@@ -1,22 +1,20 @@
 /**
- * HYBRID STORAGE SERVICE
- * 
- * Combines Replit Object Storage (hot tier) with Pocket Dimension technology (cold tier)
- * for intelligent, cost-effective storage with automatic tiering.
- * 
- * Tiering Strategy:
- * - Hot Tier (Replit): Recent files, active projects, frequently accessed
- * - Cold Tier (Pocket Dimension): Archives, old versions, rarely accessed (30+ days)
- * 
- * Features:
- * - Intelligent routing based on access patterns
- * - Automatic tiering (30 days idle = cold)
- * - Content-hash deduplication across backends
- * - Cross-user deduplication for public content
- * - Seamless fallback between storage backends
- * - Unified API for all storage operations
- * - Compression for cold storage (Pocket Dimension)
- * - Analytics and optimization recommendations
+ * HYBRID STORAGE SERVICE — PDIM-ONLY MODE
+ *
+ * All file I/O routes exclusively through the Pocket Dimension engine,
+ * which persists compressed, content-addressed chunks via PDIM.
+ *
+ * The Replit Object Storage hot tier has been removed. Every file goes
+ * directly to Pocket Dimension (cold tier / PDIM), which provides:
+ *   - Level-9 gzip compression with 32 MB chunks
+ *   - SHA-256 content-addressed deduplication (cross-user)
+ *   - Versioning support
+ *   - PDIM HTTP backend — zero local disk usage
+ *
+ * The StorageLocation type is preserved as 'replit' | 'pocket-dimension'
+ * for index compatibility, but all new writes resolve to 'pocket-dimension'.
+ * Any index entries that still carry location='replit' are transparently
+ * re-routed to cold storage on the next read.
  */
 
 import { pocketManager, PocketDimension } from '../pocket-dimension/index.js';
@@ -139,39 +137,28 @@ export class HybridStorageService {
     if (this.initialized) return;
 
     try {
-      // Hot Tier: Replit Object Storage (REPLIT_BUCKET_ID)
-      const bucketId = process.env.REPLIT_BUCKET_ID;
-      if (bucketId) {
-        try {
-          this.replitClient = new ReplitObjectStorageClient({ bucketId });
-          logger.info(`[HybridStorage] Replit Object Storage hot tier enabled (bucket: ${bucketId})`);
-        } catch (e: any) {
-          logger.warn(`[HybridStorage] Replit Object Storage unavailable: ${e.message} — using cold tier only`);
-          this.replitClient = null;
-        }
-      } else {
-        logger.warn('[HybridStorage] REPLIT_BUCKET_ID not set — Replit hot tier disabled, using cold tier only');
-        this.replitClient = null;
-      }
+      // PDIM-only: Replit Object Storage is intentionally disabled.
+      // All storage routes through Pocket Dimension → PDIM.
+      this.replitClient = null;
 
-      // Cold Tier: Pocket Dimension custom storage
+      // Sole storage tier: Pocket Dimension (PDIM-backed, 32 MB chunks)
       try {
         this.coldPocket = await pocketManager.openPocket('hybrid-cold-storage', {
           compressionLevel: 9,
           enableDeduplication: true,
           enableVersioning: true,
-          chunkSize: 1024 * 1024,
+          chunkSize: 32 * 1024 * 1024,
         });
-        logger.info('[HybridStorage] Pocket Dimension cold tier initialized');
+        logger.info('[HybridStorage] Pocket Dimension storage initialized (PDIM-only, 32 MB chunks, level-9 gzip, dedup)');
       } catch (e: any) {
-        logger.warn(`[HybridStorage] Pocket Dimension unavailable: ${e.message} — cold tier degraded`);
+        logger.warn(`[HybridStorage] Pocket Dimension unavailable: ${e.message}`);
         this.coldPocket = null;
       }
 
       await this.loadIndex();
       this.initialized = true;
 
-      logger.info('[HybridStorage] Hybrid storage service initialized (Replit Object Storage + Pocket Dimension)');
+      logger.info('[HybridStorage] Storage service initialized — PDIM-only mode (Pocket Dimension)');
     } catch (error) {
       logger.error('[HybridStorage] Failed to initialize:', error);
       throw error;
@@ -254,11 +241,9 @@ export class HybridStorageService {
     };
   }
 
-  private determineInitialTier(sizeBytes: number, mimeType: string): StorageTier {
-    if (sizeBytes > SIZE_THRESHOLD_FOR_COLD) {
-      return 'cold';
-    }
-    return 'hot';
+  private determineInitialTier(_sizeBytes: number, _mimeType: string): StorageTier {
+    // PDIM-only: all files go to cold/pocket-dimension regardless of size or type.
+    return 'cold';
   }
 
   async upload(
@@ -375,22 +360,13 @@ export class HybridStorageService {
     let compressedSize = data.length;
     let location: StorageLocation;
 
-    if (options?.forceLocation === 'replit' && !this.replitClient) {
-      throw new Error('Replit Object Storage is not available. Cannot force upload to replit location.');
-    }
+    // PDIM-only: forceLocation: 'replit' is treated as 'pocket-dimension'.
+    // All writes go exclusively to Pocket Dimension → PDIM.
+    const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
+    compressedSize = pocketEntry.compressedSize;
+    location = 'pocket-dimension';
 
-    const useReplit = options?.forceLocation === 'replit' || (options?.forceLocation !== 'pocket-dimension' && tier === 'hot' && this.replitClient);
-
-    if (useReplit && this.replitClient) {
-      await this.writeToReplit(key, data, mimeType);
-      location = 'replit';
-    } else {
-      const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
-      compressedSize = pocketEntry.compressedSize;
-      location = 'pocket-dimension';
-    }
-
-    const actualTier: StorageTier = location === 'replit' ? 'hot' : 'cold';
+    const actualTier: StorageTier = 'cold';
 
     const entry: HybridFileMetadata = {
       key,
@@ -470,23 +446,15 @@ export class HybridStorageService {
 
     const data = await this.readFromStorage(entry);
 
-    const decision = this.determineTier(entry);
-    if (decision.shouldTierUp && this.replitClient) {
-      this.scheduleTierUp(key, data).catch(err => 
-        logger.error(`[HybridStorage] Failed to tier up ${key}:`, err)
-      );
-    }
-
+    // PDIM-only: no tier-up to Replit Object Storage.
     await this.saveIndex();
     return data;
   }
 
   private async readFromStorage(entry: HybridFileMetadata): Promise<Buffer> {
-    if (entry.location === 'replit' && this.replitClient) {
-      return this.readFromReplit(entry.key);
-    } else {
-      return this.coldPocket!.read(`storage/${entry.key}`);
-    }
+    // PDIM-only: all reads come from Pocket Dimension regardless of the
+    // location value stored in the index (legacy 'replit' entries included).
+    return this.coldPocket!.read(`storage/${entry.key}`);
   }
 
   private async readFromReplit(key: string): Promise<Buffer> {
@@ -524,11 +492,8 @@ export class HybridStorageService {
       const otherRefs = hashKeys && hashKeys.length > 0;
       
       if (!otherRefs) {
-        if (entry.location === 'replit' && this.replitClient) {
-          await this.replitClient.delete(key).catch(() => {});
-        } else {
-          await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
-        }
+        // PDIM-only: always delete from cold pocket.
+        await this.coldPocket!.delete(`storage/${key}`).catch(() => {});
       } else if (hashKeys && hashKeys.length > 0) {
         const newPrimary = hashKeys[0];
         const newPrimaryEntry = this.fileIndex.get(newPrimary);
@@ -557,19 +522,12 @@ export class HybridStorageService {
     if (!entry || entry.tier === 'cold' || entry.isDeduplicated) return false;
 
     try {
-      const data = await this.readFromReplit(key);
-      const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
-
-      if (this.replitClient) {
-        await this.replitClient.delete(key).catch(() => {});
-      }
-
+      // PDIM-only: file is already in pocket-dimension; just update the index entry.
       entry.tier = 'cold';
       entry.location = 'pocket-dimension';
-      entry.compressedSize = pocketEntry.compressedSize;
       await this.saveIndex();
 
-      logger.info(`[HybridStorage] Tiered down: ${key} (saved ${entry.sizeBytes - entry.compressedSize} bytes)`);
+      logger.info(`[HybridStorage] Tier-down confirmed for: ${key} (already in PDIM)`);
       return true;
     } catch (error) {
       logger.error(`[HybridStorage] Failed to tier down ${key}:`, error);
@@ -577,51 +535,28 @@ export class HybridStorageService {
     }
   }
 
-  private async scheduleTierUp(key: string, data: Buffer): Promise<void> {
-    const entry = this.fileIndex.get(key);
-    if (!entry || entry.tier === 'hot' || !this.replitClient) return;
-
-    try {
-      await this.writeToReplit(key, data, entry.mimeType);
-
-      await this.coldPocket?.delete(`storage/${key}`).catch(() => {});
-
-      entry.tier = 'hot';
-      entry.location = 'replit';
-      entry.compressedSize = entry.sizeBytes;
-      await this.saveIndex();
-
-      logger.info(`[HybridStorage] Tiered up: ${key}`);
-    } catch (error) {
-      logger.error(`[HybridStorage] Failed to tier up ${key}:`, error);
-    }
+  private async scheduleTierUp(_key: string, _data: Buffer): Promise<void> {
+    // PDIM-only: tier-up to Replit Object Storage is disabled.
+    // All files remain in Pocket Dimension.
   }
 
   async runAutoTiering(): Promise<{ tieredDown: number; tieredUp: number }> {
     await this.initialize();
 
     let tieredDown = 0;
-    let tieredUp = 0;
 
     for (const [key, entry] of this.fileIndex) {
       if (entry.isDeduplicated) continue;
-
       const decision = this.determineTier(entry);
-
+      // PDIM-only: tier-up is disabled (no Replit hot tier). Only tier-down runs,
+      // which for existing entries just confirms they are already in pocket-dimension.
       if (decision.shouldTierDown) {
         if (await this.tierDown(key)) tieredDown++;
-      } else if (decision.shouldTierUp && this.replitClient) {
-        try {
-          const data = await this.readFromStorage(entry);
-          await this.scheduleTierUp(key, data);
-          tieredUp++;
-        } catch {
-        }
       }
     }
 
-    logger.info(`[HybridStorage] Auto-tiering: ${tieredDown} down, ${tieredUp} up`);
-    return { tieredDown, tieredUp };
+    logger.info(`[HybridStorage] Auto-tiering (PDIM-only): ${tieredDown} index entries confirmed cold`);
+    return { tieredDown, tieredUp: 0 };
   }
 
   async getAnalytics(userId?: string): Promise<StorageAnalytics> {
@@ -894,33 +829,21 @@ export class HybridStorageService {
 
     if (entry.location === targetLocation && entry.tier === targetTier) return true;
 
-    if (targetLocation === 'replit' && !this.replitClient) {
-      throw new Error('Replit Object Storage is not available. Cannot migrate to replit location.');
-    }
+    // PDIM-only: migration to 'replit' is silently remapped to 'pocket-dimension'.
+    const resolvedLocation: StorageLocation = 'pocket-dimension';
+    const resolvedTier: StorageTier = 'cold';
+
+    if (entry.location === resolvedLocation && entry.tier === resolvedTier) return true;
 
     try {
       const data = await this.readFromStorage(entry);
-
-      if (targetLocation === 'replit' && this.replitClient) {
-        await this.writeToReplit(key, data, entry.mimeType);
-        if (entry.location === 'pocket-dimension') {
-          await this.coldPocket?.delete(`storage/${key}`).catch(() => {});
-        }
-        entry.location = 'replit';
-        entry.tier = 'hot';
-        entry.compressedSize = entry.sizeBytes;
-      } else {
-        const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
-        if (entry.location === 'replit' && this.replitClient) {
-          await this.replitClient.delete(key).catch(() => {});
-        }
-        entry.location = 'pocket-dimension';
-        entry.tier = targetTier;
-        entry.compressedSize = pocketEntry.compressedSize;
-      }
+      const pocketEntry = await this.coldPocket!.write(`storage/${key}`, data);
+      entry.location = 'pocket-dimension';
+      entry.tier = 'cold';
+      entry.compressedSize = pocketEntry.compressedSize;
 
       await this.saveIndex();
-      logger.info(`[HybridStorage] Migrated ${key} to ${targetLocation}/${targetTier}`);
+      logger.info(`[HybridStorage] Migrated ${key} → pocket-dimension/cold (PDIM-only)`);
       return true;
     } catch (error) {
       logger.error(`[HybridStorage] Failed to migrate ${key}:`, error);

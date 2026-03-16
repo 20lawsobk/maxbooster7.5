@@ -150,7 +150,7 @@ router.post('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respon
     const node = await fabricNodeRegistry.registerNode({
       region: region || 'us-east',
       costTier: costTier || 'standard',
-      backendType: backendType || 'replit',
+      backendType: backendType || 'pocket-dimension',
       backendConfig: backendConfig || {},
       capacityBytes: Number(capacityBytes) || 100 * 1024 * 1024 * 1024,
       usedBytes: 0,

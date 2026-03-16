@@ -1756,7 +1756,7 @@ router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.sin
       filename,
       req.file.buffer,
       req.file.mimetype,
-      { folder: 'tier-audio', forceLocation: 'replit' as const }
+      { folder: 'tier-audio', forceLocation: 'pocket-dimension' as const }
     );
     const audioUrl = `/api/marketplace/audio/${audioResult.key}`;
 

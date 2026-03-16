@@ -81,9 +81,9 @@ export interface AppConfig {
     useTempStorage: boolean; // true = local, false = S3
   };
 
-  // Storage (S3/Object Storage/Replit)
+  // Storage — PDIM-only (Pocket Dimension)
   storage: {
-    provider: 'local' | 's3' | 'replit';
+    provider: 'local' | 's3' | 'replit' | 'pocket-dimension';
     bucket?: string;
     region?: string;
     endpoint?: string;
@@ -191,8 +191,7 @@ export const config: AppConfig = {
 
   storage: {
     provider:
-      (process.env.STORAGE_PROVIDER as 'local' | 's3' | 'replit') ||
-      (process.env.PRIVATE_OBJECT_DIR || process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID ? 'replit' : 'local'),
+      (process.env.STORAGE_PROVIDER === 's3' ? 's3' : 'pocket-dimension') as 'pocket-dimension' | 's3',
     bucket: process.env.S3_BUCKET,
     region: process.env.AWS_REGION || 'us-east-1',
     endpoint: process.env.S3_ENDPOINT,
@@ -277,8 +276,8 @@ export function logConfig(): void {
   logger.info(`   Storage: ${config.storage.provider}`);
   if (config.storage.provider === 's3') {
     logger.info(`   S3 Bucket: ${config.storage.bucket}`);
-  } else if (config.storage.provider === 'replit') {
-    logger.info(`   📦 Replit App Storage Bucket: ${config.storage.replitBucketId}`);
+  } else if (config.storage.provider === 'pocket-dimension') {
+    logger.info(`   📦 Storage: Pocket Dimension → PDIM (zero local disk)`);
   }
   logger.info(`   Max File Size: ${(config.upload.maxFileSize / 1024 / 1024).toFixed(0)}MB`);
 }

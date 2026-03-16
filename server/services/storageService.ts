@@ -43,9 +43,9 @@ class PocketDimensionStorageProvider implements StorageProvider {
         compressionLevel: 9,
         enableDeduplication: true,
         enableVersioning: false,
-        chunkSize: 4 * 1024 * 1024,
+        chunkSize: 32 * 1024 * 1024,
       });
-      logger.info('📦 [Storage] Pocket Dimension provider ready (PDIM-backed, level-9 gzip, dedup, 4 MB chunks)');
+      logger.info('📦 [Storage] Pocket Dimension provider ready (PDIM-backed, level-9 gzip, dedup, 32 MB chunks)');
     } catch (err) {
       logger.error('[Storage] Failed to initialize Pocket Dimension provider:', err);
     }
