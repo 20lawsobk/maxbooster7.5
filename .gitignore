@@ -1,5 +1,4 @@
 node_modules
-dist/index.cjs
 dist/index.cjs.map
 .DS_Store
 server/public

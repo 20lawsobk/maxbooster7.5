@@ -1,22 +1,75 @@
 #!/bin/bash
 set -e
 
-echo "==> Installing dependencies..."
-npm ci
+# ─────────────────────────────────────────────────────────────────────────────
+# FAST PATH vs SLOW PATH
+#
+# FAST PATH — all pre-built artifacts are committed to git:
+#   • dist/public/index.html  — Vite frontend bundle (committed, ~17 MB)
+#   • dist/index.cjs          — esbuild server bundle (committed, ~5 MB)
+#   • dist/cluster.cjs        — esbuild cluster entry (committed, ~1 MB)
+#   • boosterstate binary     — Rust sidecar (committed, ~2 MB)
+#
+#   No build tools needed → use `npm ci --omit=dev` which installs ONLY
+#   production deps (~700 MB) instead of all deps + prune (~3 GB → 1.5 GB).
+#   client/ (930 MB of TS source) is deleted immediately since Vite won't run.
+#   Final image: ~450–600 MB.
+#
+# SLOW PATH — one or more artifacts are missing:
+#   Falls back to full `npm ci` + `npm run build:deploy` + `npm prune`.
+#   Final image: ~1.2–1.5 GB (still correct after all the other fixes).
+# ─────────────────────────────────────────────────────────────────────────────
 
-echo "==> Removing TF native libraries downloaded by tfjs-node install script..."
-# @tensorflow/tfjs-node downloads ~400 MB of native TF binaries during npm ci
-# (via its postinstall script). They are not used at runtime — the server uses
-# the WASM/CPU backend or tfjs-node-gpu. Remove immediately to reclaim space.
+PREBUILT_FRONTEND="dist/public/index.html"
+PREBUILT_SERVER="dist/index.cjs"
+PREBUILT_CLUSTER="dist/cluster.cjs"
+RUST_BIN="./boosterstate/target/release/boosterstate"
+
+if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
+  echo "==> FAST PATH: all pre-built artifacts present"
+  echo "   dist/public/, dist/index.cjs, dist/cluster.cjs already committed."
+
+  echo "==> Deleting source tree immediately (Vite/esbuild not needed)..."
+  # client/ is 930 MB — deleting it before npm ci cuts peak disk use by 930 MB.
+  rm -rf \
+    client/ server/ shared/ script/ scripts/ electron/ \
+    attached_assets/ docs/ .cache/ \
+    node_modules/.vite/ node_modules/.cache/ \
+    capacitor.config.ts vite.config.ts tailwind.config.ts \
+    postcss.config.js drizzle.config.ts tsconfig.json \
+    tsconfig.app.json tsconfig.node.json components.json \
+    electron-builder.yml \
+    2>/dev/null || true
+  echo "   Source tree removed ($(du -sh dist/ 2>/dev/null | cut -f1) in dist/)."
+
+  echo "==> Installing production dependencies only (omitting dev deps)..."
+  # npm ci --omit=dev: reads package-lock.json, installs only non-dev packages.
+  # This downloads ~700 MB instead of 3 GB, and skips the npm prune step.
+  npm ci --omit=dev
+
+  FAST_PATH=1
+else
+  echo "==> SLOW PATH: one or more pre-built artifacts missing — running full build"
+  [ ! -f "$PREBUILT_FRONTEND" ] && echo "   missing: $PREBUILT_FRONTEND"
+  [ ! -f "$PREBUILT_SERVER"   ] && echo "   missing: $PREBUILT_SERVER"
+  [ ! -f "$PREBUILT_CLUSTER"  ] && echo "   missing: $PREBUILT_CLUSTER"
+
+  echo "==> Installing all dependencies (dev + prod)..."
+  npm ci
+
+  FAST_PATH=0
+fi
+
+# ─── TF native binaries (always remove — postinstall downloads them regardless) ─
+echo "==> Removing TF native libraries downloaded by tfjs-node postinstall..."
 rm -rf node_modules/@tensorflow/tfjs-node/deps/ 2>/dev/null || true
 rm -f  node_modules/@tensorflow/tfjs-node/binding/tfjs_binding.node 2>/dev/null || true
 echo "   TF native binaries removed."
 
-RUST_BIN=./boosterstate/target/release/boosterstate
-
+# ─── Rust sidecar ────────────────────────────────────────────────────────────
 echo "==> Rust sidecar..."
 if [ -f "$RUST_BIN" ] && [ -s "$RUST_BIN" ]; then
-  echo "   Pre-built binary found — skipping cargo compile (saves ~15 min)."
+  echo "   Pre-built binary found — skipping cargo compile."
   echo "   Binary: $(du -sh "$RUST_BIN" | cut -f1)"
 else
   echo "   No pre-built binary — running cargo build --release..."
@@ -24,9 +77,7 @@ else
   echo "   Rust binary built: $(du -sh "$RUST_BIN" | cut -f1)"
 fi
 
-echo "==> Extracting Rust binary and removing Rust source tree..."
-# Preserve only the release binary; delete the entire source + target tree to
-# reclaim disk space (hundreds of MB of .rlib / .rmeta / incremental objects).
+echo "==> Preserving Rust binary and removing Rust source tree..."
 cp "$RUST_BIN" /tmp/boosterstate-release
 rm -rf boosterstate/
 mkdir -p boosterstate/target/release
@@ -34,56 +85,36 @@ mv /tmp/boosterstate-release boosterstate/target/release/boosterstate
 chmod +x boosterstate/target/release/boosterstate
 echo "   Rust source tree removed. Binary at: boosterstate/target/release/boosterstate"
 
-echo "==> Clearing build caches before Vite compile..."
-# .cache/ can contain multi-GB UV/Python and Electron caches from previous runs.
-# node_modules/.vite/ is Vite's dep-optimizer cache (~40 MB). Both are safe to
-# delete before the build; Vite will recreate a fresh cache during compilation.
-rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
-echo "   Pre-build caches cleared."
+# ─── Full build (SLOW PATH only) ─────────────────────────────────────────────
+if [ "$FAST_PATH" = "0" ]; then
+  echo "==> Clearing build caches before compile..."
+  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
+  echo "   Pre-build caches cleared."
 
-echo "==> Clearing any pre-built frontend assets to force a fresh Vite build..."
-rm -rf dist/public
-echo "   Pre-built assets cleared."
+  echo "==> Building application (Vite frontend + esbuild server bundle)..."
+  npm run build:deploy
 
-echo "==> Building application (Vite frontend + esbuild server bundle)..."
-npm run build:deploy
+  echo "==> Removing source directories post-build..."
+  rm -rf \
+    client/ server/ shared/ script/ scripts/ electron/ \
+    attached_assets/ docs/ .cache/ \
+    node_modules/.vite/ node_modules/.cache/ \
+    capacitor.config.ts vite.config.ts tailwind.config.ts \
+    postcss.config.js drizzle.config.ts tsconfig.json \
+    tsconfig.app.json tsconfig.node.json components.json \
+    electron-builder.yml \
+    2>/dev/null || true
+  echo "   Source dirs + caches removed. dist/ size: $(du -sh dist/ 2>/dev/null | cut -f1)"
 
-echo "==> Removing source directories (compiled output lives in dist/ — sources not needed at runtime)..."
-# TypeScript/TSX source compiled into dist/index.cjs (server) and dist/public/
-# (frontend). Also clear ALL caches created by Vite/esbuild/UV during the build.
-rm -rf \
-  client/ \
-  server/ \
-  shared/ \
-  script/ \
-  scripts/ \
-  electron/ \
-  attached_assets/ \
-  docs/ \
-  .cache/ \
-  node_modules/.vite/ \
-  node_modules/.cache/ \
-  capacitor.config.ts \
-  vite.config.ts \
-  tailwind.config.ts \
-  postcss.config.js \
-  drizzle.config.ts \
-  tsconfig.json \
-  tsconfig.app.json \
-  tsconfig.node.json \
-  components.json \
-  electron-builder.yml \
-  2>/dev/null || true
-REMOVED_SIZE=$(du -sh dist/ 2>/dev/null | cut -f1)
-echo "   Source dirs + caches removed. dist/ size: ${REMOVED_SIZE}"
+  echo "==> Pruning dev dependencies..."
+  npm prune --omit=dev
+fi
 
-echo "==> Pruning dev dependencies..."
-npm prune --omit=dev
-
-echo "==> Stripping node_modules to reduce deployment image size..."
+# ─── node_modules stripping (both paths) ─────────────────────────────────────
+echo "==> Stripping node_modules..."
 
 # Belt-and-suspenders: explicitly remove the largest known dev-only packages
-# in case npm prune misses any transitive electron/builder dependencies.
+# in case npm prune / --omit=dev misses any transitive electron/builder deps.
 rm -rf \
   node_modules/electron \
   node_modules/electron-builder \
@@ -94,7 +125,7 @@ rm -rf \
   node_modules/electron-updater \
   node_modules/7zip-bin \
   2>/dev/null || true
-echo "   Removed: electron / app-builder / 7zip-bin dev packages"
+echo "   Removed: electron / app-builder / 7zip-bin packages"
 
 # WebGL backend — no GPU/WebGL in a Node.js server environment.
 rm -rf node_modules/@tensorflow/tfjs-backend-webgl 2>/dev/null || true
@@ -104,8 +135,9 @@ echo "   Removed: @tensorflow/tfjs-backend-webgl"
 rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels 2>/dev/null || true
 echo "   Removed: @tensorflow/tfjs-node/dist/kernels (redundant ESM kernels)"
 
-# @tensorflow/tfjs ships browser UMD/ESM bundle variants that are unused in Node.
-# Only tf.node.js (1.3 MB) is needed; remove the larger browser bundles (~130 MB).
+# @tensorflow/tfjs ships browser UMD/ESM bundle variants unused in Node.js.
+# Only tf.node.js (1.3 MB) is needed. The 6 browser bundles + their source
+# maps together account for ~120 MB.
 rm -f \
   node_modules/@tensorflow/tfjs/dist/tf.js \
   node_modules/@tensorflow/tfjs/dist/tf.min.js \
@@ -114,10 +146,9 @@ rm -f \
   node_modules/@tensorflow/tfjs/dist/tf.fesm.js \
   node_modules/@tensorflow/tfjs/dist/tf.fesm.min.js \
   2>/dev/null || true
-echo "   Removed: @tensorflow/tfjs browser bundle variants (~130 MB)"
+echo "   Removed: @tensorflow/tfjs browser bundle variants"
 
-# Sentry ships separate SDKs for browser, browser-replay, and Node.js.
-# In a server deployment only the Node.js SDK is needed.
+# Sentry — server deployment only needs @sentry/node.
 rm -rf \
   node_modules/@sentry/browser \
   node_modules/@sentry/vue \
@@ -127,23 +158,24 @@ rm -rf \
   node_modules/@sentry-internal/replay-canvas \
   node_modules/@sentry-internal/feedback \
   2>/dev/null || true
-echo "   Removed: Sentry browser/replay SDKs (server only needs @sentry/node)"
+echo "   Removed: Sentry browser/replay SDKs"
 
-# Source maps add ~70 MB across thousands of packages — never used at runtime.
+# Source maps — never used by the running Node.js process.
+# This also catches the 106 MB of .map files in @tensorflow/tfjs/dist/.
 find node_modules -name "*.map" -type f -delete 2>/dev/null || true
-echo "   Removed: *.map source map files"
+echo "   Removed: *.map source map files (includes ~106 MB TF.js maps)"
 
-# TypeScript declaration files are resolved at build time, not runtime.
+# TypeScript declaration files — build-time only.
 find node_modules -name "*.d.ts" -type f -delete 2>/dev/null || true
 echo "   Removed: *.d.ts TypeScript declaration files"
 
-# Bundled test suites inside packages
+# Bundled test suites inside packages.
 find node_modules -type d \( -name "__tests__" -o -name "test" -o -name "tests" \) \
   -not -path "*/.bin/*" \
   -exec rm -rf {} + 2>/dev/null || true
 echo "   Removed: test directories inside node_modules"
 
-# Documentation, examples, and repository meta-files bundled inside packages
+# Documentation, examples, and meta-files bundled inside packages.
 find node_modules -maxdepth 3 -type d \
   \( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" \
      -o -name "tutorial" -o -name "tutorials" -o -name ".github" -o -name "benchmark" \
@@ -151,20 +183,29 @@ find node_modules -maxdepth 3 -type d \
   -exec rm -rf {} + 2>/dev/null || true
 echo "   Removed: docs/examples/fixtures directories inside node_modules"
 
-# Markdown, changelog, and license files duplicated inside every package
+# Markdown, changelog, and license files duplicated inside every package.
 find node_modules -maxdepth 3 -type f \
   \( -name "CHANGELOG.md" -o -name "CHANGELOG" -o -name "HISTORY.md" \
      -o -name "CHANGES.md" -o -name "CONTRIBUTING.md" -o -name "AUTHORS" \
      -o -name "NOTICE" -o -name "*.md" \) \
   -delete 2>/dev/null || true
-echo "   Removed: changelog/readme markdown files inside node_modules"
+echo "   Removed: changelog/readme files inside node_modules"
 
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 
+# ─── Final summary ────────────────────────────────────────────────────────────
 echo ""
 echo "==> Build image size summary:"
-du -sh dist/ node_modules/ boosterstate/ .cache/ 2>/dev/null | awk '{printf "   %-15s %s\n", $2, $1}'
-echo "   .cache should be absent above (2.8 GB if not cleaned)"
+du -sh dist/ node_modules/ boosterstate/ 2>/dev/null \
+  | awk '{printf "   %-15s %s\n", $2, $1}'
+if [ -d .cache ]; then
+  echo "   WARNING: .cache/ still present — $(du -sh .cache/ | cut -f1)"
+fi
 echo "   Total workspace: $(du -sh --exclude=.git . 2>/dev/null | cut -f1)"
+if [ "$FAST_PATH" = "1" ]; then
+  echo "   Path: FAST (npm ci --omit=dev, no Vite/esbuild)"
+else
+  echo "   Path: SLOW (full build + npm prune)"
+fi
 echo ""
 echo "==> Build complete."
