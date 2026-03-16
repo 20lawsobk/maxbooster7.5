@@ -1,17 +1,17 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Music2, CheckCircle2, AlertCircle, ChevronRight, Trash2, Wrench, ExternalLink } from 'lucide-react';
+import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import ArtistLookerUpper from './ArtistLookerUpper';
-import ArtistProfileFixer from './ArtistProfileFixer';
+import AutoArtistSync from './AutoArtistSync';
 
 interface ArtistProfile {
   id: string;
@@ -38,13 +38,23 @@ interface Props {
   selectedProfileId?: string;
 }
 
+function connectedPlatforms(p: ArtistProfile): string[] {
+  const out: string[] = [];
+  if (p.spotifyArtistId) out.push('Spotify');
+  if (p.appleArtistId) out.push('Apple');
+  if (p.youtubeChannelId) out.push('YouTube');
+  if (p.deezerArtistId) out.push('Deezer');
+  if (p.tidalArtistId) out.push('Tidal');
+  if (p.soundcloudArtistId) out.push('SoundCloud');
+  if (p.amazonMusicArtistId) out.push('Amazon');
+  return out;
+}
+
 export default function ArtistProfileManager({ onSelectProfile, selectedProfileId }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [showLookerUpper, setShowLookerUpper] = useState(false);
-  const [showFixer, setShowFixer] = useState(false);
-  const [activeProfile, setActiveProfile] = useState<ArtistProfile | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [form, setForm] = useState({ artistName: '', isNewArtist: true });
 
   const { data, isLoading } = useQuery<{ profiles: ArtistProfile[] }>({
@@ -59,44 +69,21 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       setShowCreateDialog(false);
       setForm({ artistName: '', isNewArtist: true });
-      toast({ title: 'Artist profile created', description: profile.artistName });
+      setExpandedId(profile.id);
+      toast({ title: 'Artist profile created', description: `Auto-discovering "${profile.artistName}" across platforms…` });
     },
     onError: () => toast({ title: 'Failed to create artist profile', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/artist-profiles/${id}`),
-    onSuccess: () => {
+    onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      if (expandedId === id) setExpandedId(null);
       toast({ title: 'Artist profile deleted' });
     },
     onError: () => toast({ title: 'Failed to delete artist profile', variant: 'destructive' }),
   });
-
-  const verifyMutation = useMutation({
-    mutationFn: (id: string) => apiRequest('POST', `/api/artist-profiles/${id}/verify`).then(r => r.json()),
-    onSuccess: ({ spotifyData }) => {
-      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
-      toast({ title: 'Spotify identity verified', description: `Confirmed: ${spotifyData.name}` });
-    },
-    onError: (err: any) => toast({
-      title: 'Verification failed',
-      description: err?.message ?? 'Could not verify Spotify artist ID',
-      variant: 'destructive',
-    }),
-  });
-
-  const connectedPlatforms = (p: ArtistProfile) => {
-    const platforms = [];
-    if (p.spotifyArtistId) platforms.push('Spotify');
-    if (p.appleArtistId) platforms.push('Apple');
-    if (p.youtubeChannelId) platforms.push('YouTube');
-    if (p.deezerArtistId) platforms.push('Deezer');
-    if (p.tidalArtistId) platforms.push('Tidal');
-    if (p.soundcloudArtistId) platforms.push('SoundCloud');
-    if (p.amazonMusicArtistId) platforms.push('Amazon');
-    return platforms;
-  };
 
   return (
     <div className="space-y-4">
@@ -104,7 +91,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
         <div>
           <h3 className="text-lg font-semibold">Artist Profiles</h3>
           <p className="text-sm text-muted-foreground">
-            Link your artist identity to streaming platforms so releases land on the correct pages.
+            Auto-discovers and syncs your artist identity across Spotify, Apple Music, and Deezer.
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} size="sm">
@@ -123,7 +110,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
             <Music2 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="font-medium">No artist profiles yet</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Create a profile to link your releases to the correct artist pages on Spotify, Apple Music, and more.
+              Create a profile — the system will automatically find and sync your artist page across streaming platforms.
             </p>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -137,91 +124,93 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
         {profiles.map(profile => {
           const platforms = connectedPlatforms(profile);
           const isSelected = selectedProfileId === profile.id;
+          const isExpanded = expandedId === profile.id;
 
           return (
             <Card
               key={profile.id}
-              className={`cursor-pointer transition-all ${isSelected ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
-              onClick={() => onSelectProfile?.(profile)}
+              className={`transition-all ${isSelected ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  {profile.profileImageUrl ? (
-                    <img src={profile.profileImageUrl} alt={profile.artistName} className="h-12 w-12 rounded-full object-cover" />
-                  ) : (
-                    <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                      <Music2 className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                  )}
+              <Collapsible open={isExpanded} onOpenChange={open => setExpandedId(open ? profile.id : null)}>
+                <CollapsibleTrigger asChild>
+                  <CardContent
+                    className="p-4 cursor-pointer"
+                    onClick={() => {
+                      onSelectProfile?.(profile);
+                      setExpandedId(isExpanded ? null : profile.id);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      {profile.profileImageUrl ? (
+                        <img
+                          src={profile.profileImageUrl}
+                          alt={profile.artistName}
+                          className="h-12 w-12 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                          <Music2 className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
 
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold truncate">{profile.artistName}</span>
-                      {profile.isVerified && (
-                        <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" title="Spotify identity verified" />
-                      )}
-                      {profile.fixerPending && (
-                        <Badge variant="secondary" className="text-xs">Fixer pending</Badge>
-                      )}
-                    </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold truncate">{profile.artistName}</span>
+                          {profile.isVerified && (
+                            <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" title="Verified" />
+                          )}
+                          {profile.fixerPending && (
+                            <Badge variant="secondary" className="text-xs">Fixer pending</Badge>
+                          )}
+                        </div>
 
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      <Badge variant={profile.isNewArtist ? 'secondary' : 'outline'} className="text-xs">
-                        {profile.isNewArtist ? 'New artist' : 'Existing artist'}
-                      </Badge>
-                      {platforms.map(p => (
-                        <Badge key={p} variant="outline" className="text-xs text-green-600 border-green-200">
-                          {p}
-                        </Badge>
-                      ))}
-                      {platforms.length === 0 && (
-                        <Badge variant="outline" className="text-xs text-orange-500 border-orange-200">
-                          No platform IDs
-                        </Badge>
-                      )}
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          <Badge
+                            variant={profile.isNewArtist ? 'secondary' : 'outline'}
+                            className="text-xs"
+                          >
+                            {profile.isNewArtist ? 'New artist' : 'Existing artist'}
+                          </Badge>
+                          {platforms.map(p => (
+                            <Badge key={p} variant="outline" className="text-xs text-green-600 border-green-200">
+                              {p}
+                            </Badge>
+                          ))}
+                          {platforms.length === 0 && (
+                            <Badge variant="outline" className="text-xs text-orange-500 border-orange-200">
+                              Discovering…
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={e => { e.stopPropagation(); deleteMutation.mutate(profile.id); }}
+                          title="Delete profile"
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        {isExpanded
+                          ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                          : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                      </div>
                     </div>
+                  </CardContent>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent>
+                  <div className="px-4 pb-4 border-t pt-3">
+                    <AutoArtistSync
+                      profile={profile}
+                      onUpdated={() => queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] })}
+                    />
                   </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    {profile.spotifyArtistId && !profile.isVerified && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={e => { e.stopPropagation(); verifyMutation.mutate(profile.id); }}
-                        title="Verify Spotify identity"
-                      >
-                        <CheckCircle2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={e => { e.stopPropagation(); setActiveProfile(profile); setShowLookerUpper(true); }}
-                      title="Look up platform IDs"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={e => { e.stopPropagation(); setActiveProfile(profile); setShowFixer(true); }}
-                      title="Submit fixer request"
-                    >
-                      <Wrench className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={e => { e.stopPropagation(); deleteMutation.mutate(profile.id); }}
-                      title="Delete profile"
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                </div>
-              </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           );
         })}
@@ -239,6 +228,9 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                 placeholder="e.g. The Weeknd"
                 value={form.artistName}
                 onChange={e => setForm(f => ({ ...f, artistName: e.target.value }))}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' && form.artistName.trim()) createMutation.mutate(form);
+                }}
               />
             </div>
             <div className="flex items-center justify-between rounded-lg border p-4">
@@ -254,8 +246,8 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
               />
             </div>
             {!form.isNewArtist && (
-              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
-                You'll need to link your platform IDs after creating this profile. Use the Looker-Upper tool to find them.
+              <div className="rounded-lg bg-muted/50 border p-3 text-sm text-muted-foreground">
+                After creating this profile, the auto-discover system will search all major platforms and link the matching artist pages automatically.
               </div>
             )}
           </div>
@@ -265,34 +257,11 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
               onClick={() => createMutation.mutate(form)}
               disabled={!form.artistName.trim() || createMutation.isPending}
             >
-              {createMutation.isPending ? 'Creating…' : 'Create Profile'}
+              {createMutation.isPending ? 'Creating…' : 'Create & Auto-Discover'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {activeProfile && (
-        <>
-          <ArtistLookerUpper
-            open={showLookerUpper}
-            onOpenChange={setShowLookerUpper}
-            profile={activeProfile}
-            onSaved={() => {
-              queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
-              setShowLookerUpper(false);
-            }}
-          />
-          <ArtistProfileFixer
-            open={showFixer}
-            onOpenChange={setShowFixer}
-            profile={activeProfile}
-            onSubmitted={() => {
-              queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
-              setShowFixer(false);
-            }}
-          />
-        </>
-      )}
     </div>
   );
 }

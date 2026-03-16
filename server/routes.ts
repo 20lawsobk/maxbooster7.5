@@ -32,6 +32,7 @@ import { logger } from './logger.js';
 import { achievementService } from './services/achievementService.ts';
 import { notificationService } from './services/notificationService.ts';
 import { jwtAuthService } from './services/jwtAuthService.ts';
+import { artistProfileService } from './services/artistProfileService.ts';
 
 const log = (msg: string) => logger.info(msg);
 
@@ -210,7 +211,7 @@ export async function registerRoutes(
   // Auth: Register
   app.post("/api/auth/register", registerRateLimiter, async (req: Request, res: Response) => {
     try {
-      const { email, password, username, firstName, lastName } = req.body;
+      const { email, password, username, firstName, lastName, artistName } = req.body;
 
       if (!email || !password) {
         return res.status(400).json({ message: "Email and password are required" });
@@ -284,6 +285,22 @@ export async function registerRoutes(
 
       notificationService.sendAdminNewUserNotification(email, user.id)
         .catch((err: unknown) => logger.info('Admin new-user notification failed (non-blocking):', err));
+
+      if (artistName && typeof artistName === 'string' && artistName.trim().length > 0) {
+        const trimmedName = artistName.trim();
+        artistProfileService.createProfile({
+          userId: user.id,
+          artistName: trimmedName,
+          isNewArtist: true,
+        }).then((profile) => {
+          logger.info(`[Register] Artist profile created for new user ${user.id}: "${trimmedName}" (id=${profile.id})`);
+          return artistProfileService.autoDiscover(profile.id, user.id);
+        }).then((discoverResult) => {
+          logger.info(`[Register] Auto-discover complete for new user ${user.id}: saved=${discoverResult.saved} platforms=[${discoverResult.savedFields.join(',')}]`);
+        }).catch((err: unknown) => {
+          logger.info('[Register] Artist profile auto-discover failed (non-blocking):', err);
+        });
+      }
 
       return res.json(safeUser);
     } catch (error) {

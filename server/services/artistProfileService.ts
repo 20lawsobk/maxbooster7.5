@@ -298,6 +298,172 @@ class ArtistProfileService {
     return updated ?? null;
   }
 
+  // ── Auto-discover: search all platforms, score each result, pick top match ──
+
+  private _scoreSpotify(result: SpotifyArtistResult, query: string): number {
+    let score = 0;
+    const name = result.name.toLowerCase();
+    const q = query.toLowerCase();
+    if (name === q) score += 50;
+    else if (name.includes(q) || q.includes(name)) score += 25;
+    if (result.imageUrl) score += 10;
+    if (result.popularity >= 60) score += 25;
+    else if (result.popularity >= 30) score += 15;
+    else if (result.popularity >= 10) score += 5;
+    if (result.genres.length > 0) score += 5;
+    if (result.followers >= 1_000_000) score += 10;
+    else if (result.followers >= 100_000) score += 7;
+    else if (result.followers >= 10_000) score += 4;
+    return Math.min(score, 100);
+  }
+
+  private _scoreDeezer(result: DeezerArtistResult, query: string): number {
+    let score = 0;
+    const name = result.name.toLowerCase();
+    const q = query.toLowerCase();
+    if (name === q) score += 50;
+    else if (name.includes(q) || q.includes(name)) score += 25;
+    if (result.pictureUrl) score += 10;
+    if (result.fans >= 500_000) score += 25;
+    else if (result.fans >= 50_000) score += 15;
+    else if (result.fans >= 5_000) score += 5;
+    return Math.min(score, 100);
+  }
+
+  private _scoreApple(result: AppleArtistResult, query: string): number {
+    let score = 0;
+    const name = result.name.toLowerCase();
+    const q = query.toLowerCase();
+    if (name === q) score += 50;
+    else if (name.includes(q) || q.includes(name)) score += 25;
+    if (result.genres.length > 0) score += 10;
+    return Math.min(score, 100);
+  }
+
+  async autoDiscover(profileId: string, userId: string): Promise<{
+    spotify: { result: SpotifyArtistResult; confidence: number } | null;
+    apple:   { result: AppleArtistResult;   confidence: number } | null;
+    deezer:  { result: DeezerArtistResult;  confidence: number } | null;
+    saved: boolean;
+    savedFields: string[];
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const query = profile.artistName;
+    const raw = await this.searchAllPlatforms(query);
+
+    const topSpotify = raw.spotify
+      .map(r => ({ result: r, confidence: this._scoreSpotify(r, query) }))
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const topApple = raw.apple
+      .map(r => ({ result: r, confidence: this._scoreApple(r, query) }))
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const topDeezer = raw.deezer
+      .map(r => ({ result: r, confidence: this._scoreDeezer(r, query) }))
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const CONFIDENCE_THRESHOLD = 60;
+    const updates: Partial<InsertArtistProfile> = {};
+    const savedFields: string[] = [];
+
+    if (topSpotify && topSpotify.confidence >= CONFIDENCE_THRESHOLD && !profile.spotifyArtistId) {
+      updates.spotifyArtistId = topSpotify.result.id;
+      updates.spotifyArtistUri = topSpotify.result.uri;
+      if (topSpotify.result.imageUrl && !profile.profileImageUrl) {
+        updates.profileImageUrl = topSpotify.result.imageUrl;
+      }
+      if (topSpotify.result.genres.length > 0 && (!profile.genres || profile.genres.length === 0)) {
+        updates.genres = topSpotify.result.genres.slice(0, 5);
+      }
+      savedFields.push('spotify');
+    }
+
+    if (topApple && topApple.confidence >= CONFIDENCE_THRESHOLD && !profile.appleArtistId) {
+      updates.appleArtistId = topApple.result.id;
+      savedFields.push('apple');
+    }
+
+    if (topDeezer && topDeezer.confidence >= CONFIDENCE_THRESHOLD && !profile.deezerArtistId) {
+      updates.deezerArtistId = topDeezer.result.id;
+      if (topDeezer.result.pictureUrl && !profile.profileImageUrl && !updates.profileImageUrl) {
+        updates.profileImageUrl = topDeezer.result.pictureUrl;
+      }
+      savedFields.push('deezer');
+    }
+
+    const saved = savedFields.length > 0;
+    if (saved) {
+      await this.updateProfile(profileId, userId, updates);
+      logger.info(`[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields.join(',')}]`);
+    }
+
+    return { spotify: topSpotify ?? null, apple: topApple ?? null, deezer: topDeezer ?? null, saved, savedFields };
+  }
+
+  async autoSync(profileId: string, userId: string): Promise<{
+    synced: string[];
+    changes: Record<string, unknown>;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const updates: Partial<InsertArtistProfile> = {};
+    const synced: string[] = [];
+    const changes: Record<string, unknown> = {};
+
+    if (profile.spotifyArtistId) {
+      const fresh = await this.verifySpotifyArtist(profile.spotifyArtistId);
+      if (fresh) {
+        synced.push('spotify');
+        if (fresh.imageUrl && fresh.imageUrl !== profile.profileImageUrl) {
+          updates.profileImageUrl = fresh.imageUrl;
+          changes.profileImageUrl = fresh.imageUrl;
+        }
+        if (fresh.genres.length > 0) {
+          const existing = JSON.stringify((profile.genres ?? []).slice().sort());
+          const incoming = JSON.stringify(fresh.genres.slice().sort());
+          if (existing !== incoming) {
+            updates.genres = fresh.genres.slice(0, 5);
+            changes.genres = fresh.genres.slice(0, 5);
+          }
+        }
+        if (!profile.isVerified) {
+          updates.isVerified = true;
+          updates.verifiedAt = new Date();
+          changes.isVerified = true;
+        }
+      }
+    }
+
+    if (profile.deezerArtistId) {
+      try {
+        const res = await fetch(`https://api.deezer.com/artist/${profile.deezerArtistId}`, {
+          signal: AbortSignal.timeout(8000),
+        });
+        if (res.ok) {
+          const d = await res.json() as any;
+          synced.push('deezer');
+          if (d.picture_medium && d.picture_medium !== profile.profileImageUrl && !updates.profileImageUrl) {
+            updates.profileImageUrl = d.picture_medium;
+            changes.profileImageUrl = d.picture_medium;
+          }
+        }
+      } catch {
+        logger.warn(`[ArtistProfile] Deezer sync failed for profile=${profileId}`);
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await this.updateProfile(profileId, userId, updates);
+      logger.info(`[ArtistProfile] Auto-sync updated: profile=${profileId} synced=[${synced.join(',')}]`);
+    }
+
+    return { synced, changes };
+  }
+
   buildDistributionMetadata(profile: ArtistProfile): Record<string, string | null> {
     return {
       artistName: profile.artistName,

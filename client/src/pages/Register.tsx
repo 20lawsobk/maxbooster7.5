@@ -35,6 +35,7 @@ import {
   Eye,
   EyeOff,
   X,
+  Mic2,
 } from 'lucide-react';
 import { GoogleIcon } from '@/components/ui/brand-icons';
 
@@ -98,6 +99,7 @@ export default function Register() {
     email: '',
     password: '',
     confirmPassword: '',
+    artistName: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -339,6 +341,27 @@ export default function Register() {
                     {fieldErrors.username}
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="artistName" className="flex items-center gap-1.5">
+                  <Mic2 className="h-3.5 w-3.5 text-muted-foreground" />
+                  Artist / Producer Name
+                  <span className="text-xs text-muted-foreground font-normal">(optional — powers auto-discovery)</span>
+                </Label>
+                <Input
+                  id="artistName"
+                  type="text"
+                  placeholder="Your stage name or producer alias"
+                  value={formData.artistName}
+                  onChange={(e) => handleChange('artistName', e.target.value)}
+                  disabled={isLoading}
+                  autoComplete="nickname"
+                  data-testid="input-artist-name"
+                />
+                <p className="text-xs text-muted-foreground">
+                  We'll automatically find your profiles on Spotify, Apple Music & Deezer.
+                </p>
               </div>
 
               <div className="space-y-1">

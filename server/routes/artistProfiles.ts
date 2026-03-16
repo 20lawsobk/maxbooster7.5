@@ -181,6 +181,28 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
   }
 });
 
+router.post('/:id/auto-discover', async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.autoDiscover(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/auto-discover error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Auto-discover failed' });
+  }
+});
+
+router.post('/:id/auto-sync', async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.autoSync(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/auto-sync error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Auto-sync failed' });
+  }
+});
+
 router.post('/:id/link-release/:releaseId', async (req: Request, res: Response) => {
   try {
     const profile = await artistProfileService.getProfile(req.params.id, req.user!.id);
