@@ -41,6 +41,10 @@ const MAX_CONCURRENT_WORKERS = 3;
 // exhausts the 3-slot semaphore for ~35-40s. 30s caused the tail jobs to time out
 // waiting for a slot before they ever spawned a Worker.
 const MAX_WAIT_MS = 60_000;
+// Backpressure cap: reject immediately when the wait queue exceeds this size.
+// Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
+// holding thousands of 60-second timer handles and consuming unbounded memory.
+const MAX_QUEUE_SIZE = 500;
 // How long to sleep before rejecting when the circuit is OPEN.
 // BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
 // "no job" — without this sleep the poll loop runs at full speed, saturating
@@ -62,6 +66,13 @@ async function _acquireWorkerSlot(): Promise<void> {
   if (_activeWorkers < MAX_CONCURRENT_WORKERS) {
     _activeWorkers++;
     return;
+  }
+  // Backpressure: reject immediately if the wait queue is saturated.
+  // Without this cap, sustained BullMQ load causes _waitQueue to grow without
+  // bound, holding thousands of 60-second timer handles and consuming unbounded
+  // memory — a silent kill under infinite workload.
+  if (_waitQueue.length >= MAX_QUEUE_SIZE) {
+    throw new Error('[LuaExecutor] Wait queue saturated — shedding BullMQ request (backpressure)');
   }
   // Queue the caller until a slot frees up — transfer increments the count.
   return new Promise<void>((resolve, reject) => {

@@ -78,22 +78,22 @@ export class AuditSystem {
   private startContinuousAuditing(): void {
     // Security audit every 5 minutes
     setInterval(async () => {
-      await this.performSecurityAudit();
+      try { await this.performSecurityAudit(); } catch { /* non-fatal */ }
     }, 300000);
 
     // Performance audit every 10 minutes
     setInterval(async () => {
-      await this.performPerformanceAudit();
+      try { await this.performPerformanceAudit(); } catch { /* non-fatal */ }
     }, 600000);
 
     // Functionality audit every hour
     setInterval(async () => {
-      await this.performFunctionalityAudit();
+      try { await this.performFunctionalityAudit(); } catch { /* non-fatal */ }
     }, 3600000);
 
     // Full audit every 24 hours
     setInterval(async () => {
-      await this.performFullAudit();
+      try { await this.performFullAudit(); } catch { /* non-fatal */ }
     }, 86400000);
   }
 

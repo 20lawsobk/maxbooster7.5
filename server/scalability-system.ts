@@ -124,26 +124,28 @@ export class ScalabilitySystem {
   // Start performance monitoring
   private startPerformanceMonitoring(): void {
     setInterval(async () => {
-      await this.collectMetrics();
-      await this.analyzePerformance();
+      try {
+        await this.collectMetrics();
+        await this.analyzePerformance();
+      } catch { /* non-fatal */ }
     }, 5000); // Monitor every 5 seconds
 
     setInterval(async () => {
-      await this.optimizePerformance();
+      try { await this.optimizePerformance(); } catch { /* non-fatal */ }
     }, 30000); // Optimize every 30 seconds
   }
 
   // Start auto-scaling
   private startAutoScaling(): void {
     setInterval(async () => {
-      await this.checkScalingNeeds();
+      try { await this.checkScalingNeeds(); } catch { /* non-fatal */ }
     }, 10000); // Check scaling every 10 seconds
   }
 
   // Start optimization
   private startOptimization(): void {
     setInterval(async () => {
-      await this.performOptimization();
+      try { await this.performOptimization(); } catch { /* non-fatal */ }
     }, 60000); // Optimize every minute
   }
 

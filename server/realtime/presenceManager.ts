@@ -331,7 +331,7 @@ export class PresenceManager {
 
   private startStaleCleanup(projectId: string): void {
     const interval = setInterval(async () => {
-      await this.cleanupStalePresence(projectId);
+      try { await this.cleanupStalePresence(projectId); } catch { /* non-fatal */ }
     }, STALE_TIMEOUT_MS);
 
     this.cleanupIntervals.set(projectId, interval);

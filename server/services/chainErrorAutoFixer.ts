@@ -469,10 +469,15 @@ class ChainErrorAutoFixer extends EventEmitter {
     } catch { /* lua executor may not be loaded yet */ }
 
     // Check memory — GC every 15 s when heap > 85% to keep memory contained.
-    // Triggering at 85% (vs 90%) gives the V8 GC more slack to reclaim young-gen
-    // objects before the old gen fills.  WARN is rate-limited to once per 5 min.
+    // Use heap_size_limit (the configured --max-old-space-size) rather than
+    // heapTotal (the JIT-grown current size) so the percentage is accurate
+    // against the true limit.  At boot, heapTotal might be 900 MB while
+    // heap_size_limit is 4096 MB — using heapTotal gives false "98%" alarms.
     const mem = process.memoryUsage();
-    const heapPct = mem.heapUsed / mem.heapTotal;
+    const { getHeapStatistics } = await import('v8');
+    const v8stats = getHeapStatistics();
+    const limitBytes = v8stats.heap_size_limit > 0 ? v8stats.heap_size_limit : mem.heapTotal;
+    const heapPct = mem.heapUsed / limitBytes;
     if (heapPct > 0.85) {
       if (typeof global.gc === 'function') global.gc();
       const now = Date.now();
@@ -480,17 +485,18 @@ class ChainErrorAutoFixer extends EventEmitter {
         this._lastHeapWarnMs = now;
         // Re-sample after GC to reflect current state
         const memAfter = process.memoryUsage();
-        const pctAfter = memAfter.heapUsed / memAfter.heapTotal;
+        const pctAfter = memAfter.heapUsed / limitBytes;
         const rssMB = Math.round(memAfter.rss / 1024 / 1024);
+        const limitMB = Math.round(limitBytes / 1024 / 1024);
         if (pctAfter > 0.90) {
           logger.warn(
-            `[ChainFixer] Heap sustained at ${Math.round(pctAfter * 100)}% after GC ` +
+            `[ChainFixer] Heap sustained at ${Math.round(pctAfter * 100)}% of ${limitMB} MB limit after GC ` +
             `(was ${Math.round(heapPct * 100)}%, RSS ${rssMB} MB) — process under memory pressure`
           );
         } else {
           logger.info(
             `[ChainFixer] GC effective: heap ${Math.round(heapPct * 100)}% → ${Math.round(pctAfter * 100)}% ` +
-            `(RSS ${rssMB} MB)`
+            `of ${limitMB} MB limit (RSS ${rssMB} MB)`
           );
         }
       }

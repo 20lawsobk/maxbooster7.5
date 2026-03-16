@@ -85,7 +85,7 @@ export class SocialOAuthService {
     }
 
     this.tokenRefreshInterval = setInterval(async () => {
-      await this.checkAndRefreshExpiringTokens();
+      try { await this.checkAndRefreshExpiringTokens(); } catch { /* non-fatal */ }
     }, TOKEN_REFRESH_CHECK_INTERVAL_MS);
 
     logger.info('🔐 Token refresh monitor started (checking every minute)');

@@ -80,32 +80,32 @@ export class TestingSystem {
   private startContinuousTesting(): void {
     // Unit tests every 5 minutes
     setInterval(async () => {
-      await this.runUnitTests();
+      try { await this.runUnitTests(); } catch { /* non-fatal */ }
     }, 300000);
 
     // Integration tests every 15 minutes
     setInterval(async () => {
-      await this.runIntegrationTests();
+      try { await this.runIntegrationTests(); } catch { /* non-fatal */ }
     }, 900000);
 
     // E2E tests every hour
     setInterval(async () => {
-      await this.runE2ETests();
+      try { await this.runE2ETests(); } catch { /* non-fatal */ }
     }, 3600000);
 
     // Performance tests every 2 hours
     setInterval(async () => {
-      await this.runPerformanceTests();
+      try { await this.runPerformanceTests(); } catch { /* non-fatal */ }
     }, 7200000);
 
     // Security tests every 4 hours
     setInterval(async () => {
-      await this.runSecurityTests();
+      try { await this.runSecurityTests(); } catch { /* non-fatal */ }
     }, 14400000);
 
     // Full test suite every 24 hours
     setInterval(async () => {
-      await this.runFullTestSuite();
+      try { await this.runFullTestSuite(); } catch { /* non-fatal */ }
     }, 86400000);
   }
 

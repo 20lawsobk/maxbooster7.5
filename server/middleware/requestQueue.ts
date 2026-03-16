@@ -1,4 +1,5 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
+import v8 from 'v8';
 import { logger } from '../logger.js';
 
 interface QueuedRequest {
@@ -116,16 +117,33 @@ class RequestQueue {
     this.processing++;
     clearTimeout(queuedRequest.timeout);
 
-    const originalEnd = queuedRequest.res.end.bind(queuedRequest.res);
-    
-    queuedRequest.res.end = (...args: any[]) => {
+    // Guard: decrement exactly once, whether the response ends normally or the
+    // client disconnects abruptly.  Without the 'close' handler, an aborted
+    // connection never fires res.end(), causing `processing` to leak upward
+    // until it reaches maxConcurrent and ALL future requests are silently dropped.
+    let released = false;
+    const release = () => {
+      if (released) return;
+      released = true;
       this.processing--;
       this.stats.processed++;
-      
       setImmediate(() => this.processQueue());
-      
+    };
+
+    const originalEnd = queuedRequest.res.end.bind(queuedRequest.res);
+    queuedRequest.res.end = (...args: any[]) => {
+      release();
       return originalEnd(...args);
     };
+
+    // Client disconnect path: socket 'close' fires when the TCP connection drops
+    // before the response is sent (e.g. browser tab closed, network timeout).
+    queuedRequest.req.on('close', () => {
+      if (!released) {
+        this.stats.timedOut++;
+        release();
+      }
+    });
 
     const waitTime = Date.now() - queuedRequest.timestamp;
     queuedRequest.res.setHeader('X-Queue-Wait-Ms', waitTime);
@@ -232,14 +250,25 @@ export class LoadShedder {
 
   private evaluate(): void {
     const stats = this.queue.getStats();
-    const utilization = stats.currentlyProcessing / 1000;
+    const concurrencyUtil = stats.currentlyProcessing / 1000;
+
+    // Memory pressure check: use heap_size_limit (the configured --max-old-space-size)
+    // so the percentage is accurate against the true cap, not just the JIT-grown heap.
+    const heapStats = v8.getHeapStatistics();
+    const heapUtil = heapStats.heap_size_limit > 0
+      ? heapStats.used_heap_size / heapStats.heap_size_limit
+      : process.memoryUsage().heapUsed / process.memoryUsage().heapTotal;
+
+    // Activate shedding when either concurrency OR memory breaches the threshold.
+    const utilization = Math.max(concurrencyUtil, heapUtil);
 
     if (!this.shedding && utilization > this.threshold) {
       this.shedding = true;
-      logger.warn(`Load shedding ACTIVATED - utilization at ${(utilization * 100).toFixed(1)}%`);
+      const reason = concurrencyUtil >= heapUtil ? 'concurrency' : 'memory pressure';
+      logger.warn(`Load shedding ACTIVATED (${reason}) — util at ${(utilization * 100).toFixed(1)}%`);
     } else if (this.shedding && utilization < this.recoveryThreshold) {
       this.shedding = false;
-      logger.info(`Load shedding DEACTIVATED - utilization at ${(utilization * 100).toFixed(1)}%`);
+      logger.info(`Load shedding DEACTIVATED — util at ${(utilization * 100).toFixed(1)}%`);
     }
   }
 

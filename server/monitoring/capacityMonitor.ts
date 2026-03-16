@@ -9,7 +9,7 @@ export class CapacityMonitor {
 
   static startMonitoring() {
     setInterval(async () => {
-      await CapacityMonitor.checkCapacity();
+      try { await CapacityMonitor.checkCapacity(); } catch { /* non-fatal */ }
     }, CapacityMonitor.CHECK_INTERVAL);
 
     logger.info('📊 Capacity monitoring started (checks every 5 minutes)');
