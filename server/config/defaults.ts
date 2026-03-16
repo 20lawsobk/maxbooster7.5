@@ -152,10 +152,10 @@ export const config: AppConfig = {
 
   database: {
     url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '',
-    poolSize: parseEnvInt('DB_POOL_SIZE', 10),
+    poolSize: parseEnvInt('DB_POOL_SIZE', 3),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
-    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 30000),
-    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 10000),
+    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 5000),
+    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 15000),
   },
 
   redis: {

@@ -79,6 +79,19 @@ There is **no separate Redis server** and **no separate object storage**. PDIM i
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
 
+## Critical Database Notes
+
+**IMPORTANT: Two database URLs exist in this environment:**
+- `NEON_DATABASE_URL` → Real Neon cloud database (used by the server via `config.database.url = NEON_DATABASE_URL || DATABASE_URL`)
+- `DATABASE_URL` → Local PostgreSQL on `helium` (used by dev tools and direct `node -e` scripts)
+
+**ALL schema changes (ALTER TABLE, etc.) MUST target `NEON_DATABASE_URL`, not `DATABASE_URL`.** The server will always connect to the Neon cloud DB. Any column additions verified against `DATABASE_URL` will NOT be visible to the running server.
+
+When running a schema migration from a shell script, always use `process.env.NEON_DATABASE_URL` explicitly:
+```javascript
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
+```
+
 ## Production Setup (Replit)
 
 -   **Dev Workflow command**: `bash -c './boosterstate/target/release/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts'`
