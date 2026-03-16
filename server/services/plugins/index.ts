@@ -1,8 +1,15 @@
-import type { PluginDefinition } from '../pluginHostService';
-import { ALL_PLUGINS } from '../../../built-in plugins dsp/index';
-
-export const EXPANDED_INSTRUMENTS: PluginDefinition[] = ALL_PLUGINS.filter(p => p.category === 'instrument');
-export const EXPANDED_EFFECTS: PluginDefinition[] = ALL_PLUGINS.filter(p => p.category === 'effect');
-
-export { ALL_PLUGINS };
-export default ALL_PLUGINS;
+export {
+  EXPANDED_INSTRUMENTS,
+  EXPANDED_EFFECTS,
+  ALL_PLUGINS,
+  BUILT_IN_INSTRUMENTS,
+  BUILT_IN_EFFECTS,
+  type PluginDefinition,
+  type PluginCategory,
+  type InstrumentType,
+  type EffectType,
+  type PluginParameter,
+  type OscillatorConfig,
+  type EnvelopeConfig,
+} from './definitions.js';
+export { ALL_PLUGINS as default } from './definitions.js';
