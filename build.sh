@@ -13,9 +13,7 @@ rm -f  node_modules/@tensorflow/tfjs-node/binding/tfjs_binding.node 2>/dev/null 
 echo "   TF native binaries removed."
 
 echo "==> Building Rust sidecar..."
-cd boosterstate
-cargo build --release
-cd ..
+cargo build --release --manifest-path boosterstate/Cargo.toml
 
 echo "==> Pruning Rust intermediate build artifacts (keep only release binary)..."
 # The Rust target/ directory contains hundreds of MB of .rlib, .rmeta, .d and
