@@ -37,7 +37,10 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
 // HTTP concurrency, which keeps us well below PDIM's rate-limit even during
 // cluster startup when all N workers initialise simultaneously.
 const MAX_CONCURRENT_WORKERS = 3;
-const MAX_WAIT_MS = 30_000;
+// 60s: the boot burst (AIService init × 2 rounds, BaseTrainer, weight storage)
+// exhausts the 3-slot semaphore for ~35-40s. 30s caused the tail jobs to time out
+// waiting for a slot before they ever spawned a Worker.
+const MAX_WAIT_MS = 60_000;
 // How long to sleep before rejecting when the circuit is OPEN.
 // BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
 // "no job" — without this sleep the poll loop runs at full speed, saturating

@@ -259,13 +259,18 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 50,
       autoFix: async () => {
         try {
-          const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import('../lib/luaExecutor.js');
+          const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
           const stats = getLuaExecutorStats();
-          if (stats.active > 0 || stats.queued > 0) {
+          // Only reset if there are genuinely leaked slots (active > max).
+          // DO NOT reset on 429 alone — the PDIM circuit breaker already applies
+          // backoff and the semaphore queue is healthy backpressure, not a deadlock.
+          // Resetting unconditionally causes a thundering herd (all queued waiters
+          // spawn Workers simultaneously → more 429s → feedback loop).
+          if (stats.active > stats.max) {
             const released = resetLuaExecutorSemaphore();
-            logger.info(`[ChainFixer] 429 detected — LuaExecutor semaphore reset: active=${stats.active} queued=${stats.queued} released=${released}`);
+            logger.info(`[ChainFixer] 429 — leaked slots freed: active=${stats.active} queued=${stats.queued} released=${released}`);
           } else {
-            logger.info('[ChainFixer] 429 detected — global backoff already active; LuaExecutor semaphore clean');
+            logger.info(`[ChainFixer] 429 — PDIM circuit breaker handling backoff; semaphore healthy (active=${stats.active}, queued=${stats.queued})`);
           }
         } catch {
           logger.info('[ChainFixer] 429 detected — global rate-limit backoff will resolve automatically');
@@ -418,8 +423,22 @@ class ChainErrorAutoFixer extends EventEmitter {
       const stats = getLuaExecutorStats();
       this._luaStats = stats;
       if (stats.active >= stats.max && stats.queued > 3) {
-        logger.warn(`[ChainFixer] Health check: LuaExecutor semaphore congested (active=${stats.active}, queued=${stats.queued}) — resetting`);
-        resetLuaExecutorSemaphore();
+        this._consecutiveCongestedChecks++;
+        if (this._consecutiveCongestedChecks >= ChainErrorAutoFixer._CONGESTION_DEADLOCK_THRESHOLD) {
+          logger.warn(
+            `[ChainFixer] LuaExecutor deadlock confirmed (${this._consecutiveCongestedChecks} consecutive congested checks, ` +
+            `active=${stats.active}, queued=${stats.queued}) — resetting semaphore`
+          );
+          resetLuaExecutorSemaphore();
+          this._consecutiveCongestedChecks = 0;
+        } else {
+          logger.warn(
+            `[ChainFixer] LuaExecutor semaphore congested — check ${this._consecutiveCongestedChecks}/${ChainErrorAutoFixer._CONGESTION_DEADLOCK_THRESHOLD} ` +
+            `(active=${stats.active}, queued=${stats.queued}) — monitoring before reset`
+          );
+        }
+      } else {
+        this._consecutiveCongestedChecks = 0;
       }
     } catch { /* lua executor may not be loaded yet */ }
 
@@ -526,6 +545,15 @@ class ChainErrorAutoFixer extends EventEmitter {
 
   /** Cached lua executor stats updated by health check */
   private _luaStats: { active: number; queued: number; max: number } | null = null;
+
+  /**
+   * Consecutive health-check cycles where semaphore was congested.
+   * Boot bursts clear within ~30s (2 cycles @ 15s). Only reset after
+   * 3 consecutive congested readings (45s) to distinguish true deadlock
+   * from normal startup saturation. Resets to 0 whenever congestion clears.
+   */
+  private _consecutiveCongestedChecks = 0;
+  private static readonly _CONGESTION_DEADLOCK_THRESHOLD = 3;
 
   getStatus(): {
     started: boolean;
