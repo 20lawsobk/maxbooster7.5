@@ -47,29 +47,41 @@ import {
 // ── Auto multiplier ───────────────────────────────────────────────────────────
 // Target scale: 90 million long-term concurrent users.
 //
-// PDIM handles its own internal cluster — Max Booster connects to it as a
-// single process via Redis-compatible URLs and benefits from PDIM's cluster
-// transparently.  The only dimension that matters on the Max Booster side is
-// how many CPU cores this process has, because more cores → more concurrent
-// microtask paths all competing for the single PDIM HTTP chain simultaneously.
+// Max Booster deploys to VM Reserve and connects to PDIM via Redis-compatible
+// URLs.  PDIM runs its own auto-scale cluster (effectively no cluster limit),
+// so Max Booster transparently benefits from PDIM's cluster capacity without
+// managing any workers itself.
 //
-// Formula:  autoMultiplier = ceil(cpuCores / 2)
+// Two dimensions determine how many concurrent callers are hitting the PDIM
+// chain from this side:
 //
-//   VM Reserve, 4 cores : ceil(4/2) = 2  → ZPOPMIN gap =  800 ms
-//   VM Reserve, 8 cores : ceil(8/2) = 4  → ZPOPMIN gap = 1 600 ms
-//   VM Reserve, 16 cores: ceil(16/2) = 8 → ZPOPMIN gap = 3 200 ms
+//   1. PDIM cluster workers  — PDIM cluster nodes serving this instance
+//      (set via PDIM_CLUSTER_WORKERS; defaults to 1, grows as PDIM auto-scales)
+//   2. CPU cores on the VM   — more cores → more concurrent microtask paths
+//      competing for the shared HTTP chain simultaneously
+//
+// Formula:  autoMultiplier = clusterWorkers × ceil(cpuCores / 2)
+//
+//   VM Reserve, 8 cores,  1 PDIM worker :  1 × ceil(8/2)  =  1 × 4 = 4
+//     → AIMD init=600ms (fixed), ZPOPMIN gap = 1 600 ms
+//   VM Reserve, 8 cores,  6 PDIM workers:  6 × 4 = 24
+//     → AIMD init=600ms (fixed), ZPOPMIN gap = 9 600 ms
+//   VM Reserve, 16 cores, 12 PDIM workers: 12 × 8 = 96
+//     → AIMD init=600ms (fixed), ZPOPMIN gap = 38 400 ms
 //
 // Under real user load the demand step (100 ms/success at queue depth ≥ 10)
-// contracts the gap from init (600 ms) to the 400 ms floor in seconds — the
-// water expands when the valve opens.  At rest the gap drifts up gently
-// (1 ms/step) so the system stays quiet without burning PDIM quota.
+// contracts the gap to the 400 ms floor in seconds — the water expands when
+// the valve opens.  At rest the gap drifts up gently (1 ms/step) so the
+// system stays quiet without burning PDIM quota.
 //
+const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
 const _cpuCores       = Math.max(1, os.cpus().length);
-const _autoMultiplier = Math.max(1, Math.ceil(_cpuCores / 2));
+const _autoMultiplier = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
 
 logger.info(
   `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
-  `(ceil(cpuCores=${_cpuCores}/2)) — ` +
+  `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
+  `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
   `AIMD init=600ms (fixed, LuaExecutor-safe), ZPOPMIN gap=${400 * _autoMultiplier}ms`,
 );
 
