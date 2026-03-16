@@ -122,6 +122,16 @@ pocket-dimensions/
 data/
 uploads/
 
+# Source trees — fully pre-compiled into dist/ via fast-path build.
+# Excluding these from the Docker COPY layer prevents 940+ MB of source code
+# from being baked into the image base layer (where deletions in RUN steps
+# still count toward total image size in UnionFS/overlay filesystems).
+client/
+server/
+shared/
+script/
+scripts/
+
 # Static assets source (already compiled into dist/public by Vite pre-build)
 assets/
 

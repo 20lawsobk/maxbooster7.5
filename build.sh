@@ -12,8 +12,9 @@ set -e
 #
 #   No build tools needed → use `npm ci --omit=dev` which installs ONLY
 #   production deps (~700 MB) instead of all deps + prune (~3 GB → 1.5 GB).
-#   client/ (930 MB of TS source) is deleted immediately since Vite won't run.
-#   Final image: ~450–600 MB.
+#   client/ + server/ are excluded by .dockerignore (pre-compiled into dist/).
+#   Post-install stripping removes TF browser bundles, source maps, etc.
+#   Final image: ~400–550 MB.
 #
 # SLOW PATH — one or more artifacts are missing:
 #   Falls back to full `npm ci` + `npm run build:deploy` + `npm prune`.
@@ -135,18 +136,31 @@ echo "   Removed: @tensorflow/tfjs-backend-webgl"
 rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels 2>/dev/null || true
 echo "   Removed: @tensorflow/tfjs-node/dist/kernels (redundant ESM kernels)"
 
-# @tensorflow/tfjs ships browser UMD/ESM bundle variants unused in Node.js.
-# Only tf.node.js (1.3 MB) is needed. The 6 browser bundles + their source
-# maps together account for ~120 MB.
-rm -f \
-  node_modules/@tensorflow/tfjs/dist/tf.js \
-  node_modules/@tensorflow/tfjs/dist/tf.min.js \
-  node_modules/@tensorflow/tfjs/dist/tf.es2017.js \
-  node_modules/@tensorflow/tfjs/dist/tf.es2017.min.js \
-  node_modules/@tensorflow/tfjs/dist/tf.fesm.js \
-  node_modules/@tensorflow/tfjs/dist/tf.fesm.min.js \
-  2>/dev/null || true
-echo "   Removed: @tensorflow/tfjs browser bundle variants"
+# @tensorflow/tfjs — strip all browser UMD/ESM/FESM bundles.
+# These are never used in a Node.js environment; only the Node-targeted
+# entry points (tf.node.js / tf-node.cjs) are needed at runtime.
+# Removes ~120 MB of browser JS + source maps from the main package.
+find node_modules/@tensorflow/tfjs/dist -type f \
+  \( -name "tf.js" -o -name "tf.min.js" \
+     -o -name "tf.es2017.js" -o -name "tf.es2017.min.js" \
+     -o -name "tf.fesm.js"  -o -name "tf.fesm.min.js" \) \
+  -delete 2>/dev/null || true
+# Also strip browser bundle variants from every @tensorflow sub-package.
+# Each ships its own UMD/FESM copy that is redundant in a Node.js image.
+for pkg in tfjs-core tfjs-layers tfjs-converter tfjs-backend-cpu tfjs-data; do
+  find node_modules/@tensorflow/${pkg}/dist -type f \
+    \( -name "*.umd.js" -o -name "*.fesm.js" -o -name "*.es2017.js" \
+       -o -name "*.min.js" \) \
+    -delete 2>/dev/null || true
+done
+echo "   Removed: @tensorflow/tfjs + sub-package browser bundle variants"
+
+# googleapis — 164 MB prod dep needed server-side for YouTube/Google APIs.
+# Strip build artifacts, proto source files, and unused Google API clients
+# that are not required at runtime.
+find node_modules/googleapis -name "*.js.map" -delete 2>/dev/null || true
+find node_modules/google-auth-library -name "*.js.map" -delete 2>/dev/null || true
+echo "   Stripped: googleapis + google-auth-library source maps"
 
 # Sentry — server deployment only needs @sentry/node.
 rm -rf \
