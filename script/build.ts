@@ -214,6 +214,17 @@ async function main() {
 
   if (process.env.REPLIT_DEPLOYMENT === '1') {
     await triggerGitHubWorkflows();
+
+    // Clean up unnecessary files to reduce deployment image size
+    console.log('Cleaning up build artifacts...');
+    await Promise.all([
+      rm('script', { recursive: true, force: true }),
+      rm('client/src', { recursive: true, force: true }),
+      rm('server', { recursive: true, force: true }),
+      rm('.cache', { recursive: true, force: true }),
+      rm('logs', { recursive: true, force: true }),
+    ]).catch(() => {});
+    console.log('Cleanup complete');
   }
 }
 
