@@ -196,11 +196,25 @@ class ArtistProfileService {
   }
 
   async createProfile(data: InsertArtistProfile): Promise<ArtistProfile> {
-    const [profile] = await db.insert(artistProfiles).values({
-      ...data,
-      updatedAt: new Date(),
-    }).returning();
-    return profile;
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const [profile] = await db.insert(artistProfiles).values({
+          ...data,
+          updatedAt: new Date(),
+        }).returning();
+        return profile;
+      } catch (err: any) {
+        lastErr = err;
+        const isTransient = err?.message?.includes('Failed query') || err?.cause?.message?.includes('timeout') || err?.cause?.message?.includes('connection');
+        if (isTransient && attempt < 3) {
+          await new Promise(r => setTimeout(r, 200 * attempt));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastErr;
   }
 
   async getUserProfiles(userId: string): Promise<ArtistProfile[]> {

@@ -67,8 +67,9 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ profile });
-  } catch (err) {
-    logger.error('[ArtistProfiles] POST / error:', err);
+  } catch (err: any) {
+    const cause = err?.cause;
+    logger.error('[ArtistProfiles] POST / error:', err, cause ? { cause: cause.message ?? cause } : {});
     res.status(500).json({ error: 'Failed to create artist profile' });
   }
 });

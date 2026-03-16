@@ -13,6 +13,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name"),
   lastName: text("last_name"),
+  artistName: text("artist_name"),
   bio: text("bio"),
   website: text("website"),
   location: text("location"),

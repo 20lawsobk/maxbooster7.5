@@ -516,11 +516,12 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { firstName, lastName, bio, website, location, socialLinks } = req.body;
+      const { firstName, lastName, artistName, bio, website, location, socialLinks } = req.body;
       const stripHtml = (str: string | undefined) => str ? str.replace(/[<>&"'`]/g, '').trim() : str;
       await storage.updateUser(req.user.id, {
         firstName: stripHtml(firstName),
         lastName: stripHtml(lastName),
+        artistName: stripHtml(artistName),
         bio: stripHtml(bio),
         website: stripHtml(website),
         location: stripHtml(location),

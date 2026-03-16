@@ -175,6 +175,7 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
+    artistName: (user as any)?.artistName || '',
     email: user?.email || '',
     bio: '',
     website: '',
@@ -203,6 +204,7 @@ export default function Settings() {
       setProfileData({
         firstName: fullProfile.firstName || '',
         lastName: fullProfile.lastName || '',
+        artistName: (fullProfile as any).artistName || '',
         email: fullProfile.email || '',
         bio: fullProfile.bio || '',
         website: fullProfile.website || '',
@@ -788,6 +790,19 @@ export default function Settings() {
                         data-testid="input-last-name"
                       />
                     </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="artistName">Artist Name</Label>
+                    <Input
+                      id="artistName"
+                      placeholder="Your artist or stage name"
+                      value={profileData.artistName}
+                      onChange={(e) =>
+                        setProfileData((prev) => ({ ...prev, artistName: e.target.value }))
+                      }
+                      data-testid="input-artist-name"
+                    />
                   </div>
 
                   <div>
