@@ -152,10 +152,10 @@ export const config: AppConfig = {
 
   database: {
     url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '',
-    poolSize: parseEnvInt('DB_POOL_SIZE', 3),
+    poolSize: parseEnvInt('DB_POOL_SIZE', 5),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
-    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 5000),
-    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 15000),
+    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 10000),
+    connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 20000),
   },
 
   redis: {
@@ -166,7 +166,7 @@ export const config: AppConfig = {
 
   boosterState: {
     port: parseEnvInt('BOOSTERSTATE_PORT', 9877),
-    shards: parseEnvInt('BOOSTERSTATE_SHARDS', 8),
+    shards: parseEnvInt('BOOSTERSTATE_SHARDS', 16),
     dataDir: process.env.BOOSTERSTATE_DATA_DIR || './boosterstate-data',
   },
 
@@ -179,8 +179,8 @@ export const config: AppConfig = {
 
   rateLimiting: {
     windowMs: parseEnvInt('RATE_LIMIT_WINDOW_MS', 60000), // 1 minute
-    maxRequests: parseEnvInt('RATE_LIMIT_MAX', 300),
-    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 60),
+    maxRequests: parseEnvInt('RATE_LIMIT_MAX', 1000),
+    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 200),
   },
 
   upload: {
@@ -208,7 +208,7 @@ export const config: AppConfig = {
       csv:       parseEnvInt('QUEUE_CSV_CONCURRENCY',       Math.min(16, 4  * _vmConcMult)),
     },
     timeout: {
-      audio: parseEnvInt('QUEUE_AUDIO_TIMEOUT', 120000), // 2 minutes
+      audio: parseEnvInt('QUEUE_AUDIO_TIMEOUT', 180000), // 3 minutes
       analytics: parseEnvInt('QUEUE_ANALYTICS_TIMEOUT', 30000), // 30 seconds
       email: parseEnvInt('QUEUE_EMAIL_TIMEOUT', 10000), // 10 seconds
       csv: parseEnvInt('QUEUE_CSV_TIMEOUT', 300000), // 5 minutes

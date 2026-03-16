@@ -42,7 +42,7 @@ class QueryTelemetry {
 
   // Connection warmup grace period: first queries include pool/WebSocket setup
   // latency that isn't representative of actual query performance
-  private readonly warmupGraceMs = 10_000; // 10 seconds after first query
+  private readonly warmupGraceMs = 30_000; // 30 seconds after first query
   private firstQueryTime: number | null = null;
 
   private hashSql(sql: string): string {
@@ -65,7 +65,7 @@ class QueryTelemetry {
     this.lifetimeTotal++;
     this.runningSum += duration;
 
-    if (duration > 100 && !isWarmingUp) {
+    if (duration > 400 && !isWarmingUp) {
       this.lifetimeSlow++;
       const isDev = process.env.NODE_ENV === 'development';
       const sqlPreview = isDev ? sql.substring(0, 200).replace(/\s+/g, ' ') : '';
@@ -143,7 +143,7 @@ class QueryTelemetry {
     }
 
     // Calculate windowed metrics
-    const windowedSlow = recentQueries.filter((q) => q.duration > 100).length;
+    const windowedSlow = recentQueries.filter((q) => q.duration > 400).length;
     const durations = recentQueries.map((q) => q.duration).sort((a, b) => a - b);
     const p95Index = Math.floor(durations.length * 0.95);
     const p95Latency = durations[p95Index] || 0;

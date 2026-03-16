@@ -31,7 +31,7 @@ export const RETENTION_QUEUE = 'retention-jobs';
  * Capped to 5 to prevent DB connection storms during queue drain.
  * Override with BULLMQ_CONCURRENCY env var.
  */
-const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? '5', 10);
+const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? '3', 10);
 
 /**
  * Job persistence + retry policy.

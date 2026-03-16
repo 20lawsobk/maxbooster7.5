@@ -115,7 +115,7 @@ logger.info(
 const _PDIM_GAP_FLOOR_MS  = 400;    // per-worker floor — LuaExecutor constraint
 const _PDIM_GAP_CEIL_MS   = 15_000; // ceiling after sustained 429 cascade
 const _PDIM_GAP_INIT_MS   = 600;    // fixed — must satisfy 35×init < 25 000 ms
-const _PDIM_MULT_429      = 2.5;    // multiplicative back-off on each 429
+const _PDIM_MULT_429      = 2.0;    // multiplicative back-off on each 429
 
 // ── AIMD state (module-level, shared across all PdimRedisClient instances) ───
 let _pdimGapMs      = _PDIM_GAP_INIT_MS;

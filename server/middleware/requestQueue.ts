@@ -31,9 +31,9 @@ class RequestQueue {
 
   constructor(config: Partial<QueueConfig> = {}) {
     this.config = {
-      maxQueueSize: 10000,
-      maxConcurrent: 500,
-      requestTimeout: 30000,
+      maxQueueSize: 100000,
+      maxConcurrent: 5000,
+      requestTimeout: 45000,
       priorityLevels: 3,
       ...config,
     };

@@ -81,6 +81,23 @@ export default defineConfig({
               return 'vendor-charts';
             }
 
+            // Audio engine — Tone.js and Howler are heavy (~600KB+); isolate so
+            // users who never visit the Studio page don't pay the download cost.
+            if (id.includes('/tone/') || id.includes('tone/build') || id.includes('howler')) {
+              return 'vendor-audio-engine';
+            }
+
+            // Canvas / WebGL — Pixi.js is very large (~1MB+); lazy-loaded only
+            // by the visualizer/studio canvas pages.
+            if (id.includes('pixi.js') || id.includes('@pixi/')) {
+              return 'vendor-canvas';
+            }
+
+            // Forms — react-hook-form is medium weight, standalone
+            if (id.includes('react-hook-form') || id.includes('@hookform')) {
+              return 'vendor-forms';
+            }
+
             // Utils (no React dependency)
             if (id.includes('date-fns') || id.includes('zod')) {
               return 'vendor-utils';

@@ -10,7 +10,7 @@ interface CacheEntry {
 
 class APIResponseCache {
   private cache = new Map<string, CacheEntry>();
-  private maxSize = 5_000;
+  private maxSize = 20_000;
   private hitCount = 0;
   private missCount = 0;
 

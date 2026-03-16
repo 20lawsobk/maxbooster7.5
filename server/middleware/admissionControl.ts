@@ -18,7 +18,7 @@ import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
 const COUNTER_KEY = 'api:inflight';
-const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '5000', 10);
+const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '50000', 10);
 const RETRY_AFTER_SECONDS = 5;
 
 // When Redis is unavailable, each replica falls back to independent per-process tracking.

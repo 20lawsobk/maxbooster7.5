@@ -55,8 +55,8 @@ function workerOpts(concurrency: number) {
     connection: newBullMQRedisConnection(),
     concurrency: pdimConcurrency,
     autorun: false,
-    drainDelay: 5000,          // wait 5 s before re-polling an empty queue
-    runRetryDelay: 15000,      // explicit: wait 15 s after any worker error before retrying
+    drainDelay: 3000,          // wait 3 s before re-polling an empty queue
+    runRetryDelay: 10000,      // explicit: wait 10 s after any worker error before retrying
     limiter: { max: pdimConcurrency, duration: 1000 },
     lockDuration: 120000,
     stalledInterval: 30000,

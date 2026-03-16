@@ -14,8 +14,8 @@ interface DatabaseTransportConfig {
 
 const DEFAULT_CONFIG: DatabaseTransportConfig = {
   minLevel: 'warn',
-  batchSize: 10,
-  flushIntervalMs: 5000,
+  batchSize: 25,
+  flushIntervalMs: 8000,
   defaultService: 'api',
 };
 
@@ -36,15 +36,20 @@ class DatabaseLogTransport {
   private isFlushing = false;
   private consecutiveFailures = 0;
   private disabled = false;
-  private readonly MAX_CONSECUTIVE_FAILURES = 3;
-  private readonly PERMANENT_DISABLE_THRESHOLD = 10;
+  private readonly MAX_CONSECUTIVE_FAILURES = 5;
+  private readonly PERMANENT_DISABLE_THRESHOLD = 20;
   private readonly BACKOFF_BASE_MS = 10_000;
-  // Boot burst grace period: pool contention during the first ~90s of startup
+  // Boot burst grace period: pool contention during the first ~120s of startup
   // causes transient 53100/connection errors that resolve on their own.
   // Permanently disabling during this window silences all log persistence for
   // the lifetime of the process. Only permanently disable after the grace period.
-  private readonly STARTUP_GRACE_PERIOD_MS = 90_000;
+  private readonly STARTUP_GRACE_PERIOD_MS = 120_000;
   private readonly _startedAt = Date.now();
+  // Backoff guard: tracks when the next flush is allowed after a grace-period
+  // retry is scheduled.  scheduleFlush() respects this so that a buffer-full
+  // trigger (batchSize reached) cannot cancel and override a longer backoff
+  // timer set by the grace-period handler.
+  private _backoffUntil = 0;
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -92,10 +97,15 @@ class DatabaseLogTransport {
   }
 
   private scheduleFlush(delayMs: number): void {
+    // Honor any active backoff guard — never schedule sooner than _backoffUntil.
+    // This prevents a buffer-full trigger (batchSize reached) from cancelling a
+    // longer grace-period backoff timer and hammering the pool during boot.
+    const backoffRemaining = this._backoffUntil - Date.now();
+    const effectiveDelay = Math.max(delayMs, backoffRemaining);
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
     }
-    this.flushTimer = setTimeout(() => this.flush(), delayMs);
+    this.flushTimer = setTimeout(() => this.flush(), Math.max(0, effectiveDelay));
   }
 
   private async flush(): Promise<void> {
@@ -138,9 +148,11 @@ class DatabaseLogTransport {
         String((error as any)?.message ?? '').includes('too many connections') ||
         String((error as any)?.message ?? '').includes('53100');
 
-      const inGracePeriod = (Date.now() - this._startedAt) < this.STARTUP_GRACE_PERIOD_MS;
-
-      if ((isTooManyConnections && !inGracePeriod) || this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
+      // Pool exhaustion (53100/53300) is ALWAYS transient — the pool frees itself
+      // once in-flight queries complete.  Never permanently disable for connection
+      // errors; use exponential backoff instead and keep retrying forever.
+      // Only permanently disable for non-connection errors that exceed the threshold.
+      if (!isTooManyConnections && this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
         this.disabled = true;
         this.buffer.length = 0;
         if (this.flushTimer) {
@@ -149,24 +161,37 @@ class DatabaseLogTransport {
         }
         this.isFlushing = false;
         process.stderr.write(
-          `[DatabaseLogTransport] Permanently disabled — ${isTooManyConnections ? 'PG_CODE=53100 (too many connections, post-grace)' : `${this.consecutiveFailures} consecutive failures`}. ` +
+          `[DatabaseLogTransport] Permanently disabled — ${this.consecutiveFailures} consecutive non-connection failures. ` +
           `All further log persistence suppressed. Restart the process to re-enable.\n`
         );
         return;
       }
 
-      if (isTooManyConnections && inGracePeriod) {
-        // Boot-burst transient error — back off and retry after the startup window clears.
-        const graceRemaining = this.STARTUP_GRACE_PERIOD_MS - (Date.now() - this._startedAt);
-        process.stderr.write(`[DatabaseLogTransport] Boot-burst connection error (${pgCode}) — retrying in ${Math.ceil(graceRemaining / 1000)}s when pool settles\n`);
+      if (isTooManyConnections) {
+        // Pool exhaustion — exponential backoff, never permanently disable.
+        // In-grace:   graceRemaining + 10 s (waits for boot burst to clear).
+        // Post-grace: 30 s → 60 s → 120 s (capped) based on consecutive count.
+        const inGracePeriod = (Date.now() - this._startedAt) < this.STARTUP_GRACE_PERIOD_MS;
+        let backoffMs: number;
+        if (inGracePeriod) {
+          const graceRemaining = this.STARTUP_GRACE_PERIOD_MS - (Date.now() - this._startedAt);
+          backoffMs = Math.min(graceRemaining + 10_000, 120_000);
+        } else {
+          backoffMs = Math.min(30_000 * Math.pow(2, Math.min(this.consecutiveFailures - 1, 2)), 120_000);
+        }
+        const label = inGracePeriod ? 'Boot-burst' : 'Post-boot';
+        process.stderr.write(`[DatabaseLogTransport] ${label} connection error (${pgCode}) — retry #${this.consecutiveFailures} in ${Math.ceil(backoffMs / 1000)}s\n`);
         this.buffer.unshift(...logsToInsert);
         if (this.buffer.length > 500) this.buffer.length = 500;
         this.isFlushing = false;
         backoffHandled = true;
+        // Set _backoffUntil so scheduleFlush() cannot override this timer.
+        this._backoffUntil = Date.now() + backoffMs;
         this.flushTimer = setTimeout(() => {
+          this._backoffUntil = 0;
           this.flushTimer = null;
           this.flush().catch(() => {});
-        }, Math.min(graceRemaining + 5_000, 100_000));
+        }, backoffMs);
         return;
       }
       const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
@@ -217,6 +242,7 @@ class DatabaseLogTransport {
     const dropped = this.buffer.length;
     this.buffer.length = 0;
     this.consecutiveFailures = 0;
+    this._backoffUntil = 0;
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;

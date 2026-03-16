@@ -442,12 +442,12 @@ class ChainErrorAutoFixer extends EventEmitter {
       }
     } catch { /* lua executor may not be loaded yet */ }
 
-    // Check memory — GC every 15 s when heap > 90% to keep memory contained.
-    // WARN log is rate-limited to once per 5 min so it doesn't flood; a second
-    // measurement taken immediately after GC shows whether it was effective.
+    // Check memory — GC every 15 s when heap > 85% to keep memory contained.
+    // Triggering at 85% (vs 90%) gives the V8 GC more slack to reclaim young-gen
+    // objects before the old gen fills.  WARN is rate-limited to once per 5 min.
     const mem = process.memoryUsage();
     const heapPct = mem.heapUsed / mem.heapTotal;
-    if (heapPct > 0.90) {
+    if (heapPct > 0.85) {
       if (typeof global.gc === 'function') global.gc();
       const now = Date.now();
       if (now - this._lastHeapWarnMs >= this._HEAP_WARN_COOLDOWN_MS) {

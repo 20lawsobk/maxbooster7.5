@@ -21,7 +21,7 @@ type CbState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 // VM-reserved deployment: PDIM is always-on, restarts in seconds not minutes.
 // Keep backoff tight so a brief hiccup doesn't block logins for 15+ seconds.
-const INITIAL_BACKOFF_MS = 2_000;
+const INITIAL_BACKOFF_MS = 1_000;
 const MAX_BACKOFF_MS     = 10_000;
 
 let _state: CbState   = 'CLOSED';
