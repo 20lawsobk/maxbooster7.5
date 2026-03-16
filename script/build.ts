@@ -215,16 +215,156 @@ async function main() {
   if (!!process.env.REPLIT_DEPLOYMENT) {
     await triggerGitHubWorkflows();
 
-    // Clean up unnecessary files to reduce deployment image size
-    console.log('Cleaning up build artifacts...');
+    const { execSync } = await import("child_process");
+
+    // ── 1. Prune dev dependencies ─────────────────────────────────────────────
+    // This is the single biggest win: shrinks node_modules from ~2.1 GB to ~700 MB.
+    console.log('[deploy-clean] Pruning dev dependencies (npm prune --omit=dev)...');
+    try {
+      execSync('npm prune --omit=dev', { stdio: 'inherit' });
+    } catch (e) {
+      console.warn('[deploy-clean] npm prune failed (non-fatal):', e);
+    }
+
+    // ── 2. Source trees & build caches ────────────────────────────────────────
+    console.log('[deploy-clean] Removing source trees and build caches...');
     await Promise.all([
-      rm('script', { recursive: true, force: true }),
-      rm('client/src', { recursive: true, force: true }),
-      rm('server', { recursive: true, force: true }),
-      rm('.cache', { recursive: true, force: true }),
-      rm('logs', { recursive: true, force: true }),
+      rm('client',          { recursive: true, force: true }),
+      rm('server',          { recursive: true, force: true }),
+      rm('shared',          { recursive: true, force: true }),
+      rm('script',          { recursive: true, force: true }),
+      rm('scripts',         { recursive: true, force: true }),
+      rm('electron',        { recursive: true, force: true }),
+      rm('attached_assets', { recursive: true, force: true }),
+      rm('docs',            { recursive: true, force: true }),
+      rm('.cache',          { recursive: true, force: true }),
+      rm('logs',            { recursive: true, force: true }),
     ]).catch(() => {});
-    console.log('Cleanup complete');
+
+    // ── 3. Rust sidecar: keep only the release binary, drop everything else ───
+    // boosterstate/target/debug/ alone is 140 MB of intermediate build artifacts.
+    console.log('[deploy-clean] Removing Rust build artifacts (keeping release binary)...');
+    await Promise.all([
+      rm('boosterstate/target/debug',              { recursive: true, force: true }),
+      rm('boosterstate/target/release/build',      { recursive: true, force: true }),
+      rm('boosterstate/target/release/deps',       { recursive: true, force: true }),
+      rm('boosterstate/target/release/examples',   { recursive: true, force: true }),
+      rm('boosterstate/target/release/incremental',{ recursive: true, force: true }),
+      rm('boosterstate/target/incremental',        { recursive: true, force: true }),
+      rm('boosterstate/target/build',              { recursive: true, force: true }),
+      rm('boosterstate/target/deps',               { recursive: true, force: true }),
+      rm('boosterstate/target/tmp',                { recursive: true, force: true }),
+    ]).catch(() => {});
+
+    // ── 4. TensorFlow native binaries (postinstall downloads them regardless) ─
+    console.log('[deploy-clean] Removing TF native libraries...');
+    await Promise.all([
+      rm('node_modules/@tensorflow/tfjs-node/deps',           { recursive: true, force: true }),
+      rm('node_modules/@tensorflow/tfjs-node/binding',        { recursive: true, force: true }),
+      rm('node_modules/@tensorflow/tfjs-backend-webgl',       { recursive: true, force: true }),
+      rm('node_modules/@tensorflow/tfjs-node/dist/kernels',   { recursive: true, force: true }),
+    ]).catch(() => {});
+
+    // ── 5. TF.js browser UMD/ESM/FESM bundles (never used in Node.js) ────────
+    console.log('[deploy-clean] Removing TF.js browser bundle variants...');
+    try {
+      execSync(
+        `find node_modules/@tensorflow -type f ` +
+        `\\( -name "tf.js" -o -name "tf.min.js" ` +
+        `-o -name "tf.es2017.js" -o -name "tf.es2017.min.js" ` +
+        `-o -name "tf.fesm.js" -o -name "tf.fesm.min.js" ` +
+        `-o -name "*.umd.js" -o -name "*.fesm.js" ` +
+        `-o -name "*.es2017.js" -o -name "*.min.js" \\) -delete 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── 6. Electron & app-builder (dev-only, large binaries) ─────────────────
+    console.log('[deploy-clean] Removing Electron / app-builder packages...');
+    await Promise.all([
+      rm('node_modules/electron',             { recursive: true, force: true }),
+      rm('node_modules/electron-builder',     { recursive: true, force: true }),
+      rm('node_modules/app-builder-bin',      { recursive: true, force: true }),
+      rm('node_modules/app-builder-lib',      { recursive: true, force: true }),
+      rm('node_modules/builder-util',         { recursive: true, force: true }),
+      rm('node_modules/builder-util-runtime', { recursive: true, force: true }),
+      rm('node_modules/electron-updater',     { recursive: true, force: true }),
+      rm('node_modules/7zip-bin',             { recursive: true, force: true }),
+    ]).catch(() => {});
+
+    // ── 7. Sentry browser SDKs (server only needs @sentry/node) ──────────────
+    console.log('[deploy-clean] Removing Sentry browser SDKs...');
+    await Promise.all([
+      rm('node_modules/@sentry/browser',                  { recursive: true, force: true }),
+      rm('node_modules/@sentry/vue',                      { recursive: true, force: true }),
+      rm('node_modules/@sentry/react',                    { recursive: true, force: true }),
+      rm('node_modules/@sentry-internal/browser-utils',   { recursive: true, force: true }),
+      rm('node_modules/@sentry-internal/replay',          { recursive: true, force: true }),
+      rm('node_modules/@sentry-internal/replay-canvas',   { recursive: true, force: true }),
+      rm('node_modules/@sentry-internal/feedback',        { recursive: true, force: true }),
+    ]).catch(() => {});
+
+    // ── 8. Source maps throughout node_modules (~200 MB) ─────────────────────
+    console.log('[deploy-clean] Removing *.map source map files...');
+    try {
+      execSync(`find node_modules -name "*.map" -type f -delete 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' });
+    } catch (_) {}
+
+    // ── 9. TypeScript declaration files (build-time only) ────────────────────
+    console.log('[deploy-clean] Removing *.d.ts TypeScript declaration files...');
+    try {
+      execSync(`find node_modules -name "*.d.ts" -type f -delete 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' });
+    } catch (_) {}
+
+    // ── 10. Test suites bundled inside packages ───────────────────────────────
+    console.log('[deploy-clean] Removing test directories inside node_modules...');
+    try {
+      execSync(
+        `find node_modules -type d \\( -name "__tests__" -o -name "test" -o -name "tests" \\) ` +
+        `-not -path "*/.bin/*" -exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── 11. Docs, examples, fixtures inside packages ──────────────────────────
+    console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
+    try {
+      execSync(
+        `find node_modules -maxdepth 3 -type d ` +
+        `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
+        `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
+        `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
+        `-exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── 12. Changelog / readme files inside packages ──────────────────────────
+    console.log('[deploy-clean] Removing changelog/readme files inside node_modules...');
+    try {
+      execSync(
+        `find node_modules -maxdepth 3 -type f ` +
+        `\\( -name "CHANGELOG.md" -o -name "CHANGELOG" -o -name "HISTORY.md" ` +
+        `-o -name "CHANGES.md" -o -name "CONTRIBUTING.md" ` +
+        `-o -name "AUTHORS" -o -name "NOTICE" -o -name "*.md" \\) ` +
+        `-delete 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── Summary ───────────────────────────────────────────────────────────────
+    try {
+      execSync(
+        `echo "" && echo "==> Deployment image size summary:" && ` +
+        `du -sh dist/ node_modules/ boosterstate/ 2>/dev/null | awk '{printf "   %-20s %s\\n", $2, $1}' && ` +
+        `echo "   Total: $(du -sh --exclude=.git . 2>/dev/null | cut -f1)"`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    console.log('[deploy-clean] Deployment cleanup complete.');
   }
 }
 
