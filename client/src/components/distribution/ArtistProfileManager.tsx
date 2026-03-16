@@ -72,7 +72,16 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
       setExpandedId(profile.id);
       toast({ title: 'Artist profile created', description: `Auto-discovering "${profile.artistName}" across platforms…` });
     },
-    onError: () => toast({ title: 'Failed to create artist profile', variant: 'destructive' }),
+    onError: (err: any) => {
+      const isStorageLimit = err?.status === 507 || err?.message?.includes('storage limit') || err?.message?.includes('DB_STORAGE_LIMIT');
+      toast({
+        title: isStorageLimit ? 'Database Storage Full' : 'Failed to create artist profile',
+        description: isStorageLimit
+          ? 'Your database has reached its 512 MB limit. Visit console.neon.tech to upgrade your plan or free up storage.'
+          : (err?.message || 'Something went wrong. Please try again.'),
+        variant: 'destructive',
+      });
+    },
   });
 
   const deleteMutation = useMutation({

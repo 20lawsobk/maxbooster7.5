@@ -69,7 +69,17 @@ router.post('/', async (req: Request, res: Response) => {
     res.status(201).json({ profile });
   } catch (err: any) {
     const cause = err?.cause;
-    logger.error('[ArtistProfiles] POST / error:', err, cause ? { cause: cause.message ?? cause } : {});
+    const causeMsg: string = cause?.message ?? (typeof cause === 'string' ? cause : '') ?? '';
+    logger.error('[ArtistProfiles] POST / error:', err, cause ? { cause: causeMsg } : {});
+
+    if (causeMsg.includes('project size limit') || causeMsg.includes('storage limit') || causeMsg.includes('could not extend file')) {
+      return res.status(507).json({
+        error: 'Database storage limit reached',
+        message: 'Your Neon database has reached its 512 MB free-tier limit and cannot accept new records. Please visit console.neon.tech to upgrade your plan or free up storage before creating artist profiles.',
+        code: 'DB_STORAGE_LIMIT',
+      });
+    }
+
     res.status(500).json({ error: 'Failed to create artist profile' });
   }
 });

@@ -30,6 +30,10 @@ else
   echo "   WARNING: Rust binary not found at $RUST_BIN"
 fi
 
+echo "==> Clearing any pre-built frontend assets to force a fresh Vite build..."
+rm -rf dist/public
+echo "   Pre-built assets cleared."
+
 echo "==> Building application..."
 npm run build:deploy
 
