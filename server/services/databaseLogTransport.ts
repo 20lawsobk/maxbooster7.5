@@ -39,6 +39,12 @@ class DatabaseLogTransport {
   private readonly MAX_CONSECUTIVE_FAILURES = 3;
   private readonly PERMANENT_DISABLE_THRESHOLD = 10;
   private readonly BACKOFF_BASE_MS = 10_000;
+  // Boot burst grace period: pool contention during the first ~90s of startup
+  // causes transient 53100/connection errors that resolve on their own.
+  // Permanently disabling during this window silences all log persistence for
+  // the lifetime of the process. Only permanently disable after the grace period.
+  private readonly STARTUP_GRACE_PERIOD_MS = 90_000;
+  private readonly _startedAt = Date.now();
 
   constructor(config: Partial<DatabaseTransportConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
@@ -124,13 +130,17 @@ class DatabaseLogTransport {
 
       const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
 
-      // 53100 = too_many_connections — permanently disable immediately so we
-      // don't pile more connection attempts onto an already-saturated pool.
-      const isTooManyConnections = pgCode === '53100' ||
+      // 53100/53300/too_many_connections: pool contention or Neon connection limit.
+      // During the startup grace period (~90s) this is a transient boot-burst
+      // condition — the pool frees up once initialization completes.  Treat it
+      // as a regular retryable failure rather than immediately giving up forever.
+      const isTooManyConnections = pgCode === '53100' || pgCode === '53300' ||
         String((error as any)?.message ?? '').includes('too many connections') ||
         String((error as any)?.message ?? '').includes('53100');
 
-      if (isTooManyConnections || this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
+      const inGracePeriod = (Date.now() - this._startedAt) < this.STARTUP_GRACE_PERIOD_MS;
+
+      if ((isTooManyConnections && !inGracePeriod) || this.consecutiveFailures >= this.PERMANENT_DISABLE_THRESHOLD) {
         this.disabled = true;
         this.buffer.length = 0;
         if (this.flushTimer) {
@@ -139,9 +149,24 @@ class DatabaseLogTransport {
         }
         this.isFlushing = false;
         process.stderr.write(
-          `[DatabaseLogTransport] Permanently disabled — ${isTooManyConnections ? 'PG_CODE=53100 (too many connections)' : `${this.consecutiveFailures} consecutive failures`}. ` +
+          `[DatabaseLogTransport] Permanently disabled — ${isTooManyConnections ? 'PG_CODE=53100 (too many connections, post-grace)' : `${this.consecutiveFailures} consecutive failures`}. ` +
           `All further log persistence suppressed. Restart the process to re-enable.\n`
         );
+        return;
+      }
+
+      if (isTooManyConnections && inGracePeriod) {
+        // Boot-burst transient error — back off and retry after the startup window clears.
+        const graceRemaining = this.STARTUP_GRACE_PERIOD_MS - (Date.now() - this._startedAt);
+        process.stderr.write(`[DatabaseLogTransport] Boot-burst connection error (${pgCode}) — retrying in ${Math.ceil(graceRemaining / 1000)}s when pool settles\n`);
+        this.buffer.unshift(...logsToInsert);
+        if (this.buffer.length > 500) this.buffer.length = 500;
+        this.isFlushing = false;
+        backoffHandled = true;
+        this.flushTimer = setTimeout(() => {
+          this.flushTimer = null;
+          this.flush().catch(() => {});
+        }, Math.min(graceRemaining + 5_000, 100_000));
         return;
       }
       const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
