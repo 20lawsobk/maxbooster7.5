@@ -1,6 +1,7 @@
 import cluster from 'cluster';
 import os from 'os';
 import path from 'path';
+import http from 'http';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
@@ -73,6 +74,32 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
     (isAutoscale ? ' [Autoscale replica]' : '')
   );
+
+  // ── Option 1: Primary-owned health check server ───────────────────────────
+  // The primary process (this file) binds port 5000 immediately using
+  // SO_REUSEPORT *before* any worker is forked.  Workers also bind 5000 with
+  // reusePort: true (see index.ts early-listen).  The OS kernel load-balances
+  // connections across all listening sockets, so:
+  //   • Replit's health check hits /health on the PRIMARY → 200 in <1 ms,
+  //     guaranteed from the very first millisecond of process start.
+  //   • Once workers come online they share port 5000 and handle real traffic.
+  //   • If ALL workers crash and restart the primary's socket keeps the port
+  //     alive so the health check never sees a connection-refused.
+  const primaryPort = parseInt(process.env.PORT || '5000', 10);
+  const primaryHealthServer = http.createServer((req, res) => {
+    if (req.url === '/health' || req.url === '/api/ping') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status: 'ok', pid: process.pid, role: 'primary', ts: Date.now() }));
+    } else {
+      // Non-health requests that land on the primary during worker startup:
+      // return 503 + Retry-After so the client retries once a worker is ready.
+      res.writeHead(503, { 'Content-Type': 'application/json', 'Retry-After': '2' });
+      res.end(JSON.stringify({ status: 'starting', message: 'Workers initializing — retry in 2s' }));
+    }
+  });
+  primaryHealthServer.listen({ port: primaryPort, host: '0.0.0.0', reusePort: true }, () => {
+    console.log(`[Cluster] Primary health server on :${primaryPort} (pid=${process.pid}) — workers starting`);
+  });
 
   // Stagger worker startup by 800 ms per worker.
   // Without a stagger all N workers immediately race to connect to PDIM

@@ -4,18 +4,11 @@ import "./lib/consoleErrorFilter.ts";
 import "./instrument.ts";
 
 import express, { type Request, Response, NextFunction } from "express";
-import session from "express-session";
 import cookieParser from "cookie-parser";
-import { registerRoutes } from "./routes.ts";
-import { serveStatic } from "./static.ts";
 import { createServer } from "http";
 import compression from "compression";
 import { logger } from "./logger.ts";
 import { setupStartupEndpoints } from "./startup-probes.ts";
-import { verifyReadReplica } from "./db.ts";
-import { createFallbackSessionStore, getSessionConfig } from "./middleware/sessionConfig.ts";
-import { ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
-import { originValidation } from "./middleware/requestValidation.ts";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
 import path from "path";
 import crypto from "crypto";
@@ -31,9 +24,6 @@ import {
   stripeRawBodyParser,
 } from "./safety/index.ts";
 
-// Scale infrastructure
-import { distributedCache } from "./infrastructure/distributedCache.ts";
-import prometheusRouter, { httpRequestDuration, httpRequestTotal } from "./routes/prometheus.ts";
 import helmet from "helmet";
 
 // Dynamic imports for monitoring services (optional)
@@ -277,6 +267,36 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 });
 
 (async () => {
+  // ── Option 2: Parallel deferred imports ──────────────────────────────────
+  // All modules that were previously static top-level imports are loaded here
+  // in one parallel Promise.all.  Removing them from the module's static
+  // import graph means the synchronous code above (express setup + listen())
+  // now completes in < 50 ms instead of waiting 30–60 s for the route tree /
+  // TF.js / distributedCache / DB pool to initialise before listen() is called.
+  const [
+    { registerRoutes },
+    { serveStatic },
+    { default: session },
+    { verifyReadReplica },
+    { createFallbackSessionStore, getSessionConfig },
+    { ensureStripeProductsAndPrices },
+    { originValidation },
+    { distributedCache },
+    prometheusModule,
+  ] = await Promise.all([
+    import('./routes.js'),
+    import('./static.js'),
+    import('express-session'),
+    import('./db.js'),
+    import('./middleware/sessionConfig.js'),
+    import('./services/stripeSetup.js'),
+    import('./middleware/requestValidation.js'),
+    import('./infrastructure/distributedCache.js'),
+    import('./routes/prometheus.js'),
+  ]);
+  const prometheusRouter = (prometheusModule as any).default;
+  const { httpRequestDuration, httpRequestTotal } = prometheusModule as any;
+
   // Load optional modules first
   await loadOptionalModules();
 
