@@ -83,18 +83,31 @@ async function buildAll() {
     await viteBuild();
   }
 
-  const skipRust = process.env.SKIP_BOOSTERSTATE === '1' || process.env.REPL_SLUG;
+  // Skip Rust build if: explicitly disabled, running in any Replit environment
+  // (REPL_SLUG or REPLIT_DEPLOYMENT), or if the release binary already exists
+  // (meaning build.sh already compiled it). This prevents a slow/unnecessary
+  // debug-mode cargo build from running inside the deployment build container.
+  const releaseExists = await access("boosterstate/target/release/boosterstate").then(() => true).catch(() => false);
+  const skipRust =
+    process.env.SKIP_BOOSTERSTATE === '1' ||
+    !!process.env.REPL_SLUG ||
+    !!process.env.REPLIT_DEPLOYMENT ||
+    releaseExists;
   if (skipRust) {
-    console.log("skipping boosterstate build (SKIP_BOOSTERSTATE=1 or Replit deployment)");
-  } else {
-    const binaryExists = await access("boosterstate/target/debug/boosterstate").then(() => true).catch(() => false);
-    if (!binaryExists) {
-      console.log("boosterstate binary not found — building with cargo (debug)...");
-      const { execSync } = await import("child_process");
-      execSync("cargo build --manifest-path boosterstate/Cargo.toml", { stdio: "inherit" });
-      console.log("boosterstate binary built");
+    if (releaseExists) {
+      console.log("skipping boosterstate build — release binary already present (built by build.sh)");
     } else {
-      console.log("pre-built boosterstate binary found — skipping cargo build");
+      console.log("skipping boosterstate build (SKIP_BOOSTERSTATE=1 or Replit environment)");
+    }
+  } else {
+    const binaryExists = await access("boosterstate/target/release/boosterstate").then(() => true).catch(() => false);
+    if (!binaryExists) {
+      console.log("boosterstate release binary not found — building with cargo --release...");
+      const { execSync } = await import("child_process");
+      execSync("cargo build --release --manifest-path boosterstate/Cargo.toml", { stdio: "inherit" });
+      console.log("boosterstate release binary built");
+    } else {
+      console.log("pre-built boosterstate release binary found — skipping cargo build");
     }
   }
 
