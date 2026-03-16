@@ -36,18 +36,16 @@ ios/
 # Rust build artifacts only — source stays so cargo can build during deploy
 boosterstate/target
 
-# Old/legacy project copies
+# Old/legacy project copies and documentation
 maxbooster7.5/
 maxbooster_veo_music/
+Max-Booster/
+Max Booster final documentation/
+AI training server/
+pocket dimension storage tech/
+built-in plugins dsp/
 
 # Development and CI files
-*.md
-!replit.md
-README.md
-.env
-.env.*
-.env.local
-.env.*.local
 *.log
 npm-debug.log*
 logs/
@@ -73,12 +71,15 @@ test-results/
 *.spec.*
 
 # Documentation
-docs
-README.md
+docs/
+design_guidelines.md
+*.md
+!replit.md
 
 # Screenshots, videos, and large media assets not needed at runtime
 client/public/screenshots
 client/public/videos
+generated-icon.png
 
 # Generated content (regenerated at runtime via PDIM)
 public/generated-content/
@@ -91,13 +92,17 @@ attached_assets/
 # Capacitor / mobile configs (not needed in deployment container)
 capacitor.config.ts
 capacitor.config.json
+codemagic.yaml
+ecosystem.config.js
+watchdog.ps1
+install_watchdog.ps1
 
 # AI model training data (managed by MaxCore, not deployed here)
 ai_model/
 training/
 
 # Data and storage (runtime-created, not deployment artifacts)
-boostsheets_db/
+boostersheets_db/
 boosterstate-data/
 pocket-dimensions/
 data/
@@ -106,9 +111,12 @@ uploads/
 # Static assets source (already compiled into dist/public by Vite pre-build)
 assets/
 
-# Misc
-*.backup
+# Python/miscellaneous
+pyproject.toml
+uv.lock
+main.py
 cookies.txt
 .audit-wal/
 .capsule-temp/
 storybook-static/
+*.backup
