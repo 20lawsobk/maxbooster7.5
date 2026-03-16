@@ -1469,7 +1469,7 @@ export default function Distribution() {
   const { data: uploadSessionStatus } = useQuery<UploadSessionStatus | null>({
     queryKey: ['/api/distribution/upload', activeSessionId, 'status'],
     enabled: !!activeSessionId && !isPaused,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
     queryFn: async () => {
       if (!activeSessionId) return null;
       const response = await fetch(`/api/distribution/upload/${activeSessionId}/status`, {

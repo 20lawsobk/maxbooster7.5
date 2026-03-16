@@ -27,8 +27,8 @@ if (process.env.SENDGRID_API_KEY) {
   logger.warn('⚠️  SendGrid API key not configured. Email worker will fail to send emails.');
 }
 
-const MEMORY_WARNING_THRESHOLD = 24 * 1024 * 1024 * 1024;
-const MEMORY_CRITICAL_THRESHOLD = 28 * 1024 * 1024 * 1024;
+const MEMORY_WARNING_THRESHOLD = 512 * 1024 * 1024;   // 512 MB — realistic for Replit VM
+const MEMORY_CRITICAL_THRESHOLD = 768 * 1024 * 1024;  // 768 MB — triggers forced GC
 let lastMemoryLog = 0;
 
 function checkMemoryUsage(workerName: string): void {

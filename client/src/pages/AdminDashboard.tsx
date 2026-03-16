@@ -118,7 +118,7 @@ export default function AdminDashboard() {
   } = useQuery({
     queryKey: ['/api/admin/metrics'],
     enabled: isAdmin,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
 
   // Fetch user analytics

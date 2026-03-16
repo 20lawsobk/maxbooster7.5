@@ -345,9 +345,19 @@ class HyperLearningEngine extends EventEmitter {
       for (const pattern of significantPatterns) {
         const key = `${pattern.type}_${pattern.pattern}`;
         if (!this.microPatternCache.has(key)) {
+          // Evict the oldest key when the Map reaches its capacity limit,
+          // keeping memory bounded regardless of how many cycles run.
+          if (this.microPatternCache.size >= 500) {
+            const firstKey = this.microPatternCache.keys().next().value;
+            if (firstKey) this.microPatternCache.delete(firstKey);
+          }
           this.microPatternCache.set(key, []);
         }
-        this.microPatternCache.get(key)!.push(pattern);
+        const arr = this.microPatternCache.get(key)!;
+        arr.push(pattern);
+        // Keep only the 50 most recent observations per key to prevent
+        // unbounded growth across long-running HyperLearning cycles.
+        if (arr.length > 50) arr.shift();
       }
 
       return significantPatterns;
@@ -1702,12 +1712,15 @@ class HyperLearningEngine extends EventEmitter {
       } else {
         logger.warn(`[HyperLearning] DiffusionTrainer returned ${resp.status} — training signal queued locally`);
         this.pendingTrainingSignals.push(payload);
+        // Cap the retry queue to prevent unbounded growth when AI server is down.
+        if (this.pendingTrainingSignals.length > 100) this.pendingTrainingSignals.shift();
       }
     } catch {
       this.pendingTrainingSignals.push({
         source: 'hyper_ab_test', test_id: test.id, winner_id: winner.id,
         queued_at: Date.now(),
       });
+      if (this.pendingTrainingSignals.length > 100) this.pendingTrainingSignals.shift();
       logger.warn('[HyperLearning] AI server unreachable — training signal queued for next sync');
     }
   }

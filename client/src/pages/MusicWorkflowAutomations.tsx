@@ -478,7 +478,7 @@ function OverviewTab({ automations, stats }: { automations: WorkflowTemplate[]; 
 function RunHistoryTab({ templateNameMap }: { templateNameMap: Record<string, string> }) {
   const { data, isLoading, refetch, isFetching } = useQuery<{ logs: ExecutionLog[] }>({
     queryKey: ['/api/music-workflow-automations/logs'],
-    refetchInterval: 20000,
+    refetchInterval: 30000,
   });
 
   const logs = data?.logs ?? [];

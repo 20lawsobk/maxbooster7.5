@@ -68,13 +68,13 @@ export function BulkScheduler() {
 
   const { data: batches, refetch: refetchBatches } = useQuery({
     queryKey: ['/api/social/bulk/batches'],
-    refetchInterval: 5000,
+    refetchInterval: 15000,
   });
 
   const { data: currentBatch, refetch: refetchCurrentBatch } = useQuery({
     queryKey: ['/api/social/bulk/status', currentBatchId],
     enabled: !!currentBatchId,
-    refetchInterval: currentBatchId ? 2000 : false,
+    refetchInterval: currentBatchId ? 5000 : false,
   });
 
   const validateMutation = useMutation({

@@ -119,7 +119,7 @@ export function DistributionOutcomeHandler({ releaseId, onAction }: Distribution
     };
   }>({
     queryKey: [`/api/distribution/releases/${releaseId}/outcomes`],
-    refetchInterval: 15000,
+    refetchInterval: 30000,
   });
 
   const retryMutation = useMutation({

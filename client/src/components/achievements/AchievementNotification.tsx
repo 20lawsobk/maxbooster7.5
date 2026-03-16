@@ -46,7 +46,7 @@ export function AchievementNotification() {
 
   const { data: unnotified } = useQuery<Achievement[]>({
     queryKey: ["/api/achievements/unnotified"],
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const markNotifiedMutation = useMutation({

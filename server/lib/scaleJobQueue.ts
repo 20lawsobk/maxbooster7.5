@@ -28,7 +28,7 @@ export const RETENTION_QUEUE = 'retention-jobs';
 
 /**
  * How many jobs the worker runs in parallel.
- * Capped to 5 to prevent DB connection storms during queue drain.
+ * Capped to 3 to prevent DB connection storms during queue drain.
  * Override with BULLMQ_CONCURRENCY env var.
  */
 const WORKER_CONCURRENCY = parseInt(process.env.BULLMQ_CONCURRENCY ?? '3', 10);
@@ -57,8 +57,36 @@ export function getRetentionQueue(): Queue {
   return _queue;
 }
 
+/**
+ * Purge stale jobs left over from previous server sessions.
+ * Jobs with no name and no data.type are orphaned — they will never match
+ * a known handler and produce log spam on every restart.  Run once at boot,
+ * fire-and-forget so it never blocks the worker from starting.
+ */
+async function cleanStalledJobs(): Promise<void> {
+  try {
+    const queue = getRetentionQueue();
+    // BullMQ's built-in clean() removes completed/failed jobs older than N ms.
+    // For stale waiting jobs we must fetch and selectively remove them.
+    const waiting = await queue.getJobs(['waiting'], 0, 200);
+    const stale = waiting.filter(j => !j.name && !(j.data as any)?.type);
+    if (stale.length > 0) {
+      await Promise.allSettled(stale.map(j => j.remove()));
+      logger.info(`[Worker] Purged ${stale.length} stale orphan job(s) from prior session`);
+    }
+    // Also clean completed/failed job tombstones older than 1 hour
+    await queue.clean(3_600_000, 100, 'completed');
+    await queue.clean(3_600_000, 100, 'failed');
+  } catch (err) {
+    logger.warn('[Worker] Stale job cleanup skipped:', (err as Error).message);
+  }
+}
+
 export function startRetentionWorker(): Worker {
   const connection = newBullMQRedisConnection();
+
+  // Kick off stale-job cleanup in the background (non-blocking)
+  setImmediate(() => cleanStalledJobs().catch(() => {}));
 
   const worker = new Worker(
     RETENTION_QUEUE,

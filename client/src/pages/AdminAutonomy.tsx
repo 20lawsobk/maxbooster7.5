@@ -57,7 +57,7 @@ export default function AdminAutonomy() {
 
   const { data: status, isLoading: statusLoading } = useQuery<any>({
     queryKey: updatesKey,
-    refetchInterval: 10000,
+    refetchInterval: 30000,
   });
   const { data: changesData } = useQuery<any>({ queryKey: changesKey });
   const { data: upgradesData } = useQuery<any>({ queryKey: upgradesKey });
@@ -124,7 +124,7 @@ export default function AdminAutonomy() {
   const killSwitchKey = ['/api/kill-switch/status'];
   const { data: killSwitchData, refetch: refetchKillSwitch } = useQuery<any>({
     queryKey: killSwitchKey,
-    refetchInterval: 5000,
+    refetchInterval: 30000,
   });
 
   const killAll = useMutation({
