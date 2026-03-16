@@ -97,7 +97,7 @@ const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
 -   **Dev Workflow command**: `bash -c './boosterstate/target/release/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts'`
     -   Starts BoosterState Rust sidecar (fast KV on port 9877) first, then the dev server
     -   BoosterState release binary is pre-built at `./boosterstate/target/release/boosterstate`
--   **Production deployment**: Build: `cd boosterstate && cargo build --release && cd .. && npm run build:deploy`; Run: `./boosterstate/target/release/boosterstate & sleep 2 && npm run start`
+-   **Production deployment**: Build: `cargo build --release --manifest-path boosterstate/Cargo.toml && npm run build:deploy`; Run: `./boosterstate/target/release/boosterstate & sleep 2 && npm run start`
     -   `build:deploy` = Vite + esbuild bundle
     -   `start` = production Node.js cluster from `dist/cluster.cjs`
 -   **CJS bundle compatibility**: Files using `import.meta.url` must use the pattern:
