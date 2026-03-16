@@ -47,34 +47,29 @@ import {
 // ── Auto multiplier ───────────────────────────────────────────────────────────
 // Target scale: 90 million long-term concurrent users.
 //
-// The PDIM chain is shared by every concurrent code path in this process.
-// More CPU cores → more concurrent microtask paths competing for the chain
-// simultaneously.  More cluster workers → more OS-level processes sharing the
-// same PDIM instance.  Both dimensions drive up the number of callers and must
-// be reflected in the initial gap so the system boots conservatively.
+// PDIM handles its own internal cluster — Max Booster connects to it as a
+// single process via Redis-compatible URLs and benefits from PDIM's cluster
+// transparently.  The only dimension that matters on the Max Booster side is
+// how many CPU cores this process has, because more cores → more concurrent
+// microtask paths all competing for the single PDIM HTTP chain simultaneously.
 //
-// Formula:  autoMultiplier = clusterWorkers × ceil(cpuCores / 2)
+// Formula:  autoMultiplier = ceil(cpuCores / 2)
 //
-//   VM Reserve, 4 cores, 1 worker : 1 × ceil(4/2) = 1 × 2 = 2
-//     → AIMD init = 1 200 ms, ZPOPMIN gap = 800 ms
-//   VM Reserve, 8 cores, 1 worker : 1 × ceil(8/2) = 1 × 4 = 4
-//     → AIMD init = 2 400 ms, ZPOPMIN gap = 1 600 ms
-//   Autoscale,  4 cores, 6 workers: 6 × 2 = 12
-//     → AIMD init = 7 200 ms, ZPOPMIN gap = 4 800 ms
+//   VM Reserve, 4 cores : ceil(4/2) = 2  → ZPOPMIN gap =  800 ms
+//   VM Reserve, 8 cores : ceil(8/2) = 4  → ZPOPMIN gap = 1 600 ms
+//   VM Reserve, 16 cores: ceil(16/2) = 8 → ZPOPMIN gap = 3 200 ms
 //
 // Under real user load the demand step (100 ms/success at queue depth ≥ 10)
-// contracts the gap from init to the 400 ms floor in seconds — the water
-// expands when the valve opens.  At rest the gap drifts up gently (1 ms/step)
-// so the system stays quiet without burning PDIM quota.
+// contracts the gap from init (600 ms) to the 400 ms floor in seconds — the
+// water expands when the valve opens.  At rest the gap drifts up gently
+// (1 ms/step) so the system stays quiet without burning PDIM quota.
 //
-const _clusterWorkers  = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
-const _cpuCores        = Math.max(1, os.cpus().length);
-const _autoMultiplier  = _clusterWorkers * Math.max(1, Math.ceil(_cpuCores / 2));
+const _cpuCores       = Math.max(1, os.cpus().length);
+const _autoMultiplier = Math.max(1, Math.ceil(_cpuCores / 2));
 
 logger.info(
   `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
-  `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
-  `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
+  `(ceil(cpuCores=${_cpuCores}/2)) — ` +
   `AIMD init=600ms (fixed, LuaExecutor-safe), ZPOPMIN gap=${400 * _autoMultiplier}ms`,
 );
 

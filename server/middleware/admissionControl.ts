@@ -22,12 +22,10 @@ const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? 
 const RETRY_AFTER_SECONDS = 5;
 
 // When Redis is unavailable, each replica falls back to independent per-process tracking.
-// Replicas are separate network endpoints behind a load balancer — they don't share an
-// in-process counter. Dividing by replica count here would be double-counting: each
-// replica already receives only its proportional share of traffic from the load balancer.
-// So we only divide by CLUSTER_WORKERS (the number of worker processes within this replica).
-// e.g. global=8000 / 6 workers ≈ 1333 per process — each process enforces its own slice.
-const CLUSTER_WORKERS_PER_REPLICA = parseInt(process.env.CLUSTER_WORKERS ?? '6', 10);
+// VM Reserve runs a single Node.js process (no internal cluster), so the per-process
+// limit equals the global limit. Default of '1' is correct for VM Reserve; set
+// CLUSTER_WORKERS env var to the actual worker count only if you add Node.js clustering.
+const CLUSTER_WORKERS_PER_REPLICA = parseInt(process.env.CLUSTER_WORKERS ?? '1', 10);
 const DEGRADED_PER_PROCESS_LIMIT = Math.max(
   50,
   Math.ceil(MAX_CONCURRENT_REQUESTS / CLUSTER_WORKERS_PER_REPLICA)

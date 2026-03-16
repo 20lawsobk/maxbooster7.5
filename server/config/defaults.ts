@@ -1,4 +1,14 @@
 import { logger } from '../logger.js';
+import os from 'os';
+
+// VM Reserve auto-sizing: scale queue concurrency proportionally to available CPU cores.
+// Formula: floor(cpuCount / 4) gives a whole-number multiplier:
+//   4-core VM  → 1× baseline (no change from original defaults)
+//   8-core VM  → 2× baseline  (audio: 12, analytics: 16, email: 32, csv: 8)
+//   16-core VM → 4× baseline  (audio: 24, analytics: 32, email: 64, csv: 16)
+// Capped at sensible maximums so PDIM isn't overwhelmed.
+const _vmCpuCount = Math.max(1, os.cpus().length);
+const _vmConcMult = Math.max(1, Math.floor(_vmCpuCount / 4));
 /**
  * Centralized Configuration System
  *
@@ -193,10 +203,10 @@ export const config: AppConfig = {
 
   queue: {
     concurrency: {
-      audio: parseEnvInt('QUEUE_AUDIO_CONCURRENCY', 6),
-      analytics: parseEnvInt('QUEUE_ANALYTICS_CONCURRENCY', 8),
-      email: parseEnvInt('QUEUE_EMAIL_CONCURRENCY', 16),
-      csv: parseEnvInt('QUEUE_CSV_CONCURRENCY', 4),
+      audio:     parseEnvInt('QUEUE_AUDIO_CONCURRENCY',     Math.min(24, 6  * _vmConcMult)),
+      analytics: parseEnvInt('QUEUE_ANALYTICS_CONCURRENCY', Math.min(32, 8  * _vmConcMult)),
+      email:     parseEnvInt('QUEUE_EMAIL_CONCURRENCY',     Math.min(64, 16 * _vmConcMult)),
+      csv:       parseEnvInt('QUEUE_CSV_CONCURRENCY',       Math.min(16, 4  * _vmConcMult)),
     },
     timeout: {
       audio: parseEnvInt('QUEUE_AUDIO_TIMEOUT', 120000), // 2 minutes

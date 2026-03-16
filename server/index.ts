@@ -81,7 +81,9 @@ import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
   validateScaleConfig();
 }).catch(() => {});
 
-app.use(compression({ level: 4, threshold: 1024 }));
+// VM Reserve: use compression level 6 — better ratio, extra CPU cores absorb the cost.
+// Threshold kept at 1 KB so small JSON responses are still uncompressed (low overhead).
+app.use(compression({ level: 6, threshold: 1024 }));
 app.use(cookieParser());
 const httpServer = createServer(app);
 
@@ -91,6 +93,16 @@ const httpServer = createServer(app);
 // headersTimeout must be strictly greater than keepAliveTimeout.
 httpServer.keepAliveTimeout = 65_000;
 httpServer.headersTimeout   = 66_000;
+
+// VM Reserve: disable Nagle's algorithm on every accepted TCP socket.
+// setNoDelay(true) flushes each write immediately — eliminates up to 200 ms of
+// artificial latency on small API responses.  setKeepAlive with a 30 s probe
+// interval reclaims idle sockets before they silently go half-open, which
+// prevents ghost connections from consuming file descriptors.
+httpServer.on('connection', (socket) => {
+  socket.setNoDelay(true);
+  socket.setKeepAlive(true, 30_000);
+});
 
 // START LISTENING IMMEDIATELY so deployment health checks succeed.
 // /health (registered above by setupStartupEndpoints) responds with 200 at once.
