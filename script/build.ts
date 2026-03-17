@@ -329,6 +329,9 @@ async function main() {
     } catch (_) {}
 
     // ── 11. Docs, examples, fixtures inside packages ──────────────────────────
+    // IMPORTANT: exceljs/lib/doc is excluded — that directory contains runtime JS
+    // source (workbook.js, cell.js, row.js, etc.), NOT documentation.  Deleting it
+    // causes "Cannot find module './doc/workbook'" at startup and crashes the server.
     console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
     try {
       execSync(
@@ -336,6 +339,7 @@ async function main() {
         `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
         `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
         `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
+        `! -path "*/exceljs/lib/doc*" ` +
         `-exec rm -rf {} + 2>/dev/null || true`,
         { stdio: 'inherit', shell: '/bin/bash' }
       );
