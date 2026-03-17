@@ -31,7 +31,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-[#0a0a16]/90 border-b border-gray-200 dark:border-white/5 p-4 dark:backdrop-blur-xl">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {/* Mobile Menu Button */}

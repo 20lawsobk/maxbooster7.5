@@ -119,45 +119,50 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed lg:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-background border-r border-gray-200 dark:border-border flex flex-col h-full transition-transform duration-300 lg:translate-x-0',
+          'fixed lg:static inset-y-0 left-0 z-50 w-64 flex flex-col h-full transition-transform duration-300 lg:translate-x-0 sidebar-premium',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full'
         )}
         role="navigation"
         aria-label="Main navigation"
         aria-hidden={!isMobileOpen}
       >
-        <div className="p-4 border-b border-gray-200 dark:border-border">
+        {/* Sidebar header */}
+        <div className="px-4 py-5 border-b border-white/5">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <Music className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-3">
+              <div className="sidebar-logo-icon">
+                <Music className="w-4 h-4 text-amber-400" />
+              </div>
               <div className="flex flex-col">
-                <h2 className="text-lg font-bold bg-gradient-to-r from-amber-500 to-purple-600 bg-clip-text text-transparent">Max Booster</h2>
-                <span className="text-xs text-gray-500 dark:text-muted-foreground">by B-Lawz Music</span>
+                <h2 className="text-base font-black tracking-tight sidebar-brand-text">Max Booster</h2>
+                <span className="text-[10px] text-white/40 font-medium uppercase tracking-widest">by B-Lawz Music</span>
               </div>
             </div>
-            {/* Mobile Close Button */}
             <Button
               variant="ghost"
               size="sm"
-              className="lg:hidden"
+              className="lg:hidden text-white/50 hover:text-white hover:bg-white/5"
               onClick={onMobileClose}
               data-testid="sidebar-close"
             >
               <X className="w-5 h-5" />
             </Button>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-            {user.subscriptionTier === 'lifetime'
-              ? '🎵 Lifetime Access'
-              : user.subscriptionTier === 'yearly'
-                ? '📅 Yearly Plan'
-                : user.subscriptionTier === 'monthly'
-                  ? '📆 Monthly Plan'
-                  : 'Free'}
-          </p>
+          {/* Tier badge */}
+          <div className="mt-3">
+            <span className="sidebar-tier-badge">
+              {user.subscriptionTier === 'lifetime'
+                ? '♾ Lifetime Access'
+                : user.subscriptionTier === 'yearly'
+                  ? '★ Yearly Plan'
+                  : user.subscriptionTier === 'monthly'
+                    ? '◈ Monthly Plan'
+                    : '◇ Free'}
+            </span>
+          </div>
         </div>
 
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-3 space-y-0.5 overflow-y-auto sidebar-scrollbar">
           {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path || location.startsWith(item.path + '/');
@@ -167,53 +172,54 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                 key={item.path}
                 href={item.path}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ease-in-out group',
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out group relative',
                   isActive
-                    ? 'bg-gradient-to-r from-amber-500/20 to-purple-600/20 text-primary dark:text-primary shadow-sm border border-primary/30'
-                    : 'text-gray-700 dark:text-foreground hover:bg-muted dark:hover:bg-muted hover:shadow-sm'
+                    ? 'sidebar-nav-active'
+                    : 'sidebar-nav-item'
                 )}
-                onClick={(e) => {
-                  // Close mobile menu immediately on click
-                  if (onMobileClose) {
-                    onMobileClose();
-                  }
+                onClick={() => {
+                  if (onMobileClose) onMobileClose();
                 }}
                 data-testid={`nav-${item.path.replace('/', '')}`}
               >
+                {isActive && <div className="sidebar-active-indicator" />}
                 <Icon
                   className={cn(
-                    'w-5 h-5 transition-transform duration-200',
-                    isActive ? 'scale-110' : 'group-hover:scale-110'
+                    'w-4 h-4 flex-shrink-0 transition-all duration-200',
+                    isActive ? 'text-amber-400' : 'text-white/40 group-hover:text-white/70'
                   )}
                 />
-                <span className="font-medium">{t(item.labelKey)}</span>
+                <span className={cn(
+                  'text-sm font-medium transition-colors',
+                  isActive ? 'text-white' : 'text-white/50 group-hover:text-white/80'
+                )}>{t(item.labelKey)}</span>
                 {isActive && (
-                  <div className="ml-auto w-1 h-4 bg-gradient-to-b from-amber-500 to-purple-600 rounded-full animate-pulse" />
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
                 )}
               </Link>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-gray-200 dark:border-border space-y-3">
-          <div className="flex items-center justify-between mb-3">
+        <div className="px-3 py-4 border-t border-white/5 space-y-3">
+          <div className="flex items-center justify-between">
             <LanguageSwitcher />
             <ThemeToggle variant="outline" size="sm" />
           </div>
           <Link
             to="/settings"
-            className="flex items-center justify-between gap-2 rounded-md p-2 -m-2 hover:bg-accent transition-colors group"
+            className="flex items-center justify-between gap-2 rounded-xl px-3 py-2.5 hover:bg-white/5 transition-colors group sidebar-user-card"
           >
-            <div className="text-xs text-muted-foreground min-w-0">
-              <p className="font-medium text-foreground">{user.username}</p>
-              <p className="truncate">{user.email}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-white/80 group-hover:text-white transition-colors">{user.username}</p>
+              <p className="text-xs text-white/30 truncate">{user.email}</p>
               {isAdmin && (
-                <span className="inline-block mt-2 px-2 py-1 bg-secondary text-secondary-foreground rounded text-xs font-medium">
+                <span className="inline-block mt-1 px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-md text-[10px] font-bold uppercase tracking-wide">
                   Admin
                 </span>
               )}
             </div>
-            <Settings className="w-4 h-4 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Settings className="w-4 h-4 text-white/20 shrink-0 group-hover:text-white/50 group-hover:rotate-45 transition-all duration-300" />
           </Link>
         </div>
       </aside>

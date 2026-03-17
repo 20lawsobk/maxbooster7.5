@@ -28,7 +28,7 @@ function getStoredTheme(): Theme {
       return stored;
     }
   }
-  return 'system';
+  return 'dark';
 }
 
 function applyTheme(resolvedTheme: ResolvedTheme) {
