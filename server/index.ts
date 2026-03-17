@@ -311,18 +311,30 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Load optional modules first
   await loadOptionalModules();
 
-  // Initialize database log transport for automatic log persistence
-  // Only persists warn+ level logs to avoid performance impact
-  try {
-    const { initializeDatabaseLogTransport } = await import('./services/databaseLogTransport.js');
-    initializeDatabaseLogTransport({
-      minLevel: 'warn',
-      batchSize: 10,
-      flushIntervalMs: 30000,
-    });
-    logger.info('✅ Database log transport initialized');
-  } catch (error) {
-    logger.warn('⚠️ Database log transport not initialized:', error instanceof Error ? error.message : String(error));
+  // Determine once whether this process is the designated background worker.
+  // In cluster mode CLUSTER_WORKER_ID is injected by cluster.ts for each forked
+  // worker (0, 1, 2, …).  In single-process mode (dev / DISABLE_CLUSTER) it is
+  // undefined — treat that as the BG worker so everything still runs.
+  const clusterId = process.env.CLUSTER_WORKER_ID;
+  const isBgWorker = clusterId === undefined || clusterId === '0';
+
+  // Initialize database log transport only on the BG worker.
+  // Every worker creates its own transport instance which flushes to Neon
+  // simultaneously — N workers × pool connections easily exceeds Neon's
+  // connection limit (53100).  Restricting to worker 0 cuts DB connections
+  // from N to 1 without losing any log data (stdout captures everything else).
+  if (isBgWorker) {
+    try {
+      const { initializeDatabaseLogTransport } = await import('./services/databaseLogTransport.js');
+      initializeDatabaseLogTransport({
+        minLevel: 'warn',
+        batchSize: 10,
+        flushIntervalMs: 30000,
+      });
+      logger.info('✅ Database log transport initialized');
+    } catch (error) {
+      logger.warn('⚠️ Database log transport not initialized:', error instanceof Error ? error.message : String(error));
+    }
   }
 
   // Start chain error auto-fixer — must run early so it catches errors from
@@ -446,8 +458,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Running BullMQ processors on every worker multiplies PDIM queue-poll
   // traffic by N and causes 429 floods.  Worker 0 (or the sole process when
   // not clustered) handles all background jobs; the others serve HTTP only.
-  const clusterId = process.env.CLUSTER_WORKER_ID;
-  const isBgWorker = clusterId === undefined || clusterId === '0';
+  // isBgWorker / clusterId are already defined above (DatabaseLogTransport section).
   try {
     if (isBgWorker && typeof initializeWorkers === 'function') {
       await initializeWorkers();

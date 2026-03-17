@@ -31,12 +31,35 @@ import { spawnSync, spawn } from 'child_process';
     console.log('[Cluster] boosterstate already running');
     return;
   }
+
+  // Probe whether the binary can actually execute BEFORE daemon-spawning.
+  // When the ELF interpreter path embedded in the binary doesn't exist on the
+  // current host (common in Replit deployment VMs that use a different NixOS
+  // configuration than the workspace), spawn() fails with ENOENT — but only
+  // asynchronously, AFTER the synchronous Atomics.wait(2000) has already
+  // blocked startup for 2 seconds.  spawnSync returns ENOENT immediately
+  // (no timeout reached) when the interpreter is missing, so we can detect
+  // this case cheaply and skip both the daemon spawn and the 2-second wait.
+  const probe = spawnSync(bin, ['--version'], {
+    timeout: 300,        // killed after 300 ms if binary starts (server mode)
+    stdio: 'ignore',
+    killSignal: 'SIGKILL' as any,
+  });
+  const isEnoent = probe.error && (probe.error as NodeJS.ErrnoException).code === 'ENOENT';
+  if (isEnoent) {
+    console.warn(
+      '[Cluster] boosterstate binary cannot execute on this host ' +
+      '(ELF interpreter not found — binary was built for a different NixOS/glibc). ' +
+      'Continuing without sidecar.'
+    );
+    return;
+  }
+
   const proc = spawn(bin, [], { detached: true, stdio: 'ignore', env: { ...process.env } });
   // MUST attach an 'error' listener before .unref() — without it, any spawn failure
-  // (e.g. ELF interpreter mismatch in the deployment container) throws an uncaught
-  // exception that crashes the entire cluster primary process.
+  // throws an uncaught exception that crashes the entire cluster primary process.
   proc.on('error', (err) => {
-    console.warn(`[Cluster] boosterstate sidecar failed to start (${err.message}) — server will run without it`);
+    console.warn(`[Cluster] boosterstate sidecar error after start (${err.message}) — server will run without it`);
   });
   proc.unref();
   console.log('[Cluster] boosterstate sidecar started — waiting 2 s for init');
