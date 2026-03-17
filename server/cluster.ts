@@ -125,8 +125,15 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   //   • If ALL workers crash and restart the primary's socket keeps the port
   //     alive so the health check never sees a connection-refused.
   const primaryPort = parseInt(process.env.PORT || '5000', 10);
+  // Health paths answered by the primary itself.
+  // MUST include every path Replit's deployment health checker may use — if the
+  // primary returns 503 on any health path, the deployment times out even after
+  // workers come up (OS SO_REUSEPORT load-balances between primary + workers so
+  // the primary always handles a fraction of incoming requests).
+  const HEALTH_PATHS = new Set(['/health', '/api/health', '/api/ping']);
   const primaryHealthServer = http.createServer((req, res) => {
-    if (req.url === '/health' || req.url === '/api/ping') {
+    const url = (req.url ?? '').split('?')[0]; // strip query string
+    if (HEALTH_PATHS.has(url)) {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ status: 'ok', pid: process.pid, role: 'primary', ts: Date.now() }));
     } else {
