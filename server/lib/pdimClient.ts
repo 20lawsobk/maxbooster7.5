@@ -99,12 +99,12 @@ logger.info(
 //        BullMQ Lua scripts issue ~35 redis.call() each; those calls are all
 //        serialised through the PDIM chain, so a single script takes:
 //          35 × gap_ms milliseconds to complete.
-//        The LuaExecutor hard-kills scripts at 25 s → gap must stay ≤ 714 ms.
-//          35 × 400 ms = 14 000 ms  — 11 s of headroom.  Safe.
-//          35 × 600 ms = 21 000 ms  — 4 s of headroom.   Safe (init value).
-//          35 × 800 ms = 28 000 ms  — EXCEEDS 25 s.      UNSAFE.
+//        The LuaExecutor hard-kills scripts at 60 s → gap must stay ≤ 1714 ms.
+//          35 × 400 ms = 14 000 ms  — 46 s of headroom.  Very safe.
+//          35 × 600 ms = 21 000 ms  — 39 s of headroom.  Very safe (init).
+//          35 × 800 ms = 28 000 ms  — 32 s of headroom.  Safe.
 //        The _autoMultiplier MUST NOT be applied to FLOOR or INIT because
-//        doing so would push Lua scripts past the 25 s timeout.
+//        doing so could push Lua scripts past the 60 s timeout under extreme load.
 //        The multiplier is applied only to the ZPOPMIN secondary gap — those
 //        are single-command calls, not wrapped in multi-call Lua scripts.
 //
@@ -291,7 +291,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: AbortSignal.timeout(5000),
+          signal: AbortSignal.timeout(20_000),
         });
 
         if (!res.ok) {
