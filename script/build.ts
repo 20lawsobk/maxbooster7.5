@@ -7,6 +7,22 @@ import { rm, readFile, access } from "fs/promises";
 // which keeps dist/index.cjs small (only application code, no vendor code).
 const allowlist: string[] = [];
 
+// ── IMPORTANT: Runtime dependency classification ──────────────────────────────
+// Because EVERY package is externalized (loaded from node_modules at runtime),
+// any package imported by server code MUST be in "dependencies", NOT
+// "devDependencies", or it will be deleted by `npm prune --omit=dev` during the
+// [deploy-clean] phase, crashing the production server.
+//
+// Packages currently in "dependencies" that are server-runtime critical:
+//   @tensorflow/tfjs-node — server/workers/tfWorkerThread.ts, baseModelTrainer.ts
+//   esbuild              — server/self-evolution-engine.ts (static top-level import)
+//
+// Packages safely left in "devDependencies" (never loaded in production):
+//   vite    — only loaded inside `else` branch (NODE_ENV !== "production")
+//   vitest  — only appears in a template string inside generateTestsForUpgrade()
+//   All @radix-ui/*, react, framer-motion, etc. — bundled into dist/public by Vite
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Explicit force-external list as a safety net (catches scoped packages that
 // the allDeps filter might miss if they appear as transitive imports).
 const forceExternal = [
