@@ -35,30 +35,19 @@ let initializeWorkers: any = null;
 
 // Load optional monitoring modules (NOT security-critical)
 async function loadOptionalModules() {
-  try {
-    const metrics = await import("./monitoring/metricsCollector.js");
-    metricsCollector = metrics.metricsCollector;
-  } catch (e) { /* Optional module */ }
-
-  try {
-    const alerting = await import("./monitoring/alertingService.js");
-    alertingService = alerting.alertingService;
-  } catch (e) { /* Optional module */ }
-
-  try {
-    const capacity = await import("./monitoring/capacityMonitor.js");
-    capacityMonitor = capacity.CapacityMonitor;
-  } catch (e) { /* Optional module */ }
-
-  try {
-    const realtime = await import("./realtime/index.js");
-    initializeRealtimeServer = realtime.initializeRealtimeServer;
-  } catch (e) { /* Optional module */ }
-
-  try {
-    const workers = await import("./workers/index.js");
-    initializeWorkers = workers.initializeWorkers;
-  } catch (e) { /* Optional module */ }
+  // Import all optional modules concurrently instead of 5 sequential awaits.
+  const [metrics, alerting, capacity, realtime, workers] = await Promise.allSettled([
+    import("./monitoring/metricsCollector.js"),
+    import("./monitoring/alertingService.js"),
+    import("./monitoring/capacityMonitor.js"),
+    import("./realtime/index.js"),
+    import("./workers/index.js"),
+  ]);
+  if (metrics.status === 'fulfilled')   metricsCollector        = metrics.value.metricsCollector;
+  if (alerting.status === 'fulfilled')  alertingService         = alerting.value.alertingService;
+  if (capacity.status === 'fulfilled')  capacityMonitor         = capacity.value.CapacityMonitor;
+  if (realtime.status === 'fulfilled')  initializeRealtimeServer = realtime.value.initializeRealtimeServer;
+  if (workers.status === 'fulfilled')   initializeWorkers       = workers.value.initializeWorkers;
 }
 
 const app = express();
@@ -318,24 +307,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   const clusterId = process.env.CLUSTER_WORKER_ID;
   const isBgWorker = clusterId === undefined || clusterId === '0';
 
-  // Initialize database log transport only on the BG worker.
-  // Every worker creates its own transport instance which flushes to Neon
-  // simultaneously — N workers × pool connections easily exceeds Neon's
-  // connection limit (53100).  Restricting to worker 0 cuts DB connections
-  // from N to 1 without losing any log data (stdout captures everything else).
-  if (isBgWorker) {
-    try {
-      const { initializeDatabaseLogTransport } = await import('./services/databaseLogTransport.js');
-      initializeDatabaseLogTransport({
-        minLevel: 'warn',
-        batchSize: 10,
-        flushIntervalMs: 30000,
-      });
-      logger.info('✅ Database log transport initialized');
-    } catch (error) {
-      logger.warn('⚠️ Database log transport not initialized:', error instanceof Error ? error.message : String(error));
-    }
-  }
+  // DatabaseLogTransport is disabled: even a single-worker process can exhaust
+  // Neon's connection limit when the regular query pool is busy, triggering
+  // PG_CODE 53100 retry storms that pollute the logs.  Stdout captures all log
+  // output already (pino JSON transport), so DB persistence is redundant.
 
   // Start chain error auto-fixer — must run early so it catches errors from
   // autonomous systems, BullMQ workers, and PDIM during their own startup
@@ -488,39 +463,41 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Autonomous systems initialization is deferred to after server starts
   // to ensure fast cold start times for landing page loading
 
-  // Block write operations for demo users (read-only mode)
-  try {
-    const { blockDemoWrite } = await import('./auth.js');
-    app.use('/api', blockDemoWrite);
+  // Import the four /api middleware modules concurrently — their initialization is
+  // independent so there is no reason to await them one at a time (~1s saved).
+  const [demoAuthResult, rateLimiterResult, admissionResult, apiCacheResult] =
+    await Promise.allSettled([
+      import('./auth.js'),
+      import('./middleware/scalableRateLimiter.js'),
+      import('./middleware/admissionControl.js'),
+      import('./middleware/apiCache.js'),
+    ]);
+
+  // Apply each in the correct precedence order (import order above matches use order)
+  if (demoAuthResult.status === 'fulfilled') {
+    app.use('/api', demoAuthResult.value.blockDemoWrite);
     logger.info('✅ Demo write protection applied');
-  } catch (e: any) {
-    logger.warn(`⚠️ Demo write protection not available: ${e.message}`);
+  } else {
+    logger.warn(`⚠️ Demo write protection not available: ${(demoAuthResult as any).reason?.message}`);
   }
 
-  // Apply scalable rate limiter for high-load scenarios
-  try {
-    const { globalScalableRateLimiter } = await import('./middleware/scalableRateLimiter.js');
-    app.use('/api', globalScalableRateLimiter);
+  if (rateLimiterResult.status === 'fulfilled') {
+    app.use('/api', rateLimiterResult.value.globalScalableRateLimiter);
     logger.info('✅ Scalable rate limiter applied');
-  } catch (e: any) {
-    logger.warn(`⚠️ Rate limiter not available: ${e.message}`);
+  } else {
+    logger.warn(`⚠️ Rate limiter not available: ${(rateLimiterResult as any).reason?.message}`);
   }
 
-  // Admission control — shed excess concurrent requests to protect the DB under spike load
-  try {
-    const { admissionControl } = await import('./middleware/admissionControl.js');
-    app.use('/api', admissionControl);
+  if (admissionResult.status === 'fulfilled') {
+    app.use('/api', admissionResult.value.admissionControl);
     logger.info('✅ Admission control applied (max concurrent: ' + (process.env.MAX_CONCURRENT_REQUESTS ?? '5000') + ')');
-  } catch (e: any) {
-    logger.warn(`⚠️ Admission control not available: ${e.message}`);
+  } else {
+    logger.warn(`⚠️ Admission control not available: ${(admissionResult as any).reason?.message}`);
   }
 
-  // API response cache - invalidate on mutations, cache on reads
-  try {
-    const { invalidateCacheOnMutation, cacheMiddleware } = await import('./middleware/apiCache.js');
+  if (apiCacheResult.status === 'fulfilled') {
+    const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult.value;
     app.use('/api', invalidateCacheOnMutation());
-    
-    // Apply response caching to high-traffic read endpoints
     const cachedRoutes: Record<string, number> = {
       '/api/auth/me': 15,
       '/api/projects': 20,
@@ -531,23 +508,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       '/api/royalties/summary': 60,
       '/api/achievements': 120,
     };
-    
-    // Single middleware that handles all cached routes
-    // Uses req.path (without query string) for route matching, but cache key includes query
     const routeCacheMiddleware = (req: any, res: any, next: any) => {
       if (req.method !== 'GET') return next();
       const basePath = req.path.replace(/\/$/, '') || req.path;
       const ttl = cachedRoutes[basePath];
-      if (ttl) {
-        return cacheMiddleware({ ttlSeconds: ttl, varyByUser: true })(req, res, next);
-      }
+      if (ttl) return cacheMiddleware({ ttlSeconds: ttl, varyByUser: true })(req, res, next);
       next();
     };
     app.use(routeCacheMiddleware);
-    
     logger.info(`✅ API response cache initialized (${Object.keys(cachedRoutes).length} cached routes)`);
-  } catch (e: any) {
-    logger.warn(`⚠️ API cache middleware: ${e.message}`);
+  } else {
+    logger.warn(`⚠️ API cache middleware: ${(apiCacheResult as any).reason?.message}`);
   }
 
   // Prometheus metrics endpoint (before routes so it's always reachable)
