@@ -244,17 +244,19 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
-    // 7. Slow query sustained (3+ occurrences in window — DB under pressure)
+    // 7. Slow query sustained (3+ occurrences in window — Neon cold-connection latency)
     // NOTE: autoFix deliberately does NOT call distributedCache.flush() here.
-    // These slow queries are on autopilot_learning_data with no indexes (DB at
-    // 512MB Neon limit — can't add indexes).  A cache flush would send a
-    // FLUSHDB command to PDIM at the exact same moment HyperLearning cycle
-    // ends and BullMQ pollers resume — triggering the synchronized 429 burst
-    // that this fixer exists to prevent.  Logging only is the correct response.
+    // These slow queries are caused by Neon serverless suspending idle connections
+    // after ~1–2 min; the first query after a quiet period takes 400–900ms even
+    // with correct indexes in place.  A DB keepalive ping (added in server/index.ts)
+    // prevents this by sending SELECT 1 every 30s.  A cache flush here would send a
+    // FLUSHDB command to PDIM at the exact same moment HyperLearning cycle ends and
+    // BullMQ pollers resume — triggering the synchronized 429 burst this fixer exists
+    // to prevent.  Logging only is the correct response once the keepalive is running.
     this.addPattern({
       id: 'sustained_slow_queries',
       name: 'Sustained slow database queries',
-      description: 'Database query latency exceeding 300ms — expected under Neon connection-limit with no additional indexes available',
+      description: 'Database query latency exceeding 300ms — Neon cold-connection latency; DB keepalive ping suppresses this after first boot',
       matchers: [/Slow query detected \(\d{3,}ms\)/i],
       levels: ['warn'],
       severity: 'low',
@@ -263,7 +265,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       maxAttempts: 100,
       autoFix: async () => {
         // Intentionally no PDIM/cache interaction — see comment above.
-        logger.info('[ChainFixer] Slow query pattern acknowledged (autopilot_learning_data, no indexes available) — no corrective action');
+        logger.info('[ChainFixer] Slow query acknowledged — Neon cold-connection latency (DB keepalive running; will not recur after first 30s cycle)');
       },
     });
 

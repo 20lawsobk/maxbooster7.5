@@ -860,6 +860,21 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           }).catch((e) => logger.warn('[DiffBG] Could not start background trainer:', e?.message));
         }, 60_000);
 
+        // Neon keepalive: Neon serverless suspends idle connections after ~1–2 min.
+        // Without a keepalive, the first query after a quiet period takes 400–900ms
+        // (observed as ⚠️ Slow query on autopilot_learning_data at startup).
+        // Pinging every 30s keeps the connection warm at negligible cost.
+        try {
+          const { pool: _keepPool } = await import('./db.js');
+          const _keepalive = setInterval(() => {
+            _keepPool.query('SELECT 1').catch(() => {});
+          }, 30_000);
+          _keepalive.unref();
+          logger.info('[DB] Keepalive started — pinging every 30s to prevent Neon cold-start latency');
+        } catch {
+          // Non-fatal — server continues without keepalive
+        }
+
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
       });
 })().catch((error) => {

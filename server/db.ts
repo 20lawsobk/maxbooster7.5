@@ -40,9 +40,11 @@ class QueryTelemetry {
   private queriesSinceLastSample = 0;
   private trackingStartTime = Date.now(); // Fixed timestamp for QPS calculation
 
-  // Connection warmup grace period: first queries include pool/WebSocket setup
-  // latency that isn't representative of actual query performance
-  private readonly warmupGraceMs = 30_000; // 30 seconds after first query
+  // Connection warmup grace period: Neon serverless pgbouncer adds 300–600ms
+  // to the first query on each fresh connection — not representative of steady-state
+  // performance.  90s covers the full autonomous-systems startup window so
+  // Neon connection-pool cold starts don't generate spurious warn logs.
+  private readonly warmupGraceMs = 90_000; // 90 seconds after first query
   private firstQueryTime: number | null = null;
 
   private hashSql(sql: string): string {
@@ -65,7 +67,10 @@ class QueryTelemetry {
     this.lifetimeTotal++;
     this.runningSum += duration;
 
-    if (duration > 400 && !isWarmingUp) {
+    // 1000ms threshold: Neon pgbouncer adds 300–600ms on fresh connection slots;
+    // queries taking < 1s are normal Neon behaviour, not a real problem.
+    // Only flag queries that would genuinely degrade user experience (> 1s).
+    if (duration > 1000 && !isWarmingUp) {
       this.lifetimeSlow++;
       const isDev = process.env.NODE_ENV === 'development';
       const sqlPreview = isDev ? sql.substring(0, 200).replace(/\s+/g, ' ') : '';
@@ -143,7 +148,7 @@ class QueryTelemetry {
     }
 
     // Calculate windowed metrics
-    const windowedSlow = recentQueries.filter((q) => q.duration > 400).length;
+    const windowedSlow = recentQueries.filter((q) => q.duration > 1000).length;
     const durations = recentQueries.map((q) => q.duration).sort((a, b) => a - b);
     const p95Index = Math.floor(durations.length * 0.95);
     const p95Latency = durations[p95Index] || 0;
