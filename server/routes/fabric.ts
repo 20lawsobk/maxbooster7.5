@@ -9,6 +9,13 @@ interface AuthenticatedRequest extends Request {
 
 const router = Router();
 
+function sanitizeError(err: unknown): string {
+  if (process.env.NODE_ENV !== 'production') {
+    return err instanceof Error ? err.message : String(err);
+  }
+  return 'Internal server error';
+}
+
 router.post('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { name, policy } = req.body;
@@ -17,7 +24,7 @@ router.post('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.status(201).json(pocket);
   } catch (err: any) {
     logger.error('[FabricRoute] createPocket:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -27,7 +34,7 @@ router.get('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Respo
     res.json(pockets);
   } catch (err: any) {
     logger.error('[FabricRoute] listPockets:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -39,7 +46,7 @@ router.get('/pockets/:pocketId', requireAuth, async (req: AuthenticatedRequest, 
     res.json(pocket);
   } catch (err: any) {
     logger.error('[FabricRoute] getPocket:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -54,7 +61,7 @@ router.post('/pockets/:pocketId/volumes', requireAuth, async (req: Authenticated
     res.status(201).json(volume);
   } catch (err: any) {
     logger.error('[FabricRoute] createVolume:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -67,7 +74,7 @@ router.get('/pockets/:pocketId/volumes', requireAuth, async (req: AuthenticatedR
     res.json(volumes);
   } catch (err: any) {
     logger.error('[FabricRoute] listVolumes:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -94,7 +101,7 @@ router.put('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
     res.status(201).json({ objectId });
   } catch (err: any) {
     logger.error('[FabricRoute] putObject:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -107,7 +114,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
     res.json(objects);
   } catch (err: any) {
     logger.error('[FabricRoute] listObjects:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -126,7 +133,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireAuth
     res.send(result.data);
   } catch (err: any) {
     logger.error('[FabricRoute] getObject:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -139,7 +146,7 @@ router.delete('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireA
     res.status(204).end();
   } catch (err: any) {
     logger.error('[FabricRoute] deleteObject:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -159,7 +166,7 @@ router.post('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respon
     res.status(201).json(node);
   } catch (err: any) {
     logger.error('[FabricRoute] registerNode:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -170,7 +177,7 @@ router.get('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respons
     res.json(nodes);
   } catch (err: any) {
     logger.error('[FabricRoute] listNodes:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -180,7 +187,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res: Respons
     res.json(stats);
   } catch (err: any) {
     logger.error('[FabricRoute] getStats:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -211,7 +218,7 @@ router.get('/cluster/status', requireAuth, async (req: AuthenticatedRequest, res
     });
   } catch (err: any) {
     logger.error('[FabricRoute] cluster/status:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 
@@ -223,7 +230,7 @@ router.post('/cluster/evaluate', requireAuth, async (req: AuthenticatedRequest, 
     res.json({ triggered: true, ...result });
   } catch (err: any) {
     logger.error('[FabricRoute] cluster/evaluate:', err);
-    res.status(500).json({ message: err.message });
+    res.status(500).json({ message: sanitizeError(err) });
   }
 });
 

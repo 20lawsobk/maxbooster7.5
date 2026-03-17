@@ -1,10 +1,11 @@
 import { Router, Request, Response, NextFunction } from "express";
-import { db } from "../db.js";
+import { db, pool } from "../db.js";
 import { users, projects, releases, analytics, posts, orders, systemSettings, platformRoyaltyRates, taxTreatyRates, labelSettings } from "../../shared/schema.js";
 import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
 import * as os from 'os';
+import * as fs from 'fs';
 import rateLimit from 'express-rate-limit';
 
 const adminRouter = Router();
@@ -362,15 +363,26 @@ adminRouter.get("/system-health", async (req, res) => {
           percentUsed: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
         },
         cpu: cpuUsage,
-        disk: 0,
+        disk: (() => {
+          try {
+            const stat = (fs as any).statfsSync?.('/') ?? null;
+            if (stat) {
+              const total = stat.bsize * stat.blocks;
+              const free = stat.bsize * stat.bfree;
+              return total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+            }
+          } catch {}
+          return 0;
+        })(),
       },
       database: {
         status: dbStatus,
         latency: dbLatency,
         connectionPool: {
-          active: 0,
-          idle: 0,
-          max: 0,
+          active: (pool as any).totalCount ?? 0,
+          idle: (pool as any).idleCount ?? 0,
+          waiting: (pool as any).waitingCount ?? 0,
+          max: (pool as any).options?.max ?? (pool as any).maxSize ?? 0,
         },
       },
       externalApis,
@@ -630,10 +642,20 @@ adminRouter.get("/metrics", async (req, res) => {
       .from(users)
       .where(eq(users.subscriptionStatus, "active"));
 
+    let diskUsagePercent = 0;
+    try {
+      const stat = (fs as any).statfsSync?.('/') ?? null;
+      if (stat) {
+        const total = stat.bsize * stat.blocks;
+        const free = stat.bsize * stat.bfree;
+        diskUsagePercent = total > 0 ? Math.round(((total - free) / total) * 100) : 0;
+      }
+    } catch {}
+
     res.json({
       cpu: getRealCpuUsage(),
       memory: Math.floor((memUsage.heapUsed / memUsage.heapTotal) * 100),
-      disk: 0,
+      disk: diskUsagePercent,
       network: 0,
       uptime: Math.floor(process.uptime()),
       activeUsers: activeUsersResult[0]?.count || 0,
