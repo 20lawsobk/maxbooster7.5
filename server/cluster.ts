@@ -2,8 +2,40 @@ import cluster from 'cluster';
 import os from 'os';
 import path from 'path';
 import http from 'http';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
+import { spawnSync, spawn } from 'child_process';
+
+// ── Boosterstate sidecar startup ──────────────────────────────────────────────
+// Previously handled by start.sh. Moved here so the run command can be a plain
+// `node dist/cluster.cjs` — which Replit's pid1 resolves without needing npm or
+// any PATH manipulation.
+(function startBoosterstate() {
+  // Ensure production env vars are set regardless of how the process was launched.
+  // Use computed keys so esbuild's "define" substitution doesn't turn the assignments
+  // into a no-op literal assignment (e.g. "production" = ...).
+  const _env = process.env as Record<string, string | undefined>;
+  _env['NODE_ENV']               = _env['NODE_ENV']               || 'production';
+  _env['UV_THREADPOOL_SIZE']     = _env['UV_THREADPOOL_SIZE']     || '8';
+  _env['TF_NUM_INTEROP_THREADS'] = _env['TF_NUM_INTEROP_THREADS'] || '2';
+  _env['TF_NUM_INTRAOP_THREADS'] = _env['TF_NUM_INTRAOP_THREADS'] || '2';
+
+  const bin = path.join(process.cwd(), 'boosterstate', 'target', 'release', 'boosterstate');
+  if (!fs.existsSync(bin)) {
+    console.warn('[Cluster] boosterstate binary not found — skipping sidecar startup');
+    return;
+  }
+  const already = spawnSync('pgrep', ['-x', 'boosterstate'], { stdio: 'ignore' }).status === 0;
+  if (already) {
+    console.log('[Cluster] boosterstate already running');
+    return;
+  }
+  spawn(bin, [], { detached: true, stdio: 'ignore', env: { ...process.env } }).unref();
+  console.log('[Cluster] boosterstate sidecar started — waiting 2 s for init');
+  // Synchronous 2-second wait so workers don't race against boosterstate init.
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+})();
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
 // Fall back to process.argv[1] (the entry file path) for __dirname resolution.
