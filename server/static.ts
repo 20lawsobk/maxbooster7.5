@@ -200,18 +200,13 @@ function injectMeta(html: string, meta: { title: string; description: string; im
   return html;
 }
 
-export function serveStatic(app: Express) {
-  const distPath = path.resolve(__dirname, "public");
-  if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
-    );
-  }
+const DIST_PATH = path.resolve(__dirname, "public");
 
-  app.use(express.static(distPath, {
+function staticFileMiddlewareOptions() {
+  return {
     etag: true,
     lastModified: true,
-    setHeaders: (res, filePath) => {
+    setHeaders: (res: any, filePath: string) => {
       if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       } else if (filePath.match(/\.(js|css)$/)) {
@@ -226,7 +221,28 @@ export function serveStatic(app: Express) {
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
     },
-  }));
+  };
+}
+
+/**
+ * Register express.static for the pre-built frontend assets.
+ * Must be called BEFORE session middleware so asset requests never pay
+ * the cost of a PDIM session lookup.  Serves everything in dist/public
+ * except the SPA catch-all (index.html for arbitrary paths) which is
+ * handled by serveStatic() below, called after API routes are registered.
+ */
+export function serveStaticFiles(app: Express) {
+  if (!fs.existsSync(DIST_PATH)) return;
+  app.use(express.static(DIST_PATH, staticFileMiddlewareOptions()));
+}
+
+export function serveStatic(app: Express) {
+  const distPath = DIST_PATH;
+  if (!fs.existsSync(distPath)) {
+    throw new Error(
+      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    );
+  }
 
   const indexPath = path.resolve(distPath, "index.html");
   const baseHtml = fs.readFileSync(indexPath, 'utf-8');

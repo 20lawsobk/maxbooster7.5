@@ -256,6 +256,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // API routes must never receive an HTML shell — let them fall through to
   // the registered handler (or the /api 404 guard that comes later).
   if (req.originalUrl.startsWith('/api/') || req.method !== 'GET') return next();
+  // Static assets (JS chunks, CSS, images, fonts) must not receive an HTML
+  // shell during the boot window — they must reach the express.static handler.
+  const assetExt = /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
+  if (req.path.startsWith('/assets/') || assetExt.test(req.path)) return next();
   // Serve the pre-built SPA shell if it exists.  In development this is the
   // last production build; in production it is the freshly built dist/.
   if (fs.existsSync(_spaFallbackIndexPath)) {
@@ -275,7 +279,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // TF.js / distributedCache / DB pool to initialise before listen() is called.
   const [
     { registerRoutes },
-    { serveStatic },
+    { serveStatic, serveStaticFiles },
     { default: session },
     { verifyReadReplica },
     { createFallbackSessionStore, getSessionConfig },
@@ -296,6 +300,20 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   ]);
   const prometheusRouter = (prometheusModule as any).default;
   const { httpRequestDuration, httpRequestTotal } = prometheusModule as any;
+
+  // ── Early static file serving ─────────────────────────────────────────────
+  // Register express.static for dist/public BEFORE session middleware is wired.
+  // Static asset requests (favicon, /assets/*.js, /assets/*.css, images) must
+  // never pay the cost of a PDIM session lookup.  During PDIM 429 bursts at
+  // startup, session lookups can block for hundreds of milliseconds, inflating
+  // asset latency to 1-5 s.  Serving files directly from disk here drops that
+  // to single-digit milliseconds regardless of PDIM health.
+  // The SPA catch-all (serveStatic) remains registered after API routes so
+  // it can do OG meta injection and subdomain routing for page navigations.
+  if (process.env.NODE_ENV === 'production') {
+    serveStaticFiles(app);
+    logger.info('✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)');
+  }
 
   // Load optional modules first
   await loadOptionalModules();
@@ -636,6 +654,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
         // 0-pre. Distributed cache — deferred so PDIM rate-limit retries don't
         // stall route registration.  Falls back to in-memory until connected.
+        // Stagger the connect() across cluster workers so they don't all hammer
+        // PDIM simultaneously at startup: worker N waits N × 1 500 ms before
+        // connecting.  Worker 0 (BG) connects immediately; workers 1 and 2 wait
+        // 1.5 s and 3 s respectively.  Total PDIM connection window ≤ 3 s instead
+        // of all workers colliding in the same 200 ms window and triggering 429s.
+        const _pdimWorkerDelay = parseInt(process.env.CLUSTER_WORKER_ID || '0', 10) * 1500;
+        if (_pdimWorkerDelay > 0) {
+          logger.info(`[DistributedCache] Staggering connect by ${_pdimWorkerDelay}ms (worker ${process.env.CLUSTER_WORKER_ID})`);
+          await new Promise(resolve => setTimeout(resolve, _pdimWorkerDelay));
+        }
         try {
           await distributedCache.connect();
           logger.info('✅ [DistributedCache] Connected (deferred)');
