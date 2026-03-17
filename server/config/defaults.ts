@@ -152,7 +152,15 @@ export const config: AppConfig = {
 
   database: {
     url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '',
-    poolSize: parseEnvInt('DB_POOL_SIZE', 20),
+    // In production each worker creates its own pool.  With the default of 20
+    // connections × N workers we easily exceed Neon's connection limit (53100).
+    // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
+    //   ceil(15 / CLUSTER_WORKERS) → 5 for 3 workers, 3 for 6 workers, etc.
+    // The DB_POOL_SIZE env var always wins if set explicitly.
+    poolSize: parseEnvInt('DB_POOL_SIZE',
+      isReplitDeployment
+        ? Math.max(2, Math.ceil(15 / (parseInt(process.env.PDIM_CLUSTER_WORKERS || '1', 10) || 1)))
+        : 20),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
     idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 10000),
     connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 20000),

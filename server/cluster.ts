@@ -150,8 +150,19 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // rate-limiter and ZPOPMIN gap scale their per-worker budgets correctly.
   // At 90M-user scale each worker must only consume 1/N of PDIM's
   // throughput quota — PDIM's own 429 responses are the global ceiling.
+  // Track each worker's env so we can preserve CLUSTER_WORKER_ID on respawn.
+  // Without this, crash-respawned workers have no ID and all start background jobs.
+  const workerEnvMap = new Map<number, Record<string, string>>();
+
   for (let i = 0; i < workerCount; i++) {
-    setTimeout(() => cluster.fork({ PDIM_CLUSTER_WORKERS: String(workerCount) }), i * 800);
+    setTimeout(() => {
+      const env: Record<string, string> = {
+        PDIM_CLUSTER_WORKERS: String(workerCount),
+        CLUSTER_WORKER_ID: String(i),
+      };
+      const w = cluster.fork(env);
+      workerEnvMap.set(w.id, env);
+    }, i * 800);
   }
 
   // Crash-loop protection: track restart times to detect and back off runaway crashes.
@@ -162,6 +173,15 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   cluster.on('exit', (worker, code, signal) => {
     const reason = signal ? `signal=${signal}` : `code=${code}`;
     console.error(`[Cluster] Worker ${worker.process.pid} exited (${reason}) — restarting`);
+
+    // Retrieve (and remove) the env so the replacement inherits the same CLUSTER_WORKER_ID.
+    const savedEnv = workerEnvMap.get(worker.id);
+    workerEnvMap.delete(worker.id);
+
+    const spawnReplacement = () => {
+      const w = cluster.fork(savedEnv);
+      if (savedEnv) workerEnvMap.set(w.id, savedEnv);
+    };
 
     const now = Date.now();
     // Evict timestamps outside the 60-second window
@@ -174,10 +194,10 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
         `[Cluster] Crash-loop detected: ${workerRestartTimes.length} restarts in last 60s — ` +
         `backing off ${BACKOFF_DELAY_MS / 1000}s before next fork`
       );
-      setTimeout(() => cluster.fork(), BACKOFF_DELAY_MS);
+      setTimeout(spawnReplacement, BACKOFF_DELAY_MS);
     } else {
       workerRestartTimes.push(now);
-      setTimeout(() => cluster.fork(), 500);
+      setTimeout(spawnReplacement, 500);
     }
   });
 

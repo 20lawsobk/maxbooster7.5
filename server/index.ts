@@ -75,6 +75,17 @@ import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
 // Threshold kept at 1 KB so small JSON responses are still uncompressed (low overhead).
 app.use(compression({ level: 6, threshold: 1024 }));
 app.use(cookieParser());
+
+// Fast-path health endpoint: must be registered BEFORE session/PDIM middleware so
+// Replit's health checker always gets an instant response regardless of PDIM load.
+app.use((req, res, next) => {
+  if (req.path === '/api/health') {
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
+    return;
+  }
+  next();
+});
+
 const httpServer = createServer(app);
 
 // keepAliveTimeout MUST exceed the upstream load-balancer idle timeout (~60 s on Replit Autoscale).
@@ -431,11 +442,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn('Realtime server not available');
   }
 
-  // Initialize background workers
+  // Initialize background workers on one cluster worker only.
+  // Running BullMQ processors on every worker multiplies PDIM queue-poll
+  // traffic by N and causes 429 floods.  Worker 0 (or the sole process when
+  // not clustered) handles all background jobs; the others serve HTTP only.
+  const clusterId = process.env.CLUSTER_WORKER_ID;
+  const isBgWorker = clusterId === undefined || clusterId === '0';
   try {
-    if (typeof initializeWorkers === 'function') {
+    if (isBgWorker && typeof initializeWorkers === 'function') {
       await initializeWorkers();
       logger.info('Background workers initialized');
+    } else if (!isBgWorker) {
+      logger.info(`[Cluster] Worker ${clusterId} — HTTP only, background jobs handled by worker 0`);
     }
   } catch (e) {
     logger.warn('Workers not available');

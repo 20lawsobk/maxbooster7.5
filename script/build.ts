@@ -312,41 +312,21 @@ async function main() {
     } catch (_) {}
 
     // ── 9. TypeScript declaration files (build-time only) ────────────────────
+    // Safe to delete unconditionally: Node.js never require()s .d.ts files.
+    // They are only consumed by the TypeScript compiler, which already ran.
     console.log('[deploy-clean] Removing *.d.ts TypeScript declaration files...');
     try {
       execSync(`find node_modules -name "*.d.ts" -type f -delete 2>/dev/null || true`,
         { stdio: 'inherit', shell: '/bin/bash' });
     } catch (_) {}
 
-    // ── 10. Test suites bundled inside packages ───────────────────────────────
-    console.log('[deploy-clean] Removing test directories inside node_modules...');
-    try {
-      execSync(
-        `find node_modules -type d \\( -name "__tests__" -o -name "test" -o -name "tests" \\) ` +
-        `-not -path "*/.bin/*" -exec rm -rf {} + 2>/dev/null || true`,
-        { stdio: 'inherit', shell: '/bin/bash' }
-      );
-    } catch (_) {}
-
-    // ── 11. Docs, examples, fixtures inside packages ──────────────────────────
-    // IMPORTANT: exceljs/lib/doc is excluded — that directory contains runtime JS
-    // source (workbook.js, cell.js, row.js, etc.), NOT documentation.  Deleting it
-    // causes "Cannot find module './doc/workbook'" at startup and crashes the server.
-    console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
-    try {
-      execSync(
-        `find node_modules -maxdepth 3 -type d ` +
-        `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
-        `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
-        `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
-        `! -path "*/exceljs/lib/doc*" ` +
-        `-exec rm -rf {} + 2>/dev/null || true`,
-        { stdio: 'inherit', shell: '/bin/bash' }
-      );
-    } catch (_) {}
-
-    // ── 12. Changelog / readme files inside packages ──────────────────────────
-    console.log('[deploy-clean] Removing changelog/readme files inside node_modules...');
+    // ── 10. Non-JS documentation files inside packages ───────────────────────
+    // Only delete files that Node.js can never require() at runtime.
+    // We intentionally do NOT pattern-delete directories named "doc", "test",
+    // "examples", etc. — packages like exceljs use those names for real runtime
+    // JS modules.  npm prune --omit=dev (step 1) is the real allowlist; anything
+    // it leaves behind is there because a production dependency needs it.
+    console.log('[deploy-clean] Removing non-JS docs/changelogs inside node_modules...');
     try {
       execSync(
         `find node_modules -maxdepth 3 -type f ` +
