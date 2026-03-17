@@ -31,7 +31,14 @@ import { spawnSync, spawn } from 'child_process';
     console.log('[Cluster] boosterstate already running');
     return;
   }
-  spawn(bin, [], { detached: true, stdio: 'ignore', env: { ...process.env } }).unref();
+  const proc = spawn(bin, [], { detached: true, stdio: 'ignore', env: { ...process.env } });
+  // MUST attach an 'error' listener before .unref() — without it, any spawn failure
+  // (e.g. ELF interpreter mismatch in the deployment container) throws an uncaught
+  // exception that crashes the entire cluster primary process.
+  proc.on('error', (err) => {
+    console.warn(`[Cluster] boosterstate sidecar failed to start (${err.message}) — server will run without it`);
+  });
+  proc.unref();
   console.log('[Cluster] boosterstate sidecar started — waiting 2 s for init');
   // Synchronous 2-second wait so workers don't race against boosterstate init.
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
