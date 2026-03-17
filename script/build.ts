@@ -10,7 +10,7 @@ const allowlist: string[] = [];
 // ── IMPORTANT: Runtime dependency classification ──────────────────────────────
 // Because EVERY package is externalized (loaded from node_modules at runtime),
 // any package imported by server code MUST be in "dependencies", NOT
-// "devDependencies", or it will be deleted by `npm prune --omit=dev` during the
+// "devDependencies", or it will be deleted by `npm run prune:deploy` during the
 // [deploy-clean] phase, crashing the production server.
 //
 // Packages currently in "dependencies" that are server-runtime critical:
@@ -235,9 +235,11 @@ async function main() {
 
     // ── 1. Prune dev dependencies ─────────────────────────────────────────────
     // This is the single biggest win: shrinks node_modules from ~2.1 GB to ~700 MB.
-    console.log('[deploy-clean] Pruning dev dependencies (npm prune --omit=dev)...');
+    // Flags are defined in the "prune:deploy" script in package.json — edit there,
+    // not here — so there is a single canonical source of truth for prune behaviour.
+    console.log('[deploy-clean] Pruning dev dependencies...');
     try {
-      execSync('npm prune --omit=dev', { stdio: 'inherit' });
+      execSync('npm run prune:deploy', { stdio: 'inherit' });
     } catch (e) {
       console.warn('[deploy-clean] npm prune failed (non-fatal):', e);
     }
