@@ -175,13 +175,15 @@ export function startRetentionWorker(): Worker {
       concurrency: 1,
       runRetryDelay: 30000,
       autorun: false,
-      drainDelay: 30000,
-      stalledInterval: 60000,
+      drainDelay: 120_000,
+      // stalledInterval: 5 min — moveStalledJobsToWait runs ~35 PDIM redis.call()s;
+      // raising from 60 s to 5 min reduces these Lua script executions 5× and
+      // prevents the majority of 45s script timeouts from the retention worker.
+      stalledInterval: 300_000,
       maxStalledCount: 1,
-      // Extend lock well beyond the 25-second LuaExecutor timeout so that a
-      // slow PDIM round-trip during moveToFinished never expires the lock and
-      // triggers a spurious "Missing lock for job" error.
-      lockDuration: 60_000,
+      // lockDuration: 10 min — lock renewal fires every lockDuration/2 = 5 min.
+      // Raising from 60 s cuts lock-renewal Lua scripts from 1/min to 1/5min.
+      lockDuration: 600_000,
       limiter: {
         max: 1,
         duration: 5_000,

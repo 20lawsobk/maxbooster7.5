@@ -334,13 +334,17 @@ class PlatformAutoFixer extends EventEmitter {
       const stats = getLuaExecutorStats();
       details = { active: stats.active, queued: stats.queued, max: stats.max };
 
-      const utilization = stats.active / stats.max;
+      // With MAX_CONCURRENT_WORKERS=1, active=1/max=1 (utilization=100%) is the
+      // normal steady state during any BullMQ Lua script execution.  Alerting on
+      // utilization >= 0.8 causes a permanent warn flood every 60 s.  Instead,
+      // grade on *queue buildup* — a growing wait queue is the real signal that
+      // the executor is overloaded and callers are being rejected.
       if (stats.queued > 10) {
         status  = 'critical';
         message = `LuaExecutor saturated: ${stats.queued} queued, ${stats.active}/${stats.max} active`;
-      } else if (utilization >= 0.8) {
+      } else if (stats.queued >= 3) {
         status  = 'degraded';
-        message = `LuaExecutor busy: ${stats.active}/${stats.max} slots active`;
+        message = `LuaExecutor busy: ${stats.queued} queued, ${stats.active}/${stats.max} active`;
       } else {
         message = `${stats.active}/${stats.max} slots active, ${stats.queued} queued`;
       }

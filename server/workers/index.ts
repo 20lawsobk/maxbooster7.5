@@ -55,11 +55,19 @@ function workerOpts(concurrency: number) {
     connection: newBullMQRedisConnection(),
     concurrency: pdimConcurrency,
     autorun: false,
-    drainDelay: 3000,          // wait 3 s before re-polling an empty queue
-    runRetryDelay: 10000,      // explicit: wait 10 s after any worker error before retrying
+    // drainDelay: idle workers wait 2 min before re-polling an empty queue.
+    // Reduces idle BZPOPMIN+moveToActive Lua script executions against PDIM
+    // from ~80/min (4 workers × 3s) to ~2/min (4 workers × 2 min).
+    drainDelay: 120_000,
+    runRetryDelay: 30_000,     // wait 30 s after any worker error before retrying
     limiter: { max: pdimConcurrency, duration: 1000 },
-    lockDuration: 120000,
-    stalledInterval: 30000,
+    // lockDuration: 10 min — lock renewal (every lockDuration/2 = 5 min) runs
+    // one Lua script per renewal.  Raising from 2 min cuts renewal frequency 5×.
+    lockDuration: 600_000,
+    // stalledInterval: 5 min — moveStalledJobsToWait is a heavy 35-call Lua
+    // script.  Raising from 30 s to 5 min reduces these executions 10× and
+    // eliminates the majority of 45s script timeouts in steady state.
+    stalledInterval: 300_000,
     maxStalledCount: 2,
   };
 }

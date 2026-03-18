@@ -324,7 +324,29 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
-    // 9. Memory pressure — heap approaching limit
+    // 9. BullMQ lock-manager erroredJobIds.includes is not a function
+    // extendJobLocks() Lua script returns null/undefined via PDIM on timeout;
+    // the postinstall patch guards new installs but this catches any residual
+    // instances at runtime and resets the LuaExecutor semaphore so the next
+    // lock renewal attempt can succeed cleanly.
+    this.addPattern({
+      id: 'bullmq_errored_job_ids_includes',
+      name: 'BullMQ erroredJobIds.includes TypeError',
+      description: 'extendJobLocks returned non-array from PDIM — guard missing or patch not applied',
+      matchers: [/erroredJobIds\.includes is not a function/i],
+      levels: ['error'],
+      severity: 'high',
+      category: 'queue',
+      cooldownMs: 30_000,
+      maxAttempts: 20,
+      autoFix: async () => {
+        const { resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+        resetLuaExecutorSemaphore();
+        logger.info('[ChainFixer] erroredJobIds.includes crash recovered — LuaExecutor semaphore reset');
+      },
+    });
+
+    // 10. Memory pressure — heap approaching limit
     this.addPattern({
       id: 'memory_pressure',
       name: 'High memory pressure',
