@@ -931,6 +931,24 @@ class PlatformAutoFixer extends EventEmitter {
     logger.info(`[PlatformAutoFixer] Patch applied: ${opts.name} (${id})`);
     this.emit('patch:applied', patch);
 
+    // ── PERMANENT FIX REGISTRY: map subsystem → pattern ID and record ──
+    // After N patches on the same subsystem, PermanentFixRegistry permanently
+    // raises the relevant constant (gap floor, LuaWait, heap ratio) so the
+    // next deployment starts with the improvement already baked in.
+    {
+      const _subsystemToPattern: Record<string, string> = {
+        pdim:   'pdim_rate_limit_429',
+        memory: 'memory_pressure',
+        queue:  'lua_executor_timeout',
+      };
+      const _pfrPatternId = _subsystemToPattern[opts.subsystem];
+      if (_pfrPatternId) {
+        import('./permanentFixRegistry.js')
+          .then(m => m.permanentFixRegistry.recordFix(_pfrPatternId))
+          .catch(() => {});
+      }
+    }
+
     // Run the action asynchronously
     if (opts.action) {
       opts.action().catch(err => {

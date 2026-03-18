@@ -348,6 +348,18 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${e.message}`);
   }
 
+  // Load permanent overrides — restores improvements accumulated across prior sessions.
+  // Must run after PDIM is connected (fixers start PDIM lazily on first use, so a
+  // short delay lets the connection settle before we try to read saved override keys).
+  setTimeout(async () => {
+    try {
+      const { permanentFixRegistry } = await import('./services/permanentFixRegistry.js');
+      await permanentFixRegistry.loadPermanentOverrides();
+    } catch (e: any) {
+      logger.warn(`[PermanentFixer] Failed to load overrides: ${e.message}`);
+    }
+  }, 8_000);
+
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================

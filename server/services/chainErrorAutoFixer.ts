@@ -794,6 +794,12 @@ class ChainErrorAutoFixer extends EventEmitter {
       entry.result = 'success';
       this.emit('fixed', { patternId: pattern.id, attempt: st.attempts });
 
+      // ── PERMANENT FIX REGISTRY: record success so escalation can accumulate ──
+      // Fire-and-forget — non-fatal; escalates to persistent constant change after N fires
+      import('../services/permanentFixRegistry.js')
+        .then(m => m.permanentFixRegistry.recordFix(pattern.id))
+        .catch(() => {});
+
       // ── OFFENSIVE: chain prediction — pattern fired, pre-empt known downstream ──
       this._predictAndPreemptChain(pattern.id);
     } catch (err: any) {

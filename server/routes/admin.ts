@@ -1050,4 +1050,18 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   }
 });
 
+// ── PERMANENT FIX REGISTRY ──────────────────────────────────────────────────
+// Shows all permanent improvements accumulated across sessions: which constants
+// have been raised, by how much, and why.  This is the record of the codebase
+// getting better over time.
+
+adminRouter.get('/permanent-fixes', async (_req, res) => {
+  try {
+    const { permanentFixRegistry } = await import('../services/permanentFixRegistry.js');
+    res.json(permanentFixRegistry.getStatus());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default adminRouter;

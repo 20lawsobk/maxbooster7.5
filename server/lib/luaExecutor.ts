@@ -45,7 +45,13 @@ const MAX_CONCURRENT_WORKERS = 1;
 // duration is 35×1000ms = 35s, so 45s gives 10s of headroom even at 1s/call.
 // Old 20s fired constantly because 35×571ms = 20s — any PDIM latency > 571ms
 // triggered a timeout, causing a permanent retry storm.
-const MAX_WAIT_MS = 55_000;
+let _maxWaitMs = 55_000;
+/** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry
+ *  after lua_executor_timeout fires repeatedly.  Only moves upward (min 55 s, max 120 s). */
+export function setLuaScriptTimeout(ms: number): void {
+  _maxWaitMs = Math.max(55_000, Math.min(120_000, ms));
+}
+export function getLuaScriptTimeout(): number { return _maxWaitMs; }
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
 // holding thousands of 60-second timer handles and consuming unbounded memory.
@@ -87,7 +93,7 @@ async function _acquireWorkerSlot(): Promise<void> {
         const idx = _waitQueue.indexOf(entry);
         if (idx !== -1) _waitQueue.splice(idx, 1);
         reject(new Error('[LuaExecutor] Timeout waiting for worker slot (30s)'));
-      }, MAX_WAIT_MS),
+      }, _maxWaitMs),
     };
     _waitQueue.push(entry);
   });
