@@ -31,6 +31,7 @@
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
 import { addLogTransport, type LogEntry } from './structuredLogger.js';
+import { permanentFixRegistry } from './permanentFixRegistry.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -476,10 +477,14 @@ class PlatformAutoFixer extends EventEmitter {
     let status: ProbeStatus = 'healthy';
     let message = `${Math.round(heapUsed / 1e6)}MB / ${Math.round(heapLimit / 1e6)}MB heap`;
 
-    if (heapRatio >= HEAP_PATCH_RATIO) {
+    // Use permanently tuned thresholds from registry (tighten over time as memory pressure recurs)
+    const heapWarnRatio  = permanentFixRegistry.getHeapWarnRatio();
+    const heapPatchRatio = permanentFixRegistry.getHeapPatchRatio();
+
+    if (heapRatio >= heapPatchRatio) {
       status  = 'critical';
       message = `Heap critical: ${Math.round(heapRatio * 100)}% of limit`;
-    } else if (heapRatio >= HEAP_WARN_RATIO) {
+    } else if (heapRatio >= heapWarnRatio) {
       status  = 'degraded';
       message = `Heap pressure: ${Math.round(heapRatio * 100)}% of limit`;
     }
@@ -734,7 +739,11 @@ class PlatformAutoFixer extends EventEmitter {
     if (subsystem === 'memory') {
       const heapRatio = (result.details as any)?.heapRatio ?? 0;
 
-      if (status === 'degraded' && heapRatio >= 80) {
+      // Read live thresholds from permanentFixRegistry (permanently tuned over time)
+      const warnPct  = Math.round(permanentFixRegistry.getHeapWarnRatio()  * 100);
+      const patchPct = Math.round(permanentFixRegistry.getHeapPatchRatio() * 100);
+
+      if (status === 'degraded' && heapRatio >= warnPct) {
         // Tier 1: warn + GC only
         this.applyPatch({
           subsystem: 'memory',
@@ -752,7 +761,7 @@ class PlatformAutoFixer extends EventEmitter {
         });
       }
 
-      if (status === 'critical' && heapRatio >= 92) {
+      if (status === 'critical' && heapRatio >= patchPct) {
         // Tier 2: GC + cache eviction
         this.applyPatch({
           subsystem: 'memory',
@@ -825,9 +834,12 @@ class PlatformAutoFixer extends EventEmitter {
           },
           revert: async () => {
             try {
-              const { setPdimAdaptiveGap } = await import('../lib/pdimClient.js');
-              setPdimAdaptiveGap?.(500);
-              logger.info('[PlatformAutoFixer] PDIM polling gap restored to 500ms');
+              const { setPdimAdaptiveGap, getPdimGapFloor } = await import('../lib/pdimClient.js');
+              // Revert to the permanent floor (not a hardcoded 500ms — the floor
+              // has been raised by permanentFixRegistry if 429s have been recurring)
+              const floor = getPdimGapFloor?.() ?? permanentFixRegistry.getPdimGapFloorMs();
+              setPdimAdaptiveGap?.(floor);
+              logger.info(`[PlatformAutoFixer] PDIM polling gap reverted to floor ${floor}ms`);
             } catch { /* not critical */ }
           },
         });
@@ -1183,7 +1195,7 @@ class PlatformAutoFixer extends EventEmitter {
     const alreadyStressed = statuses.some(s => s === 'critical' || s === 'degraded');
     if (alreadyStressed) return; // don't probe under fire
 
-    const STRESS_TIMEOUT_MS = 200; // tight — catches latent fragility
+    const STRESS_TIMEOUT_MS = 400; // tight enough to catch latent fragility, wide enough to avoid healthy-system false positives
 
     // ── DB stress probe ──────────────────────────────────────────────────────
     try {

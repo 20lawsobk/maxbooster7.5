@@ -239,6 +239,47 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
+    // 5b. LuaExecutor internal script timeout (45s wall-clock limit exceeded)
+    // Distinct from slot-wait timeout: the slot was acquired but the Lua script
+    // itself ran longer than the configured per-script timeout.  Root cause is
+    // almost always PDIM being slow (the redis.call()s inside the script stall),
+    // so the fix is: reset the semaphore (free the slot) AND slow down PDIM.
+    this.addPattern({
+      id: 'lua_script_timeout',
+      name: 'LuaExecutor script wall-clock timeout',
+      description: 'A Lua script exceeded its per-script timeout (45s); script forcibly aborted',
+      matchers: [/\[LuaExecutor\].*script timeout \(\d+s\)/i, /Worker error.*script timeout/i],
+      levels: ['error', 'warn'],
+      severity: 'high',
+      category: 'queue',
+      cooldownMs: 15_000,
+      maxAttempts: 30,
+      autoFix: async () => {
+        // Step 1: free the semaphore slot the timed-out script was holding
+        const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import('../lib/luaExecutor.js');
+        const before = getLuaExecutorStats();
+        const released = resetLuaExecutorSemaphore();
+        logger.info(`[ChainFixer] Lua script timeout — semaphore reset: ${before.active} active → 0, released ${released} slot(s)`);
+
+        // Step 2: slow down PDIM — scripts time out because redis.call()s inside
+        // them are waiting on a slow PDIM. Widening the gap gives PDIM room to breathe.
+        try {
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+          if (typeof setPdimAdaptiveGap === 'function') {
+            const current = getPdimAdaptiveGapMs?.() ?? 600;
+            const raised  = Math.min(3000, Math.max(1500, current + 800));
+            if (raised > current) {
+              setPdimAdaptiveGap(raised);
+              logger.info(`[ChainFixer] Lua script timeout — PDIM adaptive gap raised ${current}ms → ${raised}ms (scripts were stalling on slow redis.call()s)`);
+            }
+          }
+        } catch { /* non-fatal */ }
+      },
+      escalate: async (attempts) => {
+        logger.warn(`[ChainFixer] lua_script_timeout: ${attempts} occurrences — Lua scripts chronically timing out; PDIM may be persistently slow`);
+      },
+    });
+
     // 6. PDIM circuit breaker OPEN
     this.addPattern({
       id: 'pdim_circuit_open',
@@ -251,7 +292,22 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 20_000,
       maxAttempts: 50,
       autoFix: async () => {
-        logger.info('[ChainFixer] PDIM circuit OPEN detected — session/cache fallback to PostgreSQL active; PDIM circuit breaker will auto-probe on next request');
+        // Circuit is open → PDIM is hard-failing. Increase the adaptive gap aggressively
+        // so that when the circuit half-opens and retries begin, they don't immediately
+        // slam PDIM with full-speed requests and re-open the circuit.
+        try {
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+          if (typeof setPdimAdaptiveGap === 'function') {
+            const current = getPdimAdaptiveGapMs?.() ?? 600;
+            const target  = Math.max(3000, current * 1.5);  // at least 3s between requests
+            setPdimAdaptiveGap(target);
+            logger.info(`[ChainFixer] PDIM circuit OPEN — adaptive gap set to ${target}ms; PostgreSQL fallback active; circuit will auto-probe for recovery`);
+          } else {
+            logger.info('[ChainFixer] PDIM circuit OPEN — PostgreSQL fallback active; circuit will auto-probe for recovery');
+          }
+        } catch {
+          logger.info('[ChainFixer] PDIM circuit OPEN — PostgreSQL fallback active; circuit will auto-probe for recovery');
+        }
       },
     });
 
@@ -314,6 +370,24 @@ class ChainErrorAutoFixer extends EventEmitter {
         } catch {
           logger.info('[ChainFixer] 429 detected — global rate-limit backoff will resolve automatically');
         }
+
+        // Additionally: immediately widen the adaptive gap so PDIM gets breathing room
+        // before the next request batch. The AIMD multiplier will handle further increases
+        // if 429s continue, but this ensures we don't hammer it the moment backoff completes.
+        try {
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+          if (typeof setPdimAdaptiveGap === 'function') {
+            const current = getPdimAdaptiveGapMs?.() ?? 600;
+            // Raise gap by at least 500ms above current, up to 2500ms total.
+            // The AIMD multiplicative decrease already ran on the 429, so this
+            // is additive insurance on top — not a redundant reset.
+            const bumped = Math.min(2500, current + 500);
+            if (bumped > current) {
+              setPdimAdaptiveGap(bumped);
+              logger.info(`[ChainFixer] 429 — adaptive gap raised ${current}ms → ${bumped}ms (breathing room for PDIM recovery)`);
+            }
+          }
+        } catch { /* non-fatal */ }
       },
     });
 
@@ -561,6 +635,34 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
       escalate: async () => {
         logger.error('[ChainFixer] CRITICAL: OOM escalated — cluster will recycle this worker on the next health check');
+      },
+    });
+
+    // 17. BullMQ stale / unnamed job warnings
+    // BullMQ emits these at 'warn' level when it finds stale jobs in the queue
+    // (e.g. a job that was started but never completed due to a crash, or a
+    // job that has no registered processor).  They are self-healing — BullMQ
+    // moves them to 'failed' automatically — but they flood the log at startup
+    // and after a worker crash.  This pattern provides a single acknowledged
+    // entry and suppresses the flood.
+    this.addPattern({
+      id: 'stale_job_warning',
+      name: 'BullMQ stale/unnamed job cleanup',
+      description: 'BullMQ found stale or unnamed jobs and is auto-removing them — transient noise after crash/restart',
+      matchers: [
+        /Removing stale\/unnamed job id=\d+/i,
+        /Stale job found.*removing/i,
+      ],
+      levels: ['warn', 'info'],
+      severity: 'low',
+      category: 'queue',
+      cooldownMs: 120_000,    // suppress the flood: only log once per 2 minutes
+      maxAttempts: 500,       // effectively unlimited — this is chronic background noise
+      autoFix: async () => {
+        // BullMQ already handles stale job removal automatically.
+        // This fix is intentionally a no-op — its only job is to ack the
+        // pattern and suppress the repeat flood so it doesn't drown real errors.
+        logger.info('[ChainFixer] Stale job cleanup acknowledged — BullMQ is handling removal automatically (this message suppressed for 2 min)');
       },
     });
   }
@@ -884,13 +986,14 @@ class ChainErrorAutoFixer extends EventEmitter {
    * When the key pattern fires, the downstream fixes are pre-applied.
    */
   private static readonly CHAIN_MAP: Record<string, string[]> = {
-    'pdim_rate_limit_429':         ['lua_executor_timeout', 'bullmq_missing_lock'],
+    'pdim_rate_limit_429':         ['lua_executor_timeout', 'lua_script_timeout', 'bullmq_missing_lock'],
     'lua_executor_timeout':        ['bullmq_missing_lock', 'bullmq_stalled_foreach'],
+    'lua_script_timeout':          ['bullmq_missing_lock', 'bullmq_stalled_foreach'],
     'bullmq_stalled_foreach':      ['bullmq_null_then'],
-    'worker_thread_error':         ['lua_executor_timeout', 'bullmq_missing_lock'],
-    'pdim_circuit_open':           ['pdim_rate_limit_429', 'session_store_failure'],
+    'worker_thread_error':         ['lua_executor_timeout', 'lua_script_timeout', 'bullmq_missing_lock'],
+    'pdim_circuit_open':           ['pdim_rate_limit_429', 'lua_script_timeout', 'session_store_failure'],
     'memory_pressure':             ['oom_error'],
-    'worker_thread_crash':         ['bullmq_missing_lock', 'autonomous_system_rejection'],
+    'worker_thread_crash':         ['bullmq_missing_lock', 'lua_script_timeout', 'autonomous_system_rejection'],
     'autonomous_system_rejection': ['bullmq_null_then'],
     'session_store_failure':       ['api_credential_expired'],
   };
