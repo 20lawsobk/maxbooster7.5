@@ -157,7 +157,9 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
                   ? '★ Yearly Plan'
                   : user.subscriptionTier === 'monthly'
                     ? '◈ Monthly Plan'
-                    : '◇ Free'}
+                    : isAdmin
+                      ? '♾ Lifetime Access'
+                      : '◇ Free'}
             </span>
           </div>
         </div>

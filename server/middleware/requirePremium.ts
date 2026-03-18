@@ -33,7 +33,7 @@ export const requirePremium = async (req: Request, res: Response, next: NextFunc
 
     const now = new Date();
 
-    if (user.isAdmin) {
+    if (user.role === 'admin') {
       return next();
     }
 

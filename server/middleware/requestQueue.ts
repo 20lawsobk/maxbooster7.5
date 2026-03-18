@@ -90,6 +90,7 @@ class RequestQueue {
   private determinePriority(req: Request): number {
     const user = (req as any).user;
     
+    if (user?.role === 'admin') return 0;
     if (user?.subscriptionTier === 'lifetime') return 0;
     if (user?.subscriptionTier === 'yearly') return 1;
     
@@ -276,6 +277,7 @@ export class LoadShedder {
     if (!this.shedding) return false;
 
     const user = (req as any).user;
+    if (user?.role === 'admin') return false;
     if (user?.subscriptionTier === 'lifetime') return false;
     if (req.path.includes('/health') || req.path.includes('/critical')) return false;
 

@@ -38,6 +38,11 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     return;
   }
 
+  if (req.user.role === 'admin') {
+    next();
+    return;
+  }
+
   const now = new Date();
 
   if (req.user.trialEndsAt) {

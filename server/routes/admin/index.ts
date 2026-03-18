@@ -1,12 +1,13 @@
 import { Router, type RequestHandler } from 'express';
 import { db } from '../../db.js';
-import { users, projects, releases, analytics, posts, orders, systemSettings } from '../../../shared/schema.js';
-import { eq, desc, asc, like, or, sql, count, sum, and, gte, lte } from 'drizzle-orm';
+import { users, projects, releases, analytics, posts, orders, systemSettings, artistProfiles } from '../../../shared/schema.js';
+import { eq, desc, asc, like, or, sql, count, sum, and, gte, lte, isNotNull } from 'drizzle-orm';
 import { logger } from '../../logger.js';
 import bcrypt from 'bcrypt';
 import os from 'os';
 import { notificationService } from '../../services/notificationService.js';
 import { distributedCache } from '../../infrastructure/distributedCache.js';
+import { artistProfileService } from '../../services/artistProfileService.js';
 
 const router = Router();
 
@@ -21,123 +22,6 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
-
-// ============================================================
-// ACTIVITY ENDPOINT
-// ============================================================
-
-router.get('/activity', async (req, res) => {
-  try {
-    const { limit = '50' } = req.query;
-    const limitNum = Math.min(parseInt(limit as string) || 50, 100);
-    
-    const recentUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      username: users.username,
-      createdAt: users.createdAt,
-    })
-    .from(users)
-    .orderBy(desc(users.createdAt))
-    .limit(limitNum);
-    
-    const recentProjects = await db.select({
-      id: projects.id,
-      title: projects.title,
-      userId: projects.userId,
-      createdAt: projects.createdAt,
-    })
-    .from(projects)
-    .orderBy(desc(projects.createdAt))
-    .limit(limitNum);
-
-    const activities = [
-      ...recentUsers.map(u => ({
-        type: 'user_registered',
-        userId: u.id,
-        description: `New user registered: ${u.email}`,
-        timestamp: u.createdAt,
-      })),
-      ...recentProjects.map(p => ({
-        type: 'project_created',
-        userId: p.userId,
-        description: `Project created: ${p.title}`,
-        timestamp: p.createdAt,
-      })),
-    ].sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
-    .slice(0, limitNum);
-    
-    res.json({
-      activities,
-      total: activities.length,
-    });
-  } catch (error) {
-    logger.error('Error fetching admin activity:', error);
-    res.status(500).json({ error: 'Failed to fetch activity' });
-  }
-});
-
-// ============================================================
-// ANALYTICS ENDPOINT
-// ============================================================
-
-router.get('/analytics', async (req, res) => {
-  try {
-    const cacheKey = `admin:analytics:${Math.floor(Date.now() / 60000)}`;
-    const payload = await distributedCache.getOrSet(
-      cacheKey,
-      async () => {
-        const now = new Date();
-        const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-
-        const [
-          [totalUsersResult],
-          [activeUsersResult],
-          [previousActiveResult],
-          [revenueResult],
-          [previousRevenueResult],
-          subscriptionCounts,
-        ] = await Promise.all([
-          db.select({ count: count() }).from(users),
-          db.select({ count: count() }).from(users).where(gte(users.createdAt, thirtyDaysAgo)),
-          db.select({ count: count() }).from(users).where(and(gte(users.createdAt, sixtyDaysAgo), lte(users.createdAt, thirtyDaysAgo))),
-          db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(gte(analytics.date, thirtyDaysAgo)),
-          db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo))),
-          db.select({ tier: users.subscriptionTier, count: count() }).from(users).groupBy(users.subscriptionTier),
-        ]);
-
-        const totalUsers = totalUsersResult?.count || 0;
-        const activeUsers = activeUsersResult?.count || 0;
-        const previousActiveUsers = previousActiveResult?.count || 0;
-        const revenue = revenueResult?.total || 0;
-        const previousRevenue = previousRevenueResult?.total || 0;
-
-        const subscriptions = { free: 0, pro: 0, enterprise: 0 };
-        subscriptionCounts.forEach(row => {
-          const tier = row.tier?.toLowerCase() || '';
-          if (['enterprise', 'lifetime', 'unlimited'].includes(tier)) subscriptions.enterprise += row.count;
-          else if (['pro', 'premium', 'monthly', 'yearly', 'annual'].includes(tier)) subscriptions.pro += row.count;
-          else subscriptions.free += row.count;
-        });
-
-        const userGrowth = previousActiveUsers > 0
-          ? Math.round(((activeUsers - previousActiveUsers) / previousActiveUsers) * 100)
-          : activeUsers > 0 ? 100 : 0;
-        const revenueGrowth = previousRevenue > 0
-          ? Math.round(((Number(revenue) - Number(previousRevenue)) / Number(previousRevenue)) * 100)
-          : Number(revenue) > 0 ? 100 : 0;
-
-        return { totalUsers, activeUsers, revenue, subscriptions, growth: { users: userGrowth, revenue: revenueGrowth } };
-      },
-      60
-    );
-    res.json(payload);
-  } catch (error) {
-    logger.error('Error fetching admin analytics:', error);
-    res.status(500).json({ error: 'Failed to fetch analytics' });
-  }
-});
 
 // ============================================================
 router.put('/settings', async (req, res) => {
@@ -610,21 +494,45 @@ router.post('/settings/webhook', async (req, res) => {
 
 router.get('/activity', async (req, res) => {
   try {
-    const recentUsers = await db.select({
-      id: users.id,
-      email: users.email,
-      createdAt: users.createdAt
-    })
-      .from(users)
-      .orderBy(desc(users.createdAt))
-      .limit(10);
+    const { limit = '20' } = req.query;
+    const limitNum = Math.min(parseInt(limit as string) || 20, 100);
 
-    const activities = recentUsers.map(u => ({
-      type: 'success',
-      action: `New user registered: ${u.email}`,
-      user: 'System',
-      time: formatTimeAgo(u.createdAt)
-    }));
+    const [recentUsers, recentReleases, pendingFixers] = await Promise.all([
+      db.select({ id: users.id, email: users.email, username: users.username, createdAt: users.createdAt })
+        .from(users).orderBy(desc(users.createdAt)).limit(limitNum),
+      db.select({ id: releases.id, title: releases.title, createdAt: releases.createdAt })
+        .from(releases).orderBy(desc(releases.createdAt)).limit(Math.floor(limitNum / 2)),
+      db.select({ id: artistProfiles.id, artistName: artistProfiles.artistName, fixerRequestedAt: artistProfiles.fixerRequestedAt })
+        .from(artistProfiles)
+        .where(and(eq(artistProfiles.fixerPending, true), eq(artistProfiles.fixerStatus, 'pending')))
+        .orderBy(desc(artistProfiles.fixerRequestedAt)).limit(5),
+    ]);
+
+    const activities = [
+      ...recentUsers.map(u => ({
+        type: 'success',
+        action: `New user registered: ${u.email || u.username}`,
+        user: 'System',
+        time: formatTimeAgo(u.createdAt),
+        timestamp: u.createdAt,
+      })),
+      ...recentReleases.map(r => ({
+        type: 'info',
+        action: `Release submitted: ${r.title}`,
+        user: 'System',
+        time: formatTimeAgo(r.createdAt),
+        timestamp: r.createdAt,
+      })),
+      ...pendingFixers.map(f => ({
+        type: 'warning',
+        action: `Artist fixer request pending: ${f.artistName}`,
+        user: 'System',
+        time: formatTimeAgo(f.fixerRequestedAt),
+        timestamp: f.fixerRequestedAt,
+      })),
+    ]
+      .sort((a, b) => new Date(b.timestamp || 0).getTime() - new Date(a.timestamp || 0).getTime())
+      .slice(0, limitNum);
 
     res.json(activities);
   } catch (error) {
