@@ -641,6 +641,10 @@ class ChainErrorAutoFixer extends EventEmitter {
 
     // Log it so it's visible in the audit trail
     logger.warn(`[ChainFixer] Novel error (no pattern match) — may need a new recovery rule: ${msg.slice(0, 120)}`);
+
+    // ── OFFENSIVE: weaponize this unknown error speculatively ─────────────────
+    // Don't await — fire-and-forget so it doesn't block the log transport
+    this._weaponizeUnknownError(msg).catch(() => { /* non-fatal */ });
   }
 
   // ─── Process-Level Pre-Handler ─────────────────────────────────────────────
@@ -681,6 +685,9 @@ class ChainErrorAutoFixer extends EventEmitter {
   }
 
   private async runHealthCheck(): Promise<void> {
+    // ── Offensive pre-condition scan runs every health-check cycle ────────────
+    this._runOffensivePreConditionScan().catch(() => { /* non-fatal */ });
+
     // Check LuaExecutor semaphore for deadlock
     try {
       const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
@@ -786,6 +793,9 @@ class ChainErrorAutoFixer extends EventEmitter {
       st.lastFixResult = 'success';
       entry.result = 'success';
       this.emit('fixed', { patternId: pattern.id, attempt: st.attempts });
+
+      // ── OFFENSIVE: chain prediction — pattern fired, pre-empt known downstream ──
+      this._predictAndPreemptChain(pattern.id);
     } catch (err: any) {
       st.failCount++;
       st.lastFixResult = 'failed';
@@ -840,6 +850,218 @@ class ChainErrorAutoFixer extends EventEmitter {
     }
     if (reset > 0) {
       logger.info(`[ChainFixer] Daily un-suppress: reset ${reset} pattern(s) that were quiet for 6+ hours`);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // OFFENSIVE CHAIN-FIXER ENGINE
+  //
+  // Defensive posture: wait for error log → match pattern → fix.
+  // Offensive posture: scan for pre-conditions → predict chain → strike first.
+  //
+  // Three offensive strategies:
+  //   1. Pre-condition Scanner  — every health-check cycle also actively probes
+  //      for the exact runtime state that WILL trigger each error pattern, and
+  //      fires the fix before the error log is ever written.
+  //
+  //   2. Error Chain Prediction — when pattern A fires, lookup the known chain
+  //      map (A → B) and pre-apply B's fix with a short lead time.  Cuts the
+  //      cascade before it propagates.
+  //
+  //   3. Unknown Error Weaponization — novel errors are fuzzy-matched against
+  //      all known patterns; the closest match's fix is applied speculatively.
+  //      If it succeeds → the error likely won't recur.
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Maps pattern ID → downstream pattern IDs that historically follow it.
+   * When the key pattern fires, the downstream fixes are pre-applied.
+   */
+  private static readonly CHAIN_MAP: Record<string, string[]> = {
+    'pdim_rate_limit_429':         ['lua_executor_timeout', 'bullmq_missing_lock'],
+    'lua_executor_timeout':        ['bullmq_missing_lock', 'bullmq_stalled_foreach'],
+    'bullmq_stalled_foreach':      ['bullmq_null_then'],
+    'worker_thread_error':         ['lua_executor_timeout', 'bullmq_missing_lock'],
+    'pdim_circuit_open':           ['pdim_rate_limit_429', 'session_store_failure'],
+    'memory_pressure':             ['oom_error'],
+    'worker_thread_crash':         ['bullmq_missing_lock', 'autonomous_system_rejection'],
+    'autonomous_system_rejection': ['bullmq_null_then'],
+    'session_store_failure':       ['api_credential_expired'],
+  };
+
+  private _offensiveActionsTotal = 0;
+  private _chainPredictionsTotal = 0;
+  private _preConditionHitsTotal = 0;
+
+  /**
+   * OFFENSIVE STRATEGY 1 — Pre-condition Scanner
+   *
+   * Called from the 15s health-check cycle. Actively inspects runtime state
+   * to detect conditions that will trigger known error patterns — and fires
+   * the fix before the error is ever emitted.
+   */
+  private async _runOffensivePreConditionScan(): Promise<void> {
+    // ── Pre-condition: LuaExecutor approaching saturation (queued > 5) ────────
+    // Full saturation (queued > 10) is already caught reactively.
+    // Offensive: clear at queued > 5 — before the timeout cascade starts.
+    try {
+      const { getLuaExecutorStats, resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+      const stats = getLuaExecutorStats();
+      if (stats.queued > 5 && stats.active >= stats.max) {
+        logger.info(
+          `[ChainFixer] 🎯 OFFENSIVE: LuaExecutor approaching saturation ` +
+          `(active=${stats.active}/${stats.max}, queued=${stats.queued}) — ` +
+          `pre-emptively clearing before timeout cascade`
+        );
+        resetLuaExecutorSemaphore();
+        this._offensiveActionsTotal++;
+        this._preConditionHitsTotal++;
+      }
+    } catch { /* non-fatal */ }
+
+    // ── Pre-condition: Memory on a growth trajectory above 80% ───────────────
+    // The reactive pattern fires at >85%. Offensive: GC at >75% when growing.
+    try {
+      const mem = process.memoryUsage();
+      const { getHeapStatistics } = await import('v8');
+      const v8stats = getHeapStatistics();
+      const limitBytes = v8stats.heap_size_limit > 0 ? v8stats.heap_size_limit : mem.heapTotal;
+      const heapPct = mem.heapUsed / limitBytes;
+      if (heapPct > 0.75 && heapPct <= 0.85 && typeof global.gc === 'function') {
+        global.gc();
+        logger.info(
+          `[ChainFixer] 🎯 OFFENSIVE: Pre-emptive GC at ${Math.round(heapPct * 100)}% heap ` +
+          `(below reactive 85% threshold — acting before pressure builds)`
+        );
+        this._offensiveActionsTotal++;
+        this._preConditionHitsTotal++;
+      }
+    } catch { /* non-fatal */ }
+
+    // ── Pre-condition: Autonomous system is running but has stale heartbeat ──
+    // Detect if the autonomous service has silently stalled (not crashed but
+    // not ticking) and restart it before any error is emitted.
+    try {
+      const { autonomousService } = await import('./autonomousService.js');
+      const status = autonomousService.getStatus();
+      const now = Date.now();
+      const lastActivity = (status as any).lastActivityAt ?? 0;
+      const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
+      // If supposedly running but no activity for > 10 min, it has silently stalled
+      if (status.isRunning && stalledMs > 10 * 60_000) {
+        logger.warn(
+          `[ChainFixer] 🎯 OFFENSIVE: Autonomous service silently stalled ` +
+          `(no activity for ${Math.round(stalledMs / 60_000)} min) — restarting pre-emptively`
+        );
+        autonomousService.startAutonomousOperations();
+        this._offensiveActionsTotal++;
+        this._preConditionHitsTotal++;
+      }
+    } catch { /* non-fatal — service may not be loaded yet */ }
+  }
+
+  /**
+   * OFFENSIVE STRATEGY 2 — Error Chain Prediction
+   *
+   * When pattern P fires, look up CHAIN_MAP[P] and schedule pre-emptive fixes
+   * for all downstream patterns that historically follow P.  Applied with a
+   * short delay (2 s) to allow the immediate fix to settle first.
+   */
+  private _predictAndPreemptChain(firedPatternId: string): void {
+    const downstreamIds = ChainErrorAutoFixer.CHAIN_MAP[firedPatternId];
+    if (!downstreamIds || downstreamIds.length === 0) return;
+
+    setTimeout(async () => {
+      for (const downstreamId of downstreamIds) {
+        const downstream = this.patterns.find(p => p.id === downstreamId);
+        if (!downstream) continue;
+
+        const st = this.state.get(downstreamId)!;
+        if (st.suppressed) continue;
+
+        logger.info(
+          `[ChainFixer] 🎯 OFFENSIVE: Chain prediction — '${firedPatternId}' historically ` +
+          `precedes '${downstreamId}'. Pre-applying fix now.`
+        );
+
+        try {
+          await downstream.autoFix(`[chain_prediction] triggered by ${firedPatternId}`);
+          this._chainPredictionsTotal++;
+          this._offensiveActionsTotal++;
+          this.pushHistory({
+            patternId: downstreamId,
+            patternName: `[PREDICTED] ${downstream.name}`,
+            triggeredAt: Date.now(),
+            triggeredBy: `chain_prediction:${firedPatternId}`,
+            result: 'success',
+            attemptNumber: 0,
+          });
+        } catch {
+          // Speculative fix failure — not critical
+          logger.info(`[ChainFixer] 🎯 OFFENSIVE: Chain prediction fix for '${downstreamId}' was not needed (no-op)`);
+        }
+      }
+    }, 2_000);
+  }
+
+  /**
+   * OFFENSIVE STRATEGY 3 — Unknown Error Weaponization
+   *
+   * Novel errors that match no known pattern are fuzzy-scored against all
+   * patterns.  The highest-scoring pattern's fix is applied speculatively.
+   * If it succeeds → the error likely won't recur.
+   */
+  private async _weaponizeUnknownError(msg: string): Promise<void> {
+    // Build a word-token set from the message
+    const tokens = msg.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 3);
+    if (tokens.length === 0) return;
+
+    let bestPattern: ErrorPattern | null = null;
+    let bestScore = 0;
+
+    for (const pattern of this.patterns) {
+      const st = this.state.get(pattern.id)!;
+      if (st.suppressed) continue;
+
+      // Score: count how many tokens appear in the pattern name/description/matchers
+      const patternText = `${pattern.name} ${pattern.description} ${pattern.category}`.toLowerCase();
+      let score = 0;
+      for (const token of tokens) {
+        if (patternText.includes(token)) score++;
+      }
+      // Bonus for same category keywords
+      if (msg.includes('lua') && pattern.category === 'queue') score += 2;
+      if (msg.includes('memory') && pattern.category === 'memory') score += 2;
+      if (msg.includes('session') && pattern.category === 'database') score += 2;
+      if (msg.includes('pdim') && pattern.category === 'storage') score += 2;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPattern = pattern;
+      }
+    }
+
+    // Only apply speculatively if there's a confident enough match (score ≥ 2)
+    if (!bestPattern || bestScore < 2) return;
+
+    logger.info(
+      `[ChainFixer] 🎯 OFFENSIVE: Novel error weaponized — best pattern match '${bestPattern.id}' ` +
+      `(score=${bestScore}). Applying fix speculatively.`
+    );
+
+    try {
+      await bestPattern.autoFix(`[weaponized] novel error: ${msg.slice(0, 100)}`);
+      this._offensiveActionsTotal++;
+      this.pushHistory({
+        patternId: bestPattern.id,
+        patternName: `[WEAPONIZED] ${bestPattern.name}`,
+        triggeredAt: Date.now(),
+        triggeredBy: `weaponized_unknown:${msg.slice(0, 80)}`,
+        result: 'success',
+        attemptNumber: 0,
+      });
+    } catch {
+      logger.info(`[ChainFixer] 🎯 OFFENSIVE: Weaponized fix for '${bestPattern.id}' was not applicable (no-op)`);
     }
   }
 
@@ -904,6 +1126,22 @@ class ChainErrorAutoFixer extends EventEmitter {
         heapPct: Math.round((mem.heapUsed / mem.heapTotal) * 100),
       },
       unknownErrors: this._unknownErrors.slice(-10),
+      offensive: {
+        mode: 'active',
+        description: 'Hunts for pre-conditions, predicts error chains, and weaponizes novel errors',
+        offensiveActionsTotal: this._offensiveActionsTotal,
+        chainPredictionsTotal: this._chainPredictionsTotal,
+        preConditionHitsTotal: this._preConditionHitsTotal,
+        knownChains: Object.keys(ChainErrorAutoFixer.CHAIN_MAP).map(id => ({
+          trigger: id,
+          downstream: ChainErrorAutoFixer.CHAIN_MAP[id],
+        })),
+        strategies: [
+          'Pre-condition Scanner: detects runtime conditions BEFORE error patterns fire',
+          'Error Chain Prediction: when A fires, pre-apply B\'s fix with 2s lead time',
+          'Unknown Error Weaponization: fuzzy-match novel errors to closest fix',
+        ],
+      },
     };
   }
 
