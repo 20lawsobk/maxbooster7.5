@@ -79,7 +79,7 @@ jobs:
         run: npm ci
 
       - name: Build web assets
-        run: npm run build
+        run: npx tsx script/build.ts
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
@@ -218,7 +218,7 @@ jobs:
         run: npm ci
 
       - name: Build web assets (for Capacitor sync reference)
-        run: npm run build
+        run: npx tsx script/build.ts
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'

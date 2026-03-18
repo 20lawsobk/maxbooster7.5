@@ -57,13 +57,13 @@ jobs:
         run: npm install --prefix electron --no-audit
 
       - name: Build web assets
-        run: npm run build
+        run: npx tsx script/build.ts
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
       - name: Build Linux packages
-        run: npx electron-builder --linux --publish never --projectDir electron
+        run: npx electron-builder --linux --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -121,13 +121,13 @@ jobs:
         run: npm install --prefix electron --no-audit
 
       - name: Build web assets
-        run: npm run build
+        run: npx tsx script/build.ts
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
       - name: Build Windows packages
-        run: npx electron-builder --win --publish never --projectDir electron
+        run: npx electron-builder --win --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -179,13 +179,13 @@ jobs:
         run: npm install --prefix electron --no-audit
 
       - name: Build web assets
-        run: npm run build
+        run: npx tsx script/build.ts
         env:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
       - name: Build macOS packages (cross-compiled from Linux)
-        run: npx electron-builder --mac zip --x64 --arm64 --publish never --projectDir electron
+        run: npx electron-builder --mac zip --x64 --arm64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           USE_HARD_LINKS: false
