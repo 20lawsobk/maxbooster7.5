@@ -4,8 +4,11 @@ on:
   push:
     branches:
       - main
+      - 'release/**'
+      - 'deploy/**'
     tags:
       - 'v*'
+  deployment:
   workflow_dispatch:
     inputs:
       platform:
@@ -29,6 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'deployment' ||
       github.event.inputs.platform == 'linux' ||
       github.event.inputs.platform == 'all'
     steps:
@@ -96,6 +100,7 @@ jobs:
     runs-on: windows-2022
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'deployment' ||
       github.event.inputs.platform == 'windows' ||
       github.event.inputs.platform == 'all'
     steps:
@@ -154,6 +159,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'deployment' ||
       github.event.inputs.platform == 'macos' ||
       github.event.inputs.platform == 'all'
     steps:

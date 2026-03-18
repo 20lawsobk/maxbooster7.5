@@ -4,8 +4,11 @@ on:
   push:
     branches:
       - main
+      - 'release/**'
+      - 'deploy/**'
     tags:
       - 'v*'
+  deployment:
   workflow_dispatch:
     inputs:
       platform:
@@ -37,6 +40,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'deployment' ||
       github.event.inputs.platform == 'android' ||
       github.event.inputs.platform == 'both'
     steps:
@@ -191,6 +195,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >-
       github.event_name == 'push' ||
+      github.event_name == 'deployment' ||
       github.event.inputs.platform == 'ios' ||
       github.event.inputs.platform == 'both'
     steps:
