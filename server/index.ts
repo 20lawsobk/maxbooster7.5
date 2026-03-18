@@ -921,18 +921,24 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Graceful shutdown — stops accepting new connections, drains in-flight requests,
 // then closes the DB pool. Hard-exits after 10 s so autoscale SIGKILL is never needed.
+// Guard against concurrent invocations (multiple signal handlers can fire at once).
+let _shutdownInProgress = false;
+
 async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
+  if (_shutdownInProgress) return;
+  _shutdownInProgress = true;
+
   logger.info(`[Shutdown] Received ${signal}, starting graceful shutdown...`);
 
-  // Hard deadline: exit no matter what after 10 s (autoscale gives ~30 s before SIGKILL).
+  // Hard deadline: autoscale sends SIGKILL at ~30 s, so we must complete within 25 s.
   const hardExit = setTimeout(() => {
     logger.error('[Shutdown] Hard timeout reached — forcing exit');
     process.exit(exitCode);
-  }, 10_000);
+  }, 25_000);
   hardExit.unref(); // do not keep the event loop alive just for this timer
 
   try {
-    // 1. Stop the HTTP server so the load balancer stops routing new requests here.
+    // 1. Stop accepting new HTTP connections so the load balancer re-routes immediately.
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     logger.info('[Shutdown] HTTP server closed');
   } catch (err) {
@@ -940,12 +946,32 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }
 
   try {
-    // 2. Close the database pool so in-flight queries complete before the process exits.
+    // 2. Close BullMQ workers — waits for the current job to finish then stops.
+    //    Import is dynamic so this file compiles even if workers module is absent.
+    const { shutdownWorkers } = await import('./workers/index.js');
+    await Promise.race([
+      shutdownWorkers(),
+      new Promise<void>((_, rej) => setTimeout(() => rej(new Error('BullMQ drain timeout')), 10_000)),
+    ]);
+    logger.info('[Shutdown] BullMQ workers drained');
+  } catch (err: any) {
+    logger.warn('[Shutdown] BullMQ drain error (non-fatal):', err?.message);
+  }
+
+  try {
+    // 3. Stop the platform auto-fixer probe loop.
+    const { platformAutoFixer } = await import('./services/platformAutoFixer.js');
+    (platformAutoFixer as any)?.stop?.();
+    logger.info('[Shutdown] PlatformAutoFixer stopped');
+  } catch { /* non-critical */ }
+
+  try {
+    // 4. Close the database pool so in-flight queries complete before the process exits.
     const { pool } = await import('./db.js');
     await pool.end();
     logger.info('[Shutdown] Database pool closed');
   } catch (err) {
-    logger.error('[Shutdown] Error during graceful shutdown:', err);
+    logger.error('[Shutdown] Error closing DB pool:', err);
   }
 
   clearTimeout(hardExit);
@@ -964,5 +990,13 @@ process.on('uncaughtException', (error: Error) => {
 });
 
 process.on('unhandledRejection', (reason: unknown) => {
+  const err = reason instanceof Error ? reason : new Error(String(reason));
+  const code = (reason as NodeJS.ErrnoException)?.code;
+  // Non-fatal: known transient errors that the ChainFixer / circuit breaker handle automatically.
+  const isNonFatal = (
+    (code && ['EPIPE', 'ECONNRESET', 'ECONNABORTED'].includes(code)) ||
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded/i.test(err.message)
+  );
+  if (isNonFatal) return; // instrument.ts already logs as warn
   logger.error('[Process] Unhandled promise rejection (non-fatal):', reason);
 });

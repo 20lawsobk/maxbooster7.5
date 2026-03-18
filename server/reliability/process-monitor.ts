@@ -126,13 +126,15 @@ class ProcessMonitor extends EventEmitter {
 
     process.on('unhandledRejection', (reason: any) => {
       const msg = reason?.message || String(reason);
-      if (/ECONNREFUSED|ECONNRESET|Command timed out|Connection is closed/i.test(msg)) {
+      // Filter out all known transient / expected rejections so they don't clutter
+      // the alert list with false-positive critical entries.
+      if (/ECONNREFUSED|ECONNRESET|ECONNABORTED|EPIPE|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i.test(msg)) {
         return;
       }
       this.addAlert({
         type: 'restart',
-        severity: 'critical',
-        message: `Unhandled rejection: ${reason}`,
+        severity: 'high',
+        message: `Unhandled rejection: ${msg}`,
         timestamp: new Date(),
       });
     });

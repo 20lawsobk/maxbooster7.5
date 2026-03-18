@@ -4,6 +4,11 @@
  * This file MUST be imported FIRST in server/index.ts.
  * In production, unhandled errors are always captured — to Sentry when configured,
  * and always to structured JSON logs. Observability cannot fail open.
+ *
+ * DESIGN RULE: This module only OBSERVES — it never calls process.exit().
+ * Graceful shutdown (HTTP server close + DB pool drain) is the exclusive
+ * responsibility of server/index.ts. Calling exit here would race against
+ * that cleanup and leave connections open / requests half-answered.
  */
 
 import * as Sentry from '@sentry/node';
@@ -28,24 +33,46 @@ Sentry.init({
   },
 });
 
-// Pipe/stream errors (EPIPE, ECONNRESET, ECONNABORTED) are non-fatal — they occur
-// when a client disconnects mid-stream or an FFmpeg/child process exits while
-// Node.js is still writing to it. Log them as warnings and continue.
+// Non-fatal error codes — pipe/stream/network disconnects that occur during
+// normal operation and must never trigger a shutdown or Sentry alert.
 const NON_FATAL_CODES = new Set(['EPIPE', 'ECONNRESET', 'ECONNABORTED']);
+
+// Non-fatal message patterns — transient PDIM, LuaExecutor, and BullMQ errors
+// expected under load and handled automatically by the ChainFixer / circuit breaker.
+const NON_FATAL_MSG = /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|LuaExecutor.*timeout/i;
 
 process.on('uncaughtException', (err) => {
   const code = (err as NodeJS.ErrnoException).code;
+
+  // Non-fatal stream/pipe errors — log as warn and continue.
   if (code && NON_FATAL_CODES.has(code)) {
     logger.warn({ err, type: 'non-fatal-uncaughtException', code }, `Non-fatal ${code}: ${err.message}`);
     return;
   }
+
+  // Fatal: capture to Sentry + structured log.
+  // Do NOT call process.exit() here — server/index.ts registers its own
+  // uncaughtException handler that performs the full graceful shutdown
+  // (HTTP server close → DB pool drain → process.exit).  Calling exit here
+  // would race against that cleanup and terminate the process before in-flight
+  // requests/queries have had a chance to complete.
   logger.error({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
   if (isProduction) Sentry.captureException(err);
-  Sentry.close(2000).finally(() => process.exit(1));
+  // Flush Sentry in background — index.ts gives the process 10 s to shut down,
+  // which is sufficient time for an 8-second Sentry flush.
+  Sentry.flush(8000).catch(() => { /* best-effort, must not throw */ });
 });
 
 process.on('unhandledRejection', (reason: any) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
+  const code = (reason as NodeJS.ErrnoException)?.code;
+
+  // Non-fatal: expected transient errors from PDIM / LuaExecutor / BullMQ.
+  if ((code && NON_FATAL_CODES.has(code)) || NON_FATAL_MSG.test(err.message)) {
+    logger.warn({ err, type: 'non-fatal-unhandledRejection' }, `Non-fatal rejection: ${err.message}`);
+    return;
+  }
+
   logger.error({ err, type: 'unhandledRejection' }, `unhandledRejection: ${err.message}`);
   if (isProduction) Sentry.captureException(err);
 });

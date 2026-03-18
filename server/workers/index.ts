@@ -197,38 +197,46 @@ process.on('uncaughtException', (error) => {
 process.on('unhandledRejection', (reason: any) => {
   const msg = reason?.message || String(reason);
   const code = reason?.code;
-  // Never crash the worker process on transient/stream/network errors
+  // Never crash the worker process on transient/stream/network errors.
+  // Includes PDIM circuit-open, LuaExecutor timeout, and BullMQ non-array
+  // return from PDIM — all handled automatically by the ChainFixer.
   const isNonFatal = (
     code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
-    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError/i.test(msg)
+    /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|socket|fetch failed|Failed to fetch|Command timed out|Connection is closed|AbortError|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds|PDIM.*Circuit|script timeout/i.test(msg)
   );
   if (isNonFatal) {
-    logger.warn('⚠️ Non-fatal rejection (ignoring):', msg);
+    logger.warn('⚠️ Non-fatal worker rejection (ignoring):', msg);
     return;
   }
-  // Log the error but do NOT shut down — worker errors should not kill the whole server.
-  // The job will be retried by BullMQ's built-in retry/DLQ mechanism.
+  // Log but do NOT shut down — BullMQ retries handle job-level failures.
   logger.error('❌ Unhandled rejection (workers):', msg);
 });
 
 export async function initializeWorkers(): Promise<void> {
   logger.info('🚀 BullMQ workers initializing (Redis-backed, ack + DLQ + retry)...');
 
-  audioWorker = createAudioWorker();
-  csvWorker = createCsvWorker();
+  // Create all worker objects immediately (no Lua scripts yet — BullMQ defers the
+  // first stalledInterval check until worker.run() is called).
+  audioWorker     = createAudioWorker();
+  csvWorker       = createCsvWorker();
   analyticsWorker = createAnalyticsWorker();
-  emailWorker = createEmailWorker();
+  emailWorker     = createEmailWorker();
 
-  startWorkerSafe(audioWorker, 'audio');
-  startWorkerSafe(csvWorker, 'csv');
-  startWorkerSafe(analyticsWorker, 'analytics');
-  startWorkerSafe(emailWorker, 'email');
+  // Stagger run() calls by STAGGER_MS per worker to prevent all four workers from
+  // firing their initial moveStalledJobsToWait Lua script simultaneously on startup.
+  // With stalledInterval=300s the stall checks are: audio@0s, csv@15s, analytics@30s,
+  // email@45s — each runs solo through the single LuaExecutor slot instead of piling up.
+  const STAGGER_MS = 15_000;
+  startWorkerSafe(audioWorker,     'audio');
+  setTimeout(() => startWorkerSafe(csvWorker!,       'csv'),       1 * STAGGER_MS);
+  setTimeout(() => startWorkerSafe(analyticsWorker!, 'analytics'), 2 * STAGGER_MS);
+  setTimeout(() => startWorkerSafe(emailWorker!,     'email'),     3 * STAGGER_MS);
 
-  logger.info('📋 Active BullMQ workers:');
-  logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio})`);
-  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv})`);
-  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics})`);
-  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email})`);
+  logger.info('📋 Active BullMQ workers (staggered startup — 15s apart):');
+  logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio}, starts now)`);
+  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv},       starts +15s)`);
+  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics}, starts +30s)`);
+  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email},     starts +45s)`);
 
   try {
     const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
@@ -237,7 +245,7 @@ export async function initializeWorkers(): Promise<void> {
     logger.warn('⚠️  Could not initialize weekly insights cron:', error);
   }
 
-  logger.info('⏳ BullMQ workers listening for jobs...');
+  logger.info('⏳ BullMQ workers listening for jobs (staggered)...');
 }
 
 export async function shutdownWorkers(): Promise<void> {

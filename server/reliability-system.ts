@@ -71,37 +71,26 @@ class MaxBooster247System extends EventEmitter {
   }
 
   private setupProcessHandlers(): void {
-    // Handle process signals with auto-restart for 24/7 operation
-    process.on('SIGTERM', () =>
-      this.attemptRestart('SIGTERM', 'Process termination signal received')
-    );
-    process.on('SIGINT', () => this.attemptRestart('SIGINT', 'Process interrupt signal received'));
-
-    // Handle critical errors with auto-restart
-    process.on('uncaughtException', (error) => {
-      // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
-      const code = (error as NodeJS.ErrnoException).code;
-      if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-      logger.error('🚨 CRITICAL: Uncaught Exception:', error.message);
-      this.metrics.errorCount++;
-      this.attemptRestart('uncaught-exception', error.message);
-    });
+    // NOTE: SIGTERM, SIGINT, and uncaughtException are handled exclusively by
+    // server/index.ts which performs proper graceful shutdown (HTTP close → DB pool
+    // drain → process.exit).  Registering competing handlers here would cause up to
+    // three simultaneous process.exit() calls to race each other, breaking cleanup.
+    //
+    // This module is an OBSERVER only — it tracks metrics and logs, but never exits.
 
     process.on('unhandledRejection', (reason: any) => {
       const msg = reason?.message || String(reason);
       const code = reason?.code;
-      // Non-fatal: stream errors, transient network/connection failures
+      // Non-fatal: stream errors, transient PDIM / LuaExecutor / BullMQ failures.
       const isNonFatal = (
         code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED' ||
-        /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch/i.test(msg)
+        /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|Connection|Command timed out|Connection is closed|AbortError|fetch failed|Failed to fetch|\[PDIM\] Circuit OPEN|\[LuaExecutor\]|erroredJobIds/i.test(msg)
       );
       if (isNonFatal) {
-        logger.warn('⚠️ Non-fatal rejection (will retry automatically):', msg);
-        return;
+        return; // instrument.ts already logs these as warnings
       }
-      // Only increment error count, do NOT attempt restart on unhandled rejections —
-      // transient async errors (DB timeouts, API failures) should not restart the process.
-      logger.error('🚨 Unhandled Rejection (logged, no restart):', msg);
+      // Only increment error count — do NOT attempt restart on unhandled rejections.
+      // Transient async errors (DB timeouts, API failures) must not restart the process.
       this.metrics.errorCount++;
     });
   }
@@ -125,44 +114,25 @@ class MaxBooster247System extends EventEmitter {
   }
 
   private enableGarbageCollection(): void {
-    // Try to enable garbage collection manually if possible
     if (typeof (global as any).gc === 'function') {
       logger.info('✅ Garbage collection available');
-
-      // Schedule GC every 10 minutes
+      // Schedule GC every 10 minutes to keep heap tidy between normal GC pauses.
       setInterval(() => {
         try {
           const before = process.memoryUsage().heapUsed;
           (global as any).gc();
           const after = process.memoryUsage().heapUsed;
           const freed = Math.round((before - after) / 1024 / 1024);
-
-          if (freed > 0) {
-            logger.info(`🧹 GC freed ${freed}MB memory`);
-          }
+          if (freed > 0) logger.info(`🧹 GC freed ${freed}MB memory`);
         } catch (error: unknown) {
           logger.warn('⚠️ GC failed:', error);
         }
-      }, 600000); // 10 minutes
+      }, 600_000).unref();
     } else {
-      if (process.env.NODE_ENV === 'production') {
-        logger.error('🚨 FATAL: Production requires --expose-gc for 24/7 reliability');
-        throw new Error('Missing --expose-gc flag in production - memory management compromised');
-      } else {
-        logger.info('⚠️ GC not available in development - memory cleanup limited');
-
-        // Alternative: Process restart on high memory usage
-        setInterval(() => {
-          const memUsage = process.memoryUsage().heapUsed;
-          const memMB = Math.round(memUsage / 1024 / 1024);
-
-          // Restart if memory usage exceeds 1GB
-          if (memMB > 1024) {
-            logger.warn(`🚨 High memory usage: ${memMB}MB - triggering restart`);
-            this.attemptRestart('high-memory', `${memMB}MB usage`);
-          }
-        }, 300000); // 5 minutes
-      }
+      // --expose-gc is optional.  PlatformAutoFixer already monitors memory and
+      // forces GC when heap crosses 92%.  Do NOT throw here — the process can run
+      // safely without --expose-gc.  Simply log and move on.
+      logger.info('ℹ️  GC not exposed (--expose-gc not set) — PlatformAutoFixer handles memory pressure');
     }
   }
 
@@ -176,16 +146,10 @@ class MaxBooster247System extends EventEmitter {
       const uptimeHours = Math.round((this.metrics.uptime / (1000 * 60 * 60)) * 100) / 100;
       const gcAvailable = typeof (global as any).gc === 'function';
 
-      // CRITICAL: Verify GC availability in production
-      if (process.env.NODE_ENV === 'production' && !gcAvailable) {
-        logger.error('🚨 CRITICAL: GC no longer available - production reliability compromised');
-        throw new Error('Production GC regression detected - restart required');
-      }
-
-      // Log health status every 10 minutes
+      // Log health status every 10 minutes (approximate, modulo-gated to avoid a dedicated timer).
       if (Date.now() % (10 * 60 * 1000) < 30000) {
         logger.info(
-          `📊 Health Check: ${memMB}MB memory, ${uptimeHours}h uptime, ${this.metrics.requestCount} requests, GC: ${gcAvailable ? '✅' : '❌'}`
+          `📊 Health Check: ${memMB}MB memory, ${uptimeHours}h uptime, ${this.metrics.requestCount} requests, GC: ${gcAvailable ? '✅' : '—'}`
         );
       }
 
