@@ -33,16 +33,19 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
  *
  * MAX_WAIT_MS: maximum time a caller will wait for a slot before giving up.
  */
-// Lowered from 6 → 3 → 2: fewer concurrent wasmoon Workers means less PDIM
-// HTTP concurrency, which keeps us well below PDIM's rate-limit even during
-// cluster startup when all N workers initialise simultaneously.
-// Reduced to 2 to prevent 3 stuck 20s workers from fully blocking event loop.
-const MAX_CONCURRENT_WORKERS = 2;
-// 20s: each redis.call() via PDIM has a 500ms commandTimeout + 1 retry = ~1s max
-// per call. BullMQ scripts do ~10-20 calls worst-case → 20s is generous.
-// Old 60s value caused stuck workers to block all 3 slots for a full minute,
-// saturating the event loop and causing 30-40s response times site-wide.
-const MAX_WAIT_MS = 20_000;
+// Reduced to 1: a single exclusive Worker means each BullMQ Lua script gets
+// uncontested access to the PDIM HTTP chain.  Two concurrent Workers interleave
+// their redis.call()s through the serialised chain, doubling the time each
+// script spends waiting — with 1 Worker, each script completes in ~35 × PDIM_RTT
+// (no contention).  Throughput is the same because Scripts are sequential either way.
+const MAX_CONCURRENT_WORKERS = 1;
+// 45s: BullMQ scripts make ~35 sequential redis.call()s, each serialised through
+// the PDIM chain with a 400ms floor gap.  Minimum script time is 35×400ms = 14s.
+// At the observed PDIM latency (600-1500ms per response) the expected script
+// duration is 35×1000ms = 35s, so 45s gives 10s of headroom even at 1s/call.
+// Old 20s fired constantly because 35×571ms = 20s — any PDIM latency > 571ms
+// triggered a timeout, causing a permanent retry storm.
+const MAX_WAIT_MS = 55_000;
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
 // holding thousands of 60-second timer handles and consuming unbounded memory.
@@ -328,16 +331,17 @@ export async function execLuaViaPdim(
       workerData: { script, keys, argv },
     });
 
-    // 20s timeout: each redis.call() via PDIM has 500ms commandTimeout + 1 retry.
-    // BullMQ scripts run ~10–20 sequential calls → 20s is a generous upper bound.
-    // Old 60s caused stuck Workers to hold slots for a full minute, blocking the
-    // event loop and causing 30-40s page-load times across the entire site.
+    // 45s timeout: BullMQ scripts run ~35 sequential redis.call()s, each
+    // serialised through the PDIM chain with a 400ms floor gap + actual PDIM RTT.
+    // Minimum script duration: 35×400ms = 14s.  At observed 600-1500ms PDIM latency
+    // the typical duration is 35×1000ms = 35s, so 45s gives ample headroom.
+    // The old 20s fired constantly (35×571ms = 20s) creating a permanent retry storm.
     const tmout = setTimeout(() => {
       settle(() => {
         worker.terminate();
-        reject(new Error('[LuaExecutor] script timeout (20s)'));
+        reject(new Error('[LuaExecutor] script timeout (45s)'));
       });
-    }, 20_000);
+    }, 45_000);
 
     worker.on('message', async (msg: any) => {
       if (msg.type === 'redis') {
