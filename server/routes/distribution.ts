@@ -2842,27 +2842,90 @@ router.post('/workflow/update', requireAuth, async (req: Request, res: Response)
 // These endpoints return real data from the database, or empty/null when dormant
 // ============================================================================
 
-// GET /api/distribution/analytics/growth - Get analytics growth data
+// GET /api/distribution/analytics/growth - Get analytics growth data (LabelGrid primary)
 router.get('/analytics/growth', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const analyticsData = await storage.getDistroAnalytics(userId);
-    
-    if (!analyticsData) {
-      return res.json({ streams: 0, downloads: 0, revenue: 0, growth: 0, platforms: [], trends: [] });
+
+    // Try LabelGrid first for authoritative distribution analytics
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const [lgAnalytics, lgRoyalties] = await Promise.all([
+          labelGridService.getArtistAnalytics('me'),
+          labelGridService.getRoyaltySummary(),
+        ]);
+
+        // Compute streaming growth from timeline (last 30 vs prev 30 days)
+        const now = Date.now();
+        const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+        const last30 = lgAnalytics.timeline.filter(t => new Date(t.date).getTime() >= now - thirtyDaysMs);
+        const prev30 = lgAnalytics.timeline.filter(t => {
+          const ts = new Date(t.date).getTime();
+          return ts >= now - 2 * thirtyDaysMs && ts < now - thirtyDaysMs;
+        });
+        const last30Streams = last30.reduce((s, t) => s + (t.streams || 0), 0);
+        const prev30Streams = prev30.reduce((s, t) => s + (t.streams || 0), 0);
+        const streamGrowth = prev30Streams > 0 ? Math.round(((last30Streams - prev30Streams) / prev30Streams) * 100) : 0;
+
+        const platformList = Object.entries(lgAnalytics.platforms || {}).map(([name, data]: [string, any]) => ({
+          name,
+          streams: data.streams || 0,
+          revenue: data.revenue || 0,
+          listeners: data.listeners || 0,
+        }));
+
+        return res.json({
+          totalStreams: lgAnalytics.totalStreams,
+          totalRevenue: lgAnalytics.totalRevenue,
+          streamGrowth,
+          revenue: lgRoyalties.available || lgAnalytics.totalRevenue,
+          pendingRoyalties: lgRoyalties.pending,
+          lifetimeRoyalties: lgRoyalties.lifetime,
+          currency: lgRoyalties.currency,
+          platforms: platformList,
+          trends: lgAnalytics.timeline,
+          source: 'labelgrid',
+        });
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid analytics growth fetch failed, falling back to DB:', lgErr);
+      }
     }
-    
-    res.json(analyticsData);
+
+    // Fall back to local DB
+    const analyticsData = await storage.getDistroAnalytics(userId);
+    if (!analyticsData) {
+      return res.json({ streams: 0, downloads: 0, revenue: 0, growth: 0, platforms: [], trends: [], source: 'local' });
+    }
+    res.json({ ...analyticsData, source: 'local' });
   } catch (error: unknown) {
     logger.error('Error fetching analytics growth:', error);
     res.status(500).json({ error: 'Failed to fetch analytics growth' });
   }
 });
 
-// GET /api/distribution/streaming-trends - Get streaming trends data
+// GET /api/distribution/streaming-trends - Get streaming trends data (LabelGrid primary)
 router.get('/streaming-trends', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
+
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const lgAnalytics = await labelGridService.getArtistAnalytics('me');
+        if (lgAnalytics.timeline && lgAnalytics.timeline.length > 0) {
+          return res.json(lgAnalytics.timeline.map(t => ({
+            date: t.date,
+            streams: t.streams || 0,
+            revenue: t.revenue || 0,
+            listeners: 0,
+            saves: 0,
+            source: 'labelgrid',
+          })));
+        }
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid streaming trends fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
     const trends = await storage.getStreamingTrends(userId);
     res.json(trends);
   } catch (error: unknown) {
@@ -2883,16 +2946,55 @@ router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/distribution/earnings/breakdown - Get earnings breakdown
+// GET /api/distribution/earnings/breakdown - Get earnings breakdown (LabelGrid primary)
 router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
+
+    // Try LabelGrid royalty summary first
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const [lgRoyalties, lgAnalytics] = await Promise.all([
+          labelGridService.getRoyaltySummary(),
+          labelGridService.getArtistAnalytics('me'),
+        ]);
+
+        // Compute this/last month revenue from timeline
+        const now = new Date();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+        const thisMonth = lgAnalytics.timeline
+          .filter(t => new Date(t.date) >= thisMonthStart)
+          .reduce((s, t) => s + (t.revenue || 0), 0);
+        const lastMonth = lgAnalytics.timeline
+          .filter(t => new Date(t.date) >= lastMonthStart && new Date(t.date) <= lastMonthEnd)
+          .reduce((s, t) => s + (t.revenue || 0), 0);
+        const growth = lastMonth > 0 ? ((thisMonth - lastMonth) / lastMonth) * 100 : 0;
+
+        return res.json({
+          totalEarnings: lgRoyalties.lifetime,
+          pendingEarnings: lgRoyalties.pending,
+          paidOut: lgRoyalties.lifetime - lgRoyalties.pending - lgRoyalties.available,
+          available: lgRoyalties.available,
+          thisMonth,
+          lastMonth,
+          growth,
+          currency: lgRoyalties.currency,
+          source: 'labelgrid',
+        });
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid earnings breakdown fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to local DB
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    // Single SQL aggregate query — returns 1 row regardless of transaction count
     const [agg] = await db.select({
       totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
       pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
@@ -2913,6 +3015,7 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
       thisMonth: tm,
       lastMonth: lm,
       growth,
+      source: 'local',
     });
   } catch (error: unknown) {
     logger.error('Error fetching earnings breakdown:', error);
@@ -2920,12 +3023,33 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
   }
 });
 
-// GET /api/distribution/platform-earnings - Get earnings by platform
+// GET /api/distribution/platform-earnings - Get earnings by platform (LabelGrid primary)
 router.get('/platform-earnings', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
 
-    // SQL GROUP BY — O(platforms) rows instead of O(all_transactions)
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const lgAnalytics = await labelGridService.getArtistAnalytics('me');
+        if (lgAnalytics.platforms && Object.keys(lgAnalytics.platforms).length > 0) {
+          const platformList = Object.entries(lgAnalytics.platforms)
+            .map(([name, data]: [string, any]) => ({
+              platform: name,
+              totalEarnings: data.revenue || 0,
+              streams: data.streams || 0,
+              listeners: data.listeners || 0,
+              transactions: 0,
+              source: 'labelgrid',
+            }))
+            .sort((a, b) => b.totalEarnings - a.totalEarnings);
+          return res.json(platformList);
+        }
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid platform earnings fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to local DB
     const rows = await db.select({
       platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
       totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
@@ -2941,6 +3065,7 @@ router.get('/platform-earnings', requireAuth, async (req: Request, res: Response
       totalEarnings: Number(r.totalEarnings),
       streams: Number(r.streams),
       transactions: Number(r.transactions),
+      source: 'local',
     })));
   } catch (error: unknown) {
     logger.error('Error fetching platform earnings:', error);
@@ -3218,32 +3343,92 @@ router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response)
   }
 });
 
-// GET /api/distribution/earnings/statements - Get earnings statements
+// GET /api/distribution/earnings/statements - Get earnings statements (LabelGrid primary)
 router.get('/earnings/statements', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
+    const year = req.query.year ? Number(req.query.year) : undefined;
+
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const lgStatements = await labelGridService.getRoyaltyStatements(year);
+        if (lgStatements && lgStatements.length > 0) {
+          return res.json({
+            statements: lgStatements.map(s => ({
+              id: s.id,
+              period: s.period,
+              amount: s.amount,
+              status: s.status,
+              pdfUrl: s.pdfUrl,
+              source: 'labelgrid',
+            })),
+            total: lgStatements.length,
+            source: 'labelgrid',
+          });
+        }
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid earnings statements fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to local DB
     const statements = await db
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements.userId, userId))
       .orderBy(desc(royaltyStatements.createdAt));
-    res.json({ statements });
+    res.json({ statements, source: 'local' });
   } catch (error: unknown) {
     logger.error('Error fetching earnings statements:', error);
     res.status(500).json({ error: 'Failed to fetch earnings statements' });
   }
 });
 
-// GET /api/distribution/earnings/summary - Get earnings summary
+// GET /api/distribution/earnings/summary - Get earnings summary (LabelGrid primary)
 router.get('/earnings/summary', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
+
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const [lgRoyalties, lgAnalytics] = await Promise.all([
+          labelGridService.getRoyaltySummary(),
+          labelGridService.getArtistAnalytics('me'),
+        ]);
+
+        const now = new Date();
+        const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+        const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+
+        const thisMonth = lgAnalytics.timeline
+          .filter(t => new Date(t.date) >= thisMonthStart)
+          .reduce((s, t) => s + (t.revenue || 0), 0);
+        const lastMonth = lgAnalytics.timeline
+          .filter(t => new Date(t.date) >= lastMonthStart && new Date(t.date) <= lastMonthEnd)
+          .reduce((s, t) => s + (t.revenue || 0), 0);
+
+        return res.json({
+          totalEarnings: lgRoyalties.lifetime,
+          pendingEarnings: lgRoyalties.pending,
+          available: lgRoyalties.available,
+          paidOut: lgRoyalties.lifetime - lgRoyalties.pending - lgRoyalties.available,
+          thisMonth,
+          lastMonth,
+          currency: lgRoyalties.currency,
+          source: 'labelgrid',
+        });
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid earnings summary fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to local DB
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-    // Single SQL aggregate query — returns 1 row regardless of transaction count
     const [agg] = await db.select({
       totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
       pendingEarnings: sql<number>`COALESCE(SUM(CASE WHEN ${royaltyTransactions.status} = 'pending' THEN ${royaltyTransactions.amount} ELSE 0 END), 0)`,
@@ -3258,6 +3443,7 @@ router.get('/earnings/summary', requireAuth, async (req: Request, res: Response)
       paidOut: Number(agg.paidOut),
       thisMonth: Number(agg.thisMonth),
       lastMonth: Number(agg.lastMonth),
+      source: 'local',
     });
   } catch (error: unknown) {
     logger.error('Error fetching earnings summary:', error);
@@ -3367,12 +3553,33 @@ router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response
   }
 });
 
-// GET /api/distribution/royalties/platforms - Get royalties by platform
+// GET /api/distribution/royalties/platforms - Get royalties by platform (LabelGrid primary)
 router.get('/royalties/platforms', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
 
-    // SQL GROUP BY — O(platforms) rows instead of O(all_transactions)
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const lgAnalytics = await labelGridService.getArtistAnalytics('me');
+        if (lgAnalytics.platforms && Object.keys(lgAnalytics.platforms).length > 0) {
+          const platforms = Object.entries(lgAnalytics.platforms)
+            .map(([name, data]: [string, any]) => ({
+              platform: name,
+              totalEarnings: data.revenue || 0,
+              streams: data.streams || 0,
+              listeners: data.listeners || 0,
+              transactions: 0,
+              source: 'labelgrid',
+            }))
+            .sort((a, b) => b.totalEarnings - a.totalEarnings);
+          return res.json({ platforms, source: 'labelgrid' });
+        }
+      } catch (lgErr) {
+        logger.warn('[Distribution] LabelGrid royalties/platforms fetch failed, falling back to DB:', lgErr);
+      }
+    }
+
+    // Fall back to local DB
     const rows = await db.select({
       platform: sql<string>`COALESCE(${royaltyTransactions.platform}, 'unknown')`,
       totalEarnings: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
@@ -3388,6 +3595,7 @@ router.get('/royalties/platforms', requireAuth, async (req: Request, res: Respon
       totalEarnings: Number(r.totalEarnings),
       streams: Number(r.streams),
       transactions: Number(r.transactions),
+      source: 'local',
     })) });
   } catch (error: unknown) {
     logger.error('Error fetching royalties platforms:', error);
