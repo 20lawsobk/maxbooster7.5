@@ -402,15 +402,61 @@ class IndustryMonitorService {
       return { source: 'technology', category: 'feature', urgency: 'medium', modules: ['studio', 'analytics'], impact: 72, complexity: 'complex', hours: 45 };
     }
 
-    // Competitor music distribution / artist management platforms — highest competitive impact
-    if (/distrokid|tunecore|cd baby|cdbaby|awal|unitedmasters|amuse\.io|stem\.is|landr|bandcamp|feature\.fm|submithub|groover|oneRPM|believe digital|empire distribut|vydia|soundrop|routenote|ditto music/.test(text)) {
+    // Music distribution competitors
+    if (/distrokid|tunecore|cd baby|cdbaby|awal|unitedmasters|amuse|stem\.is|landr|bandcamp|routenote|ditto music|onerpm|believe digital|vydia|soundrop/.test(text)) {
       if (/new feature|launch|release|announce|update|add|introduce|now offer|partnership|integrat/.test(text)) {
         return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['distribution', 'analytics', 'monetization'], impact: 92, complexity: 'moderate', hours: 20 };
       }
       if (/ai |analytics|dashboard|reporting|insight|automat/.test(text)) {
-        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['analytics', 'distribution'], impact: 88, complexity: 'moderate', hours: 16 };
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['analytics', 'distribution'], impact: 90, complexity: 'moderate', hours: 16 };
       }
-      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['distribution'], impact: 70, complexity: 'simple', hours: 8 };
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['distribution'], impact: 72, complexity: 'simple', hours: 8 };
+    }
+
+    // Beat marketplace competitors
+    if (/beatstars|airbit|soundclick|traktrain|beatbrokerz|soundee|rocbattle|soundgine/.test(text)) {
+      if (/new feature|launch|release|announce|update|add|partnership/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['marketplace', 'monetization'], impact: 90, complexity: 'moderate', hours: 18 };
+      }
+      if (/ai |analytics|pricing|automat|algorithm/.test(text)) {
+        return { source: 'competitor', category: 'optimization', urgency: 'high', modules: ['marketplace', 'analytics'], impact: 88, complexity: 'moderate', hours: 14 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['marketplace'], impact: 70, complexity: 'simple', hours: 8 };
+    }
+
+    // AI music creation competitors
+    if (/suno ai|suno\.ai|udio\.com| udio |boomy|aiva\.ai| aiva |soundraw|beatoven|mubert|loudly\.com/.test(text)) {
+      if (/new feature|launch|release|update|model|generate|announce/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['studio', 'analytics'], impact: 88, complexity: 'complex', hours: 40 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['studio'], impact: 75, complexity: 'complex', hours: 30 };
+    }
+
+    // AI social media management competitors
+    if (/hootsuite|sprout social|later\.com| buffer |metricool|planoly|vista social|publer/.test(text)) {
+      if (/ai |new feature|launch|music|artist|creator/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['social', 'advertising'], impact: 85, complexity: 'moderate', hours: 16 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['social'], impact: 68, complexity: 'simple', hours: 8 };
+    }
+
+    // Music marketing tool competitors
+    if (/submithub|groover|feature\.fm|hypeddit|linkfire|chartmetric|soundcharts|reverbnation|toneden|promoly/.test(text)) {
+      if (/new feature|launch|release|update|ai |announce/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['analytics', 'social', 'distribution'], impact: 85, complexity: 'moderate', hours: 14 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['analytics', 'social'], impact: 65, complexity: 'simple', hours: 10 };
+    }
+
+    // DAW competitors — new AI features are highest priority
+    if (/fl studio|ableton live|ableton|logic pro|pro tools|studio one|presonus|cubase|steinberg|reaper|bitwig|reason studios|garageband|cakewalk|adobe audition|soundtrap|bandlab|splice/.test(text)) {
+      if (/ai |artificial intelligence|machine learning|neural|generate|stem|mastering|mixing/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['studio'], impact: 85, complexity: 'complex', hours: 50 };
+      }
+      if (/new feature|update|release|version|launch/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'medium', modules: ['studio'], impact: 68, complexity: 'moderate', hours: 30 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'low', modules: ['studio'], impact: 55, complexity: 'simple', hours: 10 };
     }
 
     // Independent artist career tools broadly (catch anything we missed above)

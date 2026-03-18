@@ -82,153 +82,903 @@ interface PlatformStandard {
 // ============================================================
 
 /**
- * Every known competitor music distribution / artist career platform
- * and the features they offer.  Max Booster must stay ahead on every axis.
+ * Complete competitor universe — beat marketplaces, AI music/social platforms,
+ * music distribution services, artist management tools, and every major DAW.
+ * Max Booster must stay ahead on every axis across all categories.
  */
 const COMPETITOR_PLATFORMS: Array<{
   name: string;
+  category: string;
   knownFeatures: string[];
 }> = [
+
+  // ── MUSIC DISTRIBUTION ───────────────────────────────────────────────────
   {
     name: 'DistroKid',
+    category: 'distribution',
     knownFeatures: [
       'music distribution to all DSPs',
       'royalty splits with collaborators',
-      'HyperFollow smart links and pre-save',
+      'smart links and pre-save pages',
       'Spotify for Artists integration',
-      'automatic YouTube Content ID',
+      'YouTube Content ID',
       'daily streaming stats',
       'album artwork creation tool',
+      'scheduled release date setting',
       'leave a legacy feature',
+      'bank-direct royalty payouts',
     ],
   },
   {
     name: 'TuneCore',
+    category: 'distribution',
     knownFeatures: [
       'music distribution to all DSPs',
       'music publishing administration',
       'sync licensing marketplace',
       'social media monetization',
-      'streaming analytics',
+      'streaming analytics dashboard',
       'advance funding for artists',
+      'publishing royalty collection worldwide',
     ],
   },
   {
     name: 'CD Baby',
+    category: 'distribution',
     knownFeatures: [
       'music distribution to all DSPs',
-      'physical CD/vinyl distribution',
-      'music publishing',
+      'physical CD and vinyl distribution',
+      'music publishing administration',
       'sync licensing',
       'YouTube Content ID',
-      'artist store for merch and downloads',
+      'artist merch store',
       'cover song licensing',
+      'radio tracking airplay reporting',
     ],
   },
   {
     name: 'AWAL',
+    category: 'distribution',
     knownFeatures: [
       'selective distribution with A&R support',
       'marketing campaigns for signed artists',
-      'advanced real-time analytics',
-      'playlist pitching',
+      'advanced real-time streaming analytics',
+      'editorial playlist pitching',
       'brand partnerships',
       'recording advances',
+      'label services deal structure',
     ],
   },
   {
     name: 'UnitedMasters',
+    category: 'distribution',
     knownFeatures: [
       'music distribution to all DSPs',
       'brand deals and sync opportunities',
-      'fan data ownership',
+      'first-party fan data ownership',
       'advanced streaming analytics',
-      'select program with marketing support',
-      'direct licensing to brands',
+      'select artist marketing support',
+      'direct brand licensing',
+      'UnitedMasters app for mobile distribution',
     ],
   },
   {
     name: 'Amuse',
+    category: 'distribution',
     knownFeatures: [
       'free music distribution',
       'AI-powered artist insights',
       'advance funding for artists',
       'split payments',
-      'iOS app for distribution',
+      'mobile-first iOS distribution app',
+      'Spotify playlist submission tool',
     ],
   },
   {
     name: 'Stem',
+    category: 'distribution',
     knownFeatures: [
-      'music distribution',
+      'music distribution to all DSPs',
       'split payments for collaborators',
       'fan growth tools',
       'detailed streaming reports',
       'advance funding',
+      'multi-party royalty splits',
     ],
   },
   {
     name: 'Landr',
+    category: 'distribution',
     knownFeatures: [
-      'AI mastering',
-      'music distribution',
+      'AI-powered audio mastering',
+      'music distribution to all DSPs',
       'sample pack marketplace',
-      'music collaboration tools',
+      'online music collaboration tools',
       'plugin marketplace',
-      'mixing feedback AI',
+      'AI mixing feedback',
+      'mastering for stems',
     ],
   },
   {
     name: 'Bandcamp',
+    category: 'distribution',
     knownFeatures: [
-      'direct fan sales',
-      'name-your-price albums',
+      'direct fan sales with artist-kept revenue',
+      'name-your-price album pricing',
       'merch sales',
-      'fan subscriptions',
-      'artist discovery via genres',
+      'fan subscriptions and memberships',
+      'artist discovery via genre tags',
+      'Bandcamp Friday artist promotions',
+    ],
+  },
+  {
+    name: 'RouteNote',
+    category: 'distribution',
+    knownFeatures: [
+      'free music distribution to DSPs',
+      'revenue share distribution model',
+      'YouTube Content ID',
+      'streaming analytics',
+      'cover song licensing',
+    ],
+  },
+  {
+    name: 'Ditto Music',
+    category: 'distribution',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'record label in a box service',
+      'music publishing royalty collection',
+      'chart eligibility distribution',
+      'band/artist management tools',
+    ],
+  },
+  {
+    name: 'ONErpm',
+    category: 'distribution',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'YouTube channel management',
+      'label services',
+      'advance funding for artists',
+      'marketing and promotional support',
+      'streaming analytics',
+    ],
+  },
+  {
+    name: 'Believe Digital',
+    category: 'distribution',
+    knownFeatures: [
+      'distribution for independent artists and labels',
+      'digital marketing services',
+      'A&R scouting and support',
+      'streaming platform relationship management',
+      'advanced analytics',
+    ],
+  },
+  {
+    name: 'Vydia',
+    category: 'distribution',
+    knownFeatures: [
+      'music video and audio distribution',
+      'YouTube Content ID monetization',
+      'rights management',
+      'automated royalty splits',
+      'video distribution to streaming platforms',
+    ],
+  },
+  {
+    name: 'Soundrop',
+    category: 'distribution',
+    knownFeatures: [
+      'cover song licensing and distribution',
+      'original music distribution',
+      'per-release pricing model',
+      'automated mechanical license procurement',
+    ],
+  },
+
+  // ── BEAT MARKETPLACES ────────────────────────────────────────────────────
+  {
+    name: 'BeatStars',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace with licensing tiers',
+      'exclusive and non-exclusive beat leases',
+      'built-in beat player storefront',
+      'beat collaboration splits',
+      'direct-to-fan beat selling',
+      'beat licensing contract generation',
+      'beat subscription plans for producers',
+      'built-in YouTube monetization for beats',
+      'beat analytics and play tracking',
+      'mobile app for producers',
+      'producer profile pages',
+      'stem file delivery',
+    ],
+  },
+  {
+    name: 'Airbit',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace with licensing tiers',
+      'customizable beat player embed',
+      'exclusive and non-exclusive licenses',
+      'beat licensing contract templates',
+      'beat analytics dashboard',
+      'direct PayPal and Stripe payouts',
+      'bulk beat upload',
+      'discount and coupon codes for beats',
+      'beat subscription bundles',
+    ],
+  },
+  {
+    name: 'SoundClick',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat and music selling marketplace',
+      'fan streaming pages',
+      'subscription-based fan membership',
+      'beat licensing',
+      'music charts and rankings',
+    ],
+  },
+  {
+    name: 'Traktrain',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace',
+      'exclusive and non-exclusive licenses',
+      'beat licensing contracts',
+      'beat player embed for websites',
+      'analytics for beat plays and sales',
+    ],
+  },
+  {
+    name: 'Beatbrokerz',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace',
+      'beat licensing tiers',
+      'bulk beat purchases',
+      'producer storefront pages',
+    ],
+  },
+  {
+    name: 'Soundee',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace',
+      'producer profile and storefront',
+      'beat licensing',
+      'audio sample marketplace',
+    ],
+  },
+  {
+    name: 'Rocbattle',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'beat marketplace',
+      'beat battle competitions',
+      'producer community',
+      'beat licensing',
+    ],
+  },
+  {
+    name: 'Soundgine',
+    category: 'beat_marketplace',
+    knownFeatures: [
+      'embeddable beat player',
+      'beat licensing and sales',
+      'digital product delivery',
+      'beat store widget for websites',
+    ],
+  },
+
+  // ── AI MUSIC CREATION ─────────────────────────────────────────────────────
+  {
+    name: 'Suno AI',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI full song generation from text prompts',
+      'AI vocals and lyrics generation',
+      'genre-specific AI music creation',
+      'instant music production without instruments',
+      'royalty-free AI-generated music',
+      'mobile and web AI music app',
+    ],
+  },
+  {
+    name: 'Udio',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI full song generation from text prompts',
+      'high-fidelity AI audio generation',
+      'AI lyric writing and vocal generation',
+      'genre and mood control',
+      'stem exports from AI generation',
+    ],
+  },
+  {
+    name: 'Boomy',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI music generation in seconds',
+      'auto-distribute AI songs to DSPs',
+      'royalty sharing for AI-generated music',
+      'no-instrument music creation',
+      'AI genre selection and customization',
+    ],
+  },
+  {
+    name: 'AIVA',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI composition for film and games',
+      'orchestral and classical AI scoring',
+      'style influence from existing compositions',
+      'MIDI export from AI composition',
+      'commercial licensing of AI music',
+    ],
+  },
+  {
+    name: 'Soundraw',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI royalty-free music generation',
+      'real-time AI music customization',
+      'mood and energy AI music controls',
+      'commercial license included',
+      'DAW-ready stems download',
+    ],
+  },
+  {
+    name: 'Beatoven.ai',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI background music generation for video',
+      'mood-based AI music creation',
+      'multi-section AI track building',
+      'royalty-free AI music for content creators',
+    ],
+  },
+  {
+    name: 'Mubert',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI generative music streaming',
+      'API for AI music in apps',
+      'real-time AI music for video',
+      'royalty-free AI music licensing',
+    ],
+  },
+  {
+    name: 'Loudly',
+    category: 'ai_music',
+    knownFeatures: [
+      'AI music generation for content creators',
+      'royalty-free AI music library',
+      'loop and stem AI generation',
+      'mood and genre AI controls',
+    ],
+  },
+
+  // ── AI SOCIAL MEDIA MANAGEMENT ───────────────────────────────────────────
+  {
+    name: 'Hootsuite',
+    category: 'social_management',
+    knownFeatures: [
+      'multi-platform social media scheduling',
+      'social media analytics and reporting',
+      'team collaboration for social posts',
+      'social listening and monitoring',
+      'AI-powered caption suggestions',
+      'best time to post AI recommendations',
+      'social media ad management',
+      'inbox unified messaging',
+    ],
+  },
+  {
+    name: 'Buffer',
+    category: 'social_management',
+    knownFeatures: [
+      'social media post scheduling',
+      'multi-platform content calendar',
+      'AI post writing assistant',
+      'social media analytics',
+      'link in bio landing page',
+      'engagement reply tools',
+      'hashtag manager',
+    ],
+  },
+  {
+    name: 'Sprout Social',
+    category: 'social_management',
+    knownFeatures: [
+      'social media scheduling and publishing',
+      'social listening and sentiment analysis',
+      'AI-powered social analytics',
+      'CRM integration for social',
+      'team workflow and approval',
+      'competitor social analysis',
+      'influencer identification',
+    ],
+  },
+  {
+    name: 'Later',
+    category: 'social_management',
+    knownFeatures: [
+      'visual social media content calendar',
+      'Instagram post and Reels scheduling',
+      'TikTok scheduling',
+      'link in bio tool',
+      'AI caption writer',
+      'hashtag suggestions',
+      'best time to post analytics',
+      'user-generated content repurposing',
+    ],
+  },
+  {
+    name: 'Metricool',
+    category: 'social_management',
+    knownFeatures: [
+      'social media scheduling across all platforms',
+      'unified analytics dashboard',
+      'competitor social analytics',
+      'hashtag analytics',
+      'TikTok and YouTube analytics',
+      'social ad performance tracking',
+      'best time to post AI',
+    ],
+  },
+  {
+    name: 'Planoly',
+    category: 'social_management',
+    knownFeatures: [
+      'Instagram visual feed planner',
+      'social media scheduling',
+      'Reels and Stories scheduling',
+      'link in bio page builder',
+      'hashtag manager',
+      'content analytics',
+    ],
+  },
+  {
+    name: 'Vista Social',
+    category: 'social_management',
+    knownFeatures: [
+      'social media scheduling and publishing',
+      'AI post content generator',
+      'review management across platforms',
+      'social inbox unified messaging',
+      'analytics and reporting',
+    ],
+  },
+  {
+    name: 'Publer',
+    category: 'social_management',
+    knownFeatures: [
+      'AI-powered social media post generator',
+      'social media scheduling',
+      'bulk scheduling via CSV',
+      'watermarking media for posts',
+      'analytics dashboard',
+      'recycling evergreen content',
+    ],
+  },
+
+  // ── MUSIC MARKETING & ARTIST TOOLS ───────────────────────────────────────
+  {
+    name: 'Submithub',
+    category: 'music_marketing',
+    knownFeatures: [
+      'music submission to playlist curators',
+      'music blog submission',
+      'TikTok influencer pitching',
+      'YouTube channel submission',
+      'guaranteed curator feedback',
+      'promotion performance analytics',
     ],
   },
   {
     name: 'Groover',
+    category: 'music_marketing',
     knownFeatures: [
       'music promotion to blogs and playlists',
       'guaranteed feedback from curators',
-      'influencer pitching',
-      'radio pitching',
+      'influencer and press pitching',
+      'radio station pitching',
+      'streaming platform pitching',
+    ],
+  },
+  {
+    name: 'Feature.fm',
+    category: 'music_marketing',
+    knownFeatures: [
+      'smart music links',
+      'pre-save campaign tool',
+      'fan data capture from links',
+      'music ad targeting on social media',
+      'release countdown pages',
+      'artist website builder',
+    ],
+  },
+  {
+    name: 'Hypeddit',
+    category: 'music_marketing',
+    knownFeatures: [
+      'music promotion gate campaigns',
+      'free download in exchange for social follow',
+      'TikTok sound growth tools',
+      'SoundCloud promotion',
+      'Spotify playlist promotion',
+    ],
+  },
+  {
+    name: 'Linkfire',
+    category: 'music_marketing',
+    knownFeatures: [
+      'smart music links for all DSPs',
+      'pre-save and pre-add campaigns',
+      'fan behavior analytics from links',
+      'album and tour smart pages',
+      'retargeting pixel support',
+    ],
+  },
+  {
+    name: 'Chartmetric',
+    category: 'music_marketing',
+    knownFeatures: [
+      'real-time music streaming analytics',
+      'playlist tracking across all DSPs',
+      'artist benchmark comparisons',
+      'TikTok and social trend analytics',
+      'A&R discovery tools',
+      'radio airplay tracking',
+    ],
+  },
+  {
+    name: 'Soundcharts',
+    category: 'music_marketing',
+    knownFeatures: [
+      'real-time chart position tracking',
+      'radio airplay monitoring',
+      'social media performance analytics',
+      'streaming platform analytics',
+      'playlist tracking',
+      'competitor artist benchmarking',
+    ],
+  },
+  {
+    name: 'ReverbNation',
+    category: 'music_marketing',
+    knownFeatures: [
+      'artist promotional tools',
+      'gig and venue booking',
+      'music distribution',
+      'fan email marketing',
+      'EPK electronic press kit',
+      'music licensing opportunities',
+    ],
+  },
+  {
+    name: 'Toneden',
+    category: 'music_marketing',
+    knownFeatures: [
+      'smart link pages for music',
+      'pre-save and pre-add campaigns',
+      'fan data capture tools',
+      'social media retargeting from links',
+      'contest and giveaway campaigns',
+    ],
+  },
+  {
+    name: 'Promoly',
+    category: 'music_marketing',
+    knownFeatures: [
+      'music press and blog pitching',
+      'email promo campaign tracking',
+      'media contact database',
+      'open and click analytics for promos',
+    ],
+  },
+
+  // ── DAWS (DIGITAL AUDIO WORKSTATIONS) ────────────────────────────────────
+  {
+    name: 'FL Studio',
+    category: 'daw',
+    knownFeatures: [
+      'pattern-based beat making',
+      'step sequencer',
+      'piano roll editor',
+      'built-in mixer with effects chains',
+      'lifetime free updates',
+      'VST plugin support',
+      'MIDI controller integration',
+      'audio recording and editing',
+      'Edison audio editor',
+      'ZGameEditor Visualizer',
+      'integrated beat marketplace plugins',
+      'mobile version FL Studio Mobile',
+    ],
+  },
+  {
+    name: 'Ableton Live',
+    category: 'daw',
+    knownFeatures: [
+      'session view for live performance',
+      'arrangement view for production',
+      'Max for Live modular integration',
+      'built-in instruments and effects',
+      'VST and AU plugin support',
+      'MIDI and audio clip launching',
+      'warping and time-stretching',
+      'built-in synthesizers',
+      'Push hardware controller integration',
+      'Packs sample library ecosystem',
+    ],
+  },
+  {
+    name: 'Logic Pro',
+    category: 'daw',
+    knownFeatures: [
+      'professional audio recording and mixing',
+      'built-in AI stem splitter',
+      'Drummer virtual session drummer AI',
+      'built-in mastering tools',
+      'large instrument and loop library',
+      'AU plugin support',
+      'Spatial Audio and Dolby Atmos mixing',
+      'GarageBand project import',
+      'Score editor for notation',
+      'Logic Remote iPad controller',
+      'Flex Time audio editing',
+    ],
+  },
+  {
+    name: 'Pro Tools',
+    category: 'daw',
+    knownFeatures: [
+      'industry-standard recording and mixing',
+      'advanced audio editing',
+      'cloud collaboration sessions',
+      'AAX plugin ecosystem',
+      'AVID hardware integration',
+      'clip gain and automation',
+      'Dolby Atmos mixing',
+      'subscription and perpetual license options',
+    ],
+  },
+  {
+    name: 'Studio One',
+    category: 'daw',
+    knownFeatures: [
+      'drag-and-drop workflow',
+      'built-in mastering suite Project page',
+      'Melodyne pitch correction bundled',
+      'scratch pad for ideas',
+      'VST and AU plugin support',
+      'built-in chord track and key detection',
+      'impact XT drum machine',
+      'free Studio One Prime tier',
+    ],
+  },
+  {
+    name: 'Cubase',
+    category: 'daw',
+    knownFeatures: [
+      'professional MIDI sequencing',
+      'advanced audio editing',
+      'VariAudio pitch correction',
+      'built-in chord pads',
+      'Steinberg VST plugin support',
+      'remote recording',
+      'score editor for notation',
+    ],
+  },
+  {
+    name: 'Reaper',
+    category: 'daw',
+    knownFeatures: [
+      'lightweight highly customizable DAW',
+      'affordable perpetual license',
+      'VST and AU plugin support',
+      'scripting with Lua and Python',
+      'flexible routing',
+      'active community themes and scripts',
+    ],
+  },
+  {
+    name: 'Bitwig Studio',
+    category: 'daw',
+    knownFeatures: [
+      'modular device system The Grid',
+      'cross-platform Windows Mac Linux',
+      'live performance clip launcher',
+      'VST plugin support',
+      'Bitwig hardware controller integration',
+      'note expression per-note modulation',
+    ],
+  },
+  {
+    name: 'Reason Studios',
+    category: 'daw',
+    knownFeatures: [
+      'rack-based modular synthesizers',
+      'built-in instruments and effects',
+      'VST plugin support via Rack Extension',
+      'combinators for complex patches',
+      'built-in mastering suite',
+      'Reason Plus subscription model',
+    ],
+  },
+  {
+    name: 'GarageBand',
+    category: 'daw',
+    knownFeatures: [
+      'free DAW for macOS and iOS',
+      'Drummer AI beat generation',
+      'large loop library',
+      'basic recording and mixing',
+      'Logic Pro project upgrade path',
+      'iPhone and iPad music creation',
+    ],
+  },
+  {
+    name: 'Cakewalk by BandLab',
+    category: 'daw',
+    knownFeatures: [
+      'free professional DAW on Windows',
+      'ProChannel mastering console',
+      'VST plugin support',
+      'BandLab cloud integration',
+      'MIDI sequencing',
+      'audio recording and editing',
+    ],
+  },
+  {
+    name: 'Adobe Audition',
+    category: 'daw',
+    knownFeatures: [
+      'professional audio editing and restoration',
+      'multi-track mixing',
+      'AI noise reduction and speech cleanup',
+      'podcast and broadcast audio tools',
+      'Adobe Creative Cloud integration',
+    ],
+  },
+  {
+    name: 'Soundtrap',
+    category: 'daw',
+    knownFeatures: [
+      'browser-based online DAW',
+      'real-time collaboration in the browser',
+      'built-in loops and instruments',
+      'podcast recording tools',
+      'Spotify integration',
+      'education-focused music creation',
+    ],
+  },
+  {
+    name: 'BandLab',
+    category: 'daw',
+    knownFeatures: [
+      'free browser and mobile DAW',
+      'social music creation community',
+      'real-time online collaboration',
+      'built-in mastering',
+      'music distribution via BandLab Distribution',
+      'fan engagement tools',
+      'split royalties',
+    ],
+  },
+  {
+    name: 'Splice',
+    category: 'daw',
+    knownFeatures: [
+      'sample and loop subscription library',
+      'plugin rent-to-own marketplace',
+      'DAW project version control',
+      'collaboration via shared projects',
+      'AI-powered sample search',
+      'CoSo AI beat maker',
     ],
   },
 ];
 
 /**
- * What Max Booster already offers — compared against competitor features
- * to compute the real competitive gap.
+ * Competitive advantage tiers:
+ *   'surpassed'  — Max Booster does this measurably better than every competitor.
+ *                  The description states exactly why we win.
+ *   'at_parity'  — Max Booster has an equivalent but has not meaningfully differentiated.
+ *                  Still a gap — parity is never the goal.
+ *
+ * Features absent from this map are 'missing' — the most urgent tier.
+ *
+ * Score: only reaches 100 when EVERY competitor feature is 'surpassed'.
+ *   surpassed  → +3 pts per feature
+ *   at_parity  → +1 pt per feature
+ *   missing    → +0 pts
+ *   score = (Σ pts) / (totalFeatures × 3) × 100
  */
-const MAX_BOOSTER_CAPABILITIES = new Set([
-  'music distribution to all DSPs',
-  'royalty splits with collaborators',
-  'smart links and pre-save',
-  'YouTube Content ID',
-  'streaming analytics',
-  'advanced real-time analytics',
-  'social media autopilot',
-  'AI-powered artist insights',
-  'automated advertising campaigns',
-  'beat marketplace',
-  'AI mastering',
-  'AI mixing',
-  'viral score prediction',
-  'competitor benchmarking',
-  'playlist pitching',
-  'fan growth tools',
-  'content auto-generation',
-  'music publishing',
-  'sync licensing',
-  'split payments for collaborators',
-  'daily streaming stats',
-  'revenue forecasting',
-  'platform algorithm intelligence',
-  'social media monetization',
-  'brand deals and sync opportunities',
+type AdvantageLevel = 'surpassed' | 'at_parity';
+
+interface AdvantageEntry {
+  level: AdvantageLevel;
+  reason: string; // why we win, or why we still need to improve
+}
+
+const MAX_BOOSTER_ADVANTAGES = new Map<string, AdvantageEntry>([
+  // ── DISTRIBUTION ──────────────────────────────────────────────────────────
+  ['music distribution to all DSPs',         { level: 'at_parity',  reason: 'We distribute but lack a speed or pricing edge over DistroKid/RouteNote — need to surpass on delivery speed or fan analytics at distribution point.' }],
+  ['royalty splits with collaborators',       { level: 'at_parity',  reason: 'Splits exist but DistroKid and Stem offer more granular real-time split tracking — need superior UX and instant payout triggers.' }],
+  ['split payments for collaborators',        { level: 'at_parity',  reason: 'Same as above — must surpass with automated multi-party smart contracts and instant settlement.' }],
+  ['smart links and pre-save pages',          { level: 'at_parity',  reason: 'Smart links exist but Feature.fm and Linkfire offer deeper retargeting pixels and fan data capture — must surpass on conversion analytics.' }],
+  ['YouTube Content ID',                      { level: 'at_parity',  reason: 'Content ID implemented but need automated conflict resolution and real-time earnings dashboard to surpass.' }],
+  ['daily streaming stats',                   { level: 'at_parity',  reason: 'Stats available but not yet presented with AI narrative summaries and predictive trend lines — must surpass Chartmetric-level intelligence.' }],
+  ['music publishing administration',        { level: 'at_parity',  reason: 'Publishing exists but TuneCore collects from more societies globally — need broader PRO coverage to surpass.' }],
+  ['sync licensing',                          { level: 'at_parity',  reason: 'Sync exists but CD Baby and TuneCore have larger supervisor networks — must surpass with AI-powered sync pitch matching.' }],
+  ['advance funding for artists',            { level: 'at_parity',  reason: 'Funding offered but TuneCore and Amuse have faster approval — surpass with AI-scored instant advance decisions.' }],
+
+  // ── BEAT MARKETPLACE ──────────────────────────────────────────────────────
+  ['beat marketplace with licensing tiers',   { level: 'at_parity',  reason: 'Marketplace exists but BeatStars has far more producers and social discovery — must surpass with AI beat-to-artist matching and trend scoring.' }],
+  ['exclusive and non-exclusive beat leases', { level: 'at_parity',  reason: 'Tiers exist but BeatStars and Airbit have smarter automated upsell flows — surpass with AI-generated dynamic pricing.' }],
+  ['beat licensing contract generation',      { level: 'surpassed',  reason: 'AI-generated contracts that auto-populate splits, usage rights, and delivery on purchase — BeatStars still uses static templates.' }],
+  ['beat analytics and play tracking',        { level: 'at_parity',  reason: 'Basic analytics exist — must surpass Airbit with listener geography, skip rates, and AI-powered "beats trending toward purchase" signals.' }],
+  ['stem file delivery',                      { level: 'at_parity',  reason: 'Stems delivered on purchase but no quality gate or automatic format conversion — must surpass BeatStars with AI stem validation.' }],
+  ['producer profile pages',                  { level: 'at_parity',  reason: 'Profiles exist — surpass BeatStars with AI-curated producer highlight reels and auto-generated promo videos from beats.' }],
+
+  // ── ANALYTICS ─────────────────────────────────────────────────────────────
+  ['streaming analytics dashboard',           { level: 'at_parity',  reason: 'Dashboard exists — must surpass Chartmetric with real-time AI narrative summaries and anomaly flagging.' }],
+  ['advanced real-time streaming analytics',  { level: 'surpassed',  reason: 'Multi-platform aggregation with AI cohort analysis and predictive revenue modeling — ahead of AWAL and Chartmetric on AI insight depth.' }],
+  ['revenue forecasting',                     { level: 'surpassed',  reason: 'AI time-series revenue forecasting with confidence intervals — no competitor offers this at the independent artist level.' }],
+  ['playlist tracking across all DSPs',       { level: 'at_parity',  reason: 'Playlist tracking implemented — surpass Soundcharts by adding AI prediction of editorial playlist add probability.' }],
+  ['artist benchmark comparisons',            { level: 'at_parity',  reason: 'Benchmarking exists — surpass by adding AI strategy recommendations derived from what top comparables are doing differently.' }],
+  ['competitor artist benchmarking',          { level: 'surpassed',  reason: 'Full competitor analysis suite with share-of-voice, engagement gap detection, and strategy insights — no pure music distributor matches this.' }],
+  ['A&R discovery tools',                     { level: 'surpassed',  reason: 'AI signing potential scoring with trajectory modeling — AWAL does this manually for their own roster, we do it for everyone.' }],
+  ['radio tracking airplay reporting',        { level: 'at_parity',  reason: 'Radio tracking exists but CD Baby and Soundcharts have wider station coverage — must surpass with automatic pitch recommendations based on airplay gaps.' }],
+
+  // ── SOCIAL & AUTOPILOT ────────────────────────────────────────────────────
+  ['social media scheduling and publishing',  { level: 'surpassed',  reason: 'Music-native autopilot understands release cycles, drop timing, and platform algorithms in ways Hootsuite and Buffer never will — fully surpassed for music artists.' }],
+  ['social media autopilot',                  { level: 'surpassed',  reason: 'Fully autonomous 24/7 posting with algorithm-aware timing, viral scoring, and auto-content generation — no competitor in music or social management offers this.' }],
+  ['multi-platform content calendar',         { level: 'surpassed',  reason: 'Calendar auto-populated by AI based on release schedule, trending sounds, and engagement windows — generic tools require manual planning.' }],
+  ['AI post content generator',               { level: 'surpassed',  reason: 'Music-context-aware AI that writes captions aligned to artist brand voice, release narrative, and genre slang — Buffer and Publer use generic LLMs.' }],
+  ['AI-powered caption suggestions',          { level: 'surpassed',  reason: 'Captions trained on viral music content patterns, not generic marketing copy — fully differentiated from Hootsuite and Later.' }],
+  ['best time to post AI recommendations',    { level: 'at_parity',  reason: 'Timing recommendations exist — surpass Later and Metricool by adding release-day surge detection and fan timezone clustering.' }],
+  ['hashtag suggestions',                     { level: 'at_parity',  reason: 'Hashtag tool exists — surpass Buffer and Later with real-time trending hashtag velocity scoring and niche penetration analysis.' }],
+  ['social listening and monitoring',         { level: 'at_parity',  reason: 'Listening tools exist — surpass Sprout Social on music-specific signal detection: sample usage, cover songs, lyric quotes, fan videos.' }],
+  ['fan growth tools',                        { level: 'at_parity',  reason: 'Fan growth features exist — must surpass Stem and UnitedMasters with AI-driven fan segment analysis and personalized re-engagement flows.' }],
+  ['content auto-generation',                 { level: 'surpassed',  reason: 'Full AI content pipeline generating posts, captions, hooks, video scripts, and artwork variants — no distribution platform or social tool matches this scope.' }],
+  ['link in bio landing page',                { level: 'at_parity',  reason: 'Smart links exist but Buffer and Later offer more polished link-in-bio builders — surpass with AI-personalized fan landing pages that change by traffic source.' }],
+  ['social media ad management',              { level: 'surpassed',  reason: 'AI-optimized ad campaigns with music-native targeting (genre fans, similar artist audiences) that generic tools cannot replicate.' }],
+
+  // ── AI MUSIC ──────────────────────────────────────────────────────────────
+  ['AI-powered audio mastering',              { level: 'surpassed',  reason: 'LUFS-targeted AI mastering with platform-specific loudness profiles for every DSP — Landr offers one profile, we offer per-platform optimization.' }],
+  ['AI mixing feedback',                      { level: 'at_parity',  reason: 'Mixing feedback exists — must surpass Landr with stem-level AI analysis and genre-specific mix benchmarks.' }],
+  ['AI-powered artist insights',              { level: 'surpassed',  reason: 'Multi-dimensional AI insights combining streaming, social, market position, and revenue trajectory — Amuse and AWAL only surface surface-level metrics.' }],
+  ['AI full song generation from text prompts', { level: 'at_parity', reason: 'AI generation exists — must surpass Suno and Udio by tying AI generation directly to the artist\'s existing style and brand DNA.' }],
+
+  // ── ADVERTISING ───────────────────────────────────────────────────────────
+  ['automated advertising campaigns',         { level: 'surpassed',  reason: 'AI-managed campaigns with music-native targeting, automatic creative rotation, and ROAS optimization — no music distribution platform offers this.' }],
+
+  // ── MARKETING ─────────────────────────────────────────────────────────────
+  ['playlist pitching',                       { level: 'at_parity',  reason: 'Pitching exists — surpass Submithub and Groover with AI pitch letter personalization and curator match scoring.' }],
+  ['editorial playlist pitching',             { level: 'at_parity',  reason: 'Editorial pitching available — surpass AWAL with AI mood/genre match scoring against known editorial playlist criteria.' }],
+  ['viral score prediction',                  { level: 'surpassed',  reason: 'Multi-signal viral probability scoring using social velocity, streaming trajectory, and content format analysis — unique to Max Booster.' }],
+  ['platform algorithm intelligence',         { level: 'surpassed',  reason: 'Deep per-platform algorithm health monitoring with shadowban detection and boost-window identification — no competitor tracks this systematically.' }],
+  ['social media monetization',               { level: 'at_parity',  reason: 'Monetization tracking exists — surpass TuneCore with AI-predicted earnings by platform and automatic routing of content to highest-yield platforms.' }],
+  ['brand deals and sync opportunities',      { level: 'at_parity',  reason: 'Opportunities surfaced but UnitedMasters has direct brand relationships — surpass by building AI brand-to-artist fit scoring and outreach automation.' }],
+  ['guaranteed curator feedback',             { level: 'at_parity',  reason: 'Feedback collection exists — surpass Submithub and Groover by closing the loop: AI learns from curator rejections to improve future pitches.' }],
+  ['music promotion to blogs and playlists',  { level: 'at_parity',  reason: 'Promotion tools exist — surpass Groover with AI-ranked media lists and auto-personalized outreach emails per contact.' }],
+
+  // ── DAW / STUDIO ──────────────────────────────────────────────────────────
+  ['audio recording and editing',             { level: 'at_parity',  reason: 'Basic recording exists — must surpass traditional DAWs by integrating AI-assisted arrangement suggestions and real-time AI coaching during sessions.' }],
+  ['VST plugin support',                      { level: 'at_parity',  reason: 'Plugins supported — surpass by building an AI plugin recommendation engine that suggests chains based on genre and reference track analysis.' }],
+  ['MIDI controller integration',             { level: 'at_parity',  reason: 'MIDI exists — surpass by adding AI that learns a producer\'s playing patterns and auto-suggests scale/chord completions in real time.' }],
+  ['built-in mastering tools',                { level: 'surpassed',  reason: 'AI mastering superior to Logic Pro\'s built-in tools — platform-specific LUFS targeting and stem-aware mastering not available in any DAW.' }],
+  ['pattern-based beat making',               { level: 'at_parity',  reason: 'Beat tools exist — surpass FL Studio and BeatStars with AI that generates pattern variations based on genre rules and trending rhythmic templates.' }],
+  ['sample pack marketplace',                 { level: 'at_parity',  reason: 'Sample marketplace exists — surpass Landr and Splice by adding AI-curated packs tailored to each producer\'s existing sound and genre.' }],
+  ['online music collaboration tools',        { level: 'at_parity',  reason: 'Collaboration features exist — surpass Soundtrap and BandLab with AI session co-production that fills in missing parts in real time.' }],
 ]);
 
 export class SelfEvolutionEngine extends EventEmitter {
@@ -244,10 +994,13 @@ export class SelfEvolutionEngine extends EventEmitter {
   private competitorFeatures: CompetitorFeature[] = [];
   private platformStandards: PlatformStandard[] = [];
   // Competitive leadership tracking
-  private competitivePositionScore: number = 72; // 0-100; starts at 72 (strong but not perfect)
+  private competitivePositionScore: number = 0;
   private competitiveGapsAddressed: number = 0;
   private competitiveGapsDetected: number = 0;
   private lastCompetitiveScan: Date | null = null;
+  private lastSurpassedCount: number = 0;
+  private lastParityCount: number = 0;
+  private lastMissingCount: number = 0;
 
   private readonly MONITORING_INTERVAL_MS = 60 * 60 * 1000;
   private readonly MAX_CHANGES_IN_MEMORY = 500;
@@ -515,63 +1268,106 @@ export class SelfEvolutionEngine extends EventEmitter {
   // ============================================
 
   /**
-   * Compares every known competitor platform's feature set against
-   * MAX_BOOSTER_CAPABILITIES.  Any feature a competitor has that Max Booster
-   * is missing becomes a high-urgency IndustryChange that feeds directly into
-   * Phase 2's competitive gap prioritization.
+   * Three-tier competitive assessment:
    *
-   * Also incorporates any live competitor intelligence from the industry
-   * monitor (real articles about competitor platforms).
+   *   MISSING    → Max Booster has nothing equivalent.
+   *                Generates a CRITICAL change (impact 98) — "Build this immediately."
+   *
+   *   AT_PARITY  → Max Booster has an equivalent but no meaningful advantage.
+   *                Generates a HIGH change (impact 85) — "Surpass [competitor]'s version."
+   *                Parity is never acceptable — we must be definitively better.
+   *
+   *   SURPASSED  → Max Booster is measurably better.
+   *                No change generated. Score boosted.
+   *
+   * Score formula: only reaches 100 when every feature is SURPASSED.
+   *   surpassed = +3 pts, at_parity = +1 pt, missing = +0 pts
+   *   score = (Σ pts) / (totalFeatures × 3) × 100
    */
   private async assessCompetitiveLeadership(): Promise<IndustryChange[]> {
     this.lastCompetitiveScan = new Date();
     const gaps: IndustryChange[] = [];
 
-    // 1. Static knowledge-base gap check
+    let totalPoints = 0;
+    let maxPoints = 0;
+    let missingCount = 0;
+    let parityCount = 0;
+    let surpassedCount = 0;
+
+    // ── 1. Three-tier assessment across all competitor features ──────────────
     for (const competitor of COMPETITOR_PLATFORMS) {
       for (const feature of competitor.knownFeatures) {
-        // Fuzzy match — if none of our capabilities substring-matches the competitor feature
-        const weHaveIt = [...MAX_BOOSTER_CAPABILITIES].some(cap =>
-          cap.toLowerCase().includes(feature.toLowerCase().replace(/\s+/g, ' ').split(' ').slice(0, 3).join(' ')) ||
-          feature.toLowerCase().includes(cap.toLowerCase().split(' ').slice(0, 3).join(' '))
-        );
+        maxPoints += 3;
 
-        if (!weHaveIt) {
-          const gapId = `leadership_gap_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+        // Look up our advantage status for this feature (fuzzy key match)
+        const advantageEntry = this.lookupAdvantage(feature);
+
+        if (advantageEntry?.level === 'surpassed') {
+          // We win on this dimension — no action needed
+          totalPoints += 3;
+          surpassedCount++;
+          continue;
+        }
+
+        if (advantageEntry?.level === 'at_parity') {
+          // Parity is not the goal — generate a change to SURPASS this feature
+          totalPoints += 1;
+          parityCount++;
+          const gapId = `surpass_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
           if (!this.seenChangeIds.has(gapId)) {
             gaps.push({
               id: gapId,
               source: 'competitor',
-              category: 'feature',
-              title: `${competitor.name}: Feature gap — "${feature}"`,
-              description: `${competitor.name} offers "${feature}" but Max Booster does not have an equivalent. Addressing this gap keeps Max Booster ahead.`,
+              category: 'optimization',
+              title: `Surpass ${competitor.name}: "${feature}"`,
+              description: `Max Booster has an equivalent but has not meaningfully differentiated. ${advantageEntry.reason} Target: be definitively better than ${competitor.name} on this dimension.`,
               detectedAt: new Date(),
               urgency: 'high',
               affectedModules: this.inferModulesFromFeature(feature),
               competitiveImpact: 85,
               implementationComplexity: 'moderate',
-              estimatedImplementationHours: 20,
+              estimatedImplementationHours: 16,
             });
             this.competitiveGapsDetected++;
           }
+          continue;
+        }
+
+        // Missing entirely — most urgent
+        missingCount++;
+        const gapId = `missing_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+        if (!this.seenChangeIds.has(gapId)) {
+          gaps.push({
+            id: gapId,
+            source: 'competitor',
+            category: 'feature',
+            title: `MISSING vs ${competitor.name}: "${feature}"`,
+            description: `${competitor.name} offers "${feature}" and Max Booster has no equivalent. This is a critical gap that must be closed — then exceeded.`,
+            detectedAt: new Date(),
+            urgency: 'critical',
+            affectedModules: this.inferModulesFromFeature(feature),
+            competitiveImpact: 98,
+            implementationComplexity: 'moderate',
+            estimatedImplementationHours: 24,
+          });
+          this.competitiveGapsDetected++;
         }
       }
     }
 
-    // 2. Live competitor intelligence from RSS/search (already fetched by industryMonitor)
+    // ── 2. Live competitor signals from RSS/search ───────────────────────────
     const liveCompetitorSignals = industryMonitor.getCompetitiveIntelligence();
     for (const signal of liveCompetitorSignals.slice(0, 10)) {
-      // Promote competitive impact to at least 80 when live signal corroborates a gap
       const converted: IndustryChange = {
         id: signal.id,
         source: 'competitor',
         category: signal.category,
-        title: signal.title,
-        description: signal.description,
+        title: `SURPASS: ${signal.title}`,
+        description: `${signal.description} — this is a live competitive threat. The goal is not to match this but to do it better.`,
         detectedAt: signal.detectedAt,
         urgency: signal.urgency,
         affectedModules: signal.affectedModules,
-        competitiveImpact: Math.max(signal.competitiveImpact, 80),
+        competitiveImpact: Math.max(signal.competitiveImpact, 88),
         implementationComplexity: signal.implementationComplexity,
         estimatedImplementationHours: signal.estimatedImplementationHours,
       };
@@ -581,31 +1377,57 @@ export class SelfEvolutionEngine extends EventEmitter {
       }
     }
 
-    // 3. Update competitive position score: closer to 100 means fewer open gaps
-    const totalCompetitorFeatures = COMPETITOR_PLATFORMS.reduce((sum, c) => sum + c.knownFeatures.length, 0);
-    const coveredCount = COMPETITOR_PLATFORMS.reduce((sum, competitor) => {
-      return sum + competitor.knownFeatures.filter(feature =>
-        [...MAX_BOOSTER_CAPABILITIES].some(cap =>
-          cap.toLowerCase().includes(feature.toLowerCase().split(' ').slice(0, 3).join(' ')) ||
-          feature.toLowerCase().includes(cap.toLowerCase().split(' ').slice(0, 3).join(' '))
-        )
-      ).length;
-    }, 0);
+    // ── 3. Score: 100 = surpassed on everything, 0 = missing everything ─────
+    const rawScore = maxPoints > 0 ? Math.round((totalPoints / maxPoints) * 100) : 0;
+    this.competitivePositionScore = Math.min(100, rawScore);
 
-    const baseScore = totalCompetitorFeatures > 0
-      ? Math.round((coveredCount / totalCompetitorFeatures) * 100)
-      : 72;
+    logger.info(
+      `[SelfEvolution] Competitive scan — score: ${this.competitivePositionScore}/100` +
+      ` | surpassed: ${surpassedCount} | at_parity: ${parityCount} | missing: ${missingCount}` +
+      ` | action_items: ${gaps.length}`
+    );
 
-    // Bonus: each gap addressed this session adds 1 point
-    this.competitivePositionScore = Math.min(100, baseScore + this.competitiveGapsAddressed);
-
-    if (gaps.length > 0) {
-      logger.info(`[SelfEvolution] Competitive scan: ${gaps.length} gaps found vs competitors — score ${this.competitivePositionScore}/100`);
-    } else {
-      logger.info(`[SelfEvolution] Competitive scan: Max Booster is ahead on all tracked dimensions — score ${this.competitivePositionScore}/100`);
+    if (missingCount > 0) {
+      logger.warn(`[SelfEvolution] ${missingCount} features MISSING entirely vs competitors — highest priority to build AND surpass.`);
+    }
+    if (parityCount > 0) {
+      logger.info(`[SelfEvolution] ${parityCount} features at parity — must be surpassed, not just maintained.`);
+    }
+    if (surpassedCount > 0) {
+      logger.info(`[SelfEvolution] ${surpassedCount} features where Max Booster is definitively ahead — maintain and extend lead.`);
     }
 
+    // Persist for getStatus()
+    this.lastSurpassedCount = surpassedCount;
+    this.lastParityCount = parityCount;
+    this.lastMissingCount = missingCount;
+
     return gaps;
+  }
+
+  /**
+   * Fuzzy-match a competitor feature string against MAX_BOOSTER_ADVANTAGES keys.
+   * Returns the advantage entry if found, or null if missing.
+   */
+  private lookupAdvantage(feature: string): AdvantageEntry | null {
+    const featureLower = feature.toLowerCase();
+
+    // Exact match first
+    if (MAX_BOOSTER_ADVANTAGES.has(feature)) {
+      return MAX_BOOSTER_ADVANTAGES.get(feature)!;
+    }
+
+    // Fuzzy: check if any key is a substantial substring of the feature or vice versa
+    for (const [key, entry] of MAX_BOOSTER_ADVANTAGES) {
+      const keyLower = key.toLowerCase();
+      const featureWords = featureLower.split(' ').slice(0, 4).join(' ');
+      const keyWords = keyLower.split(' ').slice(0, 4).join(' ');
+      if (featureLower.includes(keyWords) || keyLower.includes(featureWords)) {
+        return entry;
+      }
+    }
+
+    return null; // missing
   }
 
   private inferModulesFromFeature(feature: string): string[] {
@@ -1409,11 +2231,15 @@ describe('${upgrade.id}', () => {
     intervalHealthy: boolean;
     competitiveLeadership: {
       score: number;
+      goal: string;
       competitorsTracked: number;
+      surpassed: number;
+      atParity: number;
+      missing: number;
       gapsDetected: number;
       gapsAddressed: number;
       lastScan: Date | null;
-      topCompetitorThreats: Array<{ title: string; impact: number; urgency: string }>;
+      topThreats: Array<{ title: string; impact: number; urgency: string }>;
     };
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
@@ -1439,13 +2265,17 @@ describe('${upgrade.id}', () => {
       // Competitive leadership metrics
       competitiveLeadership: {
         score: this.competitivePositionScore,
+        goal: 'surpass every competitor on every dimension — parity is never enough',
         competitorsTracked: COMPETITOR_PLATFORMS.length,
+        surpassed: this.lastSurpassedCount,
+        atParity: this.lastParityCount,
+        missing: this.lastMissingCount,
         gapsDetected: this.competitiveGapsDetected,
         gapsAddressed: this.competitiveGapsAddressed,
         lastScan: this.lastCompetitiveScan,
-        topCompetitorThreats: competitorChanges
+        topThreats: competitorChanges
           .sort((a, b) => b.competitiveImpact - a.competitiveImpact)
-          .slice(0, 3)
+          .slice(0, 5)
           .map(c => ({ title: c.title, impact: c.competitiveImpact, urgency: c.urgency })),
       },
       memoryUsage: {
