@@ -67,6 +67,9 @@ export async function initializeAdmin() {
         onboardingCompleted: true,
         onboardingStep: 100,
         emailVerified: true,
+        artistName: 'B-Lawz',
+        firstName: 'B-Lawz',
+        lastName: 'Music',
         onboardingData: {
           completedAt: new Date().toISOString(),
           skipped: false,
