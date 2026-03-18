@@ -88,15 +88,30 @@ const forceExternal = [
 ];
 
 async function buildAll() {
-  // Skip Vite if pre-built frontend assets are already committed to the repo.
-  const assetsPrebuilt = await access("dist/public/index.html").then(() => true).catch(() => false);
+  // DEPLOY_CLEAN=1 → production deployment build.
+  // Always force a fresh Vite prebuild so the deployment image contains
+  // up-to-date, correctly-hashed frontend assets regardless of whatever
+  // stale dist/public/ files may have been committed to git.
+  //
+  // Dev builds (no DEPLOY_CLEAN): skip Vite when pre-built assets exist to
+  // avoid a slow 30–60 s compile on every server-only code change.
+  const isDeployBuild = !!process.env.DEPLOY_CLEAN;
+  const assetsPrebuilt = !isDeployBuild &&
+    await access("dist/public/index.html").then(() => true).catch(() => false);
 
   if (assetsPrebuilt) {
-    console.log("pre-built client assets found — skipping Vite build");
+    console.log("pre-built client assets found — skipping Vite build (dev mode)");
   } else {
     await rm("dist", { recursive: true, force: true });
-    console.log("building client...");
+    if (isDeployBuild) {
+      console.log("[prebuild] Compiling fresh frontend assets for deployment...");
+    } else {
+      console.log("building client...");
+    }
     await viteBuild();
+    if (isDeployBuild) {
+      console.log("[prebuild] Frontend prebuild complete ✓");
+    }
   }
 
   // Skip Rust build if: explicitly disabled, running in any Replit environment
