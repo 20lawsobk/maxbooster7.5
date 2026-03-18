@@ -1,4 +1,4 @@
-import express, { type Express, type Request, type Response } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import fs from "fs";
 import path from "path";
 import { db } from './db';
@@ -202,6 +202,59 @@ function injectMeta(html: string, meta: { title: string; description: string; im
 
 const DIST_PATH = path.resolve(__dirname, "public");
 
+const EXT_CONTENT_TYPE: Record<string, string> = {
+  '.js':   'application/javascript; charset=utf-8',
+  '.css':  'text/css; charset=utf-8',
+  '.svg':  'image/svg+xml; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.html': 'text/html; charset=utf-8',
+  '.xml':  'application/xml; charset=utf-8',
+  '.txt':  'text/plain; charset=utf-8',
+};
+
+function precompressedMiddleware(distPath: string) {
+  return function (req: Request, res: Response, next: NextFunction) {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+
+    const urlPath = req.path;
+    const ext = path.extname(urlPath);
+    if (!EXT_CONTENT_TYPE[ext]) return next();
+
+    const absPath = path.join(distPath, urlPath);
+    const acceptEncoding = req.headers['accept-encoding'] || '';
+
+    const tryBr  = acceptEncoding.includes('br');
+    const tryGz  = acceptEncoding.includes('gzip');
+
+    const candidates: Array<{ file: string; encoding: string }> = [];
+    if (tryBr)  candidates.push({ file: absPath + '.br',  encoding: 'br' });
+    if (tryGz)  candidates.push({ file: absPath + '.gz',  encoding: 'gzip' });
+
+    for (const { file, encoding } of candidates) {
+      if (fs.existsSync(file)) {
+        const ct = EXT_CONTENT_TYPE[ext];
+        res.setHeader('Content-Type', ct);
+        res.setHeader('Content-Encoding', encoding);
+        res.setHeader('Vary', 'Accept-Encoding');
+
+        if (ext === '.html') {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        } else if (/\/assets\/.*-[A-Za-z0-9_-]{6,12}\.(js|css)$/.test(urlPath)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else if (ext === '.js' || ext === '.css') {
+          res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+        }
+
+        return res.sendFile(file);
+      }
+    }
+
+    next();
+  };
+}
+
 function staticFileMiddlewareOptions() {
   return {
     etag: true,
@@ -233,6 +286,7 @@ function staticFileMiddlewareOptions() {
  */
 export function serveStaticFiles(app: Express) {
   if (!fs.existsSync(DIST_PATH)) return;
+  app.use(precompressedMiddleware(DIST_PATH));
   app.use(express.static(DIST_PATH, staticFileMiddlewareOptions()));
 }
 

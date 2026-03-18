@@ -109,6 +109,10 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     modulePreload: {
       polyfill: false,
+      resolveDependencies(filename, deps) {
+        const HEAVY = ['studio', 'vendor-charts', 'jspdf', 'html2canvas', 'vendor-audio-engine', 'vendor-canvas', 'index.es'];
+        return deps.filter(dep => !HEAVY.some(h => dep.includes(h)));
+      },
     },
   },
   server: {

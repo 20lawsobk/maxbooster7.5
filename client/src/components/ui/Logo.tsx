@@ -20,11 +20,16 @@ export function Logo({ size = 'md', showText = true }: LogoProps) {
 
   return (
     <div className="flex items-center gap-2">
-      <img 
-        src="/logo.png" 
-        alt="B-Lawz Music" 
-        className={`${sizeMap[size]} rounded-lg object-cover`}
-      />
+      <picture>
+        <source srcSet="/logo.webp" type="image/webp" />
+        <img
+          src="/logo.png"
+          alt="B-Lawz Music"
+          className={`${sizeMap[size]} rounded-lg object-cover`}
+          loading="eager"
+          decoding="async"
+        />
+      </picture>
       {showText && (
         <div className="flex flex-col">
           <span className={`font-bold ${textSizeMap[size]} bg-gradient-to-r from-blue-500 to-cyan-400 bg-clip-text text-transparent`}>Max Booster</span>

@@ -1,6 +1,33 @@
 import { build as esbuild } from "esbuild";
 import { build as viteBuild } from "vite";
-import { rm, readFile, access } from "fs/promises";
+import { rm, readFile, access, readdir, stat, writeFile } from "fs/promises";
+import { brotliCompress, gzip, constants as zlibConstants } from "zlib";
+import { promisify } from "util";
+
+const brotliCompressAsync = promisify(brotliCompress);
+const gzipAsync = promisify(gzip);
+
+async function precompressAssets(dir: string): Promise<void> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  await Promise.all(entries.map(async (entry) => {
+    const fullPath = `${dir}/${entry.name}`;
+    if (entry.isDirectory()) {
+      await precompressAssets(fullPath);
+      return;
+    }
+    if (!/\.(js|css|svg|json|html|xml|txt)$/.test(entry.name)) return;
+    if (/\.(br|gz)$/.test(entry.name)) return;
+    const info = await stat(fullPath);
+    if (info.size < 512) return;
+    const src = await readFile(fullPath);
+    await Promise.all([
+      brotliCompressAsync(src, { params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 } })
+        .then(buf => writeFile(`${fullPath}.br`, buf)),
+      gzipAsync(src, { level: 9 })
+        .then(buf => writeFile(`${fullPath}.gz`, buf)),
+    ]);
+  }));
+}
 
 // On VM deployment cold-start bundling gives no benefit — externalize everything.
 // Keeping the allowlist empty ensures ALL dependencies are loaded from node_modules,
@@ -101,6 +128,15 @@ async function buildAll() {
 
   if (assetsPrebuilt) {
     console.log("pre-built client assets found — skipping Vite build (dev mode)");
+    const files = await readdir("dist/public/assets");
+    const needsCompress = files.some(f => /\.(js|css)$/.test(f) && !f.endsWith('.br'));
+    if (needsCompress) {
+      console.log("pre-compressing existing assets with brotli + gzip...");
+      await precompressAssets("dist/public");
+      console.log("pre-compression complete ✓");
+    } else {
+      console.log("pre-compressed assets already present ✓");
+    }
   } else {
     await rm("dist", { recursive: true, force: true });
     if (isDeployBuild) {
@@ -109,6 +145,9 @@ async function buildAll() {
       console.log("building client...");
     }
     await viteBuild();
+    console.log("pre-compressing assets with brotli + gzip...");
+    await precompressAssets("dist/public");
+    console.log("pre-compression complete ✓");
     if (isDeployBuild) {
       console.log("[prebuild] Frontend prebuild complete ✓");
     }
