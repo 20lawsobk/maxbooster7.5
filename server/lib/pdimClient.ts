@@ -150,6 +150,11 @@ function _pdimAdapt429(): number {
 export function getPdimAdaptiveGapMs():  number { return _pdimGapMs; }
 export function getPdimQueueDepth():     number { return _pdimQueueDepth; }
 
+/** Allow PlatformAutoFixer to temporarily raise the polling gap under PDIM pressure. */
+export function setPdimAdaptiveGap(ms: number): void {
+  _pdimGapMs = Math.max(_PDIM_GAP_FLOOR_MS, Math.min(_PDIM_GAP_CEIL_MS, ms));
+}
+
 function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
   _pdimQueueDepth++;
   const next = _pdimGlobalChain.then(async () => {

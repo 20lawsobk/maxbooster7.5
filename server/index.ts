@@ -339,6 +339,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`[ChainFixer] Failed to start: ${e.message}`);
   }
 
+  // Start platform auto-fixer — proactive subsystem health probing + runtime patching
+  try {
+    const { platformAutoFixer, platformFixerMiddleware } = await import('./services/platformAutoFixer.js');
+    platformAutoFixer.start();
+    app.use(platformFixerMiddleware);
+  } catch (e: any) {
+    logger.warn(`[PlatformAutoFixer] Failed to start: ${e.message}`);
+  }
+
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================

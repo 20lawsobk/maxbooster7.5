@@ -971,4 +971,83 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
   }
 });
 
+// ─── Platform Auto-Fixer routes ──────────────────────────────────────────────
+
+adminRouter.get('/platform-fixer/status', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    res.json(platformAutoFixer.getStatus());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    res.json(platformAutoFixer.getSubsystems());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.get('/platform-fixer/patches', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    res.json(platformAutoFixer.getPatches());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    res.json(platformAutoFixer.getIncidents());
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.post('/platform-fixer/scan', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    await platformAutoFixer.runFullScan();
+    res.json({ success: true, status: platformAutoFixer.getStatus() });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    const result = await platformAutoFixer.forceProbe(req.params.name as any);
+    if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
+    res.json(result);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    const ok = platformAutoFixer.revertPatch(req.params.id, 'admin request');
+    if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
+  try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
+    res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default adminRouter;
