@@ -1450,10 +1450,20 @@ export async function seedDSPProviders() {
     }));
     
     for (const dsp of dspList) {
-      await db.insert(dspProviders).values(dsp).onConflictDoNothing();
+      await db.insert(dspProviders)
+        .values(dsp)
+        .onConflictDoUpdate({
+          target: dspProviders.id,
+          set: { isActive: true, name: dsp.name, metadata: dsp.metadata },
+        });
     }
+
+    // Bulk-activate any DSP providers that may have been inserted as inactive
+    // by previous seeding runs (e.g. via onConflictDoNothing).  This ensures ALL
+    // platforms stored in the DB are active and accessible through LabelGrid.
+    await db.update(dspProviders).set({ isActive: true }).where(sql`is_active IS DISTINCT FROM true`);
     
-    logger.info(`✅ Seeded ${dspList.length} DSP providers`);
+    logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error: any) {
     logger.error('Failed to seed DSP providers:', error.message);
   }

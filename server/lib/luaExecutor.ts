@@ -33,14 +33,16 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
  *
  * MAX_WAIT_MS: maximum time a caller will wait for a slot before giving up.
  */
-// Lowered from 6 → 3: fewer concurrent wasmoon Workers means less PDIM
+// Lowered from 6 → 3 → 2: fewer concurrent wasmoon Workers means less PDIM
 // HTTP concurrency, which keeps us well below PDIM's rate-limit even during
 // cluster startup when all N workers initialise simultaneously.
-const MAX_CONCURRENT_WORKERS = 3;
-// 60s: the boot burst (AIService init × 2 rounds, BaseTrainer, weight storage)
-// exhausts the 3-slot semaphore for ~35-40s. 30s caused the tail jobs to time out
-// waiting for a slot before they ever spawned a Worker.
-const MAX_WAIT_MS = 60_000;
+// Reduced to 2 to prevent 3 stuck 20s workers from fully blocking event loop.
+const MAX_CONCURRENT_WORKERS = 2;
+// 20s: each redis.call() via PDIM has a 500ms commandTimeout + 1 retry = ~1s max
+// per call. BullMQ scripts do ~10-20 calls worst-case → 20s is generous.
+// Old 60s value caused stuck workers to block all 3 slots for a full minute,
+// saturating the event loop and causing 30-40s response times site-wide.
+const MAX_WAIT_MS = 20_000;
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
 // holding thousands of 60-second timer handles and consuming unbounded memory.
@@ -326,16 +328,16 @@ export async function execLuaViaPdim(
       workerData: { script, keys, argv },
     });
 
-    // 60s timeout: each BullMQ Lua script can make 10–20 sequential redis.call()s.
-    // Under PDIM congestion each call may take 2–3s, so a worst-case script needs
-    // up to ~60s to complete all its calls.  The previous 25s limit was too tight
-    // and caused spurious Worker terminations when PDIM was under load.
+    // 20s timeout: each redis.call() via PDIM has 500ms commandTimeout + 1 retry.
+    // BullMQ scripts run ~10–20 sequential calls → 20s is a generous upper bound.
+    // Old 60s caused stuck Workers to hold slots for a full minute, blocking the
+    // event loop and causing 30-40s page-load times across the entire site.
     const tmout = setTimeout(() => {
       settle(() => {
         worker.terminate();
-        reject(new Error('[LuaExecutor] script timeout (60s)'));
+        reject(new Error('[LuaExecutor] script timeout (20s)'));
       });
-    }, 60_000);
+    }, 20_000);
 
     worker.on('message', async (msg: any) => {
       if (msg.type === 'redis') {

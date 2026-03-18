@@ -192,7 +192,7 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/auto-discover', async (req: Request, res: Response) => {
+router.post('/:id/auto-discover', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await artistProfileService.autoDiscover(req.params.id, req.user!.id);
     res.json(result);
@@ -203,7 +203,7 @@ router.post('/:id/auto-discover', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/auto-sync', async (req: Request, res: Response) => {
+router.post('/:id/auto-sync', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await artistProfileService.autoSync(req.params.id, req.user!.id);
     res.json(result);

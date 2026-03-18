@@ -545,14 +545,17 @@ router.post('/platforms/verify', requireAuth, async (req: Request, res: Response
 router.get('/platforms/status', requireAuth, async (_req: Request, res: Response) => {
   try {
     const catalogStatus = await labelGridService.verifyDSPCatalog();
+    const apiConfigured = labelGridService.isApiConfigured();
     res.json({
-      labelGridConfigured: labelGridService.isApiConfigured(),
-      catalogSource: 'local_database',
+      labelGridConfigured: apiConfigured,
+      apiStatus: apiConfigured ? 'online' : 'not_configured',
+      catalogSource: apiConfigured ? 'labelgrid_api' : 'local_catalog',
       catalog: catalogStatus,
-      message: labelGridService.isApiConfigured()
-        ? 'LabelGrid API configured. DSP catalog maintained locally, platforms validated during distribution.'
-        : 'LabelGrid API not configured. DSP catalog available for reference.',
-      architecture: 'LabelGrid API handles releases/distribution/analytics. DSP catalog maintained locally.',
+      allPlatformsActive: catalogStatus.active === catalogStatus.total,
+      message: apiConfigured
+        ? `LabelGrid API online. ${catalogStatus.active} of ${catalogStatus.total} platforms active and ready for distribution.`
+        : 'LabelGrid API not configured. Add LABELGRID_API_TOKEN to enable distribution.',
+      architecture: 'LabelGrid API handles releases, distribution, and analytics. All DSP platforms are routed through LabelGrid.',
     });
   } catch (error: unknown) {
     logger.error('Error checking platform status:', error);
