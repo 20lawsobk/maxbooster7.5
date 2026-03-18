@@ -33,6 +33,7 @@ import {
   socialKeywords,
   socialMentions,
   socialAutopilotContent,
+  artistProfiles,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -304,27 +305,69 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialMetrics(userId: string): Promise<any> {
-    const accounts = await this.getSocialAccounts(userId);
-    const postsThisWeek = await db
-      .select()
-      .from(posts)
-      .where(and(
-        eq(posts.userId, userId),
-        gte(posts.createdAt, new Date(Date.now() - 7 * 24 * 60 * 60 * 1000))
-      ));
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [accounts, recentPosts, weekPosts, autopilotContent] = await Promise.all([
+      this.getSocialAccounts(userId),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))),
+      db.select().from(socialAutopilotContent).where(and(
+        eq(socialAutopilotContent.userId, userId),
+        gte(socialAutopilotContent.createdAt, thirtyDaysAgo)
+      )),
+    ]);
 
     const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
-    
+
+    let totalLikes = 0, totalComments = 0, totalShares = 0, totalViews = 0;
+    let totalReach = 0, totalImpressions = 0;
+
+    for (const post of recentPosts) {
+      const eng = post.engagement as any;
+      if (eng) {
+        totalLikes += eng.likes || 0;
+        totalComments += eng.comments || 0;
+        totalShares += eng.shares || eng.retweets || 0;
+        totalViews += eng.views || 0;
+        totalReach += eng.reach || 0;
+        totalImpressions += eng.impressions || 0;
+      }
+    }
+
+    for (const content of autopilotContent) {
+      const perf = content.performance as any;
+      if (perf) {
+        totalLikes += perf.likes || 0;
+        totalComments += perf.comments || 0;
+        totalShares += perf.shares || 0;
+        totalViews += perf.views || 0;
+      }
+    }
+
+    const totalEngagement = totalLikes + totalComments + totalShares;
+    const avgEngagementRate = totalViews > 0 ? Math.round((totalEngagement / totalViews) * 10000) / 100 : 0;
+
+    const platformGrowth = accounts.map(acc => ({
+      platform: acc.platform,
+      followers: acc.followerCount || 0,
+      username: acc.username || '',
+    }));
+
     return {
       totalFollowers,
-      totalEngagement: 0,
-      totalReach: 0,
-      totalImpressions: 0,
-      postsThisWeek: postsThisWeek.length,
-      avgEngagementRate: 0,
+      totalEngagement,
+      totalReach: totalReach || totalViews,
+      totalImpressions: totalImpressions || totalViews,
+      postsThisWeek: weekPosts.length,
+      postsThisMonth: recentPosts.length,
+      avgEngagementRate,
+      totalLikes,
+      totalComments,
+      totalShares,
       followersGrowth: null,
       contentPerformance: null,
-      platformGrowth: null,
+      platformGrowth,
       aiRecommendation: null,
     };
   }
@@ -373,7 +416,60 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialWeeklyStats(userId: string): Promise<any[]> {
-    return [];
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [allPosts, allContent] = await Promise.all([
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))),
+      db.select().from(socialAutopilotContent).where(and(
+        eq(socialAutopilotContent.userId, userId),
+        gte(socialAutopilotContent.createdAt, sevenDaysAgo)
+      )),
+    ]);
+
+    const stats: any[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      dayStart.setDate(dayStart.getDate() - i);
+      const dayEnd = new Date(dayStart);
+      dayEnd.setHours(23, 59, 59, 999);
+
+      const dayPosts = allPosts.filter(p => {
+        const t = new Date(p.createdAt!).getTime();
+        return t >= dayStart.getTime() && t <= dayEnd.getTime();
+      });
+      const dayContent = allContent.filter(c => {
+        const t = new Date(c.createdAt!).getTime();
+        return t >= dayStart.getTime() && t <= dayEnd.getTime();
+      });
+
+      let dayEngagement = 0, dayViews = 0, dayImpressions = 0;
+      for (const post of dayPosts) {
+        const eng = post.engagement as any;
+        if (eng) {
+          dayEngagement += (eng.likes || 0) + (eng.comments || 0) + (eng.shares || eng.retweets || 0);
+          dayViews += eng.views || 0;
+          dayImpressions += eng.impressions || 0;
+        }
+      }
+      for (const content of dayContent) {
+        const perf = content.performance as any;
+        if (perf) {
+          dayEngagement += (perf.likes || 0) + (perf.comments || 0) + (perf.shares || 0);
+          dayViews += perf.views || 0;
+        }
+      }
+
+      stats.push({
+        date: dayStart.toISOString().split('T')[0],
+        day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
+        posts: dayPosts.length + dayContent.length,
+        engagement: dayEngagement,
+        views: dayViews,
+        impressions: dayImpressions,
+      });
+    }
+    return stats;
   }
 
   async getAdvertisingCampaigns(userId: string): Promise<AdCampaign[]> {

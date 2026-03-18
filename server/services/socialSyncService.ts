@@ -132,8 +132,7 @@ export async function syncPlatformData(
         followerCount: syncedFollowerCount,
         profileUrl: syncedProfileUrl,
         platformUserId: syncedPlatformUserId,
-        metadata: syncedMetadata,
-        createdAt: new Date(),
+        metadata: { ...(syncedMetadata || {}), lastSyncedAt: new Date().toISOString() },
       })
       .where(eq(socialAccounts.id, connection.id));
 

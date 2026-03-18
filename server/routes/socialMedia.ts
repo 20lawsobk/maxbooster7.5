@@ -6,7 +6,7 @@ import { unifiedAIController } from '../services/unifiedAIController';
 import { pythonAIService } from '../services/pythonAIService';
 import { veoMusicService } from '../services/veoMusicService';
 import { db } from '../db';
-import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings } from '@shared/schema';
+import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
@@ -239,8 +239,11 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     const now = Date.now();
     const stalePlatforms: string[] = [];
     for (const conn of connections) {
-      if (conn.isActive && conn.createdAt) {
-        const lastSync = new Date(conn.createdAt).getTime();
+      if (conn.isActive) {
+        const meta = conn.metadata as any;
+        const lastSync = meta?.lastSyncedAt
+          ? new Date(meta.lastSyncedAt).getTime()
+          : conn.createdAt ? new Date(conn.createdAt).getTime() : 0;
         if (now - lastSync > ONE_HOUR_MS) {
           stalePlatforms.push(conn.platform);
         }
@@ -287,7 +290,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
           isConnected,
           followers,
           engagement: 0,
-          lastSync: primaryConn?.createdAt?.toISOString() || '',
+          lastSync: (primaryConn?.metadata as any)?.lastSyncedAt || primaryConn?.createdAt?.toISOString() || '',
           status: isConnected ? 'active' : 'inactive',
           username: primaryConn?.username || undefined,
           profileUrl: primaryConn?.profileUrl || '',
@@ -302,7 +305,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         isConnected: !!conn,
         followers: conn?.followerCount || 0,
         engagement: 0,
-        lastSync: conn?.createdAt?.toISOString() || '',
+        lastSync: (conn?.metadata as any)?.lastSyncedAt || conn?.createdAt?.toISOString() || '',
         status: conn ? 'active' : 'inactive',
         username: conn?.username || undefined,
         profileUrl: conn?.profileUrl || '',
@@ -1468,26 +1471,208 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
   try {
     const userId = req.user!.id;
     const { platform, period = '30d' } = req.query;
-    
-    const analytics = {
+
+    const days = period === '7d' ? 7 : period === '90d' ? 90 : 30;
+    const periodStart = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+    const [accounts, periodPosts, autopilotContent, artistProfile] = await Promise.all([
+      db.select().from(socialAccounts).where(eq(socialAccounts.userId, userId)),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, periodStart))),
+      db.select().from(socialAutopilotContent).where(and(
+        eq(socialAutopilotContent.userId, userId),
+        gte(socialAutopilotContent.createdAt, periodStart)
+      )),
+      db.select().from(artistProfiles).where(eq(artistProfiles.userId, userId)).limit(1),
+    ]);
+
+    // Kick off background follower-count sync for stale accounts
+    const ONE_HOUR_MS = 60 * 60 * 1000;
+    const now = Date.now();
+    const stalePlatforms = new Set<string>();
+    for (const acc of accounts) {
+      if (!acc.isActive) continue;
+      const lastSynced = (acc.metadata as any)?.lastSyncedAt
+        ? new Date((acc.metadata as any).lastSyncedAt).getTime()
+        : acc.createdAt ? new Date(acc.createdAt).getTime() : 0;
+      if (now - lastSynced > ONE_HOUR_MS) {
+        stalePlatforms.add(acc.platform === 'facebook' || acc.platform === 'instagram' ? 'meta' : acc.platform);
+      }
+    }
+    for (const p of stalePlatforms) {
+      syncPlatformData(userId, p).catch(err => logger.warn(`[Analytics] BG sync failed for ${p}:`, err));
+    }
+
+    // Aggregate engagement from posts
+    let totalLikes = 0, totalComments = 0, totalShares = 0, totalViews = 0;
+    let totalReach = 0, totalImpressions = 0;
+
+    const platformEngagement: Record<string, { likes: number; comments: number; shares: number; views: number; posts: number }> = {};
+
+    for (const post of periodPosts) {
+      const eng = post.engagement as any;
+      if (eng) {
+        const pl = (post.platform || 'unknown').toLowerCase();
+        if (!platformEngagement[pl]) platformEngagement[pl] = { likes: 0, comments: 0, shares: 0, views: 0, posts: 0 };
+        platformEngagement[pl].likes += eng.likes || 0;
+        platformEngagement[pl].comments += eng.comments || 0;
+        platformEngagement[pl].shares += eng.shares || eng.retweets || 0;
+        platformEngagement[pl].views += eng.views || 0;
+        platformEngagement[pl].posts += 1;
+        totalLikes += eng.likes || 0;
+        totalComments += eng.comments || 0;
+        totalShares += eng.shares || eng.retweets || 0;
+        totalViews += eng.views || 0;
+        totalReach += eng.reach || 0;
+        totalImpressions += eng.impressions || 0;
+      }
+    }
+
+    for (const content of autopilotContent) {
+      const perf = content.performance as any;
+      if (perf) {
+        const pl = (content.platform || 'unknown').toLowerCase();
+        if (!platformEngagement[pl]) platformEngagement[pl] = { likes: 0, comments: 0, shares: 0, views: 0, posts: 0 };
+        platformEngagement[pl].likes += perf.likes || 0;
+        platformEngagement[pl].comments += perf.comments || 0;
+        platformEngagement[pl].shares += perf.shares || 0;
+        platformEngagement[pl].views += perf.views || 0;
+        platformEngagement[pl].posts += 1;
+        totalLikes += perf.likes || 0;
+        totalComments += perf.comments || 0;
+        totalShares += perf.shares || 0;
+        totalViews += perf.views || 0;
+      }
+    }
+
+    const totalEngagement = totalLikes + totalComments + totalShares;
+    const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
+    const engagementRate = totalViews > 0 ? Math.round((totalEngagement / totalViews) * 10000) / 100 : 0;
+
+    // Platform breakdown enriched with follower counts from connected accounts
+    const platformBreakdown = accounts
+      .filter(acc => acc.isActive)
+      .map(acc => {
+        const pl = acc.platform.toLowerCase();
+        const eng = platformEngagement[pl] || { likes: 0, comments: 0, shares: 0, views: 0, posts: 0 };
+        return {
+          platform: acc.platform,
+          username: acc.username || '',
+          followers: acc.followerCount || 0,
+          posts: eng.posts,
+          likes: eng.likes,
+          comments: eng.comments,
+          shares: eng.shares,
+          views: eng.views,
+          engagement: eng.likes + eng.comments + eng.shares,
+          profileUrl: acc.profileUrl || '',
+        };
+      });
+
+    // Daily metrics for the period
+    const dailyMap: Record<string, { date: string; posts: number; engagement: number; views: number }> = {};
+    for (let i = days - 1; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      dailyMap[d] = { date: d, posts: 0, engagement: 0, views: 0 };
+    }
+    for (const post of periodPosts) {
+      const d = new Date(post.createdAt!).toISOString().split('T')[0];
+      if (dailyMap[d]) {
+        dailyMap[d].posts += 1;
+        const eng = post.engagement as any;
+        if (eng) {
+          dailyMap[d].engagement += (eng.likes || 0) + (eng.comments || 0) + (eng.shares || 0);
+          dailyMap[d].views += eng.views || 0;
+        }
+      }
+    }
+    for (const content of autopilotContent) {
+      const d = new Date(content.createdAt!).toISOString().split('T')[0];
+      if (dailyMap[d]) {
+        dailyMap[d].posts += 1;
+        const perf = content.performance as any;
+        if (perf) {
+          dailyMap[d].engagement += (perf.likes || 0) + (perf.comments || 0) + (perf.shares || 0);
+          dailyMap[d].views += perf.views || 0;
+        }
+      }
+    }
+
+    // Top posts by engagement
+    const allPostsForRanking = [
+      ...periodPosts.map(p => ({
+        id: p.id,
+        platform: p.platform,
+        content: p.content?.substring(0, 120) || '',
+        publishedAt: p.publishedAt || p.createdAt,
+        engagement: (() => {
+          const e = p.engagement as any;
+          return e ? (e.likes || 0) + (e.comments || 0) + (e.shares || 0) : 0;
+        })(),
+        views: (p.engagement as any)?.views || 0,
+      })),
+    ].sort((a, b) => b.engagement - a.engagement).slice(0, 10);
+
+    // Spotify artist data if connected
+    let spotifyStats: any = null;
+    const profile = artistProfile[0];
+    if (profile?.spotifyArtistId) {
+      try {
+        const clientId = process.env.SPOTIFY_CLIENT_ID;
+        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+        if (clientId && clientSecret) {
+          const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}` },
+            body: 'grant_type=client_credentials',
+            signal: AbortSignal.timeout(6000),
+          });
+          if (tokenRes.ok) {
+            const { access_token } = await tokenRes.json() as any;
+            const artistRes = await fetch(`https://api.spotify.com/v1/artists/${profile.spotifyArtistId}`, {
+              headers: { Authorization: `Bearer ${access_token}` },
+              signal: AbortSignal.timeout(6000),
+            });
+            if (artistRes.ok) {
+              const artist = await artistRes.json() as any;
+              spotifyStats = {
+                followers: artist.followers?.total || 0,
+                popularity: artist.popularity || 0,
+                genres: artist.genres || [],
+                artistId: profile.spotifyArtistId,
+                artistName: artist.name,
+                imageUrl: artist.images?.[0]?.url || null,
+              };
+            }
+          }
+        }
+      } catch (spotifyErr) {
+        logger.warn('[Analytics] Spotify artist stats fetch failed:', spotifyErr);
+      }
+    }
+
+    res.json({
       period,
       platform: platform || 'all',
+      syncedAt: new Date().toISOString(),
       metrics: {
-        totalFollowers: 0,
+        totalFollowers,
         followersGrowth: 0,
-        totalEngagement: 0,
-        engagementRate: 0,
-        totalReach: 0,
-        totalImpressions: 0,
-        postsPublished: 0,
-        topPerformingPost: null,
+        totalEngagement,
+        engagementRate,
+        totalReach: totalReach || totalViews,
+        totalImpressions: totalImpressions || totalViews,
+        postsPublished: periodPosts.length + autopilotContent.length,
+        totalLikes,
+        totalComments,
+        totalShares,
+        totalViews,
       },
-      platformBreakdown: [],
-      dailyMetrics: [],
-      topPosts: [],
-    };
-    
-    res.json(analytics);
+      platformBreakdown,
+      dailyMetrics: Object.values(dailyMap),
+      topPosts: allPostsForRanking,
+      spotifyStats,
+      connectedPlatforms: accounts.filter(a => a.isActive).length,
+    });
   } catch (error) {
     logger.error('Failed to get social analytics:', error);
     res.status(500).json({ message: 'Failed to get analytics' });
