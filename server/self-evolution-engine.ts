@@ -77,6 +77,160 @@ interface PlatformStandard {
   autoFixAvailable: boolean;
 }
 
+// ============================================================
+// COMPETITIVE LEADERSHIP KNOWLEDGE BASE
+// ============================================================
+
+/**
+ * Every known competitor music distribution / artist career platform
+ * and the features they offer.  Max Booster must stay ahead on every axis.
+ */
+const COMPETITOR_PLATFORMS: Array<{
+  name: string;
+  knownFeatures: string[];
+}> = [
+  {
+    name: 'DistroKid',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'royalty splits with collaborators',
+      'HyperFollow smart links and pre-save',
+      'Spotify for Artists integration',
+      'automatic YouTube Content ID',
+      'daily streaming stats',
+      'album artwork creation tool',
+      'leave a legacy feature',
+    ],
+  },
+  {
+    name: 'TuneCore',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'music publishing administration',
+      'sync licensing marketplace',
+      'social media monetization',
+      'streaming analytics',
+      'advance funding for artists',
+    ],
+  },
+  {
+    name: 'CD Baby',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'physical CD/vinyl distribution',
+      'music publishing',
+      'sync licensing',
+      'YouTube Content ID',
+      'artist store for merch and downloads',
+      'cover song licensing',
+    ],
+  },
+  {
+    name: 'AWAL',
+    knownFeatures: [
+      'selective distribution with A&R support',
+      'marketing campaigns for signed artists',
+      'advanced real-time analytics',
+      'playlist pitching',
+      'brand partnerships',
+      'recording advances',
+    ],
+  },
+  {
+    name: 'UnitedMasters',
+    knownFeatures: [
+      'music distribution to all DSPs',
+      'brand deals and sync opportunities',
+      'fan data ownership',
+      'advanced streaming analytics',
+      'select program with marketing support',
+      'direct licensing to brands',
+    ],
+  },
+  {
+    name: 'Amuse',
+    knownFeatures: [
+      'free music distribution',
+      'AI-powered artist insights',
+      'advance funding for artists',
+      'split payments',
+      'iOS app for distribution',
+    ],
+  },
+  {
+    name: 'Stem',
+    knownFeatures: [
+      'music distribution',
+      'split payments for collaborators',
+      'fan growth tools',
+      'detailed streaming reports',
+      'advance funding',
+    ],
+  },
+  {
+    name: 'Landr',
+    knownFeatures: [
+      'AI mastering',
+      'music distribution',
+      'sample pack marketplace',
+      'music collaboration tools',
+      'plugin marketplace',
+      'mixing feedback AI',
+    ],
+  },
+  {
+    name: 'Bandcamp',
+    knownFeatures: [
+      'direct fan sales',
+      'name-your-price albums',
+      'merch sales',
+      'fan subscriptions',
+      'artist discovery via genres',
+    ],
+  },
+  {
+    name: 'Groover',
+    knownFeatures: [
+      'music promotion to blogs and playlists',
+      'guaranteed feedback from curators',
+      'influencer pitching',
+      'radio pitching',
+    ],
+  },
+];
+
+/**
+ * What Max Booster already offers — compared against competitor features
+ * to compute the real competitive gap.
+ */
+const MAX_BOOSTER_CAPABILITIES = new Set([
+  'music distribution to all DSPs',
+  'royalty splits with collaborators',
+  'smart links and pre-save',
+  'YouTube Content ID',
+  'streaming analytics',
+  'advanced real-time analytics',
+  'social media autopilot',
+  'AI-powered artist insights',
+  'automated advertising campaigns',
+  'beat marketplace',
+  'AI mastering',
+  'AI mixing',
+  'viral score prediction',
+  'competitor benchmarking',
+  'playlist pitching',
+  'fan growth tools',
+  'content auto-generation',
+  'music publishing',
+  'sync licensing',
+  'split payments for collaborators',
+  'daily streaming stats',
+  'revenue forecasting',
+  'platform algorithm intelligence',
+  'social media monetization',
+  'brand deals and sync opportunities',
+]);
+
 export class SelfEvolutionEngine extends EventEmitter {
   private isRunning: boolean = false;
   private isCycleRunning: boolean = false;
@@ -89,6 +243,11 @@ export class SelfEvolutionEngine extends EventEmitter {
   private totalCyclesRun: number = 0;
   private competitorFeatures: CompetitorFeature[] = [];
   private platformStandards: PlatformStandard[] = [];
+  // Competitive leadership tracking
+  private competitivePositionScore: number = 72; // 0-100; starts at 72 (strong but not perfect)
+  private competitiveGapsAddressed: number = 0;
+  private competitiveGapsDetected: number = 0;
+  private lastCompetitiveScan: Date | null = null;
 
   private readonly MONITORING_INTERVAL_MS = 60 * 60 * 1000;
   private readonly MAX_CHANGES_IN_MEMORY = 500;
@@ -292,9 +451,21 @@ export class SelfEvolutionEngine extends EventEmitter {
     logger.info(`🧬 Starting evolution cycle: ${cycleId}`);
 
     try {
+      // Phase 0: Competitive leadership check — runs FIRST every cycle
+      const leadershipGaps = await this.assessCompetitiveLeadership();
+      logger.info(`   🏆 Competitive leadership: ${leadershipGaps.length} gaps vs competitors (score: ${this.competitivePositionScore}/100)`);
+
       // Phase 1: Monitor the industry landscape
       const changes = await this.monitorIndustryLandscape();
-      logger.info(`   📡 Detected ${changes.length} industry changes`);
+      // Merge leadership gaps in as high-priority industry changes
+      for (const gap of leadershipGaps) {
+        if (!this.seenChangeIds.has(gap.id)) {
+          this.seenChangeIds.add(gap.id);
+          changes.push(gap);
+          this.industryChanges.push(gap);
+        }
+      }
+      logger.info(`   📡 Detected ${changes.length} industry changes (${leadershipGaps.length} from competitive scan)`);
 
       // Phase 2: Analyze competitive position
       const competitiveGaps = await this.analyzeCompetitivePosition(changes);
@@ -337,6 +508,118 @@ export class SelfEvolutionEngine extends EventEmitter {
       this.saveStateToDisk().catch(e => logger.warn('Could not save state:', e));
       this.isCycleRunning = false;
     }
+  }
+
+  // ============================================
+  // PHASE 0: COMPETITIVE LEADERSHIP
+  // ============================================
+
+  /**
+   * Compares every known competitor platform's feature set against
+   * MAX_BOOSTER_CAPABILITIES.  Any feature a competitor has that Max Booster
+   * is missing becomes a high-urgency IndustryChange that feeds directly into
+   * Phase 2's competitive gap prioritization.
+   *
+   * Also incorporates any live competitor intelligence from the industry
+   * monitor (real articles about competitor platforms).
+   */
+  private async assessCompetitiveLeadership(): Promise<IndustryChange[]> {
+    this.lastCompetitiveScan = new Date();
+    const gaps: IndustryChange[] = [];
+
+    // 1. Static knowledge-base gap check
+    for (const competitor of COMPETITOR_PLATFORMS) {
+      for (const feature of competitor.knownFeatures) {
+        // Fuzzy match — if none of our capabilities substring-matches the competitor feature
+        const weHaveIt = [...MAX_BOOSTER_CAPABILITIES].some(cap =>
+          cap.toLowerCase().includes(feature.toLowerCase().replace(/\s+/g, ' ').split(' ').slice(0, 3).join(' ')) ||
+          feature.toLowerCase().includes(cap.toLowerCase().split(' ').slice(0, 3).join(' '))
+        );
+
+        if (!weHaveIt) {
+          const gapId = `leadership_gap_${competitor.name}_${feature}`.replace(/[^a-z0-9_]/gi, '_').toLowerCase();
+          if (!this.seenChangeIds.has(gapId)) {
+            gaps.push({
+              id: gapId,
+              source: 'competitor',
+              category: 'feature',
+              title: `${competitor.name}: Feature gap — "${feature}"`,
+              description: `${competitor.name} offers "${feature}" but Max Booster does not have an equivalent. Addressing this gap keeps Max Booster ahead.`,
+              detectedAt: new Date(),
+              urgency: 'high',
+              affectedModules: this.inferModulesFromFeature(feature),
+              competitiveImpact: 85,
+              implementationComplexity: 'moderate',
+              estimatedImplementationHours: 20,
+            });
+            this.competitiveGapsDetected++;
+          }
+        }
+      }
+    }
+
+    // 2. Live competitor intelligence from RSS/search (already fetched by industryMonitor)
+    const liveCompetitorSignals = industryMonitor.getCompetitiveIntelligence();
+    for (const signal of liveCompetitorSignals.slice(0, 10)) {
+      // Promote competitive impact to at least 80 when live signal corroborates a gap
+      const converted: IndustryChange = {
+        id: signal.id,
+        source: 'competitor',
+        category: signal.category,
+        title: signal.title,
+        description: signal.description,
+        detectedAt: signal.detectedAt,
+        urgency: signal.urgency,
+        affectedModules: signal.affectedModules,
+        competitiveImpact: Math.max(signal.competitiveImpact, 80),
+        implementationComplexity: signal.implementationComplexity,
+        estimatedImplementationHours: signal.estimatedImplementationHours,
+      };
+      if (!this.seenChangeIds.has(converted.id)) {
+        gaps.push(converted);
+        this.competitiveGapsDetected++;
+      }
+    }
+
+    // 3. Update competitive position score: closer to 100 means fewer open gaps
+    const totalCompetitorFeatures = COMPETITOR_PLATFORMS.reduce((sum, c) => sum + c.knownFeatures.length, 0);
+    const coveredCount = COMPETITOR_PLATFORMS.reduce((sum, competitor) => {
+      return sum + competitor.knownFeatures.filter(feature =>
+        [...MAX_BOOSTER_CAPABILITIES].some(cap =>
+          cap.toLowerCase().includes(feature.toLowerCase().split(' ').slice(0, 3).join(' ')) ||
+          feature.toLowerCase().includes(cap.toLowerCase().split(' ').slice(0, 3).join(' '))
+        )
+      ).length;
+    }, 0);
+
+    const baseScore = totalCompetitorFeatures > 0
+      ? Math.round((coveredCount / totalCompetitorFeatures) * 100)
+      : 72;
+
+    // Bonus: each gap addressed this session adds 1 point
+    this.competitivePositionScore = Math.min(100, baseScore + this.competitiveGapsAddressed);
+
+    if (gaps.length > 0) {
+      logger.info(`[SelfEvolution] Competitive scan: ${gaps.length} gaps found vs competitors — score ${this.competitivePositionScore}/100`);
+    } else {
+      logger.info(`[SelfEvolution] Competitive scan: Max Booster is ahead on all tracked dimensions — score ${this.competitivePositionScore}/100`);
+    }
+
+    return gaps;
+  }
+
+  private inferModulesFromFeature(feature: string): string[] {
+    const f = feature.toLowerCase();
+    const modules: string[] = [];
+    if (/distribut|dsp|isrc|upc|release/.test(f)) modules.push('distribution');
+    if (/analytic|stats|insight|report|dashboard/.test(f)) modules.push('analytics');
+    if (/social|tiktok|instagram|post|content/.test(f)) modules.push('social');
+    if (/market|advertis|campaign|brand|deal/.test(f)) modules.push('advertising');
+    if (/monetiz|revenue|royalt|payout|split|funding|advance/.test(f)) modules.push('monetization');
+    if (/mix|master|studio|plugin|vst|produc/.test(f)) modules.push('studio');
+    if (/marketplace|beat|sample|merch/.test(f)) modules.push('marketplace');
+    if (/securi|auth|encrypt/.test(f)) modules.push('security');
+    return modules.length > 0 ? modules : ['distribution', 'analytics'];
   }
 
   // ============================================
@@ -937,12 +1220,33 @@ describe('${upgrade.id}', () => {
     const total = deployedCount + failedCount;
     const successRate = total > 0 ? deployedCount / total : 1.0;
 
+    // Count how many of this cycle's deployed upgrades addressed competitive gaps
+    const competitorGapsClosedThisCycle = this.upgradeQueue
+      .filter(u => u.status === 'deployed')
+      .filter(u => {
+        const change = this.industryChanges.find(c => c.id === u.changeId);
+        return change?.source === 'competitor';
+      }).length;
+
+    if (competitorGapsClosedThisCycle > 0) {
+      this.competitiveGapsAddressed += competitorGapsClosedThisCycle;
+      // Each closed gap nudges the score up (capped at 100)
+      this.competitivePositionScore = Math.min(100, this.competitivePositionScore + competitorGapsClosedThisCycle);
+      logger.info(`   🏆 Competitive position improved: +${competitorGapsClosedThisCycle} gaps closed → score now ${this.competitivePositionScore}/100`);
+    }
+
+    // Log competitive leadership summary
+    const competitorChanges = this.industryChanges.filter(c => c.source === 'competitor').length;
+    logger.info(`   📊 Competitive leadership summary: score=${this.competitivePositionScore}/100 | gaps_detected=${this.competitiveGapsDetected} | gaps_addressed=${this.competitiveGapsAddressed} | competitor_signals=${competitorChanges}`);
+
     if (successRate > 0.9) {
       customAI.recordPerformance('self_evolution', {
         cycleId,
         successRate,
         deployedCount,
         failedCount,
+        competitivePositionScore: this.competitivePositionScore,
+        competitorGapsAddressed: this.competitiveGapsAddressed,
         timestamp: new Date().toISOString(),
       });
     }
@@ -1103,6 +1407,14 @@ describe('${upgrade.id}', () => {
     lastCycleError: string | null;
     totalCyclesRun: number;
     intervalHealthy: boolean;
+    competitiveLeadership: {
+      score: number;
+      competitorsTracked: number;
+      gapsDetected: number;
+      gapsAddressed: number;
+      lastScan: Date | null;
+      topCompetitorThreats: Array<{ title: string; impact: number; urgency: string }>;
+    };
     memoryUsage: { changes: number; upgrades: number; seenIds: number };
   } {
     const now = Date.now();
@@ -1111,6 +1423,7 @@ describe('${upgrade.id}', () => {
       ? true
       : (now - this.lastCycleAt.getTime()) < expectedIntervalMs;
 
+    const competitorChanges = this.industryChanges.filter(c => c.source === 'competitor');
     return {
       isRunning: this.isRunning,
       isCycleRunning: this.isCycleRunning,
@@ -1123,6 +1436,18 @@ describe('${upgrade.id}', () => {
       lastCycleError: this.lastCycleError,
       totalCyclesRun: this.totalCyclesRun,
       intervalHealthy,
+      // Competitive leadership metrics
+      competitiveLeadership: {
+        score: this.competitivePositionScore,
+        competitorsTracked: COMPETITOR_PLATFORMS.length,
+        gapsDetected: this.competitiveGapsDetected,
+        gapsAddressed: this.competitiveGapsAddressed,
+        lastScan: this.lastCompetitiveScan,
+        topCompetitorThreats: competitorChanges
+          .sort((a, b) => b.competitiveImpact - a.competitiveImpact)
+          .slice(0, 3)
+          .map(c => ({ title: c.title, impact: c.competitiveImpact, urgency: c.urgency })),
+      },
       memoryUsage: {
         changes: this.industryChanges.length,
         upgrades: this.upgradeQueue.length,

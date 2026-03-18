@@ -57,6 +57,11 @@ const RSS_FEEDS: Array<{ url: string; name: string; followRedirect: boolean }> =
   { url: 'https://www.musicradar.com/rss', name: 'MusicRadar', followRedirect: true },
   { url: 'https://newsroom.spotify.com/rss/', name: 'Spotify Newsroom', followRedirect: true },
   { url: 'https://about.fb.com/news/tag/creators/feed/', name: 'Meta Creators', followRedirect: true },
+  // Indie artist / music career intelligence — critical for competitive leadership
+  { url: 'https://www.hypebot.com/hypebot/atom.xml', name: 'Hypebot', followRedirect: true },
+  { url: 'https://blog.landr.com/feed/', name: 'Landr Blog', followRedirect: true },
+  { url: 'https://blog.distrokid.com/feed', name: 'DistroKid Blog', followRedirect: true },
+  { url: 'https://www.tunecore.com/blog/feed/', name: 'TuneCore Blog', followRedirect: true },
 ];
 
 const TAVILY_API = 'https://api.tavily.com/search';
@@ -72,6 +77,13 @@ const MUSIC_INDUSTRY_QUERIES = [
   'TikTok Instagram music creator policy update',
   'music copyright royalty legislation change',
   'AI music technology announcement',
+  // Competitive leadership queries — monitor what competitor platforms are doing
+  'DistroKid TuneCore CD Baby new feature music distribution 2025',
+  'AWAL UnitedMasters Amuse Stem music distribution platform update 2025',
+  'independent artist music career management platform feature launch 2025',
+  'music distribution platform comparison new tools analytics 2025',
+  'indie artist viral marketing TikTok Instagram strategy winning 2025',
+  'music industry AI tools artists competitive advantage 2025',
 ];
 
 class IndustryMonitorService {
@@ -390,6 +402,24 @@ class IndustryMonitorService {
       return { source: 'technology', category: 'feature', urgency: 'medium', modules: ['studio', 'analytics'], impact: 72, complexity: 'complex', hours: 45 };
     }
 
+    // Competitor music distribution / artist management platforms — highest competitive impact
+    if (/distrokid|tunecore|cd baby|cdbaby|awal|unitedmasters|amuse\.io|stem\.is|landr|bandcamp|feature\.fm|submithub|groover|oneRPM|believe digital|empire distribut|vydia|soundrop|routenote|ditto music/.test(text)) {
+      if (/new feature|launch|release|announce|update|add|introduce|now offer|partnership|integrat/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['distribution', 'analytics', 'monetization'], impact: 92, complexity: 'moderate', hours: 20 };
+      }
+      if (/ai |analytics|dashboard|reporting|insight|automat/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'high', modules: ['analytics', 'distribution'], impact: 88, complexity: 'moderate', hours: 16 };
+      }
+      return { source: 'competitor', category: 'optimization', urgency: 'medium', modules: ['distribution'], impact: 70, complexity: 'simple', hours: 8 };
+    }
+
+    // Independent artist career tools broadly (catch anything we missed above)
+    if (/independent artist|indie artist|unsigned artist|music career|artist platform|artist tool/.test(text)) {
+      if (/feature|tool|launch|new|update/.test(text)) {
+        return { source: 'competitor', category: 'feature', urgency: 'medium', modules: ['analytics', 'social', 'distribution'], impact: 65, complexity: 'simple', hours: 12 };
+      }
+    }
+
     return null;
   }
 
@@ -420,10 +450,25 @@ class IndustryMonitorService {
     this.cache = null;
   }
 
+  /**
+   * Returns the subset of cached changes that are competitor-sourced,
+   * sorted by competitive impact descending.  Used by the evolution engine's
+   * Phase 0 competitive leadership check.
+   */
+  getCompetitiveIntelligence(): LiveIndustryChange[] {
+    if (!this.cache) return [];
+    return this.cache.changes
+      .filter(c => c.source === 'competitor')
+      .sort((a, b) => b.competitiveImpact - a.competitiveImpact);
+  }
+
   getStatus(): Record<string, unknown> {
+    const competitive = this.getCompetitiveIntelligence();
     return {
       cacheAge: this.cache ? Math.round((Date.now() - this.cache.fetchedAt) / 1000) + 's' : 'empty',
       cachedItems: this.cache?.changes.length ?? 0,
+      competitorItems: competitive.length,
+      topCompetitorThreat: competitive[0]?.title ?? null,
       seenIds: this.seenIds.size,
       feeds: RSS_FEEDS.length,
       tavilyEnabled: !!process.env.TAVILY_API_KEY,
