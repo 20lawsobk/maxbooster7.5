@@ -63,6 +63,9 @@ class MaxBooster247System extends EventEmitter {
     // Enable garbage collection if available
     this.enableGarbageCollection();
 
+    // Schedule daily self-diagnostic + pattern reset
+    this.scheduleDailyDiagnostic();
+
     logger.info('✅ Max Booster 24/7/365 System ACTIVE');
     logger.info('🎯 True continuous operation enabled');
     logger.info('🔄 Auto-restart and recovery systems online');
@@ -161,17 +164,20 @@ class MaxBooster247System extends EventEmitter {
   }
 
   private performMemoryCheck(): void {
-    const memUsage = this.metrics.memory.heapUsed;
-    const memMB = Math.round(memUsage / 1024 / 1024);
+    // Always read fresh memory — this.metrics.memory is only updated by performHealthCheck
+    // (30 s interval), so it can be 2 min stale by the time this 2 min check fires.
+    const live = process.memoryUsage();
+    this.metrics.memory = live; // keep metrics in sync
+    const memMB = Math.round(live.heapUsed / 1024 / 1024);
 
     if (memMB > 800) {
       logger.warn(`⚠️ High memory usage: ${memMB}MB`);
 
-      // Try to trigger garbage collection
       if (typeof (global as any).gc === 'function') {
         try {
           (global as any).gc();
-          logger.info('🧹 Forced garbage collection due to high memory');
+          const after = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+          logger.info(`🧹 Forced GC due to high memory: ${memMB}MB → ${after}MB`);
         } catch (error: unknown) {
           logger.warn('⚠️ Manual GC failed:', error);
         }
@@ -179,48 +185,75 @@ class MaxBooster247System extends EventEmitter {
     }
   }
 
-  private attemptRestart(reason: string, details: string): void {
-    this.processRestartAttempts++;
-    this.metrics.restartCount++;
-    this.metrics.lastRestart = new Date();
+  // ─── Daily self-diagnostic ──────────────────────────────────────────────────
 
-    logger.error(
-      `🔄 Process restart attempt ${this.processRestartAttempts}/${this.maxRestartAttempts}`
-    );
-    logger.error(`   Reason: ${reason}`);
-    logger.error(`   Details: ${details}`);
+  private _dailyTimer: NodeJS.Timeout | null = null;
+  private _peakMemoryMB = 0;
+  private _peakMemorySince = Date.now();
 
-    if (this.processRestartAttempts >= this.maxRestartAttempts) {
-      logger.error('🚨 CRITICAL: Maximum restart attempts reached - manual intervention required');
-      this.emit('critical-failure', { reason, details, attempts: this.processRestartAttempts });
-      return;
-    }
+  private scheduleDailyDiagnostic(): void {
+    // Fire once per day — staggered so two cluster workers don't log simultaneously.
+    const jitter = Math.floor(Math.random() * 30_000);
+    this._dailyTimer = setInterval(() => {
+      this.runDailyDiagnostic();
+    }, 24 * 60 * 60_000 + jitter);
+    this._dailyTimer.unref();
 
-    // On Replit, the best we can do is graceful shutdown and let the platform restart us
-    logger.info('🔄 Initiating graceful restart...');
-    this.emit('restart-initiated', { reason, details });
-
-    setTimeout(() => {
-      process.exit(1); // Exit with error code to trigger Replit restart
-    }, 2000);
+    // Also reset suppressed ChainFixer patterns daily so long-dormant errors can
+    // be caught again if they reoccur after a quiet period.
+    setInterval(() => {
+      this.resetSuppressedPatterns();
+    }, 24 * 60 * 60_000 + jitter + 5_000).unref();
   }
 
-  private async gracefulShutdown(signal: string): Promise<void> {
-    logger.info(`🔄 Graceful shutdown initiated (${signal})...`);
+  private async resetSuppressedPatterns(): Promise<void> {
+    try {
+      const { chainErrorAutoFixer } = await import('./services/chainErrorAutoFixer.js');
+      const status = chainErrorAutoFixer.getStatus();
+      let reset = 0;
+      for (const p of status.patterns) {
+        if (p.suppressed) {
+          chainErrorAutoFixer.resetPattern(p.id);
+          reset++;
+        }
+      }
+      if (reset > 0) {
+        logger.info(`[ReliabilitySystem] Daily reset: un-suppressed ${reset} ChainFixer pattern(s) — monitoring resumes`);
+      }
+    } catch { /* non-critical */ }
+  }
 
-    this.isActive = false;
+  private runDailyDiagnostic(): void {
+    try {
+      const mem = process.memoryUsage();
+      const uptimeH  = ((Date.now() - this.startTime) / 3_600_000).toFixed(2);
+      const uptimeD  = (Number(uptimeH) / 24).toFixed(2);
+      const heapMB   = Math.round(mem.heapUsed / 1024 / 1024);
+      const rssMB    = Math.round(mem.rss / 1024 / 1024);
 
-    // Clear intervals
-    if (this.healthCheckInterval) clearInterval(this.healthCheckInterval);
-    if (this.memoryCheckInterval) clearInterval(this.memoryCheckInterval);
+      // Track peak memory
+      if (heapMB > this._peakMemoryMB) {
+        this._peakMemoryMB = heapMB;
+      }
 
-    // Stop reliability coordinator
-    await reliabilityCoordinator.stop();
+      const successRate = this.metrics.requestCount > 0
+        ? (((this.metrics.requestCount - this.metrics.errorCount) / this.metrics.requestCount) * 100).toFixed(2)
+        : '100.00';
 
-    logger.info('✅ Graceful shutdown complete');
-    this.emit('shutdown-complete');
-
-    process.exit(0);
+      logger.info(
+        `[ReliabilitySystem] ── Daily Diagnostic ──────────────────────\n` +
+        `  Uptime          : ${uptimeH}h (${uptimeD} days)\n` +
+        `  Heap            : ${heapMB}MB (peak ${this._peakMemoryMB}MB since ${new Date(this._peakMemorySince).toISOString()})\n` +
+        `  RSS             : ${rssMB}MB\n` +
+        `  Total requests  : ${this.metrics.requestCount}\n` +
+        `  Total errors    : ${this.metrics.errorCount}\n` +
+        `  Success rate    : ${successRate}%\n` +
+        `  Restarts        : ${this.metrics.restartCount}\n` +
+        `─────────────────────────────────────────────────────`
+      );
+    } catch (err: unknown) {
+      logger.warn('[ReliabilitySystem] Daily diagnostic failed:', err);
+    }
   }
 
   // Public API for tracking application metrics

@@ -63,17 +63,28 @@ interface FixHistoryEntry {
 
 // ─── Chain Error Auto-Fixer ──────────────────────────────────────────────────
 
+// Tracks recent fire timestamps per pattern for adaptive cooldown
+interface AdaptiveCooldownState {
+  recentFires: number[];   // Unix ms timestamps of last N fires
+}
+
 class ChainErrorAutoFixer extends EventEmitter {
   private patterns: ErrorPattern[] = [];
   private state = new Map<string, PatternState>();
+  private adaptiveCooldown = new Map<string, AdaptiveCooldownState>();
   private history: FixHistoryEntry[] = [];
-  private readonly MAX_HISTORY = 100;
+  private readonly MAX_HISTORY = 200;
   private healthCheckTimer: NodeJS.Timeout | null = null;
+  private _unsuppressTimer: NodeJS.Timeout | null = null;
   private started = false;
   // Heap warning cooldown — GC still fires every 15 s to keep memory contained,
   // but the WARN log is suppressed to once per 5 min so it doesn't flood.
   private _lastHeapWarnMs = 0;
   private readonly _HEAP_WARN_COOLDOWN_MS = 5 * 60 * 1000;
+
+  // Unknown error log — novel errors that matched no known pattern
+  private _unknownErrors: Array<{ ts: number; msg: string }> = [];
+  private readonly _MAX_UNKNOWN = 50;
 
   constructor() {
     super();
@@ -400,6 +411,158 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
       },
     });
+
+    // 11. Session store failure — session reads/writes fail due to DB/PDIM degradation
+    this.addPattern({
+      id: 'session_store_failure',
+      name: 'Session store failure',
+      description: 'Session store read/write failed — users may lose sessions; auto-fallback to in-memory attempted',
+      matchers: [
+        /session.*store.*fail|session.*timeout|Failed to create.*session/i,
+        /connect-pg-simple.*error|PgSessionStore.*fail/i,
+      ],
+      levels: ['error', 'warn'],
+      severity: 'high',
+      category: 'database',
+      cooldownMs: 60_000,
+      maxAttempts: 10,
+      autoFix: async () => {
+        try {
+          const { pool } = await import('../db.js');
+          await pool.query('SELECT 1');
+          logger.info('[ChainFixer] Session store — DB pool responsive; sessions will auto-recover');
+        } catch (err: any) {
+          logger.warn(`[ChainFixer] Session store — DB pool also failing: ${err.message}`);
+        }
+      },
+      escalate: async (attempts) => {
+        logger.error(`[ChainFixer] session_store_failure: ${attempts} occurrences — check DB pool and PDIM; users may be unable to authenticate`);
+      },
+    });
+
+    // 12. External API credential exhaustion (expired keys, quota exceeded)
+    this.addPattern({
+      id: 'api_credential_expired',
+      name: 'External API credential expired or exhausted',
+      description: 'An external API returned 401/403 — API key may be expired or quota exceeded',
+      matchers: [
+        /API.*401|401.*Unauthorized.*key|403.*Forbidden.*api.*key/i,
+        /API key.*expired|quota.*exceeded|rate.*limit.*exceeded.*api/i,
+        /invalid_api_key|authentication.*failed.*api/i,
+      ],
+      levels: ['error'],
+      severity: 'high',
+      category: 'external',
+      cooldownMs: 300_000,    // 5 min — no point hammering expired credentials
+      maxAttempts: 3,
+      autoFix: async () => {
+        logger.warn('[ChainFixer] External API credential issue detected — check API key environment variables (OPENAI_API_KEY, STRIPE_SECRET_KEY, SENDGRID_API_KEY, etc.)');
+      },
+      escalate: async (attempts) => {
+        logger.error(`[ChainFixer] ESCALATION: External API credential expired or quota exceeded (${attempts} occurrences). Manual key rotation required.`);
+      },
+    });
+
+    // 13. Filesystem errors — disk full, permission denied, file not found in critical paths
+    this.addPattern({
+      id: 'filesystem_error',
+      name: 'Filesystem error (ENOSPC / EACCES / EMFILE)',
+      description: 'Disk full, permission denied, or too many open files — storage is compromised',
+      matchers: [
+        /ENOSPC|no space left on device/i,
+        /EACCES.*\/|EPERM.*\/|permission denied.*file/i,
+        /EMFILE|too many open files/i,
+      ],
+      levels: ['error'],
+      severity: 'critical',
+      category: 'storage',
+      cooldownMs: 60_000,
+      maxAttempts: 5,
+      autoFix: async () => {
+        // Force GC to release any pending file buffers
+        if (typeof global.gc === 'function') global.gc();
+        logger.warn('[ChainFixer] Filesystem error detected — GC triggered to release buffers; check disk space and file descriptor limits');
+        try {
+          const { distributedCache } = await import('./distributedCacheService.js');
+          await (distributedCache as any)?.evictExpired?.();
+          logger.info('[ChainFixer] Cache evicted to reduce storage pressure after filesystem error');
+        } catch { /* non-critical */ }
+      },
+      escalate: async (attempts) => {
+        logger.error(`[ChainFixer] CRITICAL filesystem errors (${attempts}x) — disk may be full or permissions corrupted. Manual intervention required.`);
+      },
+    });
+
+    // 14. AI provider timeout / overload — OpenAI, Anthropic etc.
+    this.addPattern({
+      id: 'ai_provider_timeout',
+      name: 'AI provider timeout or overload',
+      description: 'External AI API timed out or returned 503/overloaded — AI features degrade gracefully',
+      matchers: [
+        /openai.*timeout|anthropic.*timeout|AI.*provider.*503/i,
+        /Request timed out.*openai|overloaded.*anthropic/i,
+        /model.*unavailable|ai.*service.*unavailable/i,
+      ],
+      levels: ['error', 'warn'],
+      severity: 'medium',
+      category: 'external',
+      cooldownMs: 120_000,
+      maxAttempts: 20,
+      autoFix: async () => {
+        // No automatic fix possible for external AI provider issues.
+        // Just log and let the circuit breaker in the API client handle retries.
+        logger.info('[ChainFixer] AI provider timeout — graceful degradation active; AI features will retry automatically');
+      },
+      escalate: async (attempts) => {
+        logger.warn(`[ChainFixer] AI provider repeatedly unavailable (${attempts}x) — non-AI features unaffected`);
+      },
+    });
+
+    // 15. Node.js native worker thread crash
+    this.addPattern({
+      id: 'worker_thread_crash',
+      name: 'Node.js worker thread crash',
+      description: 'A Node.js worker_threads Worker exited with non-zero code',
+      matchers: [/Worker.*exited with code [^0]|worker_thread.*crashed|Worker stopped with exit code [^0]/i],
+      levels: ['error'],
+      severity: 'high',
+      category: 'queue',
+      cooldownMs: 30_000,
+      maxAttempts: 15,
+      autoFix: async () => {
+        const { resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+        resetLuaExecutorSemaphore();
+        logger.info('[ChainFixer] Worker thread crash — LuaExecutor semaphore reset; BullMQ will respawn the worker');
+      },
+      escalate: async (attempts) => {
+        logger.error(`[ChainFixer] Worker threads crashing repeatedly (${attempts}x) — possible OOM or code bug in job handler`);
+      },
+    });
+
+    // 16. OOM killer signal / V8 heap allocation failure
+    this.addPattern({
+      id: 'oom_error',
+      name: 'V8 heap allocation failure / OOM',
+      description: 'V8 failed to allocate memory — process is under extreme heap pressure',
+      matchers: [/FATAL ERROR.*Reached heap limit|FATAL ERROR.*allocation failure|JavaScript heap out of memory/i],
+      levels: ['error'],
+      severity: 'critical',
+      category: 'memory',
+      cooldownMs: 10_000,
+      maxAttempts: 3,
+      autoFix: async () => {
+        // At this point we're in a very bad state. Best effort: force GC and flush cache.
+        if (typeof global.gc === 'function') { try { global.gc(); } catch { /* ignore */ } }
+        try {
+          const { distributedCache } = await import('./distributedCacheService.js');
+          await (distributedCache as any)?.flush?.();
+        } catch { /* non-critical */ }
+        logger.error('[ChainFixer] OOM detected — emergency GC + cache flush executed. Process may be unstable until it is recycled by the cluster.');
+      },
+      escalate: async () => {
+        logger.error('[ChainFixer] CRITICAL: OOM escalated — cluster will recycle this worker on the next health check');
+      },
+    });
   }
 
   private addPattern(p: ErrorPattern): void {
@@ -413,6 +576,36 @@ class ChainErrorAutoFixer extends EventEmitter {
       lastMessage: '',
       lastFixResult: 'none',
     });
+    this.adaptiveCooldown.set(p.id, { recentFires: [] });
+  }
+
+  // ─── Adaptive cooldown ─────────────────────────────────────────────────────
+  // If a pattern fires > 5 times within 1 hour → double its effective cooldown.
+  // If it hasn't fired in 24 hours → reset adaptive multiplier (back to base).
+  private _adaptiveCooldownMs(pattern: ErrorPattern): number {
+    const state = this.adaptiveCooldown.get(pattern.id)!;
+    const now = Date.now();
+    const oneHour  = 60 * 60_000;
+    const oneDay   = 24 * oneHour;
+
+    // Prune fires older than 1 hour
+    state.recentFires = state.recentFires.filter(t => now - t < oneHour);
+
+    // If fired 5+ times in the last hour, back off (double cooldown, max 4×)
+    const firesInHour = state.recentFires.length;
+    if (firesInHour >= 5)  return Math.min(pattern.cooldownMs * 4, 10 * 60_000);
+    if (firesInHour >= 3)  return Math.min(pattern.cooldownMs * 2, 5 * 60_000);
+
+    // If no fires in 24 h, halve cooldown to restore sensitivity
+    const lastFire = state.recentFires[state.recentFires.length - 1] ?? 0;
+    if (lastFire && now - lastFire > oneDay) return Math.max(pattern.cooldownMs / 2, 5_000);
+
+    return pattern.cooldownMs;
+  }
+
+  private _recordFire(id: string): void {
+    const state = this.adaptiveCooldown.get(id)!;
+    if (state) state.recentFires.push(Date.now());
   }
 
   // ─── Log Transport Hook ────────────────────────────────────────────────────
@@ -421,12 +614,33 @@ class ChainErrorAutoFixer extends EventEmitter {
     if (entry.level !== 'error' && entry.level !== 'warn' && entry.level !== 'info') return;
 
     const msg = entry.message + (entry.error?.message ? ' ' + entry.error.message : '');
+    let matched = false;
 
     for (const pattern of this.patterns) {
       if (!pattern.levels.includes(entry.level as any)) continue;
       if (!pattern.matchers.some(r => r.test(msg))) continue;
+      matched = true;
       await this.triggerFix(pattern, msg);
     }
+
+    // Unknown error detection — log novel errors that no pattern covers.
+    // Only track error-level messages to avoid noise from warn/info.
+    if (!matched && entry.level === 'error') {
+      this._trackUnknownError(msg);
+    }
+  }
+
+  private _trackUnknownError(msg: string): void {
+    const now = Date.now();
+    // Don't record the same message repeatedly (check last 10)
+    const recent = this._unknownErrors.slice(-10);
+    if (recent.some(e => e.msg === msg.slice(0, 120))) return;
+
+    this._unknownErrors.push({ ts: now, msg: msg.slice(0, 200) });
+    if (this._unknownErrors.length > this._MAX_UNKNOWN) this._unknownErrors.shift();
+
+    // Log it so it's visible in the audit trail
+    logger.warn(`[ChainFixer] Novel error (no pattern match) — may need a new recovery rule: ${msg.slice(0, 120)}`);
   }
 
   // ─── Process-Level Pre-Handler ─────────────────────────────────────────────
@@ -535,8 +749,11 @@ class ChainErrorAutoFixer extends EventEmitter {
     if (st.suppressed) return;
 
     const now = Date.now();
-    if (now - st.lastFix < pattern.cooldownMs) return;
+    // Use adaptive cooldown (may be longer or shorter than the base cooldown).
+    const effectiveCooldown = this._adaptiveCooldownMs(pattern);
+    if (now - st.lastFix < effectiveCooldown) return;
 
+    this._recordFire(pattern.id);
     st.lastFix = now;
     st.attempts++;
     st.lastMessage = triggeredBy.slice(0, 200);
@@ -596,7 +813,34 @@ class ChainErrorAutoFixer extends EventEmitter {
     this.installProcessHooks();
     this.startHealthCheck();
 
-    logger.info('[ChainFixer] Chain error auto-fixer active — monitoring ' + this.patterns.length + ' error patterns');
+    // Every 24 h: un-suppress all patterns that have been quiet for at least 6 h.
+    // This ensures long-dormant error classes are re-monitored after they reoccur
+    // following an extended quiet period — critical for 100+ year deployments.
+    const jitterMs = Math.floor(Math.random() * 30_000);
+    this._unsuppressTimer = setInterval(() => {
+      this._dailyUnsuppress();
+    }, 24 * 60 * 60_000 + jitterMs);
+    this._unsuppressTimer.unref();
+
+    logger.info(`[ChainFixer] Chain error auto-fixer active — monitoring ${this.patterns.length} error patterns (adaptive cooldowns, daily un-suppress)`);
+  }
+
+  private _dailyUnsuppress(): void {
+    const now = Date.now();
+    let reset = 0;
+    for (const pattern of this.patterns) {
+      const st = this.state.get(pattern.id)!;
+      if (!st.suppressed) continue;
+      // Only reset if the pattern hasn't fired in the last 6 h (it genuinely went quiet).
+      const lastFire = this.adaptiveCooldown.get(pattern.id)?.recentFires.slice(-1)[0] ?? st.lastFix;
+      if (now - lastFire > 6 * 60 * 60_000) {
+        this.resetPattern(pattern.id);
+        reset++;
+      }
+    }
+    if (reset > 0) {
+      logger.info(`[ChainFixer] Daily un-suppress: reset ${reset} pattern(s) that were quiet for 6+ hours`);
+    }
   }
 
   /** Cached lua executor stats updated by health check */
@@ -659,6 +903,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         rss: mb(mem.rss),
         heapPct: Math.round((mem.heapUsed / mem.heapTotal) * 100),
       },
+      unknownErrors: this._unknownErrors.slice(-10),
     };
   }
 

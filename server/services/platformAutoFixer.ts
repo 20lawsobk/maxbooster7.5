@@ -34,19 +34,23 @@ import { addLogTransport, type LogEntry } from './structuredLogger.js';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PROBE_INTERVAL_MS   = 30_000;
-const SLOW_QUERY_THRESHOLD_MS = 400;
-const PDIM_SLOW_THRESHOLD_MS  = 800;
+const PROBE_INTERVAL_HEALTHY_MS  = 30_000;   // normal cadence
+const PROBE_INTERVAL_DEGRADED_MS = 10_000;   // speed up when degraded
+const PROBE_INTERVAL_CRITICAL_MS =  5_000;   // fastest when critical
+const SLOW_QUERY_THRESHOLD_MS    = 400;
+const PDIM_SLOW_THRESHOLD_MS     = 800;
 const HEAP_WARN_RATIO     = 0.80;   // warn when heap > 80 % of limit
 const HEAP_PATCH_RATIO    = 0.92;   // patch when heap > 92 %
 const ROUTE_ERROR_WINDOW_MS = 60_000;
 const ROUTE_ERROR_THRESHOLD  = 0.20; // 20 % 5xx → mark degraded
 const MAX_HISTORY         = 200;
 const MAX_INCIDENTS       = 100;
+// Rolling trend window — keep up to N probe snapshots (≈ 30 s × 120 = 1 h)
+const TREND_WINDOW        = 120;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SubsystemName = 'database' | 'pdim' | 'memory' | 'lua_executor' | 'queues' | 'routes' | 'sessions';
+type SubsystemName = 'database' | 'pdim' | 'memory' | 'lua_executor' | 'queues' | 'routes' | 'sessions' | 'entropy';
 type ProbeStatus   = 'healthy' | 'degraded' | 'critical' | 'unknown';
 type PatchStatus   = 'active' | 'reverted' | 'expired';
 
@@ -114,6 +118,14 @@ export function recordRouteRequest(route: string, statusCode: number): void {
 
 // ─── Platform Auto-Fixer ─────────────────────────────────────────────────────
 
+// Trend snapshot: overall health status at a point in time
+interface TrendSnapshot {
+  ts: number;
+  status: 'healthy' | 'degraded' | 'critical' | 'unknown';
+  criticalCount: number;
+  degradedCount: number;
+}
+
 class PlatformAutoFixer extends EventEmitter {
   private probeResults  = new Map<SubsystemName, ProbeResult>();
   private patches       = new Map<string, ActivePatch>();
@@ -124,6 +136,16 @@ class PlatformAutoFixer extends EventEmitter {
   private scanCount = 0;
   private logErrorCounts = new Map<string, number>();
 
+  // ─── Adaptive probe interval state ─────────────────────────────────────────
+  private currentProbeIntervalMs = PROBE_INTERVAL_HEALTHY_MS;
+
+  // ─── Rolling trend window ───────────────────────────────────────────────────
+  private trendWindow: TrendSnapshot[] = [];
+
+  // ─── Daily report ───────────────────────────────────────────────────────────
+  private _dailyReportTimer: NodeJS.Timeout | null = null;
+  private _dailyPatternResetTimer: NodeJS.Timeout | null = null;
+
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
 
   start(): void {
@@ -133,17 +155,134 @@ class PlatformAutoFixer extends EventEmitter {
     // Intercept log entries for error-rate tracking
     addLogTransport(this._logTransport.bind(this));
 
-    // Initial probe after a short warm-up
-    setTimeout(() => this.runFullScan(), 5_000);
-    this.probeTimer = setInterval(() => this.runFullScan(), PROBE_INTERVAL_MS);
-    this.probeTimer.unref?.();
+    // Initial probe after a short warm-up, then adaptive recursive scheduling.
+    setTimeout(() => this._scheduleNextScan(), 5_000);
 
-    logger.info('[PlatformAutoFixer] Started — probing all subsystems every 30 s');
+    // Daily report — staggered with random jitter so two cluster workers don't log at the same ms.
+    const jitterMs = Math.floor(Math.random() * 60_000);
+    this._dailyReportTimer = setInterval(() => this.runDailyReport(), 24 * 60 * 60_000 + jitterMs);
+    this._dailyReportTimer.unref();
+
+    // Daily pattern reset — un-suppress ChainFixer patterns so long-dormant errors are re-caught.
+    this._dailyPatternResetTimer = setInterval(
+      () => this._unsuppressChainFixerPatterns(),
+      24 * 60 * 60_000 + jitterMs + 10_000,
+    );
+    this._dailyPatternResetTimer.unref();
+
+    logger.info('[PlatformAutoFixer] Started — probing all subsystems (adaptive: 30s/10s/5s by health)');
   }
 
   stop(): void {
-    if (this.probeTimer) { clearInterval(this.probeTimer); this.probeTimer = null; }
+    if (this.probeTimer) { clearTimeout(this.probeTimer); this.probeTimer = null; }
+    if (this._dailyReportTimer) { clearInterval(this._dailyReportTimer); this._dailyReportTimer = null; }
+    if (this._dailyPatternResetTimer) { clearInterval(this._dailyPatternResetTimer); this._dailyPatternResetTimer = null; }
     this.started = false;
+  }
+
+  // ─── Adaptive scan scheduler ────────────────────────────────────────────────
+
+  private _scheduleNextScan(): void {
+    if (!this.started) return;
+    this.probeTimer = setTimeout(async () => {
+      await this.runFullScan();
+      this._scheduleNextScan();
+    }, this.currentProbeIntervalMs);
+    (this.probeTimer as any).unref?.();
+  }
+
+  private _adjustProbeInterval(): void {
+    const statuses = [...this.probeResults.values()].map(p => p.status);
+    const hasCritical = statuses.includes('critical');
+    const hasDegraded = statuses.includes('degraded');
+
+    const target = hasCritical ? PROBE_INTERVAL_CRITICAL_MS
+      : hasDegraded  ? PROBE_INTERVAL_DEGRADED_MS
+      : PROBE_INTERVAL_HEALTHY_MS;
+
+    if (target !== this.currentProbeIntervalMs) {
+      this.currentProbeIntervalMs = target;
+      logger.info(`[PlatformAutoFixer] Probe interval adjusted → ${target / 1000}s (${hasCritical ? 'critical' : hasDegraded ? 'degraded' : 'healthy'})`);
+    }
+  }
+
+  // ─── Trend tracking ─────────────────────────────────────────────────────────
+
+  private _recordTrend(): void {
+    const statuses = [...this.probeResults.values()].map(p => p.status);
+    const criticalCount = statuses.filter(s => s === 'critical').length;
+    const degradedCount = statuses.filter(s => s === 'degraded').length;
+    const overall: TrendSnapshot['status'] = criticalCount > 0 ? 'critical'
+      : degradedCount > 0 ? 'degraded'
+      : statuses.every(s => s === 'healthy') ? 'healthy'
+      : 'unknown';
+
+    this.trendWindow.push({ ts: Date.now(), status: overall, criticalCount, degradedCount });
+    if (this.trendWindow.length > TREND_WINDOW) this.trendWindow.shift();
+  }
+
+  // Returns { worsening: bool, stable: bool, improving: bool } over the last N snapshots
+  private _analyzeTrend(n = 20): { worsening: boolean; stable: boolean; improving: boolean } {
+    const recent = this.trendWindow.slice(-n);
+    if (recent.length < 4) return { worsening: false, stable: true, improving: false };
+    const first = recent.slice(0, Math.floor(recent.length / 2));
+    const second = recent.slice(Math.floor(recent.length / 2));
+    const score = (s: TrendSnapshot) => s.criticalCount * 2 + s.degradedCount;
+    const avgFirst  = first.reduce((a, b) => a + score(b), 0)  / first.length;
+    const avgSecond = second.reduce((a, b) => a + score(b), 0) / second.length;
+    const delta = avgSecond - avgFirst;
+    return {
+      worsening:  delta >  0.5,
+      stable:     Math.abs(delta) <= 0.5,
+      improving:  delta < -0.5,
+    };
+  }
+
+  // ─── Daily report & pattern reset ──────────────────────────────────────────
+
+  private runDailyReport(): void {
+    try {
+      const trend = this._analyzeTrend(TREND_WINDOW);
+      const mem   = process.memoryUsage();
+      const uptime = process.uptime();
+      const openInc = this.incidents.filter(i => !i.resolvedAt).length;
+      const activePatches = [...this.patches.values()].filter(p => p.status === 'active').length;
+      const trendLabel = trend.worsening ? 'WORSENING ⚠️' : trend.improving ? 'IMPROVING ✅' : 'STABLE ✓';
+
+      logger.info(
+        `[PlatformAutoFixer] ─── Daily Report ──────────────────────────────\n` +
+        `  Uptime         : ${(uptime / 3600).toFixed(2)}h\n` +
+        `  Heap           : ${Math.round(mem.heapUsed / 1e6)}MB / ${Math.round(mem.rss / 1e6)}MB RSS\n` +
+        `  Trend (1h)     : ${trendLabel}\n` +
+        `  Scans run      : ${this.scanCount}\n` +
+        `  Active patches : ${activePatches}\n` +
+        `  Open incidents : ${openInc}\n` +
+        `  Subsystems     : ${[...this.probeResults.entries()].map(([k,v]) => `${k}=${v.status}`).join(', ')}\n` +
+        `──────────────────────────────────────────────────────────────`
+      );
+
+      if (trend.worsening) {
+        logger.warn('[PlatformAutoFixer] ⚠️  Health trend is WORSENING — increasing monitoring cadence');
+        this.currentProbeIntervalMs = PROBE_INTERVAL_DEGRADED_MS;
+      }
+    } catch { /* non-critical */ }
+  }
+
+  private async _unsuppressChainFixerPatterns(): Promise<void> {
+    try {
+      const { chainErrorAutoFixer } = await import('./chainErrorAutoFixer.js');
+      const status = chainErrorAutoFixer.getStatus();
+      let reset = 0;
+      for (const p of status.patterns) {
+        if (p.suppressed) {
+          chainErrorAutoFixer.resetPattern(p.id);
+          reset++;
+        }
+      }
+      if (reset > 0) {
+        logger.info(`[PlatformAutoFixer] Daily pattern reset: un-suppressed ${reset} ChainFixer pattern(s)`);
+      }
+    } catch { /* non-critical */ }
   }
 
   // ─── Log transport (reactive layer) ────────────────────────────────────────
@@ -180,6 +319,8 @@ class PlatformAutoFixer extends EventEmitter {
       this.probeLuaExecutor(),
       this.probeQueues(),
       this.probeRoutes(),
+      this.probeSessions(),
+      this.probeEntropy(),
     ]);
 
     for (const r of results) {
@@ -188,6 +329,8 @@ class PlatformAutoFixer extends EventEmitter {
       }
     }
 
+    this._recordTrend();
+    this._adjustProbeInterval();
     this.correlateIncidents();
     this.expireOldPatches();
   }
@@ -424,6 +567,103 @@ class PlatformAutoFixer extends EventEmitter {
     });
   }
 
+  private async probeSessions(): Promise<ProbeResult> {
+    const t0 = Date.now();
+    let status: ProbeStatus = 'healthy';
+    let message = 'OK';
+    let details: Record<string, unknown> = {};
+
+    try {
+      // Ping the session store via a direct DB query (the session store uses the same pool).
+      const { pool } = await import('../db.js');
+      const start = Date.now();
+      await Promise.race([
+        pool.query('SELECT COUNT(*) FROM session WHERE expire > NOW()'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 3000)),
+      ]) as any;
+      const pingMs = Date.now() - start;
+      details = { pingMs };
+      if (pingMs > 1500) {
+        status  = 'degraded';
+        message = `Session store slow: ${pingMs}ms`;
+      } else {
+        message = `Session store OK (${pingMs}ms)`;
+      }
+    } catch (err: any) {
+      const msg = err.message ?? '';
+      // 'session' table may not exist (no sessions yet) — not a real failure.
+      if (msg.includes('does not exist') || msg.includes('relation "session"')) {
+        status  = 'unknown';
+        message = 'Session table not yet created (no sessions)';
+      } else {
+        status  = 'degraded';
+        message = `Session probe failed: ${msg}`;
+        details = { error: msg };
+      }
+    }
+
+    return this._result('sessions', status, Date.now() - t0, message, details);
+  }
+
+  private async probeEntropy(): Promise<ProbeResult> {
+    const t0 = Date.now();
+    let status: ProbeStatus = 'healthy';
+    let message = 'OK';
+    const details: Record<string, unknown> = {};
+
+    try {
+      // 1. Check system uptime (very long uptimes can accumulate subtle leaks)
+      const uptimeHours = process.uptime() / 3600;
+      details.uptimeHours = Math.round(uptimeHours * 10) / 10;
+
+      // 2. Check open file descriptor count via /proc/self/fd (Linux only)
+      try {
+        const fs = await import('fs');
+        const fds = fs.readdirSync('/proc/self/fd').length;
+        details.openFds = fds;
+        if (fds > 4000) {
+          status  = 'critical';
+          message = `File descriptor leak: ${fds} open FDs`;
+        } else if (fds > 1500) {
+          status  = status === 'healthy' ? 'degraded' : status;
+          message = `Elevated open FDs: ${fds}`;
+        }
+      } catch { /* non-Linux or /proc unavailable */ }
+
+      // 3. Check EventEmitter listener leak (too many listeners = probable leak)
+      const listenerCount = (process as any)._getActiveHandles?.()?.length ?? 0;
+      details.activeHandles = listenerCount;
+      if (listenerCount > 500) {
+        status  = status === 'healthy' ? 'degraded' : status;
+        message = message === 'OK'
+          ? `High active handle count: ${listenerCount}`
+          : message;
+      }
+
+      // 4. RSS growth check — if RSS > 2× heap limit, we have external memory pressure
+      const mem = process.memoryUsage();
+      const rssMB = mem.rss / 1e6;
+      const heapLimitMB = (await import('v8')).getHeapStatistics().heap_size_limit / 1e6;
+      details.rssMB = Math.round(rssMB);
+      details.heapLimitMB = Math.round(heapLimitMB);
+      if (rssMB > heapLimitMB * 2) {
+        status  = status === 'healthy' ? 'degraded' : status;
+        message = message === 'OK'
+          ? `RSS (${Math.round(rssMB)}MB) >> heap limit (${Math.round(heapLimitMB)}MB) — possible native memory leak`
+          : message;
+      }
+
+      if (status === 'healthy') {
+        message = `entropy OK (${Math.round(uptimeHours)}h uptime, ${details.openFds ?? 'n/a'} FDs, ${Math.round(rssMB)}MB RSS)`;
+      }
+    } catch (err: any) {
+      status  = 'unknown';
+      message = `Entropy probe error: ${err.message}`;
+    }
+
+    return this._result('entropy', status, Date.now() - t0, message, details);
+  }
+
   // ─── Result builder ─────────────────────────────────────────────────────────
 
   private _result(
@@ -463,25 +703,63 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     // Apply patches based on subsystem and status
-    if (subsystem === 'memory' && status === 'critical') {
-      this.applyPatch({
-        subsystem: 'memory',
-        name: 'Force GC + cache eviction',
-        description: 'Heap above 92% — forcing garbage collection and flushing in-memory caches',
-        triggeredBy: result.message,
-        runtimeEffect: 'V8 GC forced; in-memory cache maps cleared',
-        action: async () => {
-          if (global.gc) {
-            global.gc();
-            logger.info('[PlatformAutoFixer] V8 GC forced due to heap pressure');
-          }
-          // Attempt to evict distributed cache
-          try {
-            const { distributedCache } = await import('./distributedCacheService.js');
-            await (distributedCache as any)?.evictExpired?.();
-          } catch { /* not critical */ }
-        },
-      });
+    if (subsystem === 'memory') {
+      const heapRatio = (result.details as any)?.heapRatio ?? 0;
+
+      if (status === 'degraded' && heapRatio >= 80) {
+        // Tier 1: warn + GC only
+        this.applyPatch({
+          subsystem: 'memory',
+          name: 'Memory pressure — GC',
+          description: `Heap at ${heapRatio}% — running garbage collection`,
+          triggeredBy: result.message,
+          runtimeEffect: 'V8 GC triggered',
+          action: async () => {
+            if (typeof global.gc === 'function') {
+              global.gc();
+              const after = Math.round(process.memoryUsage().heapUsed / 1e6);
+              logger.info(`[PlatformAutoFixer] GC triggered (heap ${heapRatio}%) — heap now ${after}MB`);
+            }
+          },
+        });
+      }
+
+      if (status === 'critical' && heapRatio >= 92) {
+        // Tier 2: GC + cache eviction
+        this.applyPatch({
+          subsystem: 'memory',
+          name: 'Memory critical — GC + cache eviction',
+          description: `Heap at ${heapRatio}% — GC + evicting expired cache entries`,
+          triggeredBy: result.message,
+          runtimeEffect: 'V8 GC forced; expired cache entries evicted',
+          action: async () => {
+            if (typeof global.gc === 'function') global.gc();
+            try {
+              const { distributedCache } = await import('./distributedCacheService.js');
+              await (distributedCache as any)?.evictExpired?.();
+              logger.info(`[PlatformAutoFixer] Heap critical (${heapRatio}%) — GC + cache eviction complete`);
+            } catch { /* evict is best-effort */ }
+          },
+        });
+
+        // Tier 3: if truly extreme (>= 96%), also flush the full cache
+        if (heapRatio >= 96) {
+          this.applyPatch({
+            subsystem: 'memory',
+            name: 'Memory extreme — cache flush',
+            description: `Heap at ${heapRatio}% — flushing entire distributed cache to recover memory`,
+            triggeredBy: result.message,
+            runtimeEffect: 'Distributed cache fully flushed',
+            action: async () => {
+              try {
+                const { distributedCache } = await import('./distributedCacheService.js');
+                await (distributedCache as any)?.flush?.();
+                logger.warn(`[PlatformAutoFixer] EXTREME heap pressure (${heapRatio}%) — full cache flush executed`);
+              } catch { /* non-critical */ }
+            },
+          });
+        }
+      }
     }
 
     if (subsystem === 'lua_executor' && status === 'critical') {
@@ -551,6 +829,39 @@ class PlatformAutoFixer extends EventEmitter {
           status === 'critical' ? 'high' : 'medium',
           ['routes'],
           result.message,
+        );
+      }
+    }
+
+    if (subsystem === 'sessions' && status === 'critical') {
+      this.applyPatch({
+        subsystem: 'sessions',
+        name: 'Session store reconnect',
+        description: 'Session store failing — attempting DB pool reconnect',
+        triggeredBy: result.message,
+        runtimeEffect: 'DB pool connection tested and refreshed',
+        action: async () => {
+          try {
+            const { pool } = await import('../db.js');
+            await pool.query('SELECT 1');
+            logger.info('[PlatformAutoFixer] Session store ping recovered after critical failure');
+          } catch (err: any) {
+            logger.warn('[PlatformAutoFixer] Session store reconnect failed:', err.message);
+          }
+        },
+      });
+    }
+
+    if (subsystem === 'entropy' && status !== 'healthy') {
+      // Log the worsening trend; no automatic patch can fix a real FD leak or RSS growth —
+      // these require investigation.  But we log a detailed alert for visibility.
+      const details = result.details as Record<string, unknown>;
+      if (status === 'critical') {
+        this.openIncident(
+          `Entropy critical: ${result.message}`,
+          'high',
+          ['entropy'],
+          `FDs=${details.openFds}, handles=${details.activeHandles}, RSS=${details.rssMB}MB`,
         );
       }
     }
@@ -708,13 +1019,21 @@ class PlatformAutoFixer extends EventEmitter {
       : statuses.every(s => s === 'healthy') ? 'healthy'
       : 'unknown';
 
+    const trend = this._analyzeTrend(20);
     return {
       overallStatus,
       scanCount: this.scanCount,
       started:   this.started,
+      probeIntervalMs: this.currentProbeIntervalMs,
       activePatches:   [...this.patches.values()].map(p => ({ ...p, revert: undefined })),
       openIncidents:   this.incidents.filter(i => !i.resolvedAt).length,
       subsystems: probes,
+      trend: {
+        worsening:  trend.worsening,
+        stable:     trend.stable,
+        improving:  trend.improving,
+        windowSize: this.trendWindow.length,
+      },
       timestamp:  Date.now(),
     };
   }
@@ -747,7 +1066,8 @@ class PlatformAutoFixer extends EventEmitter {
       lua_executor: () => this.probeLuaExecutor(),
       queues:       () => this.probeQueues(),
       routes:       () => this.probeRoutes(),
-      sessions:     async () => this._result('sessions', 'unknown', 0, 'Sessions probe not yet implemented', {}),
+      sessions:     () => this.probeSessions(),
+      entropy:      () => this.probeEntropy(),
     };
     const fn = probers[name];
     if (!fn) return null;
