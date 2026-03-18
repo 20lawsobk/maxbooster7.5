@@ -30,6 +30,11 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   echo "==> FAST PATH: all pre-built artifacts present"
   echo "   dist/public/, dist/index.cjs, dist/cluster.cjs already committed."
 
+  # Save postinstall.mjs BEFORE deleting script/ — it patches BullMQ after install.
+  # We use --ignore-scripts below so npm doesn't try to run the deleted file,
+  # then execute the saved copy manually once node_modules/ is ready.
+  cp script/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
+
   echo "==> Deleting source tree immediately (Vite/esbuild not needed)..."
   # client/ is 930 MB — deleting it before npm ci cuts peak disk use by 930 MB.
   rm -rf \
@@ -44,9 +49,13 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   echo "   Source tree removed ($(du -sh dist/ 2>/dev/null | cut -f1) in dist/)."
 
   echo "==> Installing production dependencies only (omitting dev deps)..."
-  # npm ci --omit=dev: reads package-lock.json, installs only non-dev packages.
-  # This downloads ~700 MB instead of 3 GB, and skips the npm prune step.
-  npm ci --omit=dev
+  # --ignore-scripts prevents npm from running the postinstall hook, which would
+  # fail because script/postinstall.mjs was just deleted with the source tree.
+  # We run the saved copy manually below after node_modules is ready.
+  npm ci --omit=dev --ignore-scripts
+
+  echo "==> Running postinstall patches (BullMQ guards + TF cleanup)..."
+  node /tmp/postinstall.mjs || echo "   postinstall.mjs warning (non-fatal)"
 
   FAST_PATH=1
 else
