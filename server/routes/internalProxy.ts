@@ -61,3 +61,16 @@ aiServiceProxyRouter.use((req: Request, res: Response) => {
   if (!checkInternalSecret(req, res)) return;
   proxyTo(AI_SERVICE_TARGET, req, res, 'PythonAI');
 });
+
+// BOOSTERSTATE_SIDECAR_PORT is the binary's actual internal listen port.
+// BOOSTERSTATE_PORT may equal PORT when the one-port config is active; never use
+// it here — that would proxy back to the main app and create a loop.
+const BOOSTERSTATE_SIDECAR_PORT = parseInt(process.env.BOOSTERSTATE_SIDECAR_PORT || '9877', 10);
+const BOOSTERSTATE_TARGET = `http://127.0.0.1:${BOOSTERSTATE_SIDECAR_PORT}`;
+
+export const boosterstateProxyRouter = Router();
+
+boosterstateProxyRouter.use((req: Request, res: Response) => {
+  if (!checkInternalSecret(req, res)) return;
+  proxyTo(BOOSTERSTATE_TARGET, req, res, 'Boosterstate');
+});

@@ -55,7 +55,13 @@ import { spawnSync, spawn } from 'child_process';
     return;
   }
 
-  const proc = spawn(bin, [], { detached: true, stdio: 'ignore', env: { ...process.env } });
+  // BOOSTERSTATE_PORT may equal PORT (5000) when the "one external port" configuration
+  // is active — clients reach boosterstate via the /api/boosterstate Express proxy.
+  // The sidecar binary itself must always bind to a different internal port.
+  // BOOSTERSTATE_SIDECAR_PORT (default 9877) is the binary's actual listen address.
+  const sidecarPort = process.env.BOOSTERSTATE_SIDECAR_PORT || '9877';
+  const sidecarEnv = { ...process.env, BOOSTERSTATE_PORT: sidecarPort };
+  const proc = spawn(bin, [], { detached: true, stdio: 'ignore', env: sidecarEnv });
   // MUST attach an 'error' listener before .unref() — without it, any spawn failure
   // throws an uncaught exception that crashes the entire cluster primary process.
   proc.on('error', (err) => {

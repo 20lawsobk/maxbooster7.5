@@ -78,7 +78,7 @@ const ENV_REQUIREMENTS: EnvRequirement[] = [
     name: 'BOOSTERSTATE_PORT',
     required: false,
     category: 'optional',
-    description: 'BoosterState server port (default: 9877)',
+    description: 'BoosterState sidecar port (default: 9877) — clients connect via PORT/api/boosterstate',
     validator: (v) => !isNaN(parseInt(v)) && parseInt(v) > 0,
   },
 

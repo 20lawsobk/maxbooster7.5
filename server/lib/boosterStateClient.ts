@@ -16,7 +16,7 @@
 
 import { logger } from '../logger.js';
 
-const BASE_URL = `http://127.0.0.1:${process.env.BOOSTERSTATE_PORT || 9877}`;
+const BASE_URL = `http://127.0.0.1:${process.env.PORT || 5000}/api/boosterstate`;
 
 let warnedOnce = false;
 

@@ -35,10 +35,15 @@ fi
 echo "[start.sh] node: $(command -v node) ($(node --version))"
 
 # ── 2. Start boosterstate sidecar ────────────────────────────────────────────
+# BOOSTERSTATE_PORT may equal PORT (5000) in the one-port configuration — clients
+# reach the sidecar via the /api/boosterstate Express proxy.  The binary itself
+# must always bind to an internal port that does not conflict with the main app.
+# BOOSTERSTATE_SIDECAR_PORT (default 9877) is the binary's actual listen address.
 if ! pgrep -x boosterstate > /dev/null 2>&1; then
   if [ -x "./boosterstate/target/release/boosterstate" ]; then
-    ./boosterstate/target/release/boosterstate &
-    echo "[start.sh] boosterstate started (pid $!) — no sleep needed, workers take >2s to init"
+    _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT:-9877}"
+    BOOSTERSTATE_PORT="$_SIDECAR_PORT" ./boosterstate/target/release/boosterstate &
+    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT — no sleep needed, workers take >2s to init"
   else
     echo "[start.sh] WARNING: boosterstate binary not found — skipping sidecar"
   fi

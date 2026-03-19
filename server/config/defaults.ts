@@ -173,7 +173,7 @@ export const config: AppConfig = {
   },
 
   boosterState: {
-    port: parseEnvInt('BOOSTERSTATE_PORT', 9877),
+    port: parseEnvInt('BOOSTERSTATE_PORT', 9877), // sidecar listens here; clients route through PORT/api/boosterstate
     shards: parseEnvInt('BOOSTERSTATE_SHARDS', 16),
     dataDir: process.env.BOOSTERSTATE_DATA_DIR || './boosterstate-data',
   },
