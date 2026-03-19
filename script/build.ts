@@ -182,6 +182,34 @@ async function buildAll() {
     }
   }
 
+  // Patch ELF interpreter so the binary runs on standard Linux (production VM) not just Nix.
+  const binaryPath = "boosterstate/target/release/boosterstate";
+  const binaryReady = await access(binaryPath).then(() => true).catch(() => false);
+  if (binaryReady) {
+    const { spawnSync: spawnPatchelf } = await import("child_process");
+    const patchelfCmd = (() => {
+      const inPath = spawnPatchelf("which", ["patchelf"], { encoding: "utf8" });
+      if (inPath.status === 0) return inPath.stdout.trim();
+      return "/nix/store/0flj33q30lmzdjagwjqh964qmiyklww2-patchelf-0.15.0/bin/patchelf";
+    })();
+    const fs = await import("fs/promises");
+    const tmpPath = `${binaryPath}.elf-patch-tmp`;
+    await fs.copyFile(binaryPath, tmpPath);
+    const patch = spawnPatchelf(patchelfCmd, [
+      "--set-interpreter", "/lib64/ld-linux-x86-64.so.2",
+      "--set-rpath", "/lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/lib64",
+      tmpPath,
+    ], { encoding: "utf8" });
+    if (patch.status === 0) {
+      await fs.rename(tmpPath, binaryPath);
+      await fs.chmod(binaryPath, 0o755);
+      console.log("boosterstate ELF patched: interpreter=/lib64/ld-linux-x86-64.so.2");
+    } else {
+      await fs.unlink(tmpPath).catch(() => {});
+      console.warn("patchelf step skipped (tool unavailable or failed):", patch.stderr?.trim());
+    }
+  }
+
   // Skip server bundle rebuild when no source files have changed since last build.
   // `find -newer` lets the OS kernel do the mtime comparison — no per-file stat() calls.
   // Only applied in dev (non-deploy) mode; deployment always rebuilds fresh.

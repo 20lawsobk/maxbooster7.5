@@ -87,6 +87,21 @@ else
   echo "   Rust binary built: $(du -sh "$RUST_BIN" | cut -f1)"
 fi
 
+echo "==> Patching Rust binary ELF interpreter for production VM portability..."
+PATCHELF_CMD=$(command -v patchelf 2>/dev/null || echo "/nix/store/0flj33q30lmzdjagwjqh964qmiyklww2-patchelf-0.15.0/bin/patchelf")
+if [ -x "$PATCHELF_CMD" ]; then
+  cp "$RUST_BIN" /tmp/boosterstate-elf-work
+  "$PATCHELF_CMD" \
+    --set-interpreter /lib64/ld-linux-x86-64.so.2 \
+    --set-rpath /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/lib64 \
+    /tmp/boosterstate-elf-work
+  mv -f /tmp/boosterstate-elf-work "$RUST_BIN"
+  chmod +x "$RUST_BIN"
+  echo "   ELF patched: interpreter=/lib64/ld-linux-x86-64.so.2, rpath=standard Linux paths"
+else
+  echo "   WARNING: patchelf not found — binary retains Nix-specific interpreter (may fail on production VM)"
+fi
+
 echo "==> Preserving Rust binary and removing Rust source tree..."
 cp "$RUST_BIN" /tmp/boosterstate-release
 rm -rf boosterstate/
