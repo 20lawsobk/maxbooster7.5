@@ -8,6 +8,11 @@
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import fs from 'fs';
+import path from 'path';
+
+const INDEX_CACHE_FILE = path.join(process.cwd(), 'dist', '.db-indexes-ok');
+const INDEX_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 
 interface IndexDefinition {
   name: string;
@@ -382,6 +387,20 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
   const skipped: string[] = [];
   const failed: { name: string; error: string }[] = [];
 
+  // Fast path: if all indexes were verified on a previous boot and the stamp file
+  // is fresh (<24h) and reflects the current index count, skip the DB round-trip.
+  const expectedCount = REQUIRED_INDEXES.length;
+  try {
+    const raw = fs.readFileSync(INDEX_CACHE_FILE, 'utf8').trim();
+    const { count, ts } = JSON.parse(raw);
+    if (count === expectedCount && Date.now() - ts < INDEX_CACHE_TTL_MS) {
+      logger.info(`📊 DB indexes: cache hit (${count} indexes verified, skipping DB check)`);
+      return { success: true, created: [], skipped: REQUIRED_INDEXES.map(i => i.name), failed: [] };
+    }
+  } catch {
+    // Cache missing or unreadable — proceed with normal check.
+  }
+
   logger.info('════════════════════════════════════════════════════════');
   logger.info('📊 VERIFYING DATABASE INDEXES');
   logger.info('════════════════════════════════════════════════════════');
@@ -452,8 +471,21 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
   logger.info('   ✓ Database indexes verified');
   logger.info('════════════════════════════════════════════════════════');
 
+  const success = failed.length === 0;
+
+  // Write a stamp so the next boot can skip the DB round-trip entirely.
+  // Only cache when all indexes are present and no failures occurred.
+  if (success) {
+    try {
+      fs.mkdirSync(path.dirname(INDEX_CACHE_FILE), { recursive: true });
+      fs.writeFileSync(INDEX_CACHE_FILE, JSON.stringify({ count: expectedCount, ts: Date.now() }));
+    } catch {
+      // Non-fatal — next boot will just re-check normally.
+    }
+  }
+
   return {
-    success: failed.length === 0,
+    success,
     created,
     skipped,
     failed,

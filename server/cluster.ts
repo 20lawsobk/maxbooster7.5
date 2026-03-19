@@ -199,7 +199,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
       };
       const w = cluster.fork(env);
       workerEnvMap.set(w.id, env);
-    }, i * 800);
+    }, i * 300);
   }
 
   // Crash-loop protection: track restart times to detect and back off runaway crashes.

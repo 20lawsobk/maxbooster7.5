@@ -3,6 +3,7 @@ import { build as viteBuild } from "vite";
 import { rm, readFile, access, readdir, stat, writeFile } from "fs/promises";
 import { brotliCompress, gzip, constants as zlibConstants } from "zlib";
 import { promisify } from "util";
+import { spawnSync } from "child_process";
 
 const brotliCompressAsync = promisify(brotliCompress);
 const gzipAsync = promisify(gzip);
@@ -181,63 +182,75 @@ async function buildAll() {
     }
   }
 
-  await rm("dist/index.cjs", { force: true });
-  await rm("dist/cluster.cjs", { force: true });
+  // Skip server bundle rebuild when no source files have changed since last build.
+  // `find -newer` lets the OS kernel do the mtime comparison — no per-file stat() calls.
+  // Only applied in dev (non-deploy) mode; deployment always rebuilds fresh.
+  const serverBundleExists = !isDeployBuild &&
+    await access("dist/index.cjs").then(() => true).catch(() => false);
 
-  console.log("building server...");
-  const pkg = JSON.parse(await readFile("package.json", "utf-8"));
-  const allDeps = [
-    ...Object.keys(pkg.dependencies || {}),
-    ...Object.keys(pkg.devDependencies || {}),
-  ];
-  
-  // Externalize everything not in allowlist, plus force-external heavy packages
-  const externals = [
-    ...allDeps.filter((dep) => !allowlist.includes(dep)),
-    ...forceExternal,
-  ];
-  
-  // Dedupe the externals list
-  const uniqueExternals = [...new Set(externals)];
+  const needsServerRebuild = !serverBundleExists || isDeployBuild || (() => {
+    const changed = spawnSync(
+      'find', ['server', 'shared', '-name', '*.ts', '-newer', 'dist/index.cjs'],
+      { encoding: 'utf8' }
+    );
+    return (changed.stdout?.trim() ?? '').length > 0;
+  })();
 
-  console.log(`Externalizing ${uniqueExternals.length} packages to reduce bundle size`);
+  if (!needsServerRebuild) {
+    console.log("server bundle up-to-date — skipping esbuild (no source changes detected)");
+  } else {
+    await rm("dist/index.cjs", { force: true });
+    await rm("dist/cluster.cjs", { force: true });
 
-  const sharedBuildConfig = {
-    platform: "node" as const,
-    bundle: true,
-    format: "cjs" as const,
-    define: {
-      "process.env.NODE_ENV": '"production"',
-      // Replace import.meta.url with a CJS-compatible variable so esbuild
-      // stops emitting "import.meta is not available with cjs" warnings.
-      "import.meta.url": "__importMetaUrl__",
-    },
-    // Banner runs before any bundled code — defines the CJS equivalent of
-    // import.meta.url so every file in the bundle resolves it correctly.
-    banner: {
-      js: `const __importMetaUrl__ = require("url").pathToFileURL(__filename).href;`,
-    },
-    minify: true,
-    minifySyntax: true,
-    external: uniqueExternals,
-    logLevel: "info" as const,
-    treeShaking: true,
-    legalComments: "none" as const,
-    drop: ["debugger"] as ("debugger" | "console")[],
-  };
+    console.log("building server...");
+    const pkg = JSON.parse(await readFile("package.json", "utf-8"));
+    const allDeps = [
+      ...Object.keys(pkg.dependencies || {}),
+      ...Object.keys(pkg.devDependencies || {}),
+    ];
 
-  await Promise.all([
-    esbuild({
-      ...sharedBuildConfig,
-      entryPoints: ["server/index.ts"],
-      outfile: "dist/index.cjs",
-    }),
-    esbuild({
-      ...sharedBuildConfig,
-      entryPoints: ["server/cluster.ts"],
-      outfile: "dist/cluster.cjs",
-    }),
-  ]);
+    const externals = [
+      ...allDeps.filter((dep) => !allowlist.includes(dep)),
+      ...forceExternal,
+    ];
+
+    const uniqueExternals = [...new Set(externals)];
+
+    console.log(`Externalizing ${uniqueExternals.length} packages to reduce bundle size`);
+
+    const sharedBuildConfig = {
+      platform: "node" as const,
+      bundle: true,
+      format: "cjs" as const,
+      define: {
+        "process.env.NODE_ENV": '"production"',
+        "import.meta.url": "__importMetaUrl__",
+      },
+      banner: {
+        js: `const __importMetaUrl__ = require("url").pathToFileURL(__filename).href;`,
+      },
+      minify: true,
+      minifySyntax: true,
+      external: uniqueExternals,
+      logLevel: "info" as const,
+      treeShaking: true,
+      legalComments: "none" as const,
+      drop: ["debugger"] as ("debugger" | "console")[],
+    };
+
+    await Promise.all([
+      esbuild({
+        ...sharedBuildConfig,
+        entryPoints: ["server/index.ts"],
+        outfile: "dist/index.cjs",
+      }),
+      esbuild({
+        ...sharedBuildConfig,
+        entryPoints: ["server/cluster.ts"],
+        outfile: "dist/cluster.cjs",
+      }),
+    ]);
+  }
 
   // dist/index.js — ESM entry point for `node dist/index.js` (deployment run command).
   // package.json has "type":"module" so .js = ESM; ESM can import CJS with no extra config.

@@ -38,8 +38,7 @@ echo "[start.sh] node: $(command -v node) ($(node --version))"
 if ! pgrep -x boosterstate > /dev/null 2>&1; then
   if [ -x "./boosterstate/target/release/boosterstate" ]; then
     ./boosterstate/target/release/boosterstate &
-    echo "[start.sh] boosterstate started (pid $!)"
-    sleep 2
+    echo "[start.sh] boosterstate started (pid $!) — no sleep needed, workers take >2s to init"
   else
     echo "[start.sh] WARNING: boosterstate binary not found — skipping sidecar"
   fi

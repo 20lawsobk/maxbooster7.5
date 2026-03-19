@@ -224,19 +224,19 @@ export async function initializeWorkers(): Promise<void> {
 
   // Stagger run() calls by STAGGER_MS per worker to prevent all four workers from
   // firing their initial moveStalledJobsToWait Lua script simultaneously on startup.
-  // With stalledInterval=300s the stall checks are: audio@0s, csv@15s, analytics@30s,
-  // email@45s — each runs solo through the single LuaExecutor slot instead of piling up.
-  const STAGGER_MS = 15_000;
+  // With stalledInterval=300s the stall checks are: audio@0s, csv@5s, analytics@10s,
+  // email@15s — each runs solo through the single LuaExecutor slot instead of piling up.
+  const STAGGER_MS = 5_000;
   startWorkerSafe(audioWorker,     'audio');
   setTimeout(() => startWorkerSafe(csvWorker!,       'csv'),       1 * STAGGER_MS);
   setTimeout(() => startWorkerSafe(analyticsWorker!, 'analytics'), 2 * STAGGER_MS);
   setTimeout(() => startWorkerSafe(emailWorker!,     'email'),     3 * STAGGER_MS);
 
-  logger.info('📋 Active BullMQ workers (staggered startup — 15s apart):');
+  logger.info('📋 Active BullMQ workers (staggered startup — 5s apart):');
   logger.info(`   - Audio     (concurrency: ${config.queue.concurrency.audio}, starts now)`);
-  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv},       starts +15s)`);
-  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics}, starts +30s)`);
-  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email},     starts +45s)`);
+  logger.info(`   - CSV       (concurrency: ${config.queue.concurrency.csv},       starts +5s)`);
+  logger.info(`   - Analytics (concurrency: ${config.queue.concurrency.analytics}, starts +10s)`);
+  logger.info(`   - Email     (concurrency: ${config.queue.concurrency.email},     starts +15s)`);
 
   try {
     const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
