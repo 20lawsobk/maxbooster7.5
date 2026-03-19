@@ -199,8 +199,10 @@ find node_modules -type d \( -name "__tests__" -o -name "test" -o -name "tests" 
 echo "   Removed: test directories inside node_modules"
 
 # Documentation, examples, and meta-files bundled inside packages.
+# NOTE: "doc" (singular) is intentionally absent — some packages ship runtime
+# JS inside a directory named "doc" (e.g. exceljs/lib/doc/workbook.js).
 find node_modules -maxdepth 3 -type d \
-  \( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" \
+  \( -name "docs" -o -name "examples" -o -name "example" \
      -o -name "tutorial" -o -name "tutorials" -o -name ".github" -o -name "benchmark" \
      -o -name "benchmarks" -o -name "fixtures" -o -name "scripts" \) \
   -exec rm -rf {} + 2>/dev/null || true

@@ -430,16 +430,15 @@ async function main() {
     } catch (_) {}
 
     // ── 11. Docs, examples, fixtures, benchmark dirs inside packages ──────────
-    // maxdepth 3 catches scoped packages (@scope/pkg/doc) but MUST exclude
-    // packages that use "doc" for runtime JS (e.g. exceljs/lib/doc/workbook.js).
+    // "doc" (singular) is intentionally excluded — some packages (e.g. exceljs)
+    // ship runtime JS inside a directory named "doc".
     console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
     try {
       execSync(
         `find node_modules -maxdepth 3 -type d ` +
-        `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
+        `\\( -name "docs" -o -name "examples" -o -name "example" ` +
         `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
         `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
-        `-not -path "*/exceljs/*" ` +
         `-exec rm -rf {} + 2>/dev/null || true`,
         { stdio: 'inherit', shell: '/bin/bash' }
       );
