@@ -4,9 +4,15 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const AI_URL = process.env.AI_MODEL_SERVICE_URL || 'http://127.0.0.1:9878';
+const _PORT = process.env.PORT || 5000;
+const AI_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
 const TRAIN_TIMEOUT = 60_000;
 const LONG_TIMEOUT  = 3_600_000;
+
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
+function internalAuthHeaders(): Record<string, string> {
+  return _INTERNAL_SECRET ? { Authorization: `Bearer ${_INTERNAL_SECRET}` } : {};
+}
 
 async function proxyToAI(
   endpoint: string,
@@ -19,7 +25,7 @@ async function proxyToAI(
   try {
     const res = await fetch(`${AI_URL}${endpoint}`, {
       method,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
       body: body ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     });

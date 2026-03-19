@@ -3605,6 +3605,9 @@ export async function registerRoutes(
     import("./routes/batch.ts"),
     import("./routes/distribution.ts"),
   ]);
+  const { aiServiceProxyRouter } = await import("./routes/internalProxy.js");
+  app.use("/api/ai-service", aiServiceProxyRouter);
+
   app.use("/api/admin", adminRouter);
   app.use("/api/distribution", distributionRouter);
   const { default: trainingRouter } = await import("./routes/training.js");

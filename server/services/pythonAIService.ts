@@ -1,7 +1,13 @@
 import { logger } from '../logger.js';
 
-const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || 'http://127.0.0.1:9878';
+const _PORT = process.env.PORT || 5000;
+const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
 const TIMEOUT_MS = 30000;
+
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
+function internalAuthHeaders(): Record<string, string> {
+  return _INTERNAL_SECRET ? { Authorization: `Bearer ${_INTERNAL_SECRET}` } : {};
+}
 
 interface AIModelResponse<T> {
   success: boolean;
@@ -24,7 +30,7 @@ async function callAIModel<T>(endpoint: string, body: any): Promise<AIModelRespo
   try {
     const response = await fetchWithTimeout(`${AI_MODEL_URL}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
       body: JSON.stringify(body),
     });
 
@@ -157,6 +163,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/health`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 5000);
       this.available = response.ok;
       this.lastCheckMs = now;
@@ -249,6 +256,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/boostsheet/${sheetId}`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       });
       if (!response.ok) {
         return { success: false, error: `Not found: ${response.status}` };
@@ -392,6 +400,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/video-job/${jobId}`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
       if (!response.ok) {
         return { success: false, error: `Job status check failed: ${response.status}` };
@@ -407,6 +416,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/cinematic-templates`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
       if (!response.ok) {
         return { success: false, error: `Failed to fetch templates: ${response.status}` };
@@ -422,6 +432,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/health`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 5000);
       if (!response.ok) {
         return { success: false, error: `Health check failed: ${response.status}` };
@@ -437,7 +448,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
         body: JSON.stringify({ file_path: filePath, detailed }),
       }, 60000);
       if (!response.ok) {
@@ -455,6 +466,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio-features`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 5000);
       if (!response.ok) {
         return { success: false, error: 'Failed to get audio feature info' };
@@ -470,7 +482,7 @@ export class PythonAIService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/transcribe`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
         body: JSON.stringify({ file_path: filePath }),
       }, 120000);
       if (!response.ok) {

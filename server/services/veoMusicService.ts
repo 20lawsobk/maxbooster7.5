@@ -1,7 +1,13 @@
 import { logger } from '../logger.js';
 
-const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || 'http://127.0.0.1:9878';
+const _PORT = process.env.PORT || 5000;
+const AI_MODEL_URL = process.env.AI_MODEL_SERVICE_URL || `http://127.0.0.1:${_PORT}/api/ai-service`;
 const VEO_TIMEOUT_MS = 60000;
+
+const _INTERNAL_SECRET = process.env.BOOSTERSTATE_SECRET || '';
+function internalAuthHeaders(): Record<string, string> {
+  return _INTERNAL_SECRET ? { Authorization: `Bearer ${_INTERNAL_SECRET}` } : {};
+}
 
 async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = VEO_TIMEOUT_MS): Promise<Response> {
   const controller = new AbortController();
@@ -89,7 +95,7 @@ class VeoMusicService {
 
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/campaign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
         body: JSON.stringify(request),
       });
 
@@ -120,6 +126,7 @@ class VeoMusicService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/platforms`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
 
       if (!response.ok) return null;
@@ -133,6 +140,7 @@ class VeoMusicService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/goals`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
 
       if (!response.ok) return null;
@@ -146,6 +154,7 @@ class VeoMusicService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/recommend/${platform}`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
 
       if (!response.ok) return null;
@@ -159,6 +168,7 @@ class VeoMusicService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/status`, {
         method: 'GET',
+        headers: { ...internalAuthHeaders() },
       }, 10000);
 
       if (!response.ok) return null;
@@ -172,7 +182,7 @@ class VeoMusicService {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/url/metadata`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
         body: JSON.stringify({ url }),
       }, 15000);
 
@@ -192,7 +202,7 @@ class VeoMusicService {
 
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/url/campaign`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...internalAuthHeaders() },
         body: JSON.stringify(body),
       }, 30000);
 
