@@ -114,8 +114,8 @@ const _PDIM_GAP_INIT_MS   = 600;    // fixed — must satisfy 35×init < 25 000 
 const _PDIM_MULT_429      = 2.0;    // multiplicative back-off on each 429
 
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
- *  and after each escalation.  Floor can only move upward (min 400 ms, max 1 200 ms)
- *  to guarantee LuaExecutor scripts finish before their 45 s hard-kill. */
+ *  and after each escalation.  Floor can only move upward (min 400 ms, max 1 200 ms).
+ *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 50ms fast-lane. */
 export function setPdimGapFloor(ms: number): void {
   _PDIM_GAP_FLOOR_MS = Math.max(400, Math.min(1_200, Math.round(ms)));
   // If the live gap is below the new floor, snap it up immediately so the change

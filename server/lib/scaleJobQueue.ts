@@ -178,7 +178,8 @@ export function startRetentionWorker(): Worker {
       drainDelay: 120_000,
       // stalledInterval: 5 min — moveStalledJobsToWait runs ~35 PDIM redis.call()s;
       // raising from 60 s to 5 min reduces these Lua script executions 5× and
-      // prevents the majority of 45s script timeouts from the retention worker.
+      // reduces overall PDIM load from stall checks (scripts run to natural
+      // completion via the 50ms fast-lane; the 5 min cadence remains optimal).
       stalledInterval: 300_000,
       maxStalledCount: 1,
       // lockDuration: 10 min — lock renewal fires every lockDuration/2 = 5 min.

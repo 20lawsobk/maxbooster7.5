@@ -239,15 +239,18 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
-    // 5b. LuaExecutor internal script timeout (45s wall-clock limit exceeded)
-    // Distinct from slot-wait timeout: the slot was acquired but the Lua script
-    // itself ran longer than the configured per-script timeout.  Root cause is
-    // almost always PDIM being slow (the redis.call()s inside the script stall),
-    // so the fix is: reset the semaphore (free the slot) AND slow down PDIM.
+    // 5b. LuaExecutor script timeout (legacy — retained for abnormal Worker exits only)
+    // Scripts now run to natural completion with no hard-kill timeout.  The 50ms
+    // fast-lane gap means scripts complete in ~9s (35 calls × 250ms RTT+gap) and
+    // the Worker watchdog only logs progress every 60s without ever terminating.
+    // This pattern can only fire if a Worker exits abnormally mid-script; the
+    // semaphore reset frees the leaked slot.  Gap adjustment removed: scripts use
+    // the 50ms fast-lane and are not affected by the AIMD gap — widening it would
+    // only penalise direct PDIM calls (sessions, cache) for no benefit.
     this.addPattern({
       id: 'lua_script_timeout',
-      name: 'LuaExecutor script wall-clock timeout',
-      description: 'A Lua script exceeded its per-script timeout (45s); script forcibly aborted',
+      name: 'LuaExecutor script abnormal exit (legacy)',
+      description: 'LuaExecutor Worker exited abnormally mid-script; semaphore slot freed. Scripts no longer have a hard-kill timeout.',
       matchers: [/\[LuaExecutor\].*script timeout \(\d+s\)/i, /Worker error.*script timeout/i],
       levels: ['error', 'warn'],
       severity: 'high',
@@ -255,28 +258,15 @@ class ChainErrorAutoFixer extends EventEmitter {
       cooldownMs: 15_000,
       maxAttempts: 30,
       autoFix: async () => {
-        // Step 1: free the semaphore slot the timed-out script was holding
+        // Free the semaphore slot the aborted script was holding so future
+        // scripts can acquire it without waiting for the full timeout window.
         const { resetLuaExecutorSemaphore, getLuaExecutorStats } = await import('../lib/luaExecutor.js');
         const before = getLuaExecutorStats();
         const released = resetLuaExecutorSemaphore();
-        logger.info(`[ChainFixer] Lua script timeout — semaphore reset: ${before.active} active → 0, released ${released} slot(s)`);
-
-        // Step 2: slow down PDIM — scripts time out because redis.call()s inside
-        // them are waiting on a slow PDIM. Widening the gap gives PDIM room to breathe.
-        try {
-          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
-          if (typeof setPdimAdaptiveGap === 'function') {
-            const current = getPdimAdaptiveGapMs?.() ?? 600;
-            const raised  = Math.min(3000, Math.max(1500, current + 800));
-            if (raised > current) {
-              setPdimAdaptiveGap(raised);
-              logger.info(`[ChainFixer] Lua script timeout — PDIM adaptive gap raised ${current}ms → ${raised}ms (scripts were stalling on slow redis.call()s)`);
-            }
-          }
-        } catch { /* non-fatal */ }
+        logger.info(`[ChainFixer] Lua script abnormal exit — semaphore reset: ${before.active} active → 0, released ${released} slot(s)`);
       },
       escalate: async (attempts) => {
-        logger.warn(`[ChainFixer] lua_script_timeout: ${attempts} occurrences — Lua scripts chronically timing out; PDIM may be persistently slow`);
+        logger.warn(`[ChainFixer] lua_script_timeout: ${attempts} occurrences — Workers exiting abnormally; check LuaExecutor logs for root cause`);
       },
     });
 

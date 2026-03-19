@@ -54,14 +54,12 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
     label: 'PDIM gap floor (ms)',
     threshold: 3,          // escalate after only 3 circuit opens (not 5)
   },
-  lua_script_timeout: {
-    key: 'luaWaitMs',
-    delta: +10_000,
-    min: 55_000,
-    max: 120_000,
-    label: 'LuaExecutor slot wait (ms)',
-    threshold: 4,
-  },
+  // lua_script_timeout removed: scripts now run to natural completion with no
+  // hard-kill timeout (infinite execution via watchdog-only Worker).  The pattern
+  // in ChainFixer is retained for abnormal Worker exits but can never escalate
+  // luaWaitMs since LuaExecutor scripts are no longer time-bounded by the slot
+  // wait window.  Escalating luaWaitMs here was only meaningful when scripts
+  // competed for slots under a hard 45s budget — that constraint no longer exists.
   lua_executor_timeout: {
     key: 'luaWaitMs',
     delta: +10_000,

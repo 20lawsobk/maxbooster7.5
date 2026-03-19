@@ -417,19 +417,33 @@ class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      const { isPdimConfigured, getPdimClient, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+      const { isPdimConfigured, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
       if (!isPdimConfigured()) {
         return this._result('pdim', 'unknown', 0, 'PDIM not configured', {});
       }
 
+      // Check circuit breaker state first — no HTTP call needed if OPEN.
+      const { cbIsOpen } = await import('../lib/pdimCircuitBreaker.js');
+      if (cbIsOpen()) {
+        return this._result('pdim', 'critical', 0, 'PDIM circuit breaker is OPEN', { circuitOpen: true });
+      }
+
       const gapMs = getPdimAdaptiveGapMs();
-      const client = getPdimClient();
+
+      // Direct HTTP ping — bypasses the AIMD serialisation chain so health probes
+      // never compete with real traffic for the shared PDIM channel.  Uses the
+      // same env-var precedence as PdimRedisClient's constructor.
+      const url   = process.env.PDIM_EXEC_URL    || process.env.PDIM_HTTP_EXEC_URL || '';
+      const token = process.env.PDIM_EXEC_TOKEN  || process.env.PDIM_BEARER_TOKEN  || '';
 
       const pingStart = Date.now();
-      await Promise.race([
-        (client as any).ping?.() ?? (client as any).exec('PING', []),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('PDIM ping timeout')), 5000)),
-      ]);
+      const res = await fetch(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body:    JSON.stringify({ cmd: 'PING', args: [] }),
+        signal:  AbortSignal.timeout(5_000),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const pingMs = Date.now() - pingStart;
 
       details = { pingMs, adaptiveGapMs: gapMs };
@@ -441,11 +455,11 @@ class PlatformAutoFixer extends EventEmitter {
         message = `ping ${pingMs}ms, gap ${gapMs}ms`;
       }
     } catch (err: any) {
-      const msg = err.message ?? '';
-      if (msg.includes('Circuit OPEN') || msg.includes('circuit open')) {
+      const msg = (err.message ?? '') as string;
+      if (err.name === 'AbortError' || err.name === 'TimeoutError' || msg.includes('timed out')) {
         status  = 'critical';
-        message = 'PDIM circuit breaker is OPEN';
-        details = { circuitOpen: true };
+        message = 'PDIM ping timed out (> 5s)';
+        details = { timeout: true };
       } else if (msg.includes('429') || msg.includes('rate limit')) {
         status  = 'degraded';
         message = 'PDIM rate-limited (429)';
