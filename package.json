@@ -14,7 +14,7 @@
     "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/security-fix.ts && npx tsx script/build.ts",
-    "build:deploy": "bash build.sh",
+    "build:deploy": "npm ci --omit=dev --ignore-scripts && node scripts/postinstall.mjs",
     "build:prod": "npx tsx script/build.ts && npm run prune:deploy",
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
     "deploy": "npx tsx scripts/deploy.ts",

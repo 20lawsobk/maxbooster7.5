@@ -30,10 +30,10 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   echo "==> FAST PATH: all pre-built artifacts present"
   echo "   dist/public/, dist/index.cjs, dist/cluster.cjs already committed."
 
-  # Save postinstall.mjs BEFORE deleting script/ — it patches BullMQ after install.
+  # Save postinstall.mjs BEFORE deleting scripts/ — it patches BullMQ after install.
   # We use --ignore-scripts below so npm doesn't try to run the deleted file,
   # then execute the saved copy manually once node_modules/ is ready.
-  cp script/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
+  cp scripts/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
 
   echo "==> Deleting source tree immediately (Vite/esbuild not needed)..."
   # client/ is 930 MB — deleting it before npm ci cuts peak disk use by 930 MB.

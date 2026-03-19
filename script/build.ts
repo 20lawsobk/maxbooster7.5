@@ -238,6 +238,10 @@ async function buildAll() {
       outfile: "dist/cluster.cjs",
     }),
   ]);
+
+  // dist/index.js — ESM entry point for `node dist/index.js` (deployment run command).
+  // package.json has "type":"module" so .js = ESM; ESM can import CJS with no extra config.
+  await writeFile("dist/index.js", "import './cluster.cjs';\n");
 }
 
 async function triggerGitHubWorkflows() {
