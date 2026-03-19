@@ -244,8 +244,21 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     }
   });
 
+  let workersOnline = 0;
+  let primaryPortReleased = false;
   cluster.on('online', (worker) => {
     console.log(`[Cluster] Worker ${worker.process.pid} online`);
+    workersOnline++;
+    if (workersOnline >= workerCount && !primaryPortReleased) {
+      primaryPortReleased = true;
+      // All workers are listening — retire the primary's reusePort socket so it
+      // stops competing with workers for connections.  Without this, ~1/N of all
+      // requests (including API calls from the SPA) land on the primary and get
+      // 503 forever, breaking the app for users even after a clean boot.
+      primaryHealthServer.close(() => {
+        console.log('[Cluster] Primary port released — all traffic now served by workers');
+      });
+    }
   });
 
   // Graceful shutdown for the cluster primary.
