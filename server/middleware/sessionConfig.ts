@@ -55,9 +55,13 @@ class SessionL1Cache {
  * FallbackSessionStore
  *
  * Wraps a primary (Redis/PDIM) and secondary (PG) session store.
- * All operations are tried on the primary first. If the primary throws
- * or returns an error, the operation is transparently retried on the
- * secondary. This means sessions keep working even when PDIM is down.
+ * All operations are tried on the primary first. If the primary throws,
+ * returns an error, or exceeds PRIMARY_OP_TIMEOUT_MS, the operation is
+ * transparently retried on the secondary.
+ *
+ * PDIM HTTP abort timeout is 20 s — far too long for session ops during
+ * auth.  PRIMARY_OP_TIMEOUT_MS caps each primary attempt at 3 s so login
+ * and page loads never stall waiting for a slow PDIM.
  *
  * L1 in-process cache (SessionL1Cache) sits in front of both stores:
  * - get()     → returns from L1 if fresh; otherwise fetches from primary/PG
@@ -72,8 +76,36 @@ class SessionL1Cache {
 class FallbackSessionStore extends session.Store {
   private primaryDown = false;
   private lastPrimaryCheck = 0;
-  private readonly PRIMARY_RETRY_MS = 30_000; // re-probe primary every 30 s
+  private readonly PRIMARY_RETRY_MS    = 30_000; // re-probe primary every 30 s
+  private readonly PRIMARY_OP_TIMEOUT  = 3_000;  // max ms to wait for PDIM per op
   private readonly l1 = new SessionL1Cache();
+
+  /**
+   * Race a callback-based primary store operation against PRIMARY_OP_TIMEOUT.
+   * If the operation doesn't complete in time we treat it as a failure and
+   * fall through to Postgres — without waiting for PDIM's 20 s HTTP timeout.
+   */
+  private withPrimaryTimeout<T>(
+    op: (cb: (err: any, result?: T) => void) => void
+  ): Promise<{ ok: true; result: T | undefined } | { ok: false; err: any }> {
+    return new Promise((resolve) => {
+      let done = false;
+
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        resolve({ ok: false, err: new Error(`[SessionStore] PDIM op timed out (${this.PRIMARY_OP_TIMEOUT}ms)`) });
+      }, this.PRIMARY_OP_TIMEOUT);
+
+      op((err, result) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        if (err) resolve({ ok: false, err });
+        else resolve({ ok: true, result: result as T | undefined });
+      });
+    });
+  }
 
   constructor(
     private readonly primary: session.Store,
@@ -122,16 +154,20 @@ class FallbackSessionStore extends session.Store {
         onResult(data ?? null);
       });
     }
-    this.primary.get(sid, (err, data) => {
-      if (err) {
-        this.markPrimaryDown(err);
-        return this.secondary.get(sid, (err2, data2) => {
+
+    this.withPrimaryTimeout<session.SessionData | null>(
+      (done) => this.primary.get(sid, (err, data) => done(err, data ?? null))
+    ).then((r) => {
+      if (r.ok) {
+        this.markPrimaryUp();
+        onResult(r.result ?? null);
+      } else {
+        this.markPrimaryDown(r.err);
+        this.secondary.get(sid, (err2, data2) => {
           if (err2) return cb(err2);
           onResult(data2 ?? null);
         });
       }
-      this.markPrimaryUp();
-      onResult(data ?? null);
     });
   }
 
@@ -142,13 +178,17 @@ class FallbackSessionStore extends session.Store {
     if (!this.canTryPrimary()) {
       return this.secondary.set(sid, sess, cb);
     }
-    this.primary.set(sid, sess, (err) => {
-      if (err) {
-        this.markPrimaryDown(err);
-        return this.secondary.set(sid, sess, cb);
+
+    this.withPrimaryTimeout<void>(
+      (done) => this.primary.set(sid, sess, (err) => done(err))
+    ).then((r) => {
+      if (r.ok) {
+        this.markPrimaryUp();
+        cb?.();
+      } else {
+        this.markPrimaryDown(r.err);
+        this.secondary.set(sid, sess, cb);
       }
-      this.markPrimaryUp();
-      cb?.();
     });
   }
 
@@ -160,8 +200,11 @@ class FallbackSessionStore extends session.Store {
     if (!this.canTryPrimary()) {
       return this.secondary.destroy(sid, done);
     }
-    this.primary.destroy(sid, (err) => {
-      if (err) this.markPrimaryDown(err);
+
+    this.withPrimaryTimeout<void>(
+      (resolve) => this.primary.destroy(sid, (err) => resolve(err))
+    ).then((r) => {
+      if (!r.ok) this.markPrimaryDown(r.err);
       else this.markPrimaryUp();
       // Always attempt secondary cleanup too (belt-and-suspenders)
       this.secondary.destroy(sid, done);
@@ -175,11 +218,17 @@ class FallbackSessionStore extends session.Store {
     if (!this.canTryPrimary()) {
       return (this.secondary as any).touch?.(sid, sess, cb) ?? cb?.();
     }
-    (this.primary as any).touch?.(sid, sess, (err?: any) => {
-      if (err) this.markPrimaryDown(err);
+
+    const primaryTouch = (this.primary as any).touch;
+    if (!primaryTouch) { cb?.(); return; }
+
+    this.withPrimaryTimeout<void>(
+      (resolve) => primaryTouch.call(this.primary, sid, sess, (err?: any) => resolve(err))
+    ).then((r) => {
+      if (!r.ok) this.markPrimaryDown(r.err);
       else this.markPrimaryUp();
       cb?.();
-    }) ?? cb?.();
+    });
   }
 }
 
