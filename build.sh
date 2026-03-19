@@ -192,21 +192,16 @@ echo "   Removed: *.map source map files (includes ~106 MB TF.js maps)"
 find node_modules -name "*.d.ts" -type f -delete 2>/dev/null || true
 echo "   Removed: *.d.ts TypeScript declaration files"
 
-# Bundled test suites inside packages.
-find node_modules -type d \( -name "__tests__" -o -name "test" -o -name "tests" \) \
+# Only remove __tests__ directories (double-underscore prefix guarantees these
+# are Jest/Vitest test suites, never runtime code).  "test", "tests", "scripts",
+# "docs", "examples" etc. are intentionally excluded — many packages store
+# runtime JS inside those directory names (e.g. exceljs/lib/doc/workbook.js,
+# wavefile/scripts/polyfills.js) and removing them breaks the server.
+# Disk savings from those sweeps is < 10 MB — not worth the breakage risk.
+find node_modules -type d -name "__tests__" \
   -not -path "*/.bin/*" \
   -exec rm -rf {} + 2>/dev/null || true
-echo "   Removed: test directories inside node_modules"
-
-# Documentation, examples, and meta-files bundled inside packages.
-# NOTE: "doc" (singular) is intentionally absent — some packages ship runtime
-# JS inside a directory named "doc" (e.g. exceljs/lib/doc/workbook.js).
-find node_modules -maxdepth 3 -type d \
-  \( -name "docs" -o -name "examples" -o -name "example" \
-     -o -name "tutorial" -o -name "tutorials" -o -name ".github" -o -name "benchmark" \
-     -o -name "benchmarks" -o -name "fixtures" -o -name "scripts" \) \
-  -exec rm -rf {} + 2>/dev/null || true
-echo "   Removed: docs/examples/fixtures directories inside node_modules"
+echo "   Removed: __tests__ directories inside node_modules"
 
 # Markdown, changelog, and license files duplicated inside every package.
 find node_modules -maxdepth 3 -type f \

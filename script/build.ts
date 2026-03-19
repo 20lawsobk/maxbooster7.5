@@ -416,30 +416,21 @@ async function main() {
         { stdio: 'inherit', shell: '/bin/bash' });
     } catch (_) {}
 
-    // ── 10. Test suites bundled inside packages ───────────────────────────────
-    // Packages often ship __tests__/, test/, or tests/ directories with their
-    // own spec files.  None of these are require()d at runtime.
-    // -not -path "*/.bin/*" guards against accidentally deleting CLI wrappers.
-    console.log('[deploy-clean] Removing test directories inside node_modules...');
+    // ── 10 & 11. node_modules directory sweeps — intentionally minimal ─────────
+    // Only __tests__ (Jest/Vitest double-underscore convention) is safe to remove
+    // unconditionally.  Packages never export runtime code from __tests__/.
+    //
+    // "test", "tests", "scripts", "doc", "docs", "examples", "fixtures" etc.
+    // are intentionally excluded: many packages store required runtime JS
+    // inside those directories.  Real-world breakage examples:
+    //   • exceljs/lib/doc/workbook.js  — required at runtime by exceljs
+    //   • wavefile/scripts/polyfills.js — required by wavefile at runtime
+    // Disk savings from those sweeps is < 10 MB total — not worth the risk.
+    console.log('[deploy-clean] Removing __tests__ directories inside node_modules...');
     try {
       execSync(
-        `find node_modules -type d \\( -name "__tests__" -o -name "test" -o -name "tests" \\) ` +
+        `find node_modules -type d -name "__tests__" ` +
         `-not -path "*/.bin/*" -exec rm -rf {} + 2>/dev/null || true`,
-        { stdio: 'inherit', shell: '/bin/bash' }
-      );
-    } catch (_) {}
-
-    // ── 11. Docs, examples, fixtures, benchmark dirs inside packages ──────────
-    // "doc" (singular) is intentionally excluded — some packages (e.g. exceljs)
-    // ship runtime JS inside a directory named "doc".
-    console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
-    try {
-      execSync(
-        `find node_modules -maxdepth 3 -type d ` +
-        `\\( -name "docs" -o -name "examples" -o -name "example" ` +
-        `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
-        `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
-        `-exec rm -rf {} + 2>/dev/null || true`,
         { stdio: 'inherit', shell: '/bin/bash' }
       );
     } catch (_) {}
