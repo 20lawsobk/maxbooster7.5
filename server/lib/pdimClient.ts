@@ -95,20 +95,16 @@ logger.info(
 //   BUSY  (queue 5–9) : step = 30 ms  — rapid expansion for real user load
 //   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
 //
-// FLOOR: 400 ms — LuaExecutor timeout guard.
-//        BullMQ Lua scripts issue ~35 redis.call() each; those calls are all
-//        serialised through the PDIM chain, so a single script takes:
-//          35 × gap_ms milliseconds to complete.
-//        The LuaExecutor hard-kills scripts at 60 s → gap must stay ≤ 1714 ms.
-//          35 × 400 ms = 14 000 ms  — 46 s of headroom.  Very safe.
-//          35 × 600 ms = 21 000 ms  — 39 s of headroom.  Very safe (init).
-//          35 × 800 ms = 28 000 ms  — 32 s of headroom.  Safe.
+// FLOOR: 400 ms — applies only to direct PDIM calls (session ops, cache, locks).
+//        BullMQ Lua scripts use the _enqueueScriptExec fast-lane (50ms gap),
+//        which shares the same global serialisation chain but bypasses the AIMD
+//        gap.  Scripts are Atomics-serialized so the AIMD gap is not needed.
 //        The _autoMultiplier MUST NOT be applied to FLOOR or INIT because
-//        doing so could push Lua scripts past the 60 s timeout under extreme load.
+//        doing so could inflate direct-call latency without benefit.
 //        The multiplier is applied only to the ZPOPMIN secondary gap — those
-//        are single-command calls, not wrapped in multi-call Lua scripts.
+//        are single-command calls with a separate secondary chain.
 //
-// INIT:  600 ms — fixed at the LuaExecutor-safe ceiling.  The AIMD demand step
+// INIT:  600 ms — starting gap for direct PDIM calls.  The AIMD demand step
 //        (100 ms/success at queue depth ≥ 10) contracts the gap to FLOOR in
 //        seconds under real load.  At rest it drifts upward only 1 ms/step.
 //
@@ -186,6 +182,47 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
     throw err;
   });
   // Suppress unhandled rejection on the chain tail — each caller handles its own.
+  _pdimGlobalChain = next.catch(() => {});
+  return next;
+}
+
+// ── Script fast-lane ──────────────────────────────────────────────────────────
+// LuaExecutor redis.call()s are already serialized by Atomics.wait() inside the
+// Worker thread — each call blocks the Worker until the main thread signals,
+// guaranteeing that no two redis.call()s from the same script can overlap.
+//
+// Using the full AIMD gap (1100ms after escalations) for every redis.call()
+// inside a BullMQ script means:
+//   35 calls × 1100ms gap = 38.5s dead-wait time, before adding PDIM RTT.
+//
+// The fast-lane uses a minimal 50ms gap (just enough to let the event loop
+// breathe between calls) while sharing the same global serialisation chain.
+// Sharing the chain guarantees:
+//   • No script redis.call() interleaves with a direct PDIM call
+//   • No parallel PDIM requests are ever fired
+//   • AIMD 429-backoff on the main chain is respected (script calls still
+//     queue behind the inflated main gap if a 429 was just received)
+//
+// Result: 35 calls × (PDIM RTT ≈ 200ms + 50ms gap) = ~8.75s per script.
+//         Previously: 35 × (200ms + 1100ms) = ~45.5s — scripts timed out.
+const _SCRIPT_CALL_GAP_MS = 50;
+
+function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
+  // Track queue depth on the shared counter so ChainFixer saturation checks
+  // remain accurate (script calls count as pending load just like direct calls).
+  _pdimQueueDepth++;
+  const next = _pdimGlobalChain.then(async () => {
+    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    const result = await fn();
+    // 50ms minimal gap — script calls are Atomics-serialized so there is
+    // no parallel-call risk; the gap exists only to yield the event loop.
+    await new Promise(r => setTimeout(r, _SCRIPT_CALL_GAP_MS));
+    return result;
+  }).catch(async (err: unknown) => {
+    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    await new Promise(r => setTimeout(r, _SCRIPT_CALL_GAP_MS));
+    throw err;
+  });
   _pdimGlobalChain = next.catch(() => {});
   return next;
 }
@@ -459,7 +496,7 @@ export class PdimRedisClient extends EventEmitter {
       }
 
       return execLuaViaPdim(
-        (args: string[]) => self.sendCommand(args),
+        (args: string[]) => self.scriptExec(args),
         lua,
         numKeys,
         flatArgs,
@@ -468,6 +505,92 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   async sendCommand(args: string[]): Promise<any> { return this.exec(args); }
+
+  /**
+   * Fast-lane variant of sendCommand for LuaExecutor redis.call() IPC.
+   *
+   * Uses _enqueueScriptExec (50ms gap) instead of _enqueueExec (full AIMD gap).
+   * The Worker's Atomics.wait() guarantees sequential calls from the same script,
+   * so the AIMD rate-limit gap is unnecessary overhead — the 50ms gap is enough
+   * to yield the event loop between redis.call()s without stalling the script.
+   *
+   * The circuit breaker is still checked so a downed PDIM trips correctly.
+   * The 429 AIMD backoff is still applied: if a 429 is received during a script
+   * call, _pdimAdapt429 raises _pdimGapMs; subsequent MAIN-CHAIN callers see the
+   * raised gap.  Script callers use the fixed 50ms lane so they don't compound
+   * the slowdown — but the rate-limit deadline (_rateLimitedUntil) IS checked
+   * inside exec() so script calls still honour the mandatory hold-off.
+   */
+  async scriptExec(args: string[]): Promise<any> {
+    const [cmd, ...rawArgs] = args;
+    const strArgs = rawArgs.map(a => (a === null || a === undefined ? '' : String(a)));
+
+    if (!cbAllowRequest()) {
+      throw new Error(`[PDIM] Circuit OPEN — ${cmd} (script) rejected`);
+    }
+
+    return _enqueueScriptExec(async () => {
+      const rlWait = PdimRedisClient._rateLimitedUntil - Date.now();
+      if (rlWait > 0) await new Promise(r => setTimeout(r, rlWait));
+
+      let _counted = false;
+      try {
+        const res = await fetch(this.execUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.bearerToken}`,
+          },
+          body: JSON.stringify({ cmd, args: strArgs }),
+          signal: AbortSignal.timeout(20_000),
+        });
+
+        if (!res.ok) {
+          const text = await res.text().catch(() => '');
+          if (res.status === 429) {
+            const newGap = _pdimAdapt429();
+            PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
+            throw new Error(`PDIM HTTP 429 (script ${cmd}): gap→${newGap}ms`);
+          }
+          throw new Error(`PDIM HTTP ${res.status} (script ${cmd}): ${text.slice(0, 200)}`);
+        }
+
+        PdimRedisClient._rateLimitedUntil = 0;
+        _pdimAdaptSuccess();
+
+        const contentType = res.headers.get('content-type') ?? '';
+        if (!contentType.includes('application/json')) {
+          const body = await res.text().catch(() => '(unreadable)');
+          cbRecord503();
+          _counted = true;
+          throw new Error(`PDIM non-JSON (script ${cmd}): ${body.slice(0, 80)}`);
+        }
+
+        const data = await res.json();
+        _counted = true;
+        cbRecordSuccess();
+
+        if (data !== null && typeof data === 'object') {
+          if ('result' in data) return data.result;
+          if ('error' in data) {
+            const errMsg = String(data.error);
+            if (errMsg.startsWith('ERR unknown command')) {
+              logger.warn(`[PDIM] Unsupported command (script) [${cmd}] — returning null`);
+              return null;
+            }
+            throw new Error(errMsg);
+          }
+        }
+        return data;
+      } catch (err: any) {
+        if (!_counted && err.name !== 'AbortError' && !err.message?.startsWith('[PDIM] Circuit')) {
+          cbRecord503();
+        }
+        cbHalfOpenFailed();
+        throw err;
+      }
+    });
+  }
 
   // ── String commands ───────────────────────────────────────────────────────
   async get(key: string): Promise<string | null> { return this.exec(['GET', key]); }

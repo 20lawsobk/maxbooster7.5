@@ -33,21 +33,21 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
  *
  * MAX_WAIT_MS: maximum time a caller will wait for a slot before giving up.
  */
-// Reduced to 1: a single exclusive Worker means each BullMQ Lua script gets
-// uncontested access to the PDIM HTTP chain.  Two concurrent Workers interleave
-// their redis.call()s through the serialised chain, doubling the time each
-// script spends waiting — with 1 Worker, each script completes in ~35 × PDIM_RTT
-// (no contention).  Throughput is the same because Scripts are sequential either way.
+// Single exclusive Worker: each BullMQ Lua script gets uncontested access to
+// the PDIM fast-lane.  Scripts are sequential either way; a single Worker
+// eliminates contention and lets each redis.call() complete in ~PDIM_RTT + 50ms.
 const MAX_CONCURRENT_WORKERS = 1;
-// 45s: BullMQ scripts make ~35 sequential redis.call()s, each serialised through
-// the PDIM chain with a 400ms floor gap.  Minimum script time is 35×400ms = 14s.
-// At the observed PDIM latency (600-1500ms per response) the expected script
-// duration is 35×1000ms = 35s, so 45s gives 10s of headroom even at 1s/call.
-// Old 20s fired constantly because 35×571ms = 20s — any PDIM latency > 571ms
-// triggered a timeout, causing a permanent retry storm.
+
+// _maxWaitMs: maximum time a CALLER waits to ACQUIRE a Worker slot (queue wait),
+// NOT a limit on script execution time.  Scripts run to completion with no
+// hard-kill — only the per-60s watchdog log reminds us if one is stuck.
+//
+// With the fast-lane (50ms inter-call gap):
+//   typical script: 35 × (200ms RTT + 50ms gap) = ~8.75s
+//   high-RTT case:  35 × (800ms RTT + 50ms gap) = ~29.75s
+// So a slot-wait of 55s is extremely conservative — a slot frees well before.
 let _maxWaitMs = 55_000;
-/** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry
- *  after lua_executor_timeout fires repeatedly.  Only moves upward (min 55 s, max 120 s). */
+/** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry. */
 export function setLuaScriptTimeout(ms: number): void {
   _maxWaitMs = Math.max(55_000, Math.min(120_000, ms));
 }
@@ -337,17 +337,22 @@ export async function execLuaViaPdim(
       workerData: { script, keys, argv },
     });
 
-    // 45s timeout: BullMQ scripts run ~35 sequential redis.call()s, each
-    // serialised through the PDIM chain with a 400ms floor gap + actual PDIM RTT.
-    // Minimum script duration: 35×400ms = 14s.  At observed 600-1500ms PDIM latency
-    // the typical duration is 35×1000ms = 35s, so 45s gives ample headroom.
-    // The old 20s fired constantly (35×571ms = 20s) creating a permanent retry storm.
-    const tmout = setTimeout(() => {
-      settle(() => {
-        worker.terminate();
-        reject(new Error('[LuaExecutor] script timeout (45s)'));
-      });
-    }, 45_000);
+    // Watchdog: logs a warning every 60s if a script is still running, but
+    // NEVER terminates the Worker.  Scripts run until they complete naturally.
+    //
+    // Why infinite time:
+    //   BullMQ scripts make ~35 sequential redis.call()s serialised through
+    //   the PDIM chain.  With the fast-lane (50ms gap) each call takes
+    //   PDIM_RTT + 50ms ≈ 250ms → 35 × 250ms = ~8.75s total.  Even at high
+    //   load or elevated RTT (e.g., 800ms) a script takes 35 × 850ms = ~30s.
+    //   Any hard timeout risks killing a legitimately in-progress script.
+    //   We let it run to completion and log progress every 60s so stuck
+    //   scripts (WASM crash, infinite Lua loop) are visible in the logs.
+    const _scriptStart = Date.now();
+    const watchdog = setInterval(() => {
+      const elapsedS = Math.round((Date.now() - _scriptStart) / 1000);
+      logger.warn(`[LuaExecutor] script still running after ${elapsedS}s — active=${_activeWorkers}, queued=${_waitQueue.length}`);
+    }, 60_000);
 
     worker.on('message', async (msg: any) => {
       if (msg.type === 'redis') {
@@ -385,16 +390,16 @@ export async function execLuaViaPdim(
         Atomics.store(ctrl, 0, status);
         Atomics.notify(ctrl, 0, 1);
       } else if (msg.type === 'result') {
-        clearTimeout(tmout);
+        clearInterval(watchdog);
         settle(() => { worker.terminate(); resolve(msg.result); });
       } else if (msg.type === 'error') {
-        clearTimeout(tmout);
+        clearInterval(watchdog);
         settle(() => { worker.terminate(); reject(new Error(msg.error)); });
       }
     });
 
     worker.on('error', (err) => {
-      clearTimeout(tmout);
+      clearInterval(watchdog);
       settle(() => reject(err));
     });
 
@@ -404,7 +409,7 @@ export async function execLuaViaPdim(
     // decrements, drifting above MAX_CONCURRENT_WORKERS and permanently
     // congesting the semaphore (observed: active=7 with cap=6).
     worker.on('exit', (code) => {
-      clearTimeout(tmout);
+      clearInterval(watchdog);
       settle(() => reject(new Error(`[LuaExecutor] worker exited unexpectedly (code=${code})`)));
     });
   });
