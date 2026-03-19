@@ -212,6 +212,80 @@ class TimingOptimizerService {
         { day: 4, startHour: 12, endHour: 13, score: 87 },// Thursday lunch
       ],
     },
+    // Spotify: "posting" = releasing music. New Music Friday is the dominant event.
+    // Optimal release day is FRIDAY; submissions must be in by Mon/Tue for editorial.
+    // Hourly multipliers reflect when listeners are most active on platform.
+    spotify: {
+      hourlyMultipliers: {
+        0: 0.40, 1: 0.28, 2: 0.20, 3: 0.15, 4: 0.20, 5: 0.38,
+        6: 0.55, 7: 0.72, 8: 0.85, 9: 0.95, 10: 1.05, 11: 1.12,
+        12: 1.20, 13: 1.18, 14: 1.15, 15: 1.20, 16: 1.30, 17: 1.45,
+        18: 1.55, 19: 1.62, 20: 1.60, 21: 1.48, 22: 1.25, 23: 0.82,
+      },
+      dayMultipliers: {
+        0: 1.10, // Sunday — heavy listening day
+        1: 0.88, // Monday — editorial submission deadline (pitch by now)
+        2: 0.90, // Tuesday — editorial submission deadline (last day to pitch)
+        3: 0.95, // Wednesday
+        4: 1.05, // Thursday — pre-release anticipation builds
+        5: 1.50, // Friday — New Music Friday; highest new release traffic
+        6: 1.25, // Saturday — continued NMF listening; discovery continues
+      },
+      optimalWindows: [
+        { day: 5, startHour: 0, endHour: 6, score: 98 },  // Friday midnight — Release goes live; NMF boost
+        { day: 5, startHour: 6, endHour: 12, score: 96 }, // Friday morning — NMF playlist populated globally
+        { day: 5, startHour: 17, endHour: 22, score: 94 },// Friday evening — listening peak post-work/school
+        { day: 6, startHour: 10, endHour: 20, score: 88 },// Saturday — continued NMF discovery
+        { day: 0, startHour: 14, endHour: 21, score: 86 },// Sunday afternoon/evening — heavy streaming day
+        { day: 1, startHour: 8, endHour: 12, score: 85 }, // Monday — editorial pitch deadline; plan release
+      ],
+    },
+    // Apple Music: similar to Spotify but editorial pitching deadline is ~10 days out
+    // New Music Friday is also the primary release window
+    apple_music: {
+      hourlyMultipliers: {
+        0: 0.38, 1: 0.25, 2: 0.18, 3: 0.12, 4: 0.18, 5: 0.35,
+        6: 0.52, 7: 0.70, 8: 0.82, 9: 0.92, 10: 1.02, 11: 1.10,
+        12: 1.18, 13: 1.15, 14: 1.12, 15: 1.18, 16: 1.28, 17: 1.42,
+        18: 1.52, 19: 1.58, 20: 1.55, 21: 1.42, 22: 1.20, 23: 0.78,
+      },
+      dayMultipliers: {
+        0: 1.08, 1: 0.90, 2: 0.90, 3: 0.95, 4: 1.02, 5: 1.48, 6: 1.22,
+      },
+      optimalWindows: [
+        { day: 5, startHour: 0, endHour: 6, score: 97 },  // Friday midnight — release live
+        { day: 5, startHour: 6, endHour: 12, score: 95 }, // Friday morning — NMF playlists
+        { day: 5, startHour: 17, endHour: 22, score: 92 },// Friday evening — peak listening
+        { day: 6, startHour: 10, endHour: 20, score: 87 },// Saturday
+        { day: 0, startHour: 14, endHour: 21, score: 85 },// Sunday
+      ],
+    },
+    // SoundCloud: social-discovery hybrid — late evening and weekend peaks
+    // Community is night-owl musicians and fans; peak hours are later than other platforms
+    soundcloud: {
+      hourlyMultipliers: {
+        0: 0.75, 1: 0.55, 2: 0.38, 3: 0.25, 4: 0.22, 5: 0.28,
+        6: 0.38, 7: 0.48, 8: 0.55, 9: 0.62, 10: 0.72, 11: 0.82,
+        12: 0.92, 13: 0.95, 14: 1.00, 15: 1.05, 16: 1.12, 17: 1.20,
+        18: 1.30, 19: 1.42, 20: 1.52, 21: 1.58, 22: 1.48, 23: 1.12,
+      },
+      dayMultipliers: {
+        0: 1.20, // Sunday — highest discovery day
+        1: 0.88, // Monday
+        2: 0.92, // Tuesday
+        3: 0.98, // Wednesday
+        4: 1.08, // Thursday
+        5: 1.25, // Friday — second highest; music community active
+        6: 1.30, // Saturday — peak day overall
+      },
+      optimalWindows: [
+        { day: 5, startHour: 20, endHour: 23, score: 92 }, // Friday late evening
+        { day: 6, startHour: 14, endHour: 22, score: 95 }, // Saturday afternoon/evening — best
+        { day: 0, startHour: 13, endHour: 22, score: 90 }, // Sunday afternoon/evening
+        { day: 4, startHour: 19, endHour: 23, score: 86 }, // Thursday evening
+        { day: 3, startHour: 19, endHour: 22, score: 84 }, // Wednesday evening
+      ],
+    },
   };
 
   // Extended timezone support with DST-aware offsets
@@ -266,6 +340,35 @@ class TimingOptimizerService {
     return await getRedisClient();
   }
 
+  // DST-aware timezone offset — dynamically computed so it's always correct
+  // regardless of Daylight Saving Time transitions. Falls back to static table
+  // if the Intl API cannot parse the timezone.
+  private getDynamicTimezoneOffset(timezone: string): number {
+    try {
+      const now = new Date();
+      // Use Intl to format in the target timezone, extracting the GMT offset
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        hour12: false,
+        timeZoneName: 'shortOffset',
+      });
+      const parts = formatter.formatToParts(now);
+      const tzPart = parts.find(p => p.type === 'timeZoneName')?.value ?? '';
+      // tzPart examples: "GMT+5:30", "GMT-4", "GMT+0"
+      const match = tzPart.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      if (match) {
+        const sign = match[1] === '+' ? 1 : -1;
+        const hours = parseInt(match[2], 10);
+        const minutes = parseInt(match[3] ?? '0', 10);
+        return sign * (hours + minutes / 60);
+      }
+    } catch {
+      // Fallback to static table for any timezone not recognized by Intl
+    }
+    return this.timezoneOffsets[timezone] ?? 0;
+  }
+
   async getOptimalTiming(
     platform: string,
     timezone: string = 'America/New_York',
@@ -298,7 +401,7 @@ class TimingOptimizerService {
 
   private calculateBestTimes(platform: string, timezone: string): OptimalTiming['bestTimes'] {
     const platformData = this.platformEngagement[platform] || this.platformEngagement.instagram;
-    const tzOffset = this.timezoneOffsets[timezone] ?? 0;
+    const tzOffset = this.getDynamicTimezoneOffset(timezone);
     const bestTimes: OptimalTiming['bestTimes'] = [];
 
     for (let day = 0; day < 7; day++) {
@@ -362,7 +465,7 @@ class TimingOptimizerService {
 
   private findNextOptimalSlot(bestTimes: OptimalTiming['bestTimes'], timezone: string): Date {
     const now = new Date();
-    const tzOffsetHours = this.timezoneOffsets[timezone] ?? 0;
+    const tzOffsetHours = this.getDynamicTimezoneOffset(timezone);
     const tzOffsetMs = tzOffsetHours * 60 * 60 * 1000;
 
     const localNow = new Date(now.getTime() + tzOffsetMs);
@@ -556,7 +659,7 @@ class TimingOptimizerService {
   }
 
   async getOptimalTimingForAllPlatforms(timezone: string = 'America/New_York'): Promise<Record<string, OptimalTiming>> {
-    const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin'];
+    const platforms = ['tiktok', 'instagram', 'youtube', 'twitter', 'facebook', 'linkedin', 'spotify', 'apple_music', 'soundcloud'];
     const results: Record<string, OptimalTiming> = {};
 
     await Promise.all(
@@ -575,17 +678,22 @@ class TimingOptimizerService {
   ): Promise<Array<{ platform: string; scheduledTime: Date; score: number }>> {
     const schedule: Array<{ platform: string; scheduledTime: Date; score: number }> = [];
     const now = new Date();
-    const tzOffset = (this.timezoneOffsets[timezone] ?? 0) * 60 * 60 * 1000;
+    const tzOffset = this.getDynamicTimezoneOffset(timezone) * 60 * 60 * 1000;
 
     const allTimings = await this.getOptimalTimingForAllPlatforms(timezone);
     const postsPerPlatform = Math.max(1, Math.ceil(postsPerWeek / platforms.length));
+
+    // Compute the local day-of-week using the DST-aware offset so scheduling
+    // doesn't recommend slots that already passed in the user's timezone
+    const localNow = new Date(now.getTime() + tzOffset);
+    const localDay = localNow.getUTCDay();
 
     for (const platform of platforms) {
       const timing = allTimings[platform];
       const topSlots = timing.bestTimes.slice(0, postsPerPlatform);
 
       for (const slot of topSlots) {
-        let daysUntil = slot.dayOfWeek - now.getDay();
+        let daysUntil = slot.dayOfWeek - localDay;
         if (daysUntil <= 0) daysUntil += 7;
 
         const scheduledTime = new Date(now);

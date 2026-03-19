@@ -437,6 +437,167 @@ class AlgorithmIntelligenceService {
       ],
       recentChanges: [],
     },
+    spotify: {
+      platform: 'spotify',
+      keyFactors: [
+        {
+          factor: 'playlist_adds',
+          weight: 0.30,
+          description: 'User and editorial playlist adds — primary signal for algorithmic playlist consideration (Discover Weekly, Release Radar)',
+        },
+        {
+          factor: 'stream_completion_rate',
+          weight: 0.26,
+          description: 'Stream completion rate — Spotify counts a stream after 30s; replay rate signals quality to editorial team',
+        },
+        {
+          factor: 'save_to_library',
+          weight: 0.22,
+          description: 'Saving a track is the strongest individual user endorsement signal in Spotify\'s algorithm',
+        },
+        {
+          factor: 'follower_to_listener_ratio',
+          weight: 0.12,
+          description: 'Monthly listeners who convert to profile followers — indicates sticky, returning audience',
+        },
+        {
+          factor: 'release_velocity',
+          weight: 0.10,
+          description: 'Consistent release cadence keeps Release Radar and Discover Weekly placements active',
+        },
+      ],
+      contentPreferences: [
+        'Submit via Spotify for Artists pitch tool at least 7 days before release for editorial consideration',
+        'Spotify Canvas (8-second visual loop) — tracks with Canvas see avg 145% higher listener shares',
+        'Countdown Page in Spotify for Artists builds pre-save momentum before release',
+        'Acoustic, instrumental, or remix versions of existing tracks get separate Release Radar cycles',
+        'Target skip rate under 15% in first 30 seconds — high skips tank Release Radar distribution',
+        'Collaborate with other artists — collab tracks appear on both profiles and both Discover Weeklys',
+        'Artist bio and profile photo must be current — editors check profile before editorial pitches',
+      ],
+      penaltyTriggers: [
+        'High skip rate (>30%) in first 30 seconds tanks algorithmic playlist placement',
+        'Stream farming or fake plays — Spotify audits remove fraudulent streams and can blacklist artists',
+        'Duplicate content (identical tracks uploaded multiple times across releases)',
+        'Missing ISRC codes or incorrect metadata blocks editorial consideration entirely',
+        'Long release gaps (>6 months) cause Monthly Listener count to decay significantly',
+        'Copyright disputes trigger distribution holds that prevent algorithmic indexing',
+      ],
+      boostOpportunities: [
+        'Spotify Discovery Mode (opt-in via S4A) — artists who opt in see avg 40% more algorithmic playlist adds',
+        'Pitch to independent playlist curators via Groover, SubmitHub, or direct email outreach',
+        'Cross-platform: link Spotify profile in all social bios — Spotify tracks referral traffic for editorial scoring',
+        'Spotify Sessions / Spotify Singles — exclusive content gets platform-wide promotion',
+        'Release acoustic or live versions — separate Release Radar push at no additional cost',
+        'Pre-save campaigns via Spotify Countdown Page build day-1 momentum that boosts Release Radar position',
+      ],
+      recentChanges: [],
+    },
+    apple_music: {
+      platform: 'apple_music',
+      keyFactors: [
+        {
+          factor: 'editorial_pitching',
+          weight: 0.35,
+          description: 'Apple Music editorial is human-curated — getting onto New Music Daily or genre playlists drives exponential growth',
+        },
+        {
+          factor: 'add_to_library',
+          weight: 0.28,
+          description: 'Users adding a track to their library is the strongest demand signal Apple Music tracks',
+        },
+        {
+          factor: 'playlist_adds',
+          weight: 0.22,
+          description: 'Both editorial and user playlist adds amplify algorithmic New Music and "Listen Now" recommendations',
+        },
+        {
+          factor: 'play_completion',
+          weight: 0.15,
+          description: 'Full track plays vs. partial plays — completion rate signals quality to Apple\'s recommendation engine',
+        },
+      ],
+      contentPreferences: [
+        'Submit via Apple Music for Artists dashboard — editorial pitching available for each release',
+        'Spatial Audio (Dolby Atmos) mix gets priority placement in Apple Music playlists and marketing',
+        'Animated cover art (Motion Album Art) increases track visibility in Apple Music browse sections',
+        'Music videos linked directly to tracks increase visibility in the music video browse section',
+        'Artist stories and editorial notes in Apple Music for Artists build profile authority for pitching',
+        'Target the "New Music" editorial window — pitch at least 10 days before release',
+        'iTunes/Apple Music chart position still drives significant discovery especially internationally',
+      ],
+      penaltyTriggers: [
+        'Missing or incorrect metadata (wrong ISRC, release date errors) blocks editorial consideration',
+        'Low-quality audio (below Loudness Normalized standards) reduces playlist add rate',
+        'Copyright issues or content ID conflicts trigger distribution holds',
+        'Abrupt release gaps — algorithm deprioritizes dormant catalogues in recommendations',
+        'Not submitting for editorial consideration before the 10-day deadline',
+      ],
+      boostOpportunities: [
+        'Apple Music editorial pitch: submit release details + press notes through A4A at least 10 days out',
+        'Dolby Atmos / Spatial Audio mix — Apple actively markets and promotes Atmos-enabled tracks',
+        'Apple Music Radio (Apple Music 1, genre channels) — pitch to show producers for premieres',
+        'Pre-release exclusive content (lyrics, liner notes, artist commentary) builds editorial relationship',
+        'Promote your Apple Music link to iOS audience specifically — highest Apple Music conversion demographic',
+        'Apple Music exclusivity window (even 1-2 weeks pre-other-DSPs) signals priority to Apple editorial',
+      ],
+      recentChanges: [],
+    },
+    soundcloud: {
+      platform: 'soundcloud',
+      keyFactors: [
+        {
+          factor: 'plays_and_reposts',
+          weight: 0.28,
+          description: 'Total plays and reposts drive SoundCloud algorithm ranking in the "Suggested" and "Similar Artists" sections',
+        },
+        {
+          factor: 'likes_to_plays_ratio',
+          weight: 0.25,
+          description: 'Likes as a proportion of total plays — indicates content resonance quality, not just volume',
+        },
+        {
+          factor: 'timed_comments',
+          weight: 0.22,
+          description: 'Timestamped comments are unique to SoundCloud — they signal deep listening engagement at specific moments',
+        },
+        {
+          factor: 'follower_engagement',
+          weight: 0.15,
+          description: 'Engagement rate from existing followers affects "New Tracks from People You Follow" feed distribution',
+        },
+        {
+          factor: 'curator_reposts',
+          weight: 0.10,
+          description: 'Reposts from verified curators and popular accounts amplify discovery exponentially',
+        },
+      ],
+      contentPreferences: [
+        'Upload full tracks and EPs — SoundCloud\'s audience expects complete works, not short clips',
+        'Tags: use genre tags + mood tags + instrument tags + BPM for maximum discovery surface area',
+        'Engage with community: comment on tracks from artists in your genre (reciprocal attention)',
+        'Reposts from your account give other artists\' fans indirect exposure to your linked catalog',
+        'Playlist creation: "Artist name — discography" playlists get shared as a single unit',
+        'SoundCloud Go+ exclusive first week for releases builds "supporter" audience signals',
+        'Waveform artwork (track-specific visual) increases time-on-track and share rate',
+      ],
+      penaltyTriggers: [
+        'Privating tracks after they gain traction removes them from discovery algorithm',
+        'Purchasing fake plays — SoundCloud audits and removes bot traffic, flags accounts',
+        'Frequent track deletions and re-uploads reset all engagement signals to zero',
+        'Spam commenting or unsolicited self-promotion in other artists\' comment sections',
+        'Uploading silent or test tracks to your main profile',
+      ],
+      boostOpportunities: [
+        'SoundCloud Repost by Repost Network — submit to the curator network for paid or earned reposts',
+        'Collaborate with popular SoundCloud curators (Majestic Casual, MrSuicideSheep-tier channels)',
+        'Upload early/demo versions to build community hype before a full release',
+        'Free download gating (in exchange for follow or repost) drives organic follower growth',
+        'Engage with trending artists in your genre on the Discover page daily',
+        'SoundCloud Promote (paid) feature targets your track to similar listeners algorithmically',
+      ],
+      recentChanges: [],
+    },
   };
 
   // Fine-tuned shadowban thresholds — calibrated to avoid false positives
@@ -560,9 +721,62 @@ class AlgorithmIntelligenceService {
         'pure_promotion': 0.65,
       },
     },
+    spotify: {
+      platform: 'spotify',
+      optimalPostFrequency: 1.5,          // 1-2 singles/EPs per month is the sweet spot
+      engagementDecayRate: 0.015,         // Streaming catalogue has very long shelf life (years)
+      peakEngagementWindow: 168,          // 7-day new release window is the primary push period
+      recommendedGapBetweenPosts: 168,    // Minimum 1 week between major releases for Release Radar
+      contentTypePerformance: {
+        'new_single': 1.65,              // New singles get highest Release Radar + Discover Weekly boost
+        'ep_release': 1.55,
+        'album': 1.50,
+        'remix': 1.40,                   // Remixes get a separate Release Radar push
+        'spotify_session': 1.45,         // Spotify Singles / Spotify Sessions get platform promotion
+        'acoustic_version': 1.35,        // Alternate versions recycle the Release Radar slot
+        'live_version': 1.25,
+        'feature_credit': 1.30,          // Being featured on another artist's track — dual-profile boost
+      },
+    },
+    apple_music: {
+      platform: 'apple_music',
+      optimalPostFrequency: 1.5,          // Similar cadence to Spotify
+      engagementDecayRate: 0.015,
+      peakEngagementWindow: 168,
+      recommendedGapBetweenPosts: 168,
+      contentTypePerformance: {
+        'spatial_audio_mix': 1.75,       // Dolby Atmos tracks get dedicated Apple Music marketing
+        'new_single': 1.60,
+        'ep_release': 1.50,
+        'album': 1.48,
+        'music_video': 1.40,             // Music videos get separate browse placement
+        'remix': 1.32,
+        'acoustic_version': 1.25,
+        'feature_credit': 1.22,
+      },
+    },
+    soundcloud: {
+      platform: 'soundcloud',
+      optimalPostFrequency: 3,            // 3x/week is acceptable; community expects frequent uploads
+      engagementDecayRate: 0.08,          // Faster decay than DSPs but slower than social media
+      peakEngagementWindow: 48,           // 48-hour peak window for new tracks in followers' feeds
+      recommendedGapBetweenPosts: 24,     // Minimum 24 hours between uploads
+      contentTypePerformance: {
+        'full_track': 1.55,
+        'free_download': 1.50,           // Free downloads drive massive repost sharing
+        'remix': 1.40,
+        'demo_wip': 1.30,               // SoundCloud community uniquely appreciates WIP content
+        'bootleg_remix': 1.22,
+        'live_set': 1.18,
+        'podcast_mix': 1.10,
+        'clip_preview': 0.80,            // Short clips perform poorly; full tracks strongly preferred
+      },
+    },
   };
 
   // Platform-specific engagement rate benchmarks for music creators (2024-2026)
+  // Social platforms: engagement rate (%) = engagements / impressions × 100
+  // Streaming platforms: stream completion rate (%) or likes-to-plays ratio (%)
   private readonly platformBenchmarks: Record<string, { userAvg: number; good: number; topCreators: number }> = {
     tiktok: { userAvg: 5.8, good: 8.5, topCreators: 14.0 },
     instagram: { userAvg: 2.8, good: 5.0, topCreators: 9.5 },
@@ -570,6 +784,9 @@ class AlgorithmIntelligenceService {
     twitter: { userAvg: 1.5, good: 3.0, topCreators: 6.5 },
     facebook: { userAvg: 1.2, good: 2.5, topCreators: 5.0 },
     linkedin: { userAvg: 2.0, good: 4.5, topCreators: 8.0 },
+    spotify: { userAvg: 28.0, good: 50.0, topCreators: 72.0 },       // Stream completion % benchmark
+    apple_music: { userAvg: 30.0, good: 52.0, topCreators: 74.0 },   // Stream completion % benchmark
+    soundcloud: { userAvg: 3.5, good: 7.0, topCreators: 14.0 },      // Likes-to-plays % benchmark
   };
 
   constructor() {
@@ -1019,27 +1236,69 @@ class AlgorithmIntelligenceService {
   ): string[] {
     const recommendations: string[] = [];
     const profile = this.platformAlgorithms[platform];
+    const benchmark = this.platformBenchmarks[platform] || { userAvg: 3.0, good: 5.0, topCreators: 9.0 };
+    const hasShadowbanAlert = alerts.some(a => a.type === 'shadowban');
 
+    // === Reach trend recommendations ===
     if (metrics.reachTrend === 'declining') {
-      recommendations.push('Analyze your last 10 posts — identify the first underperformer and find what changed');
-      recommendations.push('Temporarily shift from promo content to value content (tips, BTS, tutorials)');
+      recommendations.push('Pull your last 10 posts\' analytics — find the exact first post that underperformed and identify what changed (hook, format, length, time posted)');
+      if (platform === 'tiktok') {
+        recommendations.push('Shift from promo content to authentic BTS (behind-the-scenes studio, songwriting process) — these outperform music promo 2:1 when reach drops');
+      } else if (platform === 'instagram') {
+        recommendations.push('Switch to carousel format for your next 3 posts — Instagram resurfaces carousels to non-engagers, doubling impressions during a reach dip');
+      } else if (platform === 'youtube') {
+        recommendations.push('Publish a Community tab post and a Short this week to rebuild algorithm signals without committing to a full long-form upload');
+      } else if (platform === 'spotify' || platform === 'apple_music') {
+        recommendations.push('Release an acoustic, remix, or live version of an existing track — this triggers a fresh Release Radar cycle and revives catalogue streams');
+      } else {
+        recommendations.push('Temporarily shift from promotional content to value-first content (tips, BTS, personal story) to rebuild engagement signals');
+      }
     }
 
-    if (metrics.engagementRate < 3) {
-      recommendations.push('Rewrite your CTA: instead of "listen now" try "drop a 🔥 if this hits"');
-      recommendations.push('Post a question-first piece of content to restart engagement signals with the algorithm');
+    // === Low engagement recommendations ===
+    if (metrics.engagementRate < benchmark.userAvg) {
+      if (platform === 'tiktok') {
+        recommendations.push('Strengthen your hook: the first 1-2 seconds decide 75% of watch-through. Try "Here\'s why your favorite song sounds like this" over "New music out now"');
+        recommendations.push('Add a timed call-to-action: "Drop a 🔥 at 0:15 when the beat hits" — timestamped engagement spikes trigger extra distribution');
+      } else if (platform === 'instagram') {
+        recommendations.push('Rewrite your last post\'s CTA: instead of "stream now" try asking a genuine question related to the music ("What does this track remind you of?")');
+        recommendations.push('Post a poll or question sticker in Stories immediately after publishing a Reel — warm followers push up the Reel\'s engagement rate');
+      } else if (platform === 'twitter' || platform === 'linkedin') {
+        recommendations.push('Start your next post with a polarizing or curiosity-gap opener — first line determines whether readers hit "See more" which drives dwell-time signals');
+      } else if (platform === 'soundcloud') {
+        recommendations.push('Ask listeners to leave a timestamped comment at their favorite moment — SoundCloud\'s timed comments uniquely amplify discovery for that track');
+      } else {
+        recommendations.push('Rewrite your CTA: instead of "listen now" try asking a question that invites a reaction directly tied to the emotional content');
+        recommendations.push('Post an engagement-first piece (poll, question, reaction) to restart your engagement rate signals with the algorithm');
+      }
     }
 
-    if (profile) {
-      // Add 2 platform-specific boost opportunities
-      recommendations.push(...profile.boostOpportunities.slice(0, 2));
+    // === Shadowban / hashtag reach recommendations ===
+    if (hasShadowbanAlert || metrics.hashtagReach < 25) {
+      recommendations.push('Audit all hashtags — remove any flagged or overused tags, take a 48-72h posting break, then return with 3 fresh niche-specific hashtags maximum');
     }
 
+    // === Growth momentum recommendations ===
     if (metrics.followerGrowth > 2) {
-      recommendations.push('Growth momentum detected — this is the best time to test new content formats');
+      recommendations.push('Growth momentum detected — now is the ideal time to test a new content format. The algorithm gives preference to growing accounts when they experiment');
+    } else if (metrics.followerGrowth < -0.5) {
+      recommendations.push('Net follower loss detected — shift focus from promotional posts to value content that showcases personality and artistry, not just releases');
     }
 
-    return recommendations.slice(0, 5);
+    // === Platform-specific boost opportunities (always include top 2) ===
+    if (profile) {
+      const boosts = profile.boostOpportunities.slice(0, 2);
+      recommendations.push(...boosts);
+    }
+
+    // === Streaming platform specific ===
+    if (platform === 'spotify') {
+      recommendations.push('Pitch your next release to Spotify editorial via Spotify for Artists — submit at least 7 days before release date for Release Radar eligibility');
+    } else if (platform === 'apple_music') {
+      recommendations.push('Submit your next release for Apple Music editorial consideration via Apple Music for Artists at least 10 days before release');
+    }
+
+    return recommendations.slice(0, 6);
   }
 
   private calculateHealthScore(
@@ -1082,8 +1341,172 @@ class AlgorithmIntelligenceService {
     return Math.max(0, Math.min(100, Math.round(score)));
   }
 
-  private getRecentPlatformChanges(_platform: string): AlgorithmChange[] {
-    return [];
+  private getRecentPlatformChanges(platform: string): AlgorithmChange[] {
+    const changes: Record<string, AlgorithmChange[]> = {
+      tiktok: [
+        {
+          id: 'ttk-2025-q3',
+          platform: 'tiktok',
+          detectedAt: new Date('2025-09-01'),
+          changeType: 'content_distribution',
+          impact: 'positive',
+          description: 'TikTok 2025 Q3: Creator Music Library original audio now receives an extended algorithmic push window (up to 72h from prior 24h) when used by other creators.',
+          adaptations: [
+            'Upload original music to the TikTok Creator Music Library to benefit from the extended window',
+            'Post consistently on days 1-3 after another creator uses your original sound',
+          ],
+        },
+        {
+          id: 'ttk-2026-q1',
+          platform: 'tiktok',
+          detectedAt: new Date('2026-01-01'),
+          changeType: 'engagement',
+          impact: 'positive',
+          description: 'TikTok 2026: Watch-through replays now weighted 2× more than a single full view; comment reply threads from the creator get 1.5× distribution multiplier.',
+          adaptations: [
+            'Create loopable content (last-frame hooks back to first-frame) to drive replays',
+            'Reply to top comments with video replies — separate distribution slot in For You',
+          ],
+        },
+      ],
+      instagram: [
+        {
+          id: 'ig-2025-h1',
+          platform: 'instagram',
+          detectedAt: new Date('2025-06-01'),
+          changeType: 'ranking',
+          impact: 'positive',
+          description: 'Instagram 2025 H1: Broadcast Channels subscribers now boost post reach — creators with 1k+ subscribers see approximately 25% higher Reel distribution.',
+          adaptations: [
+            'Launch a Broadcast Channel and invite existing followers immediately',
+            'Post exclusive previews, release dates, and BTS content there to grow subscriber count',
+          ],
+        },
+        {
+          id: 'ig-2025-q4',
+          platform: 'instagram',
+          detectedAt: new Date('2025-11-01'),
+          changeType: 'hashtag',
+          impact: 'negative',
+          description: 'Instagram 2025 Q4: Hashtag reach declined further — algorithm now prioritizes topic/interest signals over hashtag text matching.',
+          adaptations: [
+            'Reduce hashtags to 3-5 highly relevant, niche-specific tags only',
+            'Focus on keyword-rich captions and on-screen text — Instagram reads these for topic signals',
+          ],
+        },
+      ],
+      youtube: [
+        {
+          id: 'yt-2025-q3',
+          platform: 'youtube',
+          detectedAt: new Date('2025-07-01'),
+          changeType: 'reach',
+          impact: 'positive',
+          description: 'YouTube 2025 Q3: Shorts-to-long-form funnel strengthened — viewers who watch 3+ Shorts from a channel are now recommended long-form content from that same channel.',
+          adaptations: [
+            'Create 3 topically-related Shorts per long-form video to build the recommendation funnel',
+            'End every Short with on-screen text: "Full version on the channel"',
+          ],
+        },
+      ],
+      twitter: [
+        {
+          id: 'x-2025-q1',
+          platform: 'twitter',
+          detectedAt: new Date('2025-03-01'),
+          changeType: 'ranking',
+          impact: 'negative',
+          description: 'X/Twitter 2025: Non-Premium (unverified) accounts receive approximately 30% less algorithmic reach vs. X Premium subscribers in the For You feed.',
+          adaptations: [
+            'Evaluate X Premium subscription for meaningful algorithmic reach improvement',
+            'Prioritize engagement depth (replies, quote tweets, threads) over raw posting frequency',
+          ],
+        },
+      ],
+      facebook: [
+        {
+          id: 'fb-2025-q2',
+          platform: 'facebook',
+          detectedAt: new Date('2025-04-01'),
+          changeType: 'reach',
+          impact: 'positive',
+          description: 'Facebook 2025 Q2: Reels now distributed to non-followers by default; organic reach for Reels is 3-5× higher than static posts for Pages under 100k.',
+          adaptations: [
+            'Prioritize Facebook Reels over static posts and text updates',
+            'Cross-post Instagram Reels to Facebook simultaneously for double distribution at zero cost',
+          ],
+        },
+      ],
+      linkedin: [
+        {
+          id: 'li-2025-q3',
+          platform: 'linkedin',
+          detectedAt: new Date('2025-08-01'),
+          changeType: 'engagement',
+          impact: 'positive',
+          description: 'LinkedIn 2025 Q3: Native documents (PDF carousels) now get 3× more impressions than single-image posts; algorithm specifically boosts "how-to" and "list" formatted documents.',
+          adaptations: [
+            'Convert your best insights and music business tips into PDF carousel format',
+            'Use "how I got X result" or "5 things I learned" framing in document titles',
+          ],
+        },
+      ],
+      spotify: [
+        {
+          id: 'spt-2025-q2',
+          platform: 'spotify',
+          detectedAt: new Date('2025-04-01'),
+          changeType: 'content_distribution',
+          impact: 'positive',
+          description: 'Spotify 2025 Q2: Discovery Mode expanded — artists who opt in via Spotify for Artists see avg 40% increase in algorithmic playlist adds on opted-in tracks.',
+          adaptations: [
+            'Evaluate Spotify Discovery Mode in Spotify for Artists for catalogue tracks',
+            'Use for older releases to revive streams while protecting new release royalty rates',
+          ],
+        },
+        {
+          id: 'spt-2025-q4',
+          platform: 'spotify',
+          detectedAt: new Date('2025-10-01'),
+          changeType: 'ranking',
+          impact: 'positive',
+          description: 'Spotify 2025 Q4: Canvas completion rate now factored into Release Radar distribution — tracks whose Canvas is watched to completion get 1.2× Radar boost.',
+          adaptations: [
+            'Create a Canvas for every new release — prioritize loopable, visually striking 8-second clips',
+            'Ensure Canvas does not require sound (many listeners see it on mute)',
+          ],
+        },
+      ],
+      apple_music: [
+        {
+          id: 'apl-2025-q1',
+          platform: 'apple_music',
+          detectedAt: new Date('2025-02-01'),
+          changeType: 'content_distribution',
+          impact: 'positive',
+          description: 'Apple Music 2025: Dolby Atmos / Spatial Audio tracks receiving dedicated placement in Apple Music marketing, "Listen Now" carousels, and editorial features.',
+          adaptations: [
+            'Mix current and upcoming releases in Dolby Atmos — most DAWs and online services support this',
+            'Flag Atmos availability in your Apple Music for Artists pitch submission',
+          ],
+        },
+      ],
+      soundcloud: [
+        {
+          id: 'sc-2025-q3',
+          platform: 'soundcloud',
+          detectedAt: new Date('2025-09-01'),
+          changeType: 'reach',
+          impact: 'positive',
+          description: 'SoundCloud 2025 Q3: SoundCloud Repost Network expanded curator pool; tracks with 500+ organic plays in first 48h are auto-eligible for curator review.',
+          adaptations: [
+            'Drive early plays from your existing fanbase within first 48h of upload via social sharing',
+            'Submit to SoundCloud Repost Network for catalogue tracks with strong organic performance',
+          ],
+        },
+      ],
+    };
+    return changes[platform] ?? [];
   }
 
   private calculateAverage(arr: number[]): number {

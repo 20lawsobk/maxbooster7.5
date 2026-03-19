@@ -31,15 +31,78 @@ interface DeezerArtistResult {
   link: string;
 }
 
+interface MusicBrainzArtistResult {
+  id: string;
+  name: string;
+  score: number;
+  type: string | null;
+  country: string | null;
+  tags: string[];
+  disambiguation: string | null;
+}
+
 interface PlatformSearchResults {
   spotify: SpotifyArtistResult[];
   apple: AppleArtistResult[];
   deezer: DeezerArtistResult[];
+  musicbrainz: MusicBrainzArtistResult[];
 }
 
 class ArtistProfileService {
   private spotifyToken: string | null = null;
   private spotifyTokenExpiry: number = 0;
+
+  // Normalize artist name for fuzzy comparison:
+  // strips punctuation, collapses spaces, lowercases, strips common prefixes like "the"
+  private _normalizeName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')  // strip punctuation (hyphens, apostrophes, etc.)
+      .replace(/\bthe\b/g, '')        // strip leading "the"
+      .replace(/\s+/g, ' ')          // collapse whitespace
+      .trim();
+  }
+
+  // Compute a 0–100 name similarity score using both exact and fuzzy normalized matching
+  private _nameSimilarity(a: string, b: string): number {
+    const na = this._normalizeName(a);
+    const nb = this._normalizeName(b);
+    if (na === nb) return 100;
+    if (na.includes(nb) || nb.includes(na)) return 70;
+    // Count shared words
+    const wordsA = new Set(na.split(' ').filter(Boolean));
+    const wordsB = new Set(nb.split(' ').filter(Boolean));
+    const shared = [...wordsA].filter(w => wordsB.has(w)).length;
+    const union = new Set([...wordsA, ...wordsB]).size;
+    const jaccardScore = union > 0 ? (shared / union) * 60 : 0;
+    return Math.round(jaccardScore);
+  }
+
+  // Retry wrapper with exponential backoff for external API calls
+  private async _withRetry<T>(
+    fn: () => Promise<T>,
+    maxAttempts = 3,
+    label = 'external API'
+  ): Promise<T> {
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await fn();
+      } catch (err: any) {
+        lastErr = err;
+        const isRetryable = err?.name === 'TimeoutError' ||
+                            err?.message?.includes('timeout') ||
+                            err?.message?.includes('network') ||
+                            (err?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT');
+        if (isRetryable && attempt < maxAttempts) {
+          await new Promise(r => setTimeout(r, 300 * attempt));
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw lastErr;
+  }
 
   private async getSpotifyToken(): Promise<string | null> {
     if (this.spotifyToken && Date.now() < this.spotifyTokenExpiry) {
@@ -181,17 +244,49 @@ class ArtistProfileService {
     }
   }
 
+  async searchMusicBrainzArtists(query: string): Promise<MusicBrainzArtistResult[]> {
+    try {
+      // MusicBrainz requires a User-Agent header; uses standard REST API (no key needed)
+      const url = `https://musicbrainz.org/ws/2/artist?query=artist:"${encodeURIComponent(query)}"&limit=8&fmt=json`;
+      const response = await this._withRetry(() => fetch(url, {
+        headers: {
+          'User-Agent': 'MaxBooster/1.0 (music career management platform)',
+          'Accept': 'application/json',
+        },
+        signal: AbortSignal.timeout(10000),
+      }), 2, 'MusicBrainz');
+
+      if (!response.ok) return [];
+
+      const data = await response.json() as any;
+      return (data.artists || []).map((a: any): MusicBrainzArtistResult => ({
+        id: a.id,
+        name: a.name,
+        score: a.score ?? 0,
+        type: a.type ?? null,
+        country: a.country ?? null,
+        tags: (a.tags || []).map((t: any) => t.name as string),
+        disambiguation: a.disambiguation ?? null,
+      }));
+    } catch (err) {
+      logger.warn('[ArtistProfile] MusicBrainz search error (non-fatal):', err);
+      return [];
+    }
+  }
+
   async searchAllPlatforms(query: string): Promise<PlatformSearchResults> {
-    const [spotify, apple, deezer] = await Promise.allSettled([
+    const [spotify, apple, deezer, musicbrainz] = await Promise.allSettled([
       this.searchSpotifyArtists(query),
       this.searchAppleArtists(query),
       this.searchDeezerArtists(query),
+      this.searchMusicBrainzArtists(query),
     ]);
 
     return {
       spotify: spotify.status === 'fulfilled' ? spotify.value : [],
       apple: apple.status === 'fulfilled' ? apple.value : [],
       deezer: deezer.status === 'fulfilled' ? deezer.value : [],
+      musicbrainz: musicbrainz.status === 'fulfilled' ? musicbrainz.value : [],
     };
   }
 
@@ -316,48 +411,76 @@ class ArtistProfileService {
 
   private _scoreSpotify(result: SpotifyArtistResult, query: string): number {
     let score = 0;
-    const name = result.name.toLowerCase();
-    const q = query.toLowerCase();
-    if (name === q) score += 50;
-    else if (name.includes(q) || q.includes(name)) score += 25;
-    if (result.imageUrl) score += 10;
-    if (result.popularity >= 60) score += 25;
-    else if (result.popularity >= 30) score += 15;
+    const nameSim = this._nameSimilarity(result.name, query);
+    // Name similarity dominates scoring — use a graded scale
+    if (nameSim >= 95) score += 50;        // Effectively exact after normalization
+    else if (nameSim >= 70) score += 38;   // Strong partial match / contains
+    else if (nameSim >= 40) score += 22;   // Shared words match
+    else if (nameSim >= 20) score += 10;   // Weak match — flag as uncertain
+    else return 0;                          // No meaningful name overlap — skip
+    if (result.imageUrl) score += 8;
+    if (result.popularity >= 60) score += 22;
+    else if (result.popularity >= 30) score += 13;
     else if (result.popularity >= 10) score += 5;
     if (result.genres.length > 0) score += 5;
     if (result.followers >= 1_000_000) score += 10;
     else if (result.followers >= 100_000) score += 7;
     else if (result.followers >= 10_000) score += 4;
+    else if (result.followers >= 1_000) score += 1;
     return Math.min(score, 100);
   }
 
   private _scoreDeezer(result: DeezerArtistResult, query: string): number {
     let score = 0;
-    const name = result.name.toLowerCase();
-    const q = query.toLowerCase();
-    if (name === q) score += 50;
-    else if (name.includes(q) || q.includes(name)) score += 25;
-    if (result.pictureUrl) score += 10;
-    if (result.fans >= 500_000) score += 25;
-    else if (result.fans >= 50_000) score += 15;
-    else if (result.fans >= 5_000) score += 5;
+    const nameSim = this._nameSimilarity(result.name, query);
+    if (nameSim >= 95) score += 50;
+    else if (nameSim >= 70) score += 38;
+    else if (nameSim >= 40) score += 22;
+    else if (nameSim >= 20) score += 10;
+    else return 0;
+    if (result.pictureUrl) score += 8;
+    if (result.fans >= 500_000) score += 22;
+    else if (result.fans >= 50_000) score += 14;
+    else if (result.fans >= 5_000) score += 6;
+    else if (result.fans >= 500) score += 2;
     return Math.min(score, 100);
   }
 
   private _scoreApple(result: AppleArtistResult, query: string): number {
     let score = 0;
-    const name = result.name.toLowerCase();
-    const q = query.toLowerCase();
-    if (name === q) score += 50;
-    else if (name.includes(q) || q.includes(name)) score += 25;
-    if (result.genres.length > 0) score += 10;
+    const nameSim = this._nameSimilarity(result.name, query);
+    if (nameSim >= 95) score += 55;        // Apple has no popularity — weight name more
+    else if (nameSim >= 70) score += 40;
+    else if (nameSim >= 40) score += 24;
+    else if (nameSim >= 20) score += 10;
+    else return 0;
+    if (result.genres.length > 0) score += 8;
     return Math.min(score, 100);
+  }
+
+  private _scoreMusicBrainz(result: MusicBrainzArtistResult, query: string): number {
+    let score = 0;
+    const nameSim = this._nameSimilarity(result.name, query);
+    if (nameSim >= 95) score += 40;
+    else if (nameSim >= 70) score += 28;
+    else if (nameSim >= 40) score += 15;
+    else return 0;
+    // MusicBrainz provides its own relevance score (0-100)
+    if (result.score >= 90) score += 30;
+    else if (result.score >= 75) score += 20;
+    else if (result.score >= 60) score += 10;
+    // Artist type bonus — confirms it's actually a music artist
+    if (result.type === 'Person' || result.type === 'Group') score += 15;
+    // Genre tags confirm music category
+    if (result.tags.length > 0) score += 5;
+    return Math.min(score, 90); // Cap at 90 — MusicBrainz alone can't reach full confidence
   }
 
   async autoDiscover(profileId: string, userId: string): Promise<{
     spotify: { result: SpotifyArtistResult; confidence: number } | null;
     apple:   { result: AppleArtistResult;   confidence: number } | null;
     deezer:  { result: DeezerArtistResult;  confidence: number } | null;
+    musicbrainz: { result: MusicBrainzArtistResult; confidence: number } | null;
     saved: boolean;
     savedFields: string[];
   }> {
@@ -369,17 +492,27 @@ class ArtistProfileService {
 
     const topSpotify = raw.spotify
       .map(r => ({ result: r, confidence: this._scoreSpotify(r, query) }))
+      .filter(r => r.confidence > 0)
       .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 
     const topApple = raw.apple
       .map(r => ({ result: r, confidence: this._scoreApple(r, query) }))
+      .filter(r => r.confidence > 0)
       .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 
     const topDeezer = raw.deezer
       .map(r => ({ result: r, confidence: this._scoreDeezer(r, query) }))
+      .filter(r => r.confidence > 0)
       .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 
-    const CONFIDENCE_THRESHOLD = 60;
+    const topMusicBrainz = raw.musicbrainz
+      .map(r => ({ result: r, confidence: this._scoreMusicBrainz(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    // Lower threshold for exact normalized name matches to avoid missing
+    // niche/emerging artists with low Spotify popularity
+    const CONFIDENCE_THRESHOLD = 55;
     const updates: Partial<InsertArtistProfile> = {};
     const savedFields: string[] = [];
 
@@ -408,13 +541,20 @@ class ArtistProfileService {
       savedFields.push('deezer');
     }
 
-    const saved = savedFields.length > 0;
+    // MusicBrainz confirms identity but doesn't save a separate platform ID field;
+    // use it as a cross-validation signal for logging and future use
+    if (topMusicBrainz && topMusicBrainz.confidence >= CONFIDENCE_THRESHOLD) {
+      savedFields.push('musicbrainz_confirmed');
+      logger.info(`[ArtistProfile] MusicBrainz confirmed: profile=${profileId} mbid=${topMusicBrainz.result.id} score=${topMusicBrainz.confidence}`);
+    }
+
+    const saved = savedFields.filter(f => f !== 'musicbrainz_confirmed').length > 0;
     if (saved) {
       await this.updateProfile(profileId, userId, updates);
       logger.info(`[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields.join(',')}]`);
     }
 
-    return { spotify: topSpotify ?? null, apple: topApple ?? null, deezer: topDeezer ?? null, saved, savedFields };
+    return { spotify: topSpotify ?? null, apple: topApple ?? null, deezer: topDeezer ?? null, musicbrainz: topMusicBrainz ?? null, saved, savedFields };
   }
 
   async autoSync(profileId: string, userId: string): Promise<{
