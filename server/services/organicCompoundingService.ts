@@ -280,29 +280,8 @@ class OrganicCompoundingService {
         avgRevenue = totalRevenue / similarAssets.length;
         avgStreams = totalStreams / similarAssets.length;
       } else {
-        // Music-industry informed fallback estimates:
-        // Average independent artist SEO article generates ~$85 in streaming referrals over 90 days
-        // Average social reel/clip generates ~$60 via streaming + merch micro-conversions
-        // Average playlist pitch generates ~$120 via streaming from playlist adds
-        const musicDefaults: Record<string, { revenue: number; streams: number }> = {
-          'tiktok_reel_clip': { revenue: 65, streams: 180 },
-          'instagram_reel': { revenue: 55, streams: 120 },
-          'youtube_short': { revenue: 45, streams: 90 },
-          'playlist_pitch': { revenue: 140, streams: 400 },
-          'press_release': { revenue: 80, streams: 150 },
-          'seo_article': { revenue: 90, streams: 130 },
-          'ugc_challenge': { revenue: 120, streams: 350 },
-          'spotify_canvas': { revenue: 50, streams: 200 },
-          'lyric_video': { revenue: 110, streams: 280 },
-          'editorial_pitch': { revenue: 180, streams: 600 },
-          'music_video_official': { revenue: 200, streams: 500 },
-          'blog_post': { revenue: 70, streams: 100 },
-          'youtube_video': { revenue: 95, streams: 220 },
-          'playlist': { revenue: 80, streams: 180 },
-        };
-        const def = musicDefaults[candidate.type] ?? { revenue: 85, streams: 120 };
-        avgRevenue = def.revenue;
-        avgStreams = def.streams;
+        avgRevenue = 100;
+        avgStreams = 50;
       }
       
       const creationCost = candidate.creationCostHours * HOURLY_RATE_ESTIMATE;
