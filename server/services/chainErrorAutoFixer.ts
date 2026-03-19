@@ -381,6 +381,45 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
+    // 7b. PDIM HTTP exec timeout (AbortError / TimeoutError from AbortSignal.timeout)
+    // When PDIM takes > 20s to respond, exec() throws an AbortError/TimeoutError.
+    // This means PDIM or the Replit container network is severely degraded.
+    // Fix: release any blocked semaphore slot + aggressively raise the gap so
+    // the AIMD back-off has room to absorb the slow period.
+    this.addPattern({
+      id: 'pdim_exec_timeout',
+      name: 'PDIM HTTP exec fetch timeout (AbortError/TimeoutError)',
+      description: 'PDIM exec fetch timed out after 20s — PDIM or network severely degraded; semaphore freed, gap raised',
+      matchers: [
+        /\[PDIM\] exec error.*AbortError/i,
+        /\[PDIM\] exec error.*TimeoutError/i,
+        /\[PDIM\].*fetch.*timed out/i,
+      ],
+      levels: ['error'],
+      severity: 'critical',
+      category: 'storage',
+      cooldownMs: 20_000,
+      maxAttempts: 20,
+      autoFix: async () => {
+        // Free any slot that was held while waiting for the unresponsive fetch
+        try {
+          const { resetLuaExecutorSemaphore } = await import('../lib/luaExecutor.js');
+          resetLuaExecutorSemaphore();
+        } catch { /* non-fatal */ }
+        // Raise the gap aggressively — PDIM is severely slow
+        try {
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+          const current = getPdimAdaptiveGapMs?.() ?? 600;
+          const raised  = Math.min(8_000, Math.max(3_000, Math.round(current * 1.5)));
+          setPdimAdaptiveGap(raised);
+          logger.info(`[ChainFixer] PDIM exec timeout — semaphore cleared, gap raised ${current}ms → ${raised}ms`);
+        } catch { /* non-fatal */ }
+      },
+      escalate: async (attempts) => {
+        logger.error(`[ChainFixer] pdim_exec_timeout: ${attempts} occurrences — PDIM is chronically unresponsive; check PDIM_HTTP_EXEC_URL health`);
+      },
+    });
+
     // 8. Worker thread uncaught error (generic [Worker] Worker error)
     this.addPattern({
       id: 'worker_thread_error',
@@ -628,7 +667,39 @@ class ChainErrorAutoFixer extends EventEmitter {
       },
     });
 
-    // 17. BullMQ stale / unnamed job warnings
+    // 17. Generic network-level connectivity errors (ECONNRESET, ETIMEDOUT, ECONNREFUSED)
+    // These fire when a TCP connection to an external service (Neon DB, PDIM, Stripe,
+    // SendGrid, etc.) is dropped mid-flight. Usually transient — every client has its
+    // own retry logic. This pattern provides a single acknowledged log entry per
+    // burst and forces a GC to release any pending stream buffers from dropped sockets.
+    this.addPattern({
+      id: 'network_connectivity',
+      name: 'Network connectivity error (ECONNRESET/ETIMEDOUT/ECONNREFUSED)',
+      description: 'TCP connection dropped or timed out — transient; per-client retry logic handles recovery',
+      matchers: [
+        /ECONNRESET|connection reset by peer/i,
+        /ETIMEDOUT|operation timed out/i,
+        /ECONNREFUSED.*\d+\.\d+\.\d+/i,
+        /EHOSTUNREACH|ENETUNREACH/i,
+      ],
+      levels: ['error'],
+      severity: 'medium',
+      category: 'network',
+      cooldownMs: 30_000,
+      maxAttempts: 50,
+      autoFix: async () => {
+        // GC releases any pending TCP stream buffers from dropped connections
+        if (typeof global.gc === 'function') {
+          try { global.gc(); } catch { /* ignore */ }
+        }
+        logger.info('[ChainFixer] Network connectivity error — GC released stream buffers; retry logic active');
+      },
+      escalate: async (attempts) => {
+        logger.warn(`[ChainFixer] network_connectivity: ${attempts} errors — persistent network instability; check upstream connectivity`);
+      },
+    });
+
+    // 18. BullMQ stale / unnamed job warnings
     // BullMQ emits these at 'warn' level when it finds stale jobs in the queue
     // (e.g. a job that was started but never completed due to a crash, or a
     // job that has no registered processor).  They are self-healing — BullMQ
@@ -838,6 +909,23 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
       }
     }
+
+    // Check PDIM chain queue depth — surface an early warning before the semaphore saturates
+    // (probePDIM handles gap drift; the health check surfaces queue depth independently)
+    try {
+      const { isPdimConfigured, getPdimQueueDepth, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+      if (isPdimConfigured()) {
+        const depth = getPdimQueueDepth();
+        const gap   = getPdimAdaptiveGapMs();
+        const now   = Date.now();
+        if (depth > 15 && now - this._lastHeapWarnMs > 60_000) {
+          logger.warn(
+            `[ChainFixer] PDIM chain congested — ${depth} callers queued (gap ${gap}ms). ` +
+            `If this persists, a 429 cascade or exec timeout may follow.`
+          );
+        }
+      }
+    } catch { /* non-fatal */ }
   }
 
   // ─── Fix Execution ─────────────────────────────────────────────────────────
@@ -976,16 +1064,28 @@ class ChainErrorAutoFixer extends EventEmitter {
    * When the key pattern fires, the downstream fixes are pre-applied.
    */
   private static readonly CHAIN_MAP: Record<string, string[]> = {
-    'pdim_rate_limit_429':         ['lua_executor_timeout', 'lua_script_timeout', 'bullmq_missing_lock'],
+    // PDIM 429 → callers start stacking (executor timeout), chain slot contention (lock miss)
+    // Also pre-arm the new exec-timeout pattern since PDIM may become unresponsive after 429
+    'pdim_rate_limit_429':         ['lua_executor_timeout', 'bullmq_missing_lock', 'pdim_exec_timeout'],
+    // Executor timeout → BullMQ lock operations stall waiting for script results
     'lua_executor_timeout':        ['bullmq_missing_lock', 'bullmq_stalled_foreach'],
+    // lua_script_timeout kept for abnormal exits (no longer fires via fast-lane, but
+    // may occur via direct long-running scripts) — same downstream as executor timeout
     'lua_script_timeout':          ['bullmq_missing_lock', 'bullmq_stalled_foreach'],
     'bullmq_stalled_foreach':      ['bullmq_null_then'],
-    'worker_thread_error':         ['lua_executor_timeout', 'lua_script_timeout', 'bullmq_missing_lock'],
-    'pdim_circuit_open':           ['pdim_rate_limit_429', 'lua_script_timeout', 'session_store_failure'],
+    // Generic worker thread errors stall the lock extension cycle
+    'worker_thread_error':         ['lua_executor_timeout', 'bullmq_missing_lock'],
+    // Circuit open → 429 cascade → session store (if session uses PDIM path)
+    'pdim_circuit_open':           ['pdim_rate_limit_429', 'session_store_failure', 'pdim_exec_timeout'],
     'memory_pressure':             ['oom_error'],
-    'worker_thread_crash':         ['bullmq_missing_lock', 'lua_script_timeout', 'autonomous_system_rejection'],
+    // Worker crash frees semaphore but next lock renewal may race with restart
+    'worker_thread_crash':         ['bullmq_missing_lock', 'autonomous_system_rejection'],
     'autonomous_system_rejection': ['bullmq_null_then'],
     'session_store_failure':       ['api_credential_expired'],
+    // PDIM exec timeout → callers stacked in executor and lock manager
+    'pdim_exec_timeout':           ['lua_executor_timeout', 'bullmq_missing_lock'],
+    // Network errors can disrupt PDIM channel, triggering rate-limiting on retry burst
+    'network_connectivity':        ['pdim_rate_limit_429', 'session_store_failure'],
   };
 
   private _offensiveActionsTotal = 0;
@@ -1034,6 +1134,32 @@ class ChainErrorAutoFixer extends EventEmitter {
         );
         this._offensiveActionsTotal++;
         this._preConditionHitsTotal++;
+      }
+    } catch { /* non-fatal */ }
+
+    // ── Pre-condition: PDIM gap over-constrained (stuck high after past 429 cascade) ──
+    // After a 429 cascade the AIMD gap rises multiplicatively and recovers via
+    // additive decrease — but additive decrease = 1 ms per successful request.
+    // At idle (0–1 req/sec), the gap stays stuck at 3000–8000ms for hours.
+    // Offensive: if gap is > 4× floor and queue is idle (no active pressure),
+    // nudge it down 20% per scan so latency tax is minimised between cascades.
+    try {
+      const { isPdimConfigured, getPdimAdaptiveGapMs, getPdimGapFloor, setPdimAdaptiveGap, getPdimQueueDepth } = await import('../lib/pdimClient.js');
+      if (isPdimConfigured()) {
+        const gap        = getPdimAdaptiveGapMs();
+        const floor      = getPdimGapFloor();
+        const queueDepth = getPdimQueueDepth();
+        // Only nudge when: gap well above floor, queue idle (no active 429 backoff), floor is sane
+        if (gap > Math.max(4_000, floor * 4) && queueDepth === 0) {
+          const target = Math.max(floor, Math.round(gap * 0.80));
+          setPdimAdaptiveGap(target);
+          logger.info(
+            `[ChainFixer] 🎯 OFFENSIVE: PDIM gap drift corrected — ${gap}ms → ${target}ms ` +
+            `(floor ${floor}ms, queue idle — AIMD recovering post-cascade)`
+          );
+          this._offensiveActionsTotal++;
+          this._preConditionHitsTotal++;
+        }
       }
     } catch { /* non-fatal */ }
 
@@ -1236,9 +1362,10 @@ class ChainErrorAutoFixer extends EventEmitter {
           downstream: ChainErrorAutoFixer.CHAIN_MAP[id],
         })),
         strategies: [
-          'Pre-condition Scanner: detects runtime conditions BEFORE error patterns fire',
+          'Pre-condition Scanner: detects runtime conditions BEFORE error patterns fire (LuaExecutor, memory, PDIM gap drift)',
           'Error Chain Prediction: when A fires, pre-apply B\'s fix with 2s lead time',
           'Unknown Error Weaponization: fuzzy-match novel errors to closest fix',
+          'PDIM Gap Correction: offensively nudges over-constrained AIMD gap back toward floor when queue is idle',
         ],
       },
     };

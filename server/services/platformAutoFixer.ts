@@ -417,7 +417,7 @@ class PlatformAutoFixer extends EventEmitter {
     let details: Record<string, unknown> = {};
 
     try {
-      const { isPdimConfigured, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+      const { isPdimConfigured, getPdimAdaptiveGapMs, getPdimQueueDepth, getPdimGapFloor } = await import('../lib/pdimClient.js');
       if (!isPdimConfigured()) {
         return this._result('pdim', 'unknown', 0, 'PDIM not configured', {});
       }
@@ -428,7 +428,9 @@ class PlatformAutoFixer extends EventEmitter {
         return this._result('pdim', 'critical', 0, 'PDIM circuit breaker is OPEN', { circuitOpen: true });
       }
 
-      const gapMs = getPdimAdaptiveGapMs();
+      const gapMs       = getPdimAdaptiveGapMs();
+      const queueDepth  = getPdimQueueDepth();
+      const gapFloorMs  = getPdimGapFloor();
 
       // Direct HTTP ping — bypasses the AIMD serialisation chain so health probes
       // never compete with real traffic for the shared PDIM channel.  Uses the
@@ -446,13 +448,25 @@ class PlatformAutoFixer extends EventEmitter {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const pingMs = Date.now() - pingStart;
 
-      details = { pingMs, adaptiveGapMs: gapMs };
+      details = { pingMs, adaptiveGapMs: gapMs, gapFloorMs, chainQueueDepth: queueDepth };
 
+      // Diagnose in priority order:
+      // 1. Slow raw ping → PDIM is genuinely slow
+      // 2. Chain congested → too many callers piling up (often caused by high gap)
+      // 3. Gap over-constrained → AIMD drifted high after old 429 cascade with no self-correction
       if (pingMs > PDIM_SLOW_THRESHOLD_MS) {
         status  = 'degraded';
-        message = `PDIM slow: ${pingMs}ms`;
+        message = `PDIM slow: ${pingMs}ms (gap ${gapMs}ms, queue depth ${queueDepth})`;
+      } else if (queueDepth > 20) {
+        status  = 'degraded';
+        message = `PDIM chain congested: ${queueDepth} callers queued (gap ${gapMs}ms, ping ${pingMs}ms)`;
+      } else if (pingMs < 200 && gapMs > 6_000 && queueDepth <= 1) {
+        // Gap is very high but PDIM is fast and queue is idle — AIMD is over-constrained
+        // from a past 429 cascade and hasn't self-corrected (slow request volume = slow AIMD decrease)
+        status  = 'degraded';
+        message = `PDIM gap over-constrained: ${gapMs}ms (ping ${pingMs}ms fast, queue idle — AIMD drift post-429 cascade)`;
       } else {
-        message = `ping ${pingMs}ms, gap ${gapMs}ms`;
+        message = `ping ${pingMs}ms, gap ${gapMs}ms, queue depth ${queueDepth}`;
       }
     } catch (err: any) {
       const msg = (err.message ?? '') as string;
@@ -569,6 +583,24 @@ class PlatformAutoFixer extends EventEmitter {
 
       // Reset counter after reading
       this.logErrorCounts.set('queues', 0);
+
+      // Also probe the PDIM chain queue depth — high depth means all BullMQ Lua
+      // script calls are stalling behind the AIMD serialisation gate.
+      try {
+        const { isPdimConfigured, getPdimQueueDepth, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+        if (isPdimConfigured()) {
+          const pdimQueue = getPdimQueueDepth();
+          const pdimGap   = getPdimAdaptiveGapMs();
+          details = { ...details, pdimChainQueueDepth: pdimQueue, pdimGapMs: pdimGap };
+          if (pdimQueue > 20) {
+            status  = 'critical';
+            message = `PDIM chain stall: ${pdimQueue} callers queued (gap ${pdimGap}ms) — all BullMQ scripts blocked`;
+          } else if (pdimQueue > 10 && status === 'healthy') {
+            status  = 'degraded';
+            message = `PDIM chain congested: ${pdimQueue} callers queued (gap ${pdimGap}ms)`;
+          }
+        }
+      } catch { /* non-fatal — PDIM may not be configured */ }
     } catch {
       status  = 'unknown';
       message = 'Queue probe unavailable';
@@ -625,7 +657,7 @@ class PlatformAutoFixer extends EventEmitter {
       const { pool } = await import('../db.js');
       const start = Date.now();
       await Promise.race([
-        pool.query('SELECT COUNT(*) FROM session WHERE expire > NOW()'),
+        pool.query('SELECT 1 FROM session WHERE expire > NOW() LIMIT 1'),
         new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 3000)),
       ]) as any;
       const pingMs = Date.now() - start;
@@ -841,9 +873,15 @@ class PlatformAutoFixer extends EventEmitter {
           runtimeEffect: 'PDIM polling gap increased to 2000ms',
           action: async () => {
             try {
-              const { setPdimAdaptiveGap } = await import('../lib/pdimClient.js');
-              setPdimAdaptiveGap?.(2000);
-              logger.info('[PlatformAutoFixer] PDIM adaptive polling gap increased to 2000ms');
+              const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+              const current = getPdimAdaptiveGapMs?.() ?? 0;
+              const target  = 2000;
+              if (current >= target) {
+                logger.info(`[PlatformAutoFixer] PDIM gap already at ${current}ms — no backoff raise needed`);
+                return;
+              }
+              setPdimAdaptiveGap?.(target);
+              logger.info(`[PlatformAutoFixer] PDIM adaptive polling gap raised ${current}ms → ${target}ms`);
             } catch { /* function may not exist */ }
           },
           revert: async () => {
@@ -1030,6 +1068,23 @@ class PlatformAutoFixer extends EventEmitter {
         'critical',
         criticalSubs,
         `${criticalSubs.length} subsystems simultaneously critical`,
+      );
+    }
+
+    // Root-cause correlation: PDIM pressure → LuaExecutor congestion
+    // PDIM slowness or high gap means every redis.call() inside a Lua script
+    // waits at the AIMD gate — this causes LuaExecutor semaphore saturation.
+    // When both subsystems are degraded/critical simultaneously, PDIM is almost
+    // always the root cause; surface this explicitly so the fix is obvious.
+    const pdimState = this.probeResults.get('pdim')?.status;
+    const luaState  = this.probeResults.get('lua_executor')?.status;
+    if ((pdimState === 'degraded' || pdimState === 'critical') &&
+        (luaState  === 'degraded' || luaState  === 'critical')) {
+      this.openIncident(
+        'Root cause: PDIM pressure causing LuaExecutor congestion',
+        'high',
+        ['pdim', 'lua_executor'],
+        'PDIM and LuaExecutor are simultaneously degraded — PDIM gate delay is starving Lua script redis.call()s. Fix PDIM first; LuaExecutor will recover automatically.',
       );
     }
 
@@ -1244,15 +1299,21 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     // ── PDIM stress probe ────────────────────────────────────────────────────
+    // Uses a direct HTTP fetch (same bypass as probePDIM) so the stress probe
+    // measures PDIM's raw response time rather than AIMD chain wait time.
+    // A 400ms budget against a 1690ms gap would always fail via the chain.
     try {
-      const { isPdimConfigured, getPdimClient } = await import('../lib/pdimClient.js');
+      const { isPdimConfigured } = await import('../lib/pdimClient.js');
       if (!isPdimConfigured()) return;
-      const client = getPdimClient();
+      const stressUrl   = process.env.PDIM_EXEC_URL   || process.env.PDIM_HTTP_EXEC_URL || '';
+      const stressToken = process.env.PDIM_EXEC_TOKEN || process.env.PDIM_BEARER_TOKEN  || '';
       const t0 = Date.now();
-      await Promise.race([
-        (client as any).ping?.() ?? (client as any).exec('PING', []),
-        new Promise<never>((_, r) => setTimeout(() => r(new Error('stress timeout')), STRESS_TIMEOUT_MS)),
-      ]);
+      await fetch(stressUrl, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${stressToken}` },
+        body:    JSON.stringify({ cmd: 'PING', args: [] }),
+        signal:  AbortSignal.timeout(STRESS_TIMEOUT_MS),
+      });
       const latency = Date.now() - t0;
       if (latency > STRESS_TIMEOUT_MS * 0.75) {
         logger.info(
@@ -1507,7 +1568,7 @@ class PlatformAutoFixer extends EventEmitter {
         activeForecastedThreats: forecastSummary,
         strategies: [
           'Threat trajectory forecasting (linear regression on trend window)',
-          'Adversarial stress probing (200ms tight-timeout DB+PDIM stress tests)',
+          'Adversarial stress probing (400ms tight-timeout DB+PDIM direct HTTP stress tests)',
           'Memory growth rate alarm (heap slope → OOM projection)',
           'Route attack surface sweeper (5xx arrival-rate burst detection)',
         ],
