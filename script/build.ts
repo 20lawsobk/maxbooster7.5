@@ -396,13 +396,37 @@ async function main() {
         { stdio: 'inherit', shell: '/bin/bash' });
     } catch (_) {}
 
-    // ── 10. Non-JS documentation files inside packages ───────────────────────
+    // ── 10. Test suites bundled inside packages ───────────────────────────────
+    // Packages often ship __tests__/, test/, or tests/ directories with their
+    // own spec files.  None of these are require()d at runtime.
+    // -not -path "*/.bin/*" guards against accidentally deleting CLI wrappers.
+    console.log('[deploy-clean] Removing test directories inside node_modules...');
+    try {
+      execSync(
+        `find node_modules -type d \\( -name "__tests__" -o -name "test" -o -name "tests" \\) ` +
+        `-not -path "*/.bin/*" -exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── 11. Docs, examples, fixtures, benchmark dirs inside packages ──────────
+    // Bounded to maxdepth 3 so we never descend into real runtime subdirectories
+    // of deeply-nested packages (e.g. exceljs uses "doc" for runtime JS modules).
+    console.log('[deploy-clean] Removing docs/examples/fixtures inside node_modules...');
+    try {
+      execSync(
+        `find node_modules -maxdepth 3 -type d ` +
+        `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
+        `-o -name "tutorial" -o -name "tutorials" -o -name ".github" ` +
+        `-o -name "benchmark" -o -name "benchmarks" -o -name "fixtures" \\) ` +
+        `-exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+    } catch (_) {}
+
+    // ── 12. Changelog / readme files inside packages ──────────────────────────
     // Only delete files that Node.js can never require() at runtime.
-    // We intentionally do NOT pattern-delete directories named "doc", "test",
-    // "examples", etc. — packages like exceljs use those names for real runtime
-    // JS modules.  npm prune --omit=dev (step 1) is the real allowlist; anything
-    // it leaves behind is there because a production dependency needs it.
-    console.log('[deploy-clean] Removing non-JS docs/changelogs inside node_modules...');
+    console.log('[deploy-clean] Removing changelog/readme files inside node_modules...');
     try {
       execSync(
         `find node_modules -maxdepth 3 -type f ` +

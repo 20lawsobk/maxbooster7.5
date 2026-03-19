@@ -73,7 +73,7 @@ fi
 # ─── TF native binaries (always remove — postinstall downloads them regardless) ─
 echo "==> Removing TF native libraries downloaded by tfjs-node postinstall..."
 rm -rf node_modules/@tensorflow/tfjs-node/deps/ 2>/dev/null || true
-rm -f  node_modules/@tensorflow/tfjs-node/binding/tfjs_binding.node 2>/dev/null || true
+rm -rf node_modules/@tensorflow/tfjs-node/binding/ 2>/dev/null || true
 echo "   TF native binaries removed."
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
