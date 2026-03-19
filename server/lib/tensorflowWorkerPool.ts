@@ -73,6 +73,16 @@ class TensorFlowWorkerPool {
 
     const workerPath = resolveWorkerPath();
 
+    // Guard: if the worker file doesn't exist at any candidate path, skip gracefully.
+    // Without this guard, all poolSize worker threads are spawned and each fails with
+    // "Cannot find module" — the first rejection collapses Promise.all but the
+    // remaining N-1 rejections become UnhandledPromiseRejections that crash the
+    // cluster worker process (Node.js 18+, exit code 1).
+    if (!existsSync(workerPath)) {
+      logger.warn(`[TFWorkerPool] Worker file not found (checked: server/workers, dist/workers) — falling back to in-process inference`);
+      return;
+    }
+
     const startWorker = (index: number): Promise<WorkerState> =>
       new Promise((resolve, reject) => {
         const worker = new Worker(workerPath);

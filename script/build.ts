@@ -249,6 +249,13 @@ async function buildAll() {
         entryPoints: ["server/cluster.ts"],
         outfile: "dist/cluster.cjs",
       }),
+      // TF worker thread: runs inside worker_threads — must be a standalone file.
+      // The cluster primary deletes server/ in deploy-clean, so this must land in dist/.
+      esbuild({
+        ...sharedBuildConfig,
+        entryPoints: ["server/workers/tfWorkerThread.ts"],
+        outfile: "dist/workers/tfWorkerThread.cjs",
+      }),
     ]);
   }
 
