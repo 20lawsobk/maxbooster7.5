@@ -8,12 +8,63 @@ import { logger } from '../logger.js';
 const PgSessionStore = connectPgSimple(session);
 
 /**
+ * In-process session cache — eliminates repeated PDIM/Postgres lookups when
+ * PDIM is rate-limited or slow.  Each session is fetched from the backing
+ * store at most once per L1_TTL_MS window.  set()/destroy() immediately
+ * invalidate the cache entry so auth state changes (login, logout) take
+ * effect instantly — there is no risk of a user staying logged in after
+ * logout due to this cache.
+ *
+ * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
+ */
+const L1_TTL_MS   = 30_000;  // how long a cached session is valid
+const L1_MAX_SIZE = 5_000;   // max entries (LRU eviction on oldest-first key)
+
+interface L1Entry { data: session.SessionData | null; expiresAt: number; }
+
+class SessionL1Cache {
+  private readonly map = new Map<string, L1Entry>();
+
+  get(sid: string): session.SessionData | null | undefined {
+    const entry = this.map.get(sid);
+    if (!entry) return undefined;          // cache miss
+    if (Date.now() > entry.expiresAt) {
+      this.map.delete(sid);
+      return undefined;                    // expired
+    }
+    return entry.data;                     // cache hit (may be null = no session)
+  }
+
+  set(sid: string, data: session.SessionData | null): void {
+    if (this.map.size >= L1_MAX_SIZE) {
+      // evict the oldest entry (Map insertion order)
+      const oldest = this.map.keys().next().value;
+      if (oldest) this.map.delete(oldest);
+    }
+    this.map.set(sid, { data, expiresAt: Date.now() + L1_TTL_MS });
+  }
+
+  invalidate(sid: string): void {
+    this.map.delete(sid);
+  }
+
+  get size(): number { return this.map.size; }
+}
+
+/**
  * FallbackSessionStore
  *
  * Wraps a primary (Redis/PDIM) and secondary (PG) session store.
  * All operations are tried on the primary first. If the primary throws
  * or returns an error, the operation is transparently retried on the
  * secondary. This means sessions keep working even when PDIM is down.
+ *
+ * L1 in-process cache (SessionL1Cache) sits in front of both stores:
+ * - get()     → returns from L1 if fresh; otherwise fetches from primary/PG
+ *               and populates L1 for subsequent requests in the TTL window.
+ * - set()     → writes through to primary/PG AND updates L1 immediately.
+ * - destroy() → invalidates L1 immediately AND propagates to both stores.
+ * - touch()   → refreshes L1 TTL; does NOT skip the underlying touch().
  *
  * VM-reserved deployment: PDIM is always-on, but may have brief hiccups
  * during restarts. PG catches all edge cases automatically.
@@ -22,6 +73,7 @@ class FallbackSessionStore extends session.Store {
   private primaryDown = false;
   private lastPrimaryCheck = 0;
   private readonly PRIMARY_RETRY_MS = 30_000; // re-probe primary every 30 s
+  private readonly l1 = new SessionL1Cache();
 
   constructor(
     private readonly primary: session.Store,
@@ -55,27 +107,45 @@ class FallbackSessionStore extends session.Store {
   }
 
   get(sid: string, cb: (err: any, session?: session.SessionData | null) => void): void {
+    // L1 hit — no PDIM/PG round-trip needed
+    const cached = this.l1.get(sid);
+    if (cached !== undefined) return cb(null, cached);
+
+    const onResult = (data: session.SessionData | null) => {
+      this.l1.set(sid, data);
+      cb(null, data);
+    };
+
     if (!this.canTryPrimary()) {
-      return this.secondary.get(sid, cb);
+      return this.secondary.get(sid, (err, data) => {
+        if (err) return cb(err);
+        onResult(data ?? null);
+      });
     }
     this.primary.get(sid, (err, data) => {
       if (err) {
         this.markPrimaryDown(err);
-        return this.secondary.get(sid, cb);
+        return this.secondary.get(sid, (err2, data2) => {
+          if (err2) return cb(err2);
+          onResult(data2 ?? null);
+        });
       }
       this.markPrimaryUp();
-      cb(null, data);
+      onResult(data ?? null);
     });
   }
 
-  set(sid: string, session: session.SessionData, cb?: (err?: any) => void): void {
+  set(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+    // Write-through: update L1 immediately so subsequent get()s see the new data
+    this.l1.set(sid, sess);
+
     if (!this.canTryPrimary()) {
-      return this.secondary.set(sid, session, cb);
+      return this.secondary.set(sid, sess, cb);
     }
-    this.primary.set(sid, session, (err) => {
+    this.primary.set(sid, sess, (err) => {
       if (err) {
         this.markPrimaryDown(err);
-        return this.secondary.set(sid, session, cb);
+        return this.secondary.set(sid, sess, cb);
       }
       this.markPrimaryUp();
       cb?.();
@@ -83,6 +153,9 @@ class FallbackSessionStore extends session.Store {
   }
 
   destroy(sid: string, cb?: (err?: any) => void): void {
+    // Invalidate L1 immediately — logout must take effect at once
+    this.l1.invalidate(sid);
+
     const done = (err?: any) => cb?.(err);
     if (!this.canTryPrimary()) {
       return this.secondary.destroy(sid, done);
@@ -95,11 +168,14 @@ class FallbackSessionStore extends session.Store {
     });
   }
 
-  touch(sid: string, session: session.SessionData, cb?: (err?: any) => void): void {
+  touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+    // Refresh L1 TTL on touch so active users don't keep re-fetching
+    this.l1.set(sid, sess);
+
     if (!this.canTryPrimary()) {
-      return (this.secondary as any).touch?.(sid, session, cb) ?? cb?.();
+      return (this.secondary as any).touch?.(sid, sess, cb) ?? cb?.();
     }
-    (this.primary as any).touch?.(sid, session, (err?: any) => {
+    (this.primary as any).touch?.(sid, sess, (err?: any) => {
       if (err) this.markPrimaryDown(err);
       else this.markPrimaryUp();
       cb?.();
