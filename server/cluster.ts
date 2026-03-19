@@ -95,25 +95,32 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   const freeMemGB = os.freemem() / (1024 ** 3);
   const totalMemGB = os.totalmem() / (1024 ** 3);
 
-  // Replit Autoscale (8 vCPU / 32 GiB per replica):
+  // Deployed VM worker sizing (covers both Autoscale and Reserved VM):
   //   - Each worker V8 heap: 4 GiB (--max-old-space-size=4096, set via execArgv below)
   //   - Native overhead (libuv, TensorFlow, ioredis, BullMQ): ~0.5 GiB
   //   - Effective footprint per worker: ~4.5 GiB
-  //   - 6 workers × 4.5 GiB = 27 GiB; leaves 5 GiB for primary + OS + buffers
   //
-  // On other hardware, use a conservative 6 GiB per worker.
-  const isAutoscale = !!process.env.REPLIT_DEPLOYMENT;
-  const memPerWorkerGB = isAutoscale ? 4.5 : 6.0;
+  //   Autoscale replica  (8 vCPU / 32 GiB):  ~6 workers auto-detected
+  //   Reserved VM        (16 vCPU / 64 GiB): ~12 workers auto-detected
+  //
+  //   Auto-detection uses Math.min(cpuLimit, memLimit) so no CLUSTER_WORKERS
+  //   override is needed — the cluster expands to fill all available CPUs and RAM.
+  //   Use CLUSTER_WORKERS only to intentionally constrain below the auto cap.
+  //
+  // Dev / non-deployment: use conservative 6 GiB per worker to avoid OOM.
+  const isDeployment = !!process.env.REPLIT_DEPLOYMENT;
+  const memPerWorkerGB = isDeployment ? 4.5 : 6.0;
 
   // V8 heap cap applied to each forked worker (MiB)
-  const workerHeapMB = isAutoscale ? 4096 : 3072;
+  const workerHeapMB = isDeployment ? 4096 : 3072;
 
-  // Cap workers by both CPU count and available RAM
-  const cpuLimit = Math.max(1, numCPUs - 1);             // leave 1 CPU for primary + OS
+  // Cap workers by both CPU count and available RAM.
+  // cpuLimit reserves 1 core for the primary process + OS scheduler.
+  const cpuLimit = Math.max(1, numCPUs - 1);
   const memLimit = Math.max(1, Math.floor(freeMemGB / memPerWorkerGB));
 
-  // CLUSTER_WORKERS env var allows operator override.
-  // Recommended for Autoscale 8 vCPU / 32 GiB: CLUSTER_WORKERS=6
+  // CLUSTER_WORKERS env var allows explicit operator override.
+  // Leave unset to let auto-detection use all available CPUs and RAM.
   const envOverride = process.env.CLUSTER_WORKERS ? parseInt(process.env.CLUSTER_WORKERS, 10) : null;
 
   const workerCount = envOverride && envOverride > 0
@@ -134,7 +141,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     `(CPUs: ${numCPUs}, total RAM: ${totalMemGB.toFixed(1)} GB, free: ${freeMemGB.toFixed(1)} GB, ` +
     `${memPerWorkerGB} GB/worker, heap/worker: ${workerHeapMB} MB, ` +
     `cpu-limit: ${cpuLimit}, mem-limit: ${memLimit})` +
-    (isAutoscale ? ' [Autoscale replica]' : '')
+    (isDeployment ? ` [Deployed VM — ${numCPUs} vCPU]` : '')
   );
 
   // ── Option 1: Primary-owned health check server ───────────────────────────
