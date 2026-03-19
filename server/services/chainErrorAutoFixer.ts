@@ -726,6 +726,62 @@ class ChainErrorAutoFixer extends EventEmitter {
         logger.info('[ChainFixer] Stale job cleanup acknowledged — BullMQ is handling removal automatically (this message suppressed for 2 min)');
       },
     });
+
+    // 19. PDIM unsupported command (ZREMRANGEBYSCORE) — rate limiter degraded mode
+    // PDIM (Pocket Dimension) only implements commands used by BullMQ Lua scripts.
+    // The express-rate-limit Redis store uses ZREMRANGEBYSCORE which PDIM doesn't
+    // support (HTTP 400).  The rate limiter already self-degrades to in-memory
+    // mode on this error — no external intervention needed.  Register as a known
+    // pattern so the weaponizer doesn't misidentify it as pdim_exec_timeout and
+    // speculatively raise the PDIM gap.
+    this.addPattern({
+      id: 'pdim_unsupported_command',
+      name: 'PDIM unsupported Redis command (rate limiter degraded)',
+      description: 'PDIM returned HTTP 400 for an unsupported command (e.g. ZREMRANGEBYSCORE); rate limiter auto-degrades to 25% in-memory mode',
+      matchers: [
+        /ERR unknown command.*ZREMRANGEBYSCORE/i,
+        /PDIM HTTP 400.*unknown command/i,
+        /\[RateLimit\] Redis error.*degraded mode/i,
+      ],
+      levels: ['error', 'warn'],
+      severity: 'low',
+      category: 'storage',
+      cooldownMs: 300_000, // 5-min cooldown — chronic, suppress the noise
+      maxAttempts: 1_000,
+      autoFix: async () => {
+        // The rate limiter already handles this — no-op acknowledgement.
+        logger.info('[ChainFixer] PDIM unsupported command (ZREMRANGEBYSCORE) acknowledged — rate limiter running in degraded in-memory mode (self-healing)');
+      },
+    });
+
+    // 20. SessionStore PDIM op timeout — fallback to PG is already handled
+    // The FallbackSessionStore times out primary (PDIM/Redis) at 800 ms and
+    // automatically retries on PostgreSQL.  This is normal behaviour during the
+    // post-restart stale-job flush window and does NOT indicate a real PDIM
+    // failure.  CRITICAL: the fix must be a no-op — raising the PDIM gap here
+    // would make stale-job cleanup slower and extend the very saturation window
+    // that caused the timeout.  Without this pattern the weaponizer fuzzy-scores
+    // the message as 'pdim_exec_timeout' (score ≈ 6) and raises the gap from
+    // 1 100 ms → 3 000 ms → 4 500 ms, turning a 2-min blip into a 10-min cascade.
+    this.addPattern({
+      id: 'session_store_pdim_timeout',
+      name: 'SessionStore PDIM op timed out — PG fallback active',
+      description: 'FallbackSessionStore primary (PDIM) exceeded op timeout; PostgreSQL fallback is serving sessions transparently',
+      matchers: [
+        /\[SessionStore\] PDIM op timed out/i,
+        /\[SessionStore\] Primary.*failed.*falling back to PostgreSQL/i,
+      ],
+      levels: ['warn'],
+      severity: 'low',
+      category: 'database',
+      cooldownMs: 60_000,   // suppress flood: ack once per minute
+      maxAttempts: 1_000,   // chronic during saturation — effectively unlimited
+      autoFix: async () => {
+        // Intentional no-op: PG fallback is already active.
+        // DO NOT raise PDIM gap here — that would worsen the saturation.
+        logger.info('[ChainFixer] SessionStore PDIM timeout acknowledged — PostgreSQL fallback is active; no gap adjustment needed');
+      },
+    });
   }
 
   private addPattern(p: ErrorPattern): void {
@@ -1086,6 +1142,10 @@ class ChainErrorAutoFixer extends EventEmitter {
     'pdim_exec_timeout':           ['lua_executor_timeout', 'bullmq_missing_lock'],
     // Network errors can disrupt PDIM channel, triggering rate-limiting on retry burst
     'network_connectivity':        ['pdim_rate_limit_429', 'session_store_failure'],
+    // SessionStore PDIM timeout is self-healing (PG fallback is already active);
+    // pre-arm stale_job_warning because the timeout often co-occurs with the
+    // post-restart stale-job flood that caused the PDIM saturation in the first place.
+    'session_store_pdim_timeout':  ['stale_job_warning'],
   };
 
   private _offensiveActionsTotal = 0;
@@ -1244,9 +1304,24 @@ class ChainErrorAutoFixer extends EventEmitter {
     let bestPattern: ErrorPattern | null = null;
     let bestScore = 0;
 
+    // Patterns whose autoFix has irreversible or cascading side effects (e.g.
+    // raising the PDIM gap) must NEVER be applied speculatively — a false
+    // positive would worsen the very saturation that triggered the novel error.
+    // The SessionStore timeout message scored 5-6 against pdim_exec_timeout,
+    // causing the gap to jump 1100 ms → 3000 ms → 4500 ms during the stale-job
+    // flood, which turned a 2-min blip into a 10-min cascade.
+    const WEAPONIZE_BLOCKLIST = new Set([
+      'pdim_exec_timeout',          // raises PDIM gap — must never fire speculatively
+      'pdim_rate_limit_429',        // also raises gap
+      'pdim_circuit_open',          // circuit manipulation — only on real circuit errors
+      'session_store_pdim_timeout', // no-op pattern, but keep it off the weaponizer path
+      'pdim_unsupported_command',   // no-op ack — rate limiter already self-heals
+    ]);
+
     for (const pattern of this.patterns) {
       const st = this.state.get(pattern.id)!;
       if (st.suppressed) continue;
+      if (WEAPONIZE_BLOCKLIST.has(pattern.id)) continue;
 
       // Score: count how many tokens appear in the pattern name/description/matchers
       const patternText = `${pattern.name} ${pattern.description} ${pattern.category}`.toLowerCase();
@@ -1266,8 +1341,12 @@ class ChainErrorAutoFixer extends EventEmitter {
       }
     }
 
-    // Only apply speculatively if there's a confident enough match (score ≥ 2)
-    if (!bestPattern || bestScore < 2) return;
+    // Only apply speculatively if there's a confident enough match.
+    // Old threshold of 2 was too loose — the SessionStore timeout message scored
+    // 5-6 against pdim_exec_timeout (both contain "pdim", "timeout", "timed",
+    // "exec"), firing the gap-raise fix falsely.  Threshold raised to 5 so only
+    // messages with substantial semantic overlap trigger speculative application.
+    if (!bestPattern || bestScore < 5) return;
 
     logger.info(
       `[ChainFixer] 🎯 OFFENSIVE: Novel error weaponized — best pattern match '${bestPattern.id}' ` +

@@ -77,7 +77,11 @@ class FallbackSessionStore extends session.Store {
   private primaryDown = false;
   private lastPrimaryCheck = 0;
   private readonly PRIMARY_RETRY_MS    = 30_000; // re-probe primary every 30 s
-  private readonly PRIMARY_OP_TIMEOUT  = 3_000;  // max ms to wait for PDIM per op
+  private readonly PRIMARY_OP_TIMEOUT  = 800;    // max ms to wait for PDIM per op
+  // 800 ms: PG fallback is always available, so there's no benefit waiting
+  // longer for PDIM.  Old 3 000 ms value stalled auth requests for 3 s per
+  // session op during the post-restart stale-job flood, causing 6–100 s
+  // dashboard responses and false "pdim_exec_timeout" ChainFixer escalations.
   private readonly l1 = new SessionL1Cache();
 
   /**
@@ -184,6 +188,10 @@ class FallbackSessionStore extends session.Store {
     ).then((r) => {
       if (r.ok) {
         this.markPrimaryUp();
+        // Mirror to secondary asynchronously so this session survives a PDIM
+        // outage on the NEXT request (sessions only in PDIM are invisible to PG
+        // fallback, causing 401s).  Fire-and-forget — never block the response.
+        this.secondary.set(sid, sess, () => {});
         cb?.();
       } else {
         this.markPrimaryDown(r.err);

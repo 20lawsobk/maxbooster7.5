@@ -60,22 +60,57 @@ export function getRetentionQueue(): Queue {
 /**
  * Purge stale jobs left over from previous server sessions.
  *
- * Stale "waiting" jobs (no name, no data.type) are also cleaned up by the
- * worker processor itself via job.remove(), so this function is a belt-and-
- * suspenders sweep, not a critical path.  It retries with back-off so that
- * a congested LuaExecutor at startup never causes a permanent skip.
+ * Critical fix: this must run BEFORE the worker starts processing so that
+ * stale jobs are cleaned in bulk (1-2 Lua calls) rather than one-by-one
+ * through the PDIM AIMD chain (100 jobs × 1.1 s = 110 s of PDIM saturation).
+ *
+ * Strategy:
+ *   - If there are many (> 10) unnamed stale jobs → drain the entire waiting
+ *     queue in ONE Lua call (queue.drain), then let the scheduler re-add
+ *     legitimate named jobs on its next tick.  At startup, all waiting jobs
+ *     are holdovers from the previous session; none are freshly scheduled.
+ *   - If there are few stale jobs → remove them individually (fast, safe).
+ *   - Also scans the active set for jobs that never had a processor pick them
+ *     up (stalledCheck re-queues them as waiting; this sweep catches any that
+ *     the stalledCheck timer hasn't fired yet).
  */
 async function cleanStalledJobs(attempt = 1): Promise<void> {
   const MAX_ATTEMPTS = 5;
   try {
     const queue = getRetentionQueue();
 
-    // Step 1 — remove stale waiting jobs (belt-and-suspenders; processor also
-    // handles these via job.remove() so failures here are non-critical).
+    // Step 1 — remove stale active jobs left over from the prior session.
+    //
+    // At startup, ALL jobs in 'active' state have expired locks — they were
+    // being processed when the previous server process died.  BullMQ's stalled
+    // check moves them back to 'waiting' after stalledInterval (default 30 s),
+    // which causes a flood of one-by-one job.remove() calls through the PDIM
+    // AIMD chain.  queue.clean(0, 500, 'active') evicts them all in a SINGLE
+    // Lua EVALSHA before the stalledCheck fires, eliminating the flood entirely.
+    //
+    // Safety: at t=5 s the new worker has not yet processed any jobs, so no
+    // legitimately-running active jobs exist to be accidentally removed.
     try {
-      const waiting = await queue.getJobs(['waiting'], 0, 200);
-      const stale = waiting.filter(j => !j.name && !(j.data as any)?.type);
-      if (stale.length > 0) {
+      await queue.clean(0, 500, 'active');
+      logger.info('[Worker] Stale active-state jobs from prior session cleaned (single bulk Lua call)');
+    } catch {
+      // non-fatal — processor handles any stragglers that slip through
+    }
+
+    // Step 2 — identify and remove stale waiting jobs (belt-and-suspenders).
+    // Use queue.drain() for large batches (single Lua call) to avoid
+    // saturating the PDIM AIMD chain with N individual job.remove() calls.
+    try {
+      const waiting = await queue.getJobs(['waiting'], 0, 500);
+      const stale   = waiting.filter(j => !j.name && !(j.data as any)?.type);
+      if (stale.length > 10) {
+        // Bulk drain: removes ALL waiting jobs in a single Lua EVALSHA.
+        // Legitimate named jobs are re-added by the scheduler on its next tick
+        // (cron is typically seconds away at startup, so no jobs are lost).
+        await queue.drain();
+        logger.info(`[Worker] Bulk-drained ${stale.length} stale orphan waiting job(s) from prior session (single Lua call — avoids PDIM saturation)`);
+      } else if (stale.length > 0) {
+        // Small count — individual removes are fine
         await Promise.allSettled(stale.map(j => j.remove()));
         logger.info(`[Worker] Purged ${stale.length} stale orphan waiting job(s) from prior session`);
       }
@@ -83,7 +118,7 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
       // getJobs can timeout under LuaExecutor pressure; processor handles stragglers
     }
 
-    // Step 2 — clean completed/failed tombstones older than 1 hour.
+    // Step 3 — clean completed/failed tombstones older than 1 hour.
     // Use separate try blocks so a timeout on one state doesn't skip the other.
     try { await queue.clean(3_600_000, 100, 'completed'); } catch { /* non-fatal */ }
     try { await queue.clean(3_600_000, 100, 'failed'); } catch { /* non-fatal */ }
@@ -91,7 +126,7 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
     logger.info('[Worker] Startup job cleanup complete');
   } catch (err) {
     if (attempt < MAX_ATTEMPTS) {
-      const delay = attempt * 60_000; // 60 s, 120 s, 180 s, 240 s
+      const delay = attempt * 30_000; // 30 s, 60 s, 90 s, 120 s (faster retry)
       logger.warn(`[Worker] Job cleanup attempt ${attempt} failed — retrying in ${delay / 1000}s: ${(err as Error).message}`);
       setTimeout(() => cleanStalledJobs(attempt + 1).catch(() => {}), delay).unref();
     } else {
@@ -103,9 +138,14 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
 export function startRetentionWorker(): Worker {
   const connection = newBullMQRedisConnection();
 
-  // Delay cleanup by 60 s so LuaExecutor/PDIM has fully warmed up before we
-  // issue bulk queue operations that would compete with boot traffic.
-  setTimeout(() => cleanStalledJobs().catch(() => {}), 60_000).unref();
+  // Run cleanup at t=5 s — enough time for PDIM to connect, but BEFORE the
+  // worker has processed more than a handful of stale jobs individually.
+  // Previous 60 s delay allowed the worker to process 100+ stale unnamed jobs
+  // one-by-one through the PDIM AIMD chain (each ~1.1 s), saturating PDIM for
+  // 2-3 min and triggering SessionStore timeouts + 100 s dashboard responses.
+  // The new bulk drain strategy (queue.drain for > 10 stale jobs) completes
+  // the same cleanup in a single Lua call instead of 100+ sequential calls.
+  setTimeout(() => cleanStalledJobs().catch(() => {}), 5_000).unref();
 
   const worker = new Worker(
     RETENTION_QUEUE,
