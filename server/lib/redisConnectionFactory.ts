@@ -27,12 +27,13 @@ export type RedisClientType = any;
 let redisClient: Redis | null = null;
 
 export async function getRedisClient(): Promise<any> {
-  // Priority 1: PDIM (Pocket Dimension external server)
+  // Priority 1: PDIM — complete replacement for Redis AND internal PD storage.
+  // Always preferred when configured; no BoosterState or ioredis fallback needed.
   if (isPdimConfigured()) {
     return getPdimClient();
   }
 
-  // Priority 2: Real Redis via ioredis
+  // Priority 2: Direct ioredis connection (non-PDIM environments)
   if (config.redis.url) {
     if (!redisClient) {
       redisClient = new Redis(config.redis.url, {
@@ -48,17 +49,17 @@ export async function getRedisClient(): Promise<any> {
     return redisClient;
   }
 
-  // Fallback: Use BoosterState (KV store)
+  // Priority 3: BoosterState sidecar (legacy / dev environments without PDIM or Redis)
   try {
     return await getBoosterStateClient();
   } catch (error: unknown) {
-    logger.warn('⚠️ BoosterState not available, falling back to in-memory operation');
+    logger.warn('⚠️ No Redis backend available (no PDIM, REDIS_URL, or BoosterState) — in-memory fallback only');
     return null;
   }
 }
 
 export async function createRedisClient(): Promise<any> {
-  // PDIM fully replaces Redis — use it when configured
+  // PDIM fully replaces Redis and internal PD — use it when configured
   if (isPdimConfigured()) {
     return getPdimClient().duplicate();
   }
@@ -78,6 +79,15 @@ export async function createRedisClient(): Promise<any> {
 }
 
 export async function isRedisHealthy(): Promise<boolean> {
+  // PDIM is the primary backend — ping it to assess health
+  if (isPdimConfigured()) {
+    try {
+      await getPdimClient().ping();
+      return true;
+    } catch {
+      return false;
+    }
+  }
   if (config.redis.url && redisClient) {
     return redisClient.status === 'ready';
   }

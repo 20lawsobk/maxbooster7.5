@@ -108,28 +108,31 @@ export class DistributedCache {
   }
 
   async connect(): Promise<void> {
+    // ── Priority 1: PDIM — complete replacement for Redis AND internal PD ──
+    // Must be checked BEFORE REDIS_URL so PDIM is used even when REDIS_URL
+    // is absent or points to a legacy instance.
+    if (isPdimConfigured()) {
+      this.redis = getPdimClient() as any;
+      this._redisReady = true;
+      logger.info('✅ [DistributedCache] Connected (PDIM)');
+      return;
+    }
+
+    // ── Priority 2: direct ioredis when PDIM is not available ─────────────
     const url = process.env.REDIS_URL;
 
     if (!url) {
       if (isProductionEnv()) {
         throw new Error(
-          '[DistributedCache] REDIS_URL is required in production. ' +
-          'Shared cache cannot function without Redis — per-instance in-memory caches diverge across cluster workers.'
+          '[DistributedCache] No Redis backend in production — neither PDIM nor REDIS_URL is configured. ' +
+          'Shared cache cannot function without a broker; per-instance in-memory caches diverge across cluster workers.'
         );
       }
-      logger.warn('[DistributedCache] REDIS_URL not set — using in-memory cache (development only)');
+      logger.warn('[DistributedCache] No Redis backend configured — using in-memory cache (development only)');
       return;
     }
 
     try {
-      // PDIM is the sole Redis backend when configured — use it directly
-      if (isPdimConfigured()) {
-        this.redis = getPdimClient() as any;
-        this._redisReady = true;
-        logger.info('✅ [DistributedCache] Connected (PDIM)');
-        return;
-      }
-
       const { default: Redis } = await import('ioredis');
       this.redis = new Redis(url, {
         maxRetriesPerRequest: 1,
