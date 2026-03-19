@@ -216,11 +216,52 @@ echo "   Removed: changelog/readme files inside node_modules"
 
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 
+# ─── Python .pythonlibs stripping ─────────────────────────────────────────────
+# Replit installs pyproject.toml packages into .pythonlibs/ before the build runs.
+# This directory is never cleaned by npm prune — strip it manually.
+if [ -d .pythonlibs ]; then
+  echo "==> Stripping Python .pythonlibs bloat..."
+
+  # TensorBoard and tensorflow_io_gcs_filesystem are model-training visualization
+  # tools — never needed by a running production server.
+  # sympy is a symbolic-math transitive dep (basic-pitch → scipy → sympy) that
+  # no runtime code ever imports.
+  rm -rf \
+    .pythonlibs/lib/python*/site-packages/tensorboard \
+    .pythonlibs/lib/python*/site-packages/tensorboard_data_server \
+    .pythonlibs/lib/python*/site-packages/tensorflow_io_gcs_filesystem \
+    .pythonlibs/lib/python*/site-packages/sympy \
+    2>/dev/null || true
+
+  # Remove dist-info metadata for the packages we just deleted.
+  find .pythonlibs -maxdepth 5 -type d \
+    \( -name "tensorboard-*.dist-info" -o -name "tensorboard_data_server-*.dist-info" \
+       -o -name "tensorflow_io_gcs_filesystem-*.dist-info" -o -name "sympy-*.dist-info" \) \
+    -exec rm -rf {} + 2>/dev/null || true
+
+  # Strip test directories inside Python packages — never imported at runtime.
+  find .pythonlibs -type d \
+    \( -name "test" -o -name "tests" -o -name "__tests__" -o -name "test_data" \) \
+    -exec rm -rf {} + 2>/dev/null || true
+
+  # Strip documentation directories inside Python packages.
+  find .pythonlibs -maxdepth 5 -type d \
+    \( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" \
+       -o -name "tutorials" -o -name "benchmarks" -o -name "fixtures" \) \
+    -exec rm -rf {} + 2>/dev/null || true
+
+  # Strip compiled Python bytecode — Python regenerates .pyc files on first import.
+  find .pythonlibs -name "*.pyc" -type f -delete 2>/dev/null || true
+  find .pythonlibs -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+
+  echo "   Final .pythonlibs size: $(du -sh .pythonlibs 2>/dev/null | cut -f1)"
+fi
+
 # ─── Final summary ────────────────────────────────────────────────────────────
 echo ""
 echo "==> Build image size summary:"
-du -sh dist/ node_modules/ boosterstate/ 2>/dev/null \
-  | awk '{printf "   %-15s %s\n", $2, $1}'
+du -sh dist/ node_modules/ boosterstate/ .pythonlibs/ 2>/dev/null \
+  | awk '{printf "   %-20s %s\n", $2, $1}'
 if [ -d .cache ]; then
   echo "   WARNING: .cache/ still present — $(du -sh .cache/ | cut -f1)"
 fi

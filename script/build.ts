@@ -438,11 +438,63 @@ async function main() {
       );
     } catch (_) {}
 
+    // ── 13. Python .pythonlibs stripping ─────────────────────────────────────
+    // Replit installs pyproject.toml packages into .pythonlibs/ before the
+    // build starts.  This directory is never touched by npm prune — strip it.
+    console.log('[deploy-clean] Stripping Python .pythonlibs bloat...');
+    try {
+      // TensorBoard / tensorflow_io_gcs_filesystem — training visualization only.
+      // sympy — symbolic-math transitive dep (basic-pitch→scipy→sympy), never
+      //          imported by any runtime Python script.
+      await Promise.all([
+        rm('.pythonlibs/lib/python3.11/site-packages/tensorboard',                        { recursive: true, force: true }),
+        rm('.pythonlibs/lib/python3.11/site-packages/tensorboard_data_server',            { recursive: true, force: true }),
+        rm('.pythonlibs/lib/python3.11/site-packages/tensorflow_io_gcs_filesystem',       { recursive: true, force: true }),
+        rm('.pythonlibs/lib/python3.11/site-packages/sympy',                              { recursive: true, force: true }),
+      ]).catch(() => {});
+
+      // dist-info metadata for removed packages
+      execSync(
+        `find .pythonlibs -maxdepth 5 -type d ` +
+        `\\( -name "tensorboard-*.dist-info" -o -name "tensorboard_data_server-*.dist-info" ` +
+        `-o -name "tensorflow_io_gcs_filesystem-*.dist-info" -o -name "sympy-*.dist-info" \\) ` +
+        `-exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+
+      // Test directories inside Python packages
+      execSync(
+        `find .pythonlibs -type d ` +
+        `\\( -name "test" -o -name "tests" -o -name "__tests__" -o -name "test_data" \\) ` +
+        `-exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+
+      // Documentation directories inside Python packages
+      execSync(
+        `find .pythonlibs -maxdepth 5 -type d ` +
+        `\\( -name "docs" -o -name "doc" -o -name "examples" -o -name "example" ` +
+        `-o -name "tutorials" -o -name "benchmarks" -o -name "fixtures" \\) ` +
+        `-exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+
+      // Compiled Python bytecode — Python regenerates .pyc files on first import
+      execSync(
+        `find .pythonlibs -name "*.pyc" -type f -delete 2>/dev/null || true && ` +
+        `find .pythonlibs -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true`,
+        { stdio: 'inherit', shell: '/bin/bash' }
+      );
+
+      execSync(`echo "   Final .pythonlibs size: $(du -sh .pythonlibs 2>/dev/null | cut -f1)"`,
+        { stdio: 'inherit', shell: '/bin/bash' });
+    } catch (_) {}
+
     // ── Summary ───────────────────────────────────────────────────────────────
     try {
       execSync(
         `echo "" && echo "==> Deployment image size summary:" && ` +
-        `du -sh dist/ node_modules/ boosterstate/ 2>/dev/null | awk '{printf "   %-20s %s\\n", $2, $1}' && ` +
+        `du -sh dist/ node_modules/ boosterstate/ .pythonlibs/ 2>/dev/null | awk '{printf "   %-20s %s\\n", $2, $1}' && ` +
         `echo "   Total: $(du -sh --exclude=.git . 2>/dev/null | cut -f1)"`,
         { stdio: 'inherit', shell: '/bin/bash' }
       );
