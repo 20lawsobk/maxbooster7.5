@@ -116,7 +116,7 @@ export default function OnboardingFlow({ onComplete, onSkip }: OnboardingFlowPro
       });
       onComplete();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Setup Failed',
         description: error.message || 'Failed to save onboarding data. Please try again.',

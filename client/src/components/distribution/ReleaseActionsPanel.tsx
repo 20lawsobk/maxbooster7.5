@@ -144,7 +144,7 @@ export function ReleaseActionsPanel({
       setShowTakedownDialog(false);
       resetTakedownForm();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Takedown failed',
         description: error.message || 'Failed to request takedown. Please try again.',

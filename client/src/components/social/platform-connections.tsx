@@ -66,7 +66,7 @@ export function PlatformConnections() {
         trackSocialAccountConnected();
       }
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Connection Failed',
         description: (error as Error).message || 'Failed to connect platform',

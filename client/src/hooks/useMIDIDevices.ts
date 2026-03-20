@@ -99,7 +99,7 @@ export function useMIDIDevices() {
       setState((prev) => ({
         ...prev,
         accessGranted: false,
-        error: error.message || 'Failed to access MIDI devices',
+        error: error instanceof Error ? error.message : 'Failed to access MIDI devices',
       }));
     }
   }, []);

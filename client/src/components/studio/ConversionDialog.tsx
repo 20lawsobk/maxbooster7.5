@@ -140,7 +140,7 @@ export function ConversionDialog({
         description: 'Your file is being converted in the background.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Conversion failed',
         description: error.message || 'Failed to start conversion',
@@ -162,7 +162,7 @@ export function ConversionDialog({
         title: 'Conversion cancelled',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Cancellation failed',
         description: error.message,
@@ -248,7 +248,7 @@ export function ConversionDialog({
         description: 'Converted file has been added as a clip.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to add to project',
         description: error.message,

@@ -351,7 +351,7 @@ export default function StorefrontBuilder() {
       setSlugUserEdited(false);
       trackBeatStoreSetup();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Creation Failed',
         description: error.message || 'Failed to create storefront',
@@ -377,7 +377,7 @@ export default function StorefrontBuilder() {
       queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       setSelectedStorefront(data);
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Update Failed',
         description: error.message || 'Failed to update storefront',
@@ -418,7 +418,7 @@ export default function StorefrontBuilder() {
         maxSubscribers: null,
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Creation Failed',
         description: error.message || 'Failed to create membership tier',
@@ -470,7 +470,7 @@ export default function StorefrontBuilder() {
       setShowDeleteDialog(false);
       setStorefrontToDelete(null);
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Delete Failed',
         description: error.message || 'Failed to delete storefront',

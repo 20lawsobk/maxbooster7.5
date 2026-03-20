@@ -78,7 +78,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
       setFormData({ collaboratorId: '', splitPercentage: '', role: '' });
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'royalty-splits'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to create split',
@@ -109,7 +109,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
       setEditingSplit(null);
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'royalty-splits'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to update split',
@@ -135,7 +135,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/projects', projectId, 'royalty-splits'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to delete split',

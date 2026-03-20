@@ -96,7 +96,7 @@ export function useAudioDevices() {
         ...prev,
         isEnumerating: false,
         permissionGranted: false,
-        error: error.message || 'Failed to enumerate audio devices',
+        error: error instanceof Error ? error.message : 'Failed to enumerate audio devices',
       }));
     }
   }, []);

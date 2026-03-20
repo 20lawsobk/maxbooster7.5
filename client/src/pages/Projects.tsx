@@ -153,7 +153,7 @@ export default function Projects() {
       setUploadForm({ title: '', description: '', genre: '', file: null });
       setUploadProgress(0);
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const apiError = error as ApiError;
       toast({
         title: 'Upload Failed',
@@ -179,7 +179,7 @@ export default function Projects() {
         description: 'The project has been removed successfully.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const apiError = error as ApiError;
       toast({
         title: 'Delete Failed',
@@ -206,7 +206,7 @@ export default function Projects() {
       setIsEditOpen(false);
       setEditingProject(null);
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const apiError = error as ApiError;
       toast({
         title: 'Update Failed',

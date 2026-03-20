@@ -144,7 +144,7 @@ export function DistributionDialog({
       const response = await apiRequest('POST', '/api/distribution/artwork/upload', formData);
       return response.json();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Artwork Upload Failed',
         description: error.message || 'Failed to upload artwork',
@@ -180,7 +180,7 @@ export function DistributionDialog({
         description: 'Distribution package saved',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to save distribution package',
@@ -219,7 +219,7 @@ export function DistributionDialog({
         description: 'Track added to package',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to add track',
@@ -254,7 +254,7 @@ export function DistributionDialog({
         description: 'Your distribution package is ready to download',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       setExportProgress(0);
       toast({
         title: 'Export Failed',

@@ -279,7 +279,7 @@ export function HyperFollowBuilder({
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/hyperfollow'] });
       onComplete?.(campaign);
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error saving campaign',
         description: error.message || 'Please try again.',

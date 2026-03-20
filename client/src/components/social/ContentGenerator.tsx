@@ -191,7 +191,7 @@ export function ContentGenerator() {
         description: `Analyzed ${data.posts_analyzed} posts. Voice profile updated.`,
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Analysis Failed',
         description: error.message || 'Unable to analyze brand voice',
@@ -215,7 +215,7 @@ export function ContentGenerator() {
         description: `Created ${selectedLanguage === 'en' ? 'English' : LANGUAGES.find((l) => l.code === selectedLanguage)?.name} content`,
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Generation Failed',
         description: (error as any).message || 'Unable to generate content',
@@ -238,7 +238,7 @@ export function ContentGenerator() {
         description: `Created ${PLATFORMS.find(p => p.value === data.platform)?.label || data.platform} content via ${data.source === 'ai' ? 'AI Model' : 'Smart Templates'} in ${(data.processingTimeMs / 1000).toFixed(1)}s`,
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Generation Failed',
         description: (error as any).message || 'Unable to generate content',
@@ -255,7 +255,7 @@ export function ContentGenerator() {
       });
       return res.json();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Hashtag Optimization Failed',
         description: error.message || 'Unable to optimize hashtags',
@@ -272,7 +272,7 @@ export function ContentGenerator() {
       });
       return res.json();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Variant Generation Failed',
         description: error.message || 'Unable to generate variants',

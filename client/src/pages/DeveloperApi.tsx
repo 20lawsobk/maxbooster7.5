@@ -124,7 +124,7 @@ export default function DeveloperApi() {
         description: 'Your new API key has been generated successfully.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to create API key',
@@ -150,7 +150,7 @@ export default function DeveloperApi() {
         description: 'The API key has been revoked successfully.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to revoke API key',

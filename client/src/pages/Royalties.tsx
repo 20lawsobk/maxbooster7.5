@@ -368,7 +368,7 @@ export default function Royalties() {
         });
       }
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Connection Failed',
         description: error.message || 'Failed to connect bank account',

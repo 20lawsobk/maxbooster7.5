@@ -90,7 +90,7 @@ export function useAdvertisement() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/advertising/campaigns'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to Create Campaign',
         description: error.message,
@@ -112,7 +112,7 @@ export function useAdvertisement() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/advertising/campaigns'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to Update Campaign',
         description: error.message,
@@ -134,7 +134,7 @@ export function useAdvertisement() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/advertising/campaigns'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to Delete Campaign',
         description: error.message,
@@ -158,7 +158,7 @@ export function useAdvertisement() {
         description: 'AI has generated optimized content for your campaign.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to Generate AI Content',
         description: error.message,
@@ -182,7 +182,7 @@ export function useAdvertisement() {
         description: 'AI has optimized your campaign for maximum performance.',
       });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Failed to Optimize Campaign',
         description: error.message,

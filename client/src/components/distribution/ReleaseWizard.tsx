@@ -275,7 +275,7 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/hyperfollow'] });
       onComplete?.();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       toast({
         title: 'Submission failed',
         description: error.message || 'Please try again.',

@@ -137,7 +137,7 @@ export function AIAssistantPanel({ projectId, onApplyChanges }: AIAssistantPanel
       });
       refetchSuggestions();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const message = error instanceof Error ? error.message : 'Unable to analyze loudness';
       toast({
         title: 'Analysis Failed',
@@ -166,7 +166,7 @@ export function AIAssistantPanel({ projectId, onApplyChanges }: AIAssistantPanel
       }
       refetchSuggestions();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const message = error instanceof Error ? error.message : 'Unable to match reference track';
       toast({
         title: 'Reference Matching Failed',
@@ -191,7 +191,7 @@ export function AIAssistantPanel({ projectId, onApplyChanges }: AIAssistantPanel
       }
       refetchSuggestions();
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const message = error instanceof Error ? error.message : 'Unable to apply genre preset';
       toast({
         title: 'Preset Application Failed',

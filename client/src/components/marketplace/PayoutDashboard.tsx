@@ -92,7 +92,7 @@ export function PayoutDashboard() {
         window.location.href = responseData.url;
       }
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to setup payout account';
       toast({
         title: 'Setup Failed',
@@ -121,7 +121,7 @@ export function PayoutDashboard() {
       queryClient.invalidateQueries({ queryKey: ['/api/payouts/balance'] });
       queryClient.invalidateQueries({ queryKey: ['/api/payouts/history'] });
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process payout request';
       toast({
         title: 'Payout Failed',

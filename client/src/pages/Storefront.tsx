@@ -360,7 +360,7 @@ export default function Storefront() {
         });
       }
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const errorMessage = error instanceof Error ? error.message : 'Failed to process subscription';
       toast({
         title: 'Subscription Failed',
@@ -389,7 +389,7 @@ export default function Storefront() {
         setCart([]);
       }
     },
-    onError: (error: unknown) => {
+    onError: (error: Error) => {
       const errorMessage = error instanceof Error ? error.message : 'Checkout failed';
       toast({
         title: 'Checkout Failed',
