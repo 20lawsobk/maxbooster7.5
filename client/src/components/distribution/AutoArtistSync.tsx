@@ -122,7 +122,19 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         });
       }
     },
-    onError: () => toast({ title: 'Discovery failed', description: 'Could not reach platform APIs', variant: 'destructive' }),
+    onError: (err: any) => {
+      const is401 = err?.message?.includes('401') || err?.status === 401 || String(err).includes('401');
+      if (is401) {
+        toast({
+          title: 'Session expired',
+          description: 'Your session timed out. Reloading…',
+          variant: 'destructive',
+        });
+        setTimeout(() => window.location.reload(), 1500);
+      } else {
+        toast({ title: 'Discovery failed', description: 'Could not reach platform APIs', variant: 'destructive' });
+      }
+    },
   });
 
   const syncMutation = useMutation({

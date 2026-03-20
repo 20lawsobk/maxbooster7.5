@@ -17,7 +17,10 @@ const PgSessionStore = connectPgSimple(session);
  *
  * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
  */
-const L1_TTL_MS   = 30_000;  // how long a cached session is valid
+// 5-minute L1 TTL gives in-process sessions a long runway to survive PDIM
+// outages (marked-down period is 30s, but same-worker requests are instant).
+// Logout calls destroy() which invalidates L1 immediately — no security risk.
+const L1_TTL_MS   = 300_000; // 5 minutes — covers entire PDIM recovery window
 const L1_MAX_SIZE = 5_000;   // max entries (LRU eviction on oldest-first key)
 
 interface L1Entry { data: session.SessionData | null; expiresAt: number; }
@@ -185,13 +188,20 @@ class FallbackSessionStore extends session.Store {
 
     this.withPrimaryTimeout<void>(
       (done) => this.primary.set(sid, sess, (err) => done(err))
-    ).then((r) => {
+    ).then(async (r) => {
       if (r.ok) {
         this.markPrimaryUp();
-        // Mirror to secondary asynchronously so this session survives a PDIM
-        // outage on the NEXT request (sessions only in PDIM are invisible to PG
-        // fallback, causing 401s).  Fire-and-forget — never block the response.
-        this.secondary.set(sid, sess, () => {});
+        // Synchronously mirror to PG (with a 300ms cap) before calling cb.
+        // This ensures every session write is durable in Postgres so that
+        // cross-worker L1 misses during PDIM outages never produce a 401.
+        await new Promise<void>((resolve) => {
+          const cap = setTimeout(resolve, 300);
+          this.secondary.set(sid, sess, (err) => {
+            clearTimeout(cap);
+            if (err) logger.warn('[SessionStore] PG write-through error (session durability reduced):', err);
+            resolve();
+          });
+        });
         cb?.();
       } else {
         this.markPrimaryDown(r.err);
@@ -224,17 +234,26 @@ class FallbackSessionStore extends session.Store {
     this.l1.set(sid, sess);
 
     if (!this.canTryPrimary()) {
-      return (this.secondary as any).touch?.(sid, sess, cb) ?? cb?.();
+      // Mirror touch to PG so session TTL stays fresh even while PDIM is down
+      (this.secondary as any).touch?.(sid, sess, cb) ?? cb?.();
+      return;
     }
 
     const primaryTouch = (this.primary as any).touch;
-    if (!primaryTouch) { cb?.(); return; }
+    if (!primaryTouch) {
+      // No touch on Redis store — still refresh PG TTL
+      (this.secondary as any).touch?.(sid, sess, () => {});
+      cb?.();
+      return;
+    }
 
     this.withPrimaryTimeout<void>(
       (resolve) => primaryTouch.call(this.primary, sid, sess, (err?: any) => resolve(err))
     ).then((r) => {
       if (!r.ok) this.markPrimaryDown(r.err);
       else this.markPrimaryUp();
+      // Keep PG TTL in sync so session doesn't expire in fallback store
+      (this.secondary as any).touch?.(sid, sess, () => {});
       cb?.();
     });
   }
