@@ -183,18 +183,92 @@ class ArtistProfileService {
   private spotifyToken: string | null = null;
   private spotifyTokenExpiry: number = 0;
 
-  // Normalize artist name for fuzzy comparison:
-  // strips punctuation, collapses spaces, lowercases, strips common prefixes like "the"
-  private _normalizeName(name: string): string {
-    return name
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')  // strip punctuation (hyphens, apostrophes, etc.)
-      .replace(/\bthe\b/g, '')        // strip leading "the"
-      .replace(/\s+/g, ' ')          // collapse whitespace
-      .trim();
+  // ── Name-matching engine ───────────────────────────────────────────────────
+  // Eight-stage ensemble that handles the full spectrum of real-world artist
+  // name variations: diacritics, hyphens, stage prefixes, word-order swaps,
+  // symbol substitutions, abbreviated forms, and fuzzy typos.
+
+  /** Strip Unicode combining diacritical marks: "Björk" → "Bjork" */
+  private _stripDiacritics(s: string): string {
+    return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  // Levenshtein edit distance for character-level similarity
+  /**
+   * Core normalisation — applied to every comparison.
+   * Strips diacritics, lowercases, expands common symbols, collapses punctuation.
+   * Does NOT strip stage-name prefixes here (reserved for relaxed form).
+   */
+  private _normalizeName(name: string): string {
+    let s = this._stripDiacritics(name).toLowerCase();
+    // Symbol expansions: "Jay-Z & Friends" → recognise & as "and"
+    s = s.replace(/&/g, ' and ').replace(/\+/g, ' and ').replace(/@/g, ' at ');
+    // Strip feat/ft/featuring and everything after — track-style artist strings
+    s = s.replace(/\s+(?:feat\.?|ft\.?|featuring)\b.*/i, '');
+    // Strip parenthetical disambiguation suffixes: "(rapper)", "(UK)", "(band)"
+    s = s.replace(/\s*\([^)]{0,45}\)\s*/g, ' ');
+    // Collapse all remaining punctuation/hyphens/apostrophes to spaces
+    s = s.replace(/[^a-z0-9\s]/g, ' ');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Relaxed normalisation — used as a fallback in later comparison stages.
+   * Also strips common stage-name prefixes/articles that vary across platforms.
+   */
+  private _normalizeRelaxed(name: string): string {
+    let s = this._normalizeName(name);
+    // Strip leading articles
+    s = s.replace(/^(?:the|a|an)\s+/, '').replace(/\bthe\b/g, '');
+    // Strip stage name honorifics/prefixes
+    s = s.replace(/\b(?:dj|mc|sir|mr|ms|dr|st|lil|young|big|ol)\b\.?\s*/g, '');
+    return s.replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Collapsed form — removes ALL whitespace and punctuation.
+   * "B-Lawz" → "blawz", "B Lawz" → "blawz", "b.lawz" → "blawz"
+   * Best for hyphenation and spacing variants.
+   */
+  private _collapseForm(name: string): string {
+    return this._stripDiacritics(name).toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  /**
+   * Collapsed-relaxed form — collapsed + relaxed normalisation combined.
+   * "DJ B-Lawz" → "blawz", "DJ BLawz" → "blawz"
+   */
+  private _collapseRelaxed(name: string): string {
+    return this._normalizeRelaxed(name).replace(/[^a-z0-9]/g, '');
+  }
+
+  /** Sort tokens alphabetically and rejoin — handles word-order permutations. */
+  private _tokenSorted(s: string): string {
+    return s.split(' ').filter(Boolean).sort().join(' ');
+  }
+
+  /**
+   * Dice coefficient on character bigrams (0–1).
+   * Very effective for short-string similarity with typos/spelling variants.
+   */
+  private _bigramSim(a: string, b: string): number {
+    if (!a || !b) return a === b ? 1 : 0;
+    if (a.length === 1 && b.length === 1) return a === b ? 1 : 0;
+    const bigrams = (s: string): Map<string, number> => {
+      const m = new Map<string, number>();
+      for (let i = 0; i < s.length - 1; i++) {
+        const bg = s.slice(i, i + 2);
+        m.set(bg, (m.get(bg) ?? 0) + 1);
+      }
+      return m;
+    };
+    const ba = bigrams(a), bb = bigrams(b);
+    let hits = 0;
+    for (const [bg, cnt] of ba) hits += Math.min(cnt, bb.get(bg) ?? 0);
+    const total = (a.length - 1) + (b.length - 1);
+    return total === 0 ? 0 : (2 * hits) / total;
+  }
+
+  /** Levenshtein edit distance (O(m×n) — keep inputs ≤ 35 chars) */
   private _levenshtein(a: string, b: string): number {
     const m = a.length, n = b.length;
     if (m === 0) return n;
@@ -204,45 +278,85 @@ class ArtistProfileService {
     );
     for (let i = 1; i <= m; i++) {
       for (let j = 1; j <= n; j++) {
-        if (a[i - 1] === b[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1];
-        } else {
-          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
-        }
+        dp[i][j] = a[i - 1] === b[j - 1]
+          ? dp[i - 1][j - 1]
+          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
       }
     }
     return dp[m][n];
   }
 
-  // Compute a 0–100 name similarity score using normalized name matching,
-  // Jaccard word-overlap, and Levenshtein character-level distance.
-  // Returns the best score across all methods to minimise false negatives.
+  /**
+   * Eight-stage name similarity ensemble — returns 0–100.
+   *
+   * Stage 1  Exact normalised match                    → 100
+   * Stage 2  Exact relaxed match (prefix-stripped)     → 97
+   * Stage 3  Collapsed form exact (hyphen/space blind) → 99
+   * Stage 4  Collapsed-relaxed exact                   → 96
+   * Stage 5  Token-sorted (word-order blind)           → 95
+   * Stage 6  Substring containment (length-weighted)   → 72–92
+   * Stage 7  Bigram Dice coefficient                   → 0–90
+   * Stage 8  Levenshtein edit-distance ratio           → 0–87
+   * Stage 8b Jaccard word overlap                      → 0–78
+   *
+   * Returns the maximum across all stages.
+   */
   private _nameSimilarity(a: string, b: string): number {
+    // ── Stage 1: Exact normalised ──
     const na = this._normalizeName(a);
     const nb = this._normalizeName(b);
-
-    // Exact after normalization → perfect
+    if (!na || !nb) return 0;
     if (na === nb) return 100;
 
-    // Substring containment (one is a superset of the other after normalization)
-    if (na.includes(nb) || nb.includes(na)) return 85;
+    // ── Stage 2: Exact relaxed (prefix/article stripped) ──
+    const ra = this._normalizeRelaxed(a);
+    const rb = this._normalizeRelaxed(b);
+    if (ra === rb && ra.length > 0) return 97;
 
-    // Jaccard word-level overlap
+    // ── Stage 3: Collapsed form (hyphen/spacing blind) ──
+    const ca = this._collapseForm(a);
+    const cb = this._collapseForm(b);
+    if (ca === cb && ca.length > 0) return 99;
+
+    // ── Stage 4: Collapsed-relaxed ──
+    const cra = this._collapseRelaxed(a);
+    const crb = this._collapseRelaxed(b);
+    if (cra === crb && cra.length > 0) return 96;
+
+    // ── Stage 5: Token-sorted normalised ──
+    if (this._tokenSorted(na) === this._tokenSorted(nb)) return 95;
+    if (this._tokenSorted(ra) === this._tokenSorted(rb) && ra.length > 0) return 93;
+
+    // ── Stage 6: Substring containment (length-weighted) ──
+    let substringScore = 0;
+    // Prefer collapsed comparison so "B-Lawz" contains "BLawz"
+    const [longC, shortC] = ca.length >= cb.length ? [ca, cb] : [cb, ca];
+    const [longN, shortN] = na.length >= nb.length ? [na, nb] : [nb, na];
+    if (shortC.length >= 3 && longC.includes(shortC)) {
+      substringScore = Math.round(70 + (shortC.length / longC.length) * 22);
+    } else if (shortN.length >= 3 && longN.includes(shortN)) {
+      substringScore = Math.round(68 + (shortN.length / longN.length) * 20);
+    }
+
+    // ── Stage 7: Bigram Dice on collapsed forms ──
+    // Use collapsed so punctuation/spacing doesn't fragment bigrams
+    const bigramScore = Math.round(this._bigramSim(ca, cb) * 90);
+
+    // ── Stage 8: Levenshtein on collapsed forms (cap at 35 chars) ──
+    const levA = ca.slice(0, 35), levB = cb.slice(0, 35);
+    const maxLev = Math.max(levA.length, levB.length);
+    const levScore = maxLev > 0
+      ? Math.round(Math.max(0, (1 - this._levenshtein(levA, levB) / maxLev) * 87))
+      : 0;
+
+    // ── Stage 8b: Jaccard word overlap ──
     const wordsA = new Set(na.split(' ').filter(Boolean));
     const wordsB = new Set(nb.split(' ').filter(Boolean));
     const shared = [...wordsA].filter(w => wordsB.has(w)).length;
-    const union = new Set([...wordsA, ...wordsB]).size;
-    const jaccardScore = union > 0 ? Math.round((shared / union) * 60) : 0;
+    const union  = new Set([...wordsA, ...wordsB]).size;
+    const jaccardScore = union > 0 ? Math.round((shared / union) * 78) : 0;
 
-    // Levenshtein character-level ratio (capped at 20 chars to stay O(n²) fast)
-    const maxLen = Math.max(na.length, nb.length);
-    let levScore = 0;
-    if (maxLen > 0 && maxLen <= 25) {
-      const dist = this._levenshtein(na, nb);
-      levScore = Math.round(Math.max(0, (1 - dist / maxLen) * 55));
-    }
-
-    return Math.max(jaccardScore, levScore);
+    return Math.max(substringScore, bigramScore, levScore, jaccardScore);
   }
 
   // Retry wrapper with exponential backoff for external API calls
@@ -706,108 +820,150 @@ class ArtistProfileService {
     return updated ?? null;
   }
 
-  // ── Auto-discover: search all platforms, score each result, pick top match ──
+  // ── Platform scoring ───────────────────────────────────────────────────────
+  // Each scorer converts _nameSimilarity (0–100) + platform-specific signals
+  // into a final 0–100 confidence score.
+  //
+  // Design principles:
+  //  • Name is the dominant signal — exact matches always pass the 55 threshold.
+  //  • Popularity/fans/followers are BONUSES, never penalties — an emerging artist
+  //    with 0 followers should still be identifiable by name.
+  //  • Each tier is documented with the rationale for its weight.
+
+  /**
+   * Convert a raw nameSim score into a base confidence that always passes the
+   * 55 threshold for exact matches, even on platforms with no popularity data.
+   */
+  private _nameBase(nameSim: number, exactWeight: number, highWeight: number, medWeight: number): number {
+    if (nameSim >= 95) return exactWeight;  // Exact / near-exact
+    if (nameSim >= 80) return highWeight;   // Very close (one-char diff, collapsed equal)
+    if (nameSim >= 65) return medWeight;    // Probable match (bigram / Levenshtein strong)
+    if (nameSim >= 45) return Math.round(medWeight * 0.6); // Possible — below threshold alone
+    if (nameSim >= 25) return Math.round(medWeight * 0.3); // Weak — will need other signals
+    return 0; // No meaningful name overlap
+  }
 
   private _scoreSpotify(result: SpotifyArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    // Name similarity dominates scoring — use a graded scale
-    if (nameSim >= 95) score += 50;        // Effectively exact after normalization
-    else if (nameSim >= 70) score += 38;   // Strong partial match / contains
-    else if (nameSim >= 40) score += 22;   // Shared words match
-    else if (nameSim >= 20) score += 10;   // Weak match — flag as uncertain
-    else return 0;                          // No meaningful name overlap — skip
-    if (result.imageUrl) score += 8;
-    if (result.popularity >= 60) score += 22;
-    else if (result.popularity >= 30) score += 13;
-    else if (result.popularity >= 10) score += 5;
-    if (result.genres.length > 0) score += 5;
-    if (result.followers >= 1_000_000) score += 10;
+    // Base: exact name → 58 (just over threshold), slides down to 0 at nameSim < 25
+    let score = this._nameBase(nameSim, 58, 44, 28);
+    if (score === 0) return 0;
+
+    // Image presence — genuine artists virtually always have one
+    if (result.imageUrl) score += 6;
+
+    // Popularity bonus (0–100 Spotify scale) — bonus only, not penalty for new artists
+    if (result.popularity >= 70) score += 18;
+    else if (result.popularity >= 45) score += 12;
+    else if (result.popularity >= 20) score += 6;
+    else if (result.popularity >= 5)  score += 2;
+    // popularity === 0 → no bonus, no penalty
+
+    // Genre presence confirms it's a music entity
+    if (result.genres.length >= 3) score += 7;
+    else if (result.genres.length >= 1) score += 4;
+
+    // Follower count bonus — reflects established presence
+    if (result.followers >= 1_000_000) score += 11;
     else if (result.followers >= 100_000) score += 7;
-    else if (result.followers >= 10_000) score += 4;
-    else if (result.followers >= 1_000) score += 1;
+    else if (result.followers >= 10_000)  score += 4;
+    else if (result.followers >= 1_000)   score += 2;
+    // < 1 000 followers → no bonus, no penalty
+
     return Math.min(score, 100);
   }
 
   private _scoreDeezer(result: DeezerArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    if (nameSim >= 95) score += 50;
-    else if (nameSim >= 70) score += 38;
-    else if (nameSim >= 40) score += 22;
-    else if (nameSim >= 20) score += 10;
-    else return 0;
-    if (result.pictureUrl) score += 8;
-    if (result.fans >= 500_000) score += 22;
-    else if (result.fans >= 50_000) score += 14;
-    else if (result.fans >= 5_000) score += 6;
-    else if (result.fans >= 500) score += 2;
+    let score = this._nameBase(nameSim, 60, 46, 30);
+    if (score === 0) return 0;
+
+    if (result.pictureUrl) score += 6;
+
+    // Fan count bonus — Deezer fans scale differently to Spotify followers
+    if (result.fans >= 1_000_000) score += 18;
+    else if (result.fans >= 100_000) score += 12;
+    else if (result.fans >= 10_000)  score += 7;
+    else if (result.fans >= 1_000)   score += 3;
+    else if (result.fans >= 100)     score += 1;
+    // 0 fans → no bonus, no penalty
+
     return Math.min(score, 100);
   }
 
   private _scoreApple(result: AppleArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    if (nameSim >= 95) score += 55;        // Apple has no popularity — weight name more
-    else if (nameSim >= 70) score += 40;
-    else if (nameSim >= 40) score += 24;
-    else if (nameSim >= 20) score += 10;
-    else return 0;
-    if (result.genres.length > 0) score += 8;
+    // Apple has NO popularity/follower data — name carries more weight
+    let score = this._nameBase(nameSim, 65, 50, 33);
+    if (score === 0) return 0;
+
+    // Genre presence — Apple's genre taxonomy is reliable
+    if (result.genres.length >= 2) score += 10;
+    else if (result.genres.length === 1) score += 6;
+
+    // Artwork URL presence
+    if (result.artworkUrl) score += 5;
+
     return Math.min(score, 100);
   }
 
   private _scoreMusicBrainz(result: MusicBrainzArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    if (nameSim >= 95) score += 40;
-    else if (nameSim >= 70) score += 28;
-    else if (nameSim >= 40) score += 15;
-    else return 0;
-    // MusicBrainz provides its own relevance score (0-100)
-    if (result.score >= 90) score += 30;
-    else if (result.score >= 75) score += 20;
-    else if (result.score >= 60) score += 10;
-    // Artist type bonus — confirms it's actually a music artist
-    if (result.type === 'Person' || result.type === 'Group') score += 15;
+    let score = this._nameBase(nameSim, 42, 30, 18);
+    if (score === 0) return 0;
+
+    // MusicBrainz returns its own relevance score (0–100) — trust it heavily
+    if (result.score >= 95) score += 32;
+    else if (result.score >= 80) score += 22;
+    else if (result.score >= 65) score += 12;
+    else if (result.score >= 50) score += 5;
+
+    // Artist type strongly confirms a music entity
+    if (result.type === 'Person' || result.type === 'Group') score += 14;
+    else if (result.type === 'Other') score += 4;
+
     // Genre tags confirm music category
-    if (result.tags.length > 0) score += 5;
-    return Math.min(score, 90); // Cap at 90 — MusicBrainz alone can't reach full confidence
+    if (result.tags.length >= 3) score += 7;
+    else if (result.tags.length >= 1) score += 3;
+
+    // Disambiguation field means MB knows this is a specific artist (not an alias)
+    if (result.disambiguation) score += 3;
+
+    return Math.min(score, 90); // Cap — MusicBrainz alone can't reach full confidence
   }
 
   private _scoreAudiomack(result: AudiomackArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    if (nameSim >= 95) score += 55;
-    else if (nameSim >= 70) score += 40;
-    else if (nameSim >= 40) score += 22;
-    else if (nameSim >= 20) score += 10;
-    else return 0;
-    if (result.imageUrl) score += 8;
-    if (result.followers >= 100_000) score += 15;
-    else if (result.followers >= 10_000) score += 8;
-    else if (result.followers >= 1_000) score += 3;
+    let score = this._nameBase(nameSim, 60, 46, 28);
+    if (score === 0) return 0;
+
+    if (result.imageUrl) score += 6;
+
+    if (result.followers >= 500_000) score += 18;
+    else if (result.followers >= 50_000)  score += 12;
+    else if (result.followers >= 5_000)   score += 6;
+    else if (result.followers >= 500)     score += 2;
+
     return Math.min(score, 100);
   }
 
   private _scoreJioSaavn(result: JioSaavnArtistResult, query: string): number {
-    let score = 0;
     const nameSim = this._nameSimilarity(result.name, query);
-    if (nameSim >= 95) score += 55;
-    else if (nameSim >= 70) score += 40;
-    else if (nameSim >= 40) score += 20;
-    else if (nameSim >= 20) score += 10;
-    else return 0;
-    if (result.imageUrl) score += 8;
-    return Math.min(score, 80); // JioSaavn alone caps at 80 (regional platform)
+    let score = this._nameBase(nameSim, 58, 44, 26);
+    if (score === 0) return 0;
+
+    if (result.imageUrl) score += 6;
+
+    return Math.min(score, 80); // Cap — regional platform, lower standalone confidence
   }
 
-  // Cross-platform validation: count how many API platforms confirmed a match.
-  // Boosts overall confidence when ≥2 platforms agree — reduces false positives.
+  // ── Cross-platform validation ──────────────────────────────────────────────
+  // When multiple independent APIs agree on the same artist, compound confidence
+  // rises. Each additional confirmation reduces the false-positive risk sharply.
   private _crossValidationBonus(confirmedCount: number): number {
-    if (confirmedCount >= 4) return 15;
-    if (confirmedCount >= 3) return 10;
-    if (confirmedCount >= 2) return 5;
+    if (confirmedCount >= 4) return 18;
+    if (confirmedCount >= 3) return 12;
+    if (confirmedCount >= 2) return 6;
     return 0;
   }
 
