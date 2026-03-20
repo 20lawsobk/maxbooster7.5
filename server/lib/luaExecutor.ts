@@ -35,16 +35,16 @@ const _msgUnpacker = new Unpackr({ useRecords: false });
  */
 // Single exclusive Worker: each BullMQ Lua script gets uncontested access to
 // the PDIM fast-lane.  Scripts are sequential either way; a single Worker
-// eliminates contention and lets each redis.call() complete in ~PDIM_RTT + 50ms.
+// eliminates contention and lets each redis.call() complete in ~PDIM_RTT + 10ms.
 const MAX_CONCURRENT_WORKERS = 1;
 
 // _maxWaitMs: maximum time a CALLER waits to ACQUIRE a Worker slot (queue wait),
 // NOT a limit on script execution time.  Scripts run to completion with no
 // hard-kill — only the per-60s watchdog log reminds us if one is stuck.
 //
-// With the fast-lane (50ms inter-call gap):
-//   typical script: 35 × (200ms RTT + 50ms gap) = ~8.75s
-//   high-RTT case:  35 × (800ms RTT + 50ms gap) = ~29.75s
+// With the fast-lane (10ms inter-call gap):
+//   typical script: 35 × (200ms RTT + 10ms gap) = ~7.35s
+//   high-RTT case:  35 × (800ms RTT + 10ms gap) = ~28.35s
 // So a slot-wait of 55s is extremely conservative — a slot frees well before.
 let _maxWaitMs = 55_000;
 /** Permanently increase the LuaExecutor slot-wait timeout — called by PermanentFixRegistry. */
@@ -55,7 +55,8 @@ export function getLuaScriptTimeout(): number { return _maxWaitMs; }
 // Backpressure cap: reject immediately when the wait queue exceeds this size.
 // Without a cap, sustained BullMQ load causes _waitQueue to grow without bound,
 // holding thousands of 60-second timer handles and consuming unbounded memory.
-const MAX_QUEUE_SIZE = 500;
+// 2000 slots: handles sustained burst workloads without premature shedding.
+const MAX_QUEUE_SIZE = 2000;
 // How long to sleep before rejecting when the circuit is OPEN.
 // BullMQ uses onlyEmitError:true so our rejection is swallowed and treated as
 // "no job" — without this sleep the poll loop runs at full speed, saturating

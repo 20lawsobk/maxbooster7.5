@@ -299,6 +299,9 @@ class ChainErrorAutoFixer extends EventEmitter {
           logger.info('[ChainFixer] PDIM circuit OPEN — PostgreSQL fallback active; circuit will auto-probe for recovery');
         }
       },
+      escalate: async (attempts) => {
+        logger.warn(`[ChainFixer] pdim_circuit_open: ${attempts} occurrences — PDIM is repeatedly unreachable; check PDIM_HTTP_EXEC_URL and container network`);
+      },
     });
 
     // 7. Slow query sustained (3+ occurrences in window — Neon cold-connection latency)
@@ -382,14 +385,14 @@ class ChainErrorAutoFixer extends EventEmitter {
     });
 
     // 7b. PDIM HTTP exec timeout (AbortError / TimeoutError from AbortSignal.timeout)
-    // When PDIM takes > 20s to respond, exec() throws an AbortError/TimeoutError.
+    // When PDIM takes > 30s to respond, exec() throws an AbortError/TimeoutError.
     // This means PDIM or the Replit container network is severely degraded.
     // Fix: release any blocked semaphore slot + aggressively raise the gap so
     // the AIMD back-off has room to absorb the slow period.
     this.addPattern({
       id: 'pdim_exec_timeout',
       name: 'PDIM HTTP exec fetch timeout (AbortError/TimeoutError)',
-      description: 'PDIM exec fetch timed out after 20s — PDIM or network severely degraded; semaphore freed, gap raised',
+      description: 'PDIM exec fetch timed out after 30s — PDIM or network severely degraded; semaphore freed, gap raised',
       matchers: [
         /\[PDIM\] exec error.*AbortError/i,
         /\[PDIM\] exec error.*TimeoutError/i,

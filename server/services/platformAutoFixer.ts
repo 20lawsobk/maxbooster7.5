@@ -423,7 +423,8 @@ class PlatformAutoFixer extends EventEmitter {
       }
 
       // Check circuit breaker state first — no HTTP call needed if OPEN.
-      const { cbIsOpen } = await import('../lib/pdimCircuitBreaker.js');
+      const { cbIsOpen, cbGetState, cbForceClose } = await import('../lib/pdimCircuitBreaker.js');
+      const cbStateBeforeProbe = cbGetState();
       if (cbIsOpen()) {
         return this._result('pdim', 'critical', 0, 'PDIM circuit breaker is OPEN', { circuitOpen: true });
       }
@@ -447,6 +448,15 @@ class PlatformAutoFixer extends EventEmitter {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const pingMs = Date.now() - pingStart;
+
+      // If PDIM passed a direct ping but the circuit was HALF_OPEN (probe in flight),
+      // force-close it immediately so we don't lose the recovery window.
+      // The normal cbRecordSuccess() path inside exec() only fires on real requests —
+      // this health-probe bypass won't reach it.  Force-close ensures the circuit
+      // recovers promptly when the health check confirms PDIM is reachable again.
+      if (cbStateBeforeProbe !== 'CLOSED') {
+        cbForceClose();
+      }
 
       details = { pingMs, adaptiveGapMs: gapMs, gapFloorMs, chainQueueDepth: queueDepth };
 
@@ -543,7 +553,7 @@ class PlatformAutoFixer extends EventEmitter {
       // utilization >= 0.8 causes a permanent warn flood every 60 s.  Instead,
       // grade on *queue buildup* — a growing wait queue is the real signal that
       // the executor is overloaded and callers are being rejected.
-      if (stats.queued > 10) {
+      if (stats.queued > 8) {
         status  = 'critical';
         message = `LuaExecutor saturated: ${stats.queued} queued, ${stats.active}/${stats.max} active`;
       } else if (stats.queued >= 3) {
@@ -1320,10 +1330,15 @@ class PlatformAutoFixer extends EventEmitter {
           `[PlatformAutoFixer] 🎯 OFFENSIVE: PDIM stress probe borderline (${latency}ms / ${STRESS_TIMEOUT_MS}ms budget). ` +
           `Increasing adaptive gap pre-emptively.`
         );
-        // Signal PDIM client to back off before the main probe catches it
+        // Signal PDIM client to back off before the main probe catches it.
+        // Use a proportional bump (current + 200ms) not a hardcoded 500ms,
+        // so heavily-loaded systems get more breathing room.
         try {
-          const { setPdimAdaptiveGap } = await import('../lib/pdimClient.js');
-          if (typeof setPdimAdaptiveGap === 'function') setPdimAdaptiveGap(500);
+          const { setPdimAdaptiveGap, getPdimAdaptiveGapMs } = await import('../lib/pdimClient.js');
+          if (typeof setPdimAdaptiveGap === 'function') {
+            const current = getPdimAdaptiveGapMs?.() ?? 600;
+            setPdimAdaptiveGap(current + 200);
+          }
         } catch { /* optional export */ }
         this._threatsNeutralized++;
       }

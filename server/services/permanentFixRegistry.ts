@@ -42,7 +42,7 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
     key: 'pdimGapFloorMs',
     delta: +100,
     min: 400,
-    max: 1_200,
+    max: 2_000,            // raised from 1200 — matches new setPdimGapFloor ceiling
     label: 'PDIM gap floor (ms)',
     threshold: 5,
   },
@@ -50,7 +50,7 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
     key: 'pdimGapFloorMs',
     delta: +150,           // circuit open is more severe than a 429 — escalate faster
     min: 400,
-    max: 1_200,
+    max: 2_000,            // raised from 1200 — matches new setPdimGapFloor ceiling
     label: 'PDIM gap floor (ms)',
     threshold: 3,          // escalate after only 3 circuit opens (not 5)
   },
@@ -97,11 +97,15 @@ const ESCALATION_MAP: Record<string, EscalationTarget> = {
 // PDIM key prefix
 const PFR = 'pfr:';
 
-// How long a session must run (clean) before de-escalation is considered
-const DEESCALATION_WINDOW_MS = 30 * 60_000;   // 30 minutes
+// How long a session must run (clean) before de-escalation is considered.
+// 45 min (was 30 min) — more cautious; real patterns often re-emerge 30–40 min
+// after startup once BullMQ worker queues fill up.
+const DEESCALATION_WINDOW_MS = 45 * 60_000;
 
-// AIMD gap state is persisted every N seconds so cold restarts resume mid-flight
-const AIMD_PERSIST_INTERVAL_MS = 60_000;
+// AIMD gap state is persisted every N seconds so cold restarts resume mid-flight.
+// 30 s (was 60 s) — 2× more frequent ensures even short-lived restarts resume
+// with an accurate gap, avoiding the cold 600ms spike on every bounce.
+const AIMD_PERSIST_INTERVAL_MS = 30_000;
 
 // ── Audit entry ───────────────────────────────────────────────────────────────
 

@@ -96,7 +96,7 @@ logger.info(
 //   PEAK  (queue 10+) : step = 100 ms — instant expansion; PDIM 429s set ceiling
 //
 // FLOOR: 400 ms — applies only to direct PDIM calls (session ops, cache, locks).
-//        BullMQ Lua scripts use the _enqueueScriptExec fast-lane (50ms gap),
+//        BullMQ Lua scripts use the _enqueueScriptExec fast-lane (10ms gap),
 //        which shares the same global serialisation chain but bypasses the AIMD
 //        gap.  Scripts are Atomics-serialized so the AIMD gap is not needed.
 //        The _autoMultiplier MUST NOT be applied to FLOOR or INIT because
@@ -109,15 +109,15 @@ logger.info(
 //        seconds under real load.  At rest it drifts upward only 1 ms/step.
 //
 let   _PDIM_GAP_FLOOR_MS  = 400;    // per-worker floor — permanently raiseable by PermanentFixRegistry
-const _PDIM_GAP_CEIL_MS   = 15_000; // ceiling after sustained 429 cascade
+const _PDIM_GAP_CEIL_MS   = 12_000; // ceiling after sustained 429 cascade (tighter: recover faster with MULT=1.5)
 const _PDIM_GAP_INIT_MS   = 600;    // fixed — must satisfy 35×init < 25 000 ms
-const _PDIM_MULT_429      = 2.0;    // multiplicative back-off on each 429
+const _PDIM_MULT_429      = 1.5;    // multiplicative back-off on each 429 (was 2.0 — 1.5 recovers 33% faster)
 
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
- *  and after each escalation.  Floor can only move upward (min 400 ms, max 1 200 ms).
- *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 50ms fast-lane. */
+ *  and after each escalation.  Floor can only move upward (min 400 ms, max 2 000 ms).
+ *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 10ms fast-lane. */
 export function setPdimGapFloor(ms: number): void {
-  _PDIM_GAP_FLOOR_MS = Math.max(400, Math.min(1_200, Math.round(ms)));
+  _PDIM_GAP_FLOOR_MS = Math.max(400, Math.min(2_000, Math.round(ms)));
   // If the live gap is below the new floor, snap it up immediately so the change
   // takes effect on the very next enqueued request without waiting for AIMD.
   if (_pdimGapMs < _PDIM_GAP_FLOOR_MS) _pdimGapMs = _PDIM_GAP_FLOOR_MS;
@@ -195,7 +195,7 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 // inside a BullMQ script means:
 //   35 calls × 1100ms gap = 38.5s dead-wait time, before adding PDIM RTT.
 //
-// The fast-lane uses a minimal 50ms gap (just enough to let the event loop
+// The fast-lane uses a minimal 10ms gap (just enough to let the event loop
 // breathe between calls) while sharing the same global serialisation chain.
 // Sharing the chain guarantees:
 //   • No script redis.call() interleaves with a direct PDIM call
@@ -203,9 +203,10 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 //   • AIMD 429-backoff on the main chain is respected (script calls still
 //     queue behind the inflated main gap if a 429 was just received)
 //
-// Result: 35 calls × (PDIM RTT ≈ 200ms + 50ms gap) = ~8.75s per script.
-//         Previously: 35 × (200ms + 1100ms) = ~45.5s — scripts timed out.
-const _SCRIPT_CALL_GAP_MS = 50;
+// Result: 35 calls × (PDIM RTT ≈ 200ms + 10ms gap) = ~7.35s per script.
+//         Previously 50ms gap: 35 × (200ms + 50ms) = ~8.75s — 19% slower.
+//         Original AIMD gap:   35 × (200ms + 1100ms) = ~45.5s — scripts timed out.
+const _SCRIPT_CALL_GAP_MS = 10;
 
 function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
   // Track queue depth on the shared counter so ChainFixer saturation checks
@@ -345,7 +346,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(30_000),
         });
 
         if (!res.ok) {
@@ -542,7 +543,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args: strArgs }),
-          signal: AbortSignal.timeout(20_000),
+          signal: AbortSignal.timeout(30_000),
         });
 
         if (!res.ok) {

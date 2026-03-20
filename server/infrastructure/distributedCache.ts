@@ -62,11 +62,13 @@ export class DistributedCache {
   private stats: CacheStats = { hits: 0, misses: 0, size: 0, memoryUsage: 0 };
   private _redisReady = false;
 
-  // L1 in-process cache — eliminates Redis round-trips for hot keys.
-  // TTL is capped at 2 seconds so stale data propagates across workers quickly.
+  // L1 in-process cache — eliminates PDIM round-trips for hot keys.
+  // TTL is capped at 4s (up from 2s) — acceptable staleness for session/cache
+  // reads; still well below any user-visible consistency window.
+  // L1_MAX raised to 5000 to absorb larger hot-key sets without evicting.
   private l1 = new Map<string, { raw: string; expiresAt: number }>();
-  private readonly L1_MAX     = 2_000;
-  private readonly L1_TTL_MS  = 2_000;
+  private readonly L1_MAX     = 5_000;
+  private readonly L1_TTL_MS  = 4_000;
   private l1PrunedAt = Date.now();
 
   private l1Get(key: string): string | null {

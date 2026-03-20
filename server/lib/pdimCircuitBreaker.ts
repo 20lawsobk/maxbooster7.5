@@ -88,6 +88,29 @@ export function cbIsOpen(): boolean {
   return false;
 }
 
+/** Return the current state string for diagnostics and dashboards. */
+export function cbGetState(): CbState { return _state; }
+
+/** Return remaining backoff ms if OPEN, 0 otherwise. */
+export function cbGetOpenUntilMs(): number { return _state === 'OPEN' ? Math.max(0, _openUntil - Date.now()) : 0; }
+
+/**
+ * Force-close the circuit — called by ChainFixer when an external signal
+ * (e.g. PDIM health-check success after the circuit tripped) confirms PDIM
+ * is healthy.  Resets all failure counters and backoff state.
+ */
+export function cbForceClose(): void {
+  const wasOpen = _state !== 'CLOSED';
+  _state          = 'CLOSED';
+  _failures       = 0;
+  _backoffMs      = INITIAL_BACKOFF_MS;
+  _openUntil      = 0;
+  _halfOpenFlight = false;
+  if (wasOpen) {
+    logger.info('[PDIM] Circuit force-CLOSED — external recovery signal received; resuming normal operation');
+  }
+}
+
 export function cbHalfOpenFailed(): void {
   _halfOpenFlight = false; // release the probe slot so next interval can retry
 }
