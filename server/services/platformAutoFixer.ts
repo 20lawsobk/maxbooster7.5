@@ -150,6 +150,10 @@ class PlatformAutoFixer extends EventEmitter {
   // ─── Adaptive probe interval state ─────────────────────────────────────────
   private currentProbeIntervalMs = PROBE_INTERVAL_HEALTHY_MS;
 
+  // ─── DB probe backoff — prevents storm on consecutive timeouts ────────────
+  private _dbConsecutiveFailures = 0;
+  private _dbNextAllowedProbeAt  = 0;
+
   // ─── Rolling trend window ───────────────────────────────────────────────────
   private trendWindow: TrendSnapshot[] = [];
 
@@ -367,7 +371,18 @@ class PlatformAutoFixer extends EventEmitter {
   // ─── Probes ────────────────────────────────────────────────────────────────
 
   private async probeDatabase(): Promise<ProbeResult> {
-    const t0 = Date.now();
+    const now = Date.now();
+
+    // Exponential backoff: after consecutive timeout failures, skip probes for
+    // an increasing window to avoid amplifying DB pool exhaustion.
+    if (this._dbNextAllowedProbeAt > now) {
+      const waitSec = Math.ceil((this._dbNextAllowedProbeAt - now) / 1000);
+      return this._result('database', 'critical', 0,
+        `DB probe skipped — backoff active (${waitSec}s remaining, ${this._dbConsecutiveFailures} consecutive failures)`,
+        { backoffUntil: this._dbNextAllowedProbeAt, consecutiveFailures: this._dbConsecutiveFailures });
+    }
+
+    const t0 = now;
     let status: ProbeStatus = 'healthy';
     let message = 'OK';
     let details: Record<string, unknown> = {};
@@ -387,6 +402,10 @@ class PlatformAutoFixer extends EventEmitter {
       ]);
       const pingMs = Date.now() - pingStart;
 
+      // Successful probe — reset backoff counter
+      this._dbConsecutiveFailures = 0;
+      this._dbNextAllowedProbeAt  = 0;
+
       details = { total, idle, waiting, pingMs };
 
       if (pingMs > SLOW_QUERY_THRESHOLD_MS) {
@@ -404,7 +423,16 @@ class PlatformAutoFixer extends EventEmitter {
     } catch (err: any) {
       status  = 'critical';
       message = `DB probe failed: ${err.message}`;
-      details = { error: err.message };
+
+      // Exponential backoff: 10 s, 20 s, 40 s, 80 s, then cap at 120 s.
+      // This prevents the 5-second critical-interval from firing repeated
+      // SELECT-1 pings at an already-overloaded DB connection pool.
+      this._dbConsecutiveFailures++;
+      const backoffMs = Math.min(10_000 * Math.pow(2, this._dbConsecutiveFailures - 1), 120_000);
+      this._dbNextAllowedProbeAt = Date.now() + backoffMs;
+
+      details = { error: err.message, consecutiveFailures: this._dbConsecutiveFailures, backoffMs };
+      logger.warn(`[PlatformAutoFixer] DB probe failed (${this._dbConsecutiveFailures} consecutive) — next probe in ${backoffMs / 1000}s`);
     }
 
     return this._result('database', status, Date.now() - t0, message, details);

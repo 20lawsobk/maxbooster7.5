@@ -78,19 +78,22 @@ export class DistributedRateLimiter {
         const remaining = Math.max(0, this.config.maxRequests - count);
         return { limited, remaining };
       } catch (error) {
+        const msg = (error as Error)?.message ?? String(error);
         if (isProductionEnv()) {
-          logger.error('[RateLimit] Redis counter failed in production — failing open (request allowed):', error);
-          return { limited: false, remaining: this.config.maxRequests };
+          // PDIM congested or Redis unavailable — fall back to per-process sliding-window
+          // limiter rather than failing open (which would be a security gap).
+          logger.warn('[RateLimit] Redis/PDIM unavailable — local sliding-window fallback engaged:', msg);
+          return this.localRateLimit(key);
         }
         logger.warn('[RateLimit] Redis counter failed in dev — using local fallback');
       }
     }
 
     if (isProductionEnv()) {
-      // No Redis client in production — fail-open with a loud warning.
-      // This should never happen because buildDistributedGlobal throws if Redis is missing in prod.
-      logger.error('[RateLimit] No Redis client in production — failing open (request allowed)');
-      return { limited: false, remaining: this.config.maxRequests };
+      // No Redis client configured in production — use local limiter rather than
+      // failing open. This should be rare since buildDistributedGlobal requires Redis.
+      logger.warn('[RateLimit] No Redis client in production — local sliding-window fallback engaged');
+      return this.localRateLimit(key);
     }
 
     return this.localRateLimit(key);

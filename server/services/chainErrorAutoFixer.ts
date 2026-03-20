@@ -785,6 +785,84 @@ class ChainErrorAutoFixer extends EventEmitter {
         logger.info('[ChainFixer] SessionStore PDIM timeout acknowledged — PostgreSQL fallback is active; no gap adjustment needed');
       },
     });
+
+    // 26. EIO i/o read error on static assets during event-loop saturation.
+    // Root cause is PDIM queue congestion starving the event loop so that
+    // fs.createReadStream calls inside res.sendFile fail with EIO.
+    // The static.ts middleware now returns 503+Retry-After so browsers
+    // back off and retry rather than showing a blank page.
+    this.addPattern({
+      id: 'eio_static_asset',
+      name: 'EIO read on static asset — event-loop saturation',
+      description: 'Disk I/O read fails during PDIM queue saturation; static.ts now returns 503+Retry-After so browsers retry automatically',
+      matchers: [
+        /EIO.*i\/o error.*read/i,
+        /Unhandled error:.*EIO/i,
+        /GET.*\/assets\/.*- 500/i,
+      ],
+      levels: ['error'],
+      severity: 'high',
+      category: 'filesystem',
+      cooldownMs: 30_000,
+      maxAttempts: 200,
+      autoFix: async () => {
+        // Open PDIM circuit briefly to let the event loop drain.
+        try {
+          const { cbIsOpen, cbForceOpen } = await import('../lib/pdimCircuitBreaker.js');
+          if (!cbIsOpen()) {
+            cbForceOpen?.(10_000);
+            logger.warn('[ChainFixer] EIO static-asset read — forced PDIM circuit open 10 s to drain event loop');
+          }
+        } catch {
+          logger.warn('[ChainFixer] EIO static-asset read acknowledged — 503+Retry-After response prevents user-visible blank page');
+        }
+      },
+    });
+
+    // 27. PDIM chain congestion causing rate-limiter to use local fallback.
+    // Previously failed-open (security gap). Now falls back to per-process
+    // sliding-window limiter — users are still protected, just not globally coordinated.
+    this.addPattern({
+      id: 'pdim_rate_limit_cascade',
+      name: 'PDIM congestion → rate-limiter local fallback',
+      description: 'PDIM chain congested; rate-limiter is using per-process sliding-window (was failing-open; now protected)',
+      matchers: [
+        /\[RateLimit\].*Redis\/PDIM unavailable.*local.*fallback/i,
+        /\[RateLimit\].*No Redis client.*local.*fallback/i,
+        /\[PDIM\].*Chain congested.*exceeds.*threshold/i,
+        /\[AdmissionControl\].*Redis unavailable.*degraded mode/i,
+      ],
+      levels: ['error', 'warn'],
+      severity: 'medium',
+      category: 'rate_limiting',
+      cooldownMs: 120_000,
+      maxAttempts: 500,
+      autoFix: async () => {
+        logger.info('[ChainFixer] PDIM rate-limit cascade acknowledged — local sliding-window limiter is protecting the service');
+      },
+    });
+
+    // 28. DB probe ping timeout generating critical-rate probe storms.
+    // PlatformAutoFixer now applies exponential backoff after consecutive
+    // failures so the 5-second critical-interval does not amplify DB load.
+    this.addPattern({
+      id: 'db_probe_ping_timeout',
+      name: 'DB probe ping timeout — exponential backoff applied',
+      description: 'DB probe exceeded 3-second timeout; exponential backoff prevents the 5-s critical interval from storming the pool',
+      matchers: [
+        /DB probe failed.*DB ping timeout/i,
+        /DB POOL CRITICAL.*DB ping timeout/i,
+        /\[PlatformAutoFixer\].*database critical.*DB probe failed/i,
+      ],
+      levels: ['error', 'warn'],
+      severity: 'high',
+      category: 'database',
+      cooldownMs: 60_000,
+      maxAttempts: 100,
+      autoFix: async () => {
+        logger.warn('[ChainFixer] DB ping timeout detected — exponential backoff is active; probe storm suppressed');
+      },
+    });
   }
 
   private addPattern(p: ErrorPattern): void {

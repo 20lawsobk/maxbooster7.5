@@ -2,6 +2,20 @@
 // This MUST be imported first, before any Redis clients are created
 // Works in all environments to prevent Redis localhost errors from cluttering logs
 
+// Suppress noisy Node.js process warnings that are informational-only
+const _origEmit = process.emit.bind(process);
+// @ts-ignore — override to filter 'warning' events
+process.emit = function (event: string, ...args: any[]): boolean {
+  if (event === 'warning') {
+    const w = args[0] as NodeJS.ErrnoException;
+    const msg = w?.message ?? '';
+    // pg SSL-mode alias advisory: 'prefer'/'require'/'verify-ca' → 'verify-full'
+    // This is expected behaviour in Replit's managed PG environment.
+    if (msg.includes('SECURITY WARNING') && msg.includes('SSL modes')) return false;
+  }
+  return _origEmit(event, ...args);
+};
+
 const originalConsoleError = console.error;
 
 // Filter for localhost Redis errors (these are non-critical when main Redis is working)

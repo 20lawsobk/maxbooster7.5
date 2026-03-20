@@ -247,7 +247,16 @@ function precompressedMiddleware(distPath: string) {
           res.setHeader('Cache-Control', 'public, max-age=86400');
         }
 
-        return res.sendFile(file);
+        // Use callback form so EIO errors during event-loop saturation return a
+        // retryable 503 instead of an unhandled-error 500.
+        res.sendFile(file, (err) => {
+          if (err && !res.headersSent) {
+            res.setHeader('Cache-Control', 'no-store');
+            res.setHeader('Retry-After', '1');
+            res.status(503).end('Asset temporarily unavailable — please retry');
+          }
+        });
+        return;
       }
     }
 
@@ -338,6 +347,11 @@ export function serveStatic(app: Express) {
       return res.send(injected);
     }
 
-    res.sendFile(indexPath);
+    res.sendFile(indexPath, (err) => {
+      if (err && !res.headersSent) {
+        res.setHeader('Retry-After', '1');
+        res.status(503).end('Service temporarily unavailable — please retry');
+      }
+    });
   });
 }
