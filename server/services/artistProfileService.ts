@@ -495,6 +495,55 @@ class ArtistProfileService {
     }
   }
 
+  // ── UPC-based direct lookup ──────────────────────────────────────────────
+  // Significantly more accurate than name search for newly distributed releases:
+  // Apple and Deezer both expose album-by-UPC endpoints that return the exact
+  // artist record tied to that release — no fuzzy matching needed.
+  async searchByUPC(upc: string): Promise<{ apple: AppleArtistResult | null; deezer: DeezerArtistResult | null }> {
+    const normalized = upc.replace(/[^0-9]/g, '');
+    if (!normalized) return { apple: null, deezer: null };
+
+    const [appleRes, deezerRes] = await Promise.allSettled([
+      // Apple iTunes UPC lookup — returns the album and its artist
+      fetch(`https://itunes.apple.com/lookup?upc=${normalized}&entity=musicArtist`, {
+        signal: AbortSignal.timeout(8000),
+      }).then(async r => {
+        if (!r.ok) return null;
+        const d = await r.json() as any;
+        const artist = (d.results || []).find((x: any) => x.wrapperType === 'artist' || x.kind === 'artist');
+        if (!artist) return null;
+        return {
+          id: String(artist.artistId),
+          name: artist.artistName,
+          genres: artist.primaryGenreName ? [artist.primaryGenreName] : [],
+          artworkUrl: null,
+          url: artist.artistLinkUrl ?? `https://music.apple.com/us/artist/${artist.artistId}`,
+        } as AppleArtistResult;
+      }),
+
+      // Deezer UPC lookup — returns the album and its artist with image
+      fetch(`https://api.deezer.com/album/upc:${normalized}`, {
+        signal: AbortSignal.timeout(8000),
+      }).then(async r => {
+        if (!r.ok) return null;
+        const d = await r.json() as any;
+        if (!d?.artist?.id || d.error) return null;
+        return {
+          id: String(d.artist.id),
+          name: d.artist.name,
+          pictureUrl: d.artist.picture_medium ?? null,
+          fans: 0,
+          link: `https://www.deezer.com/artist/${d.artist.id}`,
+        } as DeezerArtistResult;
+      }),
+    ]);
+
+    return {
+      apple: appleRes.status === 'fulfilled' ? appleRes.value : null,
+      deezer: deezerRes.status === 'fulfilled' ? deezerRes.value : null,
+    };
+  }
+
   async searchAllPlatforms(query: string): Promise<PlatformSearchResults> {
     const [spotify, apple, deezer, musicbrainz, audiomack, jiosaavn] = await Promise.allSettled([
       this.searchSpotifyArtists(query),
@@ -762,7 +811,7 @@ class ArtistProfileService {
     return 0;
   }
 
-  async autoDiscover(profileId: string, userId: string): Promise<{
+  async autoDiscover(profileId: string, userId: string, upc?: string): Promise<{
     spotify:     { result: SpotifyArtistResult;   confidence: number } | null;
     apple:       { result: AppleArtistResult;      confidence: number } | null;
     deezer:      { result: DeezerArtistResult;     confidence: number } | null;
@@ -774,16 +823,19 @@ class ArtistProfileService {
     labelgridConfigured: boolean;
     saved: boolean;
     savedFields: string[];
+    upcDiscovered?: boolean;
   }> {
     const profile = await this.getProfile(profileId, userId);
     if (!profile) throw new Error('Artist profile not found');
 
     const query = profile.artistName;
 
-    // Search all API platforms + LabelGrid in parallel — single round-trip
-    const [raw, lgArtist] = await Promise.all([
+    // Run UPC lookup (if provided) + name search + LabelGrid in parallel.
+    // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
+    const [raw, lgArtist, upcHits] = await Promise.all([
       this.searchAllPlatforms(query),
       labelGridService.searchArtistAcrossPlatforms(query).catch(() => null),
+      upc ? this.searchByUPC(upc) : Promise.resolve({ apple: null, deezer: null }),
     ]);
 
     // Score each platform's results independently
@@ -792,15 +844,19 @@ class ArtistProfileService {
       .filter(r => r.confidence > 0)
       .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 
-    const topApple = raw.apple
+    // UPC lookup gives exact artist records — treat as confidence 97 and prefer over name search
+    const upcApple  = upcHits.apple  ? { result: upcHits.apple,  confidence: 97 } : null;
+    const upcDeezer = upcHits.deezer ? { result: upcHits.deezer, confidence: 97 } : null;
+
+    const topApple = upcApple ?? (raw.apple
       .map(r => ({ result: r, confidence: this._scoreApple(r, query) }))
       .filter(r => r.confidence > 0)
-      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null);
 
-    const topDeezer = raw.deezer
+    const topDeezer = upcDeezer ?? (raw.deezer
       .map(r => ({ result: r, confidence: this._scoreDeezer(r, query) }))
       .filter(r => r.confidence > 0)
-      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null);
 
     const topMusicBrainz = raw.musicbrainz
       .map(r => ({ result: r, confidence: this._scoreMusicBrainz(r, query) }))
@@ -918,6 +974,7 @@ class ArtistProfileService {
       labelgridConfigured,
       saved,
       savedFields,
+      upcDiscovered: !!(upcApple || upcDeezer),
     };
   }
 

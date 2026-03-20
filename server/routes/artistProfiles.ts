@@ -194,7 +194,9 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
 
 router.post('/:id/auto-discover', requireAuth, async (req: Request, res: Response) => {
   try {
-    const result = await artistProfileService.autoDiscover(req.params.id, req.user!.id);
+    // Optional UPC from DistroKid / distributor — bypasses name-search for exact platform IDs
+    const upc = typeof req.body?.upc === 'string' ? req.body.upc.replace(/[^0-9]/g, '') : undefined;
+    const result = await artistProfileService.autoDiscover(req.params.id, req.user!.id, upc || undefined);
     res.json(result);
   } catch (err: any) {
     logger.error('[ArtistProfiles] POST /:id/auto-discover error:', err);

@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles, RefreshCw, CheckCircle2, XCircle, AlertCircle,
   ExternalLink, ChevronDown, ChevronUp, Loader2,
-  Zap, ShieldCheck, Wrench, Globe,
+  Zap, ShieldCheck, Wrench, Globe, Barcode,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +59,7 @@ interface DiscoverResult {
   labelgridConfigured: boolean;
   saved: boolean;
   savedFields: string[];
+  upcDiscovered?: boolean;
 }
 
 interface SpotifyHit   { id: string; uri: string; name: string; imageUrl: string | null; genres: string[]; followers: number; popularity: number; externalUrl: string; }
@@ -113,10 +114,13 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [fixerUri, setFixerUri] = useState('');
   const [fixerNotes, setFixerNotes] = useState('');
   const [fixerUriError, setFixerUriError] = useState('');
+  const [upc, setUpc] = useState('');
 
   const discoverMutation = useMutation({
-    mutationFn: () =>
-      apiRequest('POST', `/api/artist-profiles/${profile.id}/auto-discover`).then(r => r.json()),
+    mutationFn: (runUpc?: string) =>
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/auto-discover`,
+        runUpc ? { upc: runUpc } : undefined
+      ).then(r => r.json()),
     onSuccess: (data: DiscoverResult) => {
       setDiscovery(data);
       if (data.saved && data.savedFields.length > 0) {
@@ -275,9 +279,15 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               {totalPlatforms}+ platforms
             </Badge>
           )}
+          {discovery?.upcDiscovered && !isRunning && (
+            <Badge variant="secondary" className="text-xs gap-1">
+              <Barcode className="h-3 w-3" />
+              UPC match
+            </Badge>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => discoverMutation.mutate()} disabled={isRunning} title="Re-scan all platforms">
+          <Button size="sm" variant="outline" onClick={() => discoverMutation.mutate(upc.replace(/\D/g, '') || undefined)} disabled={isRunning} title="Re-scan all platforms">
             <Zap className="h-3.5 w-3.5 mr-1.5" />
             Discover
           </Button>
@@ -288,6 +298,27 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
             </Button>
           )}
         </div>
+      </div>
+
+      {/* ── UPC Input ── */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Barcode className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="Enter UPC for exact platform match (optional)"
+            value={upc}
+            onChange={e => setUpc(e.target.value.replace(/[^0-9]/g, '').slice(0, 14))}
+            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
+        {upc.length >= 12 && (
+          <Button size="sm" onClick={() => discoverMutation.mutate(upc)} disabled={isRunning} className="text-xs h-8 px-3">
+            <Zap className="h-3 w-3 mr-1" />
+            UPC Scan
+          </Button>
+        )}
       </div>
 
       {/* ── Scanning state ── */}
