@@ -198,6 +198,25 @@ export interface LabelGridDSPListResponse {
   syncedAt: string;
 }
 
+export interface LabelGridArtistPlatformPresence {
+  platform: string;
+  platformLabel: string;
+  artistId: string | null;
+  artistUrl: string | null;
+  status: 'live' | 'pending' | 'processing' | 'not_found' | 'error';
+  liveAt?: string;
+}
+
+export interface LabelGridArtistSearchResult {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl?: string;
+  genres: string[];
+  verified: boolean;
+  platforms: LabelGridArtistPlatformPresence[];
+}
+
 class LabelGridService {
   private client: AxiosInstance;
   private apiToken: string | undefined;
@@ -1205,6 +1224,71 @@ class LabelGridService {
       const axiosErr = error as AxiosError;
       this.logError('Failed to request payout', error);
       throw new Error(`LabelGrid API error: ${axiosErr.response?.data?.message || axiosErr.message}`);
+    }
+  }
+
+  /**
+   * Search for an artist by name across all LabelGrid-connected platforms.
+   * Returns the artist's ID and live status on every DSP LabelGrid distributes to.
+   * Endpoint: GET /v1/artists/search?q={name}
+   */
+  async searchArtistAcrossPlatforms(artistName: string): Promise<LabelGridArtistSearchResult | null> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn('[LabelGrid] API not configured — artist cross-platform search unavailable');
+      return null;
+    }
+
+    const endpoint = this.getEndpoint('searchArtist', '/v1/artists/search');
+    this.logApiCall('GET', `${endpoint}?q=${artistName}`);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{ artists: LabelGridArtistSearchResult[] }>(endpoint, {
+          params: { q: artistName, limit: 5 },
+        });
+      });
+
+      const artists: LabelGridArtistSearchResult[] = response.data?.artists ?? (Array.isArray(response.data) ? response.data as any : []);
+      if (!artists.length) return null;
+
+      // Pick the best match by name similarity
+      const query = artistName.toLowerCase().trim();
+      const best = artists.reduce((prev, curr) => {
+        const prevSim = prev.name.toLowerCase().includes(query) ? 1 : 0;
+        const currSim = curr.name.toLowerCase().includes(query) ? 1 : 0;
+        return currSim > prevSim ? curr : prev;
+      }, artists[0]);
+
+      logger.info(`[LabelGrid] Artist search found: ${best.name} — ${best.platforms?.length ?? 0} platform(s)`);
+      return best;
+    } catch (err: any) {
+      logger.warn('[LabelGrid] Artist search failed (non-fatal):', err?.message ?? err);
+      return null;
+    }
+  }
+
+  /**
+   * Get all platform presences for a LabelGrid artist ID.
+   * Endpoint: GET /v1/artists/:id/platforms
+   */
+  async getArtistPlatformPresence(labelGridArtistId: string): Promise<LabelGridArtistPlatformPresence[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) return [];
+
+    const endpoint = this.getEndpoint('getArtistPlatforms', '/v1/artists/:id/platforms').replace(':id', labelGridArtistId);
+    this.logApiCall('GET', endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{ platforms: LabelGridArtistPlatformPresence[] }>(endpoint);
+      });
+      return response.data?.platforms ?? [];
+    } catch (err: any) {
+      logger.warn('[LabelGrid] Artist platform presence fetch failed (non-fatal):', err?.message ?? err);
+      return [];
     }
   }
 

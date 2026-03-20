@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles, RefreshCw, CheckCircle2, XCircle, AlertCircle,
   ExternalLink, ChevronDown, ChevronUp, Loader2,
-  Zap, ShieldCheck, Wrench, Globe, ChevronRight,
+  Zap, ShieldCheck, Wrench, Globe,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -38,6 +38,15 @@ interface PlatformUrlDiscovery {
   method: 'url_template';
 }
 
+interface LabelGridPlatform {
+  platform: string;
+  platformLabel: string;
+  artistId: string | null;
+  artistUrl: string | null;
+  status: 'live' | 'pending' | 'processing' | 'not_found' | 'error';
+  liveAt?: string;
+}
+
 interface DiscoverResult {
   spotify:     { result: SpotifyHit;   confidence: number } | null;
   apple:       { result: AppleHit;     confidence: number } | null;
@@ -46,6 +55,8 @@ interface DiscoverResult {
   audiomack:   { result: AudiomackHit; confidence: number } | null;
   jiosaavn:    { result: JioSaavnHit;  confidence: number } | null;
   urlDiscoveries: PlatformUrlDiscovery[];
+  labelgridPlatforms: LabelGridPlatform[];
+  labelgridConfigured: boolean;
   saved: boolean;
   savedFields: string[];
 }
@@ -68,12 +79,11 @@ interface Props {
 }
 
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string }> = {
-  spotify:              { label: 'Spotify',       color: 'text-green-500',  dot: 'bg-green-500'  },
-  apple:                { label: 'Apple Music',   color: 'text-pink-500',   dot: 'bg-pink-500'   },
-  deezer:               { label: 'Deezer',        color: 'text-purple-500', dot: 'bg-purple-500' },
-  audiomack:            { label: 'Audiomack',     color: 'text-amber-500',  dot: 'bg-amber-500'  },
-  jiosaavn:             { label: 'JioSaavn',      color: 'text-blue-500',   dot: 'bg-blue-500'   },
-  musicbrainz_confirmed:{ label: 'MusicBrainz',   color: 'text-orange-400', dot: 'bg-orange-400' },
+  spotify:    { label: 'Spotify',     color: 'text-green-500',  dot: 'bg-green-500'  },
+  apple:      { label: 'Apple Music', color: 'text-pink-500',   dot: 'bg-pink-500'   },
+  deezer:     { label: 'Deezer',      color: 'text-purple-500', dot: 'bg-purple-500' },
+  audiomack:  { label: 'Audiomack',   color: 'text-amber-500',  dot: 'bg-amber-500'  },
+  jiosaavn:   { label: 'JioSaavn',    color: 'text-blue-500',   dot: 'bg-blue-500'   },
 };
 
 function fmt(n: number): string {
@@ -100,7 +110,6 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [discovery, setDiscovery] = useState<DiscoverResult | null>(null);
   const [hasAutoRun, setHasAutoRun] = useState(false);
   const [fixerOpen, setFixerOpen] = useState(false);
-  const [urlDiscoveriesOpen, setUrlDiscoveriesOpen] = useState(false);
   const [fixerUri, setFixerUri] = useState('');
   const [fixerNotes, setFixerNotes] = useState('');
   const [fixerUriError, setFixerUriError] = useState('');
@@ -116,20 +125,18 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         const savedLabels = data.savedFields
           .filter(f => !f.endsWith('_confirmed'))
           .map(f => PLATFORM_META[f]?.label ?? f);
-        toast({
-          title: `Auto-discovered ${savedLabels.length} platform${savedLabels.length !== 1 ? 's' : ''}`,
-          description: savedLabels.join(', '),
-        });
+        if (savedLabels.length > 0) {
+          toast({
+            title: `Auto-discovered ${savedLabels.length} platform${savedLabels.length !== 1 ? 's' : ''}`,
+            description: savedLabels.join(', '),
+          });
+        }
       }
     },
     onError: (err: any) => {
-      const is401 = err?.message?.includes('401') || err?.status === 401 || String(err).includes('401');
+      const is401 = err?.status === 401 || err?.message?.includes('401') || String(err).includes('401');
       if (is401) {
-        toast({
-          title: 'Session expired',
-          description: 'Your session timed out. Reloading…',
-          variant: 'destructive',
-        });
+        toast({ title: 'Session expired — reloading…', variant: 'destructive' });
         setTimeout(() => window.location.reload(), 1500);
       } else {
         toast({ title: 'Discovery failed', description: 'Could not reach platform APIs', variant: 'destructive' });
@@ -197,7 +204,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const hasAnyLinked = !!(profile.spotifyArtistId || profile.appleArtistId || profile.deezerArtistId || profile.soundcloudArtistId);
   const isRunning = discoverMutation.isPending || syncMutation.isPending;
 
-  // Build the API-searched platform rows for rendering
+  // API platform rows for the top verified section
   const apiRows = discovery ? [
     {
       key: 'spotify' as const,
@@ -252,35 +259,30 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     },
   ] : [];
 
+  const totalPlatforms = 6 + (discovery?.urlDiscoveries.length ?? 90);
+
   return (
     <div className="space-y-4 pt-2">
 
-      {/* ── Header actions ── */}
+      {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-primary" />
           <span className="font-medium text-sm">Auto Artist Sync</span>
           {isRunning && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+          {discovery && !isRunning && (
+            <Badge variant="outline" className="text-xs">
+              {totalPlatforms}+ platforms
+            </Badge>
+          )}
         </div>
         <div className="flex gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => discoverMutation.mutate()}
-            disabled={isRunning}
-            title="Re-discover platform IDs by name"
-          >
+          <Button size="sm" variant="outline" onClick={() => discoverMutation.mutate()} disabled={isRunning} title="Re-scan all platforms">
             <Zap className="h-3.5 w-3.5 mr-1.5" />
             Discover
           </Button>
           {hasAnyLinked && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => syncMutation.mutate()}
-              disabled={isRunning}
-              title="Refresh data from linked platforms"
-            >
+            <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={isRunning}>
               <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
               Sync
             </Button>
@@ -288,148 +290,212 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         </div>
       </div>
 
-      {/* ── Discovery scanning state ── */}
+      {/* ── Scanning state ── */}
       {discoverMutation.isPending && (
-        <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
-          <p className="text-sm font-medium">Scanning platforms for "{profile.artistName}"…</p>
-          {['Spotify', 'Apple Music', 'Deezer', 'Audiomack', 'JioSaavn', 'MusicBrainz'].map((p, i) => (
-            <div key={p} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ animationDelay: `${i * 150}ms` }} />
-              {p}
-            </div>
-          ))}
-          <p className="text-xs text-muted-foreground pt-1">
+        <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+          <p className="text-sm font-medium">Scanning {totalPlatforms}+ platforms for "{profile.artistName}"…</p>
+          <div className="grid grid-cols-2 gap-1">
+            {['Spotify', 'Apple Music', 'Deezer', 'Audiomack', 'JioSaavn', 'MusicBrainz'].map((p, i) => (
+              <div key={p} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin flex-shrink-0" style={{ animationDelay: `${i * 150}ms` }} />
+                {p}
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground pt-1 border-t">
             Generating search links for 90+ additional DSPs…
           </p>
         </div>
       )}
 
-      {/* ── Discovery results — API-searched platforms ── */}
       {discovery && !discoverMutation.isPending && (
-        <div className="space-y-2">
-          {apiRows.map(({ key, hit, alreadyLinked, savePayload, imageUrl, subtitle, href }) => {
-            const meta = PLATFORM_META[key];
-            return (
-              <div key={key} className="rounded-lg border p-3 flex items-start gap-3">
-                <div className="flex-shrink-0 mt-0.5">
-                  {alreadyLinked ? (
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  ) : hit ? (
-                    <div className={`h-2 w-2 rounded-full mt-1 ${meta.dot}`} />
-                  ) : (
-                    <XCircle className="h-4 w-4 text-muted-foreground" />
-                  )}
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={`text-sm font-medium ${meta.color}`}>{meta.label}</span>
-                    {alreadyLinked && <Badge variant="secondary" className="text-xs py-0">Linked</Badge>}
-                    {discovery.savedFields.includes(key) && (
-                      <Badge className="text-xs py-0 bg-green-500">Auto-saved</Badge>
-                    )}
-                  </div>
-
-                  {hit ? (
-                    <div className="mt-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        {imageUrl && (
-                          <img src={imageUrl} alt={hit.result.name} className="h-7 w-7 rounded-full object-cover" />
-                        )}
-                        <span className="text-sm truncate">{hit.result.name}</span>
-                      </div>
-                      {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-                      <ConfidenceBar value={hit.confidence} />
+        <>
+          {/* ── Section 1: API-Searched Platforms ── */}
+          <div>
+            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              API-Searched Platforms (live search, confidence-scored)
+            </p>
+            <div className="space-y-2">
+              {apiRows.map(({ key, hit, alreadyLinked, savePayload, imageUrl, subtitle, href }) => {
+                const meta = PLATFORM_META[key];
+                return (
+                  <div key={key} className="rounded-lg border p-3 flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      {alreadyLinked ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : hit ? (
+                        <div className={`h-2 w-2 rounded-full mt-1 ${meta.dot}`} />
+                      ) : (
+                        <XCircle className="h-4 w-4 text-muted-foreground" />
+                      )}
                     </div>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-0.5">No match found on this platform</p>
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1 shrink-0">
-                  {href && (
-                    <a href={href} target="_blank" rel="noreferrer">
-                      <Button variant="ghost" size="icon" className="h-7 w-7">
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </Button>
-                    </a>
-                  )}
-                  {!alreadyLinked && hit && savePayload && hit.confidence >= 60 && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 text-xs"
-                      onClick={() => savePlatformMutation.mutate(savePayload as Record<string, string>)}
-                      disabled={savePlatformMutation.isPending}
-                    >
-                      Use
-                    </Button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* ── MusicBrainz cross-validation indicator ── */}
-          {discovery.musicbrainz && (
-            <div className="rounded-lg border border-dashed p-3 flex items-center gap-3">
-              <CheckCircle2 className="h-4 w-4 text-orange-400 flex-shrink-0" />
-              <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-orange-400">MusicBrainz</span>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Identity cross-validated · {discovery.musicbrainz.result.name}
-                  {discovery.musicbrainz.result.type ? ` (${discovery.musicbrainz.result.type})` : ''}
-                </p>
-              </div>
-              <Badge variant="outline" className="text-xs shrink-0">
-                {discovery.musicbrainz.confidence}% match
-              </Badge>
-            </div>
-          )}
-
-          {/* ── URL discoveries — all 97 DSPs ── */}
-          {discovery.urlDiscoveries.length > 0 && (
-            <Collapsible open={urlDiscoveriesOpen} onOpenChange={setUrlDiscoveriesOpen}>
-              <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-sm hover:bg-muted/40 transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
-                      {discovery.urlDiscoveries.length} more platforms available
-                    </span>
-                    <Badge variant="outline" className="text-xs">Search links generated</Badge>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-medium ${meta.color}`}>{meta.label}</span>
+                        {alreadyLinked && <Badge variant="secondary" className="text-xs py-0">Linked</Badge>}
+                        {discovery.savedFields.includes(key) && (
+                          <Badge className="text-xs py-0 bg-green-500">Auto-saved</Badge>
+                        )}
+                        {(discovery.savedFields.includes(`${key}_confirmed`)) && (
+                          <Badge variant="outline" className="text-xs py-0">Confirmed</Badge>
+                        )}
+                      </div>
+                      {hit ? (
+                        <div className="mt-1 space-y-1">
+                          <div className="flex items-center gap-2">
+                            {imageUrl && (
+                              <img src={imageUrl} alt={hit.result.name} className="h-7 w-7 rounded-full object-cover" />
+                            )}
+                            <span className="text-sm truncate">{hit.result.name}</span>
+                          </div>
+                          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
+                          <ConfidenceBar value={hit.confidence} />
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-0.5">Not found on this platform</p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {href && (
+                        <a href={href} target="_blank" rel="noreferrer">
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </Button>
+                        </a>
+                      )}
+                      {!alreadyLinked && hit && savePayload && hit.confidence >= 60 && (
+                        <Button
+                          size="sm" variant="outline" className="h-7 text-xs"
+                          onClick={() => savePlatformMutation.mutate(savePayload as Record<string, string>)}
+                          disabled={savePlatformMutation.isPending}
+                        >
+                          Use
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  {urlDiscoveriesOpen ? (
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                );
+              })}
+
+              {/* MusicBrainz cross-validation */}
+              {discovery.musicbrainz && (
+                <div className="rounded-lg border border-dashed p-3 flex items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-orange-400 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-sm font-medium text-orange-400">MusicBrainz</span>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Identity cross-validated · {discovery.musicbrainz.result.name}
+                      {discovery.musicbrainz.result.type ? ` (${discovery.musicbrainz.result.type})` : ''}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-xs shrink-0">
+                    {discovery.musicbrainz.confidence}%
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Section 2: LabelGrid Platform Status — ALL 97 DSPs with real status ── */}
+          {discovery.labelgridConfigured && discovery.labelgridPlatforms.length > 0 ? (
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <Globe className="h-3.5 w-3.5" />
+                  Distribution Status — {discovery.labelgridPlatforms.length} platforms via LabelGrid
+                </p>
+                <div className="flex gap-1.5">
+                  <Badge className="text-xs bg-green-600">{discovery.labelgridPlatforms.filter(p => p.status === 'live').length} live</Badge>
+                  {discovery.labelgridPlatforms.filter(p => p.status === 'pending' || p.status === 'processing').length > 0 && (
+                    <Badge variant="outline" className="text-xs text-yellow-600">{discovery.labelgridPlatforms.filter(p => p.status === 'pending' || p.status === 'processing').length} pending</Badge>
                   )}
-                </button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="mt-2 rounded-lg border divide-y max-h-64 overflow-y-auto">
-                  {discovery.urlDiscoveries.map(d => (
-                    <div key={d.platform} className="flex items-center justify-between px-3 py-2 hover:bg-muted/20">
-                      <span className="text-sm text-muted-foreground">{d.platformLabel}</span>
-                      <a
-                        href={d.searchUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-1 text-xs text-primary hover:underline"
-                      >
-                        Search
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
+                </div>
+              </div>
+              <div className="rounded-lg border overflow-hidden">
+                <div className="grid grid-cols-2 divide-x divide-y divide-border/50 max-h-80 overflow-y-auto">
+                  {discovery.labelgridPlatforms.map(p => (
+                    <div key={p.platform} className="flex items-center justify-between px-3 py-2 gap-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        {p.status === 'live' ? (
+                          <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
+                        ) : p.status === 'pending' || p.status === 'processing' ? (
+                          <Loader2 className="h-3 w-3 text-yellow-500 animate-spin flex-shrink-0" />
+                        ) : p.status === 'not_found' ? (
+                          <XCircle className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
+                        ) : (
+                          <AlertCircle className="h-3 w-3 text-red-400 flex-shrink-0" />
+                        )}
+                        <span className="text-xs truncate">{p.platformLabel}</span>
+                      </div>
+                      {p.artistUrl && (
+                        <a href={p.artistUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink className="h-3 w-3 text-muted-foreground/40 hover:text-primary flex-shrink-0 transition-colors" />
+                        </a>
+                      )}
                     </div>
                   ))}
                 </div>
-                <p className="text-xs text-muted-foreground px-1 pt-2">
-                  These links open artist search pages on each DSP. Your music is distributed to all these platforms via your distributor.
-                </p>
-              </CollapsibleContent>
-            </Collapsible>
+                <div className="px-3 py-2 bg-muted/20 border-t flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <CheckCircle2 className="h-3 w-3 text-green-500" /> Live on DSP
+                    <span className="mx-1">·</span>
+                    <Loader2 className="h-3 w-3 text-yellow-500" /> Pending delivery
+                    <span className="mx-1">·</span>
+                    <XCircle className="h-3 w-3 text-muted-foreground/40" /> Not distributed
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : discovery.labelgridConfigured && discovery.labelgridPlatforms.length === 0 ? (
+            /* LabelGrid configured but artist not found yet */
+            <div className="rounded-lg border border-dashed p-4 text-center">
+              <Globe className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
+              <p className="text-sm font-medium">No releases distributed yet</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Once you distribute a release through LabelGrid, platform status for all 97 DSPs will appear here automatically.
+              </p>
+            </div>
+          ) : (
+            /* LabelGrid not configured — show search links + setup prompt */
+            <>
+              {discovery.urlDiscoveries.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                      <Globe className="h-3.5 w-3.5" />
+                      Platform Coverage — {discovery.urlDiscoveries.length} DSPs
+                    </p>
+                    <Badge variant="secondary" className="text-xs">Search links</Badge>
+                  </div>
+                  <div className="rounded-lg border overflow-hidden">
+                    <div className="grid grid-cols-2 divide-x divide-y divide-border/50 max-h-60 overflow-y-auto">
+                      {discovery.urlDiscoveries.map(d => (
+                        <a
+                          key={d.platform}
+                          href={d.searchUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center justify-between px-3 py-2 hover:bg-muted/30 transition-colors group"
+                        >
+                          <span className="text-xs text-foreground/80 truncate pr-2">{d.platformLabel}</span>
+                          <ExternalLink className="h-3 w-3 text-muted-foreground/50 group-hover:text-primary flex-shrink-0 transition-colors" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+              <Alert>
+                <Zap className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  <strong>Connect LabelGrid</strong> to see real-time status on all {(discovery.urlDiscoveries.length + 6)}+ platforms automatically.
+                  Add your <code className="font-mono bg-muted px-1 rounded">LABELGRID_API_TOKEN</code> to enable full platform discovery.
+                </AlertDescription>
+              </Alert>
+            </>
           )}
-        </div>
+        </>
       )}
 
       {/* ── Linked platform quick view ── */}
@@ -457,7 +523,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
             )}
             {profile.soundcloudArtistId && (
               <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 font-mono">
-                Audiomack · {profile.soundcloudArtistId.slice(0, 12)}
+                Audiomack · {profile.soundcloudArtistId.slice(0, 14)}
               </Badge>
             )}
             {profile.isVerified && (
@@ -469,16 +535,14 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         </div>
       )}
 
-      {/* ── Fixer (wrong artist page) ── */}
+      {/* ── Fixer ── */}
       {profile.spotifyArtistId && (
         <Collapsible open={fixerOpen} onOpenChange={setFixerOpen}>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground hover:text-foreground">
               <span className="flex items-center gap-1.5">
                 <Wrench className="h-3.5 w-3.5" />
-                {profile.fixerPending
-                  ? `Fixer pending (${profile.fixerStatus})`
-                  : 'Release landed on wrong artist page?'}
+                {profile.fixerPending ? `Fixer pending (${profile.fixerStatus})` : 'Release landed on wrong artist page?'}
               </span>
               {fixerOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
             </Button>
@@ -489,14 +553,13 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 <Alert>
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>
-                    A fixer request is currently <strong>{profile.fixerStatus}</strong>.
-                    It will be applied to future releases automatically.
+                    A fixer request is currently <strong>{profile.fixerStatus}</strong>. It will be applied to future releases automatically.
                   </AlertDescription>
                 </Alert>
               ) : (
                 <>
                   <p className="text-sm text-muted-foreground">
-                    If your release appeared on the wrong Spotify artist page, enter the correct Spotify artist URI below. This will be applied to all future releases.
+                    If your release appeared on the wrong Spotify artist page, enter the correct Spotify artist URI below.
                   </p>
                   <div className="space-y-2">
                     <Label className="text-xs">Correct Spotify Artist URI</Label>
@@ -507,8 +570,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                         setFixerUri(e.target.value);
                         setFixerUriError(
                           e.target.value && !/^spotify:artist:[A-Za-z0-9]+$/.test(e.target.value)
-                            ? 'Must match: spotify:artist:<ID>'
-                            : ''
+                            ? 'Must match: spotify:artist:<ID>' : ''
                         );
                       }}
                       className={fixerUriError ? 'border-destructive' : ''}
@@ -529,7 +591,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                     onClick={() => fixerMutation.mutate()}
                     disabled={!fixerUri || !!fixerUriError || fixerMutation.isPending}
                   >
-                    {fixerMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+                    {fixerMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />}
                     Submit Fixer Request
                   </Button>
                 </>

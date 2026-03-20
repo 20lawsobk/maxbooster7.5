@@ -3,6 +3,8 @@ import { eq, and, ilike } from 'drizzle-orm';
 import { artistProfiles, artistProfileReleases, releases, distroReleases } from '@shared/schema';
 import type { ArtistProfile, InsertArtistProfile } from '@shared/schema';
 import { logger } from '../logger.js';
+import { labelGridService } from './labelgrid-service.js';
+import type { LabelGridArtistPlatformPresence } from './labelgrid-service.js';
 
 interface SpotifyArtistResult {
   id: string;
@@ -61,7 +63,8 @@ export interface PlatformUrlDiscovery {
   platform: string;
   platformLabel: string;
   searchUrl: string;
-  profileUrlTemplate: string | null;
+  profileUrl: string | null;
+  status: 'found' | 'not_found' | 'unverified' | 'distributed';
   method: 'url_template';
 }
 
@@ -767,6 +770,8 @@ class ArtistProfileService {
     audiomack:   { result: AudiomackArtistResult;  confidence: number } | null;
     jiosaavn:    { result: JioSaavnArtistResult;   confidence: number } | null;
     urlDiscoveries: PlatformUrlDiscovery[];
+    labelgridPlatforms: LabelGridArtistPlatformPresence[];
+    labelgridConfigured: boolean;
     saved: boolean;
     savedFields: string[];
   }> {
@@ -775,8 +780,11 @@ class ArtistProfileService {
 
     const query = profile.artistName;
 
-    // Search all API platforms in parallel — single round-trip
-    const raw = await this.searchAllPlatforms(query);
+    // Search all API platforms + LabelGrid in parallel — single round-trip
+    const [raw, lgArtist] = await Promise.all([
+      this.searchAllPlatforms(query),
+      labelGridService.searchArtistAcrossPlatforms(query).catch(() => null),
+    ]);
 
     // Score each platform's results independently
     const topSpotify = raw.spotify
@@ -869,7 +877,22 @@ class ArtistProfileService {
       savedFields.push('jiosaavn_confirmed');
     }
 
-    // Generate URL-template discoveries for all 97 DSPs without public search APIs.
+    // Get LabelGrid platform presences — either from search result directly,
+    // or by making a second call using the artist ID from the search result.
+    let labelgridPlatforms: LabelGridArtistPlatformPresence[] = [];
+    if (lgArtist) {
+      if (lgArtist.platforms && lgArtist.platforms.length > 0) {
+        labelgridPlatforms = lgArtist.platforms;
+      } else {
+        // Search result didn't embed platforms — fetch them separately
+        labelgridPlatforms = await labelGridService.getArtistPlatformPresence(lgArtist.id).catch(() => []);
+      }
+      logger.info(`[ArtistProfile] LabelGrid: artist=${lgArtist.name} platforms=${labelgridPlatforms.length}`);
+    }
+
+    const labelgridConfigured = labelGridService.isApiConfigured();
+
+    // Generate URL-template discoveries for all 97 DSPs.
     // These are generated once using the verified artist name — NOT fetched per platform.
     const urlDiscoveries = this.generateUrlDiscoveries(query);
 
@@ -891,6 +914,8 @@ class ArtistProfileService {
       audiomack: finalAudiomack,
       jiosaavn: finalJioSaavn,
       urlDiscoveries,
+      labelgridPlatforms,
+      labelgridConfigured,
       saved,
       savedFields,
     };
