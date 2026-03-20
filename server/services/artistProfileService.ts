@@ -986,11 +986,14 @@ class ArtistProfileService {
 
     const query = profile.artistName;
 
-    // Run UPC lookup (if provided) + name search + LabelGrid in parallel.
+    // Run UPC lookup (if provided) + name search in parallel.
+    // LabelGrid is a distribution platform only — it has no public artist search API
+    // (token scopes: user.view-catalog, user.gate-use). LabelGrid platform status is
+    // populated separately via webhook callbacks from distribution submissions.
     // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
-    const [raw, lgArtist, upcHits] = await Promise.all([
+    const lgArtist = null; // LabelGrid does not expose an artist search endpoint
+    const [raw, upcHits] = await Promise.all([
       this.searchAllPlatforms(query),
-      labelGridService.searchArtistAcrossPlatforms(query).catch(() => null),
       upc ? this.searchByUPC(upc) : Promise.resolve({ apple: null, deezer: null }),
     ]);
 
