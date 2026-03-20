@@ -756,7 +756,11 @@ class DistributionDataTransferService {
     return deleted;
   }
 
-  async syncProfileData(userId: string, platformId: string): Promise<StreamingProfileData | null> {
+  async syncProfileData(
+    userId: string,
+    platformId: string,
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+  ): Promise<StreamingProfileData | null> {
     const userProfiles = this.linkedProfiles.get(userId);
     if (!userProfiles || !userProfiles.has(platformId)) {
       return null;
@@ -764,7 +768,9 @@ class DistributionDataTransferService {
     
     const profile = userProfiles.get(platformId)!;
     
-    const updatedData = await this.fetchPlatformData(platformId, profile.artistId);
+    // Use the shared Spotify release catalog for non-Spotify platforms so the
+    // artist's release data is only fetched from one authoritative source per sync.
+    const updatedData = await this.fetchPlatformData(platformId, profile.artistId, sharedTopTracks);
     
     const platformDef = STREAMING_PLATFORMS.find(p => p.id === platformId);
     const resolvedMethod = platformDef?.syncMethod || 'api';
@@ -807,9 +813,26 @@ class DistributionDataTransferService {
       return { total: 0, succeeded: 0, failed: 0, results: [] };
     }
 
+    // Fetch Spotify release catalog ONCE and share it across all platform syncs.
+    // This prevents Apple Music, Deezer, and other platforms from independently
+    // re-importing the same release data on every sync cycle.
+    let sharedTopTracks: Array<{ title: string; streams: number; isrc?: string }> | undefined;
+    const spotifyProfile = userProfiles.get('spotify');
+    if (spotifyProfile?.artistId) {
+      try {
+        const spotifyData = await this.fetchSpotifyData(spotifyProfile.artistId);
+        if (spotifyData?.topTracks) {
+          sharedTopTracks = spotifyData.topTracks;
+          logger.info(`[DataTransfer] Shared release catalog from Spotify (${sharedTopTracks.length} tracks) for user ${userId}`);
+        }
+      } catch (err) {
+        logger.warn('[DataTransfer] Could not fetch Spotify catalog for sharing — each platform will fetch independently:', err);
+      }
+    }
+
     const platformIds = Array.from(userProfiles.keys());
     const settled = await Promise.allSettled(
-      platformIds.map(pid => this.syncProfileData(userId, pid))
+      platformIds.map(pid => this.syncProfileData(userId, pid, sharedTopTracks))
     );
 
     const results: SyncResult[] = [];
@@ -1039,24 +1062,34 @@ class DistributionDataTransferService {
     }
   }
 
-  private async fetchAppleMusicData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchAppleMusicData(
+    artistId: string,
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+  ): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('apple_music');
     const fetcher = async () => {
-      const resp = await fetch(`https://itunes.apple.com/lookup?id=${artistId}&entity=song&limit=10`);
+      // When Spotify shared catalog is available, only look up the artist profile
+      // (no songs) to avoid re-importing the same release data from a second source.
+      const entityParam = sharedTopTracks ? 'musicArtist' : 'song';
+      const limitParam = sharedTopTracks ? '1' : '10';
+      const resp = await fetch(
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=${entityParam}&limit=${limitParam}`
+      );
       if (!resp.ok) throw new Error(`iTunes API returned ${resp.status}`);
       const data = await resp.json() as any;
       const results = data.results || [];
       if (results.length === 0) return null;
 
-      const artistResult = results.find((r: any) => r.wrapperType === 'artist');
+      const artistResult = results.find((r: any) => r.wrapperType === 'artist' || r.artistId);
       const songs = results.filter((r: any) => r.wrapperType === 'track');
 
       return {
         artistName: artistResult?.artistName || songs[0]?.artistName,
         genres: artistResult?.primaryGenreName ? [artistResult.primaryGenreName] : undefined,
         profileUrl: artistResult?.artistLinkUrl,
-        imageUrl: songs[0]?.artworkUrl100?.replace('100x100', '500x500'),
-        topTracks: songs.slice(0, 5).map((s: any) => ({
+        imageUrl: songs[0]?.artworkUrl100?.replace('100x100', '500x500') ?? undefined,
+        // Use shared Spotify catalog if provided — do NOT re-import from Apple
+        topTracks: sharedTopTracks ?? songs.slice(0, 5).map((s: any) => ({
           title: s.trackName,
           streams: 0,
         })),
@@ -1151,25 +1184,35 @@ class DistributionDataTransferService {
     }
   }
 
-  private async fetchDeezerData(artistId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchDeezerData(
+    artistId: string,
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+  ): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('deezer');
     const fetcher = async () => {
-      const [artistResp, topResp] = await Promise.all([
-        fetch(`https://api.deezer.com/artist/${artistId}`),
-        fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`),
-      ]);
+      // When Spotify shared catalog is available, only fetch artist profile (not top tracks)
+      // so the release catalog is imported once per sync — not separately from each DSP.
+      const requests: Promise<Response>[] = [fetch(`https://api.deezer.com/artist/${artistId}`)];
+      if (!sharedTopTracks) {
+        requests.push(fetch(`https://api.deezer.com/artist/${artistId}/top?limit=5`));
+      }
+      const [artistResp, topResp] = await Promise.all(requests);
 
       if (!artistResp.ok) throw new Error(`Deezer API returned ${artistResp.status}`);
       const artist = await artistResp.json() as any;
       if (artist.error) throw new Error(artist.error.message || 'Deezer API error');
 
-      let topTracks: Array<{ title: string; streams: number }> = [];
-      if (topResp.ok) {
+      let topTracks: Array<{ title: string; streams: number; isrc?: string }>;
+      if (sharedTopTracks) {
+        topTracks = sharedTopTracks;
+      } else if (topResp?.ok) {
         const topData = await topResp.json() as any;
         topTracks = (topData.data || []).slice(0, 5).map((t: any) => ({
           title: t.title,
           streams: t.rank || 0,
         }));
+      } else {
+        topTracks = [];
       }
 
       return {
@@ -1401,7 +1444,11 @@ class DistributionDataTransferService {
     }
   }
 
-  private async fetchPlatformData(platformId: string, artistId: string): Promise<Partial<StreamingProfileData> | null> {
+  private async fetchPlatformData(
+    platformId: string,
+    artistId: string,
+    sharedTopTracks?: Array<{ title: string; streams: number; isrc?: string }>
+  ): Promise<Partial<StreamingProfileData> | null> {
     logger.info(`[DataTransfer] Fetching data for ${platformId} artist: ${artistId}`);
 
     try {
@@ -1409,11 +1456,14 @@ class DistributionDataTransferService {
         case 'spotify':
           return await this.fetchSpotifyData(artistId);
         case 'apple_music':
-          return await this.fetchAppleMusicData(artistId);
+          // Use shared Spotify catalog when available — skip Apple's own song lookup
+          // so the release catalog is only imported once per sync cycle.
+          return await this.fetchAppleMusicData(artistId, sharedTopTracks);
         case 'youtube_music':
           return await this.fetchYouTubeMusicData(artistId);
         case 'deezer':
-          return await this.fetchDeezerData(artistId);
+          // Use shared Spotify catalog when available — skip Deezer's own top-track fetch.
+          return await this.fetchDeezerData(artistId, sharedTopTracks);
         case 'soundcloud':
           return await this.fetchSoundCloudData(artistId);
         case 'tidal':

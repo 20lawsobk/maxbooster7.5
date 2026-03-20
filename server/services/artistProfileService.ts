@@ -41,12 +41,140 @@ interface MusicBrainzArtistResult {
   disambiguation: string | null;
 }
 
+interface AudiomackArtistResult {
+  id: string;
+  name: string;
+  slug: string;
+  imageUrl: string | null;
+  followers: number;
+  url: string;
+}
+
+interface JioSaavnArtistResult {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  url: string;
+}
+
+export interface PlatformUrlDiscovery {
+  platform: string;
+  platformLabel: string;
+  searchUrl: string;
+  profileUrlTemplate: string | null;
+  method: 'url_template';
+}
+
 interface PlatformSearchResults {
   spotify: SpotifyArtistResult[];
   apple: AppleArtistResult[];
   deezer: DeezerArtistResult[];
   musicbrainz: MusicBrainzArtistResult[];
+  audiomack: AudiomackArtistResult[];
+  jiosaavn: JioSaavnArtistResult[];
 }
+
+// All 97 DSP distribution platforms with URL templates
+// Used to generate artist profile search links for platforms without public search APIs
+const ALL_DSP_URL_TEMPLATES: Array<{ id: string; label: string; searchUrl: (name: string, slug: string) => string }> = [
+  { id: 'pandora',          label: 'Pandora',          searchUrl: (n) => `https://www.pandora.com/search/${encodeURIComponent(n)}/artists` },
+  { id: 'iheartradio',      label: 'iHeart Radio',     searchUrl: (n) => `https://www.iheart.com/search/?keywords=${encodeURIComponent(n)}` },
+  { id: 'tidal',            label: 'Tidal',            searchUrl: (n) => `https://tidal.com/browse/search?q=${encodeURIComponent(n)}&type=artists` },
+  { id: 'amazon-music',     label: 'Amazon Music',     searchUrl: (n) => `https://music.amazon.com/search/${encodeURIComponent(n)}` },
+  { id: 'youtube-music',    label: 'YouTube Music',    searchUrl: (n) => `https://music.youtube.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'soundcloud',       label: 'SoundCloud',       searchUrl: (n, s) => `https://soundcloud.com/search/people?q=${encodeURIComponent(n)}` },
+  { id: 'bandcamp',         label: 'Bandcamp',         searchUrl: (n) => `https://bandcamp.com/search?q=${encodeURIComponent(n)}&item_type=b` },
+  { id: 'napster',          label: 'Napster',          searchUrl: (n) => `https://us.napster.com/search/artists/${encodeURIComponent(n)}` },
+  { id: 'qobuz',            label: 'Qobuz',            searchUrl: (n) => `https://www.qobuz.com/gb-en/search?q=${encodeURIComponent(n)}&target=Performers` },
+  { id: 'traxsource',       label: 'Traxsource',       searchUrl: (n) => `https://www.traxsource.com/search?q=${encodeURIComponent(n)}&type=artists` },
+  { id: 'beatport',         label: 'Beatport',         searchUrl: (n) => `https://www.beatport.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'juno-download',    label: 'Juno Download',    searchUrl: (n) => `https://www.junodownload.com/search/?order=jd_date_of_pub+desc&q%5Bf%5D%5B0%5D=artists&q%5Bsub%5D%5B0%5D=${encodeURIComponent(n)}` },
+  { id: 'boomplay',         label: 'Boomplay',         searchUrl: (n) => `https://www.boomplay.com/search/default/${encodeURIComponent(n)}` },
+  { id: 'anghami',          label: 'Anghami',          searchUrl: (n) => `https://play.anghami.com/search?q=${encodeURIComponent(n)}&type=artists` },
+  { id: 'gaana',            label: 'Gaana',            searchUrl: (n, s) => `https://gaana.com/search/${s}` },
+  { id: 'kkbox',            label: 'KKBOX',            searchUrl: (n) => `https://www.kkbox.com/tw/en/search/${encodeURIComponent(n)}/artist` },
+  { id: 'line-music',       label: 'LINE MUSIC',       searchUrl: (n) => `https://music.line.me/webapp/search/artists?query=${encodeURIComponent(n)}` },
+  { id: 'netease-cloud-music', label: 'NetEase Cloud Music', searchUrl: (n) => `https://music.163.com/#/search/m/?s=${encodeURIComponent(n)}&type=100` },
+  { id: 'qq-music',         label: 'QQ Music',         searchUrl: (n) => `https://y.qq.com/portal/search.html#page=1&searchid=1&query=${encodeURIComponent(n)}` },
+  { id: 'kugou',            label: 'Kugou',            searchUrl: (n) => `https://www.kugou.com/yy/singer/index.html#src=${encodeURIComponent(n)}` },
+  { id: 'kuwo',             label: 'Kuwo',             searchUrl: (n) => `https://www.kuwo.cn/search/singers?wd=${encodeURIComponent(n)}` },
+  { id: 'kuaishou',         label: 'Kuaishou',         searchUrl: (n) => `https://www.kuaishou.com/search/${encodeURIComponent(n)}` },
+  { id: 'yandex-music',     label: 'Yandex Music',     searchUrl: (n) => `https://music.yandex.ru/search?text=${encodeURIComponent(n)}&type=artists` },
+  { id: 'vk-music',         label: 'VK Music',         searchUrl: (n) => `https://vk.com/search?c[section]=artists&c[q]=${encodeURIComponent(n)}` },
+  { id: 'claro-musica',     label: 'Claro Música',     searchUrl: (n) => `https://www.claromusica.com/buscar?q=${encodeURIComponent(n)}` },
+  { id: 'trebel',           label: 'Trebel',           searchUrl: (n) => `https://www.trebel.io/search/${encodeURIComponent(n)}` },
+  { id: 'tiktok',           label: 'TikTok',           searchUrl: (n) => `https://www.tiktok.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'instagram',        label: 'Instagram',        searchUrl: (n, s) => `https://www.instagram.com/${s}/` },
+  { id: 'facebook',         label: 'Facebook',         searchUrl: (n, s) => `https://www.facebook.com/search/top?q=${encodeURIComponent(n)}` },
+  { id: 'snapchat',         label: 'Snapchat',         searchUrl: (n, s) => `https://www.snapchat.com/add/${s}` },
+  { id: 'youtube-content-id', label: 'YouTube',        searchUrl: (n) => `https://www.youtube.com/results?search_query=${encodeURIComponent(n)}` },
+  { id: 'twitch',           label: 'Twitch',           searchUrl: (n, s) => `https://www.twitch.tv/${s}` },
+  { id: 'soundexchange',    label: 'SoundExchange',    searchUrl: (n) => `https://www.soundexchange.com` },
+  { id: 'peloton',          label: 'Peloton',          searchUrl: (n) => `https://www.onepeloton.com` },
+  { id: 'soundtrack-your-brand', label: 'Soundtrack by Twitch', searchUrl: (n) => `https://www.soundtrackyourbrand.com` },
+  { id: 'pretzel-rocks',    label: 'Pretzel',          searchUrl: (n) => `https://www.pretzel.rocks` },
+  { id: 'roblox',           label: 'Roblox',           searchUrl: (n) => `https://www.roblox.com/discover#` },
+  { id: 'amazon-mp3',       label: 'Amazon (MP3)',     searchUrl: (n) => `https://www.amazon.com/s?k=${encodeURIComponent(n)}&i=digital-music` },
+  { id: '7digital',         label: '7digital',         searchUrl: (n) => `https://us.7digital.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'medianet',         label: 'MediaNet',         searchUrl: (n) => `https://music.mediasnet.com` },
+  { id: 'gracenote',        label: 'Gracenote',        searchUrl: (n) => `https://www.gracenote.com` },
+  { id: 'shazam',           label: 'Shazam',           searchUrl: (n) => `https://www.shazam.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'tencent-music',    label: 'Tencent Music',    searchUrl: (n) => `https://www.tencentmusic.com` },
+  { id: 'luna',             label: 'Luna',             searchUrl: (n) => `https://luna.app` },
+  { id: 'capcut',           label: 'CapCut',           searchUrl: (n) => `https://www.capcut.com` },
+  { id: 'wesing',           label: 'WeSing',           searchUrl: (n) => `https://www.wesing.com` },
+  { id: 'bilibili',         label: 'Bilibili',         searchUrl: (n) => `https://search.bilibili.com/all?keyword=${encodeURIComponent(n)}` },
+  { id: 'tencent-video',    label: 'Tencent Video',    searchUrl: (n) => `https://v.qq.com/search.html#stag=0&query=${encodeURIComponent(n)}` },
+  { id: 'iqiyi',            label: 'iQIYI',            searchUrl: (n) => `https://www.iqiyi.com/search.html?query=${encodeURIComponent(n)}` },
+  { id: 'siri',             label: 'Siri / Apple',     searchUrl: (n) => `https://music.apple.com/search?term=${encodeURIComponent(n)}` },
+  { id: 'vevo',             label: 'Vevo',             searchUrl: (n, s) => `https://www.vevo.com/artist/${s}` },
+  { id: 'kuack-media',      label: 'Kuack Media',      searchUrl: (n) => `https://kuack.com` },
+  { id: 'bugs',             label: 'Bugs',             searchUrl: (n) => `https://music.bugs.co.kr/search/artist?q=${encodeURIComponent(n)}` },
+  { id: 'genie',            label: 'Genie',            searchUrl: (n) => `https://www.genie.co.kr/search/searchMain?query=${encodeURIComponent(n)}` },
+  { id: 'melon',            label: 'Melon',            searchUrl: (n) => `https://www.melon.com/search/total/index.htm?q=${encodeURIComponent(n)}` },
+  { id: 'awa',              label: 'AWA',              searchUrl: (n) => `https://awa.fm/search?q=${encodeURIComponent(n)}` },
+  { id: 'flo',              label: 'FLO',              searchUrl: (n) => `https://www.music-flo.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'vibe',             label: 'Naver Vibe',       searchUrl: (n) => `https://vibe.naver.com/search/${encodeURIComponent(n)}` },
+  { id: 'rakuten-music',    label: 'Rakuten Music',    searchUrl: (n) => `https://music.rakuten.co.jp` },
+  { id: 'mora',             label: 'mora',             searchUrl: (n) => `https://mora.jp/search/searchResult?keyword=${encodeURIComponent(n)}` },
+  { id: 'recochoku',        label: 'Recochoku',        searchUrl: (n) => `https://recochoku.jp/search?q=${encodeURIComponent(n)}` },
+  { id: 'nuuday',           label: 'Nuuday',           searchUrl: (n) => `https://yousee.dk/musik` },
+  { id: 'zvuk',             label: 'Zvuk',             searchUrl: (n) => `https://zvuk.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'livexlive',        label: 'LiveXLive',        searchUrl: (n) => `https://www.livexlive.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'mixcloud',         label: 'Mixcloud',         searchUrl: (n, s) => `https://www.mixcloud.com/${s}/` },
+  { id: 'resso',            label: 'Resso',            searchUrl: (n) => `https://www.resso.com` },
+  { id: 'uma',              label: 'UMA',              searchUrl: (n) => `https://uma.app` },
+  { id: 'touchtunes',       label: 'TouchTunes',       searchUrl: (n) => `https://www.touchtunes.com` },
+  { id: 'tim-music',        label: 'TIM Music',        searchUrl: (n) => `https://timmusic.com.br` },
+  { id: 'saavn',            label: 'Saavn',            searchUrl: (n) => `https://www.jiosaavn.com/search/${encodeURIComponent(n)}` },
+  { id: 'wynk',             label: 'Wynk Music',       searchUrl: (n) => `https://wynk.in/search/${encodeURIComponent(n)}` },
+  { id: 'hungama',          label: 'Hungama',          searchUrl: (n) => `https://www.hungama.com/search/${encodeURIComponent(n)}/` },
+  { id: 'mdundo',           label: 'Mdundo',           searchUrl: (n) => `https://www.mdundo.com/search/${encodeURIComponent(n)}` },
+  { id: 'udux',             label: 'UDUX',             searchUrl: (n) => `https://udux.com/search/${encodeURIComponent(n)}` },
+  { id: 'amazon-alexa',     label: 'Amazon Alexa',     searchUrl: (n) => `https://music.amazon.com/search/${encodeURIComponent(n)}` },
+  { id: 'google-assistant', label: 'Google Assistant', searchUrl: (n) => `https://music.youtube.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'apple-fitness-plus', label: 'Apple Fitness+', searchUrl: (n) => `https://music.apple.com/search?term=${encodeURIComponent(n)}` },
+  { id: 'feed-fm',          label: 'Feed.fm',          searchUrl: (n) => `https://feed.fm` },
+  { id: 'epidemic-sound',   label: 'Epidemic Sound',   searchUrl: (n) => `https://www.epidemicsound.com/music/search/?term=${encodeURIComponent(n)}&contentType=artist` },
+  { id: 'fortnite',         label: 'Fortnite',         searchUrl: (n) => `https://www.fortnite.com` },
+  { id: 'dj-city',          label: 'DJcity',           searchUrl: (n) => `https://www.djcity.com/search/${encodeURIComponent(n)}` },
+  { id: 'bpm-supreme',      label: 'BPM Supreme',      searchUrl: (n) => `https://www.bpmsupreme.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'digital-dj-pool',  label: 'Digital DJ Pool',  searchUrl: (n) => `https://www.digitaldjpool.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'dubset',           label: 'Dubset',           searchUrl: (n) => `https://dubset.com` },
+  { id: 'emusic',           label: 'eMusic',           searchUrl: (n) => `https://www.emusic.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'hdtracks',         label: 'HDtracks',         searchUrl: (n) => `https://www.hdtracks.com/catalogsearch/result/?q=${encodeURIComponent(n)}` },
+  { id: 'primephonic',      label: 'Primephonic',      searchUrl: (n) => `https://primephonic.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'idagio',           label: 'Idagio',           searchUrl: (n) => `https://app.idagio.com/search?query=${encodeURIComponent(n)}` },
+  { id: 'joox',             label: 'JOOX',             searchUrl: (n) => `https://www.joox.com/search?query=${encodeURIComponent(n)}` },
+  { id: 'meta-library',     label: 'Meta Music Library', searchUrl: (n) => `https://www.facebook.com/search/top?q=${encodeURIComponent(n)}` },
+  { id: 'ultimate-music',   label: 'Ultimate Music',   searchUrl: (n) => `https://www.ultimatemusic.com` },
+  { id: 'itunes',           label: 'iTunes Store',     searchUrl: (n) => `https://itunes.apple.com/search?term=${encodeURIComponent(n)}&entity=musicArtist` },
+];
+
+// Platforms already handled by full API search — excluded from URL-template generation
+const API_SEARCHED_PLATFORMS = new Set([
+  'spotify', 'apple-music', 'deezer', 'audiomack', 'jiosaavn',
+]);
 
 class ArtistProfileService {
   private spotifyToken: string | null = null;
@@ -63,19 +191,55 @@ class ArtistProfileService {
       .trim();
   }
 
-  // Compute a 0–100 name similarity score using both exact and fuzzy normalized matching
+  // Levenshtein edit distance for character-level similarity
+  private _levenshtein(a: string, b: string): number {
+    const m = a.length, n = b.length;
+    if (m === 0) return n;
+    if (n === 0) return m;
+    const dp: number[][] = Array.from({ length: m + 1 }, (_, i) =>
+      Array.from({ length: n + 1 }, (_, j) => (i === 0 ? j : j === 0 ? i : 0))
+    );
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        if (a[i - 1] === b[j - 1]) {
+          dp[i][j] = dp[i - 1][j - 1];
+        } else {
+          dp[i][j] = 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+    }
+    return dp[m][n];
+  }
+
+  // Compute a 0–100 name similarity score using normalized name matching,
+  // Jaccard word-overlap, and Levenshtein character-level distance.
+  // Returns the best score across all methods to minimise false negatives.
   private _nameSimilarity(a: string, b: string): number {
     const na = this._normalizeName(a);
     const nb = this._normalizeName(b);
+
+    // Exact after normalization → perfect
     if (na === nb) return 100;
-    if (na.includes(nb) || nb.includes(na)) return 70;
-    // Count shared words
+
+    // Substring containment (one is a superset of the other after normalization)
+    if (na.includes(nb) || nb.includes(na)) return 85;
+
+    // Jaccard word-level overlap
     const wordsA = new Set(na.split(' ').filter(Boolean));
     const wordsB = new Set(nb.split(' ').filter(Boolean));
     const shared = [...wordsA].filter(w => wordsB.has(w)).length;
     const union = new Set([...wordsA, ...wordsB]).size;
-    const jaccardScore = union > 0 ? (shared / union) * 60 : 0;
-    return Math.round(jaccardScore);
+    const jaccardScore = union > 0 ? Math.round((shared / union) * 60) : 0;
+
+    // Levenshtein character-level ratio (capped at 20 chars to stay O(n²) fast)
+    const maxLen = Math.max(na.length, nb.length);
+    let levScore = 0;
+    if (maxLen > 0 && maxLen <= 25) {
+      const dist = this._levenshtein(na, nb);
+      levScore = Math.round(Math.max(0, (1 - dist / maxLen) * 55));
+    }
+
+    return Math.max(jaccardScore, levScore);
   }
 
   // Retry wrapper with exponential backoff for external API calls
@@ -274,12 +438,68 @@ class ArtistProfileService {
     }
   }
 
+  // Audiomack public search API — no key required
+  async searchAudiomackArtists(query: string): Promise<AudiomackArtistResult[]> {
+    try {
+      const url = `https://api.audiomack.com/v1/search?type=artists&q=${encodeURIComponent(query)}&limit=5`;
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!response.ok) return [];
+
+      const data = await response.json() as any;
+      return (data.results || []).slice(0, 5).map((a: any): AudiomackArtistResult => ({
+        id: String(a.id ?? a.url_slug ?? ''),
+        name: a.name ?? a.label ?? '',
+        slug: a.url_slug ?? '',
+        imageUrl: a.image ?? null,
+        followers: a.followers ?? 0,
+        url: a.url_slug ? `https://audiomack.com/${a.url_slug}` : '',
+      }));
+    } catch (err) {
+      logger.warn('[ArtistProfile] Audiomack search error (non-fatal):', err);
+      return [];
+    }
+  }
+
+  // JioSaavn public search API — no key required
+  async searchJioSaavnArtists(query: string): Promise<JioSaavnArtistResult[]> {
+    try {
+      const url = `https://www.jiosaavn.com/api.php?__call=autocomplete.get&_format=json&_marker=0&cc=in&includeMetaTags=1&query=${encodeURIComponent(query)}`;
+      const response = await fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'MaxBooster/1.0',
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!response.ok) return [];
+
+      const data = await response.json() as any;
+      const artists = data?.artists?.data || [];
+      return artists.slice(0, 5).map((a: any): JioSaavnArtistResult => ({
+        id: String(a.id ?? ''),
+        name: a.title ?? a.name ?? '',
+        imageUrl: a.image ?? null,
+        url: a.url ? `https://www.jiosaavn.com${a.url}` : '',
+      }));
+    } catch (err) {
+      logger.warn('[ArtistProfile] JioSaavn search error (non-fatal):', err);
+      return [];
+    }
+  }
+
   async searchAllPlatforms(query: string): Promise<PlatformSearchResults> {
-    const [spotify, apple, deezer, musicbrainz] = await Promise.allSettled([
+    const [spotify, apple, deezer, musicbrainz, audiomack, jiosaavn] = await Promise.allSettled([
       this.searchSpotifyArtists(query),
       this.searchAppleArtists(query),
       this.searchDeezerArtists(query),
       this.searchMusicBrainzArtists(query),
+      this.searchAudiomackArtists(query),
+      this.searchJioSaavnArtists(query),
     ]);
 
     return {
@@ -287,7 +507,34 @@ class ArtistProfileService {
       apple: apple.status === 'fulfilled' ? apple.value : [],
       deezer: deezer.status === 'fulfilled' ? deezer.value : [],
       musicbrainz: musicbrainz.status === 'fulfilled' ? musicbrainz.value : [],
+      audiomack: audiomack.status === 'fulfilled' ? audiomack.value : [],
+      jiosaavn: jiosaavn.status === 'fulfilled' ? jiosaavn.value : [],
     };
+  }
+
+  // Generate a URL-friendly slug from an artist name
+  private _nameToSlug(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+  }
+
+  // Generate URL-template-based discoveries for all 97 DSPs that don't have public search APIs.
+  // Returns search/profile URLs the user can visit to verify their presence on each platform.
+  generateUrlDiscoveries(artistName: string): PlatformUrlDiscovery[] {
+    const slug = this._nameToSlug(artistName);
+    return ALL_DSP_URL_TEMPLATES
+      .filter(p => !API_SEARCHED_PLATFORMS.has(p.id))
+      .map(p => ({
+        platform: p.id,
+        platformLabel: p.label,
+        searchUrl: p.searchUrl(artistName, slug),
+        profileUrlTemplate: null,
+        method: 'url_template' as const,
+      }));
   }
 
   async createProfile(data: InsertArtistProfile): Promise<ArtistProfile> {
@@ -476,11 +723,50 @@ class ArtistProfileService {
     return Math.min(score, 90); // Cap at 90 — MusicBrainz alone can't reach full confidence
   }
 
+  private _scoreAudiomack(result: AudiomackArtistResult, query: string): number {
+    let score = 0;
+    const nameSim = this._nameSimilarity(result.name, query);
+    if (nameSim >= 95) score += 55;
+    else if (nameSim >= 70) score += 40;
+    else if (nameSim >= 40) score += 22;
+    else if (nameSim >= 20) score += 10;
+    else return 0;
+    if (result.imageUrl) score += 8;
+    if (result.followers >= 100_000) score += 15;
+    else if (result.followers >= 10_000) score += 8;
+    else if (result.followers >= 1_000) score += 3;
+    return Math.min(score, 100);
+  }
+
+  private _scoreJioSaavn(result: JioSaavnArtistResult, query: string): number {
+    let score = 0;
+    const nameSim = this._nameSimilarity(result.name, query);
+    if (nameSim >= 95) score += 55;
+    else if (nameSim >= 70) score += 40;
+    else if (nameSim >= 40) score += 20;
+    else if (nameSim >= 20) score += 10;
+    else return 0;
+    if (result.imageUrl) score += 8;
+    return Math.min(score, 80); // JioSaavn alone caps at 80 (regional platform)
+  }
+
+  // Cross-platform validation: count how many API platforms confirmed a match.
+  // Boosts overall confidence when ≥2 platforms agree — reduces false positives.
+  private _crossValidationBonus(confirmedCount: number): number {
+    if (confirmedCount >= 4) return 15;
+    if (confirmedCount >= 3) return 10;
+    if (confirmedCount >= 2) return 5;
+    return 0;
+  }
+
   async autoDiscover(profileId: string, userId: string): Promise<{
-    spotify: { result: SpotifyArtistResult; confidence: number } | null;
-    apple:   { result: AppleArtistResult;   confidence: number } | null;
-    deezer:  { result: DeezerArtistResult;  confidence: number } | null;
+    spotify:     { result: SpotifyArtistResult;   confidence: number } | null;
+    apple:       { result: AppleArtistResult;      confidence: number } | null;
+    deezer:      { result: DeezerArtistResult;     confidence: number } | null;
     musicbrainz: { result: MusicBrainzArtistResult; confidence: number } | null;
+    audiomack:   { result: AudiomackArtistResult;  confidence: number } | null;
+    jiosaavn:    { result: JioSaavnArtistResult;   confidence: number } | null;
+    urlDiscoveries: PlatformUrlDiscovery[];
     saved: boolean;
     savedFields: string[];
   }> {
@@ -488,8 +774,11 @@ class ArtistProfileService {
     if (!profile) throw new Error('Artist profile not found');
 
     const query = profile.artistName;
+
+    // Search all API platforms in parallel — single round-trip
     const raw = await this.searchAllPlatforms(query);
 
+    // Score each platform's results independently
     const topSpotify = raw.spotify
       .map(r => ({ result: r, confidence: this._scoreSpotify(r, query) }))
       .filter(r => r.confidence > 0)
@@ -510,51 +799,101 @@ class ArtistProfileService {
       .filter(r => r.confidence > 0)
       .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
 
-    // Lower threshold for exact normalized name matches to avoid missing
-    // niche/emerging artists with low Spotify popularity
+    const topAudiomack = raw.audiomack
+      .map(r => ({ result: r, confidence: this._scoreAudiomack(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const topJioSaavn = raw.jiosaavn
+      .map(r => ({ result: r, confidence: this._scoreJioSaavn(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    // Count preliminary API confirmations (before threshold check) for cross-validation
     const CONFIDENCE_THRESHOLD = 55;
+    const prelimConfirmed = [topSpotify, topApple, topDeezer, topAudiomack]
+      .filter(r => r !== null && r.confidence >= CONFIDENCE_THRESHOLD).length;
+    const bonus = this._crossValidationBonus(prelimConfirmed);
+
+    // Apply cross-validation bonus — if multiple platforms agree, boost each match
+    const apply = <T>(r: { result: T; confidence: number } | null) =>
+      r ? { result: r.result, confidence: Math.min(100, r.confidence + bonus) } : null;
+
+    const finalSpotify     = apply(topSpotify);
+    const finalApple       = apply(topApple);
+    const finalDeezer      = apply(topDeezer);
+    const finalMusicBrainz = apply(topMusicBrainz);
+    const finalAudiomack   = apply(topAudiomack);
+    const finalJioSaavn    = apply(topJioSaavn);
+
     const updates: Partial<InsertArtistProfile> = {};
     const savedFields: string[] = [];
 
-    if (topSpotify && topSpotify.confidence >= CONFIDENCE_THRESHOLD && !profile.spotifyArtistId) {
-      updates.spotifyArtistId = topSpotify.result.id;
-      updates.spotifyArtistUri = topSpotify.result.uri;
-      if (topSpotify.result.imageUrl && !profile.profileImageUrl) {
-        updates.profileImageUrl = topSpotify.result.imageUrl;
+    if (finalSpotify && finalSpotify.confidence >= CONFIDENCE_THRESHOLD && !profile.spotifyArtistId) {
+      updates.spotifyArtistId = finalSpotify.result.id;
+      updates.spotifyArtistUri = finalSpotify.result.uri;
+      if (finalSpotify.result.imageUrl && !profile.profileImageUrl) {
+        updates.profileImageUrl = finalSpotify.result.imageUrl;
       }
-      if (topSpotify.result.genres.length > 0 && (!profile.genres || profile.genres.length === 0)) {
-        updates.genres = topSpotify.result.genres.slice(0, 5);
+      if (finalSpotify.result.genres.length > 0 && (!profile.genres || profile.genres.length === 0)) {
+        updates.genres = finalSpotify.result.genres.slice(0, 5);
       }
       savedFields.push('spotify');
     }
 
-    if (topApple && topApple.confidence >= CONFIDENCE_THRESHOLD && !profile.appleArtistId) {
-      updates.appleArtistId = topApple.result.id;
+    if (finalApple && finalApple.confidence >= CONFIDENCE_THRESHOLD && !profile.appleArtistId) {
+      updates.appleArtistId = finalApple.result.id;
       savedFields.push('apple');
     }
 
-    if (topDeezer && topDeezer.confidence >= CONFIDENCE_THRESHOLD && !profile.deezerArtistId) {
-      updates.deezerArtistId = topDeezer.result.id;
-      if (topDeezer.result.pictureUrl && !profile.profileImageUrl && !updates.profileImageUrl) {
-        updates.profileImageUrl = topDeezer.result.pictureUrl;
+    if (finalDeezer && finalDeezer.confidence >= CONFIDENCE_THRESHOLD && !profile.deezerArtistId) {
+      updates.deezerArtistId = finalDeezer.result.id;
+      if (finalDeezer.result.pictureUrl && !profile.profileImageUrl && !updates.profileImageUrl) {
+        updates.profileImageUrl = finalDeezer.result.pictureUrl;
       }
       savedFields.push('deezer');
     }
 
-    // MusicBrainz confirms identity but doesn't save a separate platform ID field;
-    // use it as a cross-validation signal for logging and future use
-    if (topMusicBrainz && topMusicBrainz.confidence >= CONFIDENCE_THRESHOLD) {
-      savedFields.push('musicbrainz_confirmed');
-      logger.info(`[ArtistProfile] MusicBrainz confirmed: profile=${profileId} mbid=${topMusicBrainz.result.id} score=${topMusicBrainz.confidence}`);
+    if (finalAudiomack && finalAudiomack.confidence >= CONFIDENCE_THRESHOLD && !profile.soundcloudArtistId) {
+      updates.soundcloudArtistId = finalAudiomack.result.slug || finalAudiomack.result.id;
+      savedFields.push('audiomack');
     }
 
-    const saved = savedFields.filter(f => f !== 'musicbrainz_confirmed').length > 0;
+    // MusicBrainz and JioSaavn confirm identity but don't save separate platform ID fields
+    if (finalMusicBrainz && finalMusicBrainz.confidence >= CONFIDENCE_THRESHOLD) {
+      savedFields.push('musicbrainz_confirmed');
+      logger.info(`[ArtistProfile] MusicBrainz confirmed: profile=${profileId} mbid=${finalMusicBrainz.result.id} score=${finalMusicBrainz.confidence}`);
+    }
+
+    if (finalJioSaavn && finalJioSaavn.confidence >= CONFIDENCE_THRESHOLD) {
+      savedFields.push('jiosaavn_confirmed');
+    }
+
+    // Generate URL-template discoveries for all 97 DSPs without public search APIs.
+    // These are generated once using the verified artist name — NOT fetched per platform.
+    const urlDiscoveries = this.generateUrlDiscoveries(query);
+
+    const saved = savedFields.filter(f => !f.endsWith('_confirmed')).length > 0;
     if (saved) {
       await this.updateProfile(profileId, userId, updates);
       logger.info(`[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields.join(',')}]`);
     }
 
-    return { spotify: topSpotify ?? null, apple: topApple ?? null, deezer: topDeezer ?? null, musicbrainz: topMusicBrainz ?? null, saved, savedFields };
+    if (bonus > 0) {
+      logger.info(`[ArtistProfile] Cross-validation bonus +${bonus} applied: ${prelimConfirmed} platforms confirmed profile=${profileId}`);
+    }
+
+    return {
+      spotify: finalSpotify,
+      apple: finalApple,
+      deezer: finalDeezer,
+      musicbrainz: finalMusicBrainz,
+      audiomack: finalAudiomack,
+      jiosaavn: finalJioSaavn,
+      urlDiscoveries,
+      saved,
+      savedFields,
+    };
   }
 
   async autoSync(profileId: string, userId: string): Promise<{

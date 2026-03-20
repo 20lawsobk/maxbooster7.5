@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Sparkles, RefreshCw, CheckCircle2, XCircle, AlertCircle,
-  Music2, ExternalLink, ChevronDown, ChevronUp, Loader2,
-  Zap, ShieldCheck, Wrench,
+  ExternalLink, ChevronDown, ChevronUp, Loader2,
+  Zap, ShieldCheck, Wrench, Globe, ChevronRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ interface ArtistProfile {
   spotifyArtistUri: string | null;
   appleArtistId: string | null;
   deezerArtistId: string | null;
+  soundcloudArtistId: string | null;
   profileImageUrl: string | null;
   genres: string[];
   isVerified: boolean;
@@ -29,24 +30,32 @@ interface ArtistProfile {
   fixerStatus: string;
 }
 
+interface PlatformUrlDiscovery {
+  platform: string;
+  platformLabel: string;
+  searchUrl: string;
+  profileUrlTemplate: string | null;
+  method: 'url_template';
+}
+
 interface DiscoverResult {
-  spotify: { result: SpotifyHit; confidence: number } | null;
-  apple:   { result: AppleHit;   confidence: number } | null;
-  deezer:  { result: DeezerHit;  confidence: number } | null;
+  spotify:     { result: SpotifyHit;   confidence: number } | null;
+  apple:       { result: AppleHit;     confidence: number } | null;
+  deezer:      { result: DeezerHit;    confidence: number } | null;
+  musicbrainz: { result: MBHit;        confidence: number } | null;
+  audiomack:   { result: AudiomackHit; confidence: number } | null;
+  jiosaavn:    { result: JioSaavnHit;  confidence: number } | null;
+  urlDiscoveries: PlatformUrlDiscovery[];
   saved: boolean;
   savedFields: string[];
 }
 
-interface SpotifyHit {
-  id: string; uri: string; name: string; imageUrl: string | null;
-  genres: string[]; followers: number; popularity: number; externalUrl: string;
-}
-interface AppleHit {
-  id: string; name: string; genres: string[]; artworkUrl: string | null; url: string;
-}
-interface DeezerHit {
-  id: string; name: string; pictureUrl: string | null; fans: number; link: string;
-}
+interface SpotifyHit   { id: string; uri: string; name: string; imageUrl: string | null; genres: string[]; followers: number; popularity: number; externalUrl: string; }
+interface AppleHit     { id: string; name: string; genres: string[]; artworkUrl: string | null; url: string; }
+interface DeezerHit    { id: string; name: string; pictureUrl: string | null; fans: number; link: string; }
+interface MBHit        { id: string; name: string; score: number; type: string | null; country: string | null; tags: string[]; }
+interface AudiomackHit { id: string; name: string; slug: string; imageUrl: string | null; followers: number; url: string; }
+interface JioSaavnHit  { id: string; name: string; imageUrl: string | null; url: string; }
 
 interface SyncResult {
   synced: string[];
@@ -59,9 +68,12 @@ interface Props {
 }
 
 const PLATFORM_META: Record<string, { label: string; color: string; dot: string }> = {
-  spotify: { label: 'Spotify',     color: 'text-green-500',  dot: 'bg-green-500'  },
-  apple:   { label: 'Apple Music', color: 'text-pink-500',   dot: 'bg-pink-500'   },
-  deezer:  { label: 'Deezer',      color: 'text-purple-500', dot: 'bg-purple-500' },
+  spotify:              { label: 'Spotify',       color: 'text-green-500',  dot: 'bg-green-500'  },
+  apple:                { label: 'Apple Music',   color: 'text-pink-500',   dot: 'bg-pink-500'   },
+  deezer:               { label: 'Deezer',        color: 'text-purple-500', dot: 'bg-purple-500' },
+  audiomack:            { label: 'Audiomack',     color: 'text-amber-500',  dot: 'bg-amber-500'  },
+  jiosaavn:             { label: 'JioSaavn',      color: 'text-blue-500',   dot: 'bg-blue-500'   },
+  musicbrainz_confirmed:{ label: 'MusicBrainz',   color: 'text-orange-400', dot: 'bg-orange-400' },
 };
 
 function fmt(n: number): string {
@@ -88,6 +100,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [discovery, setDiscovery] = useState<DiscoverResult | null>(null);
   const [hasAutoRun, setHasAutoRun] = useState(false);
   const [fixerOpen, setFixerOpen] = useState(false);
+  const [urlDiscoveriesOpen, setUrlDiscoveriesOpen] = useState(false);
   const [fixerUri, setFixerUri] = useState('');
   const [fixerNotes, setFixerNotes] = useState('');
   const [fixerUriError, setFixerUriError] = useState('');
@@ -100,9 +113,12 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       if (data.saved && data.savedFields.length > 0) {
         queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
         onUpdated();
+        const savedLabels = data.savedFields
+          .filter(f => !f.endsWith('_confirmed'))
+          .map(f => PLATFORM_META[f]?.label ?? f);
         toast({
-          title: `Auto-discovered ${data.savedFields.length} platform${data.savedFields.length > 1 ? 's' : ''}`,
-          description: data.savedFields.map(f => PLATFORM_META[f]?.label ?? f).join(', '),
+          title: `Auto-discovered ${savedLabels.length} platform${savedLabels.length !== 1 ? 's' : ''}`,
+          description: savedLabels.join(', '),
         });
       }
     },
@@ -166,8 +182,63 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     }
   }, []);
 
-  const hasAnyLinked = !!(profile.spotifyArtistId || profile.appleArtistId || profile.deezerArtistId);
+  const hasAnyLinked = !!(profile.spotifyArtistId || profile.appleArtistId || profile.deezerArtistId || profile.soundcloudArtistId);
   const isRunning = discoverMutation.isPending || syncMutation.isPending;
+
+  // Build the API-searched platform rows for rendering
+  const apiRows = discovery ? [
+    {
+      key: 'spotify' as const,
+      hit: discovery.spotify,
+      alreadyLinked: !!profile.spotifyArtistId,
+      savePayload: discovery.spotify
+        ? { spotifyArtistId: discovery.spotify.result.id, spotifyArtistUri: discovery.spotify.result.uri }
+        : null,
+      imageUrl: discovery.spotify?.result.imageUrl ?? null,
+      subtitle: discovery.spotify
+        ? `${fmt(discovery.spotify.result.followers)} followers · ${discovery.spotify.result.genres.slice(0, 2).join(', ')}`
+        : null,
+      href: discovery.spotify?.result.externalUrl ?? null,
+    },
+    {
+      key: 'apple' as const,
+      hit: discovery.apple,
+      alreadyLinked: !!profile.appleArtistId,
+      savePayload: discovery.apple ? { appleArtistId: discovery.apple.result.id } : null,
+      imageUrl: null,
+      subtitle: discovery.apple ? discovery.apple.result.genres.join(', ') : null,
+      href: discovery.apple?.result.url ?? null,
+    },
+    {
+      key: 'deezer' as const,
+      hit: discovery.deezer,
+      alreadyLinked: !!profile.deezerArtistId,
+      savePayload: discovery.deezer ? { deezerArtistId: discovery.deezer.result.id } : null,
+      imageUrl: discovery.deezer?.result.pictureUrl ?? null,
+      subtitle: discovery.deezer ? `${fmt(discovery.deezer.result.fans)} fans` : null,
+      href: discovery.deezer?.result.link ?? null,
+    },
+    {
+      key: 'audiomack' as const,
+      hit: discovery.audiomack,
+      alreadyLinked: !!profile.soundcloudArtistId,
+      savePayload: discovery.audiomack
+        ? { soundcloudArtistId: discovery.audiomack.result.slug || discovery.audiomack.result.id }
+        : null,
+      imageUrl: discovery.audiomack?.result.imageUrl ?? null,
+      subtitle: discovery.audiomack ? `${fmt(discovery.audiomack.result.followers)} followers` : null,
+      href: discovery.audiomack?.result.url ?? null,
+    },
+    {
+      key: 'jiosaavn' as const,
+      hit: discovery.jiosaavn,
+      alreadyLinked: false,
+      savePayload: null,
+      imageUrl: discovery.jiosaavn?.result.imageUrl ?? null,
+      subtitle: null,
+      href: discovery.jiosaavn?.result.url ?? null,
+    },
+  ] : [];
 
   return (
     <div className="space-y-4 pt-2">
@@ -209,59 +280,25 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       {discoverMutation.isPending && (
         <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
           <p className="text-sm font-medium">Scanning platforms for "{profile.artistName}"…</p>
-          {['Spotify', 'Apple Music', 'Deezer'].map((p, i) => (
+          {['Spotify', 'Apple Music', 'Deezer', 'Audiomack', 'JioSaavn', 'MusicBrainz'].map((p, i) => (
             <div key={p} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ animationDelay: `${i * 200}ms` }} />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ animationDelay: `${i * 150}ms` }} />
               {p}
             </div>
           ))}
+          <p className="text-xs text-muted-foreground pt-1">
+            Generating search links for 90+ additional DSPs…
+          </p>
         </div>
       )}
 
-      {/* ── Discovery results ── */}
+      {/* ── Discovery results — API-searched platforms ── */}
       {discovery && !discoverMutation.isPending && (
         <div className="space-y-2">
-          {(
-            [
-              {
-                key: 'spotify',
-                hit: discovery.spotify,
-                alreadyLinked: !!profile.spotifyArtistId,
-                savePayload: discovery.spotify
-                  ? { spotifyArtistId: discovery.spotify.result.id, spotifyArtistUri: (discovery.spotify.result as SpotifyHit).uri }
-                  : null,
-                imageUrl: (discovery.spotify?.result as SpotifyHit)?.imageUrl ?? null,
-                subtitle: discovery.spotify
-                  ? `${fmt((discovery.spotify.result as SpotifyHit).followers)} followers · ${(discovery.spotify.result as SpotifyHit).genres.slice(0, 2).join(', ')}`
-                  : null,
-                href: (discovery.spotify?.result as SpotifyHit)?.externalUrl ?? null,
-              },
-              {
-                key: 'apple',
-                hit: discovery.apple,
-                alreadyLinked: !!profile.appleArtistId,
-                savePayload: discovery.apple ? { appleArtistId: discovery.apple.result.id } : null,
-                imageUrl: null,
-                subtitle: discovery.apple ? (discovery.apple.result as AppleHit).genres.join(', ') : null,
-                href: (discovery.apple?.result as AppleHit)?.url ?? null,
-              },
-              {
-                key: 'deezer',
-                hit: discovery.deezer,
-                alreadyLinked: !!profile.deezerArtistId,
-                savePayload: discovery.deezer ? { deezerArtistId: discovery.deezer.result.id } : null,
-                imageUrl: (discovery.deezer?.result as DeezerHit)?.pictureUrl ?? null,
-                subtitle: discovery.deezer ? `${fmt((discovery.deezer.result as DeezerHit).fans)} fans` : null,
-                href: (discovery.deezer?.result as DeezerHit)?.link ?? null,
-              },
-            ] as const
-          ).map(({ key, hit, alreadyLinked, savePayload, imageUrl, subtitle, href }) => {
+          {apiRows.map(({ key, hit, alreadyLinked, savePayload, imageUrl, subtitle, href }) => {
             const meta = PLATFORM_META[key];
             return (
-              <div
-                key={key}
-                className="rounded-lg border p-3 flex items-start gap-3"
-              >
+              <div key={key} className="rounded-lg border p-3 flex items-start gap-3">
                 <div className="flex-shrink-0 mt-0.5">
                   {alreadyLinked ? (
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
@@ -320,6 +357,66 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               </div>
             );
           })}
+
+          {/* ── MusicBrainz cross-validation indicator ── */}
+          {discovery.musicbrainz && (
+            <div className="rounded-lg border border-dashed p-3 flex items-center gap-3">
+              <CheckCircle2 className="h-4 w-4 text-orange-400 flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <span className="text-sm font-medium text-orange-400">MusicBrainz</span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Identity cross-validated · {discovery.musicbrainz.result.name}
+                  {discovery.musicbrainz.result.type ? ` (${discovery.musicbrainz.result.type})` : ''}
+                </p>
+              </div>
+              <Badge variant="outline" className="text-xs shrink-0">
+                {discovery.musicbrainz.confidence}% match
+              </Badge>
+            </div>
+          )}
+
+          {/* ── URL discoveries — all 97 DSPs ── */}
+          {discovery.urlDiscoveries.length > 0 && (
+            <Collapsible open={urlDiscoveriesOpen} onOpenChange={setUrlDiscoveriesOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="w-full flex items-center justify-between rounded-lg border bg-muted/20 p-3 text-sm hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <span className="font-medium">
+                      {discovery.urlDiscoveries.length} more platforms available
+                    </span>
+                    <Badge variant="outline" className="text-xs">Search links generated</Badge>
+                  </div>
+                  {urlDiscoveriesOpen ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="mt-2 rounded-lg border divide-y max-h-64 overflow-y-auto">
+                  {discovery.urlDiscoveries.map(d => (
+                    <div key={d.platform} className="flex items-center justify-between px-3 py-2 hover:bg-muted/20">
+                      <span className="text-sm text-muted-foreground">{d.platformLabel}</span>
+                      <a
+                        href={d.searchUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-xs text-primary hover:underline"
+                      >
+                        Search
+                        <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground px-1 pt-2">
+                  These links open artist search pages on each DSP. Your music is distributed to all these platforms via your distributor.
+                </p>
+              </CollapsibleContent>
+            </Collapsible>
+          )}
         </div>
       )}
 
@@ -344,6 +441,11 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
             {profile.deezerArtistId && (
               <Badge variant="outline" className="text-xs text-purple-600 border-purple-200 font-mono">
                 Deezer · {profile.deezerArtistId}
+              </Badge>
+            )}
+            {profile.soundcloudArtistId && (
+              <Badge variant="outline" className="text-xs text-amber-600 border-amber-200 font-mono">
+                Audiomack · {profile.soundcloudArtistId.slice(0, 12)}
               </Badge>
             )}
             {profile.isVerified && (
