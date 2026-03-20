@@ -30,6 +30,7 @@ interface DeezerArtistResult {
   name: string;
   pictureUrl: string | null;
   fans: number;
+  nbAlbum: number;
   link: string;
 }
 
@@ -94,7 +95,7 @@ const ALL_DSP_URL_TEMPLATES: Array<{ id: string; label: string; searchUrl: (name
   { id: 'juno-download',    label: 'Juno Download',    searchUrl: (n) => `https://www.junodownload.com/search/?order=jd_date_of_pub+desc&q%5Bf%5D%5B0%5D=artists&q%5Bsub%5D%5B0%5D=${encodeURIComponent(n)}` },
   { id: 'boomplay',         label: 'Boomplay',         searchUrl: (n) => `https://www.boomplay.com/search/default/${encodeURIComponent(n)}` },
   { id: 'anghami',          label: 'Anghami',          searchUrl: (n) => `https://play.anghami.com/search?q=${encodeURIComponent(n)}&type=artists` },
-  { id: 'gaana',            label: 'Gaana',            searchUrl: (n, s) => `https://gaana.com/search/${s}` },
+  { id: 'gaana',            label: 'Gaana',            searchUrl: (n) => `https://gaana.com/search/${encodeURIComponent(n)}` },
   { id: 'kkbox',            label: 'KKBOX',            searchUrl: (n) => `https://www.kkbox.com/tw/en/search/${encodeURIComponent(n)}/artist` },
   { id: 'line-music',       label: 'LINE MUSIC',       searchUrl: (n) => `https://music.line.me/webapp/search/artists?query=${encodeURIComponent(n)}` },
   { id: 'netease-cloud-music', label: 'NetEase Cloud Music', searchUrl: (n) => `https://music.163.com/#/search/m/?s=${encodeURIComponent(n)}&type=100` },
@@ -112,43 +113,43 @@ const ALL_DSP_URL_TEMPLATES: Array<{ id: string; label: string; searchUrl: (name
   { id: 'snapchat',         label: 'Snapchat',         searchUrl: (n, s) => `https://www.snapchat.com/add/${s}` },
   { id: 'youtube-content-id', label: 'YouTube',        searchUrl: (n) => `https://www.youtube.com/results?search_query=${encodeURIComponent(n)}` },
   { id: 'twitch',           label: 'Twitch',           searchUrl: (n, s) => `https://www.twitch.tv/${s}` },
-  { id: 'soundexchange',    label: 'SoundExchange',    searchUrl: (n) => `https://www.soundexchange.com` },
-  { id: 'peloton',          label: 'Peloton',          searchUrl: (n) => `https://www.onepeloton.com` },
-  { id: 'soundtrack-your-brand', label: 'Soundtrack by Twitch', searchUrl: (n) => `https://www.soundtrackyourbrand.com` },
-  { id: 'pretzel-rocks',    label: 'Pretzel',          searchUrl: (n) => `https://www.pretzel.rocks` },
-  { id: 'roblox',           label: 'Roblox',           searchUrl: (n) => `https://www.roblox.com/discover#` },
+  { id: 'soundexchange',    label: 'SoundExchange',    searchUrl: (n) => `https://www.soundexchange.com/artist-registration/` },
+  { id: 'peloton',          label: 'Peloton',          searchUrl: (n) => `https://www.onepeloton.com/music` },
+  { id: 'soundtrack-your-brand', label: 'Soundtrack Your Brand', searchUrl: (n) => `https://www.soundtrackyourbrand.com/music?search=${encodeURIComponent(n)}` },
+  { id: 'pretzel-rocks',    label: 'Pretzel',          searchUrl: (n) => `https://www.pretzel.rocks/search?query=${encodeURIComponent(n)}` },
+  { id: 'roblox',           label: 'Roblox',           searchUrl: (n) => `https://www.roblox.com/search/people?keyword=${encodeURIComponent(n)}` },
   { id: 'amazon-mp3',       label: 'Amazon (MP3)',     searchUrl: (n) => `https://www.amazon.com/s?k=${encodeURIComponent(n)}&i=digital-music` },
   { id: '7digital',         label: '7digital',         searchUrl: (n) => `https://us.7digital.com/search?q=${encodeURIComponent(n)}` },
-  { id: 'medianet',         label: 'MediaNet',         searchUrl: (n) => `https://music.mediasnet.com` },
-  { id: 'gracenote',        label: 'Gracenote',        searchUrl: (n) => `https://www.gracenote.com` },
+  { id: 'medianet',         label: 'MediaNet',         searchUrl: (n) => `https://www.mndigital.com` },
+  { id: 'gracenote',        label: 'Gracenote',        searchUrl: (n) => `https://www.gracenote.com/music/` },
   { id: 'shazam',           label: 'Shazam',           searchUrl: (n) => `https://www.shazam.com/search?q=${encodeURIComponent(n)}` },
-  { id: 'tencent-music',    label: 'Tencent Music',    searchUrl: (n) => `https://www.tencentmusic.com` },
-  { id: 'luna',             label: 'Luna',             searchUrl: (n) => `https://luna.app` },
-  { id: 'capcut',           label: 'CapCut',           searchUrl: (n) => `https://www.capcut.com` },
-  { id: 'wesing',           label: 'WeSing',           searchUrl: (n) => `https://www.wesing.com` },
+  { id: 'tencent-music',    label: 'Tencent Music',    searchUrl: (n) => `https://y.qq.com/portal/search.html#searchid=1&remoteplace=txt.yqq.top&query=${encodeURIComponent(n)}` },
+  { id: 'luna',             label: 'Luna Music',       searchUrl: (n) => `https://www.lunamusic.ai/search?q=${encodeURIComponent(n)}` },
+  { id: 'capcut',           label: 'CapCut',           searchUrl: (n) => `https://www.capcut.com/explore?search=${encodeURIComponent(n)}&type=music` },
+  { id: 'wesing',           label: 'WeSing',           searchUrl: (n) => `https://m.wesing.com/search?keywords=${encodeURIComponent(n)}` },
   { id: 'bilibili',         label: 'Bilibili',         searchUrl: (n) => `https://search.bilibili.com/all?keyword=${encodeURIComponent(n)}` },
   { id: 'tencent-video',    label: 'Tencent Video',    searchUrl: (n) => `https://v.qq.com/search.html#stag=0&query=${encodeURIComponent(n)}` },
   { id: 'iqiyi',            label: 'iQIYI',            searchUrl: (n) => `https://www.iqiyi.com/search.html?query=${encodeURIComponent(n)}` },
   { id: 'siri',             label: 'Siri / Apple',     searchUrl: (n) => `https://music.apple.com/search?term=${encodeURIComponent(n)}` },
   { id: 'vevo',             label: 'Vevo',             searchUrl: (n, s) => `https://www.vevo.com/artist/${s}` },
-  { id: 'kuack-media',      label: 'Kuack Media',      searchUrl: (n) => `https://kuack.com` },
+  { id: 'kuack-media',      label: 'Kuack Media',      searchUrl: (n) => `https://kuack.com/search?q=${encodeURIComponent(n)}` },
   { id: 'bugs',             label: 'Bugs',             searchUrl: (n) => `https://music.bugs.co.kr/search/artist?q=${encodeURIComponent(n)}` },
   { id: 'genie',            label: 'Genie',            searchUrl: (n) => `https://www.genie.co.kr/search/searchMain?query=${encodeURIComponent(n)}` },
   { id: 'melon',            label: 'Melon',            searchUrl: (n) => `https://www.melon.com/search/total/index.htm?q=${encodeURIComponent(n)}` },
   { id: 'awa',              label: 'AWA',              searchUrl: (n) => `https://awa.fm/search?q=${encodeURIComponent(n)}` },
   { id: 'flo',              label: 'FLO',              searchUrl: (n) => `https://www.music-flo.com/search?q=${encodeURIComponent(n)}` },
   { id: 'vibe',             label: 'Naver Vibe',       searchUrl: (n) => `https://vibe.naver.com/search/${encodeURIComponent(n)}` },
-  { id: 'rakuten-music',    label: 'Rakuten Music',    searchUrl: (n) => `https://music.rakuten.co.jp` },
+  { id: 'rakuten-music',    label: 'Rakuten Music',    searchUrl: (n) => `https://music.rakuten.co.jp/search/artist/?word=${encodeURIComponent(n)}` },
   { id: 'mora',             label: 'mora',             searchUrl: (n) => `https://mora.jp/search/searchResult?keyword=${encodeURIComponent(n)}` },
   { id: 'recochoku',        label: 'Recochoku',        searchUrl: (n) => `https://recochoku.jp/search?q=${encodeURIComponent(n)}` },
-  { id: 'nuuday',           label: 'Nuuday',           searchUrl: (n) => `https://yousee.dk/musik` },
+  { id: 'nuuday',           label: 'Nuuday / YouSee',  searchUrl: (n) => `https://yousee.dk/musik/search?q=${encodeURIComponent(n)}` },
   { id: 'zvuk',             label: 'Zvuk',             searchUrl: (n) => `https://zvuk.com/search?q=${encodeURIComponent(n)}` },
   { id: 'livexlive',        label: 'LiveXLive',        searchUrl: (n) => `https://www.livexlive.com/search?q=${encodeURIComponent(n)}` },
   { id: 'mixcloud',         label: 'Mixcloud',         searchUrl: (n, s) => `https://www.mixcloud.com/${s}/` },
-  { id: 'resso',            label: 'Resso',            searchUrl: (n) => `https://www.resso.com` },
-  { id: 'uma',              label: 'UMA',              searchUrl: (n) => `https://uma.app` },
-  { id: 'touchtunes',       label: 'TouchTunes',       searchUrl: (n) => `https://www.touchtunes.com` },
-  { id: 'tim-music',        label: 'TIM Music',        searchUrl: (n) => `https://timmusic.com.br` },
+  { id: 'resso',            label: 'Resso',            searchUrl: (n) => `https://www.resso.com/search?q=${encodeURIComponent(n)}` },
+  { id: 'uma',              label: 'UMA',              searchUrl: (n) => `https://uma.app/search?q=${encodeURIComponent(n)}` },
+  { id: 'touchtunes',       label: 'TouchTunes',       searchUrl: (n) => `https://www.touchtunes.com/music/search?q=${encodeURIComponent(n)}` },
+  { id: 'tim-music',        label: 'TIM Music',        searchUrl: (n) => `https://timmusic.com.br/busca/${encodeURIComponent(n)}` },
   { id: 'saavn',            label: 'Saavn',            searchUrl: (n) => `https://www.jiosaavn.com/search/${encodeURIComponent(n)}` },
   { id: 'wynk',             label: 'Wynk Music',       searchUrl: (n) => `https://wynk.in/search/${encodeURIComponent(n)}` },
   { id: 'hungama',          label: 'Hungama',          searchUrl: (n) => `https://www.hungama.com/search/${encodeURIComponent(n)}/` },
@@ -157,20 +158,20 @@ const ALL_DSP_URL_TEMPLATES: Array<{ id: string; label: string; searchUrl: (name
   { id: 'amazon-alexa',     label: 'Amazon Alexa',     searchUrl: (n) => `https://music.amazon.com/search/${encodeURIComponent(n)}` },
   { id: 'google-assistant', label: 'Google Assistant', searchUrl: (n) => `https://music.youtube.com/search?q=${encodeURIComponent(n)}` },
   { id: 'apple-fitness-plus', label: 'Apple Fitness+', searchUrl: (n) => `https://music.apple.com/search?term=${encodeURIComponent(n)}` },
-  { id: 'feed-fm',          label: 'Feed.fm',          searchUrl: (n) => `https://feed.fm` },
+  { id: 'feed-fm',          label: 'Feed.fm',          searchUrl: (n) => `https://feed.fm/publishers/` },
   { id: 'epidemic-sound',   label: 'Epidemic Sound',   searchUrl: (n) => `https://www.epidemicsound.com/music/search/?term=${encodeURIComponent(n)}&contentType=artist` },
-  { id: 'fortnite',         label: 'Fortnite',         searchUrl: (n) => `https://www.fortnite.com` },
+  { id: 'fortnite',         label: 'Fortnite',         searchUrl: (n) => `https://www.fortnite.com/news` },
   { id: 'dj-city',          label: 'DJcity',           searchUrl: (n) => `https://www.djcity.com/search/${encodeURIComponent(n)}` },
   { id: 'bpm-supreme',      label: 'BPM Supreme',      searchUrl: (n) => `https://www.bpmsupreme.com/search?q=${encodeURIComponent(n)}` },
   { id: 'digital-dj-pool',  label: 'Digital DJ Pool',  searchUrl: (n) => `https://www.digitaldjpool.com/search?q=${encodeURIComponent(n)}` },
-  { id: 'dubset',           label: 'Dubset',           searchUrl: (n) => `https://dubset.com` },
+  { id: 'dubset',           label: 'Dubset / Songtradr', searchUrl: (n) => `https://www.songtradr.com/search?q=${encodeURIComponent(n)}` },
   { id: 'emusic',           label: 'eMusic',           searchUrl: (n) => `https://www.emusic.com/search?q=${encodeURIComponent(n)}` },
   { id: 'hdtracks',         label: 'HDtracks',         searchUrl: (n) => `https://www.hdtracks.com/catalogsearch/result/?q=${encodeURIComponent(n)}` },
   { id: 'primephonic',      label: 'Primephonic',      searchUrl: (n) => `https://primephonic.com/search?q=${encodeURIComponent(n)}` },
   { id: 'idagio',           label: 'Idagio',           searchUrl: (n) => `https://app.idagio.com/search?query=${encodeURIComponent(n)}` },
   { id: 'joox',             label: 'JOOX',             searchUrl: (n) => `https://www.joox.com/search?query=${encodeURIComponent(n)}` },
   { id: 'meta-library',     label: 'Meta Music Library', searchUrl: (n) => `https://www.facebook.com/search/top?q=${encodeURIComponent(n)}` },
-  { id: 'ultimate-music',   label: 'Ultimate Music',   searchUrl: (n) => `https://www.ultimatemusic.com` },
+  { id: 'ultimate-music',   label: 'Ultimate Music',   searchUrl: (n) => `https://www.ultimatemusic.com/search?q=${encodeURIComponent(n)}` },
   { id: 'itunes',           label: 'iTunes Store',     searchUrl: (n) => `https://itunes.apple.com/search?term=${encodeURIComponent(n)}&entity=musicArtist` },
 ];
 
@@ -491,13 +492,19 @@ class ArtistProfileService {
       if (!response.ok) return [];
 
       const data = await response.json() as any;
-      return (data.results || []).map((a: any): AppleArtistResult => ({
-        id: String(a.artistId),
-        name: a.artistName,
-        genres: a.primaryGenreName ? [a.primaryGenreName] : [],
-        artworkUrl: null,
-        url: a.artistLinkUrl ?? '',
-      }));
+      return (data.results || [])
+        .filter((a: any) => a.artistId && a.artistName)
+        .map((a: any): AppleArtistResult => ({
+          id: String(a.artistId),
+          name: a.artistName,
+          genres: [
+            ...(a.primaryGenreName ? [a.primaryGenreName] : []),
+            ...(a.genres || []),
+          ].filter((g, i, arr) => arr.indexOf(g) === i).slice(0, 4),
+          // iTunes returns artworkUrl100 for artists that have images
+          artworkUrl: a.artworkUrl100 ?? a.artworkUrl60 ?? null,
+          url: a.artistLinkUrl ?? `https://music.apple.com/us/artist/${a.artistId}`,
+        }));
     } catch (err) {
       logger.error('[ArtistProfile] Apple search error:', err);
       return [];
@@ -506,19 +513,24 @@ class ArtistProfileService {
 
   async searchDeezerArtists(query: string): Promise<DeezerArtistResult[]> {
     try {
-      const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8`;
+      const url = `https://api.deezer.com/search/artist?q=${encodeURIComponent(query)}&limit=8&order=RANKING`;
       const response = await fetch(url, { signal: AbortSignal.timeout(8000) });
 
       if (!response.ok) return [];
 
       const data = await response.json() as any;
-      return (data.data || []).map((a: any): DeezerArtistResult => ({
-        id: String(a.id),
-        name: a.name,
-        pictureUrl: a.picture_medium ?? null,
-        fans: a.nb_fan ?? 0,
-        link: a.link ?? '',
-      }));
+      if (data.error) return []; // Deezer returns {error:{...}} on quota/errors
+      return (data.data || [])
+        .filter((a: any) => a.id && a.name)
+        .map((a: any): DeezerArtistResult => ({
+          id: String(a.id),
+          name: a.name,
+          // Prefer highest-resolution image: xl → big → medium → small
+          pictureUrl: a.picture_xl ?? a.picture_big ?? a.picture_medium ?? a.picture_small ?? null,
+          fans: a.nb_fan ?? 0,
+          nbAlbum: a.nb_album ?? 0,
+          link: a.link ?? `https://www.deezer.com/artist/${a.id}`,
+        }));
     } catch (err) {
       logger.error('[ArtistProfile] Deezer search error:', err);
       return [];
@@ -526,44 +538,72 @@ class ArtistProfileService {
   }
 
   async searchMusicBrainzArtists(query: string): Promise<MusicBrainzArtistResult[]> {
+    const mbHeaders = {
+      'User-Agent': 'MaxBooster/1.0 (music career management platform; max@maxbooster.io)',
+      'Accept': 'application/json',
+    };
+
+    const parseMbArtists = (data: any): MusicBrainzArtistResult[] =>
+      (data.artists || [])
+        .filter((a: any) => a.id && a.name)
+        .map((a: any): MusicBrainzArtistResult => ({
+          id: a.id,
+          name: a.name,
+          score: Number(a.score ?? 0),
+          type: a.type ?? null,
+          country: a.country ?? null,
+          // Include both genre tags and regular tags for richer scoring
+          tags: [
+            ...(a.tags || []).map((t: any) => String(t.name)),
+            ...(a['genre-list'] || []).map((g: any) => String(g.name ?? g)),
+          ].filter((v, i, arr) => arr.indexOf(v) === i),
+          disambiguation: a.disambiguation ?? null,
+        }));
+
     try {
-      // MusicBrainz requires a User-Agent header; uses standard REST API (no key needed)
-      const url = `https://musicbrainz.org/ws/2/artist?query=artist:"${encodeURIComponent(query)}"&limit=8&fmt=json`;
-      const response = await this._withRetry(() => fetch(url, {
-        headers: {
-          'User-Agent': 'MaxBooster/1.0 (music career management platform)',
-          'Accept': 'application/json',
-        },
+      // Stage 1: Strict quoted artist name search — most precise
+      const strictUrl = `https://musicbrainz.org/ws/2/artist?query=artist:"${encodeURIComponent(query)}"&limit=8&fmt=json`;
+      const strictRes = await this._withRetry(() => fetch(strictUrl, {
+        headers: mbHeaders,
         signal: AbortSignal.timeout(10000),
       }), 2, 'MusicBrainz');
 
-      if (!response.ok) return [];
+      if (strictRes.ok) {
+        const data = await strictRes.json() as any;
+        const results = parseMbArtists(data);
+        if (results.length > 0) return results;
+      }
 
-      const data = await response.json() as any;
-      return (data.artists || []).map((a: any): MusicBrainzArtistResult => ({
-        id: a.id,
-        name: a.name,
-        score: a.score ?? 0,
-        type: a.type ?? null,
-        country: a.country ?? null,
-        tags: (a.tags || []).map((t: any) => t.name as string),
-        disambiguation: a.disambiguation ?? null,
-      }));
+      // Stage 2: Relaxed bare-name search — catches aliases, romanised names, alternate spellings
+      await new Promise(r => setTimeout(r, 500)); // Respect MusicBrainz rate limit (1 req/sec)
+      const relaxedUrl = `https://musicbrainz.org/ws/2/artist?query=${encodeURIComponent(query)}&limit=8&fmt=json`;
+      const relaxedRes = await fetch(relaxedUrl, {
+        headers: mbHeaders,
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!relaxedRes.ok) return [];
+      const relaxedData = await relaxedRes.json() as any;
+      return parseMbArtists(relaxedData);
     } catch (err) {
       logger.warn('[ArtistProfile] MusicBrainz search error (non-fatal):', err);
       return [];
     }
   }
 
-  // Audiomack public search API — no key required
+  // Audiomack public search API — NOTE: requires OAuth consumer_key for v1 API (returns 401 without it)
+  // Kept for forward-compatibility; returns empty array when unauthenticated
   async searchAudiomackArtists(query: string): Promise<AudiomackArtistResult[]> {
     try {
       const url = `https://api.audiomack.com/v1/search?type=artists&q=${encodeURIComponent(query)}&limit=5`;
       const response = await fetch(url, {
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(8000),
+        headers: { 'Accept': 'application/json', 'User-Agent': 'MaxBooster/1.0' },
+        signal: AbortSignal.timeout(6000),
       });
 
+      if (response.status === 401) {
+        // Expected: Audiomack v1 API requires OAuth consumer_key — suppress repeat logs
+        return [];
+      }
       if (!response.ok) return [];
 
       const data = await response.json() as any;
@@ -571,32 +611,56 @@ class ArtistProfileService {
         id: String(a.id ?? a.url_slug ?? ''),
         name: a.name ?? a.label ?? '',
         slug: a.url_slug ?? '',
-        imageUrl: a.image ?? null,
-        followers: a.followers ?? 0,
+        imageUrl: a.image ?? a.avatar ?? null,
+        followers: a.followers ?? a.fans ?? 0,
         url: a.url_slug ? `https://audiomack.com/${a.url_slug}` : '',
       }));
-    } catch (err) {
-      logger.warn('[ArtistProfile] Audiomack search error (non-fatal):', err);
+    } catch (err: any) {
+      // Suppress noise — Audiomack API consistently requires auth in production
+      if (!err?.message?.includes('401')) {
+        logger.warn('[ArtistProfile] Audiomack search error (non-fatal):', err?.message ?? err);
+      }
       return [];
     }
   }
 
-  // JioSaavn public search API — no key required
+  // JioSaavn artist search — primary: saavn.dev community mirror (richer data)
+  // fallback: JioSaavn autocomplete endpoint (minimal data but more stable)
   async searchJioSaavnArtists(query: string): Promise<JioSaavnArtistResult[]> {
+    // Primary: saavn.dev open API — returns structured artist data with images
+    try {
+      const url = `https://saavn.dev/api/search/artists?query=${encodeURIComponent(query)}&page=1&limit=5`;
+      const response = await fetch(url, {
+        headers: { 'Accept': 'application/json', 'User-Agent': 'MaxBooster/1.0' },
+        signal: AbortSignal.timeout(7000),
+      });
+      if (response.ok) {
+        const data = await response.json() as any;
+        const artists: any[] = data?.data?.results ?? data?.results ?? [];
+        if (artists.length > 0) {
+          return artists.slice(0, 5).map((a: any): JioSaavnArtistResult => ({
+            id: String(a.id ?? ''),
+            name: a.name ?? a.title ?? '',
+            // saavn.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
+            imageUrl: (Array.isArray(a.image)
+              ? (a.image.find((i: any) => i.quality === '500x500') ?? a.image[a.image.length - 1])?.url
+              : a.image) ?? null,
+            url: a.url ?? (a.id ? `https://www.jiosaavn.com/artist/-/${a.id}` : ''),
+          }));
+        }
+      }
+    } catch { /* fall through to backup */ }
+
+    // Fallback: JioSaavn autocomplete endpoint
     try {
       const url = `https://www.jiosaavn.com/api.php?__call=autocomplete.get&_format=json&_marker=0&cc=in&includeMetaTags=1&query=${encodeURIComponent(query)}`;
       const response = await fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'MaxBooster/1.0',
-        },
+        headers: { 'Accept': 'application/json', 'User-Agent': 'MaxBooster/1.0' },
         signal: AbortSignal.timeout(8000),
       });
-
       if (!response.ok) return [];
-
       const data = await response.json() as any;
-      const artists = data?.artists?.data || [];
+      const artists: any[] = data?.artists?.data ?? [];
       return artists.slice(0, 5).map((a: any): JioSaavnArtistResult => ({
         id: String(a.id ?? ''),
         name: a.title ?? a.name ?? '',
@@ -618,20 +682,40 @@ class ArtistProfileService {
     if (!normalized) return { apple: null, deezer: null };
 
     const [appleRes, deezerRes] = await Promise.allSettled([
-      // Apple iTunes UPC lookup — returns the album and its artist
+      // Apple iTunes UPC lookup — returns album and artist records; artist may be nested in album
       fetch(`https://itunes.apple.com/lookup?upc=${normalized}&entity=musicArtist`, {
         signal: AbortSignal.timeout(8000),
       }).then(async r => {
         if (!r.ok) return null;
         const d = await r.json() as any;
-        const artist = (d.results || []).find((x: any) => x.wrapperType === 'artist' || x.kind === 'artist');
+        const results: any[] = d.results || [];
+
+        // Prefer explicit artist record (wrapperType==='artist')
+        let artist = results.find((x: any) => x.wrapperType === 'artist' || x.kind === 'artist');
+
+        // Fallback: extract artist info from album collection (iTunes often returns album first)
+        if (!artist) {
+          const album = results.find((x: any) =>
+            x.wrapperType === 'collection' || x.collectionType === 'Album'
+          );
+          if (album?.artistId) {
+            artist = {
+              artistId: album.artistId,
+              artistName: album.artistName ?? album.collectionArtistName,
+              primaryGenreName: album.primaryGenreName,
+              artistLinkUrl: album.artistViewUrl,
+              artworkUrl100: album.artworkUrl100 ?? album.artworkUrl60,
+            };
+          }
+        }
+
         if (!artist) return null;
         return {
           id: String(artist.artistId),
-          name: artist.artistName,
+          name: artist.artistName ?? '',
           genres: artist.primaryGenreName ? [artist.primaryGenreName] : [],
-          artworkUrl: null,
-          url: artist.artistLinkUrl ?? `https://music.apple.com/us/artist/${artist.artistId}`,
+          artworkUrl: artist.artworkUrl100 ?? artist.artworkUrl60 ?? null,
+          url: artist.artistLinkUrl ?? artist.artistViewUrl ?? `https://music.apple.com/us/artist/${artist.artistId}`,
         } as AppleArtistResult;
       }),
 
@@ -645,9 +729,10 @@ class ArtistProfileService {
         return {
           id: String(d.artist.id),
           name: d.artist.name,
-          pictureUrl: d.artist.picture_medium ?? null,
-          fans: 0,
-          link: `https://www.deezer.com/artist/${d.artist.id}`,
+          pictureUrl: d.artist.picture_xl ?? d.artist.picture_big ?? d.artist.picture_medium ?? null,
+          fans: d.artist.nb_fan ?? 0,
+          nbAlbum: 0,
+          link: d.artist.link ?? `https://www.deezer.com/artist/${d.artist.id}`,
         } as DeezerArtistResult;
       }),
     ]);
@@ -878,6 +963,7 @@ class ArtistProfileService {
     let score = this._nameBase(nameSim, 60, 46, 30);
     if (score === 0) return 0;
 
+    // Image presence bonus — Deezer XL images confirm an active artist profile
     if (result.pictureUrl) score += 6;
 
     // Fan count bonus — Deezer fans scale differently to Spotify followers
@@ -887,6 +973,11 @@ class ArtistProfileService {
     else if (result.fans >= 1_000)   score += 3;
     else if (result.fans >= 100)     score += 1;
     // 0 fans → no bonus, no penalty
+
+    // Album count bonus — more releases = more established artist presence
+    if (result.nbAlbum >= 10)    score += 5;
+    else if (result.nbAlbum >= 3) score += 3;
+    else if (result.nbAlbum >= 1) score += 1;
 
     return Math.min(score, 100);
   }

@@ -212,7 +212,17 @@ export class DistributionService {
     try {
       logger.info("DSP Webhook received:", payload);
 
-      const { provider, releaseId, status, liveDate, errorMessage } = payload;
+      // Validate required fields before proceeding
+      const provider = String(payload.provider ?? '').trim();
+      const releaseId = String(payload.releaseId ?? '').trim();
+      const rawStatus = String(payload.status ?? '').trim();
+      const liveDate = payload.liveDate ? String(payload.liveDate).trim() : undefined;
+      const errorMessage = payload.errorMessage ? String(payload.errorMessage).trim() : undefined;
+
+      if (!provider || !releaseId || !rawStatus) {
+        logger.warn("DSP Webhook: missing required fields", { provider, releaseId, rawStatus });
+        return;
+      }
 
       // Map DSP status strings to internal status values
       const STATUS_MAP: Record<string, string> = {
@@ -220,23 +230,42 @@ export class DistributionService {
         delivered:          'live',
         approved:           'live',
         distributed:        'live',
+        released:           'live',
+        published:          'live',
         rejected:           'rejected',
         failed:             'rejected',
         error:              'rejected',
+        refused:            'rejected',
         takedown_requested: 'takedown',
         taken_down:         'takedown',
+        removed:            'takedown',
         processing:         'processing',
         pending:            'processing',
+        submitted:          'processing',
+        queued:             'processing',
         in_review:          'in_review',
+        under_review:       'in_review',
+        review:             'in_review',
       };
-      const internalStatus = STATUS_MAP[status.toLowerCase()] || status;
+      const internalStatus = STATUS_MAP[rawStatus.toLowerCase()] || rawStatus;
+      const status = rawStatus; // keep original for metadata storage
+
+      // Parse live date safely — guard against invalid date strings
+      let parsedLiveDate: Date | undefined;
+      if (liveDate) {
+        const d = new Date(liveDate);
+        parsedLiveDate = isNaN(d.getTime()) ? undefined : d;
+        if (!parsedLiveDate) {
+          logger.warn("DSP Webhook: invalid liveDate value, ignoring", { liveDate, provider });
+        }
+      }
 
       // Update the release status in DB
       const updatedRows = await db
         .update(releases)
         .set({
           status: internalStatus,
-          ...(liveDate ? { releaseDate: new Date(liveDate) } : {}),
+          ...(parsedLiveDate ? { releaseDate: parsedLiveDate } : {}),
           metadata: drizzleSql`
             COALESCE(metadata, '{}'::jsonb) ||
             ${JSON.stringify({ [`${provider}_status`]: status, [`${provider}_updated_at`]: new Date().toISOString(), ...(errorMessage ? { [`${provider}_error`]: errorMessage } : {}) })}::jsonb

@@ -30,7 +30,7 @@ import {
 interface PlatformStatus {
   platform: string;
   platformName: string;
-  status: 'pending' | 'processing' | 'delivered' | 'live' | 'failed' | 'removed';
+  status: 'pending' | 'processing' | 'delivered' | 'live' | 'failed' | 'removed' | 'in_review' | 'rejected' | 'takedown';
   externalId?: string;
   estimatedGoLive?: string;
   deliveredAt?: string;
@@ -38,6 +38,8 @@ interface PlatformStatus {
   errorMessage?: string;
   errorResolution?: string;
   lastChecked?: string;
+  streams?: number;
+  revenue?: number;
 }
 
 interface ReleaseStatusDashboardProps {
@@ -99,6 +101,24 @@ const STATUS_CONFIG = {
     icon: XCircle,
     description: 'Removed from platform',
   },
+  in_review: {
+    label: 'Under Review',
+    color: 'bg-orange-500/10 text-orange-500 border-orange-500/20',
+    icon: AlertCircle,
+    description: 'Platform is reviewing your release',
+  },
+  rejected: {
+    label: 'Rejected',
+    color: 'bg-red-500/10 text-red-500 border-red-500/20',
+    icon: XCircle,
+    description: 'Release was rejected — check error details',
+  },
+  takedown: {
+    label: 'Takedown Requested',
+    color: 'bg-gray-500/10 text-gray-400 border-gray-500/20',
+    icon: XCircle,
+    description: 'Takedown request is being processed',
+  },
 };
 
 export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatusDashboardProps) {
@@ -142,12 +162,25 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
     },
   });
 
-  const statuses = statusData?.statuses || [];
+  const statuses = (statusData?.statuses || []).map((s) => ({
+    ...s,
+    // Normalize backend status aliases to known STATUS_CONFIG keys
+    status: (() => {
+      const known = new Set(['pending','processing','delivered','live','failed','removed','in_review','rejected','takedown']);
+      const v = (s.status ?? 'pending').toLowerCase().replace(/-/g, '_');
+      if (known.has(v)) return v as PlatformStatus['status'];
+      // Map additional aliases from webhook handler
+      if (v === 'approved' || v === 'distributed') return 'live' as const;
+      if (v === 'error') return 'failed' as const;
+      if (v === 'taken_down' || v === 'takedown_requested') return 'takedown' as const;
+      return 'processing' as const; // safe unknown fallback
+    })(),
+  }));
   const overallProgress = statusData?.overallProgress || 0;
 
   const liveCount = statuses.filter((s) => s.status === 'live').length;
   const totalCount = statuses.length;
-  const failedCount = statuses.filter((s) => s.status === 'failed').length;
+  const failedCount = statuses.filter((s) => ['failed', 'rejected'].includes(s.status)).length;
 
   if (isLoading) {
     return (
@@ -205,7 +238,7 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
             <div className="text-center p-3 bg-blue-500/10 rounded-lg">
               <p className="text-2xl font-bold text-blue-500">
                 {
-                  statuses.filter((s) => ['pending', 'processing', 'delivered'].includes(s.status))
+                  statuses.filter((s) => ['pending', 'processing', 'delivered', 'in_review'].includes(s.status))
                     .length
                 }
               </p>
@@ -223,9 +256,14 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {statuses.map((platformStatus) => {
           const config = PLATFORM_CONFIG[platformStatus.platform];
-          const statusConfig = STATUS_CONFIG[platformStatus.status];
+          const statusConfig = STATUS_CONFIG[platformStatus.status] ?? {
+            label: platformStatus.status.replace(/_/g, ' '),
+            color: 'bg-muted/50 text-muted-foreground border-muted',
+            icon: Clock,
+            description: 'Status update pending',
+          };
           const Icon = config?.icon;
-          const StatusIcon = statusConfig?.icon;
+          const StatusIcon = statusConfig.icon;
 
           return (
             <Card
@@ -236,14 +274,15 @@ export function ReleaseStatusDashboard({ releaseId, releaseTitle }: ReleaseStatu
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    {Icon && (
-                      <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: config.color }}
-                      >
-                        <Icon className="h-5 w-5 text-white" />
-                      </div>
-                    )}
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center"
+                      style={{ backgroundColor: config?.color ?? '#6366f1' }}
+                    >
+                      {Icon
+                        ? <Icon className="h-5 w-5 text-white" />
+                        : <span className="text-white text-xs font-bold">{platformStatus.platformName.slice(0, 2).toUpperCase()}</span>
+                      }
+                    </div>
                     <div>
                       <h4 className="font-semibold">{platformStatus.platformName}</h4>
                       <p className="text-xs text-muted-foreground">
