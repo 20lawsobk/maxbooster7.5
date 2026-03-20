@@ -130,6 +130,24 @@ let _pdimGapMs      = _PDIM_GAP_INIT_MS;
 let _pdimQueueDepth = 0;    // callers waiting in the chain (not yet executing)
 let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
 
+// ── Per-category queue depth tracking ────────────────────────────────────────
+// Direct calls (sessions, cache, rate-limiting) and script fast-lane calls
+// share the same global chain but use very different gaps (AIMD gap vs 10ms).
+// Tracking them separately lets _enqueueExec estimate the real wait time for
+// a new user-facing call and fast-fail when that wait would exceed the threshold.
+let _directQueueDepth = 0;  // non-script callers currently in the chain
+let _scriptQueueDepth = 0;  // LuaExecutor redis.call() callers in the chain
+
+// Maximum estimated queue wait before a direct (user-facing) call is fast-failed
+// so its caller can fall back to PG / in-memory immediately instead of waiting.
+// Formula: (_directQueueDepth × _pdimGapMs) + (_scriptQueueDepth × 10ms)
+// At 1150ms gap with 4 direct callers queued → 4600ms > threshold → fast-fail.
+// At 400ms gap with 10 direct callers queued → 4000ms = threshold → allow.
+const _MAX_DIRECT_WAIT_MS = 4_000;
+
+// Log fast-fail events at most once every 5s to avoid flooding the log.
+let _fastFailLoggedAt = 0;
+
 /** On each successful PDIM response: shrink the gap proportionally to demand.
  *
  * The step is queue-depth-proportional — "fluid" expansion:
@@ -157,6 +175,8 @@ function _pdimAdapt429(): number {
 /** Expose live state for diagnostics (ChainFixer, health endpoints). */
 export function getPdimAdaptiveGapMs():  number { return _pdimGapMs; }
 export function getPdimQueueDepth():     number { return _pdimQueueDepth; }
+export function getPdimDirectQueueDepth():  number { return _directQueueDepth; }
+export function getPdimScriptQueueDepth():  number { return _scriptQueueDepth; }
 
 /** Allow PlatformAutoFixer to temporarily raise the polling gap under PDIM pressure. */
 export function setPdimAdaptiveGap(ms: number): void {
@@ -164,9 +184,33 @@ export function setPdimAdaptiveGap(ms: number): void {
 }
 
 function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
+  // ── Fast-fail: protect user-facing callers from unbounded queue waits ────────
+  // Estimate how long a new direct caller would wait behind existing queue:
+  //   direct callers × AIMD gap  +  script callers × 10ms fast-lane gap
+  // When that exceeds _MAX_DIRECT_WAIT_MS (4s), reject immediately so session
+  // stores and distributed caches fall back to PG / in-memory in <1ms instead
+  // of blocking for 20+ seconds and triggering "request took too long" errors.
+  const estimatedWaitMs = (_directQueueDepth * _pdimGapMs) + (_scriptQueueDepth * 10);
+  if (estimatedWaitMs > _MAX_DIRECT_WAIT_MS) {
+    const now = Date.now();
+    if (now - _fastFailLoggedAt > 5_000) {
+      _fastFailLoggedAt = now;
+      logger.warn(
+        `[PDIM] Direct-call fast-fail — est. queue wait ${Math.round(estimatedWaitMs)}ms ` +
+        `(${_directQueueDepth} direct × ${_pdimGapMs}ms + ${_scriptQueueDepth} script × 10ms) ` +
+        `> ${_MAX_DIRECT_WAIT_MS}ms threshold; caller falls back to PG/in-memory`,
+      );
+    }
+    return Promise.reject(new Error(
+      `[PDIM] Chain congested — est. wait ${Math.round(estimatedWaitMs)}ms exceeds ${_MAX_DIRECT_WAIT_MS}ms; use fallback`,
+    ));
+  }
+
+  _directQueueDepth++;
   _pdimQueueDepth++;
   const next = _pdimGlobalChain.then(async () => {
-    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    _directQueueDepth = Math.max(0, _directQueueDepth - 1);
+    _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     const result = await fn();
     // Adaptive gap fires AFTER the request completes — next caller must wait
     // this long before it starts.  Gap is read at completion time so it
@@ -174,7 +218,8 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
     if (_pdimGapMs > 0) await new Promise(r => setTimeout(r, _pdimGapMs));
     return result;
   }).catch(async (err: unknown) => {
-    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    _directQueueDepth = Math.max(0, _directQueueDepth - 1);
+    _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     // Enforce gap on error too — including 429.  _pdimGapMs has already been
     // updated by _pdimAdapt429() inside exec() before the throw reaches here,
     // so subsequent callers naturally wait the new (larger) gap.
@@ -209,18 +254,23 @@ function _enqueueExec(fn: () => Promise<unknown>): Promise<unknown> {
 const _SCRIPT_CALL_GAP_MS = 10;
 
 function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
-  // Track queue depth on the shared counter so ChainFixer saturation checks
-  // remain accurate (script calls count as pending load just like direct calls).
+  // Track both shared and per-category depth so:
+  //   • ChainFixer saturation checks remain accurate (script calls count as load)
+  //   • _enqueueExec fast-fail calculation uses accurate script count (10ms gap
+  //     each, not AIMD gap) so it does not over-estimate the wait time
+  _scriptQueueDepth++;
   _pdimQueueDepth++;
   const next = _pdimGlobalChain.then(async () => {
-    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    _scriptQueueDepth = Math.max(0, _scriptQueueDepth - 1);
+    _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     const result = await fn();
-    // 50ms minimal gap — script calls are Atomics-serialized so there is
+    // 10ms minimal gap — script calls are Atomics-serialized so there is
     // no parallel-call risk; the gap exists only to yield the event loop.
     await new Promise(r => setTimeout(r, _SCRIPT_CALL_GAP_MS));
     return result;
   }).catch(async (err: unknown) => {
-    _pdimQueueDepth = Math.max(0, _pdimQueueDepth - 1);
+    _scriptQueueDepth = Math.max(0, _scriptQueueDepth - 1);
+    _pdimQueueDepth   = Math.max(0, _pdimQueueDepth - 1);
     await new Promise(r => setTimeout(r, _SCRIPT_CALL_GAP_MS));
     throw err;
   });
@@ -505,7 +555,12 @@ export class PdimRedisClient extends EventEmitter {
     };
   }
 
-  async sendCommand(args: string[]): Promise<any> { return this.exec(args); }
+  async sendCommand(args: string[]): Promise<any> {
+    const cmd = (args[0] ?? '').toUpperCase();
+    if (cmd === 'PUBLISH') return 0;
+    if (cmd === 'SUBSCRIBE' || cmd === 'UNSUBSCRIBE' || cmd === 'PSUBSCRIBE' || cmd === 'PUNSUBSCRIBE') return null;
+    return this.exec(args);
+  }
 
   /**
    * Fast-lane variant of sendCommand for LuaExecutor redis.call() IPC.
@@ -787,8 +842,18 @@ export class PdimRedisClient extends EventEmitter {
     return this.exec(['EVAL', script, numkeys, ...args]);
   }
 
-  // ── Pub/Sub ───────────────────────────────────────────────────────────────
-  async publish(channel: string, message: string): Promise<number> { return this.exec(['PUBLISH', channel, message]); }
+  // ── Pub/Sub no-ops ────────────────────────────────────────────────────────
+  // PDIM (Pocket Dimension) is a key-value store — it does not support Redis
+  // pub/sub commands (PUBLISH, SUBSCRIBE, UNSUBSCRIBE, PSUBSCRIBE, PUNSUBSCRIBE).
+  // Any attempt to send these commands returns HTTP 400 and burns a chain slot
+  // (2,679ms per PUBLISH call observed in production).
+  //
+  // BullMQ emits job lifecycle events via PUBLISH.  Instead of routing those
+  // through the PDIM chain (→ wait 1150ms in queue → HTTP 400 → 2.6s wasted),
+  // we return the correct Redis no-op responses immediately in-process:
+  //   PUBLISH   → 0  (0 subscribers — expected when pub/sub is unavailable)
+  //   SUBSCRIBE → void  (subscription acknowledged, no messages will arrive)
+  async publish(_channel: string, _message: string): Promise<number> { return 0; }
   subscribe(_channel: string, _callback?: Function): Promise<void> { return Promise.resolve(); }
   psubscribe(_pattern: string, _callback?: Function): Promise<void> { return Promise.resolve(); }
   unsubscribe(_channel?: string): Promise<void> { return Promise.resolve(); }
