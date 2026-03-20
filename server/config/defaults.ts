@@ -198,8 +198,13 @@ export const config: AppConfig = {
   },
 
   storage: {
-    provider:
-      (process.env.STORAGE_PROVIDER === 's3' ? 's3' : 'pocket-dimension') as 'pocket-dimension' | 's3',
+    provider: (
+      process.env.STORAGE_PROVIDER === 's3'
+        ? 's3'
+        : process.env.STORAGE_PROVIDER === 'replit'
+          ? 'replit'
+          : 'pocket-dimension'
+    ) as 'local' | 's3' | 'replit' | 'pocket-dimension',
     bucket: process.env.S3_BUCKET,
     region: process.env.AWS_REGION || 'us-east-1',
     endpoint: process.env.S3_ENDPOINT,
@@ -284,7 +289,10 @@ export function logConfig(): void {
   logger.info(`   Storage: ${config.storage.provider}`);
   if (config.storage.provider === 's3') {
     logger.info(`   S3 Bucket: ${config.storage.bucket}`);
-  } else if (config.storage.provider === 'pocket-dimension') {
+  } else if (config.storage.provider === 'replit') {
+    const bucketId = process.env.REPLIT_BUCKET_ID || process.env.DEFAULT_OBJECT_STORAGE_BUCKET_ID;
+    logger.info(`   🗄️  Storage: Replit App Storage (hot) + Pocket Dimension (cold) — bucket: ${bucketId || 'auto'}`);
+  } else {
     logger.info(`   📦 Storage: Pocket Dimension → PDIM (zero local disk)`);
   }
   logger.info(`   Max File Size: ${(config.upload.maxFileSize / 1024 / 1024).toFixed(0)}MB`);
