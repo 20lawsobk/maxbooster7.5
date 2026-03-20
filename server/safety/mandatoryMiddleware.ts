@@ -138,7 +138,9 @@ export function globalErrorHandler(
         scope.setUser({ id: (req.user as any)?.id });
         Sentry.captureException(err);
       });
-    } catch {}
+    } catch {
+      // Intentionally silent — Sentry unavailable; must not cause recursive error-handler failure
+    }
   }
 
   const isDev = process.env.NODE_ENV !== 'production';

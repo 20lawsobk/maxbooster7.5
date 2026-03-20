@@ -57,7 +57,9 @@ class ModelWeightStorage {
           logger.info(`[WeightStorage] Restored ${name} from Pocket Dimension → local cache`);
           return true;
         }
-      } catch { }
+      } catch {
+        // PDIM read failed — fall through to return false (caller will re-train)
+      }
     }
 
     return false;

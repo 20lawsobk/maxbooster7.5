@@ -3724,6 +3724,7 @@ export async function registerRoutes(
     { path: "/api/studio/midi", name: "studioMidi", loader: () => import("./routes/studioMidi") },
     { path: "/api/studio/vst", name: "vstBridge", loader: () => import("./routes/vstBridge") },
     { path: "/api/audio-analysis", name: "audioAnalysis", loader: () => import("./routes/audioAnalysis") },
+    { path: "/api/audio-processing", name: "audioProcessing", loader: () => import("./routes/audio-processing") },
     { path: "/api/distribution/promo", name: "promotionalTools", loader: () => import("./routes/promotionalTools") },
 
     // Offline Mode
@@ -3772,6 +3773,9 @@ export async function registerRoutes(
     // Safety & Admin Controls
     { path: "/api/kill-switch", name: "killSwitch", loader: () => import("./routes/killSwitch") },
     { path: "/api/admin/payment-bypass", name: "paymentBypass", loader: () => import("./routes/paymentBypass") },
+
+    // SEO (sitemap.xml + robots.txt — mounted at root)
+    { path: "", name: "seo", loader: () => import("./routes/seo") },
 
     // Self-Healing Security System
     { path: "/api/security/self-healing", name: "selfHealingApi", loader: () => import("./routes/selfHealingApi") },

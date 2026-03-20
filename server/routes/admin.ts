@@ -650,7 +650,9 @@ adminRouter.get("/metrics", async (req, res) => {
         const free = stat.bsize * stat.bfree;
         diskUsagePercent = total > 0 ? Math.round(((total - free) / total) * 100) : 0;
       }
-    } catch {}
+    } catch {
+      // statfsSync not available on all Node versions/platforms — disk metric returns 0
+    }
 
     res.json({
       cpu: getRealCpuUsage(),

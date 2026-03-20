@@ -77,7 +77,9 @@ class RedisRateLimitStore implements Store {
     try {
       const redis = getRedisClient();
       await redis.del(`${RL_PREFIX}${key}`);
-    } catch {}
+    } catch {
+      // Redis unavailable — in-memory fallback already cleared above
+    }
   }
 }
 

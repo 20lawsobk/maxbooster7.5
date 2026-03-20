@@ -75,7 +75,9 @@ class PocketDimensionStorageProvider implements StorageProvider {
     await this.ensure();
     try {
       await this.pocket.delete(`files/${key}`);
-    } catch { }
+    } catch (err: any) {
+      logger.warn(`[StorageService] deleteFile failed for key=${key}: ${err?.message}`);
+    }
   }
 
   async getUploadUrl(_key: string, _contentType: string, _expiresIn?: number): Promise<string | null> {
