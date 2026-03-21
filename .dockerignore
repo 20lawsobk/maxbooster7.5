@@ -33,22 +33,13 @@ dist-portable/
 android/
 ios/
 
-# Rust build artifacts — exclude everything EXCEPT the pre-committed release binary
-# at boosterstate/target/release/boosterstate (2.1 MB, committed to git).
-# Excluding the whole target dir would force cargo build inside the container
-# (which would fail — Rust is not installed there).
-boosterstate/target/debug/
-boosterstate/target/release/build/
-boosterstate/target/release/deps/
-boosterstate/target/release/examples/
-boosterstate/target/release/incremental/
-boosterstate/target/release/*.rlib
-boosterstate/target/release/*.d
-boosterstate/target/.fingerprint/
-boosterstate/target/incremental/
-boosterstate/target/build/
-boosterstate/target/deps/
-boosterstate/target/tmp/
+# Rust build artifacts — exclude the entire target directory including the
+# compiled boosterstate binary. Replit's deployment layer push rejects ANY
+# binary (non-UTF-8) file with "invalid UTF-8". The binary cannot be committed
+# to git for the same reason, and compiling it during build only to have it
+# rejected at layer-push time wastes ~60s for nothing. The app runs gracefully
+# without the sidecar (start.sh has a built-in fallback).
+boosterstate/target/
 
 # Old/legacy project copies and documentation
 maxbooster7.5/

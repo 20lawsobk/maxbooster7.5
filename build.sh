@@ -9,9 +9,9 @@ set -e
 #   • dist/index.cjs          — esbuild server bundle (committed, ~5 MB)
 #   • dist/cluster.cjs        — esbuild cluster entry (committed, ~1 MB)
 #
-#   NOTE: The boosterstate Rust binary is NOT committed to git — Replit's
-#   deployment layer push rejects binary (non-UTF-8) files. cargo build runs
-#   below for both fast and slow paths (Nix layer is cached, ~60s compile).
+#   NOTE: The boosterstate Rust binary is NOT compiled or shipped — Replit's
+#   deployment "Repl layer" packaging rejects binary (non-UTF-8) files with
+#   "invalid UTF-8". The app runs gracefully without the boosterstate sidecar.
 #
 #   No JS build tools needed → use `npm ci --omit=dev` which installs ONLY
 #   production deps (~700 MB) instead of all deps + prune (~3 GB → 1.5 GB).
@@ -27,7 +27,6 @@ set -e
 PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.cjs"
 PREBUILT_CLUSTER="dist/cluster.cjs"
-RUST_BIN="./boosterstate/target/release/boosterstate"
 
 if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_CLUSTER" ]; then
   echo "==> FAST PATH: all pre-built artifacts present"
@@ -99,38 +98,15 @@ rm -rf node_modules/@tensorflow/tfjs-node/binding/ 2>/dev/null || true
 echo "   TF native binaries removed."
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
-echo "==> Rust sidecar..."
-if [ -f "$RUST_BIN" ] && [ -s "$RUST_BIN" ]; then
-  echo "   Pre-built binary found — skipping cargo compile."
-  echo "   Binary: $(du -sh "$RUST_BIN" | cut -f1)"
-else
-  echo "   No pre-built binary — running cargo build --release..."
-  cargo build --release --manifest-path boosterstate/Cargo.toml
-  echo "   Rust binary built: $(du -sh "$RUST_BIN" | cut -f1)"
-fi
-
-echo "==> Patching Rust binary ELF interpreter for production VM portability..."
-PATCHELF_CMD=$(command -v patchelf 2>/dev/null || echo "/nix/store/0flj33q30lmzdjagwjqh964qmiyklww2-patchelf-0.15.0/bin/patchelf")
-if [ -x "$PATCHELF_CMD" ]; then
-  cp "$RUST_BIN" /tmp/boosterstate-elf-work
-  "$PATCHELF_CMD" \
-    --set-interpreter /lib64/ld-linux-x86-64.so.2 \
-    --set-rpath /lib/x86_64-linux-gnu:/usr/lib/x86_64-linux-gnu:/lib64 \
-    /tmp/boosterstate-elf-work
-  mv -f /tmp/boosterstate-elf-work "$RUST_BIN"
-  chmod +x "$RUST_BIN"
-  echo "   ELF patched: interpreter=/lib64/ld-linux-x86-64.so.2, rpath=standard Linux paths"
-else
-  echo "   WARNING: patchelf not found — binary retains Nix-specific interpreter (may fail on production VM)"
-fi
-
-echo "==> Preserving Rust binary and removing Rust source tree..."
-cp "$RUST_BIN" /tmp/boosterstate-release
-rm -rf boosterstate/
-mkdir -p boosterstate/target/release
-mv /tmp/boosterstate-release boosterstate/target/release/boosterstate
-chmod +x boosterstate/target/release/boosterstate
-echo "   Rust source tree removed. Binary at: boosterstate/target/release/boosterstate"
+# The boosterstate binary is intentionally NOT compiled or included in the
+# deployment image. Replit's "Repl layer" packaging rejects any binary
+# (non-UTF-8) file with "invalid UTF-8" — the same reason we can't commit the
+# binary to git. boosterstate/target/ is excluded via .dockerignore.
+# The Node.js cluster already handles the missing sidecar gracefully:
+#   "[Cluster] boosterstate binary not found — skipping sidecar startup"
+echo "==> Rust sidecar: skipped (binary excluded from Repl layer by .dockerignore)"
+rm -rf boosterstate/target/ 2>/dev/null || true
+echo "   boosterstate/target/ cleaned up — app will run without sidecar."
 
 # ─── Full build (SLOW PATH only) ─────────────────────────────────────────────
 if [ "$FAST_PATH" = "0" ]; then
