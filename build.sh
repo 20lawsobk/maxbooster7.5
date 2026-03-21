@@ -8,9 +8,12 @@ set -e
 #   • dist/public/index.html  — Vite frontend bundle (committed, ~17 MB)
 #   • dist/index.cjs          — esbuild server bundle (committed, ~5 MB)
 #   • dist/cluster.cjs        — esbuild cluster entry (committed, ~1 MB)
-#   • boosterstate binary     — Rust sidecar (committed, ~2 MB)
 #
-#   No build tools needed → use `npm ci --omit=dev` which installs ONLY
+#   NOTE: The boosterstate Rust binary is NOT committed to git — Replit's
+#   deployment layer push rejects binary (non-UTF-8) files. cargo build runs
+#   below for both fast and slow paths (Nix layer is cached, ~60s compile).
+#
+#   No JS build tools needed → use `npm ci --omit=dev` which installs ONLY
 #   production deps (~700 MB) instead of all deps + prune (~3 GB → 1.5 GB).
 #   client/ + server/ are excluded by .dockerignore (pre-compiled into dist/).
 #   Post-install stripping removes TF browser bundles, source maps, etc.

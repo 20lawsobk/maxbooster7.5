@@ -53,12 +53,10 @@ cookies.txt
 .capsule-temp/
 data/
 
-# Rust build artifacts — ignore all intermediate objects but keep the
-# pre-built release binary so deployments skip the 10-20 minute cargo compile.
-boosterstate/target/**
-!boosterstate/target/
-!boosterstate/target/release/
-!boosterstate/target/release/boosterstate
+# Rust build artifacts — all compiled output is rebuilt during deployment.
+# The binary was previously committed but caused Replit's deployment layer
+# push to fail with "invalid UTF-8". cargo build runs in build.sh instead.
+boosterstate/target/
 
 # Screenshots and videos (large media assets)
 client/public/screenshots/
