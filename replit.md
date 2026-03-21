@@ -76,3 +76,39 @@ A three-agent audit identified and resolved the following issues:
 - **`client/src/App.tsx`**: Wrapped the main router in `<ErrorBoundary>` so any unhandled render crash shows the custom error UI instead of a blank white screen.
 - **`client/src/pages/Distribution.tsx`**: Added `isLoading: statsLoading` to the playlist pitching stats query and render `'—'` placeholders during load instead of misleading zeroes.
 - **`client/src/components/studio/UltimateDAW.tsx`**: Added `.catch()` handlers to both `forceSave()` call sites (Ctrl+S shortcut and Save button) so users are notified when a project save fails instead of silently discarding the error.
+
+## Full-System Optimization Pass (March 2026 — Session 2)
+
+### Critical Backend Fixes
+- **`server/storage.ts` — `getBeatListings`**: Replaced JS post-filter search with SQL `ilike` expressions; genre/bpm/key/price filters now pushed to DB; `offset` param now used correctly for pagination (was always using 0).
+- **`server/storage.ts` — `distroDispatchStore`**: Replaced in-memory `Map` (lost on restart) with DB persistence via the `systemSettings` table using key `distro_dispatch:{releaseId}`.
+- **`server/storage.ts` — `getDistroAnalytics`**: Replaced JS-level month filtering (after 30-row limit) with five parallel DB aggregation queries — correct all-time totals and accurate month-over-month growth regardless of row count.
+- **`server/storage.ts` — `getSocialMetrics`**: Filled `followersGrowth` (per-platform follower data from accounts) and `contentPerformance` (top 5 recent posts with engagement) instead of returning `null`.
+- **`server/storage.ts` — `createAuditLog`**: Now inserts to `workspace_audit_log` table via Drizzle instead of returning a fake in-memory object.
+- **`server/storage.ts`**: Added `workspaceAuditLog` to schema imports.
+
+### Royalties Routes (Complete Implementation)
+- **`server/routes.ts` — `/api/royalties/*`**: All stubs replaced with real DB implementations using `royaltyTransactions`, `royaltySplits`, and `taxForms` schema tables. Exports return real CSV data. Splits CRUD persisted to DB.
+
+### Career Coach
+- **`server/routes/careerCoach.ts`**: Added `/api/career-coach/insights` endpoint — health score, growth rate, velocity, and revenue trend all computed from DB.
+- **`client/src/pages/CareerCoach.tsx`**: Replaced hardcoded `"+24%"` / `"87/100"` values with live API data from the insights endpoint.
+
+### Notifications
+- **`server/routes/notifications.ts`**: Pushed `unreadOnly` and `category` filters to the DB query (using `eq(notifications.isRead, false)` and a SQL JSON metadata predicate) instead of fetching 50 rows then filtering in JS — pagination now returns the correct count.
+
+### Invoice PDF Download
+- **`client/src/pages/Invoices.tsx`**: Added `downloadPDF()` function that fetches `/api/invoices/:id/pdf`, creates a Blob URL, and triggers browser download. Wired to both the table row download icon button and the preview dialog "Download PDF" button.
+
+### Analytics Error Boundaries
+- **`client/src/pages/Analytics.tsx`**: Added `ErrorBoundary` import; wrapped `StreamingAnalytics`, `RevenueAnalytics`, `AudienceInsights`, `ExportAnalytics`, `FanJourneyFunnel`, `ChurnAnalytics`, and `GeographicHeatMap` in `<ErrorBoundary>` so a chart crash in one tab can't take down the entire Analytics page.
+
+### Autopilot Publisher Window Fix
+- **`server/services/autopilotPublisher.ts` — `calculateNextOptimalPostingTime`**: Fixed missed-window bug: when the cron fires during an optimal hour (e.g., 12:05 when 12 PM is optimal), the function now schedules 5 minutes from now instead of jumping to the next window (e.g., 5 PM). Uses `sameHourSlot` check before the `>` search.
+
+### Marketplace Persistence
+- **`server/routes/marketplace.ts` — `GET /escrow`**: Now queries the `orders` table filtering by userId/sellerId with status `pending` or `escrow` — previously returned an empty array.
+- **`server/routes/marketplace.ts` — `GET /affiliates` + `POST /affiliates`**: Now persists affiliate records to `systemSettings` table with key `affiliates:{userId}` — previously returned empty array and created affiliates that were discarded on each request.
+
+### FlowState Export Fix
+- **`client/src/components/studio/FlowStateExport.tsx`**: Fixed export URL from `/export` to `/render` to match the actual server endpoint.

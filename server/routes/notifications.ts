@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { db } from '../db';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, isNotNull } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger.js';
@@ -104,15 +104,23 @@ router.get('/', async (req: Request, res: Response) => {
     const category = req.query.category as string | undefined;
     const unreadOnly = req.query.unread === 'true';
 
-    let query = db
+    const conditions: any[] = [eq(notifications.userId, req.user.id)];
+    if (unreadOnly) {
+      conditions.push(eq(notifications.isRead, false));
+    }
+    if (category) {
+      conditions.push(
+        sql`${notifications.metadata}->>'category' = ${category} OR (${notifications.metadata}->>'category' IS NULL AND ${notifications.type} LIKE ${category + '%'})`
+      );
+    }
+
+    const userNotifications = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.userId, req.user.id))
+      .where(and(...conditions))
       .orderBy(desc(notifications.createdAt))
       .limit(limit)
       .offset(offset);
-
-    const userNotifications = await query;
 
     const mappedNotifications = userNotifications.map((n: any) => ({
       ...n,
@@ -123,15 +131,7 @@ router.get('/', async (req: Request, res: Response) => {
       expiresAt: n.metadata?.expiresAt || null,
     }));
 
-    let filtered = mappedNotifications;
-    if (category) {
-      filtered = filtered.filter((n: any) => n.category === category);
-    }
-    if (unreadOnly) {
-      filtered = filtered.filter((n: any) => !n.isRead);
-    }
-
-    return res.json(filtered);
+    return res.json(mappedNotifications);
   } catch (error) {
     logger.error('Get notifications error:', error);
     return res.json([]);

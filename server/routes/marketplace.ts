@@ -13,8 +13,8 @@ import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { orders, listings, users, licenseTemplates } from '@shared/schema';
-import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
+import { orders, listings, users, licenseTemplates, systemSettings } from '@shared/schema';
+import { eq, and, gte, sql, desc, asc, or } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
@@ -924,7 +924,31 @@ router.get('/escrow', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    res.json([]);
+    const userId = (req.user as any).id;
+    const escrowOrders = await db
+      .select()
+      .from(orders)
+      .where(and(
+        or(eq(orders.userId, userId), eq(orders.sellerId, userId)),
+        or(eq(orders.status, 'pending'), eq(orders.status, 'escrow'))
+      ))
+      .orderBy(desc(orders.createdAt));
+
+    const formatted = escrowOrders.map(o => ({
+      id: o.id,
+      orderId: o.id,
+      buyerId: o.userId,
+      sellerId: o.sellerId,
+      listingId: o.listingId,
+      amount: o.amount,
+      currency: o.currency || 'usd',
+      status: o.status,
+      licenseType: o.licenseType,
+      createdAt: o.createdAt,
+      releasedAt: null,
+    }));
+
+    res.json(formatted);
   } catch (error: any) {
     logger.error('Error fetching escrow transactions:', error);
     res.status(500).json({ error: 'Failed to fetch escrow transactions' });
@@ -937,7 +961,15 @@ router.get('/affiliates', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    res.json([]);
+    const userId = (req.user as any).id;
+    const settingKey = `affiliates:${userId}`;
+    const [row] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, settingKey));
+
+    const affiliates = row ? (row.value as any[]) || [] : [];
+    res.json(affiliates);
   } catch (error: any) {
     logger.error('Error fetching affiliates:', error);
     res.status(500).json({ error: 'Failed to fetch affiliates' });
@@ -1448,6 +1480,14 @@ router.post('/affiliates', async (req: Request, res: Response) => {
     }
     const { name, email, commissionRate } = parsed.data;
 
+    const userId = (req.user as any).id;
+    const settingKey = `affiliates:${userId}`;
+    const [existing] = await db
+      .select()
+      .from(systemSettings)
+      .where(eq(systemSettings.key, settingKey));
+    const currentList: any[] = existing ? (existing.value as any[]) || [] : [];
+
     const affiliate = {
       id: `aff-${Date.now()}`,
       name,
@@ -1461,6 +1501,15 @@ router.post('/affiliates', async (req: Request, res: Response) => {
       status: 'active',
       joinedAt: new Date().toISOString(),
     };
+
+    const updatedList = [...currentList, affiliate];
+    if (existing) {
+      await db.update(systemSettings)
+        .set({ value: updatedList, updatedAt: new Date() })
+        .where(eq(systemSettings.key, settingKey));
+    } else {
+      await db.insert(systemSettings).values({ key: settingKey, value: updatedList });
+    }
 
     res.status(201).json(affiliate);
   } catch (error: any) {

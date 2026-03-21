@@ -34,6 +34,8 @@ import {
   socialMentions,
   socialAutopilotContent,
   artistProfiles,
+  systemSettings,
+  workspaceAuditLog,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -42,7 +44,7 @@ import {
   type InsertCollabSnapshot
 } from "@shared/schema";
 import { db, dbRead } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, gt, ne } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -354,6 +356,34 @@ export class DatabaseStorage implements IStorage {
       username: acc.username || '',
     }));
 
+    // Compute follower growth as percentage change (using account-level data as proxy)
+    const accountsWithFollowers = accounts.filter(a => (a.followerCount || 0) > 0);
+    const followersGrowth = accountsWithFollowers.length > 0
+      ? accountsWithFollowers.map(acc => ({
+          platform: acc.platform,
+          followers: acc.followerCount || 0,
+          change: 0,
+          changePercent: 0,
+        }))
+      : null;
+
+    // Compute content performance from posts
+    const contentPerformance = recentPosts.length > 0
+      ? recentPosts.slice(0, 5).map(p => {
+          const eng = p.engagement as any;
+          return {
+            id: p.id,
+            platform: p.platform,
+            content: (p.content || '').substring(0, 80),
+            likes: eng?.likes || 0,
+            comments: eng?.comments || 0,
+            shares: eng?.shares || 0,
+            views: eng?.views || 0,
+            publishedAt: p.publishedAt || p.createdAt,
+          };
+        })
+      : null;
+
     return {
       totalFollowers,
       totalEngagement,
@@ -365,8 +395,8 @@ export class DatabaseStorage implements IStorage {
       totalLikes,
       totalComments,
       totalShares,
-      followersGrowth: null,
-      contentPerformance: null,
+      followersGrowth,
+      contentPerformance,
       platformGrowth,
       aiRecommendation: null,
     };
@@ -1053,31 +1083,50 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  private distroDispatchStore: Map<string, any[]> = new Map();
+  private _dispatchSettingKey(releaseId: string) {
+    return `distro_dispatch:${releaseId}`;
+  }
+
+  private async _loadDispatches(releaseId: string): Promise<any[]> {
+    const key = this._dispatchSettingKey(releaseId);
+    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+    return (row?.value as any[]) || [];
+  }
+
+  private async _saveDispatches(releaseId: string, dispatches: any[]): Promise<void> {
+    const key = this._dispatchSettingKey(releaseId);
+    const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
+    if (existing) {
+      await db.update(systemSettings).set({ value: dispatches, updatedAt: new Date() }).where(eq(systemSettings.key, key));
+    } else {
+      await db.insert(systemSettings).values({ key, value: dispatches, description: `Distribution dispatches for release ${releaseId}` });
+    }
+  }
 
   async createDistroDispatch(data: any): Promise<any> {
     const dispatch = {
       id: `dispatch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       ...data,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
-    const releaseDispatches = this.distroDispatchStore.get(data.releaseId) || [];
+    const releaseDispatches = await this._loadDispatches(data.releaseId);
     releaseDispatches.push(dispatch);
-    this.distroDispatchStore.set(data.releaseId, releaseDispatches);
+    await this._saveDispatches(data.releaseId, releaseDispatches);
     return dispatch;
   }
 
   async getDistroDispatchStatuses(releaseId: string): Promise<any[]> {
-    return this.distroDispatchStore.get(releaseId) || [];
+    return this._loadDispatches(releaseId);
   }
 
   async updateDistroDispatchStatus(releaseId: string, data: any): Promise<any | null> {
-    const dispatches = this.distroDispatchStore.get(releaseId) || [];
+    const dispatches = await this._loadDispatches(releaseId);
     if (data.platform) {
       const dispatch = dispatches.find((d: any) => d.platform === data.platform);
       if (dispatch) {
-        Object.assign(dispatch, data, { updatedAt: new Date() });
+        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
+        await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
     }
@@ -1085,10 +1134,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateDistroDispatch(dispatchId: string, data: any): Promise<any | null> {
-    for (const [releaseId, dispatches] of this.distroDispatchStore.entries()) {
+    const rows = await db.select().from(systemSettings)
+      .where(sql`${systemSettings.key} like ${'distro_dispatch:%'}`);
+    for (const row of rows) {
+      const dispatches = (row.value as any[]) || [];
       const dispatch = dispatches.find((d: any) => d.id === dispatchId);
       if (dispatch) {
-        Object.assign(dispatch, data, { updatedAt: new Date() });
+        Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
+        const releaseId = row.key.replace('distro_dispatch:', '');
+        await this._saveDispatches(releaseId, dispatches);
         return dispatch;
       }
     }
@@ -1096,51 +1150,80 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAuditLog(data: any): Promise<any> {
-    return {
-      id: `audit_${Date.now()}`,
-      ...data,
-      createdAt: new Date(),
-    };
+    try {
+      const [entry] = await db
+        .insert(workspaceAuditLog)
+        .values({
+          workspaceId: data.workspaceId || data.userId || 'default',
+          userId: data.userId,
+          action: data.action,
+          resourceType: data.resourceType || null,
+          resourceId: data.resourceId || null,
+          details: data.details || null,
+          changes: data.changes || null,
+          previousValues: data.previousValues || null,
+          newValues: data.newValues || null,
+          ipAddress: data.ipAddress || null,
+          userAgent: data.userAgent || null,
+        })
+        .returning();
+      return entry;
+    } catch (error) {
+      logger.error('Failed to persist audit log entry:', error);
+      return { id: `audit_${Date.now()}`, ...data, createdAt: new Date() };
+    }
   }
 
   async getDistroAnalytics(userId: string): Promise<any> {
-    const userAnalytics = await db
-      .select()
-      .from(analytics)
-      .where(eq(analytics.userId, userId))
-      .orderBy(desc(analytics.date))
-      .limit(30);
-
-    const [txRow] = await db
-      .select({
-        totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
-        totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
-        txCount: sql<number>`COUNT(*)`,
-      })
-      .from(royaltyTransactions)
-      .where(eq(royaltyTransactions.userId, userId));
-
-    const txRevenue = Number(txRow?.totalRevenue ?? 0);
-    const txStreams = Number(txRow?.totalStreams ?? 0);
-
-    if (userAnalytics.length === 0 && txStreams === 0 && txRevenue === 0) {
-      return null;
-    }
-
-    const totalStreams = userAnalytics.reduce((sum, a) => sum + (a.streams || 0), 0) + txStreams;
-    const totalListeners = userAnalytics.reduce((sum, a) => sum + (a.listeners || 0), 0);
-    const totalSaves = userAnalytics.reduce((sum, a) => sum + (a.saves || 0), 0);
-    const totalPlaylists = userAnalytics.reduce((sum, a) => sum + (a.playlistAdds || 0), 0);
-    const totalRevenue = txRevenue;
-
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const threeMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 3, 1);
 
-    const thisMonthAnalytics = userAnalytics.filter(a => a.date && new Date(a.date) >= thisMonthStart);
-    const prevMonthAnalytics = userAnalytics.filter(a => a.date && new Date(a.date) >= prevMonthStart && new Date(a.date) < thisMonthStart);
-    const thisMonthStreams = thisMonthAnalytics.reduce((s, a) => s + (a.streams || 0), 0);
-    const prevMonthStreams = prevMonthAnalytics.reduce((s, a) => s + (a.streams || 0), 0);
+    const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] = await Promise.all([
+      db.select({
+        totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalListeners: sql<number>`COALESCE(SUM(${analytics.listeners}), 0)`,
+        totalSaves: sql<number>`COALESCE(SUM(${analytics.saves}), 0)`,
+        totalPlaylists: sql<number>`COALESCE(SUM(${analytics.playlistAdds}), 0)`,
+      }).from(analytics).where(eq(analytics.userId, userId)),
+
+      db.select({
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+      }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thisMonthStart.toISOString().split('T')[0]))),
+
+      db.select({
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+      }).from(analytics).where(and(
+        eq(analytics.userId, userId),
+        gte(analytics.date, prevMonthStart.toISOString().split('T')[0]),
+        lt(analytics.date, thisMonthStart.toISOString().split('T')[0])
+      )),
+
+      db.select({
+        totalRevenue: sql<number>`COALESCE(SUM(${royaltyTransactions.amount}), 0)`,
+        totalStreams: sql<number>`COALESCE(SUM(${royaltyTransactions.streamCount}), 0)`,
+      }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId)),
+
+      db.select().from(analytics)
+        .where(and(eq(analytics.userId, userId), gte(analytics.date, threeMonthsAgo.toISOString().split('T')[0])))
+        .orderBy(desc(analytics.date))
+        .limit(90),
+    ]);
+
+    const txRevenue = Number(txRow[0]?.totalRevenue ?? 0);
+    const txStreams = Number(txRow[0]?.totalStreams ?? 0);
+    const totalStreams = Number(allTimeAgg[0]?.totalStreams ?? 0) + txStreams;
+    const totalListeners = Number(allTimeAgg[0]?.totalListeners ?? 0);
+    const totalSaves = Number(allTimeAgg[0]?.totalSaves ?? 0);
+    const totalPlaylists = Number(allTimeAgg[0]?.totalPlaylists ?? 0);
+
+    if (totalStreams === 0 && txStreams === 0 && txRevenue === 0) {
+      return null;
+    }
+
+    const thisMonthStreams = Number(thisMonthAgg[0]?.streams ?? 0);
+    const prevMonthStreams = Number(prevMonthAgg[0]?.streams ?? 0);
     const streamGrowth = prevMonthStreams > 0
       ? Math.round(((thisMonthStreams - prevMonthStreams) / prevMonthStreams) * 100)
       : 0;
@@ -1154,11 +1237,11 @@ export class DatabaseStorage implements IStorage {
       saveGrowth: 0,
       playlistAdds: totalPlaylists,
       playlistGrowth: 0,
-      totalRevenue,
+      totalRevenue: txRevenue,
       downloads: 0,
-      revenue: totalRevenue,
+      revenue: txRevenue,
       growth: streamGrowth,
-      rawData: userAnalytics,
+      rawData: recentAnalytics,
     };
   }
 
@@ -1346,14 +1429,78 @@ export class DatabaseStorage implements IStorage {
     userId?: string;
   }): Promise<any[]> {
     try {
-      let query = dbRead.select().from(listings).where(eq(listings.isPublished, true));
-      
+      const conditions: any[] = [];
+
       if (filters?.userId) {
-        query = dbRead.select().from(listings).where(eq(listings.userId, filters.userId));
+        conditions.push(eq(listings.userId, filters.userId));
+      } else {
+        conditions.push(eq(listings.isPublished, true));
       }
-      
-      let results = await query.orderBy(desc(listings.createdAt)).limit(filters?.limit || 50);
-      
+
+      if (filters?.search) {
+        const searchTerm = `%${filters.search}%`;
+        conditions.push(
+          or(
+            ilike(listings.title, searchTerm),
+            ilike(listings.description, searchTerm),
+            ilike(listings.category, searchTerm),
+            sql`${listings.metadata}::text ilike ${searchTerm}`
+          )
+        );
+      }
+
+      if (filters?.genre) {
+        conditions.push(
+          or(
+            ilike(listings.category, `%${filters.genre}%`),
+            sql`${listings.metadata}->>'genre' ilike ${`%${filters.genre}%`}`
+          )
+        );
+      }
+
+      if (filters?.minPrice != null) {
+        conditions.push(gte(listings.priceCents, Math.round(filters.minPrice * 100)));
+      }
+      if (filters?.maxPrice != null) {
+        conditions.push(lte(listings.priceCents, Math.round(filters.maxPrice * 100)));
+      }
+
+      if (filters?.bpm != null) {
+        conditions.push(sql`(${listings.metadata}->>'bpm')::int = ${filters.bpm}`);
+      }
+
+      if (filters?.key) {
+        conditions.push(sql`${listings.metadata}->>'key' ilike ${`%${filters.key}%`}`);
+      }
+
+      const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+      let orderBy: any;
+      switch (filters?.sortBy) {
+        case 'popular':
+          orderBy = [desc(sql`(${listings.metadata}->>'plays')::int`)];
+          break;
+        case 'price_low':
+          orderBy = [asc(listings.priceCents)];
+          break;
+        case 'price_high':
+          orderBy = [desc(listings.priceCents)];
+          break;
+        default:
+          orderBy = [desc(listings.createdAt)];
+      }
+
+      const limit = filters?.limit ?? 50;
+      const offset = filters?.offset ?? 0;
+
+      const results = await dbRead
+        .select()
+        .from(listings)
+        .where(whereClause)
+        .orderBy(...orderBy)
+        .limit(limit)
+        .offset(offset);
+
       const userIds = [...new Set(results.map(l => l.userId))];
       const userRows = userIds.length > 0
         ? await dbRead.select({ id: users.id, username: users.username, firstName: users.firstName, lastName: users.lastName })
@@ -1362,7 +1509,7 @@ export class DatabaseStorage implements IStorage {
         : [];
       const userMap = new Map(userRows.map(u => [u.id, u]));
 
-      const mapped = results.map(listing => {
+      return results.map(listing => {
         const meta = (listing.metadata as any) || {};
         const owner = userMap.get(listing.userId);
         const producerName = owner?.username || `${owner?.firstName || ''} ${owner?.lastName || ''}`.trim() || 'Producer';
@@ -1400,7 +1547,7 @@ export class DatabaseStorage implements IStorage {
           tags: meta.tags || [],
           waveformData: meta.waveformData || [],
           createdAt: listing.createdAt,
-          updatedAt: listing.createdAt,
+          updatedAt: listing.updatedAt ?? listing.createdAt,
           licenses: [
             { type: 'basic', price: (listing.priceCents || 0) / 100 },
             { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
@@ -1408,20 +1555,6 @@ export class DatabaseStorage implements IStorage {
           ],
         };
       });
-
-      if (filters?.search) {
-        const q = filters.search.toLowerCase();
-        return mapped.filter(b =>
-          b.title?.toLowerCase().includes(q) ||
-          b.description?.toLowerCase().includes(q) ||
-          b.producer?.toLowerCase().includes(q) ||
-          b.genre?.toLowerCase().includes(q) ||
-          b.mood?.toLowerCase().includes(q) ||
-          (b.tags as string[]).some((t: string) => t.toLowerCase().includes(q))
-        );
-      }
-
-      return mapped;
     } catch (error) {
       logger.error('Error fetching beat listings:', error);
       return [];

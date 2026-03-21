@@ -6,7 +6,8 @@ import fs from "fs";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects } from "../shared/schema.ts";
+import { sum, count, ilike, inArray, or, ne, asc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
@@ -3215,20 +3216,48 @@ export async function registerRoutes(
     }
   });
 
-  // Royalties endpoints
+  // Royalties endpoints — backed by real DB data
   app.get("/api/royalties", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        totalEarnings: 0,
-        pendingPayouts: 0,
-        lastPayout: null,
-        earnings: [],
-      });
+      const userId = req.user.id;
+      const { period = '30d', platform } = req.query as { period?: string; platform?: string };
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365, 'all': 9999 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const conditions: any[] = [eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)];
+      if (platform && platform !== 'all') {
+        conditions.push(eq(royaltyTransactions.platform, platform));
+      }
+
+      const rows = await db.select().from(royaltyTransactions)
+        .where(and(...conditions))
+        .orderBy(desc(royaltyTransactions.createdAt));
+
+      const totalEarnings = rows.reduce((s, r) => s + (r.amount || 0), 0);
+      const pendingPayouts = rows.filter(r => r.status === 'pending').reduce((s, r) => s + (r.amount || 0), 0);
+      const lastPaid = rows.find(r => r.paidAt);
+
+      const earnings = rows.map(r => ({
+        id: r.id,
+        releaseId: r.releaseId,
+        platform: r.platform,
+        amount: r.amount,
+        currency: r.currency,
+        streamCount: r.streamCount,
+        periodStart: r.periodStart,
+        periodEnd: r.periodEnd,
+        status: r.status,
+        transactionType: r.transactionType,
+        createdAt: r.createdAt,
+      }));
+
+      return res.json({ data: earnings, totalEarnings, pendingPayouts, lastPayout: lastPaid?.paidAt ?? null, pagination: { total: earnings.length } });
     } catch (error) {
-      logger.info("Royalties error:", error);
+      logger.error("Royalties error:", error);
       return res.status(500).json({ message: "Failed to fetch royalties" });
     }
   });
@@ -3238,9 +3267,31 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const userId = req.user.id;
+      const { period = '30d' } = req.query as { period?: string };
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db
+        .select({
+          platform: royaltyTransactions.platform,
+          totalAmount: sum(royaltyTransactions.amount),
+          totalStreams: sum(royaltyTransactions.streamCount),
+          transactionCount: count(royaltyTransactions.id),
+        })
+        .from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)))
+        .groupBy(royaltyTransactions.platform);
+
+      return res.json(rows.map(r => ({
+        platform: r.platform || 'unknown',
+        earnings: Number(r.totalAmount) || 0,
+        streams: Number(r.totalStreams) || 0,
+        transactions: Number(r.transactionCount) || 0,
+      })));
     } catch (error) {
-      logger.info("Platform breakdown error:", error);
+      logger.error("Platform breakdown error:", error);
       return res.status(500).json({ message: "Failed to fetch platform breakdown" });
     }
   });
@@ -3250,9 +3301,38 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const userId = req.user.id;
+      const { period = '30d' } = req.query as { period?: string };
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db
+        .select({
+          releaseId: royaltyTransactions.releaseId,
+          totalAmount: sum(royaltyTransactions.amount),
+          totalStreams: sum(royaltyTransactions.streamCount),
+        })
+        .from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)))
+        .groupBy(royaltyTransactions.releaseId)
+        .orderBy(desc(sum(royaltyTransactions.amount)))
+        .limit(10);
+
+      const releaseIds = rows.map(r => r.releaseId).filter(Boolean);
+      const releaseRows = releaseIds.length > 0
+        ? await db.select({ id: releases.id, title: releases.title }).from(releases).where(inArray(releases.id, releaseIds))
+        : [];
+      const releaseMap = new Map(releaseRows.map(r => [r.id, r.title]));
+
+      return res.json(rows.map(r => ({
+        releaseId: r.releaseId,
+        title: releaseMap.get(r.releaseId) || r.releaseId,
+        earnings: Number(r.totalAmount) || 0,
+        streams: Number(r.totalStreams) || 0,
+      })));
     } catch (error) {
-      logger.info("Top tracks error:", error);
+      logger.error("Top tracks error:", error);
       return res.status(500).json({ message: "Failed to fetch top tracks" });
     }
   });
@@ -3262,9 +3342,21 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const user = req.user as any;
+      const prefs = user.preferences?.payout || {};
+      const methods = [];
+      if (user.stripeConnectedAccountId) {
+        methods.push({ id: 'stripe', type: 'stripe', label: 'Bank Account (Stripe)', isDefault: !prefs.paypalEmail && !prefs.bankDetails });
+      }
+      if (prefs.paypalEmail) {
+        methods.push({ id: 'paypal', type: 'paypal', label: `PayPal (${prefs.paypalEmail})`, isDefault: !!prefs.paypalEmail && !prefs.bankDetails });
+      }
+      if (prefs.bankDetails) {
+        methods.push({ id: 'bank', type: 'bank_transfer', label: 'Bank Transfer', isDefault: true });
+      }
+      return res.json(methods);
     } catch (error) {
-      logger.info("Payment methods error:", error);
+      logger.error("Payment methods error:", error);
       return res.status(500).json({ message: "Failed to fetch payment methods" });
     }
   });
@@ -3274,9 +3366,19 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { type, paypalEmail, bankDetails } = req.body;
+      if (!type) return res.status(400).json({ message: 'Payment method type required' });
+
+      const user = req.user as any;
+      const currentPrefs = user.preferences || {};
+      const updated = { ...currentPrefs, payout: { ...(currentPrefs.payout || {}) } };
+      if (type === 'paypal' && paypalEmail) updated.payout.paypalEmail = paypalEmail;
+      if (type === 'bank_transfer' && bankDetails) updated.payout.bankDetails = bankDetails;
+
+      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payment method added' });
     } catch (error) {
-      logger.info("Add payment method error:", error);
+      logger.error("Add payment method error:", error);
       return res.status(500).json({ message: "Failed to add payment method" });
     }
   });
@@ -3286,13 +3388,17 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const user = req.user as any;
+      const prefs = user.preferences?.payoutSettings || {};
       return res.json({
-        minimumPayout: 50,
-        payoutSchedule: 'monthly',
-        preferredMethod: null,
+        minimumPayout: prefs.minimumPayout ?? 50,
+        payoutSchedule: prefs.payoutSchedule ?? 'monthly',
+        preferredMethod: prefs.preferredMethod ?? null,
+        stripeConnected: !!(user.stripeConnectedAccountId),
+        paypalEmail: user.preferences?.payout?.paypalEmail ?? null,
       });
     } catch (error) {
-      logger.info("Payout settings error:", error);
+      logger.error("Payout settings error:", error);
       return res.status(500).json({ message: "Failed to fetch payout settings" });
     }
   });
@@ -3302,9 +3408,22 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { minimumPayout, payoutSchedule, preferredMethod } = req.body;
+      const user = req.user as any;
+      const currentPrefs = user.preferences || {};
+      const updated = {
+        ...currentPrefs,
+        payoutSettings: {
+          ...(currentPrefs.payoutSettings || {}),
+          ...(minimumPayout != null && { minimumPayout }),
+          ...(payoutSchedule && { payoutSchedule }),
+          ...(preferredMethod && { preferredMethod }),
+        },
+      };
+      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payout settings updated' });
     } catch (error) {
-      logger.info("Update payout settings error:", error);
+      logger.error("Update payout settings error:", error);
       return res.status(500).json({ message: "Failed to update payout settings" });
     }
   });
@@ -3314,9 +3433,31 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { formType = 'W-9', taxYear = new Date().getFullYear(), formData } = req.body;
+      if (!formData) return res.status(400).json({ message: 'Form data required' });
+
+      const [existing] = await db.select({ id: taxForms.id })
+        .from(taxForms)
+        .where(and(eq(taxForms.userId, req.user.id), eq(taxForms.taxYear, taxYear), eq(taxForms.formType, formType)))
+        .limit(1);
+
+      if (existing) {
+        await db.update(taxForms)
+          .set({ formData, status: 'submitted', submittedAt: new Date() })
+          .where(eq(taxForms.id, existing.id));
+      } else {
+        await db.insert(taxForms).values({
+          userId: req.user.id,
+          formType,
+          taxYear,
+          formData,
+          status: 'submitted',
+          submittedAt: new Date(),
+        });
+      }
       return res.json({ success: true, message: 'Tax info updated' });
     } catch (error) {
-      logger.info("Update tax info error:", error);
+      logger.error("Update tax info error:", error);
       return res.status(500).json({ message: "Failed to update tax info" });
     }
   });
@@ -3326,9 +3467,12 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const rows = await db.select().from(royaltySplits)
+        .where(eq(royaltySplits.userId, req.user.id))
+        .orderBy(desc(royaltySplits.createdAt));
+      return res.json(rows);
     } catch (error) {
-      logger.info("Royalty splits error:", error);
+      logger.error("Royalty splits error:", error);
       return res.status(500).json({ message: "Failed to fetch royalty splits" });
     }
   });
@@ -3338,16 +3482,27 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { collaboratorEmail, percentage, projectId } = req.body;
-      return res.json({
-        id: `split_${Date.now()}`,
+      const { collaboratorEmail, collaboratorName, percentage, projectId, role = 'collaborator' } = req.body;
+      if (!collaboratorEmail || !percentage) {
+        return res.status(400).json({ message: 'Collaborator email and percentage are required' });
+      }
+      if (percentage <= 0 || percentage > 100) {
+        return res.status(400).json({ message: 'Percentage must be between 1 and 100' });
+      }
+
+      const [split] = await db.insert(royaltySplits).values({
+        releaseId: projectId || 'general',
+        userId: req.user.id,
         collaboratorEmail,
+        collaboratorName: collaboratorName || collaboratorEmail.split('@')[0],
+        role,
         percentage,
-        projectId,
         status: 'pending',
-      });
+      }).returning();
+
+      return res.json(split);
     } catch (error) {
-      logger.info("Create split error:", error);
+      logger.error("Create split error:", error);
       return res.status(500).json({ message: "Failed to create royalty split" });
     }
   });
@@ -3357,9 +3512,17 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { splitId } = req.params;
+      const [existing] = await db.select({ id: royaltySplits.id, userId: royaltySplits.userId })
+        .from(royaltySplits).where(eq(royaltySplits.id, splitId)).limit(1);
+
+      if (!existing) return res.status(404).json({ message: 'Royalty split not found' });
+      if (existing.userId !== req.user.id) return res.status(403).json({ message: 'Not authorized' });
+
+      await db.delete(royaltySplits).where(eq(royaltySplits.id, splitId));
       return res.json({ success: true, message: 'Royalty split deleted' });
     } catch (error) {
-      logger.info("Delete split error:", error);
+      logger.error("Delete split error:", error);
       return res.status(500).json({ message: "Failed to delete royalty split" });
     }
   });
@@ -3369,12 +3532,29 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        downloadUrl: `/exports/royalties_${Date.now()}.csv`,
-      });
+      const { period = '30d', format = 'csv' } = req.body;
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db.select().from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, req.user.id), gte(royaltyTransactions.createdAt, since)))
+        .orderBy(desc(royaltyTransactions.createdAt));
+
+      if (format === 'csv') {
+        const csvHeader = 'Date,Platform,Release,Amount,Currency,Streams,Status\n';
+        const csvBody = rows.map(r =>
+          `${r.createdAt?.toISOString()},${r.platform || ''},${r.releaseId},${r.amount},${r.currency || 'usd'},${r.streamCount || 0},${r.status}`
+        ).join('\n');
+        const csv = csvHeader + csvBody;
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="royalties_${period}_${Date.now()}.csv"`);
+        return res.send(csv);
+      }
+
+      return res.json({ success: true, data: rows });
     } catch (error) {
-      logger.info("Export royalties error:", error);
+      logger.error("Export royalties error:", error);
       return res.status(500).json({ message: "Failed to export royalties" });
     }
   });
@@ -3384,14 +3564,16 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        payoutId: `payout_${Date.now()}`,
-        message: 'Payout request submitted',
-      });
+      const { instantPayoutService } = await import("./services/instantPayoutService");
+      const balance = await instantPayoutService.calculateAvailableBalance(req.user.id);
+      if (balance <= 0) {
+        return res.status(400).json({ message: 'No available balance for payout' });
+      }
+      const result = await instantPayoutService.requestInstantPayout(req.user.id, { amount: balance });
+      return res.json({ success: true, payoutId: result?.id || `payout_${Date.now()}`, message: 'Payout request submitted', amount: balance });
     } catch (error) {
-      logger.info("Request payout error:", error);
-      return res.status(500).json({ message: "Failed to request payout" });
+      logger.error("Request payout error:", error);
+      return res.status(500).json({ message: "Failed to request payout. Please ensure your payment method is configured." });
     }
   });
 
