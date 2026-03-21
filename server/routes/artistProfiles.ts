@@ -192,6 +192,17 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/:id/profile-hub', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.profileHub(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/profile-hub error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Profile hub failed' });
+  }
+});
+
 router.post('/:id/auto-discover', requireAuth, async (req: Request, res: Response) => {
   try {
     // Optional UPC from DistroKid / distributor — bypasses name-search for exact platform IDs
