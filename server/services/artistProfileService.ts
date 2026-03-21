@@ -1307,14 +1307,22 @@ class ArtistProfileService {
 
   async profileHub(profileId: string, userId: string): Promise<{
     artistName: string;
+    profileImageUrl: string | null;
+    genres: string[];
+    isVerified: boolean;
+    verifiedPlatforms: string[];
     portals: {
       key: string;
       label: string;
       portalUrl: string;
+      artistPageUrl: string | null;
+      fieldKey: string | null;
       claimed: boolean;
       artistId: string | null;
       howVerified: string;
+      claimInstructions: string;
       distributorHandles: boolean;
+      autoDiscoverKey: string | null;
     }[];
     metadataKeys: {
       artistName: string;
@@ -1331,90 +1339,136 @@ class ArtistProfileService {
         key: 'spotify',
         label: 'Spotify for Artists',
         portalUrl: 'https://artists.spotify.com/',
+        artistPageUrl: profile.spotifyArtistId
+          ? `https://open.spotify.com/artist/${profile.spotifyArtistId}`
+          : null,
+        fieldKey: 'spotifyArtistId',
         claimed: !!profile.spotifyArtistId,
         artistId: profile.spotifyArtistId ?? null,
-        howVerified: 'Distributor metadata + social links',
+        howVerified: 'Distributor metadata + artist name',
+        claimInstructions: 'After your first release is live on Spotify, go to artists.spotify.com and claim your profile using the email address on file with your distributor.',
         distributorHandles: false,
+        autoDiscoverKey: 'spotify',
       },
       {
         key: 'apple',
         label: 'Apple Music for Artists',
         portalUrl: 'https://artists.apple.com/',
+        artistPageUrl: profile.appleArtistId
+          ? `https://music.apple.com/us/artist/${profile.appleArtistId}`
+          : null,
+        fieldKey: 'appleArtistId',
         claimed: !!profile.appleArtistId,
         artistId: profile.appleArtistId ?? null,
         howVerified: 'Apple ID + distributor metadata',
+        claimInstructions: 'Sign in at artists.apple.com with the Apple ID connected to your music account. Apple verifies via your iTunes Connect / distributor relationship.',
         distributorHandles: false,
+        autoDiscoverKey: 'apple',
       },
       {
         key: 'amazon',
         label: 'Amazon Music for Artists',
         portalUrl: 'https://artists.amazon.com/',
+        artistPageUrl: null,
+        fieldKey: 'amazonMusicArtistId',
         claimed: !!profile.amazonMusicArtistId,
         artistId: profile.amazonMusicArtistId ?? null,
-        howVerified: 'Identity verification',
+        howVerified: 'Identity verification via Amazon account',
+        claimInstructions: 'Go to artists.amazon.com, sign in with your Amazon account, and search for your artist name. You\'ll need at least one release live on Amazon Music.',
         distributorHandles: false,
+        autoDiscoverKey: null,
       },
       {
         key: 'youtube',
         label: 'YouTube Official Artist Channel',
         portalUrl: 'https://studio.youtube.com/',
+        artistPageUrl: profile.youtubeChannelId
+          ? `https://www.youtube.com/channel/${profile.youtubeChannelId}`
+          : null,
+        fieldKey: 'youtubeChannelId',
         claimed: !!profile.youtubeChannelId,
         artistId: profile.youtubeChannelId ?? null,
-        howVerified: 'Channel ownership + music delivery — your distributor requests OAC merging',
+        howVerified: 'Channel ownership + music delivery via distributor',
+        claimInstructions: 'Your distributor (LabelGrid) can request YouTube OAC (Official Artist Channel) merging once you have music on YouTube. This consolidates all your music under one verified channel. Alternatively, link your existing YouTube channel in YouTube Studio.',
         distributorHandles: true,
+        autoDiscoverKey: null,
       },
       {
         key: 'deezer',
         label: 'Deezer for Creators',
         portalUrl: 'https://creators.deezer.com/',
+        artistPageUrl: profile.deezerArtistId
+          ? `https://www.deezer.com/artist/${profile.deezerArtistId}`
+          : null,
+        fieldKey: 'deezerArtistId',
         claimed: !!profile.deezerArtistId,
         artistId: profile.deezerArtistId ?? null,
-        howVerified: 'Distributor metadata',
+        howVerified: 'Distributor metadata matching',
+        claimInstructions: 'Go to creators.deezer.com, create a free account, and search for your artist name to request access. Deezer typically approves within a few days.',
         distributorHandles: false,
+        autoDiscoverKey: 'deezer',
       },
       {
         key: 'tidal',
         label: 'Tidal for Artists',
         portalUrl: 'https://artists.tidal.com/',
+        artistPageUrl: null,
+        fieldKey: 'tidalArtistId',
         claimed: !!profile.tidalArtistId,
         artistId: profile.tidalArtistId ?? null,
         howVerified: 'Distributor metadata',
+        claimInstructions: 'Sign up at artists.tidal.com. TIDAL reviews requests manually and typically approves within 1–2 weeks. Your distributor\'s delivery to TIDAL helps confirm your identity.',
         distributorHandles: false,
+        autoDiscoverKey: null,
       },
       {
         key: 'pandora',
         label: 'Pandora for Artists',
         portalUrl: 'https://artists.pandora.com/',
+        artistPageUrl: null,
+        fieldKey: null,
         claimed: false,
         artistId: null,
-        howVerified: 'Distributor metadata',
+        howVerified: 'Distributor delivery confirmation',
+        claimInstructions: 'Register at artists.pandora.com. Pandora requires you to have distributed music to Pandora first. Use the same email associated with your distributor account.',
         distributorHandles: false,
+        autoDiscoverKey: null,
       },
       {
         key: 'soundcloud',
         label: 'SoundCloud for Artists',
         portalUrl: 'https://soundcloud.com/for/artists',
+        artistPageUrl: profile.soundcloudArtistId
+          ? `https://soundcloud.com/${profile.soundcloudArtistId}`
+          : null,
+        fieldKey: 'soundcloudArtistId',
         claimed: !!profile.soundcloudArtistId,
         artistId: profile.soundcloudArtistId ?? null,
-        howVerified: 'Account verification',
+        howVerified: 'Account verification + distribution delivery',
+        claimInstructions: 'Visit soundcloud.com/for/artists to upgrade to SoundCloud Pro for expanded analytics. Your username/slug on SoundCloud is your identifier.',
         distributorHandles: false,
+        autoDiscoverKey: 'audiomack',
       },
     ];
 
     const storedIds: Record<string, string> = {};
-    if (profile.spotifyArtistId)    storedIds['Spotify']   = profile.spotifyArtistId;
-    if (profile.appleArtistId)      storedIds['Apple']     = profile.appleArtistId;
-    if (profile.deezerArtistId)     storedIds['Deezer']    = profile.deezerArtistId;
-    if (profile.tidalArtistId)      storedIds['Tidal']     = profile.tidalArtistId;
-    if (profile.youtubeChannelId)   storedIds['YouTube']   = profile.youtubeChannelId;
-    if (profile.amazonMusicArtistId) storedIds['Amazon']   = profile.amazonMusicArtistId;
-    if (profile.soundcloudArtistId) storedIds['SoundCloud'] = profile.soundcloudArtistId;
+    if (profile.spotifyArtistId)     storedIds['Spotify']    = profile.spotifyArtistId;
+    if (profile.appleArtistId)       storedIds['Apple']      = profile.appleArtistId;
+    if (profile.deezerArtistId)      storedIds['Deezer']     = profile.deezerArtistId;
+    if (profile.tidalArtistId)       storedIds['Tidal']      = profile.tidalArtistId;
+    if (profile.youtubeChannelId)    storedIds['YouTube']    = profile.youtubeChannelId;
+    if (profile.amazonMusicArtistId) storedIds['Amazon']     = profile.amazonMusicArtistId;
+    if (profile.soundcloudArtistId)  storedIds['SoundCloud'] = profile.soundcloudArtistId;
 
     const urlDiscoveries = this.generateUrlDiscoveries(profile.artistName);
     const labelgridConfigured = labelGridService.isApiConfigured();
 
     return {
       artistName: profile.artistName,
+      profileImageUrl: profile.profileImageUrl ?? null,
+      genres: profile.genres ?? [],
+      isVerified: profile.isVerified,
+      verifiedPlatforms: (profile.verifiedPlatforms ?? []) as string[],
       portals,
       metadataKeys: {
         artistName: profile.artistName,

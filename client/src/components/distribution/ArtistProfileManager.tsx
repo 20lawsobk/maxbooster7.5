@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2, Zap, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +55,8 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [form, setForm] = useState({ artistName: '', isNewArtist: true });
+  const [discoveringId, setDiscoveringId] = useState<string | null>(null);
+  const [form, setForm] = useState({ artistName: '', isNewArtist: true, upc: '' });
 
   const { data, isLoading } = useQuery<{ profiles: ArtistProfile[] }>({
     queryKey: ['/api/artist-profiles'],
@@ -63,14 +64,35 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
   });
   const profiles = data?.profiles ?? [];
 
+  const triggerDiscover = async (profileId: string, upc?: string) => {
+    setDiscoveringId(profileId);
+    try {
+      await apiRequest('POST', `/api/artist-profiles/${profileId}/auto-discover`, {
+        upc: upc?.replace(/[^0-9]/g, '') || undefined,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profileId}/profile-hub`] });
+    } catch {
+      // silently fail — user can retry from the hub
+    } finally {
+      setDiscoveringId(null);
+    }
+  };
+
   const createMutation = useMutation({
     mutationFn: (body: object) => apiRequest('POST', '/api/artist-profiles', body).then(r => r.json()),
-    onSuccess: ({ profile }) => {
+    onSuccess: async ({ profile }) => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       setShowCreateDialog(false);
-      setForm({ artistName: '', isNewArtist: true });
+      const upc = form.upc;
+      setForm({ artistName: '', isNewArtist: true, upc: '' });
       setExpandedId(profile.id);
-      toast({ title: 'Artist profile created', description: `Auto-discovering "${profile.artistName}" across platforms…` });
+      toast({
+        title: 'Artist profile created',
+        description: `Searching for "${profile.artistName}" across streaming platforms…`,
+      });
+      await triggerDiscover(profile.id, upc);
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
     },
     onError: (err: any) => {
       const isStorageLimit = err?.status === 507 || err?.message?.includes('storage limit') || err?.message?.includes('DB_STORAGE_LIMIT');
@@ -100,7 +122,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
         <div>
           <h3 className="text-lg font-semibold">Artist Profiles</h3>
           <p className="text-sm text-muted-foreground">
-            Auto-discovers and syncs your artist identity across Spotify, Apple Music, and Deezer.
+            Auto-discovers and syncs your artist identity across Spotify, Apple Music, Deezer, and more.
           </p>
         </div>
         <Button onClick={() => setShowCreateDialog(true)} size="sm">
@@ -119,7 +141,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
             <Music2 className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="font-medium">No artist profiles yet</p>
             <p className="text-sm text-muted-foreground mb-4">
-              Create a profile — the system will automatically find and sync your artist page across streaming platforms.
+              Create a profile and MaxBooster will automatically find and link your artist pages across streaming platforms.
             </p>
             <Button onClick={() => setShowCreateDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -134,6 +156,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
           const platforms = connectedPlatforms(profile);
           const isSelected = selectedProfileId === profile.id;
           const isExpanded = expandedId === profile.id;
+          const isDiscovering = discoveringId === profile.id;
 
           return (
             <Card
@@ -154,19 +177,23 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                         <img
                           src={profile.profileImageUrl}
                           alt={profile.artistName}
-                          className="h-12 w-12 rounded-full object-cover"
+                          className="h-12 w-12 rounded-full object-cover flex-shrink-0"
+                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
                       ) : (
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                           <Music2 className="h-5 w-5 text-muted-foreground" />
                         </div>
                       )}
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-semibold truncate">{profile.artistName}</span>
                           {profile.isVerified && (
                             <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" title="Verified" />
+                          )}
+                          {isDiscovering && (
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" title="Searching platforms…" />
                           )}
                           {profile.fixerPending && (
                             <Badge variant="secondary" className="text-xs">Fixer pending</Badge>
@@ -185,15 +212,42 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                               {p}
                             </Badge>
                           ))}
-                          {platforms.length === 0 && (
+                          {platforms.length === 0 && !isDiscovering && (
                             <Badge variant="outline" className="text-xs text-orange-500 border-orange-200">
+                              No platforms linked
+                            </Badge>
+                          )}
+                          {isDiscovering && (
+                            <Badge variant="outline" className="text-xs text-blue-500 border-blue-200">
                               Discovering…
                             </Badge>
                           )}
                         </div>
+
+                        {profile.genres && profile.genres.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1">
+                            {profile.genres.slice(0, 3).map(g => (
+                              <span key={g} className="text-xs text-muted-foreground/70">{g}</span>
+                            ))}
+                            {profile.genres.length > 3 && (
+                              <span className="text-xs text-muted-foreground/50">+{profile.genres.length - 3} more</span>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex items-center gap-1 shrink-0">
+                        {platforms.length === 0 && !isDiscovering && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={e => { e.stopPropagation(); triggerDiscover(profile.id); }}
+                            title="Run auto-discovery"
+                            className="text-xs gap-1 text-blue-500 hover:text-blue-600"
+                          >
+                            <Zap className="h-3.5 w-3.5" /> Discover
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="sm"
@@ -234,14 +288,34 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
             <div className="space-y-2">
               <Label>Artist Name</Label>
               <Input
-                placeholder="e.g. The Weeknd"
+                placeholder="e.g. B-Lawz"
                 value={form.artistName}
                 onChange={e => setForm(f => ({ ...f, artistName: e.target.value }))}
                 onKeyDown={e => {
-                  if (e.key === 'Enter' && form.artistName.trim()) createMutation.mutate(form);
+                  if (e.key === 'Enter' && form.artistName.trim()) createMutation.mutate({
+                    artistName: form.artistName,
+                    isNewArtist: form.isNewArtist,
+                  });
                 }}
               />
             </div>
+
+            <div className="space-y-2">
+              <Label>
+                UPC (optional)
+                <span className="ml-1.5 text-xs font-normal text-muted-foreground">— improves discovery accuracy</span>
+              </Label>
+              <Input
+                placeholder="e.g. 00602557698992"
+                value={form.upc}
+                onChange={e => setForm(f => ({ ...f, upc: e.target.value }))}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the UPC of one of your releases. This allows exact lookup on Apple Music and Deezer instead of name-based search.
+              </p>
+            </div>
+
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
                 <p className="font-medium text-sm">New artist?</p>
@@ -254,19 +328,25 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                 onCheckedChange={v => setForm(f => ({ ...f, isNewArtist: v }))}
               />
             </div>
+
             {!form.isNewArtist && (
               <div className="rounded-lg bg-muted/50 border p-3 text-sm text-muted-foreground">
-                After creating this profile, use the DSP Profile Hub to claim your artist portals on Spotify for Artists, Apple Music for Artists, and more.
+                After creating this profile, MaxBooster will automatically search Spotify, Apple Music, Deezer, MusicBrainz, and Audiomack for your artist page and link any high-confidence matches.
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreateDialog(false)}>Cancel</Button>
             <Button
-              onClick={() => createMutation.mutate(form)}
+              onClick={() => createMutation.mutate({
+                artistName: form.artistName,
+                isNewArtist: form.isNewArtist,
+              })}
               disabled={!form.artistName.trim() || createMutation.isPending}
             >
-              {createMutation.isPending ? 'Creating…' : 'Create Profile'}
+              {createMutation.isPending ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Creating…</>
+              ) : 'Create Profile'}
             </Button>
           </DialogFooter>
         </DialogContent>
