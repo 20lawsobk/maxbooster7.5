@@ -303,11 +303,20 @@ router.post(
       }
       const data = createTrackSchema.parse(parsedMetadata);
 
+      // Upload audio buffer to Pocket Dimension (memoryStorage — no filename property)
+      const audioKey = await storageService.uploadFile(
+        file.buffer,
+        `users/${userId}/audio`,
+        file.originalname,
+        file.mimetype,
+      );
+      const audioUrl = await storageService.getDownloadUrl(audioKey);
+
       const track = await storage.createDistroTrack({
         releaseId,
         title: data.title,
         trackNumber: data.trackNumber,
-        audioUrl: `/uploads/distribution/${file.filename}`,
+        audioUrl,
         metadata: {
           explicit: data.explicit,
           lyrics: data.lyrics,
@@ -689,7 +698,16 @@ router.post(
         .replace(/-+/g, '-')
         .substring(0, 40) + '-' + Math.random().toString(36).substring(2, 8);
 
-      const headerImageUrl = file ? `/uploads/distribution/${file.filename}` : data.headerImage || null;
+      let headerImageUrl: string | null = data.headerImage || null;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
 
       const campaign = await storage.createHyperFollowPage({
         userId,
@@ -807,9 +825,16 @@ router.patch(
 
       const data = hyperFollowSchema.partial().parse(JSON.parse(req.body.data || '{}'));
 
-      const headerImageUrl = file
-        ? `/uploads/distribution/${file.filename}`
-        : data.headerImage || campaign.imageUrl;
+      let headerImageUrl: string | null | undefined = data.headerImage || campaign.imageUrl;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
 
       const existingLinks = campaign.links as HyperFollowLinks;
       const updatedCampaign = await storage.updateHyperFollowPage(id, {

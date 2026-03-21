@@ -3,6 +3,9 @@ import { storage } from '../storage';
 import { getStripePriceIds } from './stripeSetup.js';
 import { logger } from '../logger.js';
 import { stripeCircuit, executeStripeOperation } from './externalServices.js';
+import { db } from '../db.js';
+import { users } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 // Support both production and testing Stripe keys (same logic as routes.ts)
 let actualStripeKey: string | undefined;
@@ -299,9 +302,8 @@ export class StripeService {
       const subscriptionId =
         typeof invoiceSubscription === 'string' ? invoiceSubscription : invoiceSubscription.id;
 
-      // Find user by Stripe customer ID
-      const users = await storage.getAllUsers();
-      const user = users.find((u) => u.stripeCustomerId === customerId);
+      // Find user by Stripe customer ID — direct indexed lookup (avoids getAllUsers)
+      const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
 
       if (user && subscriptionId) {
         // Update subscription status
@@ -318,8 +320,7 @@ export class StripeService {
 
   private async handleSubscriptionCanceled(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
-    const users = await storage.getAllUsers();
-    const user = users.find((u) => u.stripeCustomerId === customerId);
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
 
     if (user) {
       await storage.updateUser(user.id, {

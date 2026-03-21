@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import { Switch, Route, useLocation } from 'wouter';
 import { Toaster } from '@/components/ui/toaster';
 import { InstantSkeleton } from '@/components/ui/instant-skeleton';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { KeyboardShortcutsDialog } from '@/components/dialogs/KeyboardShortcutsDialog';
 import { SkipLinks } from '@/components/SkipLinks';
 import { CookieConsentBanner } from '@/components/CookieConsentBanner';
@@ -372,15 +373,17 @@ function App() {
           <QuickActionBar position="bottom-right" />
           <ConnectionStatusBar />
           <div id="main-content" role="main" tabIndex={-1}>
-            <Suspense
-              fallback={
-                <div role="status" aria-label="Loading application">
-                  <InstantSkeleton variant="page" />
-                </div>
-              }
-            >
-              <AppWithKeyboardShortcuts />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense
+                fallback={
+                  <div role="status" aria-label="Loading application">
+                    <InstantSkeleton variant="page" />
+                  </div>
+                }
+              >
+                <AppWithKeyboardShortcuts />
+              </Suspense>
+            </ErrorBoundary>
           </div>
         </ShortcutProvider>
       </UndoProvider>

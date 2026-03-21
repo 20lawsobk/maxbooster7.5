@@ -54,7 +54,9 @@ router.post('/', async (req: Request, res: Response) => {
     let resolvedSpotifyUri = spotifyArtistUri;
 
     if (spotifyArtistUri && !spotifyArtistId) {
-      resolvedSpotifyId = spotifyArtistUri.replace('spotify:artist:', '');
+      resolvedSpotifyId = spotifyArtistUri.startsWith('spotify:artist:')
+        ? spotifyArtistUri.replace('spotify:artist:', '')
+        : spotifyArtistUri;
     } else if (spotifyArtistId && !spotifyArtistUri) {
       resolvedSpotifyUri = `spotify:artist:${spotifyArtistId}`;
     }

@@ -185,7 +185,7 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
         createdAt: session.createdAt?.toISOString(),
         expiresAt: session.expiresAt?.toISOString(),
         current: session.id === currentSessionId,
-        trusted: false
+        trusted: session.trusted ?? false,
       };
     });
 

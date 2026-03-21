@@ -60,3 +60,19 @@ Max Booster operates on a three-point data flow:
 -   **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
+
+## Comprehensive Audit Fixes (March 2026)
+A three-agent audit identified and resolved the following issues:
+
+### Backend Bug Fixes
+- **`server/index.ts`**: Removed duplicate `express.urlencoded({ extended: false })` call that was overriding the `{ extended: true, limit: '200mb' }` setting, breaking large form uploads.
+- **`server/middleware/auth.ts`**: Extracted shared JWT bearer-token resolution into private `resolveJwtUser()` helper — eliminates duplicated verification logic between `requireAuth` and `requireAuthOnly`.
+- **`server/routes/distribution.ts`**: Fixed three `file.filename` usages that returned `undefined` with `multer.memoryStorage()`. Track audio and HyperFollow header images are now properly uploaded to Pocket Dimension via `storageService.uploadFile()` before storing the URL.
+- **`server/services/stripeService.ts`**: Replaced two `storage.getAllUsers()` calls (loads entire user table into memory) with direct indexed DB queries on `users.stripeCustomerId` — O(N) → O(1) lookup using the existing `users_stripe_customer_id_idx` index.
+- **`server/routes/auth.ts`**: Fixed `trusted: false` hardcode in session list — now reads the actual `trusted` column value from the DB.
+- **`server/routes/artistProfiles.ts`**: Added guard to check `spotifyArtistUri.startsWith('spotify:artist:')` before string replacement to avoid stripping valid bare IDs.
+
+### Frontend Fixes
+- **`client/src/App.tsx`**: Wrapped the main router in `<ErrorBoundary>` so any unhandled render crash shows the custom error UI instead of a blank white screen.
+- **`client/src/pages/Distribution.tsx`**: Added `isLoading: statsLoading` to the playlist pitching stats query and render `'—'` placeholders during load instead of misleading zeroes.
+- **`client/src/components/studio/UltimateDAW.tsx`**: Added `.catch()` handlers to both `forceSave()` call sites (Ctrl+S shortcut and Save button) so users are notified when a project save fails instead of silently discarding the error.

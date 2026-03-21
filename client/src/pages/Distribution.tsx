@@ -500,7 +500,7 @@ function PlaylistPitchingContent() {
     queryKey: ['/api/playlist-pitching'],
   });
 
-  const { data: stats } = useQuery<any>({
+  const { data: stats, isLoading: statsLoading } = useQuery<any>({
     queryKey: ['/api/playlist-pitching/stats'],
   });
 
@@ -550,10 +550,10 @@ function PlaylistPitchingContent() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Pitches" value={stats?.total || 0} icon={<ListMusic className="w-4 h-4" />} />
-        <StatCard title="Accepted" value={stats?.accepted || 0} icon={<CheckCircle className="w-4 h-4 text-green-500" />} />
-        <StatCard title="Pending" value={stats?.pending || 0} icon={<Clock className="w-4 h-4 text-yellow-500" />} />
-        <StatCard title="Conversion" value={`${(stats?.conversionRate || 0).toFixed(1)}%`} icon={<TrendingUp className="w-4 h-4 text-purple-500" />} />
+        <StatCard title="Total Pitches" value={statsLoading ? '—' : (stats?.total ?? 0)} icon={<ListMusic className="w-4 h-4" />} />
+        <StatCard title="Accepted" value={statsLoading ? '—' : (stats?.accepted ?? 0)} icon={<CheckCircle className="w-4 h-4 text-green-500" />} />
+        <StatCard title="Pending" value={statsLoading ? '—' : (stats?.pending ?? 0)} icon={<Clock className="w-4 h-4 text-yellow-500" />} />
+        <StatCard title="Conversion" value={statsLoading ? '—' : `${(stats?.conversionRate ?? 0).toFixed(1)}%`} icon={<TrendingUp className="w-4 h-4 text-purple-500" />} />
       </div>
 
       <Card>
