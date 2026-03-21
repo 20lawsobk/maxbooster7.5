@@ -1,6 +1,6 @@
 import { storage } from "../storage";
 import { db } from '../db.js';
-import { dspAnalytics, releases } from '@shared/schema';
+import { dspAnalytics, releases, royaltySplits } from '@shared/schema';
 import { eq, and, sql as drizzleSql } from 'drizzle-orm';
 import { notificationService } from './notificationService.js';
 import { nanoid } from "nanoid";
@@ -423,16 +423,28 @@ export class DistributionService {
   /**
    * Setup royalty splits for collaborators
    */
-  async setupRoyaltySplit(releaseId: string, splits: Array<{ userId: string; percentage: number; role: string }>) {
+  async setupRoyaltySplit(releaseId: string, splits: Array<{ userId: string; percentage: number; role: string; name?: string; email?: string }>) {
     try {
-      // Validate splits total 100%
       const total = splits.reduce((sum, s) => sum + s.percentage, 0);
-      if (total !== 100) {
-        throw new Error("Split percentages must total 100%");
+      if (Math.abs(total - 100) > 0.01) {
+        throw new Error(`Split percentages must total 100% (got ${total.toFixed(2)}%)`);
       }
 
-      // In production: Integrate with Stripe Connect for automatic royalty splits
-      return { success: true, splitId: `split_${releaseId}` };
+      await db.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
+
+      const inserted = await db.insert(royaltySplits).values(
+        splits.map(s => ({
+          releaseId,
+          userId: s.userId,
+          collaboratorName: s.name || s.userId,
+          collaboratorEmail: s.email || `${s.userId}@placeholder.local`,
+          role: s.role,
+          percentage: s.percentage,
+          status: 'active',
+        }))
+      ).returning();
+
+      return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {
       logger.error("Royalty split error:", error);
       throw new Error("Failed to setup royalty split");

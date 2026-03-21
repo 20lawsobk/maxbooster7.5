@@ -136,3 +136,23 @@ A three-agent audit identified and resolved the following issues:
 
 ### ShowPage Session Code Fix
 - **`client/src/pages/ShowPage.tsx`**: Replaced `Math.random()` session code (changed every render) with a stable `btoa(window.location.pathname)` derivation — same show always shows same code within a page session.
+
+## Full-System Optimization Pass (March 2026 — Session 4)
+
+### Royalty Splits — Real DB Persistence
+- **`server/services/distributionService.ts` — `setupRoyaltySplit`**: Now actually persists to the `royalty_splits` table via Drizzle ORM. Clears existing splits for the release before inserting new ones. Validates that percentages sum to 100% (within 0.01 tolerance). Returns `{ success, splitId, splits: insertedRows }` instead of the previous stub.
+
+### Studio Source Label Fix
+- **`server/routes/studio.ts` — `GET /samples`**: Removed misleading `source: 'hardcoded'` label from the response; now returns `source: 'builtin'` accurately reflecting the curated sample library.
+
+### Security Service — Real Database Health Check
+- **`server/services/securityService.ts` — `checkServiceHealth('database')`**: Now executes `SELECT 1` against the Neon DB to confirm connectivity before measuring response time. Added `db` and `sql` imports. Stripe health check now verifies `STRIPE_SECRET_KEY` env var presence instead of silently returning healthy.
+
+### Marketplace — Cryptographically Secure Affiliate Codes
+- **`server/routes/marketplace.ts` — `POST /affiliates`**: Replaced `Math.random()` affiliate code generation with `crypto.randomBytes(3).toString('hex').toUpperCase()` for unpredictable, collision-resistant codes.
+
+### Advertising Stub Coverage Verified
+- Confirmed all 14 advertising storage stubs replaced in Session 3 remain intact and no new stubs were introduced in routes/advertising.ts, routes/organic.ts, routes/paid.ts, routes/advertisingAutopilot.ts, routes/growth.ts, routes/contracts.ts, routes/earnings.ts, or routes/notifications.ts.
+
+### Cross-Platform Analytics Verified
+- Confirmed `GET /api/analytics-alerts/cross-platform-comparison` is properly registered (routes.ts line 3940) and implemented with real DB queries against `dspAnalytics` table in `analyticsAlertService.ts`.

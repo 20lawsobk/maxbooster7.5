@@ -1544,7 +1544,7 @@ router.post('/affiliates', async (req: Request, res: Response) => {
       id: `aff-${Date.now()}`,
       name,
       email,
-      affiliateCode: `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      affiliateCode: `REF-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
       commissionRate: commissionRate || 20,
       totalEarnings: 0,
       pendingPayout: 0,

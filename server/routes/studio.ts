@@ -307,7 +307,7 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
     const total = samples.length;
     samples = samples.slice(offsetNum, offsetNum + limitNum);
 
-    res.json({ samples, categories: SAMPLE_CATEGORIES, total, limit: limitNum, offset: offsetNum, source: 'hardcoded' });
+    res.json({ samples, categories: SAMPLE_CATEGORIES, total, limit: limitNum, offset: offsetNum, source: 'builtin' });
   } catch (error: unknown) {
     logger.error('Error fetching samples:', error);
     res.status(500).json({ error: 'Failed to fetch samples' });

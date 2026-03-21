@@ -1674,7 +1674,7 @@ class AdvancedSocialAIService {
       hook,
       cta,
       hashtags: hashtags.slice(0, 3),
-      predictedScore: 72 + Math.random() * 10,
+      predictedScore: 72,
       differentiator: 'Shorter, more direct approach for higher scroll-stopping',
     });
 
@@ -1686,7 +1686,7 @@ class AdvancedSocialAIService {
       hook: 'What do you think about this?',
       cta,
       hashtags,
-      predictedScore: 78 + Math.random() * 10,
+      predictedScore: 80,
       differentiator: 'Question-based hook drives 2x more comments',
     });
 
@@ -1698,7 +1698,7 @@ class AdvancedSocialAIService {
       hook: `🚨 ${hook}`,
       cta: `Don't miss out! ${cta}`,
       hashtags,
-      predictedScore: 75 + Math.random() * 10,
+      predictedScore: 75,
       differentiator: 'Urgency-focused for time-sensitive promotions',
     });
 
@@ -1711,7 +1711,7 @@ class AdvancedSocialAIService {
         hook: 'Let me tell you something...',
         cta: `This is just the beginning. ${cta}`,
         hashtags,
-        predictedScore: 74 + Math.random() * 10,
+        predictedScore: 74,
         differentiator: 'Storytelling approach for deeper engagement',
       });
     }
@@ -1725,7 +1725,7 @@ class AdvancedSocialAIService {
         hook: 'We made it. 🏆',
         cta: `Thank you for being part of this journey. ${cta}`,
         hashtags,
-        predictedScore: 76 + Math.random() * 10,
+        predictedScore: 77,
         differentiator: 'Milestone/community celebration — highest brand loyalty response',
       });
     }

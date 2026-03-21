@@ -22,6 +22,7 @@ import {
   jwtTokens,
   refreshTokens,
   listings,
+  listingLicenseTiers,
   sessions,
   collabSnapshots,
   storefronts,
@@ -597,35 +598,87 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAudienceSegments(userId: string): Promise<any[]> {
-    return [];
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    const segments: any[] = [];
+    campaigns.forEach(c => {
+      const ta = c.targetAudience as Record<string, any> | null;
+      if (ta && ta.segment) {
+        segments.push({ id: c.id, name: ta.segment, size: ta.audienceSize || 0, campaignId: c.id, platform: c.platform });
+      } else if (ta) {
+        segments.push({ id: c.id, name: `${c.platform} – ${c.objective || 'general'}`, size: ta.audienceSize || 0, campaignId: c.id, platform: c.platform, ageMin: ta.ageMin, ageMax: ta.ageMax, interests: ta.interests });
+      }
+    });
+    return segments;
   }
 
   async getCreativeFatigue(userId: string): Promise<any[]> {
-    return [];
+    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt));
+    return creatives.map(c => {
+      const perf = c.performance as Record<string, any> | null;
+      const impressions = perf?.impressions || 0;
+      const clicks = perf?.clicks || 0;
+      const ctr = impressions > 0 ? (clicks / impressions) * 100 : 0;
+      const daysSinceCreated = Math.floor((Date.now() - new Date(c.createdAt!).getTime()) / 86400000);
+      const fatigueScore = Math.min(100, daysSinceCreated * 2 + (impressions > 10000 ? 30 : 0) + (ctr < 0.5 && impressions > 1000 ? 20 : 0));
+      return { id: c.id, name: c.name, campaignId: c.campaignId, impressions, ctr, fatigueScore, daysRunning: daysSinceCreated, status: c.status };
+    });
   }
 
   async getBiddingStrategies(userId: string): Promise<any[]> {
-    return [];
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    return campaigns.map(c => {
+      const meta = c.metadata as Record<string, any> | null;
+      const perf = c.performance as Record<string, any> | null;
+      return { id: c.id, campaignId: c.id, campaignName: c.name, platform: c.platform, strategy: meta?.biddingStrategy || 'manual_cpc', budget: c.budget || 0, dailyBudget: c.dailyBudget || 0, roas: perf?.roas || 0, cpa: perf?.cpa || 0, status: c.status };
+    });
   }
 
   async getLookalikeAudiences(userId: string): Promise<any[]> {
-    return [];
+    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `lookalike_audiences:${userId}`)).limit(1);
+    if (!row) return [];
+    return (row.value as any[]) || [];
   }
 
   async getAdvertisingForecasts(userId: string): Promise<any> {
-    return null;
+    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active')));
+    if (!campaigns.length) return null;
+    const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
+    const totalDailyBudget = campaigns.reduce((s, c) => s + (c.dailyBudget || 0), 0);
+    const estReach = Math.round(totalDailyBudget * 400);
+    const estImpressions = Math.round(totalDailyBudget * 1200);
+    return { activeCampaigns: campaigns.length, totalBudget, totalDailyBudget, estimatedWeeklyReach: estReach * 7, estimatedWeeklyImpressions: estImpressions * 7, estimatedMonthlyCost: totalDailyBudget * 30, forecastConfidence: campaigns.length >= 3 ? 'high' : campaigns.length >= 1 ? 'medium' : 'low' };
   }
 
   async getCompetitorInsights(userId: string): Promise<any[]> {
-    return [];
+    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitor_insights:${userId}`)).limit(1);
+    if (!row) return [];
+    return (row.value as any[]) || [];
   }
 
   async getABTests(userId: string): Promise<any[]> {
-    return [];
+    const creatives = await db.select().from(adCreatives).where(and(eq(adCreatives.userId, userId))).orderBy(desc(adCreatives.createdAt));
+    const byCampaign: Record<string, any[]> = {};
+    creatives.forEach(c => {
+      const key = c.campaignId || 'unassigned';
+      if (!byCampaign[key]) byCampaign[key] = [];
+      byCampaign[key].push(c);
+    });
+    return Object.entries(byCampaign)
+      .filter(([, variants]) => variants.length >= 2)
+      .map(([campaignId, variants]) => {
+        const perfs = variants.map(v => (v.performance as Record<string, any>) || {});
+        const best = variants.reduce((a, b) => {
+          const aRate = ((a.performance as any)?.clicks || 0) / Math.max(1, (a.performance as any)?.impressions || 1);
+          const bRate = ((b.performance as any)?.clicks || 0) / Math.max(1, (b.performance as any)?.impressions || 1);
+          return bRate > aRate ? b : a;
+        });
+        return { id: campaignId, campaignId, name: `A/B Test – ${variants[0].name}`, variants: variants.map(v => ({ id: v.id, name: v.name, status: v.status, performance: v.performance })), winnerVariantId: best.id, status: 'running', createdAt: variants[0].createdAt };
+      });
   }
 
   async getCreativeVariants(userId: string): Promise<any[]> {
-    return [];
+    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt));
+    return creatives.map(c => ({ id: c.id, campaignId: c.campaignId, name: c.name, type: c.type, headline: c.headline, description: c.description, mediaUrl: c.mediaUrl, thumbnailUrl: c.thumbnailUrl, callToAction: c.callToAction, status: c.status, performance: c.performance, variants: c.variants, createdAt: c.createdAt }));
   }
 
   async getRoasCampaigns(userId: string): Promise<any[]> {
@@ -633,19 +686,33 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoasAudienceSegments(userId: string): Promise<any[]> {
-    return [];
+    return this.getAudienceSegments(userId);
   }
 
   async getRoasForecast(userId: string): Promise<any[]> {
-    return [];
+    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active')));
+    return campaigns.map(c => {
+      const perf = c.performance as Record<string, any> | null;
+      const roas = perf?.roas || 0;
+      const spend = c.budget || 0;
+      return { campaignId: c.id, campaignName: c.name, platform: c.platform, currentRoas: roas, forecastedRoas: roas * 1.1, spend, forecastedRevenue: spend * roas * 1.1, confidence: perf ? 'medium' : 'low' };
+    });
   }
 
   async getBudgetOptimization(userId: string): Promise<any[]> {
-    return [];
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    return campaigns.map(c => {
+      const perf = c.performance as Record<string, any> | null;
+      const roas = perf?.roas || 0;
+      const spend = c.budget || 0;
+      const efficiency = roas > 0 ? roas / Math.max(1, spend / 100) : 0;
+      const recommendation = roas > 3 ? 'increase' : roas < 1 && spend > 50 ? 'decrease' : 'maintain';
+      return { campaignId: c.id, campaignName: c.name, platform: c.platform, currentBudget: spend, recommendedBudget: recommendation === 'increase' ? spend * 1.2 : recommendation === 'decrease' ? spend * 0.7 : spend, roas, efficiency, recommendation };
+    });
   }
 
   async getCreativeFatigueAnalysis(userId: string): Promise<any[]> {
-    return [];
+    return this.getCreativeFatigue(userId);
   }
 
   async getBudgetPacingCampaigns(userId: string): Promise<any[]> {
@@ -653,15 +720,29 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBudgetPacingHistory(userId: string): Promise<any[]> {
-    return [];
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).orderBy(desc(adCampaigns.createdAt)).limit(10);
+    const history: any[] = [];
+    campaigns.forEach(c => {
+      const perf = c.performance as Record<string, any> | null;
+      if (c.startDate) {
+        history.push({ campaignId: c.id, campaignName: c.name, date: c.startDate, budget: c.budget || 0, spend: perf?.spend || 0, pacing: perf?.spend && c.budget ? ((perf.spend / c.budget) * 100) : 0 });
+      }
+    });
+    return history;
   }
 
   async getAttributionData(userId: string): Promise<any[]> {
-    return [];
+    const analyticsRows = await db.select().from(analytics).where(eq(analytics.userId, userId)).orderBy(desc(analytics.date)).limit(90);
+    return analyticsRows.map(a => {
+      const meta = a.metadata as Record<string, any> | null;
+      return { date: a.date, platform: a.platform || 'unknown', streams: a.streams || 0, revenue: a.revenue || 0, source: meta?.source || 'organic', campaign: meta?.campaign || null };
+    });
   }
 
   async getCrossChannelAttribution(userId: string): Promise<any[]> {
-    return [];
+    const analyticsRows = await db.select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(eq(analytics.userId, userId)).groupBy(analytics.platform);
+    const total = analyticsRows.reduce((s, r) => s + (r.streams || 0), 0);
+    return analyticsRows.filter(r => r.platform).map(r => ({ platform: r.platform!, streams: r.streams, revenue: r.revenue, attributionShare: total > 0 ? Math.round((r.streams / total) * 1000) / 10 : 0 }));
   }
 
   async getSocialListeningKeywords(userId: string): Promise<any[]> {
@@ -747,24 +828,54 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(posts.createdAt))
       .limit(50);
 
+    const totalEngagements = recentPosts.reduce((sum, p) => {
+      const meta = p.metadata as Record<string, any> | null;
+      return sum + (meta?.likes || 0) + (meta?.comments || 0) + (meta?.shares || 0) + (meta?.reactions || 0);
+    }, 0);
+    const totalReach = recentPosts.reduce((sum, p) => {
+      const meta = p.metadata as Record<string, any> | null;
+      return sum + (meta?.reach || meta?.impressions || 0);
+    }, 0);
+    const engagementRate = recentPosts.length > 0 && totalFollowers > 0
+      ? (totalEngagements / recentPosts.length / Math.max(1, totalFollowers)) * 100
+      : 0;
+
     return {
       followers: totalFollowers,
       posts: recentPosts.length,
-      engagement: 0,
-      reach: 0,
+      engagement: Math.round(engagementRate * 100) / 100,
+      reach: totalReach,
+      totalEngagements,
     };
   }
 
   async getCompetitors(userId: string): Promise<any[]> {
-    return [];
+    const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitors:${userId}`)).limit(1);
+    if (!row) return [];
+    return (row.value as any[]) || [];
   }
 
   async getRecentAnalyzedContent(userId: string, limit: number): Promise<any[]> {
-    return [];
+    const recentPosts = await db
+      .select()
+      .from(posts)
+      .where(and(eq(posts.userId, userId), sql`${posts.metadata}->>'analyzed' = 'true'`))
+      .orderBy(desc(posts.createdAt))
+      .limit(limit || 20);
+    return recentPosts.map(p => {
+      const meta = p.metadata as Record<string, any> | null;
+      return { id: p.id, content: p.content, platform: p.platform, analyzedAt: meta?.analyzedAt || p.createdAt, features: meta?.features || {}, performance: meta?.performance || {} };
+    });
   }
 
   async saveAnalyzedContentFeatures(userId: string, features: any): Promise<string> {
-    return 'feature-' + Date.now();
+    const id = `feature-${Date.now()}-${userId.slice(0, 8)}`;
+    try {
+      await db.insert(systemSettings).values({ key: `analyzed_content:${id}`, value: { userId, features, createdAt: new Date().toISOString() }, description: `Analyzed content features for user ${userId}` }).onConflictDoNothing();
+    } catch {
+      // Non-critical; log silently
+    }
+    return id;
   }
 
   async getAllPosts(userId: string): Promise<Post[]> {
@@ -1659,11 +1770,16 @@ export class DatabaseStorage implements IStorage {
         isPublished: listing.isPublished,
         metadata: listing.metadata,
         createdAt: listing.createdAt,
-        licenses: [
-          { type: 'basic', price: (listing.priceCents || 0) / 100 },
-          { type: 'premium', price: ((listing.priceCents || 0) / 100) * 2 },
-          { type: 'exclusive', price: ((listing.priceCents || 0) / 100) * 5 },
-        ],
+        licenses: await (async () => {
+          const tiers = await db.select().from(listingLicenseTiers).where(and(eq(listingLicenseTiers.listingId, id), eq(listingLicenseTiers.isActive, true))).orderBy(asc(listingLicenseTiers.sortOrder));
+          if (tiers.length > 0) return tiers.map(t => ({ id: t.id, type: t.licenseType, label: t.label, price: (t.priceCents || 0) / 100, discountType: t.discountType, discountPercent: t.discountPercent, discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null, bogoEnabled: t.bogoEnabled, fileFormats: t.fileFormats }));
+          const base = (listing.priceCents || 0) / 100;
+          return [
+            { type: 'basic', label: 'Basic', price: base },
+            { type: 'premium', label: 'Premium', price: base * 2 },
+            { type: 'exclusive', label: 'Exclusive', price: base * 5 },
+          ];
+        })(),
       };
     } catch (error) {
       logger.error('Error fetching beat listing:', error);
