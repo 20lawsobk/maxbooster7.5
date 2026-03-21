@@ -679,7 +679,8 @@ adminRouter.get("/settings", async (req, res) => {
     const settings = await db
       .select()
       .from(systemSettings)
-      .where(like(systemSettings.key, "platform.%"));
+      .where(like(systemSettings.key, "platform.%"))
+      .limit(100);
 
     const settingsMap: Record<string, any> = {
       emailNotifications: true,
@@ -838,7 +839,7 @@ function formatUptime(seconds: number): string {
 // GET /api/admin/financial-config/royalty-rates
 adminRouter.get('/financial-config/royalty-rates', async (req, res) => {
   try {
-    const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName);
+    const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName).limit(100);
     res.json({ success: true, rates });
   } catch (err) {
     logger.error('Error fetching royalty rates:', err);
@@ -874,7 +875,7 @@ adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
 // GET /api/admin/financial-config/tax-treaties
 adminRouter.get('/financial-config/tax-treaties', async (req, res) => {
   try {
-    const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName);
+    const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName).limit(200);
     res.json({ success: true, treaties });
   } catch (err) {
     logger.error('Error fetching tax treaty rates:', err);
@@ -911,7 +912,7 @@ adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
 // GET /api/admin/financial-config/label-settings
 adminRouter.get('/financial-config/label-settings', async (req, res) => {
   try {
-    const settings = await db.select().from(labelSettings).orderBy(labelSettings.key);
+    const settings = await db.select().from(labelSettings).orderBy(labelSettings.key).limit(200);
     res.json({ success: true, settings });
   } catch (err) {
     logger.error('Error fetching label settings:', err);

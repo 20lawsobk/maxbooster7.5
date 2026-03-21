@@ -76,7 +76,8 @@ router.get('/', async (req: Request, res: Response) => {
     const accounts = await db
       .select()
       .from(socialAccounts)
-      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true)));
+      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true)))
+      .limit(50);
     
     const safeAccounts = accounts.map(account => ({
       id: account.id,
@@ -190,7 +191,8 @@ router.post('/manual-token', async (req: Request, res: Response) => {
     const existing = await db
       .select()
       .from(socialAccounts)
-      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.platform, platform)));
+      .where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.platform, platform)))
+      .limit(5);
 
     const tokenExpiresAt = expiresIn
       ? new Date(Date.now() + expiresIn * 1000)
@@ -244,7 +246,8 @@ router.put('/:accountId/permissions', async (req: Request, res: Response) => {
     const accounts = await db
       .select()
       .from(socialAccounts)
-      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)));
+      .where(and(eq(socialAccounts.id, accountId), eq(socialAccounts.userId, userId)))
+      .limit(1);
     
     if (accounts.length === 0) {
       return res.status(404).json({ error: 'Connected account not found' });

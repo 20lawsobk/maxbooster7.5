@@ -226,7 +226,8 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
     
     const connectionMap = new Map<string, typeof connections[0]>();
     for (const conn of connections) {
@@ -328,7 +329,8 @@ router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Res
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
 
     const activePlatforms = new Set<string>();
     for (const conn of connections) {
@@ -658,7 +660,8 @@ router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res: R
     const messages = await db
       .select()
       .from(socialInboxMessages)
-      .where(eq(socialInboxMessages.userId, userId));
+      .where(eq(socialInboxMessages.userId, userId))
+      .limit(200);
 
     const stats = {
       total: messages.length,
@@ -912,7 +915,8 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
     
     res.json(connections.filter(c => c.isActive).map(c => ({
       platform: c.platform,

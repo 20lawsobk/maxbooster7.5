@@ -542,7 +542,8 @@ router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
       .select()
       .from(shareLinksTable)
       .where(eq(shareLinksTable.userId, userId))
-      .orderBy(desc(shareLinksTable.createdAt));
+      .orderBy(desc(shareLinksTable.createdAt))
+      .limit(100);
 
     res.json(rows);
   } catch (error: unknown) {

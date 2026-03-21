@@ -394,7 +394,8 @@ router.get('/settings', async (req, res) => {
   try {
     const settings = await db.select()
       .from(systemSettings)
-      .where(like(systemSettings.key, 'platform.%'));
+      .where(like(systemSettings.key, 'platform.%'))
+      .limit(100);
 
     const settingsMap: Record<string, any> = {
       emailNotifications: true,

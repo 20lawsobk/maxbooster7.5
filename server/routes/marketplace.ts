@@ -295,7 +295,8 @@ async function _computeTimelineData(timeRange: string, userId: string) {
   const userListingIds = await db
     .select({ id: listings.id })
     .from(listings)
-    .where(eq(listings.userId, userId));
+    .where(eq(listings.userId, userId))
+    .limit(500);
 
   const listingIdSet = new Set(userListingIds.map(l => l.id));
 
@@ -932,7 +933,8 @@ router.get('/escrow', async (req: Request, res: Response) => {
         or(eq(orders.userId, userId), eq(orders.sellerId, userId)),
         or(eq(orders.status, 'pending'), eq(orders.status, 'escrow'))
       ))
-      .orderBy(desc(orders.createdAt));
+      .orderBy(desc(orders.createdAt))
+      .limit(200);
 
     const formatted = escrowOrders.map(o => ({
       id: o.id,
@@ -1087,7 +1089,8 @@ router.get('/collaborations', async (req: Request, res: Response) => {
     const memberRows = await db
       .select({ projectId: projectMembers.projectId })
       .from(projectMembers)
-      .where(eq(projectMembers.userId, userId));
+      .where(eq(projectMembers.userId, userId))
+      .limit(200);
 
     let memberProjects: any[] = [];
     if (memberRows.length > 0) {
@@ -1794,6 +1797,7 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
           eq(beatInteractions.beatId, beatId),
           eq(beatInteractions.interactionType, 'like')
         )
+      .limit(1)
       )
       .limit(1);
     
@@ -1864,6 +1868,7 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
           eq(beatInteractions.beatId, beatId),
           eq(beatInteractions.interactionType, 'like')
         )
+      .limit(1)
       )
       .limit(1);
     
@@ -2020,7 +2025,8 @@ router.get('/my-stems', async (req: Request, res: Response) => {
       .select()
       .from(listingStems)
       .where(eq(listingStems.userId, userId))
-      .orderBy(desc(listingStems.createdAt));
+      .orderBy(desc(listingStems.createdAt))
+      .limit(100);
     res.json(stems);
   } catch (error: any) {
     logger.error('Error fetching user stems:', error);
@@ -2035,7 +2041,8 @@ router.get('/listings/:listingId/stems', async (req: Request, res: Response) => 
       .select()
       .from(listingStems)
       .where(eq(listingStems.listingId, listingId))
-      .orderBy(asc(listingStems.createdAt));
+      .orderBy(asc(listingStems.createdAt))
+      .limit(50);
     res.json(stems);
   } catch (error: any) {
     logger.error('Error fetching listing stems:', error);

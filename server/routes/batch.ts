@@ -1085,7 +1085,8 @@ router.get('/templates', async (req: Request, res: Response) => {
       .select()
       .from(batchTemplates)
       .where(and(...conditions))
-      .orderBy(desc(batchTemplates.updatedAt));
+      .orderBy(desc(batchTemplates.updatedAt))
+      .limit(200);
 
     res.json({ templates: rows });
   } catch (error) {

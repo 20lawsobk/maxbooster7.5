@@ -161,7 +161,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
       stripe.customers.create({
         email: user.email,
         metadata: { userId: user.id },
-      })
+      }, { idempotencyKey: `create_customer_${user.id}` })
     );
     
     const customer = result.data;
@@ -169,8 +169,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
     await db
       .update(users)
       .set({ stripeCustomerId: customer.id })
-      .where(eq(users.id, user.id))
-    .limit(1);
+      .where(eq(users.id, user.id));
     
     return customer.id;
   } catch (error: any) {

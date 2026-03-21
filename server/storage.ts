@@ -110,7 +110,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.id, id)),
+      () => db.select().from(users).where(eq(users.id, id)).limit(1),
       'getUser'
     );
     return user || undefined;
@@ -118,7 +118,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.email, email)),
+      () => db.select().from(users).where(eq(users.email, email)).limit(1),
       'getUserByEmail'
     );
     return user || undefined;
@@ -126,7 +126,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.username, username)),
+      () => db.select().from(users).where(eq(users.username, username)).limit(1),
       'getUserByUsername'
     );
     return user || undefined;
@@ -134,7 +134,7 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByPasswordResetToken(token: string): Promise<User | undefined> {
     const [user] = await this._retryQuery(
-      () => db.select().from(users).where(eq(users.passwordResetToken, token)),
+      () => db.select().from(users).where(eq(users.passwordResetToken, token)).limit(1),
       'getUserByPasswordResetToken'
     );
     return user || undefined;
@@ -168,8 +168,8 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    const result = await db.delete(users).where(eq(users.id, id));
-    return true;
+    const result = await db.delete(users).where(eq(users.id, id)).returning({ id: users.id });
+    return result.length > 0;
   }
 
   async getDistributionProvider(slug: string): Promise<DSPProvider | undefined> {
@@ -178,7 +178,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getProjectsByUserId(userId: string): Promise<Project[]> {
-    return await dbRead.select().from(projects).where(eq(projects.userId, userId));
+    return await dbRead.select().from(projects).where(eq(projects.userId, userId)).orderBy(desc(projects.updatedAt)).limit(500);
   }
 
   async createProject(insertProject: InsertProject): Promise<Project> {
@@ -190,14 +190,15 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getReleasesByUserId(userId: string): Promise<Release[]> {
-    return await dbRead.select().from(releases).where(eq(releases.userId, userId));
+    return await dbRead.select().from(releases).where(eq(releases.userId, userId)).orderBy(desc(releases.createdAt)).limit(500);
   }
 
   async getAutopilotConfig(userId: string): Promise<any | undefined> {
     const [user] = await db
-      .select()
+      .select({ preferences: users.preferences })
       .from(users)
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .limit(1);
     
     if (!user) return undefined;
     return ((user as any).preferences as any)?.autopilotConfig || undefined;
@@ -218,7 +219,8 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId));
+      .where(eq(users.id, userId))
+      .limit(1);
     
     if (!user) return undefined;
     return ((user as any).preferences as any)?.advertisingAutopilotConfig || undefined;
@@ -256,7 +258,8 @@ export class DatabaseStorage implements IStorage {
     const [model] = await db
       .select()
       .from(aiModels)
-      .where(eq(aiModels.modelType, modelType));
+      .where(eq(aiModels.modelName, `${userId}-${modelType}`))
+      .limit(1);
     return model || undefined;
   }
 
@@ -287,7 +290,8 @@ export class DatabaseStorage implements IStorage {
     const [model] = await db
       .select()
       .from(aiModels)
-      .where(eq(aiModels.modelName, modelName));
+      .where(eq(aiModels.modelName, modelName))
+      .limit(1);
     return model || undefined;
   }
 
@@ -389,12 +393,12 @@ export class DatabaseStorage implements IStorage {
 
     const [accounts, recentPosts, weekPosts, autopilotContent] = await Promise.all([
       this.getSocialAccounts(userId),
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))),
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))).limit(500),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))).limit(200),
       db.select().from(socialAutopilotContent).where(and(
         eq(socialAutopilotContent.userId, userId),
         gte(socialAutopilotContent.createdAt, thirtyDaysAgo)
-      )),
+      )).limit(500),
     ]);
 
     const totalFollowers = accounts.reduce((sum, acc) => sum + (acc.followerCount || 0), 0);
@@ -483,7 +487,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
   }
 
   async getSocialCalendarEvents(userId: string): Promise<any[]> {
@@ -491,7 +496,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(contentCalendar)
       .where(eq(contentCalendar.userId, userId))
-      .orderBy(desc(contentCalendar.scheduledAt));
+      .orderBy(desc(contentCalendar.scheduledAt))
+      .limit(500);
     return events;
   }
 
@@ -526,11 +532,11 @@ export class DatabaseStorage implements IStorage {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const [allPosts, allContent] = await Promise.all([
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))),
+      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))).limit(500),
       db.select().from(socialAutopilotContent).where(and(
         eq(socialAutopilotContent.userId, userId),
         gte(socialAutopilotContent.createdAt, sevenDaysAgo)
-      )),
+      )).limit(500),
     ]);
 
     const stats: any[] = [];
@@ -584,7 +590,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(adCampaigns)
       .where(eq(adCampaigns.userId, userId))
-      .orderBy(desc(adCampaigns.createdAt));
+      .orderBy(desc(adCampaigns.createdAt))
+      .limit(200);
   }
 
   async getAdvertisingInsights(userId: string): Promise<any> {
@@ -600,7 +607,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAudienceSegments(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
     const segments: any[] = [];
     campaigns.forEach(c => {
       const ta = c.targetAudience as Record<string, any> | null;
@@ -614,7 +621,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCreativeFatigue(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt));
+    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt)).limit(100);
     return creatives.map(c => {
       const perf = c.performance as Record<string, any> | null;
       const impressions = perf?.impressions || 0;
@@ -627,7 +634,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBiddingStrategies(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
     return campaigns.map(c => {
       const meta = c.metadata as Record<string, any> | null;
       const perf = c.performance as Record<string, any> | null;
@@ -642,7 +649,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getAdvertisingForecasts(userId: string): Promise<any> {
-    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active')));
+    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active'))).limit(100);
     if (!campaigns.length) return null;
     const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
     const totalDailyBudget = campaigns.reduce((s, c) => s + (c.dailyBudget || 0), 0);
@@ -658,7 +665,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getABTests(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(and(eq(adCreatives.userId, userId))).orderBy(desc(adCreatives.createdAt));
+    const creatives = await db.select().from(adCreatives).where(and(eq(adCreatives.userId, userId))).orderBy(desc(adCreatives.createdAt)).limit(100);
     const byCampaign: Record<string, any[]> = {};
     creatives.forEach(c => {
       const key = c.campaignId || 'unassigned';
@@ -679,7 +686,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCreativeVariants(userId: string): Promise<any[]> {
-    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt));
+    const creatives = await db.select().from(adCreatives).where(eq(adCreatives.userId, userId)).orderBy(desc(adCreatives.createdAt)).limit(100);
     return creatives.map(c => ({ id: c.id, campaignId: c.campaignId, name: c.name, type: c.type, headline: c.headline, description: c.description, mediaUrl: c.mediaUrl, thumbnailUrl: c.thumbnailUrl, callToAction: c.callToAction, status: c.status, performance: c.performance, variants: c.variants, createdAt: c.createdAt }));
   }
 
@@ -692,7 +699,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoasForecast(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active')));
+    const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active'))).limit(100);
     return campaigns.map(c => {
       const perf = c.performance as Record<string, any> | null;
       const roas = perf?.roas || 0;
@@ -702,7 +709,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getBudgetOptimization(userId: string): Promise<any[]> {
-    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId));
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
     return campaigns.map(c => {
       const perf = c.performance as Record<string, any> | null;
       const roas = perf?.roas || 0;
@@ -752,7 +759,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(socialKeywords)
       .where(eq(socialKeywords.userId, userId))
-      .orderBy(desc(socialKeywords.createdAt));
+      .orderBy(desc(socialKeywords.createdAt))
+      .limit(100);
   }
 
   async getSocialListeningTrending(userId: string): Promise<any[]> {
@@ -889,7 +897,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(socialCampaigns)
       .where(eq(socialCampaigns.userId, userId))
-      .orderBy(desc(socialCampaigns.createdAt));
+      .orderBy(desc(socialCampaigns.createdAt))
+      .limit(200);
     return results;
   }
 
@@ -898,7 +907,8 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(autopilotLearningData)
       .where(eq(autopilotLearningData.userId, userId))
-      .orderBy(desc(autopilotLearningData.createdAt));
+      .orderBy(desc(autopilotLearningData.createdAt))
+      .limit(1000);
     return results;
   }
 
@@ -952,7 +962,8 @@ export class DatabaseStorage implements IStorage {
     const [notification] = await db
       .select()
       .from(notifications)
-      .where(eq(notifications.id, id));
+      .where(eq(notifications.id, id))
+      .limit(1);
     return notification || undefined;
   }
 
@@ -988,7 +999,8 @@ export class DatabaseStorage implements IStorage {
     const [session] = await db
       .select({ id: sessions.id, userId: sessions.userId })
       .from(sessions)
-      .where(eq(sessions.id, sessionId));
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
     return session || undefined;
   }
 
@@ -1116,14 +1128,16 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(distroReleases)
       .where(eq(distroReleases.artistId, artistId))
-      .orderBy(desc(distroReleases.createdAt));
+      .orderBy(desc(distroReleases.createdAt))
+      .limit(200);
   }
 
   async getDistroRelease(id: string): Promise<DistroRelease | undefined> {
     const [release] = await db
       .select()
       .from(distroReleases)
-      .where(eq(distroReleases.id, id));
+      .where(eq(distroReleases.id, id))
+      .limit(1);
     return release || undefined;
   }
 
@@ -1140,7 +1154,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(distroTracks)
-      .where(eq(distroTracks.releaseId, releaseId));
+      .where(eq(distroTracks.releaseId, releaseId))
+      .limit(50);
   }
 
   async createDistroTrack(data: any): Promise<DistroTrack> {
@@ -1193,7 +1208,8 @@ export class DatabaseStorage implements IStorage {
       const [provider] = await db
         .select()
         .from(dspProviders)
-        .where(eq(dspProviders.slug, slug));
+        .where(eq(dspProviders.slug, slug))
+        .limit(1);
       return provider || null;
     } catch (error) {
       logger.error('Error fetching DSP provider by slug:', error);
@@ -1203,7 +1219,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllDSPProviders(): Promise<any[]> {
     try {
-      const providers = await dbRead.select().from(dspProviders);
+      const providers = await dbRead.select().from(dspProviders).limit(100);
       return providers;
     } catch (error) {
       logger.error('Error fetching all DSP providers:', error);
@@ -1322,7 +1338,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateDistroDispatch(dispatchId: string, data: any): Promise<any | null> {
     const rows = await db.select().from(systemSettings)
-      .where(sql`${systemSettings.key} like ${'distro_dispatch:%'}`);
+      .where(sql`${systemSettings.key} like ${'distro_dispatch:%'}`).limit(200);
     for (const row of rows) {
       const dispatches = (row.value as any[]) || [];
       const dispatch = dispatches.find((d: any) => d.id === dispatchId);
@@ -1484,7 +1500,8 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(hyperFollowPages)
         .where(eq(hyperFollowPages.userId, userId))
-        .orderBy(desc(hyperFollowPages.createdAt));
+        .orderBy(desc(hyperFollowPages.createdAt))
+        .limit(50);
       return pages || [];
     } catch (error) {
       logger.error('Error fetching hyperfollow pages:', error);
@@ -1525,7 +1542,8 @@ export class DatabaseStorage implements IStorage {
       const providers = await db
         .select()
         .from(dspProviders)
-        .orderBy(dspProviders.name);
+        .orderBy(dspProviders.name)
+        .limit(100);
       return providers || [];
     } catch (error) {
       logger.error('Error fetching DSP providers:', error);
@@ -1753,7 +1771,8 @@ export class DatabaseStorage implements IStorage {
       const [listing] = await db
         .select()
         .from(listings)
-        .where(eq(listings.id, id));
+        .where(eq(listings.id, id))
+        .limit(1);
       
       if (!listing) return null;
       
@@ -1773,7 +1792,7 @@ export class DatabaseStorage implements IStorage {
         metadata: listing.metadata,
         createdAt: listing.createdAt,
         licenses: await (async () => {
-          const tiers = await db.select().from(listingLicenseTiers).where(and(eq(listingLicenseTiers.listingId, id), eq(listingLicenseTiers.isActive, true))).orderBy(asc(listingLicenseTiers.sortOrder));
+          const tiers = await db.select().from(listingLicenseTiers).where(and(eq(listingLicenseTiers.listingId, id), eq(listingLicenseTiers.isActive, true))).orderBy(asc(listingLicenseTiers.sortOrder)).limit(20);
           if (tiers.length > 0) return tiers.map(t => ({ id: t.id, type: t.licenseType, label: t.label, price: (t.priceCents || 0) / 100, discountType: t.discountType, discountPercent: t.discountPercent, discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null, bogoEnabled: t.bogoEnabled, fileFormats: t.fileFormats }));
           const base = (listing.priceCents || 0) / 100;
           return [
@@ -1836,7 +1855,8 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(contractTemplates)
         .where(eq(contractTemplates.userId, userId))
-        .orderBy(desc(contractTemplates.createdAt));
+        .orderBy(desc(contractTemplates.createdAt))
+        .limit(100);
       return results;
     } catch (error) {
       logger.error('Error fetching contract templates:', error);
@@ -1965,7 +1985,8 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(orders)
         .where(eq(orders.sellerId, sellerId))
-        .orderBy(desc(orders.createdAt));
+        .orderBy(desc(orders.createdAt))
+        .limit(200);
       return results;
     } catch (error) {
       logger.error('Error fetching seller orders:', error);
@@ -2009,7 +2030,8 @@ export class DatabaseStorage implements IStorage {
       .select({ id: collabSnapshots.id })
       .from(collabSnapshots)
       .where(eq(collabSnapshots.projectId, projectId))
-      .orderBy(desc(collabSnapshots.createdAt));
+      .orderBy(desc(collabSnapshots.createdAt))
+      .limit(500);
 
     if (snapshots.length > keepCount) {
       const idsToDelete = snapshots.slice(keepCount).map(s => s.id);

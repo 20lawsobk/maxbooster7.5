@@ -30,7 +30,8 @@ router.get('/', async (req: Request, res: Response) => {
     const rows = await db
       .select()
       .from(apiKeys)
-      .where(eq(apiKeys.userId, userId));
+      .where(eq(apiKeys.userId, userId))
+      .limit(50);
 
     const result = rows.map(k => ({
       id: k.id,

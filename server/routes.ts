@@ -723,7 +723,7 @@ export async function registerRoutes(
           await redisClient.del(`maxbooster:sess:${sessionId}`);
         }
       } catch (redisError) {
-        logger.info("Redis session deletion skipped:", redisError);
+        logger.warn("Redis session deletion skipped:", redisError);
       }
 
       return res.json({ success: true, message: "Session terminated successfully" });
@@ -1145,7 +1145,7 @@ export async function registerRoutes(
           }
         } catch (fsError) {
           // File deletion is best-effort, continue even if it fails
-          logger.info("Avatar file deletion skipped:", fsError);
+          logger.warn("Avatar file deletion skipped:", fsError);
         }
       }
 
@@ -2116,7 +2116,7 @@ export async function registerRoutes(
       }
       return res.json({ success: true, message: "Push subscription removed" });
     } catch (error) {
-      logger.info("Remove push subscription error:", error);
+      logger.error("Remove push subscription error:", error);
       return res.status(500).json({ message: "Failed to remove push subscription" });
     }
   });
@@ -2141,7 +2141,7 @@ export async function registerRoutes(
         })),
       });
     } catch (error) {
-      logger.info("Get push subscription status error:", error);
+      logger.error("Get push subscription status error:", error);
       return res.status(500).json({ message: "Failed to get subscription status" });
     }
   });
@@ -2206,7 +2206,7 @@ export async function registerRoutes(
   app.post("/api/projects", (req: Request, res: Response, next) => {
     upload.single('audio')(req, res, (err: any) => {
       if (err) {
-        logger.info("Project upload error:", err);
+        logger.error("Project upload error:", err);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(413).json({ message: "File too large. Maximum size is 500MB." });
         }
@@ -4252,7 +4252,7 @@ export async function registerRoutes(
 
   // REGISTER AFTER PAYMENT - Complete account creation after Stripe checkout
   // This endpoint verifies the Stripe session and creates the user account
-  app.post("/api/register-after-payment", async (req: Request, res: Response) => {
+  app.post("/api/register-after-payment", registerRateLimiter, async (req: Request, res: Response) => {
     try {
       if (!stripe) {
         return res.status(500).json({ error: 'Payment system not configured' });
@@ -4268,8 +4268,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy' });
       }
 
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
       }
 
       // Retrieve and verify the Stripe checkout session

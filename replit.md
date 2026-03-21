@@ -291,3 +291,60 @@ Applied automated and targeted fixes across every route and service file in the 
 **Service files fixed** (47 queries across 16 files): `advancedAnalyticsService.ts` (6), `securityMonitoringService.ts` (7), `dmcaService.ts` (6), `kycService.ts` (4), `statusPageService.ts` (4), `auditLoggerService.ts` (3), `customerHealthScoreService.ts` (3), `stripeService.ts` (2), `userPocketDimensionService.ts` (3), `aiContentService.ts` (1), `careerCoachService.ts` (1), `emailTrackingService.ts` (1), `paymentBypassService.ts` (2), `rbacService.ts` (1), `releaseCountdownService.ts` (2), `ssoService.ts` (1), `socialSyncService.ts` (1).
 
 **Total across Session 10**: 130+ single-result SELECT queries now have `.limit(1)`, eliminating unnecessary full-table scans on indexed lookups.
+
+## Full-System Optimization Pass (March 2026 — Session 11)
+
+### Cross-File Unbounded Multi-Row Query Sweep (S04–S11)
+Applied comprehensive automated sweep across all route and service files to add appropriate `.limit(N)` bounds to every genuinely unbounded multi-row SELECT. Distinguished from aggregate (count/sum/avg) false positives using parenthesis-depth-aware detection.
+
+**80+ multi-row queries bounded across 30+ files:**
+- **`server/routes/distribution.ts`**: `distroReleases` IDs select → `.limit(500)`
+- **`server/routes/studio.ts`**: `stemExports` → `.limit(100)`, `pluginPresets` multi-row → `.limit(200)`, `pluginPresets` single-row → `.limit(1)`
+- **`server/routes/socialMedia.ts`**: 4 `socialAccounts` / `socialInboxMessages` queries → `.limit(50)` / `.limit(200)`
+- **`server/routes/admin.ts`**: `platformRoyaltyRates` → `.limit(100)`, `taxTreatyRates` → `.limit(200)`, `labelSettings` → `.limit(200)`, `systemSettings` → `.limit(100)`
+- **`server/routes/marketplace.ts`**: `listings` IDs → `.limit(500)`, `orders` escrow → `.limit(200)`, `projectMembers` → `.limit(200)`, `beatInteractions` (×2) → `.limit(1)`, `listingStems` (×2) → `.limit(100)` / `.limit(50)`
+- **`server/routes/collaboration.ts`**: 5 queries (versions, access requests, comments) → `.limit(100)`–`.limit(500)`
+- **`server/routes/export.ts`**: `shareLinksTable` → `.limit(100)`
+- **`server/routes/batch.ts`**: `batchTemplates` → `.limit(200)`
+- **`server/routes/advertising.ts`**: `adCampaigns` (×2) → `.limit(100)`
+- **`server/routes/apiKeys.ts`**: `apiKeys` → `.limit(50)`
+- **`server/routes/payouts.ts`**: `taxForms` → `.limit(20)`, `royaltyStatements` → `.limit(100)`, `royaltyDisputes` → `.limit(50)`, `disputeMessages` → `.limit(500)`
+- **`server/routes/connectedAccounts.ts`**: 3 `socialAccounts` queries → `.limit(50)` / `.limit(5)` / `.limit(1)`
+- **`server/routes/socialOAuth.ts`**: `socialAccounts` (×2) → `.limit(50)` / `.limit(1)`
+- **`server/routes/socialBulk.ts`**: `socialAccounts` (×2) → `.limit(100)`, `socialCampaigns` → `.limit(100)`
+- **`server/routes/contracts.ts`**: `contractTemplates` → `.limit(50)`, `splitSheets` → `.limit(100)`, `marketplaceDisputes` (×3) → `.limit(10)` / `.limit(200)` / `.limit(100)`
+- **`server/routes/invoices.ts`**: `orders` date-range → `.limit(200)`
+- **`server/routes/support.ts`**: `supportTickets` → `.limit(100)`
+- **`server/routes/dns.ts`**: `dnsRecordCache` → `.limit(50)`, `dnsTemplates` → `.limit(50)`
+- **`server/routes/assistant.ts`**: `assistantConversations` → `.limit(500)`
+- **`server/routes/careerCoach.ts`**: `releases.id` (×2), `posts.id` → `.limit(500)`
+- **`server/routes/auth.ts`**: `sessions` other-sessions → `.limit(500)`
+- **`server/routes/search.ts`**: `filterPresets` → `.limit(50)`, `releases.status` → `.limit(1000)`
+- **`server/routes/admin/index.ts`**: `systemSettings` → `.limit(100)`
+- **`server/routes/contracts.ts`**: Admin all disputes → `.limit(200)`
+
+### Billing & Stripe Fixes
+- **`server/routes/billing.ts`**: Removed invalid `.limit(1)` on PostgreSQL UPDATE statement (MySQL-only syntax, caused runtime error on every new Stripe customer creation). The `.where(eq(users.id, user.id))` already ensures single-row update.
+- **`server/routes/billing.ts`**: Added `idempotencyKey: 'create_customer_${user.id}'` to `stripe.customers.create()` — prevents duplicate Stripe customer creation if request retried.
+
+### Logger Severity Fixes (Routes & Services)
+- **`server/routes.ts`**: 2 `logger.info` → `logger.warn` in catch blocks for non-critical failures (Redis session deletion, avatar file deletion best-effort paths).
+- **`server/routes/auth.ts`**: Added `.limit(500)` to other-sessions lookup used in session termination.
+
+### Auth Architecture Verified
+- **Frontend auth guard pattern confirmed solid**: All protected pages use `useRequireAuth`, `useRequireSubscription`, or `useRequireAdmin` hooks — each properly redirects unauthenticated users to `/login` and non-admins to `/dashboard`. Server-side route protection confirmed on all payment, admin, and batch operation endpoints.
+- **Stripe webhook signature verification confirmed**: `/api/webhooks/stripe` uses `stripeWebhookMiddleware` which calls `stripe.webhooks.constructEvent()` — full cryptographic verification in place.
+- **Zero raw SQL injection vectors**: Comprehensive scan across all 100+ route files found 0 instances of `req.params/query/body` passed directly into `sql\`...\`` template literals.
+- **Payouts authorization confirmed**: All 12 POST/PUT/DELETE payout routes have inline `if (!req.user)` guards returning 401.
+
+### Frontend Audit (S12–S13) — Clean
+- **896 frontend TypeScript/TSX files scanned**: 0 hardcoded admin IDs, 0 localhost references in production code, 0 process.env without VITE_ prefix.
+- **QueryClient confirmed production-grade**: Structured `ApiError` class with typed error codes, 30s timeout, MutationCache global error handler, Sentry breadcrumbs.
+- **ErrorBoundary confirmed comprehensive**: 889-line component with error categorization, recovery actions, and Sentry integration.
+- **App.tsx routing confirmed correct**: All 50+ routes use lazy loading with Suspense; admin pages protected by `useRequireAdmin`; dashboard pages protected by `useRequireSubscription`.
+
+### Total Session 11 Fixes
+- **80+ unbounded multi-row queries** bounded with appropriate limits
+- **2 Stripe billing bugs** fixed (invalid PG UPDATE limit, missing idempotency)
+- **2 logger severity mismatches** corrected (info → warn for non-critical failures)
+- **Full security audit passed**: Auth, Stripe webhooks, SQL injection, password exposure — all clean

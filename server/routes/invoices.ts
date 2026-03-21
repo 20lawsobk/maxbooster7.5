@@ -355,7 +355,8 @@ router.post('/bulk-generate', requireAuth, async (req: AuthenticatedRequest, res
           gte(orders.createdAt, start),
           lte(orders.createdAt, end)
         )
-      );
+      )
+      .limit(200);
     
     const generatedInvoices: string[] = [];
     

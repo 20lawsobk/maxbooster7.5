@@ -569,7 +569,8 @@ router.get('/tax-forms', async (req, res) => {
       .select()
       .from(taxForms)
       .where(eq(taxForms.userId, req.user.id))
-      .orderBy(desc(taxForms.taxYear));
+      .orderBy(desc(taxForms.taxYear))
+      .limit(20);
 
     res.json({ forms });
   } catch (error: unknown) {
@@ -643,7 +644,8 @@ router.get('/statements', async (req, res) => {
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements.userId, req.user.id))
-      .orderBy(desc(royaltyStatements.periodEnd));
+      .orderBy(desc(royaltyStatements.periodEnd))
+      .limit(100);
 
     res.json({
       statements: statements.map((s) => ({
@@ -774,7 +776,8 @@ router.get('/disputes', async (req, res) => {
       .select()
       .from(royaltyDisputes)
       .where(eq(royaltyDisputes.userId, req.user.id))
-      .orderBy(desc(royaltyDisputes.createdAt));
+      .orderBy(desc(royaltyDisputes.createdAt))
+      .limit(50);
 
     const disputeIds = disputes.map((d) => d.id);
     const allMessages = disputeIds.length > 0
@@ -783,6 +786,7 @@ router.get('/disputes', async (req, res) => {
           .from(disputeMessages)
           .where(inArray(disputeMessages.disputeId, disputeIds))
           .orderBy(desc(disputeMessages.createdAt))
+          .limit(500)
       : [];
 
     const messagesByDispute = new Map<string, typeof allMessages>();

@@ -231,7 +231,8 @@ router.get('/:storefrontId/records', async (req, res) => {
       const cached = await db
         .select()
         .from(dnsRecordCache)
-        .where(and(eq(dnsRecordCache.storefrontId, storefrontId), eq(dnsRecordCache.domain, domain)));
+        .where(and(eq(dnsRecordCache.storefrontId, storefrontId), eq(dnsRecordCache.domain, domain)))
+        .limit(50);
 
       const records: DnsRecord[] = cached.map((r) => ({
         type: r.recordType,
@@ -460,7 +461,8 @@ router.get('/:storefrontId/templates', async (req, res) => {
     const templates = await db
       .select()
       .from(dnsTemplates)
-      .where(eq(dnsTemplates.userId, userId));
+      .where(eq(dnsTemplates.userId, userId))
+      .limit(50);
 
     res.json({ templates });
   } catch (error: unknown) {

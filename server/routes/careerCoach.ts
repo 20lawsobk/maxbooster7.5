@@ -271,15 +271,15 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       db.select({ streams: sum(analytics.streams), followers: sum(analytics.followers) })
         .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), gte(analytics.date, thirtyDaysAgo))),
       db.select({ id: releases.id }).from(releases)
-        .where(and(eq(releases.userId, userId), gte(releases.createdAt, ninetyDaysAgo))),
+        .where(and(eq(releases.userId, userId), gte(releases.createdAt, ninetyDaysAgo))).limit(500),
       db.select({ id: releases.id }).from(releases)
-        .where(and(eq(releases.userId, userId), gte(releases.createdAt, new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)))),
+        .where(and(eq(releases.userId, userId), gte(releases.createdAt, new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)))).limit(500),
       db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
         .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, thirtyDaysAgo))),
       db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
         .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, sixtyDaysAgo))),
       db.select({ id: posts.id }).from(posts)
-        .where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))),
+        .where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))).limit(500),
     ]);
 
     const currentStreams = Number(currentAnalytics[0]?.streams) || 0;

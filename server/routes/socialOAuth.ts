@@ -225,7 +225,8 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId));
+      .where(eq(socialAccounts.userId, userId))
+      .limit(50);
     
     const enrichedConnections = connections.map(c => {
       const isTokenExpired = c.tokenExpiresAt ? new Date(c.tokenExpiresAt) < new Date() : false;
@@ -674,7 +675,8 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         .where(and(
           eq(socialAccounts.userId, stateData.userId),
           eq(socialAccounts.platform, p.name)
-        ));
+        ))
+        .limit(1);
       
       if (existingConnection.length > 0) {
         await db

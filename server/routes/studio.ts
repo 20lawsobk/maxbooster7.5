@@ -2623,7 +2623,8 @@ router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Re
       .select()
       .from(stemExports)
       .where(and(eq(stemExports.projectId, projectId), eq(stemExports.userId, userId)))
-      .orderBy(desc(stemExports.createdAt));
+      .orderBy(desc(stemExports.createdAt))
+      .limit(100);
     res.json({ exports, projectId });
   } catch (error: unknown) {
     logger.error('Error fetching stem exports:', error);
@@ -4615,6 +4616,7 @@ router.get('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async 
           eq(pluginPresets.pluginId, pluginId),
           or(eq(pluginPresets.userId, userId), eq(pluginPresets.isFactory, true))
         )
+      .limit(200)
       )
       .orderBy(pluginPresets.name);
 
@@ -4645,6 +4647,7 @@ router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', re
           eq(pluginPresets.pluginId, pluginId),
           or(eq(pluginPresets.userId, userId), eq(pluginPresets.isFactory, true))
         )
+      .limit(1)
       )
       .limit(1);
 

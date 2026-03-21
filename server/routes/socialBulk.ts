@@ -50,7 +50,8 @@ router.post('/validate', requireAuth, async (req, res) => {
             inArray(socialAccounts.id, referencedAccountIds),
             eq(socialAccounts.userId, userId)
           )
-        );
+        )
+        .limit(100);
       for (const a of ownedAccounts) ownedAccountIdSet.add(a.id);
     }
 
@@ -150,7 +151,8 @@ router.post('/schedule', requireAuth, async (req, res) => {
       const ownedAccounts = await db
         .select({ id: socialAccounts.id })
         .from(socialAccounts)
-        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, userId)));
+        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, userId)))
+        .limit(100);
       const ownedIds = new Set(ownedAccounts.map((a) => a.id));
       const badIndex = validatedData.posts.findIndex(
         (p) => p.socialAccountId && !ownedIds.has(p.socialAccountId)
@@ -173,7 +175,8 @@ router.post('/schedule', requireAuth, async (req, res) => {
       const ownedCampaigns = await db
         .select({ id: socialCampaigns.id })
         .from(socialCampaigns)
-        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, userId)));
+        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, userId)))
+        .limit(100);
       const ownedCampaignIds = new Set(ownedCampaigns.map((c) => c.id));
       const badCampaignIndex = validatedData.posts.findIndex(
         (p) => p.campaignId && !ownedCampaignIds.has(p.campaignId)

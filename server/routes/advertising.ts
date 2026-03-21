@@ -189,7 +189,8 @@ router.get('/status', requireAuth, async (req: AuthenticatedRequest, res) => {
     const [campaigns, autopilotConfig] = await Promise.all([
       db.select({ platform: adCampaigns.platform, status: adCampaigns.status, budget: adCampaigns.budget })
         .from(adCampaigns)
-        .where(eq(adCampaigns.userId, userId)),
+        .where(eq(adCampaigns.userId, userId))
+        .limit(100),
       storage.getAdvertisingAutopilotConfig(userId),
     ]);
 
@@ -444,7 +445,8 @@ router.get('/roas/campaigns', requireAuth, async (req: AuthenticatedRequest, res
       .select()
       .from(adCampaigns)
       .where(eq(adCampaigns.userId, userId))
-      .orderBy(desc(adCampaigns.createdAt));
+      .orderBy(desc(adCampaigns.createdAt))
+      .limit(100);
     res.json({ campaigns });
   } catch (error) {
     logger.error('Failed to get ROAS campaigns:', error);

@@ -357,7 +357,8 @@ router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const existingVersions = await db
       .select({ id: collaborationVersions.id })
       .from(collaborationVersions)
-      .where(eq(collaborationVersions.projectId, validatedData.projectId));
+      .where(eq(collaborationVersions.projectId, validatedData.projectId))
+      .limit(500);
 
     const nextVersion = existingVersions.length + 1;
 
@@ -410,7 +411,8 @@ router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest
       .select()
       .from(collaborationVersions)
       .where(eq(collaborationVersions.projectId, projectId))
-      .orderBy(desc(collaborationVersions.version));
+      .orderBy(desc(collaborationVersions.version))
+      .limit(100);
 
     res.json({
       versions: rows,
@@ -472,7 +474,8 @@ router.post('/versions/:projectId/compare', requireAuth, async (req: Authenticat
     const rows = await db
       .select()
       .from(collaborationVersions)
-      .where(and(eq(collaborationVersions.projectId, projectId)));
+      .where(and(eq(collaborationVersions.projectId, projectId)))
+      .limit(200);
 
     const versionA = rows.find(v => v.id === versionAId);
     const versionB = rows.find(v => v.id === versionBId);
@@ -578,7 +581,8 @@ router.get('/access/requests/:projectId', requireAuth, async (req: Authenticated
       .where(and(
         eq(collaborationAccessRequests.projectId, projectId),
         eq(collaborationAccessRequests.status, 'pending'),
-      ));
+      ))
+      .limit(100);
 
     res.json({ requests: rows });
   } catch (error) {
@@ -741,7 +745,8 @@ router.get('/comments/:projectId', requireAuth, async (req: AuthenticatedRequest
       .select()
       .from(collaborationComments)
       .where(eq(collaborationComments.projectId, projectId))
-      .orderBy(desc(collaborationComments.createdAt));
+      .orderBy(desc(collaborationComments.createdAt))
+      .limit(200);
 
     res.json({ comments: rows });
   } catch (error) {

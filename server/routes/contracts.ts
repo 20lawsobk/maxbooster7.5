@@ -35,7 +35,8 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
           .where(and(
             eq(contractTemplates.userId, userId),
             eq(contractTemplates.isDefault, false)
-          ));
+          ))
+          .limit(50);
         userCustomTemplates = dbTemplates.map(t => ({
           id: t.id,
           type: t.content as string,
@@ -885,7 +886,8 @@ router.get('/split-sheets/list', async (req: Request, res: Response) => {
           sql`${splitSheets.participants} @> ${JSON.stringify([{ userId }])}::jsonb`
         )
       )
-      .orderBy(desc(splitSheets.createdAt));
+      .orderBy(desc(splitSheets.createdAt))
+      .limit(100);
 
     return res.json({ splitSheets: rows });
   } catch (error: any) {
@@ -1146,7 +1148,8 @@ router.post('/marketplace-disputes', async (req: Request, res: Response) => {
           eq(marketplaceDisputes.orderId, orderId),
           notInArray(marketplaceDisputes.status, ['resolved', 'closed'])
         )
-      );
+      )
+      .limit(10);
 
     if (existingDisputes.length > 0) {
       return res.status(400).json({ error: 'An open dispute already exists for this order', disputeId: existingDisputes[0].id });
@@ -1210,7 +1213,8 @@ router.get('/marketplace-disputes', async (req: Request, res: Response) => {
       disputes = await db
         .select()
         .from(marketplaceDisputes)
-        .orderBy(desc(marketplaceDisputes.createdAt));
+        .orderBy(desc(marketplaceDisputes.createdAt))
+        .limit(200);
     } else {
       disputes = await db
         .select()
@@ -1219,7 +1223,8 @@ router.get('/marketplace-disputes', async (req: Request, res: Response) => {
           eq(marketplaceDisputes.buyerId, userId),
           eq(marketplaceDisputes.sellerId, userId)
         ))
-        .orderBy(desc(marketplaceDisputes.createdAt));
+        .orderBy(desc(marketplaceDisputes.createdAt))
+        .limit(100);
     }
 
     if (status && typeof status === 'string') {
@@ -1616,7 +1621,8 @@ router.get('/marketplace-disputes/stats', async (req: Request, res: Response) =>
     if (isAdmin) {
       userDisputes = await db
         .select()
-        .from(marketplaceDisputes);
+        .from(marketplaceDisputes)
+        .limit(200);
     } else {
       userDisputes = await db
         .select()

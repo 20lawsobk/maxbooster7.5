@@ -274,7 +274,8 @@ router.delete('/sessions/other', requireAuth, async (req: AuthenticatedRequest, 
           eq(sessions.userId, userId),
           ne(sessions.id, currentSessionId || '')
         )
-      );
+      )
+      .limit(500);
 
     const terminatedCount = otherSessions.length;
 

@@ -3567,7 +3567,8 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
     const userReleases = await db
       .select({ id: distroReleases.id })
       .from(distroReleases)
-      .where(eq(distroReleases.artistId, userId));
+      .where(eq(distroReleases.artistId, userId))
+      .limit(500);
 
     if (userReleases.length === 0) {
       return res.json({ splits: [] });

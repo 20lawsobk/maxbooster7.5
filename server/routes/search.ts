@@ -795,7 +795,8 @@ router.get('/filter-presets', async (req: Request, res: Response) => {
       .select()
       .from(filterPresets)
       .where(and(eq(filterPresets.userId, userId), eq(filterPresets.context, contextKey)))
-      .orderBy(desc(filterPresets.createdAt));
+      .orderBy(desc(filterPresets.createdAt))
+      .limit(50);
 
     res.json({ presets: [...contextPresets, ...userPresets] });
   } catch (error: any) {
@@ -986,7 +987,8 @@ router.get('/distribution', async (req: Request, res: Response) => {
     
     const allReleases = await db.select({ status: releases.status })
       .from(releases)
-      .where(eq(releases.userId, userId));
+      .where(eq(releases.userId, userId))
+      .limit(1000);
     
     allReleases.forEach(r => {
       statusCounts.all++;
