@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db.js';
 import {
   socialAutopilotContent,
@@ -11,7 +12,7 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, lte, desc, sql, lt } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+
 import { aiModelManager } from './aiModelManager.js';
 import { createHash } from 'crypto';
 
@@ -144,7 +145,7 @@ class SocialFanbaseService {
       const [inserted] = await db
         .insert(musicImpactMetrics)
         .values({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           userId,
           contentId,
           savesWeighted: impactData.savesWeighted,
@@ -228,7 +229,7 @@ class SocialFanbaseService {
         const [inserted] = await db
           .insert(socialPatternAggregates)
           .values({
-            id: nanoid(),
+            id: randomBytes(8).toString('hex'),
             userId,
             patternHash,
             hookType: pattern.hookType,
@@ -307,7 +308,7 @@ class SocialFanbaseService {
 
       for (const pattern of patterns) {
         const candidate: ContentCandidate = {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           type: 'generated',
           format: pattern.format,
           hookType: pattern.hookType,
@@ -342,7 +343,7 @@ class SocialFanbaseService {
 
     for (let i = 0; i < exploreCount; i++) {
       const candidate: ContentCandidate = {
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         type: 'explore',
         format: formats[Math.floor(Math.random() * formats.length)],
         hookType: hookTypes[Math.floor(Math.random() * hookTypes.length)],
@@ -625,7 +626,7 @@ class SocialFanbaseService {
       const [inserted] = await db
         .insert(fanSegments)
         .values({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           userId,
           name,
           tasteVector,
@@ -779,7 +780,7 @@ class SocialFanbaseService {
       const [inserted] = await db
         .insert(socialAutopilotContent)
         .values({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           userId,
           type: data.type,
           format: data.format,

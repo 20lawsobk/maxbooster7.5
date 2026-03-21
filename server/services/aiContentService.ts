@@ -1,7 +1,8 @@
+import { randomBytes } from 'crypto';
 import { aiService } from './aiService';
 import { MaxCoreAIClient } from './unifiedAIController.js';
 import { db } from '../db';
-import { nanoid } from 'nanoid';
+
 import {
   aiModels,
   aiModelVersions,
@@ -29,6 +30,9 @@ import { sharpImageService } from './sharpImageService.js';
 
 import { spawn } from 'child_process';
 import { synthesizeToWAV, parseTextToParameters, generateChordProgression, generateMelody } from './musicGenerationService.js';
+
+import { aiTranslationService } from './aiTranslationService';
+import { dynamicTrendsService } from './dynamicTrendsService';
 
 // Sharp image service is automatically initialized on import
 
@@ -168,7 +172,8 @@ export class AIContentService {
       const [preferences] = await db
         .select()
         .from(autopilotPreferences)
-        .where(eq(autopilotPreferences.userId, userId));
+        .where(eq(autopilotPreferences.userId, userId))
+        .limit(1);
       return preferences || null;
     } catch (error) {
       logger.error('Error fetching user autopilot preferences:', error);
@@ -247,7 +252,7 @@ export class AIContentService {
           confidenceScore: outputData.confidence || 0.85,
           executionTimeMs,
           success: true,
-          requestId: nanoid(),
+          requestId: randomBytes(8).toString('hex'),
         })
         .returning();
 
@@ -304,7 +309,7 @@ export class AIContentService {
       }
 
       return {
-        id: `text_${nanoid()}`,
+        id: `text_${randomBytes(8).toString('hex')}`,
         type: 'text',
         content: result.content,
         metadata: { platform, tone, length, executionTimeMs },
@@ -324,7 +329,6 @@ export class AIContentService {
     const startTime = Date.now();
     
     try {
-      const { aiTranslationService } = await import('./aiTranslationService');
       
       const translations = await aiTranslationService.translateContent({
         content: prompt,
@@ -670,7 +674,6 @@ export class AIContentService {
     const startTime = Date.now();
 
     try {
-      const { dynamicTrendsService } = await import('./dynamicTrendsService');
       
       const dynamicTrends = await dynamicTrendsService.getTrendingTopics(platform, genre, region);
       
@@ -1044,21 +1047,21 @@ export class AIContentService {
     if (variationType === 'tone') {
       variants.push(
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: baseContent.replace(/!/g, '.'),
           variationType: 'formal',
           predictedPerformance: 75,
           changes: ['Reduced exclamation marks', 'More professional tone'],
         },
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: `${baseContent} 🔥`,
           variationType: 'energetic',
           predictedPerformance: 85,
           changes: ['Added fire emoji', 'More energetic'],
         },
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: baseContent.toLowerCase(),
           variationType: 'casual',
           predictedPerformance: 80,
@@ -1073,7 +1076,7 @@ export class AIContentService {
       ];
       emojis.forEach((emojiSet, i) => {
         variants.push({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: `${baseContent} ${emojiSet.join(' ')}`,
           variationType: `emoji-set-${i + 1}`,
           predictedPerformance: 78 + i * 3,
@@ -1084,7 +1087,7 @@ export class AIContentService {
       const ctas = ['Listen now!', 'Check it out!', "Don't miss this!", 'Stream it here!'];
       ctas.forEach((cta, i) => {
         variants.push({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: `${baseContent} ${cta}`,
           variationType: `cta-${i + 1}`,
           predictedPerformance: 82 + i * 2,
@@ -1094,14 +1097,14 @@ export class AIContentService {
     } else if (variationType === 'length') {
       variants.push(
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: baseContent.split(' ').slice(0, 10).join(' ') + '...',
           variationType: 'short',
           predictedPerformance: 88,
           changes: ['Shortened to 10 words', 'More concise'],
         },
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: `${baseContent} This is an extended version with more context and details to engage the audience.`,
           variationType: 'long',
           predictedPerformance: 72,
@@ -1112,7 +1115,7 @@ export class AIContentService {
       const headlines = ['🚨 BREAKING:', '✨ NEW:', '🎵 JUST DROPPED:'];
       headlines.forEach((headline, i) => {
         variants.push({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           content: `${headline} ${baseContent}`,
           variationType: `headline-${i + 1}`,
           predictedPerformance: 80 + i * 4,
@@ -1173,7 +1176,7 @@ export class AIContentService {
   ): Promise<GeneratedContent> {
     const content = await aiService.generateSocialContent(prompt, platform, length || 'medium');
     return {
-      id: `txt_${nanoid()}`,
+      id: `txt_${randomBytes(8).toString('hex')}`,
       type: 'text',
       content,
       createdAt: new Date(),
@@ -1198,7 +1201,7 @@ export class AIContentService {
       });
 
       return {
-        id: `img_${nanoid()}`,
+        id: `img_${randomBytes(8).toString('hex')}`,
         type: 'image',
         content: prompt,
         url: result.publicUrl,
@@ -1228,7 +1231,7 @@ export class AIContentService {
   ): Promise<GeneratedContent> {
     const dimensions = this.getPlatformVideoDimensions(platform);
     const duration = this.getPlatformVideoDuration(platform);
-    const filename = `${nanoid()}.mp4`;
+    const filename = `${randomBytes(8).toString('hex')}.mp4`;
     const outputDir = path.join(process.cwd(), 'public', 'generated-content', 'videos');
     const outputPath = path.join(outputDir, filename);
     const publicUrl = `/generated-content/videos/${filename}`;
@@ -1237,7 +1240,7 @@ export class AIContentService {
       await fs.mkdir(outputDir, { recursive: true });
 
       // Generate frame images
-      const framesDir = path.join(outputDir, `frames_${nanoid()}`);
+      const framesDir = path.join(outputDir, `frames_${randomBytes(8).toString('hex')}`);
       await fs.mkdir(framesDir, { recursive: true });
 
       const fps = 30;
@@ -1280,7 +1283,7 @@ export class AIContentService {
       }
 
       return {
-        id: `vid_${nanoid()}`,
+        id: `vid_${randomBytes(8).toString('hex')}`,
         type: 'video',
         content: prompt,
         url: publicUrl,
@@ -1308,7 +1311,7 @@ export class AIContentService {
     platform: string,
     tone?: string
   ): Promise<GeneratedContent> {
-    const filename = `${nanoid()}.wav`;
+    const filename = `${randomBytes(8).toString('hex')}.wav`;
     const outputDir = path.join(process.cwd(), 'public', 'generated-content', 'audio');
     const outputPath = path.join(outputDir, filename);
     const publicUrl = `/generated-content/audio/${filename}`;
@@ -1339,7 +1342,7 @@ export class AIContentService {
       logger.info(`✅ Generated audio: ${publicUrl} (${stats.size} bytes)`);
 
       return {
-        id: `aud_${nanoid()}`,
+        id: `aud_${randomBytes(8).toString('hex')}`,
         type: 'audio',
         content: prompt,
         url: publicUrl,

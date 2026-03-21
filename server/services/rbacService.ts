@@ -245,7 +245,8 @@ export class RBACService {
       const [memberCount] = await db
         .select({ count: sql<number>`count(*)` })
         .from(workspaceMembers)
-        .where(eq(workspaceMembers.roleId, roleId));
+        .where(eq(workspaceMembers.roleId, roleId))
+        .limit(1);
 
       if (memberCount && memberCount.count > 0) {
         return { success: false, error: 'Cannot delete role with assigned members' };

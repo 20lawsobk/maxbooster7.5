@@ -27,14 +27,16 @@ export async function getSecurityMetrics() {
   const [activeSessionsResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(gte(sessions.lastActivity, fifteenMinutesAgo));
+    .where(gte(sessions.lastActivity, fifteenMinutesAgo))
+    .limit(1);
 
   const activeSessions = activeSessionsResult?.count || 0;
 
   const [totalLoginsResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(gte(sessions.createdAt, yesterday));
+    .where(gte(sessions.createdAt, yesterday))
+    .limit(1);
 
   const totalLogins = totalLoginsResult?.count || 0;
 
@@ -42,7 +44,8 @@ export async function getSecurityMetrics() {
   const [failedLoginsResult] = await db
     .select({ count: count() })
     .from(passwordResetTokens)
-    .where(gte(passwordResetTokens.createdAt, yesterday));
+    .where(gte(passwordResetTokens.createdAt, yesterday))
+    .limit(1);
 
   const failedLogins = failedLoginsResult?.count || 0;
 
@@ -67,7 +70,8 @@ export async function getSecurityMetrics() {
   const [suspiciousActivityResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(gte(sessions.createdAt, oneHourAgo));
+    .where(gte(sessions.createdAt, oneHourAgo))
+    .limit(1);
 
   const suspiciousActivity = Math.max(0, (suspiciousActivityResult?.count || 0) - activeSessions);
 
@@ -172,12 +176,14 @@ export async function detectSecurityAnomalies() {
   const [recentSessionsResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(gte(sessions.createdAt, yesterday));
+    .where(gte(sessions.createdAt, yesterday))
+    .limit(1);
 
   const [previousSessionsResult] = await db
     .select({ count: count() })
     .from(sessions)
-    .where(and(gte(sessions.createdAt, twoDaysAgo), sql`${sessions.createdAt} < ${yesterday}`));
+    .where(and(gte(sessions.createdAt, twoDaysAgo), sql`${sessions.createdAt} < ${yesterday}`))
+    .limit(1);
 
   const recentSessions = recentSessionsResult?.count || 0;
   const previousSessions = previousSessionsResult?.count || 0;
@@ -201,7 +207,8 @@ export async function detectSecurityAnomalies() {
   const [passwordResetResult] = await db
     .select({ count: count() })
     .from(passwordResetTokens)
-    .where(gte(passwordResetTokens.createdAt, yesterday));
+    .where(gte(passwordResetTokens.createdAt, yesterday))
+    .limit(1);
 
   const passwordResets = passwordResetResult?.count || 0;
 

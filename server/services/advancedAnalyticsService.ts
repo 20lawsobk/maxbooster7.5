@@ -438,7 +438,8 @@ class AdvancedAnalyticsService {
     const [prevAnalyticsData] = await db
       .select({ totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` })
       .from(analytics)
-      .where(and(eq(analytics.userId, userId), gte(analytics.date, prevStartDate), lte(analytics.date, startDate)));
+      .where(and(eq(analytics.userId, userId), gte(analytics.date, prevStartDate), lte(analytics.date, startDate)))
+      .limit(1);
 
     const activePlaylistCount = await db
       .select({ count: sql<number>`COUNT(*)` })
@@ -596,7 +597,8 @@ class AdvancedAnalyticsService {
     const [prevData] = await db
       .select({ totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` })
       .from(analytics)
-      .where(and(eq(analytics.userId, artistId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)));
+      .where(and(eq(analytics.userId, artistId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)))
+      .limit(1);
 
     const [artistUser] = await db.select({ name: users.name }).from(users).where(eq(users.id, artistId)).limit(1);
 
@@ -781,8 +783,10 @@ class AdvancedAnalyticsService {
         const periodStart = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1000);
         const prevPeriodStart = new Date(periodStart.getTime() - daysBack * 24 * 60 * 60 * 1000);
 
-        const [curr] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, periodStart)));
-        const [prev] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, prevPeriodStart), lte(analytics.date, periodStart)));
+        const [curr] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, periodStart)))
+          .limit(1);
+        const [prev] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, prevPeriodStart), lte(analytics.date, periodStart)))
+          .limit(1);
         const currentTotal = Number(curr?.total || 0);
         const prevTotal = Number(prev?.total || 0);
         const change = prevTotal > 0 ? Math.round(((currentTotal - prevTotal) / prevTotal) * 1000) / 10 : 0;
@@ -793,8 +797,10 @@ class AdvancedAnalyticsService {
         intent = 'revenue';
         responseType = 'number';
 
-        const [curr] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)));
-        const [prev] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)));
+        const [curr] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)))
+          .limit(1);
+        const [prev] = await db.select({ total: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)))
+          .limit(1);
         const currentRev = Number(curr?.total || 0);
         const prevRev = Number(prev?.total || 0);
         const change = prevRev > 0 ? Math.round(((currentRev - prevRev) / prevRev) * 1000) / 10 : 0;

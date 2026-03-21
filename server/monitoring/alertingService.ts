@@ -1,3 +1,4 @@
+import sgMail from '@sendgrid/mail';
 import { logger } from '../logger.js';
 
 interface AlertConfig {
@@ -115,8 +116,7 @@ export class AlertingService {
 
   private async sendEmailAlert(alert: Alert): Promise<void> {
     try {
-      const sgMail = await import('@sendgrid/mail');
-      sgMail.default.setApiKey(process.env.SENDGRID_API_KEY!);
+      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
 
       const severityEmoji = {
         info: 'ℹ️',

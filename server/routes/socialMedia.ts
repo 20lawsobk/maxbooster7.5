@@ -85,7 +85,7 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
     const userId = req.user!.id;
     const { postId } = req.params;
 
-    const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+    const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId))).limit(1);
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -766,7 +766,8 @@ router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, r
           eq(socialInboxMessages.id, id),
           eq(socialInboxMessages.userId, userId)
         )
-      );
+      )
+      .limit(1);
 
     if (!message) {
       return res.status(404).json({ 

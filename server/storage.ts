@@ -38,6 +38,7 @@ import {
   artistProfiles,
   systemSettings,
   workspaceAuditLog,
+  contractTemplates,
   type User, 
   type InsertUser, 
   type DSPProvider,
@@ -350,7 +351,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getScheduledPostById(id: string): Promise<any | null> {
-    const [post] = await db.select().from(posts).where(eq(posts.id, id));
+    const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
     if (!post) return null;
     const meta = (post.metadata as any) || {};
     return {
@@ -1831,7 +1832,6 @@ export class DatabaseStorage implements IStorage {
 
   async getContractTemplates(userId: string): Promise<any[]> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
       const results = await db
         .select()
         .from(contractTemplates)
@@ -1846,7 +1846,6 @@ export class DatabaseStorage implements IStorage {
 
   async getContractTemplate(id: string): Promise<any | null> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
       const [template] = await db
         .select()
         .from(contractTemplates)
@@ -1861,8 +1860,6 @@ export class DatabaseStorage implements IStorage {
 
   async getContractTemplateByUser(id: string, userId: string): Promise<any | null> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
-      const { and } = await import("drizzle-orm");
       const [template] = await db
         .select()
         .from(contractTemplates)
@@ -1884,7 +1881,6 @@ export class DatabaseStorage implements IStorage {
     variables?: any[];
   }): Promise<any> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
       const [template] = await db
         .insert(contractTemplates)
         .values({
@@ -1906,7 +1902,6 @@ export class DatabaseStorage implements IStorage {
 
   async updateContractTemplate(id: string, data: any): Promise<any | null> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
       const [template] = await db
         .update(contractTemplates)
         .set({ ...data, updatedAt: new Date() })
@@ -1921,7 +1916,6 @@ export class DatabaseStorage implements IStorage {
 
   async deleteContractTemplate(id: string): Promise<boolean> {
     try {
-      const { contractTemplates } = await import("@shared/schema");
       await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
       return true;
     } catch (error) {
@@ -1932,7 +1926,6 @@ export class DatabaseStorage implements IStorage {
 
   async getUserOrders(userId: string): Promise<any[]> {
     try {
-      const { orders, listings, users } = await import("@shared/schema");
       const results = await db
         .select({
           id: orders.id,
@@ -1968,7 +1961,6 @@ export class DatabaseStorage implements IStorage {
 
   async getSellerOrders(sellerId: string): Promise<any[]> {
     try {
-      const { orders } = await import("@shared/schema");
       const results = await db
         .select()
         .from(orders)

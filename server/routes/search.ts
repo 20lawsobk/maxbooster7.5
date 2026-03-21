@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
 import { storage } from '../storage.ts';
-import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum } from 'drizzle-orm';
+import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum, inArray } from 'drizzle-orm';
 import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns, searchHistory, filterPresets } from '../../shared/schema.ts';
 import { logger } from '../logger.js';
 
@@ -853,7 +853,8 @@ router.post('/filter-presets/:presetId/default', async (req: Request, res: Respo
     const [target] = await db
       .select()
       .from(filterPresets)
-      .where(and(eq(filterPresets.id, presetId), eq(filterPresets.userId, userId)));
+      .where(and(eq(filterPresets.id, presetId), eq(filterPresets.userId, userId)))
+      .limit(1);
 
     if (!target) return res.status(404).json({ error: 'Preset not found' });
 
@@ -1266,19 +1267,20 @@ router.get('/marketplace/producers', async (req: Request, res: Response) => {
       .from(users)
       .where(conditions.length > 0 ? and(...conditions) : undefined);
     
-    const producersWithStats = await Promise.all(
-      results.map(async (producer) => {
-        const beatCount = await db.select({ value: count() })
+    const producerIds = results.map(r => r.id);
+    const beatCounts = producerIds.length > 0
+      ? await db.select({ producerId: beats.producerId, value: count() })
           .from(beats)
-          .where(and(eq(beats.producerId, producer.id), eq(beats.isPublished, true)));
-        
-        return {
-          ...producer,
-          beatCount: beatCount[0]?.value || 0,
-          type: 'producer',
-        };
-      })
-    );
+          .where(and(inArray(beats.producerId, producerIds), eq(beats.isPublished, true)))
+          .groupBy(beats.producerId)
+      : [];
+    const beatCountMap = new Map(beatCounts.map(b => [b.producerId, Number(b.value)]));
+
+    const producersWithStats = results.map(producer => ({
+      ...producer,
+      beatCount: beatCountMap.get(producer.id) ?? 0,
+      type: 'producer',
+    }));
     
     res.json({
       producers: producersWithStats,

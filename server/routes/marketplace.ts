@@ -13,8 +13,8 @@ import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { orders, listings, users, licenseTemplates, systemSettings, collaborationProjects, projectMembers, listingStems } from '@shared/schema';
-import { eq, and, gte, sql, desc, asc, or, inArray } from 'drizzle-orm';
+import { orders, listings, users, licenseTemplates, systemSettings, collaborationProjects, projectMembers, listingStems, storefronts, storefrontFollows, storefrontRatings, beatInteractions } from '@shared/schema';
+import { eq, and, gte, sql, desc, asc, or, inArray, avg } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
@@ -772,7 +772,7 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
 
     const { orderId } = req.params;
 
-    const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
@@ -966,7 +966,8 @@ router.get('/affiliates', async (req: Request, res: Response) => {
     const [row] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey));
+      .where(eq(systemSettings.key, settingKey))
+      .limit(1);
 
     const affiliates = row ? (row.value as any[]) || [] : [];
     res.json(affiliates);
@@ -1537,7 +1538,8 @@ router.post('/affiliates', async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey));
+      .where(eq(systemSettings.key, settingKey))
+      .limit(1);
     const currentList: any[] = existing ? (existing.value as any[]) || [] : [];
 
     const affiliate = {
@@ -1668,10 +1670,6 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Producer not found' });
     }
     
-    const { storefronts, storefrontFollows, storefrontRatings, orders } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { sql, eq, avg: drizzleAvg } = await import('drizzle-orm');
-
     const producerBeats = await marketplaceService.getListingsByProducer(producerId);
     const beatCount = producerBeats.length;
     
@@ -1688,12 +1686,14 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
     if (storefrontId) {
       const [followResult] = await db.select({ count: sql<number>`count(*)::int` })
         .from(storefrontFollows)
-        .where(eq(storefrontFollows.storefrontId, storefrontId));
+        .where(eq(storefrontFollows.storefrontId, storefrontId))
+        .limit(1);
       followerCount = followResult?.count || 0;
 
       const [ratingResult] = await db.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
         .from(storefrontRatings)
-        .where(eq(storefrontRatings.storefrontId, storefrontId));
+        .where(eq(storefrontRatings.storefrontId, storefrontId))
+        .limit(1);
       avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
 
@@ -1706,10 +1706,10 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       }
     }
 
-    const { and: drizzleAnd } = await import('drizzle-orm');
     const [salesResult] = await db.select({ count: sql<number>`count(*)::int` })
       .from(orders)
-      .where(drizzleAnd(eq(orders.sellerId, producerId), eq(orders.status, 'completed')));
+      .where(and(eq(orders.sellerId, producerId), eq(orders.status, 'completed')))
+      .limit(1);
     salesCount = salesResult?.count || 0;
     
     const featuredBeats = producerBeats.slice(0, 8).map((beat: any) => ({
@@ -1786,10 +1786,6 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
     const { beatId } = req.params;
     
     // Check if already liked
-    const { beatInteractions, listings } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { eq, and } = await import('drizzle-orm');
-    
     const existingLike = await db.select()
       .from(beatInteractions)
       .where(
@@ -1860,10 +1856,6 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
     const { beatId } = req.params;
     
     // Check if user has liked this beat by checking interactions
-    const { beatInteractions } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { eq, and } = await import('drizzle-orm');
-    
     const likes = await db.select()
       .from(beatInteractions)
       .where(
@@ -1904,10 +1896,6 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
     });
     
     // Update listing metadata with new rating
-    const { listings } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { eq, sql } = await import('drizzle-orm');
-    
     // Get current listing and update average rating
     const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
     if (listing) {
@@ -1948,10 +1936,6 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
 router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
   try {
     const { beatId } = req.params;
-    const { listings } = await import('@shared/schema');
-    const { db } = await import('../db');
-    const { eq } = await import('drizzle-orm');
-    
     const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
     if (!listing) {
       return res.status(404).json({ error: 'Beat not found' });

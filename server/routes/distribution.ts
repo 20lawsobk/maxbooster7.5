@@ -20,6 +20,7 @@ import { logger } from '../logger';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 interface AuthenticatedUser {
   id: string;
@@ -2135,7 +2136,6 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
     let audioPath = data.audioPath;
     let tmpPath: string | null = null;
     if (file) {
-      const os = await import('os');
       tmpPath = path.join(os.tmpdir(), `fp_check_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
       fs.writeFileSync(tmpPath, file.buffer);
       audioPath = tmpPath;
@@ -2191,7 +2191,6 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
       return res.status(400).json({ error: 'trackId and releaseId are required' });
     }
 
-    const os = await import('os');
     const tmpPath = path.join(os.tmpdir(), `fp_gen_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
     fs.writeFileSync(tmpPath, file.buffer);
 
@@ -3434,7 +3433,8 @@ router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: R
     const [setting] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, 'currency_rates'));
+      .where(eq(systemSettings.key, 'currency_rates'))
+      .limit(1);
 
     if (setting && setting.value) {
       const val = setting.value as any;

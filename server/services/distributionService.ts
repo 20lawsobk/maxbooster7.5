@@ -1,9 +1,10 @@
+import { randomBytes } from 'crypto';
 import { storage } from "../storage";
 import { db } from '../db.js';
 import { dspAnalytics, releases, royaltySplits } from '@shared/schema';
 import { eq, and, sql as drizzleSql } from 'drizzle-orm';
 import { notificationService } from './notificationService.js';
-import { nanoid } from "nanoid";
+
 import type { 
   InsertRelease, 
   Release, 
@@ -146,7 +147,7 @@ export class DistributionService {
         logger.warn('⚠️  LabelGrid API token not configured - using demo mode');
         logger.warn('   Set LABELGRID_API_TOKEN in environment to enable real distribution');
 
-        const dispatchId = `demo_dispatch_${nanoid()}`;
+        const dispatchId = `demo_dispatch_${randomBytes(8).toString('hex')}`;
         const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
@@ -1347,7 +1348,7 @@ Generated: ${new Date().toISOString()}
    */
   async createPreSaveCampaign(data: InsertPreSaveCampaign): Promise<PreSaveCampaign> {
     try {
-      const slug = data.slug || `${data.name.toLowerCase().replace(/\s+/g, '-')}-${nanoid(6)}`;
+      const slug = data.slug || `${data.name.toLowerCase().replace(/\s+/g, '-')}-${randomBytes(3).toString('hex')}`;
       
       const campaign = await storage.createPreSaveCampaign({
         ...data,

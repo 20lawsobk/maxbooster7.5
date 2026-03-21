@@ -1,5 +1,5 @@
 import { db } from "../db";
-import { eq, and, desc, gte } from "drizzle-orm";
+import { eq, and, desc, gte, inArray } from "drizzle-orm";
 import {
   releaseCountdowns,
   countdownTasks,
@@ -71,7 +71,8 @@ class ReleaseCountdownService {
       const [countdown] = await db
         .select()
         .from(releaseCountdowns)
-        .where(and(eq(releaseCountdowns.id, countdownId), eq(releaseCountdowns.userId, userId)));
+        .where(and(eq(releaseCountdowns.id, countdownId), eq(releaseCountdowns.userId, userId)))
+        .limit(1);
       return countdown;
     } catch (error) {
       logger.error("Error fetching countdown:", error);
@@ -184,6 +185,27 @@ class ReleaseCountdownService {
     }
   }
 
+  async getTasksForCountdowns(countdownIds: string[]): Promise<Map<string, CountdownTask[]>> {
+    if (countdownIds.length === 0) return new Map();
+    try {
+      const rows = await db
+        .select()
+        .from(countdownTasks)
+        .where(inArray(countdownTasks.countdownId, countdownIds))
+        .orderBy(countdownTasks.order);
+      const map = new Map<string, CountdownTask[]>();
+      for (const row of rows) {
+        const arr = map.get(row.countdownId) ?? [];
+        arr.push(row);
+        map.set(row.countdownId, arr);
+      }
+      return map;
+    } catch (error) {
+      logger.error("Error batch-fetching tasks:", error);
+      throw new Error("Failed to batch-fetch tasks");
+    }
+  }
+
   async completeTask(countdownId: string, taskId: string): Promise<CountdownTask> {
     try {
       const [task] = await db
@@ -241,7 +263,8 @@ class ReleaseCountdownService {
       const [existing] = await db
         .select()
         .from(countdownAnalytics)
-        .where(and(eq(countdownAnalytics.countdownId, countdownId), gte(countdownAnalytics.date, today)));
+        .where(and(eq(countdownAnalytics.countdownId, countdownId), gte(countdownAnalytics.date, today)))
+        .limit(1);
 
       if (existing) {
         const [updated] = await db

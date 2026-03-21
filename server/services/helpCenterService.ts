@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { eq, and, or, like, desc, asc, sql } from 'drizzle-orm';
+import { randomBytes } from 'crypto';
 
 export interface FAQItem {
   id: string;
@@ -270,7 +271,7 @@ export class HelpCenterService {
   }
 
   async createSupportTicket(data: CreateTicketData): Promise<SupportTicket> {
-    const ticketId = `ticket-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const ticketId = `ticket-${Date.now()}-${randomBytes(6).toString('hex')}`;
     
     const ticket: SupportTicket = {
       id: ticketId,

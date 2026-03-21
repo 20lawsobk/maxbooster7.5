@@ -20,6 +20,7 @@
 
 import { EventEmitter } from 'events';
 import http from 'http';
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { selfEvolution } from '../self-evolution-engine.js';
 import { storage } from '../storage.js';
@@ -120,7 +121,7 @@ class SilentDeploymentService extends EventEmitter {
 
     const item = this.deploymentQueue.shift()!;
     const record: DeploymentRecord = {
-      id: `sdep-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      id: `sdep-${Date.now()}-${randomBytes(4).toString('hex')}`,
       upgradeId: item.upgradeId,
       upgradeType: item.upgradeType,
       filesModified: item.filesModified,

@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 /**
  * SELF-HEALING SECURITY ENGINE
  * 
@@ -22,7 +23,7 @@ import {
   type InsertIpBlacklist 
 } from '@shared/schema';
 import { eq, gte, and, sql, desc } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+
 
 interface SecurityEvent {
   id: string;
@@ -259,7 +260,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   public processSecurityEvent(event: Partial<SecurityEvent>): void {
     const now = Date.now();
     const fullEvent: SecurityEvent = {
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       timestamp: now,
       type: event.type || 'request',
       category: event.category || 'general',
@@ -425,7 +426,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
 
     const assessment: ThreatAssessment = {
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       eventId: event.id,
       detectionTime: Date.now() - event.timestamp,
       threatLevel,
@@ -512,7 +513,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   private async respondToThreat(assessment: ThreatAssessment): Promise<void> {
     for (const actionType of assessment.recommendedActions) {
       const action: HealingAction = {
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         threatId: assessment.id,
         type: actionType as HealingAction['type'],
         status: 'executing',

@@ -12,7 +12,8 @@ async function verifyProjectAccess(projectId: string, userId: string): Promise<b
   const [project] = await db
     .select({ id: studioProjects.id })
     .from(studioProjects)
-    .where(and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)));
+    .where(and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)))
+    .limit(1);
   return !!project;
 }
 
@@ -431,7 +432,8 @@ router.put('/versions/:projectId/:versionId/restore', requireAuth, async (req: A
     const [target] = await db
       .select()
       .from(collaborationVersions)
-      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)));
+      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)))
+      .limit(1);
 
     if (!target) {
       return res.status(404).json({ error: 'Version not found' });
@@ -499,7 +501,8 @@ router.delete('/versions/:projectId/:versionId', requireAuth, async (req: Authen
     const [target] = await db
       .select()
       .from(collaborationVersions)
-      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)));
+      .where(and(eq(collaborationVersions.id, versionId), eq(collaborationVersions.projectId, projectId)))
+      .limit(1);
 
     if (!target) {
       return res.status(404).json({ error: 'Version not found' });

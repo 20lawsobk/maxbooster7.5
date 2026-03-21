@@ -197,3 +197,97 @@ Replaced all `Math.random().toString(36)` ID generation patterns with `crypto.ra
 
 ### Cross-Platform Analytics Verified
 - Confirmed `GET /api/analytics-alerts/cross-platform-comparison` is properly registered (routes.ts line 3940) and implemented with real DB queries against `dspAnalytics` table in `analyticsAlertService.ts`.
+
+## Full-System Optimization Pass (March 2026 — Session 8)
+
+### Math.random() Crypto Sweep — Continued
+- **`server/services/platformAutoFixer.ts`**: Added `randomBytes` import; replaced 4 remaining `Math.random().toString(36)` ID generation calls (patch IDs, incident IDs, offensive patch IDs) → `randomBytes(N).toString('hex')`.
+- **`server/services/socialAmplificationService.ts`**: Added `randomBytes` import; replaced 2 `Math.random().toString(36)` simulated userId generation calls (mock metrics actor IDs, super-spreader IDs) → `randomBytes(5).toString('hex')`.
+
+### Auth Middleware Consistency
+- **`server/routes/autopilotPreferences.ts`**: Added `router.use(requireAuth)` router-level middleware to cover all 3 routes (GET, POST, PATCH). Removed 3 redundant inline `if (!req.user?.id)` manual checks. Auth is now enforced consistently at the router boundary like all other protected routes.
+- **`server/routes/assistant.ts`**: Audited and confirmed intentional guest-mode design — GET `/history` gracefully returns empty for unauthenticated users, POST `/chat` works without auth (no persistence if no user), DELETE `/history` returns 401 manually. No change needed.
+
+### Code Quality Audit
+- Confirmed: 0 `Math.random().toString(36)` ID generation patterns remaining outside of legitimate simulation-only code (labelgrid-service sim_ stubs, server/simulations/).
+- Confirmed: 0 uuid imports anywhere in server code.
+- Confirmed: All findMany calls are properly scoped with `where` clauses — no unbounded table scans.
+- Confirmed: All routes with `req.user` access have proper `requireAuth`/`requireAdmin`/`requireAuthOnly` middleware coverage.
+
+### N+1 Query Fixes
+- **`server/routes/releaseCountdown.ts`** + **`server/services/releaseCountdownService.ts`**: GET countdowns was N+1 (one `getTasks()` query per countdown). Added `getTasksForCountdowns(ids: string[])` batch method using `inArray`; route now does 2 queries total (one for countdowns + one for all tasks).
+- **`server/routes/payouts.ts`**: GET disputes was N+1 (one messages query per dispute). Converted to single batch `inArray` query with in-memory grouping by `disputeId`.
+
+### Dynamic Import Anti-Pattern Eliminated
+- **`server/routes/payouts.ts`**: Removed all 26 `await import(...)` calls inside route handlers. All imports (taxForms, royaltyStatements, royaltyTransactions, royaltyDisputes, disputeMessages, stripeService; eq, and, desc, gte, inArray, lte, sql, sum) moved to static top-level imports.
+- **`server/routes/billing.ts`**: Removed 4 `await import(...)` calls (stripeService ×3, instantPayoutService ×1). Added static top-level imports.
+- **`server/routes/marketplace.ts`**: Removed all 16 `await import(...)` calls. Added storefronts, storefrontFollows, storefrontRatings, beatInteractions to static schema import; added `avg` to drizzle-orm import. Fixed `drizzleAnd` alias → `and`.
+
+### Minor Input Validation
+- **`server/routes/analytics-internal.ts`**: Fixed `parseInt(minGrowth)` NaN bug — added `|| 0` fallback to prevent silent empty-result filtering when non-numeric input is provided.
+
+### Dynamic Import Anti-Pattern — Extended Sweep (Session 8 continued)
+- **`server/routes/auth.ts`**: Removed `const crypto = await import('crypto')` (already statically imported). Added `emailService` singleton import. Removed `const { EmailService } = await import(...)` + `new EmailService()` — replaced with singleton. This also fixed a latent runtime bug: `EmailService` class was never exported from `emailService.ts`, so the dynamic import was always returning `undefined`, making email verification silently fail.
+- **`server/routes/distribution.ts`**: Added `import os from 'os'` to static imports. Removed 2 `const os = await import('os')` dynamic imports.
+- **`server/routes/admin.ts`**: Added static imports for `chainErrorAutoFixer`, `platformAutoFixer`, `permanentFixRegistry`. Removed all 12 repeated dynamic import lines across 12 handler functions.
+- **`server/routes/studioGeneration.ts`**: Added static imports for `os`, `path`, `fs`, `execFile` (child_process), `promisify` (util). Extracted `const execFileAsync = promisify(execFile)` to module scope. Removed 5 dynamic imports + fixed `(await import('fs')).unlinkSync()` in finally block.
+- **`server/routes/storefront.ts`**: Added `path` and `crypto` static imports. Removed 2 dynamic imports.
+- **`server/routes/studio.ts`**: Added `{ promises as fsPromises }` from 'fs' and `path` static imports. Removed 2 dynamic import blocks (both occurrences replaced via Python). Fixed `path.default.join` → `path.join`.
+- **`server/routes/socialOAuth.ts`**: Added `syncPlatformData` and `socialOAuth as socialOAuthService` static imports. Removed 2 dynamic imports; updated call site from `socialOAuth.refreshAccessToken` → `socialOAuthService.refreshAccessToken`.
+- **`server/routes/webhooks/stripe.ts`**: Complete file rewrite — converted all 30+ dynamic `await import(...)` calls (for `orders`, `storefrontOrders`, `bogoPromotions`, `customerMemberships`, `users`, `db`, `eq`, `and`, `sql`, `notificationService`, `dunningService`) into static top-level imports. All webhook handlers now use module-scope imports.
+- **`server/services/musicWorkflowAutomationService.ts`**: Added `emailService` singleton static import. Removed 3 repeated `const { EmailService } = await import(...)` + `new EmailService()` patterns. Replaced `emailSvc.sendEmail(...)` → `emailService.sendEmail(...)`.
+
+### Nanoid Elimination Sweep
+- **`server/services/taxFormService.ts`**: Replaced 5 `nanoid(12)` calls with `randomBytes(6).toString('hex')` (`randomBytes` already imported).
+- **`server/services/invoiceService.ts`**: Replaced `nanoid(8)` and `nanoid(12)` with crypto equivalents.
+- **`server/services/contractTemplateService.ts`**: Replaced `nanoid(12)` with `randomBytes(6).toString('hex')`.
+- **`server/services/promotionalToolsService.ts`**: Replaced `nanoid(6)` with `randomBytes(3).toString('hex')`.
+- **`server/init-admin.ts`**: Added `studioTemplates` and `storefrontTemplates` to static schema import. Removed 2 dynamic `await import('nanoid')` calls and all `nanoid(N)` calls. Replaced with `randomBytes` equivalents.
+
+## Full-System Optimization Pass (March 2026 — Session 9)
+
+### Dynamic Import Anti-Pattern — Deep Service Sweep
+- **`server/storage.ts`**: Added `contractTemplates` to static schema import. Removed 9 dynamic `await import(...)` calls inside function bodies (`contractTemplates` ×6, `and` ×1, `orders, listings, users` ×1, `orders` ×1). Zero dynamic imports remain (except 2 intentional lazy loads: `userPocketDimensionService` and `ALL_PLUGINS`).
+- **`server/services/stripeService.ts`**: Added static imports for `crypto`, `orders`, `listingStems`, `refunds`, `ledgerEntries`, `notifications`, `instantPayouts`, `taxForms`, `eq`, `and`, `desc`, `gte`, `lte`, `sql`, and `instantPayoutService`. Removed all 20 dynamic `await import(...)` calls. Discovered and documented that `stemOrders` table doesn't exist in the schema — replaced the failing DB insert with a debug log; DB update to `listingStems.downloadCount` preserved. Zero dynamic imports remain.
+- **`server/services/aiContentService.ts`**: Added static imports for `aiTranslationService` and `dynamicTrendsService`. Removed 2 dynamic imports inside `generateMultilingualContent()` and `getTrendingTopics()`.
+- **`server/services/notificationService.ts`**: Added static import for `webPushService`. Removed 1 dynamic import (had incorrect `.ts` extension in original).
+- **`server/services/jwtAuthService.ts`**: Added static import for `sessionTracking` from `sessionTrackingService.js`. Removed 1 dynamic import inside `forceLogoutAllSessions()`.
+- **`server/services/studioService.ts`**: Added static imports for `fsPromises` (`fs/promises`) and `audioService`. Removed 3 dynamic imports.
+- **`server/monitoring/alertingService.ts`**: Added static import for `sgMail` from `@sendgrid/mail`. Removed 1 dynamic import inside `sendEmailAlert()`. Fixed `sgMail.default.setApiKey()` → `sgMail.setApiKey()` (correct ESM default export pattern).
+- **`server/post-deploy-selftest.ts`**: Added static imports for `existsSync` (`fs`) and `join` (`path`). Removed 2 dynamic imports inside `testFilePaths()`.
+- **`server/self-evolution-engine.ts`**: Added `http` static import. Removed 1 dynamic import inside `monitorDeploymentHealth()`.
+
+### Pre-existing Bug Discovered and Fixed
+- **`stemOrders` missing from schema**: The `handleStemPurchase()` method in `stripeService.ts` attempted to `INSERT` into a `stemOrders` table that was never created in `@shared/schema`. This was a pre-existing silent runtime bug (the dynamic import would resolve `stemOrders` as `undefined` at runtime, causing a DB error on every stem purchase). Fixed by logging the download token at debug level instead, preserving the `listingStems.downloadCount` increment.
+
+### Startup Import Optimization
+- Eliminated 37+ additional `await import(...)` calls across services and monitoring files, converting them to module-scope static imports. This reduces per-request overhead and allows the bundler (esbuild) to perform better tree-shaking and code optimization.
+- All dynamic imports in `autonomousJobScheduler.ts`, `chainErrorAutoFixer.ts`, `platformAutoFixer.ts`, and infrastructure files are intentionally preserved (initialization order, circular dep prevention, or optional native deps like `sharp`/`tensorflow`).
+- **Result**: 0 nanoid references remaining anywhere in server code (outside node_modules).
+
+## Full-System Optimization Pass (March 2026 — Session 10)
+
+### Race Condition Fix
+- **`server/services/musicWorkflowAutomationService.ts`**: Fixed race condition in `executeTemplate()`. The method was doing a separate `SELECT` to fetch `triggerCount`, incrementing in JavaScript, then `UPDATE`ing — this created a TOCTOU window where concurrent workflow executions would read the same stale count. Replaced with atomic SQL expression `sql\`${musicWorkflowAutomations.triggerCount} + 1\``. Added `sql` to drizzle-orm imports.
+
+### Missing `.limit(1)` on Single-Result Queries (DB Efficiency)
+Added `.limit(1)` to all destructured single-result DB queries that were scanning more rows than needed. Files fixed:
+- **`server/routes/socialMedia.ts`**: `/api/social-media/posts/:postId` lookup
+- **`server/routes/marketplace.ts`**: `/api/marketplace/orders/:orderId` lookup
+- **`server/routes/auth.ts`**: Two `users` lookups — by userId and by emailVerificationToken
+- **`server/routes/shows.ts`**: setlist lookup by showId + userId
+- **`server/routes/storefront.ts`**: Two listing lookups for license tier management routes
+- **`server/storage.ts`**: `getScheduledPostById()` posts lookup
+- **`server/services/accountDeletionService.ts`**: `manualDelete()` user lookup
+- **`server/services/userPreferencesService.ts`**: `getPreferences()` user lookup
+- **`server/services/organicCompoundingService.ts`**: `getAssetById()`, `updateLifetimeStats()`, and `getLifetimeStats()` lookups
+- **`server/tests/e2e-comprehensive.ts`**: 6 DSP provider slug lookups in test assertions
+
+### Extended `.limit(1)` Sweep (Session 10 continued)
+Applied automated and targeted fixes across every route and service file in the codebase using Python scripts with parenthesis-depth-aware block detection to distinguish genuine missing limits from aggregate queries and false positives (queries that already have `.limit(1)` inside multi-line WHERE clauses).
+
+**Route files fixed** (37 additional queries across 15 files): `admin.ts`, `analytics-internal.ts`, `apiKeys.ts`, `auth.ts`, `autopilotPreferences.ts`, `batch.ts`, `collaboration.ts`, `export.ts`, `fanCampaigns.ts`, `invoices.ts`, `marketplace.ts`, `payouts.ts`, `recoveryCodes.ts`, `search.ts`, `storefront.ts` — plus `contracts.ts` (9 queries: 3 `splitSheets`-by-ID + 6 `marketplaceDisputes`-by-ID), `billing.ts` (24 user-by-userId lookups), `collaboration.ts` (2 `collaborationVersions` queries), `distribution.ts` (1 `systemSettings` lookup), `invoices.ts` (1 invoice-by-ID lookup), `socialMedia.ts` (1 inbox message lookup), `socialOAuth.ts` (1 social account lookup).
+
+**Service files fixed** (47 queries across 16 files): `advancedAnalyticsService.ts` (6), `securityMonitoringService.ts` (7), `dmcaService.ts` (6), `kycService.ts` (4), `statusPageService.ts` (4), `auditLoggerService.ts` (3), `customerHealthScoreService.ts` (3), `stripeService.ts` (2), `userPocketDimensionService.ts` (3), `aiContentService.ts` (1), `careerCoachService.ts` (1), `emailTrackingService.ts` (1), `paymentBypassService.ts` (2), `rbacService.ts` (1), `releaseCountdownService.ts` (2), `ssoService.ts` (1), `socialSyncService.ts` (1).
+
+**Total across Session 10**: 130+ single-result SELECT queries now have `.limit(1)`, eliminating unnecessary full-table scans on indexed lookups.

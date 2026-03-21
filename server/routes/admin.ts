@@ -7,6 +7,9 @@ import { killSwitch } from "../safety/killSwitch.js";
 import * as os from 'os';
 import * as fs from 'fs';
 import rateLimit from 'express-rate-limit';
+import { chainErrorAutoFixer } from '../services/chainErrorAutoFixer.js';
+import { platformAutoFixer } from '../services/platformAutoFixer.js';
+import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
 
 const adminRouter = Router();
 
@@ -640,7 +643,8 @@ adminRouter.get("/metrics", async (req, res) => {
     const [activeUsersResult] = await db
       .select({ count: count() })
       .from(users)
-      .where(eq(users.subscriptionStatus, "active"));
+      .where(eq(users.subscriptionStatus, "active"))
+      .limit(1);
 
     let diskUsagePercent = 0;
     try {
@@ -944,7 +948,6 @@ adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
 
 adminRouter.get('/chain-fixer/status', async (_req, res) => {
   try {
-    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     res.json(chainErrorAutoFixer.getStatus());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -953,7 +956,6 @@ adminRouter.get('/chain-fixer/status', async (_req, res) => {
 
 adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
   try {
-    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
     res.json({ success: ok });
   } catch (err: any) {
@@ -965,7 +967,6 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'message is required' });
-    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     chainErrorAutoFixer.forceCheck(message);
     res.json({ success: true });
   } catch (err: any) {
@@ -977,7 +978,6 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
 
 adminRouter.get('/platform-fixer/status', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getStatus());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -986,7 +986,6 @@ adminRouter.get('/platform-fixer/status', async (_req, res) => {
 
 adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getSubsystems());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -995,7 +994,6 @@ adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
 
 adminRouter.get('/platform-fixer/patches', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getPatches());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1004,7 +1002,6 @@ adminRouter.get('/platform-fixer/patches', async (_req, res) => {
 
 adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getIncidents());
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1013,7 +1010,6 @@ adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
 
 adminRouter.post('/platform-fixer/scan', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     await platformAutoFixer.runFullScan();
     res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err: any) {
@@ -1023,7 +1019,6 @@ adminRouter.post('/platform-fixer/scan', async (_req, res) => {
 
 adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     const result = await platformAutoFixer.forceProbe(req.params.name as any);
     if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
     res.json(result);
@@ -1034,7 +1029,6 @@ adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
 
 adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     const ok = platformAutoFixer.revertPatch(req.params.id, 'admin request');
     if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
     res.json({ success: true });
@@ -1045,7 +1039,6 @@ adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
 
 adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   try {
-    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -1059,7 +1052,6 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
 
 adminRouter.get('/permanent-fixes', async (_req, res) => {
   try {
-    const { permanentFixRegistry } = await import('../services/permanentFixRegistry.js');
     res.json(permanentFixRegistry.getStatus());
   } catch (err: any) {
     res.status(500).json({ error: err.message });

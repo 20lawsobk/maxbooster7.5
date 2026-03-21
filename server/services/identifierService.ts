@@ -443,7 +443,7 @@ class IdentifierService {
   private generateRandomDigits(length: number): string {
     let result = '';
     for (let i = 0; i < length; i++) {
-      result += Math.floor(Math.random() * 10).toString();
+      result += crypto.randomInt(0, 10).toString();
     }
     return result;
   }

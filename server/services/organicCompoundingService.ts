@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db.js';
 import { 
   organicAssets, organicChannels, organicRoiSnapshots, organicAssetLifetime,
@@ -6,7 +7,7 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, desc, sql, lte } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+
 
 interface AssetPerformance {
   monthlyViews: number;
@@ -164,7 +165,7 @@ class OrganicCompoundingService {
       
       for (const asset of topPerformingAssets) {
         candidates.push({
-          assetId: `candidate_${nanoid()}`,
+          assetId: `candidate_${randomBytes(8).toString('hex')}`,
           type: asset.type,
           topic: `${asset.topic} - Extended`,
           intent: asset.intent,
@@ -208,7 +209,7 @@ class OrganicCompoundingService {
         ];
         for (const def of assetDefs) {
           candidates.push({
-            assetId: `candidate_${nanoid()}`,
+            assetId: `candidate_${randomBytes(8).toString('hex')}`,
             type: def.type,
             topic: `${def.type.replace(/_/g, ' ')} for ${channel.name}`,
             intent: channel.type === 'search' ? 'search' : 'discovery',
@@ -237,7 +238,7 @@ class OrganicCompoundingService {
         const needed = 5 - candidates.length;
         for (const defaultAsset of defaultTypes.slice(0, needed)) {
           candidates.push({
-            assetId: `candidate_${nanoid()}`,
+            assetId: `candidate_${randomBytes(8).toString('hex')}`,
             type: defaultAsset.type,
             topic: defaultAsset.topic,
             intent: defaultAsset.intent,
@@ -535,7 +536,8 @@ class OrganicCompoundingService {
     try {
       const [asset] = await db.select()
         .from(organicAssets)
-        .where(eq(organicAssets.id, assetId));
+        .where(eq(organicAssets.id, assetId))
+        .limit(1);
       
       return asset || null;
     } catch (error) {
@@ -645,7 +647,8 @@ class OrganicCompoundingService {
         .where(and(
           eq(organicAssetLifetime.userId, userId),
           eq(organicAssetLifetime.assetId, assetId)
-        ));
+        ))
+        .limit(1);
       
       if (existing) {
         const [updated] = await db.update(organicAssetLifetime)
@@ -689,7 +692,8 @@ class OrganicCompoundingService {
         .where(and(
           eq(organicAssetLifetime.userId, userId),
           eq(organicAssetLifetime.assetId, assetId)
-        ));
+        ))
+        .limit(1);
       
       return stats || null;
     } catch (error) {

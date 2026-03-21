@@ -7,7 +7,7 @@ import { viralScoringService, type ContentData, type ViralScore } from '../servi
 import { timingOptimizerService, type OptimalTiming } from '../services/timingOptimizer.js';
 import { contentVariantGeneratorService, type Variant } from '../services/contentVariantGenerator.js';
 import { algorithmIntelligenceService, type AlgorithmHealth } from '../services/algorithmIntelligence.js';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 
 const router = Router();
 
@@ -76,7 +76,7 @@ router.post('/score-viral', requireAuth, asyncHandler(async (req, res) => {
 
     const contentData: ContentData = {
       ...content,
-      id: content.id || nanoid(),
+      id: content.id || randomBytes(8).toString('hex'),
       userId,
       scheduledTime: content.scheduledTime ? new Date(content.scheduledTime) : undefined,
     };
@@ -102,7 +102,7 @@ router.post('/predict-potential', requireAuth, asyncHandler(async (req, res) => 
 
     const contentData: ContentData = {
       ...content,
-      id: content.id || nanoid(),
+      id: content.id || randomBytes(8).toString('hex'),
       userId,
     };
 
@@ -126,7 +126,7 @@ router.post('/suggest-improvements', requireAuth, asyncHandler(async (req, res) 
 
     const contentData: ContentData = {
       ...content,
-      id: content.id || nanoid(),
+      id: content.id || randomBytes(8).toString('hex'),
       userId,
     };
 
@@ -149,7 +149,7 @@ router.post('/compare-variants', requireAuth, asyncHandler(async (req, res) => {
 
     const contentVariants: ContentData[] = variants.map(v => ({
       ...v,
-      id: v.id || nanoid(),
+      id: v.id || randomBytes(8).toString('hex'),
       userId,
     }));
 
@@ -298,7 +298,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
 
     const contentData: ContentData = {
       ...content,
-      id: content.id || nanoid(),
+      id: content.id || randomBytes(8).toString('hex'),
       userId,
     };
 
@@ -388,7 +388,7 @@ router.post('/create-ab-test', requireAuth, asyncHandler(async (req, res) => {
 
     const contentData = {
       ...content,
-      id: content.id || nanoid(),
+      id: content.id || randomBytes(8).toString('hex'),
       userId,
     };
 

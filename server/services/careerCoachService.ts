@@ -829,7 +829,8 @@ class CareerCoachService {
     const [goal] = await db
       .select({ targetValue: careerGoals.targetValue })
       .from(careerGoals)
-      .where(eq(careerGoals.id, goalId));
+      .where(eq(careerGoals.id, goalId))
+      .limit(1);
     return goal?.targetValue || 0;
   }
 

@@ -51,7 +51,8 @@ router.get('/stats', requireAuth, async (req, res) => {
 
       const [subscriberCount] = await db.select({ total: count() })
         .from(fanSubscribers)
-        .where(eq(fanSubscribers.userId, userId));
+        .where(eq(fanSubscribers.userId, userId))
+        .limit(1);
 
       const totalCampaigns = Number(campaignTotals.totalCampaigns);
       const sentCount = Number(campaignTotals.sent);
@@ -139,7 +140,8 @@ router.post('/:id/send', requireAuth, async (req, res) => {
 
     const [recipientCountRow] = await db.select({ total: count() })
       .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId));
+      .where(eq(fanSubscribers.userId, userId))
+      .limit(1);
     const recipientCount = Number(recipientCountRow.total);
 
     const [campaign] = await db.update(fanCampaigns)

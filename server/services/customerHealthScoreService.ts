@@ -73,7 +73,8 @@ class CustomerHealthScoreService {
     const [sessionCountRow] = await db
       .select({ count: count() })
       .from(sessions)
-      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, thirtyDaysAgo)));
+      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, thirtyDaysAgo)))
+      .limit(1);
 
     const totalSessions = Number(sessionCountRow?.count ?? 0);
 
@@ -81,7 +82,8 @@ class CustomerHealthScoreService {
     const [recentSessionRow] = await db
       .select({ count: count() })
       .from(sessions)
-      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, sevenDaysAgo)));
+      .where(and(eq(sessions.userId, userId), gte(sessions.createdAt!, sevenDaysAgo)))
+      .limit(1);
 
     const recentSessions = Number(recentSessionRow?.count ?? 0);
 
@@ -89,7 +91,8 @@ class CustomerHealthScoreService {
     const [featureCountRow] = await db
       .select({ distinct: countDistinct(featureEvents.featureName) })
       .from(featureEvents)
-      .where(and(eq(featureEvents.userId, userId), gte(featureEvents.createdAt!, ninetyDaysAgo)));
+      .where(and(eq(featureEvents.userId, userId), gte(featureEvents.createdAt!, ninetyDaysAgo)))
+      .limit(1);
 
     const featuresUsed = Number(featureCountRow?.distinct ?? 0);
 

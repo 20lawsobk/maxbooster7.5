@@ -1,7 +1,8 @@
+import { randomBytes } from 'crypto';
 import { aiService } from './aiService';
 import { studioService } from './studioService';
 import { storage } from '../storage';
-import { nanoid } from 'nanoid';
+
 import * as fs from 'fs';
 import * as path from 'path';
 import * as fsPromises from 'fs/promises';
@@ -245,7 +246,7 @@ export class AIMusicService {
    */
   async separateStems(audioBuffer: Buffer): Promise<StemSeparationResult> {
     const startTime = Date.now();
-    const inferenceId = nanoid();
+    const inferenceId = randomBytes(8).toString('hex');
 
     try {
       const decoded = wav.decode(audioBuffer);
@@ -389,7 +390,7 @@ export class AIMusicService {
           const processedDir = path.join(process.cwd(), 'uploads', 'processed');
           await fsPromises.mkdir(processedDir, { recursive: true });
 
-          const processedFilename = `${genre}_${nanoid()}.wav`;
+          const processedFilename = `${genre}_${randomBytes(8).toString('hex')}.wav`;
           const outputPath = path.join(processedDir, processedFilename);
 
           await this.applyAudioProcessing(inputPath, outputPath, appliedSettings);
@@ -547,7 +548,7 @@ export class AIMusicService {
 
     if (referenceProfile.loudnessMetrics.integrated > -14) {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'loudness',
         suggestion: `Increase master loudness to ${referenceProfile.loudnessMetrics.integrated.toFixed(1)} LUFS`,
         reasoning: `Reference track has higher integrated loudness. Increase by ${Math.abs(referenceProfile.loudnessMetrics.integrated + 14).toFixed(1)}dB to match`,
@@ -562,7 +563,7 @@ export class AIMusicService {
     if (referenceProfile.frequencyBalance.treble > 0.7) {
       const boostAmount = (referenceProfile.frequencyBalance.treble - 0.7) * 3;
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'eq',
         suggestion: `Increase highs by +${boostAmount.toFixed(1)}dB at 8kHz`,
         reasoning: `Reference has ${(referenceProfile.frequencyBalance.treble * 100).toFixed(0)}% more high-frequency content. Boosting to match brilliance`,
@@ -578,7 +579,7 @@ export class AIMusicService {
     if (referenceProfile.stereoWidth > 1.0) {
       const widthIncrease = ((referenceProfile.stereoWidth - 1.0) * 100).toFixed(0);
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'stereo',
         suggestion: `Add +${widthIncrease}% stereo width`,
         reasoning: `Reference track has wider stereo image (${(referenceProfile.stereoWidth * 100).toFixed(0)}%). Expanding to match spatial depth`,
@@ -593,7 +594,7 @@ export class AIMusicService {
 
     if (referenceProfile.frequencyBalance.bass > 0.75) {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'eq',
         suggestion: `Boost low-end by +2.5dB at 80Hz`,
         reasoning: `Reference has strong bass presence (${(referenceProfile.frequencyBalance.bass * 100).toFixed(0)}%). Adding punch and weight`,
@@ -659,7 +660,7 @@ export class AIMusicService {
       const tempDir = path.join(process.cwd(), 'uploads', 'temp');
       await fsPromises.mkdir(tempDir, { recursive: true });
 
-      const tempInputPath = path.join(tempDir, `input_${nanoid()}.wav`);
+      const tempInputPath = path.join(tempDir, `input_${randomBytes(8).toString('hex')}.wav`);
       await fsPromises.writeFile(tempInputPath, audioBuffer);
 
       const metrics = await new Promise<LoudnessMetrics>((resolve, reject) => {
@@ -767,7 +768,7 @@ export class AIMusicService {
 
       const suggestions: AISuggestion[] = [
         {
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           category: 'loudness',
           suggestion: `Apply ${requiredGain >= 0 ? '+' : ''}${requiredGain.toFixed(1)}dB gain to reach ${targetLUFS} LUFS`,
           reasoning: `Current integrated loudness is ${currentLoudness.toFixed(1)} LUFS. Target is ${targetLUFS} LUFS.`,
@@ -780,7 +781,7 @@ export class AIMusicService {
 
       if (Math.abs(requiredGain) > 6) {
         suggestions.push({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           category: 'compression',
           suggestion: `Consider compression before gain adjustment`,
           reasoning: `Large gain adjustment (${Math.abs(requiredGain).toFixed(1)}dB) may cause clipping. Apply compression first.`,
@@ -800,7 +801,7 @@ export class AIMusicService {
           const normalizedDir = path.join(process.cwd(), 'uploads', 'normalized');
           await fsPromises.mkdir(normalizedDir, { recursive: true });
 
-          const normalizedFilename = `normalized_${nanoid()}.wav`;
+          const normalizedFilename = `normalized_${randomBytes(8).toString('hex')}.wav`;
           const outputPath = path.join(normalizedDir, normalizedFilename);
 
           await this.applyLoudnessNormalization(inputPath, outputPath, targetLUFS, currentLoudness);
@@ -881,7 +882,7 @@ export class AIMusicService {
 
     if (genre === 'hip-hop' || genre === 'trap') {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'eq',
         suggestion: 'Added +3dB at 80Hz because bass lacked punch',
         reasoning:
@@ -893,7 +894,7 @@ export class AIMusicService {
       });
 
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'compression',
         suggestion: 'Applied compression (4:1) to control vocal dynamics',
         reasoning:
@@ -907,7 +908,7 @@ export class AIMusicService {
 
     if (genre === 'edm' || genre === 'house' || genre === 'techno') {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'stereo',
         suggestion: 'Increased stereo width by 25% for pads and synths',
         reasoning:
@@ -919,7 +920,7 @@ export class AIMusicService {
       });
 
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'effects',
         suggestion: 'Added sidechain compression (4:1) for pumping effect',
         reasoning: 'Sidechain compression creates rhythmic pumping essential to EDM/house genres.',
@@ -932,7 +933,7 @@ export class AIMusicService {
 
     if (energy && energy > 0.8) {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'compression',
         suggestion: 'Applied parallel compression for extra punch',
         reasoning: `High energy track (${(energy * 100).toFixed(0)}%) needs controlled dynamics with maximum impact.`,
@@ -945,7 +946,7 @@ export class AIMusicService {
 
     if (preset) {
       suggestions.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         category: 'general',
         suggestion: `Applied ${preset} preset at ${(intensity || 1) * 100}% intensity`,
         reasoning: `Genre-optimized settings for ${genre}. Professional preset tailored for this musical style.`,
@@ -1702,7 +1703,7 @@ export class AIMusicService {
 
     const filteredAudio = this.applyFrequencyFilter(audioData, stemType);
 
-    const stemId = nanoid();
+    const stemId = randomBytes(8).toString('hex');
     const stemPath = `/stems/${stemType}_${stemId}.wav`;
 
     const confidenceScore = this.calculateStemConfidence(filteredAudio, stemType, bufferSize);
@@ -2057,7 +2058,7 @@ export class AIMusicService {
     const tempDir = path.join(process.cwd(), 'uploads', 'temp');
     await fsPromises.mkdir(tempDir, { recursive: true });
 
-    const tempOutputPath = path.join(tempDir, `converted_${nanoid()}.wav`);
+    const tempOutputPath = path.join(tempDir, `converted_${randomBytes(8).toString('hex')}.wav`);
 
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
@@ -2124,7 +2125,7 @@ export class AIMusicService {
     const stemsDir = path.join(process.cwd(), 'uploads', 'stems');
     await fsPromises.mkdir(stemsDir, { recursive: true });
 
-    const stemId = nanoid();
+    const stemId = randomBytes(8).toString('hex');
     const stemFilename = `${stemType}_${stemId}.wav`;
     const stemPath = path.join(stemsDir, stemFilename);
 
@@ -2389,7 +2390,7 @@ export class AIMusicService {
         confidenceScore: confidence,
         executionTimeMs,
         success: true,
-        requestId: nanoid(),
+        requestId: randomBytes(8).toString('hex'),
       });
 
       const humanReadable = this.generateExplanation(

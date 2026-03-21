@@ -122,7 +122,8 @@ router.get("/:id/setlist", requireAuth, asyncHandler(async (req, res) => {
   
   const [showSetlist] = await db.select()
     .from(setlists)
-    .where(and(eq(setlists.showId, showId), eq(setlists.userId, userId)));
+    .where(and(eq(setlists.showId, showId), eq(setlists.userId, userId)))
+    .limit(1);
     
   res.json(showSetlist || null);
 }));

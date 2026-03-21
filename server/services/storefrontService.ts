@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db';
 import {
   storefronts,
@@ -9,7 +10,7 @@ import {
 } from '@shared/schema';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 import Stripe from 'stripe';
-import { nanoid } from 'nanoid';
+
 import { logger } from '../logger.js';
 
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')

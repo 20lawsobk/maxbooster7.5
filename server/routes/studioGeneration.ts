@@ -3,11 +3,18 @@ import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import multer from 'multer';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { generateFromText, generateFromReference } from '../services/aiAudioGeneratorService.js';
 import { melodyPatternService, GenerationParams } from '../services/melodyPatternService';
 import { db } from '../db.js';
 import { studioSamples } from '../../shared/schema.js';
+import os from 'os';
+import path from 'path';
+import fs from 'fs';
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 async function persistGeneratedSample(opts: {
   name: string;
@@ -22,7 +29,7 @@ async function persistGeneratedSample(opts: {
 }) {
   try {
     await db.insert(studioSamples).values({
-      id: `ai_${nanoid()}`,
+      id: `ai_${randomBytes(8).toString('hex')}`,
       name: opts.name,
       category: opts.category,
       subcategory: opts.subcategory,
@@ -492,13 +499,6 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
     return res.status(400).json({ error: 'No audio file provided' });
   }
 
-  const os = await import('os');
-  const path = await import('path');
-  const fs = await import('fs');
-  const { execFile } = await import('child_process');
-  const { promisify } = await import('util');
-  const execFileAsync = promisify(execFile);
-
   const rawExt = (file.originalname.split('.').pop() || 'wav').toLowerCase().replace(/[^a-z0-9]/g, '');
   const ext = rawExt || 'wav';
   const tmpPath = path.join(os.tmpdir(), `pitch_${Date.now()}.${ext}`);
@@ -554,7 +554,7 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
     logger.error('[audio-to-melody] Error:', err);
     res.status(500).json({ error: 'Pitch tracking failed' });
   } finally {
-    try { (await import('fs')).unlinkSync(tmpPath); } catch {}
+    try { fs.unlinkSync(tmpPath); } catch {}
   }
 });
 

@@ -5,6 +5,8 @@ import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger';
 import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
+import { syncPlatformData } from '../services/socialSyncService';
+import { socialOAuth as socialOAuthService } from '../services/socialOAuthService';
 
 const router = Router();
 
@@ -778,7 +780,6 @@ router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, re
     const userId = req.user!.id;
     const platform = req.params.platform.toLowerCase();
 
-    const { syncPlatformData } = await import('../services/socialSyncService');
     const results = await syncPlatformData(userId, platform);
 
     res.json({ success: true, results });
@@ -799,7 +800,8 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       .where(and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.platform, platform)
-      ));
+      ))
+      .limit(1);
     
     if (!connection) {
       return res.status(404).json({ 
@@ -824,8 +826,7 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       });
     }
     
-    const { socialOAuth } = await import('../services/socialOAuthService');
-    const result = await socialOAuth.refreshAccessToken(userId, platform);
+    const result = await socialOAuthService.refreshAccessToken(userId, platform);
     
     res.json({ 
       success: true,

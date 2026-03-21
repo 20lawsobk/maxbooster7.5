@@ -2,7 +2,7 @@
 // Revolutionary AI implementation that replaces OpenAI with proprietary algorithms
 // Implements deterministic AI processing for social content, advertising, and audio analysis
 
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 

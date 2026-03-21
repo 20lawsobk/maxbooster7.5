@@ -4,7 +4,7 @@ import { invoiceService } from '../services/invoiceService';
 import { taxFormService, TaxpayerInfo } from '../services/taxFormService';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { marketplaceDisputes, users, contractTemplates, splitSheets } from '@shared/schema';
 import { eq, and, or, desc, notInArray, sql } from 'drizzle-orm';
@@ -943,7 +943,8 @@ router.get('/split-sheets/:contractId', async (req: Request, res: Response) => {
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId));
+      .where(eq(splitSheets.id, contractId))
+      .limit(1);
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -969,7 +970,8 @@ router.post('/split-sheets/:contractId/sign', async (req: Request, res: Response
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId));
+      .where(eq(splitSheets.id, contractId))
+      .limit(1);
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -1029,7 +1031,8 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId));
+      .where(eq(splitSheets.id, contractId))
+      .limit(1);
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -1240,7 +1243,8 @@ router.get('/marketplace-disputes/:disputeId', async (req: Request, res: Respons
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1277,7 +1281,8 @@ router.post('/marketplace-disputes/:disputeId/message', async (req: Request, res
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1355,7 +1360,8 @@ router.post('/marketplace-disputes/:disputeId/evidence', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1421,7 +1427,8 @@ router.post('/marketplace-disputes/:disputeId/escalate', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1488,7 +1495,8 @@ router.post('/marketplace-disputes/:disputeId/resolve', async (req: Request, res
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1553,7 +1561,8 @@ router.post('/marketplace-disputes/:disputeId/withdraw', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId));
+      .where(eq(marketplaceDisputes.id, disputeId))
+      .limit(1);
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });

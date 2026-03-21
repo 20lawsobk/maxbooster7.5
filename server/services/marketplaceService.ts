@@ -1,6 +1,7 @@
+import { randomBytes } from 'crypto';
 import { storage } from '../storage';
 import { db } from '../db';
-import { nanoid } from 'nanoid';
+
 import Stripe from 'stripe';
 import { type Order as DBOrder, listingLicenseTiers } from '@shared/schema';
 import { eq } from 'drizzle-orm';

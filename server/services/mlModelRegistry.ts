@@ -12,6 +12,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import type { ModelMetadata, EvaluationMetrics } from '../../shared/ml/types.js';
 import type { BaseModel } from '../../shared/ml/models/BaseModel.js';
@@ -778,7 +779,7 @@ export class MLModelRegistry {
     }
 
     const prediction: PredictionRecord = {
-      id: `pred_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `pred_${Date.now()}_${randomBytes(6).toString('hex')}`,
       timestamp: new Date(),
       ...record
     };

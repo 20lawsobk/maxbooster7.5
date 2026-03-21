@@ -1,8 +1,9 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { competitorProfiles, posts } from '@shared/schema';
 import { eq, and, desc, gte, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+
 
 export interface CompetitorMetrics {
   id: string;
@@ -265,7 +266,7 @@ export class CompetitorBenchmarkService {
         const topCompetitor = competitors[0];
         if (topCompetitor.avgEngagementRate > yourStats.engagementRate * 1.5) {
           insights.push({
-            id: nanoid(),
+            id: randomBytes(8).toString('hex'),
             type: 'opportunity',
             title: 'Engagement Gap Detected',
             description: `${topCompetitor.name} has ${Math.round((topCompetitor.avgEngagementRate / Math.max(yourStats.engagementRate, 0.1) - 1) * 100)}% higher engagement rate. Analyze their content strategy for improvements.`,
@@ -282,7 +283,7 @@ export class CompetitorBenchmarkService {
         );
         if (fastGrowingCompetitors.length > 0) {
           insights.push({
-            id: nanoid(),
+            id: randomBytes(8).toString('hex'),
             type: 'threat',
             title: 'Competitor Growing Rapidly',
             description: `${fastGrowingCompetitors.map(c => c.name).join(', ')} ${fastGrowingCompetitors.length > 1 ? 'are' : 'is'} experiencing rapid follower growth. Monitor their strategies.`,
@@ -294,7 +295,7 @@ export class CompetitorBenchmarkService {
       }
 
       insights.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         type: 'trend',
         title: 'Video Content Performing Well',
         description: 'Across your industry, video content is generating 3x more engagement than static posts. Consider increasing video content.',
@@ -304,7 +305,7 @@ export class CompetitorBenchmarkService {
       });
 
       insights.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         type: 'gap',
         title: 'LinkedIn Opportunity',
         description: 'Your competitors have limited presence on LinkedIn. This could be an opportunity to establish thought leadership.',

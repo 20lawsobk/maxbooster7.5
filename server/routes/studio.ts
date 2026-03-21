@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { promises as fsPromises } from 'fs';
+import path from 'path';
 import { db } from '../db';
 import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders, stemExports, pluginPresets, studioSamples } from '@shared/schema';
 import { notificationService } from '../services/notificationService.js';
@@ -7,7 +9,7 @@ import { eq, and, or, desc, isNull, inArray, sql as drizzleSql, ilike, arrayOver
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { audioUpload, storeUploadedFile, handleUploadError } from '../middleware/uploadHandler.js';
 
 const router = Router();
@@ -84,12 +86,17 @@ async function verifyProjectOwnership(projectId: string, userId: string): Promis
   return !!project;
 }
 
-// GET all projects for user
+// GET all projects for user (with optional pagination)
 router.get('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
+    const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit || '200'), 10)));
+    const offset = Math.max(0, parseInt(String(req.query.offset || '0'), 10));
     const userProjects = await db.query.projects.findMany({
       where: eq(projects.userId, userId),
+      orderBy: [desc(projects.updatedAt)],
+      limit,
+      offset,
     });
     res.json(userProjects);
   } catch (error: unknown) {
@@ -103,7 +110,7 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const { title, description, genre, tempo, bpm, key, timeSignature, sampleRate, bitDepth, workflowStage, status } = req.body;
-    const projectId = nanoid();
+    const projectId = randomBytes(8).toString('hex');
     
     const [project] = await db.insert(projects).values({
       id: projectId,
@@ -402,7 +409,7 @@ router.post(
       // Store to object storage and get a persistent URL
       const { url, key } = await storeUploadedFile(file, userId, 'audio');
 
-      const clipId = nanoid();
+      const clipId = randomBytes(8).toString('hex');
       const clipName = recordingName || `Recording ${new Date().toLocaleTimeString()}`;
 
       // If trackId + projectId provided, persist as an audio clip
@@ -745,7 +752,7 @@ router.post('/projects/:projectId/render', requireAuth, async (req: Request, res
     }
 
     const renderJob = {
-      id: `render_${nanoid()}`,
+      id: `render_${randomBytes(8).toString('hex')}`,
       projectId,
       userId,
       settings: {
@@ -892,7 +899,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
 
     const trackOrder = data.trackNumber ?? existingTracks.length;
 
-    const trackId = `track_${nanoid()}`;
+    const trackId = `track_${randomBytes(8).toString('hex')}`;
     const [track] = await db
       .insert(studioTracks)
       .values({
@@ -907,7 +914,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
         isSolo: data.solo,
         isArmed: data.armed,
         inputSource: null,
-        color: data.color || `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
+        color: data.color || `#${randomBytes(3).toString('hex')}`,
         outputBus: data.outputBus,
       })
       .returning();
@@ -979,7 +986,7 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
         
         // Create the track
         const [newTrack] = await db.insert(studioTracks).values({
-          id: nanoid(),
+          id: randomBytes(8).toString('hex'),
           projectId,
           name: project.title || 'Audio Track 1',
           type: 'audio',
@@ -995,7 +1002,7 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
         // Create an audio clip for this track
         if (newTrack) {
           await db.insert(audioClips).values({
-            id: nanoid(),
+            id: randomBytes(8).toString('hex'),
             projectId: projectId,
             trackId: newTrack.id,
             name: project.title || 'Audio Clip',
@@ -1241,7 +1248,7 @@ router.post(
       const startTime = parseFloat(req.body.startTime) || 0;
       const duration = parseFloat(req.body.duration) || null;
 
-      const clipId = nanoid();
+      const clipId = randomBytes(8).toString('hex');
       const [clip] = await db
         .insert(audioClips)
         .values({
@@ -1426,7 +1433,7 @@ router.post('/record/upload', requireAuth, async (req: Request, res: Response) =
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const clipId = nanoid();
+    const clipId = randomBytes(8).toString('hex');
     const [clip] = await db
       .insert(audioClips)
       .values({
@@ -1472,7 +1479,7 @@ router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
     const existingBusses = (metadata.mixBusses as MixBusConfig[]) || [...DEFAULT_MIX_BUSSES];
 
     const newBus: MixBusConfig = {
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       name: name || 'New Bus',
       type: type || 'aux',
       volume: 1,
@@ -1655,7 +1662,7 @@ router.get('/conversions', requireAuth, async (req: Request, res: Response) => {
 router.post('/conversions', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, format, quality } = req.body;
-    const conversionId = nanoid();
+    const conversionId = randomBytes(8).toString('hex');
     res.status(201).json({
       id: conversionId,
       projectId,
@@ -1912,7 +1919,7 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
       return res.status(400).json({ error: 'No audio file provided' });
     }
     
-    const fileId = `file_${nanoid()}`;
+    const fileId = `file_${randomBytes(8).toString('hex')}`;
     
     const storedFile = await storeUploadedFile(file, userId, 'audio');
     
@@ -1937,7 +1944,7 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
         const trackOrder = existingTracks.length;
         
         const trackName = file.originalname.replace(/\.[^/.]+$/, '') || `Track ${trackOrder + 1}`;
-        const trackId = `track_${nanoid()}`;
+        const trackId = `track_${randomBytes(8).toString('hex')}`;
         
         const [newTrack] = await db.insert(studioTracks).values({
           id: trackId,
@@ -1951,13 +1958,13 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
           isSolo: false,
           isArmed: false,
           inputSource: null,
-          color: `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`,
+          color: `#${randomBytes(3).toString('hex')}`,
           outputBus: 'master',
         }).returning();
         
         track = newTrack;
         
-        const clipId = `clip_${nanoid()}`;
+        const clipId = `clip_${randomBytes(8).toString('hex')}`;
         const [newClip] = await db.insert(audioClips).values({
           id: clipId,
           projectId,
@@ -2125,7 +2132,7 @@ router.post('/clips/audio', requireAuth, async (req: Request, res: Response) => 
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    const clipId = nanoid();
+    const clipId = randomBytes(8).toString('hex');
     const [clip] = await db
       .insert(audioClips)
       .values({
@@ -2163,7 +2170,7 @@ router.post('/projects/:projectId/markers', requireAuth, async (req: Request, re
     const { projectId } = req.params;
     const { position, label, color, type } = req.body;
     res.json({
-      id: `marker_${nanoid()}`,
+      id: `marker_${randomBytes(8).toString('hex')}`,
       projectId,
       position: position || 0,
       label: label || 'Marker',
@@ -2264,7 +2271,7 @@ router.post('/folders', requireAuth, async (req: Request, res: Response) => {
     }
 
     const folder = await db.insert(studioTracks).values({
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       projectId,
       name,
       trackType: 'folder',
@@ -2714,7 +2721,7 @@ router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reque
     const mixBusConfig = metadata.mixBusConfig || { busses: [] };
 
     // Create the snapshot
-    const snapshotId = nanoid();
+    const snapshotId = randomBytes(8).toString('hex');
     const snapshot = {
       id: snapshotId,
       name: name || `Mix Snapshot ${new Date().toLocaleString()}`,
@@ -3263,94 +3270,100 @@ function formatDuration(seconds: number): string {
 }
 
 // GET overall user studio statistics (for dashboard)
+// Uses SQL aggregation to avoid loading all rows into memory
 router.get('/user-statistics', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
 
-    // Get all user projects
-    const allProjects = await db.query.projects.findMany({
-      where: eq(projects.userId, userId),
-    });
+    const [projectStats, trackStats, clipStats, templateStats, mostRecentProject] = await Promise.all([
+      // Aggregate project counts in a single query
+      db.select({
+        total:           drizzleSql<string>`COUNT(*)`,
+        mastering:       drizzleSql<string>`COUNT(*) FILTER (WHERE workflow_stage = 'mastering')`,
+        shows:           drizzleSql<string>`COUNT(*) FILTER (WHERE workflow_stage = 'show')`,
+        favorites:       drizzleSql<string>`COUNT(*) FILTER (WHERE favorite = true)`,
+        recentlyUpdated: drizzleSql<string>`COUNT(*) FILTER (WHERE updated_at > NOW() - INTERVAL '7 days')`,
+      }).from(projects).where(eq(projects.userId, userId)),
 
-    // Get all tracks across all projects
-    const projectIds = allProjects.map(p => p.id);
-    const allTracks = projectIds.length > 0
-      ? await db.query.studioTracks.findMany({
-          where: inArray(studioTracks.projectId, projectIds),
-        })
-      : [];
+      // Track count via subquery — no row fetch
+      db.select({ total: drizzleSql<string>`COUNT(*)` })
+        .from(studioTracks)
+        .where(drizzleSql`project_id IN (SELECT id FROM projects WHERE user_id = ${userId})`),
 
-    // Get all clips
-    const allClips = projectIds.length > 0
-      ? await db.query.audioClips.findMany({
-          where: inArray(audioClips.projectId, projectIds),
-        })
-      : [];
+      // Clip stats — count + total duration in one pass
+      db.select({
+        total:         drizzleSql<string>`COUNT(*)`,
+        totalDuration: drizzleSql<string>`COALESCE(SUM(duration::numeric), 0)`,
+      })
+        .from(audioClips)
+        .where(drizzleSql`project_id IN (SELECT id FROM projects WHERE user_id = ${userId})`),
 
-    // Get templates
-    const templates = await db.query.studioTemplates.findMany({
-      where: eq(studioTemplates.userId, userId),
-    });
+      // Template stats — count + usage sum
+      db.select({
+        total:      drizzleSql<string>`COUNT(*)`,
+        totalUsage: drizzleSql<string>`COALESCE(SUM(usage_count), 0)`,
+      }).from(studioTemplates).where(eq(studioTemplates.userId, userId)),
 
-    // Calculate project stats by type
-    const projectsByType = {
-      songs: allProjects.filter(p => p.workflowStage !== 'mastering' && p.workflowStage !== 'show').length,
-      mastering: allProjects.filter(p => p.workflowStage === 'mastering').length,
-      shows: allProjects.filter(p => p.workflowStage === 'show').length,
-    };
+      // Most recently updated project — single row
+      db.query.projects.findFirst({
+        where: eq(projects.userId, userId),
+        orderBy: [desc(projects.updatedAt)],
+        columns: { id: true, title: true, updatedAt: true },
+      }),
+    ]);
 
-    // Calculate total duration
-    let totalDuration = 0;
-    for (const clip of allClips) {
-      if (clip.duration) {
-        totalDuration += Number(clip.duration);
-      }
-    }
+    const ps = projectStats[0];
+    const ts = trackStats[0];
+    const cs = clipStats[0];
+    const tpl = templateStats[0];
 
-    // Get recent activity (last 7 days)
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    const recentlyUpdated = allProjects.filter(p => 
-      p.updatedAt && new Date(p.updatedAt) > oneWeekAgo
-    ).length;
+    const totalProjectCount = Number(ps?.total ?? 0);
+    const masteringCount    = Number(ps?.mastering ?? 0);
+    const showCount         = Number(ps?.shows ?? 0);
+    const favoritesCount    = Number(ps?.favorites ?? 0);
+    const recentlyUpdated   = Number(ps?.recentlyUpdated ?? 0);
+    const trackTotal        = Number(ts?.total ?? 0);
+    const clipTotal         = Number(cs?.total ?? 0);
+    const totalDuration     = Number(cs?.totalDuration ?? 0);
 
-    // Calculate averages
-    const avgTracksPerProject = allProjects.length > 0 
-      ? Math.round(allTracks.length / allProjects.length * 10) / 10 
+    const avgTracksPerProject = totalProjectCount > 0
+      ? Math.round(trackTotal / totalProjectCount * 10) / 10
       : 0;
-    const avgClipsPerProject = allProjects.length > 0 
-      ? Math.round(allClips.length / allProjects.length * 10) / 10 
+    const avgClipsPerProject = totalProjectCount > 0
+      ? Math.round(clipTotal / totalProjectCount * 10) / 10
       : 0;
 
     res.json({
       userId,
       projects: {
-        total: allProjects.length,
-        byType: projectsByType,
+        total: totalProjectCount,
+        byType: {
+          songs:     totalProjectCount - masteringCount - showCount,
+          mastering: masteringCount,
+          shows:     showCount,
+        },
         recentlyUpdated,
-        favorites: allProjects.filter(p => p.favorite).length,
+        favorites: favoritesCount,
       },
       tracks: {
-        total: allTracks.length,
+        total: trackTotal,
         averagePerProject: avgTracksPerProject,
       },
       clips: {
-        total: allClips.length,
+        total: clipTotal,
         averagePerProject: avgClipsPerProject,
         totalDurationSeconds: Math.round(totalDuration * 100) / 100,
         totalDurationFormatted: formatDuration(totalDuration),
       },
       templates: {
-        created: templates.length,
-        totalUsage: templates.reduce((sum, t) => sum + (t.usageCount || 0), 0),
+        created:    Number(tpl?.total ?? 0),
+        totalUsage: Number(tpl?.totalUsage ?? 0),
       },
       activity: {
         projectsUpdatedThisWeek: recentlyUpdated,
-        mostRecentProject: allProjects.length > 0 ? {
-          id: allProjects[0].id,
-          title: allProjects[0].title,
-          updatedAt: allProjects[0].updatedAt,
-        } : null,
+        mostRecentProject: mostRecentProject
+          ? { id: mostRecentProject.id, title: mostRecentProject.title, updatedAt: mostRecentProject.updatedAt }
+          : null,
       },
     });
   } catch (error: unknown) {
@@ -3648,7 +3661,7 @@ router.post('/templates', requireAuth, async (req: Request, res: Response) => {
       tags: tags || [],
     };
     
-    const templateId = nanoid();
+    const templateId = randomBytes(8).toString('hex');
     const [template] = await db.insert(studioTemplates).values({
       id: templateId,
       userId,
@@ -3723,7 +3736,7 @@ router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Re
     const metadata = (studioProject.metadata as any) || {};
 
     // Create the template
-    const templateId = nanoid();
+    const templateId = randomBytes(8).toString('hex');
     const templateData = {
       trackLayout,
       mixBusConfig: metadata.mixBusConfig || null,
@@ -3798,7 +3811,7 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
     }));
     
     // Create the base project with cleanup on failure
-    const projectId = nanoid();
+    const projectId = randomBytes(8).toString('hex');
     let project: any = null;
     
     try {
@@ -3843,7 +3856,7 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
       let tracksCreated = 0;
       for (let i = 0; i < validatedTrackLayout.length; i++) {
         const trackDef = validatedTrackLayout[i];
-        const trackId = nanoid();
+        const trackId = randomBytes(8).toString('hex');
         
         await db.insert(studioTracks).values({
           id: trackId,
@@ -4073,7 +4086,7 @@ router.post('/pinned-folders', requireAuth, async (req: Request, res: Response) 
       .from(studioPinnedFolders)
       .where(eq(studioPinnedFolders.userId, userId));
     
-    const folderId = nanoid();
+    const folderId = randomBytes(8).toString('hex');
     const [folder] = await db.insert(studioPinnedFolders).values({
       id: folderId,
       userId,
@@ -4157,7 +4170,7 @@ router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: 
       return res.status(403).json({ error: 'Access denied' });
     }
     
-    const fileId = nanoid();
+    const fileId = randomBytes(8).toString('hex');
     const [recentFile] = await db.insert(studioRecentFiles).values({
       id: fileId,
       userId,
@@ -4191,9 +4204,7 @@ router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Re
       return res.status(403).json({ error: 'Admin access required' });
     }
     
-    const fsPromises = await import('fs/promises');
-    const path = await import('path');
-    const uploadsDir = path.default.join(process.cwd(), 'uploads', 'audio');
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'audio');
     
     let cleaned = 0;
     let errors = 0;
@@ -4260,9 +4271,7 @@ router.get('/maintenance/orphaned-uploads-stats', requireAuth, async (req: Reque
       return res.status(403).json({ error: 'Admin access required' });
     }
     
-    const fsPromises = await import('fs/promises');
-    const path = await import('path');
-    const uploadsDir = path.default.join(process.cwd(), 'uploads', 'audio');
+    const uploadsDir = path.join(process.cwd(), 'uploads', 'audio');
     
     let orphanedCount = 0;
     let orphanedSize = 0;
@@ -4457,7 +4466,7 @@ router.post('/projects/:projectId/tracks/:trackId/duplicate', requireAuth, async
       return res.status(404).json({ error: 'Track not found' });
     }
     
-    const newTrackId = nanoid();
+    const newTrackId = randomBytes(8).toString('hex');
     const [duplicatedTrack] = await db.insert(studioTracks).values({
       id: newTrackId,
       projectId,
@@ -4889,7 +4898,7 @@ router.post('/generate', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'type and prompt are required' });
     }
     
-    const generationId = nanoid();
+    const generationId = randomBytes(8).toString('hex');
     
     const result = {
       id: generationId,

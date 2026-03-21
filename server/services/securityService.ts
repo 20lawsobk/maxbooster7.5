@@ -1,4 +1,5 @@
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
+
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../logger.js';
@@ -55,7 +56,7 @@ export class SecurityService {
   ): Promise<AuditLog> {
     try {
       const log: AuditLog = {
-        id: `audit_${nanoid()}`,
+        id: `audit_${randomBytes(8).toString('hex')}`,
         userId,
         action,
         resource,
@@ -211,7 +212,7 @@ export class SecurityService {
   ): Promise<SecurityIncident> {
     try {
       const incident: SecurityIncident = {
-        id: `incident_${nanoid()}`,
+        id: `incident_${randomBytes(8).toString('hex')}`,
         severity,
         title,
         description,

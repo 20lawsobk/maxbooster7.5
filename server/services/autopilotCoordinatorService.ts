@@ -1,6 +1,7 @@
+import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+
 
 const MINIMUM_GAP_HOURS = 2;
 const MINIMUM_GAP_MS = MINIMUM_GAP_HOURS * 60 * 60 * 1000;
@@ -162,7 +163,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     }
 
     const post: ScheduledPost = {
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       userId,
       autopilotType,
       platform,
@@ -267,7 +268,7 @@ class AutopilotCoordinatorService extends EventEmitter {
     data: Record<string, any>
   ): SharedInsight {
     const insight: SharedInsight = {
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       userId,
       sourceAutopilot,
       insightType,

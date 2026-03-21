@@ -1,6 +1,7 @@
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
-import { nanoid } from 'nanoid';
+
 
 export interface OptimalTiming {
   platform: string;
@@ -655,7 +656,7 @@ class TimingOptimizerService {
         return alt;
       });
 
-    return { id: nanoid(), platform, scheduledTime: targetDate, score, reasoning, alternatives };
+    return { id: randomBytes(8).toString('hex'), platform, scheduledTime: targetDate, score, reasoning, alternatives };
   }
 
   async getOptimalTimingForAllPlatforms(timezone: string = 'America/New_York'): Promise<Record<string, OptimalTiming>> {
