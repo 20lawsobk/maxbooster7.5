@@ -132,7 +132,7 @@ class TaxFormService {
       return this._treatyCache.data;
     }
     try {
-      const rows = await db.select().from(taxTreatyRates);
+      const rows = await db.select().from(taxTreatyRates).limit(300);
       const map: Record<string, number> = {};
       for (const row of rows) {
         if (row.hasTreaty) {

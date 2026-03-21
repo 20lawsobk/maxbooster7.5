@@ -476,7 +476,9 @@ class ReleaseScheduler {
           eq(releaseScheduledActions.status, 'pending'),
           lte(releaseScheduledActions.scheduledFor, now)
         )
-      );
+      )
+      .orderBy(releaseScheduledActions.scheduledFor)
+      .limit(100);
 
     for (const action of pendingActions) {
       try {

@@ -164,17 +164,16 @@ export class RecoupmentService {
   }
 
   async getAccountsByUser(userId: string, includeInactive = false): Promise<RecoupmentAccount[]> {
-    let query = db
+    const whereClause = includeInactive
+      ? eq(recoupmentAccounts.userId, userId)
+      : and(eq(recoupmentAccounts.userId, userId), eq(recoupmentAccounts.isActive, true));
+
+    return await db
       .select()
       .from(recoupmentAccounts)
-      .where(eq(recoupmentAccounts.userId, userId))
-      .orderBy(recoupmentAccounts.priority);
-
-    if (!includeInactive) {
-      query = query.where(eq(recoupmentAccounts.isActive, true));
-    }
-
-    return await query;
+      .where(whereClause)
+      .orderBy(recoupmentAccounts.priority)
+      .limit(50);
   }
 
   async getAccountById(accountId: string): Promise<RecoupmentAccount | null> {

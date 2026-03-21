@@ -283,7 +283,7 @@ class SmartDefaultsService {
 
   async analyzeUserBehavior(userId: string): Promise<UserBehaviorAnalysis> {
     const user = await storage.getUser(userId);
-    const userProjects = await db.select().from(projects).where(eq(projects.userId, userId));
+    const userProjects = await db.select().from(projects).where(eq(projects.userId, userId)).limit(50);
     
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -291,7 +291,8 @@ class SmartDefaultsService {
     const recentAnalytics = await db.select()
       .from(analytics)
       .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)))
-      .orderBy(desc(analytics.date));
+      .orderBy(desc(analytics.date))
+      .limit(30);
 
     const preferences = (user?.preferences as Record<string, any>) || {};
     const featureUsage = (preferences.featureUsage as Record<string, number>) || {};

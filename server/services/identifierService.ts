@@ -392,7 +392,8 @@ class IdentifierService {
     const records = await db.select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry.userId, userId))
-      .orderBy(desc(isrcRegistry.issuedAt));
+      .orderBy(desc(isrcRegistry.issuedAt))
+      .limit(500);
 
     return records.map(r => ({
       code: r.code,

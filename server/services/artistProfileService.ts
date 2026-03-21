@@ -851,7 +851,8 @@ class ArtistProfileService {
     const rows = await db.select({ profile: artistProfiles })
       .from(artistProfileReleases)
       .innerJoin(artistProfiles, eq(artistProfileReleases.artistProfileId, artistProfiles.id))
-      .where(eq(artistProfileReleases.releaseId, releaseId));
+      .where(eq(artistProfileReleases.releaseId, releaseId))
+      .limit(50);
     return rows.map(r => r.profile);
   }
 

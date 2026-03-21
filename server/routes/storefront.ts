@@ -1414,7 +1414,8 @@ router.post('/:id/checkout', async (req, res) => {
         eq(listings.userId, storefront.userId),
         eq(listings.isPublished, true),
         inArray(listings.id, listingIds)
-      ));
+      ))
+      .limit(50);
     if (validListings.length === 0) {
       return res.status(400).json({ error: 'No valid listings found' });
     }
@@ -2155,7 +2156,8 @@ router.post('/:id/checkout/preview', async (req, res) => {
         eq(listings.userId, storefront.userId),
         eq(listings.isPublished, true),
         inArray(listings.id, listingIds)
-      ));
+      ))
+      .limit(50);
 
     const cartItems = validListings.map(l => {
       let priceCents = l.priceCents;

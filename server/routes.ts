@@ -3233,7 +3233,8 @@ export async function registerRoutes(
 
       const rows = await db.select().from(royaltyTransactions)
         .where(and(...conditions))
-        .orderBy(desc(royaltyTransactions.createdAt));
+        .orderBy(desc(royaltyTransactions.createdAt))
+        .limit(5000);
 
       const totalEarnings = rows.reduce((s, r) => s + (r.amount || 0), 0);
       const pendingPayouts = rows.filter(r => r.status === 'pending').reduce((s, r) => s + (r.amount || 0), 0);

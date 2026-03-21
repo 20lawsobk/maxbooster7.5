@@ -977,7 +977,7 @@ export class CustomAIEngine {
 
   private async extractChurnFeatures(userId: string): Promise<any> {
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
-    const userProjects = await db.select().from(studioProjects).where(eq(studioProjects.userId, userId));
+    const userProjects = await db.select().from(studioProjects).where(eq(studioProjects.userId, userId)).limit(100);
 
     return {
       engagementScore: userProjects.length > 0 ? 0.7 : 0.3,

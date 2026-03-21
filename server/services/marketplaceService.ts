@@ -754,7 +754,8 @@ export class MarketplaceService {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
             .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder);
+            .orderBy(listingLicenseTiers.sortOrder)
+            .limit(20);
           allTiers.push(...tiers);
         }
       }
@@ -830,7 +831,8 @@ export class MarketplaceService {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
             .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder);
+            .orderBy(listingLicenseTiers.sortOrder)
+            .limit(20);
           allTiers.push(...tiers);
         }
       }

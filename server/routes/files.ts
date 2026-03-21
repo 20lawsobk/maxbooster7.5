@@ -378,8 +378,17 @@ router.get('/storage-usage', async (req: Request, res: Response) => {
 
     const storage = await getOrCreateUserStorage(req.user.id);
 
-    // Only count non-deleted files for storage usage
-    const files = await db.select()
+    // Use SQL aggregates for storage usage by category — avoids loading all file rows into JS
+    const [catAgg] = await db.select({
+      audioUsed:  sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'audio/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
+      audioCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'audio/%' THEN 1 END)`,
+      imagesUsed:  sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'image/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
+      imagesCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'image/%' THEN 1 END)`,
+      videoUsed:  sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} LIKE 'video/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
+      videoCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} LIKE 'video/%' THEN 1 END)`,
+      otherUsed:  sql<number>`COALESCE(SUM(CASE WHEN ${userStorageFiles.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles.mimeType} NOT LIKE 'video/%' THEN ${userStorageFiles.sizeBytes} ELSE 0 END), 0)`,
+      otherCount: sql<number>`COUNT(CASE WHEN ${userStorageFiles.mimeType} NOT LIKE 'audio/%' AND ${userStorageFiles.mimeType} NOT LIKE 'image/%' AND ${userStorageFiles.mimeType} NOT LIKE 'video/%' THEN 1 END)`,
+    })
       .from(userStorageFiles)
       .where(and(
         eq(userStorageFiles.userId, req.user.id),
@@ -387,28 +396,11 @@ router.get('/storage-usage', async (req: Request, res: Response) => {
       ));
 
     const categories = {
-      audio: { name: 'Audio', used: 0, count: 0 },
-      images: { name: 'Images', used: 0, count: 0 },
-      video: { name: 'Video', used: 0, count: 0 },
-      other: { name: 'Other', used: 0, count: 0 },
+      audio:  { name: 'Audio',  used: Number(catAgg?.audioUsed  || 0), count: Number(catAgg?.audioCount  || 0) },
+      images: { name: 'Images', used: Number(catAgg?.imagesUsed || 0), count: Number(catAgg?.imagesCount || 0) },
+      video:  { name: 'Video',  used: Number(catAgg?.videoUsed  || 0), count: Number(catAgg?.videoCount  || 0) },
+      other:  { name: 'Other',  used: Number(catAgg?.otherUsed  || 0), count: Number(catAgg?.otherCount  || 0) },
     };
-
-    files.forEach(file => {
-      const size = file.sizeBytes || 0;
-      if (file.mimeType?.startsWith('audio/')) {
-        categories.audio.used += size;
-        categories.audio.count++;
-      } else if (file.mimeType?.startsWith('image/')) {
-        categories.images.used += size;
-        categories.images.count++;
-      } else if (file.mimeType?.startsWith('video/')) {
-        categories.video.used += size;
-        categories.video.count++;
-      } else {
-        categories.other.used += size;
-        categories.other.count++;
-      }
-    });
 
     const usedPercent = Math.round((storage.totalBytes / storage.quotaBytes) * 100);
     

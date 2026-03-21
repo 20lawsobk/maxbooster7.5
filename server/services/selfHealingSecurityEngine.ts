@@ -243,7 +243,8 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       const now = new Date();
       const blocked = await db.select()
         .from(ipBlacklist)
-        .where(gte(ipBlacklist.expiresAt, now));
+        .where(gte(ipBlacklist.expiresAt, now))
+        .limit(10000);
       
       for (const entry of blocked) {
         if (entry.ip) {

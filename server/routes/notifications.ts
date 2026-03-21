@@ -602,4 +602,22 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
   }
 });
 
+// GET /:id - get single notification (after all specific paths to avoid route shadowing)
+router.get('/:id', async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const [notification] = await db
+      .select()
+      .from(notifications)
+      .where(and(eq(notifications.id, req.params.id), eq(notifications.userId, userId)))
+      .limit(1);
+    if (!notification) return res.status(404).json({ error: 'Notification not found' });
+    res.json(notification);
+  } catch (error) {
+    logger.error('Get notification error:', error);
+    res.status(500).json({ error: 'Failed to fetch notification' });
+  }
+});
+
 export default router;

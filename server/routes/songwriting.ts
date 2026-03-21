@@ -32,6 +32,19 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const [item] = await db.select().from(songwritingSessions)
+      .where(and(eq(songwritingSessions.id, req.params.id), eq(songwritingSessions.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Session not found' });
+    res.json(item);
+  } catch (error) {
+    logger.error('[Songwriting] Failed to fetch session:', error);
+    res.status(500).json({ error: 'Failed to fetch songwriting session' });
+  }
+});
+
 router.post('/', requireAuth, async (req, res) => {
   try {
     const data = insertSongwritingSessionSchema.parse({ ...req.body, userId: req.user!.id });

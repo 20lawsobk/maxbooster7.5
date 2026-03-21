@@ -155,7 +155,8 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
           gte(sessions.expiresAt, new Date())
         )
       )
-      .orderBy(desc(sessions.lastActivity));
+      .orderBy(desc(sessions.lastActivity))
+      .limit(50);
 
     const formattedSessions = userSessions.map(session => {
       const userAgent = session.userAgent || '';
@@ -436,7 +437,8 @@ router.get('/social-token-status', requireAuth, async (req: AuthenticatedRequest
       .where(and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.isActive, true)
-      ));
+      ))
+      .limit(20);
 
     const now = new Date();
     const platformStatus = accounts.map(account => {

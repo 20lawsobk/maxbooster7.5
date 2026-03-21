@@ -525,7 +525,8 @@ class OrganicCompoundingService {
       return await db.select()
         .from(organicAssets)
         .where(eq(organicAssets.userId, userId))
-        .orderBy(desc(organicAssets.createdAt));
+        .orderBy(desc(organicAssets.createdAt))
+        .limit(500);
     } catch (error) {
       logger.error('Error getting assets:', error);
       throw error;

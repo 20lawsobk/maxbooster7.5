@@ -245,7 +245,8 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
         eq(merchItems.userId, userId),
         sql`${merchItems.inventory} < 5`,
         eq(merchItems.isDigital, false),
-      ));
+      ))
+      .limit(50);
 
     res.json({
       totalRevenue: Number(orderStats?.totalRevenue || 0),
@@ -258,6 +259,20 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error fetching merch stats:', error);
     res.status(500).json({ error: 'Failed to fetch merch stats' });
+  }
+});
+
+// GET /api/merch/:id - get single merch item (after /stats & /orders to avoid route shadowing)
+router.get('/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const [item] = await db.select().from(merchItems)
+      .where(and(eq(merchItems.id, req.params.id), eq(merchItems.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Merch item not found' });
+    res.json(item);
+  } catch (error) {
+    logger.error('Error fetching merch item:', error);
+    res.status(500).json({ error: 'Failed to fetch merch item' });
   }
 });
 

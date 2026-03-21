@@ -647,7 +647,40 @@ router.post('/generate-event', (req: Request, res: Response) => {
   }
 });
 
-// DELETE /api/simulation/:id - Delete simulation results
+// GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
+router.get('/:id', (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+
+    const running = activeSimulations.get(id);
+    if (running) {
+      return res.json({
+        success: true,
+        id,
+        status: 'running',
+        ...running.getStatus(),
+        logs: simulationLogs.get(id) ?? [],
+      });
+    }
+
+    const result = simulationResults.get(id);
+    if (result) {
+      return res.json({
+        success: true,
+        id,
+        status: result.error ? 'failed' : 'completed',
+        result,
+        logs: simulationLogs.get(id) ?? [],
+      });
+    }
+
+    return res.status(404).json({ success: false, error: 'Simulation not found' });
+  } catch (error: any) {
+    logger.error('Error fetching simulation:', error);
+    res.status(500).json({ success: false, error: 'Failed to fetch simulation' });
+  }
+});
+
 router.delete('/:id', (req: Request, res: Response) => {
   try {
     const { id } = req.params;
