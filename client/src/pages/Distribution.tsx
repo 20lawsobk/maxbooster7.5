@@ -1149,16 +1149,23 @@ export default function Distribution() {
 
   const platformsData = platformsResponse?.platforms || [];
 
-  const DISTRO_PLATFORMS: DistroPlatform[] = platformsData.map((platform) => {
-    const platformEarning = platformEarnings.find((p) => p.platform === platform.name);
-    return {
-      ...platform,
-      id: platform.slug,
-      icon: getPlatformIcon(platform.slug),
-      color: getPlatformColor(platform.slug),
-      earnings: platformEarning?.amount ?? 0,
-    };
-  });
+  const DISTRO_PLATFORMS: DistroPlatform[] = Array.from(
+    new Map(
+      platformsData.map((platform) => {
+        const platformEarning = platformEarnings.find((p) => p.platform === platform.name);
+        return [
+          platform.slug,
+          {
+            ...platform,
+            id: platform.slug,
+            icon: getPlatformIcon(platform.slug),
+            color: getPlatformColor(platform.slug),
+            earnings: platformEarning?.amount ?? 0,
+          },
+        ];
+      })
+    ).values()
+  );
 
   // Mutations
   const uploadReleaseMutation = useMutation({
@@ -4183,7 +4190,34 @@ return (
                   <h3 className="text-lg font-semibold">Platform Selection & Settings</h3>
 
                   <div className="space-y-4">
-                    <Label>Select Distribution Platforms</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Select Distribution Platforms ({uploadForm.selectedPlatforms.length} of {DISTRO_PLATFORMS.length} selected)</Label>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setUploadForm((prev) => ({
+                              ...prev,
+                              selectedPlatforms: DISTRO_PLATFORMS.map((p) => p.id),
+                            }))
+                          }
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setUploadForm((prev) => ({ ...prev, selectedPlatforms: [] }))
+                          }
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    </div>
                     <div className="grid grid-cols-3 gap-4">
                       {DISTRO_PLATFORMS.map((platform) => (
                         <div
