@@ -17,6 +17,7 @@ import {
   analyzeUrl, analyzeAudio, analyzeImage,
   urlToContentSeed, audioToContentSeed, imageToContentSeed,
 } from '../services/mediaAnalyzerService.js';
+import { labelGridService } from '../services/labelgrid-service.js';
 
 const router = Router();
 
@@ -1612,42 +1613,24 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
       })),
     ].sort((a, b) => b.engagement - a.engagement).slice(0, 10);
 
-    // Spotify artist data if connected
+    // Streaming stats via LabelGrid royalty summary (primary source).
+    // getRoyaltySummary() requires no artist ID and aggregates all distributed releases.
     let spotifyStats: any = null;
     const profile = artistProfile[0];
-    if (profile?.spotifyArtistId) {
-      try {
-        const clientId = process.env.SPOTIFY_CLIENT_ID;
-        const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-        if (clientId && clientSecret) {
-          const tokenRes = await fetch('https://accounts.spotify.com/api/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}` },
-            body: 'grant_type=client_credentials',
-            signal: AbortSignal.timeout(6000),
-          });
-          if (tokenRes.ok) {
-            const { access_token } = await tokenRes.json() as any;
-            const artistRes = await fetch(`https://api.spotify.com/v1/artists/${profile.spotifyArtistId}`, {
-              headers: { Authorization: `Bearer ${access_token}` },
-              signal: AbortSignal.timeout(6000),
-            });
-            if (artistRes.ok) {
-              const artist = await artistRes.json() as any;
-              spotifyStats = {
-                followers: artist.followers?.total || 0,
-                popularity: artist.popularity || 0,
-                genres: artist.genres || [],
-                artistId: profile.spotifyArtistId,
-                artistName: artist.name,
-                imageUrl: artist.images?.[0]?.url || null,
-              };
-            }
-          }
-        }
-      } catch (spotifyErr) {
-        logger.warn('[Analytics] Spotify artist stats fetch failed:', spotifyErr);
+    try {
+      const royalties = await labelGridService.getRoyaltySummary();
+      if (royalties && (royalties.lifetime > 0 || royalties.available > 0 || royalties.pending > 0)) {
+        spotifyStats = {
+          totalRevenue: royalties.lifetime,
+          pendingRevenue: royalties.pending,
+          availableRevenue: royalties.available,
+          currency: royalties.currency,
+          artistId: profile?.spotifyArtistId ?? null,
+          source: 'labelgrid',
+        };
       }
+    } catch (lgErr) {
+      logger.debug('[Analytics] LabelGrid royalty summary unavailable:', lgErr);
     }
 
     res.json({

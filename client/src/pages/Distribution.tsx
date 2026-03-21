@@ -4178,14 +4178,47 @@ return (
                 </div>
               )}
 
-              {currentStep === 4 && (
+              {currentStep === 4 && (() => {
+                // Slugs that are aliases/legacy names of another platform already in the list.
+                // We hide these from the release selection to avoid visible duplicates.
+                const ALIAS_SLUGS = new Set([
+                  'saavn',            // duplicate of jiosaavn (old brand name)
+                  'amazon-mp3',       // duplicate of amazon-music (legacy download store)
+                  'youtube-content-id', // rights-management only, not a streaming distribution target
+                ]);
+                const selectionPlatforms = DISTRO_PLATFORMS.filter(
+                  (p) => !ALIAS_SLUGS.has(p.id)
+                );
+                const allSelected = selectionPlatforms.every((p) =>
+                  uploadForm.selectedPlatforms.includes(p.id)
+                );
+                const handleSelectAll = () => {
+                  if (allSelected) {
+                    setUploadForm((prev) => ({ ...prev, selectedPlatforms: [] }));
+                  } else {
+                    setUploadForm((prev) => ({
+                      ...prev,
+                      selectedPlatforms: selectionPlatforms.map((p) => p.id),
+                    }));
+                  }
+                };
+                return (
                 <div className="space-y-6">
                   <h3 className="text-lg font-semibold">Platform Selection & Settings</h3>
 
                   <div className="space-y-4">
-                    <Label>Select Distribution Platforms</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>Select Distribution Platforms</Label>
+                      <button
+                        type="button"
+                        onClick={handleSelectAll}
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        {allSelected ? 'Deselect All' : `Select All (${selectionPlatforms.length})`}
+                      </button>
+                    </div>
                     <div className="grid grid-cols-3 gap-4">
-                      {DISTRO_PLATFORMS.map((platform) => (
+                      {selectionPlatforms.map((platform) => (
                         <div
                           key={platform.id}
                           className="flex items-center space-x-3 p-3 border rounded-lg"
@@ -4273,7 +4306,8 @@ return (
                   </div>
 
                 </div>
-              )}
+                );
+              })()}
 
               {currentStep === 5 && (
                 <div className="space-y-6">
