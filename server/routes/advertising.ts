@@ -7,8 +7,8 @@ import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 import { db } from '../db.js';
-import { eq, desc, sql } from 'drizzle-orm';
-import { adCampaigns } from '@shared/schema';
+import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
+import { adCampaigns, adCreatives } from '@shared/schema';
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -104,9 +104,29 @@ router.get('/competitor-insights', requireAuth, async (req: AuthenticatedRequest
   }
 });
 
-router.get('/ab-tests', requireAuth, async (req, res) => {
+router.get('/ab-tests', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ tests: [] });
+    const userId = req.user!.id;
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(and(eq(adCreatives.userId, userId), isNotNull(adCreatives.variants)))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(50);
+
+    const tests = creatives
+      .filter(c => c.variants && Array.isArray(c.variants) && (c.variants as any[]).length > 1)
+      .map(c => ({
+        id: c.id,
+        name: c.name,
+        status: c.status || 'draft',
+        campaignId: c.campaignId,
+        variants: c.variants,
+        performance: c.performance || null,
+        createdAt: c.createdAt,
+      }));
+
+    res.json({ tests });
   } catch (error) {
     logger.error('Failed to get A/B tests:', error);
     res.status(500).json({ error: 'Failed to get A/B tests' });
@@ -157,13 +177,8 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
   }
 });
 
-router.post('/upload-image', requireAuth, async (req, res) => {
-  try {
-    res.json({ success: true, url: '' });
-  } catch (error) {
-    logger.error('Failed to upload image:', error);
-    res.status(500).json({ error: 'Failed to upload image' });
-  }
+router.post('/upload-image', requireAuth, async (_req, res) => {
+  res.status(501).json({ error: 'Image upload for ad creatives requires file storage. Use the Files section to upload media, then reference the URL in your creative.' });
 });
 
 // Advertising autopilot status — returns isRunning, config, modelStatus + campaign metrics
@@ -248,28 +263,89 @@ router.post('/configure', requireAuth, async (req: AuthenticatedRequest, res) =>
 });
 
 // Variants endpoint
-router.get('/variants', requireAuth, async (req, res) => {
+router.get('/variants', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ variants: [] });
+    const userId = req.user!.id;
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+
+    const variants = creatives.flatMap(c => {
+      if (!c.variants || !Array.isArray(c.variants)) return [];
+      return (c.variants as any[]).map((v: any, idx: number) => ({
+        id: `${c.id}-v${idx}`,
+        creativeId: c.id,
+        creativeName: c.name,
+        variantIndex: idx,
+        ...v,
+      }));
+    });
+
+    res.json({ variants });
   } catch (error) {
     logger.error('Failed to get variants:', error);
     res.status(500).json({ error: 'Failed to get variants' });
   }
 });
 
-// Attribution endpoints
-router.get('/attribution/channels', requireAuth, async (req, res) => {
+// Attribution endpoints — derive from campaign data
+router.get('/attribution/channels', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ channels: [] });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ platform: adCampaigns.platform, budget: adCampaigns.budget, status: adCampaigns.status, performance: adCampaigns.performance })
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+
+    const channelMap = new Map<string, { spend: number; conversions: number; revenue: number; campaigns: number }>();
+    for (const c of campaigns) {
+      const perf = (c.performance || {}) as any;
+      const entry = channelMap.get(c.platform) || { spend: 0, conversions: 0, revenue: 0, campaigns: 0 };
+      entry.spend += Number(c.budget || 0);
+      entry.conversions += Number(perf.conversions || 0);
+      entry.revenue += Number(perf.revenue || 0);
+      entry.campaigns += 1;
+      channelMap.set(c.platform, entry);
+    }
+
+    const channels = Array.from(channelMap.entries()).map(([platform, data]) => ({
+      platform,
+      spend: data.spend,
+      conversions: data.conversions,
+      revenue: data.revenue,
+      roas: data.spend > 0 ? data.revenue / data.spend : 0,
+      campaigns: data.campaigns,
+    }));
+
+    res.json({ channels });
   } catch (error) {
     logger.error('Failed to get attribution channels:', error);
     res.status(500).json({ error: 'Failed to get attribution channels' });
   }
 });
 
-router.get('/attribution/paths', requireAuth, async (req, res) => {
+router.get('/attribution/paths', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ paths: [] });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ platform: adCampaigns.platform, objective: adCampaigns.objective, performance: adCampaigns.performance })
+      .from(adCampaigns)
+      .where(and(eq(adCampaigns.userId, userId), isNotNull(adCampaigns.performance)))
+      .limit(100);
+
+    const paths = campaigns
+      .filter(c => (c.performance as any)?.conversions > 0)
+      .map(c => ({
+        path: [c.platform, c.objective || 'conversion'].filter(Boolean),
+        conversions: (c.performance as any)?.conversions || 0,
+        revenue: (c.performance as any)?.revenue || 0,
+      }));
+
+    res.json({ paths });
   } catch (error) {
     logger.error('Failed to get attribution paths:', error);
     res.status(500).json({ error: 'Failed to get attribution paths' });
@@ -277,18 +353,54 @@ router.get('/attribution/paths', requireAuth, async (req, res) => {
 });
 
 // Dashboard endpoints
-router.get('/dashboard/attribution', requireAuth, async (req, res) => {
+router.get('/dashboard/attribution', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ attribution: { channels: [], total: 0 } });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ platform: adCampaigns.platform, budget: adCampaigns.budget, performance: adCampaigns.performance })
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(200);
+
+    const channelMap = new Map<string, number>();
+    let total = 0;
+    for (const c of campaigns) {
+      const rev = Number((c.performance as any)?.revenue || c.budget || 0);
+      channelMap.set(c.platform, (channelMap.get(c.platform) || 0) + rev);
+      total += rev;
+    }
+
+    const channels = Array.from(channelMap.entries()).map(([platform, revenue]) => ({
+      platform,
+      revenue,
+      share: total > 0 ? revenue / total : 0,
+    }));
+
+    res.json({ attribution: { channels, total } });
   } catch (error) {
     logger.error('Failed to get dashboard attribution:', error);
     res.status(500).json({ error: 'Failed to get dashboard attribution' });
   }
 });
 
-router.get('/dashboard/paths', requireAuth, async (req, res) => {
+router.get('/dashboard/paths', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ paths: [] });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ platform: adCampaigns.platform, objective: adCampaigns.objective, performance: adCampaigns.performance, status: adCampaigns.status })
+      .from(adCampaigns)
+      .where(eq(adCampaigns.userId, userId))
+      .limit(100);
+
+    const paths = campaigns
+      .filter(c => c.status === 'active' || c.status === 'completed')
+      .map(c => ({
+        channel: c.platform,
+        objective: c.objective,
+        conversions: (c.performance as any)?.conversions || 0,
+      }));
+
+    res.json({ paths });
   } catch (error) {
     logger.error('Failed to get dashboard paths:', error);
     res.status(500).json({ error: 'Failed to get dashboard paths' });
@@ -296,9 +408,29 @@ router.get('/dashboard/paths', requireAuth, async (req, res) => {
 });
 
 // ROAS endpoints
-router.get('/roas/audience-segments', requireAuth, async (req, res) => {
+router.get('/roas/audience-segments', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ segments: [] });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ id: adCampaigns.id, name: adCampaigns.name, targetAudience: adCampaigns.targetAudience, budget: adCampaigns.budget, performance: adCampaigns.performance })
+      .from(adCampaigns)
+      .where(and(eq(adCampaigns.userId, userId), isNotNull(adCampaigns.targetAudience)))
+      .limit(50);
+
+    const segments = campaigns.map(c => ({
+      campaignId: c.id,
+      campaignName: c.name,
+      audience: c.targetAudience,
+      spend: Number(c.budget || 0),
+      roas: (() => {
+        const perf = c.performance as any;
+        const revenue = Number(perf?.revenue || 0);
+        const spend = Number(c.budget || 0);
+        return spend > 0 ? revenue / spend : 0;
+      })(),
+    }));
+
+    res.json({ segments });
   } catch (error) {
     logger.error('Failed to get ROAS audience segments:', error);
     res.status(500).json({ error: 'Failed to get ROAS audience segments' });
@@ -320,18 +452,88 @@ router.get('/roas/campaigns', requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
-router.get('/roas/creative-fatigue-analysis', requireAuth, async (req, res) => {
+router.get('/roas/creative-fatigue-analysis', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ analysis: { fatigued: [], healthy: [] } });
+    const userId = req.user!.id;
+    const creatives = await db
+      .select()
+      .from(adCreatives)
+      .where(eq(adCreatives.userId, userId))
+      .orderBy(desc(adCreatives.createdAt))
+      .limit(100);
+
+    const fatigued: any[] = [];
+    const healthy: any[] = [];
+
+    for (const c of creatives) {
+      const perf = (c.performance || {}) as any;
+      const ctr = Number(perf.ctr || 0);
+      const impressions = Number(perf.impressions || 0);
+      const age = c.createdAt ? Math.floor((Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
+
+      const isFatigued = (impressions > 10000 && ctr < 0.5) || age > 60;
+
+      const item = {
+        id: c.id,
+        name: c.name,
+        type: c.type,
+        campaignId: c.campaignId,
+        ctr,
+        impressions,
+        ageInDays: age,
+        status: c.status,
+        fatigueScore: isFatigued ? Math.min(100, age + (impressions > 10000 ? 30 : 0)) : Math.max(0, age / 2),
+      };
+
+      if (isFatigued) {
+        fatigued.push(item);
+      } else {
+        healthy.push(item);
+      }
+    }
+
+    res.json({ analysis: { fatigued, healthy } });
   } catch (error) {
     logger.error('Failed to get ROAS creative fatigue analysis:', error);
     res.status(500).json({ error: 'Failed to get ROAS creative fatigue analysis' });
   }
 });
 
-router.get('/roas/forecast', requireAuth, async (req, res) => {
+router.get('/roas/forecast', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    res.json({ forecast: { daily: [], weekly: [], monthly: [] } });
+    const userId = req.user!.id;
+    const campaigns = await db
+      .select({ budget: adCampaigns.budget, dailyBudget: adCampaigns.dailyBudget, performance: adCampaigns.performance, status: adCampaigns.status })
+      .from(adCampaigns)
+      .where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active')))
+      .limit(100);
+
+    const totalDailyBudget = campaigns.reduce((sum, c) => sum + Number(c.dailyBudget || c.budget / 30 || 0), 0);
+    const avgRoas = (() => {
+      const withPerf = campaigns.filter(c => (c.performance as any)?.roas);
+      if (!withPerf.length) return 2.5;
+      return withPerf.reduce((sum, c) => sum + Number((c.performance as any).roas || 0), 0) / withPerf.length;
+    })();
+
+    const daily = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date();
+      date.setDate(date.getDate() + i + 1);
+      const jitter = 0.85 + Math.random() * 0.3;
+      const spend = totalDailyBudget * jitter;
+      return { date: date.toISOString().split('T')[0], spend, revenue: spend * avgRoas, roas: avgRoas * jitter };
+    });
+
+    const weekly = Array.from({ length: 4 }, (_, i) => {
+      const spend = totalDailyBudget * 7 * (0.9 + i * 0.05);
+      return { week: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
+    });
+
+    const monthly = Array.from({ length: 3 }, (_, i) => {
+      const spend = totalDailyBudget * 30 * (0.95 + i * 0.03);
+      return { month: i + 1, spend, revenue: spend * avgRoas, roas: avgRoas };
+    });
+
+    res.json({ forecast: { daily, weekly, monthly, activeCampaigns: campaigns.length, dailyBudget: totalDailyBudget } });
   } catch (error) {
     logger.error('Failed to get ROAS forecast:', error);
     res.status(500).json({ error: 'Failed to get ROAS forecast' });

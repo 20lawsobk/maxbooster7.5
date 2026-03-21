@@ -456,8 +456,8 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
     }
 
     const total = filtered.length;
-    const limitNum = parseInt(limit as string);
-    const offsetNum = parseInt(offset as string);
+    const limitNum = Math.min(Math.max(parseInt(limit as string) || 50, 1), 1000);
+    const offsetNum = Math.max(parseInt(offset as string) || 0, 0);
     
     const paginated = filtered.slice(offsetNum, offsetNum + limitNum);
 

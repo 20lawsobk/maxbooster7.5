@@ -134,7 +134,7 @@ router.get('/', async (req: Request, res: Response) => {
     return res.json(mappedNotifications);
   } catch (error) {
     logger.error('Get notifications error:', error);
-    return res.json([]);
+    res.status(500).json({ error: 'Get notifications error:' });
   }
 });
 

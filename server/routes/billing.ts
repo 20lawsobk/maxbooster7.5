@@ -583,7 +583,7 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       .limit(1);
     
     if (!user?.stripeCustomerId || !stripe) {
-      return res.json([]);
+      res.status(500).json({ error: 'Internal server error' });
     }
     
     try {
@@ -607,7 +607,7 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       logger.warn('[Billing] Failed to fetch invoices:', err);
     }
     
-    res.json([]);
+    res.status(500).json({ error: 'Internal server error' });
   } catch (error) {
     logger.error('[Billing] Failed to get billing history:', error);
     res.status(500).json({ message: 'Failed to get billing history' });

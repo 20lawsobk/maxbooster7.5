@@ -258,7 +258,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     res.json(enrichedConnections);
   } catch (error) {
     logger.error('Failed to get social connections:', error);
-    res.json([]);
+    res.status(500).json({ error: 'Failed to get social connections:' });
   }
 });
 
@@ -727,7 +727,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     logger.error('OAuth callback error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
-    logger.info(`[OAuth] Redirecting to error URL`, { errorUrl });
+    logger.error(`[OAuth] Redirecting to error URL`, { errorUrl });
     res.redirect(errorUrl);
   }
 });

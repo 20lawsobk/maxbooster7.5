@@ -950,6 +950,7 @@ adminRouter.get('/chain-fixer/status', async (_req, res) => {
   try {
     res.json(chainErrorAutoFixer.getStatus());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -959,6 +960,7 @@ adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
     const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
     res.json({ success: ok });
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -970,6 +972,7 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
     chainErrorAutoFixer.forceCheck(message);
     res.json({ success: true });
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -980,6 +983,7 @@ adminRouter.get('/platform-fixer/status', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getStatus());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -988,6 +992,7 @@ adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getSubsystems());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -996,6 +1001,7 @@ adminRouter.get('/platform-fixer/patches', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getPatches());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1004,6 +1010,7 @@ adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getIncidents());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1013,6 +1020,7 @@ adminRouter.post('/platform-fixer/scan', async (_req, res) => {
     await platformAutoFixer.runFullScan();
     res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1023,6 +1031,7 @@ adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
     if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
     res.json(result);
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1033,6 +1042,7 @@ adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
     if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
     res.json({ success: true });
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1041,6 +1051,7 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   try {
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1054,6 +1065,7 @@ adminRouter.get('/permanent-fixes', async (_req, res) => {
   try {
     res.json(permanentFixRegistry.getStatus());
   } catch (err: any) {
+    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });

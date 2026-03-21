@@ -171,10 +171,13 @@ router.get('/performance', requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const { platform, limit, offset } = req.query;
     
+    const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 50, 1), 500);
+    const offsetNum = Math.max(parseInt(offset as string, 10) || 0, 0);
+
     const result = await autopilotLearningService.getPerformanceHistory(userId, {
       platform: platform as string | undefined,
-      limit: limit ? parseInt(limit as string, 10) : 50,
-      offset: offset ? parseInt(offset as string, 10) : 0,
+      limit: limitNum,
+      offset: offsetNum,
     });
     
     res.json({
@@ -182,8 +185,8 @@ router.get('/performance', requireAuth, async (req, res) => {
       data: result.data,
       total: result.total,
       pagination: {
-        limit: limit ? parseInt(limit as string, 10) : 50,
-        offset: offset ? parseInt(offset as string, 10) : 0,
+        limit: limitNum,
+        offset: offsetNum,
       },
     });
   } catch (error) {

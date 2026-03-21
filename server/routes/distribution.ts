@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
 import { eq, and, desc, sql, gte, lte, sum, count, inArray } from 'drizzle-orm';
-import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks } from '@shared/schema';
+import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks, isrcRegistry, upcRegistry } from '@shared/schema';
 import { storageService } from '../services/storageService';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
@@ -3248,7 +3248,22 @@ router.post('/export-report', requireAuth, async (req: Request, res: Response) =
 // GET /api/distribution/codes/stats - Get code generation stats
 router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ isrcGenerated: 0, upcGenerated: 0, remaining: 1000 });
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const [[isrcResult], [upcResult]] = await Promise.all([
+      db.select({ count: count() }).from(isrcRegistry).where(eq(isrcRegistry.artistId, userId)),
+      db.select({ count: count() }).from(upcRegistry).where(eq(upcRegistry.artistId, userId)),
+    ]);
+
+    const isrcGenerated = Number(isrcResult?.count || 0);
+    const upcGenerated = Number(upcResult?.count || 0);
+
+    res.json({
+      isrcGenerated,
+      upcGenerated,
+      remaining: Math.max(0, 1000 - isrcGenerated),
+    });
   } catch (error: unknown) {
     logger.error('Error fetching code stats:', error);
     res.status(500).json({ error: 'Failed to fetch code stats' });
@@ -3312,7 +3327,8 @@ router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response)
       .select()
       .from(instantPayouts)
       .where(eq(instantPayouts.userId, userId))
-      .orderBy(desc(instantPayouts.createdAt));
+      .orderBy(desc(instantPayouts.createdAt))
+      .limit(500);
     res.json({ payouts, total: payouts.length });
   } catch (error: unknown) {
     logger.error('Error fetching earnings payouts:', error);
@@ -3328,7 +3344,8 @@ router.get('/earnings/statements', requireAuth, async (req: Request, res: Respon
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements.userId, userId))
-      .orderBy(desc(royaltyStatements.createdAt));
+      .orderBy(desc(royaltyStatements.createdAt))
+      .limit(500);
     res.json({ statements });
   } catch (error: unknown) {
     logger.error('Error fetching earnings statements:', error);
@@ -3460,7 +3477,8 @@ router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Re
       .select()
       .from(royaltyDisputes)
       .where(eq(royaltyDisputes.userId, userId))
-      .orderBy(desc(royaltyDisputes.createdAt));
+      .orderBy(desc(royaltyDisputes.createdAt))
+      .limit(500);
     res.json({ discrepancies, total: discrepancies.length });
   } catch (error: unknown) {
     logger.error('Error fetching royalty discrepancies:', error);
@@ -3575,7 +3593,8 @@ router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Re
       .select()
       .from(taxForms)
       .where(eq(taxForms.userId, userId))
-      .orderBy(desc(taxForms.createdAt));
+      .orderBy(desc(taxForms.createdAt))
+      .limit(200);
     res.json({ documents });
   } catch (error: unknown) {
     logger.error('Error fetching tax documents:', error);
@@ -4684,13 +4703,13 @@ router.get('/packages/:id/tracks', requireAuth, async (req: Request, res: Respon
 
     const key = `distribution/packages/${userId}/${id}/tracks.json`;
     const data = await storageService.downloadFile(key).catch(() => null);
-    if (!data) return res.json([]);
+    res.status(500).json({ error: 'Internal server error' });
 
     const tracks = JSON.parse(data.toString());
     res.json(tracks);
   } catch (error: unknown) {
     const err = error as { message?: string };
-    if (err?.message?.includes('not found') || err?.message?.includes('404')) return res.json([]);
+    res.status(500).json({ error: 'Internal server error' });
     logger.error('Error fetching package tracks:', error);
     res.status(500).json({ error: 'Failed to fetch package tracks' });
   }

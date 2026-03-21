@@ -734,7 +734,7 @@ export async function registerRoutes(
   });
 
   // Auth: Terminate all other sessions
-  app.post("/api/auth/sessions/terminate-all", async (req: Request, res: Response) => {
+  app.post("/api/auth/sessions/terminate-all", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -869,7 +869,7 @@ export async function registerRoutes(
       return res.json(allEvents);
     } catch (error) {
       logger.error("Get login history error:", error);
-      return res.json([]);
+      return res.status(500).json({ message: "Failed to fetch login history" });
     }
   });
 
@@ -981,7 +981,7 @@ export async function registerRoutes(
 
   // Auth: Change password
   // SECURITY: Invalidates all other sessions after password change
-  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
+  app.post("/api/auth/change-password", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -1023,7 +1023,7 @@ export async function registerRoutes(
         }
         logger.info(`[Security] Invalidated ${userSessions.length - 1} sessions after password change for user ${req.user.id}`);
       } catch (sessionError) {
-        logger.info('[Security] Could not invalidate other sessions:', sessionError);
+        logger.error('[Security] Could not invalidate other sessions:', sessionError);
         // Continue - password was changed successfully
       }
       
@@ -1238,7 +1238,7 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA setup - Generate TOTP secret and QR code
-  app.post("/api/auth/2fa/setup", async (req: Request, res: Response) => {
+  app.post("/api/auth/2fa/setup", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -1819,7 +1819,7 @@ export async function registerRoutes(
       return res.json({ action: 'view_analytics', title: 'Review Your Analytics', description: 'Check your streaming performance and audience insights.', priority: 'low', estimatedTime: '5 minutes' });
     } catch (error) {
       logger.error("Next action error:", error);
-      return res.json({ action: 'upload_first_track', title: 'Upload Your First Track', description: 'Get started by uploading your first track to the studio.', priority: 'high', estimatedTime: '5 minutes' });
+      return res.status(500).json({ error: 'Failed to determine next action' });
     }
   });
 
@@ -1839,7 +1839,7 @@ export async function registerRoutes(
       return res.json(mappedNotifications);
     } catch (error) {
       logger.error("Get notifications error:", error);
-      return res.json([]);
+      return res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 
@@ -1951,7 +1951,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.info("Mark all notifications read error:", error);
+      logger.error("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -1965,7 +1965,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.info("Mark all notifications read error:", error);
+      logger.error("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -1996,7 +1996,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Test notification sent", notification });
     } catch (error) {
-      logger.info("Test notification error:", error);
+      logger.error("Test notification error:", error);
       return res.status(500).json({ message: "Failed to send test notification" });
     }
   });
@@ -2020,16 +2020,8 @@ export async function registerRoutes(
       const prefs = user?.notificationSettings || defaultPrefs;
       return res.json(prefs);
     } catch (error) {
-      logger.info("Get notification preferences error:", error);
-      return res.json({
-        email: true,
-        browser: true,
-        releases: true,
-        earnings: true,
-        sales: true,
-        marketing: false,
-        system: true,
-      });
+      logger.error("Get notification preferences error:", error);
+      return res.status(500).json({ error: 'Failed to get notification preferences' });
     }
   });
 
@@ -2044,7 +2036,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true });
     } catch (error) {
-      logger.info("Update notification preferences error:", error);
+      logger.error("Update notification preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2098,7 +2090,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Push subscription saved" });
     } catch (error) {
-      logger.info("Save push subscription error:", error);
+      logger.error("Save push subscription error:", error);
       return res.status(500).json({ message: "Failed to save push subscription" });
     }
   });
@@ -2169,7 +2161,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, ...result });
     } catch (error) {
-      logger.info("Test push notification error:", error);
+      logger.error("Test push notification error:", error);
       return res.status(500).json({ message: "Failed to send test push notification" });
     }
   });
@@ -2190,7 +2182,7 @@ export async function registerRoutes(
       const count = result[0]?.count || 0;
       return res.json({ count });
     } catch (error) {
-      logger.info("Get unread count error:", error);
+      logger.error("Get unread count error:", error);
       return res.json({ count: 0 });
     }
   });
@@ -2204,8 +2196,8 @@ export async function registerRoutes(
       const projects = await storage.getProjectsByUserId(req.user.id);
       return res.json({ data: projects || [] });
     } catch (error) {
-      logger.info("Projects error:", error);
-      return res.json({ data: [] });
+      logger.error("Projects error:", error);
+      return res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
 
@@ -2260,7 +2252,7 @@ export async function registerRoutes(
       });
       return res.json(project);
     } catch (error) {
-      logger.info("Create project error:", error);
+      logger.error("Create project error:", error);
       return res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -2542,7 +2534,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.info("Analytics dashboard error:", error);
+      logger.error("Analytics dashboard error:", error);
       return res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
@@ -2601,7 +2593,7 @@ export async function registerRoutes(
         data: analyticsData,
       });
     } catch (error) {
-      logger.info("Analytics export error:", error);
+      logger.error("Analytics export error:", error);
       return res.status(500).json({ message: "Failed to export analytics" });
     }
   });
@@ -2624,7 +2616,7 @@ export async function registerRoutes(
         byMetric: {},
       });
     } catch (error) {
-      logger.info("Anomalies summary error:", error);
+      logger.error("Anomalies summary error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies summary" });
     }
   });
@@ -2700,7 +2692,7 @@ export async function registerRoutes(
 
       return res.json({ data: filteredAnomalies });
     } catch (error) {
-      logger.info("Anomalies list error:", error);
+      logger.error("Anomalies list error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies" });
     }
   });
@@ -2715,7 +2707,7 @@ export async function registerRoutes(
       // In production, this would update a database record
       return res.json({ success: true, message: `Anomaly ${id} acknowledged` });
     } catch (error) {
-      logger.info("Acknowledge anomaly error:", error);
+      logger.error("Acknowledge anomaly error:", error);
       return res.status(500).json({ message: "Failed to acknowledge anomaly" });
     }
   });
@@ -2737,7 +2729,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Event tracked" });
     } catch (error) {
-      logger.info("Track event error:", error);
+      logger.error("Track event error:", error);
       return res.status(500).json({ message: "Failed to track event" });
     }
   });
@@ -2786,13 +2778,8 @@ export async function registerRoutes(
         opportunities: [],
       });
     } catch (error) {
-      logger.info("AI insights error:", error);
-      return res.json({
-        performanceScore: 25,
-        recommendations: [],
-        trends: [],
-        opportunities: [],
-      });
+      logger.error("AI insights error:", error);
+      return res.status(500).json({ message: "Failed to fetch AI insights" });
     }
   });
 
@@ -2813,7 +2800,7 @@ export async function registerRoutes(
     try {
       return res.json(req.user.preferences || {});
     } catch (error) {
-      logger.info("Error fetching user preferences:", error);
+      logger.error("Error fetching user preferences:", error);
       return res.status(500).json({ message: "Failed to fetch preferences" });
     }
   });
@@ -2827,7 +2814,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
-      logger.info("Error updating user preferences:", error);
+      logger.error("Error updating user preferences:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2840,7 +2827,7 @@ export async function registerRoutes(
       const prefs = req.user.preferences as any;
       return res.json(prefs?.studio || {});
     } catch (error) {
-      logger.info("Error fetching studio preferences:", error);
+      logger.error("Error fetching studio preferences:", error);
       return res.status(500).json({ message: "Failed to fetch studio preferences" });
     }
   });
@@ -2855,7 +2842,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
-      logger.info("Error updating studio preferences:", error);
+      logger.error("Error updating studio preferences:", error);
       return res.status(500).json({ message: "Failed to update studio preferences" });
     }
   });
@@ -2872,7 +2859,7 @@ export async function registerRoutes(
         summary: { total: 0, analyzed: 0 },
       });
     } catch (error) {
-      logger.info("Analysis error:", error);
+      logger.error("Analysis error:", error);
       return res.status(500).json({ message: "Failed to fetch analysis" });
     }
   });
@@ -2891,7 +2878,7 @@ export async function registerRoutes(
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.info("Analysis error:", error);
+      logger.error("Analysis error:", error);
       return res.status(500).json({ message: "Failed to start analysis" });
     }
   });
@@ -2909,7 +2896,7 @@ export async function registerRoutes(
         total: 0,
       });
     } catch (error) {
-      logger.info("Assets fetch error:", error);
+      logger.error("Assets fetch error:", error);
       return res.status(500).json({ message: "Failed to fetch assets" });
     }
   });
@@ -2948,12 +2935,12 @@ export async function registerRoutes(
             message: 'Asset uploaded successfully',
           });
         } catch (uploadError) {
-          logger.info("Asset storage error:", uploadError);
+          logger.error("Asset storage error:", uploadError);
           return res.status(500).json({ message: "Failed to store asset" });
         }
       });
     } catch (error) {
-      logger.info("Asset upload error:", error);
+      logger.error("Asset upload error:", error);
       return res.status(500).json({ message: "Failed to upload asset" });
     }
   });
@@ -2969,7 +2956,7 @@ export async function registerRoutes(
       });
       return res.json(pockets);
     } catch (error) {
-      logger.info("Pocket list error:", error);
+      logger.error("Pocket list error:", error);
       return res.status(500).json({ message: "Failed to fetch pockets" });
     }
   });
@@ -2989,7 +2976,7 @@ export async function registerRoutes(
       }).returning();
       return res.json(pocket);
     } catch (error) {
-      logger.info("Pocket create error:", error);
+      logger.error("Pocket create error:", error);
       return res.status(500).json({ message: "Failed to create pocket" });
     }
   });
@@ -3003,7 +2990,7 @@ export async function registerRoutes(
         files: [],
       });
     } catch (error) {
-      logger.info("Pocket demo error:", error);
+      logger.error("Pocket demo error:", error);
       return res.status(500).json({ message: "Failed to fetch demo pocket" });
     }
   });
@@ -3027,7 +3014,7 @@ export async function registerRoutes(
         lastUpdated: pocket?.lastAccessedAt || new Date(),
       });
     } catch (error) {
-      logger.info("Pocket stats error:", error);
+      logger.error("Pocket stats error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket stats" });
     }
   });
@@ -3049,7 +3036,7 @@ export async function registerRoutes(
       });
       return res.json(files);
     } catch (error) {
-      logger.info("Pocket files error:", error);
+      logger.error("Pocket files error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket files" });
     }
   });
@@ -3112,7 +3099,7 @@ export async function registerRoutes(
         summary: { passed: 0, failed: 0, warnings: 0 },
       });
     } catch (error) {
-      logger.info("Audit results error:", error);
+      logger.error("Audit results error:", error);
       return res.status(500).json({ message: "Failed to fetch audit results" });
     }
   });
@@ -3128,7 +3115,7 @@ export async function registerRoutes(
         coverage: { statements: 0, branches: 0, functions: 0, lines: 0 },
       });
     } catch (error) {
-      logger.info("Testing results error:", error);
+      logger.error("Testing results error:", error);
       return res.status(500).json({ message: "Failed to fetch testing results" });
     }
   });
@@ -3149,7 +3136,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, message: 'Onboarding completed' });
     } catch (error) {
-      logger.info("Complete onboarding error:", error);
+      logger.error("Complete onboarding error:", error);
       return res.status(500).json({ message: "Failed to complete onboarding" });
     }
   });
@@ -3163,7 +3150,7 @@ export async function registerRoutes(
       const seenFeatures = req.user.onboardingData?.seenFeatures || [];
       return res.json({ seenFeatures });
     } catch (error) {
-      logger.info("Get seen features error:", error);
+      logger.error("Get seen features error:", error);
       return res.status(500).json({ message: "Failed to get seen features" });
     }
   });
@@ -3191,7 +3178,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, seenFeatures });
     } catch (error) {
-      logger.info("Mark feature seen error:", error);
+      logger.error("Mark feature seen error:", error);
       return res.status(500).json({ message: "Failed to mark feature as seen" });
     }
   });
@@ -3209,7 +3196,7 @@ export async function registerRoutes(
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       });
     } catch (error) {
-      logger.info("Download statement error:", error);
+      logger.error("Download statement error:", error);
       return res.status(500).json({ message: "Failed to generate statement download" });
     }
   });
@@ -3222,6 +3209,10 @@ export async function registerRoutes(
     try {
       const userId = req.user.id;
       const { period = '30d', platform } = req.query as { period?: string; platform?: string };
+      const pageParam = parseInt(String(req.query.page || '1'), 10);
+      const limitParam = Math.min(Math.max(parseInt(String(req.query.limit || '100'), 10), 1), 500);
+      const offset = (Math.max(pageParam, 1) - 1) * limitParam;
+
       const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365, 'all': 9999 };
       const days = daysMap[period] ?? 30;
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -3230,31 +3221,48 @@ export async function registerRoutes(
       if (platform && platform !== 'all') {
         conditions.push(eq(royaltyTransactions.platform, platform));
       }
+      const where = and(...conditions);
 
-      const rows = await db.select().from(royaltyTransactions)
-        .where(and(...conditions))
-        .orderBy(desc(royaltyTransactions.createdAt))
-        .limit(5000);
+      const [aggregates, rows, [lastPaidRow]] = await Promise.all([
+        db.select({
+          totalEarnings: sum(royaltyTransactions.amount),
+          totalRows: count(),
+          pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`,
+        }).from(royaltyTransactions).where(where),
 
-      const totalEarnings = rows.reduce((s, r) => s + (r.amount || 0), 0);
-      const pendingPayouts = rows.filter(r => r.status === 'pending').reduce((s, r) => s + (r.amount || 0), 0);
-      const lastPaid = rows.find(r => r.paidAt);
+        db.select({
+          id: royaltyTransactions.id,
+          releaseId: royaltyTransactions.releaseId,
+          platform: royaltyTransactions.platform,
+          amount: royaltyTransactions.amount,
+          currency: royaltyTransactions.currency,
+          streamCount: royaltyTransactions.streamCount,
+          periodStart: royaltyTransactions.periodStart,
+          periodEnd: royaltyTransactions.periodEnd,
+          status: royaltyTransactions.status,
+          transactionType: royaltyTransactions.transactionType,
+          createdAt: royaltyTransactions.createdAt,
+        }).from(royaltyTransactions)
+          .where(where)
+          .orderBy(desc(royaltyTransactions.createdAt))
+          .limit(limitParam)
+          .offset(offset),
 
-      const earnings = rows.map(r => ({
-        id: r.id,
-        releaseId: r.releaseId,
-        platform: r.platform,
-        amount: r.amount,
-        currency: r.currency,
-        streamCount: r.streamCount,
-        periodStart: r.periodStart,
-        periodEnd: r.periodEnd,
-        status: r.status,
-        transactionType: r.transactionType,
-        createdAt: r.createdAt,
-      }));
+        db.select({ paidAt: royaltyTransactions.paidAt })
+          .from(royaltyTransactions)
+          .where(and(eq(royaltyTransactions.userId, userId), sql`${royaltyTransactions.paidAt} is not null`))
+          .orderBy(desc(royaltyTransactions.paidAt))
+          .limit(1),
+      ]);
 
-      return res.json({ data: earnings, totalEarnings, pendingPayouts, lastPayout: lastPaid?.paidAt ?? null, pagination: { total: earnings.length } });
+      const agg = aggregates[0];
+      return res.json({
+        data: rows,
+        totalEarnings: Number(agg?.totalEarnings || 0),
+        pendingPayouts: Number(agg?.pendingPayouts || 0),
+        lastPayout: lastPaidRow?.paidAt ?? null,
+        pagination: { total: Number(agg?.totalRows || 0), page: pageParam, limit: limitParam },
+      });
     } catch (error) {
       logger.error("Royalties error:", error);
       return res.status(500).json({ message: "Failed to fetch royalties" });
@@ -3468,7 +3476,8 @@ export async function registerRoutes(
     try {
       const rows = await db.select().from(royaltySplits)
         .where(eq(royaltySplits.userId, req.user.id))
-        .orderBy(desc(royaltySplits.createdAt));
+        .orderBy(desc(royaltySplits.createdAt))
+        .limit(500);
       return res.json(rows);
     } catch (error) {
       logger.error("Royalty splits error:", error);
@@ -3588,7 +3597,7 @@ export async function registerRoutes(
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
     } catch (error) {
-      logger.info("Connect Stripe error:", error);
+      logger.error("Connect Stripe error:", error);
       return res.status(500).json({ message: "Failed to connect bank account. Please try again." });
     }
   });
@@ -3613,7 +3622,7 @@ export async function registerRoutes(
 
       return res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
-      logger.info("Create subscription error:", error);
+      logger.error("Create subscription error:", error);
       return res.status(500).json({ message: "Failed to create subscription" });
     }
   });
@@ -3847,7 +3856,7 @@ export async function registerRoutes(
         message: 'Your content has been optimized for maximum reach and engagement.',
       });
     } catch (error) {
-      logger.info("AI optimize content error:", error);
+      logger.error("AI optimize content error:", error);
       return res.status(500).json({ message: "Failed to optimize content" });
     }
   });
@@ -4236,7 +4245,7 @@ export async function registerRoutes(
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      logger.info('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', error);
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
     }
   });
@@ -4337,7 +4346,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
       }
     } catch (error: any) {
-      logger.info('Error completing registration after payment:', error);
+      logger.error('Error completing registration after payment:', error);
 
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ error: 'Invalid payment session. Please try again.' });

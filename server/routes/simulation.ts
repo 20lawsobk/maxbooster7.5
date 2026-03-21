@@ -342,7 +342,7 @@ router.get('/events/:id', (req: Request, res: Response) => {
       return res.json({
         success: true,
         status: 'running',
-        recentEvents: logs.slice(-parseInt(limit as string) || -100),
+        recentEvents: logs.slice(-Math.min(Math.max(parseInt(limit as string) || 100, 1), 500)),
       });
     }
 

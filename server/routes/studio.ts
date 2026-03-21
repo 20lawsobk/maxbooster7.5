@@ -1652,7 +1652,7 @@ router.post('/projects/:projectId/track-routing', requireAuth, async (req: Reque
 
 router.get('/conversions', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json([]);
+    res.json({ conversions: [] });
   } catch (error: unknown) {
     logger.error('Error fetching conversions:', error);
     res.status(500).json({ error: 'Failed to fetch conversions' });
