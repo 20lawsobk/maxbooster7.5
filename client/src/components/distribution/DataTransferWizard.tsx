@@ -109,6 +109,20 @@ const PLATFORM_SCAN_SUPPORT: Record<string, boolean> = {
   beatport: false,
 };
 
+// All distribution-related query keys that should stay in sync across the page.
+const DISTRIBUTION_QUERY_KEYS = [
+  ['/api/distribution/releases'],
+  ['/api/distribution/migration/report'],
+  ['/api/distribution/profiles'],
+  ['/api/distribution/transfer/jobs'],
+  ['/api/analytics/dashboard'],
+  ['/api/distribution/analytics/growth'],
+  ['/api/distribution/streaming-trends'],
+  ['/api/distribution/geographic'],
+  ['/api/distribution/platform-earnings'],
+  ['/api/distribution/earnings/breakdown'],
+];
+
 export function DataTransferWizard() {
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [profileUrl, setProfileUrl] = useState('');
@@ -139,6 +153,12 @@ export function DataTransferWizard() {
     queryKey: ['/api/distribution/migration/report'],
   });
 
+  const invalidateAll = () => {
+    DISTRIBUTION_QUERY_KEYS.forEach(key => {
+      queryClient.invalidateQueries({ queryKey: key });
+    });
+  };
+
   const linkProfileMutation = useMutation({
     mutationFn: async ({ platformId, profileUrl, artistName }: { platformId: string; profileUrl: string; artistName: string }) => {
       const res = await fetch('/api/distribution/profiles/link', {
@@ -155,7 +175,7 @@ export function DataTransferWizard() {
       setShowLinkDialog(false);
       setProfileUrl('');
       setArtistName('');
-      refetchProfiles();
+      invalidateAll();
     },
     onError: (error: any) => {
       toast({ title: 'Link Failed', description: error.message, variant: 'destructive' });
@@ -173,7 +193,7 @@ export function DataTransferWizard() {
     },
     onSuccess: (data) => {
       toast({ title: 'Profile Synced', description: data.message });
-      refetchProfiles();
+      invalidateAll();
     },
   });
 
@@ -188,7 +208,7 @@ export function DataTransferWizard() {
     },
     onSuccess: () => {
       toast({ title: 'Profile Unlinked' });
-      refetchProfiles();
+      invalidateAll();
     },
   });
 
@@ -208,8 +228,7 @@ export function DataTransferWizard() {
       setScannedReleases(prev => { const n = { ...prev }; delete n[variables.platformId]; return n; });
       setSelectedReleases(prev => { const n = { ...prev }; delete n[variables.platformId]; return n; });
       refetchJobs();
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/migration/report'] });
+      invalidateAll();
     },
     onError: (error: any) => {
       toast({ title: 'Import Failed', description: error.message, variant: 'destructive' });
@@ -318,12 +337,84 @@ export function DataTransferWizard() {
   const scanSupportedProfiles = profiles.filter(p => PLATFORM_SCAN_SUPPORT[p.platformId]);
   const manualProfiles = profiles.filter(p => !PLATFORM_SCAN_SUPPORT[p.platformId]);
 
+  const LinkProfileDialog = () => (
+    <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
+      <DialogTrigger asChild>
+        <Button>
+          <Link2 className="h-4 w-4 mr-2" />
+          Link Profile
+        </Button>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Link Streaming Profile</DialogTitle>
+          <DialogDescription>
+            Connect your artist profile to sync analytics and scan your full release catalog
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Platform</Label>
+            <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select platform" />
+              </SelectTrigger>
+              <SelectContent>
+                {platforms?.platforms.map((platform) => (
+                  <SelectItem key={platform.id} value={platform.id}>
+                    <span className="flex items-center gap-2">
+                      <span>{getPlatformIcon(platform.id)}</span>
+                      <span>{platform.name}</span>
+                      {PLATFORM_SCAN_SUPPORT[platform.id] && (
+                        <Badge variant="outline" className="text-xs text-green-600 border-green-400">Catalog scan</Badge>
+                      )}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Artist Name</Label>
+            <Input
+              value={artistName}
+              onChange={(e) => setArtistName(e.target.value)}
+              placeholder="Your artist name on this platform"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Profile URL</Label>
+            <Input
+              value={profileUrl}
+              onChange={(e) => setProfileUrl(e.target.value)}
+              placeholder="https://open.spotify.com/artist/..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste the full URL to your artist profile
+            </p>
+          </div>
+          <Button
+            className="w-full"
+            onClick={() => linkProfileMutation.mutate({ platformId: selectedPlatform, profileUrl, artistName })}
+            disabled={!selectedPlatform || !profileUrl || linkProfileMutation.isPending}
+          >
+            {linkProfileMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              'Link Profile'
+            )}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Data Transfer & Profile Sync</h2>
-          <p className="text-muted-foreground">Scan and import your release catalog directly from your streaming profiles</p>
+          <p className="text-muted-foreground">Link streaming profiles to sync analytics and scan your full release catalog</p>
         </div>
       </div>
 
@@ -390,12 +481,8 @@ export function DataTransferWizard() {
         </Alert>
       )}
 
-      <Tabs defaultValue="catalog-sync" className="space-y-4">
+      <Tabs defaultValue="profiles" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="catalog-sync" className="flex items-center gap-2">
-            <ScanSearch className="h-4 w-4" />
-            Catalog Sync
-          </TabsTrigger>
           <TabsTrigger value="profiles" className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
             Streaming Profiles
@@ -406,376 +493,131 @@ export function DataTransferWizard() {
           </TabsTrigger>
         </TabsList>
 
-        {/* ── Catalog Sync tab (replaces distributor CSV import) ── */}
-        <TabsContent value="catalog-sync" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ScanSearch className="h-5 w-5" />
-                Profile Catalog Scanner
-              </CardTitle>
-              <CardDescription>
-                Your linked streaming profiles are scanned directly using the same parser that syncs your analytics — now extended to pull your full release catalog including albums, EPs, and singles with artwork, dates, and track counts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {profiles.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Globe className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-1">No streaming profiles linked</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Link a Spotify, Apple Music, Deezer, SoundCloud, Bandcamp, or Audiomack profile to scan your release catalog.
-                  </p>
-                  <Button onClick={() => { }}>
-                    <Link2 className="h-4 w-4 mr-2" />
-                    Link a Profile
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Profiles with scan support */}
-                  {scanSupportedProfiles.length > 0 && (
-                    <div className="space-y-3">
-                      {scanSupportedProfiles.map(profile => {
-                        const isScanning = scanningPlatform === profile.platformId;
-                        const scanned = scannedReleases[profile.platformId];
-                        const selected = selectedReleases[profile.platformId] || new Set();
-                        const isExpanded = expandedPlatform === profile.platformId;
-                        const isImporting = importCatalogMutation.isPending &&
-                          importCatalogMutation.variables?.platformId === profile.platformId;
-
-                        return (
-                          <Card key={profile.platformId} className="overflow-hidden">
-                            <div className="p-4">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <span className="text-2xl">{getPlatformIcon(profile.platformId)}</span>
-                                  <div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">{profile.artistName}</span>
-                                      {profile.verified && (
-                                        <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
-                                          <CheckCircle2 className="h-3 w-3 mr-1" />Verified
-                                        </Badge>
-                                      )}
-                                    </div>
-                                    <p className="text-sm text-muted-foreground">
-                                      {getPlatformName(profile.platformId)}
-                                      {profile.followers !== undefined && (
-                                        <span className="ml-2">· {profile.followers.toLocaleString()} followers</span>
-                                      )}
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  {scanned && scanned.length > 0 && (
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => setExpandedPlatform(isExpanded ? null : profile.platformId)}
-                                    >
-                                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                      <span className="ml-1 text-xs">{scanned.length} found</span>
-                                    </Button>
-                                  )}
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleScanReleases(profile.platformId)}
-                                    disabled={isScanning || scanningPlatform !== null}
-                                  >
-                                    {isScanning ? (
-                                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning…</>
-                                    ) : (
-                                      <><ScanSearch className="h-4 w-4 mr-2" />{scanned ? 'Re-scan' : 'Scan Releases'}</>
-                                    )}
-                                  </Button>
-                                  {scanned && scanned.length > 0 && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => handleImport(profile.platformId)}
-                                      disabled={isImporting || selected.size === 0}
-                                    >
-                                      {isImporting ? (
-                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Importing…</>
-                                      ) : (
-                                        <><PackagePlus className="h-4 w-4 mr-2" />Import {selected.size > 0 && selected.size < scanned.length ? `${selected.size} of ${scanned.length}` : selected.size}</>
-                                      )}
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* Scanned releases list */}
-                              {scanned && isExpanded && (
-                                <div className="mt-4 border-t pt-4 space-y-3">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">
-                                      {scanned.length} release{scanned.length !== 1 ? 's' : ''} found
-                                    </span>
-                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                      <button
-                                        className="hover:text-foreground"
-                                        onClick={() => handleSelectAll(profile.platformId, true)}
-                                      >Select all</button>
-                                      <span>·</span>
-                                      <button
-                                        className="hover:text-foreground"
-                                        onClick={() => handleSelectAll(profile.platformId, false)}
-                                      >Deselect all</button>
-                                    </div>
-                                  </div>
-
-                                  {scanned.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground text-center py-4">
-                                      No releases found on this profile.
-                                    </p>
-                                  ) : (
-                                    <ScrollArea className="h-[340px]">
-                                      <div className="space-y-2 pr-2">
-                                        {scanned.map(release => {
-                                          const isSelected = selected.has(release.id);
-                                          return (
-                                            <div
-                                              key={release.id}
-                                              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
-                                              onClick={() => handleToggleRelease(profile.platformId, release.id)}
-                                            >
-                                              <Checkbox
-                                                checked={isSelected}
-                                                onCheckedChange={() => handleToggleRelease(profile.platformId, release.id)}
-                                                onClick={e => e.stopPropagation()}
-                                              />
-
-                                              {release.coverUrl ? (
-                                                <img
-                                                  src={release.coverUrl}
-                                                  alt={release.title}
-                                                  className="h-12 w-12 rounded object-cover flex-shrink-0"
-                                                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                                                />
-                                              ) : (
-                                                <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
-                                                  <Disc3 className="h-5 w-5 text-muted-foreground" />
-                                                </div>
-                                              )}
-
-                                              <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                  <span className="font-medium text-sm truncate">{release.title}</span>
-                                                  {getReleaseTypeBadge(release.releaseType)}
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                                                  {release.releaseDate && (
-                                                    <span>{new Date(release.releaseDate).getFullYear()}</span>
-                                                  )}
-                                                  <span>·</span>
-                                                  <span>{release.trackCount} track{release.trackCount !== 1 ? 's' : ''}</span>
-                                                  {release.genre && (
-                                                    <><span>·</span><span>{release.genre}</span></>
-                                                  )}
-                                                </div>
-                                              </div>
-
-                                              {release.platformUrl && (
-                                                <a
-                                                  href={release.platformUrl}
-                                                  target="_blank"
-                                                  rel="noreferrer"
-                                                  onClick={e => e.stopPropagation()}
-                                                >
-                                                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-                                                </a>
-                                              )}
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    </ScrollArea>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Empty state after scan */}
-                              {scanned && scanned.length === 0 && !isExpanded && (
-                                <p className="text-sm text-muted-foreground mt-2">
-                                  No releases found on this profile. Try re-scanning or check your profile URL.
-                                </p>
-                              )}
-                            </div>
-                          </Card>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Profiles without scan support */}
-                  {manualProfiles.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                        Profiles without catalog scanning
-                      </p>
-                      {manualProfiles.map(profile => (
-                        <Card key={profile.platformId} className="p-4">
-                          <div className="flex items-center gap-3">
-                            <span className="text-xl">{getPlatformIcon(profile.platformId)}</span>
-                            <div className="flex-1">
-                              <span className="font-medium text-sm">{profile.artistName}</span>
-                              <p className="text-xs text-muted-foreground">
-                                {getPlatformName(profile.platformId)} · Catalog scanning not yet supported for this platform
-                              </p>
-                            </div>
-                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                              Analytics only
-                            </Badge>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  <Alert>
-                    <ScanSearch className="h-4 w-4" />
-                    <AlertDescription className="text-sm">
-                      The scanner reads your public artist pages using the same parser that syncs your followers, monthly listeners, and top tracks — now extended to discover your full discography. Releases already in your catalog are matched and merged automatically rather than duplicated.
-                    </AlertDescription>
-                  </Alert>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* ── Streaming Profiles tab ── */}
+        {/* ── Streaming Profiles tab — unified profile management + catalog scanning ── */}
         <TabsContent value="profiles" className="space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Streaming Platform Profiles</CardTitle>
                 <CardDescription>
-                  Link your existing artist profiles to sync analytics and scan your release catalog
+                  Link your profiles to sync analytics, scan your full release catalog, and import releases — all in one place
                 </CardDescription>
               </div>
-              <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Link2 className="h-4 w-4 mr-2" />
-                    Link Profile
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Link Streaming Profile</DialogTitle>
-                    <DialogDescription>
-                      Connect your artist profile to sync analytics and release catalog data
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Platform</Label>
-                      <Select value={selectedPlatform} onValueChange={setSelectedPlatform}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select platform" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {platforms?.platforms.map((platform) => (
-                            <SelectItem key={platform.id} value={platform.id}>
-                              <span className="flex items-center gap-2">
-                                <span>{getPlatformIcon(platform.id)}</span>
-                                <span>{platform.name}</span>
-                                {PLATFORM_SCAN_SUPPORT[platform.id] && (
-                                  <Badge variant="outline" className="text-xs text-green-600 border-green-400">Catalog scan</Badge>
-                                )}
-                              </span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Artist Name</Label>
-                      <Input
-                        value={artistName}
-                        onChange={(e) => setArtistName(e.target.value)}
-                        placeholder="Your artist name on this platform"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Profile URL</Label>
-                      <Input
-                        value={profileUrl}
-                        onChange={(e) => setProfileUrl(e.target.value)}
-                        placeholder="https://open.spotify.com/artist/..."
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        Paste the full URL to your artist profile
-                      </p>
-                    </div>
-                    <Button
-                      className="w-full"
-                      onClick={() => linkProfileMutation.mutate({ platformId: selectedPlatform, profileUrl, artistName })}
-                      disabled={!selectedPlatform || !profileUrl || linkProfileMutation.isPending}
-                    >
-                      {linkProfileMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Link Profile'
-                      )}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <LinkProfileDialog />
             </CardHeader>
-            <CardContent>
-              {profiles.length > 0 ? (
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-3">
-                    {profiles.map((profile) => (
-                      <Card key={profile.platformId} className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <span className="text-2xl">{getPlatformIcon(profile.platformId)}</span>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium">{profile.artistName}</span>
-                                {profile.verified && (
-                                  <Badge variant="outline" className="text-green-500 border-green-500">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" />Verified
+            <CardContent className="space-y-4">
+              {profiles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Globe className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="font-medium mb-1">No profiles linked yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Link a Spotify, Apple Music, Deezer, SoundCloud, Bandcamp, or Audiomack profile to sync analytics and scan your full release catalog.
+                  </p>
+                  <Button onClick={() => setShowLinkDialog(true)}>
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Link Your First Profile
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Scan-supported profiles with inline catalog scanning */}
+                  {scanSupportedProfiles.map(profile => {
+                    const isScanning = scanningPlatform === profile.platformId;
+                    const scanned = scannedReleases[profile.platformId];
+                    const selected = selectedReleases[profile.platformId] || new Set();
+                    const isExpanded = expandedPlatform === profile.platformId;
+                    const isImporting = importCatalogMutation.isPending &&
+                      importCatalogMutation.variables?.platformId === profile.platformId;
+                    const isSyncing = syncProfileMutation.isPending &&
+                      syncProfileMutation.variables === profile.platformId;
+
+                    return (
+                      <Card key={profile.platformId} className="overflow-hidden">
+                        <div className="p-4">
+                          {/* Profile header row */}
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-2xl flex-shrink-0">{getPlatformIcon(profile.platformId)}</span>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">{profile.artistName}</span>
+                                  {profile.verified && (
+                                    <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
+                                      <CheckCircle2 className="h-3 w-3 mr-1" />Verified
+                                    </Badge>
+                                  )}
+                                  <Badge variant="outline" className="text-xs text-blue-500 border-blue-400">
+                                    <ScanSearch className="h-3 w-3 mr-1" />Catalog scan
                                   </Badge>
-                                )}
-                                {PLATFORM_SCAN_SUPPORT[profile.platformId] && (
-                                  <Badge variant="outline" className="text-xs text-blue-500 border-blue-400">Catalog scan</Badge>
-                                )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  {getPlatformName(profile.platformId)}
+                                  {profile.followers !== undefined && (
+                                    <span className="ml-2">· {profile.followers.toLocaleString()} followers</span>
+                                  )}
+                                  {profile.monthlyListeners !== undefined && (
+                                    <span className="ml-2">· {profile.monthlyListeners.toLocaleString()} monthly listeners</span>
+                                  )}
+                                </p>
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {getPlatformName(profile.platformId)}
-                              </p>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            {profile.monthlyListeners !== undefined && (
-                              <div className="text-right">
-                                <p className="text-sm font-medium">{profile.monthlyListeners.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">Monthly Listeners</p>
-                              </div>
-                            )}
-                            {profile.followers !== undefined && (
-                              <div className="text-right">
-                                <p className="text-sm font-medium">{profile.followers.toLocaleString()}</p>
-                                <p className="text-xs text-muted-foreground">Followers</p>
-                              </div>
-                            )}
-                            <div className="flex gap-2">
+
+                            {/* Action buttons */}
+                            <div className="flex items-center gap-1.5 flex-shrink-0 flex-wrap justify-end">
+                              {/* Expand/collapse scanned list */}
+                              {scanned && scanned.length > 0 && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setExpandedPlatform(isExpanded ? null : profile.platformId)}
+                                  className="text-xs"
+                                >
+                                  {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                  <span className="ml-1">{scanned.length} found</span>
+                                </Button>
+                              )}
+
+                              {/* Scan / Re-scan */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleScanReleases(profile.platformId)}
+                                disabled={isScanning || scanningPlatform !== null}
+                              >
+                                {isScanning ? (
+                                  <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Scanning…</>
+                                ) : (
+                                  <><ScanSearch className="h-4 w-4 mr-1.5" />{scanned ? 'Re-scan' : 'Scan Releases'}</>
+                                )}
+                              </Button>
+
+                              {/* Import button (shows after scan) */}
+                              {scanned && scanned.length > 0 && (
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleImport(profile.platformId)}
+                                  disabled={isImporting || selected.size === 0}
+                                >
+                                  {isImporting ? (
+                                    <><Loader2 className="h-4 w-4 mr-1.5 animate-spin" />Importing…</>
+                                  ) : (
+                                    <><PackagePlus className="h-4 w-4 mr-1.5" />Import {selected.size > 0 && selected.size < scanned.length ? `${selected.size} of ${scanned.length}` : selected.size}</>
+                                  )}
+                                </Button>
+                              )}
+
+                              {/* Sync analytics */}
                               <Button
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => syncProfileMutation.mutate(profile.platformId)}
-                                disabled={syncProfileMutation.isPending}
+                                disabled={isSyncing}
                                 title="Sync analytics"
                               >
-                                <RefreshCw className={`h-4 w-4 ${syncProfileMutation.isPending ? 'animate-spin' : ''}`} />
+                                <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
                               </Button>
+
+                              {/* Open external profile */}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -784,6 +626,8 @@ export function DataTransferWizard() {
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
+
+                              {/* Unlink */}
                               <Button
                                 variant="ghost"
                                 size="icon"
@@ -795,22 +639,188 @@ export function DataTransferWizard() {
                               </Button>
                             </div>
                           </div>
+
+                          {/* Scanned releases list (inline, expandable) */}
+                          {scanned && isExpanded && (
+                            <div className="mt-4 border-t pt-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">
+                                  {scanned.length} release{scanned.length !== 1 ? 's' : ''} found — select which to import
+                                </span>
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <button
+                                    className="hover:text-foreground"
+                                    onClick={() => handleSelectAll(profile.platformId, true)}
+                                  >Select all</button>
+                                  <span>·</span>
+                                  <button
+                                    className="hover:text-foreground"
+                                    onClick={() => handleSelectAll(profile.platformId, false)}
+                                  >Deselect all</button>
+                                </div>
+                              </div>
+
+                              {scanned.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">
+                                  No releases found on this profile.
+                                </p>
+                              ) : (
+                                <ScrollArea className="h-[300px]">
+                                  <div className="space-y-2 pr-2">
+                                    {scanned.map(release => {
+                                      const isSelected = selected.has(release.id);
+                                      return (
+                                        <div
+                                          key={release.id}
+                                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                                          onClick={() => handleToggleRelease(profile.platformId, release.id)}
+                                        >
+                                          <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={() => handleToggleRelease(profile.platformId, release.id)}
+                                            onClick={e => e.stopPropagation()}
+                                          />
+
+                                          {release.coverUrl ? (
+                                            <img
+                                              src={release.coverUrl}
+                                              alt={release.title}
+                                              className="h-12 w-12 rounded object-cover flex-shrink-0"
+                                              onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                            />
+                                          ) : (
+                                            <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                              <Disc3 className="h-5 w-5 text-muted-foreground" />
+                                            </div>
+                                          )}
+
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                              <span className="font-medium text-sm truncate">{release.title}</span>
+                                              {getReleaseTypeBadge(release.releaseType)}
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                              {release.releaseDate && (
+                                                <span>{new Date(release.releaseDate).getFullYear()}</span>
+                                              )}
+                                              <span>·</span>
+                                              <span>{release.trackCount} track{release.trackCount !== 1 ? 's' : ''}</span>
+                                              {release.genre && (
+                                                <><span>·</span><span>{release.genre}</span></>
+                                              )}
+                                            </div>
+                                          </div>
+
+                                          {release.platformUrl && (
+                                            <a
+                                              href={release.platformUrl}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              onClick={e => e.stopPropagation()}
+                                            >
+                                              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                            </a>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </ScrollArea>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Empty state after scan with no results */}
+                          {scanned && scanned.length === 0 && !isExpanded && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                              No releases found on this profile. Try re-scanning or check your profile URL.
+                            </p>
+                          )}
                         </div>
                       </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <Globe className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="font-medium mb-1">No profiles linked yet</h3>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Link your streaming platform profiles to sync analytics and scan your release catalog
-                  </p>
-                  <Button variant="outline" onClick={() => setShowLinkDialog(true)}>
-                    <Link2 className="h-4 w-4 mr-2" />
-                    Link Your First Profile
-                  </Button>
+                    );
+                  })}
+
+                  {/* Analytics-only profiles (no catalog scan support) */}
+                  {manualProfiles.length > 0 && (
+                    <div className="space-y-2">
+                      {manualProfiles.length > 0 && scanSupportedProfiles.length > 0 && (
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide pt-1">
+                          Analytics-only profiles
+                        </p>
+                      )}
+                      {manualProfiles.map(profile => {
+                        const isSyncing = syncProfileMutation.isPending &&
+                          syncProfileMutation.variables === profile.platformId;
+                        return (
+                          <Card key={profile.platformId} className="p-4">
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <span className="text-2xl flex-shrink-0">{getPlatformIcon(profile.platformId)}</span>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="font-medium">{profile.artistName}</span>
+                                    {profile.verified && (
+                                      <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
+                                        <CheckCircle2 className="h-3 w-3 mr-1" />Verified
+                                      </Badge>
+                                    )}
+                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                      Analytics only
+                                    </Badge>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">
+                                    {getPlatformName(profile.platformId)}
+                                    {profile.followers !== undefined && (
+                                      <span className="ml-2">· {profile.followers.toLocaleString()} followers</span>
+                                    )}
+                                    {profile.monthlyListeners !== undefined && (
+                                      <span className="ml-2">· {profile.monthlyListeners.toLocaleString()} monthly listeners</span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => syncProfileMutation.mutate(profile.platformId)}
+                                  disabled={isSyncing}
+                                  title="Sync analytics"
+                                >
+                                  <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => window.open(profile.profileUrl, '_blank')}
+                                  title="Open profile"
+                                >
+                                  <ExternalLink className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => unlinkProfileMutation.mutate(profile.platformId)}
+                                  disabled={unlinkProfileMutation.isPending}
+                                  title="Unlink profile"
+                                >
+                                  <Unlink className="h-4 w-4 text-red-500" />
+                                </Button>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <Alert>
+                    <ScanSearch className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      The scanner reads your public artist pages using the same parser that syncs followers, monthly listeners, and top tracks — extended to discover your full discography. Releases already in your catalog are matched and merged automatically, never duplicated.
+                    </AlertDescription>
+                  </Alert>
                 </div>
               )}
             </CardContent>
