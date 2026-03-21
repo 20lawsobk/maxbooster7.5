@@ -165,13 +165,13 @@ declare module "express-session" {
 
 app.use(
   express.json({
-    limit: '200mb',
+    limit: '10mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
-app.use(express.urlencoded({ extended: true, limit: '200mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve generated audio content from root public folder
 app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 'generated-content'), {

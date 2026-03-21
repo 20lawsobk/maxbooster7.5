@@ -108,43 +108,53 @@ async function slidingWindowCheck(
 
   const redisKey = `${REDIS_KEY_PREFIX}${key}`;
 
+  // Wrap all Redis ops in a 400ms timeout — if PDIM is congested the race
+  // rejects and we fall through to the degraded in-memory limiter immediately,
+  // preventing the 4–20 s PDIM HTTP timeout from stalling login/AI/billing routes.
+  const REDIS_TIMEOUT_MS = 400;
+
   try {
-    // ioredis API: all commands are lowercase
-    await redis.zremrangebyscore(redisKey, '-inf', windowStart);
+    const result = await Promise.race<SlidingWindowResult>([
+      (async () => {
+        // ioredis API: all commands are lowercase
+        await redis.zremrangebyscore(redisKey, '-inf', windowStart);
 
-    const requestCount: number = await redis.zcard(redisKey);
+        const requestCount: number = await redis.zcard(redisKey);
 
-    if (requestCount >= maxRequests) {
-      const oldest: string[] = await redis.zrange(redisKey, 0, 0);
-      let resetAt = now + windowMs;
+        if (requestCount >= maxRequests) {
+          const oldest: string[] = await redis.zrange(redisKey, 0, 0);
+          let resetAt = now + windowMs;
 
-      if (oldest.length > 0) {
-        const oldestTimestamp = parseInt(oldest[0], 10);
-        resetAt = oldestTimestamp + windowMs;
-      }
+          if (oldest.length > 0) {
+            const oldestTimestamp = parseInt(oldest[0], 10);
+            resetAt = oldestTimestamp + windowMs;
+          }
 
-      return {
-        allowed: false,
-        remaining: 0,
-        resetAt,
-        total: requestCount
-      };
-    }
+          return { allowed: false, remaining: 0, resetAt, total: requestCount };
+        }
 
-    const requestId = `${now}:${randomBytes(4).toString('hex')}`;
-    // ioredis zadd: zadd(key, score, member)
-    await redis.zadd(redisKey, now, requestId);
+        const requestId = `${now}:${randomBytes(4).toString('hex')}`;
+        await redis.zadd(redisKey, now, requestId);
+        // fire-and-forget expire — doesn't need to block the response
+        redis.expire(redisKey, Math.ceil(windowMs / 1000) + 60).catch(() => {});
 
-    await redis.expire(redisKey, Math.ceil(windowMs / 1000) + 60);
-
-    return {
-      allowed: true,
-      remaining: maxRequests - requestCount - 1,
-      resetAt: now + windowMs,
-      total: requestCount + 1
-    };
+        return {
+          allowed: true,
+          remaining: maxRequests - requestCount - 1,
+          resetAt: now + windowMs,
+          total: requestCount + 1
+        };
+      })(),
+      new Promise<SlidingWindowResult>((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`[RateLimit] Redis ops timed out (${REDIS_TIMEOUT_MS}ms)`)),
+          REDIS_TIMEOUT_MS
+        )
+      )
+    ]);
+    return result;
   } catch (error) {
-    logger.error('[RateLimit] Redis error — degraded mode (25% limits):', error);
+    logger.warn('[RateLimit] Redis error — degraded mode (25% limits):', error);
     return degradedLimiter.check(key, windowMs, maxRequests);
   }
 }

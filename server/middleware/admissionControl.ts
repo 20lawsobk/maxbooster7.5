@@ -37,11 +37,26 @@ const isProduction = () =>
 let _inProcess = 0;
 let _redisFailed = false;
 
+// Fast timeout for Redis operations — prevents PDIM congestion from blocking
+// admission control checks for seconds. If Redis takes longer than this, we
+// immediately fall back to in-process counting. Matches ioredis commandTimeout.
+const REDIS_OP_TIMEOUT_MS = 400;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`[AdmissionControl] Redis op timed out (${ms}ms)`)), ms)
+    ),
+  ]);
+}
+
 async function increment(): Promise<number> {
   try {
     const redis = getRedisClient();
-    const count = await redis.incr(COUNTER_KEY);
-    await redis.expire(COUNTER_KEY, 60);
+    const count = await withTimeout(redis.incr(COUNTER_KEY), REDIS_OP_TIMEOUT_MS);
+    // Fire-and-forget expire — don't block the request for this housekeeping op
+    redis.expire(COUNTER_KEY, 60).catch(() => {});
     _redisFailed = false;
     return count;
   } catch {
@@ -58,8 +73,8 @@ async function increment(): Promise<number> {
 async function decrement(): Promise<void> {
   try {
     const redis = getRedisClient();
-    const v = await redis.decr(COUNTER_KEY);
-    if (v < 0) await redis.set(COUNTER_KEY, '0');
+    const v = await withTimeout(redis.decr(COUNTER_KEY), REDIS_OP_TIMEOUT_MS);
+    if (v < 0) redis.set(COUNTER_KEY, '0').catch(() => {});
     _redisFailed = false;
   } catch {
     if (_inProcess > 0) _inProcess--;

@@ -1386,21 +1386,20 @@ export class DatabaseStorage implements IStorage {
     const [allTimeAgg, thisMonthAgg, prevMonthAgg, txRow, recentAnalytics] = await Promise.all([
       db.select({
         totalStreams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-        totalListeners: sql<number>`COALESCE(SUM(${analytics.listeners}), 0)`,
-        totalSaves: sql<number>`COALESCE(SUM(${analytics.saves}), 0)`,
-        totalPlaylists: sql<number>`COALESCE(SUM(${analytics.playlistAdds}), 0)`,
+        totalListeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+        totalRevenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
       }).from(analytics).where(eq(analytics.userId, userId)),
 
       db.select({
         streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
-      }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thisMonthStart.toISOString().split('T')[0]))),
+      }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thisMonthStart))),
 
       db.select({
         streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
       }).from(analytics).where(and(
         eq(analytics.userId, userId),
-        gte(analytics.date, prevMonthStart.toISOString().split('T')[0]),
-        lt(analytics.date, thisMonthStart.toISOString().split('T')[0])
+        gte(analytics.date, prevMonthStart),
+        lt(analytics.date, thisMonthStart)
       )),
 
       db.select({
@@ -1409,7 +1408,7 @@ export class DatabaseStorage implements IStorage {
       }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId)),
 
       db.select().from(analytics)
-        .where(and(eq(analytics.userId, userId), gte(analytics.date, threeMonthsAgo.toISOString().split('T')[0])))
+        .where(and(eq(analytics.userId, userId), gte(analytics.date, threeMonthsAgo)))
         .orderBy(desc(analytics.date))
         .limit(90),
     ]);
@@ -1418,8 +1417,8 @@ export class DatabaseStorage implements IStorage {
     const txStreams = Number(txRow[0]?.totalStreams ?? 0);
     const totalStreams = Number(allTimeAgg[0]?.totalStreams ?? 0) + txStreams;
     const totalListeners = Number(allTimeAgg[0]?.totalListeners ?? 0);
-    const totalSaves = Number(allTimeAgg[0]?.totalSaves ?? 0);
-    const totalPlaylists = Number(allTimeAgg[0]?.totalPlaylists ?? 0);
+    const analyticsRevenue = Number(allTimeAgg[0]?.totalRevenue ?? 0);
+    const combinedRevenue = txRevenue || analyticsRevenue;
 
     if (totalStreams === 0 && txStreams === 0 && txRevenue === 0) {
       return null;
@@ -1436,13 +1435,13 @@ export class DatabaseStorage implements IStorage {
       streamGrowth,
       monthlyListeners: totalListeners,
       listenerGrowth: 0,
-      saves: totalSaves,
+      saves: 0,
       saveGrowth: 0,
-      playlistAdds: totalPlaylists,
+      playlistAdds: 0,
       playlistGrowth: 0,
-      totalRevenue: txRevenue,
+      totalRevenue: combinedRevenue,
       downloads: 0,
-      revenue: txRevenue,
+      revenue: combinedRevenue,
       growth: streamGrowth,
       rawData: recentAnalytics,
     };

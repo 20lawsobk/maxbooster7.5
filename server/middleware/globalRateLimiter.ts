@@ -51,7 +51,14 @@ class RedisRateLimitStore implements Store {
       const pipeline = redis.pipeline();
       pipeline.incr(rKey);
       pipeline.expire(rKey, windowSec);
-      const results = await pipeline.exec();
+      // 400ms timeout — if PDIM is congested the race rejects and we fall back
+      // to the in-memory store immediately instead of waiting 20s.
+      const results = await Promise.race([
+        pipeline.exec(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('[GlobalRateLimit] Pipeline timed out (400ms)')), 400)
+        )
+      ]);
       const totalHits = (results?.[0]?.[1] as number) ?? 1;
       const resetTime = new Date(Date.now() + this.windowMs);
       return { totalHits, resetTime };

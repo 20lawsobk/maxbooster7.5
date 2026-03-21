@@ -80,11 +80,12 @@ class FallbackSessionStore extends session.Store {
   private primaryDown = false;
   private lastPrimaryCheck = 0;
   private readonly PRIMARY_RETRY_MS    = 30_000; // re-probe primary every 30 s
-  private readonly PRIMARY_OP_TIMEOUT  = 800;    // max ms to wait for PDIM per op
-  // 800 ms: PG fallback is always available, so there's no benefit waiting
-  // longer for PDIM.  Old 3 000 ms value stalled auth requests for 3 s per
-  // session op during the post-restart stale-job flood, causing 6–100 s
-  // dashboard responses and false "pdim_exec_timeout" ChainFixer escalations.
+  private readonly PRIMARY_OP_TIMEOUT  = 500;    // max ms to wait for PDIM per op
+  // 500 ms: PG fallback is always available so there's no benefit waiting
+  // longer.  Old 3 000 ms value stalled requests for 3 s each during PDIM
+  // congestion; 800 ms was the first reduction, 500 ms further caps the overhead.
+  // Under healthy PDIM (<500 ms), sessions still serve from Redis.  Under
+  // congestion, PG fallback fires immediately — saving ~300 ms per request.
   private readonly l1 = new SessionL1Cache();
 
   /**

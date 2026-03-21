@@ -2,6 +2,19 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
+// Fast timeout for Redis rate-limit ops — prevents PDIM congestion from blocking
+// every API request. Falls back to local sliding-window limiter immediately.
+const REDIS_RATELIMIT_TIMEOUT_MS = 400;
+
+function withRedisTimeout<T>(p: Promise<T>, ms = REDIS_RATELIMIT_TIMEOUT_MS): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`[RateLimit] Redis op timed out (${ms}ms)`)), ms)
+    ),
+  ]);
+}
+
 interface RateLimiterConfig {
   windowMs: number;
   maxRequests: number;
@@ -68,10 +81,12 @@ export class DistributedRateLimiter {
         const windowSecs = Math.ceil(this.config.windowMs / 1000);
 
         // Fixed-window counter using INCR + EXPIRE — no Lua required, fully PDIM-compatible.
-        const count: number = await this.redisClient.incr(redisKey);
+        // withRedisTimeout ensures PDIM congestion never blocks the request for seconds;
+        // any timeout throws and the catch block falls back to localRateLimit immediately.
+        const count: number = await withRedisTimeout(this.redisClient.incr(redisKey));
         if (count === 1) {
-          // First request in this window — set the expiry
-          await this.redisClient.expire(redisKey, windowSecs);
+          // First request in this window — set the expiry (fire-and-forget)
+          this.redisClient.expire(redisKey, windowSecs).catch(() => {});
         }
 
         const limited = count > this.config.maxRequests;
