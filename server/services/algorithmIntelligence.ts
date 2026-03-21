@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
-
+import { nanoid } from 'nanoid';
 
 export interface AlgorithmHealth {
   platform: string;
@@ -957,7 +956,7 @@ class AlgorithmIntelligenceService {
     // Significant reach change detection (threshold: 15% — meaningful but not noise)
     if (Math.abs(reachChangePercent) > 15) {
       changes.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         platform,
         detectedAt: new Date(),
         changeType: 'reach',
@@ -982,7 +981,7 @@ class AlgorithmIntelligenceService {
     // Significant engagement change detection
     if (Math.abs(engagementChangePercent) > 20) {
       changes.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         platform,
         detectedAt: new Date(),
         changeType: 'engagement',
@@ -1159,7 +1158,7 @@ class AlgorithmIntelligenceService {
 
     if (metrics.reachTrend === 'declining') {
       alerts.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'reach_decline',
         severity: 'medium',
         message: `Reach declining on ${platform} — engagement signals may have weakened`,
@@ -1177,7 +1176,7 @@ class AlgorithmIntelligenceService {
 
     if (metrics.engagementRate < lowEngagementThreshold) {
       alerts.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'engagement_drop',
         severity: metrics.engagementRate < lowEngagementThreshold * 0.5 ? 'critical' : 'high',
         message: `Engagement rate ${metrics.engagementRate}% is below platform baseline of ${benchmark.userAvg}%`,
@@ -1189,7 +1188,7 @@ class AlgorithmIntelligenceService {
 
     if (metrics.hashtagReach < this.shadowbanIndicators.hashtagVisibilityThreshold) {
       alerts.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'shadowban',
         severity: metrics.hashtagReach < 15 ? 'critical' : 'high',
         message: `Hashtag visibility at ${Math.round(metrics.hashtagReach)}% — possible reach restriction active`,
@@ -1201,7 +1200,7 @@ class AlgorithmIntelligenceService {
 
     if (metrics.followerGrowth < -0.5) {
       alerts.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'reach_decline',
         severity: 'medium',
         message: `Net follower loss detected (${metrics.followerGrowth}%) — check for bot purges or content misalignment`,

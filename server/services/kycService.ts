@@ -662,8 +662,7 @@ export class KYCService {
     const [verification] = await db
       .select()
       .from(kycVerifications)
-      .where(eq(kycVerifications.id, verificationId))
-      .limit(1);
+      .where(eq(kycVerifications.id, verificationId));
 
     return verification || null;
   }
@@ -701,8 +700,7 @@ export class KYCService {
     const [doc] = await db
       .select()
       .from(kycDocuments)
-      .where(eq(kycDocuments.id, documentId))
-      .limit(1);
+      .where(eq(kycDocuments.id, documentId));
     return doc || null;
   }
 
@@ -992,8 +990,7 @@ export class KYCService {
       const [user] = await db
         .select({ email: users.email, firstName: users.firstName })
         .from(users)
-        .where(eq(users.id, verification.userId))
-        .limit(1);
+        .where(eq(users.id, verification.userId));
 
       const level = getLevel(verification);
 
@@ -1019,8 +1016,7 @@ export class KYCService {
       const [user] = await db
         .select({ email: users.email, firstName: users.firstName })
         .from(users)
-        .where(eq(users.id, verification.userId))
-        .limit(1);
+        .where(eq(users.id, verification.userId));
 
       const metadata = getMetadata(verification);
 

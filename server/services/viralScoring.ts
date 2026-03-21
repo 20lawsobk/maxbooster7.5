@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
-
+import { nanoid } from 'nanoid';
 
 export interface ContentData {
   id?: string;
@@ -341,7 +340,7 @@ class ViralScoringService {
   }
 
   async scoreContent(content: ContentData): Promise<ViralScore> {
-    const cacheKey = `${this.CACHE_PREFIX}score:${content.id || randomBytes(8).toString('hex')}`;
+    const cacheKey = `${this.CACHE_PREFIX}score:${content.id || nanoid()}`;
 
     const redis = await this.getRedis();
     if (redis && content.id) {
@@ -931,7 +930,7 @@ class ViralScoringService {
 
     if (score.factors.hookStrength < 75) {
       improvements.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'hook',
         priority: score.factors.hookStrength < 50 ? 'high' : 'medium',
         suggestion: 'Rewrite your opening to maximize curiosity gap or emotional investment',
@@ -942,7 +941,7 @@ class ViralScoringService {
 
     if (score.factors.hashtagOptimization < 75) {
       improvements.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'hashtags',
         priority: score.factors.hashtagOptimization < 45 ? 'high' : 'medium',
         suggestion: 'Restructure hashtag strategy for better discoverability',
@@ -953,7 +952,7 @@ class ViralScoringService {
 
     if (score.factors.trendAlignment < 65) {
       improvements.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'content',
         priority: score.factors.trendAlignment < 40 ? 'high' : 'medium',
         suggestion: 'Increase relevance to current music industry trends',
@@ -964,7 +963,7 @@ class ViralScoringService {
 
     if (score.factors.emotionalResonance < 65) {
       improvements.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'engagement',
         priority: 'medium',
         suggestion: 'Increase emotional appeal and personal connection',
@@ -975,7 +974,7 @@ class ViralScoringService {
 
     if (score.factors.audioQuality < 65 && content.platform === 'tiktok') {
       improvements.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'format',
         priority: 'high',
         suggestion: 'Prioritize original or trending audio',
@@ -985,7 +984,7 @@ class ViralScoringService {
     }
 
     improvements.push({
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       category: 'timing',
       priority: 'low',
       suggestion: 'Post during peak audience activity windows',
@@ -1003,7 +1002,7 @@ class ViralScoringService {
     const scoredVariants = await Promise.all(
       variants.map(async (variant) => {
         const score = await this.scoreContent(variant);
-        return { variant, score, id: variant.id || randomBytes(8).toString('hex') };
+        return { variant, score, id: variant.id || nanoid() };
       })
     );
 

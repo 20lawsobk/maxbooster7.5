@@ -397,8 +397,7 @@ export class DMCAService {
     const [notice] = await db
       .select()
       .from(dmcaNotices)
-      .where(eq(dmcaNotices.id, noticeId))
-      .limit(1);
+      .where(eq(dmcaNotices.id, noticeId));
 
     return notice || null;
   }
@@ -412,8 +411,7 @@ export class DMCAService {
       const [user] = await db
         .select({ email: users.email })
         .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+        .where(eq(users.id, userId));
       
       if (!user) {
         return [];
@@ -496,8 +494,7 @@ export class DMCAService {
         const [project] = await db
           .select({ id: projects.id, userId: projects.userId })
           .from(projects)
-          .where(eq(projects.id, contentId))
-          .limit(1);
+          .where(eq(projects.id, contentId));
 
         if (project) {
           return { id: project.userId };
@@ -521,8 +518,7 @@ export class DMCAService {
       const [user] = await db
         .select({ email: users.email, firstName: users.firstName })
         .from(users)
-        .where(eq(users.id, notice.contentOwnerId))
-        .limit(1);
+        .where(eq(users.id, notice.contentOwnerId));
 
       if (user?.email) {
         await emailService.sendEmail({
@@ -578,8 +574,7 @@ export class DMCAService {
       const [user] = await db
         .select({ email: users.email, firstName: users.firstName })
         .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+        .where(eq(users.id, userId));
 
       if (user?.email) {
         await emailService.sendEmail({
@@ -603,8 +598,7 @@ export class DMCAService {
       const [user] = await db
         .select({ email: users.email, firstName: users.firstName })
         .from(users)
-        .where(eq(users.id, userId))
-        .limit(1);
+        .where(eq(users.id, userId));
 
       if (user?.email) {
         await emailService.sendEmail({

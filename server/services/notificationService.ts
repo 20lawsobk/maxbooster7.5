@@ -3,7 +3,6 @@ import { db } from '../db';
 import { notifications, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
-import { webPushService } from './webPushService.js';
 
 interface NotificationOptions {
   userId: string;
@@ -134,6 +133,7 @@ class NotificationService {
     link?: string
   ): Promise<void> {
     try {
+      const { webPushService } = await import('./webPushService.ts');
       if (!webPushService.isReady()) {
         logger.info('Web Push not ready, skipping push notification');
         return;

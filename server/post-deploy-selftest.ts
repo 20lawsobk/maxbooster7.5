@@ -15,8 +15,6 @@
  * - Structured logging for debugging
  */
 
-import { existsSync } from 'fs';
-import { join } from 'path';
 import { db } from './db.js';
 import { sql } from 'drizzle-orm';
 import { logger } from './logger.js';
@@ -195,6 +193,8 @@ class PostDeploySelfTest {
   async testFilePaths(): Promise<SelfTestResult> {
     const startTime = Date.now();
     try {
+      const { existsSync } = await import('fs');
+      const { join } = await import('path');
       
       const criticalPaths = [
         'dist/index.js',

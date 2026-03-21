@@ -25,8 +25,7 @@ export async function syncPlatformData(
       .where(and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.platform, p)
-      ))
-      .limit(1);
+      ));
 
     if (!connection || !connection.accessToken) {
       results[p] = { error: 'Not connected or no access token' };

@@ -1,8 +1,7 @@
-import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { pluginCatalog, pluginInstances, pluginPresets } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
-
+import { nanoid } from 'nanoid';
 import { logger } from '../logger.js';
 import { EXPANDED_INSTRUMENTS, EXPANDED_EFFECTS, ALL_PLUGINS } from './plugins/index';
 import { 

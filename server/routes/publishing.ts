@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { db } from '../db';
 import { publishingRights } from '@shared/schema';
-import { eq, and, desc, count, sql } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
@@ -24,19 +24,15 @@ const insertPublishingSchema = z.object({
   notes: z.string().max(5000).optional(),
 });
 
-// GET /api/publishing - list registered works (paginated)
+// GET /api/publishing - list registered works
 router.get('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
     const works = await db
       .select()
       .from(publishingRights)
       .where(eq(publishingRights.userId, userId))
-      .orderBy(desc(publishingRights.registeredAt))
-      .limit(limit)
-      .offset(offset);
+      .orderBy(desc(publishingRights.registeredAt));
     res.json(works);
   } catch (error) {
     logger.error('[Publishing] Failed to fetch registered works:', error);
@@ -109,42 +105,24 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// GET /api/publishing/stats - aggregate stats via SQL
+// GET /api/publishing/stats - total works, pending registration, confirmed, splits breakdown
 router.get('/stats', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const [stats] = await db.select({
-      totalWorks: count(),
-      pendingCount: sql<number>`count(*) filter (where status = 'pending')`,
-      confirmedCount: sql<number>`count(*) filter (where status in ('confirmed', 'active'))`,
-    })
+    const works = await db
+      .select()
       .from(publishingRights)
       .where(eq(publishingRights.userId, userId));
 
-    res.json({
-      totalWorks: Number(stats.totalWorks),
-      pendingCount: Number(stats.pendingCount),
-      confirmedCount: Number(stats.confirmedCount),
-    });
+    const stats = {
+      totalWorks: works.length,
+      pendingCount: works.filter(w => w.status === 'pending').length,
+      confirmedCount: works.filter(w => w.status === 'confirmed' || w.status === 'active').length,
+    };
+    res.json(stats);
   } catch (error) {
     logger.error('[Publishing] Failed to fetch publishing stats:', error);
     res.status(500).json({ error: 'Failed to fetch publishing stats' });
-  }
-});
-
-// GET /api/publishing/:id - get single registered work (after /stats to avoid shadowing)
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const [work] = await db
-      .select()
-      .from(publishingRights)
-      .where(and(eq(publishingRights.id, req.params.id), eq(publishingRights.userId, req.user!.id)))
-      .limit(1);
-    if (!work) return res.status(404).json({ error: 'Work not found' });
-    res.json(work);
-  } catch (error) {
-    logger.error('[Publishing] Failed to fetch work:', error);
-    res.status(500).json({ error: 'Failed to fetch publishing record' });
   }
 });
 

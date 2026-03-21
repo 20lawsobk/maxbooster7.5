@@ -7,9 +7,6 @@ import { killSwitch } from "../safety/killSwitch.js";
 import * as os from 'os';
 import * as fs from 'fs';
 import rateLimit from 'express-rate-limit';
-import { chainErrorAutoFixer } from '../services/chainErrorAutoFixer.js';
-import { platformAutoFixer } from '../services/platformAutoFixer.js';
-import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
 
 const adminRouter = Router();
 
@@ -643,8 +640,7 @@ adminRouter.get("/metrics", async (req, res) => {
     const [activeUsersResult] = await db
       .select({ count: count() })
       .from(users)
-      .where(eq(users.subscriptionStatus, "active"))
-      .limit(1);
+      .where(eq(users.subscriptionStatus, "active"));
 
     let diskUsagePercent = 0;
     try {
@@ -679,8 +675,7 @@ adminRouter.get("/settings", async (req, res) => {
     const settings = await db
       .select()
       .from(systemSettings)
-      .where(like(systemSettings.key, "platform.%"))
-      .limit(100);
+      .where(like(systemSettings.key, "platform.%"));
 
     const settingsMap: Record<string, any> = {
       emailNotifications: true,
@@ -839,7 +834,7 @@ function formatUptime(seconds: number): string {
 // GET /api/admin/financial-config/royalty-rates
 adminRouter.get('/financial-config/royalty-rates', async (req, res) => {
   try {
-    const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName).limit(100);
+    const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName);
     res.json({ success: true, rates });
   } catch (err) {
     logger.error('Error fetching royalty rates:', err);
@@ -875,7 +870,7 @@ adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
 // GET /api/admin/financial-config/tax-treaties
 adminRouter.get('/financial-config/tax-treaties', async (req, res) => {
   try {
-    const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName).limit(200);
+    const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName);
     res.json({ success: true, treaties });
   } catch (err) {
     logger.error('Error fetching tax treaty rates:', err);
@@ -912,7 +907,7 @@ adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
 // GET /api/admin/financial-config/label-settings
 adminRouter.get('/financial-config/label-settings', async (req, res) => {
   try {
-    const settings = await db.select().from(labelSettings).orderBy(labelSettings.key).limit(200);
+    const settings = await db.select().from(labelSettings).orderBy(labelSettings.key);
     res.json({ success: true, settings });
   } catch (err) {
     logger.error('Error fetching label settings:', err);
@@ -949,19 +944,19 @@ adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
 
 adminRouter.get('/chain-fixer/status', async (_req, res) => {
   try {
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     res.json(chainErrorAutoFixer.getStatus());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
   try {
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
     res.json({ success: ok });
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -970,10 +965,10 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
   try {
     const { message } = req.body;
     if (!message) return res.status(400).json({ error: 'message is required' });
+    const { chainErrorAutoFixer } = await import('../services/chainErrorAutoFixer.js');
     chainErrorAutoFixer.forceCheck(message);
     res.json({ success: true });
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -982,77 +977,77 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
 
 adminRouter.get('/platform-fixer/status', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getStatus());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getSubsystems());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.get('/platform-fixer/patches', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getPatches());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json(platformAutoFixer.getIncidents());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.post('/platform-fixer/scan', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     await platformAutoFixer.runFullScan();
     res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     const result = await platformAutoFixer.forceProbe(req.params.name as any);
     if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
     res.json(result);
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     const ok = platformAutoFixer.revertPatch(req.params.id, 'admin request');
     if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
     res.json({ success: true });
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   try {
+    const { platformAutoFixer } = await import('../services/platformAutoFixer.js');
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1064,9 +1059,9 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
 
 adminRouter.get('/permanent-fixes', async (_req, res) => {
   try {
+    const { permanentFixRegistry } = await import('../services/permanentFixRegistry.js');
     res.json(permanentFixRegistry.getStatus());
   } catch (err: any) {
-    logger.error('Admin route error:', err);
     res.status(500).json({ error: err.message });
   }
 });

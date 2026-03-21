@@ -1,16 +1,13 @@
-import { randomBytes } from 'crypto';
 import { storage } from '../storage';
 import type {
   InsertProject,
   Project,
   StudioTrack,
 } from '@shared/schema';
-
+import { nanoid } from 'nanoid';
 import fs from 'fs';
-import * as fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';
-import { audioService } from './audioService';
 
 interface InsertStudioTrack {
   projectId: string;
@@ -298,7 +295,7 @@ export class StudioService {
     userId: string
   ): Promise<{ id: string; url: string; duration?: number }> {
     try {
-      const audioId = `audio_${randomBytes(8).toString('hex')}`;
+      const audioId = `audio_${nanoid()}`;
       const ext = path.extname(file.originalname);
       const fileName = `${audioId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
@@ -306,6 +303,7 @@ export class StudioService {
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
       
       // Use async operations to avoid blocking event loop
+      const fsPromises = await import('fs/promises');
       try {
         await fsPromises.access(audioDir);
       } catch {
@@ -357,6 +355,7 @@ export class StudioService {
     const MAX_WAVEFORM_SAMPLES = 100000; // Limit memory usage
 
     try {
+      const { audioService } = await import('./audioService');
       
       // Wrap waveform generation with timeout to prevent hanging
       const waveformResult = await this.withTimeout(
@@ -472,7 +471,7 @@ export class StudioService {
     }
   ): Promise<RecordingUploadResult> {
     try {
-      const clipId = `clip_${randomBytes(8).toString('hex')}`;
+      const clipId = `clip_${nanoid()}`;
       const ext = path.extname(file.originalname);
       const fileName = `${clipId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
@@ -480,6 +479,7 @@ export class StudioService {
       const audioDir = path.join(process.cwd(), 'uploads', 'audio');
       
       // Use async operations to avoid blocking event loop
+      const fsPromises = await import('fs/promises');
       try {
         await fsPromises.access(audioDir);
       } catch {
@@ -498,7 +498,7 @@ export class StudioService {
         startTime: options.startPosition,
         endTime: options.startPosition + 10,
         takeNumber: options.takeNumber,
-        takeGroupId: options.takeGroupId || randomBytes(8).toString('hex'),
+        takeGroupId: options.takeGroupId || nanoid(),
         isComped: false,
       });
 
@@ -532,7 +532,7 @@ export class StudioService {
     }
   ): Promise<{ exportId: string; status: 'processing' | 'completed'; url?: string }> {
     try {
-      const exportId = `export_${randomBytes(8).toString('hex')}`;
+      const exportId = `export_${nanoid()}`;
 
       return {
         exportId,
@@ -850,7 +850,7 @@ export class StudioService {
 
   async freezeTrack(trackId: string, file: Express.Multer.File, projectId: string): Promise<{ success: boolean; frozenFilePath: string }> {
     try {
-      const frozenId = `frozen_${randomBytes(8).toString('hex')}`;
+      const frozenId = `frozen_${nanoid()}`;
       const ext = path.extname(file.originalname);
       const fileName = `${frozenId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);

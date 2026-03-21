@@ -1,5 +1,4 @@
-import { randomBytes } from 'crypto';
-
+import { nanoid } from 'nanoid';
 import { logger } from '../logger';
 import { db } from '../db';
 import { eq, and, desc, sql, gte } from 'drizzle-orm';
@@ -409,7 +408,7 @@ class SocialChatbotService {
 
       this.storeMessageInHistory(message);
 
-      const responseId = randomBytes(8).toString('hex');
+      const responseId = nanoid();
       logger.info(`Chatbot response generated for user ${userId}`, {
         responseId,
         platform: message.platform,
@@ -431,7 +430,7 @@ class SocialChatbotService {
     } catch (error) {
       logger.error('Error generating chatbot response:', error);
       return {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         content: "Thanks for your message! A team member will get back to you shortly.",
         confidence: 0,
         intent: 'fallback',
@@ -594,7 +593,7 @@ class SocialChatbotService {
     entry: Omit<KnowledgeBaseEntry, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>
   ): Promise<KnowledgeBaseEntry> {
     const newEntry: KnowledgeBaseEntry = {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       ...entry,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -651,7 +650,7 @@ class SocialChatbotService {
 
   async addTemplate(template: Omit<ResponseTemplate, 'id'>): Promise<ResponseTemplate> {
     const newTemplate: ResponseTemplate = {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       ...template,
     };
     this.templates.set(newTemplate.id, newTemplate);

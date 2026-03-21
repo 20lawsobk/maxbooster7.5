@@ -4,7 +4,7 @@ import { invoiceService } from '../services/invoiceService';
 import { taxFormService, TaxpayerInfo } from '../services/taxFormService';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
-import { randomBytes } from 'crypto';
+import { nanoid } from 'nanoid';
 import { db } from '../db';
 import { marketplaceDisputes, users, contractTemplates, splitSheets } from '@shared/schema';
 import { eq, and, or, desc, notInArray, sql } from 'drizzle-orm';
@@ -35,8 +35,7 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
           .where(and(
             eq(contractTemplates.userId, userId),
             eq(contractTemplates.isDefault, false)
-          ))
-          .limit(50);
+          ));
         userCustomTemplates = dbTemplates.map(t => ({
           id: t.id,
           type: t.content as string,
@@ -886,8 +885,7 @@ router.get('/split-sheets/list', async (req: Request, res: Response) => {
           sql`${splitSheets.participants} @> ${JSON.stringify([{ userId }])}::jsonb`
         )
       )
-      .orderBy(desc(splitSheets.createdAt))
-      .limit(100);
+      .orderBy(desc(splitSheets.createdAt));
 
     return res.json({ splitSheets: rows });
   } catch (error: any) {
@@ -945,8 +943,7 @@ router.get('/split-sheets/:contractId', async (req: Request, res: Response) => {
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId))
-      .limit(1);
+      .where(eq(splitSheets.id, contractId));
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -972,8 +969,7 @@ router.post('/split-sheets/:contractId/sign', async (req: Request, res: Response
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId))
-      .limit(1);
+      .where(eq(splitSheets.id, contractId));
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -1033,8 +1029,7 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
     const [contract] = await db
       .select()
       .from(splitSheets)
-      .where(eq(splitSheets.id, contractId))
-      .limit(1);
+      .where(eq(splitSheets.id, contractId));
 
     if (!contract) {
       return res.status(404).json({ error: 'Split sheet not found' });
@@ -1148,8 +1143,7 @@ router.post('/marketplace-disputes', async (req: Request, res: Response) => {
           eq(marketplaceDisputes.orderId, orderId),
           notInArray(marketplaceDisputes.status, ['resolved', 'closed'])
         )
-      )
-      .limit(10);
+      );
 
     if (existingDisputes.length > 0) {
       return res.status(400).json({ error: 'An open dispute already exists for this order', disputeId: existingDisputes[0].id });
@@ -1213,8 +1207,7 @@ router.get('/marketplace-disputes', async (req: Request, res: Response) => {
       disputes = await db
         .select()
         .from(marketplaceDisputes)
-        .orderBy(desc(marketplaceDisputes.createdAt))
-        .limit(200);
+        .orderBy(desc(marketplaceDisputes.createdAt));
     } else {
       disputes = await db
         .select()
@@ -1223,8 +1216,7 @@ router.get('/marketplace-disputes', async (req: Request, res: Response) => {
           eq(marketplaceDisputes.buyerId, userId),
           eq(marketplaceDisputes.sellerId, userId)
         ))
-        .orderBy(desc(marketplaceDisputes.createdAt))
-        .limit(100);
+        .orderBy(desc(marketplaceDisputes.createdAt));
     }
 
     if (status && typeof status === 'string') {
@@ -1248,8 +1240,7 @@ router.get('/marketplace-disputes/:disputeId', async (req: Request, res: Respons
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1286,8 +1277,7 @@ router.post('/marketplace-disputes/:disputeId/message', async (req: Request, res
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1365,8 +1355,7 @@ router.post('/marketplace-disputes/:disputeId/evidence', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1432,8 +1421,7 @@ router.post('/marketplace-disputes/:disputeId/escalate', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1500,8 +1488,7 @@ router.post('/marketplace-disputes/:disputeId/resolve', async (req: Request, res
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1566,8 +1553,7 @@ router.post('/marketplace-disputes/:disputeId/withdraw', async (req: Request, re
     const [dispute] = await db
       .select()
       .from(marketplaceDisputes)
-      .where(eq(marketplaceDisputes.id, disputeId))
-      .limit(1);
+      .where(eq(marketplaceDisputes.id, disputeId));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
@@ -1621,8 +1607,7 @@ router.get('/marketplace-disputes/stats', async (req: Request, res: Response) =>
     if (isAdmin) {
       userDisputes = await db
         .select()
-        .from(marketplaceDisputes)
-        .limit(200);
+        .from(marketplaceDisputes);
     } else {
       userDisputes = await db
         .select()

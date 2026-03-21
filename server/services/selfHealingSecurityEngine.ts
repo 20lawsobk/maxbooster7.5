@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 /**
  * SELF-HEALING SECURITY ENGINE
  * 
@@ -23,7 +22,7 @@ import {
   type InsertIpBlacklist 
 } from '@shared/schema';
 import { eq, gte, and, sql, desc } from 'drizzle-orm';
-
+import { nanoid } from 'nanoid';
 
 interface SecurityEvent {
   id: string;
@@ -243,8 +242,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       const now = new Date();
       const blocked = await db.select()
         .from(ipBlacklist)
-        .where(gte(ipBlacklist.expiresAt, now))
-        .limit(10000);
+        .where(gte(ipBlacklist.expiresAt, now));
       
       for (const entry of blocked) {
         if (entry.ip) {
@@ -261,7 +259,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   public processSecurityEvent(event: Partial<SecurityEvent>): void {
     const now = Date.now();
     const fullEvent: SecurityEvent = {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       timestamp: now,
       type: event.type || 'request',
       category: event.category || 'general',
@@ -427,7 +425,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
     }
 
     const assessment: ThreatAssessment = {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       eventId: event.id,
       detectionTime: Date.now() - event.timestamp,
       threatLevel,
@@ -514,7 +512,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
   private async respondToThreat(assessment: ThreatAssessment): Promise<void> {
     for (const actionType of assessment.recommendedActions) {
       const action: HealingAction = {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         threatId: assessment.id,
         type: actionType as HealingAction['type'],
         status: 'executing',

@@ -1,5 +1,4 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
-import { randomBytes } from 'crypto';
 import { getRedisClient } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
@@ -131,7 +130,7 @@ async function slidingWindowCheck(
       };
     }
 
-    const requestId = `${now}:${randomBytes(4).toString('hex')}`;
+    const requestId = `${now}:${Math.random().toString(36).substring(7)}`;
     // ioredis zadd: zadd(key, score, member)
     await redis.zadd(redisKey, now, requestId);
 

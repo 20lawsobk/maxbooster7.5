@@ -447,9 +447,11 @@ export class AdvertisingDispatchService {
   async collectAllActiveEngagement(userId?: string): Promise<void> {
     try {
       // Get all active campaigns
+      let query = db.select().from(adCampaigns).where(eq(adCampaigns.status, 'active'));
+
       const activeCampaigns = userId
-        ? await db.select().from(adCampaigns).where(and(eq(adCampaigns.status, 'active'), eq(adCampaigns.userId, userId))).limit(200)
-        : await db.select().from(adCampaigns).where(eq(adCampaigns.status, 'active')).limit(200);
+        ? await query.where(eq(adCampaigns.userId, userId))
+        : await query;
 
       logger.info(`🔄 Collecting engagement for ${activeCampaigns.length} active campaigns...`);
 

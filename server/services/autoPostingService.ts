@@ -1,5 +1,4 @@
 import { storage } from '../storage.js';
-import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import axios from 'axios';
 import type { User } from '../../shared/schema.js';
@@ -93,7 +92,7 @@ class AutoPostingService {
     createdBy: 'social_autopilot' | 'advertising_autopilot' | 'manual' = 'manual',
     viralPrediction?: any
   ): Promise<ScheduledPost> {
-    const postId = `post_${Date.now()}_${randomBytes(4).toString('hex')}`;
+    const postId = `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const scheduledPost: ScheduledPost = {
       id: postId,

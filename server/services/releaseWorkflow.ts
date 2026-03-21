@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { storage } from '../storage.js';
-
+import { nanoid } from 'nanoid';
 
 export type ReleaseState = 'draft' | 'pending_review' | 'approved' | 'processing' | 'live' | 'updated' | 'update_pending' | 'taken_down' | 'rejected';
 
@@ -249,7 +248,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: `Cannot takedown release in "${currentState}" state. Must be live.` };
       }
 
-      const requestId = `takedown_${randomBytes(8).toString('hex')}`;
+      const requestId = `takedown_${nanoid()}`;
       const request: TakedownRequest = {
         id: requestId,
         releaseId,
@@ -349,7 +348,7 @@ export class ReleaseWorkflowService {
         return { success: false, error: 'No changes provided' };
       }
 
-      const requestId = `update_${randomBytes(8).toString('hex')}`;
+      const requestId = `update_${nanoid()}`;
       const request: UpdateRequest = {
         id: requestId,
         releaseId,
@@ -468,7 +467,7 @@ export class ReleaseWorkflowService {
     entry: Omit<AuditLogEntry, 'id' | 'releaseId' | 'timestamp'>
   ): Promise<void> {
     const auditEntry: AuditLogEntry = {
-      id: `audit_${randomBytes(8).toString('hex')}`,
+      id: `audit_${nanoid()}`,
       releaseId,
       timestamp: new Date(),
       ...entry

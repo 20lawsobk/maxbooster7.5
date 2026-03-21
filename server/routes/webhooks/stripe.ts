@@ -15,11 +15,6 @@ import {
   registerWebhookHandler,
 } from '../../safety/stripeWebhookSecurity';
 import { auditPayment } from '../../safety/auditLogger';
-import { db } from '../../db';
-import { orders, storefrontOrders, bogoPromotions, customerMemberships, users } from '@shared/schema';
-import { eq, and, sql } from 'drizzle-orm';
-import { notificationService } from '../../services/notificationService.js';
-import { dunningService } from '../../services/dunningService.js';
 
 const router = Router();
 
@@ -38,6 +33,10 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
   const { beatId, buyerId, sellerId, licenseType, licenseSnapshot: snapshotStr } = session.metadata || {};
   if (beatId && buyerId && sellerId) {
     try {
+      const { orders } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq } = await import('drizzle-orm');
+      
       const paymentRef = session.payment_intent as string || session.id;
       const [existing] = await db.select({ id: orders.id })
         .from(orders)
@@ -74,6 +73,10 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
   const { storefrontId, promotionId } = session.metadata || {};
   if (storefrontId) {
     try {
+      const { storefrontOrders, bogoPromotions } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq, sql } = await import('drizzle-orm');
+
       await db.update(storefrontOrders)
         .set({ status: 'completed' })
         .where(eq(storefrontOrders.stripeSessionId, session.id));
@@ -93,6 +96,10 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
   const { type: sessionType, customerId: memberCustomerId, tierId: memberTierId, storefrontId: memberStorefrontId } = session.metadata || {};
   if (sessionType === 'storefront_membership' && memberCustomerId && memberTierId) {
     try {
+      const { customerMemberships } = await import('@shared/schema');
+      const { db } = await import('../../db');
+      const { eq, and } = await import('drizzle-orm');
+
       const subscriptionId = session.subscription as string | undefined;
 
       const existing = await db
@@ -133,6 +140,10 @@ registerWebhookHandler('customer.subscription.created', async (event) => {
   logger.info(`[Stripe] Subscription created: ${subscription.id} - Status: ${subscription.status}`);
 
   try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
     const customerId = typeof subscription.customer === 'string'
       ? subscription.customer
       : subscription.customer.id;
@@ -169,6 +180,10 @@ registerWebhookHandler('customer.subscription.updated', async (event) => {
   logger.info(`[Stripe] Subscription updated: ${subscription.id} - Status: ${subscription.status}`);
 
   try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
     const customerId = typeof subscription.customer === 'string'
       ? subscription.customer
       : subscription.customer.id;
@@ -190,6 +205,7 @@ registerWebhookHandler('customer.subscription.updated', async (event) => {
 
     if (updated.length > 0) {
       logger.info(`[Stripe] User ${updated[0].id} subscription updated: tier=${tier}, status=${subscription.status}`);
+      const { notificationService } = await import('../../services/notificationService.js');
       const previousTier = subscription.metadata?.previousPlanId;
       if (subscription.status === 'active') {
         if (previousTier && previousTier !== tier) {
@@ -213,6 +229,10 @@ registerWebhookHandler('customer.subscription.deleted', async (event) => {
   logger.info(`[Stripe] Subscription canceled: ${subscription.id}`);
 
   try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+
     const customerId = typeof subscription.customer === 'string'
       ? subscription.customer
       : subscription.customer.id;
@@ -252,6 +272,7 @@ registerWebhookHandler('invoice.paid', async (event) => {
   );
 
   try {
+    const { dunningService } = await import('../../services/dunningService.js');
     await dunningService.resolveSequence(invoice.id, 'paid');
   } catch (err) {
     logger.error('[Stripe] Failed to resolve dunning sequence:', err);
@@ -273,6 +294,10 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
   );
 
   try {
+    const { users } = await import('@shared/schema');
+    const { db } = await import('../../db');
+    const { eq } = await import('drizzle-orm');
+    const { notificationService } = await import('../../services/notificationService.js');
     const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as any)?.id;
     if (customerId) {
       const found = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
@@ -283,6 +308,7 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
         await notificationService.sendAdminPaymentIssueNotification(found[0].email!, found[0].id, amount, reason);
 
         try {
+          const { dunningService } = await import('../../services/dunningService.js');
           await dunningService.startSequence(found[0].id, invoice.id);
         } catch (dunningErr) {
           logger.error('[Stripe] Failed to start dunning sequence:', dunningErr);

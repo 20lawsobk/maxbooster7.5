@@ -460,8 +460,7 @@ export class AuditLoggerService {
 
       const [countResult] = await db.select({ count: sql<number>`count(*)::int` })
         .from(auditLogs)
-        .where(whereClause)
-        .limit(1);
+        .where(whereClause);
 
       return {
         logs,
@@ -555,13 +554,11 @@ export class AuditLoggerService {
   }> {
     try {
       const [totalResult] = await db.select({ count: sql<number>`count(*)::int` })
-        .from(auditLogs)
-        .limit(1);
+        .from(auditLogs);
 
       const [archivedResult] = await db.select({ count: sql<number>`count(*)::int` })
         .from(auditLogs)
-        .where(eq(auditLogs.archived, true))
-        .limit(1);
+        .where(eq(auditLogs.archived, true));
 
       const riskLevelStats = await db.select({
         riskLevel: auditLogs.riskLevel,

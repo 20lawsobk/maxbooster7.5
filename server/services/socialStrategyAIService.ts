@@ -1,5 +1,4 @@
-import { randomBytes } from 'crypto';
-
+import { nanoid } from 'nanoid';
 import { logger } from '../logger';
 import { pythonAIService } from './pythonAIService.js';
 
@@ -274,7 +273,7 @@ class SocialStrategyAIService {
 
       const suggestedContent = await this.generateSuggestedContentAsync(idea.title, platform);
       recommendations.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: idea.type as any,
         platform,
         title: idea.title,
@@ -353,7 +352,7 @@ class SocialStrategyAIService {
 
     const recommendations: CampaignRecommendation[] = [
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         name: 'New Release Launch Campaign',
         objective: 'awareness',
         duration: { start: startDate, end: endDate },
@@ -392,7 +391,7 @@ class SocialStrategyAIService {
         reasoning: 'This campaign leverages the excitement around new releases with a multi-platform approach to maximize reach and engagement.',
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         name: 'Community Growth Campaign',
         objective: 'followers',
         duration: { start: startDate, end: endDate },
@@ -462,7 +461,7 @@ class SocialStrategyAIService {
     period: 'weekly' | 'monthly' | 'quarterly' = 'monthly'
   ): Promise<ContentStrategy> {
     return {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       period,
       pillars: [
         { name: 'Educational', percentage: 25, description: 'Teach your audience something valuable', examples: ['Production tips', 'Industry insights', 'How-to guides'] },
@@ -645,7 +644,7 @@ class SocialStrategyAIService {
 
     const allTips: EngagementTip[] = [
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'content',
         title: 'Use Vertical Video Format',
         description: 'Vertical videos (9:16) get 40% more engagement on mobile-first platforms.',
@@ -656,7 +655,7 @@ class SocialStrategyAIService {
         expectedImprovement: 40,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'timing',
         title: 'Post During Peak Hours',
         description: 'Posting when your audience is most active increases visibility by up to 25%.',
@@ -667,7 +666,7 @@ class SocialStrategyAIService {
         expectedImprovement: 25,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'engagement',
         title: 'Reply Within the First Hour',
         description: 'Responding to comments quickly boosts algorithm visibility.',
@@ -678,7 +677,7 @@ class SocialStrategyAIService {
         expectedImprovement: 30,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'hashtags',
         title: 'Use a Mix of Hashtag Sizes',
         description: 'Combine high-reach and niche hashtags for optimal discovery.',
@@ -689,7 +688,7 @@ class SocialStrategyAIService {
         expectedImprovement: 20,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'content',
         title: 'Hook Viewers in 3 Seconds',
         description: 'The first 3 seconds determine if viewers will keep watching.',
@@ -700,7 +699,7 @@ class SocialStrategyAIService {
         expectedImprovement: 50,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'growth',
         title: 'Cross-Promote Content',
         description: 'Share your content across platforms to maximize reach.',
@@ -711,7 +710,7 @@ class SocialStrategyAIService {
         expectedImprovement: 35,
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         category: 'analytics',
         title: 'Track Your Top Performing Content',
         description: 'Analyze what works and create more of it.',
@@ -767,7 +766,7 @@ class SocialStrategyAIService {
       const type = platformTypes[i % platformTypes.length];
 
       posts.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         date: postDate,
         time: `${hour}:00`,
         platform,
@@ -791,7 +790,7 @@ class SocialStrategyAIService {
     });
 
     return {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: `Content Plan ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`,
       period: { start: startDate, end: endDate },
       posts,
@@ -807,7 +806,7 @@ class SocialStrategyAIService {
   async getAIInsights(userId: string): Promise<AIInsight[]> {
     return [
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'opportunity',
         title: 'Trending Sound Opportunity',
         description: 'A sound related to your genre is trending on TikTok. Creating content with this sound could boost visibility.',
@@ -817,7 +816,7 @@ class SocialStrategyAIService {
         createdAt: new Date(),
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'recommendation',
         title: 'Increase Video Content',
         description: 'Your video posts get 3x more engagement than images. Consider shifting your content mix.',
@@ -827,7 +826,7 @@ class SocialStrategyAIService {
         createdAt: new Date(),
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'warning',
         title: 'Engagement Rate Declining',
         description: 'Your engagement rate dropped 15% this week. Review recent content performance.',
@@ -837,7 +836,7 @@ class SocialStrategyAIService {
         createdAt: new Date(),
       },
       {
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         type: 'trend',
         title: 'Behind-the-Scenes Content Rising',
         description: 'BTS content is performing 40% better in your niche this month.',

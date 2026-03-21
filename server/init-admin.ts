@@ -1,9 +1,8 @@
-import { randomBytes } from 'crypto';
 import bcrypt from 'bcrypt';
 import { storage } from './storage';
 import { logger } from './logger.js';
 import { db } from './db';
-import { users, userStorage, userTasteProfiles, dspProviders, licenseTemplates, contractTemplates, membershipTiers, storefronts, studioTemplates, storefrontTemplates, systemSettings, alertRules } from '../shared/schema';
+import { users, userStorage, userTasteProfiles, dspProviders, licenseTemplates, contractTemplates, membershipTiers, storefronts } from '../shared/schema';
 import { eq, sql } from 'drizzle-orm';
 import { DSP_POLICIES } from './services/dspPolicyChecker';
 
@@ -188,6 +187,7 @@ async function initializeAdminResources(adminId: string, adminEmail: string, isN
     }
     
     // 3. Check and initialize admin producer storefront
+    const { storefronts } = await import('../shared/schema');
     const [existingStorefront] = await db
       .select()
       .from(storefronts)
@@ -519,7 +519,8 @@ async function seedPluginCatalog() {
 }
 
 async function seedStudioTemplates() {
-
+  const { studioTemplates } = await import('../shared/schema');
+  const { nanoid } = await import('nanoid');
   
   // Check if templates already exist
   const existingTemplates = await db.select().from(studioTemplates).limit(1);
@@ -532,7 +533,7 @@ async function seedStudioTemplates() {
   
   const builtInTemplates = [
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Empty Song',
       description: 'Start with a blank canvas',
       category: 'recording',
@@ -544,7 +545,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Hip Hop Beat',
       description: 'Pre-configured for hip hop production',
       category: 'production',
@@ -567,7 +568,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Pop Production',
       description: 'Modern pop production setup',
       category: 'production',
@@ -592,7 +593,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Electronic/EDM',
       description: 'Electronic dance music production',
       category: 'production',
@@ -619,7 +620,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'R&B Soul',
       description: 'Smooth R&B production',
       category: 'production',
@@ -642,7 +643,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Podcast/Voice Recording',
       description: 'Optimized for voice recording and podcasts',
       category: 'recording',
@@ -661,7 +662,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Mastering Session',
       description: 'Setup for mastering your tracks',
       category: 'mastering',
@@ -678,7 +679,7 @@ async function seedStudioTemplates() {
       isBuiltIn: true,
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Album Mastering',
       description: 'Multi-track mastering for albums',
       category: 'mastering',
@@ -719,7 +720,8 @@ async function seedStudioTemplates() {
  * Based on extensive research of successful beat marketplace designs
  */
 async function seedStorefrontTemplates() {
-
+  const { storefrontTemplates } = await import('../shared/schema');
+  const { nanoid } = await import('nanoid');
   
   // Check if templates already exist
   const existingTemplates = await db.select().from(storefrontTemplates).limit(1);
@@ -733,7 +735,7 @@ async function seedStorefrontTemplates() {
   const marketplaceTemplates = [
     // === PREMIUM TIER (High-Converting, Pro Designs) ===
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Platinum Producer',
       slug: 'platinum-producer',
       description: 'Premium dark theme with gold accents. Features prominent audio player, trust badges, and urgency indicators. Optimized for high-ticket beat sales.',
@@ -779,7 +781,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Midnight Studio',
       slug: 'midnight-studio',
       description: 'Sleek dark mode design inspired by professional DAWs. Perfect for trap and hip-hop producers wanting a studio-quality aesthetic.',
@@ -824,7 +826,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Neon Wave',
       slug: 'neon-wave',
       description: 'Vibrant cyberpunk-inspired design with neon gradients. Eye-catching visuals that stand out in any genre. Great for electronic and trap beats.',
@@ -866,7 +868,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Luxury Gold',
       slug: 'luxury-gold',
       description: 'Premium luxury theme with elegant typography and gold accents. Perfect for high-end producers targeting serious artists.',
@@ -908,7 +910,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Studio Pro',
       slug: 'studio-pro',
       description: 'Professional recording studio aesthetic with mixing console elements. Communicates expertise and quality production.',
@@ -953,7 +955,7 @@ async function seedStorefrontTemplates() {
     
     // === STANDARD TIER (Clean, Modern Designs) ===
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Clean Slate',
       slug: 'clean-slate',
       description: 'Minimalist white theme with bold typography. Maximum focus on your beats with distraction-free browsing experience.',
@@ -991,7 +993,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Urban Heat',
       slug: 'urban-heat',
       description: 'Bold street-style design with fire gradient accents. High-energy layout perfect for trap, drill, and hip-hop beats.',
@@ -1030,7 +1032,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Ocean Breeze',
       slug: 'ocean-breeze',
       description: 'Calm blue gradient theme. Perfect for R&B, soul, lo-fi, and chill beats. Creates a relaxed shopping experience.',
@@ -1068,7 +1070,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Monochrome Pro',
       slug: 'monochrome-pro',
       description: 'Sophisticated grayscale design with subtle gradients. Timeless aesthetic that works across all genres.',
@@ -1106,7 +1108,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Sunset Vibes',
       slug: 'sunset-vibes',
       description: 'Warm orange and pink gradient theme. Creates an inviting atmosphere ideal for pop, R&B, and afrobeat producers.',
@@ -1144,7 +1146,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Matrix Code',
       slug: 'matrix-code',
       description: 'Hacker-inspired green-on-black design. Unique tech aesthetic for electronic, dubstep, and experimental producers.',
@@ -1182,7 +1184,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Velvet Night',
       slug: 'velvet-night',
       description: 'Rich purple and burgundy tones. Sophisticated dark theme perfect for moody, atmospheric, and alternative beats.',
@@ -1222,7 +1224,7 @@ async function seedStorefrontTemplates() {
     
     // === STARTER TIER (Simple, Effective Designs) ===
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Basic Black',
       slug: 'basic-black',
       description: 'Simple and effective dark theme. No distractions, just your beats. Perfect for getting started quickly.',
@@ -1256,7 +1258,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Fresh Start',
       slug: 'fresh-start',
       description: 'Clean white background with simple navigation. Great for new producers building their first store.',
@@ -1291,7 +1293,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Street Corner',
       slug: 'street-corner',
       description: 'Gritty urban design with bold red accents. High-impact visuals for drill, Chicago, and UK rap producers.',
@@ -1328,7 +1330,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Cloud Nine',
       slug: 'cloud-nine',
       description: 'Dreamy pastel gradient design. Soft and inviting for lo-fi, ambient, and bedroom pop producers.',
@@ -1365,7 +1367,7 @@ async function seedStorefrontTemplates() {
       },
     },
     {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       name: 'Industry Standard',
       slug: 'industry-standard',
       description: 'Professional layout inspired by major label aesthetics. Commands respect and communicates serious quality.',
@@ -1531,6 +1533,7 @@ async function seedAIModels() {
 
 async function seedSystemSettings() {
   try {
+    const { systemSettings } = await import('../shared/schema.js');
     const existing = await db.select().from(systemSettings);
     if (existing.length > 0) {
       logger.info('   ✓ System settings already seeded');
@@ -1571,6 +1574,7 @@ async function seedSystemSettings() {
 
 async function seedAlertRules() {
   try {
+    const { alertRules } = await import('../shared/schema.js');
     const existing = await db.select().from(alertRules);
     if (existing.length > 0) {
       logger.info('   ✓ Alert rules already seeded');

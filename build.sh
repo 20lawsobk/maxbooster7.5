@@ -8,12 +8,9 @@ set -e
 #   • dist/public/index.html  — Vite frontend bundle (committed, ~17 MB)
 #   • dist/index.cjs          — esbuild server bundle (committed, ~5 MB)
 #   • dist/cluster.cjs        — esbuild cluster entry (committed, ~1 MB)
+#   • boosterstate binary     — Rust sidecar (committed, ~2 MB)
 #
-#   NOTE: The boosterstate Rust binary is NOT committed to git — Replit's
-#   deployment layer push rejects binary (non-UTF-8) files. cargo build runs
-#   below for both fast and slow paths (Nix layer is cached, ~60s compile).
-#
-#   No JS build tools needed → use `npm ci --omit=dev` which installs ONLY
+#   No build tools needed → use `npm ci --omit=dev` which installs ONLY
 #   production deps (~700 MB) instead of all deps + prune (~3 GB → 1.5 GB).
 #   client/ + server/ are excluded by .dockerignore (pre-compiled into dist/).
 #   Post-install stripping removes TF browser bundles, source maps, etc.
@@ -37,25 +34,6 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   # We use --ignore-scripts below so npm doesn't try to run the deleted file,
   # then execute the saved copy manually once node_modules/ is ready.
   cp scripts/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
-
-  # Copy binary assets to dist/public/ BEFORE deleting the source tree.
-  # PNG/WebP/ICO files CANNOT be committed to git — Replit's deployment layer
-  # push rejects non-UTF-8 (binary) files with "invalid UTF-8". These assets
-  # are excluded from git by .gitignore and are only available in the source
-  # tree (client/public/) at deploy time via the Repl layer. Copying them here
-  # ensures they are present in dist/public/ for runtime serving (favicon, PWA
-  # icons, logo) without being stored in the git repository.
-  # NOTE: If client/public/icons/ etc. are absent (e.g. clean checkout), the
-  # cp commands fail silently and the app runs without custom icons (acceptable).
-  echo "==> Copying binary assets to dist/public/ if present (favicon, icons, logo)..."
-  mkdir -p dist/public/icons dist/public/screenshots 2>/dev/null || true
-  cp client/public/favicon.png dist/public/favicon.png 2>/dev/null || true
-  cp client/public/logo.png    dist/public/logo.png    2>/dev/null || true
-  cp client/public/logo.webp   dist/public/logo.webp   2>/dev/null || true
-  cp -r client/public/icons/.  dist/public/icons/      2>/dev/null || true
-  cp -r client/public/screenshots/. dist/public/screenshots/ 2>/dev/null || true
-  ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
-  echo "   Binary assets: favicon=$([ -f dist/public/favicon.png ] && echo yes || echo no), icons=${ICON_COUNT}"
 
   echo "==> Deleting source tree immediately (Vite/esbuild not needed)..."
   # client/ is 930 MB — deleting it before npm ci cuts peak disk use by 930 MB.

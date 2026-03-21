@@ -4,9 +4,6 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { careerCoachService } from '../services/careerCoachService';
 import { logger } from '../logger';
 import { z } from 'zod';
-import { db } from '../db';
-import { analytics, releases, royaltyTransactions, posts } from '../../shared/schema';
-import { eq, and, gte, desc, count, sum } from 'drizzle-orm';
 
 const router = Router();
 
@@ -245,92 +242,6 @@ router.get('/patterns', requireAuth, asyncHandler(async (req, res) => {
     res.json({ success: true, data: { patterns, total: patterns.length } });
   } catch (error: any) {
     logger.error('Error fetching pattern library:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-}));
-
-router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const now = new Date();
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-
-    const [
-      currentAnalytics,
-      previousAnalytics,
-      recentReleases,
-      olderReleases,
-      recentRevenue,
-      previousRevenue,
-      recentPosts,
-    ] = await Promise.all([
-      db.select({ streams: sum(analytics.streams), followers: sum(analytics.followers) })
-        .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo))),
-      db.select({ streams: sum(analytics.streams), followers: sum(analytics.followers) })
-        .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), gte(analytics.date, thirtyDaysAgo))),
-      db.select({ id: releases.id }).from(releases)
-        .where(and(eq(releases.userId, userId), gte(releases.createdAt, ninetyDaysAgo))).limit(500),
-      db.select({ id: releases.id }).from(releases)
-        .where(and(eq(releases.userId, userId), gte(releases.createdAt, new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000)))).limit(500),
-      db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
-        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, thirtyDaysAgo))),
-      db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
-        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, sixtyDaysAgo))),
-      db.select({ id: posts.id }).from(posts)
-        .where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))).limit(500),
-    ]);
-
-    const currentStreams = Number(currentAnalytics[0]?.streams) || 0;
-    const previousStreams = Number(previousAnalytics[0]?.streams) || 0;
-    const growthRate = previousStreams > 0
-      ? Math.round(((currentStreams - previousStreams) / previousStreams) * 100)
-      : currentStreams > 0 ? 100 : 0;
-
-    const currentRevenue = Number(recentRevenue[0]?.total) || 0;
-    const prevRevenue = Number(previousRevenue[0]?.total) || 0;
-    const revenueTrend = prevRevenue > 0
-      ? Math.round(((currentRevenue - prevRevenue) / prevRevenue) * 100)
-      : currentRevenue > 0 ? 100 : 0;
-
-    const releasesLast90 = recentReleases.length;
-    const releaseVelocity = Math.round((releasesLast90 / 3) * 10) / 10;
-
-    const postingFrequency = recentPosts.length;
-    const engagementScore = Math.min(100, Math.round(
-      (Math.min(postingFrequency, 30) / 30) * 40 +
-      (releasesLast90 > 0 ? 30 : 0) +
-      (currentStreams > 1000 ? 30 : currentStreams > 100 ? 15 : 5)
-    ));
-
-    const careerHealthScore = Math.min(100, Math.round(
-      (engagementScore * 0.4) +
-      (Math.min(releasesLast90 * 10, 30)) +
-      (currentRevenue > 0 ? 20 : 0) +
-      (growthRate > 0 ? Math.min(growthRate, 10) : 0)
-    ));
-
-    const healthLabel = careerHealthScore >= 80 ? 'Excellent' : careerHealthScore >= 60 ? 'Good' : careerHealthScore >= 40 ? 'Fair' : 'Needs Work';
-
-    res.json({
-      insights: {
-        growthRate,
-        growthRateDisplay: growthRate >= 0 ? `+${growthRate}%` : `${growthRate}%`,
-        engagementScore,
-        releaseVelocity,
-        revenueTrend,
-        revenueTrendDisplay: revenueTrend >= 0 ? `+${revenueTrend}%` : `${revenueTrend}%`,
-        careerHealthScore,
-        healthLabel,
-        postsThisMonth: postingFrequency,
-        releasesLast90Days: releasesLast90,
-        currentMonthRevenue: currentRevenue,
-        currentMonthStreams: currentStreams,
-      }
-    });
-  } catch (error: any) {
-    logger.error('Error fetching career insights:', error?.message);
     res.status(500).json({ message: 'Internal server error' });
   }
 }));

@@ -454,19 +454,21 @@ export class RoyaltyEngine {
   ): Promise<PeriodStatement> {
     const period = this.formatPeriod(startDate);
     
-    const dateConditions = and(
-      gte(revenueEvents.occurredAt, startDate),
-      lte(revenueEvents.occurredAt, endDate)
-    );
-    const whereClause = releaseId
-      ? and(dateConditions, eq(revenueEvents.projectId, releaseId))
-      : dateConditions;
-
-    const events = await db
+    let query = db
       .select()
       .from(revenueEvents)
-      .where(whereClause)
-      .limit(5000);
+      .where(
+        and(
+          gte(revenueEvents.occurredAt, startDate),
+          lte(revenueEvents.occurredAt, endDate)
+        )
+      );
+
+    if (releaseId) {
+      query = query.where(eq(revenueEvents.projectId, releaseId));
+    }
+
+    const events = await query;
 
     const lineItems: LineItem[] = [];
     const territoryMap = new Map<string, { streams: number; revenue: number }>();
@@ -574,8 +576,7 @@ export class RoyaltyEngine {
           eq(recoupmentAccounts.isActive, true)
         )
       )
-      .orderBy(recoupmentAccounts.priority)
-      .limit(50);
+      .orderBy(recoupmentAccounts.priority);
 
     const results: RecoupmentResult[] = [];
     let remainingAmount = amount;
@@ -741,16 +742,25 @@ export class RoyaltyEngine {
     userId: string,
     options?: { limit?: number; offset?: number; status?: string }
   ): Promise<RoyaltyStatement[]> {
-    const conditions = [eq(royaltyStatements.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyStatements.status, options.status as any));
-
-    return await db
+    let query = db
       .select()
       .from(royaltyStatements)
-      .where(and(...conditions))
-      .orderBy(desc(royaltyStatements.periodStart))
-      .limit(options?.limit ?? 100)
-      .offset(options?.offset ?? 0);
+      .where(eq(royaltyStatements.userId, userId))
+      .orderBy(desc(royaltyStatements.periodStart));
+
+    if (options?.status) {
+      query = query.where(eq(royaltyStatements.status, options.status as any));
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      query = query.offset(options.offset);
+    }
+
+    return await query;
   }
 
   async finalizeStatement(statementId: string): Promise<RoyaltyStatement> {

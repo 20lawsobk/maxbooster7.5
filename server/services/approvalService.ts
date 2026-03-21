@@ -393,8 +393,7 @@ export class ApprovalService {
         .from(approvalHistory)
         .leftJoin(users, eq(approvalHistory.userId, users.id))
         .where(eq(approvalHistory.postId, postId))
-        .orderBy(desc(approvalHistory.createdAt))
-        .limit(200);
+        .orderBy(desc(approvalHistory.createdAt));
 
       return history;
     } catch (error: unknown) {
@@ -556,21 +555,18 @@ export class ApprovalService {
         })
         .from(posts);
 
-      const conditions: any[] = [];
-
       if (['content_creator'].includes(userRole)) {
-        conditions.push(eq(posts.submittedBy, userId));
+        query = query.where(eq(posts.submittedBy, userId)) as any;
       }
 
       if (status) {
-        conditions.push(eq(posts.approvalStatus, status));
+        const existingCondition = (query as any)._config?.where;
+        query = existingCondition
+          ? (query.where(and(existingCondition, eq(posts.approvalStatus, status))) as any)
+          : (query.where(eq(posts.approvalStatus, status)) as any);
       }
 
-      const baseQuery = conditions.length > 0
-        ? query.where(and(...conditions))
-        : query;
-
-      const results = await (baseQuery as any).orderBy(desc(posts.createdAt)).limit(500);
+      const results = await (query as any).orderBy(desc(posts.createdAt));
       return results;
     } catch (error: unknown) {
       logger.error('Get user posts error:', error);

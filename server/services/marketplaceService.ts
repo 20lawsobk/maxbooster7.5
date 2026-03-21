@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto';
 import { storage } from '../storage';
 import { db } from '../db';
-
+import { nanoid } from 'nanoid';
 import Stripe from 'stripe';
 import { type Order as DBOrder, listingLicenseTiers } from '@shared/schema';
 import { eq } from 'drizzle-orm';
@@ -754,8 +753,7 @@ export class MarketplaceService {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
             .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder)
-            .limit(20);
+            .orderBy(listingLicenseTiers.sortOrder);
           allTiers.push(...tiers);
         }
       }
@@ -831,8 +829,7 @@ export class MarketplaceService {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
             .where(eq(listingLicenseTiers.listingId, lid))
-            .orderBy(listingLicenseTiers.sortOrder)
-            .limit(20);
+            .orderBy(listingLicenseTiers.sortOrder);
           allTiers.push(...tiers);
         }
       }

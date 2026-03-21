@@ -39,7 +39,7 @@ router.get('/posts', requireAuth, async (req: AuthenticatedRequest, res: Respons
     res.json(posts);
   } catch (error) {
     logger.error('Failed to get social posts:', error);
-    res.status(500).json({ error: 'Failed to get social posts:' });
+    res.json([]);
   }
 });
 
@@ -85,7 +85,7 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
     const userId = req.user!.id;
     const { postId } = req.params;
 
-    const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId))).limit(1);
+    const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId)));
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
@@ -154,7 +154,7 @@ router.get('/calendar', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json(events);
   } catch (error) {
     logger.error('Failed to get social calendar:', error);
-    res.status(500).json({ error: 'Failed to get social calendar:' });
+    res.json([]);
   }
 });
 
@@ -188,7 +188,7 @@ router.get('/activity', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json(activity);
   } catch (error) {
     logger.error('Failed to get social activity:', error);
-    res.status(500).json({ error: 'Failed to get social activity:' });
+    res.json([]);
   }
 });
 
@@ -200,7 +200,7 @@ router.get('/weekly-stats', requireAuth, async (req: AuthenticatedRequest, res: 
     res.json(stats);
   } catch (error) {
     logger.error('Failed to get weekly stats:', error);
-    res.status(500).json({ error: 'Failed to get weekly stats:' });
+    res.json([]);
   }
 });
 
@@ -212,7 +212,7 @@ router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: R
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get AI insights:', error);
-    res.status(500).json({ error: 'Failed to get AI insights:' });
+    res.json([]);
   }
 });
 
@@ -226,8 +226,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId))
-      .limit(50);
+      .where(eq(socialAccounts.userId, userId));
     
     const connectionMap = new Map<string, typeof connections[0]>();
     for (const conn of connections) {
@@ -318,7 +317,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     res.json(platformStatus);
   } catch (error) {
     logger.error('Failed to get platform status:', error);
-    res.status(500).json({ error: 'Failed to get platform status:' });
+    res.json([]);
   }
 });
 
@@ -329,8 +328,7 @@ router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Res
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId))
-      .limit(50);
+      .where(eq(socialAccounts.userId, userId));
 
     const activePlatforms = new Set<string>();
     for (const conn of connections) {
@@ -389,7 +387,7 @@ router.get('/listening/keywords', requireAuth, async (req: AuthenticatedRequest,
     res.json(keywords);
   } catch (error) {
     logger.error('Failed to get social listening keywords:', error);
-    res.status(500).json({ error: 'Failed to get social listening keywords:' });
+    res.json([]);
   }
 });
 
@@ -443,7 +441,7 @@ router.get('/hashtags/trending', requireAuth, async (req: AuthenticatedRequest, 
     res.json(topTrending);
   } catch (error) {
     logger.error('Failed to get trending hashtags:', error);
-    res.status(500).json({ error: 'Failed to get trending hashtags:' });
+    res.json([]);
   }
 });
 
@@ -455,7 +453,7 @@ router.get('/listening/trending', requireAuth, async (req: AuthenticatedRequest,
     res.json(trending);
   } catch (error) {
     logger.error('Failed to get social listening trending:', error);
-    res.status(500).json({ error: 'Failed to get social listening trending:' });
+    res.json([]);
   }
 });
 
@@ -467,7 +465,7 @@ router.get('/listening/influencers', requireAuth, async (req: AuthenticatedReque
     res.json(influencers);
   } catch (error) {
     logger.error('Failed to get social listening influencers:', error);
-    res.status(500).json({ error: 'Failed to get social listening influencers:' });
+    res.json([]);
   }
 });
 
@@ -479,7 +477,7 @@ router.get('/listening/alerts', requireAuth, async (req: AuthenticatedRequest, r
     res.json(alerts);
   } catch (error) {
     logger.error('Failed to get social listening alerts:', error);
-    res.status(500).json({ error: 'Failed to get social listening alerts:' });
+    res.json([]);
   }
 });
 
@@ -495,7 +493,7 @@ router.get('/competitors', requireAuth, async (req: AuthenticatedRequest, res: R
     res.json(competitors);
   } catch (error) {
     logger.error('Failed to get competitors:', error);
-    res.status(500).json({ error: 'Failed to get competitors:' });
+    res.json([]);
   }
 });
 
@@ -575,7 +573,7 @@ router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest,
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get benchmark insights:', error);
-    res.status(500).json({ error: 'Failed to get benchmark insights:' });
+    res.json([]);
   }
 });
 
@@ -587,7 +585,7 @@ router.get('/benchmark/share-of-voice', requireAuth, async (req: AuthenticatedRe
     res.json(shareOfVoice);
   } catch (error) {
     logger.error('Failed to get share of voice:', error);
-    res.status(500).json({ error: 'Failed to get share of voice' });
+    res.json({ yourBrand: { mentions: 0, percentage: 0, reach: 0, sentiment: 0 }, competitors: [], industryTotal: 0 });
   }
 });
 
@@ -660,8 +658,7 @@ router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res: R
     const messages = await db
       .select()
       .from(socialInboxMessages)
-      .where(eq(socialInboxMessages.userId, userId))
-      .limit(200);
+      .where(eq(socialInboxMessages.userId, userId));
 
     const stats = {
       total: messages.length,
@@ -769,8 +766,7 @@ router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, r
           eq(socialInboxMessages.id, id),
           eq(socialInboxMessages.userId, userId)
         )
-      )
-      .limit(1);
+      );
 
     if (!message) {
       return res.status(404).json({ 
@@ -891,20 +887,20 @@ router.post('/inbox/:id/archive', requireAuth, async (req: AuthenticatedRequest,
 // Get reply templates - returns empty array when no templates exist
 router.get('/inbox/templates', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.status(500).json({ error: 'Internal server error' });
+    res.json([]);
   } catch (error) {
     logger.error('Failed to get reply templates:', error);
-    res.status(500).json({ error: 'Failed to get reply templates:' });
+    res.json([]);
   }
 });
 
 // Get team members for assignment - returns empty array when no team exists
 router.get('/inbox/team', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.status(500).json({ error: 'Internal server error' });
+    res.json([]);
   } catch (error) {
     logger.error('Failed to get team members:', error);
-    res.status(500).json({ error: 'Failed to get team members:' });
+    res.json([]);
   }
 });
 
@@ -915,8 +911,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId))
-      .limit(50);
+      .where(eq(socialAccounts.userId, userId));
     
     res.json(connections.filter(c => c.isActive).map(c => ({
       platform: c.platform,
@@ -930,7 +925,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     })));
   } catch (error) {
     logger.error('Failed to get connections:', error);
-    res.status(500).json({ error: 'Failed to get connections:' });
+    res.json([]);
   }
 });
 
@@ -1467,7 +1462,7 @@ router.get('/scheduled', requireAuth, async (req: AuthenticatedRequest, res: Res
     res.json(scheduledPosts);
   } catch (error) {
     logger.error('Failed to get scheduled posts:', error);
-    res.status(500).json({ error: 'Failed to get scheduled posts:' });
+    res.json([]);
   }
 });
 

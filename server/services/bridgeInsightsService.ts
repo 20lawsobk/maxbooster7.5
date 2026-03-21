@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 import { db } from '../db.js';
 import { 
   autopilotCrossInsights, 
@@ -12,7 +11,7 @@ import {
 } from '@shared/schema';
 import { eq, desc, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
-
+import { nanoid } from 'nanoid';
 
 interface TopHook {
   hookType: string;
@@ -255,7 +254,7 @@ class BridgeInsightsService {
       const [inserted] = await db
         .insert(autopilotCrossInsights)
         .values({
-          id: randomBytes(8).toString('hex'),
+          id: nanoid(),
           userId,
           insightType,
           topHooks: topHooks as any,

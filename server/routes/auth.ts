@@ -5,7 +5,6 @@ import { eq, and, desc, ne, gte, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
-import { emailService } from '../services/emailService.js';
 
 const router = Router();
 
@@ -155,8 +154,7 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
           gte(sessions.expiresAt, new Date())
         )
       )
-      .orderBy(desc(sessions.lastActivity))
-      .limit(50);
+      .orderBy(desc(sessions.lastActivity));
 
     const formattedSessions = userSessions.map(session => {
       const userAgent = session.userAgent || '';
@@ -187,7 +185,7 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
         createdAt: session.createdAt?.toISOString(),
         expiresAt: session.expiresAt?.toISOString(),
         current: session.id === currentSessionId,
-        trusted: session.trusted ?? false,
+        trusted: false
       };
     });
 
@@ -274,8 +272,7 @@ router.delete('/sessions/other', requireAuth, async (req: AuthenticatedRequest, 
           eq(sessions.userId, userId),
           ne(sessions.id, currentSessionId || '')
         )
-      )
-      .limit(500);
+      );
 
     const terminatedCount = otherSessions.length;
 
@@ -438,8 +435,7 @@ router.get('/social-token-status', requireAuth, async (req: AuthenticatedRequest
       .where(and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.isActive, true)
-      ))
-      .limit(20);
+      ));
 
     const now = new Date();
     const platformStatus = accounts.map(account => {
@@ -714,13 +710,14 @@ router.post('/security-alerts/:alertId/dismiss', requireAuth, async (req: Authen
 router.post('/send-verification-email', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user!.id;
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
     if (!user) return res.status(404).json({ error: 'User not found' });
 
     if (user.emailVerified) {
       return res.json({ success: true, message: 'Email already verified' });
     }
 
+    const crypto = await import('crypto');
     const token = crypto.randomBytes(32).toString('hex');
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -733,6 +730,8 @@ router.post('/send-verification-email', requireAuth, async (req: any, res) => {
     const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
     try {
+      const { EmailService } = await import('../services/emailService.js');
+      const emailService = new EmailService();
       await emailService.sendEmail({
         to: user.email,
         subject: 'Verify your Max Booster email',
@@ -757,7 +756,7 @@ router.get('/verify-email', async (req, res) => {
     }
 
     const [user] = await db.select().from(users)
-      .where(eq(users.emailVerificationToken, token)).limit(1);
+      .where(eq(users.emailVerificationToken, token));
 
     if (!user) {
       return res.status(400).json({ error: 'Invalid or expired verification token' });
@@ -783,8 +782,7 @@ router.get('/verify-email', async (req, res) => {
 router.get('/email-verification-status', requireAuth, async (req: any, res) => {
   try {
     const userId = req.user!.id;
-    const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId))
-      .limit(1);
+    const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId));
     res.json({ emailVerified: user?.emailVerified ?? false });
   } catch (error) {
     logger.error('Error checking email verification:', error);

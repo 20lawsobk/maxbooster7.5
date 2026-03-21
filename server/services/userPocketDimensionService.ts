@@ -91,8 +91,7 @@ export class UserPocketDimensionService {
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage.userId, userId))
-      .limit(1);
+      .where(eq(userStorage.userId, userId));
     
     if (!storage || !storage.isActive) {
       return null;
@@ -141,8 +140,7 @@ export class UserPocketDimensionService {
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage.userId, userId))
-      .limit(1);
+      .where(eq(userStorage.userId, userId));
     
     if (storage) {
       await db.insert(userStorageFiles).values({
@@ -248,8 +246,7 @@ export class UserPocketDimensionService {
     const [storage] = await db
       .select()
       .from(userStorage)
-      .where(eq(userStorage.userId, userId))
-      .limit(1);
+      .where(eq(userStorage.userId, userId));
     
     if (!pocket || !storage) {
       return {

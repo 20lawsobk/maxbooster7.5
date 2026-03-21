@@ -239,8 +239,7 @@ router.get('/ai/forecast-revenue', async (req: Request, res: Response) => {
       const [prior30] = await db
         .select({ rev: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
         .from(analytics)
-        .where(and(revenueFilter as any, lte(analytics.date, thirtyDaysAgo2)))
-        .limit(1);
+        .where(and(revenueFilter as any, lte(analytics.date, thirtyDaysAgo2)));
 
       const priorRevenue = Number(prior30?.rev) || 0;
 
@@ -1202,7 +1201,7 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
       artists = artists.filter(a => a.country.toLowerCase().includes((country as string).toLowerCase()) || a.countryCode.toLowerCase() === (country as string).toLowerCase());
     }
     if (minGrowth) {
-      artists = artists.filter(a => a.monthlyGrowth >= (parseInt(minGrowth as string) || 0));
+      artists = artists.filter(a => a.monthlyGrowth >= parseInt(minGrowth as string));
     }
 
     return res.json({

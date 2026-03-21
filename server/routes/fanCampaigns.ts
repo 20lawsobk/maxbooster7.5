@@ -51,8 +51,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
       const [subscriberCount] = await db.select({ total: count() })
         .from(fanSubscribers)
-        .where(eq(fanSubscribers.userId, userId))
-        .limit(1);
+        .where(eq(fanSubscribers.userId, userId));
 
       const totalCampaigns = Number(campaignTotals.totalCampaigns);
       const sentCount = Number(campaignTotals.sent);
@@ -83,19 +82,6 @@ router.post('/', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to create campaign' });
-  }
-});
-
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const [item] = await db.select().from(fanCampaigns)
-      .where(and(eq(fanCampaigns.id, req.params.id), eq(fanCampaigns.userId, req.user!.id)))
-      .limit(1);
-    if (!item) return res.status(404).json({ error: 'Campaign not found' });
-    res.json(item);
-  } catch (error) {
-    logger.error('[FanCampaigns] Failed to fetch campaign:', error);
-    res.status(500).json({ error: 'Failed to fetch campaign' });
   }
 });
 
@@ -153,8 +139,7 @@ router.post('/:id/send', requireAuth, async (req, res) => {
 
     const [recipientCountRow] = await db.select({ total: count() })
       .from(fanSubscribers)
-      .where(eq(fanSubscribers.userId, userId))
-      .limit(1);
+      .where(eq(fanSubscribers.userId, userId));
     const recipientCount = Number(recipientCountRow.total);
 
     const [campaign] = await db.update(fanCampaigns)

@@ -479,8 +479,7 @@ class AutopilotLearningService {
             eq(autopilotInsights.isActive, true)
           )
         )
-        .orderBy(desc(autopilotInsights.priority), desc(autopilotInsights.confidence))
-        .limit(50);
+        .orderBy(desc(autopilotInsights.priority), desc(autopilotInsights.confidence));
     } catch (error) {
       logger.error('Failed to get active insights:', error);
       return [];

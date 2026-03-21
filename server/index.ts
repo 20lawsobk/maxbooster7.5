@@ -173,6 +173,8 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: '200mb' }));
 
+app.use(express.urlencoded({ extended: false }));
+
 // Serve generated audio content from root public folder
 app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 'generated-content'), {
   setHeaders: (res, filePath) => {

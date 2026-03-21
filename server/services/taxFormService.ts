@@ -1,5 +1,4 @@
-import { randomBytes } from 'crypto';
-
+import { nanoid } from 'nanoid';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { logger } from '../logger.js';
@@ -132,7 +131,7 @@ class TaxFormService {
       return this._treatyCache.data;
     }
     try {
-      const rows = await db.select().from(taxTreatyRates).limit(300);
+      const rows = await db.select().from(taxTreatyRates);
       const map: Record<string, number> = {};
       for (const row of rows) {
         if (row.hasTreaty) {
@@ -270,7 +269,7 @@ class TaxFormService {
 
   generateW9(userId: string, taxpayerInfo: TaxpayerInfo): GeneratedTaxForm {
     const form: GeneratedTaxForm = {
-      id: `tax_${randomBytes(6).toString("hex")}`,
+      id: `tax_${nanoid(12)}`,
       userId,
       formType: 'W-9',
       taxYear: new Date().getFullYear(),
@@ -291,7 +290,7 @@ class TaxFormService {
     }
 
     const form: GeneratedTaxForm = {
-      id: `tax_${randomBytes(6).toString("hex")}`,
+      id: `tax_${nanoid(12)}`,
       userId,
       formType: 'W-8BEN',
       taxYear: new Date().getFullYear(),
@@ -314,7 +313,7 @@ class TaxFormService {
     amounts: { nonemployeeCompensation: number; federalWithholding?: number; stateWithholding?: number }
   ): GeneratedTaxForm {
     const form: GeneratedTaxForm = {
-      id: `tax_${randomBytes(6).toString("hex")}`,
+      id: `tax_${nanoid(12)}`,
       userId: payerId,
       formType: '1099-NEC',
       taxYear,
@@ -356,7 +355,7 @@ class TaxFormService {
     }
   ): GeneratedTaxForm {
     const form: GeneratedTaxForm = {
-      id: `tax_${randomBytes(6).toString("hex")}`,
+      id: `tax_${nanoid(12)}`,
       userId: payerId,
       formType: '1099-MISC',
       taxYear,
@@ -400,7 +399,7 @@ class TaxFormService {
     }
   ): GeneratedTaxForm {
     const form: GeneratedTaxForm = {
-      id: `tax_${randomBytes(6).toString("hex")}`,
+      id: `tax_${nanoid(12)}`,
       userId: payerId,
       formType: '1099-K',
       taxYear,

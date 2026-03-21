@@ -34,8 +34,7 @@ class PaymentBypassService {
       const [setting] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
-        .limit(1);
+        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY));
 
       if (setting?.value) {
         const config = setting.value as PaymentBypassConfig;
@@ -59,8 +58,7 @@ class PaymentBypassService {
       const [existing] = await db
         .select()
         .from(systemSettings)
-        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY))
-        .limit(1);
+        .where(eq(systemSettings.key, PAYMENT_BYPASS_KEY));
 
       if (existing) {
         await db

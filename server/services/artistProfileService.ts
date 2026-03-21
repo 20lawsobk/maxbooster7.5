@@ -851,8 +851,7 @@ class ArtistProfileService {
     const rows = await db.select({ profile: artistProfiles })
       .from(artistProfileReleases)
       .innerJoin(artistProfiles, eq(artistProfileReleases.artistProfileId, artistProfiles.id))
-      .where(eq(artistProfileReleases.releaseId, releaseId))
-      .limit(50);
+      .where(eq(artistProfileReleases.releaseId, releaseId));
     return rows.map(r => r.profile);
   }
 
@@ -1302,126 +1301,6 @@ class ArtistProfileService {
       deezerArtistId: profile.deezerArtistId ?? null,
       soundcloudArtistId: profile.soundcloudArtistId ?? null,
       amazonMusicArtistId: profile.amazonMusicArtistId ?? null,
-    };
-  }
-
-  async profileHub(profileId: string, userId: string): Promise<{
-    artistName: string;
-    portals: {
-      key: string;
-      label: string;
-      portalUrl: string;
-      claimed: boolean;
-      artistId: string | null;
-      howVerified: string;
-      distributorHandles: boolean;
-    }[];
-    metadataKeys: {
-      artistName: string;
-      storedIds: Record<string, string>;
-    };
-    urlDiscoveries: PlatformUrlDiscovery[];
-    labelgridConfigured: boolean;
-  }> {
-    const profile = await this.getProfile(profileId, userId);
-    if (!profile) throw new Error('Artist profile not found');
-
-    const portals = [
-      {
-        key: 'spotify',
-        label: 'Spotify for Artists',
-        portalUrl: 'https://artists.spotify.com/',
-        claimed: !!profile.spotifyArtistId,
-        artistId: profile.spotifyArtistId ?? null,
-        howVerified: 'Distributor metadata + social links',
-        distributorHandles: false,
-      },
-      {
-        key: 'apple',
-        label: 'Apple Music for Artists',
-        portalUrl: 'https://artists.apple.com/',
-        claimed: !!profile.appleArtistId,
-        artistId: profile.appleArtistId ?? null,
-        howVerified: 'Apple ID + distributor metadata',
-        distributorHandles: false,
-      },
-      {
-        key: 'amazon',
-        label: 'Amazon Music for Artists',
-        portalUrl: 'https://artists.amazon.com/',
-        claimed: !!profile.amazonMusicArtistId,
-        artistId: profile.amazonMusicArtistId ?? null,
-        howVerified: 'Identity verification',
-        distributorHandles: false,
-      },
-      {
-        key: 'youtube',
-        label: 'YouTube Official Artist Channel',
-        portalUrl: 'https://studio.youtube.com/',
-        claimed: !!profile.youtubeChannelId,
-        artistId: profile.youtubeChannelId ?? null,
-        howVerified: 'Channel ownership + music delivery — your distributor requests OAC merging',
-        distributorHandles: true,
-      },
-      {
-        key: 'deezer',
-        label: 'Deezer for Creators',
-        portalUrl: 'https://creators.deezer.com/',
-        claimed: !!profile.deezerArtistId,
-        artistId: profile.deezerArtistId ?? null,
-        howVerified: 'Distributor metadata',
-        distributorHandles: false,
-      },
-      {
-        key: 'tidal',
-        label: 'Tidal for Artists',
-        portalUrl: 'https://artists.tidal.com/',
-        claimed: !!profile.tidalArtistId,
-        artistId: profile.tidalArtistId ?? null,
-        howVerified: 'Distributor metadata',
-        distributorHandles: false,
-      },
-      {
-        key: 'pandora',
-        label: 'Pandora for Artists',
-        portalUrl: 'https://artists.pandora.com/',
-        claimed: false,
-        artistId: null,
-        howVerified: 'Distributor metadata',
-        distributorHandles: false,
-      },
-      {
-        key: 'soundcloud',
-        label: 'SoundCloud for Artists',
-        portalUrl: 'https://soundcloud.com/for/artists',
-        claimed: !!profile.soundcloudArtistId,
-        artistId: profile.soundcloudArtistId ?? null,
-        howVerified: 'Account verification',
-        distributorHandles: false,
-      },
-    ];
-
-    const storedIds: Record<string, string> = {};
-    if (profile.spotifyArtistId)    storedIds['Spotify']   = profile.spotifyArtistId;
-    if (profile.appleArtistId)      storedIds['Apple']     = profile.appleArtistId;
-    if (profile.deezerArtistId)     storedIds['Deezer']    = profile.deezerArtistId;
-    if (profile.tidalArtistId)      storedIds['Tidal']     = profile.tidalArtistId;
-    if (profile.youtubeChannelId)   storedIds['YouTube']   = profile.youtubeChannelId;
-    if (profile.amazonMusicArtistId) storedIds['Amazon']   = profile.amazonMusicArtistId;
-    if (profile.soundcloudArtistId) storedIds['SoundCloud'] = profile.soundcloudArtistId;
-
-    const urlDiscoveries = this.generateUrlDiscoveries(profile.artistName);
-    const labelgridConfigured = labelGridService.isApiConfigured();
-
-    return {
-      artistName: profile.artistName,
-      portals,
-      metadataKeys: {
-        artistName: profile.artistName,
-        storedIds,
-      },
-      urlDiscoveries,
-      labelgridConfigured,
     };
   }
 }

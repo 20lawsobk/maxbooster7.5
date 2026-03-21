@@ -142,19 +142,6 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const [row] = await db.select().from(customWorkflows)
-      .where(and(eq(customWorkflows.id, req.params.id), eq(customWorkflows.userId, req.user!.id)))
-      .limit(1);
-    if (!row) return res.status(404).json({ error: 'Workflow not found' });
-    res.json(row);
-  } catch (error) {
-    logger.error('[CustomWorkflow] Error fetching workflow:', error);
-    res.status(500).json({ error: 'Failed to fetch workflow' });
-  }
-});
-
 router.post('/', requireAuth, async (req, res) => {
   try {
     const parsed = createWorkflowSchema.safeParse(req.body);

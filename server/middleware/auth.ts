@@ -8,34 +8,25 @@ interface AuthenticatedRequest extends Request {
   user?: any;
 }
 
-/**
- * Shared JWT bearer-token resolution.
- * If the session already has an authenticated user, this is a no-op.
- * Otherwise it tries to decode the Authorization header and loads the user.
- */
-async function resolveJwtUser(req: AuthenticatedRequest): Promise<void> {
-  if (req.isAuthenticated && req.isAuthenticated()) return;
-
-  const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith('Bearer ')) return;
-
-  const token = authHeader.substring(7);
-  try {
-    const decoded = await jwtAuthService.verifyAccessToken(token);
-    if (decoded) {
-      const user = await storage.getUser(decoded.userId);
-      if (user) {
-        req.user = user;
-        req.isAuthenticated = () => true;
+export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = await jwtAuthService.verifyAccessToken(token);
+        if (decoded) {
+          const user = await storage.getUser(decoded.userId);
+          if (user) {
+            req.user = user;
+            req.isAuthenticated = () => true;
+          }
+        }
+      } catch (err) {
+        logger.error('[Auth] JWT verification error:', err);
       }
     }
-  } catch (err) {
-    logger.error('[Auth] JWT verification error:', err);
   }
-}
-
-export const requireAuth = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     res.status(401).json({ message: 'Authentication required' });
@@ -88,7 +79,24 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
  * the frontend's protected-route subscription check.
  */
 export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
-  await resolveJwtUser(req);
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      try {
+        const decoded = await jwtAuthService.verifyAccessToken(token);
+        if (decoded) {
+          const user = await storage.getUser(decoded.userId);
+          if (user) {
+            req.user = user;
+            req.isAuthenticated = () => true;
+          }
+        }
+      } catch (err) {
+        logger.error('[Auth] JWT verification error:', err);
+      }
+    }
+  }
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
     res.status(401).json({ message: 'Authentication required' });

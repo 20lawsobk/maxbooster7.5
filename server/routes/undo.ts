@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
 import { logger } from '../logger';
@@ -25,7 +24,7 @@ interface UndoAction {
 const actionCache = new Map<string, UndoAction>();
 
 function generateActionId(): string {
-  return `action_${Date.now()}_${randomBytes(4).toString('hex')}`;
+  return `action_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 router.post('/action', async (req: Request, res: Response) => {
@@ -381,7 +380,7 @@ router.post('/batch', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Actions array is required' });
     }
 
-    const groupId = `group_${Date.now()}_${randomBytes(4).toString('hex')}`;
+    const groupId = `group_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     const recordedIds: string[] = [];
 
     for (const actionData of actions) {
@@ -440,11 +439,11 @@ const restorePointCache = new Map<string, RestorePoint>();
 const deletedItemCache = new Map<string, DeletedItem>();
 
 function generateRestorePointId(): string {
-  return `restore_${Date.now()}_${randomBytes(4).toString("hex")}`;
+  return `restore_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 function generateDeletedItemId(): string {
-  return `deleted_${Date.now()}_${randomBytes(4).toString("hex")}`;
+  return `deleted_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
 }
 
 router.post('/track-action', async (req: Request, res: Response) => {

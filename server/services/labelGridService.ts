@@ -17,7 +17,6 @@ import { labelSettings } from '@shared/schema';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
 import { eq } from 'drizzle-orm';
-import { randomInt } from 'crypto';
 
 interface LabelGridConfig {
   apiKey: string;
@@ -339,7 +338,7 @@ export class LabelGridService {
    */
   private async generateUPC(): Promise<string> {
     const prefix = await this.getLabelSetting('upc_company_prefix', '123456');
-    const product = randomInt(0, 99999)
+    const product = Math.floor(Math.random() * 10000)
       .toString()
       .padStart(5, '0');
     const checkDigit = this.calculateUPCCheckDigit(prefix + product);
@@ -358,7 +357,7 @@ export class LabelGridService {
     const registrant = await this.getLabelSetting('isrc_registrant_code', 'MXB');
     const country = 'US';
     const year = new Date().getFullYear().toString().slice(-2);
-    const uniqueId = randomInt(0, 99999)
+    const uniqueId = Math.floor(Math.random() * 100000)
       .toString()
       .padStart(5, '0');
     return `${country}-${registrant}-${year}-${uniqueId}`;

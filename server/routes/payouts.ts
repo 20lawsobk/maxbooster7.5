@@ -1,21 +1,12 @@
 import { Router } from 'express';
 import { instantPayoutService } from '../services/instantPayoutService';
-import {
-  requestInstantPayoutSchema,
-  users,
-  taxForms,
-  royaltyStatements,
-  royaltyTransactions,
-  royaltyDisputes,
-  disputeMessages,
-} from '@shared/schema';
+import { requestInstantPayoutSchema, users } from '@shared/schema';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
-import { eq, and, desc, gte, inArray, lte, sql, sum } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
-import { stripeService } from '../services/stripeService.js';
 
 const router = Router();
 
@@ -546,6 +537,7 @@ router.get('/tax-form/:year', async (req, res) => {
       return res.status(400).json({ error: 'Invalid tax year' });
     }
 
+    const { stripeService } = await import('../services/stripeService');
     const formData = await stripeService.generateTaxFormData(req.user.id, taxYear);
 
     res.json(formData);
@@ -565,12 +557,15 @@ router.get('/tax-forms', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const { db } = await import('../db');
+    const { taxForms } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+
     const forms = await db
       .select()
       .from(taxForms)
       .where(eq(taxForms.userId, req.user.id))
-      .orderBy(desc(taxForms.taxYear))
-      .limit(20);
+      .orderBy(desc(taxForms.taxYear));
 
     res.json({ forms });
   } catch (error: unknown) {
@@ -595,9 +590,15 @@ router.post('/tax-form/submit', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    const { db } = await import('../db');
+    const { taxForms } = await import('@shared/schema');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const formId = uuidv4();
     const now = new Date();
 
-    const [inserted] = await db.insert(taxForms).values({
+    await db.insert(taxForms).values({
+      id: formId,
       userId: req.user.id,
       formType,
       status: 'pending_review',
@@ -616,11 +617,11 @@ router.post('/tax-form/submit', async (req, res) => {
       },
       submittedAt: now,
       createdAt: now,
-    }).returning();
+    });
 
     res.json({
       success: true,
-      formId: inserted.id,
+      formId,
       status: 'pending_review',
       message: 'Tax form submitted for review. You will be notified once it is approved.',
     });
@@ -640,12 +641,15 @@ router.get('/statements', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyStatements } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+
     const statements = await db
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements.userId, req.user.id))
-      .orderBy(desc(royaltyStatements.periodEnd))
-      .limit(100);
+      .orderBy(desc(royaltyStatements.periodEnd));
 
     res.json({
       statements: statements.map((s) => ({
@@ -687,6 +691,11 @@ router.post('/statements/generate', async (req, res) => {
       return res.status(400).json({ error: 'startDate must be before endDate' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyStatements, royaltyTransactions } = await import('@shared/schema');
+    const { eq, and, gte, lte, sum } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
     const earningsResult = await db
       .select({ total: sum(royaltyTransactions.amount) })
       .from(royaltyTransactions)
@@ -700,9 +709,11 @@ router.post('/statements/generate', async (req, res) => {
 
     const totalEarnings = earningsResult[0]?.total || '0';
 
+    const statementId = uuidv4();
     const label = `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
 
-    const [stmt] = await db.insert(royaltyStatements).values({
+    await db.insert(royaltyStatements).values({
+      id: statementId,
       userId: req.user.id,
       periodStart: start,
       periodEnd: end,
@@ -710,12 +721,12 @@ router.post('/statements/generate', async (req, res) => {
       label,
       status: parseFloat(totalEarnings) > 0 ? 'available' : 'no_data',
       createdAt: new Date(),
-    }).returning();
+    });
 
     res.json({
       success: true,
       statement: {
-        id: stmt.id,
+        id: statementId,
         label,
         startDate: start,
         endDate: end,
@@ -740,12 +751,14 @@ router.get('/statements/:id/download', async (req, res) => {
     }
 
     const { id } = req.params;
+    const { db } = await import('../db');
+    const { royaltyStatements } = await import('@shared/schema');
+    const { eq, and } = await import('drizzle-orm');
 
     const [statement] = await db
       .select()
       .from(royaltyStatements)
-      .where(and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, req.user.id)))
-      .limit(1);
+      .where(and(eq(royaltyStatements.id, id), eq(royaltyStatements.userId, req.user.id)));
 
     if (!statement) {
       return res.status(404).json({ error: 'Statement not found' });
@@ -772,54 +785,47 @@ router.get('/disputes', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, desc } = await import('drizzle-orm');
+
     const disputes = await db
       .select()
       .from(royaltyDisputes)
       .where(eq(royaltyDisputes.userId, req.user.id))
-      .orderBy(desc(royaltyDisputes.createdAt))
-      .limit(50);
+      .orderBy(desc(royaltyDisputes.createdAt));
 
-    const disputeIds = disputes.map((d) => d.id);
-    const allMessages = disputeIds.length > 0
-      ? await db
+    const disputesWithMessages = await Promise.all(
+      disputes.map(async (dispute) => {
+        const messages = await db
           .select()
           .from(disputeMessages)
-          .where(inArray(disputeMessages.disputeId, disputeIds))
-          .orderBy(desc(disputeMessages.createdAt))
-          .limit(500)
-      : [];
+          .where(eq(disputeMessages.disputeId, dispute.id))
+          .orderBy(desc(disputeMessages.createdAt));
 
-    const messagesByDispute = new Map<string, typeof allMessages>();
-    for (const m of allMessages) {
-      const arr = messagesByDispute.get(m.disputeId) ?? [];
-      arr.push(m);
-      messagesByDispute.set(m.disputeId, arr);
-    }
-
-    const disputesWithMessages = disputes.map((dispute) => {
-      const messages = messagesByDispute.get(dispute.id) ?? [];
-      return {
-        id: dispute.id,
-        type: dispute.type,
-        status: dispute.status,
-        subject: dispute.subject,
-        description: dispute.description,
-        amount: dispute.amount ? parseFloat(dispute.amount) : undefined,
-        period: dispute.period,
-        createdAt: dispute.createdAt,
-        updatedAt: dispute.updatedAt,
-        resolution: dispute.resolution,
-        outcome: dispute.outcome,
-        evidenceCount: dispute.evidenceCount || 0,
-        messages: messages.map((m) => ({
-          id: m.id,
-          sender: m.sender,
-          content: m.content,
-          timestamp: m.createdAt,
-          attachments: m.attachments,
-        })),
-      };
-    });
+        return {
+          id: dispute.id,
+          type: dispute.type,
+          status: dispute.status,
+          subject: dispute.subject,
+          description: dispute.description,
+          amount: dispute.amount ? parseFloat(dispute.amount) : undefined,
+          period: dispute.period,
+          createdAt: dispute.createdAt,
+          updatedAt: dispute.updatedAt,
+          resolution: dispute.resolution,
+          outcome: dispute.outcome,
+          evidenceCount: dispute.evidenceCount || 0,
+          messages: messages.map((m) => ({
+            id: m.id,
+            sender: m.sender,
+            content: m.content,
+            timestamp: m.createdAt,
+            attachments: m.attachments,
+          })),
+        };
+      })
+    );
 
     res.json({ disputes: disputesWithMessages });
   } catch (error: unknown) {
@@ -844,9 +850,15 @@ router.post('/disputes', async (req, res) => {
       return res.status(400).json({ error: 'type, subject, and description are required' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyDisputes } = await import('@shared/schema');
+    const { v4: uuidv4 } = await import('uuid');
+
+    const disputeId = uuidv4();
     const now = new Date();
 
-    const [newDispute] = await db.insert(royaltyDisputes).values({
+    await db.insert(royaltyDisputes).values({
+      id: disputeId,
       userId: req.user.id,
       type,
       status: 'open',
@@ -857,11 +869,11 @@ router.post('/disputes', async (req, res) => {
       evidenceCount: 0,
       createdAt: now,
       updatedAt: now,
-    }).returning();
+    });
 
     res.json({
       success: true,
-      disputeId: newDispute.id,
+      disputeId,
       status: 'open',
       message: 'Dispute filed successfully. We will review within 5 business days.',
     });
@@ -888,19 +900,25 @@ router.post('/disputes/:id/evidence', async (req, res) => {
       return res.status(400).json({ error: 'description is required' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, and, sql } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
     const [dispute] = await db
       .select()
       .from(royaltyDisputes)
-      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)))
-      .limit(1);
+      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
 
+    const messageId = uuidv4();
     const now = new Date();
 
     await db.insert(disputeMessages).values({
+      id: messageId,
       disputeId: id,
       sender: 'user',
       content: `[Evidence] ${description}`,
@@ -943,19 +961,25 @@ router.post('/disputes/:id/message', async (req, res) => {
       return res.status(400).json({ error: 'message is required' });
     }
 
+    const { db } = await import('../db');
+    const { royaltyDisputes, disputeMessages } = await import('@shared/schema');
+    const { eq, and } = await import('drizzle-orm');
+    const { v4: uuidv4 } = await import('uuid');
+
     const [dispute] = await db
       .select()
       .from(royaltyDisputes)
-      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)))
-      .limit(1);
+      .where(and(eq(royaltyDisputes.id, id), eq(royaltyDisputes.userId, req.user.id)));
 
     if (!dispute) {
       return res.status(404).json({ error: 'Dispute not found' });
     }
 
+    const messageId = uuidv4();
     const now = new Date();
 
     await db.insert(disputeMessages).values({
+      id: messageId,
       disputeId: id,
       sender: 'user',
       content: message,

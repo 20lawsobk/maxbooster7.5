@@ -57,19 +57,6 @@ router.get('/stats', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const [item] = await db.select().from(sampleClearances)
-      .where(and(eq(sampleClearances.id, req.params.id), eq(sampleClearances.userId, req.user!.id)))
-      .limit(1);
-    if (!item) return res.status(404).json({ error: 'Sample clearance not found' });
-    res.json(item);
-  } catch (error) {
-    logger.error('[SampleClearances] Failed to fetch sample clearance:', error);
-    res.status(500).json({ error: 'Failed to fetch sample clearance' });
-  }
-});
-
 router.post('/', requireAuth, async (req, res) => {
   try {
     const data = insertSampleClearanceSchema.parse({

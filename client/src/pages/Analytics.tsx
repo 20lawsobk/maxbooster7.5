@@ -129,7 +129,6 @@ import { AudienceInsights } from './analytics/AudienceInsights';
 import { PlaylistTracking } from './analytics/PlaylistTracking';
 import { CrossPlatformComparison } from './analytics/CrossPlatformComparison';
 import { ExportAnalytics } from './analytics/ExportAnalytics';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface AnalyticsWebSocketMessage {
   type: string;
@@ -2132,39 +2131,31 @@ const data = analyticsData as AnalyticsData;
           </TabsContent>
 
           <TabsContent value="streaming-enhanced" className="space-y-6">
-            <ErrorBoundary>
-              <StreamingAnalytics
-                timeRange={timeRange}
-                onTimeRangeChange={handleTimeRangeChange}
-              />
-            </ErrorBoundary>
+            <StreamingAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </TabsContent>
 
           <TabsContent value="revenue-enhanced" className="space-y-6">
-            <ErrorBoundary>
-              <RevenueAnalytics
-                timeRange={timeRange}
-                onTimeRangeChange={handleTimeRangeChange}
-              />
-            </ErrorBoundary>
+            <RevenueAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </TabsContent>
 
           <TabsContent value="audience-enhanced" className="space-y-6">
-            <ErrorBoundary>
-              <AudienceInsights
-                timeRange={timeRange}
-                onTimeRangeChange={handleTimeRangeChange}
-              />
-            </ErrorBoundary>
+            <AudienceInsights
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </TabsContent>
 
           <TabsContent value="export" className="space-y-6">
-            <ErrorBoundary>
-              <ExportAnalytics
-                timeRange={timeRange}
-                onTimeRangeChange={handleTimeRangeChange}
-              />
-            </ErrorBoundary>
+            <ExportAnalytics
+              timeRange={timeRange}
+              onTimeRangeChange={handleTimeRangeChange}
+            />
           </TabsContent>
 
           <TabsContent value="fan-journey" className="space-y-6">
@@ -2179,9 +2170,7 @@ const data = analyticsData as AnalyticsData;
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ErrorBoundary>
-                  <FanJourneyFunnel data={data?.fanJourney} />
-                </ErrorBoundary>
+                <FanJourneyFunnel data={data?.fanJourney} />
               </CardContent>
             </Card>
 
@@ -2254,9 +2243,7 @@ const data = analyticsData as AnalyticsData;
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ErrorBoundary>
-                  <ChurnAnalytics churnData={data?.churn} />
-                </ErrorBoundary>
+                <ChurnAnalytics churnData={data?.churn} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -2273,9 +2260,7 @@ const data = analyticsData as AnalyticsData;
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <ErrorBoundary>
-                  <GeographicHeatMap geoData={data?.geographic} />
-                </ErrorBoundary>
+                <GeographicHeatMap geoData={data?.geographic} />
               </CardContent>
             </Card>
           </TabsContent>

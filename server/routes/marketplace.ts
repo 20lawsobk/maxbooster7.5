@@ -13,8 +13,8 @@ import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { orders, listings, users, licenseTemplates, systemSettings, collaborationProjects, projectMembers, listingStems, storefronts, storefrontFollows, storefrontRatings, beatInteractions } from '@shared/schema';
-import { eq, and, gte, sql, desc, asc, or, inArray, avg } from 'drizzle-orm';
+import { orders, listings, users, licenseTemplates } from '@shared/schema';
+import { eq, and, gte, sql, desc, asc } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
@@ -295,8 +295,7 @@ async function _computeTimelineData(timeRange: string, userId: string) {
   const userListingIds = await db
     .select({ id: listings.id })
     .from(listings)
-    .where(eq(listings.userId, userId))
-    .limit(500);
+    .where(eq(listings.userId, userId));
 
   const listingIdSet = new Set(userListingIds.map(l => l.id));
 
@@ -773,7 +772,7 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
 
     const { orderId } = req.params;
 
-    const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+    const [order] = await db.select().from(orders).where(eq(orders.id, orderId));
     if (!order) {
       return res.status(404).json({ error: 'Order not found' });
     }
@@ -925,32 +924,7 @@ router.get('/escrow', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
-    const escrowOrders = await db
-      .select()
-      .from(orders)
-      .where(and(
-        or(eq(orders.userId, userId), eq(orders.sellerId, userId)),
-        or(eq(orders.status, 'pending'), eq(orders.status, 'escrow'))
-      ))
-      .orderBy(desc(orders.createdAt))
-      .limit(200);
-
-    const formatted = escrowOrders.map(o => ({
-      id: o.id,
-      orderId: o.id,
-      buyerId: o.userId,
-      sellerId: o.sellerId,
-      listingId: o.listingId,
-      amount: o.amount,
-      currency: o.currency || 'usd',
-      status: o.status,
-      licenseType: o.licenseType,
-      createdAt: o.createdAt,
-      releasedAt: null,
-    }));
-
-    res.json(formatted);
+    res.json([]);
   } catch (error: any) {
     logger.error('Error fetching escrow transactions:', error);
     res.status(500).json({ error: 'Failed to fetch escrow transactions' });
@@ -963,16 +937,7 @@ router.get('/affiliates', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
-    const settingKey = `affiliates:${userId}`;
-    const [row] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey))
-      .limit(1);
-
-    const affiliates = row ? (row.value as any[]) || [] : [];
-    res.json(affiliates);
+    res.json([]);
   } catch (error: any) {
     logger.error('Error fetching affiliates:', error);
     res.status(500).json({ error: 'Failed to fetch affiliates' });
@@ -1072,61 +1037,8 @@ router.get('/collaborations', async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const userId = req.user!.id;
 
-    // Find projects where user is owner
-    const ownedProjects = await db
-      .select()
-      .from(collaborationProjects)
-      .where(and(
-        eq(collaborationProjects.ownerId, userId),
-        sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
-      ))
-      .orderBy(desc(collaborationProjects.createdAt))
-      .limit(100);
-
-    // Find projects where user is a member (via projectMembers)
-    const memberRows = await db
-      .select({ projectId: projectMembers.projectId })
-      .from(projectMembers)
-      .where(eq(projectMembers.userId, userId))
-      .limit(200);
-
-    let memberProjects: any[] = [];
-    if (memberRows.length > 0) {
-      const memberProjectIds = memberRows.map(r => r.projectId);
-      memberProjects = await db
-        .select()
-        .from(collaborationProjects)
-        .where(and(
-          inArray(collaborationProjects.id, memberProjectIds),
-          sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
-        ))
-        .orderBy(desc(collaborationProjects.createdAt))
-        .limit(100);
-    }
-
-    const allProjects = [...ownedProjects, ...memberProjects.filter(p => p.ownerId !== userId)];
-
-    const collaborations = allProjects.map(project => {
-      const meta = (project.metadata as any) || {};
-      return {
-        id: project.id,
-        fromUser: meta.fromUser || { id: project.ownerId, name: 'Unknown', avatar: '' },
-        toUser: meta.toUser || { id: meta.toUserId || '', name: 'Recipient', avatar: '' },
-        beatId: meta.beatId || null,
-        beatTitle: meta.beatTitle || project.title,
-        type: meta.type || 'custom',
-        terms: meta.terms || project.description || '',
-        splitPercentage: meta.splitPercentage ?? 50,
-        budget: meta.budget || null,
-        status: project.status || 'pending',
-        messages: meta.messages || [],
-        createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
-      };
-    });
-
-    res.json(collaborations);
+    res.json([]);
   } catch (error: any) {
     logger.error('Error fetching collaborations:', error);
     res.status(500).json({ error: 'Failed to fetch collaborations' });
@@ -1536,20 +1448,11 @@ router.post('/affiliates', async (req: Request, res: Response) => {
     }
     const { name, email, commissionRate } = parsed.data;
 
-    const userId = (req.user as any).id;
-    const settingKey = `affiliates:${userId}`;
-    const [existing] = await db
-      .select()
-      .from(systemSettings)
-      .where(eq(systemSettings.key, settingKey))
-      .limit(1);
-    const currentList: any[] = existing ? (existing.value as any[]) || [] : [];
-
     const affiliate = {
       id: `aff-${Date.now()}`,
       name,
       email,
-      affiliateCode: `REF-${crypto.randomBytes(3).toString('hex').toUpperCase()}`,
+      affiliateCode: `REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
       commissionRate: commissionRate || 20,
       totalEarnings: 0,
       pendingPayout: 0,
@@ -1558,15 +1461,6 @@ router.post('/affiliates', async (req: Request, res: Response) => {
       status: 'active',
       joinedAt: new Date().toISOString(),
     };
-
-    const updatedList = [...currentList, affiliate];
-    if (existing) {
-      await db.update(systemSettings)
-        .set({ value: updatedList, updatedAt: new Date() })
-        .where(eq(systemSettings.key, settingKey));
-    } else {
-      await db.insert(systemSettings).values({ key: settingKey, value: updatedList });
-    }
 
     res.status(201).json(affiliate);
   } catch (error: any) {
@@ -1615,46 +1509,20 @@ router.post('/collaborations', async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.errors[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } = parsed.data;
-    const userId = req.user!.id;
 
-    const fromUser = { id: userId, name: (req.user as any)?.username || 'User', avatar: '' };
-    const messages = message ? [{ sender: userId, content: message, timestamp: new Date().toISOString() }] : [];
-
-    const [project] = await db.insert(collaborationProjects).values({
-      title: `${type} collaboration`,
-      description: terms || '',
-      ownerId: userId,
-      status: 'pending',
-      isPublic: false,
-      metadata: {
-        _offerType: 'marketplace_collab',
-        fromUser,
-        toUser: { id: toUserId, name: 'Recipient', avatar: '' },
-        toUserId,
-        beatId: beatId || null,
-        beatTitle: null,
-        type,
-        terms: terms || '',
-        splitPercentage: splitPercentage || 50,
-        budget: budget || null,
-        messages,
-      },
-    }).returning();
-
-    const meta = (project.metadata as any) || {};
     const collaboration = {
-      id: project.id,
-      fromUser: meta.fromUser,
-      toUser: meta.toUser,
-      beatId: meta.beatId,
-      beatTitle: meta.beatTitle,
-      type: meta.type,
-      terms: meta.terms,
-      splitPercentage: meta.splitPercentage,
-      budget: meta.budget,
-      status: project.status,
-      messages: meta.messages,
-      createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
+      id: `collab-${Date.now()}`,
+      fromUser: { id: req.user!.id, name: req.user!.username || 'User', avatar: '' },
+      toUser: { id: toUserId, name: 'Recipient', avatar: '' },
+      beatId: beatId || null,
+      beatTitle: null,
+      type,
+      terms: terms || '',
+      splitPercentage: splitPercentage || 50,
+      budget: budget || null,
+      status: 'pending',
+      messages: message ? [{ sender: req.user!.id, content: message, timestamp: new Date().toISOString() }] : [],
+      createdAt: new Date().toISOString(),
     };
 
     res.status(201).json(collaboration);
@@ -1673,6 +1541,10 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Producer not found' });
     }
     
+    const { storefronts, storefrontFollows, storefrontRatings, orders } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { sql, eq, avg: drizzleAvg } = await import('drizzle-orm');
+
     const producerBeats = await marketplaceService.getListingsByProducer(producerId);
     const beatCount = producerBeats.length;
     
@@ -1689,14 +1561,12 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
     if (storefrontId) {
       const [followResult] = await db.select({ count: sql<number>`count(*)::int` })
         .from(storefrontFollows)
-        .where(eq(storefrontFollows.storefrontId, storefrontId))
-        .limit(1);
+        .where(eq(storefrontFollows.storefrontId, storefrontId));
       followerCount = followResult?.count || 0;
 
       const [ratingResult] = await db.select({ avg: sql<number>`coalesce(avg(${storefrontRatings.rating}), 0)` })
         .from(storefrontRatings)
-        .where(eq(storefrontRatings.storefrontId, storefrontId))
-        .limit(1);
+        .where(eq(storefrontRatings.storefrontId, storefrontId));
       avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
     }
 
@@ -1709,10 +1579,10 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       }
     }
 
+    const { and: drizzleAnd } = await import('drizzle-orm');
     const [salesResult] = await db.select({ count: sql<number>`count(*)::int` })
       .from(orders)
-      .where(and(eq(orders.sellerId, producerId), eq(orders.status, 'completed')))
-      .limit(1);
+      .where(drizzleAnd(eq(orders.sellerId, producerId), eq(orders.status, 'completed')));
     salesCount = salesResult?.count || 0;
     
     const featuredBeats = producerBeats.slice(0, 8).map((beat: any) => ({
@@ -1789,6 +1659,10 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
     const { beatId } = req.params;
     
     // Check if already liked
+    const { beatInteractions, listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, and } = await import('drizzle-orm');
+    
     const existingLike = await db.select()
       .from(beatInteractions)
       .where(
@@ -1797,7 +1671,6 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
           eq(beatInteractions.beatId, beatId),
           eq(beatInteractions.interactionType, 'like')
         )
-      .limit(1)
       )
       .limit(1);
     
@@ -1860,6 +1733,10 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
     const { beatId } = req.params;
     
     // Check if user has liked this beat by checking interactions
+    const { beatInteractions } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, and } = await import('drizzle-orm');
+    
     const likes = await db.select()
       .from(beatInteractions)
       .where(
@@ -1868,7 +1745,6 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
           eq(beatInteractions.beatId, beatId),
           eq(beatInteractions.interactionType, 'like')
         )
-      .limit(1)
       )
       .limit(1);
     
@@ -1901,6 +1777,10 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
     });
     
     // Update listing metadata with new rating
+    const { listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq, sql } = await import('drizzle-orm');
+    
     // Get current listing and update average rating
     const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
     if (listing) {
@@ -1941,6 +1821,10 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
 router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
   try {
     const { beatId } = req.params;
+    const { listings } = await import('@shared/schema');
+    const { db } = await import('../db');
+    const { eq } = await import('drizzle-orm');
+    
     const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
     if (!listing) {
       return res.status(404).json({ error: 'Beat not found' });
@@ -2020,14 +1904,7 @@ router.get('/my-stems', async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const userId = req.user!.id;
-    const stems = await db
-      .select()
-      .from(listingStems)
-      .where(eq(listingStems.userId, userId))
-      .orderBy(desc(listingStems.createdAt))
-      .limit(100);
-    res.json(stems);
+    res.json([]);
   } catch (error: any) {
     logger.error('Error fetching user stems:', error);
     res.status(500).json({ error: 'Failed to fetch your stems' });
@@ -2037,67 +1914,10 @@ router.get('/my-stems', async (req: Request, res: Response) => {
 router.get('/listings/:listingId/stems', async (req: Request, res: Response) => {
   try {
     const { listingId } = req.params;
-    const stems = await db
-      .select()
-      .from(listingStems)
-      .where(eq(listingStems.listingId, listingId))
-      .orderBy(asc(listingStems.createdAt))
-      .limit(50);
-    res.json(stems);
+    res.json([]);
   } catch (error: any) {
     logger.error('Error fetching listing stems:', error);
     res.status(500).json({ error: 'Failed to fetch listing stems' });
-  }
-});
-
-router.post('/listings/:listingId/stems', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const { listingId } = req.params;
-    const { stemName, stemType, fileUrl, fileSize, format, sampleRate, bitDepth, price } = req.body;
-
-    if (!stemName || !fileUrl) {
-      return res.status(400).json({ error: 'stemName and fileUrl are required' });
-    }
-
-    const [stem] = await db.insert(listingStems).values({
-      listingId,
-      userId,
-      stemName,
-      stemType: stemType || 'other',
-      fileUrl,
-      fileSize: fileSize || 0,
-      format: format || 'wav',
-      sampleRate: sampleRate || null,
-      bitDepth: bitDepth || null,
-      price: price ? String(price) : null,
-    }).returning();
-
-    res.status(201).json(stem);
-  } catch (error: any) {
-    logger.error('Error creating stem:', error);
-    res.status(500).json({ error: 'Failed to create stem' });
-  }
-});
-
-router.delete('/stems/:stemId', requireAuth, async (req: Request, res: Response) => {
-  try {
-    const userId = req.user!.id;
-    const { stemId } = req.params;
-
-    const [deleted] = await db
-      .delete(listingStems)
-      .where(and(eq(listingStems.id, stemId), eq(listingStems.userId, userId)))
-      .returning();
-
-    if (!deleted) {
-      return res.status(404).json({ error: 'Stem not found or not authorized' });
-    }
-
-    res.json({ success: true });
-  } catch (error: any) {
-    logger.error('Error deleting stem:', error);
-    res.status(500).json({ error: 'Failed to delete stem' });
   }
 });
 

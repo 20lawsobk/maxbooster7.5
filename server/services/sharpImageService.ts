@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 /**
  * Sharp-based Image Generation Service
  * Production-ready image generation using Sharp instead of Canvas
@@ -6,7 +5,7 @@ import { randomBytes } from 'crypto';
  */
 
 import sharp from 'sharp';
-
+import { nanoid } from 'nanoid';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { logger } from '../logger.js';
@@ -268,7 +267,7 @@ class SharpImageService {
     const { prompt, platform, tone = 'creative' } = options;
     const dimensions = this.getDimensions(platform);
     const { width, height } = dimensions;
-    const filename = `${randomBytes(8).toString('hex')}.png`;
+    const filename = `${nanoid()}.png`;
     const outputPath = path.join(this.outputDir, filename);
     const publicUrl = `/generated-content/images/${filename}`;
 

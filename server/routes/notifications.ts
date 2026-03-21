@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
 import { db } from '../db';
-import { eq, and, desc, sql, isNotNull } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger.js';
@@ -104,23 +104,15 @@ router.get('/', async (req: Request, res: Response) => {
     const category = req.query.category as string | undefined;
     const unreadOnly = req.query.unread === 'true';
 
-    const conditions: any[] = [eq(notifications.userId, req.user.id)];
-    if (unreadOnly) {
-      conditions.push(eq(notifications.isRead, false));
-    }
-    if (category) {
-      conditions.push(
-        sql`${notifications.metadata}->>'category' = ${category} OR (${notifications.metadata}->>'category' IS NULL AND ${notifications.type} LIKE ${category + '%'})`
-      );
-    }
-
-    const userNotifications = await db
+    let query = db
       .select()
       .from(notifications)
-      .where(and(...conditions))
+      .where(eq(notifications.userId, req.user.id))
       .orderBy(desc(notifications.createdAt))
       .limit(limit)
       .offset(offset);
+
+    const userNotifications = await query;
 
     const mappedNotifications = userNotifications.map((n: any) => ({
       ...n,
@@ -131,10 +123,18 @@ router.get('/', async (req: Request, res: Response) => {
       expiresAt: n.metadata?.expiresAt || null,
     }));
 
-    return res.json(mappedNotifications);
+    let filtered = mappedNotifications;
+    if (category) {
+      filtered = filtered.filter((n: any) => n.category === category);
+    }
+    if (unreadOnly) {
+      filtered = filtered.filter((n: any) => !n.isRead);
+    }
+
+    return res.json(filtered);
   } catch (error) {
     logger.error('Get notifications error:', error);
-    res.status(500).json({ error: 'Get notifications error:' });
+    return res.json([]);
   }
 });
 
@@ -599,24 +599,6 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
   } catch (error) {
     logger.error('Get unread count error:', error);
     return res.json({ count: 0 });
-  }
-});
-
-// GET /:id - get single notification (after all specific paths to avoid route shadowing)
-router.get('/:id', async (req: Request, res: Response) => {
-  const userId = (req as any).user?.id;
-  if (!userId) return res.status(401).json({ error: 'Not authenticated' });
-  try {
-    const [notification] = await db
-      .select()
-      .from(notifications)
-      .where(and(eq(notifications.id, req.params.id), eq(notifications.userId, userId)))
-      .limit(1);
-    if (!notification) return res.status(404).json({ error: 'Notification not found' });
-    res.json(notification);
-  } catch (error) {
-    logger.error('Get notification error:', error);
-    res.status(500).json({ error: 'Failed to fetch notification' });
   }
 });
 

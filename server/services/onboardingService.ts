@@ -168,7 +168,7 @@ class OnboardingService {
       const newCompletedSteps = [...completedSteps, stepId];
       const newTotalPoints = (progress.totalPoints || 0) + pointsAwarded;
 
-      const allTasks = await db.select().from(onboardingTasks).limit(200);
+      const allTasks = await db.select().from(onboardingTasks);
       const allCompleted = allTasks.every(t => newCompletedSteps.includes(t.id));
 
       const today = new Date();

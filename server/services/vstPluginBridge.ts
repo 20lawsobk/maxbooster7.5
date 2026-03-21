@@ -1,6 +1,5 @@
 import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
-import { randomBytes } from 'crypto';
 
 export type VSTFormat = 'vst2' | 'vst3' | 'au' | 'aax';
 
@@ -530,7 +529,7 @@ class VSTPluginBridge extends EventEmitter {
     }
 
     const instance: VSTInstance = {
-      id: `vst-inst-${Date.now()}-${randomBytes(6).toString('hex')}`,
+      id: `vst-inst-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       pluginId,
       pluginInfo: plugin,
       projectId,

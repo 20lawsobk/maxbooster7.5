@@ -47,9 +47,7 @@ async function cleanupOldDeletedFiles() {
       .where(and(
         isNotNull(userStorageFiles.deletedAt),
         lt(userStorageFiles.deletedAt, cutoffDate)
-      ))
-      .orderBy(userStorageFiles.deletedAt)
-      .limit(500);
+      ));
     
     for (const file of oldDeletedFiles) {
       try {

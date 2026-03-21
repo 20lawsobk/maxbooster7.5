@@ -10,7 +10,7 @@ import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger';
 import rateLimit from 'express-rate-limit';
 import { db } from '../db';
-import { users, posts, adCampaigns } from '@shared/schema';
+import { users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 
 const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|::1$|fc|fd)/i;
@@ -323,7 +323,7 @@ router.post('/batch', async (req, res) => {
  * type: 'post' | 'campaign'
  * id: post or campaign ID
  */
-router.get('/:type/:id', requireAuth, async (req, res) => {
+router.get('/:type/:id', async (req, res) => {
   try {
     const { type, id } = req.params;
 
@@ -333,57 +333,11 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
       });
     }
 
-    if (type === 'post') {
-      const [post] = await db
-        .select()
-        .from(posts)
-        .where(eq(posts.id, id))
-        .limit(1);
-
-      if (!post) {
-        return res.status(404).json({ success: false, error: 'Post not found' });
-      }
-
-      return res.json({
-        success: true,
-        type: 'post',
-        id: post.id,
-        content: post.content,
-        platform: post.platform,
-        status: post.status,
-        approvalStatus: post.approvalStatus,
-        scheduledAt: post.scheduledAt,
-        publishedAt: post.publishedAt,
-        engagementData: post.engagement || null,
-        mediaUrls: post.mediaUrls || [],
-      });
-    }
-
-    if (type === 'campaign') {
-      const [campaign] = await db
-        .select()
-        .from(adCampaigns)
-        .where(eq(adCampaigns.id, id))
-        .limit(1);
-
-      if (!campaign) {
-        return res.status(404).json({ success: false, error: 'Campaign not found' });
-      }
-
-      return res.json({
-        success: true,
-        type: 'campaign',
-        id: campaign.id,
-        name: campaign.name,
-        status: campaign.status,
-        platform: campaign.platform,
-        budget: campaign.budget,
-        performance: campaign.performance,
-        targetAudience: campaign.targetAudience,
-        startDate: campaign.startDate,
-        endDate: campaign.endDate,
-      });
-    }
+    res.json({
+      success: true,
+      message: 'Content analysis retrieval endpoint',
+      note: 'To be implemented with database integration',
+    });
   } catch (error) {
     logger.error('Content analysis retrieval error:', error);
     res.status(500).json({

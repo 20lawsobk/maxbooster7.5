@@ -768,8 +768,7 @@ export class SSOService {
       const [countResult] = await db
         .select({ count: sql<number>`count(*)` })
         .from(workspaceMembers)
-        .where(eq(workspaceMembers.workspaceId, workspaceId))
-        .limit(1);
+        .where(eq(workspaceMembers.workspaceId, workspaceId));
 
       const resources = members.map(member => ({
         schemas: ['urn:ietf:params:scim:schemas:core:2.0:User'],

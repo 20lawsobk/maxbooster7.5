@@ -6,7 +6,7 @@ import { viralScoringService, type ContentData } from '../services/viralScoring.
 import { timingOptimizerService } from '../services/timingOptimizer.js';
 import { contentVariantGeneratorService } from '../services/contentVariantGenerator.js';
 import { algorithmIntelligenceService, type AlgorithmHealth } from '../services/algorithmIntelligence.js';
-import { randomBytes } from 'crypto';
+import { nanoid } from 'nanoid';
 import { z } from 'zod';
 
 const router = Router();
@@ -55,7 +55,7 @@ router.post('/viral-score', requireAuth, asyncHandler(async (req, res) => {
 
     const contentData: ContentData = {
       ...validatedContent,
-      id: validatedContent.id || randomBytes(8).toString('hex'),
+      id: validatedContent.id || nanoid(),
       userId,
       scheduledTime: validatedContent.scheduledTime ? new Date(validatedContent.scheduledTime) : undefined,
     };
@@ -254,7 +254,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
 
     const contentData = {
       ...validatedContent,
-      id: validatedContent.id || randomBytes(8).toString('hex'),
+      id: validatedContent.id || nanoid(),
       userId,
     };
 

@@ -5,8 +5,6 @@ import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger';
 import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
-import { syncPlatformData } from '../services/socialSyncService';
-import { socialOAuth as socialOAuthService } from '../services/socialOAuthService';
 
 const router = Router();
 
@@ -225,8 +223,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     const connections = await db
       .select()
       .from(socialAccounts)
-      .where(eq(socialAccounts.userId, userId))
-      .limit(50);
+      .where(eq(socialAccounts.userId, userId));
     
     const enrichedConnections = connections.map(c => {
       const isTokenExpired = c.tokenExpiresAt ? new Date(c.tokenExpiresAt) < new Date() : false;
@@ -259,7 +256,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     res.json(enrichedConnections);
   } catch (error) {
     logger.error('Failed to get social connections:', error);
-    res.status(500).json({ error: 'Failed to get social connections:' });
+    res.json([]);
   }
 });
 
@@ -675,8 +672,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         .where(and(
           eq(socialAccounts.userId, stateData.userId),
           eq(socialAccounts.platform, p.name)
-        ))
-        .limit(1);
+        ));
       
       if (existingConnection.length > 0) {
         await db
@@ -729,7 +725,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     logger.error('OAuth callback error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
-    logger.error(`[OAuth] Redirecting to error URL`, { errorUrl });
+    logger.info(`[OAuth] Redirecting to error URL`, { errorUrl });
     res.redirect(errorUrl);
   }
 });
@@ -782,6 +778,7 @@ router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, re
     const userId = req.user!.id;
     const platform = req.params.platform.toLowerCase();
 
+    const { syncPlatformData } = await import('../services/socialSyncService');
     const results = await syncPlatformData(userId, platform);
 
     res.json({ success: true, results });
@@ -802,8 +799,7 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       .where(and(
         eq(socialAccounts.userId, userId),
         eq(socialAccounts.platform, platform)
-      ))
-      .limit(1);
+      ));
     
     if (!connection) {
       return res.status(404).json({ 
@@ -828,7 +824,8 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       });
     }
     
-    const result = await socialOAuthService.refreshAccessToken(userId, platform);
+    const { socialOAuth } = await import('../services/socialOAuthService');
+    const result = await socialOAuth.refreshAccessToken(userId, platform);
     
     res.json({ 
       success: true,

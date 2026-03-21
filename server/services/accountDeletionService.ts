@@ -223,7 +223,7 @@ export class AccountDeletionService {
     logger.warn(`⚠️ Manual account deletion initiated by admin ${adminId} for user ${userId} - Reason: ${reason}`);
 
     // Get user email before deletion
-    const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
     
     if (!user) {
       throw new Error(`User ${userId} not found`);

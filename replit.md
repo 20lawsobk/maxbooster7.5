@@ -1,56 +1,77 @@
 # Max Booster - AI-Powered Music Career Management Platform
 
 ## Overview
+
 Max Booster is an AI-powered, full-stack TypeScript web application designed to empower music artists with comprehensive career management tools. It offers AI-assisted features for social media management, music distribution, analytics, a beat marketplace, career automation, press kit creation, playlist pitching, tour management, merch store integration, sync licensing, publishing rights, A&R submissions, sample clearances, music video production tracking, radio/blog pitching, fan campaigns, revenue intelligence, songwriting, project budget planning, and venue/booking CRM. The platform aims to streamline and optimize various aspects of an artist's career, leveraging AI models fine-tuned specifically for the music industry, with the ambition to become the leading platform for artist career development through intelligent automation and insights.
 
 ## User Preferences
+
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
 ## System Architecture
+
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.
 
 ### Triangle Architecture
+
 Max Booster operates on a three-point data flow:
-1. **Max Booster → PDIM**: Application pushes all data exclusively to PDIM.
+1. **Max Booster → PDIM**: Application pushes all data (AI model weights, session state, queue jobs, object blobs, cache, pub/sub) exclusively to PDIM.
 2. **MaxCore training server (`secure-ai-forge.replit.app`) ← PDIM**: MaxCore pulls training data from PDIM to train AI models.
 3. **Max Booster AI models ← MaxCore**: Max Booster pulls trained model weights from MaxCore for inference.
 
 ### PDIM — Unified Storage Container
-**PDIM (`pocketdimensionstorage.replit.app`) is the ONLY storage backend.** It functions as both a Redis-compatible layer (for job queues, pub/sub, caching) and a persistent object storage system, accessed via a single HTTP exec endpoint. There is no separate Redis server or object storage.
 
-### Key Architectural Decisions:
--   **Pocket Dimension Storage Bubbles**: All major storage paths route through dedicated PDIM pockets with level-9 Gzip compression and SHA-256 content-addressed deduplication.
--   **Hybrid Storage System**: All storage operations are routed entirely through PDIM as the sole backend, with `HybridStorageService` providing a tiered API.
--   **AI Model Fine-Tuning**: All core AI/ML models are in-house, specifically fine-tuned for music artist use cases (e.g., Viral Scoring, Timing Optimization, Algorithm Intelligence) using industry-specific data. No external AI APIs are used.
+**PDIM (`pocketdimensionstorage.replit.app`) is the ONLY storage backend.** It is a single unified system that simultaneously acts as:
+- **Redis-compatible layer**: BullMQ job queues, Lua script execution via wasmoon LuaExecutor, pub/sub, key expiry, sorted sets — all Redis-protocol operations go through PDIM.
+- **Pocket Dimension object storage**: Persistent key-value blobs, AI model weight files, application data, cold storage, per-user pockets — all with level-9 Gzip compression and SHA-256 content-addressed deduplication.
+
+There is **no separate Redis server** and **no separate object storage**. PDIM is both, accessed via a single HTTP exec endpoint: `https://pocketdimensionstorage.replit.app/api/redis/instances/e50d64e610d37dd52ce85711/exec` using `{ cmd, args }` JSON payloads with bearer-token auth.
+
+**Key Architectural Decisions:**
+
+-   **Pocket Dimension Storage Bubbles**: All major storage paths route through dedicated Pocket Dimension pockets (level-9 Gzip, SHA-256 content-addressed deduplication, 4MB chunking). This includes `ai-model-weights`, `offline-mode-cache`, `application-storage`, `hybrid-cold-storage`, and per-user pockets.
+-   **Hybrid Storage System**: Routes entirely through PDIM as the sole backend. `HybridStorageService` provides a tiered API but all writes and reads ultimately land in PDIM. Replit Object Storage and BoosterState are NOT used.
+-   **AI Model Fine-Tuning**: All core AI/ML models are in-house, specifically fine-tuned for music artist use cases (e.g., Viral Scoring, Timing Optimization, Algorithm Intelligence) using industry-specific data and public datasets. No external AI APIs are used.
 -   **Microservices-like Structure**: Services are logically separated within the monorepo.
--   **Scalability**: Designed for Replit Autoscale with PDIM as the shared-state backend.
+-   **Scalability**: Designed for Replit Autoscale with PDIM as the shared-state backend (queues, sessions, cache — all routed through PDIM's Redis-compatible layer).
 -   **Robust Authentication**: Implements session fixation prevention, JWTs with refresh, and session heartbeat.
 -   **Comprehensive Workflow Automations**: 21 automation templates across five career phases, managed by `musicWorkflowAutomationService.ts`.
--   **Advertisement and Autopilot Systems**: Exclusively use custom in-house AI models and connected social profiles.
--   **AI Content Stack**: Multiple versions (v2, v3, v4) integrate advanced content science principles, generative engines (Markov), and adaptive intelligence (Beam Search, Per-Artist Engagement Feedback Loop) for social content generation and songwriting assistance.
--   **Video Generation Engine**: An in-house text-to-video neural network (UNetV4 + v4 Training Engine) built with NumPy, featuring continuous self-training.
--   **MaxCore DigitalGPU v2**: A domain-native compute engine and hardware accelerator design stack for optimized performance.
--   **Read Replica Routing**: PostgreSQL read replica for analytical and dashboard reads.
+-   **Advertisement and Autopilot Systems**: Exclusively use custom in-house AI models and connected social profiles, avoiding traditional ad platform integrations.
+-   **Songwriting AI Assist**: Generates lyric suggestions, rhyme words, and mood-aware chord progressions using `unifiedAIController`.
+-   **Social Content Generation**: Generates structured social media content (hook, body, cta, hashtags) using `unifiedAIController`.
+-   **Social Autopilot**: Manages and triggers the live `AutopilotEngine` for automated social media actions.
+-   **Media-to-Content Analysis**: Analyzes URLs, audio files, and images to extract metadata and generate social media content using Python-based services.
+-   **Video Generation Engine v3 — In-House Diffusion Model v4**: A text-to-video neural network built from scratch using pure NumPy, continuously self-improving. Features a 3.0M-parameter 4-level U-Net architecture with attention mechanisms and FiLM conditioning. Training data includes 602 prompts across 20 scene categories. Background self-training runs continuously.
+-   **Veo-for-Music Full Training Pipeline**: Five-module training infrastructure for video generation, including `MaxBoosterSample` dataclass for unified data, `DatasetRegistry` for cataloging datasets, a progressive 30-day training curriculum, teacher-student knowledge distillation, and live milestone tracking.
+-   **UNetV4 + v4 Training Engine**: Next-generation 463M-parameter text-to-video diffusion model architecture with a 5-level U-Net, depthwise-separable convolutions, and 32-head spatial + temporal attention. Includes a robust training loop with progressive phases and advanced loss functions.
+-   **MaxCore DigitalGPU v2**: A domain-native compute engine and hardware accelerator design stack with LocalCPUBackend (NumPy+OpenBLAS), LocalGPUBackend (Numba JIT), GraphOptimizer with AutoTuner for performance, and MaxCoreTile + RTLGenerator for hardware simulation and SystemVerilog output.
+-   **Read Replica Routing**: PostgreSQL read replica is used for analytical and dashboard reads.
 -   **Silent Deployment System**: Self-evolution engine for silent deployments with rolling restarts and auto-rollback.
 -   **Security Hardening**: Includes IDOR prevention, improved session cookie security, AI route rate limiting, Zod-validated input, authentication consistency, and SSRF protection.
--   **Performance Hardening**: Pagination, Redis query caching, composite DB indexes, Neon PostgreSQL, and request correlation IDs.
--   **Gamified Onboarding**: RPG-style persona selector, XP system, and achievements.
--   **Studio DAW UI/UX**: Customizable toolbar, resizable panels, and Web Audio API integration.
--   **CI/CD**: GitHub Actions workflows for desktop and mobile platforms.
--   **Python Audio Analysis Engine**: Utilizes `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch` for server-side audio intelligence (requires local Python 3.11 setup).
--   **Distribution Analytics**: Aggregates data from LabelGrid and royalty transactions for `streams-revenue` and `analytics/growth`.
--   **Offline Mode**: `OfflineProvider` and `ConnectionStatusBar` for app-wide offline context and background sync.
--   **Autopilot Learning Feedback Loop**: `autopilotLearningService.recordPerformance()` for learning timing/content patterns.
--   **Admin Functionality**: Dedicated admin UI for financial configuration, enhanced admin account privileges (lifetime access, priority in request queue), and improved admin routes for analytics and activity.
--   **Error Handling and Fixing**: `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` provide reactive and proactive system health monitoring and runtime patching.
--   **Comprehensive Parsing/Scraping**: Upgraded parsers for Apple iTunes, Deezer, JioSaavn, MusicBrainz, Audiomack, and numerous DSPs, along with an improved distribution webhook handler and ReleaseStatusDashboard.
--   **DSP Profile Hub**: Replaced "Auto Artist Sync" scanning model with a DSP portal ownership/claiming paradigm. The `AutoArtistSync.tsx` component was fully rewritten to show 8 DSP portal rows (Spotify for Artists, Apple Music for Artists, Amazon Music for Artists, YouTube OAC, Deezer for Creators, Tidal, Pandora, SoundCloud) with claimed/unclaimed status, claim action buttons, and 4 collapsible informational sections. Backend: `artistProfileService.ts` `profileHub()` method + `GET /api/artist-profiles/:id/profile-hub` route. ArtistProfileManager create dialog updated to "Create Profile" button and DSP Hub guidance text.
+-   **Content Generation Simulation**: `POST /api/social/ai/generate` now returns a `simulation` block with genre auto-detection, viral score, predicted engagement metrics, platform optimization data, and scheduling intelligence.
+-   **AI Content Stack v2 (Max Quality Upgrade)**: Upgraded five in-house JS AI content generation services for maximum output quality, expanding hook options, CTAs, content quality strategies, viral scoring, and auto-post generation.
+-   **AI Content Stack v4 (Generative + Adaptive Intelligence Upgrade)**: Activates Markov Generative Engine for novel sentence generation, Beam Search Candidate Selection for quality-biased content, and Per-Artist Engagement Feedback Loop for personalized pattern weighting.
+-   **AI Content Stack v3 (Advanced Content Science Upgrade)**: Integrates research-based content science principles, including `CONTENT_FORMULA_LIBRARY`, `PSYCHOLOGICAL_TRIGGER_LAYERS`, `RELEASE_PHASE_MULTIPLIERS`, `PLATFORM_NATIVE_DNA`, `SELF_IDENTIFICATION_PHRASES`, and `EMOTIONAL_ARC_TEMPLATES` for more effective content.
+-   **Performance Hardening**: Pagination, Redis query caching, composite DB indexes, Neon PostgreSQL, and request correlation IDs are implemented.
+-   **Gamified Onboarding**: RPG-style "Choose Your Class" persona selector, animated XP bar, rank progression, and achievement pop-ups.
+-   **Studio DAW UI/UX**: Customizable toolbar, resizable panels, platform-adaptive fullscreen mode, and Web Audio API integration.
+-   **CI/CD**: GitHub Actions workflows automate builds for desktop (Linux, Windows, macOS) and mobile (Android, iOS) platforms.
+-   **Python Audio Analysis Engine**: Utilizes `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch` for server-side audio intelligence.
+-   **Distribution Analytics**: Enhanced routes for `streams-revenue` and `analytics/growth` aggregate data from LabelGrid and `royaltyTransactions` table.
+-   **Redis Stability**: Implemented `unhandledRejection` handlers to treat Redis timeouts and connection issues as non-fatal.
+-   **Offline Mode**: `OfflineProvider` and `ConnectionStatusBar` enable app-wide offline context and background sync queue.
+-   **Autopilot Learning Feedback Loop**: `autopilotLearningService.recordPerformance()` is called after successful auto-posts to learn timing/content patterns.
+-   **Financial Config Admin UI**: Admin panel for editing DSP royalty rates, tax treaty withholding rates, and label settings.
+-   **Admin Account Parity**: The admin account doubles as a personal artist account with lifetime subscription preconfigured. Fixed critical bug where `requirePremium` middleware checked `user.isAdmin` (undefined — not a real field) instead of `user.role === 'admin'`. Added admin bypass in `requireAuth` for trial/subscription expiry gates. Admin gets top priority (0) in the request queue and is exempt from load shedding. The admin init script (`server/init-admin.ts`) always ensures `subscriptionTier: 'lifetime'` and `subscriptionStatus: 'active'` on every server boot. Sidebar shows "♾ Lifetime Access" badge naturally from the lifetime tier, with admin role badge shown separately in the user card.
+-   **Admin Route Deduplication**: Removed duplicate `/analytics` and `/activity` route handlers from `server/routes/admin/index.ts`. Previously the first (wrong-format) route handler silently swallowed all requests, so the admin UI was receiving mismatched data. The surviving analytics endpoint returns the full payload (`totalUsers`, `totalProjects`, `totalRevenue`, `totalStreams`, `recentSignups`, `revenueGrowth`, `subscriptionStats`, etc.) that the frontend expects. The activity feed now includes recent users, releases, and pending artist fixer requests.
+-   **Artist Profile Admin Sync**: Admin routes now import `artistProfileService` for future fixer-request review endpoints. Activity feed surfaces pending artist identity fixer requests as warning-level items so admins can take action without missing them.
 
 ## External Dependencies
+
 -   **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 -   **Backend Frameworks**: Express.js, Node.js, tsx.
 -   **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
--   **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`).
+-   **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`). Acts as Redis-compatible queue/cache layer (BullMQ, Lua, pub/sub) AND persistent object storage simultaneously. This is the ONLY storage backend — no separate Redis server, no Replit Object Storage.
 -   **Machine Learning**: `@tensorflow/tfjs-node`.
 -   **Payment Processing**: Stripe.
 -   **Email Delivery**: SendGrid.
@@ -61,305 +82,84 @@ Max Booster operates on a three-point data flow:
 -   **Version Control**: GitHub.
 -   **Search APIs**: Exa, Tavily.
 
-## Comprehensive Audit Fixes (March 2026)
-A three-agent audit identified and resolved the following issues:
-
-### Backend Bug Fixes
-- **`server/index.ts`**: Removed duplicate `express.urlencoded({ extended: false })` call that was overriding the `{ extended: true, limit: '200mb' }` setting, breaking large form uploads.
-- **`server/middleware/auth.ts`**: Extracted shared JWT bearer-token resolution into private `resolveJwtUser()` helper — eliminates duplicated verification logic between `requireAuth` and `requireAuthOnly`.
-- **`server/routes/distribution.ts`**: Fixed three `file.filename` usages that returned `undefined` with `multer.memoryStorage()`. Track audio and HyperFollow header images are now properly uploaded to Pocket Dimension via `storageService.uploadFile()` before storing the URL.
-- **`server/services/stripeService.ts`**: Replaced two `storage.getAllUsers()` calls (loads entire user table into memory) with direct indexed DB queries on `users.stripeCustomerId` — O(N) → O(1) lookup using the existing `users_stripe_customer_id_idx` index.
-- **`server/routes/auth.ts`**: Fixed `trusted: false` hardcode in session list — now reads the actual `trusted` column value from the DB.
-- **`server/routes/artistProfiles.ts`**: Added guard to check `spotifyArtistUri.startsWith('spotify:artist:')` before string replacement to avoid stripping valid bare IDs.
-
-### Frontend Fixes
-- **`client/src/App.tsx`**: Wrapped the main router in `<ErrorBoundary>` so any unhandled render crash shows the custom error UI instead of a blank white screen.
-- **`client/src/pages/Distribution.tsx`**: Added `isLoading: statsLoading` to the playlist pitching stats query and render `'—'` placeholders during load instead of misleading zeroes.
-- **`client/src/components/studio/UltimateDAW.tsx`**: Added `.catch()` handlers to both `forceSave()` call sites (Ctrl+S shortcut and Save button) so users are notified when a project save fails instead of silently discarding the error.
-
-## Full-System Optimization Pass (March 2026 — Session 2)
-
-### Critical Backend Fixes
-- **`server/storage.ts` — `getBeatListings`**: Replaced JS post-filter search with SQL `ilike` expressions; genre/bpm/key/price filters now pushed to DB; `offset` param now used correctly for pagination (was always using 0).
-- **`server/storage.ts` — `distroDispatchStore`**: Replaced in-memory `Map` (lost on restart) with DB persistence via the `systemSettings` table using key `distro_dispatch:{releaseId}`.
-- **`server/storage.ts` — `getDistroAnalytics`**: Replaced JS-level month filtering (after 30-row limit) with five parallel DB aggregation queries — correct all-time totals and accurate month-over-month growth regardless of row count.
-- **`server/storage.ts` — `getSocialMetrics`**: Filled `followersGrowth` (per-platform follower data from accounts) and `contentPerformance` (top 5 recent posts with engagement) instead of returning `null`.
-- **`server/storage.ts` — `createAuditLog`**: Now inserts to `workspace_audit_log` table via Drizzle instead of returning a fake in-memory object.
-- **`server/storage.ts`**: Added `workspaceAuditLog` to schema imports.
-
-### Royalties Routes (Complete Implementation)
-- **`server/routes.ts` — `/api/royalties/*`**: All stubs replaced with real DB implementations using `royaltyTransactions`, `royaltySplits`, and `taxForms` schema tables. Exports return real CSV data. Splits CRUD persisted to DB.
-
-### Career Coach
-- **`server/routes/careerCoach.ts`**: Added `/api/career-coach/insights` endpoint — health score, growth rate, velocity, and revenue trend all computed from DB.
-- **`client/src/pages/CareerCoach.tsx`**: Replaced hardcoded `"+24%"` / `"87/100"` values with live API data from the insights endpoint.
-
-### Notifications
-- **`server/routes/notifications.ts`**: Pushed `unreadOnly` and `category` filters to the DB query (using `eq(notifications.isRead, false)` and a SQL JSON metadata predicate) instead of fetching 50 rows then filtering in JS — pagination now returns the correct count.
-
-### Invoice PDF Download
-- **`client/src/pages/Invoices.tsx`**: Added `downloadPDF()` function that fetches `/api/invoices/:id/pdf`, creates a Blob URL, and triggers browser download. Wired to both the table row download icon button and the preview dialog "Download PDF" button.
-
-### Analytics Error Boundaries
-- **`client/src/pages/Analytics.tsx`**: Added `ErrorBoundary` import; wrapped `StreamingAnalytics`, `RevenueAnalytics`, `AudienceInsights`, `ExportAnalytics`, `FanJourneyFunnel`, `ChurnAnalytics`, and `GeographicHeatMap` in `<ErrorBoundary>` so a chart crash in one tab can't take down the entire Analytics page.
-
-### Autopilot Publisher Window Fix
-- **`server/services/autopilotPublisher.ts` — `calculateNextOptimalPostingTime`**: Fixed missed-window bug: when the cron fires during an optimal hour (e.g., 12:05 when 12 PM is optimal), the function now schedules 5 minutes from now instead of jumping to the next window (e.g., 5 PM). Uses `sameHourSlot` check before the `>` search.
-
-### Marketplace Persistence
-- **`server/routes/marketplace.ts` — `GET /escrow`**: Now queries the `orders` table filtering by userId/sellerId with status `pending` or `escrow` — previously returned an empty array.
-- **`server/routes/marketplace.ts` — `GET /affiliates` + `POST /affiliates`**: Now persists affiliate records to `systemSettings` table with key `affiliates:{userId}` — previously returned empty array and created affiliates that were discarded on each request.
-
-### FlowState Export Fix
-- **`client/src/components/studio/FlowStateExport.tsx`**: Fixed export URL from `/export` to `/render` to match the actual server endpoint.
-
-## Full-System Optimization Pass (March 2026 — Session 3)
-
-### Scheduled Post Storage Methods (previously all missing from storage.ts)
-- **`server/storage.ts` — `getScheduledPosts(input)`**: Added — handles both `(userId: string)` calls (from social route) and `({ userId?, status? })` object calls (from autoPostingServiceV2). Queries `posts` table with status `scheduled` or `pending` filter.
-- **`server/storage.ts` — `createScheduledPost(post)`**: Added — maps `ScheduledPost` interface (platforms[], content object, scheduledTime, viralPrediction, createdBy) to the `posts` table columns, storing extra fields in `metadata` JSONB.
-- **`server/storage.ts` — `getScheduledPostById(id)`**: Added — fetches post and reconstructs `ScheduledPost` shape from metadata.
-- **`server/storage.ts` — `updateScheduledPost(id, updates)`**: Added — maps field updates back to `posts` table columns.
-- **`server/storage.ts` — `updateScheduledPostStatus(id, status, results?)`**: Added — updates status and sets `publishedAt` on completion.
-
-### Marketplace Collaborations (previously a hardcoded stub)
-- **`server/routes/marketplace.ts` — `GET /collaborations`**: Now queries `collaborationProjects` table for projects where user is owner AND `metadata._offerType = 'marketplace_collab'`, plus projects where user is a `projectMembers` member. Maps back to `CollaborationOffer` shape.
-- **`server/routes/marketplace.ts` — `POST /collaborations`**: Now persists collaboration offers to `collaborationProjects` table with all offer data (toUserId, beatId, type, terms, splitPercentage, budget, messages) stored in `metadata` JSONB.
-
-### Marketplace Listing Stems (fully implemented)
-- **`shared/schema.ts` — `listingStems` table**: New `listing_stems` table added with columns: `id, listing_id, user_id, stem_name, stem_type, file_url, file_size, format, sample_rate, bit_depth, price, download_count, created_at`.
-- **`server/routes/marketplace.ts` — `GET /my-stems`**: Now queries `listingStems` by userId.
-- **`server/routes/marketplace.ts` — `GET /listings/:listingId/stems`**: Now queries `listingStems` by listingId.
-- **`server/routes/marketplace.ts` — `POST /listings/:listingId/stems`**: New endpoint — inserts a stem record (requires auth).
-- **`server/routes/marketplace.ts` — `DELETE /stems/:stemId`**: New endpoint — deletes user-owned stem (requires auth).
-- **`server/routes/marketplace.ts` imports**: Added `collaborationProjects, projectMembers, listingStems` from schema; added `inArray` from drizzle-orm.
-
-### ShowPage Session Code Fix
-- **`client/src/pages/ShowPage.tsx`**: Replaced `Math.random()` session code (changed every render) with a stable `btoa(window.location.pathname)` derivation — same show always shows same code within a page session.
-
-## Full-System Optimization Pass (March 2026 — Session 5)
-
-### Deployment URL
-- Correct published URL: **https://maxbooster.replit.app** (not max-booster)
-
-### Cryptographic ID Generation — Comprehensive Pass
-Replaced all `Math.random().toString(36)` ID generation patterns with `crypto.randomBytes` across the entire server for collision resistance and unpredictability:
-- **`server/storage.ts`**: DSP provider and dispatch IDs → `randomBytes(4).toString('hex')` (added `randomBytes` import)
-- **`server/services/analyticsAlertService.ts`**: Alert IDs → `randomBytes(4).toString('hex')`
-- **`server/services/autoPostingService.ts`**: Post IDs → `randomBytes(4).toString('hex')`
-- **`server/services/autoPostingServiceV2.ts`**: Post IDs → `randomBytes(4).toString('hex')`
-- **`server/routes/export.ts`**: `generateShortCode()` → uses `randomBytes(8)` indexed into charset (unbiased, cryptographically secure)
-- **`server/routes/simulation.ts`**: Simulation IDs → `randomBytes(3).toString('hex')`
-- **`server/routes/undo.ts`**: Action, group, restore point, and deleted item IDs → `randomBytes(4).toString('hex')`
-- **`server/routes/distribution.ts`**: Hyperfollow slugs and content fingerprints → `randomBytes`
-- **`server/routes/studioPlugins.ts`**: Bounce and modulation routing IDs → `randomBytes(4).toString('hex')`
-- **`server/lib/distributedLock.ts`**: Redis lock token → `randomBytes(16).toString('hex')` (was `Math.random() + Date.now`)
-- **`server/lib/tensorflowWorkerPool.ts`**: Worker job IDs → `randomBytes(4).toString('hex')`
-- **`server/middleware/rateLimiter.ts`**: Redis sorted-set member IDs → `randomBytes(4).toString('hex')`
-- **`server/middleware/requestQueue.ts`**: Queue entry IDs → `randomBytes(4).toString('hex')`; fixed `retryAfter` from random to constant 10s
-- **`server/services/crossPlatformSyncService.ts`**: Update and rollout IDs → `randomBytes(3).toString('hex')`
-
-### Real Data Replacing Fake Analytics
-- **`server/services/advancedAnalyticsService.ts` — `getCrossPlatformAnalysis()`**: Platform growth now computed from real period-over-period DB comparison (first-half vs second-half of date range). Audience overlap estimated from actual listener/stream ratio. Added `lt` to drizzle imports.
-- **`server/services/cohortAnalyticsService.ts` — `predictChurn()`**: Removed 10 randomly-generated fake listener records. Now derives churn risk predictions from actual stored cohort retention curves (day7/day30 drop). Imports real `analytics` table.
-- **`server/services/cohortAnalyticsService.ts` — `syncCohortData()`**: Replaced all `Math.random()` seed data with real analytics DB queries per calendar month. Uses industry-research retention benchmarks (Day1 70%, Day7 50%, Day30 35%) only when no listener-level data exists. LTV derived from actual revenue/initialSize ratio.
-- **`server/services/competitorBenchmarkService.ts` — `getShareOfVoice()`**: Replaced random mention counts with follower-proportional reach percentages. Mentions set to 0 (requires social listening API) with explicit comment. Sentiment kept at 0 for competitor (no data source).
-
-### Security Pentest — Deterministic Configuration Audit
-- **`server/security-system.ts` — `runPenetrationTest()`**: Replaced 20% random vulnerability injection with deterministic security configuration audit (checks `DATABASE_URL`, `SESSION_SECRET`, helmet CSP, rate limiter status). `testDuration` now uses actual `Date.now()` elapsed time. `requestsSent` is 0 (config audit, no actual requests). `method: 'config_audit'` added to payload.
-
-### Audio Analysis — Real Signal Processing
-- **`server/services/aiMusicService.ts` — `analyzeLoudness()`**: Replaced `Math.random()` LUFS/peak/DR values with deterministic estimates derived from `projectId` character code hash. Same project always shows consistent estimated values.
-- **`server/services/aiMusicService.ts` — `calculateStereoWidth()`**: Replaced `Math.random() * 0.3` with actual L/R channel energy analysis from the audio buffer. Reads 16-bit stereo PCM pairs and computes L/R sum ratio. Returns 1.00–1.50 stereo width ratio based on real buffer content.
-
-### Dead Code Removal
-- **`server/routes.ts` — Google OAuth**: Removed unused dead `username` variable computed with `Math.random()` that was never passed to `createUser()`.
-
-### Content Scoring — Deterministic
-- **`server/services/contentVariantGenerator.ts` — `predictedScore`**: Removed `Math.random() * 30` noise. Score now purely from `hooks[index].predictedStrength` (actual AI-computed hook quality). Capped at 100.
-
-## Full-System Optimization Pass (March 2026 — Session 4)
-
-### Royalty Splits — Real DB Persistence
-- **`server/services/distributionService.ts` — `setupRoyaltySplit`**: Now actually persists to the `royalty_splits` table via Drizzle ORM. Clears existing splits for the release before inserting new ones. Validates that percentages sum to 100% (within 0.01 tolerance). Returns `{ success, splitId, splits: insertedRows }` instead of the previous stub.
-
-### Studio Source Label Fix
-- **`server/routes/studio.ts` — `GET /samples`**: Removed misleading `source: 'hardcoded'` label from the response; now returns `source: 'builtin'` accurately reflecting the curated sample library.
-
-### Security Service — Real Database Health Check
-- **`server/services/securityService.ts` — `checkServiceHealth('database')`**: Now executes `SELECT 1` against the Neon DB to confirm connectivity before measuring response time. Added `db` and `sql` imports. Stripe health check now verifies `STRIPE_SECRET_KEY` env var presence instead of silently returning healthy.
-
-### Marketplace — Cryptographically Secure Affiliate Codes
-- **`server/routes/marketplace.ts` — `POST /affiliates`**: Replaced `Math.random()` affiliate code generation with `crypto.randomBytes(3).toString('hex').toUpperCase()` for unpredictable, collision-resistant codes.
-
-### Advertising Stub Coverage Verified
-- Confirmed all 14 advertising storage stubs replaced in Session 3 remain intact and no new stubs were introduced in routes/advertising.ts, routes/organic.ts, routes/paid.ts, routes/advertisingAutopilot.ts, routes/growth.ts, routes/contracts.ts, routes/earnings.ts, or routes/notifications.ts.
-
-### Cross-Platform Analytics Verified
-- Confirmed `GET /api/analytics-alerts/cross-platform-comparison` is properly registered (routes.ts line 3940) and implemented with real DB queries against `dspAnalytics` table in `analyticsAlertService.ts`.
-
-## Full-System Optimization Pass (March 2026 — Session 8)
-
-### Math.random() Crypto Sweep — Continued
-- **`server/services/platformAutoFixer.ts`**: Added `randomBytes` import; replaced 4 remaining `Math.random().toString(36)` ID generation calls (patch IDs, incident IDs, offensive patch IDs) → `randomBytes(N).toString('hex')`.
-- **`server/services/socialAmplificationService.ts`**: Added `randomBytes` import; replaced 2 `Math.random().toString(36)` simulated userId generation calls (mock metrics actor IDs, super-spreader IDs) → `randomBytes(5).toString('hex')`.
-
-### Auth Middleware Consistency
-- **`server/routes/autopilotPreferences.ts`**: Added `router.use(requireAuth)` router-level middleware to cover all 3 routes (GET, POST, PATCH). Removed 3 redundant inline `if (!req.user?.id)` manual checks. Auth is now enforced consistently at the router boundary like all other protected routes.
-- **`server/routes/assistant.ts`**: Audited and confirmed intentional guest-mode design — GET `/history` gracefully returns empty for unauthenticated users, POST `/chat` works without auth (no persistence if no user), DELETE `/history` returns 401 manually. No change needed.
-
-### Code Quality Audit
-- Confirmed: 0 `Math.random().toString(36)` ID generation patterns remaining outside of legitimate simulation-only code (labelgrid-service sim_ stubs, server/simulations/).
-- Confirmed: 0 uuid imports anywhere in server code.
-- Confirmed: All findMany calls are properly scoped with `where` clauses — no unbounded table scans.
-- Confirmed: All routes with `req.user` access have proper `requireAuth`/`requireAdmin`/`requireAuthOnly` middleware coverage.
-
-### N+1 Query Fixes
-- **`server/routes/releaseCountdown.ts`** + **`server/services/releaseCountdownService.ts`**: GET countdowns was N+1 (one `getTasks()` query per countdown). Added `getTasksForCountdowns(ids: string[])` batch method using `inArray`; route now does 2 queries total (one for countdowns + one for all tasks).
-- **`server/routes/payouts.ts`**: GET disputes was N+1 (one messages query per dispute). Converted to single batch `inArray` query with in-memory grouping by `disputeId`.
-
-### Dynamic Import Anti-Pattern Eliminated
-- **`server/routes/payouts.ts`**: Removed all 26 `await import(...)` calls inside route handlers. All imports (taxForms, royaltyStatements, royaltyTransactions, royaltyDisputes, disputeMessages, stripeService; eq, and, desc, gte, inArray, lte, sql, sum) moved to static top-level imports.
-- **`server/routes/billing.ts`**: Removed 4 `await import(...)` calls (stripeService ×3, instantPayoutService ×1). Added static top-level imports.
-- **`server/routes/marketplace.ts`**: Removed all 16 `await import(...)` calls. Added storefronts, storefrontFollows, storefrontRatings, beatInteractions to static schema import; added `avg` to drizzle-orm import. Fixed `drizzleAnd` alias → `and`.
-
-### Minor Input Validation
-- **`server/routes/analytics-internal.ts`**: Fixed `parseInt(minGrowth)` NaN bug — added `|| 0` fallback to prevent silent empty-result filtering when non-numeric input is provided.
-
-### Dynamic Import Anti-Pattern — Extended Sweep (Session 8 continued)
-- **`server/routes/auth.ts`**: Removed `const crypto = await import('crypto')` (already statically imported). Added `emailService` singleton import. Removed `const { EmailService } = await import(...)` + `new EmailService()` — replaced with singleton. This also fixed a latent runtime bug: `EmailService` class was never exported from `emailService.ts`, so the dynamic import was always returning `undefined`, making email verification silently fail.
-- **`server/routes/distribution.ts`**: Added `import os from 'os'` to static imports. Removed 2 `const os = await import('os')` dynamic imports.
-- **`server/routes/admin.ts`**: Added static imports for `chainErrorAutoFixer`, `platformAutoFixer`, `permanentFixRegistry`. Removed all 12 repeated dynamic import lines across 12 handler functions.
-- **`server/routes/studioGeneration.ts`**: Added static imports for `os`, `path`, `fs`, `execFile` (child_process), `promisify` (util). Extracted `const execFileAsync = promisify(execFile)` to module scope. Removed 5 dynamic imports + fixed `(await import('fs')).unlinkSync()` in finally block.
-- **`server/routes/storefront.ts`**: Added `path` and `crypto` static imports. Removed 2 dynamic imports.
-- **`server/routes/studio.ts`**: Added `{ promises as fsPromises }` from 'fs' and `path` static imports. Removed 2 dynamic import blocks (both occurrences replaced via Python). Fixed `path.default.join` → `path.join`.
-- **`server/routes/socialOAuth.ts`**: Added `syncPlatformData` and `socialOAuth as socialOAuthService` static imports. Removed 2 dynamic imports; updated call site from `socialOAuth.refreshAccessToken` → `socialOAuthService.refreshAccessToken`.
-- **`server/routes/webhooks/stripe.ts`**: Complete file rewrite — converted all 30+ dynamic `await import(...)` calls (for `orders`, `storefrontOrders`, `bogoPromotions`, `customerMemberships`, `users`, `db`, `eq`, `and`, `sql`, `notificationService`, `dunningService`) into static top-level imports. All webhook handlers now use module-scope imports.
-- **`server/services/musicWorkflowAutomationService.ts`**: Added `emailService` singleton static import. Removed 3 repeated `const { EmailService } = await import(...)` + `new EmailService()` patterns. Replaced `emailSvc.sendEmail(...)` → `emailService.sendEmail(...)`.
-
-### Nanoid Elimination Sweep
-- **`server/services/taxFormService.ts`**: Replaced 5 `nanoid(12)` calls with `randomBytes(6).toString('hex')` (`randomBytes` already imported).
-- **`server/services/invoiceService.ts`**: Replaced `nanoid(8)` and `nanoid(12)` with crypto equivalents.
-- **`server/services/contractTemplateService.ts`**: Replaced `nanoid(12)` with `randomBytes(6).toString('hex')`.
-- **`server/services/promotionalToolsService.ts`**: Replaced `nanoid(6)` with `randomBytes(3).toString('hex')`.
-- **`server/init-admin.ts`**: Added `studioTemplates` and `storefrontTemplates` to static schema import. Removed 2 dynamic `await import('nanoid')` calls and all `nanoid(N)` calls. Replaced with `randomBytes` equivalents.
-
-## Full-System Optimization Pass (March 2026 — Session 9)
-
-### Dynamic Import Anti-Pattern — Deep Service Sweep
-- **`server/storage.ts`**: Added `contractTemplates` to static schema import. Removed 9 dynamic `await import(...)` calls inside function bodies (`contractTemplates` ×6, `and` ×1, `orders, listings, users` ×1, `orders` ×1). Zero dynamic imports remain (except 2 intentional lazy loads: `userPocketDimensionService` and `ALL_PLUGINS`).
-- **`server/services/stripeService.ts`**: Added static imports for `crypto`, `orders`, `listingStems`, `refunds`, `ledgerEntries`, `notifications`, `instantPayouts`, `taxForms`, `eq`, `and`, `desc`, `gte`, `lte`, `sql`, and `instantPayoutService`. Removed all 20 dynamic `await import(...)` calls. Discovered and documented that `stemOrders` table doesn't exist in the schema — replaced the failing DB insert with a debug log; DB update to `listingStems.downloadCount` preserved. Zero dynamic imports remain.
-- **`server/services/aiContentService.ts`**: Added static imports for `aiTranslationService` and `dynamicTrendsService`. Removed 2 dynamic imports inside `generateMultilingualContent()` and `getTrendingTopics()`.
-- **`server/services/notificationService.ts`**: Added static import for `webPushService`. Removed 1 dynamic import (had incorrect `.ts` extension in original).
-- **`server/services/jwtAuthService.ts`**: Added static import for `sessionTracking` from `sessionTrackingService.js`. Removed 1 dynamic import inside `forceLogoutAllSessions()`.
-- **`server/services/studioService.ts`**: Added static imports for `fsPromises` (`fs/promises`) and `audioService`. Removed 3 dynamic imports.
-- **`server/monitoring/alertingService.ts`**: Added static import for `sgMail` from `@sendgrid/mail`. Removed 1 dynamic import inside `sendEmailAlert()`. Fixed `sgMail.default.setApiKey()` → `sgMail.setApiKey()` (correct ESM default export pattern).
-- **`server/post-deploy-selftest.ts`**: Added static imports for `existsSync` (`fs`) and `join` (`path`). Removed 2 dynamic imports inside `testFilePaths()`.
-- **`server/self-evolution-engine.ts`**: Added `http` static import. Removed 1 dynamic import inside `monitorDeploymentHealth()`.
-
-### Pre-existing Bug Discovered and Fixed
-- **`stemOrders` missing from schema**: The `handleStemPurchase()` method in `stripeService.ts` attempted to `INSERT` into a `stemOrders` table that was never created in `@shared/schema`. This was a pre-existing silent runtime bug (the dynamic import would resolve `stemOrders` as `undefined` at runtime, causing a DB error on every stem purchase). Fixed by logging the download token at debug level instead, preserving the `listingStems.downloadCount` increment.
-
-### Startup Import Optimization
-- Eliminated 37+ additional `await import(...)` calls across services and monitoring files, converting them to module-scope static imports. This reduces per-request overhead and allows the bundler (esbuild) to perform better tree-shaking and code optimization.
-- All dynamic imports in `autonomousJobScheduler.ts`, `chainErrorAutoFixer.ts`, `platformAutoFixer.ts`, and infrastructure files are intentionally preserved (initialization order, circular dep prevention, or optional native deps like `sharp`/`tensorflow`).
-- **Result**: 0 nanoid references remaining anywhere in server code (outside node_modules).
-
-## Full-System Optimization Pass (March 2026 — Session 10)
-
-### Race Condition Fix
-- **`server/services/musicWorkflowAutomationService.ts`**: Fixed race condition in `executeTemplate()`. The method was doing a separate `SELECT` to fetch `triggerCount`, incrementing in JavaScript, then `UPDATE`ing — this created a TOCTOU window where concurrent workflow executions would read the same stale count. Replaced with atomic SQL expression `sql\`${musicWorkflowAutomations.triggerCount} + 1\``. Added `sql` to drizzle-orm imports.
-
-### Missing `.limit(1)` on Single-Result Queries (DB Efficiency)
-Added `.limit(1)` to all destructured single-result DB queries that were scanning more rows than needed. Files fixed:
-- **`server/routes/socialMedia.ts`**: `/api/social-media/posts/:postId` lookup
-- **`server/routes/marketplace.ts`**: `/api/marketplace/orders/:orderId` lookup
-- **`server/routes/auth.ts`**: Two `users` lookups — by userId and by emailVerificationToken
-- **`server/routes/shows.ts`**: setlist lookup by showId + userId
-- **`server/routes/storefront.ts`**: Two listing lookups for license tier management routes
-- **`server/storage.ts`**: `getScheduledPostById()` posts lookup
-- **`server/services/accountDeletionService.ts`**: `manualDelete()` user lookup
-- **`server/services/userPreferencesService.ts`**: `getPreferences()` user lookup
-- **`server/services/organicCompoundingService.ts`**: `getAssetById()`, `updateLifetimeStats()`, and `getLifetimeStats()` lookups
-- **`server/tests/e2e-comprehensive.ts`**: 6 DSP provider slug lookups in test assertions
-
-### Extended `.limit(1)` Sweep (Session 10 continued)
-Applied automated and targeted fixes across every route and service file in the codebase using Python scripts with parenthesis-depth-aware block detection to distinguish genuine missing limits from aggregate queries and false positives (queries that already have `.limit(1)` inside multi-line WHERE clauses).
-
-**Route files fixed** (37 additional queries across 15 files): `admin.ts`, `analytics-internal.ts`, `apiKeys.ts`, `auth.ts`, `autopilotPreferences.ts`, `batch.ts`, `collaboration.ts`, `export.ts`, `fanCampaigns.ts`, `invoices.ts`, `marketplace.ts`, `payouts.ts`, `recoveryCodes.ts`, `search.ts`, `storefront.ts` — plus `contracts.ts` (9 queries: 3 `splitSheets`-by-ID + 6 `marketplaceDisputes`-by-ID), `billing.ts` (24 user-by-userId lookups), `collaboration.ts` (2 `collaborationVersions` queries), `distribution.ts` (1 `systemSettings` lookup), `invoices.ts` (1 invoice-by-ID lookup), `socialMedia.ts` (1 inbox message lookup), `socialOAuth.ts` (1 social account lookup).
-
-**Service files fixed** (47 queries across 16 files): `advancedAnalyticsService.ts` (6), `securityMonitoringService.ts` (7), `dmcaService.ts` (6), `kycService.ts` (4), `statusPageService.ts` (4), `auditLoggerService.ts` (3), `customerHealthScoreService.ts` (3), `stripeService.ts` (2), `userPocketDimensionService.ts` (3), `aiContentService.ts` (1), `careerCoachService.ts` (1), `emailTrackingService.ts` (1), `paymentBypassService.ts` (2), `rbacService.ts` (1), `releaseCountdownService.ts` (2), `ssoService.ts` (1), `socialSyncService.ts` (1).
-
-**Total across Session 10**: 130+ single-result SELECT queries now have `.limit(1)`, eliminating unnecessary full-table scans on indexed lookups.
-
-## Full-System Optimization Pass (March 2026 — Session 11)
-
-### Cross-File Unbounded Multi-Row Query Sweep (S04–S11)
-Applied comprehensive automated sweep across all route and service files to add appropriate `.limit(N)` bounds to every genuinely unbounded multi-row SELECT. Distinguished from aggregate (count/sum/avg) false positives using parenthesis-depth-aware detection.
-
-**80+ multi-row queries bounded across 30+ files:**
-- **`server/routes/distribution.ts`**: `distroReleases` IDs select → `.limit(500)`
-- **`server/routes/studio.ts`**: `stemExports` → `.limit(100)`, `pluginPresets` multi-row → `.limit(200)`, `pluginPresets` single-row → `.limit(1)`
-- **`server/routes/socialMedia.ts`**: 4 `socialAccounts` / `socialInboxMessages` queries → `.limit(50)` / `.limit(200)`
-- **`server/routes/admin.ts`**: `platformRoyaltyRates` → `.limit(100)`, `taxTreatyRates` → `.limit(200)`, `labelSettings` → `.limit(200)`, `systemSettings` → `.limit(100)`
-- **`server/routes/marketplace.ts`**: `listings` IDs → `.limit(500)`, `orders` escrow → `.limit(200)`, `projectMembers` → `.limit(200)`, `beatInteractions` (×2) → `.limit(1)`, `listingStems` (×2) → `.limit(100)` / `.limit(50)`
-- **`server/routes/collaboration.ts`**: 5 queries (versions, access requests, comments) → `.limit(100)`–`.limit(500)`
-- **`server/routes/export.ts`**: `shareLinksTable` → `.limit(100)`
-- **`server/routes/batch.ts`**: `batchTemplates` → `.limit(200)`
-- **`server/routes/advertising.ts`**: `adCampaigns` (×2) → `.limit(100)`
-- **`server/routes/apiKeys.ts`**: `apiKeys` → `.limit(50)`
-- **`server/routes/payouts.ts`**: `taxForms` → `.limit(20)`, `royaltyStatements` → `.limit(100)`, `royaltyDisputes` → `.limit(50)`, `disputeMessages` → `.limit(500)`
-- **`server/routes/connectedAccounts.ts`**: 3 `socialAccounts` queries → `.limit(50)` / `.limit(5)` / `.limit(1)`
-- **`server/routes/socialOAuth.ts`**: `socialAccounts` (×2) → `.limit(50)` / `.limit(1)`
-- **`server/routes/socialBulk.ts`**: `socialAccounts` (×2) → `.limit(100)`, `socialCampaigns` → `.limit(100)`
-- **`server/routes/contracts.ts`**: `contractTemplates` → `.limit(50)`, `splitSheets` → `.limit(100)`, `marketplaceDisputes` (×3) → `.limit(10)` / `.limit(200)` / `.limit(100)`
-- **`server/routes/invoices.ts`**: `orders` date-range → `.limit(200)`
-- **`server/routes/support.ts`**: `supportTickets` → `.limit(100)`
-- **`server/routes/dns.ts`**: `dnsRecordCache` → `.limit(50)`, `dnsTemplates` → `.limit(50)`
-- **`server/routes/assistant.ts`**: `assistantConversations` → `.limit(500)`
-- **`server/routes/careerCoach.ts`**: `releases.id` (×2), `posts.id` → `.limit(500)`
-- **`server/routes/auth.ts`**: `sessions` other-sessions → `.limit(500)`
-- **`server/routes/search.ts`**: `filterPresets` → `.limit(50)`, `releases.status` → `.limit(1000)`
-- **`server/routes/admin/index.ts`**: `systemSettings` → `.limit(100)`
-- **`server/routes/contracts.ts`**: Admin all disputes → `.limit(200)`
-
-### Billing & Stripe Fixes
-- **`server/routes/billing.ts`**: Removed invalid `.limit(1)` on PostgreSQL UPDATE statement (MySQL-only syntax, caused runtime error on every new Stripe customer creation). The `.where(eq(users.id, user.id))` already ensures single-row update.
-- **`server/routes/billing.ts`**: Added `idempotencyKey: 'create_customer_${user.id}'` to `stripe.customers.create()` — prevents duplicate Stripe customer creation if request retried.
-
-### Logger Severity Fixes (Routes & Services)
-- **`server/routes.ts`**: 2 `logger.info` → `logger.warn` in catch blocks for non-critical failures (Redis session deletion, avatar file deletion best-effort paths).
-- **`server/routes/auth.ts`**: Added `.limit(500)` to other-sessions lookup used in session termination.
-
-### Auth Architecture Verified
-- **Frontend auth guard pattern confirmed solid**: All protected pages use `useRequireAuth`, `useRequireSubscription`, or `useRequireAdmin` hooks — each properly redirects unauthenticated users to `/login` and non-admins to `/dashboard`. Server-side route protection confirmed on all payment, admin, and batch operation endpoints.
-- **Stripe webhook signature verification confirmed**: `/api/webhooks/stripe` uses `stripeWebhookMiddleware` which calls `stripe.webhooks.constructEvent()` — full cryptographic verification in place.
-- **Zero raw SQL injection vectors**: Comprehensive scan across all 100+ route files found 0 instances of `req.params/query/body` passed directly into `sql\`...\`` template literals.
-- **Payouts authorization confirmed**: All 12 POST/PUT/DELETE payout routes have inline `if (!req.user)` guards returning 401.
-
-### Frontend Audit (S12–S13) — Clean
-- **896 frontend TypeScript/TSX files scanned**: 0 hardcoded admin IDs, 0 localhost references in production code, 0 process.env without VITE_ prefix.
-- **QueryClient confirmed production-grade**: Structured `ApiError` class with typed error codes, 30s timeout, MutationCache global error handler, Sentry breadcrumbs.
-- **ErrorBoundary confirmed comprehensive**: 889-line component with error categorization, recovery actions, and Sentry integration.
-- **App.tsx routing confirmed correct**: All 50+ routes use lazy loading with Suspense; admin pages protected by `useRequireAdmin`; dashboard pages protected by `useRequireSubscription`.
-
-### Total Session 11 Fixes
-- **80+ unbounded multi-row queries** bounded with appropriate limits
-- **2 Stripe billing bugs** fixed (invalid PG UPDATE limit, missing idempotency)
-- **2 logger severity mismatches** corrected (info → warn for non-critical failures)
-- **Full security audit passed**: Auth, Stripe webhooks, SQL injection, password exposure — all clean
-
-## Pre-Launch Fixes (March 2026 — Session 12)
-
-### Admin Account Configured
-- **`server/scripts/setupAdmin.ts`** run against production DB — admin account `blawzmusic@gmail.com` confirmed with `role=admin`, `subscriptionTier=lifetime`, `subscriptionStatus=active`
-- All seeded data confirmed present: storefront, workspace, 3 projects, 3 releases, 6 social accounts, 31 days analytics, 3 beats, 2 marketplace listings, brand voice, HyperFollow page, content calendar entries, notifications
-
-### Distribution: Spotify API → LabelGrid API
-- **`server/routes/distribution.ts`**: Replaced 3 legacy per-platform mock routes (`/platform/spotify`, `/platform/apple`, `/platform/youtube`) with real LabelGrid API submissions
-- Each route now: fetches release + tracks from DB, builds a `LabelGridRelease` payload, calls `labelGridService.createRelease()` with the specific platform, writes the returned `labelGridReleaseId` back to release metadata, and returns the real LabelGrid response (status, estimatedLiveDate, platform statuses)
-- Added shared `buildLabelGridPayload()` helper to standardize release payload construction across all three routes
-
-### Social Media APIs Confirmed Operational
-- All OAuth credentials confirmed set: `FACEBOOK_APP_ID/SECRET`, `INSTAGRAM_APP_ID/SECRET`, `TWITTER_API_KEY/SECRET`, `TWITTER_CLIENT_ID/SECRET`, `TIKTOK_CLIENT_KEY/SECRET`, `YOUTUBE_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `THREADS_APP_ID/SECRET`
-- `server/services/autoPostingService.ts` (767 lines) confirmed making real API calls: Facebook Graph API v18.0, Twitter API v2, TikTok, YouTube — using stored OAuth access tokens from `socialAccounts` table
+## Critical Database Notes
+
+**IMPORTANT: Two database URLs exist in this environment:**
+- `NEON_DATABASE_URL` → Real Neon cloud database (used by the server via `config.database.url = NEON_DATABASE_URL || DATABASE_URL`)
+- `DATABASE_URL` → Local PostgreSQL on `helium` (used by dev tools and direct `node -e` scripts)
+
+**ALL schema changes (ALTER TABLE, etc.) MUST target `NEON_DATABASE_URL`, not `DATABASE_URL`.** The server will always connect to the Neon cloud DB. Any column additions verified against `DATABASE_URL` will NOT be visible to the running server.
+
+When running a schema migration from a shell script, always use `process.env.NEON_DATABASE_URL` explicitly:
+```javascript
+const pool = new Pool({ connectionString: process.env.NEON_DATABASE_URL });
+```
+
+## Production Setup (Replit)
+
+-   **Dev Workflow command**: `bash -c './boosterstate/target/release/boosterstate & sleep 2 && NODE_ENV=development npx tsx server/index.ts'`
+    -   Starts BoosterState Rust sidecar (fast KV on port 9877) first, then the dev server
+    -   BoosterState release binary is pre-built at `./boosterstate/target/release/boosterstate`
+    -   In the Replit deployment VM the ELF interpreter embedded in the binary is unavailable (different NixOS derivation). `startBoosterstate()` in `server/cluster.ts` probes the binary with `spawnSync(bin, ['--version'], {timeout:300})` — if ENOENT is returned immediately it logs a clear warning and returns early, skipping both the daemon spawn and the 2-second `Atomics.wait`. Server runs fine without it; PDIM is the sole storage backend.
+-   **Production deployment**: Build: `cargo build --release --manifest-path boosterstate/Cargo.toml && npm run build:deploy`; Run: `./boosterstate/target/release/boosterstate & sleep 2 && npm run start`
+    -   `build:deploy` = Vite + esbuild bundle
+    -   `start` = production Node.js cluster from `dist/cluster.cjs`
+-   **CJS bundle compatibility**: Files using `import.meta.url` must use the pattern:
+    ```ts
+    const __metaUrl = (import.meta as any)?.url as string | undefined;
+    const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
+    ```
+    Applied to: `server/cluster.ts`, `server/startup-probes.ts`, `server/services/diffusionBackgroundTrainer.ts`, `server/services/diffusionVideoService.ts`
+-   **Storage (all tiers)**: PDIM is the sole backend — exec endpoint `https://pocketdimensionstorage.replit.app/api/redis/instances/e50d64e610d37dd52ce85711/exec`; bearer token in `PDIM_BEARER_TOKEN` env secret; HTTP URL in `PDIM_HTTP_EXEC_URL`. No external Redis server, no Replit Object Storage bucket.
+-   **Deployment builds**: Workflow command: `npm run build:deploy && npm run start`. Deployment build command (`build:prod`): `npx tsx script/build.ts && npm prune --production --omit=dev`. `security-fix.ts` is only in `npm run build` (dev), never in `build:prod` or `build:deploy`. Always use "Clear build cache" in the Deployments pane when redeploying. `postinstall` now runs `script/postinstall.mjs` (consolidates TF binary removal + BullMQ `stalled.forEach` patch).
+-   **BullMQ / PDIM compatibility fixes** (all resolved, no recurring errors):
+    - `stalled.forEach is not a function` — patched in `script/postinstall.mjs` via `Array.isArray(stalled) ? stalled : []` guard in `node_modules/bullmq/dist/cjs/classes/worker.js`
+    - Repeatable job Lua errors — `server/services/autonomousJobScheduler.ts` replaced `q.getRepeatableJobs()` + `q.add(…, {repeat:…})` Lua API with plain `setInterval` scheduling (no Lua dependency)
+    - PDIM 429 rate-limit bursts — `bzpopmin` polling interval raised from 200ms → 500ms + 0–100ms random jitter in `server/lib/pdimClient.ts`
+    - All BullMQ workers now have `stalledInterval: 30000, maxStalledCount: 2` (including `autonomousWorker.ts` and `scaleJobQueue.ts`)
+-   **DatabaseLogTransport** (`server/services/databaseLogTransport.ts`): **Completely disabled in `server/index.ts`**. Even a single-worker process can exhaust Neon's connection limit when the regular query pool is busy, triggering PG_CODE 53100 retry storms. All log output is already captured by the standard pino stdout JSON transport, so DB persistence is redundant. The transport file is retained but never initialized.
+-   **Cluster DB pool sizing** (`server/config/defaults.ts`): In production (`REPLIT_DEPLOYMENT=1`), pool size per worker = `ceil(15 / CLUSTER_WORKERS)` (e.g., 5 for 3 workers = 15 total) instead of a flat 20 per worker. This prevents the N×20 connection count from exceeding Neon's connection limit and causing 53100 errors. `DB_POOL_SIZE` env var always overrides.
+-   **Fast-path health endpoint** (`server/index.ts`): `/api/health` is intercepted by an early middleware registered before the session store. This ensures Replit's health checker always gets a sub-10ms response regardless of PDIM rate-limit state (previously 2–7 seconds due to session HGET stalls on PDIM 429).
+-   **Cluster primary handles all health paths** (`server/cluster.ts`): The primary health server (which binds port 5000 immediately with `reusePort: true`) responds 200 to `/health`, `/api/health`, AND `/api/ping`. Previously it only handled `/health` and `/api/ping` — returning 503 for `/api/health`. Since the OS distributes SO_REUSEPORT connections between the primary and all workers, some health checks always hit the primary. Returning 503 on the deployment health-check path caused fresh deployments to fail the 4-minute health-check timeout even after workers were running. The `HEALTH_PATHS` set in cluster.ts must contain every path Replit's health checker may use.
+-   **Background workers on cluster worker 0 only** (`server/index.ts` + `server/cluster.ts`): Each forked worker receives `CLUSTER_WORKER_ID` env var (0, 1, 2, …). Only worker 0 (or the single process in non-clustered/dev mode) runs `initializeWorkers()` (BullMQ processors). Workers 1+ are HTTP-only. This reduces PDIM job-queue poll traffic by N× and eliminates the 429 cascade from multiple workers racing on the same queues. Worker env (including `CLUSTER_WORKER_ID`) is preserved on crash-respawn via `workerEnvMap` in cluster primary.
+-   **Deploy pruner philosophy** (`script/build.ts`): The pruner does NOT pattern-delete directories by name (`doc`, `test`, `examples`, etc.) inside `node_modules`. Those directory names are sometimes used for real runtime JS modules (e.g., `exceljs/lib/doc/workbook.js`). `npm prune --omit=dev` is the real allowlist — it keeps exactly what production dependencies need. Only files provably never `require()`d at runtime are deleted: `*.map`, `*.d.ts`, `*.md`, changelogs. Specific large known-safe blobs (Rust build artifacts, TF browser bundles, Electron, Sentry browser SDKs) are removed by exact path.
+-   **Startup Seeding Optimizations**: Distribution platforms seeding (`server/seed/distributionPlatforms.ts`) replaced 194 sequential SELECT/UPDATE queries with a single batch `INSERT...onConflictDoUpdate`. Achievements seeding (`server/seed/seedAchievements.ts`) replaced 16 sequential SELECT+INSERT loops with a single `COUNT` check (skip entirely if all seeded) plus one batch `INSERT` for missing records — startup seeding now completes in near-instant vs ~14s previously.
+-   **Startup Parallelization** (`server/index.ts` + `server/safety/databaseIndexes.ts`):
+    - **Batch DB index check**: `createRequiredIndexes()` now fetches all 51 index names in a single `WHERE indexname IN (…)` query instead of 51 individual round-trips. On repeat boots (all indexes exist), index verification drops from ~6 seconds to < 200 ms.
+    - **Parallel optional module imports**: `loadOptionalModules()` concurrently imports 5 monitoring/realtime/worker modules via `Promise.allSettled` instead of 5 sequential `await import()`s — saves ~0.5 s.
+    - **Parallel middleware imports**: The 4 API middleware modules (`auth.js`, `scalableRateLimiter.js`, `admissionControl.js`, `apiCache.js`) are imported concurrently via `Promise.allSettled`, then applied in the correct order — saves ~0.5 s.
+    - **Net result (production cluster, verified)**: From "serving on port 5000" to "all middleware and routes registered" is **12.5 seconds** running `REPLIT_DEPLOYMENT=1 CLUSTER_WORKERS=2 node dist/cluster.cjs` (compiled bundle, 2 workers in parallel). Both workers complete simultaneously — each milestone appears twice at the same timestamp. Zero 53100 errors.
+    - **Testing standard**: All startup and performance testing is done against the compiled production cluster (`bash -c 'npx tsx script/build.ts && REPLIT_DEPLOYMENT=1 CLUSTER_WORKERS=2 node dist/cluster.cjs'`), not the dev TypeScript transpile. The workflow is configured accordingly.
+-   **Startup Speed Optimizations** (implemented 2026-03-19, all verified with dual-restart test):
+    - **Eliminated `sleep 2` in `start.sh`**: boosterstate Rust sidecar starts in background without any wait — workers take >2 s to init anyway, so the sidecar is always ready before first use. Saves **2 full seconds** on every cold start.
+    - **Skip-rebuild cache in `script/build.ts`**: `find server shared -name '*.ts' -newer dist/index.cjs` (OS-level, instant) detects source changes before invoking esbuild. If nothing changed, esbuild is skipped entirely. Saves **300–500 ms** on every restart without code changes (e.g. crash-recovery restarts).
+    - **Cluster worker stagger reduced 800 ms → 300 ms** (`server/cluster.ts`): Workers still stagger to avoid PDIM rate-limit burst, but the gap is now 300 ms (sufficient since each worker takes ~500 ms to begin PDIM operations regardless). Saves **500 ms** for the second worker's fork.
+    - **DB index verification file-stamp cache** (`server/safety/databaseIndexes.ts`): After a successful check, writes `dist/.db-indexes-ok` with `{count, ts}`. On the next boot, if the stamp is <24 h old and the index count matches, the DB round-trip is skipped entirely ("cache hit"). Saves **~150 ms** per restart in steady state.
+    - **BullMQ worker stagger reduced 15 s → 5 s** (`server/workers/index.ts`): Stall checks for audio/csv/analytics/email are now at 0 s/5 s/10 s/15 s instead of 0 s/15 s/30 s/45 s. They still run solo through the single LuaExecutor slot (300 s stalledInterval means no subsequent collision). Full queue readiness is now **30 seconds faster**.
+-   **LuaExecutor tuning** (`server/lib/luaExecutor.ts`): `MAX_CONCURRENT_WORKERS` reduced to 1 (single exclusive slot — eliminates chain contention where two concurrent Workers interleave their 35 sequential redis.call()s through the serialised PDIM chain, doubling per-script duration). Script timeout raised from 20 s → 45 s and slot wait timeout raised to 55 s. Root cause of the old timeout cascade: BullMQ scripts make ~35 sequential redis.call()s, each serialised through the PDIM chain with a 400 ms floor gap. Minimum script duration = 35×400 ms = 14 s; at observed 600–1500 ms PDIM RTT the typical duration is 35×1000 ms = 35 s. The old 20 s timeout fired whenever PDIM averaged >571 ms/call (35×571 ms = 20 s), creating a permanent retry storm. At 45 s, scripts survive up to 1285 ms average PDIM latency. Boot-burst congestion (all BullMQ queues initialising simultaneously against 1 slot) is handled by ChainFixer semaphore resets.
+-   **Distribution platform activation** (`server/init-admin.ts`, `server/routes/distribution.ts`): `seedDSPProviders()` now uses `onConflictDoUpdate` (was `onConflictDoNothing`) so every restart forces all DSP policy platforms to `isActive: true`. A bulk SQL update (`UPDATE dsp_providers SET is_active = true WHERE is_active IS DISTINCT FROM true`) also reactivates any previously-inactive platform from prior seeding runs. The `/api/distribution/platforms/status` endpoint now returns `apiStatus: "online"`, `catalogSource: "labelgrid_api"`, and `allPlatformsActive: true` when `LABELGRID_API_TOKEN` is configured, confirming all 97 platforms are active and routed through LabelGrid.
+-   **Artist auto-discover / auto-sync auth fix** (`server/routes/artistProfiles.ts`): `POST /:id/auto-discover` and `POST /:id/auto-sync` were missing `requireAuth` middleware, causing them to throw a TypeError (`Cannot read properties of undefined`) instead of returning 401 when the session wasn't established. Both routes now have `requireAuth` applied.
+-   **Chain Error Auto-Fixer** (`server/services/chainErrorAutoFixer.ts`): Started early in `server/index.ts`; hooks into the structured logger transport to intercept error/warn messages in real time, runs a 15s health check loop, and applies 10 named fix patterns. Admin API: `GET /api/admin/chain-fixer/status`, `POST /api/admin/chain-fixer/reset/:patternId`, `POST /api/admin/chain-fixer/force-check`.
+-   **Platform Auto Error Fixer & Patcher** (`server/services/platformAutoFixer.ts`): Proactive subsystem-level health monitoring and runtime patching. Complements `chainErrorAutoFixer` (reactive/log-based) by actively probing 6 subsystems every 30 s: `database` (pool health + query latency), `pdim` (ping latency + circuit state), `memory` (heap ratio vs V8 limit), `lua_executor` (slot saturation), `queues` (log error accumulation), `routes` (per-route 5xx rate via `platformFixerMiddleware`). Applies typed, reversible runtime patches automatically (e.g., PDIM backoff increase via `setPdimAdaptiveGap`, LuaExecutor semaphore reset, forced GC on heap pressure, DB pool exhaustion incidents). Correlates concurrent failures into incidents. Patches auto-expire after 30 min and auto-revert when the subsystem recovers. Admin API: `GET /api/admin/platform-fixer/status`, `GET /api/admin/platform-fixer/subsystems`, `GET /api/admin/platform-fixer/patches`, `GET /api/admin/platform-fixer/incidents`, `GET /api/admin/platform-fixer/degraded-routes`, `POST /api/admin/platform-fixer/scan`, `POST /api/admin/platform-fixer/probe/:name`, `POST /api/admin/platform-fixer/patch/:id/revert`. Also added `setPdimAdaptiveGap(ms)` export to `server/lib/pdimClient.ts`.
+-   **Fabric routes**: Gracefully skipped if pocket-dimension fabric dependencies fail to initialize (non-fatal warning)
+-   **Deploy-clean prune safety — runtime dependency classification** (`package.json`, `script/build.ts`): Because EVERY package is externalized (the server loads all modules from `node_modules` at runtime), any package imported by server code at runtime MUST be in `"dependencies"` — not `"devDependencies"` — or `npm prune --omit=dev` will delete it during the `[deploy-clean]` phase, crashing the production server. Two packages were confirmed server-runtime and moved from devDependencies → dependencies: (1) `@tensorflow/tfjs-node` — dynamically imported by `server/workers/tfWorkerThread.ts` and `server/services/baseModelTrainer.ts`; (2) `esbuild` — statically imported at the top of `server/self-evolution-engine.ts` (loaded at every startup via the autoUpdates/silentDeployment route chain). `vite` stays in devDependencies (only loaded in the `NODE_ENV !== "production"` else-branch). `vitest` stays in devDependencies (only appears inside a code-generation template string, not a real import). A comprehensive comment block in `script/build.ts` (above the allowlist) documents this classification for future developers. The `overrides.esbuild` entry and `optionalDependencies["@esbuild/linux-x64"]` remain unchanged. `package-lock.json` updated via `npm install --package-lock-only`.
+-   **Security — Error sanitization** (`server/routes/fabric.ts`): All 17 endpoint error handlers now run raw `err.message` through a `sanitizeError()` helper that returns `"Internal server error"` when `NODE_ENV === "production"`, preventing internal stack/message leakage to clients.
+-   **Admin — Real metrics** (`server/routes/admin.ts`): `/api/admin/system/storage` and `/api/admin/system/health` now return real disk stats via `fs.statfsSync('/')` and real PostgreSQL pool metrics (`pool.totalCount`, `pool.idleCount`, `pool.waitingCount`) instead of hardcoded zeros. The `pool` export from `server/db.ts` (`InstrumentedPool`) and the `fs` module are properly imported.
+-   **Production hardening**: `NODE_ENV=production` is set in the Replit deployment environment. `SESSION_SECRET` is configured as a Replit secret. Both verified active on every restart cycle.
+-   **Social analytics — real data aggregation** (`server/storage.ts`, `server/routes/socialMedia.ts`, `server/services/socialSyncService.ts`):
+    - `getSocialMetrics()` now aggregates real engagement data (likes/comments/shares/views/reach/impressions) from both `posts.engagement` JSONB and `socialAutopilotContent.performance` JSONB tables. Returns `totalEngagement`, `totalLikes`, `totalComments`, `totalShares`, `totalViews`, `avgEngagementRate`, `postsThisWeek`, `postsThisMonth`, `platformGrowth`.
+    - `getSocialWeeklyStats()` now returns a real 7-day breakdown by fetching posts and autopilot content for the past 7 days and bucketing them by day, with `posts`, `engagement`, `views`, and `impressions` per day.
+    - `GET /api/social/analytics` endpoint rebuilt from scratch — pulls connected accounts (with follower counts), posts (30d), and autopilot content from DB; computes per-platform engagement breakdown; returns daily metrics for the selected period, top posts ranked by engagement, and Spotify artist stats (followers, popularity, genres) when `spotifyArtistId` is set in the artist profile.
+    - **Stale sync bug fixed** (`socialSyncService.ts`): `syncPlatformData()` was setting `createdAt: new Date()` on every sync, which reset the timestamp used by the stale-check and prevented subsequent re-syncs. Fixed to write `metadata.lastSyncedAt` instead.
+    - **Platform-status stale check fixed** (`socialMedia.ts`): The stale detection now reads `metadata.lastSyncedAt` (with fallback to `createdAt`), so accounts correctly re-sync after their 1-hour window expires.
+    - `artistProfiles` imported into both `server/storage.ts` and `server/routes/socialMedia.ts`.
+-   **Python AI**: Python 3.11 module is **not installed** (removed to stay under the 8 GiB deployment image limit). All `spawn('python3', ...)` calls use the `PYTHON` constant from `server/services/pythonPath.ts`, which tries `.venv/bin/python3` → `/usr/bin/python3` → `python3` and sets `PYTHON_AVAILABLE = false` if nothing is found. When `PYTHON_AVAILABLE` is false, `renderWithPython()` in `videoGeneratorService.ts` immediately rejects with a clear error message instead of an ENOENT crash. To re-enable Python video generation locally: install Python 3.11, run `python3 -m venv .venv && .venv/bin/pip install numpy Pillow`, and the path resolver will automatically find it.
+-   **Comprehensive parsing/scraping upgrade** (`server/services/artistProfileService.ts`, `server/services/distributionService.ts`, `client/src/components/distribution/ReleaseStatusDashboard.tsx`):
+    - **Apple iTunes** — artworkUrl now captures `artworkUrl100 ?? artworkUrl60`; UPC lookup extracts artist from album collection when no explicit artist record is returned (iTunes often returns album-first)
+    - **Deezer** — Image chain upgraded to `picture_xl → picture_big → picture_medium → picture_small`; `nbAlbum` field added to interface and scoring (+5/+3/+1 for 10+/3+/1+ albums); error guard on `data.error` response; UPC lookup similarly improved
+    - **JioSaavn** — Primary: `saavn.dev` community API with 500x500 images and structured data; fallback: original autocomplete endpoint; both paths wrapped in independent try/catch
+    - **MusicBrainz** — Two-stage search: strict `artist:"name"` first, then relaxed bare-name when 0 results; 500ms rate-limit gap between stages; improved tag parsing includes `genre-list`
+    - **Audiomack** — 401 errors suppressed (OAuth required, expected behaviour); added `avatar` and `fans` fallback fields
+    - **URL Templates (97 DSPs)** — Fixed ~15 placeholder-only root URLs: Gaana, Pretzel, Roblox, TouchTunes, TIM Music, Resso, UMA, Nuuday/YouSee, Rakuten Music, WeSing, CapCut, Tencent Music, Luna Music, Kuack, Dubset→Songtradr, Ultimate Music; improved SoundExchange, Peloton, Soundtrack Your Brand
+    - **Distribution webhook handler** — Explicit `String()` coercion + trim on all fields; expanded STATUS_MAP covers: released, published, refused, submitted, queued, under_review, review; `parsedLiveDate` guard with `isNaN()` check
+    - **ReleaseStatusDashboard** — Added `in_review`, `rejected`, `takedown` to STATUS_CONFIG; client-side status normalization maps aliases; platform cards render fallback initials icon for unknown platforms; failedCount includes `rejected`; inProgress includes `in_review`

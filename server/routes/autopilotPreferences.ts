@@ -4,11 +4,8 @@ import { db } from '../db';
 import { autopilotPreferences } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger';
-import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-
-router.use(requireAuth);
 
 const postingScheduleSchema = z.object({
   timezone: z.string().max(64).optional(),
@@ -54,11 +51,14 @@ const preferencesSchema = z.object({
 
 router.get('/', async (req: Request, res: Response) => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const [preferences] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences.userId, req.user.id))
-      .limit(1);
+      .where(eq(autopilotPreferences.userId, req.user.id));
 
     if (!preferences) {
       return res.json({
@@ -106,6 +106,10 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.post('/', async (req: Request, res: Response) => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const parsed = preferencesSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Invalid input' });
@@ -121,8 +125,7 @@ router.post('/', async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences.userId, req.user.id))
-      .limit(1);
+      .where(eq(autopilotPreferences.userId, req.user.id));
 
     let result;
     if (existing) {
@@ -148,6 +151,10 @@ router.post('/', async (req: Request, res: Response) => {
 
 router.patch('/', async (req: Request, res: Response) => {
   try {
+    if (!req.user?.id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
     const parsed = preferencesSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Invalid input' });
@@ -156,8 +163,7 @@ router.patch('/', async (req: Request, res: Response) => {
     const [existing] = await db
       .select()
       .from(autopilotPreferences)
-      .where(eq(autopilotPreferences.userId, req.user.id))
-      .limit(1);
+      .where(eq(autopilotPreferences.userId, req.user.id));
 
     if (!existing) {
       return res.status(404).json({ error: 'Preferences not found. Create them first.' });

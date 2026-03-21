@@ -1,6 +1,5 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { randomBytes } from 'crypto';
 import wavefilePkg from 'wavefile';
 const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
 
@@ -475,7 +474,7 @@ export async function synthesizeToWAV(
   const outputDir = path.join(process.cwd(), 'public', 'generated-content', 'audio');
   await fs.mkdir(outputDir, { recursive: true });
 
-  const filename = `melody_${Date.now()}_${randomBytes(8).toString('hex')}.wav`;
+  const filename = `melody_${Date.now()}_${Math.random().toString(36).substring(7)}.wav`;
   const filepath = path.join(outputDir, filename);
 
   await fs.writeFile(filepath, wav.toBuffer());

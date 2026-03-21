@@ -1,7 +1,6 @@
-import { randomBytes } from 'crypto';
 import { storage } from '../storage';
 import { aiContentService } from './aiContentService';
-
+import { nanoid } from 'nanoid';
 import type { InsertAdCampaign, AdCampaign } from '@shared/schema';
 import { logger } from '../logger.js';
 

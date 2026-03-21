@@ -1,5 +1,4 @@
-import { randomBytes } from 'crypto';
-
+import { nanoid } from 'nanoid';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { logger } from '../logger.js';
@@ -218,7 +217,7 @@ class InvoiceService {
       const total = subtotal - discountAmount + taxAmount;
 
       return {
-        id: randomBytes(4).toString("hex"),
+        id: nanoid(8),
         description: item.description,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -253,7 +252,7 @@ class InvoiceService {
     const total = subtotal + totalTax - discountAmount;
 
     const invoice: Invoice = {
-      id: `inv_${randomBytes(6).toString("hex")}`,
+      id: `inv_${nanoid(12)}`,
       invoiceNumber,
       userId: data.userId,
       type: data.type,

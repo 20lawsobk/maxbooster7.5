@@ -6,7 +6,6 @@
 
 import wavefilePkg from 'wavefile';
 const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
-import { randomBytes } from 'crypto';
 
 import { AIAudioGenerator, type GenerationOutput, type GenerationType } from '../../shared/ml/audio/AIAudioGenerator.js';
 import { logger } from '../logger.js';
@@ -63,7 +62,7 @@ async function saveToWav(audioData: Float32Array, sampleRate: number): Promise<s
   const wav = new WaveFile();
   wav.fromScratch(1, sampleRate, '16', Array.from(int16Data));
 
-  const filename = `ai_generated_${Date.now()}_${randomBytes(8).toString('hex')}.wav`;
+  const filename = `ai_generated_${Date.now()}_${Math.random().toString(36).substring(7)}.wav`;
   const key = `generated-content/audio/${filename}`;
   const buffer = Buffer.from(wav.toBuffer());
 

@@ -1,10 +1,9 @@
-import { randomBytes } from 'crypto';
 import { storage } from "../storage";
 import { db } from '../db.js';
-import { dspAnalytics, releases, royaltySplits } from '@shared/schema';
+import { dspAnalytics, releases } from '@shared/schema';
 import { eq, and, sql as drizzleSql } from 'drizzle-orm';
 import { notificationService } from './notificationService.js';
-
+import { nanoid } from "nanoid";
 import type { 
   InsertRelease, 
   Release, 
@@ -147,7 +146,7 @@ export class DistributionService {
         logger.warn('⚠️  LabelGrid API token not configured - using demo mode');
         logger.warn('   Set LABELGRID_API_TOKEN in environment to enable real distribution');
 
-        const dispatchId = `demo_dispatch_${randomBytes(8).toString('hex')}`;
+        const dispatchId = `demo_dispatch_${nanoid()}`;
         const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
@@ -424,28 +423,16 @@ export class DistributionService {
   /**
    * Setup royalty splits for collaborators
    */
-  async setupRoyaltySplit(releaseId: string, splits: Array<{ userId: string; percentage: number; role: string; name?: string; email?: string }>) {
+  async setupRoyaltySplit(releaseId: string, splits: Array<{ userId: string; percentage: number; role: string }>) {
     try {
+      // Validate splits total 100%
       const total = splits.reduce((sum, s) => sum + s.percentage, 0);
-      if (Math.abs(total - 100) > 0.01) {
-        throw new Error(`Split percentages must total 100% (got ${total.toFixed(2)}%)`);
+      if (total !== 100) {
+        throw new Error("Split percentages must total 100%");
       }
 
-      await db.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
-
-      const inserted = await db.insert(royaltySplits).values(
-        splits.map(s => ({
-          releaseId,
-          userId: s.userId,
-          collaboratorName: s.name || s.userId,
-          collaboratorEmail: s.email || `${s.userId}@placeholder.local`,
-          role: s.role,
-          percentage: s.percentage,
-          status: 'active',
-        }))
-      ).returning();
-
-      return { success: true, splitId: `split_${releaseId}`, splits: inserted };
+      // In production: Integrate with Stripe Connect for automatic royalty splits
+      return { success: true, splitId: `split_${releaseId}` };
     } catch (error: unknown) {
       logger.error("Royalty split error:", error);
       throw new Error("Failed to setup royalty split");
@@ -1348,7 +1335,7 @@ Generated: ${new Date().toISOString()}
    */
   async createPreSaveCampaign(data: InsertPreSaveCampaign): Promise<PreSaveCampaign> {
     try {
-      const slug = data.slug || `${data.name.toLowerCase().replace(/\s+/g, '-')}-${randomBytes(3).toString('hex')}`;
+      const slug = data.slug || `${data.name.toLowerCase().replace(/\s+/g, '-')}-${nanoid(6)}`;
       
       const campaign = await storage.createPreSaveCampaign({
         ...data,

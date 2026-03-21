@@ -199,7 +199,7 @@ export function FlowStateExport({
 
       setExportPhase('complete');
 
-      const response = await fetch(`/api/studio/projects/${projectId}/render`, {
+      const response = await fetch(`/api/studio/projects/${projectId}/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',

@@ -1,5 +1,4 @@
 import { Router } from 'express';
-import { randomBytes } from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
@@ -707,7 +706,7 @@ router.post('/bounce', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const bounceId = `bounce_${Date.now()}_${randomBytes(4).toString('hex')}`;
+    const bounceId = `bounce_${Date.now()}_${Math.random().toString(36).substring(7)}`;
     const fileName = `${data.targetTrackName || 'Bounced Track'}_${bounceId}.${data.format}`;
 
     const bouncedTrack = {
@@ -847,7 +846,7 @@ router.post('/modulation-matrix', requireAuth, async (req, res) => {
 
     const routingsWithIds = data.routings.map(routing => ({
       ...routing,
-      id: routing.id || `mod_${Date.now()}_${randomBytes(4).toString('hex')}`,
+      id: routing.id || `mod_${Date.now()}_${Math.random().toString(36).substring(7)}`,
     }));
 
     const key = data.trackId ? `${data.projectId}:${data.trackId}` : data.projectId;

@@ -1,5 +1,4 @@
-import { randomBytes } from 'crypto';
-
+import { nanoid } from 'nanoid';
 import { logger } from '../logger';
 import { storage } from '../storage.js';
 import axios from 'axios';
@@ -157,7 +156,7 @@ class SocialListeningService {
     ];
 
     defaultQueries.forEach(query => {
-      const id = randomBytes(8).toString('hex');
+      const id = nanoid();
       this.trackedKeywords.set(id, { ...query, id, createdAt: new Date() });
     });
   }
@@ -429,16 +428,16 @@ class SocialListeningService {
       const isInfluencer = followers > 50000;
 
       mentions.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         platform,
         type: types[Math.floor(Math.random() * types.length)],
         content: sampleContent[Math.floor(Math.random() * sampleContent.length)],
-        authorId: randomBytes(8).toString('hex'),
+        authorId: nanoid(),
         authorName: `User ${i + 1}`,
         authorHandle: `@user${i + 1}`,
         authorFollowers: followers,
         authorVerified: Math.random() > 0.9,
-        url: `https://${platform}.com/post/${randomBytes(8).toString('hex')}`,
+        url: `https://${platform}.com/post/${nanoid()}`,
         timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
         sentiment,
         reach: followers * (1 + Math.random()),
@@ -536,7 +535,7 @@ class SocialListeningService {
     for (let i = 0; i < Math.min(limit, trendingData.length); i++) {
       const data = trendingData[i];
       topics.push({
-        id: randomBytes(8).toString('hex'),
+        id: nanoid(),
         topic: data.topic,
         hashtag: data.hashtag,
         category: data.category as any,
@@ -564,7 +563,7 @@ class SocialListeningService {
       const baseFollowers = Math.floor(Math.random() * 500000) + 50000;
       
       analyses.push({
-        competitorId: randomBytes(8).toString('hex'),
+        competitorId: nanoid(),
         name: handle.replace('@', '').replace('_', ' '),
         handle,
         platforms: [
@@ -723,7 +722,7 @@ class SocialListeningService {
     query: Omit<ListeningQuery, 'id' | 'createdAt'>
   ): Promise<ListeningQuery> {
     const newQuery: ListeningQuery = {
-      id: randomBytes(8).toString('hex'),
+      id: nanoid(),
       ...query,
       createdAt: new Date(),
     };

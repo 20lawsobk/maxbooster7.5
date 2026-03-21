@@ -392,8 +392,7 @@ class IdentifierService {
     const records = await db.select()
       .from(isrcRegistry)
       .where(eq(isrcRegistry.userId, userId))
-      .orderBy(desc(isrcRegistry.issuedAt))
-      .limit(500);
+      .orderBy(desc(isrcRegistry.issuedAt));
 
     return records.map(r => ({
       code: r.code,
@@ -444,7 +443,7 @@ class IdentifierService {
   private generateRandomDigits(length: number): string {
     let result = '';
     for (let i = 0; i < length; i++) {
-      result += crypto.randomInt(0, 10).toString();
+      result += Math.floor(Math.random() * 10).toString();
     }
     return result;
   }

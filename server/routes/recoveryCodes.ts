@@ -41,8 +41,7 @@ async function getStore(userId: string): Promise<RecoveryCodeStore | null> {
   const [row] = await db
     .select({ preferences: users.preferences })
     .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+    .where(eq(users.id, userId));
 
   const prefs = (row?.preferences ?? {}) as Record<string, any>;
   return (prefs.twoFactorRecoveryCodes as RecoveryCodeStore) ?? null;
@@ -52,8 +51,7 @@ async function saveStore(userId: string, store: RecoveryCodeStore): Promise<void
   const [row] = await db
     .select({ preferences: users.preferences })
     .from(users)
-    .where(eq(users.id, userId))
-    .limit(1);
+    .where(eq(users.id, userId));
 
   const prefs = ((row?.preferences ?? {}) as Record<string, any>);
   prefs.twoFactorRecoveryCodes = store;

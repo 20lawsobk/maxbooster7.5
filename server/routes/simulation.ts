@@ -1,4 +1,3 @@
-import { randomBytes } from 'crypto';
 /**
  * Simulation API Routes
  * 
@@ -27,7 +26,7 @@ const simulationLogs: Map<string, string[]> = new Map();
 
 // Generate unique simulation ID
 function generateSimulationId(): string {
-  return `sim_${Date.now()}_${randomBytes(3).toString('hex')}`;
+  return `sim_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
 }
 
 // Time acceleration: 98% acceleration = 0.48 seconds per simulated day
@@ -342,7 +341,7 @@ router.get('/events/:id', (req: Request, res: Response) => {
       return res.json({
         success: true,
         status: 'running',
-        recentEvents: logs.slice(-Math.min(Math.max(parseInt(limit as string) || 100, 1), 500)),
+        recentEvents: logs.slice(-parseInt(limit as string) || -100),
       });
     }
 
@@ -647,40 +646,7 @@ router.post('/generate-event', (req: Request, res: Response) => {
   }
 });
 
-// GET /api/simulation/:id - Get overview of a specific simulation (must be after all literal paths)
-router.get('/:id', (req: Request, res: Response) => {
-  try {
-    const { id } = req.params;
-
-    const running = activeSimulations.get(id);
-    if (running) {
-      return res.json({
-        success: true,
-        id,
-        status: 'running',
-        ...running.getStatus(),
-        logs: simulationLogs.get(id) ?? [],
-      });
-    }
-
-    const result = simulationResults.get(id);
-    if (result) {
-      return res.json({
-        success: true,
-        id,
-        status: result.error ? 'failed' : 'completed',
-        result,
-        logs: simulationLogs.get(id) ?? [],
-      });
-    }
-
-    return res.status(404).json({ success: false, error: 'Simulation not found' });
-  } catch (error: any) {
-    logger.error('Error fetching simulation:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch simulation' });
-  }
-});
-
+// DELETE /api/simulation/:id - Delete simulation results
 router.delete('/:id', (req: Request, res: Response) => {
   try {
     const { id } = req.params;

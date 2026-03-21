@@ -33,8 +33,6 @@ import { executeStripeOperation } from '../services/externalServices';
 import { billingRateLimiter } from '../middleware/rateLimiter';
 import { requireAuth } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
-import { stripeService } from '../services/stripeService.js';
-import { instantPayoutService } from '../services/instantPayoutService.js';
 
 const router = Router();
 
@@ -148,8 +146,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
   const [dbUser] = await db
     .select()
     .from(users)
-    .where(eq(users.id, user.id))
-    .limit(1);
+    .where(eq(users.id, user.id));
   
   if (dbUser?.stripeCustomerId) {
     return dbUser.stripeCustomerId;
@@ -161,7 +158,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
       stripe.customers.create({
         email: user.email,
         metadata: { userId: user.id },
-      }, { idempotencyKey: `create_customer_${user.id}` })
+      })
     );
     
     const customer = result.data;
@@ -349,8 +346,7 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user) {
       return res.status(404).json({ 
@@ -534,8 +530,7 @@ router.get('/payment-method', requireAuth, async (req: AuthenticatedRequest, res
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.json({ last4: null, expiry: null, brand: null });
@@ -578,11 +573,10 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId || !stripe) {
-      res.status(500).json({ error: 'Internal server error' });
+      return res.json([]);
     }
     
     try {
@@ -606,7 +600,7 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       logger.warn('[Billing] Failed to fetch invoices:', err);
     }
     
-    res.status(500).json({ error: 'Internal server error' });
+    res.json([]);
   } catch (error) {
     logger.error('[Billing] Failed to get billing history:', error);
     res.status(500).json({ message: 'Failed to get billing history' });
@@ -629,8 +623,7 @@ router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedReques
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (user?.subscriptionTier === 'lifetime') {
       return res.status(400).json({ 
@@ -690,8 +683,7 @@ router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedReques
       await db
         .update(users)
         .set({ subscriptionStatus: 'canceled' })
-        .where(eq(users.id, userId))
-      .limit(1);
+        .where(eq(users.id, userId));
       
       logger.info(`[Billing] Subscription ${subscription.id} cancelled immediately for user ${userId}`);
       
@@ -743,8 +735,7 @@ router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRe
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(404).json({ 
@@ -808,8 +799,7 @@ router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRe
     await db
       .update(users)
       .set({ subscriptionStatus: 'active' })
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     logger.info(`[Billing] Subscription ${subscription.id} reactivated for user ${userId}`);
     
@@ -846,8 +836,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(400).json({ 
@@ -944,8 +933,7 @@ router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequ
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(400).json({ message: 'No billing account found' });
@@ -983,6 +971,7 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
       }
     }
     
+    const { stripeService } = await import('../services/stripeService');
     const result = await stripeService.createRefund({
       orderId,
       userId,
@@ -1010,6 +999,7 @@ router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, r
   try {
     const { refundId } = req.params;
     
+    const { stripeService } = await import('../services/stripeService');
     const refund = await stripeService.getRefundStatus(refundId);
     
     if (refund.userId !== req.user!.id) {
@@ -1030,6 +1020,7 @@ router.get('/order/:orderId/refunds', requireAuth, async (req: AuthenticatedRequ
   try {
     const { orderId } = req.params;
     
+    const { stripeService } = await import('../services/stripeService');
     const refunds = await stripeService.getOrderRefunds(orderId);
     
     res.json({ refunds });
@@ -1045,6 +1036,7 @@ router.get('/ledger', requireAuth, async (req: AuthenticatedRequest, res: Respon
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
     const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
     
+    const { instantPayoutService } = await import('../services/instantPayoutService');
     const entries = await instantPayoutService.getLedgerHistory(userId, limit, offset);
     
     res.json({ entries, pagination: { limit, offset } });
@@ -1061,8 +1053,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(404).json({ 
@@ -1114,8 +1105,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
         await db
           .update(users)
           .set({ subscriptionStatus: 'active' })
-          .where(eq(users.id, userId))
-      .limit(1);
+          .where(eq(users.id, userId));
         
         logger.info(`[Billing] Payment retry successful for user ${userId}`);
         
@@ -1176,8 +1166,7 @@ router.delete('/payment-method', requireAuth, requireStripe, async (req: Authent
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(404).json({ 
@@ -1254,15 +1243,13 @@ router.post('/3ds/confirm', requireAuth, requireStripe, async (req: Authenticate
       const [user] = await db
         .select()
         .from(users)
-        .where(eq(users.id, userId))
-      .limit(1);
+        .where(eq(users.id, userId));
       
       if (user?.stripeCustomerId) {
         await db
           .update(users)
           .set({ subscriptionStatus: 'active' })
-          .where(eq(users.id, userId))
-      .limit(1);
+          .where(eq(users.id, userId));
       }
       
       logger.info(`[Billing] 3DS confirmation successful for user ${userId}`);
@@ -1285,8 +1272,7 @@ router.post('/3ds/confirm', requireAuth, requireStripe, async (req: Authenticate
           await db
             .update(users)
             .set({ subscriptionStatus: 'active' })
-            .where(eq(users.id, userId))
-      .limit(1);
+            .where(eq(users.id, userId));
           
           return res.json({
             success: true,
@@ -1388,8 +1374,7 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(400).json({ 
@@ -1527,8 +1512,7 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId) {
       return res.status(400).json({ 
@@ -1618,8 +1602,7 @@ router.get('/grace-period-status', requireAuth, async (req: AuthenticatedRequest
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user) {
       return res.status(404).json({ 
@@ -1725,8 +1708,7 @@ router.get('/disputes', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId || !stripe) {
       return res.json({ disputes: [], hasMore: false });
@@ -1797,8 +1779,7 @@ router.get('/invoices', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId || !stripe) {
       return res.json({ invoices: [], hasMore: false });
@@ -1878,8 +1859,7 @@ router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     if (!user?.stripeCustomerId || !stripe) {
       return res.json({ refunds: [], hasMore: false });
@@ -1939,8 +1919,7 @@ router.get('/usage', requireAuth, async (req: AuthenticatedRequest, res: Respons
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
+      .where(eq(users.id, userId));
     
     const tier = user?.subscriptionTier || 'free';
     

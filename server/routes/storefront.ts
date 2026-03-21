@@ -1,8 +1,6 @@
 import { Router } from 'express';
 import multer from 'multer';
 import dns from 'dns';
-import path from 'path';
-import crypto from 'crypto';
 import { storefrontService } from '../services/storefrontService';
 import { hybridStorageService } from '../services/hybridStorageService';
 import { storeUploadedFile } from '../middleware/uploadHandler.js';
@@ -1271,12 +1269,9 @@ router.get('/:id/social', async (req, res) => {
     const storefrontId = req.params.id;
     const userId = req.isAuthenticated() ? req.user!.id : null;
 
-    const [likesResult] = await db.select({ count: count() }).from(storefrontLikes).where(eq(storefrontLikes.storefrontId, storefrontId))
-      .limit(1);
-    const [followsResult] = await db.select({ count: count() }).from(storefrontFollows).where(eq(storefrontFollows.storefrontId, storefrontId))
-      .limit(1);
-    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId))
-      .limit(1);
+    const [likesResult] = await db.select({ count: count() }).from(storefrontLikes).where(eq(storefrontLikes.storefrontId, storefrontId));
+    const [followsResult] = await db.select({ count: count() }).from(storefrontFollows).where(eq(storefrontFollows.storefrontId, storefrontId));
+    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId));
 
     let userLiked = false;
     let userFollowing = false;
@@ -1362,8 +1357,7 @@ router.post('/:id/rate', async (req, res) => {
       await db.insert(storefrontRatings).values({ userId, storefrontId, rating, review });
     }
 
-    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId))
-      .limit(1);
+    const [ratingsResult] = await db.select({ count: count(), avg: avg(storefrontRatings.rating) }).from(storefrontRatings).where(eq(storefrontRatings.storefrontId, storefrontId));
 
     res.json({
       userRating: rating,
@@ -1414,8 +1408,7 @@ router.post('/:id/checkout', async (req, res) => {
         eq(listings.userId, storefront.userId),
         eq(listings.isPublished, true),
         inArray(listings.id, listingIds)
-      ))
-      .limit(50);
+      ));
     if (validListings.length === 0) {
       return res.status(400).json({ error: 'No valid listings found' });
     }
@@ -1753,6 +1746,8 @@ router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.sin
 
     if (!req.file) return res.status(400).json({ error: 'No audio file provided' });
 
+    const path = await import('path');
+    const crypto = await import('crypto');
     const ext = path.extname(req.file.originalname) || '.mp3';
     const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
 
@@ -1785,7 +1780,7 @@ router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
       return res.status(400).json({ error: 'tiers must be an array' });
     }
 
-    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
+    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId));
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
@@ -1840,7 +1835,7 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     const { listingId } = req.params;
 
-    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId)).limit(1);
+    const [listing] = await db.select().from(listings).where(eq(listings.id, listingId));
     if (!listing) {
       return res.status(404).json({ error: 'Listing not found' });
     }
@@ -2156,8 +2151,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
         eq(listings.userId, storefront.userId),
         eq(listings.isPublished, true),
         inArray(listings.id, listingIds)
-      ))
-      .limit(50);
+      ));
 
     const cartItems = validListings.map(l => {
       let priceCents = l.priceCents;

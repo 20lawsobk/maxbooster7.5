@@ -4,7 +4,7 @@ import { invoices, orders, users, notifications } from '@shared/schema';
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { logger } from '../logger';
 import { invoiceService } from '../services/invoiceService';
-import { randomBytes } from 'crypto';
+import { nanoid } from 'nanoid';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
@@ -15,7 +15,7 @@ interface AuthenticatedRequest extends Request {
 
 function generateInvoiceNumber(): string {
   const year = new Date().getFullYear();
-  const unique = randomBytes(4).toString('hex').toUpperCase();
+  const unique = nanoid(8).toUpperCase().replace(/[^A-Z0-9]/g, '0');
   return `INV-${year}-${unique}`;
 }
 
@@ -49,8 +49,7 @@ router.get('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     const [invoice] = await db
       .select()
       .from(invoices)
-      .where(eq(invoices.id, invoiceId))
-      .limit(1);
+      .where(eq(invoices.id, invoiceId));
     
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
@@ -120,8 +119,7 @@ router.put('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     const [existing] = await db
       .select()
       .from(invoices)
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
-      .limit(1);
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)));
     
     if (!existing) {
       return res.status(404).json({ message: 'Invoice not found' });
@@ -175,8 +173,7 @@ router.post('/:invoiceId/send', requireAuth, async (req: AuthenticatedRequest, r
     const [invoice] = await db
       .select()
       .from(invoices)
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
-      .limit(1);
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)));
     
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
@@ -204,8 +201,7 @@ router.post('/:invoiceId/mark-paid', requireAuth, async (req: AuthenticatedReque
     const [invoice] = await db
       .select()
       .from(invoices)
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
-      .limit(1);
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)));
     
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
@@ -237,8 +233,7 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
     const [invoice] = await db
       .select()
       .from(invoices)
-      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)))
-      .limit(1);
+      .where(and(eq(invoices.id, invoiceId), eq(invoices.userId, userId)));
     
     if (!invoice) {
       return res.status(404).json({ message: 'Invoice not found' });
@@ -300,8 +295,7 @@ router.post('/generate-from-order/:orderId', requireAuth, async (req: Authentica
     const [order] = await db
       .select()
       .from(orders)
-      .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
-      .limit(1);
+      .where(and(eq(orders.id, orderId), eq(orders.userId, userId)));
     
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
@@ -355,8 +349,7 @@ router.post('/bulk-generate', requireAuth, async (req: AuthenticatedRequest, res
           gte(orders.createdAt, start),
           lte(orders.createdAt, end)
         )
-      )
-      .limit(200);
+      );
     
     const generatedInvoices: string[] = [];
     

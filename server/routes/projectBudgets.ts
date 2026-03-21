@@ -23,19 +23,6 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const [budget] = await db.select().from(projectBudgets)
-      .where(and(eq(projectBudgets.id, req.params.id), eq(projectBudgets.userId, req.user!.id)))
-      .limit(1);
-    if (!budget) return res.status(404).json({ error: 'Project budget not found' });
-    res.json(budget);
-  } catch (error) {
-    logger.error('[ProjectBudgets] Failed to fetch budget:', error);
-    res.status(500).json({ error: 'Failed to fetch project budget' });
-  }
-});
-
 router.get('/:id/items', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;

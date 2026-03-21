@@ -74,7 +74,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'Major streaming platforms exist', async () => {
     const majors = ['spotify', 'apple-music', 'amazon-music', 'tidal', 'deezer'];
     for (const slug of majors) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing platform: ${slug}`);
     }
   });
@@ -82,7 +82,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'Electronic stores exist (Beatport, Traxsource)', async () => {
     const electronic = ['beatport', 'juno-download', 'traxsource', 'bandcamp'];
     for (const slug of electronic) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing electronic store: ${slug}`);
     }
   });
@@ -90,7 +90,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'China platforms exist (QQ, Kugou, NetEase)', async () => {
     const china = ['qq-music', 'kugou', 'kuwo', 'netease-cloud-music', 'kuaishou'];
     for (const slug of china) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing China platform: ${slug}`);
     }
   });
@@ -98,7 +98,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'Regional platforms exist (JioSaavn, Anghami, Boomplay)', async () => {
     const regional = ['jiosaavn', 'anghami', 'boomplay', 'joox', 'kkbox', 'awa', 'flo'];
     for (const slug of regional) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing regional platform: ${slug}`);
     }
   });
@@ -106,7 +106,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'Social/Content ID platforms exist', async () => {
     const social = ['tiktok', 'instagram', 'youtube-content-id', 'twitch', 'meta-library'];
     for (const slug of social) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing social platform: ${slug}`);
     }
   });
@@ -114,7 +114,7 @@ async function testDistributionPlatforms() {
   await runTest('Distribution', 'Niche platforms exist (Peloton, Roblox, Pretzel)', async () => {
     const niche = ['peloton', 'roblox', 'pretzel-rocks', 'soundtrack-your-brand'];
     for (const slug of niche) {
-      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug)).limit(1);
+      const [platform] = await db.select().from(dspProviders).where(eq(dspProviders.slug, slug));
       if (!platform) throw new Error(`Missing niche platform: ${slug}`);
     }
   });

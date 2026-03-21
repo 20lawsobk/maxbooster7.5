@@ -106,22 +106,6 @@ export default function Invoices() {
     },
   });
 
-  const downloadPDF = async (invoiceId: string, invoiceNumber: string) => {
-    try {
-      const res = await fetch(`/api/invoices/${invoiceId}/pdf`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to generate PDF');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${invoiceNumber}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      toast({ title: 'Download failed', description: 'Could not generate PDF. Please try again.', variant: 'destructive' });
-    }
-  };
-
   if (!user) {
     setLocation('/login');
     return null;
@@ -445,7 +429,7 @@ const invoices = invoicesData?.invoices || [];
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}>
+                        <Button variant="ghost" size="sm">
                           <Download className="h-4 w-4" />
                         </Button>
                         {invoice.status === 'draft' && (
@@ -517,7 +501,7 @@ const invoices = invoicesData?.invoices || [];
                 <div className="flex items-center justify-between">
                   {getStatusBadge(selectedInvoice.status)}
                   <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => selectedInvoice && downloadPDF(selectedInvoice.id, selectedInvoice.invoiceNumber)}>
+                    <Button variant="outline">
                       <Download className="h-4 w-4 mr-2" />
                       Download PDF
                     </Button>

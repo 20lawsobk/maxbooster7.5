@@ -444,19 +444,10 @@ class AutopilotPublisher {
 
     const platformHours = optimalHours[platform] || [9, 12, 17];
 
-    // Find the next optimal hour (>= currentHour so we don't skip the current hour slot)
-    const currentMinute = now.getMinutes();
+    // Find next optimal hour
     let nextOptimalHour = platformHours.find(h => h > currentHour);
-    const sameHourSlot = platformHours.find(h => h === currentHour);
-
-    // If we're currently in an optimal hour and at most 55 minutes in, use it (schedule 5 min from now)
-    if (sameHourSlot !== undefined && currentMinute <= 55) {
-      const scheduledTime = new Date(now);
-      scheduledTime.setMinutes(currentMinute + 5, 0, 0);
-      return scheduledTime;
-    }
-
-    // If no future optimal hour today, roll over to first optimal hour tomorrow
+    
+    // If no optimal hour today, use first optimal hour tomorrow
     if (!nextOptimalHour) {
       nextOptimalHour = platformHours[0];
       const tomorrow = new Date(now);

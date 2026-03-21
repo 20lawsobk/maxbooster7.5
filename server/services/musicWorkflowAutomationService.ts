@@ -4,10 +4,9 @@ import {
   musicWorkflowAutomations,
   musicWorkflowExecutionLogs,
 } from '../../shared/schema.js';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { notificationService } from './notificationService.js';
-import { emailService } from './emailService.js';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1037,7 +1036,17 @@ class MusicWorkflowAutomationService {
         .update(musicWorkflowAutomations)
         .set({
           lastTriggeredAt: new Date(),
-          triggerCount: sql`${musicWorkflowAutomations.triggerCount} + 1`,
+          triggerCount: (await db
+            .select()
+            .from(musicWorkflowAutomations)
+            .where(
+              and(
+                eq(musicWorkflowAutomations.userId, userId),
+                eq(musicWorkflowAutomations.templateId, template.id)
+              )
+            )
+            .limit(1)
+            .then((r) => r[0]?.triggerCount ?? 0)) + 1,
           updatedAt: new Date(),
         })
         .where(
@@ -1170,7 +1179,9 @@ class MusicWorkflowAutomationService {
 
     if (config.sendEmail && eventData.newMemberEmail) {
       try {
-        await emailService.sendEmail({
+        const { EmailService } = await import('./emailService.js');
+        const emailSvc = new EmailService();
+        await emailSvc.sendEmail({
           to: eventData.newMemberEmail,
           subject: `You've been added to "${projectName}"`,
           html: `
@@ -1347,6 +1358,8 @@ class MusicWorkflowAutomationService {
     const subject = config.subject || `${artistName} — "${releaseTitle}" is out now!`;
 
     try {
+      const { EmailService } = await import('./emailService.js');
+      const emailSvc = new EmailService();
       logger.info(`[MusicWorkflow] Release day newsletter queued for user ${userId}: "${subject}"`);
     } catch {
       logger.warn('[MusicWorkflow] Email service unavailable for release newsletter');
@@ -1500,8 +1513,10 @@ class MusicWorkflowAutomationService {
 
     if (config.sendThankYouEmail && buyerEmail) {
       try {
-          const note = config.personalNote || `Thank you for your purchase! I appreciate your support.`;
-        await emailService.sendEmail({
+        const { EmailService } = await import('./emailService.js');
+        const emailSvc = new EmailService();
+        const note = config.personalNote || `Thank you for your purchase! I appreciate your support.`;
+        await emailSvc.sendEmail({
           to: buyerEmail,
           subject: `Thank you for purchasing "${productName}"`,
           html: `

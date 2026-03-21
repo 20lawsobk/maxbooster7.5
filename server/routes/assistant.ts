@@ -207,8 +207,7 @@ router.delete('/history', async (req: Request, res: Response) => {
     const conversations = await db
       .select()
       .from(assistantConversations)
-      .where(eq(assistantConversations.userId, user.id))
-      .limit(500);
+      .where(eq(assistantConversations.userId, user.id));
 
     for (const conv of conversations) {
       await db

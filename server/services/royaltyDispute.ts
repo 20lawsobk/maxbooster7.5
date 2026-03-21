@@ -174,16 +174,25 @@ export class RoyaltyDisputeService {
     userId: string,
     options?: { status?: string; limit?: number; offset?: number }
   ): Promise<RoyaltyDispute[]> {
-    const conditions = [eq(royaltyDisputes.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as any));
-
-    return await db
+    let query = db
       .select()
       .from(royaltyDisputes)
-      .where(and(...conditions))
-      .orderBy(desc(royaltyDisputes.submittedAt))
-      .limit(options?.limit ?? 100)
-      .offset(options?.offset ?? 0);
+      .where(eq(royaltyDisputes.userId, userId))
+      .orderBy(desc(royaltyDisputes.submittedAt));
+
+    if (options?.status) {
+      query = query.where(eq(royaltyDisputes.status, options.status as any));
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      query = query.offset(options.offset);
+    }
+
+    return await query;
   }
 
   async getDisputesByStatement(statementId: string): Promise<RoyaltyDispute[]> {
@@ -203,18 +212,32 @@ export class RoyaltyDisputeService {
       offset?: number;
     }
   ): Promise<RoyaltyDispute[]> {
-    const conditions = [];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as any));
-    if (options?.priority) conditions.push(eq(royaltyDisputes.priority, options.priority));
-    if (options?.assignedTo) conditions.push(eq(royaltyDisputes.assignedTo, options.assignedTo));
-
-    return await db
+    let query = db
       .select()
       .from(royaltyDisputes)
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(desc(royaltyDisputes.submittedAt))
-      .limit(options?.limit ?? 100)
-      .offset(options?.offset ?? 0);
+      .orderBy(desc(royaltyDisputes.submittedAt));
+
+    if (options?.status) {
+      query = query.where(eq(royaltyDisputes.status, options.status as any));
+    }
+
+    if (options?.priority) {
+      query = query.where(eq(royaltyDisputes.priority, options.priority));
+    }
+
+    if (options?.assignedTo) {
+      query = query.where(eq(royaltyDisputes.assignedTo, options.assignedTo));
+    }
+
+    if (options?.limit) {
+      query = query.limit(options.limit);
+    }
+
+    if (options?.offset) {
+      query = query.offset(options.offset);
+    }
+
+    return await query;
   }
 
   async updateDispute(

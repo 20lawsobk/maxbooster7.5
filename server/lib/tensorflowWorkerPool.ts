@@ -2,7 +2,6 @@ import { Worker } from 'worker_threads';
 import path from 'path';
 import os from 'os';
 import { existsSync } from 'fs';
-import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 
 // Resolve worker path for both dev (tsx/source) and prod (esbuild/dist) environments
@@ -153,7 +152,7 @@ class TensorFlowWorkerPool {
     }
 
     return new Promise<void>((resolve, reject) => {
-      const id = `load-${Date.now()}-${randomBytes(4).toString('hex')}`;
+      const id = `load-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       let settled = 0;
       let failed = 0;
       const total = this.workers.length;
@@ -225,7 +224,7 @@ class TensorFlowWorkerPool {
       );
     }
     return new Promise((resolve, reject) => {
-      const id = `${Date.now()}-${randomBytes(4).toString('hex')}`;
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
       const req: InferenceRequest = { id, modelId, inputData, inputShape, resolve, reject };
       this.queue.push(req);
       this.dispatch();

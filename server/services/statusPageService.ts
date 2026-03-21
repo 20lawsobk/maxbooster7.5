@@ -134,8 +134,7 @@ export class StatusPageService {
     const [service] = await db
       .select()
       .from(statusPageServices)
-      .where(eq(statusPageServices.id, serviceId))
-      .limit(1);
+      .where(eq(statusPageServices.id, serviceId));
 
     return service || null;
   }
@@ -144,8 +143,7 @@ export class StatusPageService {
     const [service] = await db
       .select()
       .from(statusPageServices)
-      .where(eq(statusPageServices.slug, slug))
-      .limit(1);
+      .where(eq(statusPageServices.slug, slug));
 
     return service || null;
   }
@@ -259,8 +257,7 @@ export class StatusPageService {
     const [incident] = await db
       .select()
       .from(statusPageIncidents)
-      .where(eq(statusPageIncidents.id, incidentId))
-      .limit(1);
+      .where(eq(statusPageIncidents.id, incidentId));
 
     return incident || null;
   }
@@ -410,8 +407,7 @@ export class StatusPageService {
     const [subscriber] = await db
       .select()
       .from(statusPageSubscribers)
-      .where(eq(statusPageSubscribers.verificationToken, token))
-      .limit(1);
+      .where(eq(statusPageSubscribers.verificationToken, token));
 
     if (!subscriber) {
       throw new Error('Invalid verification token');

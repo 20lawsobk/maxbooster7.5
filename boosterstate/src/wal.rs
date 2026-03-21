@@ -24,7 +24,6 @@ pub trait Wal: Send + Sync + 'static {
 }
 
 pub struct FileWal {
-    #[allow(dead_code)]
     path: PathBuf,
     inner: Mutex<BufWriter<File>>,
 }

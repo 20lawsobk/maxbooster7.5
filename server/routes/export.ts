@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { db } from '../db';
 import { logger } from '../logger.js';
-import { randomBytes } from 'crypto';
+import { nanoid } from 'nanoid';
 import { z } from 'zod';
 import { getBaseUrl } from '../config/defaults.js';
 import { shareLinks as shareLinksTable } from '@shared/schema';
@@ -128,8 +128,11 @@ const shareLinkSchema = z.object({
 
 function generateShortCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  
-  return Array.from(bytes as Uint8Array).map((b: number) => chars[b % chars.length]).join('');
+  let result = '';
+  for (let i = 0; i < 8; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }
 
 function simulateExportProgress(jobId: string): void {
@@ -215,7 +218,7 @@ router.post('/audio/:projectId', requireAuth, async (req: Request, res: Response
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
     const jobName = options.fileName || `Export_${Date.now()}`;
 
     const job: ExportJob = {
@@ -386,7 +389,7 @@ router.post('/data', requireAuth, async (req: Request, res: Response) => {
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
     const categoryNames: Record<string, string> = {
       analytics: 'Analytics Export',
       royalties: 'Royalty Statement',
@@ -456,8 +459,8 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
     }
 
     const total = filtered.length;
-    const limitNum = Math.min(Math.max(parseInt(limit as string) || 50, 1), 1000);
-    const offsetNum = Math.max(parseInt(offset as string) || 0, 0);
+    const limitNum = parseInt(limit as string);
+    const offsetNum = parseInt(offset as string);
     
     const paginated = filtered.slice(offsetNum, offsetNum + limitNum);
 
@@ -542,8 +545,7 @@ router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
       .select()
       .from(shareLinksTable)
       .where(eq(shareLinksTable.userId, userId))
-      .orderBy(desc(shareLinksTable.createdAt))
-      .limit(100);
+      .orderBy(desc(shareLinksTable.createdAt));
 
     res.json(rows);
   } catch (error: unknown) {
@@ -560,8 +562,7 @@ router.get('/share/:shortCode', async (req: Request, res: Response) => {
     const [link] = await db
       .select()
       .from(shareLinksTable)
-      .where(eq(shareLinksTable.shortCode, shortCode))
-      .limit(1);
+      .where(eq(shareLinksTable.shortCode, shortCode));
 
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
@@ -604,8 +605,7 @@ router.post('/share/:shortCode/verify', async (req: Request, res: Response) => {
     const [link] = await db
       .select()
       .from(shareLinksTable)
-      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)))
-      .limit(1);
+      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)));
 
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
@@ -636,8 +636,7 @@ router.get('/share/:shortCode/download', async (req: Request, res: Response) => 
     const [link] = await db
       .select()
       .from(shareLinksTable)
-      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)))
-      .limit(1);
+      .where(and(eq(shareLinksTable.shortCode, shortCode), eq(shareLinksTable.isActive, true)));
 
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
@@ -670,8 +669,7 @@ router.delete('/share-links/:id', requireAuth, async (req: Request, res: Respons
     const [link] = await db
       .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
       .from(shareLinksTable)
-      .where(eq(shareLinksTable.id, id))
-      .limit(1);
+      .where(eq(shareLinksTable.id, id));
 
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
@@ -702,8 +700,7 @@ router.patch('/share-links/:id', requireAuth, async (req: Request, res: Response
     const [link] = await db
       .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
       .from(shareLinksTable)
-      .where(eq(shareLinksTable.id, id))
-      .limit(1);
+      .where(eq(shareLinksTable.id, id));
 
     if (!link) {
       return res.status(404).json({ error: 'Link not found' });
@@ -786,11 +783,11 @@ router.post('/batch', requireAuth, async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'No outputs specified' });
     }
 
-    const batchId = randomBytes(8).toString('hex');
+    const batchId = nanoid();
     const jobs: ExportJob[] = [];
 
     for (const output of outputs) {
-      const jobId = randomBytes(8).toString('hex');
+      const jobId = nanoid();
       const job: ExportJob = {
         id: jobId,
         userId,
@@ -845,7 +842,7 @@ router.post('/analytics', requireAuth, async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const { format, sections, filters, dateRange, includeCharts } = req.body;
 
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
 
     const job: ExportJob = {
       id: jobId,
@@ -920,7 +917,7 @@ router.post('/report/:type', requireAuth, async (req: Request, res: Response) =>
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
 
     const reportNames: Record<ReportType, string> = {
       royalties: 'Royalty Statement',
@@ -1005,7 +1002,7 @@ router.post('/chart', requireAuth, async (req: Request, res: Response) => {
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
 
     const resolutionMultipliers: Record<string, number> = {
       standard: 1,
@@ -1100,7 +1097,7 @@ router.post('/bulk', requireAuth, async (req: Request, res: Response) => {
     }
 
     const { items, settings } = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
     const isLargeExport = items.length > 20;
 
     const job: ExportJob = {
@@ -1221,7 +1218,7 @@ router.post('/audio/:projectId/mastered', requireAuth, async (req: Request, res:
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
 
     const presetSettings: Record<string, Partial<typeof options.processing>> = {
       streaming: { normalize: true, normalizeTarget: -14, limiter: true, limiterCeiling: -1 },
@@ -1314,7 +1311,7 @@ router.post('/audio/:projectId/stems', requireAuth, async (req: Request, res: Re
     }
 
     const options = validation.data;
-    const jobId = randomBytes(8).toString('hex');
+    const jobId = nanoid();
 
     const job: ExportJob = {
       id: jobId,
