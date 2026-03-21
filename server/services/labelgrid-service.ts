@@ -217,6 +217,27 @@ export interface LabelGridArtistSearchResult {
   platforms: LabelGridArtistPlatformPresence[];
 }
 
+export interface LabelGridCatalogTrack {
+  title: string;
+  isrc?: string;
+  trackNumber: number;
+  duration: number;
+}
+
+export interface LabelGridCatalogRelease {
+  id: string;
+  title: string;
+  artist: string;
+  releaseDate?: string;
+  upc?: string;
+  coverUrl?: string;
+  releaseType: 'album' | 'ep' | 'single';
+  trackCount: number;
+  genre?: string;
+  platforms: string[];
+  tracks?: LabelGridCatalogTrack[];
+}
+
 class LabelGridService {
   private client: AxiosInstance;
   private apiToken: string | undefined;
@@ -1288,6 +1309,47 @@ class LabelGridService {
       return response.data?.platforms ?? [];
     } catch (err: any) {
       logger.warn('[LabelGrid] Artist platform presence fetch failed (non-fatal):', err?.message ?? err);
+      return [];
+    }
+  }
+
+  /**
+   * Retrieve the distributed release catalog for an artist on a given platform.
+   * When LabelGrid API is configured this calls GET /v1/artists/:externalId/releases.
+   * Returns an empty array (non-fatal) when the API is not configured, so callers
+   * can fall back to direct platform API scanning.
+   */
+  async getArtistCatalog(
+    artistExternalId: string,
+    platform?: string
+  ): Promise<LabelGridCatalogRelease[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn('[LabelGrid] API not configured — artist catalog unavailable, caller should fall back to direct platform scan');
+      return [];
+    }
+
+    const endpoint = this.getEndpoint('getArtistCatalog', '/v1/artists/:id/releases')
+      .replace(':id', encodeURIComponent(artistExternalId));
+    this.logApiCall('GET', endpoint, { platform });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<{ releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]>(
+          endpoint,
+          { params: platform ? { platform } : undefined }
+        );
+      });
+
+      const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
+        ? response.data
+        : (response.data as any)?.releases ?? [];
+
+      logger.info(`[LabelGrid] Artist catalog fetched: ${releases.length} release(s) for ${artistExternalId}`);
+      return releases;
+    } catch (err: any) {
+      logger.warn('[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan:', err?.message ?? err);
       return [];
     }
   }

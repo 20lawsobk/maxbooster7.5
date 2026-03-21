@@ -3,6 +3,7 @@ import { logger } from '../logger';
 import { z } from 'zod';
 import { createHash } from 'crypto';
 import { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuitBreaker';
+import { labelGridService, type LabelGridCatalogRelease } from './labelgrid-service';
 
 export const SUPPORTED_DISTRIBUTORS = [
   { id: 'distrokid', name: 'DistroKid', importFormat: 'csv', exportUrl: 'https://distrokid.com/stats/' },
@@ -1773,8 +1774,54 @@ class DistributionDataTransferService {
     const artistName = profile.artistName || 'Unknown Artist';
     const artistId = profile.artistId;
 
-    logger.info(`[DataTransfer] Scanning releases from ${platformId} for user ${userId}: ${artistId}`);
+    logger.info(`[DataTransfer] Scanning releases via LabelGrid for ${platformId} / user ${userId}: ${artistId}`);
 
+    // ── LabelGrid primary path ──────────────────────────────────────────────
+    // When the LabelGrid API is configured it is the authoritative source for
+    // an artist's distributed catalog across all DSPs.
+    if (labelGridService.isApiConfigured()) {
+      try {
+        const lgReleases = await labelGridService.getArtistCatalog(artistId, platformId);
+        if (lgReleases.length > 0) {
+          logger.info(`[DataTransfer] LabelGrid returned ${lgReleases.length} releases for ${platformId}`);
+          const normalizeType = (t: string): 'single' | 'EP' | 'album' => {
+            if (t === 'ep') return 'EP';
+            if (t === 'single') return 'single';
+            return 'album';
+          };
+          return lgReleases.map((r: LabelGridCatalogRelease): ScannedRelease => ({
+            id: r.id,
+            title: r.title,
+            artistName: r.artist,
+            releaseType: normalizeType(r.releaseType),
+            releaseDate: r.releaseDate || null,
+            trackCount: r.trackCount,
+            coverUrl: r.coverUrl || undefined,
+            platformUrl: undefined,
+            platformId,
+            externalId: r.id,
+            upc: r.upc || undefined,
+            genre: r.genre || undefined,
+            tracks: (r.tracks || []).map((t) => ({
+              title: t.title,
+              isrc: t.isrc || undefined,
+              trackNumber: t.trackNumber,
+              duration: t.duration,
+            })),
+          }));
+        }
+        // LabelGrid returned 0 releases — may mean this artist isn't distributed
+        // through LabelGrid yet. Fall through to direct platform scan.
+        logger.info(`[DataTransfer] LabelGrid returned 0 releases for ${platformId}; falling back to direct platform scan`);
+      } catch (lgErr: any) {
+        logger.warn(`[DataTransfer] LabelGrid catalog scan failed for ${platformId}, falling back to direct scan:`, lgErr?.message ?? lgErr);
+      }
+    }
+
+    // ── Direct platform fallback ─────────────────────────────────────────────
+    // Used when LabelGrid API is not configured, or when the artist has legacy
+    // releases on a platform that predate their LabelGrid distribution.
+    logger.info(`[DataTransfer] Direct platform scan for ${platformId} / artist ${artistId}`);
     switch (platformId) {
       case 'spotify':      return this.fetchSpotifyAlbums(artistId, artistName);
       case 'apple_music':  return this.fetchAppleMusicAlbums(artistId, artistName);

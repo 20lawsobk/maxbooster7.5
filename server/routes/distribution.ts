@@ -1313,32 +1313,52 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       });
     }
 
-    // Update release status to submitted
+    // Submit to LabelGrid — the authoritative distribution API
+    const lgPayload = await buildLabelGridPayload(release, tracks, selectedPlatforms);
+    logger.info(`[Distribution] Submitting release ${id} to LabelGrid for ${selectedPlatforms.length} platform(s)`, { userId, platforms: selectedPlatforms });
+    const lgResult = await labelGridService.createRelease(lgPayload);
+
+    // Persist LabelGrid release ID and update status
     await storage.updateDistroRelease(id, {
-      metadata: { ...metadata, status: 'submitted' },
+      metadata: {
+        ...metadata,
+        status: 'submitted',
+        labelGridReleaseId: lgResult.releaseId,
+        labelGridSubmittedAt: new Date().toISOString(),
+        labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
+      },
     });
 
-    // Create dispatch records for each selected platform
+    // Mirror per-platform status from LabelGrid response into dispatch records
     for (const platformSlug of selectedPlatforms) {
       const provider = await storage.getDSPProviderBySlug(platformSlug);
       if (provider) {
+        const lgPlatformStatus = lgResult.platforms?.find(
+          (p) => p.platform === platformSlug || p.platform === provider.slug
+        );
         await storage.createDistroDispatch({
           releaseId: id,
           providerId: provider.id,
-          status: 'queued',
+          status: lgPlatformStatus?.status === 'live' ? 'delivered' : 'processing',
         });
       }
     }
 
     // AUDIT: Log successful submission for tracking
-    logger.info(`Release ${id} submitted for distribution to ${selectedPlatforms.length} platforms`, {
+    logger.info(`Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${selectedPlatforms.length} platforms`, {
       releaseId: id,
+      labelGridReleaseId: lgResult.releaseId,
       userId,
       platforms: selectedPlatforms,
       trackCount: tracks.length
     });
 
-    res.json({ success: true, message: 'Release submitted for distribution' });
+    res.json({
+      success: true,
+      message: 'Release submitted for distribution via LabelGrid',
+      labelGridReleaseId: lgResult.releaseId,
+      estimatedLiveDate: lgResult.estimatedLiveDate,
+    });
   } catch (error: unknown) {
     logger.error('Error submitting release:', error);
     res.status(500).json({ error: 'Failed to submit release' });
@@ -4824,25 +4844,27 @@ router.get('/packages/:id/export', requireAuth, async (req: Request, res: Respon
 });
 
 // ─── Platform-specific submission endpoints (via LabelGrid API) ───────────────
-// Helper: build a LabelGridRelease payload from a DB release + tracks
-async function buildLabelGridPayload(release: any, tracks: any[], platform: string) {
+// Helper: build a LabelGridRelease payload from a DB release + tracks.
+// `platforms` can be a single slug string or an array of slugs.
+async function buildLabelGridPayload(release: any, tracks: any[], platforms: string | string[]) {
   const metadata = (release.metadata as any) || {};
+  const platformList = Array.isArray(platforms) ? platforms : [platforms];
   return {
     title: release.title,
-    artist: release.artistName || release.artist || 'Unknown Artist',
+    artist: release.artistName || release.artist || metadata.artistName || 'Unknown Artist',
     releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     upc: release.upc,
     artwork: metadata.artworkUrl || metadata.artwork || '',
-    genre: release.genre || 'Other',
+    genre: release.genre || metadata.primaryGenre || 'Other',
     label: metadata.label || undefined,
     copyrightYear: metadata.copyrightYear || new Date().getFullYear(),
     copyrightOwner: metadata.copyrightOwner || undefined,
     territoryMode: (metadata.territoryMode as 'worldwide' | 'include' | 'exclude') || 'worldwide',
     territories: metadata.territories || [],
-    platforms: [platform],
+    platforms: platformList,
     tracks: tracks.map((t: any, idx: number) => ({
       title: t.title,
-      artist: t.artistName || release.artistName || release.artist || 'Unknown Artist',
+      artist: t.artistName || release.artistName || release.artist || metadata.artistName || 'Unknown Artist',
       isrc: t.isrc,
       audioFile: t.audioUrl || t.fileUrl || '',
       duration: t.duration || 0,
