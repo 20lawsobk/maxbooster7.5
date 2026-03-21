@@ -1,4 +1,5 @@
 import { logger } from './logger';
+import { randomBytes } from 'crypto';
 import { 
   users, 
   dspProviders, 
@@ -1220,7 +1221,7 @@ export class DatabaseStorage implements IStorage {
       const [provider] = await db
         .insert(dspProviders)
         .values({
-          id: `dsp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          id: `dsp_${Date.now()}_${randomBytes(4).toString("hex")}`,
           name: data.name,
           slug: data.slug,
           isActive: data.isActive ?? true,
@@ -1290,7 +1291,7 @@ export class DatabaseStorage implements IStorage {
 
   async createDistroDispatch(data: any): Promise<any> {
     const dispatch = {
-      id: `dispatch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `dispatch_${Date.now()}_${randomBytes(4).toString("hex")}`,
       ...data,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

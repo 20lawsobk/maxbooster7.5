@@ -1,4 +1,5 @@
 import { logger } from '../logger.js';
+import { randomBytes } from 'crypto';
 
 export type PlatformType = 'web' | 'android' | 'desktop';
 export type UpdateStatus = 'pending' | 'downloading' | 'installed' | 'failed';
@@ -208,7 +209,7 @@ export function setLatestVersion(platform: PlatformType, version: string, change
 
 export function pushUpdateNotification(platform: PlatformType, version: string, changelog: string, isForced: boolean): UpdateNotification {
   const notification: UpdateNotification = {
-    id: `update-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `update-${Date.now()}-${randomBytes(3).toString('hex')}`,
     platform,
     version,
     changelog,
@@ -227,7 +228,7 @@ export function pushUpdateNotification(platform: PlatformType, version: string, 
 
 export function triggerRemoteUpdate(platform: PlatformType, targetVersion: string, isForced: boolean, changelog: string, triggeredBy: string): UpdateRollout {
   const rollout: UpdateRollout = {
-    id: `rollout-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `rollout-${Date.now()}-${randomBytes(3).toString('hex')}`,
     platform,
     targetVersion,
     isForced,

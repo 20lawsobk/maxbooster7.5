@@ -128,11 +128,8 @@ const shareLinkSchema = z.object({
 
 function generateShortCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
-  let result = '';
-  for (let i = 0; i < 8; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
+  const bytes = require('crypto').randomBytes(8);
+  return Array.from(bytes as Uint8Array).map((b: number) => chars[b % chars.length]).join('');
 }
 
 function simulateExportProgress(jobId: string): void {

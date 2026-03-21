@@ -1609,8 +1609,6 @@ export async function registerRoutes(
 
       if (!user) {
         // Create new user from Google account
-        const username = googleUser.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6);
-
         user = await storage.createUser({
           email: googleUser.email,
           password: '', // No password for OAuth users

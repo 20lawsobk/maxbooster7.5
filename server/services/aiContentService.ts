@@ -1720,36 +1720,17 @@ export class AIContentService {
   }
 
   async getOptimalPostingTimes(userId: string): Promise<PostingTimeRecommendation[]> {
-    const times: PostingTimeRecommendation[] = [];
-    const optimalHours = [9, 12, 15, 18, 21];
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
-    for (let dayOfWeek = 1; dayOfWeek <= 5; dayOfWeek++) {
-      const hour = optimalHours[Math.floor(Math.random() * optimalHours.length)];
-      const score = 75 + Math.floor(Math.random() * 20);
-      times.push({
-        dayOfWeek,
-        hour,
-        score,
-        reasoning: `${dayNames[dayOfWeek]} at ${hour}:00 has historically high engagement for your audience`,
-      });
-    }
-
-    times.push({
-      dayOfWeek: 5,
-      hour: 19,
-      score: 95,
-      reasoning: 'Friday evening is peak engagement time for music content',
-    });
-
-    times.push({
-      dayOfWeek: 6,
-      hour: 11,
-      score: 88,
-      reasoning: 'Saturday morning shows strong engagement for weekend content',
-    });
-
-    return times.sort((a, b) => b.score - a.score);
+    const industryOptimal: Array<{ dayOfWeek: number; hour: number; score: number; reasoning: string }> = [
+      { dayOfWeek: 1, hour: 12, score: 82, reasoning: `${dayNames[1]} at noon captures lunch-break listeners — peak mid-week discovery` },
+      { dayOfWeek: 2, hour: 18, score: 78, reasoning: `${dayNames[2]} evening commute window: listeners actively discovering new music` },
+      { dayOfWeek: 3, hour: 12, score: 85, reasoning: `${dayNames[3]} noon is statistically the highest mid-week stream hour for music` },
+      { dayOfWeek: 4, hour: 15, score: 80, reasoning: `${dayNames[4]} afternoon: pre-weekend energy drives higher engagement on music posts` },
+      { dayOfWeek: 5, hour: 19, score: 95, reasoning: 'Friday evening is peak engagement time for music content — weekend kickoff' },
+      { dayOfWeek: 6, hour: 11, score: 88, reasoning: 'Saturday morning shows strong engagement for weekend content discovery' },
+      { dayOfWeek: 0, hour: 14, score: 76, reasoning: 'Sunday afternoon: relaxed browsing produces longer session times and saves' },
+    ];
+    return industryOptimal.sort((a, b) => b.score - a.score);
   }
 }
 

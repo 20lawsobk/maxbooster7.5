@@ -289,7 +289,7 @@ class ContentVariantGeneratorService {
       caption,
       hashtags: hashtagSets[index] || content.hashtags,
       hookType: hooks[index]?.type || 'statement',
-      predictedScore: 50 + Math.floor(Math.random() * 30) + (hooks[index]?.predictedStrength || 0) / 2,
+      predictedScore: Math.min(100, 55 + (hooks[index]?.predictedStrength || 0) / 2),
       changes: this.identifyChanges(content.caption, caption),
     }));
 

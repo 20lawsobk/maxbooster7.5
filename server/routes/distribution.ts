@@ -1,4 +1,5 @@
 import { Router, NextFunction } from 'express';
+import { randomBytes } from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
@@ -696,7 +697,7 @@ router.post(
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .substring(0, 40) + '-' + Math.random().toString(36).substring(2, 8);
+        .substring(0, 40) + '-' + randomBytes(3).toString('hex');
 
       let headerImageUrl: string | null = data.headerImage || null;
       if (file) {
@@ -4030,7 +4031,7 @@ router.post('/content-id/generate', requireAuth, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Track not found' });
     }
 
-    const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
     
     await storage.updateDistroTrack(trackId, {
       metadata: {
@@ -4060,7 +4061,7 @@ router.post('/content-id/generate-all', requireAuth, async (req: Request, res: R
     let count = 0;
 
     for (const track of tracks) {
-      const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
       await storage.updateDistroTrack(track.id, {
         metadata: {
           ...track.metadata,

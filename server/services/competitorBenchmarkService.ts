@@ -220,24 +220,30 @@ export class CompetitorBenchmarkService {
       const competitors = await this.getCompetitors(userId);
       const yourStats = await this.getYourStats(userId);
 
-      const yourMentions = Math.floor(Math.random() * 500) + 100;
-      const totalMentions = yourMentions + competitors.reduce((sum) => sum + Math.floor(Math.random() * 300) + 50, 0);
+      // Social mention counts require live social API access — return follower-proportional estimates
+      const yourReach = yourStats.totalFollowers;
+      const competitorTotalReach = competitors.reduce((sum, c) => sum + (c.totalFollowers || 0), 0);
+      const totalReach = yourReach + competitorTotalReach;
+      const yourSharePct = totalReach > 0 ? (yourReach / totalReach) * 100 : 0;
 
       return {
         yourBrand: {
-          mentions: yourMentions,
-          percentage: (yourMentions / Math.max(totalMentions, 1)) * 100,
-          reach: yourStats.totalFollowers * 0.1,
+          mentions: 0, // Requires social listening API
+          percentage: Math.round(yourSharePct * 10) / 10,
+          reach: yourReach,
           sentiment: 0.65,
         },
-        competitors: competitors.slice(0, 5).map(c => ({
-          name: c.name,
-          mentions: Math.floor(Math.random() * 300) + 50,
-          percentage: Math.random() * 20 + 5,
-          reach: c.totalFollowers * 0.1,
-          sentiment: Math.random() * 0.4 + 0.3,
-        })),
-        industryTotal: totalMentions,
+        competitors: competitors.slice(0, 5).map(c => {
+          const compShare = totalReach > 0 ? ((c.totalFollowers || 0) / totalReach) * 100 : 0;
+          return {
+            name: c.name,
+            mentions: 0,
+            percentage: Math.round(compShare * 10) / 10,
+            reach: c.totalFollowers || 0,
+            sentiment: 0,
+          };
+        }),
+        industryTotal: 0,
       };
     } catch (error) {
       logger.error('Get share of voice error:', error);

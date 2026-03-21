@@ -1772,8 +1772,11 @@ class AdvancedSocialAIService {
     const brandAlignment = (1 - Math.abs(tone.formality - 0.5)) * 100;
     
     const audienceMatch = (1 - Math.abs(audience.preferredTone - tone.formality)) * 100;
-    const trendAlignment = request.trendContext?.length ? 70 + Math.random() * 20 : 50;
-    const originality = 60 + Math.random() * 30;
+    const trendAlignment = request.trendContext?.length
+      ? Math.min(95, 65 + request.trendContext.length * 5)
+      : 50;
+    const uniqueWords = new Set(words.map(w => w.replace(/[^a-z]/g, ''))).size;
+    const originality = Math.min(90, Math.max(60, 50 + (uniqueWords / Math.max(words.length, 1)) * 60));
 
     const overall = (
       engagement * 0.2 +

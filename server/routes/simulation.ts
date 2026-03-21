@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 /**
  * Simulation API Routes
  * 
@@ -26,7 +27,7 @@ const simulationLogs: Map<string, string[]> = new Map();
 
 // Generate unique simulation ID
 function generateSimulationId(): string {
-  return `sim_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+  return `sim_${Date.now()}_${randomBytes(3).toString('hex')}`;
 }
 
 // Time acceleration: 98% acceleration = 0.48 seconds per simulated day
