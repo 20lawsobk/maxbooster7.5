@@ -348,3 +348,18 @@ Applied comprehensive automated sweep across all route and service files to add 
 - **2 Stripe billing bugs** fixed (invalid PG UPDATE limit, missing idempotency)
 - **2 logger severity mismatches** corrected (info → warn for non-critical failures)
 - **Full security audit passed**: Auth, Stripe webhooks, SQL injection, password exposure — all clean
+
+## Pre-Launch Fixes (March 2026 — Session 12)
+
+### Admin Account Configured
+- **`server/scripts/setupAdmin.ts`** run against production DB — admin account `blawzmusic@gmail.com` confirmed with `role=admin`, `subscriptionTier=lifetime`, `subscriptionStatus=active`
+- All seeded data confirmed present: storefront, workspace, 3 projects, 3 releases, 6 social accounts, 31 days analytics, 3 beats, 2 marketplace listings, brand voice, HyperFollow page, content calendar entries, notifications
+
+### Distribution: Spotify API → LabelGrid API
+- **`server/routes/distribution.ts`**: Replaced 3 legacy per-platform mock routes (`/platform/spotify`, `/platform/apple`, `/platform/youtube`) with real LabelGrid API submissions
+- Each route now: fetches release + tracks from DB, builds a `LabelGridRelease` payload, calls `labelGridService.createRelease()` with the specific platform, writes the returned `labelGridReleaseId` back to release metadata, and returns the real LabelGrid response (status, estimatedLiveDate, platform statuses)
+- Added shared `buildLabelGridPayload()` helper to standardize release payload construction across all three routes
+
+### Social Media APIs Confirmed Operational
+- All OAuth credentials confirmed set: `FACEBOOK_APP_ID/SECRET`, `INSTAGRAM_APP_ID/SECRET`, `TWITTER_API_KEY/SECRET`, `TWITTER_CLIENT_ID/SECRET`, `TIKTOK_CLIENT_KEY/SECRET`, `YOUTUBE_CLIENT_ID/SECRET`, `GOOGLE_CLIENT_ID/SECRET`, `THREADS_APP_ID/SECRET`
+- `server/services/autoPostingService.ts` (767 lines) confirmed making real API calls: Facebook Graph API v18.0, Twitter API v2, TikTok, YouTube — using stored OAuth access tokens from `socialAccounts` table

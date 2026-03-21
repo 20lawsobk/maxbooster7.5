@@ -4779,72 +4779,152 @@ router.get('/packages/:id/export', requireAuth, async (req: Request, res: Respon
   }
 });
 
-// ─── Platform-specific submission endpoints ───────────────────────────────────
-// POST /api/distribution/platform/spotify — Submit release to Spotify
+// ─── Platform-specific submission endpoints (via LabelGrid API) ───────────────
+// Helper: build a LabelGridRelease payload from a DB release + tracks
+async function buildLabelGridPayload(release: any, tracks: any[], platform: string) {
+  const metadata = (release.metadata as any) || {};
+  return {
+    title: release.title,
+    artist: release.artistName || release.artist || 'Unknown Artist',
+    releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    upc: release.upc,
+    artwork: metadata.artworkUrl || metadata.artwork || '',
+    genre: release.genre || 'Other',
+    label: metadata.label || undefined,
+    copyrightYear: metadata.copyrightYear || new Date().getFullYear(),
+    copyrightOwner: metadata.copyrightOwner || undefined,
+    territoryMode: (metadata.territoryMode as 'worldwide' | 'include' | 'exclude') || 'worldwide',
+    territories: metadata.territories || [],
+    platforms: [platform],
+    tracks: tracks.map((t: any, idx: number) => ({
+      title: t.title,
+      artist: t.artistName || release.artistName || release.artist || 'Unknown Artist',
+      isrc: t.isrc,
+      audioFile: t.audioUrl || t.fileUrl || '',
+      duration: t.duration || 0,
+      trackNumber: t.trackNumber || idx + 1,
+      explicit: t.explicit || false,
+      lyrics: t.lyrics || undefined,
+    })),
+  };
+}
+
+// POST /api/distribution/platform/spotify — Submit release to Spotify via LabelGrid
 router.post('/platform/spotify', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] Spotify submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'spotify');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridSpotifySubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'spotify',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to Spotify for review. Typical delivery time is 24-48 hours.',
-      submissionId: `spotify_${Date.now()}`,
-      estimatedDelivery: '24-48 hours',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to Spotify via LabelGrid. Typical delivery time is 24-48 hours.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '24-48 hours',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Spotify:', error);
+    logger.error('Error submitting to Spotify via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Spotify' });
   }
 });
 
-// POST /api/distribution/platform/apple — Submit release to Apple Music
+// POST /api/distribution/platform/apple — Submit release to Apple Music via LabelGrid
 router.post('/platform/apple', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] Apple Music submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'apple_music');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridAppleSubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'apple',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to Apple Music for review. Typical delivery time is 24-72 hours.',
-      submissionId: `apple_${Date.now()}`,
-      estimatedDelivery: '24-72 hours',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to Apple Music via LabelGrid. Typical delivery time is 24-72 hours.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '24-72 hours',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Apple Music:', error);
+    logger.error('Error submitting to Apple Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Apple Music' });
   }
 });
 
-// POST /api/distribution/platform/youtube — Submit release to YouTube Music
+// POST /api/distribution/platform/youtube — Submit release to YouTube Music via LabelGrid
 router.post('/platform/youtube', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] YouTube Music submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'youtube_music');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridYoutubeSubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'youtube',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to YouTube Music for review. Typical delivery time is 1-3 business days.',
-      submissionId: `youtube_${Date.now()}`,
-      estimatedDelivery: '1-3 business days',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to YouTube Music via LabelGrid. Typical delivery time is 1-3 business days.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '1-3 business days',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to YouTube Music:', error);
+    logger.error('Error submitting to YouTube Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to YouTube Music' });
   }
 });
