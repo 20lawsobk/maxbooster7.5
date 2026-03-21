@@ -58,7 +58,18 @@ data/
 # push to fail with "invalid UTF-8". cargo build runs in build.sh instead.
 boosterstate/target/
 
-# Screenshots and videos (large media assets)
+# Pre-compressed assets — brotli (.br) and gzip (.gz) files are binary and
+# cause Replit's deployment layer push to fail with "invalid UTF-8".
+# They are generated at runtime by the build script and must NOT be committed.
+dist/public/assets/*.br
+dist/public/assets/*.gz
+dist/public/**/*.br
+dist/public/**/*.gz
+client/dist/public/
+
+# Videos and large media (binary, served from object storage / CDN instead)
+dist/public/videos/
+client/dist/public/videos/
 client/public/screenshots/
 client/public/videos/
 .github-runner/
