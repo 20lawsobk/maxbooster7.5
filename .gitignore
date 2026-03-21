@@ -116,3 +116,8 @@ service-account*.json
 
 # Security auto-fix: required entries
 .env.development
+
+# Nix build artifacts — nix-build creates a "result" symlink pointing to a Nix
+# store path containing ELF binaries. Replit's deployment Repl layer push fails
+# with "invalid UTF-8" if it follows the symlink to binary executable content.
+result
