@@ -38,6 +38,25 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   # then execute the saved copy manually once node_modules/ is ready.
   cp scripts/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
 
+  # Copy binary assets to dist/public/ BEFORE deleting the source tree.
+  # PNG/WebP/ICO files CANNOT be committed to git — Replit's deployment layer
+  # push rejects non-UTF-8 (binary) files with "invalid UTF-8". These assets
+  # are excluded from git by .gitignore and are only available in the source
+  # tree (client/public/) at deploy time via the Repl layer. Copying them here
+  # ensures they are present in dist/public/ for runtime serving (favicon, PWA
+  # icons, logo) without being stored in the git repository.
+  # NOTE: If client/public/icons/ etc. are absent (e.g. clean checkout), the
+  # cp commands fail silently and the app runs without custom icons (acceptable).
+  echo "==> Copying binary assets to dist/public/ if present (favicon, icons, logo)..."
+  mkdir -p dist/public/icons dist/public/screenshots 2>/dev/null || true
+  cp client/public/favicon.png dist/public/favicon.png 2>/dev/null || true
+  cp client/public/logo.png    dist/public/logo.png    2>/dev/null || true
+  cp client/public/logo.webp   dist/public/logo.webp   2>/dev/null || true
+  cp -r client/public/icons/.  dist/public/icons/      2>/dev/null || true
+  cp -r client/public/screenshots/. dist/public/screenshots/ 2>/dev/null || true
+  ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
+  echo "   Binary assets: favicon=$([ -f dist/public/favicon.png ] && echo yes || echo no), icons=${ICON_COUNT}"
+
   echo "==> Deleting source tree immediately (Vite/esbuild not needed)..."
   # client/ is 930 MB — deleting it before npm ci cuts peak disk use by 930 MB.
   rm -rf \
