@@ -126,6 +126,15 @@ scripts/
 # Static assets source (already compiled into dist/public by Vite pre-build)
 assets/
 
+# Pre-compressed static asset variants (gzip + brotli) — binary files that are
+# rejected by Replit's Repl-layer push with "invalid UTF-8". These are generated
+# at dev-time by Vite's vite-plugin-compression and excluded from git by .gitignore,
+# but they persist in the dev workspace between builds. The Node.js server serves
+# the uncompressed originals when the .gz/.br variants are absent. Mirrors the
+# existing .gitignore entries for dist/public/**/*.gz and dist/public/**/*.br.
+dist/public/**/*.gz
+dist/public/**/*.br
+
 # Python/miscellaneous
 pyproject.toml
 uv.lock

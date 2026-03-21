@@ -229,6 +229,54 @@ echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 # .pythonlibs — do NOT strip. All Python packages are required for production
 # functionality (AI inference, audio processing, scientific computing, etc.).
 
+# ─── Pre-compressed asset cleanup ────────────────────────────────────────────
+# Vite's vite-plugin-compression generates .gz and .br variants of every JS/CSS
+# file during the dev-time build. These binary files are:
+#   • Excluded from git by .gitignore
+#   • Excluded from the Repl layer by .dockerignore
+# BUT they persist in the dev workspace between builds and Replit's layer push
+# rejects them with "invalid UTF-8" if they are somehow included (e.g., if the
+# .dockerignore pattern mismatches the actual file layout). Delete them here as
+# a belt-and-suspenders measure — the server serves uncompressed originals when
+# the compressed variants are absent.
+echo "==> Removing pre-compressed assets (.gz/.br) from dist/public/..."
+find dist/public -type f \( -name '*.gz' -o -name '*.br' \) -delete 2>/dev/null || true
+REMOVED_COUNT=$(find dist/public -type f \( -name '*.gz' -o -name '*.br' \) 2>/dev/null | wc -l)
+echo "   Compressed variants removed. Remaining: ${REMOVED_COUNT}"
+
+# ─── Non-UTF-8 filename cleanup ──────────────────────────────────────────────
+# Replit's Repl-layer push rejects any file whose FILENAME contains bytes that
+# are not valid UTF-8 (same "invalid UTF-8" error as binary file content).
+# Such filenames can appear as zero-byte temp files created by system processes.
+# This step finds and removes them using Python's raw-bytes filesystem API so
+# the cleanup works even when the filename cannot be expressed as a shell string.
+# Safe to fail: PDIM in the dev workspace may reject this operation; the step is
+# non-fatal and is only strictly needed in the deployment build container (no PDIM).
+echo "==> Removing files with non-UTF-8 filenames from workspace root..."
+python3 - << 'PYEOF' || true
+import os, sys
+workspace = b'.'
+try:
+    entries = os.listdir(workspace)
+    removed = 0
+    for e in entries:
+        eb = e if isinstance(e, bytes) else e.encode('utf-8', errors='surrogateescape')
+        try:
+            eb.decode('utf-8')
+        except UnicodeDecodeError:
+            path = workspace + b'/' + eb
+            try:
+                os.unlink(path)
+                print(f'   Removed non-UTF-8 filename: {eb.hex()}')
+                removed += 1
+            except Exception as ex:
+                print(f'   Warning: could not remove {eb.hex()}: {ex}', file=sys.stderr)
+    if removed == 0:
+        print('   No non-UTF-8 filenames found.')
+except Exception as ex:
+    print(f'   Warning: cleanup scan failed: {ex}', file=sys.stderr)
+PYEOF
+
 # ─── Final summary ────────────────────────────────────────────────────────────
 echo ""
 echo "==> Build image size summary:"
