@@ -84,6 +84,27 @@ export interface StreamingProfileData {
   autoSyncEnabled?: boolean;
 }
 
+export interface ScannedRelease {
+  id: string;
+  title: string;
+  artistName: string;
+  releaseType: 'single' | 'EP' | 'album';
+  releaseDate: string | null;
+  trackCount: number;
+  coverUrl?: string;
+  platformUrl?: string;
+  platformId: string;
+  externalId: string;
+  upc?: string;
+  genre?: string;
+  tracks?: Array<{
+    title: string;
+    trackNumber: number;
+    isrc?: string;
+    duration?: number;
+  }>;
+}
+
 export interface DataTransferJob {
   id: string;
   userId: string;
@@ -1485,6 +1506,356 @@ class DistributionDataTransferService {
       logger.error(`[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`, err);
       return null;
     }
+  }
+
+  // ─── Catalog scanning methods ─────────────────────────────────────────────
+
+  private async fetchSpotifyAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+    const token = await this.getSpotifyToken();
+    if (!token) return [];
+
+    try {
+      const results: ScannedRelease[] = [];
+      let url: string | null = `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
+
+      while (url) {
+        const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+        if (!resp.ok) break;
+        const data = await resp.json() as any;
+
+        for (const item of (data.items || [])) {
+          const type = item.album_type === 'album'
+            ? (item.total_tracks >= 6 ? 'album' : 'EP')
+            : 'single';
+          results.push({
+            id: `spotify-${item.id}`,
+            externalId: item.id,
+            platformId: 'spotify',
+            title: item.name,
+            artistName: item.artists?.[0]?.name || artistName,
+            releaseType: type as 'single' | 'EP' | 'album',
+            releaseDate: item.release_date || null,
+            trackCount: item.total_tracks || 1,
+            coverUrl: item.images?.[0]?.url,
+            platformUrl: item.external_urls?.spotify,
+          });
+        }
+
+        url = data.next || null;
+        if (results.length >= 100) break;
+      }
+
+      // Fetch track-level ISRC for first 5 singles for richer metadata
+      for (const release of results.filter(r => r.releaseType === 'single').slice(0, 5)) {
+        try {
+          const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=10`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (tr.ok) {
+            const td = await tr.json() as any;
+            release.tracks = (td.items || []).map((t: any, idx: number) => ({
+              title: t.name,
+              trackNumber: idx + 1,
+              isrc: t.external_ids?.isrc,
+              duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : undefined,
+            }));
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      return results;
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Spotify album scan failed for ${artistId}:`, err);
+      return [];
+    }
+  }
+
+  private async fetchAppleMusicAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+    try {
+      const resp = await fetch(
+        `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=50`
+      );
+      if (!resp.ok) return [];
+      const data = await resp.json() as any;
+      const albums = (data.results || []).filter((r: any) => r.collectionType === 'Album' || r.wrapperType === 'collection');
+
+      return albums.map((item: any) => ({
+        id: `apple-${item.collectionId}`,
+        externalId: String(item.collectionId),
+        platformId: 'apple_music',
+        title: item.collectionName,
+        artistName: item.artistName || artistName,
+        releaseType: (item.trackCount >= 6 ? 'album' : (item.trackCount >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
+        releaseDate: item.releaseDate ? item.releaseDate.split('T')[0] : null,
+        trackCount: item.trackCount || 1,
+        coverUrl: item.artworkUrl100?.replace('100x100', '600x600'),
+        platformUrl: item.collectionViewUrl,
+        genre: item.primaryGenreName,
+      }));
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Apple Music album scan failed for ${artistId}:`, err);
+      return [];
+    }
+  }
+
+  private async fetchDeezerAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
+    try {
+      const resp = await fetch(`https://api.deezer.com/artist/${artistId}/albums?limit=50`);
+      if (!resp.ok) return [];
+      const data = await resp.json() as any;
+      if (data.error) return [];
+
+      return (data.data || []).map((item: any) => ({
+        id: `deezer-${item.id}`,
+        externalId: String(item.id),
+        platformId: 'deezer',
+        title: item.title,
+        artistName,
+        releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
+        releaseDate: item.release_date || null,
+        trackCount: item.nb_tracks || 1,
+        coverUrl: item.cover_xl || item.cover_big,
+        platformUrl: item.link,
+      }));
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Deezer album scan failed for ${artistId}:`, err);
+      return [];
+    }
+  }
+
+  private async fetchSoundCloudAlbums(permalink: string, artistName: string): Promise<ScannedRelease[]> {
+    try {
+      const clientId = await this.getSoundCloudClientId();
+      if (!clientId) return [];
+
+      const userResp = await fetch(
+        `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
+      );
+      if (!userResp.ok) return [];
+      const user = await userResp.json() as any;
+      if (!user?.id) return [];
+
+      const [playlistResp, tracksResp] = await Promise.all([
+        fetch(`https://api-v2.soundcloud.com/users/${user.id}/playlists?client_id=${clientId}&limit=20`),
+        fetch(`https://api-v2.soundcloud.com/users/${user.id}/tracks?client_id=${clientId}&limit=20`),
+      ]);
+
+      const results: ScannedRelease[] = [];
+
+      if (playlistResp.ok) {
+        const pd = await playlistResp.json() as any;
+        for (const pl of (pd.collection || [])) {
+          const trackCount = pl.track_count || pl.tracks?.length || 1;
+          results.push({
+            id: `soundcloud-pl-${pl.id}`,
+            externalId: String(pl.id),
+            platformId: 'soundcloud',
+            title: pl.title,
+            artistName: pl.user?.username || artistName,
+            releaseType: trackCount >= 6 ? 'album' : trackCount >= 3 ? 'EP' : 'single',
+            releaseDate: pl.release_date || pl.created_at?.split('T')[0] || null,
+            trackCount,
+            coverUrl: pl.artwork_url?.replace('-large', '-t500x500'),
+            platformUrl: pl.permalink_url,
+          });
+        }
+      }
+
+      if (tracksResp.ok) {
+        const td = await tracksResp.json() as any;
+        for (const track of (td.collection || []).slice(0, 10)) {
+          results.push({
+            id: `soundcloud-tr-${track.id}`,
+            externalId: String(track.id),
+            platformId: 'soundcloud',
+            title: track.title,
+            artistName: track.user?.username || artistName,
+            releaseType: 'single',
+            releaseDate: track.release_date || track.created_at?.split('T')[0] || null,
+            trackCount: 1,
+            coverUrl: track.artwork_url?.replace('-large', '-t500x500'),
+            platformUrl: track.permalink_url,
+          });
+        }
+      }
+
+      return results;
+    } catch (err: any) {
+      logger.error(`[DataTransfer] SoundCloud album scan failed for ${permalink}:`, err);
+      return [];
+    }
+  }
+
+  private async fetchBandcampAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
+    try {
+      const resp = await fetch(`https://${slug}.bandcamp.com/music`, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
+      });
+      if (!resp.ok) return [];
+      const html = await resp.text();
+
+      const results: ScannedRelease[] = [];
+      const itemRegex = /<li[^>]*data-item-id="[^"]*"[^>]*>[\s\S]*?<\/li>/g;
+      const titleRegex = /<p[^>]*class="title"[^>]*>([\s\S]*?)<\/p>/;
+      const imgRegex = /<img[^>]+src="([^"]+)"/;
+      const linkRegex = /<a[^>]+href="([^"]+)"/;
+      const typeRegex = /\/(album|track)\//;
+
+      let match: RegExpExecArray | null;
+      while ((match = itemRegex.exec(html)) !== null && results.length < 30) {
+        const block = match[0];
+        const titleM = titleRegex.exec(block);
+        const imgM = imgRegex.exec(block);
+        const linkM = linkRegex.exec(block);
+        const typeM = linkM ? typeRegex.exec(linkM[1]) : null;
+
+        const title = titleM ? titleM[1].replace(/<[^>]+>/g, '').trim() : null;
+        if (!title) continue;
+
+        const rawType = typeM?.[1];
+        const releaseType = rawType === 'album' ? 'album' : 'single';
+        const href = linkM?.[1] || '';
+        const fullUrl = href.startsWith('http') ? href : `https://${slug}.bandcamp.com${href}`;
+
+        results.push({
+          id: `bandcamp-${Buffer.from(fullUrl).toString('base64').substring(0, 16)}`,
+          externalId: fullUrl,
+          platformId: 'bandcamp',
+          title,
+          artistName,
+          releaseType: releaseType as 'single' | 'EP' | 'album',
+          releaseDate: null,
+          trackCount: releaseType === 'album' ? 5 : 1,
+          coverUrl: imgM?.[1],
+          platformUrl: fullUrl,
+        });
+      }
+
+      return results;
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Bandcamp album scan failed for ${slug}:`, err);
+      return [];
+    }
+  }
+
+  private async fetchAudiomackAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
+    try {
+      const resp = await fetch(`https://api.audiomack.com/v1/artist/${slug}/playlists?limit=20`);
+      if (!resp.ok) return [];
+      const data = await resp.json() as any;
+      const items = data.results || data.data || [];
+
+      return items.map((item: any) => ({
+        id: `audiomack-${item.id || item.slug}`,
+        externalId: String(item.id || item.slug),
+        platformId: 'audiomack',
+        title: item.title,
+        artistName: item.artist?.name || artistName,
+        releaseType: (item.song_count >= 6 ? 'album' : item.song_count >= 3 ? 'EP' : 'single') as 'single' | 'EP' | 'album',
+        releaseDate: item.released_at ? new Date(item.released_at * 1000).toISOString().split('T')[0] : null,
+        trackCount: item.song_count || 1,
+        coverUrl: item.image,
+        platformUrl: item.url || `https://audiomack.com/${slug}/${item.slug}`,
+      }));
+    } catch (err: any) {
+      logger.error(`[DataTransfer] Audiomack album scan failed for ${slug}:`, err);
+      return [];
+    }
+  }
+
+  async scanReleasesFromProfile(userId: string, platformId: string): Promise<ScannedRelease[]> {
+    const userProfiles = this.linkedProfiles.get(userId);
+    if (!userProfiles || !userProfiles.has(platformId)) {
+      throw new Error('Profile not linked');
+    }
+
+    const profile = userProfiles.get(platformId)!;
+    const artistName = profile.artistName || 'Unknown Artist';
+    const artistId = profile.artistId;
+
+    logger.info(`[DataTransfer] Scanning releases from ${platformId} for user ${userId}: ${artistId}`);
+
+    switch (platformId) {
+      case 'spotify':      return this.fetchSpotifyAlbums(artistId, artistName);
+      case 'apple_music':  return this.fetchAppleMusicAlbums(artistId, artistName);
+      case 'deezer':       return this.fetchDeezerAlbums(artistId, artistName);
+      case 'soundcloud':   return this.fetchSoundCloudAlbums(artistId, artistName);
+      case 'bandcamp':     return this.fetchBandcampAlbums(artistId, artistName);
+      case 'audiomack':    return this.fetchAudiomackAlbums(artistId, artistName);
+      default:
+        return [];
+    }
+  }
+
+  async importProfileCatalog(
+    userId: string,
+    platformId: string,
+    releases: ScannedRelease[]
+  ): Promise<DataTransferJob> {
+    const job = await this.createTransferJob(userId, 'import', `${platformId}_profile_scan`);
+    job.status = 'processing';
+    job.totalItems = releases.length;
+    job.updatedAt = new Date();
+
+    let imported = 0;
+    let failed = 0;
+
+    for (const release of releases) {
+      try {
+        const existing = await this.findExistingRelease(userId, release.upc, release.title, release.artistName);
+
+        if (existing) {
+          const existingMeta = existing.metadata as any;
+          const links = existingMeta?.originalPlatformLinks || {};
+          if (release.platformUrl) links[platformId] = release.platformUrl;
+          await storage.updateDistroRelease(existing.id, {
+            metadata: { ...existingMeta, originalPlatformLinks: links },
+          });
+          logger.info(`[DataTransfer] Merged existing release from ${platformId}: ${release.title}`);
+        } else {
+          await storage.createDistroRelease({
+            artistId: userId,
+            title: release.title,
+            releaseDate: release.releaseDate ? new Date(release.releaseDate) : null,
+            metadata: {
+              artistName: release.artistName,
+              releaseType: release.releaseType,
+              primaryGenre: release.genre || 'Other',
+              language: 'en',
+              copyrightYear: release.releaseDate ? new Date(release.releaseDate).getFullYear() : new Date().getFullYear(),
+              copyrightOwner: release.artistName,
+              upc: release.upc,
+              importedFrom: `${platformId}_profile_scan`,
+              originalPlatformLinks: release.platformUrl ? { [platformId]: release.platformUrl } : {},
+              coverUrl: release.coverUrl,
+              isImported: true,
+              importedAt: new Date().toISOString(),
+              scannedExternalId: release.externalId,
+            },
+          });
+          logger.info(`[DataTransfer] Imported release from ${platformId} profile: ${release.title}`);
+        }
+
+        imported++;
+        job.successItems = imported;
+      } catch (err: any) {
+        failed++;
+        job.failedItems = failed;
+        job.errors.push({ item: release.title, error: err.message || 'Unknown error' });
+        logger.error(`[DataTransfer] Failed to import profile release ${release.title}:`, err);
+      }
+
+      job.processedItems = imported + failed;
+      job.progress = Math.round((job.processedItems / job.totalItems) * 100);
+      job.updatedAt = new Date();
+    }
+
+    job.status = failed === 0 ? 'completed' : (imported > 0 ? 'partial' : 'failed');
+    job.completedAt = new Date();
+    job.result = { importedReleases: imported };
+
+    logger.info(`[DataTransfer] Profile catalog import ${job.id}: ${imported} imported, ${failed} failed`);
+    return job;
   }
 
   async generateMigrationReport(userId: string): Promise<{

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,37 +8,32 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-  Upload, 
-  Download, 
-  Link2, 
-  Unlink, 
-  RefreshCw, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Download,
+  Link2,
+  Unlink,
+  RefreshCw,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   Music,
+  Disc3,
   FileSpreadsheet,
   ExternalLink,
   Loader2,
-  ArrowRight,
   BarChart3,
   Globe,
-  Users,
-  TrendingUp
+  TrendingUp,
+  ScanSearch,
+  PackagePlus,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-
-interface Distributor {
-  id: string;
-  name: string;
-  importFormat: string;
-  exportUrl: string | null;
-}
 
 interface StreamingPlatform {
   id: string;
@@ -56,6 +51,21 @@ interface LinkedProfile {
   followers?: number;
   monthlyListeners?: number;
   totalStreams?: number;
+}
+
+interface ScannedRelease {
+  id: string;
+  title: string;
+  artistName: string;
+  releaseType: 'single' | 'EP' | 'album';
+  releaseDate: string | null;
+  trackCount: number;
+  coverUrl?: string;
+  platformUrl?: string;
+  platformId: string;
+  externalId: string;
+  upc?: string;
+  genre?: string;
 }
 
 interface TransferJob {
@@ -86,21 +96,32 @@ interface MigrationReport {
   recommendations: string[];
 }
 
+const PLATFORM_SCAN_SUPPORT: Record<string, boolean> = {
+  spotify: true,
+  apple_music: true,
+  deezer: true,
+  soundcloud: true,
+  bandcamp: true,
+  audiomack: true,
+  youtube_music: false,
+  amazon_music: false,
+  tidal: false,
+  beatport: false,
+};
+
 export function DataTransferWizard() {
-  const [selectedDistributor, setSelectedDistributor] = useState<string>('');
   const [selectedPlatform, setSelectedPlatform] = useState<string>('');
   const [profileUrl, setProfileUrl] = useState('');
   const [artistName, setArtistName] = useState('');
-  const [importFile, setImportFile] = useState<File | null>(null);
-  const [validationResult, setValidationResult] = useState<any>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [scanningPlatform, setScanningPlatform] = useState<string | null>(null);
+  const [scannedReleases, setScannedReleases] = useState<Record<string, ScannedRelease[]>>({});
+  const [selectedReleases, setSelectedReleases] = useState<Record<string, Set<string>>>({});
+  const [expandedPlatform, setExpandedPlatform] = useState<string | null>(null);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
-  const { data: distributors } = useQuery<{ distributors: Distributor[] }>({
-    queryKey: ['/api/distribution/transfer/distributors'],
-  });
 
   const { data: platforms } = useQuery<{ platforms: StreamingPlatform[] }>({
     queryKey: ['/api/distribution/transfer/platforms'],
@@ -118,73 +139,6 @@ export function DataTransferWizard() {
     queryKey: ['/api/distribution/migration/report'],
   });
 
-  const validateMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('distributor', selectedDistributor);
-      
-      const res = await fetch('/api/distribution/transfer/validate', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      
-      if (!res.ok) throw new Error('Validation failed');
-      return res.json();
-    },
-    onSuccess: (data) => {
-      setValidationResult(data);
-      if (data.valid) {
-        toast({
-          title: 'Validation Successful',
-          description: `Found ${data.validRows} valid releases to import`,
-        });
-      }
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Validation Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  const importMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('distributor', selectedDistributor);
-      
-      const res = await fetch('/api/distribution/transfer/import', {
-        method: 'POST',
-        body: formData,
-        credentials: 'include',
-      });
-      
-      if (!res.ok) throw new Error('Import failed');
-      return res.json();
-    },
-    onSuccess: (data) => {
-      toast({
-        title: 'Import Complete',
-        description: data.message,
-      });
-      setImportFile(null);
-      setValidationResult(null);
-      refetchJobs();
-      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: 'Import Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
   const linkProfileMutation = useMutation({
     mutationFn: async ({ platformId, profileUrl, artistName }: { platformId: string; profileUrl: string; artistName: string }) => {
       const res = await fetch('/api/distribution/profiles/link', {
@@ -193,26 +147,18 @@ export function DataTransferWizard() {
         body: JSON.stringify({ platformId, profileUrl, artistName }),
         credentials: 'include',
       });
-      
       if (!res.ok) throw new Error('Failed to link profile');
       return res.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: 'Profile Linked',
-        description: data.message,
-      });
+      toast({ title: 'Profile Linked', description: data.message });
       setShowLinkDialog(false);
       setProfileUrl('');
       setArtistName('');
       refetchProfiles();
     },
     onError: (error: any) => {
-      toast({
-        title: 'Link Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Link Failed', description: error.message, variant: 'destructive' });
     },
   });
 
@@ -222,15 +168,11 @@ export function DataTransferWizard() {
         method: 'POST',
         credentials: 'include',
       });
-      
       if (!res.ok) throw new Error('Failed to sync profile');
       return res.json();
     },
     onSuccess: (data) => {
-      toast({
-        title: 'Profile Synced',
-        description: data.message,
-      });
+      toast({ title: 'Profile Synced', description: data.message });
       refetchProfiles();
     },
   });
@@ -241,47 +183,97 @@ export function DataTransferWizard() {
         method: 'DELETE',
         credentials: 'include',
       });
-      
       if (!res.ok) throw new Error('Failed to unlink profile');
       return res.json();
     },
-    onSuccess: (data) => {
-      toast({
-        title: 'Profile Unlinked',
-        description: data.message,
-      });
+    onSuccess: () => {
+      toast({ title: 'Profile Unlinked' });
       refetchProfiles();
     },
   });
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImportFile(file);
-      setValidationResult(null);
-    }
-  };
-
-  const handleValidate = () => {
-    if (importFile && selectedDistributor) {
-      validateMutation.mutate(importFile);
-    }
-  };
-
-  const handleImport = () => {
-    if (importFile && selectedDistributor) {
-      importMutation.mutate(importFile);
-    }
-  };
-
-  const handleLinkProfile = () => {
-    if (selectedPlatform && profileUrl) {
-      linkProfileMutation.mutate({
-        platformId: selectedPlatform,
-        profileUrl,
-        artistName,
+  const importCatalogMutation = useMutation({
+    mutationFn: async ({ platformId, releases }: { platformId: string; releases: ScannedRelease[] }) => {
+      const res = await fetch(`/api/distribution/profiles/${platformId}/import-catalog`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ releases }),
+        credentials: 'include',
       });
+      if (!res.ok) throw new Error('Import failed');
+      return res.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({ title: 'Catalog Imported', description: data.message });
+      setScannedReleases(prev => { const n = { ...prev }; delete n[variables.platformId]; return n; });
+      setSelectedReleases(prev => { const n = { ...prev }; delete n[variables.platformId]; return n; });
+      refetchJobs();
+      queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/distribution/migration/report'] });
+    },
+    onError: (error: any) => {
+      toast({ title: 'Import Failed', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const handleScanReleases = async (platformId: string) => {
+    setScanningPlatform(platformId);
+    try {
+      const res = await fetch(`/api/distribution/profiles/${platformId}/scan-releases`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Scan failed' }));
+        throw new Error(err.error || 'Scan failed');
+      }
+      const data = await res.json();
+      const releases: ScannedRelease[] = data.releases || [];
+      setScannedReleases(prev => ({ ...prev, [platformId]: releases }));
+      setSelectedReleases(prev => ({
+        ...prev,
+        [platformId]: new Set(releases.map(r => r.id)),
+      }));
+      setExpandedPlatform(platformId);
+      toast({
+        title: 'Scan Complete',
+        description: releases.length > 0
+          ? `Found ${releases.length} release${releases.length !== 1 ? 's' : ''} on ${getPlatformName(platformId)}`
+          : `No releases found on ${getPlatformName(platformId)}`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Scan Failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setScanningPlatform(null);
     }
+  };
+
+  const handleToggleRelease = (platformId: string, releaseId: string) => {
+    setSelectedReleases(prev => {
+      const set = new Set(prev[platformId] || []);
+      if (set.has(releaseId)) set.delete(releaseId);
+      else set.add(releaseId);
+      return { ...prev, [platformId]: set };
+    });
+  };
+
+  const handleSelectAll = (platformId: string, all: boolean) => {
+    const releases = scannedReleases[platformId] || [];
+    setSelectedReleases(prev => ({
+      ...prev,
+      [platformId]: all ? new Set(releases.map(r => r.id)) : new Set(),
+    }));
+  };
+
+  const handleImport = (platformId: string) => {
+    const releases = (scannedReleases[platformId] || []).filter(r =>
+      (selectedReleases[platformId] || new Set()).has(r.id)
+    );
+    if (releases.length === 0) {
+      toast({ title: 'No releases selected', variant: 'destructive' });
+      return;
+    }
+    importCatalogMutation.mutate({ platformId, releases });
   };
 
   const getPlatformIcon = (platformId: string) => {
@@ -300,27 +292,38 @@ export function DataTransferWizard() {
     return icons[platformId] || '🎵';
   };
 
-  const getStatusBadge = (status: TransferJob['status']) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completed</Badge>;
-      case 'failed':
-        return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
-      case 'partial':
-        return <Badge className="bg-yellow-500"><AlertCircle className="w-3 h-3 mr-1" />Partial</Badge>;
-      case 'processing':
-        return <Badge className="bg-blue-500"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Processing</Badge>;
-      default:
-        return <Badge variant="outline">Pending</Badge>;
+  const getPlatformName = (platformId: string) => {
+    return platforms?.platforms.find(p => p.id === platformId)?.name || platformId;
+  };
+
+  const getReleaseTypeBadge = (type: string) => {
+    switch (type) {
+      case 'album': return <Badge className="bg-purple-600 text-white text-xs">Album</Badge>;
+      case 'EP': return <Badge className="bg-blue-600 text-white text-xs">EP</Badge>;
+      default: return <Badge variant="outline" className="text-xs">Single</Badge>;
     }
   };
+
+  const getStatusBadge = (status: TransferJob['status']) => {
+    switch (status) {
+      case 'completed': return <Badge className="bg-green-500"><CheckCircle2 className="w-3 h-3 mr-1" />Completed</Badge>;
+      case 'failed': return <Badge variant="destructive"><XCircle className="w-3 h-3 mr-1" />Failed</Badge>;
+      case 'partial': return <Badge className="bg-yellow-500"><AlertCircle className="w-3 h-3 mr-1" />Partial</Badge>;
+      case 'processing': return <Badge className="bg-blue-500"><Loader2 className="w-3 h-3 mr-1 animate-spin" />Processing</Badge>;
+      default: return <Badge variant="outline">Pending</Badge>;
+    }
+  };
+
+  const profiles = linkedProfiles?.profiles || [];
+  const scanSupportedProfiles = profiles.filter(p => PLATFORM_SCAN_SUPPORT[p.platformId]);
+  const manualProfiles = profiles.filter(p => !PLATFORM_SCAN_SUPPORT[p.platformId]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Data Transfer & Profile Sync</h2>
-          <p className="text-muted-foreground">Import your catalog from other distributors and sync your streaming profiles</p>
+          <p className="text-muted-foreground">Scan and import your release catalog directly from your streaming profiles</p>
         </div>
       </div>
 
@@ -366,7 +369,7 @@ export function DataTransferWizard() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <Link2 className="h-4 w-4 text-muted-foreground" />
-                <span className="text-2xl font-bold">{linkedProfiles?.profiles?.length || 0}</span>
+                <span className="text-2xl font-bold">{profiles.length}</span>
               </div>
             </CardContent>
           </Card>
@@ -387,11 +390,11 @@ export function DataTransferWizard() {
         </Alert>
       )}
 
-      <Tabs defaultValue="import" className="space-y-4">
+      <Tabs defaultValue="catalog-sync" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="import" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Import Catalog
+          <TabsTrigger value="catalog-sync" className="flex items-center gap-2">
+            <ScanSearch className="h-4 w-4" />
+            Catalog Sync
           </TabsTrigger>
           <TabsTrigger value="profiles" className="flex items-center gap-2">
             <Link2 className="h-4 w-4" />
@@ -403,149 +406,255 @@ export function DataTransferWizard() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="import" className="space-y-4">
+        {/* ── Catalog Sync tab (replaces distributor CSV import) ── */}
+        <TabsContent value="catalog-sync" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Import from Another Distributor</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <ScanSearch className="h-5 w-5" />
+                Profile Catalog Scanner
+              </CardTitle>
               <CardDescription>
-                Transfer your releases and streaming data from your current distributor
+                Your linked streaming profiles are scanned directly using the same parser that syncs your analytics — now extended to pull your full release catalog including albums, EPs, and singles with artwork, dates, and track counts.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Select Your Current Distributor</Label>
-                  <Select value={selectedDistributor} onValueChange={setSelectedDistributor}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose distributor" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {distributors?.distributors.map((dist) => (
-                        <SelectItem key={dist.id} value={dist.id}>
-                          {dist.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {profiles.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <Globe className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="font-medium mb-1">No streaming profiles linked</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Link a Spotify, Apple Music, Deezer, SoundCloud, Bandcamp, or Audiomack profile to scan your release catalog.
+                  </p>
+                  <Button onClick={() => { }}>
+                    <Link2 className="h-4 w-4 mr-2" />
+                    Link a Profile
+                  </Button>
                 </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Profiles with scan support */}
+                  {scanSupportedProfiles.length > 0 && (
+                    <div className="space-y-3">
+                      {scanSupportedProfiles.map(profile => {
+                        const isScanning = scanningPlatform === profile.platformId;
+                        const scanned = scannedReleases[profile.platformId];
+                        const selected = selectedReleases[profile.platformId] || new Set();
+                        const isExpanded = expandedPlatform === profile.platformId;
+                        const isImporting = importCatalogMutation.isPending &&
+                          importCatalogMutation.variables?.platformId === profile.platformId;
 
-                {selectedDistributor && distributors?.distributors.find(d => d.id === selectedDistributor)?.exportUrl && (
-                  <div className="space-y-2">
-                    <Label>Export Your Data</Label>
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={() => window.open(distributors?.distributors.find(d => d.id === selectedDistributor)?.exportUrl || '', '_blank')}
-                    >
-                      <ExternalLink className="h-4 w-4 mr-2" />
-                      Go to {distributors?.distributors.find(d => d.id === selectedDistributor)?.name} Dashboard
-                    </Button>
-                    <p className="text-xs text-muted-foreground">
-                      Export your catalog as a CSV file from your distributor's dashboard
-                    </p>
-                  </div>
-                )}
-              </div>
+                        return (
+                          <Card key={profile.platformId} className="overflow-hidden">
+                            <div className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-2xl">{getPlatformIcon(profile.platformId)}</span>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium">{profile.artistName}</span>
+                                      {profile.verified && (
+                                        <Badge variant="outline" className="text-green-500 border-green-500 text-xs">
+                                          <CheckCircle2 className="h-3 w-3 mr-1" />Verified
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-sm text-muted-foreground">
+                                      {getPlatformName(profile.platformId)}
+                                      {profile.followers !== undefined && (
+                                        <span className="ml-2">· {profile.followers.toLocaleString()} followers</span>
+                                      )}
+                                    </p>
+                                  </div>
+                                </div>
 
-              <Separator />
+                                <div className="flex items-center gap-2">
+                                  {scanned && scanned.length > 0 && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setExpandedPlatform(isExpanded ? null : profile.platformId)}
+                                    >
+                                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                      <span className="ml-1 text-xs">{scanned.length} found</span>
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleScanReleases(profile.platformId)}
+                                    disabled={isScanning || scanningPlatform !== null}
+                                  >
+                                    {isScanning ? (
+                                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning…</>
+                                    ) : (
+                                      <><ScanSearch className="h-4 w-4 mr-2" />{scanned ? 'Re-scan' : 'Scan Releases'}</>
+                                    )}
+                                  </Button>
+                                  {scanned && scanned.length > 0 && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handleImport(profile.platformId)}
+                                      disabled={isImporting || selected.size === 0}
+                                    >
+                                      {isImporting ? (
+                                        <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Importing…</>
+                                      ) : (
+                                        <><PackagePlus className="h-4 w-4 mr-2" />Import {selected.size > 0 && selected.size < scanned.length ? `${selected.size} of ${scanned.length}` : selected.size}</>
+                                      )}
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
 
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Upload Exported CSV File</Label>
-                  <div className="flex gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept=".csv"
-                      onChange={handleFileSelect}
-                      className="hidden"
-                    />
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={!selectedDistributor}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      {importFile ? importFile.name : 'Choose CSV File'}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={handleValidate}
-                      disabled={!importFile || !selectedDistributor || validateMutation.isPending}
-                    >
-                      {validateMutation.isPending ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        'Validate'
-                      )}
-                    </Button>
-                  </div>
-                </div>
+                              {/* Scanned releases list */}
+                              {scanned && isExpanded && (
+                                <div className="mt-4 border-t pt-4 space-y-3">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm font-medium">
+                                      {scanned.length} release{scanned.length !== 1 ? 's' : ''} found
+                                    </span>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <button
+                                        className="hover:text-foreground"
+                                        onClick={() => handleSelectAll(profile.platformId, true)}
+                                      >Select all</button>
+                                      <span>·</span>
+                                      <button
+                                        className="hover:text-foreground"
+                                        onClick={() => handleSelectAll(profile.platformId, false)}
+                                      >Deselect all</button>
+                                    </div>
+                                  </div>
 
-                {validationResult && (
-                  <Alert className={validationResult.valid ? 'border-green-500' : 'border-red-500'}>
-                    <AlertDescription>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          {validationResult.valid ? (
-                            <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          ) : (
-                            <XCircle className="h-4 w-4 text-red-500" />
-                          )}
-                          <span className="font-medium">
-                            {validationResult.valid ? 'Validation Passed' : 'Validation Failed'}
-                          </span>
-                        </div>
-                        <p className="text-sm">
-                          Found {validationResult.validRows} valid releases out of {validationResult.totalRows} rows
-                        </p>
-                        {validationResult.preview && validationResult.preview.length > 0 && (
-                          <div className="mt-2">
-                            <p className="text-sm font-medium mb-1">Preview:</p>
-                            <ul className="text-sm space-y-1">
-                              {validationResult.preview.slice(0, 3).map((release: any, idx: number) => (
-                                <li key={idx} className="text-muted-foreground">
-                                  {release.artistName} - {release.title} ({release.releaseType})
-                                </li>
-                              ))}
-                            </ul>
+                                  {scanned.length === 0 ? (
+                                    <p className="text-sm text-muted-foreground text-center py-4">
+                                      No releases found on this profile.
+                                    </p>
+                                  ) : (
+                                    <ScrollArea className="h-[340px]">
+                                      <div className="space-y-2 pr-2">
+                                        {scanned.map(release => {
+                                          const isSelected = selected.has(release.id);
+                                          return (
+                                            <div
+                                              key={release.id}
+                                              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'}`}
+                                              onClick={() => handleToggleRelease(profile.platformId, release.id)}
+                                            >
+                                              <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={() => handleToggleRelease(profile.platformId, release.id)}
+                                                onClick={e => e.stopPropagation()}
+                                              />
+
+                                              {release.coverUrl ? (
+                                                <img
+                                                  src={release.coverUrl}
+                                                  alt={release.title}
+                                                  className="h-12 w-12 rounded object-cover flex-shrink-0"
+                                                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                />
+                                              ) : (
+                                                <div className="h-12 w-12 rounded bg-muted flex items-center justify-center flex-shrink-0">
+                                                  <Disc3 className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                              )}
+
+                                              <div className="flex-1 min-w-0">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                  <span className="font-medium text-sm truncate">{release.title}</span>
+                                                  {getReleaseTypeBadge(release.releaseType)}
+                                                </div>
+                                                <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
+                                                  {release.releaseDate && (
+                                                    <span>{new Date(release.releaseDate).getFullYear()}</span>
+                                                  )}
+                                                  <span>·</span>
+                                                  <span>{release.trackCount} track{release.trackCount !== 1 ? 's' : ''}</span>
+                                                  {release.genre && (
+                                                    <><span>·</span><span>{release.genre}</span></>
+                                                  )}
+                                                </div>
+                                              </div>
+
+                                              {release.platformUrl && (
+                                                <a
+                                                  href={release.platformUrl}
+                                                  target="_blank"
+                                                  rel="noreferrer"
+                                                  onClick={e => e.stopPropagation()}
+                                                >
+                                                  <ExternalLink className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                                                </a>
+                                              )}
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
+                                    </ScrollArea>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Empty state after scan */}
+                              {scanned && scanned.length === 0 && !isExpanded && (
+                                <p className="text-sm text-muted-foreground mt-2">
+                                  No releases found on this profile. Try re-scanning or check your profile URL.
+                                </p>
+                              )}
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Profiles without scan support */}
+                  {manualProfiles.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                        Profiles without catalog scanning
+                      </p>
+                      {manualProfiles.map(profile => (
+                        <Card key={profile.platformId} className="p-4">
+                          <div className="flex items-center gap-3">
+                            <span className="text-xl">{getPlatformIcon(profile.platformId)}</span>
+                            <div className="flex-1">
+                              <span className="font-medium text-sm">{profile.artistName}</span>
+                              <p className="text-xs text-muted-foreground">
+                                {getPlatformName(profile.platformId)} · Catalog scanning not yet supported for this platform
+                              </p>
+                            </div>
+                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                              Analytics only
+                            </Badge>
                           </div>
-                        )}
-                      </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+
+                  <Alert>
+                    <ScanSearch className="h-4 w-4" />
+                    <AlertDescription className="text-sm">
+                      The scanner reads your public artist pages using the same parser that syncs your followers, monthly listeners, and top tracks — now extended to discover your full discography. Releases already in your catalog are matched and merged automatically rather than duplicated.
                     </AlertDescription>
                   </Alert>
-                )}
-
-                <Button
-                  className="w-full"
-                  onClick={handleImport}
-                  disabled={!validationResult?.valid || importMutation.isPending}
-                >
-                  {importMutation.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Importing...
-                    </>
-                  ) : (
-                    <>
-                      <Download className="h-4 w-4 mr-2" />
-                      Import Releases
-                    </>
-                  )}
-                </Button>
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
 
+        {/* ── Streaming Profiles tab ── */}
         <TabsContent value="profiles" className="space-y-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Streaming Platform Profiles</CardTitle>
                 <CardDescription>
-                  Link your existing artist profiles to sync analytics and verify your identity
+                  Link your existing artist profiles to sync analytics and scan your release catalog
                 </CardDescription>
               </div>
               <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
@@ -559,7 +668,7 @@ export function DataTransferWizard() {
                   <DialogHeader>
                     <DialogTitle>Link Streaming Profile</DialogTitle>
                     <DialogDescription>
-                      Connect your existing artist profile to sync your analytics
+                      Connect your artist profile to sync analytics and release catalog data
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
@@ -575,8 +684,8 @@ export function DataTransferWizard() {
                               <span className="flex items-center gap-2">
                                 <span>{getPlatformIcon(platform.id)}</span>
                                 <span>{platform.name}</span>
-                                {platform.apiSupported && (
-                                  <Badge variant="outline" className="text-xs">API</Badge>
+                                {PLATFORM_SCAN_SUPPORT[platform.id] && (
+                                  <Badge variant="outline" className="text-xs text-green-600 border-green-400">Catalog scan</Badge>
                                 )}
                               </span>
                             </SelectItem>
@@ -605,7 +714,7 @@ export function DataTransferWizard() {
                     </div>
                     <Button
                       className="w-full"
-                      onClick={handleLinkProfile}
+                      onClick={() => linkProfileMutation.mutate({ platformId: selectedPlatform, profileUrl, artistName })}
                       disabled={!selectedPlatform || !profileUrl || linkProfileMutation.isPending}
                     >
                       {linkProfileMutation.isPending ? (
@@ -619,10 +728,10 @@ export function DataTransferWizard() {
               </Dialog>
             </CardHeader>
             <CardContent>
-              {linkedProfiles?.profiles && linkedProfiles.profiles.length > 0 ? (
+              {profiles.length > 0 ? (
                 <ScrollArea className="h-[400px]">
                   <div className="space-y-3">
-                    {linkedProfiles.profiles.map((profile) => (
+                    {profiles.map((profile) => (
                       <Card key={profile.platformId} className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -632,13 +741,15 @@ export function DataTransferWizard() {
                                 <span className="font-medium">{profile.artistName}</span>
                                 {profile.verified && (
                                   <Badge variant="outline" className="text-green-500 border-green-500">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                                    Verified
+                                    <CheckCircle2 className="h-3 w-3 mr-1" />Verified
                                   </Badge>
+                                )}
+                                {PLATFORM_SCAN_SUPPORT[profile.platformId] && (
+                                  <Badge variant="outline" className="text-xs text-blue-500 border-blue-400">Catalog scan</Badge>
                                 )}
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                {platforms?.platforms.find(p => p.id === profile.platformId)?.name}
+                                {getPlatformName(profile.platformId)}
                               </p>
                             </div>
                           </div>
@@ -661,6 +772,7 @@ export function DataTransferWizard() {
                                 size="icon"
                                 onClick={() => syncProfileMutation.mutate(profile.platformId)}
                                 disabled={syncProfileMutation.isPending}
+                                title="Sync analytics"
                               >
                                 <RefreshCw className={`h-4 w-4 ${syncProfileMutation.isPending ? 'animate-spin' : ''}`} />
                               </Button>
@@ -668,6 +780,7 @@ export function DataTransferWizard() {
                                 variant="ghost"
                                 size="icon"
                                 onClick={() => window.open(profile.profileUrl, '_blank')}
+                                title="Open profile"
                               >
                                 <ExternalLink className="h-4 w-4" />
                               </Button>
@@ -676,6 +789,7 @@ export function DataTransferWizard() {
                                 size="icon"
                                 onClick={() => unlinkProfileMutation.mutate(profile.platformId)}
                                 disabled={unlinkProfileMutation.isPending}
+                                title="Unlink profile"
                               >
                                 <Unlink className="h-4 w-4 text-red-500" />
                               </Button>
@@ -691,7 +805,7 @@ export function DataTransferWizard() {
                   <Globe className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="font-medium mb-1">No profiles linked yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Link your streaming platform profiles to sync your analytics
+                    Link your streaming platform profiles to sync analytics and scan your release catalog
                   </p>
                   <Button variant="outline" onClick={() => setShowLinkDialog(true)}>
                     <Link2 className="h-4 w-4 mr-2" />
@@ -703,12 +817,13 @@ export function DataTransferWizard() {
           </Card>
         </TabsContent>
 
+        {/* ── Transfer History tab ── */}
         <TabsContent value="history" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Transfer History</CardTitle>
               <CardDescription>
-                View the status of your import and sync operations
+                View the status of your catalog imports and profile sync operations
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -720,21 +835,23 @@ export function DataTransferWizard() {
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             {job.type === 'import' ? (
-                              <Upload className="h-4 w-4 text-muted-foreground" />
+                              <Download className="h-4 w-4 text-muted-foreground" />
                             ) : (
                               <RefreshCw className="h-4 w-4 text-muted-foreground" />
                             )}
                             <span className="font-medium capitalize">{job.type}</span>
                             <span className="text-muted-foreground">from</span>
-                            <span className="font-medium">{job.source}</span>
+                            <span className="font-medium">
+                              {job.source.replace('_profile_scan', ' profile').replace(/_/g, ' ')}
+                            </span>
                           </div>
                           {getStatusBadge(job.status)}
                         </div>
-                        
+
                         {job.status === 'processing' && (
                           <Progress value={job.progress} className="mb-2" />
                         )}
-                        
+
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
                           <span>
                             {job.successItems} imported, {job.failedItems} failed
@@ -743,7 +860,7 @@ export function DataTransferWizard() {
                             {new Date(job.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                        
+
                         {job.result && (
                           <div className="mt-2 text-sm">
                             <span className="text-green-500">
@@ -756,7 +873,7 @@ export function DataTransferWizard() {
                             )}
                           </div>
                         )}
-                        
+
                         {job.errors.length > 0 && (
                           <div className="mt-2">
                             <details className="text-sm">

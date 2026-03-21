@@ -3798,6 +3798,50 @@ router.delete('/profiles/:platformId', requireAuth, async (req: Request, res: Re
   }
 });
 
+// POST /api/distribution/profiles/:platformId/scan-releases - Scan release catalog from linked profile
+router.post('/profiles/:platformId/scan-releases', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { platformId } = req.params;
+
+    const releases = await distributionDataTransferService.scanReleasesFromProfile(userId, platformId);
+
+    res.json({
+      success: true,
+      releases,
+      total: releases.length,
+    });
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : 'Failed to scan releases';
+    logger.error('Error scanning releases from profile:', error);
+    res.status(msg === 'Profile not linked' ? 404 : 500).json({ error: msg });
+  }
+});
+
+// POST /api/distribution/profiles/:platformId/import-catalog - Import scanned releases into catalog
+router.post('/profiles/:platformId/import-catalog', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = (req.user as AuthenticatedUser).id;
+    const { platformId } = req.params;
+    const { releases } = req.body;
+
+    if (!releases || !Array.isArray(releases) || releases.length === 0) {
+      return res.status(400).json({ error: 'releases array required' });
+    }
+
+    const job = await distributionDataTransferService.importProfileCatalog(userId, platformId, releases);
+
+    res.json({
+      success: true,
+      job,
+      message: `${job.successItems} releases imported from ${platformId} profile${job.failedItems > 0 ? `, ${job.failedItems} failed` : ''}`,
+    });
+  } catch (error: unknown) {
+    logger.error('Error importing profile catalog:', error);
+    res.status(500).json({ error: 'Failed to import catalog' });
+  }
+});
+
 // POST /api/distribution/profiles/sync-all - Sync all linked streaming profiles at once
 router.post('/profiles/sync-all', requireAuth, async (req: Request, res: Response) => {
   try {
