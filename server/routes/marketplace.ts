@@ -13,8 +13,8 @@ import { storeUploadedFile } from '../middleware/uploadHandler.js';
 import { notificationService } from '../services/notificationService';
 import { logger } from '../logger.js';
 import { db } from '../db';
-import { orders, listings, users, licenseTemplates, systemSettings } from '@shared/schema';
-import { eq, and, gte, sql, desc, asc, or } from 'drizzle-orm';
+import { orders, listings, users, licenseTemplates, systemSettings, collaborationProjects, projectMembers, listingStems } from '@shared/schema';
+import { eq, and, gte, sql, desc, asc, or, inArray } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
@@ -1069,8 +1069,60 @@ router.get('/collaborations', async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
+    const userId = req.user!.id;
 
-    res.json([]);
+    // Find projects where user is owner
+    const ownedProjects = await db
+      .select()
+      .from(collaborationProjects)
+      .where(and(
+        eq(collaborationProjects.ownerId, userId),
+        sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
+      ))
+      .orderBy(desc(collaborationProjects.createdAt))
+      .limit(100);
+
+    // Find projects where user is a member (via projectMembers)
+    const memberRows = await db
+      .select({ projectId: projectMembers.projectId })
+      .from(projectMembers)
+      .where(eq(projectMembers.userId, userId));
+
+    let memberProjects: any[] = [];
+    if (memberRows.length > 0) {
+      const memberProjectIds = memberRows.map(r => r.projectId);
+      memberProjects = await db
+        .select()
+        .from(collaborationProjects)
+        .where(and(
+          inArray(collaborationProjects.id, memberProjectIds),
+          sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
+        ))
+        .orderBy(desc(collaborationProjects.createdAt))
+        .limit(100);
+    }
+
+    const allProjects = [...ownedProjects, ...memberProjects.filter(p => p.ownerId !== userId)];
+
+    const collaborations = allProjects.map(project => {
+      const meta = (project.metadata as any) || {};
+      return {
+        id: project.id,
+        fromUser: meta.fromUser || { id: project.ownerId, name: 'Unknown', avatar: '' },
+        toUser: meta.toUser || { id: meta.toUserId || '', name: 'Recipient', avatar: '' },
+        beatId: meta.beatId || null,
+        beatTitle: meta.beatTitle || project.title,
+        type: meta.type || 'custom',
+        terms: meta.terms || project.description || '',
+        splitPercentage: meta.splitPercentage ?? 50,
+        budget: meta.budget || null,
+        status: project.status || 'pending',
+        messages: meta.messages || [],
+        createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
+      };
+    });
+
+    res.json(collaborations);
   } catch (error: any) {
     logger.error('Error fetching collaborations:', error);
     res.status(500).json({ error: 'Failed to fetch collaborations' });
@@ -1558,20 +1610,46 @@ router.post('/collaborations', async (req: Request, res: Response) => {
       return res.status(400).json({ error: parsed.error.errors[0].message });
     }
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } = parsed.data;
+    const userId = req.user!.id;
 
-    const collaboration = {
-      id: `collab-${Date.now()}`,
-      fromUser: { id: req.user!.id, name: req.user!.username || 'User', avatar: '' },
-      toUser: { id: toUserId, name: 'Recipient', avatar: '' },
-      beatId: beatId || null,
-      beatTitle: null,
-      type,
-      terms: terms || '',
-      splitPercentage: splitPercentage || 50,
-      budget: budget || null,
+    const fromUser = { id: userId, name: (req.user as any)?.username || 'User', avatar: '' };
+    const messages = message ? [{ sender: userId, content: message, timestamp: new Date().toISOString() }] : [];
+
+    const [project] = await db.insert(collaborationProjects).values({
+      title: `${type} collaboration`,
+      description: terms || '',
+      ownerId: userId,
       status: 'pending',
-      messages: message ? [{ sender: req.user!.id, content: message, timestamp: new Date().toISOString() }] : [],
-      createdAt: new Date().toISOString(),
+      isPublic: false,
+      metadata: {
+        _offerType: 'marketplace_collab',
+        fromUser,
+        toUser: { id: toUserId, name: 'Recipient', avatar: '' },
+        toUserId,
+        beatId: beatId || null,
+        beatTitle: null,
+        type,
+        terms: terms || '',
+        splitPercentage: splitPercentage || 50,
+        budget: budget || null,
+        messages,
+      },
+    }).returning();
+
+    const meta = (project.metadata as any) || {};
+    const collaboration = {
+      id: project.id,
+      fromUser: meta.fromUser,
+      toUser: meta.toUser,
+      beatId: meta.beatId,
+      beatTitle: meta.beatTitle,
+      type: meta.type,
+      terms: meta.terms,
+      splitPercentage: meta.splitPercentage,
+      budget: meta.budget,
+      status: project.status,
+      messages: meta.messages,
+      createdAt: project.createdAt?.toISOString() || new Date().toISOString(),
     };
 
     res.status(201).json(collaboration);
@@ -1953,7 +2031,13 @@ router.get('/my-stems', async (req: Request, res: Response) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    res.json([]);
+    const userId = req.user!.id;
+    const stems = await db
+      .select()
+      .from(listingStems)
+      .where(eq(listingStems.userId, userId))
+      .orderBy(desc(listingStems.createdAt));
+    res.json(stems);
   } catch (error: any) {
     logger.error('Error fetching user stems:', error);
     res.status(500).json({ error: 'Failed to fetch your stems' });
@@ -1963,10 +2047,66 @@ router.get('/my-stems', async (req: Request, res: Response) => {
 router.get('/listings/:listingId/stems', async (req: Request, res: Response) => {
   try {
     const { listingId } = req.params;
-    res.json([]);
+    const stems = await db
+      .select()
+      .from(listingStems)
+      .where(eq(listingStems.listingId, listingId))
+      .orderBy(asc(listingStems.createdAt));
+    res.json(stems);
   } catch (error: any) {
     logger.error('Error fetching listing stems:', error);
     res.status(500).json({ error: 'Failed to fetch listing stems' });
+  }
+});
+
+router.post('/listings/:listingId/stems', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { listingId } = req.params;
+    const { stemName, stemType, fileUrl, fileSize, format, sampleRate, bitDepth, price } = req.body;
+
+    if (!stemName || !fileUrl) {
+      return res.status(400).json({ error: 'stemName and fileUrl are required' });
+    }
+
+    const [stem] = await db.insert(listingStems).values({
+      listingId,
+      userId,
+      stemName,
+      stemType: stemType || 'other',
+      fileUrl,
+      fileSize: fileSize || 0,
+      format: format || 'wav',
+      sampleRate: sampleRate || null,
+      bitDepth: bitDepth || null,
+      price: price ? String(price) : null,
+    }).returning();
+
+    res.status(201).json(stem);
+  } catch (error: any) {
+    logger.error('Error creating stem:', error);
+    res.status(500).json({ error: 'Failed to create stem' });
+  }
+});
+
+router.delete('/stems/:stemId', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { stemId } = req.params;
+
+    const [deleted] = await db
+      .delete(listingStems)
+      .where(and(eq(listingStems.id, stemId), eq(listingStems.userId, userId)))
+      .returning();
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Stem not found or not authorized' });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    logger.error('Error deleting stem:', error);
+    res.status(500).json({ error: 'Failed to delete stem' });
   }
 });
 

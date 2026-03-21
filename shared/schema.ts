@@ -5196,3 +5196,26 @@ export const labelSettings = pgTable("label_settings", {
 export const insertLabelSettingSchema = createInsertSchema(labelSettings).omit({ id: true, updatedAt: true });
 export type LabelSetting = typeof labelSettings.$inferSelect;
 export type InsertLabelSetting = typeof labelSettings.$inferInsert;
+
+// ============================================================================
+// LISTING STEMS — Individual stem files for beat/track marketplace listings
+// ============================================================================
+export const listingStems = pgTable("listing_stems", {
+  id:            varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId:     varchar("listing_id").notNull(),
+  userId:        varchar("user_id").notNull(),
+  stemName:      text("stem_name").notNull(),
+  stemType:      text("stem_type").notNull().default("other"),
+  fileUrl:       text("file_url").notNull(),
+  fileSize:      integer("file_size").default(0),
+  format:        text("format").default("wav"),
+  sampleRate:    integer("sample_rate"),
+  bitDepth:      integer("bit_depth"),
+  price:         text("price"),
+  downloadCount: integer("download_count").default(0),
+  createdAt:     timestamp("created_at").defaultNow(),
+});
+
+export const insertListingStemSchema = createInsertSchema(listingStems).omit({ id: true, createdAt: true, downloadCount: true });
+export type ListingStem = typeof listingStems.$inferSelect;
+export type InsertListingStem = z.infer<typeof insertListingStemSchema>;

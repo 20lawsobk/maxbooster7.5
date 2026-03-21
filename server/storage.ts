@@ -306,6 +306,80 @@ export class DatabaseStorage implements IStorage {
     return this.getSocialPosts(userId);
   }
 
+  async getScheduledPosts(input: string | { userId?: string; status?: string }): Promise<any[]> {
+    const conditions: any[] = [];
+    if (typeof input === 'string') {
+      conditions.push(eq(posts.userId, input));
+      conditions.push(sql`${posts.status} IN ('scheduled', 'pending')`);
+    } else {
+      if (input.userId) conditions.push(eq(posts.userId, input.userId));
+      if (input.status) {
+        conditions.push(eq(posts.status, input.status));
+      } else {
+        conditions.push(sql`${posts.status} IN ('scheduled', 'pending')`);
+      }
+    }
+    return db
+      .select()
+      .from(posts)
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(asc(posts.scheduledAt))
+      .limit(500);
+  }
+
+  async createScheduledPost(post: any): Promise<any> {
+    const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = post;
+    const [newPost] = await db.insert(posts).values({
+      id: post.id,
+      userId: post.userId,
+      platform: Array.isArray(platforms) && platforms.length > 0 ? platforms[0] : 'social',
+      content: typeof content === 'string' ? content : JSON.stringify(content),
+      scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
+      status: post.status || 'scheduled',
+      mediaUrls: content?.mediaUrls || [],
+      metadata: {
+        platforms: platforms || [],
+        viralPrediction,
+        createdBy,
+        ...(typeof content !== 'string' ? { content } : {}),
+      },
+    }).returning();
+    return newPost;
+  }
+
+  async getScheduledPostById(id: string): Promise<any | null> {
+    const [post] = await db.select().from(posts).where(eq(posts.id, id));
+    if (!post) return null;
+    const meta = (post.metadata as any) || {};
+    return {
+      ...post,
+      platforms: meta.platforms || [post.platform].filter(Boolean),
+      content: meta.content || post.content,
+      scheduledTime: post.scheduledAt,
+      viralPrediction: meta.viralPrediction || null,
+      createdBy: meta.createdBy || 'manual',
+      results: post.engagement || [],
+    };
+  }
+
+  async updateScheduledPost(id: string, updates: Partial<any>): Promise<any> {
+    const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = updates;
+    const updateValues: any = { ...rest };
+    if (platforms) updateValues.platform = Array.isArray(platforms) ? platforms[0] : platforms;
+    if (content !== undefined) updateValues.content = typeof content === 'string' ? content : JSON.stringify(content);
+    if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
+    if (results !== undefined) updateValues.engagement = results;
+    const [updated] = await db.update(posts).set(updateValues).where(eq(posts.id, id)).returning();
+    return updated;
+  }
+
+  async updateScheduledPostStatus(id: string, status: string, results?: any[]): Promise<void> {
+    const updateValues: any = { status };
+    if (results !== undefined) updateValues.engagement = results;
+    if (status === 'completed' || status === 'published') updateValues.publishedAt = new Date();
+    await db.update(posts).set(updateValues).where(eq(posts.id, id));
+  }
+
   async getSocialMetrics(userId: string): Promise<any> {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);

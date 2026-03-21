@@ -112,3 +112,27 @@ A three-agent audit identified and resolved the following issues:
 
 ### FlowState Export Fix
 - **`client/src/components/studio/FlowStateExport.tsx`**: Fixed export URL from `/export` to `/render` to match the actual server endpoint.
+
+## Full-System Optimization Pass (March 2026 — Session 3)
+
+### Scheduled Post Storage Methods (previously all missing from storage.ts)
+- **`server/storage.ts` — `getScheduledPosts(input)`**: Added — handles both `(userId: string)` calls (from social route) and `({ userId?, status? })` object calls (from autoPostingServiceV2). Queries `posts` table with status `scheduled` or `pending` filter.
+- **`server/storage.ts` — `createScheduledPost(post)`**: Added — maps `ScheduledPost` interface (platforms[], content object, scheduledTime, viralPrediction, createdBy) to the `posts` table columns, storing extra fields in `metadata` JSONB.
+- **`server/storage.ts` — `getScheduledPostById(id)`**: Added — fetches post and reconstructs `ScheduledPost` shape from metadata.
+- **`server/storage.ts` — `updateScheduledPost(id, updates)`**: Added — maps field updates back to `posts` table columns.
+- **`server/storage.ts` — `updateScheduledPostStatus(id, status, results?)`**: Added — updates status and sets `publishedAt` on completion.
+
+### Marketplace Collaborations (previously a hardcoded stub)
+- **`server/routes/marketplace.ts` — `GET /collaborations`**: Now queries `collaborationProjects` table for projects where user is owner AND `metadata._offerType = 'marketplace_collab'`, plus projects where user is a `projectMembers` member. Maps back to `CollaborationOffer` shape.
+- **`server/routes/marketplace.ts` — `POST /collaborations`**: Now persists collaboration offers to `collaborationProjects` table with all offer data (toUserId, beatId, type, terms, splitPercentage, budget, messages) stored in `metadata` JSONB.
+
+### Marketplace Listing Stems (fully implemented)
+- **`shared/schema.ts` — `listingStems` table**: New `listing_stems` table added with columns: `id, listing_id, user_id, stem_name, stem_type, file_url, file_size, format, sample_rate, bit_depth, price, download_count, created_at`.
+- **`server/routes/marketplace.ts` — `GET /my-stems`**: Now queries `listingStems` by userId.
+- **`server/routes/marketplace.ts` — `GET /listings/:listingId/stems`**: Now queries `listingStems` by listingId.
+- **`server/routes/marketplace.ts` — `POST /listings/:listingId/stems`**: New endpoint — inserts a stem record (requires auth).
+- **`server/routes/marketplace.ts` — `DELETE /stems/:stemId`**: New endpoint — deletes user-owned stem (requires auth).
+- **`server/routes/marketplace.ts` imports**: Added `collaborationProjects, projectMembers, listingStems` from schema; added `inArray` from drizzle-orm.
+
+### ShowPage Session Code Fix
+- **`client/src/pages/ShowPage.tsx`**: Replaced `Math.random()` session code (changed every render) with a stable `btoa(window.location.pathname)` derivation — same show always shows same code within a page session.
