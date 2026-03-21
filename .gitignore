@@ -86,7 +86,13 @@ client/public/icons/
 assets/images/
 electron/assets/*.png
 electron/assets/*.ico
+# Root-level and public/ binary image assets
 generated-icon.png
+public/favicon.png
+public/favicon.ico
+public/*.png
+public/*.jpg
+public/*.webp
 
 # Videos and large media (binary, served from object storage / CDN instead)
 dist/public/videos/
