@@ -82,7 +82,6 @@ import {
   Target,
   Zap,
   Shield,
-  Award,
   Crown,
   Sparkles,
   MapPin,
@@ -154,11 +153,9 @@ import { TakedownManager } from '@/components/distribution/TakedownManager';
 import { EarningsReconciliation } from '@/components/distribution/EarningsReconciliation';
 import { DataTransferWizard } from '@/components/distribution/DataTransferWizard';
 import { RoyaltySplitManager } from '@/components/distribution/RoyaltySplitManager';
-import { ReleaseDateScheduler } from '@/components/distribution/ReleaseDateScheduler';
 import { HyperFollowBuilder } from '@/components/distribution/HyperFollowBuilder';
 import { SubmissionStatusTracker } from '@/components/distribution/SubmissionStatusTracker';
 import { ContentIDManager } from '@/components/distribution/ContentIDManager';
-import { DistributionOutcomeHandler } from '@/components/distribution/DistributionOutcomeHandler';
 import ArtistProfileManager from '@/components/distribution/ArtistProfileManager';
 
 // DistroKid Clone Interfaces
@@ -1013,7 +1010,7 @@ export default function Distribution() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const albumArtRef = useRef<HTMLInputElement>(null);
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('releases');
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -1758,13 +1755,6 @@ return (
           <div className="overflow-x-auto">
             <TabsList className="inline-flex w-auto min-w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
               <TabsTrigger
-                value="overview"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                data-testid="tab-overview"
-              >
-                Overview
-              </TabsTrigger>
-              <TabsTrigger
                 value="releases"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
                 data-testid="tab-releases"
@@ -1803,14 +1793,6 @@ return (
                 ISRC/UPC
               </TabsTrigger>
               <TabsTrigger
-                value="scheduling"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                data-testid="tab-scheduling"
-              >
-                <CalendarIcon className="w-4 h-4 mr-1" />
-                Scheduling
-              </TabsTrigger>
-              <TabsTrigger
                 value="splits"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
                 data-testid="tab-splits"
@@ -1831,14 +1813,6 @@ return (
                 data-testid="tab-takedowns"
               >
                 Takedowns
-              </TabsTrigger>
-              <TabsTrigger
-                value="rights"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                data-testid="tab-rights"
-              >
-                <Award className="w-4 h-4 mr-1" />
-                Rights
               </TabsTrigger>
               <TabsTrigger
                 value="hyperfollow"
@@ -1884,14 +1858,6 @@ return (
               >
                 <Shield className="w-4 h-4 mr-1" />
                 Content ID
-              </TabsTrigger>
-              <TabsTrigger
-                value="outcomes"
-                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
-                data-testid="tab-outcomes"
-              >
-                <TrendingUp className="w-4 h-4 mr-1" />
-                Outcomes
               </TabsTrigger>
               <TabsTrigger
                 value="playlist-pitching"
@@ -1943,112 +1909,6 @@ return (
               </TabsTrigger>
             </TabsList>
           </div>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Recent Releases */}
-              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
-                    <Music className="w-5 h-5 mr-2 text-blue-600" />
-                    Recent Releases
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {releasesLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(3)].map((_, i) => (
-                        <div key={i} className="animate-pulse flex items-center space-x-4">
-                          <div className="w-12 h-12 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
-                          <div className="flex-1">
-                            <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded mb-2"></div>
-                            <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-2/3"></div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : releases.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Upload className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                      <p className="text-gray-500 dark:text-gray-400 mb-4">No releases yet</p>
-                      <Button
-                        onClick={() => setIsUploadOpen(true)}
-                        className="bg-blue-600 hover:bg-blue-700"
-                        data-testid="button-upload-first-release"
-                      >
-                        Upload Your First Release
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {releases.slice(0, 5).map((release: unknown) => (
-                        <div
-                          key={release.id}
-                          className="flex items-center space-x-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                        >
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                            <Music className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {release.title}
-                            </p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                              {release.artistName}
-                            </p>
-                          </div>
-                          <Badge variant={release.status === 'live' ? 'default' : 'secondary'}>
-                            {release.status}
-                          </Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Quick Stats */}
-              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-lg">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
-                    <BarChart3 className="w-5 h-5 mr-2 text-purple-600" />
-                    Platform Performance
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {DISTRO_PLATFORMS.slice(0, 6).map((platform) => {
-                      const IconComponent = platform.icon;
-                      return (
-                        <div
-                          key={platform.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center shadow-sm">
-                              <IconComponent className="w-4 h-4" />
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                {platform.name}
-                              </p>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">
-                                {platform.processingTime}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant="outline" className="text-xs">
-                            Connected
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           {/* Releases Tab */}
           <TabsContent value="releases" className="space-y-6">
@@ -3175,77 +3035,6 @@ return (
             />
           </TabsContent>
 
-          {/* Release Scheduling Tab */}
-          <TabsContent value="scheduling" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Release Scheduling
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Schedule your releases with platform-specific timing for maximum impact
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <ReleaseDateScheduler
-                selectedDate={uploadForm.releaseDate}
-                onChange={(date) => setUploadForm(prev => ({ ...prev, releaseDate: date }))}
-                minWeeksAhead={2}
-              />
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5" />
-                    Platform Timing
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <SpotifyIcon className="w-5 h-5" />
-                        <span className="font-medium">Spotify</span>
-                      </div>
-                      <Badge variant="outline" className="text-green-600">Friday midnight UTC</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <AppleMusicIcon className="w-5 h-5" />
-                        <span className="font-medium">Apple Music</span>
-                      </div>
-                      <Badge variant="outline" className="text-red-600">Friday midnight local</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <YouTubeIcon className="w-5 h-5" />
-                        <span className="font-medium">YouTube Music</span>
-                      </div>
-                      <Badge variant="outline" className="text-yellow-600">Friday 12:00 UTC</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <AmazonIcon className="w-5 h-5" />
-                        <span className="font-medium">Amazon Music</span>
-                      </div>
-                      <Badge variant="outline" className="text-orange-600">Friday midnight UTC</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <TikTokIcon className="w-5 h-5" />
-                        <span className="font-medium">TikTok</span>
-                      </div>
-                      <Badge variant="outline">Immediate upon approval</Badge>
-                    </div>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Most platforms release new music on Fridays. We automatically schedule your release
-                    to go live at the optimal time for each platform.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           {/* Splits Tab */}
           <TabsContent value="splits" className="space-y-6">
@@ -3341,164 +3130,6 @@ return (
             <TakedownManager />
           </TabsContent>
 
-          {/* Rights Management Tab */}
-          <TabsContent value="rights" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Rights Management
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Manage ownership, licensing, and content protection
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Shield className="w-5 h-5" />
-                    Ownership & Copyright
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <Label className="text-sm font-medium">Copyright Owner</Label>
-                      <Input
-                        placeholder="Your name or company"
-                        value={uploadForm.copyrightOwner}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, copyrightOwner: e.target.value }))}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <Label className="text-sm font-medium">Copyright Year</Label>
-                      <Input
-                        type="number"
-                        placeholder={new Date().getFullYear().toString()}
-                        value={uploadForm.copyrightYear}
-                        onChange={(e) => setUploadForm(prev => ({ ...prev, copyrightYear: parseInt(e.target.value) || new Date().getFullYear() }))}
-                        className="mt-2"
-                      />
-                    </div>
-                    <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                      <Label className="text-sm font-medium">Publishing Rights</Label>
-                      <Select
-                        value={uploadForm.publishingRights}
-                        onValueChange={(value) => setUploadForm(prev => ({ ...prev, publishingRights: value }))}
-                      >
-                        <SelectTrigger className="mt-2">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Independent">Independent (Self-Published)</SelectItem>
-                          <SelectItem value="Publisher">Signed to Publisher</SelectItem>
-                          <SelectItem value="Partial">Partial Publishing Deal</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="w-5 h-5" />
-                    Content ID & Protection
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="font-medium">YouTube Content ID</p>
-                          <p className="text-xs text-muted-foreground">Protect & monetize on YouTube</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-600">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <div>
-                          <p className="font-medium">Facebook Rights Manager</p>
-                          <p className="text-xs text-muted-foreground">Protect on FB & Instagram</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-green-600">Active</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Shield className="w-5 h-5 text-blue-600" />
-                        <div>
-                          <p className="font-medium">Audio Fingerprinting</p>
-                          <p className="text-xs text-muted-foreground">Detect unauthorized use</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-blue-600">Enabled</Badge>
-                    </div>
-                    <div className="flex items-center justify-between p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="w-5 h-5 text-purple-600" />
-                        <div>
-                          <p className="font-medium">Shazam Integration</p>
-                          <p className="text-xs text-muted-foreground">Be discoverable on Shazam</p>
-                        </div>
-                      </div>
-                      <Badge className="bg-purple-600">Active</Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Globe className="w-5 h-5" />
-                    Territory Rights
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">Worldwide Distribution</p>
-                        <p className="text-sm text-muted-foreground">
-                          Your music is available in all territories where platforms operate
-                        </p>
-                      </div>
-                      <Badge className="bg-green-600">
-                        <Globe className="w-3 h-3 mr-1" />
-                        All Territories
-                      </Badge>
-                    </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-blue-600">195+</p>
-                        <p className="text-xs text-muted-foreground">Countries</p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-green-600">150+</p>
-                        <p className="text-xs text-muted-foreground">Platforms</p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-purple-600">100%</p>
-                        <p className="text-xs text-muted-foreground">You Keep</p>
-                      </div>
-                      <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-center">
-                        <p className="text-2xl font-bold text-orange-600">∞</p>
-                        <p className="text-xs text-muted-foreground">Ownership</p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
 
           <TabsContent value="platforms">
             <Card>
@@ -3686,70 +3317,6 @@ return (
             )}
           </TabsContent>
 
-          {/* Outcomes Tab */}
-          <TabsContent value="outcomes" className="space-y-6">
-            {selectedRelease ? (
-              <DistributionOutcomeHandler
-                releaseId={selectedRelease.id}
-                onAction={(action, data) => {
-                  toast({
-                    title: 'Action Triggered',
-                    description: `${action} action initiated`,
-                  });
-                }}
-              />
-            ) : releases.length > 0 ? (
-              <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-gray-900 dark:text-white">
-                    <TrendingUp className="w-5 h-5 mr-2 text-purple-600" />
-                    Distribution Outcomes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-500 dark:text-gray-400 mb-4">
-                    Select a release to view all distribution outcomes and activities.
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {releases.slice(0, 6).map((release: Release) => (
-                      <Card
-                        key={release.id}
-                        className="cursor-pointer hover:shadow-lg transition-shadow"
-                        onClick={() => setSelectedRelease(release)}
-                      >
-                        <CardContent className="p-4 flex items-center gap-4">
-                          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-600 rounded-lg flex items-center justify-center">
-                            <TrendingUp className="w-6 h-6 text-white" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="font-medium">{release.title}</p>
-                            <p className="text-sm text-muted-foreground">{release.artistName}</p>
-                          </div>
-                          <Badge
-                            variant={release.status === 'live' ? 'default' : release.status === 'processing' ? 'secondary' : 'outline'}
-                          >
-                            {release.status}
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="bg-white dark:bg-gray-800">
-                <CardContent className="p-12 text-center">
-                  <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">No Releases Yet</h3>
-                  <p className="text-gray-500 mb-4">Create a release to track distribution outcomes.</p>
-                  <Button onClick={() => setActiveTab('new-release')}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Create Release
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </TabsContent>
 
           {/* Playlist Pitching Tab */}
           <TabsContent value="playlist-pitching" className="space-y-6">
