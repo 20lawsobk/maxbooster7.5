@@ -30,7 +30,8 @@ router.get('/', async (req: Request, res: Response) => {
     const rows = await db
       .select()
       .from(apiKeys)
-      .where(eq(apiKeys.userId, userId));
+      .where(eq(apiKeys.userId, userId))
+      .limit(50);
 
     const result = rows.map(k => ({
       id: k.id,
@@ -130,7 +131,8 @@ router.post('/:keyId/regenerate', async (req: Request, res: Response) => {
     const [existing] = await db
       .select({ id: apiKeys.id })
       .from(apiKeys)
-      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)));
+      .where(and(eq(apiKeys.id, keyId), eq(apiKeys.userId, userId)))
+      .limit(1);
 
     if (!existing) {
       return res.status(404).json({ error: 'API key not found' });

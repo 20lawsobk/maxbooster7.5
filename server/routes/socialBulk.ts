@@ -5,49 +5,63 @@ import { posts, scheduledPostBatches, socialAccounts, socialCampaigns } from '@s
 import { bulkSchedulePostSchema, bulkValidatePostSchema } from '@shared/schema';
 import { socialQueueService } from '../services/socialQueueService';
 import { eq, and, desc, inArray } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 
-interface AuthenticatedRequest extends Express.Request {
-  user?: {
-    id: string;
-    email: string;
-  };
-}
-
-router.post('/validate', async (req: AuthenticatedRequest, res) => {
+router.post('/validate', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const userId = (req as any).user.id;
     const validatedData = bulkValidatePostSchema.parse(req.body);
     const errors: Array<{ index: number; field: string; message: string }> = [];
     const warnings: Array<{ index: number; message: string }> = [];
 
+    const validPlatforms = ['twitter', 'facebook', 'instagram', 'linkedin', 'tiktok', 'youtube', 'threads'];
+
+    const platformLimits: Record<string, number> = {
+      twitter: 280,
+      linkedin: 3000,
+      facebook: 63206,
+      instagram: 2200,
+      tiktok: 2200,
+      youtube: 5000,
+      threads: 500,
+    };
+
+    const now = new Date();
+
+    // Batch-load all referenced socialAccountIds in a single query (avoid N+1)
+    const referencedAccountIds = [
+      ...new Set(
+        validatedData.posts
+          .map((p) => p.socialAccountId)
+          .filter(Boolean) as string[]
+      ),
+    ];
+    const ownedAccountIdSet = new Set<string>();
+    if (referencedAccountIds.length > 0) {
+      const ownedAccounts = await db
+        .select({ id: socialAccounts.id })
+        .from(socialAccounts)
+        .where(
+          and(
+            inArray(socialAccounts.id, referencedAccountIds),
+            eq(socialAccounts.userId, userId)
+          )
+        )
+        .limit(100);
+      for (const a of ownedAccounts) ownedAccountIdSet.add(a.id);
+    }
+
     for (let i = 0; i < validatedData.posts.length; i++) {
       const post = validatedData.posts[i];
+      const platform = (post.platform || '').toLowerCase();
 
       if (!post.platform || post.platform.trim() === '') {
-        errors.push({
-          index: i,
-          field: 'platform',
-          message: 'Platform is required',
-        });
-      }
-
-      const validPlatforms = [
-        'twitter',
-        'facebook',
-        'instagram',
-        'linkedin',
-        'tiktok',
-        'youtube',
-        'threads',
-      ];
-      if (!validPlatforms.includes(post.platform.toLowerCase())) {
+        errors.push({ index: i, field: 'platform', message: 'Platform is required' });
+      } else if (!validPlatforms.includes(platform)) {
         errors.push({
           index: i,
           field: 'platform',
@@ -56,71 +70,35 @@ router.post('/validate', async (req: AuthenticatedRequest, res) => {
       }
 
       if (!post.content || post.content.trim() === '') {
-        errors.push({
-          index: i,
-          field: 'content',
-          message: 'Content is required',
-        });
-      }
-
-      const platformLimits: Record<string, number> = {
-        twitter: 280,
-        linkedin: 3000,
-        facebook: 63206,
-        instagram: 2200,
-        tiktok: 2200,
-        youtube: 5000,
-        threads: 500,
-      };
-
-      const limit = platformLimits[post.platform.toLowerCase()];
-      if (limit && post.content.length > limit) {
-        errors.push({
-          index: i,
-          field: 'content',
-          message: `Content exceeds ${limit} character limit for ${post.platform}`,
-        });
+        errors.push({ index: i, field: 'content', message: 'Content is required' });
+      } else {
+        const limit = platformLimits[platform];
+        if (limit && post.content.length > limit) {
+          errors.push({
+            index: i,
+            field: 'content',
+            message: `Content exceeds ${limit} character limit for ${post.platform}`,
+          });
+        }
       }
 
       if (post.scheduledAt) {
         const scheduledDate = new Date(post.scheduledAt);
-        const now = new Date();
-
         if (isNaN(scheduledDate.getTime())) {
-          errors.push({
-            index: i,
-            field: 'scheduledAt',
-            message: 'Invalid date format',
-          });
+          errors.push({ index: i, field: 'scheduledAt', message: 'Invalid date format' });
         } else if (scheduledDate < now) {
-          errors.push({
-            index: i,
-            field: 'scheduledAt',
-            message: 'Scheduled time must be in the future',
-          });
+          errors.push({ index: i, field: 'scheduledAt', message: 'Scheduled time must be in the future' });
         } else if (scheduledDate.getTime() - now.getTime() < 5 * 60 * 1000) {
-          warnings.push({
-            index: i,
-            message: 'Post scheduled less than 5 minutes from now',
-          });
+          warnings.push({ index: i, message: 'Post scheduled less than 5 minutes from now' });
         }
       }
 
-      if (post.socialAccountId) {
-        const account = await db.query.socialAccounts.findFirst({
-          where: and(
-            eq(socialAccounts.id, post.socialAccountId),
-            eq(socialAccounts.userId, req.user.id)
-          ),
+      if (post.socialAccountId && !ownedAccountIdSet.has(post.socialAccountId)) {
+        errors.push({
+          index: i,
+          field: 'socialAccountId',
+          message: 'Social account not found or does not belong to you',
         });
-
-        if (!account) {
-          errors.push({
-            index: i,
-            field: 'socialAccountId',
-            message: 'Social account not found or does not belong to user',
-          });
-        }
       }
     }
 
@@ -132,83 +110,105 @@ router.post('/validate', async (req: AuthenticatedRequest, res) => {
     });
   } catch (error: unknown) {
     logger.error('Bulk validation error:', error);
-
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: error.errors,
-      });
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
-
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.post('/schedule', async (req: AuthenticatedRequest, res) => {
+router.post('/schedule', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const userId = (req as any).user.id;
     const validatedData = bulkSchedulePostSchema.parse(req.body);
 
+    if (validatedData.posts.length === 0) {
+      return res.status(400).json({ error: 'At least one post is required' });
+    }
+
     if (validatedData.posts.length > 500) {
-      return res.status(400).json({
-        error: 'Batch size exceeds maximum of 500 posts',
-      });
+      return res.status(400).json({ error: 'Batch size exceeds maximum of 500 posts' });
     }
 
     const validationErrors: Array<{ index: number; field: string; message: string }> = [];
-
     for (let i = 0; i < validatedData.posts.length; i++) {
       const post = validatedData.posts[i];
-
       if (!post.content || post.content.trim() === '') {
-        validationErrors.push({
-          index: i,
-          field: 'content',
-          message: 'Content is required',
-        });
+        validationErrors.push({ index: i, field: 'content', message: 'Content is required' });
       }
     }
-
     if (validationErrors.length > 0) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        errors: validationErrors,
-      });
+      return res.status(400).json({ error: 'Validation failed', errors: validationErrors });
     }
 
-    const accountIds = [...new Set(validatedData.posts.map((p) => p.socialAccountId).filter(Boolean) as string[])];
+    // Verify social account ownership in a single batch query
+    const accountIds = [
+      ...new Set(
+        validatedData.posts.map((p) => p.socialAccountId).filter(Boolean) as string[]
+      ),
+    ];
     if (accountIds.length > 0) {
       const ownedAccounts = await db
         .select({ id: socialAccounts.id })
         .from(socialAccounts)
-        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, req.user.id)));
+        .where(and(inArray(socialAccounts.id, accountIds), eq(socialAccounts.userId, userId)))
+        .limit(100);
       const ownedIds = new Set(ownedAccounts.map((a) => a.id));
-      const badIndex = validatedData.posts.findIndex((p) => p.socialAccountId && !ownedIds.has(p.socialAccountId));
+      const badIndex = validatedData.posts.findIndex(
+        (p) => p.socialAccountId && !ownedIds.has(p.socialAccountId)
+      );
       if (badIndex !== -1) {
-        return res.status(403).json({ error: 'One or more social accounts do not belong to you', index: badIndex });
+        return res.status(403).json({
+          error: 'One or more social accounts do not belong to you',
+          index: badIndex,
+        });
       }
     }
 
-    const campaignIds = [...new Set(validatedData.posts.map((p) => p.campaignId).filter(Boolean) as string[])];
+    // Verify campaign ownership in a single batch query
+    const campaignIds = [
+      ...new Set(
+        validatedData.posts.map((p) => p.campaignId).filter(Boolean) as string[]
+      ),
+    ];
     if (campaignIds.length > 0) {
       const ownedCampaigns = await db
         .select({ id: socialCampaigns.id })
         .from(socialCampaigns)
-        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, req.user.id)));
+        .where(and(inArray(socialCampaigns.id, campaignIds), eq(socialCampaigns.userId, userId)))
+        .limit(100);
       const ownedCampaignIds = new Set(ownedCampaigns.map((c) => c.id));
-      const badCampaignIndex = validatedData.posts.findIndex((p) => p.campaignId && !ownedCampaignIds.has(p.campaignId));
+      const badCampaignIndex = validatedData.posts.findIndex(
+        (p) => p.campaignId && !ownedCampaignIds.has(p.campaignId)
+      );
       if (badCampaignIndex !== -1) {
-        return res.status(403).json({ error: 'One or more campaigns do not belong to you', index: badCampaignIndex });
+        return res.status(403).json({
+          error: 'One or more campaigns do not belong to you',
+          index: badCampaignIndex,
+        });
       }
+    }
+
+    // Determine campaignId: use existing one from posts, or create a new campaign
+    let defaultCampaignId = validatedData.posts[0]?.campaignId;
+    if (!defaultCampaignId) {
+      // Insert campaign first and retrieve its generated ID
+      const [newCampaign] = await db
+        .insert(socialCampaigns)
+        .values({
+          userId,
+          name: `Bulk Schedule - ${new Date().toISOString()}`,
+          platforms: [...new Set(validatedData.posts.map((p) => p.platform))],
+          status: 'active',
+        })
+        .returning({ id: socialCampaigns.id });
+      defaultCampaignId = newCampaign.id;
     }
 
     const [batch] = await db
       .insert(scheduledPostBatches)
       .values({
-        userId: req.user.id,
+        userId,
         totalPosts: validatedData.posts.length,
         processedPosts: 0,
         successfulPosts: 0,
@@ -218,24 +218,8 @@ router.post('/schedule', async (req: AuthenticatedRequest, res) => {
       })
       .returning();
 
-    const defaultCampaignId = validatedData.posts[0]?.campaignId || nanoid();
-
-    if (!validatedData.posts[0]?.campaignId) {
-      await db
-        .insert(socialCampaigns)
-        .values({
-          userId: req.user.id,
-          name: `Bulk Schedule - ${new Date().toISOString()}`,
-          platforms: [...new Set(validatedData.posts.map((p) => p.platform))],
-          status: 'active',
-        })
-        .catch((err) => {
-          logger.error('Error creating default campaign:', err);
-        });
-    }
-
     const postsToInsert = validatedData.posts.map((post) => ({
-      userId: req.user!.id,
+      userId,
       campaignId: post.campaignId || defaultCampaignId,
       batchId: batch.id,
       platform: post.platform,
@@ -248,57 +232,56 @@ router.post('/schedule', async (req: AuthenticatedRequest, res) => {
 
     const insertedPosts = await db.insert(posts).values(postsToInsert).returning();
 
-    for (const post of insertedPosts) {
-      const scheduledDate = post.scheduledAt || new Date();
-      const delay = scheduledDate.getTime() - Date.now();
-
-      await socialQueueService.addSocialPostJob(
-        {
-          postId: post.id,
-          batchId: batch.id,
-          platform: post.platform,
-          content: post.content || '',
-          mediaUrls: (post.mediaUrls as string[]) || [],
-          socialAccountId: post.socialAccountId,
-          campaignId: post.campaignId,
-          scheduledAt: post.scheduledAt || undefined,
-        },
-        Math.max(0, delay)
-      );
-    }
+    // Queue all posts — parallelise with Promise.all for speed
+    await Promise.all(
+      insertedPosts.map((post) => {
+        const scheduledDate = post.scheduledAt || new Date();
+        const delay = Math.max(0, scheduledDate.getTime() - Date.now());
+        return socialQueueService.addSocialPostJob(
+          {
+            postId: post.id,
+            batchId: batch.id,
+            platform: post.platform,
+            content: post.content || '',
+            mediaUrls: (post.mediaUrls as string[]) || [],
+            socialAccountId: post.socialAccountId,
+            campaignId: post.campaignId,
+            scheduledAt: post.scheduledAt || undefined,
+          },
+          delay
+        );
+      })
+    );
 
     return res.status(201).json({
       success: true,
       batchId: batch.id,
+      campaignId: defaultCampaignId,
       totalPosts: validatedData.posts.length,
       message: 'Batch scheduled successfully',
     });
   } catch (error: unknown) {
     logger.error('Bulk schedule error:', error);
-
     if (error instanceof z.ZodError) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: error.errors,
-      });
+      return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
-
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.get('/status/:batchId', async (req: AuthenticatedRequest, res) => {
+router.get('/status/:batchId', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const userId = (req as any).user.id;
     const { batchId } = req.params;
+
+    if (!batchId || typeof batchId !== 'string') {
+      return res.status(400).json({ error: 'Invalid batch ID' });
+    }
 
     const batch = await db.query.scheduledPostBatches.findFirst({
       where: and(
         eq(scheduledPostBatches.id, batchId),
-        eq(scheduledPostBatches.userId, req.user.id)
+        eq(scheduledPostBatches.userId, userId)
       ),
     });
 
@@ -306,9 +289,11 @@ router.get('/status/:batchId', async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'Batch not found' });
     }
 
+    // Limit to 500 (the max batch size), ordered by schedule time
     const batchPosts = await db.query.posts.findMany({
-      where: eq(posts.batchId, batchId),
+      where: and(eq(posts.batchId, batchId), eq(posts.userId, userId)),
       orderBy: [desc(posts.createdAt)],
+      limit: 500,
     });
 
     const statusBreakdown = batchPosts.reduce(
@@ -348,43 +333,44 @@ router.get('/status/:batchId', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-router.delete('/:batchId', async (req: AuthenticatedRequest, res) => {
+router.delete('/:batchId', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    const userId = (req as any).user.id;
     const { batchId } = req.params;
 
-    const cancelled = await socialQueueService.cancelBatch(batchId, req.user.id);
+    if (!batchId || typeof batchId !== 'string') {
+      return res.status(400).json({ error: 'Invalid batch ID' });
+    }
+
+    const cancelled = await socialQueueService.cancelBatch(batchId, userId);
 
     if (!cancelled) {
       return res.status(404).json({ error: 'Batch not found or already completed' });
     }
 
-    return res.json({
-      success: true,
-      message: 'Batch cancelled successfully',
-    });
+    return res.json({ success: true, message: 'Batch cancelled successfully' });
   } catch (error: unknown) {
     logger.error('Cancel batch error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.get('/batches', async (req: AuthenticatedRequest, res) => {
+router.get('/batches', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+    const userId = (req as any).user.id;
+    const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
+    const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || '50'), 10)));
 
     const batches = await db.query.scheduledPostBatches.findMany({
-      where: eq(scheduledPostBatches.userId, req.user.id),
+      where: eq(scheduledPostBatches.userId, userId),
       orderBy: [desc(scheduledPostBatches.createdAt)],
-      limit: 50,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
     });
 
     return res.json({
+      page,
+      pageSize,
       batches: batches.map((batch) => ({
         id: batch.id,
         totalPosts: batch.totalPosts,
@@ -403,13 +389,14 @@ router.get('/batches', async (req: AuthenticatedRequest, res) => {
   }
 });
 
-// Get bulk status
-router.get('/status', async (req: AuthenticatedRequest, res) => {
+router.get('/status', requireAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-    res.json({ status: 'ready', queuedPosts: 0, processingPosts: 0 });
+    const queueStats = await socialQueueService.getQueueStats();
+    return res.json({
+      status: 'ready',
+      queuedPosts: queueStats?.waiting ?? 0,
+      processingPosts: queueStats?.active ?? 0,
+    });
   } catch (error: unknown) {
     logger.error('Get bulk status error:', error);
     return res.status(500).json({ error: 'Internal server error' });

@@ -1,5 +1,6 @@
 import { getRedisClient } from './redisClient.js';
 import { logger } from '../logger.js';
+import { randomBytes } from 'crypto';
 
 const isProduction = () =>
   process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
@@ -36,7 +37,7 @@ export async function acquireLock(lockName: string, ttlSeconds: number): Promise
     return 'dev-no-redis';
   }
 
-  const token = Math.random().toString(36).substring(2) + Date.now().toString(36);
+  const token = randomBytes(16).toString('hex');
   const key = `lock:${lockName}`;
 
   try {

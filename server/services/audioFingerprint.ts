@@ -1,5 +1,5 @@
 import { logger } from '../logger.js';
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
@@ -109,7 +109,7 @@ export class AudioFingerprintService {
       const fingerprintData = await this.computeFingerprint(audioPath, options);
       
       const fingerprint: AudioFingerprint = {
-        id: `fp_${nanoid()}`,
+        id: `fp_${randomBytes(8).toString('hex')}`,
         releaseId,
         trackId,
         fingerprint: fingerprintData.hash,
@@ -322,7 +322,7 @@ export class AudioFingerprintService {
     }
 
     return {
-      id: `warn_${nanoid()}`,
+      id: `warn_${randomBytes(8).toString('hex')}`,
       severity,
       type,
       message: `${Math.round(similarity * 100)}% similarity detected with existing content`,

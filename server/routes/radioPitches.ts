@@ -59,6 +59,19 @@ router.get('/stats', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const [item] = await db.select().from(radioPitches)
+      .where(and(eq(radioPitches.id, req.params.id), eq(radioPitches.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Radio pitch not found' });
+    res.json(item);
+  } catch (error) {
+    logger.error('[RadioPitches] Failed to fetch radio pitch:', error);
+    res.status(500).json({ error: 'Failed to fetch radio pitch' });
+  }
+});
+
 router.post('/', requireAuth, async (req, res) => {
   try {
     const data = insertRadioPitchSchema.parse({ ...req.body, userId: req.user!.id });

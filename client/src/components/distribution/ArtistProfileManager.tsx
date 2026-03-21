@@ -256,7 +256,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
             </div>
             {!form.isNewArtist && (
               <div className="rounded-lg bg-muted/50 border p-3 text-sm text-muted-foreground">
-                After creating this profile, the auto-discover system will search all major platforms and link the matching artist pages automatically.
+                After creating this profile, use the DSP Profile Hub to claim your artist portals on Spotify for Artists, Apple Music for Artists, and more.
               </div>
             )}
           </div>
@@ -266,7 +266,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
               onClick={() => createMutation.mutate(form)}
               disabled={!form.artistName.trim() || createMutation.isPending}
             >
-              {createMutation.isPending ? 'Creating…' : 'Create & Auto-Discover'}
+              {createMutation.isPending ? 'Creating…' : 'Create Profile'}
             </Button>
           </DialogFooter>
         </DialogContent>

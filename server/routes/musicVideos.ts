@@ -136,6 +136,20 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// GET /:id - get single music video production (after /stats to avoid route shadowing)
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const [item] = await db.select().from(musicVideoProductions)
+      .where(and(eq(musicVideoProductions.id, req.params.id), eq(musicVideoProductions.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Music video production not found' });
+    res.json(item);
+  } catch (error) {
+    logger.error('[MusicVideos] Failed to fetch production:', error);
+    res.status(500).json({ error: 'Failed to fetch music video production' });
+  }
+});
+
 // ── In-house Diffusion Video Engine endpoints ─────────────────────────────
 
 router.get('/diffusion/status', requireAuth, async (_req, res) => {

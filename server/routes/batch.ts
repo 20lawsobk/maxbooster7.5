@@ -1085,7 +1085,8 @@ router.get('/templates', async (req: Request, res: Response) => {
       .select()
       .from(batchTemplates)
       .where(and(...conditions))
-      .orderBy(desc(batchTemplates.updatedAt));
+      .orderBy(desc(batchTemplates.updatedAt))
+      .limit(200);
 
     res.json({ templates: rows });
   } catch (error) {
@@ -1138,7 +1139,8 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
     const [existing] = await db
       .select({ id: batchTemplates.id, userId: batchTemplates.userId })
       .from(batchTemplates)
-      .where(eq(batchTemplates.id, id));
+      .where(eq(batchTemplates.id, id))
+      .limit(1);
 
     if (!existing) {
       return res.status(404).json({ message: 'Template not found' });
@@ -1212,7 +1214,8 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
     const [original] = await db
       .select()
       .from(batchTemplates)
-      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)));
+      .where(and(eq(batchTemplates.id, id), eq(batchTemplates.userId, userId)))
+      .limit(1);
 
     if (!original) {
       return res.status(404).json({ message: 'Template not found' });

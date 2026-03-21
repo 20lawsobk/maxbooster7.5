@@ -289,7 +289,8 @@ class ReleaseWorkflowService {
     const requests = await db.select()
       .from(releaseWorkflowRequests)
       .where(eq(releaseWorkflowRequests.releaseId, releaseId))
-      .orderBy(desc(releaseWorkflowRequests.createdAt));
+      .orderBy(desc(releaseWorkflowRequests.createdAt))
+      .limit(100);
 
     return requests;
   }
@@ -298,7 +299,8 @@ class ReleaseWorkflowService {
     const versions = await db.select()
       .from(releaseVersionHistory)
       .where(eq(releaseVersionHistory.releaseId, releaseId))
-      .orderBy(desc(releaseVersionHistory.version));
+      .orderBy(desc(releaseVersionHistory.version))
+      .limit(50);
 
     return versions;
   }
@@ -307,7 +309,8 @@ class ReleaseWorkflowService {
     const baseQuery = db.select()
       .from(releaseWorkflowRequests)
       .where(eq(releaseWorkflowRequests.status, 'pending'))
-      .orderBy(desc(releaseWorkflowRequests.createdAt));
+      .orderBy(desc(releaseWorkflowRequests.createdAt))
+      .limit(100);
 
     return baseQuery;
   }

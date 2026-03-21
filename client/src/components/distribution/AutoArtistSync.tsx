@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  RefreshCw, CheckCircle2, XCircle, AlertCircle,
-  ExternalLink, Loader2, Globe, Barcode, Info,
-  Music, Link2,
+  CheckCircle2, XCircle, ExternalLink, ChevronDown, ChevronUp,
+  Loader2, Globe, Info, Key, Wrench, Music2, AlertCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -19,9 +22,6 @@ interface ArtistProfile {
   appleArtistId: string | null;
   deezerArtistId: string | null;
   soundcloudArtistId: string | null;
-  amazonMusicArtistId: string | null;
-  youtubeChannelId: string | null;
-  tidalArtistId: string | null;
   profileImageUrl: string | null;
   genres: string[];
   isVerified: boolean;
@@ -29,58 +29,33 @@ interface ArtistProfile {
   fixerStatus: string;
 }
 
-interface ClaimEntry {
-  hasId: boolean;
-  artistId?: string | null;
-  channelId?: string | null;
-  claimUrl: string;
-  profileUrl?: string | null;
-  channelUrl?: string | null;
+interface Portal {
+  key: string;
+  label: string;
+  portalUrl: string;
+  claimed: boolean;
+  artistId: string | null;
+  howVerified: string;
+  distributorHandles: boolean;
 }
 
 interface PlatformUrlDiscovery {
   platform: string;
   platformLabel: string;
   searchUrl: string;
+  profileUrlTemplate: string | null;
   method: 'url_template';
 }
 
-interface LabelGridPlatform {
-  platform: string;
-  platformLabel: string;
-  artistId: string | null;
-  artistUrl: string | null;
-  status: 'live' | 'pending' | 'processing' | 'not_found' | 'error';
-  liveAt?: string;
-}
-
-interface DiscoverResult {
-  claims: {
-    spotify: ClaimEntry;
-    apple:   ClaimEntry;
-    amazon:  ClaimEntry;
-    youtube: ClaimEntry;
-    tidal:   ClaimEntry;
-    deezer:  ClaimEntry;
+interface HubData {
+  artistName: string;
+  portals: Portal[];
+  metadataKeys: {
+    artistName: string;
+    storedIds: Record<string, string>;
   };
-  upcMatch: { apple: any | null; deezer: any | null } | null;
-  upcDiscovered: boolean;
   urlDiscoveries: PlatformUrlDiscovery[];
-  labelgridPlatforms: LabelGridPlatform[];
   labelgridConfigured: boolean;
-  metadata: { artistName: string; linkedCount: number; missingPlatforms: string[] };
-  saved: boolean;
-  savedFields: string[];
-}
-
-interface SyncResult {
-  synced: string[];
-  changes: Record<string, unknown>;
-  metadataConsistency: {
-    consistent: boolean;
-    linkedIds: Record<string, string | null>;
-    missingPlatforms: string[];
-  };
 }
 
 interface Props {
@@ -88,106 +63,77 @@ interface Props {
   onUpdated: () => void;
 }
 
-const CLAIM_META: Record<string, { label: string; color: string; dot: string; description: string }> = {
-  spotify: {
-    label: 'Spotify for Artists',
-    color: 'text-green-500',
-    dot: 'bg-green-500',
-    description: 'Claim via Spotify for Artists — verify with distributor metadata + social links',
-  },
-  apple: {
-    label: 'Apple Music for Artists',
-    color: 'text-pink-500',
-    dot: 'bg-pink-500',
-    description: 'Sign in with Apple ID → request access → Apple verifies via distributor metadata',
-  },
-  amazon: {
-    label: 'Amazon Music for Artists',
-    color: 'text-blue-400',
-    dot: 'bg-blue-400',
-    description: 'Request access → verify identity via Amazon account + distributor data',
-  },
-  youtube: {
-    label: 'YouTube Official Artist Channel',
-    color: 'text-red-500',
-    dot: 'bg-red-500',
-    description: 'Your distributor can request OAC merging — YouTube verifies via channel ownership + music delivery',
-  },
-  tidal: {
-    label: 'TIDAL for Artists',
-    color: 'text-cyan-400',
-    dot: 'bg-cyan-400',
-    description: 'Request artist access → TIDAL verifies via distributor delivery',
-  },
-  deezer: {
-    label: 'Deezer for Creators',
-    color: 'text-purple-500',
-    dot: 'bg-purple-500',
-    description: 'Claim your profile on Deezer Creators portal',
-  },
+const PORTAL_COLORS: Record<string, string> = {
+  spotify:    'text-green-500',
+  apple:      'text-pink-500',
+  amazon:     'text-blue-400',
+  youtube:    'text-red-500',
+  deezer:     'text-purple-500',
+  tidal:      'text-cyan-400',
+  pandora:    'text-indigo-400',
+  soundcloud: 'text-orange-400',
+};
+
+const PORTAL_ICONS: Record<string, string> = {
+  spotify:    '🎵',
+  apple:      '🍎',
+  amazon:     '🛒',
+  youtube:    '▶',
+  deezer:     '🎶',
+  tidal:      '🌊',
+  pandora:    '📻',
+  soundcloud: '☁️',
 };
 
 export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [discovery, setDiscovery] = useState<DiscoverResult | null>(null);
-  const [syncResult, setSyncResult] = useState<SyncResult | null>(null);
-  const [hasAutoRun, setHasAutoRun] = useState(false);
-  const [upc, setUpc] = useState('');
-  const [showAllDsps, setShowAllDsps] = useState(false);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
+  const [metaOpen, setMetaOpen] = useState(false);
+  const [dspGridOpen, setDspGridOpen] = useState(false);
+  const [fixerOpen, setFixerOpen] = useState(false);
+  const [fixerUri, setFixerUri] = useState('');
+  const [fixerNotes, setFixerNotes] = useState('');
+  const [fixerUriError, setFixerUriError] = useState('');
 
-  const discoverMutation = useMutation({
-    mutationFn: (runUpc?: string) =>
-      apiRequest('POST', `/api/artist-profiles/${profile.id}/auto-discover`,
-        runUpc ? { upc: runUpc } : undefined
-      ).then(r => r.json()),
-    onSuccess: (data: DiscoverResult) => {
-      setDiscovery(data);
-      if (data.saved && data.savedFields.length > 0) {
-        queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
-        onUpdated();
-        toast({
-          title: `UPC matched ${data.savedFields.length} platform${data.savedFields.length !== 1 ? 's' : ''}`,
-          description: data.savedFields.join(', '),
-        });
-      }
-    },
-    onError: (err: any) => {
-      const is401 = err?.status === 401 || String(err).includes('401');
-      if (is401) {
-        toast({ title: 'Session expired — reloading…', variant: 'destructive' });
-        setTimeout(() => window.location.reload(), 1500);
-      } else {
-        toast({ title: 'Could not load platform status', variant: 'destructive' });
-      }
-    },
+  const { data: hub, isLoading } = useQuery<HubData>({
+    queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`],
+    queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/profile-hub`).then(r => r.json()),
   });
 
-  const syncMutation = useMutation({
+  const savePlatformMutation = useMutation({
+    mutationFn: (updates: Record<string, string>) =>
+      apiRequest('PATCH', `/api/artist-profiles/${profile.id}`, updates).then(r => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`] });
+      onUpdated();
+      toast({ title: 'Artist ID saved' });
+    },
+    onError: () => toast({ title: 'Failed to save', variant: 'destructive' }),
+  });
+
+  const fixerMutation = useMutation({
     mutationFn: () =>
-      apiRequest('POST', `/api/artist-profiles/${profile.id}/auto-sync`).then(r => r.json()),
-    onSuccess: (data: SyncResult) => {
-      setSyncResult(data);
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/fixer`, {
+        targetSpotifyUri: fixerUri,
+        notes: fixerNotes,
+      }).then(r => r.json()),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       onUpdated();
-      if (data.changes.isVerified) {
-        toast({ title: 'Profile verified', description: `Linked on ${data.synced.length} platform${data.synced.length !== 1 ? 's' : ''}` });
-      } else {
-        toast({ title: 'Metadata checked', description: data.metadataConsistency.consistent ? 'All platform IDs linked' : `${data.metadataConsistency.missingPlatforms.length} platforms still need IDs` });
-      }
+      setFixerOpen(false);
+      toast({ title: 'Re-mapping request submitted', description: 'Will be applied to future releases' });
     },
-    onError: () => toast({ title: 'Sync check failed', variant: 'destructive' }),
+    onError: (err: any) => toast({
+      title: 'Request failed',
+      description: err?.message ?? 'Check that the Spotify URI is valid',
+      variant: 'destructive',
+    }),
   });
 
-  useEffect(() => {
-    if (!hasAutoRun) {
-      setHasAutoRun(true);
-      discoverMutation.mutate();
-    }
-  }, []);
-
-  const isRunning = discoverMutation.isPending || syncMutation.isPending;
-  const claimKeys = ['spotify', 'apple', 'amazon', 'youtube', 'tidal', 'deezer'] as const;
+  const claimedCount = hub?.portals.filter(p => p.claimed).length ?? 0;
+  const totalPortals = hub?.portals.length ?? 8;
 
   return (
     <div className="space-y-4 pt-2">
@@ -195,246 +141,251 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       {/* ── Header ── */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-primary" />
-          <span className="font-medium text-sm">Artist Profile Ownership</span>
-          {isRunning && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-          {discovery && !isRunning && (
-            <Badge variant="outline" className="text-xs">
-              {discovery.metadata.linkedCount}/6 linked
+          <Globe className="h-4 w-4 text-primary" />
+          <span className="font-medium text-sm">DSP Profile Hub</span>
+          {isLoading && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
+          {hub && !isLoading && (
+            <Badge variant={claimedCount === totalPortals ? 'default' : 'outline'} className="text-xs">
+              {claimedCount}/{totalPortals} portals set up
             </Badge>
           )}
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => discoverMutation.mutate(upc.replace(/\D/g, '') || undefined)} disabled={isRunning}>
-            <RefreshCw className={`h-3.5 w-3.5 mr-1.5 ${discoverMutation.isPending ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => syncMutation.mutate()} disabled={isRunning}>
-            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-            Check
-          </Button>
-        </div>
       </div>
 
-      {/* ── How it works ── */}
-      <Alert className="border-blue-500/30 bg-blue-500/5">
-        <Info className="h-4 w-4 text-blue-400" />
-        <AlertDescription className="text-xs text-muted-foreground space-y-1">
-          <p><strong className="text-foreground">Your artist profiles belong to the DSPs, not your distributor.</strong> When you switch distributors, nothing transfers between them.</p>
-          <p>Your new distributor delivers releases with your existing artist IDs → DSPs match via metadata (name, ISRCs, fingerprint) → you claim your profiles on each platform.</p>
-        </AlertDescription>
-      </Alert>
+      {/* ── How it works (collapsible) ── */}
+      <Collapsible open={howItWorksOpen} onOpenChange={setHowItWorksOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
+            <span className="flex items-center gap-1.5">
+              <Info className="h-3.5 w-3.5" />
+              How artist profile ownership works
+            </span>
+            {howItWorksOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border bg-muted/30 p-3 space-y-2 text-xs text-muted-foreground mt-1">
+            <p><span className="text-foreground font-medium">Your profiles belong to the DSPs, not your distributor.</span> Spotify, Apple, Amazon, Deezer, etc. each maintain their own artist profiles. Your distributor only delivers music — they don't own your profile.</p>
+            <p><span className="text-foreground font-medium">Switching distributors does not delete your profiles.</span> When your new distributor delivers a release, DSPs match it to your existing profile using artist name, ISRCs, audio fingerprints, and the artist IDs you provide. Keep metadata consistent across releases to ensure everything lands on the right profile.</p>
+            <p><span className="text-foreground font-medium">You then claim or re-claim each DSP's artist portal.</span> Once a release is live (or in pre-release), use each platform's official artist portal to request access. Your distributor helps resolve mismatches and can request OAC merging for YouTube on your behalf.</p>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
-      {/* ── UPC Lookup ── */}
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Barcode className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="Enter UPC to match Apple Music / Deezer artist IDs"
-            value={upc}
-            onChange={e => setUpc(e.target.value.replace(/[^0-9]/g, '').slice(0, 14))}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-md border border-input bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-        </div>
-        {upc.length >= 12 && (
-          <Button size="sm" onClick={() => discoverMutation.mutate(upc)} disabled={isRunning} className="text-xs h-8 px-3">
-            <Barcode className="h-3 w-3 mr-1" />
-            Match
-          </Button>
-        )}
-      </div>
-
-      {/* ── UPC Match Banner ── */}
-      {discovery?.upcDiscovered && discovery.upcMatch && (
-        <Alert className="border-green-500/30 bg-green-500/5">
-          <CheckCircle2 className="h-4 w-4 text-green-500" />
-          <AlertDescription className="text-xs">
-            <strong>UPC match found</strong> — artist IDs auto-saved for {[discovery.upcMatch.apple && 'Apple Music', discovery.upcMatch.deezer && 'Deezer'].filter(Boolean).join(' and ')}.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* ── Loading state ── */}
-      {discoverMutation.isPending && (
+      {/* ── Artist Portals ── */}
+      {isLoading ? (
         <div className="rounded-lg border bg-muted/30 p-4 flex items-center gap-3">
-          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
-          <div>
-            <p className="text-sm font-medium">Loading platform claim status…</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Checking your linked IDs and distribution delivery</p>
-          </div>
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading your profile hub…</p>
         </div>
-      )}
-
-      {/* ── Platform Claim Cards ── */}
-      {discovery && !discoverMutation.isPending && (
-        <>
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
-              <Music className="h-3.5 w-3.5" />
-              Artist Portals — claim your profile on each DSP
-            </p>
-            <div className="space-y-2">
-              {claimKeys.map(key => {
-                const entry = discovery.claims[key];
-                const meta = CLAIM_META[key];
-                const profileUrl = (entry as any).profileUrl ?? (entry as any).channelUrl ?? null;
-                const artistId = (entry as any).artistId ?? (entry as any).channelId ?? null;
-                return (
-                  <div key={key} className="rounded-lg border p-3 flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-0.5">
-                      {entry.hasId ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-muted-foreground/40" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-sm font-medium ${meta.color}`}>{meta.label}</span>
-                        {entry.hasId ? (
-                          <Badge variant="secondary" className="text-xs py-0">ID linked</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-xs py-0 text-muted-foreground">Not linked</Badge>
-                        )}
-                      </div>
-                      {artistId && (
-                        <p className="text-xs font-mono text-muted-foreground mt-0.5 truncate">{artistId}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground mt-1">{meta.description}</p>
-                    </div>
-                    <div className="flex items-center gap-1 shrink-0">
-                      {profileUrl && (
-                        <a href={profileUrl} target="_blank" rel="noreferrer" title="View profile">
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </Button>
-                        </a>
-                      )}
-                      <a href={entry.claimUrl} target="_blank" rel="noreferrer">
-                        <Button size="sm" variant={entry.hasId ? 'ghost' : 'outline'} className="h-7 text-xs">
-                          {entry.hasId ? 'Manage' : 'Claim'}
-                        </Button>
-                      </a>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* ── Sync consistency result ── */}
-          {syncResult && (
-            <Alert className={syncResult.metadataConsistency.consistent ? 'border-green-500/30 bg-green-500/5' : 'border-yellow-500/30 bg-yellow-500/5'}>
-              {syncResult.metadataConsistency.consistent
-                ? <CheckCircle2 className="h-4 w-4 text-green-500" />
-                : <AlertCircle className="h-4 w-4 text-yellow-500" />
-              }
-              <AlertDescription className="text-xs">
-                {syncResult.metadataConsistency.consistent
-                  ? `All 6 platform IDs linked. Metadata consistent — new releases will attach to your existing profiles automatically.`
-                  : `${syncResult.metadataConsistency.missingPlatforms.length} platform${syncResult.metadataConsistency.missingPlatforms.length !== 1 ? 's' : ''} missing IDs: ${syncResult.metadataConsistency.missingPlatforms.join(', ')}. Claim those profiles above to ensure new releases attach correctly.`
-                }
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* ── LabelGrid Distribution Status ── */}
-          {discovery.labelgridConfigured && discovery.labelgridPlatforms.length > 0 ? (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5" />
-                  Distribution Delivery Status — {discovery.labelgridPlatforms.length} platforms
-                </p>
-                <div className="flex gap-1.5">
-                  <Badge className="text-xs bg-green-600">{discovery.labelgridPlatforms.filter(p => p.status === 'live').length} live</Badge>
-                  {discovery.labelgridPlatforms.filter(p => p.status === 'pending' || p.status === 'processing').length > 0 && (
-                    <Badge variant="outline" className="text-xs text-yellow-600">
-                      {discovery.labelgridPlatforms.filter(p => p.status === 'pending' || p.status === 'processing').length} pending
-                    </Badge>
+      ) : hub ? (
+        <div>
+          <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            DSP Artist Portals
+          </p>
+          <div className="space-y-2">
+            {hub.portals.map(portal => (
+              <div key={portal.key} className="rounded-lg border p-3 flex items-start gap-3">
+                <div className="flex-shrink-0 mt-0.5">
+                  {portal.claimed ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <XCircle className="h-4 w-4 text-muted-foreground/50" />
                   )}
                 </div>
-              </div>
-              <div className="rounded-lg border overflow-hidden">
-                <div className="grid grid-cols-2 divide-x divide-y divide-border/50 max-h-60 overflow-y-auto">
-                  {discovery.labelgridPlatforms.map(p => (
-                    <div key={p.platform} className="flex items-center justify-between px-3 py-2 gap-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {p.status === 'live' ? (
-                          <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0" />
-                        ) : p.status === 'pending' || p.status === 'processing' ? (
-                          <Loader2 className="h-3 w-3 text-yellow-500 animate-spin flex-shrink-0" />
-                        ) : p.status === 'not_found' ? (
-                          <XCircle className="h-3 w-3 text-muted-foreground/40 flex-shrink-0" />
-                        ) : (
-                          <AlertCircle className="h-3 w-3 text-red-400 flex-shrink-0" />
-                        )}
-                        <span className="text-xs truncate">{p.platformLabel}</span>
-                      </div>
-                      {p.artistUrl && (
-                        <a href={p.artistUrl} target="_blank" rel="noreferrer">
-                          <ExternalLink className="h-3 w-3 text-muted-foreground/40 hover:text-primary transition-colors" />
-                        </a>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="px-3 py-2 bg-muted/20 border-t flex items-center gap-2 text-xs text-muted-foreground">
-                  <CheckCircle2 className="h-3 w-3 text-green-500" /> Live on DSP
-                  <span className="mx-1">·</span>
-                  <Loader2 className="h-3 w-3 text-yellow-500" /> Pending delivery
-                  <span className="mx-1">·</span>
-                  <XCircle className="h-3 w-3 text-muted-foreground/40" /> Not distributed
-                </div>
-              </div>
-            </div>
-          ) : discovery.labelgridConfigured ? (
-            <div className="rounded-lg border border-dashed p-4 text-center">
-              <Globe className="h-6 w-6 mx-auto mb-2 text-muted-foreground/50" />
-              <p className="text-sm font-medium">No releases distributed yet</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Once you distribute a release, delivery status across all DSPs will appear here.
-              </p>
-            </div>
-          ) : null}
-
-          {/* ── Search Links for 97 DSPs ── */}
-          {discovery.urlDiscoveries.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowAllDsps(v => !v)}
-                className="w-full flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground transition-colors mb-2"
-              >
-                <span className="flex items-center gap-1.5">
-                  <Globe className="h-3.5 w-3.5" />
-                  Search Links — {discovery.urlDiscoveries.length} more DSPs
-                </span>
-                <Badge variant="secondary" className="text-xs">{showAllDsps ? 'Hide' : 'Show'}</Badge>
-              </button>
-              {showAllDsps && (
-                <div className="rounded-lg border overflow-hidden">
-                  <div className="grid grid-cols-2 divide-x divide-y divide-border/50 max-h-72 overflow-y-auto">
-                    {discovery.urlDiscoveries.map(d => (
-                      <a
-                        key={d.platform}
-                        href={d.searchUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center justify-between px-3 py-2 gap-2 hover:bg-muted/30 transition-colors group"
-                      >
-                        <span className="text-xs truncate">{d.platformLabel}</span>
-                        <ExternalLink className="h-3 w-3 text-muted-foreground/30 group-hover:text-primary transition-colors flex-shrink-0" />
-                      </a>
-                    ))}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-medium ${PORTAL_COLORS[portal.key] ?? 'text-foreground'}`}>
+                      <span className="mr-1">{PORTAL_ICONS[portal.key]}</span>
+                      {portal.label}
+                    </span>
+                    {portal.claimed && (
+                      <Badge variant="secondary" className="text-xs py-0">Set up</Badge>
+                    )}
+                    {portal.distributorHandles && (
+                      <Badge variant="outline" className="text-xs py-0 text-blue-500 border-blue-500/40">Via distributor</Badge>
+                    )}
                   </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{portal.howVerified}</p>
+                  {portal.claimed && portal.artistId && (
+                    <p className="text-xs font-mono text-muted-foreground/60 mt-0.5 truncate">ID: {portal.artistId}</p>
+                  )}
+                </div>
+                <div className="shrink-0">
+                  <a href={portal.portalUrl} target="_blank" rel="noreferrer">
+                    <Button variant={portal.claimed ? 'ghost' : 'outline'} size="sm" className="h-7 text-xs gap-1">
+                      {portal.claimed ? (
+                        <>Open <ExternalLink className="h-3 w-3" /></>
+                      ) : portal.distributorHandles ? (
+                        <>Info <ExternalLink className="h-3 w-3" /></>
+                      ) : (
+                        <>Claim <ExternalLink className="h-3 w-3" /></>
+                      )}
+                    </Button>
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* ── Metadata Match Keys ── */}
+      {hub && (
+        <Collapsible open={metaOpen} onOpenChange={setMetaOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+              <span className="flex items-center gap-1.5">
+                <Key className="h-3.5 w-3.5" />
+                Metadata DSPs use to match your releases
+              </span>
+              {metaOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="rounded-lg border bg-muted/30 p-3 space-y-2 mt-1">
+              <div className="flex items-start gap-2">
+                <span className="text-xs text-muted-foreground w-24 shrink-0">Artist Name</span>
+                <span className="text-xs font-medium">{hub.metadataKeys.artistName}</span>
+              </div>
+              {Object.entries(hub.metadataKeys.storedIds).map(([platform, id]) => (
+                <div key={platform} className="flex items-start gap-2">
+                  <span className="text-xs text-muted-foreground w-24 shrink-0">{platform} ID</span>
+                  <span className="text-xs font-mono truncate">{id}</span>
+                </div>
+              ))}
+              {Object.keys(hub.metadataKeys.storedIds).length === 0 && (
+                <div className="flex items-center gap-2 text-xs text-amber-600">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  No platform IDs stored yet. Claim your portals above and your IDs will appear here for release matching.
                 </div>
               )}
+              <p className="text-xs text-muted-foreground border-t pt-2 mt-2">
+                Keep your artist name and ISRCs identical across all releases. DSPs use these to attach new music to your existing profile — inconsistencies create duplicate or split profiles.
+              </p>
             </div>
-          )}
-        </>
+          </CollapsibleContent>
+        </Collapsible>
       )}
+
+      {/* ── Full Distribution Network (97 DSP search links) ── */}
+      {hub && hub.urlDiscoveries.length > 0 && (
+        <Collapsible open={dspGridOpen} onOpenChange={setDspGridOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+              <span className="flex items-center gap-1.5">
+                <Music2 className="h-3.5 w-3.5" />
+                Verify presence on {hub.urlDiscoveries.length} DSPs
+              </span>
+              {dspGridOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="rounded-lg border overflow-hidden mt-1">
+              <div className="px-3 py-2 bg-muted/20 border-b">
+                <p className="text-xs text-muted-foreground">
+                  Search links for your artist name across all distribution network platforms. Use these to verify your music has landed and check your profile on each DSP.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 divide-x divide-y divide-border/50 max-h-72 overflow-y-auto">
+                {hub.urlDiscoveries.map(d => (
+                  <a
+                    key={d.platform}
+                    href={d.searchUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between px-3 py-2 gap-2 hover:bg-muted/30 transition-colors group"
+                  >
+                    <span className="text-xs truncate group-hover:text-foreground text-muted-foreground transition-colors">
+                      {d.platformLabel}
+                    </span>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-primary flex-shrink-0 transition-colors" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* ── Profile Fixer ── */}
+      <Collapsible open={fixerOpen} onOpenChange={setFixerOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Wrench className="h-3.5 w-3.5" />
+              Release landed on the wrong profile?
+              {profile.fixerPending && (
+                <Badge variant="outline" className="text-xs py-0 ml-1 text-amber-500 border-amber-500/40">
+                  Pending
+                </Badge>
+              )}
+            </span>
+            {fixerOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            {profile.fixerPending ? (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="text-xs">
+                  A re-mapping request is already pending. Your distributor will apply it to future releases.
+                  {profile.fixerStatus && <span className="block text-muted-foreground mt-1">Status: {profile.fixerStatus}</span>}
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  If a release was attached to the wrong Spotify profile (e.g. a duplicate or a different artist with the same name), submit a re-mapping request. Your distributor will deliver future releases to the correct Spotify URI.
+                </p>
+                <div className="space-y-2">
+                  <Label className="text-xs">Correct Spotify URI</Label>
+                  <Input
+                    placeholder="spotify:artist:xxxxxxxxxxxxxxxxxxxxxx"
+                    value={fixerUri}
+                    onChange={e => {
+                      setFixerUri(e.target.value);
+                      setFixerUriError('');
+                    }}
+                    className="h-8 text-xs font-mono"
+                  />
+                  {fixerUriError && <p className="text-xs text-destructive">{fixerUriError}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs">Notes (optional)</Label>
+                  <Textarea
+                    placeholder="Describe the issue — e.g. 'New release landed on duplicate profile, correct profile has 1.2M followers'"
+                    value={fixerNotes}
+                    onChange={e => setFixerNotes(e.target.value)}
+                    className="text-xs min-h-[60px] resize-none"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full h-8 text-xs"
+                  onClick={() => {
+                    if (!fixerUri.startsWith('spotify:artist:')) {
+                      setFixerUriError('Must be a Spotify artist URI starting with spotify:artist:');
+                      return;
+                    }
+                    fixerMutation.mutate();
+                  }}
+                  disabled={fixerMutation.isPending || !fixerUri}
+                >
+                  {fixerMutation.isPending ? (
+                    <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Submitting…</>
+                  ) : (
+                    'Submit Re-mapping Request'
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
     </div>
   );
 }

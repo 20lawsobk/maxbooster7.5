@@ -178,7 +178,7 @@ class UserPreferencesService {
         }
       }
 
-      const [user] = await db.select().from(users).where(eq(users.id, userId));
+      const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
       if (!user) return null;
 
       const preferences = (user.preferences as UserPreferences) || this.getDefaultPreferences('solo', 'emerging');

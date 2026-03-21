@@ -1,6 +1,7 @@
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
-import { nanoid } from 'nanoid';
+
 import { pythonAIService } from './pythonAIService.js';
 
 export interface ContentData {
@@ -234,7 +235,7 @@ class ContentVariantGeneratorService {
         .replace('{audience}', this.inferAudience(content.caption));
 
       hooks.push({
-        id: nanoid(),
+        id: randomBytes(8).toString('hex'),
         text: hookText,
         type: type as Hook['type'],
         predictedStrength: this.predictHookStrength(hookText, type),
@@ -270,7 +271,7 @@ class ContentVariantGeneratorService {
   }
 
   async generateVariants(content: ContentData, count: number = 5): Promise<VariantResult> {
-    const cacheKey = `${this.CACHE_PREFIX}${content.id || nanoid()}`;
+    const cacheKey = `${this.CACHE_PREFIX}${content.id || randomBytes(8).toString('hex')}`;
     
     const redis = await this.getRedis();
     if (redis) {
@@ -285,11 +286,11 @@ class ContentVariantGeneratorService {
     const hooks = await this.generateHookVariants(content);
 
     const variants: Variant[] = captionVariants.map((caption, index) => ({
-      id: nanoid(),
+      id: randomBytes(8).toString('hex'),
       caption,
       hashtags: hashtagSets[index] || content.hashtags,
       hookType: hooks[index]?.type || 'statement',
-      predictedScore: 50 + Math.floor(Math.random() * 30) + (hooks[index]?.predictedStrength || 0) / 2,
+      predictedScore: Math.min(100, 55 + (hooks[index]?.predictedStrength || 0) / 2),
       changes: this.identifyChanges(content.caption, caption),
     }));
 
@@ -472,7 +473,7 @@ class ContentVariantGeneratorService {
     variantCount: number = 30
   ): Promise<{ variants: Variant[]; testId: string; recommendation: string }> {
     const result = await this.generateVariants(content, variantCount);
-    const testId = nanoid();
+    const testId = randomBytes(8).toString('hex');
 
     return {
       variants: result.variants.slice(0, variantCount),

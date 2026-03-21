@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { storage } from '../storage';
 import type { InsertJWTToken, InsertRefreshToken } from '@shared/schema';
 import { logger } from '../logger.js';
+import { sessionTracking } from './sessionTrackingService.js';
 
 let JWT_SECRET = process.env.SESSION_SECRET || '';
 
@@ -231,7 +232,6 @@ export class JWTAuthService {
   async forceLogoutAllSessions(userId: string, reason: string = 'Security: all sessions revoked'): Promise<void> {
     await this.forceLogoutUser(userId, reason);
     try {
-      const { sessionTracking } = await import('./sessionTrackingService.js');
       await sessionTracking.revokeAllUserSessions(userId);
     } catch (error) {
       logger.warn('Session tracking not available for full session revocation');

@@ -116,7 +116,7 @@ export class MetricsService {
    */
   async evaluateAlerts(): Promise<void> {
     try {
-      const activeRules = await db.select().from(alertRules).where(eq(alertRules.isActive, true));
+      const activeRules = await db.select().from(alertRules).where(eq(alertRules.isActive, true)).limit(200);
 
       for (const rule of activeRules) {
         const endTime = new Date();

@@ -29,6 +29,7 @@
  */
 
 import { EventEmitter } from 'events';
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 import { addLogTransport, type LogEntry } from './structuredLogger.js';
 import { permanentFixRegistry } from './permanentFixRegistry.js';
@@ -1015,7 +1016,7 @@ class PlatformAutoFixer extends EventEmitter {
       }
     }
 
-    const id = `patch_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const id = `patch_${Date.now()}_${randomBytes(4).toString('hex')}`;
     const patch: ActivePatch = {
       id,
       subsystem:     opts.subsystem,
@@ -1158,7 +1159,7 @@ class PlatformAutoFixer extends EventEmitter {
     }
 
     const incident: Incident = {
-      id:         `inc_${now}_${Math.random().toString(36).slice(2, 6)}`,
+      id:         `inc_${now}_${randomBytes(3).toString('hex')}`,
       title,
       severity,
       subsystems,
@@ -1529,7 +1530,7 @@ class PlatformAutoFixer extends EventEmitter {
     triggeredBy: string;
     runtimeEffect: string;
   }): void {
-    const id = `offensive_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const id = `offensive_${Date.now()}_${randomBytes(3).toString('hex')}`;
     const patch: ActivePatch = {
       id,
       subsystem: opts.subsystem,
@@ -1553,7 +1554,7 @@ class PlatformAutoFixer extends EventEmitter {
     if (alreadyOpen) return;
 
     const incident: Incident = {
-      id: `inc_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+      id: `inc_${Date.now()}_${randomBytes(3).toString('hex')}`,
       title,
       severity,
       subsystems: [subsystem],

@@ -312,6 +312,8 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
             forceSave().then(() => {
               toast({ title: 'Saved', description: 'Project synced successfully.' });
               onSave?.();
+            }).catch(() => {
+              toast({ title: 'Save failed', description: 'Could not sync project. Try again.', variant: 'destructive' });
             });
           }
           break;
@@ -404,7 +406,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                 <Redo className="w-4 h-4" />
               </Button>
               <div className="w-px h-6 bg-zinc-700" />
-              <Button variant="ghost" size="sm" onClick={() => forceSave().then(() => { toast({ title: 'Saved' }); onSave?.(); })} className="text-zinc-400 hover:text-white">
+              <Button variant="ghost" size="sm" onClick={() => forceSave().then(() => { toast({ title: 'Saved' }); onSave?.(); }).catch(() => { toast({ title: 'Save failed', variant: 'destructive' }); })} className="text-zinc-400 hover:text-white">
                 <Save className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={onExport} className="text-zinc-400 hover:text-white">

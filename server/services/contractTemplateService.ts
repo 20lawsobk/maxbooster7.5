@@ -1,4 +1,5 @@
-import { nanoid } from 'nanoid';
+import { randomBytes } from 'crypto';
+
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { logger } from '../logger.js';
@@ -199,7 +200,7 @@ class ContractTemplateService {
     const parties = this.extractParties(template.type, variables);
 
     const contract: GeneratedContract = {
-      id: `contract_${nanoid(12)}`,
+      id: `contract_${randomBytes(6).toString("hex")}`,
       templateId,
       type: template.type,
       title: `${template.name} - ${variables.beatTitle || variables.projectTitle || 'Untitled'}`,

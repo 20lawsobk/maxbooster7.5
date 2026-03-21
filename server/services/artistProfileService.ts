@@ -851,7 +851,8 @@ class ArtistProfileService {
     const rows = await db.select({ profile: artistProfiles })
       .from(artistProfileReleases)
       .innerJoin(artistProfiles, eq(artistProfileReleases.artistProfileId, artistProfiles.id))
-      .where(eq(artistProfileReleases.releaseId, releaseId));
+      .where(eq(artistProfileReleases.releaseId, releaseId))
+      .limit(50);
     return rows.map(r => r.profile);
   }
 
@@ -1058,237 +1059,235 @@ class ArtistProfileService {
     return 0;
   }
 
-  // ─── Distributor-Transfer Model ──────────────────────────────────────────────
-  // Artist profiles belong to DSPs, not distributors. When switching distributors,
-  // nothing transfers between them. The new distributor delivers releases with the
-  // artist's existing platform IDs; DSPs match via metadata (name, ISRCs, fingerprint).
-  // The artist then claims/re-claims their profiles on each platform.
-  // ──────────────────────────────────────────────────────────────────────────────
-
   async autoDiscover(profileId: string, userId: string, upc?: string): Promise<{
-    claims: {
-      spotify: { hasId: boolean; artistId: string | null; claimUrl: string; profileUrl: string | null };
-      apple:   { hasId: boolean; artistId: string | null; claimUrl: string; profileUrl: string | null };
-      amazon:  { hasId: boolean; artistId: string | null; claimUrl: string; profileUrl: string | null };
-      youtube: { hasId: boolean; channelId: string | null; claimUrl: string; channelUrl: string | null };
-      tidal:   { hasId: boolean; artistId: string | null; claimUrl: string; profileUrl: string | null };
-      deezer:  { hasId: boolean; artistId: string | null; claimUrl: string; profileUrl: string | null };
-    };
-    upcMatch: { apple: AppleArtistResult | null; deezer: DeezerArtistResult | null } | null;
-    upcDiscovered: boolean;
+    spotify:     { result: SpotifyArtistResult;   confidence: number } | null;
+    apple:       { result: AppleArtistResult;      confidence: number } | null;
+    deezer:      { result: DeezerArtistResult;     confidence: number } | null;
+    musicbrainz: { result: MusicBrainzArtistResult; confidence: number } | null;
+    audiomack:   { result: AudiomackArtistResult;  confidence: number } | null;
+    jiosaavn:    { result: JioSaavnArtistResult;   confidence: number } | null;
     urlDiscoveries: PlatformUrlDiscovery[];
     labelgridPlatforms: LabelGridArtistPlatformPresence[];
     labelgridConfigured: boolean;
-    metadata: { artistName: string; linkedCount: number; missingPlatforms: string[] };
     saved: boolean;
     savedFields: string[];
+    upcDiscovered?: boolean;
   }> {
     const profile = await this.getProfile(profileId, userId);
     if (!profile) throw new Error('Artist profile not found');
 
-    const name = profile.artistName;
-    const encodedName = encodeURIComponent(name);
+    const query = profile.artistName;
 
-    // Build per-platform claim entries using the profile's existing IDs.
-    // Claim URLs are the official "Artist Portal" entry points for each DSP.
-    const claims = {
-      spotify: {
-        hasId: !!profile.spotifyArtistId,
-        artistId: profile.spotifyArtistId ?? null,
-        claimUrl: 'https://artists.spotify.com/claim',
-        profileUrl: profile.spotifyArtistId
-          ? `https://open.spotify.com/artist/${profile.spotifyArtistId}`
-          : `https://open.spotify.com/search/${encodedName}`,
-      },
-      apple: {
-        hasId: !!profile.appleArtistId,
-        artistId: profile.appleArtistId ?? null,
-        claimUrl: 'https://artists.apple.com',
-        profileUrl: profile.appleArtistId
-          ? `https://music.apple.com/us/artist/${profile.appleArtistId}`
-          : `https://music.apple.com/us/search?term=${encodedName}`,
-      },
-      amazon: {
-        hasId: !!profile.amazonMusicArtistId,
-        artistId: profile.amazonMusicArtistId ?? null,
-        claimUrl: 'https://artists.amazon.com',
-        profileUrl: profile.amazonMusicArtistId
-          ? `https://music.amazon.com/artists/${profile.amazonMusicArtistId}`
-          : `https://music.amazon.com/search?q=${encodedName}`,
-      },
-      youtube: {
-        hasId: !!profile.youtubeChannelId,
-        channelId: profile.youtubeChannelId ?? null,
-        claimUrl: 'https://oac.youtube.com',
-        channelUrl: profile.youtubeChannelId
-          ? `https://www.youtube.com/channel/${profile.youtubeChannelId}`
-          : `https://www.youtube.com/results?search_query=${encodedName}`,
-      },
-      tidal: {
-        hasId: !!profile.tidalArtistId,
-        artistId: profile.tidalArtistId ?? null,
-        claimUrl: 'https://artists.tidal.com',
-        profileUrl: profile.tidalArtistId
-          ? `https://tidal.com/browse/artist/${profile.tidalArtistId}`
-          : `https://tidal.com/search?q=${encodedName}`,
-      },
-      deezer: {
-        hasId: !!profile.deezerArtistId,
-        artistId: profile.deezerArtistId ?? null,
-        claimUrl: 'https://creators.deezer.com',
-        profileUrl: profile.deezerArtistId
-          ? `https://www.deezer.com/artist/${profile.deezerArtistId}`
-          : `https://www.deezer.com/search/${encodedName}`,
-      },
-    };
+    // Run UPC lookup (if provided) + name search in parallel.
+    // LabelGrid is a distribution platform only — it has no public artist search API
+    // (token scopes: user.view-catalog, user.gate-use). LabelGrid platform status is
+    // populated separately via webhook callbacks from distribution submissions.
+    // UPC results are exact and bypass confidence scoring — treated as 97 confidence.
+    const lgArtist = null; // LabelGrid does not expose an artist search endpoint
+    const [raw, upcHits] = await Promise.all([
+      this.searchAllPlatforms(query),
+      upc ? this.searchByUPC(upc) : Promise.resolve({ apple: null, deezer: null }),
+    ]);
 
-    // UPC lookup — exact matching, no name-based guessing.
-    // DSPs match releases to artist profiles using metadata; UPC confirms delivery.
-    let upcMatch: { apple: AppleArtistResult | null; deezer: DeezerArtistResult | null } | null = null;
-    let upcDiscovered = false;
-    if (upc) {
-      const hits = await this.searchByUPC(upc);
-      if (hits.apple || hits.deezer) {
-        upcMatch = hits;
-        upcDiscovered = true;
-        // If a UPC match fills in a missing ID, save it automatically
-        const updates: Partial<InsertArtistProfile> = {};
-        const savedFields: string[] = [];
-        if (hits.apple && !profile.appleArtistId) {
-          updates.appleArtistId = hits.apple.id;
-          savedFields.push('apple');
-          claims.apple.hasId = true;
-          claims.apple.artistId = hits.apple.id;
-          claims.apple.profileUrl = `https://music.apple.com/us/artist/${hits.apple.id}`;
-        }
-        if (hits.deezer && !profile.deezerArtistId) {
-          updates.deezerArtistId = hits.deezer.id;
-          savedFields.push('deezer');
-          claims.deezer.hasId = true;
-          claims.deezer.artistId = hits.deezer.id;
-          claims.deezer.profileUrl = `https://www.deezer.com/artist/${hits.deezer.id}`;
-        }
-        if (Object.keys(updates).length > 0) {
-          await this.updateProfile(profileId, userId, updates);
-          logger.info(`[ArtistProfile] UPC match saved: profile=${profileId} upc=${upc} fields=[${savedFields.join(',')}]`);
-          return {
-            claims,
-            upcMatch,
-            upcDiscovered,
-            urlDiscoveries: this.generateUrlDiscoveries(name),
-            labelgridPlatforms: await labelGridService.getArtistPlatformPresence(profileId).catch(() => []),
-            labelgridConfigured: labelGridService.isApiConfigured(),
-            metadata: this._buildMetadataSummary(profile, savedFields),
-            saved: true,
-            savedFields,
-          };
-        }
+    // Score each platform's results independently
+    const topSpotify = raw.spotify
+      .map(r => ({ result: r, confidence: this._scoreSpotify(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    // UPC lookup gives exact artist records — treat as confidence 97 and prefer over name search
+    const upcApple  = upcHits.apple  ? { result: upcHits.apple,  confidence: 97 } : null;
+    const upcDeezer = upcHits.deezer ? { result: upcHits.deezer, confidence: 97 } : null;
+
+    const topApple = upcApple ?? (raw.apple
+      .map(r => ({ result: r, confidence: this._scoreApple(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null);
+
+    const topDeezer = upcDeezer ?? (raw.deezer
+      .map(r => ({ result: r, confidence: this._scoreDeezer(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null);
+
+    const topMusicBrainz = raw.musicbrainz
+      .map(r => ({ result: r, confidence: this._scoreMusicBrainz(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const topAudiomack = raw.audiomack
+      .map(r => ({ result: r, confidence: this._scoreAudiomack(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    const topJioSaavn = raw.jiosaavn
+      .map(r => ({ result: r, confidence: this._scoreJioSaavn(r, query) }))
+      .filter(r => r.confidence > 0)
+      .sort((a, b) => b.confidence - a.confidence)[0] ?? null;
+
+    // Count preliminary API confirmations (before threshold check) for cross-validation
+    const CONFIDENCE_THRESHOLD = 55;
+    const prelimConfirmed = [topSpotify, topApple, topDeezer, topAudiomack]
+      .filter(r => r !== null && r.confidence >= CONFIDENCE_THRESHOLD).length;
+    const bonus = this._crossValidationBonus(prelimConfirmed);
+
+    // Apply cross-validation bonus — if multiple platforms agree, boost each match
+    const apply = <T>(r: { result: T; confidence: number } | null) =>
+      r ? { result: r.result, confidence: Math.min(100, r.confidence + bonus) } : null;
+
+    const finalSpotify     = apply(topSpotify);
+    const finalApple       = apply(topApple);
+    const finalDeezer      = apply(topDeezer);
+    const finalMusicBrainz = apply(topMusicBrainz);
+    const finalAudiomack   = apply(topAudiomack);
+    const finalJioSaavn    = apply(topJioSaavn);
+
+    const updates: Partial<InsertArtistProfile> = {};
+    const savedFields: string[] = [];
+
+    if (finalSpotify && finalSpotify.confidence >= CONFIDENCE_THRESHOLD && !profile.spotifyArtistId) {
+      updates.spotifyArtistId = finalSpotify.result.id;
+      updates.spotifyArtistUri = finalSpotify.result.uri;
+      if (finalSpotify.result.imageUrl && !profile.profileImageUrl) {
+        updates.profileImageUrl = finalSpotify.result.imageUrl;
       }
+      if (finalSpotify.result.genres.length > 0 && (!profile.genres || profile.genres.length === 0)) {
+        updates.genres = finalSpotify.result.genres.slice(0, 5);
+      }
+      savedFields.push('spotify');
     }
 
-    // LabelGrid platform delivery status (real distributor data — not name-scraped)
-    const labelgridPlatforms = await labelGridService.getArtistPlatformPresence(profileId).catch(() => []);
+    if (finalApple && finalApple.confidence >= CONFIDENCE_THRESHOLD && !profile.appleArtistId) {
+      updates.appleArtistId = finalApple.result.id;
+      savedFields.push('apple');
+    }
+
+    if (finalDeezer && finalDeezer.confidence >= CONFIDENCE_THRESHOLD && !profile.deezerArtistId) {
+      updates.deezerArtistId = finalDeezer.result.id;
+      if (finalDeezer.result.pictureUrl && !profile.profileImageUrl && !updates.profileImageUrl) {
+        updates.profileImageUrl = finalDeezer.result.pictureUrl;
+      }
+      savedFields.push('deezer');
+    }
+
+    if (finalAudiomack && finalAudiomack.confidence >= CONFIDENCE_THRESHOLD && !profile.soundcloudArtistId) {
+      updates.soundcloudArtistId = finalAudiomack.result.slug || finalAudiomack.result.id;
+      savedFields.push('audiomack');
+    }
+
+    // MusicBrainz and JioSaavn confirm identity but don't save separate platform ID fields
+    if (finalMusicBrainz && finalMusicBrainz.confidence >= CONFIDENCE_THRESHOLD) {
+      savedFields.push('musicbrainz_confirmed');
+      logger.info(`[ArtistProfile] MusicBrainz confirmed: profile=${profileId} mbid=${finalMusicBrainz.result.id} score=${finalMusicBrainz.confidence}`);
+    }
+
+    if (finalJioSaavn && finalJioSaavn.confidence >= CONFIDENCE_THRESHOLD) {
+      savedFields.push('jiosaavn_confirmed');
+    }
+
+    // Get LabelGrid platform presences — either from search result directly,
+    // or by making a second call using the artist ID from the search result.
+    let labelgridPlatforms: LabelGridArtistPlatformPresence[] = [];
+    if (lgArtist) {
+      if (lgArtist.platforms && lgArtist.platforms.length > 0) {
+        labelgridPlatforms = lgArtist.platforms;
+      } else {
+        // Search result didn't embed platforms — fetch them separately
+        labelgridPlatforms = await labelGridService.getArtistPlatformPresence(lgArtist.id).catch(() => []);
+      }
+      logger.info(`[ArtistProfile] LabelGrid: artist=${lgArtist.name} platforms=${labelgridPlatforms.length}`);
+    }
+
     const labelgridConfigured = labelGridService.isApiConfigured();
 
-    // URL-template discoveries for all 97 DSPs — search links, not scraped data
-    const urlDiscoveries = this.generateUrlDiscoveries(name);
+    // Generate URL-template discoveries for all 97 DSPs.
+    // These are generated once using the verified artist name — NOT fetched per platform.
+    const urlDiscoveries = this.generateUrlDiscoveries(query);
 
-    const linkedIds = [
-      profile.spotifyArtistId && 'Spotify',
-      profile.appleArtistId && 'Apple Music',
-      profile.amazonMusicArtistId && 'Amazon Music',
-      profile.youtubeChannelId && 'YouTube',
-      profile.tidalArtistId && 'TIDAL',
-      profile.deezerArtistId && 'Deezer',
-    ].filter(Boolean) as string[];
+    const saved = savedFields.filter(f => !f.endsWith('_confirmed')).length > 0;
+    if (saved) {
+      await this.updateProfile(profileId, userId, updates);
+      logger.info(`[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields.join(',')}]`);
+    }
 
-    logger.info(`[ArtistProfile] Distributor model: profile=${profileId} linked=[${linkedIds.join(',')}]`);
+    if (bonus > 0) {
+      logger.info(`[ArtistProfile] Cross-validation bonus +${bonus} applied: ${prelimConfirmed} platforms confirmed profile=${profileId}`);
+    }
 
     return {
-      claims,
-      upcMatch,
-      upcDiscovered,
+      spotify: finalSpotify,
+      apple: finalApple,
+      deezer: finalDeezer,
+      musicbrainz: finalMusicBrainz,
+      audiomack: finalAudiomack,
+      jiosaavn: finalJioSaavn,
       urlDiscoveries,
       labelgridPlatforms,
       labelgridConfigured,
-      metadata: this._buildMetadataSummary(profile, []),
-      saved: false,
-      savedFields: [],
+      saved,
+      savedFields,
+      upcDiscovered: !!(upcApple || upcDeezer),
     };
-  }
-
-  private _buildMetadataSummary(
-    profile: ArtistProfile,
-    extraSaved: string[],
-  ): { artistName: string; linkedCount: number; missingPlatforms: string[] } {
-    const platformMap: [string, string | null][] = [
-      ['Spotify', profile.spotifyArtistId],
-      ['Apple Music', profile.appleArtistId],
-      ['Amazon Music', profile.amazonMusicArtistId],
-      ['YouTube', profile.youtubeChannelId],
-      ['TIDAL', profile.tidalArtistId],
-      ['Deezer', profile.deezerArtistId],
-    ];
-    const linked = platformMap.filter(([, id]) => id).map(([p]) => p);
-    const missing = platformMap.filter(([p, id]) => !id && !extraSaved.includes(p)).map(([p]) => p);
-    return { artistName: profile.artistName, linkedCount: linked.length, missingPlatforms: missing };
   }
 
   async autoSync(profileId: string, userId: string): Promise<{
     synced: string[];
     changes: Record<string, unknown>;
-    metadataConsistency: { consistent: boolean; linkedIds: Record<string, string | null>; missingPlatforms: string[] };
   }> {
     const profile = await this.getProfile(profileId, userId);
     if (!profile) throw new Error('Artist profile not found');
 
-    // Sync = verify which platform IDs are present and report metadata consistency.
-    // DSPs own the artist profiles — we verify our stored IDs are still valid by
-    // checking whether our LabelGrid-delivered releases are live on each platform.
+    const updates: Partial<InsertArtistProfile> = {};
     const synced: string[] = [];
     const changes: Record<string, unknown> = {};
 
-    const linkedIds: Record<string, string | null> = {
-      spotify: profile.spotifyArtistId ?? null,
-      apple: profile.appleArtistId ?? null,
-      amazon: profile.amazonMusicArtistId ?? null,
-      youtube: profile.youtubeChannelId ?? null,
-      tidal: profile.tidalArtistId ?? null,
-      deezer: profile.deezerArtistId ?? null,
-    };
-
-    const missingPlatforms: string[] = [];
-    if (!profile.spotifyArtistId) missingPlatforms.push('Spotify');
-    if (!profile.appleArtistId)   missingPlatforms.push('Apple Music');
-    if (!profile.amazonMusicArtistId) missingPlatforms.push('Amazon Music');
-    if (!profile.youtubeChannelId) missingPlatforms.push('YouTube');
-    if (!profile.tidalArtistId)   missingPlatforms.push('TIDAL');
-    if (!profile.deezerArtistId)  missingPlatforms.push('Deezer');
-
-    // Mark linked platforms as synced
-    if (profile.spotifyArtistId)      synced.push('spotify');
-    if (profile.appleArtistId)        synced.push('apple');
-    if (profile.amazonMusicArtistId)  synced.push('amazon');
-    if (profile.youtubeChannelId)     synced.push('youtube');
-    if (profile.tidalArtistId)        synced.push('tidal');
-    if (profile.deezerArtistId)       synced.push('deezer');
-
-    // Mark profile as verified if at least one platform ID is present
-    if (synced.length > 0 && !profile.isVerified) {
-      await this.updateProfile(profileId, userId, { isVerified: true, verifiedAt: new Date() });
-      changes.isVerified = true;
-      logger.info(`[ArtistProfile] Auto-sync: profile=${profileId} verified=true linked=[${synced.join(',')}]`);
+    if (profile.spotifyArtistId) {
+      const fresh = await this.verifySpotifyArtist(profile.spotifyArtistId);
+      if (fresh) {
+        synced.push('spotify');
+        if (fresh.imageUrl && fresh.imageUrl !== profile.profileImageUrl) {
+          updates.profileImageUrl = fresh.imageUrl;
+          changes.profileImageUrl = fresh.imageUrl;
+        }
+        if (fresh.genres.length > 0) {
+          const existing = JSON.stringify((profile.genres ?? []).slice().sort());
+          const incoming = JSON.stringify(fresh.genres.slice().sort());
+          if (existing !== incoming) {
+            updates.genres = fresh.genres.slice(0, 5);
+            changes.genres = fresh.genres.slice(0, 5);
+          }
+        }
+        if (!profile.isVerified) {
+          updates.isVerified = true;
+          updates.verifiedAt = new Date();
+          changes.isVerified = true;
+        }
+      }
     }
 
-    return {
-      synced,
-      changes,
-      metadataConsistency: {
-        consistent: missingPlatforms.length === 0,
-        linkedIds,
-        missingPlatforms,
-      },
-    };
+    if (profile.deezerArtistId) {
+      try {
+        const res = await fetch(`https://api.deezer.com/artist/${profile.deezerArtistId}`, {
+          signal: AbortSignal.timeout(8000),
+        });
+        if (res.ok) {
+          const d = await res.json() as any;
+          synced.push('deezer');
+          if (d.picture_medium && d.picture_medium !== profile.profileImageUrl && !updates.profileImageUrl) {
+            updates.profileImageUrl = d.picture_medium;
+            changes.profileImageUrl = d.picture_medium;
+          }
+        }
+      } catch {
+        logger.warn(`[ArtistProfile] Deezer sync failed for profile=${profileId}`);
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await this.updateProfile(profileId, userId, updates);
+      logger.info(`[ArtistProfile] Auto-sync updated: profile=${profileId} synced=[${synced.join(',')}]`);
+    }
+
+    return { synced, changes };
   }
 
   buildDistributionMetadata(profile: ArtistProfile): Record<string, string | null> {
@@ -1303,6 +1302,126 @@ class ArtistProfileService {
       deezerArtistId: profile.deezerArtistId ?? null,
       soundcloudArtistId: profile.soundcloudArtistId ?? null,
       amazonMusicArtistId: profile.amazonMusicArtistId ?? null,
+    };
+  }
+
+  async profileHub(profileId: string, userId: string): Promise<{
+    artistName: string;
+    portals: {
+      key: string;
+      label: string;
+      portalUrl: string;
+      claimed: boolean;
+      artistId: string | null;
+      howVerified: string;
+      distributorHandles: boolean;
+    }[];
+    metadataKeys: {
+      artistName: string;
+      storedIds: Record<string, string>;
+    };
+    urlDiscoveries: PlatformUrlDiscovery[];
+    labelgridConfigured: boolean;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const portals = [
+      {
+        key: 'spotify',
+        label: 'Spotify for Artists',
+        portalUrl: 'https://artists.spotify.com/',
+        claimed: !!profile.spotifyArtistId,
+        artistId: profile.spotifyArtistId ?? null,
+        howVerified: 'Distributor metadata + social links',
+        distributorHandles: false,
+      },
+      {
+        key: 'apple',
+        label: 'Apple Music for Artists',
+        portalUrl: 'https://artists.apple.com/',
+        claimed: !!profile.appleArtistId,
+        artistId: profile.appleArtistId ?? null,
+        howVerified: 'Apple ID + distributor metadata',
+        distributorHandles: false,
+      },
+      {
+        key: 'amazon',
+        label: 'Amazon Music for Artists',
+        portalUrl: 'https://artists.amazon.com/',
+        claimed: !!profile.amazonMusicArtistId,
+        artistId: profile.amazonMusicArtistId ?? null,
+        howVerified: 'Identity verification',
+        distributorHandles: false,
+      },
+      {
+        key: 'youtube',
+        label: 'YouTube Official Artist Channel',
+        portalUrl: 'https://studio.youtube.com/',
+        claimed: !!profile.youtubeChannelId,
+        artistId: profile.youtubeChannelId ?? null,
+        howVerified: 'Channel ownership + music delivery — your distributor requests OAC merging',
+        distributorHandles: true,
+      },
+      {
+        key: 'deezer',
+        label: 'Deezer for Creators',
+        portalUrl: 'https://creators.deezer.com/',
+        claimed: !!profile.deezerArtistId,
+        artistId: profile.deezerArtistId ?? null,
+        howVerified: 'Distributor metadata',
+        distributorHandles: false,
+      },
+      {
+        key: 'tidal',
+        label: 'Tidal for Artists',
+        portalUrl: 'https://artists.tidal.com/',
+        claimed: !!profile.tidalArtistId,
+        artistId: profile.tidalArtistId ?? null,
+        howVerified: 'Distributor metadata',
+        distributorHandles: false,
+      },
+      {
+        key: 'pandora',
+        label: 'Pandora for Artists',
+        portalUrl: 'https://artists.pandora.com/',
+        claimed: false,
+        artistId: null,
+        howVerified: 'Distributor metadata',
+        distributorHandles: false,
+      },
+      {
+        key: 'soundcloud',
+        label: 'SoundCloud for Artists',
+        portalUrl: 'https://soundcloud.com/for/artists',
+        claimed: !!profile.soundcloudArtistId,
+        artistId: profile.soundcloudArtistId ?? null,
+        howVerified: 'Account verification',
+        distributorHandles: false,
+      },
+    ];
+
+    const storedIds: Record<string, string> = {};
+    if (profile.spotifyArtistId)    storedIds['Spotify']   = profile.spotifyArtistId;
+    if (profile.appleArtistId)      storedIds['Apple']     = profile.appleArtistId;
+    if (profile.deezerArtistId)     storedIds['Deezer']    = profile.deezerArtistId;
+    if (profile.tidalArtistId)      storedIds['Tidal']     = profile.tidalArtistId;
+    if (profile.youtubeChannelId)   storedIds['YouTube']   = profile.youtubeChannelId;
+    if (profile.amazonMusicArtistId) storedIds['Amazon']   = profile.amazonMusicArtistId;
+    if (profile.soundcloudArtistId) storedIds['SoundCloud'] = profile.soundcloudArtistId;
+
+    const urlDiscoveries = this.generateUrlDiscoveries(profile.artistName);
+    const labelgridConfigured = labelGridService.isApiConfigured();
+
+    return {
+      artistName: profile.artistName,
+      portals,
+      metadataKeys: {
+        artistName: profile.artistName,
+        storedIds,
+      },
+      urlDiscoveries,
+      labelgridConfigured,
     };
   }
 }

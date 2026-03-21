@@ -94,21 +94,26 @@ export class SupportTicketService {
       category?: string;
     }
   ) {
-    let query = db.select().from(supportTickets).where(eq(supportTickets.userId, userId));
+    const conditions: any[] = [eq(supportTickets.userId, userId)];
 
     if (filters?.status && filters.status.length > 0) {
-      query = query.where(inArray(supportTickets.status, filters.status as any));
+      conditions.push(inArray(supportTickets.status, filters.status as any));
     }
 
     if (filters?.priority && filters.priority.length > 0) {
-      query = query.where(inArray(supportTickets.priority, filters.priority as any));
+      conditions.push(inArray(supportTickets.priority, filters.priority as any));
     }
 
     if (filters?.category) {
-      query = query.where(eq(supportTickets.category, filters.category));
+      conditions.push(eq(supportTickets.category, filters.category));
     }
 
-    const tickets = await query.orderBy(desc(supportTickets.createdAt));
+    const tickets = await db
+      .select()
+      .from(supportTickets)
+      .where(and(...conditions))
+      .orderBy(desc(supportTickets.createdAt))
+      .limit(200);
     return tickets;
   }
 

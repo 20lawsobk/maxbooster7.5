@@ -50,7 +50,8 @@ export class EmailTrackingService {
       const [sentCount] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(emailMessages)
-        .where(dateFilter);
+        .where(dateFilter)
+        .limit(1);
 
       const eventCounts = await db
         .select({

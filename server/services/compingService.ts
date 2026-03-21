@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { 
   takeGroups, 
@@ -16,7 +17,7 @@ import {
   type InsertCompVersion,
 } from '@shared/schema';
 import { eq, and, desc, asc } from 'drizzle-orm';
-import { nanoid } from 'nanoid';
+
 import { logger } from '../logger.js';
 
 export interface CompRenderResult {
@@ -42,7 +43,7 @@ export class CompingService {
         .insert(takeGroups)
         .values({
           ...data,
-          id: `tg_${nanoid()}`,
+          id: `tg_${randomBytes(8).toString('hex')}`,
         })
         .returning();
       
@@ -165,7 +166,7 @@ export class CompingService {
         .insert(takeLanes)
         .values({
           ...data,
-          id: `tl_${nanoid()}`,
+          id: `tl_${randomBytes(8).toString('hex')}`,
           laneIndex: data.laneIndex ?? nextIndex,
         })
         .returning();
@@ -275,7 +276,7 @@ export class CompingService {
         .insert(takeSegments)
         .values({
           ...data,
-          id: `ts_${nanoid()}`,
+          id: `ts_${randomBytes(8).toString('hex')}`,
           order: data.order ?? nextOrder,
         })
         .returning();
@@ -399,7 +400,7 @@ export class CompingService {
       const [version] = await db
         .insert(compVersions)
         .values({
-          id: `cv_${nanoid()}`,
+          id: `cv_${randomBytes(8).toString('hex')}`,
           takeGroupId: groupId,
           name: data.name,
           versionNumber: nextVersionNumber,
@@ -521,7 +522,7 @@ export class CompingService {
         throw new Error('No segments selected for rendering');
       }
 
-      const clipId = `comp_${nanoid()}`;
+      const clipId = `comp_${randomBytes(8).toString('hex')}`;
       const filePath = `/uploads/audio/comps/${clipId}.wav`;
 
       const [newClip] = await db

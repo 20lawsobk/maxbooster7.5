@@ -36,14 +36,19 @@ const createSetlistSchema = z.object({
   totalDuration: z.number().optional().default(0),
 });
 
-// GET /api/shows - list all shows
+// GET /api/shows - list all shows (paginated)
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
+  const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+  const offset = parseInt(req.query.offset as string) || 0;
+
   const userShows = await db.select()
     .from(shows)
     .where(eq(shows.userId, userId))
-    .orderBy(desc(shows.date));
-  
+    .orderBy(desc(shows.date))
+    .limit(limit)
+    .offset(offset);
+
   res.json(userShows);
 }));
 
@@ -115,6 +120,23 @@ router.get("/stats", requireAuth, asyncHandler(async (req, res) => {
   });
 }));
 
+// GET /api/shows/:id - get single show (must come after /stats to avoid route shadowing)
+router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const showId = req.params.id;
+
+  const [show] = await db.select()
+    .from(shows)
+    .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
+    .limit(1);
+
+  if (!show) {
+    return res.status(404).json({ message: "Show not found" });
+  }
+
+  res.json(show);
+}));
+
 // GET /api/shows/:id/setlist - get setlist for a show
 router.get("/:id/setlist", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
@@ -122,7 +144,8 @@ router.get("/:id/setlist", requireAuth, asyncHandler(async (req, res) => {
   
   const [showSetlist] = await db.select()
     .from(setlists)
-    .where(and(eq(setlists.showId, showId), eq(setlists.userId, userId)));
+    .where(and(eq(setlists.showId, showId), eq(setlists.userId, userId)))
+    .limit(1);
     
   res.json(showSetlist || null);
 }));

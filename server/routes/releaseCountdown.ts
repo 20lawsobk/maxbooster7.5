@@ -41,20 +41,21 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       countdowns = await releaseCountdownService.getAllCountdowns(userId);
     }
 
-    const countdownsWithProgress = await Promise.all(
-      countdowns.map(async (countdown) => {
-        const tasks = await releaseCountdownService.getTasks(countdown.id);
-        const progress = releaseCountdownService.calculateProgress(tasks);
-        const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(countdown.releaseDate));
+    const countdownIds = countdowns.map((c) => c.id);
+    const tasksByCountdown = await releaseCountdownService.getTasksForCountdowns(countdownIds);
 
-        return {
-          ...countdown,
-          progress,
-          timeRemaining,
-          taskCount: tasks.length,
-        };
-      })
-    );
+    const countdownsWithProgress = countdowns.map((countdown) => {
+      const tasks = tasksByCountdown.get(countdown.id) ?? [];
+      const progress = releaseCountdownService.calculateProgress(tasks);
+      const timeRemaining = releaseCountdownService.calculateTimeRemaining(new Date(countdown.releaseDate));
+
+      return {
+        ...countdown,
+        progress,
+        timeRemaining,
+        taskCount: tasks.length,
+      };
+    });
 
     res.json({
       success: true,

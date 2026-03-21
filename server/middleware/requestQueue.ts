@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import v8 from 'v8';
+import { randomBytes } from 'crypto';
 import { logger } from '../logger.js';
 
 interface QueuedRequest {
@@ -45,7 +46,7 @@ class RequestQueue {
   }
 
   private generateId(): string {
-    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return `${Date.now()}-${randomBytes(4).toString('hex')}`;
   }
 
   private getTotalQueueSize(): number {
@@ -290,7 +291,7 @@ export class LoadShedder {
         res.status(503).json({
           error: 'Service overloaded',
           message: 'Server is under heavy load. Please try again shortly.',
-          retryAfter: Math.floor(Math.random() * 10) + 5,
+          retryAfter: 10,
         });
         return;
       }

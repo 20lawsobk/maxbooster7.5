@@ -53,14 +53,50 @@ cookies.txt
 .capsule-temp/
 data/
 
-# Rust build artifacts — ignore all intermediate objects but keep the
-# pre-built release binary so deployments skip the 10-20 minute cargo compile.
-boosterstate/target/**
-!boosterstate/target/
-!boosterstate/target/release/
-!boosterstate/target/release/boosterstate
+# Rust build artifacts — all compiled output is rebuilt during deployment.
+# The binary was previously committed but caused Replit's deployment layer
+# push to fail with "invalid UTF-8". cargo build runs in build.sh instead.
+boosterstate/target/
 
-# Screenshots and videos (large media assets)
+# Binary files that CANNOT be committed to git — Replit's deployment layer
+# push rejects non-UTF-8 (binary) content with "invalid UTF-8".
+# All binary assets are copied at build time by build.sh before client/ is deleted.
+
+# Pre-compressed assets — brotli (.br) and gzip (.gz) are generated at build time.
+dist/public/assets/*.br
+dist/public/assets/*.gz
+dist/public/**/*.br
+dist/public/**/*.gz
+client/dist/public/
+
+# Binary image assets — PNG/WebP/ICO/JPG files are binary and must NOT be in git.
+# Replit's deployment layer push rejects non-UTF-8 (binary) files.
+dist/public/favicon.png
+dist/public/favicon.ico
+dist/public/logo.png
+dist/public/logo.webp
+dist/public/icons/
+dist/public/screenshots/
+# Source-tree binary assets (also excluded by .dockerignore via client/ + assets/)
+client/public/favicon.png
+client/public/favicon.ico
+client/public/logo.png
+client/public/logo.webp
+client/public/icons/
+assets/images/
+electron/assets/*.png
+electron/assets/*.ico
+# Root-level and public/ binary image assets
+generated-icon.png
+public/favicon.png
+public/favicon.ico
+public/*.png
+public/*.jpg
+public/*.webp
+
+# Videos and large media (binary, served from object storage / CDN instead)
+dist/public/videos/
+client/dist/public/videos/
 client/public/screenshots/
 client/public/videos/
 .github-runner/
@@ -80,3 +116,8 @@ service-account*.json
 
 # Security auto-fix: required entries
 .env.development
+
+# Nix build artifacts — nix-build creates a "result" symlink pointing to a Nix
+# store path containing ELF binaries. Replit's deployment Repl layer push fails
+# with "invalid UTF-8" if it follows the symlink to binary executable content.
+result

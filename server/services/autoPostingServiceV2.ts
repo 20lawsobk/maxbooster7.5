@@ -1,4 +1,5 @@
 import { getBoosterStateClient } from '../lib/boosterStateClient.js';
+import { randomBytes } from 'crypto';
 import { BoosterQueue } from './queueService.js';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
@@ -171,7 +172,7 @@ class AutoPostingServiceV2 {
   ): Promise<ScheduledPost> {
     const postId = idempotencyKey
       ? `post_${idempotencyKey}`
-      : `post_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      : `post_${Date.now()}_${randomBytes(4).toString('hex')}`;
 
     if (idempotencyKey) {
       const existingPost = await storage.getScheduledPostById(postId);

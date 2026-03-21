@@ -137,4 +137,18 @@ router.get('/stats', requireAuth, async (req, res) => {
   }
 });
 
+// GET /:id must come after /stats to prevent route shadowing
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const [item] = await db.select().from(playlistPitches)
+      .where(and(eq(playlistPitches.id, req.params.id), eq(playlistPitches.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Pitch not found' });
+    res.json(item);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to fetch pitch:', error);
+    res.status(500).json({ error: 'Failed to fetch playlist pitch' });
+  }
+});
+
 export default router;

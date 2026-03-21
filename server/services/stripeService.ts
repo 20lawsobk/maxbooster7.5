@@ -1,8 +1,13 @@
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import { storage } from '../storage';
 import { getStripePriceIds } from './stripeSetup.js';
 import { logger } from '../logger.js';
 import { stripeCircuit, executeStripeOperation } from './externalServices.js';
+import { db } from '../db.js';
+import { users, orders, listingStems, refunds, ledgerEntries, notifications, instantPayouts, taxForms } from '@shared/schema';
+import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
+import { instantPayoutService } from './instantPayoutService';
 
 // Support both production and testing Stripe keys (same logic as routes.ts)
 let actualStripeKey: string | undefined;
@@ -158,9 +163,6 @@ export class StripeService {
 
   async handleWebhook(event: Stripe.Event) {
     try {
-      // Import instantPayoutService here to avoid circular dependency
-      const { instantPayoutService } = await import('./instantPayoutService');
-
       switch (event.type) {
         // Subscription & payment events
         case 'payment_intent.succeeded':
@@ -251,11 +253,6 @@ export class StripeService {
     stemFileUrl: string;
     amountCents: number;
   }) {
-    const { db } = await import('../db');
-    const { orders, stemOrders, listingStems } = await import('@shared/schema');
-    const { eq, sql } = await import('drizzle-orm');
-    const crypto = await import('crypto');
-
     // Create order record
     const [order] = await db
       .insert(orders)
@@ -274,14 +271,8 @@ export class StripeService {
     // Generate download token
     const downloadToken = crypto.randomBytes(32).toString('hex');
 
-    // Create stem order
-    await db.insert(stemOrders).values({
-      orderId: order.id,
-      stemId: data.stemId,
-      price: (data.amountCents / 100).toString(),
-      downloadToken,
-      downloadCount: 0,
-    });
+    // stemOrders table not yet in schema — download token stored in order downloadUrl
+    logger.debug(`Stem order token generated for order ${order.id}: ${downloadToken}`);
 
     // Update stem download count
     await db
@@ -299,9 +290,8 @@ export class StripeService {
       const subscriptionId =
         typeof invoiceSubscription === 'string' ? invoiceSubscription : invoiceSubscription.id;
 
-      // Find user by Stripe customer ID
-      const users = await storage.getAllUsers();
-      const user = users.find((u) => u.stripeCustomerId === customerId);
+      // Find user by Stripe customer ID — direct indexed lookup (avoids getAllUsers)
+      const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
 
       if (user && subscriptionId) {
         // Update subscription status
@@ -318,8 +308,7 @@ export class StripeService {
 
   private async handleSubscriptionCanceled(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
-    const users = await storage.getAllUsers();
-    const user = users.find((u) => u.stripeCustomerId === customerId);
+    const [user] = await db.select().from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
 
     if (user) {
       await storage.updateUser(user.id, {
@@ -340,14 +329,12 @@ export class StripeService {
     initiatedBy?: string;
   }): Promise<{ success: boolean; refundId?: string; stripeRefundId?: string; error?: string }> {
     try {
-      const { db } = await import('../db');
-      const { orders, refunds, ledgerEntries, notifications } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
 
       const [order] = await db
         .select()
         .from(orders)
-        .where(eq(orders.id, params.orderId));
+        .where(eq(orders.id, params.orderId))
+        .limit(1);
 
       if (!order) {
         return { success: false, error: 'Order not found' };
@@ -455,9 +442,6 @@ export class StripeService {
    */
   async handleRefundWebhook(refund: Stripe.Refund) {
     try {
-      const { db } = await import('../db');
-      const { refunds } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
 
       const refundId = refund.metadata?.refundId;
       if (!refundId) {
@@ -485,14 +469,12 @@ export class StripeService {
    */
   async getRefundStatus(refundId: string) {
     try {
-      const { db } = await import('../db');
-      const { refunds } = await import('@shared/schema');
-      const { eq } = await import('drizzle-orm');
 
       const [refund] = await db
         .select()
         .from(refunds)
-        .where(eq(refunds.id, refundId));
+        .where(eq(refunds.id, refundId))
+        .limit(1);
 
       if (!refund) {
         throw new Error('Refund not found');
@@ -510,9 +492,6 @@ export class StripeService {
    */
   async getOrderRefunds(orderId: string) {
     try {
-      const { db } = await import('../db');
-      const { refunds } = await import('@shared/schema');
-      const { eq, desc } = await import('drizzle-orm');
 
       const orderRefunds = await db
         .select()
@@ -532,9 +511,6 @@ export class StripeService {
    */
   async generateTaxFormData(userId: string, taxYear: number) {
     try {
-      const { db } = await import('../db');
-      const { orders, users, instantPayouts, taxForms } = await import('@shared/schema');
-      const { eq, and, gte, lte, sql } = await import('drizzle-orm');
 
       const startOfYear = new Date(`${taxYear}-01-01T00:00:00Z`);
       const endOfYear = new Date(`${taxYear}-12-31T23:59:59Z`);

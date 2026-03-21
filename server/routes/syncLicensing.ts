@@ -2,25 +2,11 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { db } from '../db';
 import { syncSubmissions } from '@shared/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, count, sql } from 'drizzle-orm';
 import { z } from 'zod';
+import { parsePaginationParams } from '../middleware/pagination.js';
 
 const router = Router();
-
-// GET /api/sync-licensing - list user's sync catalog
-router.get('/', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const catalog = await db
-      .select()
-      .from(syncSubmissions)
-      .where(eq(syncSubmissions.userId, userId))
-      .orderBy(desc(syncSubmissions.createdAt));
-    res.json(catalog);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch sync catalog' });
-  }
-});
 
 const insertSyncSchema = z.object({
   trackTitle: z.string().min(1),
@@ -37,6 +23,62 @@ const insertSyncSchema = z.object({
   submissionTarget: z.string().optional(),
 });
 
+// GET /api/sync-licensing - list user's sync catalog (paginated)
+router.get('/', requireAuth, async (req, res) => {
+  try {
+    const { limit, offset } = parsePaginationParams(req);
+    const catalog = await db
+      .select()
+      .from(syncSubmissions)
+      .where(eq(syncSubmissions.userId, req.user!.id))
+      .orderBy(desc(syncSubmissions.createdAt))
+      .limit(limit)
+      .offset(offset);
+    res.json(catalog);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sync catalog' });
+  }
+});
+
+// GET /api/sync-licensing/stats - aggregate stats via SQL (no full-table JS scan)
+router.get('/stats', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const [stats] = await db.select({
+      totalTracks: count(),
+      licensedCount: sql<number>`count(*) filter (where status = 'licensed')`,
+      pendingCount: sql<number>`count(*) filter (where status in ('under_review', 'submitted'))`,
+      revenue: sql<number>`coalesce(sum(license_fee), 0)`,
+    })
+      .from(syncSubmissions)
+      .where(eq(syncSubmissions.userId, userId));
+
+    res.json({
+      totalTracks: Number(stats.totalTracks),
+      licensedCount: Number(stats.licensedCount),
+      pendingCount: Number(stats.pendingCount),
+      revenue: Number(stats.revenue),
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch sync stats' });
+  }
+});
+
+// GET /api/sync-licensing/:id - get single listing
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const [item] = await db
+      .select()
+      .from(syncSubmissions)
+      .where(and(eq(syncSubmissions.id, req.params.id), eq(syncSubmissions.userId, req.user!.id)))
+      .limit(1);
+    if (!item) return res.status(404).json({ error: 'Listing not found' });
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch listing' });
+  }
+});
+
 // POST /api/sync-licensing - add track to sync catalog
 router.post('/', requireAuth, async (req, res) => {
   try {
@@ -50,7 +92,7 @@ router.post('/', requireAuth, async (req, res) => {
         status: 'available',
       })
       .returning();
-    res.json(submission);
+    res.status(201).json(submission);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -73,6 +115,9 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Listing not found' });
     res.json(updated);
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
     res.status(500).json({ error: 'Failed to update listing' });
   }
 });
@@ -90,27 +135,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: 'Failed to remove from catalog' });
-  }
-});
-
-// GET /api/sync-licensing/stats - total tracks, licensed count, revenue, pending
-router.get('/stats', requireAuth, async (req, res) => {
-  try {
-    const userId = req.user!.id;
-    const catalog = await db
-      .select()
-      .from(syncSubmissions)
-      .where(eq(syncSubmissions.userId, userId));
-    
-    const stats = {
-      totalTracks: catalog.length,
-      licensedCount: catalog.filter(s => s.status === 'licensed').length,
-      revenue: catalog.reduce((sum, s) => sum + (Number(s.licenseFee) || 0), 0),
-      pendingCount: catalog.filter(s => s.status === 'under_review' || s.status === 'submitted').length,
-    };
-    res.json(stats);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch sync stats' });
   }
 });
 

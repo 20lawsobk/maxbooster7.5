@@ -1,4 +1,5 @@
 import { db } from "../db";
+import { randomBytes } from 'crypto';
 import { eq, and, desc, sql, gte, lte, lt, gt, or } from "drizzle-orm";
 import { dspAnalytics } from "@shared/schema";
 import { logger } from "../logger";
@@ -411,7 +412,7 @@ class AnalyticsAlertService {
 
   private async createAlert(alertData: Omit<Alert, 'id' | 'createdAt' | 'dismissed'>): Promise<Alert> {
     const alert: Alert = {
-      id: `alert_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `alert_${Date.now()}_${randomBytes(4).toString('hex')}`,
       createdAt: new Date(),
       dismissed: false,
       ...alertData,

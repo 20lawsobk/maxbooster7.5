@@ -1,11 +1,12 @@
 import { Router, NextFunction } from 'express';
+import { randomBytes } from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
 import { eq, and, desc, sql, gte, lte, sum, count, inArray } from 'drizzle-orm';
-import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks } from '@shared/schema';
+import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks, isrcRegistry, upcRegistry } from '@shared/schema';
 import { storageService } from '../services/storageService';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
@@ -19,6 +20,7 @@ import { logger } from '../logger';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
 interface AuthenticatedUser {
   id: string;
@@ -303,11 +305,20 @@ router.post(
       }
       const data = createTrackSchema.parse(parsedMetadata);
 
+      // Upload audio buffer to Pocket Dimension (memoryStorage — no filename property)
+      const audioKey = await storageService.uploadFile(
+        file.buffer,
+        `users/${userId}/audio`,
+        file.originalname,
+        file.mimetype,
+      );
+      const audioUrl = await storageService.getDownloadUrl(audioKey);
+
       const track = await storage.createDistroTrack({
         releaseId,
         title: data.title,
         trackNumber: data.trackNumber,
-        audioUrl: `/uploads/distribution/${file.filename}`,
+        audioUrl,
         metadata: {
           explicit: data.explicit,
           lyrics: data.lyrics,
@@ -687,9 +698,18 @@ router.post(
         .replace(/[^a-z0-9\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-        .substring(0, 40) + '-' + Math.random().toString(36).substring(2, 8);
+        .substring(0, 40) + '-' + randomBytes(3).toString('hex');
 
-      const headerImageUrl = file ? `/uploads/distribution/${file.filename}` : data.headerImage || null;
+      let headerImageUrl: string | null = data.headerImage || null;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
 
       const campaign = await storage.createHyperFollowPage({
         userId,
@@ -807,9 +827,16 @@ router.patch(
 
       const data = hyperFollowSchema.partial().parse(JSON.parse(req.body.data || '{}'));
 
-      const headerImageUrl = file
-        ? `/uploads/distribution/${file.filename}`
-        : data.headerImage || campaign.imageUrl;
+      let headerImageUrl: string | null | undefined = data.headerImage || campaign.imageUrl;
+      if (file) {
+        const imgKey = await storageService.uploadFile(
+          file.buffer,
+          `users/${userId}/hyperfollow`,
+          file.originalname,
+          file.mimetype,
+        );
+        headerImageUrl = await storageService.getDownloadUrl(imgKey);
+      }
 
       const existingLinks = campaign.links as HyperFollowLinks;
       const updatedCampaign = await storage.updateHyperFollowPage(id, {
@@ -2109,7 +2136,6 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
     let audioPath = data.audioPath;
     let tmpPath: string | null = null;
     if (file) {
-      const os = await import('os');
       tmpPath = path.join(os.tmpdir(), `fp_check_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
       fs.writeFileSync(tmpPath, file.buffer);
       audioPath = tmpPath;
@@ -2165,7 +2191,6 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
       return res.status(400).json({ error: 'trackId and releaseId are required' });
     }
 
-    const os = await import('os');
     const tmpPath = path.join(os.tmpdir(), `fp_gen_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
     fs.writeFileSync(tmpPath, file.buffer);
 
@@ -3223,7 +3248,22 @@ router.post('/export-report', requireAuth, async (req: Request, res: Response) =
 // GET /api/distribution/codes/stats - Get code generation stats
 router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ isrcGenerated: 0, upcGenerated: 0, remaining: 1000 });
+    const userId = (req as any).user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const [[isrcResult], [upcResult]] = await Promise.all([
+      db.select({ count: count() }).from(isrcRegistry).where(eq(isrcRegistry.artistId, userId)),
+      db.select({ count: count() }).from(upcRegistry).where(eq(upcRegistry.artistId, userId)),
+    ]);
+
+    const isrcGenerated = Number(isrcResult?.count || 0);
+    const upcGenerated = Number(upcResult?.count || 0);
+
+    res.json({
+      isrcGenerated,
+      upcGenerated,
+      remaining: Math.max(0, 1000 - isrcGenerated),
+    });
   } catch (error: unknown) {
     logger.error('Error fetching code stats:', error);
     res.status(500).json({ error: 'Failed to fetch code stats' });
@@ -3287,7 +3327,8 @@ router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response)
       .select()
       .from(instantPayouts)
       .where(eq(instantPayouts.userId, userId))
-      .orderBy(desc(instantPayouts.createdAt));
+      .orderBy(desc(instantPayouts.createdAt))
+      .limit(500);
     res.json({ payouts, total: payouts.length });
   } catch (error: unknown) {
     logger.error('Error fetching earnings payouts:', error);
@@ -3303,7 +3344,8 @@ router.get('/earnings/statements', requireAuth, async (req: Request, res: Respon
       .select()
       .from(royaltyStatements)
       .where(eq(royaltyStatements.userId, userId))
-      .orderBy(desc(royaltyStatements.createdAt));
+      .orderBy(desc(royaltyStatements.createdAt))
+      .limit(500);
     res.json({ statements });
   } catch (error: unknown) {
     logger.error('Error fetching earnings statements:', error);
@@ -3408,7 +3450,8 @@ router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: R
     const [setting] = await db
       .select()
       .from(systemSettings)
-      .where(eq(systemSettings.key, 'currency_rates'));
+      .where(eq(systemSettings.key, 'currency_rates'))
+      .limit(1);
 
     if (setting && setting.value) {
       const val = setting.value as any;
@@ -3434,7 +3477,8 @@ router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Re
       .select()
       .from(royaltyDisputes)
       .where(eq(royaltyDisputes.userId, userId))
-      .orderBy(desc(royaltyDisputes.createdAt));
+      .orderBy(desc(royaltyDisputes.createdAt))
+      .limit(500);
     res.json({ discrepancies, total: discrepancies.length });
   } catch (error: unknown) {
     logger.error('Error fetching royalty discrepancies:', error);
@@ -3523,7 +3567,8 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
     const userReleases = await db
       .select({ id: distroReleases.id })
       .from(distroReleases)
-      .where(eq(distroReleases.artistId, userId));
+      .where(eq(distroReleases.artistId, userId))
+      .limit(500);
 
     if (userReleases.length === 0) {
       return res.json({ splits: [] });
@@ -3549,7 +3594,8 @@ router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Re
       .select()
       .from(taxForms)
       .where(eq(taxForms.userId, userId))
-      .orderBy(desc(taxForms.createdAt));
+      .orderBy(desc(taxForms.createdAt))
+      .limit(200);
     res.json({ documents });
   } catch (error: unknown) {
     logger.error('Error fetching tax documents:', error);
@@ -4005,7 +4051,7 @@ router.post('/content-id/generate', requireAuth, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Track not found' });
     }
 
-    const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
     
     await storage.updateDistroTrack(trackId, {
       metadata: {
@@ -4035,7 +4081,7 @@ router.post('/content-id/generate-all', requireAuth, async (req: Request, res: R
     let count = 0;
 
     for (const track of tracks) {
-      const fingerprint = `fp_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
       await storage.updateDistroTrack(track.id, {
         metadata: {
           ...track.metadata,
@@ -4658,13 +4704,13 @@ router.get('/packages/:id/tracks', requireAuth, async (req: Request, res: Respon
 
     const key = `distribution/packages/${userId}/${id}/tracks.json`;
     const data = await storageService.downloadFile(key).catch(() => null);
-    if (!data) return res.json([]);
+    res.status(500).json({ error: 'Internal server error' });
 
     const tracks = JSON.parse(data.toString());
     res.json(tracks);
   } catch (error: unknown) {
     const err = error as { message?: string };
-    if (err?.message?.includes('not found') || err?.message?.includes('404')) return res.json([]);
+    res.status(500).json({ error: 'Internal server error' });
     logger.error('Error fetching package tracks:', error);
     res.status(500).json({ error: 'Failed to fetch package tracks' });
   }
@@ -4733,72 +4779,152 @@ router.get('/packages/:id/export', requireAuth, async (req: Request, res: Respon
   }
 });
 
-// ─── Platform-specific submission endpoints ───────────────────────────────────
-// POST /api/distribution/platform/spotify — Submit release to Spotify
+// ─── Platform-specific submission endpoints (via LabelGrid API) ───────────────
+// Helper: build a LabelGridRelease payload from a DB release + tracks
+async function buildLabelGridPayload(release: any, tracks: any[], platform: string) {
+  const metadata = (release.metadata as any) || {};
+  return {
+    title: release.title,
+    artist: release.artistName || release.artist || 'Unknown Artist',
+    releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    upc: release.upc,
+    artwork: metadata.artworkUrl || metadata.artwork || '',
+    genre: release.genre || 'Other',
+    label: metadata.label || undefined,
+    copyrightYear: metadata.copyrightYear || new Date().getFullYear(),
+    copyrightOwner: metadata.copyrightOwner || undefined,
+    territoryMode: (metadata.territoryMode as 'worldwide' | 'include' | 'exclude') || 'worldwide',
+    territories: metadata.territories || [],
+    platforms: [platform],
+    tracks: tracks.map((t: any, idx: number) => ({
+      title: t.title,
+      artist: t.artistName || release.artistName || release.artist || 'Unknown Artist',
+      isrc: t.isrc,
+      audioFile: t.audioUrl || t.fileUrl || '',
+      duration: t.duration || 0,
+      trackNumber: t.trackNumber || idx + 1,
+      explicit: t.explicit || false,
+      lyrics: t.lyrics || undefined,
+    })),
+  };
+}
+
+// POST /api/distribution/platform/spotify — Submit release to Spotify via LabelGrid
 router.post('/platform/spotify', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] Spotify submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'spotify');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridSpotifySubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'spotify',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to Spotify for review. Typical delivery time is 24-48 hours.',
-      submissionId: `spotify_${Date.now()}`,
-      estimatedDelivery: '24-48 hours',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to Spotify via LabelGrid. Typical delivery time is 24-48 hours.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '24-48 hours',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Spotify:', error);
+    logger.error('Error submitting to Spotify via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Spotify' });
   }
 });
 
-// POST /api/distribution/platform/apple — Submit release to Apple Music
+// POST /api/distribution/platform/apple — Submit release to Apple Music via LabelGrid
 router.post('/platform/apple', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] Apple Music submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'apple_music');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridAppleSubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'apple',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to Apple Music for review. Typical delivery time is 24-72 hours.',
-      submissionId: `apple_${Date.now()}`,
-      estimatedDelivery: '24-72 hours',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to Apple Music via LabelGrid. Typical delivery time is 24-72 hours.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '24-72 hours',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Apple Music:', error);
+    logger.error('Error submitting to Apple Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Apple Music' });
   }
 });
 
-// POST /api/distribution/platform/youtube — Submit release to YouTube Music
+// POST /api/distribution/platform/youtube — Submit release to YouTube Music via LabelGrid
 router.post('/platform/youtube', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req.user as AuthenticatedUser).id;
-    const { releaseId, credentials } = req.body;
+    const { releaseId } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
-    logger.info(`[Distribution] YouTube Music submission for release ${releaseId} by user ${userId}`);
+    const release = await storage.getDistroRelease(releaseId);
+    if (!release || release.artistId !== userId) {
+      return res.status(404).json({ error: 'Release not found' });
+    }
+
+    const tracks = await storage.getDistroTracks(releaseId);
+    const payload = await buildLabelGridPayload(release, tracks, 'youtube_music');
+
+    logger.info(`[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`, { userId });
+    const result = await labelGridService.createRelease(payload);
+
+    const metadata = (release.metadata as any) || {};
+    await storage.updateDistroRelease(releaseId, {
+      metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridYoutubeSubmittedAt: new Date().toISOString() },
+    });
+
     res.json({
       success: true,
       platform: 'youtube',
       releaseId,
-      status: 'submitted',
-      message: 'Release submitted to YouTube Music for review. Typical delivery time is 1-3 business days.',
-      submissionId: `youtube_${Date.now()}`,
-      estimatedDelivery: '1-3 business days',
+      labelGridReleaseId: result.releaseId,
+      status: result.status,
+      message: 'Release submitted to YouTube Music via LabelGrid. Typical delivery time is 1-3 business days.',
+      submissionId: result.releaseId,
+      estimatedDelivery: result.estimatedLiveDate || '1-3 business days',
+      platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to YouTube Music:', error);
+    logger.error('Error submitting to YouTube Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to YouTube Music' });
   }
 });

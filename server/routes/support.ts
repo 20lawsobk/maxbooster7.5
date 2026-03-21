@@ -30,7 +30,8 @@ router.get('/tickets', requireAuth, async (req, res) => {
       .select()
       .from(supportTickets)
       .where(eq(supportTickets.userId, userId))
-      .orderBy(desc(supportTickets.createdAt));
+      .orderBy(desc(supportTickets.createdAt))
+      .limit(100);
 
     res.json({ tickets, total: tickets.length });
   } catch (error) {

@@ -922,7 +922,7 @@ export default function ShowPage() {
                     Make sure both devices are on the same network.
                   </div>
                   <Badge variant="outline" className="mt-2 border-blue-500/50 text-blue-400">
-                    Session Code: {Math.random().toString(36).substring(2, 8).toUpperCase()}
+                    Session Code: {typeof window !== 'undefined' ? btoa(window.location.pathname).replace(/[^A-Z0-9]/gi, '').substring(0, 6).toUpperCase() : 'STUDIO'}
                   </Badge>
                 </div>
               )}

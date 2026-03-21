@@ -1,9 +1,11 @@
+import { randomBytes } from 'crypto';
 import { AIAdvertisingEngine } from '../ai-advertising.js';
 import { AutonomousAutopilot } from '../autonomous-autopilot.js';
 import { customAI } from '../custom-ai-engine.js';
 import { storage } from '../storage.js';
 import { config } from '../config/defaults.js';
 import { logger } from '../logger.js';
+import { randomBytes } from 'crypto';
 
 /**
  * REVOLUTIONARY ZERO-COST SOCIAL AMPLIFICATION SYSTEM
@@ -496,7 +498,7 @@ export class SocialAmplificationService {
       const postResult: OrganicPerformance = {
         platform,
         posted: true,
-        postId: `organic_${Date.now()}_${platform}_${Math.random().toString(36).substring(7)}`,
+        postId: `organic_${Date.now()}_${platform}_${randomBytes(6).toString('hex')}`,
         metrics: timeBasedVariation,
         organicBoost,
         costSavings,
@@ -1323,7 +1325,7 @@ export class SocialAmplificationService {
   private async fetchPostMetrics(postId: string): Promise<PostMetrics> {
     return {
       postId,
-      userId: 'user_' + Math.random().toString(36).substr(2, 9),
+      userId: 'user_' + randomBytes(5).toString('hex'),
       platform: 'instagram',
       campaignId: null,
       impressions: Math.round(10000 + Math.random() * 90000),
@@ -1346,7 +1348,7 @@ export class SocialAmplificationService {
     metrics: PostMetrics
   ): Array<{ userId: string; amplification: number }> {
     return Array.from({ length: 5 }, (_, i) => ({
-      userId: 'super_' + Math.random().toString(36).substr(2, 9),
+      userId: 'super_' + randomBytes(5).toString('hex'),
       amplification: Math.round(100 + Math.random() * 900),
     }));
   }

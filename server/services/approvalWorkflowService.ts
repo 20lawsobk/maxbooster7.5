@@ -119,7 +119,8 @@ export class ApprovalWorkflowService {
         .select()
         .from(approvalWorkflows)
         .where(eq(approvalWorkflows.workspaceId, workspaceId))
-        .orderBy(desc(approvalWorkflows.createdAt));
+        .orderBy(desc(approvalWorkflows.createdAt))
+        .limit(100);
 
       return workflows;
     } catch (error: unknown) {
@@ -462,7 +463,8 @@ export class ApprovalWorkflowService {
             eq(approvalRequests.status, 'in_progress')
           )
         ))
-        .orderBy(desc(approvalRequests.createdAt));
+        .orderBy(desc(approvalRequests.createdAt))
+        .limit(100);
 
       return pendingRequests;
     } catch (error: unknown) {
@@ -491,7 +493,8 @@ export class ApprovalWorkflowService {
           eq(approvalSteps.approverId, userId),
           eq(approvalSteps.status, 'pending')
         ))
-        .orderBy(approvalSteps.dueAt);
+        .orderBy(approvalSteps.dueAt)
+        .limit(100);
 
       return pendingSteps;
     } catch (error: unknown) {
@@ -546,7 +549,9 @@ export class ApprovalWorkflowService {
             eq(approvalRequests.status, 'in_progress')
           ),
           lte(approvalRequests.dueAt, new Date())
-        ));
+        ))
+        .orderBy(approvalRequests.dueAt)
+        .limit(100);
 
       for (const request of overdueRequests) {
         const workflow = await this.getWorkflow(request.workflowId);

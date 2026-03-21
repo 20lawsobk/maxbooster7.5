@@ -18,6 +18,7 @@
  */
 
 import { EventEmitter } from 'events';
+import http from 'http';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { logger } from './logger.js';
@@ -1963,7 +1964,6 @@ describe('${upgrade.id}', () => {
       const port = process.env.PORT || '5000';
       const start = Date.now();
 
-      const { default: http } = await import('http');
       const responseTime = await new Promise<number>((resolve, reject) => {
         const req = http.get(`http://127.0.0.1:${port}/api/health`, (res) => {
           res.resume();

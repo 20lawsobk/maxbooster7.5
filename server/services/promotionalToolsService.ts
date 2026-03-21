@@ -1,3 +1,4 @@
+import { randomBytes } from 'crypto';
 import { db } from '../db';
 import { 
   releases, 
@@ -20,7 +21,7 @@ import {
 } from '@shared/schema';
 import { eq, and, desc } from 'drizzle-orm';
 import { logger } from '../logger';
-import { nanoid } from 'nanoid';
+
 import { sharpImageService } from './sharpImageService';
 import { AutonomousAutopilot } from '../autonomous-autopilot';
 import { AutopilotEngine } from '../autopilot-engine';
@@ -220,7 +221,7 @@ class PromotionalToolsService {
     if (!release) throw new Error('Release not found');
 
     const dimensions = PROMO_CARD_DIMENSIONS[config.type] || PROMO_CARD_DIMENSIONS.square;
-    const cardId = nanoid();
+    const cardId = randomBytes(8).toString('hex');
 
     let generatedImageUrl: string | null = null;
     try {
@@ -333,7 +334,7 @@ class PromotionalToolsService {
       accentColor: config.accentColor || '#4ecdc4',
       textOverlay: config.textOverlay,
       animationStyle: config.animationStyle || 'wave',
-      generatedVideoUrl: `/api/distribution/promo/mini-video/${nanoid()}/render`,
+      generatedVideoUrl: `/api/distribution/promo/mini-video/${randomBytes(8).toString('hex')}/render`,
     }).returning();
 
     logger.info('Mini video created:', { videoId: video.id, type: config.type });
@@ -557,7 +558,7 @@ class PromotionalToolsService {
     return title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '') + '-' + nanoid(6);
+      .replace(/^-|-$/g, '') + '-' + randomBytes(3).toString('hex');
   }
 
   async calculateArtistScore(userId: string): Promise<ArtistScore> {

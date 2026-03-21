@@ -54,7 +54,9 @@ router.post('/', async (req: Request, res: Response) => {
     let resolvedSpotifyUri = spotifyArtistUri;
 
     if (spotifyArtistUri && !spotifyArtistId) {
-      resolvedSpotifyId = spotifyArtistUri.replace('spotify:artist:', '');
+      resolvedSpotifyId = spotifyArtistUri.startsWith('spotify:artist:')
+        ? spotifyArtistUri.replace('spotify:artist:', '')
+        : spotifyArtistUri;
     } else if (spotifyArtistId && !spotifyArtistUri) {
       resolvedSpotifyUri = `spotify:artist:${spotifyArtistId}`;
     }
@@ -189,6 +191,17 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
       return res.status(400).json({ error: err.message });
     }
     res.status(500).json({ error: 'Failed to submit fixer request' });
+  }
+});
+
+router.get('/:id/profile-hub', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.profileHub(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/profile-hub error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Profile hub failed' });
   }
 });
 

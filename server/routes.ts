@@ -6,7 +6,8 @@ import fs from "fs";
 import { storage } from "./storage.ts";
 import { db } from "./db.ts";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects } from "../shared/schema.ts";
+import { sum, count, ilike, inArray, or, ne, asc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.ts";
 import Stripe from "stripe";
@@ -722,7 +723,7 @@ export async function registerRoutes(
           await redisClient.del(`maxbooster:sess:${sessionId}`);
         }
       } catch (redisError) {
-        logger.info("Redis session deletion skipped:", redisError);
+        logger.warn("Redis session deletion skipped:", redisError);
       }
 
       return res.json({ success: true, message: "Session terminated successfully" });
@@ -733,7 +734,7 @@ export async function registerRoutes(
   });
 
   // Auth: Terminate all other sessions
-  app.post("/api/auth/sessions/terminate-all", async (req: Request, res: Response) => {
+  app.post("/api/auth/sessions/terminate-all", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -868,7 +869,7 @@ export async function registerRoutes(
       return res.json(allEvents);
     } catch (error) {
       logger.error("Get login history error:", error);
-      return res.json([]);
+      return res.status(500).json({ message: "Failed to fetch login history" });
     }
   });
 
@@ -980,7 +981,7 @@ export async function registerRoutes(
 
   // Auth: Change password
   // SECURITY: Invalidates all other sessions after password change
-  app.post("/api/auth/change-password", async (req: Request, res: Response) => {
+  app.post("/api/auth/change-password", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -1022,7 +1023,7 @@ export async function registerRoutes(
         }
         logger.info(`[Security] Invalidated ${userSessions.length - 1} sessions after password change for user ${req.user.id}`);
       } catch (sessionError) {
-        logger.info('[Security] Could not invalidate other sessions:', sessionError);
+        logger.error('[Security] Could not invalidate other sessions:', sessionError);
         // Continue - password was changed successfully
       }
       
@@ -1144,7 +1145,7 @@ export async function registerRoutes(
           }
         } catch (fsError) {
           // File deletion is best-effort, continue even if it fails
-          logger.info("Avatar file deletion skipped:", fsError);
+          logger.warn("Avatar file deletion skipped:", fsError);
         }
       }
 
@@ -1237,7 +1238,7 @@ export async function registerRoutes(
   });
 
   // Auth: 2FA setup - Generate TOTP secret and QR code
-  app.post("/api/auth/2fa/setup", async (req: Request, res: Response) => {
+  app.post("/api/auth/2fa/setup", criticalEndpointLimiter, async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -1608,8 +1609,6 @@ export async function registerRoutes(
 
       if (!user) {
         // Create new user from Google account
-        const username = googleUser.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '') + Math.random().toString(36).substring(2, 6);
-
         user = await storage.createUser({
           email: googleUser.email,
           password: '', // No password for OAuth users
@@ -1820,7 +1819,7 @@ export async function registerRoutes(
       return res.json({ action: 'view_analytics', title: 'Review Your Analytics', description: 'Check your streaming performance and audience insights.', priority: 'low', estimatedTime: '5 minutes' });
     } catch (error) {
       logger.error("Next action error:", error);
-      return res.json({ action: 'upload_first_track', title: 'Upload Your First Track', description: 'Get started by uploading your first track to the studio.', priority: 'high', estimatedTime: '5 minutes' });
+      return res.status(500).json({ error: 'Failed to determine next action' });
     }
   });
 
@@ -1840,7 +1839,7 @@ export async function registerRoutes(
       return res.json(mappedNotifications);
     } catch (error) {
       logger.error("Get notifications error:", error);
-      return res.json([]);
+      return res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
 
@@ -1952,7 +1951,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.info("Mark all notifications read error:", error);
+      logger.error("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -1966,7 +1965,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.info("Mark all notifications read error:", error);
+      logger.error("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -1997,7 +1996,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Test notification sent", notification });
     } catch (error) {
-      logger.info("Test notification error:", error);
+      logger.error("Test notification error:", error);
       return res.status(500).json({ message: "Failed to send test notification" });
     }
   });
@@ -2021,16 +2020,8 @@ export async function registerRoutes(
       const prefs = user?.notificationSettings || defaultPrefs;
       return res.json(prefs);
     } catch (error) {
-      logger.info("Get notification preferences error:", error);
-      return res.json({
-        email: true,
-        browser: true,
-        releases: true,
-        earnings: true,
-        sales: true,
-        marketing: false,
-        system: true,
-      });
+      logger.error("Get notification preferences error:", error);
+      return res.status(500).json({ error: 'Failed to get notification preferences' });
     }
   });
 
@@ -2045,7 +2036,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true });
     } catch (error) {
-      logger.info("Update notification preferences error:", error);
+      logger.error("Update notification preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2099,7 +2090,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Push subscription saved" });
     } catch (error) {
-      logger.info("Save push subscription error:", error);
+      logger.error("Save push subscription error:", error);
       return res.status(500).json({ message: "Failed to save push subscription" });
     }
   });
@@ -2125,7 +2116,7 @@ export async function registerRoutes(
       }
       return res.json({ success: true, message: "Push subscription removed" });
     } catch (error) {
-      logger.info("Remove push subscription error:", error);
+      logger.error("Remove push subscription error:", error);
       return res.status(500).json({ message: "Failed to remove push subscription" });
     }
   });
@@ -2150,7 +2141,7 @@ export async function registerRoutes(
         })),
       });
     } catch (error) {
-      logger.info("Get push subscription status error:", error);
+      logger.error("Get push subscription status error:", error);
       return res.status(500).json({ message: "Failed to get subscription status" });
     }
   });
@@ -2170,7 +2161,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, ...result });
     } catch (error) {
-      logger.info("Test push notification error:", error);
+      logger.error("Test push notification error:", error);
       return res.status(500).json({ message: "Failed to send test push notification" });
     }
   });
@@ -2191,7 +2182,7 @@ export async function registerRoutes(
       const count = result[0]?.count || 0;
       return res.json({ count });
     } catch (error) {
-      logger.info("Get unread count error:", error);
+      logger.error("Get unread count error:", error);
       return res.json({ count: 0 });
     }
   });
@@ -2205,8 +2196,8 @@ export async function registerRoutes(
       const projects = await storage.getProjectsByUserId(req.user.id);
       return res.json({ data: projects || [] });
     } catch (error) {
-      logger.info("Projects error:", error);
-      return res.json({ data: [] });
+      logger.error("Projects error:", error);
+      return res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
 
@@ -2215,7 +2206,7 @@ export async function registerRoutes(
   app.post("/api/projects", (req: Request, res: Response, next) => {
     upload.single('audio')(req, res, (err: any) => {
       if (err) {
-        logger.info("Project upload error:", err);
+        logger.error("Project upload error:", err);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(413).json({ message: "File too large. Maximum size is 500MB." });
         }
@@ -2261,7 +2252,7 @@ export async function registerRoutes(
       });
       return res.json(project);
     } catch (error) {
-      logger.info("Create project error:", error);
+      logger.error("Create project error:", error);
       return res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -2543,7 +2534,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.info("Analytics dashboard error:", error);
+      logger.error("Analytics dashboard error:", error);
       return res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
@@ -2602,7 +2593,7 @@ export async function registerRoutes(
         data: analyticsData,
       });
     } catch (error) {
-      logger.info("Analytics export error:", error);
+      logger.error("Analytics export error:", error);
       return res.status(500).json({ message: "Failed to export analytics" });
     }
   });
@@ -2625,7 +2616,7 @@ export async function registerRoutes(
         byMetric: {},
       });
     } catch (error) {
-      logger.info("Anomalies summary error:", error);
+      logger.error("Anomalies summary error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies summary" });
     }
   });
@@ -2701,7 +2692,7 @@ export async function registerRoutes(
 
       return res.json({ data: filteredAnomalies });
     } catch (error) {
-      logger.info("Anomalies list error:", error);
+      logger.error("Anomalies list error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies" });
     }
   });
@@ -2716,7 +2707,7 @@ export async function registerRoutes(
       // In production, this would update a database record
       return res.json({ success: true, message: `Anomaly ${id} acknowledged` });
     } catch (error) {
-      logger.info("Acknowledge anomaly error:", error);
+      logger.error("Acknowledge anomaly error:", error);
       return res.status(500).json({ message: "Failed to acknowledge anomaly" });
     }
   });
@@ -2738,7 +2729,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Event tracked" });
     } catch (error) {
-      logger.info("Track event error:", error);
+      logger.error("Track event error:", error);
       return res.status(500).json({ message: "Failed to track event" });
     }
   });
@@ -2787,13 +2778,8 @@ export async function registerRoutes(
         opportunities: [],
       });
     } catch (error) {
-      logger.info("AI insights error:", error);
-      return res.json({
-        performanceScore: 25,
-        recommendations: [],
-        trends: [],
-        opportunities: [],
-      });
+      logger.error("AI insights error:", error);
+      return res.status(500).json({ message: "Failed to fetch AI insights" });
     }
   });
 
@@ -2814,7 +2800,7 @@ export async function registerRoutes(
     try {
       return res.json(req.user.preferences || {});
     } catch (error) {
-      logger.info("Error fetching user preferences:", error);
+      logger.error("Error fetching user preferences:", error);
       return res.status(500).json({ message: "Failed to fetch preferences" });
     }
   });
@@ -2828,7 +2814,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
-      logger.info("Error updating user preferences:", error);
+      logger.error("Error updating user preferences:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2841,7 +2827,7 @@ export async function registerRoutes(
       const prefs = req.user.preferences as any;
       return res.json(prefs?.studio || {});
     } catch (error) {
-      logger.info("Error fetching studio preferences:", error);
+      logger.error("Error fetching studio preferences:", error);
       return res.status(500).json({ message: "Failed to fetch studio preferences" });
     }
   });
@@ -2856,7 +2842,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
-      logger.info("Error updating studio preferences:", error);
+      logger.error("Error updating studio preferences:", error);
       return res.status(500).json({ message: "Failed to update studio preferences" });
     }
   });
@@ -2873,7 +2859,7 @@ export async function registerRoutes(
         summary: { total: 0, analyzed: 0 },
       });
     } catch (error) {
-      logger.info("Analysis error:", error);
+      logger.error("Analysis error:", error);
       return res.status(500).json({ message: "Failed to fetch analysis" });
     }
   });
@@ -2892,7 +2878,7 @@ export async function registerRoutes(
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.info("Analysis error:", error);
+      logger.error("Analysis error:", error);
       return res.status(500).json({ message: "Failed to start analysis" });
     }
   });
@@ -2910,7 +2896,7 @@ export async function registerRoutes(
         total: 0,
       });
     } catch (error) {
-      logger.info("Assets fetch error:", error);
+      logger.error("Assets fetch error:", error);
       return res.status(500).json({ message: "Failed to fetch assets" });
     }
   });
@@ -2949,12 +2935,12 @@ export async function registerRoutes(
             message: 'Asset uploaded successfully',
           });
         } catch (uploadError) {
-          logger.info("Asset storage error:", uploadError);
+          logger.error("Asset storage error:", uploadError);
           return res.status(500).json({ message: "Failed to store asset" });
         }
       });
     } catch (error) {
-      logger.info("Asset upload error:", error);
+      logger.error("Asset upload error:", error);
       return res.status(500).json({ message: "Failed to upload asset" });
     }
   });
@@ -2970,7 +2956,7 @@ export async function registerRoutes(
       });
       return res.json(pockets);
     } catch (error) {
-      logger.info("Pocket list error:", error);
+      logger.error("Pocket list error:", error);
       return res.status(500).json({ message: "Failed to fetch pockets" });
     }
   });
@@ -2990,7 +2976,7 @@ export async function registerRoutes(
       }).returning();
       return res.json(pocket);
     } catch (error) {
-      logger.info("Pocket create error:", error);
+      logger.error("Pocket create error:", error);
       return res.status(500).json({ message: "Failed to create pocket" });
     }
   });
@@ -3004,7 +2990,7 @@ export async function registerRoutes(
         files: [],
       });
     } catch (error) {
-      logger.info("Pocket demo error:", error);
+      logger.error("Pocket demo error:", error);
       return res.status(500).json({ message: "Failed to fetch demo pocket" });
     }
   });
@@ -3028,7 +3014,7 @@ export async function registerRoutes(
         lastUpdated: pocket?.lastAccessedAt || new Date(),
       });
     } catch (error) {
-      logger.info("Pocket stats error:", error);
+      logger.error("Pocket stats error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket stats" });
     }
   });
@@ -3050,7 +3036,7 @@ export async function registerRoutes(
       });
       return res.json(files);
     } catch (error) {
-      logger.info("Pocket files error:", error);
+      logger.error("Pocket files error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket files" });
     }
   });
@@ -3113,7 +3099,7 @@ export async function registerRoutes(
         summary: { passed: 0, failed: 0, warnings: 0 },
       });
     } catch (error) {
-      logger.info("Audit results error:", error);
+      logger.error("Audit results error:", error);
       return res.status(500).json({ message: "Failed to fetch audit results" });
     }
   });
@@ -3129,7 +3115,7 @@ export async function registerRoutes(
         coverage: { statements: 0, branches: 0, functions: 0, lines: 0 },
       });
     } catch (error) {
-      logger.info("Testing results error:", error);
+      logger.error("Testing results error:", error);
       return res.status(500).json({ message: "Failed to fetch testing results" });
     }
   });
@@ -3150,7 +3136,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, message: 'Onboarding completed' });
     } catch (error) {
-      logger.info("Complete onboarding error:", error);
+      logger.error("Complete onboarding error:", error);
       return res.status(500).json({ message: "Failed to complete onboarding" });
     }
   });
@@ -3164,7 +3150,7 @@ export async function registerRoutes(
       const seenFeatures = req.user.onboardingData?.seenFeatures || [];
       return res.json({ seenFeatures });
     } catch (error) {
-      logger.info("Get seen features error:", error);
+      logger.error("Get seen features error:", error);
       return res.status(500).json({ message: "Failed to get seen features" });
     }
   });
@@ -3192,7 +3178,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, seenFeatures });
     } catch (error) {
-      logger.info("Mark feature seen error:", error);
+      logger.error("Mark feature seen error:", error);
       return res.status(500).json({ message: "Failed to mark feature as seen" });
     }
   });
@@ -3210,25 +3196,75 @@ export async function registerRoutes(
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       });
     } catch (error) {
-      logger.info("Download statement error:", error);
+      logger.error("Download statement error:", error);
       return res.status(500).json({ message: "Failed to generate statement download" });
     }
   });
 
-  // Royalties endpoints
+  // Royalties endpoints — backed by real DB data
   app.get("/api/royalties", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const userId = req.user.id;
+      const { period = '30d', platform } = req.query as { period?: string; platform?: string };
+      const pageParam = parseInt(String(req.query.page || '1'), 10);
+      const limitParam = Math.min(Math.max(parseInt(String(req.query.limit || '100'), 10), 1), 500);
+      const offset = (Math.max(pageParam, 1) - 1) * limitParam;
+
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365, 'all': 9999 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const conditions: any[] = [eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)];
+      if (platform && platform !== 'all') {
+        conditions.push(eq(royaltyTransactions.platform, platform));
+      }
+      const where = and(...conditions);
+
+      const [aggregates, rows, [lastPaidRow]] = await Promise.all([
+        db.select({
+          totalEarnings: sum(royaltyTransactions.amount),
+          totalRows: count(),
+          pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`,
+        }).from(royaltyTransactions).where(where),
+
+        db.select({
+          id: royaltyTransactions.id,
+          releaseId: royaltyTransactions.releaseId,
+          platform: royaltyTransactions.platform,
+          amount: royaltyTransactions.amount,
+          currency: royaltyTransactions.currency,
+          streamCount: royaltyTransactions.streamCount,
+          periodStart: royaltyTransactions.periodStart,
+          periodEnd: royaltyTransactions.periodEnd,
+          status: royaltyTransactions.status,
+          transactionType: royaltyTransactions.transactionType,
+          createdAt: royaltyTransactions.createdAt,
+        }).from(royaltyTransactions)
+          .where(where)
+          .orderBy(desc(royaltyTransactions.createdAt))
+          .limit(limitParam)
+          .offset(offset),
+
+        db.select({ paidAt: royaltyTransactions.paidAt })
+          .from(royaltyTransactions)
+          .where(and(eq(royaltyTransactions.userId, userId), sql`${royaltyTransactions.paidAt} is not null`))
+          .orderBy(desc(royaltyTransactions.paidAt))
+          .limit(1),
+      ]);
+
+      const agg = aggregates[0];
       return res.json({
-        totalEarnings: 0,
-        pendingPayouts: 0,
-        lastPayout: null,
-        earnings: [],
+        data: rows,
+        totalEarnings: Number(agg?.totalEarnings || 0),
+        pendingPayouts: Number(agg?.pendingPayouts || 0),
+        lastPayout: lastPaidRow?.paidAt ?? null,
+        pagination: { total: Number(agg?.totalRows || 0), page: pageParam, limit: limitParam },
       });
     } catch (error) {
-      logger.info("Royalties error:", error);
+      logger.error("Royalties error:", error);
       return res.status(500).json({ message: "Failed to fetch royalties" });
     }
   });
@@ -3238,9 +3274,31 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const userId = req.user.id;
+      const { period = '30d' } = req.query as { period?: string };
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db
+        .select({
+          platform: royaltyTransactions.platform,
+          totalAmount: sum(royaltyTransactions.amount),
+          totalStreams: sum(royaltyTransactions.streamCount),
+          transactionCount: count(royaltyTransactions.id),
+        })
+        .from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)))
+        .groupBy(royaltyTransactions.platform);
+
+      return res.json(rows.map(r => ({
+        platform: r.platform || 'unknown',
+        earnings: Number(r.totalAmount) || 0,
+        streams: Number(r.totalStreams) || 0,
+        transactions: Number(r.transactionCount) || 0,
+      })));
     } catch (error) {
-      logger.info("Platform breakdown error:", error);
+      logger.error("Platform breakdown error:", error);
       return res.status(500).json({ message: "Failed to fetch platform breakdown" });
     }
   });
@@ -3250,9 +3308,38 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const userId = req.user.id;
+      const { period = '30d' } = req.query as { period?: string };
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db
+        .select({
+          releaseId: royaltyTransactions.releaseId,
+          totalAmount: sum(royaltyTransactions.amount),
+          totalStreams: sum(royaltyTransactions.streamCount),
+        })
+        .from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)))
+        .groupBy(royaltyTransactions.releaseId)
+        .orderBy(desc(sum(royaltyTransactions.amount)))
+        .limit(10);
+
+      const releaseIds = rows.map(r => r.releaseId).filter(Boolean);
+      const releaseRows = releaseIds.length > 0
+        ? await db.select({ id: releases.id, title: releases.title }).from(releases).where(inArray(releases.id, releaseIds))
+        : [];
+      const releaseMap = new Map(releaseRows.map(r => [r.id, r.title]));
+
+      return res.json(rows.map(r => ({
+        releaseId: r.releaseId,
+        title: releaseMap.get(r.releaseId) || r.releaseId,
+        earnings: Number(r.totalAmount) || 0,
+        streams: Number(r.totalStreams) || 0,
+      })));
     } catch (error) {
-      logger.info("Top tracks error:", error);
+      logger.error("Top tracks error:", error);
       return res.status(500).json({ message: "Failed to fetch top tracks" });
     }
   });
@@ -3262,9 +3349,21 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const user = req.user as any;
+      const prefs = user.preferences?.payout || {};
+      const methods = [];
+      if (user.stripeConnectedAccountId) {
+        methods.push({ id: 'stripe', type: 'stripe', label: 'Bank Account (Stripe)', isDefault: !prefs.paypalEmail && !prefs.bankDetails });
+      }
+      if (prefs.paypalEmail) {
+        methods.push({ id: 'paypal', type: 'paypal', label: `PayPal (${prefs.paypalEmail})`, isDefault: !!prefs.paypalEmail && !prefs.bankDetails });
+      }
+      if (prefs.bankDetails) {
+        methods.push({ id: 'bank', type: 'bank_transfer', label: 'Bank Transfer', isDefault: true });
+      }
+      return res.json(methods);
     } catch (error) {
-      logger.info("Payment methods error:", error);
+      logger.error("Payment methods error:", error);
       return res.status(500).json({ message: "Failed to fetch payment methods" });
     }
   });
@@ -3274,9 +3373,19 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { type, paypalEmail, bankDetails } = req.body;
+      if (!type) return res.status(400).json({ message: 'Payment method type required' });
+
+      const user = req.user as any;
+      const currentPrefs = user.preferences || {};
+      const updated = { ...currentPrefs, payout: { ...(currentPrefs.payout || {}) } };
+      if (type === 'paypal' && paypalEmail) updated.payout.paypalEmail = paypalEmail;
+      if (type === 'bank_transfer' && bankDetails) updated.payout.bankDetails = bankDetails;
+
+      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payment method added' });
     } catch (error) {
-      logger.info("Add payment method error:", error);
+      logger.error("Add payment method error:", error);
       return res.status(500).json({ message: "Failed to add payment method" });
     }
   });
@@ -3286,13 +3395,17 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const user = req.user as any;
+      const prefs = user.preferences?.payoutSettings || {};
       return res.json({
-        minimumPayout: 50,
-        payoutSchedule: 'monthly',
-        preferredMethod: null,
+        minimumPayout: prefs.minimumPayout ?? 50,
+        payoutSchedule: prefs.payoutSchedule ?? 'monthly',
+        preferredMethod: prefs.preferredMethod ?? null,
+        stripeConnected: !!(user.stripeConnectedAccountId),
+        paypalEmail: user.preferences?.payout?.paypalEmail ?? null,
       });
     } catch (error) {
-      logger.info("Payout settings error:", error);
+      logger.error("Payout settings error:", error);
       return res.status(500).json({ message: "Failed to fetch payout settings" });
     }
   });
@@ -3302,9 +3415,22 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { minimumPayout, payoutSchedule, preferredMethod } = req.body;
+      const user = req.user as any;
+      const currentPrefs = user.preferences || {};
+      const updated = {
+        ...currentPrefs,
+        payoutSettings: {
+          ...(currentPrefs.payoutSettings || {}),
+          ...(minimumPayout != null && { minimumPayout }),
+          ...(payoutSchedule && { payoutSchedule }),
+          ...(preferredMethod && { preferredMethod }),
+        },
+      };
+      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payout settings updated' });
     } catch (error) {
-      logger.info("Update payout settings error:", error);
+      logger.error("Update payout settings error:", error);
       return res.status(500).json({ message: "Failed to update payout settings" });
     }
   });
@@ -3314,9 +3440,31 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { formType = 'W-9', taxYear = new Date().getFullYear(), formData } = req.body;
+      if (!formData) return res.status(400).json({ message: 'Form data required' });
+
+      const [existing] = await db.select({ id: taxForms.id })
+        .from(taxForms)
+        .where(and(eq(taxForms.userId, req.user.id), eq(taxForms.taxYear, taxYear), eq(taxForms.formType, formType)))
+        .limit(1);
+
+      if (existing) {
+        await db.update(taxForms)
+          .set({ formData, status: 'submitted', submittedAt: new Date() })
+          .where(eq(taxForms.id, existing.id));
+      } else {
+        await db.insert(taxForms).values({
+          userId: req.user.id,
+          formType,
+          taxYear,
+          formData,
+          status: 'submitted',
+          submittedAt: new Date(),
+        });
+      }
       return res.json({ success: true, message: 'Tax info updated' });
     } catch (error) {
-      logger.info("Update tax info error:", error);
+      logger.error("Update tax info error:", error);
       return res.status(500).json({ message: "Failed to update tax info" });
     }
   });
@@ -3326,9 +3474,13 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json([]);
+      const rows = await db.select().from(royaltySplits)
+        .where(eq(royaltySplits.userId, req.user.id))
+        .orderBy(desc(royaltySplits.createdAt))
+        .limit(500);
+      return res.json(rows);
     } catch (error) {
-      logger.info("Royalty splits error:", error);
+      logger.error("Royalty splits error:", error);
       return res.status(500).json({ message: "Failed to fetch royalty splits" });
     }
   });
@@ -3338,16 +3490,27 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { collaboratorEmail, percentage, projectId } = req.body;
-      return res.json({
-        id: `split_${Date.now()}`,
+      const { collaboratorEmail, collaboratorName, percentage, projectId, role = 'collaborator' } = req.body;
+      if (!collaboratorEmail || !percentage) {
+        return res.status(400).json({ message: 'Collaborator email and percentage are required' });
+      }
+      if (percentage <= 0 || percentage > 100) {
+        return res.status(400).json({ message: 'Percentage must be between 1 and 100' });
+      }
+
+      const [split] = await db.insert(royaltySplits).values({
+        releaseId: projectId || 'general',
+        userId: req.user.id,
         collaboratorEmail,
+        collaboratorName: collaboratorName || collaboratorEmail.split('@')[0],
+        role,
         percentage,
-        projectId,
         status: 'pending',
-      });
+      }).returning();
+
+      return res.json(split);
     } catch (error) {
-      logger.info("Create split error:", error);
+      logger.error("Create split error:", error);
       return res.status(500).json({ message: "Failed to create royalty split" });
     }
   });
@@ -3357,9 +3520,17 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
+      const { splitId } = req.params;
+      const [existing] = await db.select({ id: royaltySplits.id, userId: royaltySplits.userId })
+        .from(royaltySplits).where(eq(royaltySplits.id, splitId)).limit(1);
+
+      if (!existing) return res.status(404).json({ message: 'Royalty split not found' });
+      if (existing.userId !== req.user.id) return res.status(403).json({ message: 'Not authorized' });
+
+      await db.delete(royaltySplits).where(eq(royaltySplits.id, splitId));
       return res.json({ success: true, message: 'Royalty split deleted' });
     } catch (error) {
-      logger.info("Delete split error:", error);
+      logger.error("Delete split error:", error);
       return res.status(500).json({ message: "Failed to delete royalty split" });
     }
   });
@@ -3369,12 +3540,29 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        downloadUrl: `/exports/royalties_${Date.now()}.csv`,
-      });
+      const { period = '30d', format = 'csv' } = req.body;
+      const daysMap: Record<string, number> = { '7d': 7, '30d': 30, '90d': 90, '1y': 365 };
+      const days = daysMap[period] ?? 30;
+      const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+
+      const rows = await db.select().from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, req.user.id), gte(royaltyTransactions.createdAt, since)))
+        .orderBy(desc(royaltyTransactions.createdAt));
+
+      if (format === 'csv') {
+        const csvHeader = 'Date,Platform,Release,Amount,Currency,Streams,Status\n';
+        const csvBody = rows.map(r =>
+          `${r.createdAt?.toISOString()},${r.platform || ''},${r.releaseId},${r.amount},${r.currency || 'usd'},${r.streamCount || 0},${r.status}`
+        ).join('\n');
+        const csv = csvHeader + csvBody;
+        res.setHeader('Content-Type', 'text/csv');
+        res.setHeader('Content-Disposition', `attachment; filename="royalties_${period}_${Date.now()}.csv"`);
+        return res.send(csv);
+      }
+
+      return res.json({ success: true, data: rows });
     } catch (error) {
-      logger.info("Export royalties error:", error);
+      logger.error("Export royalties error:", error);
       return res.status(500).json({ message: "Failed to export royalties" });
     }
   });
@@ -3384,14 +3572,16 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      return res.json({
-        success: true,
-        payoutId: `payout_${Date.now()}`,
-        message: 'Payout request submitted',
-      });
+      const { instantPayoutService } = await import("./services/instantPayoutService");
+      const balance = await instantPayoutService.calculateAvailableBalance(req.user.id);
+      if (balance <= 0) {
+        return res.status(400).json({ message: 'No available balance for payout' });
+      }
+      const result = await instantPayoutService.requestInstantPayout(req.user.id, { amount: balance });
+      return res.json({ success: true, payoutId: result?.id || `payout_${Date.now()}`, message: 'Payout request submitted', amount: balance });
     } catch (error) {
-      logger.info("Request payout error:", error);
-      return res.status(500).json({ message: "Failed to request payout" });
+      logger.error("Request payout error:", error);
+      return res.status(500).json({ message: "Failed to request payout. Please ensure your payment method is configured." });
     }
   });
 
@@ -3407,7 +3597,7 @@ export async function registerRoutes(
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
     } catch (error) {
-      logger.info("Connect Stripe error:", error);
+      logger.error("Connect Stripe error:", error);
       return res.status(500).json({ message: "Failed to connect bank account. Please try again." });
     }
   });
@@ -3432,7 +3622,7 @@ export async function registerRoutes(
 
       return res.json({ sessionId: session.id, url: session.url });
     } catch (error) {
-      logger.info("Create subscription error:", error);
+      logger.error("Create subscription error:", error);
       return res.status(500).json({ message: "Failed to create subscription" });
     }
   });
@@ -3666,7 +3856,7 @@ export async function registerRoutes(
         message: 'Your content has been optimized for maximum reach and engagement.',
       });
     } catch (error) {
-      logger.info("AI optimize content error:", error);
+      logger.error("AI optimize content error:", error);
       return res.status(500).json({ message: "Failed to optimize content" });
     }
   });
@@ -4055,14 +4245,14 @@ export async function registerRoutes(
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      logger.info('Error creating checkout session:', error);
+      logger.error('Error creating checkout session:', error);
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
     }
   });
 
   // REGISTER AFTER PAYMENT - Complete account creation after Stripe checkout
   // This endpoint verifies the Stripe session and creates the user account
-  app.post("/api/register-after-payment", async (req: Request, res: Response) => {
+  app.post("/api/register-after-payment", registerRateLimiter, async (req: Request, res: Response) => {
     try {
       if (!stripe) {
         return res.status(500).json({ error: 'Payment system not configured' });
@@ -4078,8 +4268,8 @@ export async function registerRoutes(
         return res.status(400).json({ error: 'You must accept the Terms of Service and Privacy Policy' });
       }
 
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password must be at least 8 characters long' });
       }
 
       // Retrieve and verify the Stripe checkout session
@@ -4156,7 +4346,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
       }
     } catch (error: any) {
-      logger.info('Error completing registration after payment:', error);
+      logger.error('Error completing registration after payment:', error);
 
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ error: 'Invalid payment session. Please try again.' });
