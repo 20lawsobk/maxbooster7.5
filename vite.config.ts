@@ -29,6 +29,12 @@ export default defineConfig({
     cssMinify: true,
     sourcemap: false,
     cssCodeSplit: true,
+    // Skip per-file gzip size reporting during build — saves 2-3s per build.
+    // Actual brotli+gzip is still done by script/build.ts after Vite finishes.
+    reportCompressedSize: false,
+    // Inline assets smaller than 8 kB (icons, tiny SVGs) directly into the JS/CSS
+    // bundle to eliminate extra round-trips on first load.
+    assetsInlineLimit: 8192,
     rollupOptions: {
       output: {
         chunkFileNames: "assets/[name]-[hash].js",
