@@ -499,6 +499,51 @@ class LabelGridService {
     return 'streaming';
   }
 
+  /**
+   * Retrieve all releases in the authenticated user's LabelGrid catalog.
+   *
+   * Uses GET /v1/releases (or the configured override) with the bearer token
+   * already scoped to this user (scope: user.view-catalog).  No external artist
+   * ID is required — the API returns every release distributed under this account.
+   *
+   * Optionally filter by DSP platform name (e.g. 'spotify', 'apple_music') so
+   * the caller can narrow the result without a client-side loop.
+   */
+  async getUserCatalog(platform?: string): Promise<LabelGridCatalogRelease[]> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn('[LabelGrid] API not configured — getUserCatalog unavailable');
+      return [];
+    }
+
+    const endpoint = this.getEndpoint('getUserCatalog', '/v1/releases');
+    this.logApiCall('GET', endpoint, { platform });
+
+    try {
+      const response = await this.retryWithBackoff(async () => {
+        return await this.client.get<
+          { releases: LabelGridCatalogRelease[] } | LabelGridCatalogRelease[]
+        >(endpoint, {
+          params: {
+            ...(platform ? { platform } : {}),
+            limit: 200,
+          },
+        });
+      });
+
+      const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
+        ? response.data
+        : (response.data as any)?.releases ?? [];
+
+      logger.info(`[LabelGrid] getUserCatalog: ${releases.length} release(s) returned`);
+      return releases;
+    } catch (err: any) {
+      logger.warn('[LabelGrid] getUserCatalog failed (non-fatal):', err?.message ?? err);
+      return [];
+    }
+  }
+
   async createRelease(releaseData: LabelGridRelease): Promise<LabelGridReleaseResponse> {
     await this.loadConfig();
 

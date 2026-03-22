@@ -742,11 +742,55 @@ class DistributionDataTransferService {
   }
 
   async getLinkedProfiles(userId: string): Promise<StreamingProfileData[]> {
-    const userProfiles = this.linkedProfiles.get(userId);
-    if (!userProfiles) {
-      return [];
+    // Hydrate from DB if the in-memory map is empty (e.g. after server restart).
+    if (!this.linkedProfiles.has(userId)) {
+      await this.hydrateProfilesFromStorage(userId);
     }
+    const userProfiles = this.linkedProfiles.get(userId);
+    if (!userProfiles) return [];
     return Array.from(userProfiles.values());
+  }
+
+  /**
+   * Load saved streaming profiles from the user's DB preferences into the
+   * in-memory map. Called lazily whenever the map is empty for a given user
+   * (typically on the first request after a server restart).
+   */
+  private async hydrateProfilesFromStorage(userId: string): Promise<void> {
+    try {
+      const user = await storage.getUser(userId);
+      if (!user) return;
+      const prefs = (user.preferences as Record<string, any>) || {};
+      const saved = prefs.streamingProfiles || {};
+      if (Object.keys(saved).length === 0) return;
+
+      if (!this.linkedProfiles.has(userId)) {
+        this.linkedProfiles.set(userId, new Map());
+      }
+      const userMap = this.linkedProfiles.get(userId)!;
+
+      for (const [platformId, data] of Object.entries(saved)) {
+        const p = data as any;
+        userMap.set(platformId, {
+          platformId,
+          artistId: p.artistId,
+          artistName: p.artistName || 'Unknown Artist',
+          profileUrl: p.profileUrl,
+          verified: p.verified || false,
+          followers: p.followers,
+          monthlyListeners: p.monthlyListeners,
+          totalStreams: p.totalStreams,
+          lastSyncedAt: p.lastSyncedAt,
+          lastSyncStatus: p.lastSyncStatus,
+          lastSyncMethod: p.lastSyncMethod,
+          syncCount: p.syncCount || 0,
+          consecutiveFailures: p.consecutiveFailures || 0,
+        });
+      }
+      logger.info(`[DataTransfer] Hydrated ${Object.keys(saved).length} profile(s) from DB for user ${userId}`);
+    } catch (err: any) {
+      logger.warn('[DataTransfer] Failed to hydrate profiles from storage:', err?.message);
+    }
   }
 
   async unlinkStreamingProfile(userId: string, platformId: string): Promise<boolean> {
@@ -1513,7 +1557,13 @@ class DistributionDataTransferService {
 
   private async fetchSpotifyAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
     const token = await this.getSpotifyToken();
-    if (!token) return [];
+    if (!token) {
+      // No Spotify API credentials configured — use MusicBrainz open catalog as
+      // a credential-free fallback.  MusicBrainz is the gold-standard music
+      // catalog with full artist discographies and no authentication required.
+      logger.info(`[DataTransfer] No Spotify credentials — using MusicBrainz fallback for artist ${artistId}`);
+      return this.fetchMusicBrainzAlbums(artistId, artistName);
+    }
 
     try {
       const results: ScannedRelease[] = [];
@@ -1567,6 +1617,97 @@ class DistributionDataTransferService {
       return results;
     } catch (err: any) {
       logger.error(`[DataTransfer] Spotify album scan failed for ${artistId}:`, err);
+      return [];
+    }
+  }
+
+  /**
+   * MusicBrainz open-catalog fallback for Spotify scans.
+   *
+   * MusicBrainz is a freely licensed music encyclopedia — no API credentials
+   * required.  We resolve the Spotify artist ID to a MusicBrainz MBID via their
+   * URL relationship lookup, then fetch all official release-groups for that artist.
+   *
+   * Rate-limit note: MusicBrainz asks for ≤1 req/s for unauthenticated callers.
+   * We stagger two calls with a short delay and include a descriptive User-Agent
+   * as required by their terms of service.
+   */
+  private async fetchMusicBrainzAlbums(spotifyArtistId: string, artistName: string): Promise<ScannedRelease[]> {
+    const UA = 'MaxBooster/1.0 (maxbooster.replit.app; music career management platform)';
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+    try {
+      // ── Step 1: Resolve Spotify artist ID → MusicBrainz MBID ──────────────
+      let mbid: string | null = null;
+
+      try {
+        const spotifyUrl = `https://open.spotify.com/artist/${spotifyArtistId}`;
+        const urlResp = await fetch(
+          `https://musicbrainz.org/ws/2/url?resource=${encodeURIComponent(spotifyUrl)}&inc=artist-rels&fmt=json`,
+          { headers: { 'User-Agent': UA } }
+        );
+        if (urlResp.ok) {
+          const urlData = await urlResp.json() as any;
+          const artistRel = (urlData.relations || []).find((r: any) => r['target-type'] === 'artist');
+          mbid = artistRel?.artist?.id || null;
+        }
+      } catch { /* non-fatal — fall through to name search */ }
+
+      // ── Step 2: Fall back to name search if URL lookup missed ─────────────
+      if (!mbid && artistName && artistName !== 'Unknown Artist') {
+        await delay(300); // respect rate limit
+        try {
+          const searchResp = await fetch(
+            `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(artistName)}&fmt=json&limit=5`,
+            { headers: { 'User-Agent': UA } }
+          );
+          if (searchResp.ok) {
+            const searchData = await searchResp.json() as any;
+            mbid = searchData.artists?.[0]?.id || null;
+          }
+        } catch { /* non-fatal */ }
+      }
+
+      if (!mbid) {
+        logger.warn(`[DataTransfer] MusicBrainz: could not resolve MBID for Spotify artist ${spotifyArtistId}`);
+        return [];
+      }
+
+      // ── Step 3: Fetch release-groups for this artist ──────────────────────
+      await delay(300);
+      const rgResp = await fetch(
+        `https://musicbrainz.org/ws/2/release-group?artist=${mbid}&type=album%7Csingle%7Cep&fmt=json&limit=100`,
+        { headers: { 'User-Agent': UA } }
+      );
+      if (!rgResp.ok) return [];
+
+      const rgData = await rgResp.json() as any;
+      const groups: any[] = rgData['release-groups'] || [];
+
+      const normalizeType = (primary: string, secondary: string[]): 'single' | 'EP' | 'album' => {
+        const t = (primary || '').toLowerCase();
+        if (t === 'single') return 'single';
+        if (t === 'ep' || (secondary || []).map((s: string) => s.toLowerCase()).includes('ep')) return 'EP';
+        return 'album';
+      };
+
+      const results: ScannedRelease[] = groups.map((rg: any) => ({
+        id: `mb-${rg.id}`,
+        externalId: rg.id,
+        platformId: 'spotify',
+        title: rg.title,
+        artistName,
+        releaseType: normalizeType(rg['primary-type'] || 'album', rg['secondary-types'] || []),
+        releaseDate: rg['first-release-date'] || null,
+        trackCount: 1,
+        coverUrl: undefined,
+        platformUrl: `https://open.spotify.com/artist/${spotifyArtistId}`,
+      }));
+
+      logger.info(`[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid})`);
+      return results;
+    } catch (err: any) {
+      logger.error(`[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`, err?.message);
       return [];
     }
   }
@@ -1765,6 +1906,12 @@ class DistributionDataTransferService {
   }
 
   async scanReleasesFromProfile(userId: string, platformId: string): Promise<ScannedRelease[]> {
+    // Hydrate from DB first if the in-memory map is missing this user/platform
+    // (common after a server restart when the map hasn't been populated yet).
+    if (!this.linkedProfiles.has(userId) || !this.linkedProfiles.get(userId)!.has(platformId)) {
+      await this.hydrateProfilesFromStorage(userId);
+    }
+
     const userProfiles = this.linkedProfiles.get(userId);
     if (!userProfiles || !userProfiles.has(platformId)) {
       throw new Error('Profile not linked');
@@ -1777,16 +1924,19 @@ class DistributionDataTransferService {
     logger.info(`[DataTransfer] Scanning releases via LabelGrid for ${platformId} / user ${userId}: ${artistId}`);
 
     // ── LabelGrid primary path ──────────────────────────────────────────────
-    // When the LabelGrid API is configured it is the authoritative source for
-    // an artist's distributed catalog across all DSPs.
+    // LabelGrid is the authoritative distribution source covering Spotify and
+    // 97+ other DSPs.  We call getUserCatalog() which uses the authenticated
+    // bearer token (no external artist ID needed) — so it works regardless of
+    // whether the Spotify artist ID matches a LabelGrid internal ID.
     if (labelGridService.isApiConfigured()) {
       try {
-        const lgReleases = await labelGridService.getArtistCatalog(artistId, platformId);
+        // Primary: authenticated user's full catalog (covers all linked platforms)
+        const lgReleases = await labelGridService.getUserCatalog();
         if (lgReleases.length > 0) {
-          logger.info(`[DataTransfer] LabelGrid returned ${lgReleases.length} releases for ${platformId}`);
+          logger.info(`[DataTransfer] LabelGrid getUserCatalog returned ${lgReleases.length} releases`);
           const normalizeType = (t: string): 'single' | 'EP' | 'album' => {
-            if (t === 'ep') return 'EP';
-            if (t === 'single') return 'single';
+            if ((t || '').toLowerCase() === 'ep') return 'EP';
+            if ((t || '').toLowerCase() === 'single') return 'single';
             return 'album';
           };
           return lgReleases.map((r: LabelGridCatalogRelease): ScannedRelease => ({
@@ -1810,8 +1960,42 @@ class DistributionDataTransferService {
             })),
           }));
         }
-        // LabelGrid returned 0 releases — may mean this artist isn't distributed
-        // through LabelGrid yet. Fall through to direct platform scan.
+
+        // Secondary: artist-specific catalog lookup (requires LabelGrid artist ID).
+        // Useful if the user has multiple artist profiles on the same account.
+        const lgArtistReleases = await labelGridService.getArtistCatalog(artistId, platformId);
+        if (lgArtistReleases.length > 0) {
+          logger.info(`[DataTransfer] LabelGrid getArtistCatalog returned ${lgArtistReleases.length} releases for ${platformId}`);
+          const normalizeType = (t: string): 'single' | 'EP' | 'album' => {
+            if ((t || '').toLowerCase() === 'ep') return 'EP';
+            if ((t || '').toLowerCase() === 'single') return 'single';
+            return 'album';
+          };
+          return lgArtistReleases.map((r: LabelGridCatalogRelease): ScannedRelease => ({
+            id: r.id,
+            title: r.title,
+            artistName: r.artist,
+            releaseType: normalizeType(r.releaseType),
+            releaseDate: r.releaseDate || null,
+            trackCount: r.trackCount,
+            coverUrl: r.coverUrl || undefined,
+            platformUrl: undefined,
+            platformId,
+            externalId: r.id,
+            upc: r.upc || undefined,
+            genre: r.genre || undefined,
+            tracks: (r.tracks || []).map((t) => ({
+              title: t.title,
+              isrc: t.isrc || undefined,
+              trackNumber: t.trackNumber,
+              duration: t.duration,
+            })),
+          }));
+        }
+
+        // Both LabelGrid paths returned 0 — the account may have no distributed
+        // releases yet, or the releases aren't indexed.  Fall through to direct
+        // platform scan as a best-effort fallback.
         logger.info(`[DataTransfer] LabelGrid returned 0 releases for ${platformId}; falling back to direct platform scan`);
       } catch (lgErr: any) {
         logger.warn(`[DataTransfer] LabelGrid catalog scan failed for ${platformId}, falling back to direct scan:`, lgErr?.message ?? lgErr);
