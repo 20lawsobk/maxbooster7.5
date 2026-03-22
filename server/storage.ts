@@ -502,12 +502,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialCalendarStats(userId: string): Promise<any> {
-    const events = await this.getSocialCalendarEvents(userId);
+    // Use a single SQL GROUP BY aggregation instead of fetching up to 500 rows
+    // into JS and filtering — O(1) network, constant memory.
+    const rows = await db
+      .select({
+        status: contentCalendar.status,
+        count: sql<number>`COUNT(*)::int`,
+      })
+      .from(contentCalendar)
+      .where(eq(contentCalendar.userId, userId))
+      .groupBy(contentCalendar.status);
+
+    const counts = Object.fromEntries(rows.map(r => [r.status, r.count]));
     return {
-      totalScheduled: events.filter(e => e.status === 'scheduled').length,
-      pendingApproval: events.filter(e => e.status === 'pending_approval').length,
-      published: events.filter(e => e.status === 'published').length,
-      drafts: events.filter(e => e.status === 'draft').length,
+      totalScheduled: counts['scheduled'] ?? 0,
+      pendingApproval: counts['pending_approval'] ?? 0,
+      published: counts['published'] ?? 0,
+      drafts: counts['draft'] ?? 0,
     };
   }
 
@@ -1040,22 +1051,21 @@ export class DatabaseStorage implements IStorage {
 
     logger.info(`🎹 Seeding plugin catalog (${currentCount} existing, ${ALL_PLUGINS.length} total)...`);
     
-    let inserted = 0;
-    for (const plugin of ALL_PLUGINS) {
-      const result = await db.insert(pluginCatalog).values({
-        id: plugin.id,
-        name: plugin.name,
-        slug: plugin.slug,
-        type: plugin.type,
-        category: plugin.category,
-        vendor: plugin.author || 'Max Booster',
-        version: plugin.version,
-        description: plugin.description,
-        isBuiltIn: true,
-        isActive: true,
-      }).onConflictDoNothing();
-      if (result.rowCount && result.rowCount > 0) inserted++;
-    }
+    // Bulk-insert all plugins in a single round-trip instead of N separate queries.
+    const pluginRows = ALL_PLUGINS.map(plugin => ({
+      id: plugin.id,
+      name: plugin.name,
+      slug: plugin.slug,
+      type: plugin.type,
+      category: plugin.category,
+      vendor: plugin.author || 'Max Booster',
+      version: plugin.version,
+      description: plugin.description,
+      isBuiltIn: true,
+      isActive: true,
+    }));
+    const result = await db.insert(pluginCatalog).values(pluginRows).onConflictDoNothing();
+    const inserted = result.rowCount ?? 0;
     
     logger.info(`   ✓ Plugin catalog: ${inserted} new plugins added (${currentCount + inserted} total)`);
   }
@@ -2046,9 +2056,8 @@ export class DatabaseStorage implements IStorage {
 
     if (snapshots.length > keepCount) {
       const idsToDelete = snapshots.slice(keepCount).map(s => s.id);
-      for (const id of idsToDelete) {
-        await db.delete(collabSnapshots).where(eq(collabSnapshots.id, id));
-      }
+      // Single bulk DELETE instead of N separate round-trips.
+      await db.delete(collabSnapshots).where(inArray(collabSnapshots.id, idsToDelete));
     }
   }
 

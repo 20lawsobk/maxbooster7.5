@@ -178,6 +178,15 @@ const PUBLIC_ONLY_ROUTES = [
 ];
 const PUBLIC_ONLY_PREFIXES = ['/blog/', '/register/payment/', '/register/'];
 
+// Scroll the page to the top whenever the user navigates to a new route.
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [location]);
+  return null;
+}
+
 function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
@@ -333,6 +342,7 @@ function AppWithKeyboardShortcuts() {
 
   return (
     <>
+      <ScrollToTop />
       <SkipLinks />
       <KeyboardShortcutsDialog open={showShortcutsDialog} onOpenChange={setShowShortcutsDialog} />
       <Router />

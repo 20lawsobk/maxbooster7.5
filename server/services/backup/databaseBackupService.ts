@@ -93,6 +93,16 @@ export class DatabaseBackupService {
       let pipelineDone = false;
       let exited = false;
       let exitCode: number | null = null;
+      let settled = false;
+
+      // Ensure the write stream is always closed when we reject — otherwise the
+      // file descriptor leaks until the next GC cycle.
+      function fail(err: Error) {
+        if (settled) return;
+        settled = true;
+        writeStream.destroy();
+        reject(err);
+      }
 
       pgDump.stderr.on('data', (d) => { errorOutput += d.toString(); });
 
@@ -100,11 +110,11 @@ export class DatabaseBackupService {
         pipelineDone = true;
         check();
       });
-      writeStream.on('error', (err) => reject(err));
+      writeStream.on('error', (err) => fail(err));
 
       // Absorb EPIPE on pgDump stdout in case writeStream closes early
       pgDump.stdout.on('error', (e: NodeJS.ErrnoException) => {
-        if (e.code !== 'EPIPE' && e.code !== 'ECONNRESET') reject(e);
+        if (e.code !== 'EPIPE' && e.code !== 'ECONNRESET') fail(e);
       });
 
       pgDump.stdout.pipe(writeStream);
@@ -115,10 +125,12 @@ export class DatabaseBackupService {
         check();
       });
 
-      pgDump.on('error', reject);
+      pgDump.on('error', (err) => fail(err));
 
       function check() {
         if (!pipelineDone || !exited) return;
+        if (settled) return;
+        settled = true;
         if (exitCode === 0) resolve();
         else reject(new Error(`pg_dump failed (code ${exitCode}): ${errorOutput}`));
       }

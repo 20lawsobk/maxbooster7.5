@@ -23,12 +23,40 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 
 router.use(requireAdmin);
 
+// Allowlist of admin-configurable platform setting keys.
+// Only keys in this set may be written via PUT /settings.
+const ALLOWED_SETTING_KEYS = new Set([
+  'emailNotifications',
+  'maintenanceMode',
+  'userRegistrationEnabled',
+  'apiRateLimit',
+  'webhookEndpoint',
+  'maxUploadSizeMb',
+  'defaultSubscriptionPlan',
+  'trialDurationDays',
+  'stripeWebhookEnabled',
+  'featureFlags',
+  'supportEmail',
+  'platformName',
+  'contentModerationEnabled',
+  'analyticsRetentionDays',
+  'maxUsersPerWorkspace',
+  'allowExternalCollaborators',
+  'aiContentGenerationEnabled',
+  'distributionEnabled',
+  'advertisingEnabled',
+]);
+
 // ============================================================
 router.put('/settings', async (req, res) => {
   try {
     const body = req.body as Record<string, unknown>;
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return res.status(400).json({ error: 'Request body must be an object' });
+    }
+    const unknown = Object.keys(body).filter(k => !ALLOWED_SETTING_KEYS.has(k));
+    if (unknown.length > 0) {
+      return res.status(400).json({ error: 'Unknown setting keys', keys: unknown });
     }
     await Promise.all(
       Object.entries(body).map(([key, value]) => updateSetting(key, value))
@@ -47,8 +75,8 @@ router.put('/settings', async (req, res) => {
 router.get('/users', async (req, res) => {
   try {
     const { page = '1', limit = '20', search = '', status, plan } = req.query;
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
+    const pageNum = Math.max(1, parseInt(page as string, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit as string, 10) || 20));
     const offset = (pageNum - 1) * limitNum;
 
     let conditions = [];

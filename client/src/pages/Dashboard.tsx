@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -794,10 +795,14 @@ function DashboardContent({ user }: { user: any }) {
             </div>
 
             {/* Artist Progress Dashboard */}
-            <ArtistProgressDashboard />
+            <ErrorBoundary>
+              <ArtistProgressDashboard />
+            </ErrorBoundary>
 
             {/* Revenue Forecast */}
-            <RevenueForecast />
+            <ErrorBoundary>
+              <RevenueForecast />
+            </ErrorBoundary>
 
             {/* Upcoming Releases */}
             <UpcomingReleasesSection />

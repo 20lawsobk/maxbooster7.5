@@ -89,6 +89,10 @@ const PLAGIARISM_THRESHOLDS = {
 };
 
 export class AudioFingerprintService {
+  // Cap in-memory store to prevent unbounded growth in long-running processes.
+  // JS Map preserves insertion order, so the first key is always the oldest.
+  private static readonly MAX_FINGERPRINTS = 5_000;
+
   private fingerprintStore: Map<string, AudioFingerprint> = new Map();
   private releaseIndex: Map<string, string[]> = new Map();
   private hashIndex: Map<string, string[]> = new Map();
@@ -170,6 +174,23 @@ export class AudioFingerprintService {
   }
 
   private storeFingerprint(fingerprint: AudioFingerprint): void {
+    // Evict oldest entry when the store hits its cap (LRU-lite: Map preserves insertion order).
+    if (this.fingerprintStore.size >= AudioFingerprintService.MAX_FINGERPRINTS) {
+      const oldestId = this.fingerprintStore.keys().next().value;
+      if (oldestId) {
+        const oldest = this.fingerprintStore.get(oldestId)!;
+        this.fingerprintStore.delete(oldestId);
+        // Clean up secondary indexes for evicted entry.
+        const rIds = this.releaseIndex.get(oldest.releaseId)?.filter(id => id !== oldestId);
+        if (rIds?.length) this.releaseIndex.set(oldest.releaseId, rIds);
+        else this.releaseIndex.delete(oldest.releaseId);
+        const hKey = oldest.fingerprint.substring(0, 16);
+        const hIds = this.hashIndex.get(hKey)?.filter(id => id !== oldestId);
+        if (hIds?.length) this.hashIndex.set(hKey, hIds);
+        else this.hashIndex.delete(hKey);
+      }
+    }
+
     this.fingerprintStore.set(fingerprint.id, fingerprint);
     
     const releaseFingerprints = this.releaseIndex.get(fingerprint.releaseId) || [];

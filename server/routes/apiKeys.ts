@@ -65,10 +65,14 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Key name is required' });
     }
 
+    const VALID_SCOPES = new Set(['read', 'write', 'analytics', 'distribution', 'social', 'billing', 'admin']);
     const trimmedName = name.trim().substring(0, 100);
-    const validScopes = Array.isArray(scopes)
-      ? scopes.filter((s: any) => typeof s === 'string')
-      : ['read'];
+    const requestedScopes = Array.isArray(scopes) ? scopes : ['read'];
+    const invalidScopes = requestedScopes.filter((s: any) => typeof s !== 'string' || !VALID_SCOPES.has(s));
+    if (invalidScopes.length > 0) {
+      return res.status(400).json({ error: 'Invalid scopes', invalid: invalidScopes, valid: [...VALID_SCOPES] });
+    }
+    const validScopes = requestedScopes as string[];
 
     const rawKey = generateApiKey();
     const keyHash = hashApiKey(rawKey);

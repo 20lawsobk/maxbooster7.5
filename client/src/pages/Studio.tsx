@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { StudioOneDAW } from '@/components/studio/StudioOneDAW';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { Loader2 } from 'lucide-react';
 import { useParams } from 'wouter';
 import { dawCore } from '@/lib/daw';
@@ -32,7 +33,9 @@ export default function Studio() {
   return (
     <AppLayout noPadding title="Studio">
       <div className="h-full w-full relative">
-        <StudioOneDAW projectId={projectId} />
+        <ErrorBoundary>
+          <StudioOneDAW projectId={projectId} />
+        </ErrorBoundary>
       </div>
     </AppLayout>
   );

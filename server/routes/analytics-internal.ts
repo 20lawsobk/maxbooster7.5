@@ -73,7 +73,8 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
             )
           )
           .groupBy(sql`DATE(${analytics.date})`)
-          .orderBy(sql`DATE(${analytics.date})`);
+          .orderBy(sql`DATE(${analytics.date})`)
+          .limit(365);
 
         const values = historicalData.map(d => Number(d.value) || 0);
         const current = values.length > 0 ? values[values.length - 1] : 0;
@@ -310,7 +311,8 @@ router.get('/ai/detect-anomalies', async (req: Request, res: Response) => {
         )
       )
       .groupBy(sql`DATE(${analytics.date})`)
-      .orderBy(sql`DATE(${analytics.date})`);
+      .orderBy(sql`DATE(${analytics.date})`)
+      .limit(90);
 
     const anomalies = [];
 
@@ -604,7 +606,8 @@ router.get('/music/fanbase', async (req: Request, res: Response) => {
       .from(analytics)
       .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)))
       .groupBy(analytics.platform)
-      .orderBy(sql`SUM(${analytics.streams}) DESC`);
+      .orderBy(sql`SUM(${analytics.streams}) DESC`)
+      .limit(100);
 
     const totalRecentStreams = platformRows.reduce((s, r) => s + Number(r.streams), 0);
     const totalRecentListeners = platformRows.reduce((s, r) => s + Number(r.listeners), 0);
@@ -960,7 +963,8 @@ router.get('/global-ranking', async (req: Request, res: Response) => {
       })
       .from(analytics)
       .where(eq(analytics.userId, userId))
-      .groupBy(analytics.platform);
+      .groupBy(analytics.platform)
+      .limit(100);
 
     const platformMap: Record<string, { streams: number; revenue: number; listeners: number }> = {};
     for (const row of platformAnalytics) {
@@ -1104,7 +1108,8 @@ router.post('/natural-language-query', async (req: Request, res: Response) => {
           )
         )
         .groupBy(sql`DATE(${analytics.date})`)
-        .orderBy(sql`DATE(${analytics.date})`);
+        .orderBy(sql`DATE(${analytics.date})`)
+        .limit(90);
 
       return res.json({
         success: true,

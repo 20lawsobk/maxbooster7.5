@@ -321,7 +321,11 @@ router.get('/unified', async (req: Request, res: Response) => {
     
     const userId = req.user?.id;
     const numLimit = Math.min(Number(limit) || 20, 100);
-    const numOffset = Number(offset) || 0;
+    const numOffset = Math.max(0, Number(offset) || 0);
+
+    if (typeof q === 'string' && q.length > 200) {
+      return res.status(400).json({ error: 'Search query must be 200 characters or fewer' });
+    }
     
     const filters = {
       genre: genre as string,
@@ -409,7 +413,8 @@ router.get('/unified', async (req: Request, res: Response) => {
                        results.projects.total + results.releases.total;
     
     if (userId && q) {
-      await db.insert(searchHistory).values({ userId, query: q, resultCount: totalCount }).catch(() => {});
+      await db.insert(searchHistory).values({ userId, query: q, resultCount: totalCount })
+        .catch((err: unknown) => logger.warn('Search history insert failed (non-critical):', err));
     }
     
     res.json({

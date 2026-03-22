@@ -92,7 +92,12 @@ export const analytics = pgTable("analytics", {
   platform: text("platform"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  // Composite index used by time-range analytics queries (most common access pattern).
+  index("analytics_user_id_date_idx").on(t.userId, t.date),
+  // Secondary index for platform-filtered aggregations.
+  index("analytics_user_id_platform_idx").on(t.userId, t.platform),
+]);
 
 export const insertAnalyticsSchema = createInsertSchema(analytics).omit({ id: true, createdAt: true });
 export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
@@ -144,7 +149,10 @@ export const projects = pgTable("projects", {
   bitDepth: integer("bit_depth").default(24),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => [
+  // Supports the default project listing query: WHERE user_id = ? ORDER BY updated_at DESC.
+  index("projects_user_id_updated_at_idx").on(t.userId, t.updatedAt),
+]);
 
 export const insertProjectSchema = createInsertSchema(projects).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertProject = z.infer<typeof insertProjectSchema>;
@@ -255,7 +263,10 @@ export const releases = pgTable("releases", {
   artworkUrl: text("artwork_url"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  // Supports the default release listing query: WHERE user_id = ? ORDER BY created_at DESC.
+  index("releases_user_id_created_at_idx").on(t.userId, t.createdAt),
+]);
 
 export const insertReleaseSchema = createInsertSchema(releases).omit({ id: true, createdAt: true });
 export type InsertRelease = z.infer<typeof insertReleaseSchema>;
@@ -1574,7 +1585,12 @@ export const posts = pgTable("posts", {
   platformPostId: text("platform_post_id"),
   engagement: jsonb("engagement"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  // Supports the default post listing query: WHERE user_id = ? ORDER BY created_at DESC.
+  index("posts_user_id_created_at_idx").on(t.userId, t.createdAt),
+  // Supports the scheduled post lookup: WHERE user_id = ? AND status IN ('scheduled','pending').
+  index("posts_user_id_scheduled_at_idx").on(t.userId, t.scheduledAt),
+]);
 
 // ============================================================================
 // AUDIO CLIPS (Studio)
@@ -2515,7 +2531,12 @@ export const contentCalendar = pgTable("content_calendar", {
   campaignId: varchar("campaign_id"),
   publishedAt: timestamp("published_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => [
+  // Supports calendar event listing: WHERE user_id = ? ORDER BY scheduled_at DESC.
+  index("content_calendar_user_id_scheduled_at_idx").on(t.userId, t.scheduledAt),
+  // Supports the stats aggregation: WHERE user_id = ? GROUP BY status.
+  index("content_calendar_user_id_status_idx").on(t.userId, t.status),
+]);
 
 export type ContentCalendarEntry = typeof contentCalendar.$inferSelect;
 export const insertContentCalendarSchema = createInsertSchema(contentCalendar).omit({ id: true, createdAt: true });

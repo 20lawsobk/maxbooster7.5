@@ -845,7 +845,13 @@ router.patch(
         return res.status(404).json({ error: 'Campaign not found' });
       }
 
-      const data = hyperFollowSchema.partial().parse(JSON.parse(req.body.data || '{}'));
+      let parsedHfData: unknown;
+      try {
+        parsedHfData = JSON.parse(req.body.data || '{}');
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON in data field' });
+      }
+      const data = hyperFollowSchema.partial().parse(parsedHfData);
 
       let headerImageUrl: string | null | undefined = data.headerImage || campaign.imageUrl;
       if (file) {
@@ -2178,7 +2184,13 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
     
     let data;
     if (req.body.data) {
-      data = duplicateCheckSchema.parse(JSON.parse(req.body.data));
+      let parsedBody: unknown;
+      try {
+        parsedBody = JSON.parse(req.body.data);
+      } catch {
+        return res.status(400).json({ error: 'Invalid JSON in data field' });
+      }
+      data = duplicateCheckSchema.parse(parsedBody);
     } else {
       data = duplicateCheckSchema.parse(req.body);
     }

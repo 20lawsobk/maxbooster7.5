@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Link, useLocation } from 'wouter';
 import { useTranslation } from 'react-i18next';
@@ -73,6 +73,14 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   const { user } = useAuth();
   const [location] = useLocation();
   const { t } = useTranslation();
+  const [isDesktop, setIsDesktop] = useState(() => window.innerWidth >= 1024);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   useEffect(() => {
     if (!isMobileOpen) return;
@@ -99,7 +107,11 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   }
 
   const isAdmin = user.role === 'admin';
-  const visibleNavItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+  // Memoize so this doesn't re-compute on every render triggered by location changes.
+  const visibleNavItems = useMemo(
+    () => navItems.filter((item) => !item.adminOnly || isAdmin),
+    [isAdmin]
+  );
 
   return (
     <>
@@ -108,9 +120,10 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
           onClick={onMobileClose}
+          onKeyDown={(e) => { if (e.key === 'Escape' || e.key === 'Enter') onMobileClose?.(); }}
           onTouchEnd={(e) => { e.preventDefault(); onMobileClose?.(); }}
           role="button"
-          tabIndex={-1}
+          tabIndex={0}
           aria-label="Close sidebar"
           data-testid="sidebar-overlay"
         />
@@ -124,7 +137,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
         )}
         role="navigation"
         aria-label="Main navigation"
-        aria-hidden={!isMobileOpen}
+        aria-hidden={!isDesktop && !isMobileOpen}
       >
         {/* Sidebar header */}
         <div className="px-4 py-5 border-b border-white/5">

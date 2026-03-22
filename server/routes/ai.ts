@@ -424,7 +424,7 @@ router.get('/models/:modelId/performance', requireAuth, async (req: Request, res
   try {
     const { modelId } = req.params;
 
-    const versions = await db.select().from(aiModelVersions).where(eq(aiModelVersions.modelId, modelId));
+    const versions = await db.select().from(aiModelVersions).where(eq(aiModelVersions.modelId, modelId)).limit(100);
     const [model] = await db.select().from(aiModels).where(eq(aiModels.id, modelId)).limit(1);
 
     res.json({

@@ -58,7 +58,20 @@ export class QueueBackpressureManager extends EventEmitter {
     logger.info('🛑 Stopped backpressure monitoring');
   }
 
+  private _checkInFlight = false;
+
   private async checkBackpressure(): Promise<void> {
+    // Prevent overlapping checks when a check takes longer than the interval.
+    if (this._checkInFlight) return;
+    this._checkInFlight = true;
+    try {
+      await this._doCheckBackpressure();
+    } finally {
+      this._checkInFlight = false;
+    }
+  }
+
+  private async _doCheckBackpressure(): Promise<void> {
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = memoryUsage.heapUsed / 1024 / 1024;
 
