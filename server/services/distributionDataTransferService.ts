@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { createHash } from 'crypto';
 import { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuitBreaker';
 import { labelGridService, type LabelGridCatalogRelease } from './labelgrid-service';
+import { DISTRIBUTION_PLATFORMS } from '../seed/distributionPlatforms.js';
 
 export const SUPPORTED_DISTRIBUTORS = [
   { id: 'distrokid', name: 'DistroKid', importFormat: 'csv', exportUrl: 'https://distrokid.com/stats/' },
@@ -21,18 +22,156 @@ export const SUPPORTED_DISTRIBUTORS = [
   { id: 'manual', name: 'Manual Entry', importFormat: 'manual', exportUrl: null },
 ] as const;
 
-export const STREAMING_PLATFORMS = [
-  { id: 'spotify', name: 'Spotify', profileType: 'spotify_artist_id', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'apple_music', name: 'Apple Music', profileType: 'apple_artist_id', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'amazon_music', name: 'Amazon Music', profileType: 'amazon_artist_asin', apiSupported: true, syncMethod: 'manual' as const },
-  { id: 'youtube_music', name: 'YouTube Music', profileType: 'youtube_channel_id', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'deezer', name: 'Deezer', profileType: 'deezer_artist_id', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'tidal', name: 'Tidal', profileType: 'tidal_artist_id', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'soundcloud', name: 'SoundCloud', profileType: 'soundcloud_permalink', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'bandcamp', name: 'Bandcamp', profileType: 'bandcamp_url', apiSupported: true, syncMethod: 'scrape' as const },
-  { id: 'audiomack', name: 'Audiomack', profileType: 'audiomack_url', apiSupported: true, syncMethod: 'api' as const },
-  { id: 'beatport', name: 'Beatport', profileType: 'beatport_artist_id', apiSupported: true, syncMethod: 'manual' as const },
-] as const;
+/**
+ * Per-platform scanner configuration.
+ *
+ * syncMethod:
+ *   'api'    — dedicated scanner using the platform's own public API
+ *   'scrape' — HTML scraping (no official API available)
+ *   'proxy'  — use iTunes as a proxy (all DistroKid releases land on Apple
+ *              Music simultaneously, so the iTunes catalog is a faithful mirror)
+ *   'manual' — no automated catalog retrieval; user must enter data manually
+ *
+ * scannerAlias — redirect to another scanner key (e.g. 'itunes' → 'apple_music')
+ */
+const PLATFORM_SCANNER_CONFIG: Record<string, {
+  profileType: string;
+  syncMethod: 'api' | 'scrape' | 'proxy' | 'manual';
+  scannerAlias?: string;
+}> = {
+  'spotify':               { profileType: 'spotify_artist_id',       syncMethod: 'api' },
+  'apple-music':           { profileType: 'apple_artist_id',         syncMethod: 'api',    scannerAlias: 'apple_music' },
+  'itunes':                { profileType: 'apple_artist_id',         syncMethod: 'api',    scannerAlias: 'apple_music' },
+  'amazon-music':          { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
+  'tidal':                 { profileType: 'tidal_artist_id',         syncMethod: 'proxy' },
+  'deezer':                { profileType: 'deezer_artist_id',        syncMethod: 'api' },
+  'youtube-music':         { profileType: 'youtube_channel_id',      syncMethod: 'proxy' },
+  'pandora':               { profileType: 'pandora_artist_id',       syncMethod: 'proxy' },
+  'iheartradio':           { profileType: 'iheartradio_artist_id',   syncMethod: 'proxy' },
+  'napster':               { profileType: 'napster_artist_id',       syncMethod: 'proxy' },
+  'beatport':              { profileType: 'beatport_artist_id',      syncMethod: 'manual' },
+  'juno-download':         { profileType: 'juno_artist_id',          syncMethod: 'manual' },
+  'bandcamp':              { profileType: 'bandcamp_url',            syncMethod: 'scrape' },
+  'soundcloud':            { profileType: 'soundcloud_permalink',    syncMethod: 'api' },
+  'audiomack':             { profileType: 'audiomack_url',           syncMethod: 'api' },
+  'traxsource':            { profileType: 'traxsource_artist_id',    syncMethod: 'manual' },
+  'netease-cloud-music':   { profileType: 'netease_artist_id',       syncMethod: 'proxy' },
+  'qq-music':              { profileType: 'qq_artist_id',            syncMethod: 'proxy' },
+  'kugou':                 { profileType: 'kugou_artist_id',         syncMethod: 'proxy' },
+  'kuwo':                  { profileType: 'kuwo_artist_id',          syncMethod: 'proxy' },
+  'kuaishou':              { profileType: 'kuaishou_artist_id',      syncMethod: 'proxy' },
+  'jiosaavn':              { profileType: 'jiosaavn_artist_id',      syncMethod: 'proxy' },
+  'saavn':                 { profileType: 'saavn_artist_id',         syncMethod: 'proxy' },
+  'gaana':                 { profileType: 'gaana_artist_id',         syncMethod: 'proxy' },
+  'anghami':               { profileType: 'anghami_artist_id',       syncMethod: 'proxy' },
+  'boomplay':              { profileType: 'boomplay_artist_id',      syncMethod: 'proxy' },
+  'joox':                  { profileType: 'joox_artist_id',          syncMethod: 'proxy' },
+  'kkbox':                 { profileType: 'kkbox_artist_id',         syncMethod: 'proxy' },
+  'awa':                   { profileType: 'awa_artist_id',           syncMethod: 'proxy' },
+  'flo':                   { profileType: 'flo_artist_id',           syncMethod: 'proxy' },
+  'melon':                 { profileType: 'melon_artist_id',         syncMethod: 'proxy' },
+  'yandex-music':          { profileType: 'yandex_artist_id',        syncMethod: 'proxy' },
+  'vk-music':              { profileType: 'vk_artist_id',            syncMethod: 'proxy' },
+  'claro-musica':          { profileType: 'claro_artist_id',         syncMethod: 'proxy' },
+  'trebel':                { profileType: 'trebel_artist_id',        syncMethod: 'proxy' },
+  'tiktok':                { profileType: 'tiktok_unique_id',        syncMethod: 'manual' },
+  'meta-library':          { profileType: 'meta_page_id',            syncMethod: 'manual' },
+  'instagram':             { profileType: 'instagram_handle',        syncMethod: 'manual' },
+  'facebook':              { profileType: 'facebook_page_id',        syncMethod: 'manual' },
+  'snapchat':              { profileType: 'snapchat_handle',         syncMethod: 'manual' },
+  'youtube-content-id':    { profileType: 'youtube_channel_id',      syncMethod: 'manual' },
+  'twitch':                { profileType: 'twitch_channel',          syncMethod: 'manual' },
+  'soundexchange':         { profileType: 'soundexchange_id',        syncMethod: 'manual' },
+  'peloton':               { profileType: 'peloton_artist_id',       syncMethod: 'proxy' },
+  'soundtrack-your-brand': { profileType: 'syb_artist_id',           syncMethod: 'proxy' },
+  'pretzel-rocks':         { profileType: 'pretzel_artist_id',       syncMethod: 'proxy' },
+  'roblox':                { profileType: 'roblox_creator_id',       syncMethod: 'manual' },
+  'amazon-mp3':            { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
+  '7digital':              { profileType: '7digital_artist_id',      syncMethod: 'proxy' },
+  'qobuz':                 { profileType: 'qobuz_artist_id',         syncMethod: 'proxy' },
+  'medianet':              { profileType: 'medianet_artist_id',      syncMethod: 'proxy' },
+  'gracenote':             { profileType: 'gracenote_artist_id',     syncMethod: 'manual' },
+  'shazam':                { profileType: 'shazam_artist_id',        syncMethod: 'proxy' },
+  'tencent-music':         { profileType: 'tencent_artist_id',       syncMethod: 'proxy' },
+  'luna':                  { profileType: 'luna_artist_id',          syncMethod: 'proxy' },
+  'capcut':                { profileType: 'capcut_creator_id',       syncMethod: 'manual' },
+  'wesing':                { profileType: 'wesing_artist_id',        syncMethod: 'proxy' },
+  'ultimate-music':        { profileType: 'ultimate_artist_id',      syncMethod: 'proxy' },
+  'bilibili':              { profileType: 'bilibili_uid',            syncMethod: 'proxy' },
+  'tencent-video':         { profileType: 'tencent_video_id',        syncMethod: 'proxy' },
+  'iqiyi':                 { profileType: 'iqiyi_artist_id',         syncMethod: 'proxy' },
+  'siri':                  { profileType: 'apple_artist_id',         syncMethod: 'proxy', scannerAlias: 'apple_music' },
+  'vevo':                  { profileType: 'vevo_artist_id',          syncMethod: 'proxy' },
+  'kuack-media':           { profileType: 'kuack_artist_id',         syncMethod: 'proxy' },
+  'bugs':                  { profileType: 'bugs_artist_id',          syncMethod: 'proxy' },
+  'genie':                 { profileType: 'genie_artist_id',         syncMethod: 'proxy' },
+  'vibe':                  { profileType: 'vibe_artist_id',          syncMethod: 'proxy' },
+  'line-music':            { profileType: 'line_artist_id',          syncMethod: 'proxy' },
+  'rakuten-music':         { profileType: 'rakuten_artist_id',       syncMethod: 'proxy' },
+  'mora':                  { profileType: 'mora_artist_id',          syncMethod: 'proxy' },
+  'recochoku':             { profileType: 'recochoku_artist_id',     syncMethod: 'proxy' },
+  'nuuday':                { profileType: 'nuuday_artist_id',        syncMethod: 'proxy' },
+  'zvuk':                  { profileType: 'zvuk_artist_id',          syncMethod: 'proxy' },
+  'livexlive':             { profileType: 'livexlive_artist_id',     syncMethod: 'proxy' },
+  'mixcloud':              { profileType: 'mixcloud_username',        syncMethod: 'proxy' },
+  'resso':                 { profileType: 'resso_artist_id',         syncMethod: 'proxy' },
+  'uma':                   { profileType: 'uma_artist_id',           syncMethod: 'proxy' },
+  'touchtunes':            { profileType: 'touchtunes_artist_id',    syncMethod: 'proxy' },
+  'tim-music':             { profileType: 'tim_artist_id',           syncMethod: 'proxy' },
+  'wynk':                  { profileType: 'wynk_artist_id',          syncMethod: 'proxy' },
+  'hungama':               { profileType: 'hungama_artist_id',       syncMethod: 'proxy' },
+  'mdundo':                { profileType: 'mdundo_artist_id',        syncMethod: 'proxy' },
+  'udux':                  { profileType: 'udux_artist_id',          syncMethod: 'proxy' },
+  'amazon-alexa':          { profileType: 'amazon_artist_asin',      syncMethod: 'proxy' },
+  'google-assistant':      { profileType: 'google_artist_id',        syncMethod: 'proxy' },
+  'apple-fitness-plus':    { profileType: 'apple_artist_id',         syncMethod: 'proxy', scannerAlias: 'apple_music' },
+  'feed-fm':               { profileType: 'feedfm_artist_id',        syncMethod: 'proxy' },
+  'epidemic-sound':        { profileType: 'epidemic_artist_id',      syncMethod: 'proxy' },
+  'fortnite':              { profileType: 'fortnite_creator_id',     syncMethod: 'manual' },
+  'dj-city':               { profileType: 'djcity_artist_id',        syncMethod: 'manual' },
+  'bpm-supreme':           { profileType: 'bpm_artist_id',           syncMethod: 'manual' },
+  'digital-dj-pool':       { profileType: 'digitaldj_artist_id',     syncMethod: 'manual' },
+  'dubset':                { profileType: 'dubset_artist_id',        syncMethod: 'manual' },
+  'emusic':                { profileType: 'emusic_artist_id',        syncMethod: 'proxy' },
+  'hdtracks':              { profileType: 'hdtracks_artist_id',      syncMethod: 'proxy' },
+  'primephonic':           { profileType: 'primephonic_artist_id',   syncMethod: 'proxy' },
+  'idagio':                { profileType: 'idagio_artist_id',        syncMethod: 'proxy' },
+};
+
+/**
+ * All 97 active distribution platforms derived from the canonical seed list.
+ *
+ * This single source of truth replaces the old hardcoded 10-platform array.
+ * Each entry carries:
+ *   id           — snake_case version of the slug (backward-compatible profile key)
+ *   slug         — canonical hyphenated form from DISTRIBUTION_PLATFORMS
+ *   name         — display name
+ *   profileType  — artist identifier field expected when linking the profile
+ *   syncMethod   — how the scanner retrieves catalog data
+ *   scannerAvailable — true when automated catalog retrieval is possible
+ *   category     — 'streaming' | 'store' | 'social' | 'fitness' | 'gaming' | etc.
+ *   region       — 'global' | 'north_america' | 'asia' | etc.
+ *   scannerAlias — if set, delegates to another scanner (e.g. iTunes for 'siri')
+ */
+export const STREAMING_PLATFORMS = DISTRIBUTION_PLATFORMS.map(p => {
+  const cfg = PLATFORM_SCANNER_CONFIG[p.slug] ?? {
+    profileType: `${p.slug.replace(/-/g, '_')}_artist_id`,
+    syncMethod: 'proxy' as const,
+  };
+  const meta = p.metadata as any;
+  return {
+    id:               p.slug.replace(/-/g, '_'),
+    slug:             p.slug,
+    name:             p.name,
+    profileType:      cfg.profileType,
+    apiSupported:     cfg.syncMethod !== 'manual',
+    syncMethod:       cfg.syncMethod,
+    scannerAvailable: cfg.syncMethod !== 'manual',
+    category:         (meta?.category ?? 'streaming') as string,
+    region:           (meta?.region   ?? 'global')    as string,
+    ...(cfg.scannerAlias ? { scannerAlias: cfg.scannerAlias } : {}),
+  };
+});
 
 export interface ImportedRelease {
   title: string;
@@ -1881,6 +2020,60 @@ class DistributionDataTransferService {
     }
   }
 
+  /**
+   * Deezer artist-name search → album list.
+   *
+   * Used as a secondary proxy when the iTunes catalog returns nothing.
+   * Searches by artist name, picks the best match, then fetches their albums.
+   * No authentication required.
+   */
+  private async fetchDeezerCatalogByArtistName(
+    artistName: string,
+    platformId: string
+  ): Promise<ScannedRelease[]> {
+    if (!artistName || artistName === 'Unknown Artist') return [];
+    try {
+      const searchResp = await fetch(
+        `https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5`
+      );
+      if (!searchResp.ok) return [];
+      const searchData = await searchResp.json() as any;
+      const artists: any[] = searchData.data || [];
+      if (artists.length === 0) return [];
+
+      // Pick the artist whose name most closely matches
+      const bestArtist = artists.reduce((best: any, a: any) => {
+        const score = (a.name || '').toLowerCase() === artistName.toLowerCase() ? 100 : a.nb_fan || 0;
+        return score > (best._score ?? 0) ? { ...a, _score: score } : best;
+      }, {});
+
+      if (!bestArtist?.id) return [];
+
+      const albumResp = await fetch(
+        `https://api.deezer.com/artist/${bestArtist.id}/albums?limit=50`
+      );
+      if (!albumResp.ok) return [];
+      const albumData = await albumResp.json() as any;
+      if (albumData.error) return [];
+
+      return (albumData.data || []).map((item: any) => ({
+        id: `deezer-proxy-${item.id}`,
+        externalId: String(item.id),
+        platformId,
+        title: item.title,
+        artistName,
+        releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
+        releaseDate: item.release_date || null,
+        trackCount: item.nb_tracks || 1,
+        coverUrl: item.cover_xl || item.cover_big,
+        platformUrl: item.link,
+      }));
+    } catch (err: any) {
+      logger.warn(`[DataTransfer] Deezer catalog proxy failed for "${artistName}":`, err?.message);
+      return [];
+    }
+  }
+
   private async fetchSoundCloudAlbums(permalink: string, artistName: string): Promise<ScannedRelease[]> {
     try {
       const clientId = await this.getSoundCloudClientId();
@@ -2039,21 +2232,64 @@ class DistributionDataTransferService {
 
     logger.info(`[DataTransfer] Scanning catalog for ${platformId} / artist "${artistName}" (${artistId})`);
 
-    // Parse the catalog directly from the linked platform profile.
-    // The existing releases were distributed via DistroKid — we read them
-    // straight from the DSP (Spotify, Apple Music, etc.) rather than going
-    // through any distribution intermediary.
-    switch (platformId) {
-      case 'spotify':      return this.fetchSpotifyAlbums(artistId, artistName);
-      case 'apple_music':  return this.fetchAppleMusicAlbums(artistId, artistName);
-      case 'deezer':       return this.fetchDeezerAlbums(artistId, artistName);
-      case 'soundcloud':   return this.fetchSoundCloudAlbums(artistId, artistName);
-      case 'bandcamp':     return this.fetchBandcampAlbums(artistId, artistName);
-      case 'audiomack':    return this.fetchAudiomackAlbums(artistId, artistName);
-      default:
-        logger.warn(`[DataTransfer] No catalog scanner for platform "${platformId}"`);
-        return [];
+    // Normalize: accept both hyphenated slugs ('apple-music') and the
+    // legacy snake_case ids ('apple_music') that profile keys use.
+    const normId = platformId.replace(/-/g, '_');
+
+    // Resolve scannerAlias — e.g. 'itunes' and 'apple-music' both delegate
+    // to the apple_music scanner which uses the iTunes lookup API.
+    const platformMeta = STREAMING_PLATFORMS.find(
+      p => p.id === normId || p.slug === platformId
+    );
+    const scannerKey = (platformMeta as any)?.scannerAlias ?? normId;
+
+    // Manual-only platforms (DJ pools, gaming stores, social CMS) have no
+    // automated catalog retrieval path.
+    if (platformMeta?.syncMethod === 'manual') {
+      logger.warn(
+        `[DataTransfer] "${platformId}" is manual-entry only — no automated scanner. ` +
+        `Category: ${platformMeta.category}`
+      );
+      return [];
     }
+
+    // ── Dedicated scanners ────────────────────────────────────────────────────
+    // These platforms have a stable, free public API that we query directly.
+    switch (scannerKey) {
+      case 'spotify':     return this.fetchSpotifyAlbums(artistId, artistName);
+      case 'apple_music': return this.fetchAppleMusicAlbums(artistId, artistName);
+      case 'deezer':      return this.fetchDeezerAlbums(artistId, artistName);
+      case 'soundcloud':  return this.fetchSoundCloudAlbums(artistId, artistName);
+      case 'bandcamp':    return this.fetchBandcampAlbums(artistId, artistName);
+      case 'audiomack':   return this.fetchAudiomackAlbums(artistId, artistName);
+    }
+
+    // ── iTunes proxy fallback (covers all 97 DistroKid DSPs) ─────────────────
+    // DistroKid distributes to all registered platforms simultaneously, so the
+    // Apple Music / iTunes catalog carries an identical copy of every release.
+    // For any platform without a dedicated scanner we use iTunes as a proxy —
+    // the artist name is sufficient to identify the right catalog.
+    logger.info(
+      `[DataTransfer] No dedicated scanner for "${platformId}" ` +
+      `(syncMethod: ${platformMeta?.syncMethod ?? 'proxy'}) — ` +
+      `using iTunes proxy catalog for artist "${artistName}"`
+    );
+
+    const proxyReleases = await this.fetchItunesCatalogByArtistName(artistName, platformId);
+    if (proxyReleases.length > 0) {
+      logger.info(
+        `[DataTransfer] iTunes proxy returned ${proxyReleases.length} releases ` +
+        `for "${artistName}" (routed via ${platformId})`
+      );
+      return proxyReleases;
+    }
+
+    // Secondary proxy: Deezer artist-name search
+    logger.info(
+      `[DataTransfer] iTunes proxy returned 0 results — trying Deezer name search ` +
+      `for "${artistName}" (routed via ${platformId})`
+    );
+    return this.fetchDeezerCatalogByArtistName(artistName, platformId);
   }
 
   async importProfileCatalog(
