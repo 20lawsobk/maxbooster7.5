@@ -32,15 +32,15 @@ export interface LabelGridTrack {
 
 export interface LabelGridReleaseResponse {
   releaseId: string;
-  status: 'draft' | 'processing' | 'live' | 'failed';
-  submittedAt: string;
+  status: 'draft' | 'not_submitted' | 'processing' | 'live' | 'failed';
+  submittedAt?: string;
   estimatedLiveDate?: string;
   platforms: LabelGridPlatformStatus[];
 }
 
 export interface LabelGridPlatformStatus {
   platform: string;
-  status: 'pending' | 'processing' | 'live' | 'failed';
+  status: 'draft' | 'not_submitted' | 'pending' | 'processing' | 'live' | 'failed';
   liveDate?: string;
   errorMessage?: string;
 }
@@ -1355,58 +1355,49 @@ class LabelGridService {
   }
 
   private simulateCreateRelease(releaseData: LabelGridRelease): LabelGridReleaseResponse {
-    const releaseId = `lg_sim_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const estimatedLiveDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
+    // LabelGrid not configured — release saved as a local draft only, NOT submitted to any DSP.
+    const releaseId = `draft_${Date.now()}`;
     return {
       releaseId,
-      status: 'processing',
+      status: 'draft',
       submittedAt: new Date().toISOString(),
-      estimatedLiveDate: estimatedLiveDate.toISOString(),
       platforms: releaseData.platforms.map((platform) => ({
         platform,
-        status: 'processing',
+        status: 'draft',
       })),
     };
   }
 
   private simulateGetReleaseStatus(releaseId: string): LabelGridReleaseResponse {
+    // LabelGrid not configured — if releaseId is a local draft, report it honestly.
+    const isDraft = releaseId.startsWith('draft_');
     return {
       releaseId,
-      status: 'processing',
-      submittedAt: new Date().toISOString(),
-      estimatedLiveDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-      platforms: [
-        { platform: 'spotify', status: 'processing' },
-        { platform: 'apple_music', status: 'processing' },
-        { platform: 'youtube_music', status: 'processing' },
-      ],
+      status: isDraft ? 'draft' : 'not_submitted',
+      submittedAt: undefined,
+      estimatedLiveDate: undefined,
+      platforms: [],
     };
   }
 
-  private simulateGenerateISRC(artist: string, title: string): LabelGridCodeResponse {
-    const year = new Date().getFullYear().toString().substring(2);
-    const randomNum = Math.floor(10000 + Math.random() * 90000);
-    const code = `US-SIM-${year}-${randomNum}`;
-
-    return {
-      code,
-      type: 'isrc',
-      assignedTo: `${artist} - ${title}`,
-      createdAt: new Date().toISOString(),
-    };
+  private simulateGenerateISRC(_artist: string, _title: string): never {
+    // Refuse to generate fake ISRC codes — ISRCs must be issued by a real
+    // distributor or national ISRC agency (e.g. RIAA). The caller's catch
+    // block will fall through to the internal musicCodes fallback generator.
+    throw new Error(
+      'LabelGrid not configured — ISRC generation requires a connected distributor account. ' +
+      'Set LABELGRID_API_TOKEN to enable real ISRC assignment.'
+    );
   }
 
-  private simulateGenerateUPC(releaseTitle: string): LabelGridCodeResponse {
-    const randomNum = Math.floor(100000000000 + Math.random() * 900000000000);
-    const code = randomNum.toString();
-
-    return {
-      code,
-      type: 'upc',
-      assignedTo: releaseTitle,
-      createdAt: new Date().toISOString(),
-    };
+  private simulateGenerateUPC(_releaseTitle: string): never {
+    // Refuse to generate fake UPC codes — UPCs require a valid GS1 company
+    // prefix. The caller's catch block will fall through to the internal
+    // musicCodes fallback generator.
+    throw new Error(
+      'LabelGrid not configured — UPC generation requires a connected distributor account. ' +
+      'Set LABELGRID_API_TOKEN to enable real UPC assignment.'
+    );
   }
 
   private simulateGetReleaseAnalytics(releaseId: string): LabelGridAnalytics {
@@ -1490,29 +1481,19 @@ class LabelGridService {
   }
 
   private simulateCreateSmartLink(
-    releaseId: string,
-    options?: { customSlug?: string; platforms?: string[] }
-  ): LabelGridSmartLink {
-    const id = `sl_sim_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const slug = options?.customSlug || id;
-    return {
-      id,
-      url: `https://smartlink.labelgrid.com/${slug}`,
-      releaseId,
-      platforms: options?.platforms || ['spotify', 'apple_music', 'youtube_music'],
-      customSlug: options?.customSlug,
-      clicks: 0,
-    };
+    _releaseId: string,
+    _options?: { customSlug?: string; platforms?: string[] }
+  ): never {
+    throw new Error(
+      'LabelGrid not configured — smart link creation requires a connected distributor account. ' +
+      'Set LABELGRID_API_TOKEN to enable real smart links.'
+    );
   }
 
-  private simulateGetSmartLink(linkId: string): LabelGridSmartLink {
-    return {
-      id: linkId,
-      url: `https://smartlink.labelgrid.com/${linkId}`,
-      releaseId: '',
-      platforms: ['spotify', 'apple_music', 'youtube_music'],
-      clicks: 0,
-    };
+  private simulateGetSmartLink(_linkId: string): never {
+    throw new Error(
+      'LabelGrid not configured — smart link lookup requires a connected distributor account.'
+    );
   }
 
   private simulateGetSmartLinkAnalytics(
@@ -1604,15 +1585,13 @@ class LabelGridService {
   }
 
   private simulateRequestPayout(
-    amount: number,
-    method?: 'paypal' | 'bank'
-  ): LabelGridPayoutRequest {
-    return {
-      id: `po_sim_${Date.now()}_${Math.random().toString(36).substring(7)}`,
-      amount,
-      status: 'pending',
-      requestedAt: new Date().toISOString(),
-    };
+    _amount: number,
+    _method?: 'paypal' | 'bank'
+  ): never {
+    throw new Error(
+      'LabelGrid not configured — payout requests require a connected distributor account with real royalty balances. ' +
+      'Set LABELGRID_API_TOKEN to enable payouts.'
+    );
   }
 }
 

@@ -406,15 +406,18 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
 
     let isrcCode: string;
     let assignedTo: string = `${artist} - ${title}`;
+    let isOfficiallyRegistered = true;
 
     try {
+      // LabelGrid throws when not configured — falls through to internal generator below
       const result = await labelGridService.generateISRC(artist, title);
       isrcCode = result.code;
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
-      logger.warn('LabelGrid ISRC generation failed, falling back to internal generator:', lgError);
+      logger.warn('LabelGrid ISRC generation unavailable, using internal generator:', lgError);
       const fallback = musicCodesService.generateISRC(userId);
       isrcCode = fallback.code;
+      isOfficiallyRegistered = false;
     }
 
     if (trackId && trackId !== `temp_${Date.now()}`) {
@@ -425,7 +428,14 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ isrc: isrcCode, assignedTo });
+    res.json({
+      isrc: isrcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered ? {} : {
+        note: 'This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.',
+      }),
+    });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -444,15 +454,18 @@ router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
 
     let upcCode: string;
     let assignedTo: string = title;
+    let isOfficiallyRegistered = true;
 
     try {
+      // LabelGrid throws when not configured — falls through to internal generator below
       const result = await labelGridService.generateUPC(title);
       upcCode = result.code;
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
-      logger.warn('LabelGrid UPC generation failed, falling back to internal generator:', lgError);
+      logger.warn('LabelGrid UPC generation unavailable, using internal generator:', lgError);
       const fallback = musicCodesService.generateUPC(userId);
       upcCode = fallback.code;
+      isOfficiallyRegistered = false;
     }
 
     if (releaseId && releaseId !== `temp_${Date.now()}`) {
@@ -463,7 +476,14 @@ router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
       }
     }
 
-    res.json({ upc: upcCode, assignedTo });
+    res.json({
+      upc: upcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered ? {} : {
+        note: 'This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.',
+      }),
+    });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -4450,16 +4470,37 @@ router.post('/isrc/generate', requireAuth, async (req: Request, res: Response) =
       return res.status(400).json({ error: 'artist and title are required' });
     }
 
-    const result = await labelGridService.generateISRC(artist, title);
+    let isrcCode: string;
+    let assignedTo: string = `${artist} - ${title}`;
+    let isOfficiallyRegistered = true;
 
-    if (trackId && trackId !== `temp_${Date.now()}`) {
-      await codeGenerationService.generateISRC(userId, trackId, artist, title);
+    try {
+      const result = await labelGridService.generateISRC(artist, title);
+      isrcCode = result.code;
+      assignedTo = result.assignedTo || assignedTo;
+    } catch (lgError) {
+      logger.warn('LabelGrid ISRC generation unavailable, using internal generator:', lgError);
+      const fallback = musicCodesService.generateISRC(userId);
+      isrcCode = fallback.code;
+      isOfficiallyRegistered = false;
     }
 
-    res.json({ 
+    if (trackId && trackId !== `temp_${Date.now()}`) {
+      try {
+        await codeGenerationService.generateISRC(userId, trackId, artist, title);
+      } catch (storeErr) {
+        logger.warn('Failed to store ISRC in database:', storeErr);
+      }
+    }
+
+    res.json({
       success: true,
-      isrc: result.code, 
-      assignedTo: result.assignedTo 
+      isrc: isrcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered ? {} : {
+        note: 'This ISRC was generated internally and is not yet registered with a national ISRC agency. Connect a distributor account to obtain an officially registered code.',
+      }),
     });
   } catch (error: unknown) {
     logger.error('Error generating ISRC:', error);
@@ -4477,16 +4518,37 @@ router.post('/upc/generate', requireAuth, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'title is required' });
     }
 
-    const result = await labelGridService.generateUPC(title);
+    let upcCode: string;
+    let assignedTo: string = title;
+    let isOfficiallyRegistered = true;
 
-    if (releaseId && releaseId !== `temp_${Date.now()}`) {
-      await codeGenerationService.generateUPC(userId, releaseId, title);
+    try {
+      const result = await labelGridService.generateUPC(title);
+      upcCode = result.code;
+      assignedTo = result.assignedTo || assignedTo;
+    } catch (lgError) {
+      logger.warn('LabelGrid UPC generation unavailable, using internal generator:', lgError);
+      const fallback = musicCodesService.generateUPC(userId);
+      upcCode = fallback.code;
+      isOfficiallyRegistered = false;
     }
 
-    res.json({ 
+    if (releaseId && releaseId !== `temp_${Date.now()}`) {
+      try {
+        await codeGenerationService.generateUPC(userId, releaseId, title);
+      } catch (storeErr) {
+        logger.warn('Failed to store UPC in database:', storeErr);
+      }
+    }
+
+    res.json({
       success: true,
-      upc: result.code, 
-      assignedTo: result.assignedTo 
+      upc: upcCode,
+      assignedTo,
+      isOfficiallyRegistered,
+      ...(isOfficiallyRegistered ? {} : {
+        note: 'This UPC was generated internally and does not use a GS1-registered company prefix. Connect a distributor account to obtain an officially registered barcode.',
+      }),
     });
   } catch (error: unknown) {
     logger.error('Error generating UPC:', error);
@@ -4497,23 +4559,89 @@ router.post('/upc/generate', requireAuth, async (req: Request, res: Response) =>
 // ─── POST /api/distribution/qc/analyze — Run QC analysis on a release ────────
 router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Request, res: Response) => {
   try {
-    const { releaseId } = req.body;
+    const { releaseId, title, artist, isrc, artworkUrl } = req.body;
     if (!releaseId) return res.status(400).json({ error: 'releaseId is required' });
 
+    const audioFile = req.file;
+
+    // Only report checks we can actually evaluate. Audio-dependent checks
+    // (LUFS, true peak, sample rate, bit depth) require server-side ffmpeg
+    // analysis which is not currently available — mark them as not_analyzed
+    // rather than returning fabricated "passed" results.
+    const REQUIRES_ANALYSIS = 'not_analyzed';
+
+    const metadataStatus = (title && artist && isrc) ? 'passed'
+      : (title && artist) ? 'warning'
+      : 'failed';
+    const metadataDetail = metadataStatus === 'passed'
+      ? 'Title, artist, and ISRC are all present'
+      : metadataStatus === 'warning'
+      ? 'ISRC is missing — required for digital distribution'
+      : 'Title and artist are required';
+
     const checks = [
-      { id: 'loudness', name: 'Loudness (LUFS)', status: 'passed', detail: 'Integrated loudness within -16 to -14 LUFS' },
-      { id: 'truepeak', name: 'True Peak', status: 'passed', detail: 'True peak below -1 dBTP' },
-      { id: 'samplerate', name: 'Sample Rate', status: 'passed', detail: '44.1 kHz or 48 kHz' },
-      { id: 'bitdepth', name: 'Bit Depth', status: 'passed', detail: '16-bit or 24-bit' },
-      { id: 'metadata', name: 'Metadata Completeness', status: req.body.title ? 'passed' : 'warning', detail: 'Title, artist, and ISRC present' },
-      { id: 'artwork', name: 'Artwork Resolution', status: 'passed', detail: 'Minimum 3000×3000 px' },
+      {
+        id: 'loudness',
+        name: 'Loudness (LUFS)',
+        status: REQUIRES_ANALYSIS,
+        detail: audioFile
+          ? 'Audio file received — full LUFS analysis requires audio processing tools not yet configured on this server'
+          : 'No audio file uploaded — upload the master WAV/AIFF to analyze loudness',
+      },
+      {
+        id: 'truepeak',
+        name: 'True Peak',
+        status: REQUIRES_ANALYSIS,
+        detail: audioFile
+          ? 'Audio file received — true peak analysis requires audio processing tools not yet configured'
+          : 'No audio file uploaded',
+      },
+      {
+        id: 'samplerate',
+        name: 'Sample Rate',
+        status: audioFile ? REQUIRES_ANALYSIS : 'warning',
+        detail: audioFile
+          ? `Audio file received (${(audioFile.size / 1024 / 1024).toFixed(2)} MB, ${audioFile.mimetype}) — sample rate analysis requires audio processing tools not yet configured`
+          : 'No audio file uploaded — upload the master to verify sample rate',
+      },
+      {
+        id: 'bitdepth',
+        name: 'Bit Depth',
+        status: audioFile ? REQUIRES_ANALYSIS : 'warning',
+        detail: audioFile
+          ? 'Bit depth analysis requires audio processing tools not yet configured'
+          : 'No audio file uploaded — upload the master to verify bit depth',
+      },
+      {
+        id: 'metadata',
+        name: 'Metadata Completeness',
+        status: metadataStatus,
+        detail: metadataDetail,
+      },
+      {
+        id: 'artwork',
+        name: 'Artwork',
+        status: artworkUrl ? REQUIRES_ANALYSIS : 'warning',
+        detail: artworkUrl
+          ? 'Artwork URL provided — resolution check (3000×3000 px minimum) requires server-side image analysis'
+          : 'No artwork URL provided — artwork is required for distribution',
+      },
     ];
 
     const passed = checks.filter(c => c.status === 'passed').length;
     const failed = checks.filter(c => c.status === 'failed').length;
     const warnings = checks.filter(c => c.status === 'warning').length;
+    const notAnalyzed = checks.filter(c => c.status === REQUIRES_ANALYSIS).length;
 
-    res.json({ releaseId, checks, summary: { passed, failed, warnings, total: checks.length }, qcScore: Math.round((passed / checks.length) * 100) });
+    res.json({
+      releaseId,
+      checks,
+      summary: { passed, failed, warnings, notAnalyzed, total: checks.length },
+      qcScore: checks.length > notAnalyzed ? Math.round((passed / (checks.length - notAnalyzed)) * 100) : null,
+      note: notAnalyzed > 0
+        ? 'Some checks require audio/image processing tools. Upload your audio file and configure server-side analysis for a complete QC report.'
+        : undefined,
+    });
   } catch (error: unknown) {
     logger.error('Error running QC analysis:', error);
     res.status(500).json({ error: 'Failed to run QC analysis' });
@@ -4525,8 +4653,13 @@ router.post('/qc/fix', requireAuth, async (req: Request, res: Response) => {
   try {
     const { releaseId, checkId, fixType } = req.body;
     if (!releaseId || !checkId) return res.status(400).json({ error: 'releaseId and checkId are required' });
-
-    res.json({ success: true, releaseId, checkId, fixType, message: `QC fix applied for ${checkId}`, status: 'passed' });
+    // QC fixes for audio metrics require audio processing tools not yet available.
+    // Only metadata fixes can be applied server-side.
+    if (checkId === 'metadata') {
+      res.json({ success: true, releaseId, checkId, fixType, message: 'Please update the missing metadata fields and re-run QC analysis.', status: 'pending_user_action' });
+    } else {
+      res.status(501).json({ error: 'Automatic QC fixes for audio checks require audio processing tools not yet configured on this server.' });
+    }
   } catch (error: unknown) {
     logger.error('Error applying QC fix:', error);
     res.status(500).json({ error: 'Failed to apply QC fix' });
@@ -4559,11 +4692,16 @@ router.post('/earnings/payout', requireAuth, async (req: Request, res: Response)
     if (!amount || !method) return res.status(400).json({ error: 'amount and method are required' });
     if (typeof amount !== 'number' || amount <= 0) return res.status(400).json({ error: 'amount must be a positive number' });
 
-    const payoutId = `payout_${Date.now()}_${userId.slice(0, 8)}`;
-    logger.info(`[Distribution] Payout requested by ${userId}: $${amount} via ${method}`);
-    res.json({ success: true, payoutId, amount, method, status: 'pending', message: 'Payout request submitted for processing', estimatedArrival: '3-5 business days' });
+    // Route through LabelGrid — will throw (502) if distributor account not configured
+    const result = await labelGridService.requestPayout(amount, method);
+    logger.info(`[Distribution] Payout requested by ${userId}: $${amount} via ${method} → id=${result.id}`);
+    res.json({ success: true, payoutId: result.id, amount: result.amount, method, status: result.status, requestedAt: result.requestedAt });
   } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.error('Error requesting earnings payout:', error);
+    if (message.includes('not configured') || message.includes('LABELGRID')) {
+      return res.status(503).json({ error: 'Payout unavailable', details: message });
+    }
     res.status(500).json({ error: 'Failed to request payout' });
   }
 });
@@ -4579,25 +4717,50 @@ router.post('/codes/generate', requireAuth, async (req: Request, res: Response) 
 
     if (type === 'isrc') {
       const codes: string[] = [];
+      let isOfficiallyRegistered = true;
       for (let i = 0; i < safeCount; i++) {
         const trackInfo = tracks?.[i] || { title: release?.title || `Track ${i + 1}`, artist: release?.artist || '' };
-        const tempReleaseId = `temp_${Date.now()}_${i}`;
-        const result = await labelGridService.generateISRC(trackInfo.title);
-        codes.push(result.code);
+        try {
+          const result = await labelGridService.generateISRC(trackInfo.artist, trackInfo.title);
+          codes.push(result.code);
+        } catch {
+          const fallback = musicCodesService.generateISRC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
+        }
       }
       const code = codes[0];
-      logger.info(`[Distribution] Generated ${safeCount} ISRC code(s) for user ${userId}`);
-      res.json({ success: true, type: 'isrc', code, codes, count: codes.length });
+      logger.info(`[Distribution] Generated ${safeCount} ISRC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`);
+      res.json({
+        success: true, type: 'isrc', code, codes, count: codes.length,
+        isOfficiallyRegistered,
+        ...(isOfficiallyRegistered ? {} : {
+          note: 'These ISRCs were generated internally and are not yet registered with a national ISRC agency. Connect a distributor account to obtain officially registered codes.',
+        }),
+      });
     } else {
       const codes: string[] = [];
+      let isOfficiallyRegistered = true;
       for (let i = 0; i < safeCount; i++) {
         const title = release?.title || tracks?.[0]?.title || `Release ${i + 1}`;
-        const result = await labelGridService.generateUPC(title);
-        codes.push(result.code);
+        try {
+          const result = await labelGridService.generateUPC(title);
+          codes.push(result.code);
+        } catch {
+          const fallback = musicCodesService.generateUPC(userId);
+          codes.push(fallback.code);
+          isOfficiallyRegistered = false;
+        }
       }
       const code = codes[0];
-      logger.info(`[Distribution] Generated ${safeCount} UPC code(s) for user ${userId}`);
-      res.json({ success: true, type: 'upc', code, codes, count: codes.length });
+      logger.info(`[Distribution] Generated ${safeCount} UPC code(s) for user ${userId} (officiallyRegistered=${isOfficiallyRegistered})`);
+      res.json({
+        success: true, type: 'upc', code, codes, count: codes.length,
+        isOfficiallyRegistered,
+        ...(isOfficiallyRegistered ? {} : {
+          note: 'These UPCs were generated internally and do not use a GS1-registered company prefix. Connect a distributor account to obtain officially registered barcodes.',
+        }),
+      });
     }
   } catch (error: unknown) {
     logger.error('Error generating codes:', error);
@@ -4613,11 +4776,16 @@ router.post('/royalties/payout', requireAuth, async (req: Request, res: Response
     if (!amount || !method) return res.status(400).json({ error: 'amount and method are required' });
     if (typeof amount !== 'number' || amount <= 0) return res.status(400).json({ error: 'amount must be a positive number' });
 
-    const payoutId = `royalty_payout_${Date.now()}_${userId.slice(0, 8)}`;
-    logger.info(`[Distribution] Royalty payout requested by ${userId}: $${amount} via ${method}`);
-    res.json({ success: true, payoutId, amount, method, status: 'pending', message: 'Royalty payout request submitted', estimatedArrival: '3-5 business days' });
+    // Route through LabelGrid — will throw if distributor account not configured
+    const result = await labelGridService.requestPayout(amount, method);
+    logger.info(`[Distribution] Royalty payout requested by ${userId}: $${amount} via ${method} → id=${result.id}`);
+    res.json({ success: true, payoutId: result.id, amount: result.amount, method, status: result.status, requestedAt: result.requestedAt });
   } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     logger.error('Error requesting royalties payout:', error);
+    if (message.includes('not configured') || message.includes('LABELGRID')) {
+      return res.status(503).json({ error: 'Payout unavailable', details: message });
+    }
     res.status(500).json({ error: 'Failed to request royalties payout' });
   }
 });

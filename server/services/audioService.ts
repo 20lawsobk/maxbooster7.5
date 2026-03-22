@@ -246,11 +246,8 @@ export class AudioService {
   }
 
   private generateFallbackWaveform(): number[] {
-    const waveform = [];
-    for (let i = 0; i < 2000; i++) {
-      waveform.push(Math.sin(i * 0.1) * Math.random() * 0.8);
-    }
-    return waveform;
+    // Return empty — callers should show "waveform unavailable" instead of a fabricated visualization.
+    return [];
   }
 
   private downsampleAudio(samples: Int16Array, targetLength: number): number[] {
