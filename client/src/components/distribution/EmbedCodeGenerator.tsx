@@ -644,24 +644,47 @@ function AutopilotTab({
         )}
       </div>
 
-      {/* Autopilot system link */}
-      <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800">
-        <CardContent className="p-4 flex items-center gap-4">
-          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-            <TrendingUp className="h-5 w-5 text-purple-600" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-purple-900 dark:text-purple-300">Autopilot Social Engine</p>
-            <p className="text-xs text-purple-700 dark:text-purple-400">Let AI pick the best posting times, platforms, and content variations for your releases.</p>
-          </div>
-          <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 dark:text-purple-300 flex-shrink-0" asChild>
-            <a href="/autopilot">
-              Configure
-              <ArrowRight className="h-3.5 w-3.5 ml-1" />
-            </a>
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Autopilot system links */}
+      <div>
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Connected Autopilot Systems</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <Bot className="h-4.5 w-4.5 text-purple-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-purple-900 dark:text-purple-300">Social Media Autopilot</p>
+                <p className="text-xs text-purple-700 dark:text-purple-400 leading-snug">AI posting times, captions & platform targeting</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 dark:text-purple-300 flex-shrink-0 h-7 text-xs" asChild>
+                <a href="/social-media">
+                  Open
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200 dark:border-orange-800">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex-shrink-0 w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
+                <TrendingUp className="h-4.5 w-4.5 text-orange-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-orange-900 dark:text-orange-300">Advertisement Autopilot</p>
+                <p className="text-xs text-orange-700 dark:text-orange-400 leading-snug">Auto-run paid ads & budget optimization for releases</p>
+              </div>
+              <Button size="sm" variant="outline" className="border-orange-300 text-orange-700 dark:text-orange-300 flex-shrink-0 h-7 text-xs" asChild>
+                <a href="/advertising">
+                  Open
+                  <ArrowRight className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
