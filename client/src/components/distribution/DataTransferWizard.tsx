@@ -39,9 +39,14 @@ import { useToast } from '@/hooks/use-toast';
 
 interface StreamingPlatform {
   id: string;
+  slug?: string;
   name: string;
   profileType: string;
   apiSupported: boolean;
+  syncMethod?: 'api' | 'scrape' | 'proxy' | 'manual';
+  scannerAvailable?: boolean;
+  category?: string;
+  region?: string;
 }
 
 interface LinkedProfile {
@@ -98,18 +103,11 @@ interface MigrationReport {
   recommendations: string[];
 }
 
-const PLATFORM_SCAN_SUPPORT: Record<string, boolean> = {
-  spotify: true,
-  apple_music: true,
-  deezer: true,
-  soundcloud: true,
-  bandcamp: true,
-  audiomack: true,
-  youtube_music: false,
-  amazon_music: false,
-  tidal: false,
-  beatport: false,
-};
+// Scan support is now derived from the platform metadata returned by the server.
+// Every platform with syncMethod !== 'manual' supports catalog scanning via
+// dedicated API, HTML scraping, or the iTunes/Deezer proxy (all 97 DistroKid
+// DSPs are covered since they receive the same releases simultaneously).
+// PLATFORM_SCAN_SUPPORT is no longer needed — use isScanSupported() instead.
 
 // All distribution-related query keys that should stay in sync across the page.
 const DISTRIBUTION_QUERY_KEYS = [
@@ -336,8 +334,22 @@ export function DataTransferWizard() {
   };
 
   const profiles = linkedProfiles?.profiles || [];
-  const scanSupportedProfiles = profiles.filter(p => PLATFORM_SCAN_SUPPORT[p.platformId]);
-  const manualProfiles = profiles.filter(p => !PLATFORM_SCAN_SUPPORT[p.platformId]);
+
+  // A platform supports catalog scanning when the server reports apiSupported:true.
+  // That covers: dedicated-API platforms (Spotify, Deezer, etc.), scrape-based
+  // platforms (Bandcamp), and all proxy platforms (the remaining 90+ DSPs via
+  // iTunes/Deezer proxy).  Only 'manual' platforms (DJ pools, social CMS, etc.)
+  // are analytics-only.
+  const isScanSupported = (platformId: string): boolean => {
+    const meta = platforms?.platforms.find(
+      p => p.id === platformId || p.slug === platformId
+    );
+    // Default true if metadata hasn't loaded yet — avoids flashing the wrong section.
+    return meta ? meta.apiSupported : true;
+  };
+
+  const scanSupportedProfiles = profiles.filter(p => isScanSupported(p.platformId));
+  const manualProfiles = profiles.filter(p => !isScanSupported(p.platformId));
 
   const LinkProfileDialog = () => (
     <Dialog open={showLinkDialog} onOpenChange={setShowLinkDialog}>
@@ -367,7 +379,7 @@ export function DataTransferWizard() {
                     <span className="flex items-center gap-2">
                       <span>{getPlatformIcon(platform.id)}</span>
                       <span>{platform.name}</span>
-                      {PLATFORM_SCAN_SUPPORT[platform.id] && (
+                      {platform.apiSupported && (
                         <Badge variant="outline" className="text-xs text-green-600 border-green-400">Catalog scan</Badge>
                       )}
                     </span>
@@ -517,7 +529,7 @@ export function DataTransferWizard() {
                   <Globe className="h-12 w-12 text-muted-foreground mb-4" />
                   <h3 className="font-medium mb-1">No profiles linked yet</h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Link a Spotify, Apple Music, Deezer, SoundCloud, Bandcamp, or Audiomack profile to sync analytics and scan your full release catalog.
+                    Link any streaming platform profile to sync analytics and scan your full release catalog. All 97 registered DSPs support catalog scanning via LabelGrid.
                   </p>
                   <Button onClick={() => setShowLinkDialog(true)}>
                     <Link2 className="h-4 w-4 mr-2" />
