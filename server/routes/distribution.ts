@@ -5163,4 +5163,22 @@ router.post('/platform/youtube', requireAuth, async (req: Request, res: Response
   }
 });
 
+// ── Catalog Migration Export ───────────────────────────────────────────────────
+// Parses public streaming-platform profiles and outputs LabelGrid import JSON.
+// No premium credentials required — uses iTunes + Deezer public APIs.
+router.post('/catalog-export', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { artistName } = req.body as { artistName?: string };
+    if (!artistName || !artistName.trim()) {
+      return res.status(400).json({ error: 'artistName is required' });
+    }
+    const { buildMigrationPayload } = await import('../services/catalogMigrationService.js');
+    const payload = await buildMigrationPayload(artistName.trim());
+    res.json(payload);
+  } catch (error: unknown) {
+    logger.error('[Distribution] Catalog export failed:', error);
+    res.status(500).json({ error: 'Catalog export failed' });
+  }
+});
+
 export default router;

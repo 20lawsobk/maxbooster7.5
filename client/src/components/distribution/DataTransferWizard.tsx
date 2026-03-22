@@ -32,7 +32,9 @@ import {
   PackagePlus,
   ChevronDown,
   ChevronUp,
+  ArrowRightLeft,
 } from 'lucide-react';
+import CatalogMigration from './CatalogMigration';
 import { useToast } from '@/hooks/use-toast';
 
 interface StreamingPlatform {
