@@ -102,6 +102,16 @@ export const CUSTOM_ACTIONS = [
       { key: 'secret', label: 'Secret header value (optional)', type: 'text', placeholder: 'Bearer token or HMAC secret' },
     ],
   },
+  {
+    id: 'share_smart_link',
+    label: 'Share release smart link',
+    description: 'Post your release smart link (lnk.to URL) to social media. Use {{releaseName}}, {{artistName}}, {{smartLink}} as placeholders.',
+    fields: [
+      { key: 'platform', label: 'Platform', type: 'select', options: ['all', 'instagram', 'twitter', 'tiktok', 'facebook'] },
+      { key: 'message', label: 'Post message', type: 'textarea', placeholder: 'e.g. 🎵 {{releaseName}} by {{artistName}} is OUT NOW! Stream it everywhere: {{smartLink}} 🔥 #NewMusic' },
+      { key: 'smartLink', label: 'Smart link URL (auto-filled from release)', type: 'text', placeholder: 'https://lnk.to/your-release' },
+    ],
+  },
 ];
 
 const VALID_TRIGGER_IDS = new Set(CUSTOM_TRIGGERS.map(t => t.id));
@@ -287,6 +297,13 @@ router.post('/:id/test', requireAuth, async (req, res) => {
           case 'social_post':
             actionsRun.push(`Social post queued for ${String(action.config.platform || 'all platforms')}`);
             break;
+          case 'share_smart_link': {
+            const platform = String(action.config.platform || 'all');
+            const link = String(action.config.smartLink || '');
+            const msg = String(action.config.message || '').replace('{{smartLink}}', link || 'https://lnk.to/your-release');
+            actionsRun.push(`Smart link share queued for ${platform}: "${msg.slice(0, 60)}${msg.length > 60 ? '…' : ''}"`);
+            break;
+          }
           case 'webhook':
             if (action.config.url && typeof action.config.url === 'string') {
               const webhookUrl = String(action.config.url);

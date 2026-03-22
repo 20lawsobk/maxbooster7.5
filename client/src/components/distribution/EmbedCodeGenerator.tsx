@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useRef, type ReactNode } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import {
   Copy,
   Check,
@@ -35,6 +36,16 @@ import {
   AlertCircle,
   Maximize2,
   Minimize2,
+  Zap,
+  Bot,
+  Clock,
+  Star,
+  ListMusic,
+  ArrowRight,
+  CheckCircle2,
+  RefreshCw,
+  Settings2,
+  TrendingUp,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -296,6 +307,365 @@ function SmartLinkButtonPreview({
   );
 }
 
+// ── Preset automation templates ────────────────────────────────────────────
+interface AutomationPreset {
+  id: string;
+  name: string;
+  description: string;
+  trigger: string;
+  triggerLabel: string;
+  actions: Array<{ type: string; config: Record<string, string> }>;
+  icon: ReactNode;
+  color: string;
+  badgeColor: string;
+}
+
+function buildPresets(smartLink: string, title: string, artist: string): AutomationPreset[] {
+  return [
+    {
+      id: 'launch-promo',
+      name: 'Launch Promo',
+      description: 'Automatically post your smart link to all connected social accounts the moment a release goes live.',
+      trigger: 'release:live',
+      triggerLabel: 'Release goes live',
+      actions: [
+        {
+          type: 'share_smart_link',
+          config: {
+            platform: 'all',
+            message: `🎵 ${title || '{{releaseName}}'} by ${artist || '{{artistName}}'} is OUT NOW! Stream it everywhere 🔥 ${smartLink || '{{smartLink}}'} #NewMusic #OutNow`,
+            smartLink: smartLink || '',
+          },
+        },
+      ],
+      icon: <Zap className="h-5 w-5" />,
+      color: 'text-purple-600',
+      badgeColor: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+    },
+    {
+      id: 'weekly-spotlight',
+      name: 'Weekly Spotlight',
+      description: 'Every Monday, automatically re-share your release smart link to keep it top-of-mind for fans.',
+      trigger: 'schedule:weekly',
+      triggerLabel: 'Every Monday at 9 AM',
+      actions: [
+        {
+          type: 'share_smart_link',
+          config: {
+            platform: 'instagram',
+            message: `🎧 Still not heard ${title || '{{releaseName}}'}? Stream it now 👇 ${smartLink || '{{smartLink}}'} #Music #${artist?.replace(/\s+/g, '') || 'Artist'}`,
+            smartLink: smartLink || '',
+          },
+        },
+      ],
+      icon: <Clock className="h-5 w-5" />,
+      color: 'text-blue-600',
+      badgeColor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    },
+    {
+      id: 'milestone-celebration',
+      name: 'Milestone Celebration',
+      description: 'When a release hits a streaming milestone, notify yourself and auto-share the smart link to celebrate.',
+      trigger: 'analytics:milestone',
+      triggerLabel: 'Streaming milestone reached',
+      actions: [
+        {
+          type: 'push_notification',
+          config: {
+            title: `🎉 ${title || '{{releaseName}}'} hit a milestone!`,
+            message: 'Your release just crossed a stream milestone. Time to celebrate and share!',
+          },
+        },
+        {
+          type: 'share_smart_link',
+          config: {
+            platform: 'all',
+            message: `🎉 WE HIT A MILESTONE! ${title || '{{releaseName}}'} is streaming everywhere — thank you all! ${smartLink || '{{smartLink}}'} 🔥`,
+            smartLink: smartLink || '',
+          },
+        },
+      ],
+      icon: <Star className="h-5 w-5" />,
+      color: 'text-amber-600',
+      badgeColor: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    },
+    {
+      id: 'playlist-win',
+      name: 'Playlist Placement Win',
+      description: 'When your track gets added to a public playlist, automatically share the smart link to amplify the momentum.',
+      trigger: 'analytics:playlist-placement',
+      triggerLabel: 'Track added to playlist',
+      actions: [
+        {
+          type: 'share_smart_link',
+          config: {
+            platform: 'all',
+            message: `📀 ${title || '{{releaseName}}'} just landed on a new playlist! Stream it everywhere: ${smartLink || '{{smartLink}}'} 🙏 #PlaylistPlacement`,
+            smartLink: smartLink || '',
+          },
+        },
+      ],
+      icon: <ListMusic className="h-5 w-5" />,
+      color: 'text-green-600',
+      badgeColor: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+    },
+  ];
+}
+
+function AutopilotTab({
+  smartLinkUrl,
+  title,
+  artist,
+}: {
+  smartLinkUrl: string;
+  title: string;
+  artist: string;
+}) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [activating, setActivating] = useState<string | null>(null);
+
+  const { data: workflows = [], isLoading: workflowsLoading, refetch } = useQuery<any[]>({
+    queryKey: ['/api/custom-workflows'],
+  });
+
+  const presets = buildPresets(smartLinkUrl, title, artist);
+
+  // workflows that are sharing-related
+  const sharingWorkflows = workflows.filter((w) => {
+    const actions = w.actions as Array<{ type: string }>;
+    return actions.some((a) => a.type === 'share_smart_link' || a.type === 'social_post');
+  });
+
+  const isPresetActive = (presetId: string) => {
+    return sharingWorkflows.some((w) =>
+      w.name?.toLowerCase().includes(presetId.replace('-', ' ')) ||
+      w.name?.toLowerCase().includes(presets.find(p => p.id === presetId)?.name.toLowerCase() ?? '')
+    );
+  };
+
+  const activatePreset = async (preset: AutomationPreset) => {
+    setActivating(preset.id);
+    try {
+      const res = await apiRequest('POST', '/api/custom-workflows', {
+        name: preset.name,
+        description: preset.description,
+        triggerEvent: preset.trigger,
+        actions: preset.actions,
+      });
+      if (!res.ok) throw new Error('Failed to create workflow');
+      await queryClient.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
+      toast({
+        title: `${preset.name} activated`,
+        description: `Workflow created and enabled. It will fire when: ${preset.triggerLabel.toLowerCase()}.`,
+      });
+    } catch {
+      toast({ title: 'Error', description: 'Could not create automation. Try again.', variant: 'destructive' });
+    } finally {
+      setActivating(null);
+    }
+  };
+
+  const toggleWorkflow = async (wf: any) => {
+    const endpoint = wf.enabled
+      ? `/api/custom-workflows/${wf.id}/disable`
+      : `/api/custom-workflows/${wf.id}/enable`;
+    try {
+      await apiRequest('POST', endpoint, {});
+      await queryClient.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
+    } catch {
+      toast({ title: 'Toggle failed', variant: 'destructive' });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Bot className="h-5 w-5 text-purple-500" />
+            <h3 className="font-semibold text-base">Autopilot Sharing</h3>
+            <Badge variant="outline" className="text-xs text-purple-600 border-purple-300">AI-Powered</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Connect your smart link to the automation engine. One click to activate — then it runs on its own.
+          </p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <Button size="sm" variant="outline" asChild>
+            <a href="/workflow-automations">
+              <Settings2 className="h-3.5 w-3.5 mr-1.5" />
+              All Workflows
+            </a>
+          </Button>
+        </div>
+      </div>
+
+      {/* Smart link summary banner */}
+      {smartLinkUrl && title && (
+        <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/40">
+          <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <Link2 className="h-4 w-4 text-purple-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-medium">{title}</p>
+            <p className="text-xs text-muted-foreground truncate">{smartLinkUrl}</p>
+          </div>
+          <Badge variant="secondary" className="text-xs flex-shrink-0">Smart Link Ready</Badge>
+        </div>
+      )}
+
+      {/* Preset cards */}
+      <div>
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">One-Click Automations</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {presets.map((preset) => {
+            const active = isPresetActive(preset.id);
+            const loading = activating === preset.id;
+            return (
+              <Card key={preset.id} className={`transition-all ${active ? 'border-green-400 dark:border-green-600 bg-green-50/50 dark:bg-green-950/20' : ''}`}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${preset.badgeColor}`}>
+                      {preset.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-semibold text-sm">{preset.name}</span>
+                        {active && (
+                          <Badge className="text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 border-0">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Active
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{preset.description}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1.5 rounded-md">
+                    <Clock className="h-3 w-3 flex-shrink-0" />
+                    <span>Trigger: <strong>{preset.triggerLabel}</strong></span>
+                    <ArrowRight className="h-3 w-3 mx-1 flex-shrink-0" />
+                    <span>{preset.actions.length} action{preset.actions.length > 1 ? 's' : ''}</span>
+                  </div>
+
+                  <div className="flex gap-2">
+                    {active ? (
+                      <Button size="sm" variant="outline" className="w-full text-xs h-7 border-green-400 text-green-700 dark:text-green-400" disabled>
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Running
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="w-full text-xs h-7"
+                        onClick={() => activatePreset(preset)}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                        ) : (
+                          <Zap className="h-3 w-3 mr-1" />
+                        )}
+                        {loading ? 'Activating…' : 'Activate'}
+                      </Button>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active sharing workflows */}
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Active Sharing Workflows
+            {sharingWorkflows.length > 0 && (
+              <span className="ml-2 text-foreground font-bold">{sharingWorkflows.length}</span>
+            )}
+          </h4>
+          <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => refetch()}>
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </Button>
+        </div>
+
+        {workflowsLoading ? (
+          <div className="text-center py-6 text-muted-foreground text-sm">Loading workflows…</div>
+        ) : sharingWorkflows.length === 0 ? (
+          <div className="border border-dashed rounded-lg p-6 text-center">
+            <Bot className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No sharing workflows yet.</p>
+            <p className="text-xs text-muted-foreground mt-1">Activate a preset above or build a custom one.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {sharingWorkflows.map((wf) => {
+              const actions = wf.actions as Array<{ type: string; config: Record<string, string> }>;
+              const platforms = [...new Set(actions
+                .filter((a) => a.type === 'share_smart_link' || a.type === 'social_post')
+                .map((a) => a.config?.platform || 'all')
+              )].join(', ');
+
+              return (
+                <div key={wf.id} className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${wf.enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{wf.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {wf.triggerEvent?.replace(':', ' → ').replace(/-/g, ' ')} · {platforms ? `${platforms} platform(s)` : `${actions.length} action(s)`} · {wf.runCount ?? 0} runs
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {wf.lastRunAt && (
+                      <span className="text-xs text-muted-foreground hidden sm:block">
+                        Last: {new Date(wf.lastRunAt).toLocaleDateString()}
+                      </span>
+                    )}
+                    <Switch
+                      checked={!!wf.enabled}
+                      onCheckedChange={() => toggleWorkflow(wf)}
+                    />
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" asChild>
+                      <a href="/workflow-automations">
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Autopilot system link */}
+      <Card className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20 border-purple-200 dark:border-purple-800">
+        <CardContent className="p-4 flex items-center gap-4">
+          <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-purple-600" />
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-purple-900 dark:text-purple-300">Autopilot Social Engine</p>
+            <p className="text-xs text-purple-700 dark:text-purple-400">Let AI pick the best posting times, platforms, and content variations for your releases.</p>
+          </div>
+          <Button size="sm" variant="outline" className="border-purple-300 text-purple-700 dark:text-purple-300 flex-shrink-0" asChild>
+            <a href="/autopilot">
+              Configure
+              <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </a>
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function EmbedCodeGenerator() {
   const { toast } = useToast();
   const [copied, copy] = useCopy();
@@ -499,6 +869,10 @@ export function EmbedCodeGenerator() {
           <TabsTrigger value="all-codes" className="gap-1.5">
             <Code2 className="h-3.5 w-3.5" />
             All Codes
+          </TabsTrigger>
+          <TabsTrigger value="autopilot" className="gap-1.5">
+            <Bot className="h-3.5 w-3.5" />
+            Autopilot
           </TabsTrigger>
         </TabsList>
 
@@ -976,6 +1350,15 @@ export function EmbedCodeGenerator() {
               </ul>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── AUTOPILOT TAB ─────────────────────────────────── */}
+        <TabsContent value="autopilot" className="mt-4">
+          <AutopilotTab
+            smartLinkUrl={smartLinkUrl}
+            title={title}
+            artist={artist}
+          />
         </TabsContent>
       </Tabs>
     </div>
