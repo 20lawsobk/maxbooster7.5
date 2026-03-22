@@ -102,6 +102,7 @@ export interface MigrationRelease {
   territories: [];
   platforms: string[];
   tracks: MigrationTrack[];
+  platformUrl?: string;
   _meta: {
     sources: string[];
     isrcsCovered: number;
@@ -342,6 +343,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
   upc: string | null;
   isrcMap: Map<string, string>;    // trackTitle (normalized) → ISRC
   alternateVersions: string[];
+  deezerTracks: DeezerAlbumTrack[]; // raw Deezer track list (for populating lgTracks when empty)
 }> {
   const result: PlatformValidation = {
     platform: 'deezer',
@@ -378,7 +380,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
 
   if (!bestAlbum || bestScore < 0.6) {
     result.discrepancies.push(`Release "${ctx.lgTitle}" not found on Deezer`);
-    return { validation: result, upc, isrcMap, alternateVersions };
+    return { validation: result, upc, isrcMap, alternateVersions, deezerTracks: [] };
   }
 
   result.found = true;
@@ -395,7 +397,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
   // Fetch full album detail for UPC, release_date, genres, track listing.
   await delay(100);
   const detail = await deezerAlbumDetail(bestAlbum.id);
-  if (!detail) return { validation: result, upc, isrcMap, alternateVersions };
+  if (!detail) return { validation: result, upc, isrcMap, alternateVersions, deezerTracks: [] };
 
   upc = detail.upc ?? null;
   if (upc) result.enrichedFields.push('upc');
@@ -448,7 +450,7 @@ async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
     }
   }
 
-  return { validation: result, upc, isrcMap, alternateVersions };
+  return { validation: result, upc, isrcMap, alternateVersions, deezerTracks: albumTracks };
 }
 
 // ─── Apple Music validation for one release ───────────────────────────────────
@@ -540,7 +542,7 @@ async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
   }
 
   // Artwork: fill if LabelGrid didn't supply it; note if different resolution.
-  const amArtwork = bestAlbum.artworkUrl100?.replace('100x100bb', '3000x3000bb') ?? null;
+  const amArtwork = bestAlbum.artworkUrl100?.replace('100x100bb', '600x600bb') ?? null;
   if (!ctx.lgArtwork && amArtwork) {
     artwork = amArtwork;
     result.enrichedFields.push('artwork');
@@ -580,7 +582,7 @@ async function hydrateLabelGridRelease(
 
   let upc = lgRelease.upc ?? null;
   let artwork = lgRelease.coverUrl
-    ? lgRelease.coverUrl.replace(/\/\d+x\d+[a-z]{2}\.(jpg|png)$/i, '/3000x3000bb.jpg')
+    ? lgRelease.coverUrl.replace(/\/\d+x\d+[a-z]{2}\.(jpg|png)$/i, '/600x600bb.jpg')
     : null;
   let genre = lgRelease.genre ?? null;
 
@@ -598,6 +600,18 @@ async function hydrateLabelGridRelease(
   if (deezerResult.validation.found) sources.push('deezer');
   if (!upc && deezerResult.upc) {
     upc = deezerResult.upc;
+  }
+
+  // When LabelGrid returned no tracks and Deezer has track-level data, use
+  // Deezer's track list as a fallback so that migrationTracks is non-empty
+  // and track numbers / durations / ISRCs are populated.
+  if (lgTracks.length === 0 && deezerResult.deezerTracks.length > 0) {
+    lgTracks = deezerResult.deezerTracks.map(dt => ({
+      title: dt.title,
+      isrc: deezerResult.isrcMap.get(normalizeTitle(dt.title)) ?? undefined,
+      trackNumber: dt.track_position,
+      duration: dt.duration,
+    }));
   }
 
   // ── Apple Music validation + enrichment ─────────────────────────────────
@@ -719,7 +733,7 @@ async function hydrateLabelGridRelease(
     _meta: {
       sources,
       isrcsCovered,
-      totalTracks: migrationTracks.length,
+      totalTracks: migrationTracks.length || lgRelease.trackCount || 0,
       missingFields,
       platformPresence,
       validation: [deezerResult.validation, amResult.validation],
@@ -760,17 +774,12 @@ async function buildFromLinkedProfiles(
   const platformList = linkedProfiles.map(p => p.platformId).join(', ');
   logger.info(`[CatalogMigration] Linked platforms: ${platformList}`);
 
-  // Platforms with working catalog scanners in distributionDataTransferService.
-  const SCANNABLE = new Set(['spotify', 'apple_music', 'deezer', 'soundcloud', 'bandcamp', 'audiomack']);
-
   // ── Scan each platform ─────────────────────────────────────────────────────
+  // scanReleasesFromProfile now supports all 97 DSPs via the universal scanner
+  // (dedicated API scanners for 6 platforms + iTunes-proxy fallback for the rest).
   const allScanned: ScannedRelease[] = [];
 
   for (const profile of linkedProfiles) {
-    if (!SCANNABLE.has(profile.platformId)) {
-      logger.info(`[CatalogMigration] Skipping ${profile.platformId} (no scanner)`);
-      continue;
-    }
     try {
       logger.info(
         `[CatalogMigration] Scanning ${profile.platformId} — ` +
@@ -843,8 +852,9 @@ async function buildFromLinkedProfiles(
       releaseType: r.releaseType,
       trackCount: r.trackCount,
       genre: r.genre,
-      // Include the known platform so it shows up in platformPresence.
-      platforms: [r.platformId],
+      // Leave platforms empty so hydrateLabelGridRelease uses ALL_DISTRIBUTION_PLATFORM_SLUGS.
+      // The source platform is added to platformPresence after hydration.
+      platforms: [],
       tracks: (r.tracks ?? []).map(t => ({
         title: t.title,
         isrc: t.isrc,
@@ -862,6 +872,16 @@ async function buildFromLinkedProfiles(
     );
     if (!migrated._meta.sources.includes(r.platformId)) {
       migrated._meta.sources.unshift(r.platformId);
+    }
+
+    // Ensure the source platform appears in platformPresence.
+    if (!migrated._meta.platformPresence.includes(r.platformId)) {
+      migrated._meta.platformPresence.unshift(r.platformId);
+    }
+
+    // Carry the source platform's direct link through to the export.
+    if (r.platformUrl) {
+      migrated.platformUrl = r.platformUrl;
     }
 
     releases.push(migrated);
@@ -897,7 +917,7 @@ async function buildFromiTunesAndDeezer(
       artist: album.artistName || artistName,
       releaseDate: album.releaseDate?.split('T')[0] ?? undefined,
       upc: undefined,
-      coverUrl: album.artworkUrl100?.replace('100x100bb', '3000x3000bb') ?? undefined,
+      coverUrl: album.artworkUrl100?.replace('100x100bb', '600x600bb') ?? undefined,
       releaseType: 'single', // iTunes doesn't expose a clean release type
       trackCount: album.trackCount,
       genre: album.primaryGenreName || undefined,
@@ -1001,7 +1021,7 @@ export async function buildMigrationPayload(
     }
   }
 
-  const totalTracks = releases.reduce((acc, r) => acc + r.tracks.length, 0);
+  const totalTracks = releases.reduce((acc, r) => acc + r._meta.totalTracks, 0);
   const totalIsrcs = releases.reduce((acc, r) => acc + r._meta.isrcsCovered, 0);
   const isrcCoverage = totalTracks > 0
     ? `${Math.round((totalIsrcs / totalTracks) * 100)}%`
