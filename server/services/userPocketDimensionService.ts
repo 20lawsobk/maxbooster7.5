@@ -18,8 +18,23 @@ const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
 export class UserPocketDimensionService {
   private static instance: UserPocketDimensionService;
   private activePockets: Map<string, PocketDimension> = new Map();
-  
+  /** Per-user write locks — serialises concurrent read-modify-write operations per user. */
+  private writeLocks: Map<string, Promise<void>> = new Map();
+
   private constructor() {}
+
+  /**
+   * Acquire a per-user write lock. Returns a release function.
+   * All callers for the same userId are serialised via promise chaining.
+   */
+  private acquireWriteLock(userId: string): Promise<() => void> {
+    let release!: () => void;
+    const pending: Promise<void> = (this.writeLocks.get(userId) ?? Promise.resolve()).then(
+      () => new Promise<void>(res => { release = res; })
+    );
+    this.writeLocks.set(userId, pending.then(() => {}, () => {}));
+    return pending.then(() => release);
+  }
   
   static getInstance(): UserPocketDimensionService {
     if (!UserPocketDimensionService.instance) {
@@ -308,17 +323,24 @@ export class UserPocketDimensionService {
     const pocket = await this.getUserPocket(userId);
     if (!pocket) return;
 
-    const KEY = 'ai-journey/generation-history.json';
-    let history: any[] = [];
+    // Serialise concurrent writes to prevent the read-modify-write race condition
+    // where two concurrent calls each read the same history and overwrite each other.
+    const release = await this.acquireWriteLock(userId);
     try {
-      const raw = await pocket.read(KEY);
-      history = JSON.parse(raw.toString());
-    } catch {}
+      const KEY = 'ai-journey/generation-history.json';
+      let history: any[] = [];
+      try {
+        const raw = await pocket.read(KEY);
+        history = JSON.parse(raw.toString());
+      } catch {}
 
-    history.push({ ...meta, createdAt: meta.createdAt ?? new Date().toISOString() });
-    if (history.length > 1000) history = history.slice(-1000);
+      history.push({ ...meta, createdAt: meta.createdAt ?? new Date().toISOString() });
+      if (history.length > 1000) history = history.slice(-1000);
 
-    await pocket.write(KEY, JSON.stringify(history));
+      await pocket.write(KEY, JSON.stringify(history));
+    } finally {
+      release();
+    }
     logger.debug(`[AIJourney] Recorded ${meta.type} generation for user ${userId}`);
   }
 
@@ -340,9 +362,15 @@ export class UserPocketDimensionService {
   async updateAiProfile(userId: string, updates: Record<string, any>): Promise<void> {
     const pocket = await this.getUserPocket(userId);
     if (!pocket) return;
-    const current = await this.getAiProfile(userId);
-    const merged  = { ...current, ...updates, updatedAt: new Date().toISOString() };
-    await pocket.write('ai-journey/profile.json', JSON.stringify(merged));
+    // Serialise concurrent updates to prevent last-write-wins overwrite.
+    const release = await this.acquireWriteLock(userId);
+    try {
+      const current = await this.getAiProfile(userId);
+      const merged  = { ...current, ...updates, updatedAt: new Date().toISOString() };
+      await pocket.write('ai-journey/profile.json', JSON.stringify(merged));
+    } finally {
+      release();
+    }
   }
 
   /**

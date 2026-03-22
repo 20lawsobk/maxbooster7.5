@@ -1219,7 +1219,9 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
             isrc: track.isrc || trackMeta.isrc || '',
             trackNumber: index + 1,
             duration: track.duration || 0,
-            audioFilePath: track.audioUrl ? path.join(process.cwd(), track.audioUrl) : '',
+            // Pass the URL as-is — ddexPackageService.createDDEXPackage detects HTTPS URLs
+            // and downloads them to temp files before archiving, so no path transform needed.
+            audioFilePath: track.audioUrl || '',
             explicit: trackMeta.explicit || false,
             lyrics: trackMeta.lyrics,
             primaryArtist: metadata.artistName || 'Unknown Artist',
@@ -1338,7 +1340,29 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
     logger.info(`[Distribution] Submitting release ${id} to LabelGrid for ${selectedPlatforms.length} platform(s)`, { userId, platforms: selectedPlatforms });
     const lgResult = await labelGridService.createRelease(lgPayload);
 
-    // Persist LabelGrid release ID and update status
+    // Create dispatch records FIRST (in parallel), then mark the release as submitted.
+    // This ordering prevents a window where the release is "submitted" but has no dispatch
+    // records — which would make per-platform tracking impossible after a mid-flight crash.
+    const dispatchResults = await Promise.allSettled(
+      selectedPlatforms.map(async (platformSlug: string) => {
+        const provider = await storage.getDSPProviderBySlug(platformSlug);
+        if (!provider) return;
+        const lgPlatformStatus = lgResult.platforms?.find(
+          (p: any) => p.platform === platformSlug || p.platform === provider.slug
+        );
+        await storage.createDistroDispatch({
+          releaseId: id,
+          providerId: provider.id,
+          status: lgPlatformStatus?.status === 'live' ? 'delivered' : 'processing',
+        });
+      })
+    );
+    const failedDispatches = dispatchResults.filter(r => r.status === 'rejected');
+    if (failedDispatches.length > 0) {
+      logger.warn(`[Distribution] ${failedDispatches.length} dispatch record(s) failed to create for release ${id}`);
+    }
+
+    // Persist LabelGrid release ID and update status only after dispatch records exist.
     await storage.updateDistroRelease(id, {
       metadata: {
         ...metadata,
@@ -1346,23 +1370,9 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
         labelGridReleaseId: lgResult.releaseId,
         labelGridSubmittedAt: new Date().toISOString(),
         labelGridEstimatedLiveDate: lgResult.estimatedLiveDate,
+        dispatchedPlatformCount: dispatchResults.filter(r => r.status === 'fulfilled').length,
       },
     });
-
-    // Mirror per-platform status from LabelGrid response into dispatch records
-    for (const platformSlug of selectedPlatforms) {
-      const provider = await storage.getDSPProviderBySlug(platformSlug);
-      if (provider) {
-        const lgPlatformStatus = lgResult.platforms?.find(
-          (p) => p.platform === platformSlug || p.platform === provider.slug
-        );
-        await storage.createDistroDispatch({
-          releaseId: id,
-          providerId: provider.id,
-          status: lgPlatformStatus?.status === 'live' ? 'delivered' : 'processing',
-        });
-      }
-    }
 
     // AUDIT: Log successful submission for tracking
     logger.info(`Release ${id} submitted to LabelGrid (${lgResult.releaseId}) for ${selectedPlatforms.length} platforms`, {

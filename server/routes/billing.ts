@@ -26,7 +26,7 @@
 import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { db } from '../db';
-import { users } from '@shared/schema';
+import { users, workspaceAuditLog } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger';
 import { executeStripeOperation } from '../services/externalServices';
@@ -1108,7 +1108,9 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
     }
     
     try {
-      const paidInvoice = await stripe!.invoices.pay(latestInvoice.id);
+      // Idempotency key scoped to user+invoice so duplicate taps/timeouts never double-charge.
+      const idempotencyKey = `retry-pay-${userId}-${latestInvoice.id}`;
+      const paidInvoice = await stripe!.invoices.pay(latestInvoice.id, {}, { idempotencyKey });
       
       if (paidInvoice.status === 'paid') {
         await db
@@ -1464,24 +1466,41 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
     const refundAmount = amount ? Math.min(amount, refundableAmount) : refundableAmount;
     const isPartialRefund = refundAmount < refundableAmount;
     
-    logger.info(`[Billing] Refund request created for user ${userId}: ${invoiceId || chargeId}, reason: ${reason}, amount: ${refundAmount / 100}`);
-    
+    const refundRequestId = `refund_req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    const refundRequestPayload = {
+      id: refundRequestId,
+      chargeId: chargeToRefund,
+      invoiceId: invoiceId || null,
+      amount: refundAmount / 100,
+      reason,
+      description: description || null,
+      status: 'pending_review',
+      isPartialRefund,
+      estimatedProcessingDays: 7,
+      createdAt: new Date().toISOString(),
+    };
+
+    // Persist the refund request so admins can review it; without this it would only exist in server logs.
+    try {
+      await db.insert(workspaceAuditLog).values({
+        workspaceId: userId,
+        userId,
+        action: 'refund_request_submitted',
+        resourceType: 'billing',
+        resourceId: refundRequestId,
+        details: refundRequestPayload,
+      });
+    } catch (persistErr) {
+      logger.error('[Billing] Failed to persist refund request to audit log:', persistErr);
+    }
+
+    logger.info(`[Billing] Refund request ${refundRequestId} persisted for user ${userId}: ${invoiceId || chargeId}, reason: ${reason}, amount: ${refundAmount / 100}`);
+
     res.json({
       success: true,
       message: 'Refund request submitted successfully. Our team will review and process it within 5-7 business days.',
       code: 'REFUND_REQUESTED',
-      refundRequest: {
-        id: `refund_req_${Date.now()}`,
-        chargeId: chargeToRefund,
-        invoiceId: invoiceId || null,
-        amount: refundAmount / 100,
-        reason,
-        description: description || null,
-        status: 'pending_review',
-        isPartialRefund,
-        estimatedProcessingDays: 7,
-        createdAt: new Date().toISOString()
-      }
+      refundRequest: refundRequestPayload,
     });
   } catch (error: any) {
     logger.error('[Billing] Failed to create refund request:', error);

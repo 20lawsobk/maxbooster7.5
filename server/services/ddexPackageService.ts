@@ -1,6 +1,7 @@
 import { createHash } from 'crypto';
-import { readFile } from 'fs/promises';
+import { readFile, writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
+import { tmpdir } from 'os';
 import archiver from 'archiver';
 import { create } from 'xmlbuilder2';
 import { logger } from '../logger.js';
@@ -268,43 +269,86 @@ export class DDEXPackageService {
     return xml;
   }
 
+  /**
+   * Download a remote audio URL to a temp file and return the temp path.
+   * Caller is responsible for unlinking the temp file when done.
+   */
+  private async downloadAudioToTemp(url: string, trackNumber: number): Promise<string> {
+    const ext = url.split('?')[0].split('.').pop() || 'mp3';
+    const tmpPath = join(tmpdir(), `ddex_track_${trackNumber}_${Date.now()}.${ext}`);
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Failed to download audio for track ${trackNumber}: HTTP ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    await writeFile(tmpPath, buf);
+    return tmpPath;
+  }
+
   async createDDEXPackage(
     release: ReleaseMetadata,
     tracks: TrackMetadata[],
     outputPath: string
   ): Promise<string> {
-    const xml = await this.generateDDEXXML(release, tracks);
+    // Resolve audio file paths BEFORE generating XML so calculateMD5 works on local files.
+    const tempFiles: string[] = [];
+    const resolvedTracks = await Promise.all(
+      tracks.map(async (track) => {
+        let audioFilePath = track.audioFilePath;
+        if (audioFilePath && audioFilePath.startsWith('http')) {
+          try {
+            audioFilePath = await this.downloadAudioToTemp(audioFilePath, track.trackNumber);
+            tempFiles.push(audioFilePath);
+          } catch (err) {
+            logger.warn(`[DDEX] Could not download audio for track ${track.trackNumber} — file will be omitted from package:`, err);
+            audioFilePath = '';
+          }
+        }
+        return { ...track, audioFilePath };
+      })
+    );
+
+    // Generate XML with resolved (local) file paths so MD5 checksums are accurate.
+    const xml = await this.generateDDEXXML(release, resolvedTracks);
 
     // Create ZIP archive
     const archive = archiver('zip', {
       zlib: { level: 9 },
     });
 
-    const output = require('fs').createWriteStream(outputPath);
+    const { createWriteStream } = require('fs');
+    const output = createWriteStream(outputPath);
 
-    return new Promise((resolve, reject) => {
-      let settled = false;
-      const settle = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
-      output.on('close', () => settle(resolve.bind(null, outputPath)));
-      output.on('error', (err: Error) => settle(() => reject(err)));
-      archive.on('error', (err: Error) => settle(() => reject(err)));
-      archive.pipe(output);
+    try {
+      await new Promise<void>((resolve, reject) => {
+        let settled = false;
+        const settle = (fn: () => void) => { if (!settled) { settled = true; fn(); } };
+        output.on('close', () => settle(resolve));
+        output.on('error', (err: Error) => settle(() => reject(err)));
+        archive.on('error', (err: Error) => settle(() => reject(err)));
+        archive.pipe(output);
 
-      // Add XML file
-      archive.append(xml, { name: 'release.xml' });
+        // Add XML file
+        archive.append(xml, { name: 'release.xml' });
 
-      // Add audio files
-      for (const track of tracks) {
-        archive.file(track.audioFilePath, { name: `track_${track.trackNumber}.flac` });
-      }
+        // Add audio files (local paths only — remote URLs already resolved above)
+        for (const track of resolvedTracks) {
+          if (track.audioFilePath && !track.audioFilePath.startsWith('http')) {
+            archive.file(track.audioFilePath, { name: `track_${track.trackNumber}.flac` });
+          }
+        }
 
-      // Add cover art
-      if (release.coverArtPath) {
-        archive.file(release.coverArtPath, { name: 'cover.jpg' });
-      }
+        // Add cover art
+        if (release.coverArtPath && !release.coverArtPath.startsWith('http')) {
+          archive.file(release.coverArtPath, { name: 'cover.jpg' });
+        }
 
-      archive.finalize();
-    });
+        archive.finalize();
+      });
+    } finally {
+      // Clean up temp audio files regardless of success or failure
+      await Promise.all(tempFiles.map(f => unlink(f).catch(() => {})));
+    }
+
+    return outputPath;
   }
 
   async validateDDEXXML(xml: string): Promise<{ valid: boolean; errors: string[] }> {

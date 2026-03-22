@@ -32,11 +32,27 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    // Validate metric to prevent injection and unexpected queries
+    const ALLOWED_METRICS = ['streams', 'revenue', 'listeners', 'followers', 'engagement'];
+    if (!metric || !ALLOWED_METRICS.includes(metric)) {
+      return res.status(400).json({ error: 'Invalid metric. Must be one of: ' + ALLOWED_METRICS.join(', ') });
+    }
+
+    // Validate timeframe format and cap to prevent heavy DB scans
+    const timeframeMatch = /^(\d+)d$/.exec(String(timeframe));
+    if (!timeframeMatch) {
+      return res.status(400).json({ error: 'Invalid timeframe format. Expected format: 30d, 90d, etc.' });
+    }
+    const requestedDays = parseInt(timeframeMatch[1], 10);
+    if (requestedDays < 1 || requestedDays > 365) {
+      return res.status(400).json({ error: 'Timeframe must be between 1d and 365d.' });
+    }
+
     const cacheKey = `analytics:predict:${userId}:${metric}:${timeframe}`;
     const result = await distributedCache.getOrSet(
       cacheKey,
       async () => {
-        const days = parseInt(timeframe.replace('d', '')) || 30;
+        const days = requestedDays;
         const endDate = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - days);
@@ -232,15 +248,13 @@ router.get('/ai/forecast-revenue', async (req: Request, res: Response) => {
     let calculatedGrowthRate: number | null = null;
 
     try {
-      const revenueFilter = isAdmin
-        ? gte(analytics.date, sixtyDaysAgo)
-        : and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo));
-
-      const [prior30] = await db
+      // Build prior-30d revenue query separately for admin vs. per-user to avoid `as any` cast.
+      const prior30Query = db
         .select({ rev: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
-        .from(analytics)
-        .where(and(revenueFilter as any, lte(analytics.date, thirtyDaysAgo2)))
-        .limit(1);
+        .from(analytics);
+      const [prior30] = isAdmin
+        ? await prior30Query.where(and(gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo2))).limit(1)
+        : await prior30Query.where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo2))).limit(1);
 
       const priorRevenue = Number(prior30?.rev) || 0;
 
@@ -412,7 +426,21 @@ router.post('/music/career-growth', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const days = parseInt(timeline.replace('d', '')) || 30;
+    const ALLOWED_METRICS = ['streams', 'revenue', 'listeners', 'followers', 'engagement'];
+    if (metric && !ALLOWED_METRICS.includes(metric)) {
+      return res.status(400).json({ error: 'Invalid metric. Must be one of: ' + ALLOWED_METRICS.join(', ') });
+    }
+
+    const timelineMatch = /^(\d+)d$/.exec(String(timeline));
+    if (!timelineMatch) {
+      return res.status(400).json({ error: 'Invalid timeline format. Expected format: 30d, 90d, etc.' });
+    }
+    const requestedDays = parseInt(timelineMatch[1], 10);
+    if (requestedDays < 1 || requestedDays > 365) {
+      return res.status(400).json({ error: 'Timeline must be between 1d and 365d.' });
+    }
+
+    const days = requestedDays;
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 

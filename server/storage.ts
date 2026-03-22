@@ -531,55 +531,67 @@ export class DatabaseStorage implements IStorage {
   async getSocialWeeklyStats(userId: string): Promise<any[]> {
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const [allPosts, allContent] = await Promise.all([
-      db.select().from(posts).where(and(eq(posts.userId, userId), gte(posts.createdAt, sevenDaysAgo))).limit(500),
-      db.select().from(socialAutopilotContent).where(and(
-        eq(socialAutopilotContent.userId, userId),
-        gte(socialAutopilotContent.createdAt, sevenDaysAgo)
-      )).limit(500),
+    // Use SQL aggregation for both tables rather than fetching all rows into JS
+    // and filtering — this avoids the 500-row truncation problem and is O(1) network.
+    const [postRows, contentRows] = await Promise.all([
+      db.execute(sql`
+        SELECT
+          DATE(created_at) AS day,
+          COUNT(*)::int AS post_count,
+          COALESCE(SUM(
+            COALESCE((engagement->>'likes')::int, 0) +
+            COALESCE((engagement->>'comments')::int, 0) +
+            COALESCE((engagement->>'shares')::int, (engagement->>'retweets')::int, 0)
+          ), 0)::int AS engagement,
+          COALESCE(SUM(COALESCE((engagement->>'views')::int, 0)), 0)::int AS views,
+          COALESCE(SUM(COALESCE((engagement->>'impressions')::int, 0)), 0)::int AS impressions
+        FROM posts
+        WHERE user_id = ${userId} AND created_at >= ${sevenDaysAgo}
+        GROUP BY DATE(created_at)
+      `),
+      db.execute(sql`
+        SELECT
+          DATE(created_at) AS day,
+          COUNT(*)::int AS post_count,
+          COALESCE(SUM(
+            COALESCE((performance->>'likes')::int, 0) +
+            COALESCE((performance->>'comments')::int, 0) +
+            COALESCE((performance->>'shares')::int, 0)
+          ), 0)::int AS engagement,
+          COALESCE(SUM(COALESCE((performance->>'views')::int, 0)), 0)::int AS views
+        FROM social_autopilot_content
+        WHERE user_id = ${userId} AND created_at >= ${sevenDaysAgo}
+        GROUP BY DATE(created_at)
+      `),
     ]);
+
+    // Index results by ISO date string for O(1) merge
+    const postMap = new Map<string, any>();
+    for (const row of (postRows as any).rows ?? postRows) {
+      postMap.set(String(row.day).substring(0, 10), row);
+    }
+    const contentMap = new Map<string, any>();
+    for (const row of (contentRows as any).rows ?? contentRows) {
+      contentMap.set(String(row.day).substring(0, 10), row);
+    }
 
     const stats: any[] = [];
     for (let i = 6; i >= 0; i--) {
       const dayStart = new Date();
       dayStart.setHours(0, 0, 0, 0);
       dayStart.setDate(dayStart.getDate() - i);
-      const dayEnd = new Date(dayStart);
-      dayEnd.setHours(23, 59, 59, 999);
+      const dateKey = dayStart.toISOString().split('T')[0];
 
-      const dayPosts = allPosts.filter(p => {
-        const t = new Date(p.createdAt!).getTime();
-        return t >= dayStart.getTime() && t <= dayEnd.getTime();
-      });
-      const dayContent = allContent.filter(c => {
-        const t = new Date(c.createdAt!).getTime();
-        return t >= dayStart.getTime() && t <= dayEnd.getTime();
-      });
-
-      let dayEngagement = 0, dayViews = 0, dayImpressions = 0;
-      for (const post of dayPosts) {
-        const eng = post.engagement as any;
-        if (eng) {
-          dayEngagement += (eng.likes || 0) + (eng.comments || 0) + (eng.shares || eng.retweets || 0);
-          dayViews += eng.views || 0;
-          dayImpressions += eng.impressions || 0;
-        }
-      }
-      for (const content of dayContent) {
-        const perf = content.performance as any;
-        if (perf) {
-          dayEngagement += (perf.likes || 0) + (perf.comments || 0) + (perf.shares || 0);
-          dayViews += perf.views || 0;
-        }
-      }
+      const pr = postMap.get(dateKey);
+      const cr = contentMap.get(dateKey);
 
       stats.push({
-        date: dayStart.toISOString().split('T')[0],
+        date: dateKey,
         day: dayStart.toLocaleDateString('en-US', { weekday: 'short' }),
-        posts: dayPosts.length + dayContent.length,
-        engagement: dayEngagement,
-        views: dayViews,
-        impressions: dayImpressions,
+        posts: (Number(pr?.post_count) || 0) + (Number(cr?.post_count) || 0),
+        engagement: (Number(pr?.engagement) || 0) + (Number(cr?.engagement) || 0),
+        views: (Number(pr?.views) || 0) + (Number(cr?.views) || 0),
+        impressions: Number(pr?.impressions) || 0,
       });
     }
     return stats;
