@@ -544,6 +544,32 @@ class LabelGridService {
     }
   }
 
+  /**
+   * Fetch a single release by its LabelGrid ID, with full track listing.
+   * Returns null if the API is unconfigured or the endpoint fails.
+   */
+  async getReleaseDetail(releaseId: string): Promise<LabelGridCatalogRelease | null> {
+    await this.loadConfig();
+
+    if (!this.isConfigured) {
+      logger.warn('[LabelGrid] API not configured — getReleaseDetail unavailable');
+      return null;
+    }
+
+    const endpoint = this.getEndpoint('getReleaseDetail', '/v1/releases/:id').replace(':id', encodeURIComponent(releaseId));
+    this.logApiCall('GET', endpoint);
+
+    try {
+      const response = await this.retryWithBackoff(async () =>
+        this.client.get<LabelGridCatalogRelease>(endpoint)
+      );
+      return response.data ?? null;
+    } catch (err: any) {
+      logger.warn(`[LabelGrid] getReleaseDetail failed for ${releaseId}:`, err?.message ?? err);
+      return null;
+    }
+  }
+
   async createRelease(releaseData: LabelGridRelease): Promise<LabelGridReleaseResponse> {
     await this.loadConfig();
 

@@ -225,9 +225,10 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             Migrate Catalog to LabelGrid
           </CardTitle>
           <CardDescription>
-            Parses your public streaming profiles on Apple Music and Deezer to extract all release
-            metadata — titles, track listings, ISRCs, UPCs, artwork, and more. Outputs a clean
-            JSON file you can import directly into LabelGrid.
+            Pulls your complete catalog directly from LabelGrid — including UPCs, ISRCs, artwork,
+            and all distribution-grade metadata. Missing fields are automatically filled in from
+            Deezer (ISRCs) and Apple Music (artwork/genre). Outputs a clean JSON file ready
+            for LabelGrid import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -266,8 +267,8 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             <Alert>
               <Loader2 className="w-4 h-4 animate-spin" />
               <AlertDescription className="ml-2">
-                Fetching album list from Apple Music, then enriching each track with ISRC data
-                from Deezer. Large catalogs may take up to 2 minutes…
+                Fetching your catalog from LabelGrid, then filling any gaps using Deezer (ISRCs)
+                and Apple Music (artwork/genre). Large catalogs may take up to 2 minutes…
               </AlertDescription>
             </Alert>
           )}
@@ -308,8 +309,9 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
                 <FileJson className="w-3 h-3" />
                 LabelGrid Import Format
               </Badge>
-              <Badge variant="secondary">iTunes</Badge>
-              <Badge variant="secondary">Deezer</Badge>
+              <Badge variant="default">LabelGrid</Badge>
+              <Badge variant="secondary">Deezer (ISRC fill)</Badge>
+              <Badge variant="secondary">Apple Music (artwork)</Badge>
             </div>
           </CardHeader>
 

@@ -489,6 +489,10 @@ export function DataTransferWizard() {
             <Link2 className="h-4 w-4" />
             Streaming Profiles
           </TabsTrigger>
+          <TabsTrigger value="migrate" className="flex items-center gap-2">
+            <ArrowRightLeft className="h-4 w-4" />
+            Migrate Catalog
+          </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" />
             Transfer History
@@ -827,6 +831,11 @@ export function DataTransferWizard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Migrate Catalog tab ── */}
+        <TabsContent value="migrate" className="space-y-4">
+          <CatalogMigration />
         </TabsContent>
 
         {/* ── Transfer History tab ── */}
