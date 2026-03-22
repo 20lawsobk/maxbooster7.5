@@ -102,9 +102,37 @@ function formatDuration(seconds: number | null): string {
 }
 
 const PLATFORM_LABEL: Record<string, string> = {
-  deezer: 'Deezer',
+  spotify: 'Spotify',
   apple_music: 'Apple Music',
+  'apple-music': 'Apple Music',
+  itunes: 'iTunes',
+  'amazon-music': 'Amazon Music',
+  amazon_music: 'Amazon Music',
+  tidal: 'Tidal',
+  deezer: 'Deezer',
+  'youtube-music': 'YouTube Music',
+  youtube_music: 'YouTube Music',
+  pandora: 'Pandora',
+  iheartradio: 'iHeartRadio',
+  napster: 'Napster',
+  soundcloud: 'SoundCloud',
+  tiktok: 'TikTok',
+  boomplay: 'Boomplay',
+  anghami: 'Anghami',
+  kkbox: 'KKBOX',
+  beatport: 'Beatport',
+  bandcamp: 'Bandcamp',
 };
+
+/** Summarise a platform presence list for display. */
+function formatPlatformPresence(platforms: string[]): string {
+  if (platforms.length === 0) return '';
+  if (platforms.length <= 4) {
+    return platforms.map(p => PLATFORM_LABEL[p] ?? p).join(', ');
+  }
+  const first = platforms.slice(0, 3).map(p => PLATFORM_LABEL[p] ?? p).join(', ');
+  return `${first} + ${platforms.length - 3} more`;
+}
 
 // ── ValidationBadge ───────────────────────────────────────────────────────────
 
@@ -208,7 +236,20 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
             {release.upc && <span>UPC: <span className="font-mono text-foreground">{release.upc}</span></span>}
             {release.releaseDate && <span>Released: {release.releaseDate}</span>}
             {platformPresence.length > 0 && (
-              <span>Confirmed on: {platformPresence.map(p => PLATFORM_LABEL[p] ?? p).join(', ')}</span>
+              <span>
+                LabelGrid confirmed:{' '}
+                <span className="text-foreground">{formatPlatformPresence(platformPresence)}</span>
+              </span>
+            )}
+            {release.platforms.length > 0 && (
+              <span>
+                Distribution targets:{' '}
+                <span className="text-foreground">
+                  {release.platforms.length > 6
+                    ? `All ${release.platforms.length} registered platforms`
+                    : formatPlatformPresence(release.platforms)}
+                </span>
+              </span>
             )}
             {release._meta.sources.length > 0 && (
               <span>Sources: {release._meta.sources.join(', ')}</span>

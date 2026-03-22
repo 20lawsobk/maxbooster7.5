@@ -40,6 +40,17 @@ import { logger } from '../logger.js';
 import { labelGridService } from './labelgrid-service.js';
 import type { LabelGridCatalogRelease, LabelGridCatalogTrack } from './labelgrid-service.js';
 import type { ScannedRelease } from './distributionDataTransferService.js';
+import { DISTRIBUTION_PLATFORMS } from '../seed/distributionPlatforms.js';
+
+// ─── All registered DSP platform slugs ────────────────────────────────────────
+// LabelGrid is the authority layer for every platform in this list.
+// When LabelGrid confirms a release is live on a set of platforms, that list
+// takes precedence over everything else in the export. When LabelGrid is
+// unavailable, the release is assumed to target the full active platform
+// catalog (since DistroKid distributes to all major platforms by default).
+const ALL_DISTRIBUTION_PLATFORM_SLUGS: string[] = DISTRIBUTION_PLATFORMS
+  .filter(p => p.isActive)
+  .map(p => p.slug);
 
 // ─── Validation types ─────────────────────────────────────────────────────────
 
@@ -605,12 +616,19 @@ async function hydrateLabelGridRelease(
   if (!artwork && amResult.artwork) artwork = amResult.artwork;
   if (!genre && amResult.genre) genre = amResult.genre;
 
-  // ── Platform presence ────────────────────────────────────────────────────
-  const platformPresence: string[] = [];
-  if (deezerResult.validation.found) platformPresence.push('deezer');
-  if (amResult.validation.found) platformPresence.push('apple_music');
-  // Releases distributed via DistroKid are typically on all major platforms.
-  // We note only platforms we could programmatically verify.
+  // ── Platform presence (LabelGrid is the authority for all 100 DSPs) ──────
+  // When LabelGrid's API returns a `platforms` list for this release, that list
+  // is the authoritative record of which of the 100 distribution system
+  // platforms the release is live on. Deezer and Apple Music public-API
+  // verification adds additional confirmed entries on top of LabelGrid's list.
+  const lgPlatforms = lgRelease.platforms?.length ? lgRelease.platforms : [];
+  const platformPresence: string[] = [...lgPlatforms];
+  if (!platformPresence.includes('deezer') && deezerResult.validation.found) {
+    platformPresence.push('deezer');
+  }
+  if (!platformPresence.includes('apple_music') && amResult.validation.found) {
+    platformPresence.push('apple_music');
+  }
 
   // ── Build track list ─────────────────────────────────────────────────────
   const migrationTracks: MigrationTrack[] = [];
@@ -689,9 +707,14 @@ async function hydrateLabelGridRelease(
     copyrightOwner: null,
     territoryMode: 'worldwide',
     territories: [],
+    // LabelGrid is the authority for all 100 distribution system platforms.
+    // When LabelGrid specifies platforms for this release, that list is used
+    // exactly as returned. When LabelGrid is unavailable (API 404 etc.) the
+    // release targets every active platform registered in the distribution
+    // system — matching the "worldwide" scope DistroKid delivers to.
     platforms: lgRelease.platforms?.length
       ? lgRelease.platforms
-      : ['spotify', 'apple_music', 'amazon_music', 'deezer', 'tidal', 'youtube_music', 'pandora'],
+      : ALL_DISTRIBUTION_PLATFORM_SLUGS,
     tracks: migrationTracks,
     _meta: {
       sources,
