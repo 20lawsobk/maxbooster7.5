@@ -2037,91 +2037,12 @@ class DistributionDataTransferService {
     const artistName = profile.artistName || 'Unknown Artist';
     const artistId = profile.artistId;
 
-    logger.info(`[DataTransfer] Scanning releases via LabelGrid for ${platformId} / user ${userId}: ${artistId}`);
+    logger.info(`[DataTransfer] Scanning catalog for ${platformId} / artist "${artistName}" (${artistId})`);
 
-    // ── LabelGrid primary path ──────────────────────────────────────────────
-    // LabelGrid is the authoritative distribution source covering Spotify and
-    // 97+ other DSPs.  We call getUserCatalog() which uses the authenticated
-    // bearer token (no external artist ID needed) — so it works regardless of
-    // whether the Spotify artist ID matches a LabelGrid internal ID.
-    if (labelGridService.isApiConfigured()) {
-      try {
-        // Primary: authenticated user's full catalog (covers all linked platforms)
-        const lgReleases = await labelGridService.getUserCatalog();
-        if (lgReleases.length > 0) {
-          logger.info(`[DataTransfer] LabelGrid getUserCatalog returned ${lgReleases.length} releases`);
-          const normalizeType = (t: string): 'single' | 'EP' | 'album' => {
-            if ((t || '').toLowerCase() === 'ep') return 'EP';
-            if ((t || '').toLowerCase() === 'single') return 'single';
-            return 'album';
-          };
-          return lgReleases.map((r: LabelGridCatalogRelease): ScannedRelease => ({
-            id: r.id,
-            title: r.title,
-            artistName: r.artist,
-            releaseType: normalizeType(r.releaseType),
-            releaseDate: r.releaseDate || null,
-            trackCount: r.trackCount,
-            coverUrl: r.coverUrl || undefined,
-            platformUrl: undefined,
-            platformId,
-            externalId: r.id,
-            upc: r.upc || undefined,
-            genre: r.genre || undefined,
-            tracks: (r.tracks || []).map((t) => ({
-              title: t.title,
-              isrc: t.isrc || undefined,
-              trackNumber: t.trackNumber,
-              duration: t.duration,
-            })),
-          }));
-        }
-
-        // Secondary: artist-specific catalog lookup (requires LabelGrid artist ID).
-        // Useful if the user has multiple artist profiles on the same account.
-        const lgArtistReleases = await labelGridService.getArtistCatalog(artistId, platformId);
-        if (lgArtistReleases.length > 0) {
-          logger.info(`[DataTransfer] LabelGrid getArtistCatalog returned ${lgArtistReleases.length} releases for ${platformId}`);
-          const normalizeType = (t: string): 'single' | 'EP' | 'album' => {
-            if ((t || '').toLowerCase() === 'ep') return 'EP';
-            if ((t || '').toLowerCase() === 'single') return 'single';
-            return 'album';
-          };
-          return lgArtistReleases.map((r: LabelGridCatalogRelease): ScannedRelease => ({
-            id: r.id,
-            title: r.title,
-            artistName: r.artist,
-            releaseType: normalizeType(r.releaseType),
-            releaseDate: r.releaseDate || null,
-            trackCount: r.trackCount,
-            coverUrl: r.coverUrl || undefined,
-            platformUrl: undefined,
-            platformId,
-            externalId: r.id,
-            upc: r.upc || undefined,
-            genre: r.genre || undefined,
-            tracks: (r.tracks || []).map((t) => ({
-              title: t.title,
-              isrc: t.isrc || undefined,
-              trackNumber: t.trackNumber,
-              duration: t.duration,
-            })),
-          }));
-        }
-
-        // Both LabelGrid paths returned 0 — the account may have no distributed
-        // releases yet, or the releases aren't indexed.  Fall through to direct
-        // platform scan as a best-effort fallback.
-        logger.info(`[DataTransfer] LabelGrid returned 0 releases for ${platformId}; falling back to direct platform scan`);
-      } catch (lgErr: any) {
-        logger.warn(`[DataTransfer] LabelGrid catalog scan failed for ${platformId}, falling back to direct scan:`, lgErr?.message ?? lgErr);
-      }
-    }
-
-    // ── Direct platform fallback ─────────────────────────────────────────────
-    // Used when LabelGrid API is not configured, or when the artist has legacy
-    // releases on a platform that predate their LabelGrid distribution.
-    logger.info(`[DataTransfer] Direct platform scan for ${platformId} / artist ${artistId}`);
+    // Parse the catalog directly from the linked platform profile.
+    // The existing releases were distributed via DistroKid — we read them
+    // straight from the DSP (Spotify, Apple Music, etc.) rather than going
+    // through any distribution intermediary.
     switch (platformId) {
       case 'spotify':      return this.fetchSpotifyAlbums(artistId, artistName);
       case 'apple_music':  return this.fetchAppleMusicAlbums(artistId, artistName);
@@ -2130,6 +2051,7 @@ class DistributionDataTransferService {
       case 'bandcamp':     return this.fetchBandcampAlbums(artistId, artistName);
       case 'audiomack':    return this.fetchAudiomackAlbums(artistId, artistName);
       default:
+        logger.warn(`[DataTransfer] No catalog scanner for platform "${platformId}"`);
         return [];
     }
   }
