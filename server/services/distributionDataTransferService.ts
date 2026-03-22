@@ -1557,66 +1557,182 @@ class DistributionDataTransferService {
 
   private async fetchSpotifyAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
     const token = await this.getSpotifyToken();
-    if (!token) {
-      // No Spotify API credentials configured — use MusicBrainz open catalog as
-      // a credential-free fallback.  MusicBrainz is the gold-standard music
-      // catalog with full artist discographies and no authentication required.
-      logger.info(`[DataTransfer] No Spotify credentials — using MusicBrainz fallback for artist ${artistId}`);
-      return this.fetchMusicBrainzAlbums(artistId, artistName);
-    }
 
-    try {
-      const results: ScannedRelease[] = [];
-      let url: string | null = `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
+    if (token) {
+      try {
+        const results: ScannedRelease[] = [];
+        let url: string | null = `https://api.spotify.com/v1/artists/${artistId}/albums?include_groups=album,single,ep&limit=50&market=US`;
+        let spotifyApiBlocked = false;
 
-      while (url) {
-        const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
-        if (!resp.ok) break;
-        const data = await resp.json() as any;
+        while (url) {
+          const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
 
-        for (const item of (data.items || [])) {
-          const type = item.album_type === 'album'
-            ? (item.total_tracks >= 6 ? 'album' : 'EP')
-            : 'single';
-          results.push({
-            id: `spotify-${item.id}`,
-            externalId: item.id,
-            platformId: 'spotify',
-            title: item.name,
-            artistName: item.artists?.[0]?.name || artistName,
-            releaseType: type as 'single' | 'EP' | 'album',
-            releaseDate: item.release_date || null,
-            trackCount: item.total_tracks || 1,
-            coverUrl: item.images?.[0]?.url,
-            platformUrl: item.external_urls?.spotify,
-          });
+          if (!resp.ok) {
+            // Detect premium-subscription block on the developer app — the
+            // Spotify API responds with a plain-text message (not JSON) when the
+            // app owner's account doesn't have an active Spotify premium
+            // subscription.  In that case we fall through to the iTunes catalog.
+            const body = await resp.text().catch(() => '');
+            if (body.toLowerCase().includes('premium') || resp.status === 403) {
+              logger.warn(`[DataTransfer] Spotify API blocked (status ${resp.status}): ${body.slice(0, 120)} — falling back to iTunes catalog`);
+              spotifyApiBlocked = true;
+            } else {
+              logger.warn(`[DataTransfer] Spotify albums request failed: ${resp.status}`);
+            }
+            break;
+          }
+
+          const data = await resp.json() as any;
+          for (const item of (data.items || [])) {
+            const type = item.album_type === 'album'
+              ? (item.total_tracks >= 6 ? 'album' : 'EP')
+              : 'single';
+            results.push({
+              id: `spotify-${item.id}`,
+              externalId: item.id,
+              platformId: 'spotify',
+              title: item.name,
+              artistName: item.artists?.[0]?.name || artistName,
+              releaseType: type as 'single' | 'EP' | 'album',
+              releaseDate: item.release_date || null,
+              trackCount: item.total_tracks || 1,
+              coverUrl: item.images?.[0]?.url,
+              platformUrl: item.external_urls?.spotify,
+            });
+          }
+
+          url = data.next || null;
+          if (results.length >= 100) break;
         }
 
-        url = data.next || null;
-        if (results.length >= 100) break;
-      }
-
-      // Fetch track-level ISRC for first 5 singles for richer metadata
-      for (const release of results.filter(r => r.releaseType === 'single').slice(0, 5)) {
-        try {
-          const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=10`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (tr.ok) {
-            const td = await tr.json() as any;
-            release.tracks = (td.items || []).map((t: any, idx: number) => ({
-              title: t.name,
-              trackNumber: idx + 1,
-              isrc: t.external_ids?.isrc,
-              duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : undefined,
-            }));
+        if (results.length > 0) {
+          // Fetch track-level ISRC for first 5 singles for richer metadata
+          for (const release of results.filter(r => r.releaseType === 'single').slice(0, 5)) {
+            try {
+              const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=10`, {
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              if (tr.ok) {
+                const td = await tr.json() as any;
+                release.tracks = (td.items || []).map((t: any, idx: number) => ({
+                  title: t.name,
+                  trackNumber: idx + 1,
+                  isrc: t.external_ids?.isrc,
+                  duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : undefined,
+                }));
+              }
+            } catch { /* non-fatal */ }
           }
-        } catch { /* non-fatal */ }
-      }
+          logger.info(`[DataTransfer] Spotify API returned ${results.length} releases for artist ${artistId}`);
+          return results;
+        }
 
-      return results;
+        // Spotify returned nothing (API blocked or empty) — fall through to iTunes
+        if (!spotifyApiBlocked) {
+          logger.info(`[DataTransfer] Spotify API returned 0 releases for ${artistId} — trying iTunes catalog`);
+        }
+      } catch (err: any) {
+        logger.warn(`[DataTransfer] Spotify album scan error for ${artistId}:`, err?.message);
+      }
+    } else {
+      logger.info(`[DataTransfer] No Spotify token — going direct to iTunes catalog for artist "${artistName}"`);
+    }
+
+    // ── iTunes/Apple Music catalog (credential-free) ──────────────────────────
+    // LabelGrid distributes to Apple Music and Spotify simultaneously, so the
+    // iTunes catalog is the authoritative mirror of what's on Spotify.  We search
+    // by artist name (extracted from the Spotify profile) and page through all
+    // their releases.  No API key required.
+    const itunesReleases = await this.fetchItunesCatalogByArtistName(artistName, 'spotify');
+    if (itunesReleases.length > 0) {
+      logger.info(`[DataTransfer] iTunes catalog returned ${itunesReleases.length} releases for "${artistName}"`);
+      return itunesReleases;
+    }
+
+    // ── MusicBrainz last-resort fallback ─────────────────────────────────────
+    logger.info(`[DataTransfer] iTunes returned 0 results — trying MusicBrainz for artist ${artistId}`);
+    return this.fetchMusicBrainzAlbums(artistId, artistName);
+  }
+
+  /**
+   * Fetch an artist's full catalog from the iTunes / Apple Music search API.
+   *
+   * LabelGrid distributes to Apple Music and Spotify in tandem, so the iTunes
+   * catalog carries the same released titles as Spotify.  This is a reliable,
+   * credential-free alternative when the Spotify API is unavailable.
+   *
+   * The iTunes search API is public and free — no authentication required.
+   * We search by artist name, pick the best-matching artist ID, then pull all
+   * their albums and singles (up to 200 items).
+   */
+  private async fetchItunesCatalogByArtistName(
+    artistName: string,
+    platformId: string
+  ): Promise<ScannedRelease[]> {
+    if (!artistName || artistName === 'Unknown Artist') return [];
+
+    try {
+      // Step 1 — Find the iTunes artist ID by name
+      const searchResp = await fetch(
+        `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`
+      );
+      if (!searchResp.ok) return [];
+
+      const searchData = await searchResp.json() as any;
+      const items: any[] = searchData.results || [];
+      if (items.length === 0) return [];
+
+      // Pick the artist ID that appears most often — that's the best name match
+      const idCounts: Record<number, number> = {};
+      for (const item of items) {
+        const aid = item.artistId as number | undefined;
+        if (aid) idCounts[aid] = (idCounts[aid] || 0) + 1;
+      }
+      const bestId = Number(
+        Object.entries(idCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
+      );
+      if (!bestId) return [];
+
+      // Step 2 — Get all releases for that artist ID (up to 200)
+      const lookupResp = await fetch(
+        `https://itunes.apple.com/lookup?id=${bestId}&entity=album&limit=200&country=US`
+      );
+      if (!lookupResp.ok) return [];
+
+      const lookupData = await lookupResp.json() as any;
+      const releases: any[] = (lookupData.results || []).filter(
+        (r: any) => r.wrapperType === 'collection' || r.collectionId
+      );
+
+      const resolvedArtistName =
+        releases[0]?.artistName || artistName;
+
+      const normalizeType = (trackCount: number): 'single' | 'EP' | 'album' => {
+        if (trackCount <= 2) return 'single';
+        if (trackCount <= 6) return 'EP';
+        return 'album';
+      };
+
+      return releases.map((item: any) => ({
+        id: `itunes-${item.collectionId}`,
+        externalId: String(item.collectionId),
+        platformId,
+        title: item.collectionName?.replace(/ - Single$| - EP$/, '') || item.collectionName,
+        artistName: item.artistName || resolvedArtistName,
+        releaseType: item.collectionName?.endsWith(' - Single')
+          ? 'single'
+          : item.collectionName?.endsWith(' - EP')
+            ? 'EP'
+            : normalizeType(item.trackCount || 1),
+        releaseDate: item.releaseDate ? item.releaseDate.split('T')[0] : null,
+        trackCount: item.trackCount || 1,
+        coverUrl: item.artworkUrl100?.replace('100x100bb', '600x600bb'),
+        platformUrl: item.collectionViewUrl,
+        upc: undefined,
+        genre: item.primaryGenreName || undefined,
+      }));
     } catch (err: any) {
-      logger.error(`[DataTransfer] Spotify album scan failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] iTunes catalog lookup failed for "${artistName}":`, err?.message);
       return [];
     }
   }
