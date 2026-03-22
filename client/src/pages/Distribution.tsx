@@ -157,6 +157,7 @@ import { HyperFollowBuilder } from '@/components/distribution/HyperFollowBuilder
 import { SubmissionStatusTracker } from '@/components/distribution/SubmissionStatusTracker';
 import { ContentIDManager } from '@/components/distribution/ContentIDManager';
 import ArtistProfileManager from '@/components/distribution/ArtistProfileManager';
+import { EmbedCodeGenerator } from '@/components/distribution/EmbedCodeGenerator';
 
 // DistroKid Clone Interfaces
 interface Release {
@@ -1822,6 +1823,14 @@ return (
                 Pre-Save
               </TabsTrigger>
               <TabsTrigger
+                value="share-embed"
+                className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
+                data-testid="tab-share-embed"
+              >
+                <Share2 className="w-4 h-4 mr-1" />
+                Share & Embed
+              </TabsTrigger>
+              <TabsTrigger
                 value="analytics"
                 className="data-[state=active]:bg-blue-600 data-[state=active]:text-white whitespace-nowrap"
                 data-testid="tab-analytics"
@@ -2967,6 +2976,11 @@ return (
                 <p className="text-gray-500">HyperFollow pages will appear here</p>
               </div>
             )}
+          </TabsContent>
+
+          {/* Share & Embed Tab */}
+          <TabsContent value="share-embed" className="space-y-6">
+            <EmbedCodeGenerator />
           </TabsContent>
 
           {/* Quality Control Tab */}

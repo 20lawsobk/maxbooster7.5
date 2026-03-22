@@ -45,6 +45,7 @@ Max Booster operates on a three-point data flow:
 - **Error Handling and Fixing**: `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` provide reactive and proactive system health monitoring and runtime patching.
 - **Comprehensive Parsing/Scraping**: Upgraded parsers for Apple iTunes, Deezer, JioSaavn, MusicBrainz, Audiomack, and numerous DSPs, along with an improved distribution webhook handler and ReleaseStatusDashboard.
 - **DSP Profile Hub**: Replaced "Auto Artist Sync" scanning model with a DSP portal ownership/claiming paradigm, displaying 8 DSP portal rows with claimed/unclaimed status.
+- **Share & Embed Panel**: New Distribution tab (`share-embed`) with `EmbedCodeGenerator` component — generates LabelGrid WordPress shortcodes (`[labelgrid_smartlink]`, `[labelgrid_release]`, `[labelgrid_player]`), HTML iframe embeds, QR codes (via `qrcode` package with PNG download), live previews for button/widget/player types, and a release selector wired to `/api/distribution/releases`.
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
