@@ -5168,12 +5168,13 @@ router.post('/platform/youtube', requireAuth, async (req: Request, res: Response
 // No premium credentials required — uses iTunes + Deezer public APIs.
 router.post('/catalog-export', requireAuth, async (req: Request, res: Response) => {
   try {
+    const user = req.user as AuthenticatedUser;
     const { artistName } = req.body as { artistName?: string };
     if (!artistName || !artistName.trim()) {
       return res.status(400).json({ error: 'artistName is required' });
     }
     const { buildMigrationPayload } = await import('../services/catalogMigrationService.js');
-    const payload = await buildMigrationPayload(artistName.trim());
+    const payload = await buildMigrationPayload(artistName.trim(), user?.id);
     res.json(payload);
   } catch (error: unknown) {
     logger.error('[Distribution] Catalog export failed:', error);

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,9 +17,35 @@ import {
   ChevronDown,
   ChevronUp,
   ArrowRightLeft,
+  ShieldCheck,
+  ShieldX,
+  AlertTriangle,
+  GitBranch,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
+
+// ── Types (mirror server/services/catalogMigrationService.ts) ─────────────────
+
+interface IsrcConflict {
+  trackTitle: string;
+  trackNumber: number;
+  labelgridIsrc: string;
+  platformIsrc: string;
+}
+
+interface PlatformValidation {
+  platform: 'deezer' | 'apple_music';
+  found: boolean;
+  platformReleaseId: string | null;
+  titleMatch: boolean;
+  releaseDateMatch: boolean | null;
+  trackCountMatch: boolean | null;
+  isrcConflicts: IsrcConflict[];
+  alternateVersions: string[];
+  discrepancies: string[];
+  enrichedFields: string[];
+}
 
 interface MigrationTrack {
   title: string;
@@ -35,6 +61,7 @@ interface MigrationTrack {
 interface MigrationRelease {
   title: string;
   artist: string;
+  releaseType: 'album' | 'EP' | 'single';
   releaseDate: string | null;
   upc: string | null;
   artwork: string | null;
@@ -51,6 +78,8 @@ interface MigrationRelease {
     isrcsCovered: number;
     totalTracks: number;
     missingFields: string[];
+    platformPresence: string[];
+    validation: PlatformValidation[];
   };
 }
 
@@ -63,6 +92,8 @@ interface MigrationPayload {
   releases: MigrationRelease[];
 }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function formatDuration(seconds: number | null): string {
   if (!seconds) return '—';
   const m = Math.floor(seconds / 60);
@@ -70,13 +101,57 @@ function formatDuration(seconds: number | null): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const PLATFORM_LABEL: Record<string, string> = {
+  deezer: 'Deezer',
+  apple_music: 'Apple Music',
+};
+
+// ── ValidationBadge ───────────────────────────────────────────────────────────
+
+function ValidationBadge({ v }: { v: PlatformValidation }) {
+  const label = PLATFORM_LABEL[v.platform] ?? v.platform;
+  const hasIssues = v.discrepancies.length > 0 || v.isrcConflicts.length > 0;
+
+  if (!v.found) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+        <ShieldX className="w-3 h-3 text-muted-foreground/60" />
+        {label}: not found
+      </span>
+    );
+  }
+
+  if (hasIssues) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-amber-500">
+        <AlertTriangle className="w-3 h-3" />
+        {label}: {v.discrepancies.length + v.isrcConflicts.length} issue{v.discrepancies.length + v.isrcConflicts.length !== 1 ? 's' : ''}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-green-500">
+      <ShieldCheck className="w-3 h-3" />
+      {label}: verified
+    </span>
+  );
+}
+
+// ── ReleaseRow ────────────────────────────────────────────────────────────────
+
 function ReleaseRow({ release }: { release: MigrationRelease }) {
   const [open, setOpen] = useState(false);
-  const isrcCount = release._meta.isrcsCovered;
-  const totalTracks = release._meta.totalTracks;
+  const { isrcsCovered, totalTracks, validation, platformPresence, missingFields } = release._meta;
+
+  const allDiscrepancies = validation.flatMap(v => v.discrepancies);
+  const allConflicts = validation.flatMap(v => v.isrcConflicts);
+  const allAlternates = [...new Set(validation.flatMap(v => v.alternateVersions))];
+  const hasWarnings = allDiscrepancies.length > 0 || allConflicts.length > 0;
 
   return (
     <div className="border border-border rounded-lg overflow-hidden">
+      {/* ── Header row ── */}
       <button
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/40 transition-colors"
         onClick={() => setOpen(o => !o)}
@@ -95,70 +170,131 @@ function ReleaseRow({ release }: { release: MigrationRelease }) {
 
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{release.title}</p>
-          <p className="text-xs text-muted-foreground">
-            {release.releaseDate?.slice(0, 4) ?? '—'} · {totalTracks} track{totalTracks !== 1 ? 's' : ''} · {release.genre ?? 'Unknown genre'}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+            <span className="text-xs text-muted-foreground">
+              {release.releaseDate?.slice(0, 4) ?? '—'} · {totalTracks} track{totalTracks !== 1 ? 's' : ''} · {release.genre ?? 'Unknown genre'}
+            </span>
+            {validation.map(v => (
+              <ValidationBadge key={v.platform} v={v} />
+            ))}
+          </div>
         </div>
 
         <div className="flex items-center gap-2 flex-shrink-0">
+          {hasWarnings && (
+            <Badge variant="outline" className="text-xs text-amber-500 border-amber-400">
+              {allDiscrepancies.length + allConflicts.length} flag{allDiscrepancies.length + allConflicts.length !== 1 ? 's' : ''}
+            </Badge>
+          )}
           {release.upc && (
             <Badge variant="secondary" className="text-xs font-mono">UPC</Badge>
           )}
           <Badge
-            variant={isrcCount === totalTracks ? 'default' : isrcCount > 0 ? 'secondary' : 'outline'}
+            variant={isrcsCovered === totalTracks ? 'default' : isrcsCovered > 0 ? 'secondary' : 'outline'}
             className="text-xs"
           >
-            {isrcCount}/{totalTracks} ISRC
+            {isrcsCovered}/{totalTracks} ISRC
           </Badge>
           {open ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
         </div>
       </button>
 
+      {/* ── Expanded detail ── */}
       {open && (
-        <div className="border-t border-border bg-muted/20 px-4 py-3 space-y-2">
-          {release.upc && (
-            <p className="text-xs text-muted-foreground font-mono">UPC: {release.upc}</p>
+        <div className="border-t border-border bg-muted/20 divide-y divide-border/50">
+
+          {/* Metadata summary */}
+          <div className="px-4 py-3 flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
+            {release.upc && <span>UPC: <span className="font-mono text-foreground">{release.upc}</span></span>}
+            {release.releaseDate && <span>Released: {release.releaseDate}</span>}
+            {platformPresence.length > 0 && (
+              <span>Confirmed on: {platformPresence.map(p => PLATFORM_LABEL[p] ?? p).join(', ')}</span>
+            )}
+            {release._meta.sources.length > 0 && (
+              <span>Sources: {release._meta.sources.join(', ')}</span>
+            )}
+          </div>
+
+          {/* Alternate versions */}
+          {allAlternates.length > 0 && (
+            <div className="px-4 py-3">
+              <p className="text-xs font-medium flex items-center gap-1 mb-1 text-blue-500">
+                <GitBranch className="w-3 h-3" />
+                Alternate versions detected on streaming platforms
+              </p>
+              <ul className="space-y-0.5">
+                {allAlternates.map((v, i) => (
+                  <li key={i} className="text-xs text-muted-foreground pl-4">{v}</li>
+                ))}
+              </ul>
+            </div>
           )}
-          <table className="w-full text-xs">
-            <thead>
-              <tr className="text-muted-foreground border-b border-border">
-                <th className="text-left pb-1 w-8">#</th>
-                <th className="text-left pb-1">Title</th>
-                <th className="text-left pb-1 w-36 font-mono">ISRC</th>
-                <th className="text-right pb-1 w-16">Duration</th>
-              </tr>
-            </thead>
-            <tbody>
-              {release.tracks.map((track) => (
-                <tr key={track.trackNumber} className="border-b border-border/50 last:border-0">
-                  <td className="py-1 text-muted-foreground">{track.trackNumber}</td>
-                  <td className="py-1 pr-2 truncate max-w-0 w-full">
-                    <span className="flex items-center gap-1">
-                      {track.title}
-                      {track.explicit && (
-                        <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">E</Badge>
-                      )}
-                    </span>
-                  </td>
-                  <td className="py-1 font-mono text-muted-foreground">
-                    {track.isrc ? (
-                      <span className="text-green-500">{track.isrc}</span>
-                    ) : (
-                      <span className="text-muted-foreground/50">—</span>
-                    )}
-                  </td>
-                  <td className="py-1 text-right text-muted-foreground">
-                    {formatDuration(track.duration)}
-                  </td>
+
+          {/* Validation discrepancies */}
+          {(allDiscrepancies.length > 0 || allConflicts.length > 0) && (
+            <div className="px-4 py-3">
+              <p className="text-xs font-medium flex items-center gap-1 mb-1 text-amber-500">
+                <AlertTriangle className="w-3 h-3" />
+                Metadata discrepancies
+              </p>
+              <ul className="space-y-0.5">
+                {allDiscrepancies.map((d, i) => (
+                  <li key={i} className="text-xs text-muted-foreground pl-4">{d}</li>
+                ))}
+                {allConflicts.map((c, i) => (
+                  <li key={`conflict-${i}`} className="text-xs text-amber-600 pl-4">
+                    ISRC conflict on "{c.trackTitle}": LabelGrid={c.labelgridIsrc} vs Platform={c.platformIsrc}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Track listing */}
+          <div className="px-4 py-3">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-muted-foreground border-b border-border">
+                  <th className="text-left pb-1 w-8">#</th>
+                  <th className="text-left pb-1">Title</th>
+                  <th className="text-left pb-1 w-36 font-mono">ISRC</th>
+                  <th className="text-right pb-1 w-16">Duration</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {release.tracks.map((track) => (
+                  <tr key={track.trackNumber} className="border-b border-border/50 last:border-0">
+                    <td className="py-1 text-muted-foreground">{track.trackNumber}</td>
+                    <td className="py-1 pr-2 truncate max-w-0 w-full">
+                      <span className="flex items-center gap-1">
+                        {track.title}
+                        {track.explicit && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4">E</Badge>
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-1 font-mono">
+                      {track.isrc ? (
+                        <span className="text-green-500">{track.isrc}</span>
+                      ) : (
+                        <span className="text-muted-foreground/40">—</span>
+                      )}
+                    </td>
+                    <td className="py-1 text-right text-muted-foreground">
+                      {formatDuration(track.duration)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
+// ── Main component ────────────────────────────────────────────────────────────
 
 interface CatalogMigrationProps {
   defaultArtistName?: string;
@@ -168,7 +304,6 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
   const [artistName, setArtistName] = useState(defaultArtistName);
   const [result, setResult] = useState<MigrationPayload | null>(null);
   const { toast } = useToast();
-  const downloadRef = useRef<HTMLAnchorElement>(null);
 
   const exportMutation = useMutation({
     mutationFn: async (name: string) => {
@@ -180,13 +315,17 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
       if (data.totalReleases === 0) {
         toast({
           title: 'No releases found',
-          description: `Could not find any releases for "${data.artistName}" on iTunes or Deezer.`,
+          description: `Could not find any releases for "${data.artistName}".`,
           variant: 'destructive',
         });
       } else {
+        const warnings = data.releases.reduce(
+          (acc, r) => acc + r._meta.validation.reduce((a, v) => a + v.discrepancies.length + v.isrcConflicts.length, 0),
+          0
+        );
         toast({
           title: 'Catalog parsed',
-          description: `Found ${data.totalReleases} release(s), ${data.isrcCoverage} ISRC coverage.`,
+          description: `${data.totalReleases} release(s), ${data.isrcCoverage} ISRC coverage${warnings > 0 ? `, ${warnings} discrepancy flag(s) detected` : ''}.`,
         });
       }
     },
@@ -216,8 +355,14 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
 
   const isLoading = exportMutation.isPending;
 
+  const totalWarnings = result?.releases.reduce(
+    (acc, r) => acc + r._meta.validation.reduce((a, v) => a + v.discrepancies.length + v.isrcConflicts.length, 0),
+    0
+  ) ?? 0;
+
   return (
     <div className="space-y-6">
+      {/* ── Input card ── */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -225,10 +370,11 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             Migrate Catalog to LabelGrid
           </CardTitle>
           <CardDescription>
-            Pulls your complete catalog directly from LabelGrid — including UPCs, ISRCs, artwork,
-            and all distribution-grade metadata. Missing fields are automatically filled in from
-            Deezer (ISRCs) and Apple Music (artwork/genre). Outputs a clean JSON file ready
-            for LabelGrid import.
+            Pulls your complete catalog from LabelGrid as the authoritative source, then
+            cross-checks every release against Deezer and Apple Music — verifying ISRCs,
+            UPCs, release dates, track counts, and artwork. Any discrepancies or alternate
+            versions found on public platforms are flagged in the output. Outputs a clean
+            JSON file ready for LabelGrid import.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -247,19 +393,20 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Parsing…
+                    Processing…
                   </>
                 ) : (
                   <>
                     <Music className="w-4 h-4 mr-2" />
-                    Parse Catalog
+                    Parse &amp; Validate
                   </>
                 )}
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Must match the exact artist name used on Apple Music. This scan typically takes
-              30–90 seconds depending on catalog size.
+              Uses LabelGrid as the primary source. Streaming platforms (Deezer, Apple Music)
+              are queried in parallel for validation and enrichment only. Typically takes 1–3
+              minutes for a full catalog.
             </p>
           </div>
 
@@ -267,8 +414,9 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
             <Alert>
               <Loader2 className="w-4 h-4 animate-spin" />
               <AlertDescription className="ml-2">
-                Fetching your catalog from LabelGrid, then filling any gaps using Deezer (ISRCs)
-                and Apple Music (artwork/genre). Large catalogs may take up to 2 minutes…
+                Step 1: Fetching catalog from LabelGrid…<br />
+                Step 2: Cross-checking every release against Deezer and Apple Music — verifying
+                ISRCs, UPCs, dates, track counts, and detecting alternate versions…
               </AlertDescription>
             </Alert>
           )}
@@ -284,6 +432,7 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
         </CardContent>
       </Card>
 
+      {/* ── Results card ── */}
       {result && result.totalReleases > 0 && (
         <Card>
           <CardHeader className="pb-3">
@@ -291,11 +440,14 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
               <div>
                 <CardTitle className="flex items-center gap-2 text-base">
                   <CheckCircle2 className="w-4 h-4 text-green-500" />
-                  {result.totalReleases} Release{result.totalReleases !== 1 ? 's' : ''} Extracted
+                  {result.totalReleases} Release{result.totalReleases !== 1 ? 's' : ''} Extracted &amp; Validated
                 </CardTitle>
                 <CardDescription className="mt-1">
-                  {result.totalTracks} tracks total · {result.isrcCoverage} ISRC coverage ·
-                  Exported {new Date(result.exportedAt).toLocaleString()}
+                  {result.totalTracks} tracks · {result.isrcCoverage} ISRC coverage
+                  {totalWarnings > 0 && (
+                    <span className="text-amber-500"> · {totalWarnings} discrepancy flag{totalWarnings !== 1 ? 's' : ''}</span>
+                  )}
+                  {' · '}Exported {new Date(result.exportedAt).toLocaleString()}
                 </CardDescription>
               </div>
               <Button onClick={downloadJson} className="flex-shrink-0">
@@ -309,14 +461,20 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
                 <FileJson className="w-3 h-3" />
                 LabelGrid Import Format
               </Badge>
-              <Badge variant="default">LabelGrid</Badge>
-              <Badge variant="secondary">Deezer (ISRC fill)</Badge>
-              <Badge variant="secondary">Apple Music (artwork)</Badge>
+              <Badge variant="default">LabelGrid (primary)</Badge>
+              <Badge variant="secondary">Deezer (validation)</Badge>
+              <Badge variant="secondary">Apple Music (validation)</Badge>
+              {totalWarnings > 0 && (
+                <Badge variant="outline" className="text-amber-500 border-amber-400 gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  {totalWarnings} flag{totalWarnings !== 1 ? 's' : ''} — review before importing
+                </Badge>
+              )}
             </div>
           </CardHeader>
 
           <CardContent>
-            <ScrollArea className="max-h-[520px] pr-1">
+            <ScrollArea className="max-h-[600px] pr-1">
               <div className="space-y-2">
                 {result.releases.map((release, i) => (
                   <ReleaseRow key={i} release={release} />
@@ -331,13 +489,11 @@ export default function CatalogMigration({ defaultArtistName = '' }: CatalogMigr
         <Alert>
           <AlertCircle className="w-4 h-4" />
           <AlertDescription className="ml-2">
-            No releases found for <strong>{result.artistName}</strong> on Apple Music. Make sure
-            the artist name matches exactly how it appears on Apple Music.
+            No releases found for <strong>{result.artistName}</strong>. Ensure the artist name
+            matches exactly how it appears on Apple Music and that your LabelGrid account is connected.
           </AlertDescription>
         </Alert>
       )}
-
-      <a ref={downloadRef} className="hidden" />
     </div>
   );
 }

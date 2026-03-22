@@ -1,33 +1,69 @@
 /**
  * Catalog Migration Service
  *
- * Extracts a complete, distribution-grade catalog from LabelGrid's API and
- * outputs it in LabelGrid's import format, ready for re-submission or
- * cross-account migration.
+ * Extracts a complete, distribution-grade catalog and outputs it in
+ * LabelGrid's import format, ready for re-submission or cross-account
+ * migration.
  *
- * Pipeline:
- *   1. PRIMARY — LabelGrid API (GET /v1/releases + GET /v1/releases/:id)
- *        Full UPCs, ISRCs, contributor metadata, distribution fields, artwork.
- *   2. ISRC GAP FILL — Deezer public API (free, no key required)
- *        Used only for tracks that LabelGrid returned without an ISRC.
- *   3. ARTWORK / GENRE GAP FILL — Apple Music / iTunes public API (free)
- *        Used only when LabelGrid did not supply artwork or genre for a release.
- *   4. FULL FALLBACK — iTunes + Deezer only
- *        Used only when LabelGrid's API returns zero releases (e.g. token not
- *        yet configured, account not linked). Spotify is never used.
+ * Pipeline
+ * ────────
+ *   1. AUTHORITY CHECK — LabelGrid API (GET /v1/releases + GET /v1/releases/:id)
+ *        When LabelGrid returns releases, they are the authoritative source.
+ *        All output fields are seeded from LabelGrid first.
  *
- * Fields that are not publicly available and are left null rather than invented:
- *   - audioFile (binary audio content)
- *   - label (not exposed by public APIs)
- *   - copyrightOwner (not exposed by public APIs)
- *   - lyrics (not exposed by public APIs)
+ *   2. PRIMARY DATA SOURCE — Linked streaming platform profiles
+ *        When LabelGrid is empty, the user's linked streaming profiles
+ *        (Spotify, Apple Music, Deezer, etc.) are scanned directly.
+ *        Each linked platform is scanned via scanReleasesFromProfile().
+ *        Results are merged and deduplicated across platforms.
+ *
+ *   3. VALIDATION + ENRICHMENT — authority layer (Deezer, Apple Music)
+ *        Runs on every release regardless of its source.
+ *        Role:
+ *          • Cross-check title, release date, and track count against public platforms.
+ *          • Fill fields the primary source left blank (ISRC, UPC, artwork, genre).
+ *          • Detect ISRC conflicts between sources.
+ *          • Detect alternate versions (deluxe, explicit, clean, remix, bonus).
+ *          • Confirm which platforms publicly carry the release.
+ *          • Record all discrepancies in _meta.validation.
+ *        Platforms queried: Deezer (free API), Apple Music / iTunes (free API).
+ *
+ *   4. FULL FALLBACK — iTunes + Deezer catalog build
+ *        Only when LabelGrid returns nothing AND no profiles are linked.
+ *        Same validation layer applied.
+ *
+ * Fields not available from any public source (left null, never invented):
+ *   - audioFile, label, copyrightOwner, lyrics
  */
 
 import { logger } from '../logger.js';
 import { labelGridService } from './labelgrid-service.js';
 import type { LabelGridCatalogRelease, LabelGridCatalogTrack } from './labelgrid-service.js';
+import type { ScannedRelease } from './distributionDataTransferService.js';
 
-// ─── Public output types ──────────────────────────────────────────────────────
+// ─── Validation types ─────────────────────────────────────────────────────────
+
+export interface IsrcConflict {
+  trackTitle: string;
+  trackNumber: number;
+  labelgridIsrc: string;
+  platformIsrc: string;
+}
+
+export interface PlatformValidation {
+  platform: 'deezer' | 'apple_music';
+  found: boolean;
+  platformReleaseId: string | null;
+  titleMatch: boolean;
+  releaseDateMatch: boolean | null;
+  trackCountMatch: boolean | null;
+  isrcConflicts: IsrcConflict[];
+  alternateVersions: string[];
+  discrepancies: string[];
+  enrichedFields: string[];
+}
+
+// ─── Output types ─────────────────────────────────────────────────────────────
 
 export interface MigrationTrack {
   title: string;
@@ -60,6 +96,8 @@ export interface MigrationRelease {
     isrcsCovered: number;
     totalTracks: number;
     missingFields: string[];
+    platformPresence: string[];
+    validation: PlatformValidation[];
   };
 }
 
@@ -72,7 +110,33 @@ export interface MigrationPayload {
   releases: MigrationRelease[];
 }
 
-// ─── Internal types ───────────────────────────────────────────────────────────
+// ─── Internal raw types ───────────────────────────────────────────────────────
+
+interface DeezerAlbumSummary {
+  id: number;
+  title: string;
+  nb_tracks: number;
+  release_date?: string;
+  upc?: string;
+  genres?: { data: { name: string }[] };
+  tracks?: { data: DeezerAlbumTrack[] };
+}
+
+interface DeezerAlbumTrack {
+  id: number;
+  title: string;
+  track_position: number;
+  duration: number;
+  explicit_lyrics: boolean;
+}
+
+interface DeezerTrackDetail {
+  id: number;
+  title: string;
+  isrc: string | null;
+  duration: number;
+  explicit_lyrics: boolean;
+}
 
 interface iTunesAlbumEntry {
   collectionId: number;
@@ -86,7 +150,6 @@ interface iTunesAlbumEntry {
 }
 
 interface iTunesTrackEntry {
-  collectionId: number;
   trackName: string;
   trackNumber: number;
   discNumber: number;
@@ -95,21 +158,12 @@ interface iTunesTrackEntry {
   artistName: string;
 }
 
-interface DeezerSearchTrack {
-  id: number;
-  title: string;
-  isrc: string | null;
-  duration: number;
-  explicit_lyrics: boolean;
-  album: { id: number; title: string };
-}
-
 // ─── Utility ──────────────────────────────────────────────────────────────────
 
 const delay = (ms: number) => new Promise<void>(r => setTimeout(r, ms));
 
 function normalizeTitle(s: string): string {
-  return s
+  return (s || '')
     .toLowerCase()
     .replace(/\s*-\s*(single|ep|album)\s*$/i, '')
     .replace(/[^a-z0-9]/g, '')
@@ -120,6 +174,25 @@ function titleMatch(a: string, b: string): boolean {
   return normalizeTitle(a) === normalizeTitle(b);
 }
 
+/** Score-based similarity: returns 0-1. */
+function titleSimilarity(a: string, b: string): number {
+  const na = normalizeTitle(a);
+  const nb = normalizeTitle(b);
+  if (na === nb) return 1;
+  if (!na || !nb) return 0;
+  const longer = na.length > nb.length ? na : nb;
+  const shorter = na.length > nb.length ? nb : na;
+  if (longer.includes(shorter)) return shorter.length / longer.length;
+  return 0;
+}
+
+/** Returns true if a title looks like an alternate version. */
+const ALTERNATE_SUFFIXES = /\b(deluxe|bonus|remaster|remastered|remix|remixed|explicit|clean|edited|acoustic|live|extended|instrumental|radio edit|edition|version|special|expanded)\b/i;
+
+function isAlternateVersion(title: string): boolean {
+  return ALTERNATE_SUFFIXES.test(title);
+}
+
 function releaseTypeNormalize(t: string): 'album' | 'EP' | 'single' {
   const l = (t || '').toLowerCase();
   if (l === 'ep') return 'EP';
@@ -127,200 +200,476 @@ function releaseTypeNormalize(t: string): 'album' | 'EP' | 'single' {
   return 'album';
 }
 
-// ─── Deezer ISRC lookup ───────────────────────────────────────────────────────
+// ─── Deezer helpers ───────────────────────────────────────────────────────────
 
-async function deezerSearchTrack(
+async function deezerRequest<T>(url: string): Promise<T | null> {
+  try {
+    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!resp.ok) return null;
+    return await resp.json() as T;
+  } catch {
+    return null;
+  }
+}
+
+/** Search Deezer for albums by a given artist. Returns up to `limit` results. */
+async function deezerSearchAlbums(artistName: string, limit = 50): Promise<DeezerAlbumSummary[]> {
+  const q = `artist:"${artistName}"`;
+  const data = await deezerRequest<{ data: DeezerAlbumSummary[] }>(
+    `https://api.deezer.com/search/album?q=${encodeURIComponent(q)}&limit=${limit}`
+  );
+  return data?.data ?? [];
+}
+
+/** Fetch full album detail (including UPC, release_date, genres, track list). */
+async function deezerAlbumDetail(albumId: number): Promise<DeezerAlbumSummary | null> {
+  return deezerRequest<DeezerAlbumSummary>(`https://api.deezer.com/album/${albumId}`);
+}
+
+/** Fetch individual track for ISRC. */
+async function deezerTrackDetail(trackId: number): Promise<DeezerTrackDetail | null> {
+  return deezerRequest<DeezerTrackDetail>(`https://api.deezer.com/track/${trackId}`);
+}
+
+/** Search for a single track by title + artist; used to fill missing ISRCs. */
+async function deezerFindTrack(
   trackTitle: string,
   artistName: string
-): Promise<DeezerSearchTrack | null> {
-  try {
-    const q = `track:"${trackTitle}" artist:"${artistName}"`;
-    const url = `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=5`;
-    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
-    if (!resp.ok) return null;
-    const data = await resp.json() as { data: DeezerSearchTrack[] };
-    const items = data.data || [];
-    for (const item of items) {
-      if (titleMatch(item.title, trackTitle)) return item;
+): Promise<{ isrc: string | null; albumId: number | null } | null> {
+  const q = `track:"${trackTitle}" artist:"${artistName}"`;
+  const data = await deezerRequest<{ data: any[] }>(
+    `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=5`
+  );
+  if (!data?.data?.length) return null;
+  for (const t of data.data) {
+    if (titleMatch(t.title, trackTitle)) {
+      return { isrc: t.isrc ?? null, albumId: t.album?.id ?? null };
     }
-    return items[0] ?? null;
-  } catch {
-    return null;
   }
+  const first = data.data[0];
+  return { isrc: first.isrc ?? null, albumId: first.album?.id ?? null };
 }
 
-async function deezerAlbumUPC(deezerAlbumId: number): Promise<string | null> {
+// ─── iTunes / Apple Music helpers ─────────────────────────────────────────────
+
+async function itunesRequest<T>(url: string): Promise<T | null> {
   try {
-    const url = `https://api.deezer.com/album/${deezerAlbumId}`;
-    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    const resp = await fetch(url);
     if (!resp.ok) return null;
-    const data = await resp.json() as { upc?: string };
-    return data.upc ?? null;
+    return await resp.json() as T;
   } catch {
     return null;
   }
 }
-
-// ─── iTunes helpers (artwork / genre / fallback catalog) ──────────────────────
 
 async function itunesFindArtistId(
   artistName: string
 ): Promise<{ id: number; name: string } | null> {
-  try {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`;
-    const resp = await fetch(url);
-    if (!resp.ok) return null;
-    const data = await resp.json() as { results: any[] };
-
-    const counts: Record<number, { count: number; name: string }> = {};
-    for (const item of data.results || []) {
-      const id: number = item.artistId;
-      if (!id) continue;
-      if (!counts[id]) counts[id] = { count: 0, name: item.artistName };
-      counts[id].count++;
-    }
-    const sorted = Object.entries(counts).sort((a, b) => b[1].count - a[1].count);
-    if (!sorted.length) return null;
-    return { id: Number(sorted[0][0]), name: sorted[0][1].name };
-  } catch {
-    return null;
+  const data = await itunesRequest<{ results: any[] }>(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`
+  );
+  const counts: Record<number, { count: number; name: string }> = {};
+  for (const item of data?.results ?? []) {
+    const id: number = item.artistId;
+    if (!id) continue;
+    if (!counts[id]) counts[id] = { count: 0, name: item.artistName };
+    counts[id].count++;
   }
+  const sorted = Object.entries(counts).sort((a, b) => b[1].count - a[1].count);
+  if (!sorted.length) return null;
+  return { id: Number(sorted[0][0]), name: sorted[0][1].name };
 }
 
-async function itunesAlbums(artistId: number): Promise<iTunesAlbumEntry[]> {
-  try {
-    const url = `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200&country=US`;
-    const resp = await fetch(url);
-    if (!resp.ok) return [];
-    const data = await resp.json() as { results: any[] };
-    return (data.results || []).filter((r: any) => r.wrapperType === 'collection');
-  } catch {
-    return [];
-  }
+async function itunesAlbumsByArtist(artistId: number): Promise<iTunesAlbumEntry[]> {
+  const data = await itunesRequest<{ results: any[] }>(
+    `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200&country=US`
+  );
+  return (data?.results ?? []).filter((r: any) => r.wrapperType === 'collection');
 }
 
-async function itunesTracks(collectionId: number): Promise<iTunesTrackEntry[]> {
-  try {
-    const url = `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&limit=200&country=US`;
-    const resp = await fetch(url);
-    if (!resp.ok) return [];
-    const data = await resp.json() as { results: any[] };
-    return (data.results || []).filter((r: any) => r.wrapperType === 'track');
-  } catch {
-    return [];
-  }
+async function itunesTracksByAlbum(collectionId: number): Promise<iTunesTrackEntry[]> {
+  const data = await itunesRequest<{ results: any[] }>(
+    `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&limit=200&country=US`
+  );
+  return (data?.results ?? []).filter((r: any) => r.wrapperType === 'track');
 }
-
-/** Find artwork + genre for a release title from iTunes. */
-async function itunesMetadataForRelease(
-  title: string,
-  artistName: string
-): Promise<{ artwork: string | null; genre: string | null }> {
-  try {
-    const q = `${artistName} ${title}`;
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(q)}&entity=album&limit=10&country=US`;
-    const resp = await fetch(url);
-    if (!resp.ok) return { artwork: null, genre: null };
-    const data = await resp.json() as { results: any[] };
-    for (const r of data.results || []) {
-      if (titleMatch(r.collectionName || '', title)) {
-        return {
-          artwork: (r.artworkUrl100 as string)?.replace('100x100bb', '3000x3000bb') ?? null,
-          genre: r.primaryGenreName ?? null,
-        };
-      }
-    }
-    return { artwork: null, genre: null };
-  } catch {
-    return { artwork: null, genre: null };
-  }
-}
-
-// ─── LabelGrid → MigrationRelease ────────────────────────────────────────────
 
 /**
- * Convert a LabelGrid catalog release (possibly enriched with track detail)
- * into a MigrationRelease, filling ISRC gaps from Deezer and artwork/genre
- * gaps from iTunes.
+ * Search Apple Music for a specific release title+artist.
+ * Returns the best matching album entry or null.
+ */
+async function itunesFindRelease(
+  title: string,
+  artistName: string
+): Promise<iTunesAlbumEntry | null> {
+  const data = await itunesRequest<{ results: any[] }>(
+    `https://itunes.apple.com/search?term=${encodeURIComponent(`${artistName} ${title}`)}&entity=album&limit=10&country=US`
+  );
+  for (const r of data?.results ?? []) {
+    if (titleMatch(r.collectionName || '', title)) return r as iTunesAlbumEntry;
+  }
+  // Fuzzy fallback: similarity ≥ 0.7
+  for (const r of data?.results ?? []) {
+    if (titleSimilarity(r.collectionName || '', title) >= 0.7) return r as iTunesAlbumEntry;
+  }
+  return null;
+}
+
+// ─── Deezer validation for one release ───────────────────────────────────────
+
+interface DeezerValidationContext {
+  lgTitle: string;
+  lgReleaseDate: string | null;
+  lgTrackCount: number;
+  lgTracks: LabelGridCatalogTrack[];
+  artistName: string;
+  allDeezerAlbums: DeezerAlbumSummary[]; // pre-fetched artist discography
+}
+
+async function validateOnDeezer(ctx: DeezerValidationContext): Promise<{
+  validation: PlatformValidation;
+  upc: string | null;
+  isrcMap: Map<string, string>;    // trackTitle (normalized) → ISRC
+  alternateVersions: string[];
+}> {
+  const result: PlatformValidation = {
+    platform: 'deezer',
+    found: false,
+    platformReleaseId: null,
+    titleMatch: false,
+    releaseDateMatch: null,
+    trackCountMatch: null,
+    isrcConflicts: [],
+    alternateVersions: [],
+    discrepancies: [],
+    enrichedFields: [],
+  };
+
+  const isrcMap = new Map<string, string>();
+  let upc: string | null = null;
+  const alternateVersions: string[] = [];
+
+  // Find the best-matching album in the pre-fetched Deezer discography.
+  let bestAlbum: DeezerAlbumSummary | null = null;
+  let bestScore = 0;
+
+  for (const album of ctx.allDeezerAlbums) {
+    const score = titleSimilarity(album.title, ctx.lgTitle);
+    if (score > bestScore) {
+      bestScore = score;
+      bestAlbum = album;
+    }
+    // Collect alternate versions of this specific release.
+    if (isAlternateVersion(album.title) && titleSimilarity(album.title, ctx.lgTitle) >= 0.5) {
+      alternateVersions.push(album.title);
+    }
+  }
+
+  if (!bestAlbum || bestScore < 0.6) {
+    result.discrepancies.push(`Release "${ctx.lgTitle}" not found on Deezer`);
+    return { validation: result, upc, isrcMap, alternateVersions };
+  }
+
+  result.found = true;
+  result.platformReleaseId = String(bestAlbum.id);
+  result.titleMatch = titleMatch(bestAlbum.title, ctx.lgTitle);
+  result.alternateVersions = alternateVersions;
+
+  if (!result.titleMatch) {
+    result.discrepancies.push(
+      `Title mismatch: LabelGrid="${ctx.lgTitle}" Deezer="${bestAlbum.title}"`
+    );
+  }
+
+  // Fetch full album detail for UPC, release_date, genres, track listing.
+  await delay(100);
+  const detail = await deezerAlbumDetail(bestAlbum.id);
+  if (!detail) return { validation: result, upc, isrcMap, alternateVersions };
+
+  upc = detail.upc ?? null;
+  if (upc) result.enrichedFields.push('upc');
+
+  // Release-date check.
+  if (ctx.lgReleaseDate && detail.release_date) {
+    const lgYear = ctx.lgReleaseDate.slice(0, 4);
+    const dzYear = detail.release_date.slice(0, 4);
+    result.releaseDateMatch = lgYear === dzYear;
+    if (!result.releaseDateMatch) {
+      result.discrepancies.push(
+        `Release date mismatch: LabelGrid=${ctx.lgReleaseDate} Deezer=${detail.release_date}`
+      );
+    }
+  }
+
+  // Track-count check.
+  if (detail.nb_tracks != null) {
+    result.trackCountMatch = detail.nb_tracks === ctx.lgTrackCount;
+    if (!result.trackCountMatch) {
+      result.discrepancies.push(
+        `Track count mismatch: LabelGrid=${ctx.lgTrackCount} Deezer=${detail.nb_tracks}`
+      );
+    }
+  }
+
+  // Per-track ISRC fetch + conflict detection.
+  const albumTracks = detail.tracks?.data ?? [];
+  for (const dTrack of albumTracks) {
+    await delay(80);
+    const trackDetail = await deezerTrackDetail(dTrack.id);
+    if (!trackDetail?.isrc) continue;
+
+    const dzIsrc = trackDetail.isrc;
+    const normTitle = normalizeTitle(dTrack.title);
+    isrcMap.set(normTitle, dzIsrc);
+
+    // Check against LabelGrid ISRC for the same track.
+    const lgTrack = ctx.lgTracks.find(t => titleMatch(t.title, dTrack.title));
+    if (lgTrack?.isrc && lgTrack.isrc !== dzIsrc) {
+      result.isrcConflicts.push({
+        trackTitle: dTrack.title,
+        trackNumber: dTrack.track_position,
+        labelgridIsrc: lgTrack.isrc,
+        platformIsrc: dzIsrc,
+      });
+      result.discrepancies.push(
+        `ISRC conflict on "${dTrack.title}": LabelGrid=${lgTrack.isrc} Deezer=${dzIsrc}`
+      );
+    }
+  }
+
+  return { validation: result, upc, isrcMap, alternateVersions };
+}
+
+// ─── Apple Music validation for one release ───────────────────────────────────
+
+interface AppleMusicValidationContext {
+  lgTitle: string;
+  lgReleaseDate: string | null;
+  lgTrackCount: number;
+  lgGenre: string | null;
+  lgArtwork: string | null;
+  artistName: string;
+  allItunesAlbums: iTunesAlbumEntry[];
+}
+
+async function validateOnAppleMusic(ctx: AppleMusicValidationContext): Promise<{
+  validation: PlatformValidation;
+  artwork: string | null;
+  genre: string | null;
+  alternateVersions: string[];
+}> {
+  const result: PlatformValidation = {
+    platform: 'apple_music',
+    found: false,
+    platformReleaseId: null,
+    titleMatch: false,
+    releaseDateMatch: null,
+    trackCountMatch: null,
+    isrcConflicts: [],
+    alternateVersions: [],
+    discrepancies: [],
+    enrichedFields: [],
+  };
+
+  let artwork: string | null = null;
+  let genre: string | null = null;
+  const alternateVersions: string[] = [];
+
+  // Find best match in pre-fetched iTunes albums.
+  let bestAlbum: iTunesAlbumEntry | null = null;
+  let bestScore = 0;
+
+  for (const album of ctx.allItunesAlbums) {
+    const score = titleSimilarity(album.collectionName, ctx.lgTitle);
+    if (score > bestScore) {
+      bestScore = score;
+      bestAlbum = album;
+    }
+    if (isAlternateVersion(album.collectionName) && titleSimilarity(album.collectionName, ctx.lgTitle) >= 0.5) {
+      alternateVersions.push(album.collectionName);
+    }
+  }
+
+  if (!bestAlbum || bestScore < 0.6) {
+    result.discrepancies.push(`Release "${ctx.lgTitle}" not found on Apple Music`);
+    return { validation: result, artwork, genre, alternateVersions };
+  }
+
+  result.found = true;
+  result.platformReleaseId = String(bestAlbum.collectionId);
+  result.titleMatch = titleMatch(bestAlbum.collectionName, ctx.lgTitle);
+  result.alternateVersions = alternateVersions;
+
+  if (!result.titleMatch) {
+    result.discrepancies.push(
+      `Title mismatch: LabelGrid="${ctx.lgTitle}" Apple Music="${bestAlbum.collectionName}"`
+    );
+  }
+
+  // Release-date check.
+  if (ctx.lgReleaseDate && bestAlbum.releaseDate) {
+    const lgYear = ctx.lgReleaseDate.slice(0, 4);
+    const amYear = bestAlbum.releaseDate.slice(0, 4);
+    result.releaseDateMatch = lgYear === amYear;
+    if (!result.releaseDateMatch) {
+      result.discrepancies.push(
+        `Release date mismatch: LabelGrid=${ctx.lgReleaseDate} AppleMusic=${bestAlbum.releaseDate.slice(0, 10)}`
+      );
+    }
+  }
+
+  // Track-count check.
+  if (bestAlbum.trackCount != null) {
+    result.trackCountMatch = bestAlbum.trackCount === ctx.lgTrackCount;
+    if (!result.trackCountMatch) {
+      result.discrepancies.push(
+        `Track count mismatch: LabelGrid=${ctx.lgTrackCount} AppleMusic=${bestAlbum.trackCount}`
+      );
+    }
+  }
+
+  // Artwork: fill if LabelGrid didn't supply it; note if different resolution.
+  const amArtwork = bestAlbum.artworkUrl100?.replace('100x100bb', '3000x3000bb') ?? null;
+  if (!ctx.lgArtwork && amArtwork) {
+    artwork = amArtwork;
+    result.enrichedFields.push('artwork');
+  }
+
+  // Genre: fill if LabelGrid didn't supply it.
+  if (!ctx.lgGenre && bestAlbum.primaryGenreName) {
+    genre = bestAlbum.primaryGenreName;
+    result.enrichedFields.push('genre');
+  }
+
+  return { validation: result, artwork, genre, alternateVersions };
+}
+
+// ─── Core hydration: LabelGrid release → MigrationRelease ────────────────────
+
+/**
+ * Converts one LabelGrid release into a MigrationRelease.
+ * Runs the full validation + enrichment layer (Deezer + Apple Music)
+ * regardless of whether fields are missing, so discrepancies are always caught.
  */
 async function hydrateLabelGridRelease(
-  lgRelease: LabelGridCatalogRelease
+  lgRelease: LabelGridCatalogRelease,
+  allDeezerAlbums: DeezerAlbumSummary[],
+  allItunesAlbums: iTunesAlbumEntry[]
 ): Promise<MigrationRelease> {
   const sources: string[] = ['labelgrid'];
   const cleanTitle = lgRelease.title.replace(/\s*-\s*(Single|EP|Album)\s*$/i, '').trim();
   const artistName = lgRelease.artist;
 
-  // If the catalog response didn't include tracks inline, fetch the detail record.
-  let tracks: LabelGridCatalogTrack[] = lgRelease.tracks ?? [];
-  if (tracks.length === 0 && lgRelease.id) {
+  // Ensure we have the full track listing.
+  let lgTracks: LabelGridCatalogTrack[] = lgRelease.tracks ?? [];
+  if (lgTracks.length === 0 && lgRelease.id) {
     const detail = await labelGridService.getReleaseDetail(lgRelease.id);
-    if (detail?.tracks?.length) {
-      tracks = detail.tracks;
-    }
+    if (detail?.tracks?.length) lgTracks = detail.tracks;
   }
 
-  // Gap-fill: artwork and genre from iTunes when LabelGrid didn't supply them.
+  let upc = lgRelease.upc ?? null;
   let artwork = lgRelease.coverUrl
-    ? lgRelease.coverUrl.replace(/\/\d+x\d+[a-z]{2}\.(jpg|png)$/, '/3000x3000bb.jpg')
+    ? lgRelease.coverUrl.replace(/\/\d+x\d+[a-z]{2}\.(jpg|png)$/i, '/3000x3000bb.jpg')
     : null;
   let genre = lgRelease.genre ?? null;
 
-  if (!artwork || !genre) {
-    const itunesMeta = await itunesMetadataForRelease(cleanTitle, artistName);
-    if (!artwork && itunesMeta.artwork) {
-      artwork = itunesMeta.artwork;
-      if (!sources.includes('itunes')) sources.push('itunes');
-    }
-    if (!genre && itunesMeta.genre) {
-      genre = itunesMeta.genre;
-      if (!sources.includes('itunes')) sources.push('itunes');
-    }
+  // ── Deezer validation + enrichment ──────────────────────────────────────
+  await delay(80);
+  const deezerResult = await validateOnDeezer({
+    lgTitle: cleanTitle,
+    lgReleaseDate: lgRelease.releaseDate?.split('T')[0] ?? null,
+    lgTrackCount: lgTracks.length || lgRelease.trackCount,
+    lgTracks,
+    artistName,
+    allDeezerAlbums,
+  });
+
+  if (deezerResult.validation.found) sources.push('deezer');
+  if (!upc && deezerResult.upc) {
+    upc = deezerResult.upc;
   }
 
-  // Build track list; gap-fill missing ISRCs from Deezer.
+  // ── Apple Music validation + enrichment ─────────────────────────────────
+  await delay(80);
+  const amResult = await validateOnAppleMusic({
+    lgTitle: cleanTitle,
+    lgReleaseDate: lgRelease.releaseDate?.split('T')[0] ?? null,
+    lgTrackCount: lgTracks.length || lgRelease.trackCount,
+    lgGenre: genre,
+    lgArtwork: artwork,
+    artistName,
+    allItunesAlbums,
+  });
+
+  if (amResult.validation.found) sources.push('apple_music');
+  if (!artwork && amResult.artwork) artwork = amResult.artwork;
+  if (!genre && amResult.genre) genre = amResult.genre;
+
+  // ── Platform presence ────────────────────────────────────────────────────
+  const platformPresence: string[] = [];
+  if (deezerResult.validation.found) platformPresence.push('deezer');
+  if (amResult.validation.found) platformPresence.push('apple_music');
+  // Releases distributed via DistroKid are typically on all major platforms.
+  // We note only platforms we could programmatically verify.
+
+  // ── Build track list ─────────────────────────────────────────────────────
   const migrationTracks: MigrationTrack[] = [];
-  let deezerAlbumId: number | null = null;
 
-  for (const track of tracks) {
-    let isrc = track.isrc ?? null;
+  for (const lgTrack of lgTracks) {
+    let isrc = lgTrack.isrc ?? null;
+    let explicit = false;
 
+    // Fill ISRC from Deezer ISRC map if LabelGrid didn't supply it.
     if (!isrc) {
-      await delay(120);
-      const deezerHit = await deezerSearchTrack(track.title, artistName);
-      if (deezerHit) {
-        if (!deezerAlbumId) deezerAlbumId = deezerHit.album.id;
-        isrc = deezerHit.isrc ?? null;
-        if (isrc && !sources.includes('deezer')) sources.push('deezer');
+      const fromDeezer = deezerResult.isrcMap.get(normalizeTitle(lgTrack.title));
+      if (fromDeezer) {
+        isrc = fromDeezer;
+        if (!sources.includes('deezer')) sources.push('deezer');
       }
     }
 
+    // If still missing, do a targeted Deezer track search.
+    if (!isrc) {
+      await delay(100);
+      const hit = await deezerFindTrack(lgTrack.title, artistName);
+      if (hit?.isrc) {
+        isrc = hit.isrc;
+        if (!sources.includes('deezer')) sources.push('deezer');
+      }
+      if (hit) explicit = false; // explicit_lyrics not available from search result type
+    }
+
     migrationTracks.push({
-      title: track.title,
+      title: lgTrack.title,
       artist: artistName,
       isrc,
       audioFile: null,
-      duration: track.duration > 0 ? track.duration : null,
-      trackNumber: track.trackNumber,
+      duration: lgTrack.duration > 0 ? lgTrack.duration : null,
+      trackNumber: lgTrack.trackNumber,
       discNumber: 1,
-      explicit: false,
+      explicit,
     });
   }
 
-  // Gap-fill UPC from Deezer album if LabelGrid didn't supply it.
-  let upc = lgRelease.upc ?? null;
-  if (!upc && deezerAlbumId) {
-    await delay(120);
-    const deezerUPC = await deezerAlbumUPC(deezerAlbumId);
-    if (deezerUPC) {
-      upc = deezerUPC;
-      if (!sources.includes('deezer')) sources.push('deezer');
-    }
-  }
+  // ── Collect alternate versions across platforms ───────────────────────────
+  const allAlternates = [
+    ...new Set([
+      ...deezerResult.alternateVersions,
+      ...amResult.alternateVersions,
+    ]),
+  ].filter(v => !titleMatch(v, cleanTitle));
 
+  // Merge alternate versions into both validation objects for completeness.
+  deezerResult.validation.alternateVersions = deezerResult.alternateVersions;
+  amResult.validation.alternateVersions = amResult.alternateVersions;
+
+  // ── Missing fields list ───────────────────────────────────────────────────
   const isrcsCovered = migrationTracks.filter(t => t.isrc).length;
   const missingFields: string[] = [];
   if (!upc) missingFields.push('upc');
   if (isrcsCovered < migrationTracks.length) missingFields.push('isrc (partial)');
+  if (!artwork) missingFields.push('artwork');
+  if (!genre) missingFields.push('genre');
   missingFields.push('audioFile', 'label', 'copyrightOwner');
 
   const releaseYear = lgRelease.releaseDate
@@ -349,96 +698,201 @@ async function hydrateLabelGridRelease(
       isrcsCovered,
       totalTracks: migrationTracks.length,
       missingFields,
+      platformPresence,
+      validation: [deezerResult.validation, amResult.validation],
     },
   };
 }
 
-// ─── iTunes + Deezer fallback pipeline ───────────────────────────────────────
+// ─── Step 2: Build from linked streaming platform profiles ────────────────────
 
 /**
- * Full fallback: fetches catalog from iTunes and enriches with Deezer ISRCs.
- * Only called when LabelGrid returns zero releases.
+ * Scans each of the user's linked streaming platform profiles and builds
+ * MigrationRelease objects from the combined results.
+ *
+ * Each ScannedRelease is converted into a LabelGridCatalogRelease skeleton so
+ * it can flow through the same Deezer + Apple Music authority/validation layer
+ * that LabelGrid releases use.
+ *
+ * Results from multiple platforms are merged and deduplicated:
+ *   • Primary key: UPC (authoritative)
+ *   • Secondary key: normalised title
+ *   • On collision: keep the version with more track data; merge UPC / genre.
  */
-async function buildFromiTunesAndDeezer(artistName: string): Promise<MigrationRelease[]> {
-  logger.info(`[CatalogMigration] Fallback: fetching catalog from iTunes for "${artistName}"`);
+async function buildFromLinkedProfiles(
+  userId: string,
+  artistName: string,
+  allDeezerAlbums: DeezerAlbumSummary[],
+  allItunesAlbums: iTunesAlbumEntry[]
+): Promise<MigrationRelease[]> {
+  // Lazy-import to avoid circular deps at module load time.
+  const { distributionDataTransferService } = await import('./distributionDataTransferService.js');
 
-  const itunesArtist = await itunesFindArtistId(artistName);
-  if (!itunesArtist) {
-    logger.warn(`[CatalogMigration] Could not locate "${artistName}" on iTunes`);
+  const linkedProfiles = await distributionDataTransferService.getLinkedProfiles(userId);
+  if (linkedProfiles.length === 0) {
+    logger.info('[CatalogMigration] No linked streaming profiles for this user');
     return [];
   }
 
-  const resolvedName = itunesArtist.name;
-  const albums = await itunesAlbums(itunesArtist.id);
-  logger.info(`[CatalogMigration] iTunes returned ${albums.length} album(s) for "${resolvedName}"`);
+  const platformList = linkedProfiles.map(p => p.platformId).join(', ');
+  logger.info(`[CatalogMigration] Linked platforms: ${platformList}`);
 
+  // Platforms with working catalog scanners in distributionDataTransferService.
+  const SCANNABLE = new Set(['spotify', 'apple_music', 'deezer', 'soundcloud', 'bandcamp', 'audiomack']);
+
+  // ── Scan each platform ─────────────────────────────────────────────────────
+  const allScanned: ScannedRelease[] = [];
+
+  for (const profile of linkedProfiles) {
+    if (!SCANNABLE.has(profile.platformId)) {
+      logger.info(`[CatalogMigration] Skipping ${profile.platformId} (no scanner)`);
+      continue;
+    }
+    try {
+      logger.info(
+        `[CatalogMigration] Scanning ${profile.platformId} — ` +
+        `"${profile.artistName}" (id: ${profile.artistId})`
+      );
+      const scanned = await distributionDataTransferService.scanReleasesFromProfile(
+        userId,
+        profile.platformId
+      );
+      logger.info(`[CatalogMigration]   ${scanned.length} release(s) from ${profile.platformId}`);
+      allScanned.push(...scanned);
+    } catch (err: any) {
+      logger.warn(`[CatalogMigration] Scan failed for ${profile.platformId}: ${err?.message}`);
+    }
+  }
+
+  if (allScanned.length === 0) {
+    logger.info('[CatalogMigration] All platform scans returned 0 releases');
+    return [];
+  }
+
+  // ── Deduplicate across platforms ──────────────────────────────────────────
+  // Key: UPC when present, else normalised title.
+  const seen = new Map<string, ScannedRelease>();
+
+  for (const r of allScanned) {
+    const key = r.upc ? `upc:${r.upc}` : `title:${normalizeTitle(r.title)}`;
+    const existing = seen.get(key);
+    if (!existing) {
+      seen.set(key, r);
+    } else {
+      // Merge: prefer the entry with more track data.
+      const merged: ScannedRelease = { ...existing };
+      if ((r.tracks?.length ?? 0) > (existing.tracks?.length ?? 0)) {
+        merged.tracks = r.tracks;
+      }
+      if (!merged.upc && r.upc) merged.upc = r.upc;
+      if (!merged.genre && r.genre) merged.genre = r.genre;
+      if (!merged.coverUrl && r.coverUrl) merged.coverUrl = r.coverUrl;
+      // Keep the platform with more data as the canonical source label.
+      seen.set(key, merged);
+    }
+  }
+
+  const deduped = Array.from(seen.values());
+  logger.info(
+    `[CatalogMigration] ${deduped.length} unique release(s) after dedup ` +
+    `(${allScanned.length} total across all platforms)`
+  );
+
+  // ── Convert ScannedRelease → LabelGridCatalogRelease skeleton → MigrationRelease ─
   const releases: MigrationRelease[] = [];
 
-  for (let ai = 0; ai < albums.length; ai++) {
-    const album = albums[ai];
-    const cleanTitle = album.collectionName
-      .replace(/\s*-\s*(Single|EP|Album)\s*$/i, '')
-      .trim();
+  for (let i = 0; i < deduped.length; i++) {
+    const r = deduped[i];
+    const cleanTitle = r.title.replace(/\s*-\s*(Single|EP|Album)\s*$/i, '').trim();
+    logger.info(
+      `[CatalogMigration] Hydrating ${i + 1}/${deduped.length}: "${cleanTitle}" [${r.platformId}]`
+    );
 
-    logger.info(`[CatalogMigration] Fallback processing ${ai + 1}/${albums.length}: "${cleanTitle}"`);
+    // Build a skeleton that matches the LabelGridCatalogRelease shape so
+    // hydrateLabelGridRelease can run its full validation + enrichment pass.
+    const skeleton: LabelGridCatalogRelease = {
+      id: `${r.platformId}-${r.externalId}`,
+      title: r.title,
+      artist: r.artistName || artistName,
+      releaseDate: r.releaseDate ?? undefined,
+      upc: r.upc,
+      coverUrl: r.coverUrl,
+      releaseType: r.releaseType,
+      trackCount: r.trackCount,
+      genre: r.genre,
+      // Include the known platform so it shows up in platformPresence.
+      platforms: [r.platformId],
+      tracks: (r.tracks ?? []).map(t => ({
+        title: t.title,
+        isrc: t.isrc,
+        trackNumber: t.trackNumber,
+        duration: t.duration ?? 0,
+      })),
+    };
+
+    const migrated = await hydrateLabelGridRelease(skeleton, allDeezerAlbums, allItunesAlbums);
+
+    // Replace the hardcoded 'labelgrid' source tag with the real platform that
+    // supplied this release's data.
+    migrated._meta.sources = migrated._meta.sources.map(s =>
+      s === 'labelgrid' ? r.platformId : s
+    );
+    if (!migrated._meta.sources.includes(r.platformId)) {
+      migrated._meta.sources.unshift(r.platformId);
+    }
+
+    releases.push(migrated);
+    await delay(80);
+  }
+
+  return releases;
+}
+
+// ─── Fallback: build from iTunes + Deezer when LabelGrid has nothing ──────────
+
+async function buildFromiTunesAndDeezer(
+  artistName: string,
+  allDeezerAlbums: DeezerAlbumSummary[],
+  allItunesAlbums: iTunesAlbumEntry[]
+): Promise<MigrationRelease[]> {
+  logger.info(`[CatalogMigration] Fallback: building from iTunes for "${artistName}"`);
+  const releases: MigrationRelease[] = [];
+
+  for (let ai = 0; ai < allItunesAlbums.length; ai++) {
+    const album = allItunesAlbums[ai];
+    const cleanTitle = album.collectionName.replace(/\s*-\s*(Single|EP|Album)\s*$/i, '').trim();
+    logger.info(`[CatalogMigration] Fallback ${ai + 1}/${allItunesAlbums.length}: "${cleanTitle}"`);
 
     await delay(80);
-    const tracks = await itunesTracks(album.collectionId);
+    const iTracks = await itunesTracksByAlbum(album.collectionId);
 
-    const migrationTracks: MigrationTrack[] = [];
-    let deezerAlbumId: number | null = null;
+    // Build skeleton LabelGridCatalogRelease from iTunes data so we can
+    // reuse hydrateLabelGridRelease (which will validate via Deezer + Apple Music).
+    const skeletonRelease: LabelGridCatalogRelease = {
+      id: `itunes-${album.collectionId}`,
+      title: album.collectionName,
+      artist: album.artistName || artistName,
+      releaseDate: album.releaseDate?.split('T')[0] ?? undefined,
+      upc: undefined,
+      coverUrl: album.artworkUrl100?.replace('100x100bb', '3000x3000bb') ?? undefined,
+      releaseType: 'single', // iTunes doesn't expose a clean release type
+      trackCount: album.trackCount,
+      genre: album.primaryGenreName || undefined,
+      platforms: [],
+      tracks: iTracks.map(t => ({
+        title: t.trackName,
+        isrc: undefined,
+        trackNumber: t.trackNumber,
+        duration: t.trackTimeMillis ? Math.round(t.trackTimeMillis / 1000) : 0,
+      })),
+    };
 
-    for (const track of tracks) {
-      await delay(120);
-      const deezerHit = await deezerSearchTrack(track.trackName, resolvedName);
-      if (deezerHit && !deezerAlbumId) deezerAlbumId = deezerHit.album.id;
-
-      migrationTracks.push({
-        title: track.trackName,
-        artist: track.artistName || resolvedName,
-        isrc: deezerHit?.isrc ?? null,
-        audioFile: null,
-        duration: track.trackTimeMillis ? Math.round(track.trackTimeMillis / 1000) : null,
-        trackNumber: track.trackNumber,
-        discNumber: track.discNumber || 1,
-        explicit: track.trackExplicitness === 'explicit',
-      });
+    const migrated = await hydrateLabelGridRelease(skeletonRelease, allDeezerAlbums, allItunesAlbums);
+    // Ensure fallback sources are recorded correctly.
+    if (!migrated._meta.sources.includes('itunes')) {
+      migrated._meta.sources.unshift('itunes');
     }
-
-    let upc: string | null = null;
-    if (deezerAlbumId) {
-      await delay(120);
-      upc = await deezerAlbumUPC(deezerAlbumId);
-    }
-
-    const isrcsCovered = migrationTracks.filter(t => t.isrc).length;
-    const missingFields: string[] = [];
-    if (!upc) missingFields.push('upc');
-    if (isrcsCovered < migrationTracks.length) missingFields.push('isrc (partial)');
-    missingFields.push('audioFile', 'label', 'copyrightOwner');
-
-    releases.push({
-      title: cleanTitle,
-      artist: resolvedName,
-      releaseType: 'single',
-      releaseDate: album.releaseDate?.split('T')[0] ?? null,
-      upc,
-      artwork: album.artworkUrl100?.replace('100x100bb', '3000x3000bb') ?? null,
-      genre: album.primaryGenreName || null,
-      label: null,
-      copyrightYear: album.releaseDate ? new Date(album.releaseDate).getFullYear() : null,
-      copyrightOwner: null,
-      territoryMode: 'worldwide',
-      territories: [],
-      platforms: ['spotify', 'apple_music', 'amazon_music', 'deezer', 'tidal', 'youtube_music', 'pandora'],
-      tracks: migrationTracks,
-      _meta: {
-        sources: deezerAlbumId ? ['itunes', 'deezer'] : ['itunes'],
-        isrcsCovered,
-        totalTracks: migrationTracks.length,
-        missingFields,
-      },
-    });
+    releases.push(migrated);
   }
 
   return releases;
@@ -446,30 +900,82 @@ async function buildFromiTunesAndDeezer(artistName: string): Promise<MigrationRe
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
 
-export async function buildMigrationPayload(artistName: string): Promise<MigrationPayload> {
-  logger.info(`[CatalogMigration] Starting catalog migration export for "${artistName}"`);
+/**
+ * @param artistName  The artist name used to query Deezer + iTunes (authority layer).
+ * @param userId      When provided, linked streaming platform profiles are used
+ *                    as the primary catalog data source (Step 2). Without it,
+ *                    the pipeline falls through to the iTunes + Deezer fallback.
+ */
+export async function buildMigrationPayload(
+  artistName: string,
+  userId?: string
+): Promise<MigrationPayload> {
+  logger.info(
+    `[CatalogMigration] Starting migration export for "${artistName}"` +
+    (userId ? ` (userId: ${userId})` : '')
+  );
+
+  // Pre-fetch streaming-platform discographies upfront so the authority /
+  // validation layer can run per-release without re-fetching the artist index.
+  logger.info('[CatalogMigration] Pre-fetching Deezer + iTunes discographies (authority layer)');
+  const [deezerAlbums, itunesArtist] = await Promise.all([
+    deezerSearchAlbums(artistName, 100),
+    itunesFindArtistId(artistName),
+  ]);
+
+  logger.info(`[CatalogMigration] Deezer: ${deezerAlbums.length} album(s) found`);
+  let itunesAlbums: iTunesAlbumEntry[] = [];
+  if (itunesArtist) {
+    itunesAlbums = await itunesAlbumsByArtist(itunesArtist.id);
+    logger.info(
+      `[CatalogMigration] Apple Music: ${itunesAlbums.length} album(s) found for "${itunesArtist.name}"`
+    );
+  }
+
+  // ── Step 1: LabelGrid authority check ────────────────────────────────────
+  // When LabelGrid returns releases they are the definitive catalog source.
+  logger.info('[CatalogMigration] Querying LabelGrid authority layer');
+  const lgReleases = await labelGridService.getUserCatalog();
+  logger.info(`[CatalogMigration] LabelGrid returned ${lgReleases.length} release(s)`);
 
   const releases: MigrationRelease[] = [];
 
-  // ── Step 1: Primary — LabelGrid API ──────────────────────────────────────
-  logger.info('[CatalogMigration] Querying LabelGrid API for authenticated user catalog');
-  const lgReleases = await labelGridService.getUserCatalog();
-
   if (lgReleases.length > 0) {
-    logger.info(`[CatalogMigration] LabelGrid returned ${lgReleases.length} release(s) — using as primary source`);
-
     for (let i = 0; i < lgReleases.length; i++) {
       const lgR = lgReleases[i];
-      logger.info(`[CatalogMigration] Processing LabelGrid release ${i + 1}/${lgReleases.length}: "${lgR.title}"`);
-      await delay(80);
-      const migrated = await hydrateLabelGridRelease(lgR);
+      logger.info(`[CatalogMigration] LabelGrid ${i + 1}/${lgReleases.length}: "${lgR.title}"`);
+      const migrated = await hydrateLabelGridRelease(lgR, deezerAlbums, itunesAlbums);
       releases.push(migrated);
     }
   } else {
-    // ── Step 2: Full fallback — iTunes + Deezer ───────────────────────────
-    logger.info('[CatalogMigration] LabelGrid returned 0 releases — falling back to iTunes + Deezer');
-    const fallbackReleases = await buildFromiTunesAndDeezer(artistName);
-    releases.push(...fallbackReleases);
+    // ── Step 2: Linked streaming platform profiles ────────────────────────
+    // The user's linked profiles (Spotify, Apple Music, Deezer, etc.) provide
+    // the raw catalog. LabelGrid is still the authority layer that validates
+    // each release; it just isn't the data source when its API returns nothing.
+    if (userId) {
+      logger.info('[CatalogMigration] LabelGrid empty — scanning linked streaming profiles');
+      const profileReleases = await buildFromLinkedProfiles(
+        userId,
+        artistName,
+        deezerAlbums,
+        itunesAlbums
+      );
+      if (profileReleases.length > 0) {
+        logger.info(
+          `[CatalogMigration] Got ${profileReleases.length} release(s) from linked profiles`
+        );
+        releases.push(...profileReleases);
+      }
+    }
+
+    // ── Step 3: Fallback — iTunes + Deezer ───────────────────────────────
+    // Used when LabelGrid is empty and either no userId was supplied or all
+    // profile scans returned zero releases.
+    if (releases.length === 0) {
+      logger.info('[CatalogMigration] No profile data — using iTunes + Deezer fallback');
+      const fallback = await buildFromiTunesAndDeezer(artistName, deezerAlbums, itunesAlbums);
+      releases.push(...fallback);
+    }
   }
 
   const totalTracks = releases.reduce((acc, r) => acc + r.tracks.length, 0);
@@ -478,8 +984,6 @@ export async function buildMigrationPayload(artistName: string): Promise<Migrati
     ? `${Math.round((totalIsrcs / totalTracks) * 100)}%`
     : '0%';
 
-  const resolvedArtistName = releases[0]?.artist ?? artistName;
-
   logger.info(
     `[CatalogMigration] Complete: ${releases.length} releases, ` +
     `${totalTracks} tracks, ${isrcCoverage} ISRC coverage`
@@ -487,7 +991,7 @@ export async function buildMigrationPayload(artistName: string): Promise<Migrati
 
   return {
     exportedAt: new Date().toISOString(),
-    artistName: resolvedArtistName,
+    artistName: releases[0]?.artist ?? artistName,
     totalReleases: releases.length,
     totalTracks,
     isrcCoverage,
