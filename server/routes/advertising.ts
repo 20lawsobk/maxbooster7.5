@@ -136,13 +136,17 @@ router.get('/ab-tests', requireAuth, async (req: AuthenticatedRequest, res) => {
 router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = req.user!.id;
-    const { name, platform, objective, startDate, endDate, targetAudience, creativeIds } = req.body;
+    const { name, platform: platformDirect, objective, startDate, endDate, targetAudience, creativeIds } = req.body;
+    const platform = platformDirect ||
+      (Array.isArray(targetAudience?.platforms) && targetAudience.platforms.length > 0
+        ? targetAudience.platforms[0]
+        : null);
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ error: 'Campaign name is required' });
     }
     if (!platform || typeof platform !== 'string') {
-      return res.status(400).json({ error: 'Platform is required' });
+      return res.status(400).json({ error: 'Platform is required — select at least one platform in the targeting section' });
     }
 
     const [campaign] = await db

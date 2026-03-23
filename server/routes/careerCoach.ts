@@ -391,4 +391,66 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+const chatSchema = z.object({
+  message: z.string().min(1).max(2000),
+});
+
+const CAREER_KNOWLEDGE: Record<string, { keywords: string[]; response: string }> = {
+  social: {
+    keywords: ['social media', 'instagram', 'tiktok', 'twitter', 'x ', 'facebook', 'youtube', 'content', 'post', 'followers', 'engagement'],
+    response: 'For social media growth, consistency is key. Post at least 3-5 times per week across your main platforms. TikTok and Instagram Reels drive the most organic discovery right now — short-form video of behind-the-scenes studio moments, snippets of new music, and authentic storytelling outperform polished ads. Use Max Booster\'s Social Media hub to schedule posts and track engagement trends. Aim to respond to every comment in the first hour after posting to boost your content in the algorithm.',
+  },
+  release: {
+    keywords: ['release', 'single', 'album', 'ep', 'distribute', 'spotify', 'apple music', 'streaming', 'upload', 'drop'],
+    response: 'The ideal release strategy starts 4-6 weeks before your drop date. Begin teasing 30-second clips 3 weeks out, lock in playlist pitching 2 weeks out (Spotify editorial requires at least 7 days in advance), and ramp up social frequency in the final week. Use Max Booster\'s Distribution module to submit to all major DSPs in one go. Post-release, focus on playlist campaigns and fan engagement for the first 2 weeks — early stream velocity signals matter a lot to algorithms.',
+  },
+  marketing: {
+    keywords: ['marketing', 'promote', 'promotion', 'advertise', 'advertising', 'campaign', 'budget', 'ads', 'paid'],
+    response: 'For music marketing on a budget, prioritize platforms where your audience already lives. Facebook/Instagram ads with a $5-15/day budget work well for awareness. Always retarget people who\'ve engaged with your profile before — they convert at 3-5x the rate of cold audiences. Use Max Booster\'s Advertising dashboard to create campaigns and track ROAS. Pair paid ads with organic push on the same day for maximum impact. Video ads under 15 seconds outperform longer formats by 40%.',
+  },
+  revenue: {
+    keywords: ['money', 'income', 'revenue', 'royalty', 'royalties', 'earn', 'sync', 'licensing', 'merch', 'merchandise'],
+    response: 'Diversifying revenue is critical for music career sustainability. Streaming royalties average $0.003-0.005 per stream, so supplement with sync licensing (film, TV, ads), live performance, and merchandise. Sync placements can pay $500-50,000+ per placement. Register with ASCAP, BMI, or SESAC for performance royalties. Max Booster\'s Royalties section tracks your streaming income across all DSPs. Consider offering exclusive content or early access through Patreon or a fan club to build recurring revenue.',
+  },
+  growth: {
+    keywords: ['grow', 'growth', 'fans', 'audience', 'reach', 'discovery', 'playlist', 'curators', 'blog'],
+    response: 'Sustainable audience growth comes from a mix of organic discovery and targeted outreach. Submit to independent playlist curators on SubmitHub and Groover — even placements on smaller playlists (1,000-10,000 followers) add up. Collaborate with artists in adjacent genres to cross-pollinate audiences. Feature in music blogs and podcasts for credibility. On streaming platforms, release consistently — artists who drop every 4-6 weeks see 40% more algorithmic playlist consideration than those who release infrequently.',
+  },
+  brand: {
+    keywords: ['brand', 'image', 'identity', 'logo', 'visual', 'bio', 'press', 'epp', 'press kit'],
+    response: 'Your artist brand is your first impression with industry gatekeepers and potential fans. Ensure your artist name, photo, bio, and visual style are consistent across all platforms. A professional press kit (EPK) with high-res photos, a concise bio, notable achievements, and streaming links is essential for booking shows and pitching to labels. Max Booster\'s Press Kit builder helps you create a shareable EPK in minutes. Update it with every major release or achievement.',
+  },
+  performance: {
+    keywords: ['show', 'live', 'performance', 'concert', 'gig', 'tour', 'booking', 'venue', 'setlist'],
+    response: 'Live performance is one of the most powerful audience-building tools available. Start with local venues, open mics, and supporting slots for established artists. Build a tight 20-30 minute set before pitching to bookers. Use the Show Mode feature in Max Booster to manage setlists, BPMs, and transitions during live performances. Document every show with quality photos and video — this content performs well on social and builds your performance portfolio for better bookings.',
+  },
+  ai: {
+    keywords: ['ai', 'artificial intelligence', 'max booster', 'autopilot', 'automation', 'machine learning'],
+    response: 'Max Booster\'s AI system analyzes your music career data across social, streaming, advertising, and engagement metrics to surface actionable recommendations. The Autopilot feature can automatically post content, optimize ad bids, and flag growth opportunities. The AI Career Coach (that\'s me!) is trained on music industry patterns and can answer questions about strategy, releases, marketing, and more. Check your Dashboard for personalized daily recommendations based on your career trajectory.',
+  },
+};
+
+const DEFAULT_RESPONSE = 'Great question! As your AI Career Coach, I\'m here to help you navigate the music industry. I can advise on topics like social media strategy, release planning, marketing campaigns, revenue diversification, audience growth, artist branding, live performance, and how to use Max Booster\'s tools to their full potential. What specific area of your music career would you like to focus on?';
+
+router.post('/chat', requireAuth, asyncHandler(async (req, res) => {
+  const parsed = chatSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Message is required' });
+  }
+
+  const { message } = parsed.data;
+  const lowerMsg = message.toLowerCase();
+
+  let response = DEFAULT_RESPONSE;
+  for (const [, entry] of Object.entries(CAREER_KNOWLEDGE)) {
+    if (entry.keywords.some((kw) => lowerMsg.includes(kw))) {
+      response = entry.response;
+      break;
+    }
+  }
+
+  logger.info(`Career coach chat for user ${req.user!.id}: "${message.slice(0, 60)}..."`);
+  res.json({ response });
+}));
+
 export default router;
