@@ -162,6 +162,7 @@ function isNativeApp(): boolean {
 const PUBLIC_ONLY_ROUTES = [
   '/',
   '/about',
+  '/blog',
   '/features',
   '/pricing',
   '/security',
@@ -171,12 +172,14 @@ const PUBLIC_ONLY_ROUTES = [
   '/api-docs',
   '/documentation',
   '/solo-founder-story',
+  '/desktop-app',
+  '/help',
   '/login',
   '/register',
   '/forgot-password',
   '/reset-password',
 ];
-const PUBLIC_ONLY_PREFIXES = ['/blog/', '/register/payment/', '/register/'];
+const PUBLIC_ONLY_PREFIXES = ['/blog/', '/blog', '/register/payment/', '/register/'];
 
 // Scroll the page to the top whenever the user navigates to a new route.
 function ScrollToTop() {

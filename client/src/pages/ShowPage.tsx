@@ -126,6 +126,8 @@ export default function ShowPage() {
     timeSignature: { numerator: 4, denominator: 4 },
     volume: metronomeVolume,
   });
+  const metronomeRef = useRef(metronome);
+  metronomeRef.current = metronome;
 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -237,11 +239,11 @@ export default function ShowPage() {
 
   useEffect(() => {
     if (metronomeEnabled && isPlaying) {
-      metronome.start();
+      metronomeRef.current.start();
     } else {
-      metronome.stop();
+      metronomeRef.current.stop();
     }
-  }, [isPlaying, metronomeEnabled, metronome]);
+  }, [isPlaying, metronomeEnabled]);
 
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
