@@ -2,8 +2,8 @@ import { db } from '../db.js';
 import { autopilotLearningData, autopilotInsights } from '@shared/schema';
 import { eq, and, desc, gte, sql, avg, count } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { pushTrainingFeedback } from './maxcoreSync.js';
 
-const AI_SERVER_URL = process.env.PEER_TRAINING_NODE || 'http://localhost:8000';
 const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
 export interface PostData {
@@ -749,37 +749,17 @@ class AutopilotLearningService {
    * Fire-and-forget — never blocks the request path.
    */
   private async dispatchCurriculumSessionAsync(engagementRate: number, postData: PostData): Promise<void> {
-    try {
-      const payload = {
-        source:          'autopilot_learning',
-        trigger:         'high_engagement_post',
-        engagement_rate: engagementRate,
-        platform:        postData.platform,
-        content_type:    postData.contentType || 'unknown',
-        hook_type:       postData.hookType    || 'unknown',
-        media_type:      postData.mediaType   || 'unknown',
-        curriculum_hint: 'reinforce_high_engagement_visual_style',
-        dispatched_at:   new Date().toISOString(),
-      };
-
-      const resp = await fetch(`${AI_SERVER_URL}/train/feedback`, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify(payload),
-        signal:  AbortSignal.timeout(5000),
-      });
-
-      if (resp.ok) {
-        logger.info(
-          `[AutopilotLearning] CurriculumTrainer notified — ${postData.platform} ` +
-          `${postData.contentType} at ${engagementRate.toFixed(2)}% engagement`
-        );
-      } else {
-        logger.warn(`[AutopilotLearning] CurriculumTrainer returned ${resp.status} — signal dropped`);
-      }
-    } catch {
-      logger.warn('[AutopilotLearning] AI server unreachable — CurriculumTrainer signal skipped (will retry next post)');
-    }
+    await pushTrainingFeedback({
+      source:          'autopilot_learning',
+      trigger:         'high_engagement_post',
+      engagement_rate: engagementRate,
+      platform:        postData.platform,
+      content_type:    postData.contentType || 'unknown',
+      hook_type:       postData.hookType    || 'unknown',
+      media_type:      postData.mediaType   || 'unknown',
+      curriculum_hint: 'reinforce_high_engagement_visual_style',
+      dispatched_at:   new Date().toISOString(),
+    });
   }
 }
 

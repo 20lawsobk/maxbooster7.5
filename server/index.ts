@@ -899,6 +899,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           runBaseModelTraining().catch((e) => { logger.warn('[BaseTrainer] Background training error:', e instanceof Error ? e.message : String(e)); });
         }).catch(() => {});
 
+        // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
+        import('./services/maxcoreSync.js').then(({ initMaxCoreSync }) => {
+          initMaxCoreSync().catch((e: any) => logger.warn('[MaxCoreSync] Init error:', e?.message));
+        }).catch(() => {});
+
         // Diffusion self-training: starts 60s after boot so server is stable first
         setTimeout(() => {
           import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
