@@ -71,6 +71,7 @@ const licenseTemplateSchema = z.object({
   allowsProfit: z.boolean().optional(),
   allowsSync: z.boolean().optional(),
   fileFormats: z.string().max(100).optional(),
+  isActive: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -422,21 +423,18 @@ router.put('/license-templates/:id', requireAuth, async (req: Request, res: Resp
     if (existing.length === 0) {
       return res.status(404).json({ error: 'License template not found' });
     }
-    const { name, type, priceCents, streams, copies, musicVideos, duration, allowsBroadcast, allowsProfit, allowsSync, fileFormats, isActive, sortOrder } = req.body;
-    const updates: Record<string, any> = { updatedAt: new Date() };
-    if (name !== undefined) updates.name = name;
-    if (type !== undefined) updates.type = type;
-    if (priceCents !== undefined) updates.priceCents = priceCents;
-    if (streams !== undefined) updates.streams = String(streams);
-    if (copies !== undefined) updates.copies = String(copies);
-    if (musicVideos !== undefined) updates.musicVideos = String(musicVideos);
-    if (duration !== undefined) updates.duration = duration;
-    if (allowsBroadcast !== undefined) updates.allowsBroadcast = allowsBroadcast;
-    if (allowsProfit !== undefined) updates.allowsProfit = allowsProfit;
-    if (allowsSync !== undefined) updates.allowsSync = allowsSync;
-    if (fileFormats !== undefined) updates.fileFormats = fileFormats;
-    if (isActive !== undefined) updates.isActive = isActive;
-    if (sortOrder !== undefined) updates.sortOrder = sortOrder;
+    const parsed = licenseTemplateSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
+    const { streams, copies, musicVideos, ...rest } = parsed.data;
+    const updates: Record<string, any> = {
+      ...rest,
+      ...(streams !== undefined && { streams: String(streams) }),
+      ...(copies !== undefined && { copies: String(copies) }),
+      ...(musicVideos !== undefined && { musicVideos: String(musicVideos) }),
+      updatedAt: new Date(),
+    };
 
     const [updated] = await db.update(licenseTemplates)
       .set(updates)
@@ -1023,20 +1021,18 @@ router.patch('/contracts/:id', async (req: Request, res: Response) => {
 
     const userId = (req.user as any).id;
     const { id } = req.params;
-    const { name, description, content, category, variables } = req.body;
+
+    const parsed = contractSchema.partial().safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+    }
 
     const contract = await storage.getContractTemplateByUser(id, userId);
     if (!contract) {
       return res.status(404).json({ error: 'Contract not found' });
     }
 
-    const updatedContract = await storage.updateContractTemplate(id, {
-      name,
-      description,
-      content,
-      category,
-      variables,
-    });
+    const updatedContract = await storage.updateContractTemplate(id, parsed.data);
 
     res.json(updatedContract);
   } catch (error: any) {

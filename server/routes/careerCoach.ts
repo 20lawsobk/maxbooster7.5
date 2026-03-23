@@ -6,7 +6,7 @@ import { logger } from '../logger';
 import { z } from 'zod';
 import { db } from '../db';
 import { analytics, releases, royaltyTransactions, posts } from '../../shared/schema';
-import { eq, and, gte, desc, count, sum } from 'drizzle-orm';
+import { eq, and, gte, lte, desc, count, sum } from 'drizzle-orm';
 
 const router = Router();
 
@@ -42,7 +42,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching career coach recommendations:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -68,7 +68,7 @@ router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error dismissing recommendation:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -94,7 +94,7 @@ router.post('/complete/:id', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error completing recommendation:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -122,7 +122,7 @@ router.get('/goals', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching career goals:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -154,7 +154,7 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error creating career goal:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -180,7 +180,7 @@ router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error creating SMART goal:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -214,7 +214,7 @@ router.patch('/goals/:id/progress', requireAuth, asyncHandler(async (req, res) =
     });
   } catch (error: any) {
     logger.error('Error updating goal progress:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -235,7 +235,7 @@ router.get('/analyze', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error analyzing career gaps:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -245,7 +245,7 @@ router.get('/patterns', requireAuth, asyncHandler(async (req, res) => {
     res.json({ success: true, data: { patterns, total: patterns.length } });
   } catch (error: any) {
     logger.error('Error fetching pattern library:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -269,7 +269,7 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       db.select({ streams: sum(analytics.streams), followers: sum(analytics.followers) })
         .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo))),
       db.select({ streams: sum(analytics.streams), followers: sum(analytics.followers) })
-        .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), gte(analytics.date, thirtyDaysAgo))),
+        .from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo))),
       db.select({ id: releases.id }).from(releases)
         .where(and(eq(releases.userId, userId), gte(releases.createdAt, ninetyDaysAgo))).limit(500),
       db.select({ id: releases.id }).from(releases)
@@ -277,7 +277,7 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
         .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, thirtyDaysAgo))),
       db.select({ total: sum(royaltyTransactions.amount) }).from(royaltyTransactions)
-        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, sixtyDaysAgo))),
+        .where(and(eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, sixtyDaysAgo), lte(royaltyTransactions.createdAt, thirtyDaysAgo))),
       db.select({ id: posts.id }).from(posts)
         .where(and(eq(posts.userId, userId), gte(posts.createdAt, thirtyDaysAgo))).limit(500),
     ]);
@@ -331,7 +331,7 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching career insights:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
