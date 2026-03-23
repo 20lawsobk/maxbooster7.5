@@ -107,7 +107,7 @@ export default function KYCReview() {
       if (!res.ok) throw new Error('Failed to fetch verifications');
       return res.json();
     },
-    enabled: !!user?.isAdmin,
+    enabled: user?.role === 'admin',
   });
 
   const reviewMutation = useMutation({
@@ -172,7 +172,7 @@ export default function KYCReview() {
     },
   });
 
-  if (!user?.isAdmin) {
+  if (user?.role !== 'admin') {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-6">
         <Card className="max-w-md">

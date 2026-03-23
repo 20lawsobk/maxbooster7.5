@@ -272,7 +272,7 @@ export function LiveEditingBanner({
                       style={{ backgroundColor: user.color }}
                       className="text-[8px]"
                     >
-                      {user.displayName.charAt(0)}
+                      {(user.displayName || "?").charAt(0)}
                     </AvatarFallback>
                   </Avatar>
                 </TooltipTrigger>
@@ -377,7 +377,7 @@ export function LiveEditingBanner({
                             style={{ backgroundColor: user.color }}
                             className="text-[10px]"
                           >
-                            {user.displayName.charAt(0)}
+                            {(user.displayName || "?").charAt(0)}
                           </AvatarFallback>
                         </Avatar>
                       </motion.div>

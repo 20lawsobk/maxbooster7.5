@@ -186,7 +186,7 @@ export function ConflictResolutionDialog({
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="text-amber-400 border-amber-400/30">
                 <AlertTriangle className="w-3 h-3 mr-1" />
-                {conflict.elementType.charAt(0).toUpperCase() + conflict.elementType.slice(1)} Conflict
+                {(conflict.elementType || "unknown").charAt(0).toUpperCase() + (conflict.elementType || "unknown").slice(1)} Conflict
               </Badge>
               {conflict.canAutoMerge && (
                 <Badge variant="secondary" className="text-green-400">

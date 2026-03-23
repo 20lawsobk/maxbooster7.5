@@ -465,7 +465,7 @@ export function AccessRequestDialog({
                           <Avatar className="w-10 h-10">
                             <AvatarImage src={request.requesterAvatar} />
                             <AvatarFallback>
-                              {request.requesterName.charAt(0)}
+                              {(request.requesterName || "?").charAt(0)}
                             </AvatarFallback>
                           </Avatar>
 

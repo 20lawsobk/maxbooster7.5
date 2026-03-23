@@ -344,7 +344,7 @@ const workspaces = workspacesData?.workspaces || [];
     return (
       <Badge variant={variants[role] || 'outline'} className="text-xs">
         {role === 'owner' && <Crown className="h-3 w-3 mr-1" />}
-        {role.charAt(0).toUpperCase() + role.slice(1)}
+        {(role || 'member').charAt(0).toUpperCase() + (role || 'member').slice(1)}
       </Badge>
     );
   };
@@ -533,7 +533,7 @@ const workspaces = workspacesData?.workspaces || [];
                             {getRoleBadge(selectedWorkspace.role)}
                           </CardTitle>
                           <CardDescription>
-                            {selectedWorkspace.description || `${selectedWorkspace.type.charAt(0).toUpperCase() + selectedWorkspace.type.slice(1)} workspace`}
+                            {selectedWorkspace.description || `${(selectedWorkspace.type || 'project').charAt(0).toUpperCase() + (selectedWorkspace.type || 'project').slice(1)} workspace`}
                           </CardDescription>
                         </div>
                       </div>

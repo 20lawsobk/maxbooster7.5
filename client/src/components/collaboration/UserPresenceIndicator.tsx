@@ -125,7 +125,7 @@ export function UserPresenceIndicator({
               <Avatar className="w-5 h-5">
                 <AvatarImage src={user.avatar} />
                 <AvatarFallback style={{ backgroundColor: user.color }} className="text-[10px]">
-                  {user.displayName.charAt(0)}
+                  {(user.displayName || "?").charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <span>{user.displayName} joined the session</span>

@@ -383,7 +383,7 @@ export function VersionHistory({
                       <Avatar className="w-4 h-4">
                         <AvatarImage src={version.createdByAvatar} />
                         <AvatarFallback className="text-[8px]">
-                          {version.createdByName.charAt(0)}
+                          {(version.createdByName || "?").charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-xs text-zinc-500">

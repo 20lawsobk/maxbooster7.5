@@ -264,7 +264,7 @@ export function CommentThread({
             <Avatar className="w-8 h-8">
               <AvatarImage src={comment.userAvatar} />
               <AvatarFallback className="text-xs">
-                {comment.userName.charAt(0)}
+                {(comment.userName || "?").charAt(0)}
               </AvatarFallback>
             </Avatar>
 
@@ -581,7 +581,7 @@ export function CommentThread({
                       <Avatar className="w-6 h-6">
                         <AvatarImage src={user.avatar} />
                         <AvatarFallback className="text-xs">
-                          {user.name.charAt(0)}
+                          {(user.name || "?").charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left">
