@@ -6,7 +6,7 @@ const router = Router();
 
 router.get("/connections", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -14,13 +14,13 @@ router.get("/connections", async (req: Request, res: Response) => {
     return res.json(connections);
   } catch (error) {
     logger.error("Error fetching connections:", error);
-    return res.status(500).json({ message: "Failed to fetch connections" });
+    return res.status(500).json({ error: "Failed to fetch connections" });
   }
 });
 
 router.get("/connections/pending", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -28,20 +28,20 @@ router.get("/connections/pending", async (req: Request, res: Response) => {
     return res.json(requests);
   } catch (error) {
     logger.error("Error fetching pending requests:", error);
-    return res.status(500).json({ message: "Failed to fetch pending requests" });
+    return res.status(500).json({ error: "Failed to fetch pending requests" });
   }
 });
 
 router.post("/connect", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const { userId, message } = req.body;
 
     if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+      return res.status(400).json({ error: "User ID is required" });
     }
 
     const connection = await collaborationService.sendConnectionRequest(
@@ -52,13 +52,13 @@ router.post("/connect", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error sending connection request:", error);
-    return res.status(400).json({ message: "Failed to send connection request" });
+    return res.status(400).json({ error: "Failed to send connection request" });
   }
 });
 
 router.post("/accept/:id", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -69,13 +69,13 @@ router.post("/accept/:id", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error accepting connection:", error);
-    return res.status(400).json({ message: "Failed to accept connection" });
+    return res.status(400).json({ error: "Failed to accept connection" });
   }
 });
 
 router.post("/decline/:id", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -86,13 +86,13 @@ router.post("/decline/:id", async (req: Request, res: Response) => {
     return res.json(connection);
   } catch (error: any) {
     logger.error("Error declining connection:", error);
-    return res.status(400).json({ message: "Failed to decline connection" });
+    return res.status(400).json({ error: "Failed to decline connection" });
   }
 });
 
 router.delete("/connections/:id", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -100,13 +100,13 @@ router.delete("/connections/:id", async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error: any) {
     logger.error("Error removing connection:", error);
-    return res.status(400).json({ message: "Failed to remove connection" });
+    return res.status(400).json({ error: "Failed to remove connection" });
   }
 });
 
 router.get("/suggestions", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -118,7 +118,7 @@ router.get("/suggestions", async (req: Request, res: Response) => {
     return res.json(suggestions);
   } catch (error) {
     logger.error("Error fetching suggestions:", error);
-    return res.status(500).json({ message: "Failed to fetch suggestions" });
+    return res.status(500).json({ error: "Failed to fetch suggestions" });
   }
 });
 
@@ -137,20 +137,20 @@ router.get("/projects", async (req: Request, res: Response) => {
     return res.json(projects);
   } catch (error) {
     logger.error("Error fetching projects:", error);
-    return res.status(500).json({ message: "Failed to fetch projects" });
+    return res.status(500).json({ error: "Failed to fetch projects" });
   }
 });
 
 router.post("/projects", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
     const { title, description, genre, lookingFor, maxMembers, isPublic } = req.body;
 
     if (!title) {
-      return res.status(400).json({ message: "Project title is required" });
+      return res.status(400).json({ error: "Project title is required" });
     }
 
     const project = await collaborationService.createProject(req.user.id, {
@@ -164,13 +164,13 @@ router.post("/projects", async (req: Request, res: Response) => {
     return res.json(project);
   } catch (error: any) {
     logger.error("Error creating project:", error);
-    return res.status(400).json({ message: "Failed to create project" });
+    return res.status(400).json({ error: "Failed to create project" });
   }
 });
 
 router.post("/projects/:id/join", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -182,13 +182,13 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
     return res.json(member);
   } catch (error: any) {
     logger.error("Error joining project:", error);
-    return res.status(400).json({ message: "Failed to join project" });
+    return res.status(400).json({ error: "Failed to join project" });
   }
 });
 
 router.post("/projects/:id/leave", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -196,7 +196,7 @@ router.post("/projects/:id/leave", async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error: any) {
     logger.error("Error leaving project:", error);
-    return res.status(400).json({ message: "Failed to leave project" });
+    return res.status(400).json({ error: "Failed to leave project" });
   }
 });
 
@@ -218,13 +218,13 @@ router.get("/search", async (req: Request, res: Response) => {
     return res.json(artists);
   } catch (error) {
     logger.error("Error searching artists:", error);
-    return res.status(500).json({ message: "Failed to search artists" });
+    return res.status(500).json({ error: "Failed to search artists" });
   }
 });
 
 router.get("/connection-status/:userId", async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   try {
@@ -235,7 +235,7 @@ router.get("/connection-status/:userId", async (req: Request, res: Response) => 
     return res.json(status);
   } catch (error) {
     logger.error("Error getting connection status:", error);
-    return res.status(500).json({ message: "Failed to get connection status" });
+    return res.status(500).json({ error: "Failed to get connection status" });
   }
 });
 

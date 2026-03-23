@@ -106,4 +106,22 @@ router.post('/generate', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+router.delete('/:id', requireAuth, asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+
+    const deleted = await revenueForecastService.deleteForecastById(userId, id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Forecast not found or does not belong to you' });
+    }
+
+    res.json({ success: true, message: 'Forecast deleted' });
+  } catch (error: any) {
+    logger.error('Error deleting forecast:', error?.message);
+    res.status(500).json({ error: 'Failed to process request' });
+  }
+}));
+
 export default router;

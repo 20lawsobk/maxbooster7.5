@@ -567,7 +567,7 @@ router.get('/payment-method', requireAuth, async (req: AuthenticatedRequest, res
     res.json({ last4: null, expiry: null, brand: null });
   } catch (error) {
     logger.error('[Billing] Failed to get payment method:', error);
-    res.status(500).json({ message: 'Failed to get payment method' });
+    res.status(500).json({ error: 'Failed to get payment method' });
   }
 });
 
@@ -609,7 +609,7 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
     res.status(500).json({ error: 'Internal server error' });
   } catch (error) {
     logger.error('[Billing] Failed to get billing history:', error);
-    res.status(500).json({ message: 'Failed to get billing history' });
+    res.status(500).json({ error: 'Failed to get billing history' });
   }
 });
 
@@ -911,7 +911,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
 router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!stripe) {
-      return res.status(503).json({ message: 'Billing service not configured' });
+      return res.status(503).json({ error: 'Billing service not configured' });
     }
     
     const userId = req.user!.id;
@@ -929,14 +929,14 @@ router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, re
     res.json({ url: session.url });
   } catch (error) {
     logger.error('[Billing] Failed to create setup session:', error);
-    res.status(500).json({ message: 'Failed to update payment method' });
+    res.status(500).json({ error: 'Failed to update payment method' });
   }
 });
 
 router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     if (!stripe) {
-      return res.status(503).json({ message: 'Billing service not configured' });
+      return res.status(503).json({ error: 'Billing service not configured' });
     }
     
     const userId = req.user!.id;
@@ -948,7 +948,7 @@ router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequ
       .limit(1);
     
     if (!user?.stripeCustomerId) {
-      return res.status(400).json({ message: 'No billing account found' });
+      return res.status(400).json({ error: 'No billing account found' });
     }
     
     const portalSession = await stripe.billingPortal.sessions.create({
@@ -959,7 +959,7 @@ router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequ
     res.json({ url: portalSession.url });
   } catch (error) {
     logger.error('[Billing] Failed to create portal session:', error);
-    res.status(500).json({ message: 'Failed to access billing portal' });
+    res.status(500).json({ error: 'Failed to access billing portal' });
   }
 });
 
@@ -969,17 +969,17 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const { orderId, amountCents, reason } = req.body;
     
     if (!orderId) {
-      return res.status(400).json({ message: 'Order ID is required' });
+      return res.status(400).json({ error: 'Order ID is required' });
     }
     
     // SECURITY FIX: Validate amountCents is a positive number
     if (amountCents !== undefined) {
       if (typeof amountCents !== 'number' || !Number.isInteger(amountCents) || amountCents <= 0) {
-        return res.status(400).json({ message: 'Amount must be a positive integer in cents' });
+        return res.status(400).json({ error: 'Amount must be a positive integer in cents' });
       }
       // SECURITY: Sanity check for maximum refund amount ($10,000)
       if (amountCents > 1000000) {
-        return res.status(400).json({ message: 'Refund amount exceeds maximum limit' });
+        return res.status(400).json({ error: 'Refund amount exceeds maximum limit' });
       }
     }
     
@@ -992,7 +992,7 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
     
     if (!result.success) {
-      return res.status(400).json({ message: result.error });
+      return res.status(400).json({ error: result.error });
     }
     
     res.json({
@@ -1002,7 +1002,7 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
     });
   } catch (error) {
     logger.error('[Billing] Failed to create refund:', error);
-    res.status(500).json({ message: 'Failed to process refund' });
+    res.status(500).json({ error: 'Failed to process refund' });
   }
 });
 
@@ -1013,16 +1013,16 @@ router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, r
     const refund = await stripeService.getRefundStatus(refundId);
     
     if (refund.userId !== req.user!.id) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ error: 'Forbidden' });
     }
     
     res.json(refund);
   } catch (error: any) {
     if (error.message === 'Refund not found') {
-      return res.status(404).json({ message: 'Refund not found' });
+      return res.status(404).json({ error: 'Refund not found' });
     }
     logger.error('[Billing] Failed to get refund status:', error);
-    res.status(500).json({ message: 'Failed to get refund status' });
+    res.status(500).json({ error: 'Failed to get refund status' });
   }
 });
 
@@ -1035,7 +1035,7 @@ router.get('/order/:orderId/refunds', requireAuth, async (req: AuthenticatedRequ
     res.json({ refunds });
   } catch (error) {
     logger.error('[Billing] Failed to get order refunds:', error);
-    res.status(500).json({ message: 'Failed to get order refunds' });
+    res.status(500).json({ error: 'Failed to get order refunds' });
   }
 });
 
@@ -1050,7 +1050,7 @@ router.get('/ledger', requireAuth, async (req: AuthenticatedRequest, res: Respon
     res.json({ entries, pagination: { limit, offset } });
   } catch (error) {
     logger.error('[Billing] Failed to get ledger history:', error);
-    res.status(500).json({ message: 'Failed to get ledger history' });
+    res.status(500).json({ error: 'Failed to get ledger history' });
   }
 });
 
@@ -1804,7 +1804,7 @@ router.get('/disputes', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json({ disputes: [], hasMore: false });
   } catch (error) {
     logger.error('[Billing] Failed to get disputes:', error);
-    res.status(500).json({ message: 'Failed to get disputes' });
+    res.status(500).json({ error: 'Failed to get disputes' });
   }
 });
 
@@ -1886,7 +1886,7 @@ router.get('/invoices', requireAuth, async (req: AuthenticatedRequest, res: Resp
     res.json({ invoices: [], hasMore: false });
   } catch (error) {
     logger.error('[Billing] Failed to get invoices:', error);
-    res.status(500).json({ message: 'Failed to get invoices' });
+    res.status(500).json({ error: 'Failed to get invoices' });
   }
 });
 
@@ -1947,7 +1947,7 @@ router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Respo
     res.json({ refunds: [], hasMore: false });
   } catch (error) {
     logger.error('[Billing] Failed to get refunds:', error);
-    res.status(500).json({ message: 'Failed to get refunds' });
+    res.status(500).json({ error: 'Failed to get refunds' });
   }
 });
 
@@ -1994,7 +1994,7 @@ router.get('/usage', requireAuth, async (req: AuthenticatedRequest, res: Respons
     res.json(usageStats);
   } catch (error) {
     logger.error('[Billing] Failed to get usage stats:', error);
-    res.status(500).json({ message: 'Failed to get usage stats' });
+    res.status(500).json({ error: 'Failed to get usage stats' });
   }
 });
 

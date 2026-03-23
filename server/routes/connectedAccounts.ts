@@ -134,7 +134,7 @@ router.delete('/:accountId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Connected account not found' });
     }
     
-    res.json({ message: 'Account disconnected successfully' });
+    res.json({ error: 'Account disconnected successfully' });
   } catch (error) {
     logger.error('Error disconnecting account:', error);
     res.status(500).json({ error: 'Failed to disconnect account' });
@@ -212,7 +212,7 @@ router.post('/manual-token', async (req: Request, res: Response) => {
         .where(eq(socialAccounts.id, existing[0].id));
 
       logger.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
-      res.json({ message: `${platform} access token updated successfully`, id: existing[0].id });
+      res.json({ error: `${platform} access token updated successfully`, id: existing[0].id });
     } else {
       const [newAccount] = await db
         .insert(socialAccounts)
@@ -229,7 +229,7 @@ router.post('/manual-token', async (req: Request, res: Response) => {
         .returning({ id: socialAccounts.id });
 
       logger.info(`[ManualToken] Created ${platform} token for user ${userId}`);
-      res.json({ message: `${platform} connected successfully`, id: newAccount.id });
+      res.json({ error: `${platform} connected successfully`, id: newAccount.id });
     }
   } catch (error) {
     logger.error('Error saving manual token:', error);

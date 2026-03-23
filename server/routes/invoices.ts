@@ -38,7 +38,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
     res.json({ invoices: userInvoices, pagination: { limit, offset } });
   } catch (error) {
     logger.error('[Invoices] Failed to get invoices:', error);
-    res.status(500).json({ message: 'Failed to get invoices' });
+    res.status(500).json({ error: 'Failed to get invoices' });
   }
 });
 
@@ -53,17 +53,17 @@ router.get('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
       .limit(1);
     
     if (!invoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
+      return res.status(404).json({ error: 'Invoice not found' });
     }
     
     if (invoice.userId !== req.user!.id) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ error: 'Forbidden' });
     }
     
     res.json(invoice);
   } catch (error) {
     logger.error('[Invoices] Failed to get invoice:', error);
-    res.status(500).json({ message: 'Failed to get invoice' });
+    res.status(500).json({ error: 'Failed to get invoice' });
   }
 });
 
@@ -73,7 +73,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
     const { lineItems, toAddress, fromAddress, dueDate, notes, terms, invoiceType } = req.body;
     
     if (!lineItems || !Array.isArray(lineItems) || lineItems.length === 0) {
-      return res.status(400).json({ message: 'Line items are required' });
+      return res.status(400).json({ error: 'Line items are required' });
     }
     
     const subtotalCents = lineItems.reduce((sum: number, item: any) => {
@@ -108,7 +108,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
     res.status(201).json(invoice);
   } catch (error) {
     logger.error('[Invoices] Failed to create invoice:', error);
-    res.status(500).json({ message: 'Failed to create invoice' });
+    res.status(500).json({ error: 'Failed to create invoice' });
   }
 });
 
@@ -124,11 +124,11 @@ router.put('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
       .limit(1);
     
     if (!existing) {
-      return res.status(404).json({ message: 'Invoice not found' });
+      return res.status(404).json({ error: 'Invoice not found' });
     }
     
     if (existing.status === 'paid') {
-      return res.status(400).json({ message: 'Cannot modify paid invoice' });
+      return res.status(400).json({ error: 'Cannot modify paid invoice' });
     }
     
     const { lineItems, toAddress, fromAddress, dueDate, notes, terms, status } = req.body;
@@ -163,7 +163,7 @@ router.put('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     res.json(updated);
   } catch (error) {
     logger.error('[Invoices] Failed to update invoice:', error);
-    res.status(500).json({ message: 'Failed to update invoice' });
+    res.status(500).json({ error: 'Failed to update invoice' });
   }
 });
 
@@ -179,7 +179,7 @@ router.post('/:invoiceId/send', requireAuth, async (req: AuthenticatedRequest, r
       .limit(1);
     
     if (!invoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
+      return res.status(404).json({ error: 'Invoice not found' });
     }
     
     await db
@@ -191,7 +191,7 @@ router.post('/:invoiceId/send', requireAuth, async (req: AuthenticatedRequest, r
     res.json({ success: true, message: 'Invoice sent successfully' });
   } catch (error) {
     logger.error('[Invoices] Failed to send invoice:', error);
-    res.status(500).json({ message: 'Failed to send invoice' });
+    res.status(500).json({ error: 'Failed to send invoice' });
   }
 });
 
@@ -208,7 +208,7 @@ router.post('/:invoiceId/mark-paid', requireAuth, async (req: AuthenticatedReque
       .limit(1);
     
     if (!invoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
+      return res.status(404).json({ error: 'Invoice not found' });
     }
     
     await db
@@ -225,7 +225,7 @@ router.post('/:invoiceId/mark-paid', requireAuth, async (req: AuthenticatedReque
     res.json({ success: true, message: 'Invoice marked as paid' });
   } catch (error) {
     logger.error('[Invoices] Failed to mark invoice paid:', error);
-    res.status(500).json({ message: 'Failed to mark invoice as paid' });
+    res.status(500).json({ error: 'Failed to mark invoice as paid' });
   }
 });
 
@@ -241,7 +241,7 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
       .limit(1);
     
     if (!invoice) {
-      return res.status(404).json({ message: 'Invoice not found' });
+      return res.status(404).json({ error: 'Invoice not found' });
     }
     
     const pdfData = await invoiceService.generatePDF({
@@ -288,7 +288,7 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
     res.send(Buffer.from(pdfData, 'base64'));
   } catch (error) {
     logger.error('[Invoices] Failed to generate PDF:', error);
-    res.status(500).json({ message: 'Failed to generate PDF' });
+    res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
 
@@ -304,7 +304,7 @@ router.post('/generate-from-order/:orderId', requireAuth, async (req: Authentica
       .limit(1);
     
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ error: 'Order not found' });
     }
     
     const invoiceNumber = generateInvoiceNumber();
@@ -333,7 +333,7 @@ router.post('/generate-from-order/:orderId', requireAuth, async (req: Authentica
     res.status(201).json(invoice);
   } catch (error) {
     logger.error('[Invoices] Failed to generate invoice from order:', error);
-    res.status(500).json({ message: 'Failed to generate invoice' });
+    res.status(500).json({ error: 'Failed to generate invoice' });
   }
 });
 
@@ -402,7 +402,7 @@ router.post('/bulk-generate', requireAuth, async (req: AuthenticatedRequest, res
     });
   } catch (error) {
     logger.error('[Invoices] Failed to bulk generate invoices:', error);
-    res.status(500).json({ message: 'Failed to bulk generate invoices' });
+    res.status(500).json({ error: 'Failed to bulk generate invoices' });
   }
 });
 
@@ -436,7 +436,7 @@ router.get('/summary/stats', requireAuth, async (req: AuthenticatedRequest, res:
     });
   } catch (error) {
     logger.error('[Invoices] Failed to get invoice stats:', error);
-    res.status(500).json({ message: 'Failed to get invoice statistics' });
+    res.status(500).json({ error: 'Failed to get invoice statistics' });
   }
 });
 

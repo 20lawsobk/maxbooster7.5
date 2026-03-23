@@ -107,7 +107,7 @@ router.get('/accessibility-preferences', requireAuth, async (req: Request, res: 
     const user = await storage.getUser(userId);
     
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const preferences = user.accessibilityPreferences || defaultPreferences;
@@ -118,7 +118,7 @@ router.get('/accessibility-preferences', requireAuth, async (req: Request, res: 
     });
   } catch (error) {
     logger.error('Error fetching accessibility preferences:', error);
-    return res.status(500).json({ message: 'Failed to fetch accessibility preferences' });
+    return res.status(500).json({ error: 'Failed to fetch accessibility preferences' });
   }
 });
 
@@ -138,7 +138,7 @@ router.put('/accessibility-preferences', requireAuth, async (req: Request, res: 
 
     const user = await storage.getUser(userId);
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ error: 'User not found' });
     }
 
     const currentPreferences = user.accessibilityPreferences || defaultPreferences;
@@ -159,7 +159,7 @@ router.put('/accessibility-preferences', requireAuth, async (req: Request, res: 
     });
   } catch (error) {
     logger.error('Error updating accessibility preferences:', error);
-    return res.status(500).json({ message: 'Failed to update accessibility preferences' });
+    return res.status(500).json({ error: 'Failed to update accessibility preferences' });
   }
 });
 
@@ -179,7 +179,7 @@ router.delete('/accessibility-preferences', requireAuth, async (req: Request, re
     });
   } catch (error) {
     logger.error('Error resetting accessibility preferences:', error);
-    return res.status(500).json({ message: 'Failed to reset accessibility preferences' });
+    return res.status(500).json({ error: 'Failed to reset accessibility preferences' });
   }
 });
 

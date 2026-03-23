@@ -1,12 +1,22 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db.ts';
-import { eq, desc, asc, lt, sql } from 'drizzle-orm';
+import { eq, desc, asc, lt, sql, inArray } from 'drizzle-orm';
 import {
   assistantConversations,
   assistantMessages,
 } from '../../shared/schema.ts';
 import { generateMaxResponse } from '../services/maxAssistantService.ts';
 import { logger } from '../logger.js';
+import rateLimit from 'express-rate-limit';
+
+const chatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many messages — please wait a moment before sending again.' },
+  skip: (req) => (req as any).user?.role === 'admin',
+});
 
 const router = Router();
 
@@ -122,9 +132,9 @@ router.get('/history', async (req: Request, res: Response) => {
 // Sends a message to Max, persists it, returns the in-house AI response.
 // Body: { message: string }
 // Response: { content, category, confidence, proactiveSuggestions, relatedTopics, quickActions, messageId, assistantMessageId }
-router.post('/chat', async (req: Request, res: Response) => {
+router.post('/chat', chatLimiter, async (req: Request, res: Response) => {
   try {
-    const { message } = req.body;
+    const { message } = req.body ?? {};
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return res.status(400).json({ error: 'Message is required' });
@@ -205,15 +215,16 @@ router.delete('/history', async (req: Request, res: Response) => {
     }
 
     const conversations = await db
-      .select()
+      .select({ id: assistantConversations.id })
       .from(assistantConversations)
       .where(eq(assistantConversations.userId, user.id))
       .limit(500);
 
-    for (const conv of conversations) {
+    if (conversations.length > 0) {
+      const convIds = conversations.map((c) => c.id);
       await db
         .delete(assistantMessages)
-        .where(eq(assistantMessages.conversationId, conv.id));
+        .where(inArray(assistantMessages.conversationId, convIds));
     }
 
     await db

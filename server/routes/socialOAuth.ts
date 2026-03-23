@@ -281,7 +281,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     
     const config = PLATFORMS[platform as keyof typeof PLATFORMS];
     if (!config) {
-      return res.status(400).json({ message: `Platform ${platform} is not supported` });
+      return res.status(400).json({ error: `Platform ${platform} is not supported` });
     }
 
     if (!config.enabled) {
@@ -330,7 +330,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     res.json({ authUrl });
   } catch (error) {
     logger.error('Failed to initiate OAuth:', error);
-    res.status(500).json({ message: 'Failed to connect platform' });
+    res.status(500).json({ error: 'Failed to connect platform' });
   }
 });
 
@@ -787,7 +787,7 @@ router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, re
     res.json({ success: true, results });
   } catch (error) {
     logger.error('Failed to sync platform stats:', error);
-    res.status(500).json({ message: 'Failed to sync platform stats' });
+    res.status(500).json({ error: 'Failed to sync platform stats' });
   }
 });
 

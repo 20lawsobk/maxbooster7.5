@@ -31,7 +31,7 @@ function generateActionId(): string {
 router.post('/action', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const {
@@ -85,29 +85,29 @@ router.post('/action', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error recording action:', error);
-    return res.status(500).json({ message: 'Failed to record action' });
+    return res.status(500).json({ error: 'Failed to record action' });
   }
 });
 
 router.post('/undo/:actionId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { actionId } = req.params;
     const action = actionCache.get(actionId);
 
     if (!action) {
-      return res.status(404).json({ message: 'Action not found' });
+      return res.status(404).json({ error: 'Action not found' });
     }
 
     if (action.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to undo this action' });
+      return res.status(403).json({ error: 'Not authorized to undo this action' });
     }
 
     if (action.isUndone) {
-      return res.status(400).json({ message: 'Action already undone' });
+      return res.status(400).json({ error: 'Action already undone' });
     }
 
     action.isUndone = true;
@@ -121,29 +121,29 @@ router.post('/undo/:actionId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error undoing action:', error);
-    return res.status(500).json({ message: 'Failed to undo action' });
+    return res.status(500).json({ error: 'Failed to undo action' });
   }
 });
 
 router.post('/redo/:actionId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { actionId } = req.params;
     const action = actionCache.get(actionId);
 
     if (!action) {
-      return res.status(404).json({ message: 'Action not found' });
+      return res.status(404).json({ error: 'Action not found' });
     }
 
     if (action.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to redo this action' });
+      return res.status(403).json({ error: 'Not authorized to redo this action' });
     }
 
     if (!action.isUndone) {
-      return res.status(400).json({ message: 'Action has not been undone' });
+      return res.status(400).json({ error: 'Action has not been undone' });
     }
 
     action.isUndone = false;
@@ -157,14 +157,14 @@ router.post('/redo/:actionId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error redoing action:', error);
-    return res.status(500).json({ message: 'Failed to redo action' });
+    return res.status(500).json({ error: 'Failed to redo action' });
   }
 });
 
 router.get('/history', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
@@ -206,14 +206,14 @@ router.get('/history', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching action history:', error);
-    return res.status(500).json({ message: 'Failed to fetch action history' });
+    return res.status(500).json({ error: 'Failed to fetch action history' });
   }
 });
 
 router.delete('/history', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const userActionIds = Array.from(actionCache.entries())
@@ -229,25 +229,25 @@ router.delete('/history', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error clearing action history:', error);
-    return res.status(500).json({ message: 'Failed to clear action history' });
+    return res.status(500).json({ error: 'Failed to clear action history' });
   }
 });
 
 router.get('/action/:actionId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { actionId } = req.params;
     const action = actionCache.get(actionId);
 
     if (!action) {
-      return res.status(404).json({ message: 'Action not found' });
+      return res.status(404).json({ error: 'Action not found' });
     }
 
     if (action.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to view this action' });
+      return res.status(403).json({ error: 'Not authorized to view this action' });
     }
 
     return res.json({
@@ -267,14 +267,14 @@ router.get('/action/:actionId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching action:', error);
-    return res.status(500).json({ message: 'Failed to fetch action' });
+    return res.status(500).json({ error: 'Failed to fetch action' });
   }
 });
 
 router.post('/record', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const {
@@ -329,29 +329,29 @@ router.post('/record', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error recording action:', error);
-    return res.status(500).json({ message: 'Failed to record action' });
+    return res.status(500).json({ error: 'Failed to record action' });
   }
 });
 
 router.post('/revert/:actionId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { actionId } = req.params;
     const action = actionCache.get(actionId);
 
     if (!action) {
-      return res.status(404).json({ message: 'Action not found' });
+      return res.status(404).json({ error: 'Action not found' });
     }
 
     if (action.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to revert this action' });
+      return res.status(403).json({ error: 'Not authorized to revert this action' });
     }
 
     if (action.isUndone) {
-      return res.status(400).json({ message: 'Action has already been reverted' });
+      return res.status(400).json({ error: 'Action has already been reverted' });
     }
 
     action.isUndone = true;
@@ -365,20 +365,20 @@ router.post('/revert/:actionId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error reverting action:', error);
-    return res.status(500).json({ message: 'Failed to revert action' });
+    return res.status(500).json({ error: 'Failed to revert action' });
   }
 });
 
 router.post('/batch', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { actions, groupName } = req.body;
 
     if (!Array.isArray(actions) || actions.length === 0) {
-      return res.status(400).json({ message: 'Actions array is required' });
+      return res.status(400).json({ error: 'Actions array is required' });
     }
 
     const groupId = `group_${Date.now()}_${randomBytes(4).toString('hex')}`;
@@ -412,7 +412,7 @@ router.post('/batch', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error batch recording actions:', error);
-    return res.status(500).json({ message: 'Failed to batch record actions' });
+    return res.status(500).json({ error: 'Failed to batch record actions' });
   }
 });
 
@@ -450,7 +450,7 @@ function generateDeletedItemId(): string {
 router.post('/track-action', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const {
@@ -519,20 +519,20 @@ router.post('/track-action', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error tracking action:', error);
-    return res.status(500).json({ message: 'Failed to track action' });
+    return res.status(500).json({ error: 'Failed to track action' });
   }
 });
 
 router.post('/create-restore-point', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { name, description } = req.body;
 
     if (!name) {
-      return res.status(400).json({ message: 'name is required' });
+      return res.status(400).json({ error: 'name is required' });
     }
 
     const userActions = Array.from(actionCache.values())
@@ -569,14 +569,14 @@ router.post('/create-restore-point', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error creating restore point:', error);
-    return res.status(500).json({ message: 'Failed to create restore point' });
+    return res.status(500).json({ error: 'Failed to create restore point' });
   }
 });
 
 router.get('/restore-points', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const userRestorePoints = Array.from(restorePointCache.values())
@@ -595,25 +595,25 @@ router.get('/restore-points', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching restore points:', error);
-    return res.status(500).json({ message: 'Failed to fetch restore points' });
+    return res.status(500).json({ error: 'Failed to fetch restore points' });
   }
 });
 
 router.post('/restore/:pointId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { pointId } = req.params;
     const restorePoint = restorePointCache.get(pointId);
 
     if (!restorePoint) {
-      return res.status(404).json({ message: 'Restore point not found' });
+      return res.status(404).json({ error: 'Restore point not found' });
     }
 
     if (restorePoint.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to use this restore point' });
+      return res.status(403).json({ error: 'Not authorized to use this restore point' });
     }
 
     const userActions = Array.from(actionCache.values())
@@ -641,25 +641,25 @@ router.post('/restore/:pointId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error restoring to point:', error);
-    return res.status(500).json({ message: 'Failed to restore to point' });
+    return res.status(500).json({ error: 'Failed to restore to point' });
   }
 });
 
 router.delete('/restore-points/:pointId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { pointId } = req.params;
     const restorePoint = restorePointCache.get(pointId);
 
     if (!restorePoint) {
-      return res.status(404).json({ message: 'Restore point not found' });
+      return res.status(404).json({ error: 'Restore point not found' });
     }
 
     if (restorePoint.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to delete this restore point' });
+      return res.status(403).json({ error: 'Not authorized to delete this restore point' });
     }
 
     restorePointCache.delete(pointId);
@@ -670,14 +670,14 @@ router.delete('/restore-points/:pointId', async (req: Request, res: Response) =>
     });
   } catch (error) {
     logger.error('Error deleting restore point:', error);
-    return res.status(500).json({ message: 'Failed to delete restore point' });
+    return res.status(500).json({ error: 'Failed to delete restore point' });
   }
 });
 
 router.get('/deleted-items', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { type, limit = 50 } = req.query;
@@ -708,30 +708,30 @@ router.get('/deleted-items', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error fetching deleted items:', error);
-    return res.status(500).json({ message: 'Failed to fetch deleted items' });
+    return res.status(500).json({ error: 'Failed to fetch deleted items' });
   }
 });
 
 router.post('/recover/:itemId', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { itemId } = req.params;
     const deletedItem = deletedItemCache.get(itemId);
 
     if (!deletedItem) {
-      return res.status(404).json({ message: 'Deleted item not found' });
+      return res.status(404).json({ error: 'Deleted item not found' });
     }
 
     if (deletedItem.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized to recover this item' });
+      return res.status(403).json({ error: 'Not authorized to recover this item' });
     }
 
     if (deletedItem.expiresAt < new Date()) {
       deletedItemCache.delete(itemId);
-      return res.status(410).json({ message: 'Item has expired and cannot be recovered' });
+      return res.status(410).json({ error: 'Item has expired and cannot be recovered' });
     }
 
     const action = actionCache.get(deletedItem.actionId);
@@ -749,7 +749,7 @@ router.post('/recover/:itemId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Error recovering item:', error);
-    return res.status(500).json({ message: 'Failed to recover item' });
+    return res.status(500).json({ error: 'Failed to recover item' });
   }
 });
 

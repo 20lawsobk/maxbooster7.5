@@ -6,6 +6,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { queryCache, createCacheKey } from '../lib/queryCache.js';
 import { parsePaginationParams } from '../middleware/pagination.js';
+import { z } from 'zod';
 
 const router = Router();
 const CACHE_TTL = 300;
@@ -116,6 +117,77 @@ router.put('/:id', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
     res.status(500).json({ error: 'Failed to update label submission' });
+  }
+});
+
+// PATCH /api/label-submissions/:id/status - quick status update
+router.patch('/:id/status', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const statusSchema = z.object({
+      status: z.enum(['draft', 'submitted', 'under_review', 'following_up', 'accepted', 'rejected', 'declined']),
+      responseNote: z.string().max(2000).optional(),
+      responseAt: z.string().datetime().optional(),
+    });
+    const { status, responseNote, responseAt } = statusSchema.parse(req.body);
+
+    const setFields: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (responseNote !== undefined) setFields.responseNote = responseNote;
+    if (responseAt !== undefined) setFields.responseAt = new Date(responseAt);
+    else if (['accepted', 'rejected', 'declined'].includes(status)) {
+      setFields.responseAt = new Date();
+    }
+
+    const [item] = await db.update(labelSubmissions)
+      .set(setFields)
+      .where(and(eq(labelSubmissions.id, id), eq(labelSubmissions.userId, userId)))
+      .returning();
+
+    if (!item) return res.status(404).json({ error: 'Submission not found' });
+    await queryCache.invalidate(createCacheKey('stats:labelSubmissions', userId));
+    res.json(item);
+  } catch (error: unknown) {
+    logger.error('[LabelSubmissions] Failed to update status:', error);
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: 'Failed to update submission status' });
+  }
+});
+
+// POST /api/label-submissions/:id/followup - log a follow-up attempt
+router.post('/:id/followup', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const followupSchema = z.object({
+      nextFollowUpAt: z.string().datetime().optional(),
+      notes: z.string().max(2000).optional(),
+    });
+    const { nextFollowUpAt, notes } = followupSchema.parse(req.body);
+
+    const setFields: Record<string, unknown> = {
+      status: 'following_up',
+      updatedAt: new Date(),
+    };
+    if (nextFollowUpAt !== undefined) setFields.followUpAt = new Date(nextFollowUpAt);
+    if (notes !== undefined) setFields.notes = notes;
+
+    const [item] = await db.update(labelSubmissions)
+      .set(setFields)
+      .where(and(eq(labelSubmissions.id, id), eq(labelSubmissions.userId, userId)))
+      .returning();
+
+    if (!item) return res.status(404).json({ error: 'Submission not found' });
+    await queryCache.invalidate(createCacheKey('stats:labelSubmissions', userId));
+    res.json({ success: true, submission: item });
+  } catch (error: unknown) {
+    logger.error('[LabelSubmissions] Failed to log follow-up:', error);
+    if (error instanceof Error && error.name === 'ZodError') {
+      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
+    }
+    res.status(500).json({ error: 'Failed to log follow-up' });
   }
 });
 

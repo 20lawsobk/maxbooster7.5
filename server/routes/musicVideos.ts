@@ -270,7 +270,7 @@ router.post('/diffusion/background/start', requireAuth, async (req, res) => {
   try {
     const { startBackgroundTraining, getBackgroundStatus } = await import('../services/diffusionBackgroundTrainer.js');
     startBackgroundTraining();
-    res.json({ message: 'Background self-training started', status: getBackgroundStatus() });
+    res.json({ error: 'Background self-training started', status: getBackgroundStatus() });
   } catch (err) {
     res.status(500).json({ error: 'Could not start background trainer', details: String(err) });
   }

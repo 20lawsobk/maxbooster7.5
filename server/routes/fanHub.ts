@@ -82,7 +82,7 @@ router.get("/subscribers", async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error("Error fetching fan subscribers:", error);
-    return res.status(500).json({ message: "Failed to fetch fan subscribers" });
+    return res.status(500).json({ error: "Failed to fetch fan subscribers" });
   }
 });
 
@@ -90,7 +90,7 @@ router.post("/subscribers", async (req: Request, res: Response) => {
   try {
     const parsed = createSubscriberSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+      return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [subscriber] = await db.insert(fanSubscribers).values({
@@ -101,7 +101,7 @@ router.post("/subscribers", async (req: Request, res: Response) => {
     return res.status(201).json(subscriber);
   } catch (error) {
     logger.error("Error creating fan subscriber:", error);
-    return res.status(500).json({ message: "Failed to create fan subscriber" });
+    return res.status(500).json({ error: "Failed to create fan subscriber" });
   }
 });
 
@@ -112,7 +112,7 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
 
     const parsed = updateSubscriberSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+      return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const [updated] = await db.update(fanSubscribers)
@@ -121,13 +121,13 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) {
-      return res.status(404).json({ message: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
     return res.json(updated);
   } catch (error) {
     logger.error("Error updating fan subscriber:", error);
-    return res.status(500).json({ message: "Failed to update fan subscriber" });
+    return res.status(500).json({ error: "Failed to update fan subscriber" });
   }
 });
 
@@ -141,13 +141,13 @@ router.delete("/subscribers/:id", async (req: Request, res: Response) => {
       .returning();
 
     if (!deleted) {
-      return res.status(404).json({ message: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
     return res.json({ success: true });
   } catch (error) {
     logger.error("Error deleting fan subscriber:", error);
-    return res.status(500).json({ message: "Failed to delete fan subscriber" });
+    return res.status(500).json({ error: "Failed to delete fan subscriber" });
   }
 });
 
@@ -157,16 +157,16 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
     const { subscribers: importData } = req.body;
 
     if (!Array.isArray(importData)) {
-      return res.status(400).json({ message: "Invalid import data: must be an array" });
+      return res.status(400).json({ error: "Invalid import data: must be an array" });
     }
 
     if (importData.length > 1000) {
-      return res.status(400).json({ message: "Import limit is 1000 subscribers per request" });
+      return res.status(400).json({ error: "Import limit is 1000 subscribers per request" });
     }
 
     const parsed = z.array(importSubscriberSchema).safeParse(importData);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+      return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const values = parsed.data.map(s => ({
@@ -184,7 +184,7 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
     return res.json({ count: imported.length });
   } catch (error) {
     logger.error("Error importing fan subscribers:", error);
-    return res.status(500).json({ message: "Failed to import fan subscribers" });
+    return res.status(500).json({ error: "Failed to import fan subscribers" });
   }
 });
 
@@ -210,7 +210,7 @@ router.get("/stats", async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error("Error fetching fan hub stats:", error);
-    return res.status(500).json({ message: "Failed to fetch stats" });
+    return res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
 
@@ -220,7 +220,7 @@ router.post("/message", async (req: Request, res: Response) => {
 
     const parsed = sendMessageSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ message: "Validation error", details: parsed.error.flatten() });
+      return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
     }
 
     const { subject, body, segmentFilter } = parsed.data;
@@ -241,7 +241,7 @@ router.post("/message", async (req: Request, res: Response) => {
     return res.json(message);
   } catch (error) {
     logger.error("Error sending bulk message:", error);
-    return res.status(500).json({ message: "Failed to send message" });
+    return res.status(500).json({ error: "Failed to send message" });
   }
 });
 
@@ -260,7 +260,7 @@ router.get("/messages", async (req: Request, res: Response) => {
     return res.json(messages);
   } catch (error) {
     logger.error("Error fetching fan messages:", error);
-    return res.status(500).json({ message: "Failed to fetch messages" });
+    return res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
 
@@ -271,7 +271,7 @@ router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
     const parsed = z.object({ tags: z.array(z.string().max(100)).max(50) }).safeParse(req.body);
 
     if (!parsed.success) {
-      return res.status(400).json({ message: "Tags must be an array of strings (max 50 tags)" });
+      return res.status(400).json({ error: "Tags must be an array of strings (max 50 tags)" });
     }
 
     const [updated] = await db.update(fanSubscribers)
@@ -280,13 +280,13 @@ router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
       .returning();
 
     if (!updated) {
-      return res.status(404).json({ message: "Subscriber not found" });
+      return res.status(404).json({ error: "Subscriber not found" });
     }
 
     return res.json(updated);
   } catch (error) {
     logger.error("Error updating tags:", error);
-    return res.status(500).json({ message: "Failed to update tags" });
+    return res.status(500).json({ error: "Failed to update tags" });
   }
 });
 

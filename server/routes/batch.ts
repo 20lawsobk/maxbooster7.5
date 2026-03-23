@@ -36,12 +36,12 @@ function createBatchResult(
 router.post('/releases/submit', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -75,12 +75,12 @@ router.post('/releases/submit', async (req: Request, res: Response) => {
 router.post('/releases/takedown', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -114,12 +114,12 @@ router.post('/releases/takedown', async (req: Request, res: Response) => {
 router.put('/releases/update', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -158,12 +158,12 @@ router.put('/releases/update', async (req: Request, res: Response) => {
 router.post('/releases/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -197,12 +197,12 @@ router.post('/releases/delete', async (req: Request, res: Response) => {
 router.post('/posts/schedule', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -237,12 +237,12 @@ router.post('/posts/schedule', async (req: Request, res: Response) => {
 router.post('/posts/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -275,12 +275,12 @@ router.post('/posts/delete', async (req: Request, res: Response) => {
 router.put('/posts/update', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -319,12 +319,12 @@ router.put('/posts/update', async (req: Request, res: Response) => {
 router.post('/files/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -358,12 +358,12 @@ router.post('/files/delete', async (req: Request, res: Response) => {
 router.post('/files/move', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -398,12 +398,12 @@ router.post('/files/move', async (req: Request, res: Response) => {
 router.post('/files/download', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -444,12 +444,12 @@ router.post('/files/download', async (req: Request, res: Response) => {
 router.put('/files/update', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -488,12 +488,12 @@ router.put('/files/update', async (req: Request, res: Response) => {
 router.put('/marketplace/update', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -533,12 +533,12 @@ router.put('/marketplace/update', async (req: Request, res: Response) => {
 router.post('/marketplace/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -572,12 +572,12 @@ router.post('/marketplace/delete', async (req: Request, res: Response) => {
 router.post('/analytics/export', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -632,14 +632,14 @@ router.post('/analytics/export', async (req: Request, res: Response) => {
 router.get('/analytics/export/:exportId/download', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { exportId } = req.params;
     const job = batchJobs.get(exportId);
 
     if (!job || !job.exportData) {
-      return res.status(404).json({ message: 'Export not found or expired' });
+      return res.status(404).json({ error: 'Export not found or expired' });
     }
 
     const rows = job.exportData;
@@ -668,12 +668,12 @@ router.get('/analytics/export/:exportId/download', async (req: Request, res: Res
 router.post('/analytics/compare', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -723,12 +723,12 @@ const batchJobs: Map<string, { status: string; processed: number; total: number;
 router.post('/tracks/move', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const targetProjectId = typeof data?.targetProjectId === 'string' ? data.targetProjectId : null;
@@ -770,12 +770,12 @@ router.post('/tracks/move', async (req: Request, res: Response) => {
 router.post('/tracks/tag', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const tags = Array.isArray(data?.tags) ? data.tags : [];
@@ -814,12 +814,12 @@ router.post('/tracks/tag', async (req: Request, res: Response) => {
 router.post('/tracks/export', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -834,7 +834,7 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!firstTrack) {
-      return res.status(404).json({ message: 'Track not found' });
+      return res.status(404).json({ error: 'Track not found' });
     }
 
     const [exportRecord] = await db
@@ -879,12 +879,12 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
 router.post('/tracks/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const successIds: string[] = [];
@@ -916,12 +916,12 @@ router.post('/tracks/delete', async (req: Request, res: Response) => {
 router.put('/beats/update', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids, data } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -962,12 +962,12 @@ router.put('/beats/update', async (req: Request, res: Response) => {
 router.post('/beats/delete', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -1001,12 +1001,12 @@ router.post('/beats/delete', async (req: Request, res: Response) => {
 router.post('/posts/approve', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { ids } = req.body as BatchRequest;
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(400).json({ message: 'No IDs provided' });
+      return res.status(400).json({ error: 'No IDs provided' });
     }
 
     const userId = req.user!.id;
@@ -1040,14 +1040,14 @@ router.post('/posts/approve', async (req: Request, res: Response) => {
 router.get('/progress/:jobId', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { jobId } = req.params;
     const job = batchJobs.get(jobId);
 
     if (!job) {
-      return res.status(404).json({ message: 'Job not found' });
+      return res.status(404).json({ error: 'Job not found' });
     }
 
     res.json({
@@ -1070,7 +1070,7 @@ router.get('/progress/:jobId', async (req: Request, res: Response) => {
 router.get('/templates', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const userId = req.user.id;
@@ -1098,14 +1098,14 @@ router.get('/templates', async (req: Request, res: Response) => {
 router.post('/templates', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const userId = req.user.id;
     const { name, description, resource, action, configuration } = req.body;
 
     if (!name || !resource || !configuration) {
-      return res.status(400).json({ message: 'Name, resource, and configuration are required' });
+      return res.status(400).json({ error: 'Name, resource, and configuration are required' });
     }
 
     const [inserted] = await db
@@ -1130,7 +1130,7 @@ router.post('/templates', async (req: Request, res: Response) => {
 router.put('/templates/:id', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { id } = req.params;
@@ -1143,10 +1143,10 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!existing) {
-      return res.status(404).json({ message: 'Template not found' });
+      return res.status(404).json({ error: 'Template not found' });
     }
     if (existing.userId !== userId) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ error: 'Forbidden' });
     }
 
     const { name, description, resource, action, configuration, isFavorite } = req.body;
@@ -1175,7 +1175,7 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
 router.delete('/templates/:id', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { id } = req.params;
@@ -1187,10 +1187,10 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
       .returning({ id: batchTemplates.id });
 
     if (!deleted) {
-      return res.status(404).json({ message: 'Template not found' });
+      return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json({ message: 'Template deleted' });
+    res.json({ error: 'Template deleted' });
   } catch (error) {
     logger.error('Delete template error:', error);
     res.status(500).json({ error: 'Failed to process request' });
@@ -1200,7 +1200,7 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
 router.post('/templates/:id/share', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     const { id } = req.params;
@@ -1208,7 +1208,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
     const userId = req.user.id;
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return res.status(400).json({ message: 'Valid email address is required' });
+      return res.status(400).json({ error: 'Valid email address is required' });
     }
 
     const [original] = await db
@@ -1218,7 +1218,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
       .limit(1);
 
     if (!original) {
-      return res.status(404).json({ message: 'Template not found' });
+      return res.status(404).json({ error: 'Template not found' });
     }
 
     const [sharedCopy] = await db
@@ -1236,7 +1236,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
       })
       .returning();
 
-    res.json({ message: 'Template shared successfully', sharedTemplate: sharedCopy });
+    res.json({ error: 'Template shared successfully', sharedTemplate: sharedCopy });
   } catch (error) {
     logger.error('Share template error:', error);
     res.status(500).json({ error: 'Failed to process request' });

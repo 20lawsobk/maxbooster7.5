@@ -40,10 +40,10 @@ function getRealCpuUsage(): number {
 
 function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
-    return res.status(401).json({ message: "Authentication required" });
+    return res.status(401).json({ error: "Authentication required" });
   }
   if (!req.user || req.user.role !== "admin") {
-    return res.status(403).json({ message: "Admin access required" });
+    return res.status(403).json({ error: "Admin access required" });
   }
   next();
 }
@@ -52,7 +52,7 @@ adminRouter.use(requireAdmin);
 
 adminRouter.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as any;
-  res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
+  res.json({ error: "Welcome to the admin dashboard!", user: safeUser });
 });
 
 adminRouter.get("/users", async (req, res) => {
@@ -292,7 +292,7 @@ adminRouter.post("/subscriptions/lifetime", async (req, res) => {
 
     logger.info(`Admin ${req.user?.email} granted lifetime subscription to user ${userId}`);
 
-    res.json({ message: "Lifetime subscription granted." });
+    res.json({ error: "Lifetime subscription granted." });
   } catch (error) {
     logger.error("Error granting lifetime subscription:", error);
     res.status(500).json({ error: "Failed to grant lifetime subscription" });

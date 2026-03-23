@@ -122,6 +122,39 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/sync-licensing/:id/status - update license status and optional deal terms
+router.patch('/:id/status', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const statusSchema = z.object({
+      status: z.enum(['available', 'under_review', 'negotiating', 'licensed', 'rejected', 'withdrawn']),
+      licensedTo: z.string().max(200).optional(),
+      licenseFee: z.number().min(0).optional(),
+    });
+    const { status, licensedTo, licenseFee } = statusSchema.parse(req.body);
+
+    const setFields: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (licensedTo !== undefined) setFields.licensedTo = licensedTo;
+    if (licenseFee !== undefined) setFields.licenseFee = licenseFee;
+    if (status === 'licensed') setFields.licensedAt = new Date();
+
+    const [updated] = await db
+      .update(syncSubmissions)
+      .set(setFields)
+      .where(and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: 'Listing not found' });
+    res.json(updated);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.errors });
+    }
+    res.status(500).json({ error: 'Failed to update license status' });
+  }
+});
+
 // DELETE /api/sync-licensing/:id - remove from catalog
 router.delete('/:id', requireAuth, async (req, res) => {
   try {

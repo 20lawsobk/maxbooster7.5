@@ -94,7 +94,7 @@ const defaultPreferences: NotificationPreferences = {
 
 router.get('/', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -140,7 +140,7 @@ router.get('/', async (req: Request, res: Response) => {
 
 router.put('/:id/read', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -148,10 +148,10 @@ router.put('/:id/read', async (req: Request, res: Response) => {
     const notification = await storage.getNotificationById(id);
 
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
+      return res.status(404).json({ error: 'Notification not found' });
     }
     if (notification.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ error: 'Not authorized' });
     }
 
     await storage.markNotificationRead(id);
@@ -166,13 +166,13 @@ router.put('/:id/read', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Mark notification read error:', error);
-    return res.status(500).json({ message: 'Failed to mark notification as read' });
+    return res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
 
 router.put('/mark-all-read', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -188,13 +188,13 @@ router.put('/mark-all-read', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Mark all read error:', error);
-    return res.status(500).json({ message: 'Failed to mark all as read' });
+    return res.status(500).json({ error: 'Failed to mark all as read' });
   }
 });
 
 router.delete('/:id', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -202,10 +202,10 @@ router.delete('/:id', async (req: Request, res: Response) => {
     const notification = await storage.getNotificationById(id);
 
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
+      return res.status(404).json({ error: 'Notification not found' });
     }
     if (notification.userId !== req.user.id) {
-      return res.status(403).json({ message: 'Not authorized' });
+      return res.status(403).json({ error: 'Not authorized' });
     }
 
     await storage.deleteNotification(id);
@@ -220,13 +220,13 @@ router.delete('/:id', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Delete notification error:', error);
-    return res.status(500).json({ message: 'Failed to delete notification' });
+    return res.status(500).json({ error: 'Failed to delete notification' });
   }
 });
 
 router.delete('/clear-all', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -242,13 +242,13 @@ router.delete('/clear-all', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Clear all notifications error:', error);
-    return res.status(500).json({ message: 'Failed to clear notifications' });
+    return res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
 
 router.get('/preferences', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -286,7 +286,7 @@ router.get('/preferences', async (req: Request, res: Response) => {
 
 router.put('/preferences', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -324,20 +324,20 @@ router.put('/preferences', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Update notification preferences error:', error);
-    return res.status(500).json({ message: 'Failed to update preferences' });
+    return res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
 
 router.post('/push/subscribe', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
     const { endpoint, keys } = req.body;
 
     if (!endpoint || !keys?.p256dh || !keys?.auth) {
-      return res.status(400).json({ message: 'Invalid push subscription data' });
+      return res.status(400).json({ error: 'Invalid push subscription data' });
     }
 
     const user = await storage.getUser(req.user.id);
@@ -367,13 +367,13 @@ router.post('/push/subscribe', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Push subscribe error:', error);
-    return res.status(500).json({ message: 'Failed to subscribe to push notifications' });
+    return res.status(500).json({ error: 'Failed to subscribe to push notifications' });
   }
 });
 
 router.post('/push/unsubscribe', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -401,25 +401,25 @@ router.post('/push/unsubscribe', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Push unsubscribe error:', error);
-    return res.status(500).json({ message: 'Failed to unsubscribe from push notifications' });
+    return res.status(500).json({ error: 'Failed to unsubscribe from push notifications' });
   }
 });
 
 router.post('/sms/verify', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
     const { phoneNumber } = req.body;
 
     if (!phoneNumber) {
-      return res.status(400).json({ message: 'Phone number is required' });
+      return res.status(400).json({ error: 'Phone number is required' });
     }
 
     const cleanPhone = phoneNumber.replace(/\D/g, '');
     if (cleanPhone.length < 10) {
-      return res.status(400).json({ message: 'Invalid phone number format' });
+      return res.status(400).json({ error: 'Invalid phone number format' });
     }
 
     const verificationCode = crypto.randomInt(100000, 1000000).toString();
@@ -447,13 +447,13 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('SMS verify error:', error);
-    return res.status(500).json({ message: 'Failed to send verification code' });
+    return res.status(500).json({ error: 'Failed to send verification code' });
   }
 });
 
 router.post('/sms/confirm', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -464,7 +464,7 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
     const pendingCode = currentSettings.sms?.pendingVerification;
 
     if (!pendingCode || pendingCode !== code) {
-      return res.status(400).json({ message: 'Invalid verification code' });
+      return res.status(400).json({ error: 'Invalid verification code' });
     }
 
     await storage.updateUser(req.user.id, {
@@ -489,13 +489,13 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('SMS confirm error:', error);
-    return res.status(500).json({ message: 'Failed to confirm verification code' });
+    return res.status(500).json({ error: 'Failed to confirm verification code' });
   }
 });
 
 router.post('/test', async (req: Request, res: Response) => {
   if (!req.user) {
-    return res.status(401).json({ message: 'Not authenticated' });
+    return res.status(401).json({ error: 'Not authenticated' });
   }
 
   try {
@@ -531,7 +531,7 @@ router.post('/test', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Test notification error:', error);
-    return res.status(500).json({ message: 'Failed to send test notification' });
+    return res.status(500).json({ error: 'Failed to send test notification' });
   }
 });
 

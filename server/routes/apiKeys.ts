@@ -143,7 +143,7 @@ router.delete('/:keyId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'API key not found' });
     }
 
-    res.json({ message: 'API key revoked successfully' });
+    res.json({ error: 'API key revoked successfully' });
   } catch (error) {
     logger.error('Error revoking API key:', error);
     res.status(500).json({ error: 'Failed to revoke API key' });

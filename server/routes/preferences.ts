@@ -18,7 +18,7 @@ router.get('/user', requireAuth, async (req: Request, res: Response) => {
     return res.json(preferences);
   } catch (error) {
     logger.error('Error fetching user preferences:', error);
-    return res.status(500).json({ message: 'Failed to fetch preferences' });
+    return res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });
 
@@ -31,7 +31,7 @@ router.put('/user', requireAuth, async (req: Request, res: Response) => {
     return res.json(updated);
   } catch (error) {
     logger.error('Error updating user preferences:', error);
-    return res.status(500).json({ message: 'Failed to update preferences' });
+    return res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
 
@@ -42,7 +42,7 @@ router.get('/defaults/:artistType', async (req: Request, res: Response) => {
     
     const validArtistTypes: ArtistType[] = ['solo', 'band', 'producer', 'label', 'dj', 'songwriter'];
     if (!validArtistTypes.includes(artistType as ArtistType)) {
-      return res.status(400).json({ message: 'Invalid artist type' });
+      return res.status(400).json({ error: 'Invalid artist type' });
     }
     
     const genreArray = genres ? (genres as string).split(',') : [];
@@ -56,7 +56,7 @@ router.get('/defaults/:artistType', async (req: Request, res: Response) => {
     return res.json(defaults);
   } catch (error) {
     logger.error('Error fetching defaults:', error);
-    return res.status(500).json({ message: 'Failed to fetch defaults' });
+    return res.status(500).json({ error: 'Failed to fetch defaults' });
   }
 });
 
@@ -67,7 +67,7 @@ router.get('/recommendations', requireAuth, async (req: Request, res: Response) 
     return res.json(recommendations);
   } catch (error) {
     logger.error('Error fetching recommendations:', error);
-    return res.status(500).json({ message: 'Failed to fetch recommendations' });
+    return res.status(500).json({ error: 'Failed to fetch recommendations' });
   }
 });
 
@@ -77,7 +77,7 @@ router.post('/learn', requireAuth, async (req: Request, res: Response) => {
     const { eventType, context } = req.body;
     
     if (!eventType) {
-      return res.status(400).json({ message: 'Event type is required' });
+      return res.status(400).json({ error: 'Event type is required' });
     }
     
     await userPreferencesService.recordBehaviorEvent(userId, {
@@ -89,7 +89,7 @@ router.post('/learn', requireAuth, async (req: Request, res: Response) => {
     return res.json({ success: true });
   } catch (error) {
     logger.error('Error recording behavior:', error);
-    return res.status(500).json({ message: 'Failed to record behavior' });
+    return res.status(500).json({ error: 'Failed to record behavior' });
   }
 });
 
@@ -100,7 +100,7 @@ router.get('/smart-defaults', requireAuth, async (req: Request, res: Response) =
     return res.json(defaults);
   } catch (error) {
     logger.error('Error fetching smart defaults:', error);
-    return res.status(500).json({ message: 'Failed to fetch smart defaults' });
+    return res.status(500).json({ error: 'Failed to fetch smart defaults' });
   }
 });
 
@@ -111,7 +111,7 @@ router.get('/scheduling-suggestions', requireAuth, async (req: Request, res: Res
     return res.json(suggestions);
   } catch (error) {
     logger.error('Error fetching scheduling suggestions:', error);
-    return res.status(500).json({ message: 'Failed to fetch scheduling suggestions' });
+    return res.status(500).json({ error: 'Failed to fetch scheduling suggestions' });
   }
 });
 
@@ -122,7 +122,7 @@ router.get('/platform-recommendations', requireAuth, async (req: Request, res: R
     return res.json(recommendations);
   } catch (error) {
     logger.error('Error fetching platform recommendations:', error);
-    return res.status(500).json({ message: 'Failed to fetch platform recommendations' });
+    return res.status(500).json({ error: 'Failed to fetch platform recommendations' });
   }
 });
 
@@ -132,7 +132,7 @@ router.get('/genre-templates', async (req: Request, res: Response) => {
     return res.json(templates);
   } catch (error) {
     logger.error('Error fetching genre templates:', error);
-    return res.status(500).json({ message: 'Failed to fetch genre templates' });
+    return res.status(500).json({ error: 'Failed to fetch genre templates' });
   }
 });
 
@@ -143,7 +143,7 @@ router.get('/genre-templates/:genre', async (req: Request, res: Response) => {
     return res.json(template);
   } catch (error) {
     logger.error('Error fetching genre template:', error);
-    return res.status(500).json({ message: 'Failed to fetch genre template' });
+    return res.status(500).json({ error: 'Failed to fetch genre template' });
   }
 });
 
@@ -154,7 +154,7 @@ router.get('/dashboard-layout', requireAuth, async (req: Request, res: Response)
     return res.json(layout);
   } catch (error) {
     logger.error('Error fetching dashboard layout:', error);
-    return res.status(500).json({ message: 'Failed to fetch dashboard layout' });
+    return res.status(500).json({ error: 'Failed to fetch dashboard layout' });
   }
 });
 
@@ -167,7 +167,7 @@ router.put('/dashboard-layout', requireAuth, async (req: Request, res: Response)
     return res.json({ success: true });
   } catch (error) {
     logger.error('Error saving dashboard layout:', error);
-    return res.status(500).json({ message: 'Failed to save dashboard layout' });
+    return res.status(500).json({ error: 'Failed to save dashboard layout' });
   }
 });
 

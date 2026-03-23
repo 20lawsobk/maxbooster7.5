@@ -25,7 +25,7 @@ router.post('/chatbot/respond', requireAuth, async (req: AuthenticatedRequest, r
     const { platform, senderId, senderName, content, threadId } = req.body;
 
     if (!platform || !content) {
-      return res.status(400).json({ message: 'Platform and content are required' });
+      return res.status(400).json({ error: 'Platform and content are required' });
     }
 
     const message: ChatbotMessage = {
@@ -48,7 +48,7 @@ router.post('/chatbot/respond', requireAuth, async (req: AuthenticatedRequest, r
     });
   } catch (error) {
     logger.error('Chatbot respond error:', error);
-    res.status(500).json({ message: 'Failed to generate chatbot response' });
+    res.status(500).json({ error: 'Failed to generate chatbot response' });
   }
 });
 
@@ -58,7 +58,7 @@ router.post('/chatbot/train', requireAuth, async (req: AuthenticatedRequest, res
     const { question, answer, category, keywords } = req.body;
 
     if (!question || !answer) {
-      return res.status(400).json({ message: 'Question and answer are required' });
+      return res.status(400).json({ error: 'Question and answer are required' });
     }
 
     const entry = await socialChatbotService.addToKnowledgeBase(userId, {
@@ -74,7 +74,7 @@ router.post('/chatbot/train', requireAuth, async (req: AuthenticatedRequest, res
     });
   } catch (error) {
     logger.error('Chatbot train error:', error);
-    res.status(500).json({ message: 'Failed to add to knowledge base' });
+    res.status(500).json({ error: 'Failed to add to knowledge base' });
   }
 });
 
@@ -85,7 +85,7 @@ router.get('/chatbot/stats', requireAuth, async (req: AuthenticatedRequest, res:
     res.json(stats);
   } catch (error) {
     logger.error('Chatbot stats error:', error);
-    res.status(500).json({ message: 'Failed to get chatbot stats' });
+    res.status(500).json({ error: 'Failed to get chatbot stats' });
   }
 });
 
@@ -95,7 +95,7 @@ router.get('/chatbot/templates', requireAuth, async (req: AuthenticatedRequest, 
     res.json(templates);
   } catch (error) {
     logger.error('Get templates error:', error);
-    res.status(500).json({ message: 'Failed to get templates' });
+    res.status(500).json({ error: 'Failed to get templates' });
   }
 });
 
@@ -104,7 +104,7 @@ router.post('/chatbot/templates', requireAuth, async (req: AuthenticatedRequest,
     const { name, category, triggers, response, platforms, priority, enabled } = req.body;
 
     if (!name || !response) {
-      return res.status(400).json({ message: 'Name and response are required' });
+      return res.status(400).json({ error: 'Name and response are required' });
     }
 
     const template = await socialChatbotService.addTemplate({
@@ -123,7 +123,7 @@ router.post('/chatbot/templates', requireAuth, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     logger.error('Add template error:', error);
-    res.status(500).json({ message: 'Failed to add template' });
+    res.status(500).json({ error: 'Failed to add template' });
   }
 });
 
@@ -133,7 +133,7 @@ router.post('/chatbot/route', requireAuth, async (req: AuthenticatedRequest, res
     const { messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ message: 'Messages array is required' });
+      return res.status(400).json({ error: 'Messages array is required' });
     }
 
     const results = await socialChatbotService.processIncomingMessages(messages, userId);
@@ -143,7 +143,7 @@ router.post('/chatbot/route', requireAuth, async (req: AuthenticatedRequest, res
     });
   } catch (error) {
     logger.error('Route messages error:', error);
-    res.status(500).json({ message: 'Failed to route messages' });
+    res.status(500).json({ error: 'Failed to route messages' });
   }
 });
 
@@ -169,7 +169,7 @@ router.get('/listening/mentions', requireAuth, async (req: AuthenticatedRequest,
     res.json(result);
   } catch (error) {
     logger.error('Get mentions error:', error);
-    res.status(500).json({ message: 'Failed to get mentions' });
+    res.status(500).json({ error: 'Failed to get mentions' });
   }
 });
 
@@ -187,7 +187,7 @@ router.get('/listening/sentiment', requireAuth, async (req: AuthenticatedRequest
     res.json(result);
   } catch (error) {
     logger.error('Sentiment analysis error:', error);
-    res.status(500).json({ message: 'Failed to analyze sentiment' });
+    res.status(500).json({ error: 'Failed to analyze sentiment' });
   }
 });
 
@@ -206,7 +206,7 @@ router.get('/listening/trends', requireAuth, async (req: AuthenticatedRequest, r
     res.json(result);
   } catch (error) {
     logger.error('Get trends error:', error);
-    res.status(500).json({ message: 'Failed to get trending topics' });
+    res.status(500).json({ error: 'Failed to get trending topics' });
   }
 });
 
@@ -216,7 +216,7 @@ router.get('/listening/competitors', requireAuth, async (req: AuthenticatedReque
     const { handles } = req.query;
 
     if (!handles) {
-      return res.status(400).json({ message: 'Competitor handles are required' });
+      return res.status(400).json({ error: 'Competitor handles are required' });
     }
 
     const competitorHandles = String(handles).split(',');
@@ -225,7 +225,7 @@ router.get('/listening/competitors', requireAuth, async (req: AuthenticatedReque
     res.json(result);
   } catch (error) {
     logger.error('Competitor analysis error:', error);
-    res.status(500).json({ message: 'Failed to analyze competitors' });
+    res.status(500).json({ error: 'Failed to analyze competitors' });
   }
 });
 
@@ -236,7 +236,7 @@ router.get('/listening/brand-health', requireAuth, async (req: AuthenticatedRequ
     res.json(result);
   } catch (error) {
     logger.error('Brand health error:', error);
-    res.status(500).json({ message: 'Failed to get brand health' });
+    res.status(500).json({ error: 'Failed to get brand health' });
   }
 });
 
@@ -251,7 +251,7 @@ router.get('/listening/share-of-voice', requireAuth, async (req: AuthenticatedRe
     res.json(result);
   } catch (error) {
     logger.error('Share of voice error:', error);
-    res.status(500).json({ message: 'Failed to get share of voice' });
+    res.status(500).json({ error: 'Failed to get share of voice' });
   }
 });
 
@@ -262,7 +262,7 @@ router.get('/listening/queries', requireAuth, async (req: AuthenticatedRequest, 
     res.json(queries);
   } catch (error) {
     logger.error('Get queries error:', error);
-    res.status(500).json({ message: 'Failed to get listening queries' });
+    res.status(500).json({ error: 'Failed to get listening queries' });
   }
 });
 
@@ -272,7 +272,7 @@ router.post('/listening/queries', requireAuth, async (req: AuthenticatedRequest,
     const { name, type, query, platforms, enabled } = req.body;
 
     if (!name || !query) {
-      return res.status(400).json({ message: 'Name and query are required' });
+      return res.status(400).json({ error: 'Name and query are required' });
     }
 
     const result = await socialListeningService.addListeningQuery(userId, {
@@ -289,7 +289,7 @@ router.post('/listening/queries', requireAuth, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     logger.error('Add query error:', error);
-    res.status(500).json({ message: 'Failed to add listening query' });
+    res.status(500).json({ error: 'Failed to add listening query' });
   }
 });
 
@@ -303,7 +303,7 @@ router.delete('/listening/queries/:id', requireAuth, async (req: AuthenticatedRe
     res.json({ success });
   } catch (error) {
     logger.error('Delete query error:', error);
-    res.status(500).json({ message: 'Failed to delete listening query' });
+    res.status(500).json({ error: 'Failed to delete listening query' });
   }
 });
 
@@ -328,7 +328,7 @@ router.post('/strategy/recommend', requireAuth, async (req: AuthenticatedRequest
     });
   } catch (error) {
     logger.error('Get recommendations error:', error);
-    res.status(500).json({ message: 'Failed to get recommendations' });
+    res.status(500).json({ error: 'Failed to get recommendations' });
   }
 });
 
@@ -349,7 +349,7 @@ router.post('/strategy/campaign', requireAuth, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     logger.error('Get campaign recommendations error:', error);
-    res.status(500).json({ message: 'Failed to get campaign recommendations' });
+    res.status(500).json({ error: 'Failed to get campaign recommendations' });
   }
 });
 
@@ -371,7 +371,7 @@ router.post('/strategy/plan', requireAuth, async (req: AuthenticatedRequest, res
     });
   } catch (error) {
     logger.error('Generate plan error:', error);
-    res.status(500).json({ message: 'Failed to generate content plan' });
+    res.status(500).json({ error: 'Failed to generate content plan' });
   }
 });
 
@@ -388,7 +388,7 @@ router.get('/strategy/content-strategy', requireAuth, async (req: AuthenticatedR
     res.json(strategy);
   } catch (error) {
     logger.error('Get content strategy error:', error);
-    res.status(500).json({ message: 'Failed to get content strategy' });
+    res.status(500).json({ error: 'Failed to get content strategy' });
   }
 });
 
@@ -403,7 +403,7 @@ router.get('/strategy/posting-times', requireAuth, async (req: AuthenticatedRequ
     res.json(recommendations);
   } catch (error) {
     logger.error('Get posting times error:', error);
-    res.status(500).json({ message: 'Failed to get posting times' });
+    res.status(500).json({ error: 'Failed to get posting times' });
   }
 });
 
@@ -418,7 +418,7 @@ router.get('/strategy/growth-predictions', requireAuth, async (req: Authenticate
     res.json(predictions);
   } catch (error) {
     logger.error('Get growth predictions error:', error);
-    res.status(500).json({ message: 'Failed to get growth predictions' });
+    res.status(500).json({ error: 'Failed to get growth predictions' });
   }
 });
 
@@ -436,7 +436,7 @@ router.get('/strategy/tips', requireAuth, async (req: AuthenticatedRequest, res:
     res.json(tips);
   } catch (error) {
     logger.error('Get engagement tips error:', error);
-    res.status(500).json({ message: 'Failed to get engagement tips' });
+    res.status(500).json({ error: 'Failed to get engagement tips' });
   }
 });
 
@@ -447,7 +447,7 @@ router.get('/strategy/insights', requireAuth, async (req: AuthenticatedRequest, 
     res.json(insights);
   } catch (error) {
     logger.error('Get AI insights error:', error);
-    res.status(500).json({ message: 'Failed to get AI insights' });
+    res.status(500).json({ error: 'Failed to get AI insights' });
   }
 });
 
@@ -464,7 +464,7 @@ router.get('/benchmarks', requireAuth, async (req: AuthenticatedRequest, res: Re
     res.json(benchmarks);
   } catch (error) {
     logger.error('Get benchmarks error:', error);
-    res.status(500).json({ message: 'Failed to get industry benchmarks' });
+    res.status(500).json({ error: 'Failed to get industry benchmarks' });
   }
 });
 
@@ -481,7 +481,7 @@ router.get('/ai-content/ab-variants', requireAuth, async (req: AuthenticatedRequ
     res.json({ variants });
   } catch (error) {
     logger.error('Get AB variants error:', error);
-    res.status(500).json({ message: 'Failed to get AB variants' });
+    res.status(500).json({ error: 'Failed to get AB variants' });
   }
 });
 
@@ -490,13 +490,13 @@ router.post('/ai-content/analyze-brand-voice', requireAuth, async (req: Authenti
     const userId = req.user!.id;
     const { historicalPosts = [] } = req.body;
     if (!Array.isArray(historicalPosts)) {
-      return res.status(400).json({ message: 'historicalPosts must be an array of strings' });
+      return res.status(400).json({ error: 'historicalPosts must be an array of strings' });
     }
     const brandVoice = await aiContentService.analyzeBrandVoice(userId, historicalPosts.map(String));
     res.json({ brandVoice, score: brandVoice.consistency || 0.85 });
   } catch (error) {
     logger.error('Analyze brand voice error:', error);
-    res.status(500).json({ message: 'Failed to analyze brand voice' });
+    res.status(500).json({ error: 'Failed to analyze brand voice' });
   }
 });
 
@@ -504,10 +504,10 @@ router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRe
   try {
     const { content, targetLanguages, headline, hashtags, platform } = req.body;
     if (!content || typeof content !== 'string') {
-      return res.status(400).json({ message: 'content is required' });
+      return res.status(400).json({ error: 'content is required' });
     }
     if (!Array.isArray(targetLanguages) || targetLanguages.length === 0) {
-      return res.status(400).json({ message: 'targetLanguages must be a non-empty array' });
+      return res.status(400).json({ error: 'targetLanguages must be a non-empty array' });
     }
     const translations = await aiContentService.generateMultilingualContent(
       content,
@@ -517,7 +517,7 @@ router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRe
     res.json({ translations });
   } catch (error) {
     logger.error('Multilingual content error:', error);
-    res.status(500).json({ message: 'Failed to generate multilingual content' });
+    res.status(500).json({ error: 'Failed to generate multilingual content' });
   }
 });
 
@@ -534,7 +534,7 @@ router.post('/ai-content/optimize-hashtags', requireAuth, async (req: Authentica
     res.json({ hashtags, optimized: true });
   } catch (error) {
     logger.error('Optimize hashtags error:', error);
-    res.status(500).json({ message: 'Failed to optimize hashtags' });
+    res.status(500).json({ error: 'Failed to optimize hashtags' });
   }
 });
 
@@ -545,7 +545,7 @@ router.get('/ai-content/posting-times', requireAuth, async (req: AuthenticatedRe
     res.json({ times, timezone: 'UTC' });
   } catch (error) {
     logger.error('Get posting times error:', error);
-    res.status(500).json({ message: 'Failed to get posting times' });
+    res.status(500).json({ error: 'Failed to get posting times' });
   }
 });
 
@@ -556,7 +556,7 @@ router.get('/ai-content/trending-topics', requireAuth, async (req: Authenticated
     res.json({ topics });
   } catch (error) {
     logger.error('Get trending topics error:', error);
-    res.status(500).json({ message: 'Failed to get trending topics' });
+    res.status(500).json({ error: 'Failed to get trending topics' });
   }
 });
 
@@ -831,7 +831,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     });
 
     if (!result.success) {
-      return res.status(500).json({ message: result.error });
+      return res.status(500).json({ error: result.error });
     }
 
     const data = result.data as any;
@@ -914,7 +914,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     });
   } catch (error) {
     logger.error('AI content generate error:', error);
-    res.status(500).json({ message: 'Failed to generate AI content' });
+    res.status(500).json({ error: 'Failed to generate AI content' });
   }
 });
 

@@ -11,7 +11,7 @@ router.get("/", requireAuth, async (req: Request, res: Response) => {
     return res.json(achievements);
   } catch (error) {
     logger.error("Error fetching achievements:", error?.message || error);
-    return res.status(500).json({ message: "Failed to fetch achievements" });
+    return res.status(500).json({ error: "Failed to fetch achievements" });
   }
 });
 
@@ -21,7 +21,7 @@ router.get("/user", requireAuth, async (req: Request, res: Response) => {
     return res.json(achievements);
   } catch (error) {
     logger.error("Error fetching user achievements:", error?.message || error);
-    return res.status(500).json({ message: "Failed to fetch user achievements" });
+    return res.status(500).json({ error: "Failed to fetch user achievements" });
   }
 });
 
@@ -31,7 +31,7 @@ router.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
     return res.json(achievements);
   } catch (error) {
     logger.error("Error fetching unnotified achievements:", error?.message || error);
-    return res.status(500).json({ message: "Failed to fetch unnotified achievements" });
+    return res.status(500).json({ error: "Failed to fetch unnotified achievements" });
   }
 });
 
@@ -41,7 +41,7 @@ router.post("/mark-notified/:achievementId", requireAuth, async (req: Request, r
     return res.json({ success: true });
   } catch (error) {
     logger.error("Error marking achievement notified:", error?.message || error);
-    return res.status(500).json({ message: "Failed to mark achievement notified" });
+    return res.status(500).json({ error: "Failed to mark achievement notified" });
   }
 });
 
@@ -54,7 +54,7 @@ router.get("/leaderboard", requireAuth, async (req: Request, res: Response) => {
     return res.json(leaderboard);
   } catch (error) {
     logger.error("Error fetching leaderboard:", error?.message || error);
-    return res.status(500).json({ message: "Failed to fetch leaderboard" });
+    return res.status(500).json({ error: "Failed to fetch leaderboard" });
   }
 });
 
@@ -64,7 +64,7 @@ router.get("/streaks", requireAuth, async (req: Request, res: Response) => {
     return res.json(streaks);
   } catch (error) {
     logger.error("Error fetching streaks:", error?.message || error);
-    return res.status(500).json({ message: "Failed to fetch streaks" });
+    return res.status(500).json({ error: "Failed to fetch streaks" });
   }
 });
 
@@ -74,7 +74,7 @@ router.post("/streaks/:type", requireAuth, async (req: Request, res: Response) =
     return res.json(streak);
   } catch (error) {
     logger.error("Error updating streak:", error?.message || error);
-    return res.status(500).json({ message: "Failed to update streak" });
+    return res.status(500).json({ error: "Failed to update streak" });
   }
 });
 

@@ -7,21 +7,21 @@ const router = Router();
 router.get('/api/email-preferences', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const preferences = await weeklyInsightsService.getEmailPreferences(req.user.id);
     return res.json(preferences);
   } catch (error) {
     logger.error('Failed to get email preferences:', error);
-    return res.status(500).json({ message: 'Failed to get email preferences' });
+    return res.status(500).json({ error: 'Failed to get email preferences' });
   }
 });
 
 router.patch('/api/email-preferences', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const { weeklyInsights, weeklyInsightsFrequency, marketingEmails, releaseAlerts, collaborationAlerts, revenueAlerts } = req.body;
@@ -38,7 +38,7 @@ router.patch('/api/email-preferences', async (req: Request, res: Response) => {
     return res.json(updated);
   } catch (error) {
     logger.error('Failed to update email preferences:', error);
-    return res.status(500).json({ message: 'Failed to update email preferences' });
+    return res.status(500).json({ error: 'Failed to update email preferences' });
   }
 });
 
@@ -59,18 +59,18 @@ router.get('/api/email-preferences/unsubscribe', async (req: Request, res: Respo
 router.get('/api/email-preferences/preview', async (req: Request, res: Response) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
+      return res.status(401).json({ error: 'Authentication required' });
     }
 
     const preview = await weeklyInsightsService.getPreviewData(req.user.id);
     if (!preview) {
-      return res.status(404).json({ message: 'Unable to generate preview' });
+      return res.status(404).json({ error: 'Unable to generate preview' });
     }
 
     return res.json(preview);
   } catch (error) {
     logger.error('Failed to get email preview:', error);
-    return res.status(500).json({ message: 'Failed to generate preview' });
+    return res.status(500).json({ error: 'Failed to generate preview' });
   }
 });
 
@@ -119,7 +119,7 @@ router.get('/api/emails/track/:id/click', async (req: Request, res: Response) =>
 router.post('/api/admin/emails/send-weekly-insights', async (req: Request, res: Response) => {
   try {
     if (!req.user || req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
+      return res.status(403).json({ error: 'Admin access required' });
     }
 
     const result = await weeklyInsightsService.sendWeeklyInsights();
@@ -129,7 +129,7 @@ router.post('/api/admin/emails/send-weekly-insights', async (req: Request, res: 
     });
   } catch (error) {
     logger.error('Failed to send weekly insights batch:', error);
-    return res.status(500).json({ message: 'Failed to send weekly insights' });
+    return res.status(500).json({ error: 'Failed to send weekly insights' });
   }
 });
 

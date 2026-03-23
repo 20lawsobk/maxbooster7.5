@@ -493,6 +493,14 @@ class RevenueForecastService {
       },
     });
   }
+
+  async deleteForecastById(userId: string, forecastId: string): Promise<boolean> {
+    const result = await db
+      .delete(revenueForecasts)
+      .where(and(eq(revenueForecasts.id, forecastId), eq(revenueForecasts.userId, userId)))
+      .returning({ id: revenueForecasts.id });
+    return result.length > 0;
+  }
 }
 
 export const revenueForecastService = new RevenueForecastService();

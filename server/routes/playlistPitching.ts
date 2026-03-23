@@ -90,6 +90,39 @@ router.put('/:id', requireAuth, async (req, res) => {
   }
 });
 
+// PATCH /api/playlist-pitching/:id/status — record pitch outcome (placed, rejected, etc.)
+router.patch('/:id/status', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const statusSchema = z.object({
+      status: z.enum(['draft', 'submitted', 'under_review', 'accepted', 'rejected', 'placed', 'following_up']),
+      responseNote: z.string().max(2000).optional(),
+    });
+    const { status, responseNote } = statusSchema.parse(req.body);
+
+    const setFields: Record<string, unknown> = { status, updatedAt: new Date() };
+    if (responseNote !== undefined) setFields.responseNote = responseNote;
+    if (['accepted', 'rejected', 'placed'].includes(status)) setFields.responseAt = new Date();
+    if (status === 'submitted') setFields.submittedAt = new Date();
+
+    const [updated] = await db.update(playlistPitches)
+      .set(setFields)
+      .where(and(eq(playlistPitches.id, id), eq(playlistPitches.userId, userId)))
+      .returning();
+
+    if (!updated) return res.status(404).json({ error: 'Pitch not found' });
+    await queryCache.invalidate(createCacheKey('stats:playlistPitches', userId));
+    res.json(updated);
+  } catch (error) {
+    logger.error('[PlaylistPitching] Failed to update status:', error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Validation error', details: error.flatten() });
+    }
+    res.status(500).json({ error: 'Failed to update pitch status' });
+  }
+});
+
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
     const [deletedPitch] = await db.delete(playlistPitches)

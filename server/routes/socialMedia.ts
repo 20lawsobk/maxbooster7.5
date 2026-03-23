@@ -49,7 +49,7 @@ router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res
     const { platform, content, mediaUrls, scheduledAt } = req.body;
 
     if (!platform || !content) {
-      return res.status(400).json({ message: 'Platform and content are required' });
+      return res.status(400).json({ error: 'Platform and content are required' });
     }
 
     const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
@@ -76,7 +76,7 @@ router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res
     }
   } catch (error) {
     logger.error('Failed to schedule post:', error);
-    res.status(500).json({ message: 'Failed to schedule post' });
+    res.status(500).json({ error: 'Failed to schedule post' });
   }
 });
 
@@ -87,7 +87,7 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
 
     const [post] = await db.select().from(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId))).limit(1);
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      return res.status(404).json({ error: 'Post not found' });
     }
 
     const [updated] = await db.update(posts)
@@ -108,7 +108,7 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
     });
   } catch (error) {
     logger.error('Failed to publish post:', error);
-    res.status(500).json({ message: 'Failed to publish post' });
+    res.status(500).json({ error: 'Failed to publish post' });
   }
 });
 
@@ -373,7 +373,7 @@ router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Res
     });
   } catch (error) {
     logger.error('Failed to sync all platforms:', error);
-    res.status(500).json({ message: 'Failed to sync all platforms' });
+    res.status(500).json({ error: 'Failed to sync all platforms' });
   }
 });
 
@@ -1305,7 +1305,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     const { url, platforms = ['instagram'], tone = 'energetic', format = 'text', targetAudience = '' } = req.body;
 
     if (!url) {
-      return res.status(400).json({ message: 'URL is required' });
+      return res.status(400).json({ error: 'URL is required' });
     }
 
     // Use the rich Python URL analyzer for full metadata extraction
@@ -1455,7 +1455,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     });
   } catch (error) {
     logger.error('Failed to generate content from URL:', error);
-    res.status(500).json({ message: 'Failed to generate content from URL' });
+    res.status(500).json({ error: 'Failed to generate content from URL' });
   }
 });
 
@@ -1680,7 +1680,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
     });
   } catch (error) {
     logger.error('Failed to get social analytics:', error);
-    res.status(500).json({ message: 'Failed to get analytics' });
+    res.status(500).json({ error: 'Failed to get analytics' });
   }
 });
 

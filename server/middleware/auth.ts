@@ -38,7 +38,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ message: 'Authentication required' });
+    res.status(401).json({ error: 'Authentication required' });
     return;
   }
 
@@ -58,7 +58,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     const trialEnd = new Date(req.user.trialEndsAt);
     if (now > trialEnd) {
       res.status(403).json({
-        message: 'Your 30-day trial has expired. Please contact support to continue using Max Booster.',
+        error: 'Your 30-day trial has expired. Please contact support to continue using Max Booster.',
         trialExpired: true,
       });
       return;
@@ -70,7 +70,7 @@ export const requireAuth = async (req: AuthenticatedRequest, res: Response, next
     if (now > subscriptionEnd) {
       const planName = req.user.subscriptionTier === 'monthly' ? 'monthly' : 'yearly';
       res.status(403).json({
-        message: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
+        error: `Your ${planName} subscription has expired. Please renew your subscription to continue using Max Booster.`,
         subscriptionExpired: true,
         plan: req.user.subscriptionTier,
       });
@@ -91,7 +91,7 @@ export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, 
   await resolveJwtUser(req);
 
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    res.status(401).json({ message: 'Authentication required' });
+    res.status(401).json({ error: 'Authentication required' });
     return;
   }
 
@@ -100,10 +100,10 @@ export const requireAuthOnly = async (req: AuthenticatedRequest, res: Response, 
 
 export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   if (!req.isAuthenticated || !req.isAuthenticated()) {
-    return res.status(401).json({ message: 'Authentication required' });
+    return res.status(401).json({ error: 'Authentication required' });
   }
   if (req.user?.role === 'admin') {
     return next();
   }
-  res.status(403).json({ message: 'Admin access required' });
+  res.status(403).json({ error: 'Admin access required' });
 };
