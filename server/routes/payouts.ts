@@ -468,8 +468,16 @@ router.get('/report', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : new Date();
+    const parseDate = (raw: unknown, fallback: Date): Date => {
+      if (!raw) return fallback;
+      const d = new Date(raw as string);
+      return isNaN(d.getTime()) ? fallback : d;
+    };
+    const startDate = parseDate(req.query.startDate, new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+    const endDate = parseDate(req.query.endDate, new Date());
+    if (endDate < startDate) {
+      return res.status(400).json({ error: 'endDate must be after startDate' });
+    }
 
     const report = await instantPayoutService.generatePayoutReport(req.user.id, startDate, endDate);
 

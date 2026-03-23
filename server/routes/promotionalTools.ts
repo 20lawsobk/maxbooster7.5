@@ -124,6 +124,9 @@ router.post('/presave/:id/analytics', async (req: Request, res: Response) => {
 router.post('/presave/:id/email', async (req: Request, res: Response) => {
   try {
     const { email } = req.body;
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ error: 'Valid email address required' });
+    }
     const success = await promotionalToolsService.captureEmail(req.params.id, email);
     if (success) {
       await promotionalToolsService.recordPreSaveAnalytics(req.params.id, 'email');

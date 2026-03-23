@@ -1,14 +1,26 @@
-import { Router, Request, Response, RequestHandler } from 'express';
+import { Router, Request, Response } from 'express';
 import { db } from '../db.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, count } from 'drizzle-orm';
 import { apiKeys } from '@shared/schema';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
+import rateLimit from 'express-rate-limit';
 
 const router = Router();
 
 router.use(requireAuth);
+
+const MAX_KEYS_PER_USER = 20;
+
+const keyCreateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  keyGenerator: (req) => `apikey-create:${(req.user as any)?.id ?? 'anon'}`,
+  message: { error: 'Too many API key operations, please try again later' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 const generateApiKey = (): string => {
   const prefix = 'mb_';
@@ -56,7 +68,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/', async (req: Request, res: Response) => {
+router.post('/', keyCreateLimiter, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { name, scopes = ['read'] } = req.body;
@@ -73,6 +85,17 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid scopes', invalid: invalidScopes, valid: [...VALID_SCOPES] });
     }
     const validScopes = requestedScopes as string[];
+
+    const [{ activeCount }] = await db
+      .select({ activeCount: count() })
+      .from(apiKeys)
+      .where(and(eq(apiKeys.userId, userId), eq(apiKeys.isActive, true)));
+
+    if (Number(activeCount) >= MAX_KEYS_PER_USER) {
+      return res.status(409).json({
+        error: `Maximum of ${MAX_KEYS_PER_USER} active API keys reached. Revoke an existing key first.`,
+      });
+    }
 
     const rawKey = generateApiKey();
     const keyHash = hashApiKey(rawKey);
@@ -127,7 +150,7 @@ router.delete('/:keyId', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:keyId/regenerate', async (req: Request, res: Response) => {
+router.post('/:keyId/regenerate', keyCreateLimiter, async (req: Request, res: Response) => {
   try {
     const userId = req.user.id;
     const { keyId } = req.params;

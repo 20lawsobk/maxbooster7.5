@@ -6,6 +6,12 @@ import { autopilotCoordinatorService } from '../services/autopilotCoordinatorSer
 
 const router = Router();
 
+function parseValidDate(raw: unknown, fallback: Date): Date {
+  if (!raw) return fallback;
+  const d = new Date(raw as string);
+  return isNaN(d.getTime()) ? fallback : d;
+}
+
 const registerPostSchema = z.object({
   autopilotType: z.enum(['social', 'advertising']),
   platform: z.string().min(1),
@@ -200,7 +206,9 @@ router.get('/next-slot', requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const autopilotType = (req.query.autopilotType as 'social' | 'advertising') || 'social';
     const platform = (req.query.platform as string) || 'twitter';
-    const preferredTime = req.query.preferredTime ? new Date(req.query.preferredTime as string) : undefined;
+    const preferredTime = req.query.preferredTime
+      ? parseValidDate(req.query.preferredTime, new Date())
+      : undefined;
     
     const slot = autopilotCoordinatorService.getNextAvailableSlot(
       userId,
@@ -294,12 +302,8 @@ router.get('/optimal-times/:platform', requireAuth, async (req, res) => {
 router.get('/conflicts', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    const startDate = req.query.startDate 
-      ? new Date(req.query.startDate as string) 
-      : new Date();
-    const endDate = req.query.endDate 
-      ? new Date(req.query.endDate as string) 
-      : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const startDate = parseValidDate(req.query.startDate, new Date());
+    const endDate = parseValidDate(req.query.endDate, new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
     
     const conflicts = autopilotCoordinatorService.getPostingConflicts(userId, startDate, endDate);
     

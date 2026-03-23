@@ -1029,6 +1029,10 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
     if (!userId || !name || !email || !role || splitPercentage === undefined) {
       return res.status(400).json({ error: 'userId, name, email, role, and splitPercentage are required' });
     }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ error: 'Invalid email address format' });
+    }
 
     const [contract] = await db
       .select()

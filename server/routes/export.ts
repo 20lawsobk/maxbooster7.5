@@ -612,8 +612,8 @@ router.post('/share/:shortCode/verify', async (req: Request, res: Response) => {
     }
 
     if (link.requiresEmail) {
-      if (!email) {
-        return res.status(400).json({ error: 'Email required' });
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return res.status(400).json({ error: 'Valid email address required' });
       }
       const allowed = link.allowedEmails as string[] | null;
       if (allowed && allowed.length > 0 && !allowed.includes(email.toLowerCase())) {

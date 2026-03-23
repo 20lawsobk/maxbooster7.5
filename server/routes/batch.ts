@@ -1207,8 +1207,8 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
     const { email } = req.body;
     const userId = req.user.id;
 
-    if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ message: 'Valid email address is required' });
     }
 
     const [original] = await db
