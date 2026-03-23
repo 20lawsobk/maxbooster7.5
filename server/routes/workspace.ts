@@ -31,7 +31,7 @@ const requireWorkspaceMember = async (req: AuthenticatedRequest, res: Response, 
     next();
   } catch (error: any) {
     logger.error('Error in workspace member check:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 };
 
@@ -50,7 +50,7 @@ const requireWorkspaceAdmin = async (req: AuthenticatedRequest, res: Response, n
     next();
   } catch (error: any) {
     logger.error('Error in workspace admin check:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 };
 

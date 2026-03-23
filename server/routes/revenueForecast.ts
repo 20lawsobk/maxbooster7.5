@@ -25,7 +25,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching stored forecasts:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -43,7 +43,7 @@ router.get('/projections', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error getting revenue projections:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -61,7 +61,7 @@ router.get('/accuracy', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching forecast accuracy:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -82,7 +82,7 @@ router.get('/rate', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error calculating stream-to-revenue rate:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -102,7 +102,7 @@ router.post('/generate', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error generating forecast:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 

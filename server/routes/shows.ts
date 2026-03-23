@@ -115,39 +115,87 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
   res.json({ message: "Show deleted successfully" });
 }));
 
-// GET /api/shows/stats - show performance summary
+// PATCH /api/shows/:id/attendance - record post-show actual attendance and revenue
+router.patch("/:id/attendance", requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const showId = req.params.id;
+
+  const parsed = z.object({
+    ticketsSold: z.number().int().min(0),
+    revenue: z.number().min(0),
+    status: z.enum(["upcoming", "completed", "cancelled"]).optional(),
+  }).safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+  }
+
+  const [updated] = await db.update(shows)
+    .set({
+      ticketsSold: parsed.data.ticketsSold,
+      revenue: parsed.data.revenue,
+      ...(parsed.data.status ? { status: parsed.data.status } : { status: "completed" }),
+      updatedAt: new Date(),
+    })
+    .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
+    .returning();
+
+  if (!updated) {
+    return res.status(404).json({ error: "Show not found" });
+  }
+
+  res.json(updated);
+}));
+
+// PATCH /api/shows/:id/status - update show status
+router.patch("/:id/status", requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const showId = req.params.id;
+
+  const parsed = z.object({
+    status: z.enum(["upcoming", "completed", "cancelled"]),
+  }).safeParse(req.body);
+
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Validation error', details: parsed.error.flatten() });
+  }
+
+  const [updated] = await db.update(shows)
+    .set({ status: parsed.data.status, updatedAt: new Date() })
+    .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
+    .returning();
+
+  if (!updated) {
+    return res.status(404).json({ error: "Show not found" });
+  }
+
+  res.json(updated);
+}));
+
+// GET /api/shows/stats - show performance summary (single query with conditional aggregation)
 router.get("/stats", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
-  const now = new Date();
 
-  const [overall] = await db.select({
+  const [stats] = await db.select({
     totalShows: sql<number>`count(*)`,
     totalRevenue: sql<number>`coalesce(sum(${shows.revenue}), 0)`,
     avgTicketsSold: sql<number>`coalesce(avg(${shows.ticketsSold}), 0)`,
+    upcomingCount: sql<number>`count(*) filter (where ${shows.date} >= now())`,
+    pastCount: sql<number>`count(*) filter (where ${shows.date} < now())`,
+    pastRevenue: sql<number>`coalesce(sum(${shows.revenue}) filter (where ${shows.date} < now()), 0)`,
+    avgCapacityFill: sql<number>`coalesce(avg(case when ${shows.capacity} > 0 then ${shows.ticketsSold}::float / ${shows.capacity} * 100 else null end), 0)`,
   })
     .from(shows)
     .where(eq(shows.userId, userId));
 
-  const [upcoming] = await db.select({
-    count: sql<number>`count(*)`,
-  })
-    .from(shows)
-    .where(and(eq(shows.userId, userId), gte(shows.date, now)));
-
-  const [past] = await db.select({
-    count: sql<number>`count(*)`,
-    revenue: sql<number>`coalesce(sum(${shows.revenue}), 0)`,
-  })
-    .from(shows)
-    .where(and(eq(shows.userId, userId), lt(shows.date, now)));
-
   res.json({
-    totalShows: Number(overall?.totalShows ?? 0),
-    totalRevenue: Number(overall?.totalRevenue ?? 0),
-    avgTicketsSold: Number(overall?.avgTicketsSold ?? 0),
-    upcomingCount: Number(upcoming?.count ?? 0),
-    pastCount: Number(past?.count ?? 0),
-    pastRevenue: Number(past?.revenue ?? 0),
+    totalShows: Number(stats?.totalShows ?? 0),
+    totalRevenue: Number(stats?.totalRevenue ?? 0),
+    avgTicketsSold: Number(stats?.avgTicketsSold ?? 0),
+    upcomingCount: Number(stats?.upcomingCount ?? 0),
+    pastCount: Number(stats?.pastCount ?? 0),
+    pastRevenue: Number(stats?.pastRevenue ?? 0),
+    avgCapacityFill: Math.round(Number(stats?.avgCapacityFill ?? 0)),
   });
 }));
 

@@ -158,10 +158,55 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
+router.delete('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const goalId = req.params.id;
+
+    const success = await careerCoachService.deleteGoal(userId, goalId);
+    if (!success) {
+      return res.status(404).json({ success: false, message: 'Goal not found' });
+    }
+    res.json({ success: true, message: 'Goal deleted' });
+  } catch (error: any) {
+    logger.error('Error deleting career goal:', error?.message);
+    res.status(500).json({ error: 'Failed to delete goal' });
+  }
+}));
+
+router.put('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const goalId = req.params.id;
+
+    const validation = createGoalSchema.partial().safeParse(req.body);
+    if (!validation.success) {
+      return res.status(400).json({ success: false, errors: validation.error.flatten().fieldErrors });
+    }
+
+    const { deadline, ...rest } = validation.data;
+    const goal = await careerCoachService.updateGoal(userId, goalId, {
+      ...rest,
+      ...(deadline !== undefined ? { deadline: new Date(deadline) } : {}),
+    });
+
+    if (!goal) {
+      return res.status(404).json({ success: false, message: 'Goal not found' });
+    }
+    res.json({ success: true, data: goal });
+  } catch (error: any) {
+    logger.error('Error updating career goal:', error?.message);
+    res.status(500).json({ error: 'Failed to update goal' });
+  }
+}));
+
+const smartGoalTypeSchema = z.enum(['streams', 'followers', 'revenue', 'releases', 'posts', 'playlists']).default('streams');
+
 router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
-    const { type = 'streams' } = req.body;
+    const parsed = smartGoalTypeSchema.safeParse(req.body.type);
+    const type = parsed.success ? parsed.data : 'streams';
 
     logger.info(`Creating SMART goal (type: ${type}) for user ${userId}`);
 
@@ -288,6 +333,12 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       ? Math.round(((currentStreams - previousStreams) / previousStreams) * 100)
       : currentStreams > 0 ? 100 : 0;
 
+    const currentFollowers = Number(currentAnalytics[0]?.followers) || 0;
+    const previousFollowers = Number(previousAnalytics[0]?.followers) || 0;
+    const followersGrowth = previousFollowers > 0
+      ? Math.round(((currentFollowers - previousFollowers) / previousFollowers) * 100)
+      : currentFollowers > 0 ? 100 : 0;
+
     const currentRevenue = Number(recentRevenue[0]?.total) || 0;
     const prevRevenue = Number(previousRevenue[0]?.total) || 0;
     const revenueTrend = prevRevenue > 0
@@ -304,11 +355,13 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       (currentStreams > 1000 ? 30 : currentStreams > 100 ? 15 : 5)
     ));
 
+    // Health score: engagement 35%, releases 25%, revenue presence 20%, growth 10%, revenue trend 10%
     const careerHealthScore = Math.min(100, Math.round(
-      (engagementScore * 0.4) +
-      (Math.min(releasesLast90 * 10, 30)) +
+      (engagementScore * 0.35) +
+      (Math.min(releasesLast90 * 8, 25)) +
       (currentRevenue > 0 ? 20 : 0) +
-      (growthRate > 0 ? Math.min(growthRate, 10) : 0)
+      (growthRate > 0 ? Math.min(growthRate * 0.5, 10) : 0) +
+      (revenueTrend > 0 ? Math.min(revenueTrend * 0.5, 10) : 0)
     ));
 
     const healthLabel = careerHealthScore >= 80 ? 'Excellent' : careerHealthScore >= 60 ? 'Good' : careerHealthScore >= 40 ? 'Fair' : 'Needs Work';
@@ -317,6 +370,9 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       insights: {
         growthRate,
         growthRateDisplay: growthRate >= 0 ? `+${growthRate}%` : `${growthRate}%`,
+        followersGrowth,
+        followersGrowthDisplay: followersGrowth >= 0 ? `+${followersGrowth}%` : `${followersGrowth}%`,
+        currentFollowers,
         engagementScore,
         releaseVelocity,
         revenueTrend,

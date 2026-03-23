@@ -109,7 +109,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     const data = insertSyncSchema.partial().parse(req.body);
     const [updated] = await db
       .update(syncSubmissions)
-      .set(data)
+      .set({ ...data, updatedAt: new Date() })
       .where(and(eq(syncSubmissions.id, id), eq(syncSubmissions.userId, userId)))
       .returning();
     if (!updated) return res.status(404).json({ error: 'Listing not found' });

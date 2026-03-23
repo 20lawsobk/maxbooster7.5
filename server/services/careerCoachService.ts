@@ -794,6 +794,23 @@ class CareerCoachService {
     return goal;
   }
 
+  async updateGoal(userId: string, goalId: string, data: Partial<Omit<InsertCareerGoal, 'userId' | 'id'>>): Promise<CareerGoal | null> {
+    const [goal] = await db
+      .update(careerGoals)
+      .set({ ...data, updatedAt: new Date() })
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.userId, userId)))
+      .returning();
+    return goal || null;
+  }
+
+  async deleteGoal(userId: string, goalId: string): Promise<boolean> {
+    const [deleted] = await db
+      .delete(careerGoals)
+      .where(and(eq(careerGoals.id, goalId), eq(careerGoals.userId, userId)))
+      .returning({ id: careerGoals.id });
+    return !!deleted;
+  }
+
   async updateGoalProgress(userId: string, goalId: string, currentValue: number): Promise<CareerGoal | null> {
     const [goal] = await db
       .update(careerGoals)

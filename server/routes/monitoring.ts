@@ -28,7 +28,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in queue-metrics:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -53,7 +53,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in queue-metrics by name:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -74,7 +74,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in queue-health:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -95,7 +95,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in ai-models:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -153,7 +153,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in system-health:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -182,7 +182,7 @@ router.post(
       });
     } catch (error: any) {
       logger.error('Error in set-thresholds:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -206,7 +206,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in monitoring dashboard:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -232,7 +232,7 @@ router.post(
       });
     } catch (error: any) {
       logger.error('Error in baseline save:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -254,7 +254,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error in alerting config:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -277,7 +277,7 @@ router.post(
       });
     } catch (error: any) {
       logger.error('Error in alerting test:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );

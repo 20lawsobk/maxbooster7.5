@@ -172,7 +172,7 @@ router.get('/support', async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in KYC support info:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -192,7 +192,7 @@ router.get('/document-types', async (req, res) => {
     res.json({ documentTypes });
   } catch (error: any) {
     logger.error('Error in KYC document types:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 

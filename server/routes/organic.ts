@@ -42,7 +42,7 @@ router.get('/viral-score/:contentId', requireAuth, asyncHandler(async (req, res)
     });
   } catch (error: any) {
     logger.error('Error in get viral-score:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -85,7 +85,7 @@ router.post('/viral-score', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in post viral-score:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -128,7 +128,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
     });
   } catch (error: any) {
     logger.error('Error in optimal-timing:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -241,7 +241,7 @@ router.get('/reach-dashboard', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in reach-dashboard:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -295,7 +295,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
     });
   } catch (error: any) {
     logger.error('Error in generate-variants:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -347,7 +347,7 @@ router.get('/algorithm-insights', requireAuth, asyncHandler(async (req, res) => 
     });
   } catch (error: any) {
     logger.error('Error in algorithm-insights:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -369,7 +369,7 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
     });
   } catch (error: any) {
     logger.error('Error in algorithm-insights by platform:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -393,7 +393,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in organic dashboard:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -409,7 +409,7 @@ router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in organic stats:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -426,7 +426,7 @@ router.get('/metrics', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in organic metrics:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -439,7 +439,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error in organic recommendations:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 

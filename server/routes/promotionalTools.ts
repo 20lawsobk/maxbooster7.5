@@ -190,7 +190,7 @@ router.get('/promo-cards/templates', async (req: Request, res: Response) => {
     res.json(promotionalToolsService.getPromoCardTemplates());
   } catch (error: any) {
     logger.error('Error in promo card templates:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 

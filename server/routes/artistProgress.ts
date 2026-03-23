@@ -25,7 +25,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching artist progress dashboard:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -51,7 +51,7 @@ router.get('/history', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching progress history:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -69,7 +69,7 @@ router.get('/milestones', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching career milestones:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -87,7 +87,7 @@ router.get('/growth-metrics', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching growth metrics:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 
@@ -105,7 +105,7 @@ router.post('/capture-snapshot', requireAuth, asyncHandler(async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error capturing snapshot:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 }));
 

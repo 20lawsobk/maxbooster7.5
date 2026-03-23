@@ -68,7 +68,7 @@ router.post('/releases/submit', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch release submit error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -107,7 +107,7 @@ router.post('/releases/takedown', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch release takedown error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -151,7 +151,7 @@ router.put('/releases/update', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch release update error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -190,7 +190,7 @@ router.post('/releases/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch release delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -230,7 +230,7 @@ router.post('/posts/schedule', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch post schedule error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -268,7 +268,7 @@ router.post('/posts/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch post delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -312,7 +312,7 @@ router.put('/posts/update', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch post update error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -351,7 +351,7 @@ router.post('/files/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch file delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -391,7 +391,7 @@ router.post('/files/move', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch file move error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -437,7 +437,7 @@ router.post('/files/download', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Batch file download error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -481,7 +481,7 @@ router.put('/files/update', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch file update error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -526,7 +526,7 @@ router.put('/marketplace/update', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch marketplace update error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -565,7 +565,7 @@ router.post('/marketplace/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch marketplace delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -625,7 +625,7 @@ router.post('/analytics/export', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Batch analytics export error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -661,7 +661,7 @@ router.get('/analytics/export/:exportId/download', async (req: Request, res: Res
     res.send(csvLines.join('\n'));
   } catch (error) {
     logger.error('Analytics export download error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -714,7 +714,7 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Batch analytics compare error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -763,7 +763,7 @@ router.post('/tracks/move', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch track move error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -807,7 +807,7 @@ router.post('/tracks/tag', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch track tag error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -872,7 +872,7 @@ router.post('/tracks/export', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Batch track export error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -909,7 +909,7 @@ router.post('/tracks/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch track delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -955,7 +955,7 @@ router.put('/beats/update', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch beat update error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -994,7 +994,7 @@ router.post('/beats/delete', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch beat delete error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1033,7 +1033,7 @@ router.post('/posts/approve', async (req: Request, res: Response) => {
     res.json(createBatchResult(successIds, failures, ids.length));
   } catch (error) {
     logger.error('Batch post approve error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1063,7 +1063,7 @@ router.get('/progress/:jobId', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error('Get batch progress error:', error?.message || error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1091,7 +1091,7 @@ router.get('/templates', async (req: Request, res: Response) => {
     res.json({ templates: rows });
   } catch (error) {
     logger.error('Get templates error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1123,7 +1123,7 @@ router.post('/templates', async (req: Request, res: Response) => {
     res.json(inserted);
   } catch (error) {
     logger.error('Create template error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1168,7 +1168,7 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
     res.json(updated);
   } catch (error) {
     logger.error('Update template error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1193,7 +1193,7 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
     res.json({ message: 'Template deleted' });
   } catch (error) {
     logger.error('Delete template error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 
@@ -1239,7 +1239,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
     res.json({ message: 'Template shared successfully', sharedTemplate: sharedCopy });
   } catch (error) {
     logger.error('Share template error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 

@@ -36,8 +36,8 @@ router.get('/stats', requireAuth, async (req, res) => {
         prospects: sql<number>`count(*) filter (where status = 'prospect')`,
         contacted: sql<number>`count(*) filter (where status = 'contacted')`,
         booked: sql<number>`count(*) filter (where status = 'booked')`,
+        declined: sql<number>`count(*) filter (where status = 'declined')`,
         totalCapacity: sql<number>`coalesce(sum(capacity), 0)`,
-        venueCount: count(),
       }).from(venueContacts).where(eq(venueContacts.userId, userId));
 
       const total = Number(totals.total);
@@ -47,6 +47,7 @@ router.get('/stats', requireAuth, async (req, res) => {
         prospects: Number(totals.prospects),
         contacted: Number(totals.contacted),
         booked: Number(totals.booked),
+        declined: Number(totals.declined),
         avgCapacity: total > 0 ? Math.round(totalCapacity / total) : 0,
       };
     }, CACHE_TTL);

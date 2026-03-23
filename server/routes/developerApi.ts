@@ -410,7 +410,7 @@ print(data)
   });
   } catch (error: any) {
     logger.error('Error in developer docs:', error?.message);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ error: 'Failed to process request' });
   }
 });
 

@@ -103,7 +103,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error fetching executive dashboard:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
@@ -129,7 +129,7 @@ router.get(
       });
     } catch (error: any) {
       logger.error('Error fetching health summary:', error?.message);
-      res.status(500).json({ message: 'Internal server error' });
+      res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );

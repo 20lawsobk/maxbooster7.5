@@ -179,6 +179,20 @@ router.delete('/:id', requireAuth, async (req, res) => {
   }
 });
 
+router.get('/rhyme/:word', requireAuth, async (req, res) => {
+  try {
+    const word = req.params.word.toLowerCase().trim().replace(/[^a-z'-]/g, '');
+    if (!word || word.length < 2) {
+      return res.status(400).json({ error: 'Word must be at least 2 characters' });
+    }
+    const rhymes = getRhymes(word);
+    res.json({ word, rhymes, count: rhymes.length });
+  } catch (error) {
+    logger.error('[Songwriting] Rhyme lookup error:', error);
+    res.status(500).json({ error: 'Failed to look up rhymes' });
+  }
+});
+
 router.post('/ai-assist', requireAuth, async (req, res) => {
   try {
     const parsed = aiAssistSchema.safeParse(req.body);
@@ -271,7 +285,7 @@ function getRhymes(word: string): string[] {
     dream: ['seem', 'team', 'stream', 'scheme', 'extreme', 'gleam', 'cream', 'esteem', 'regime'],
     shine: ['mine', 'fine', 'line', 'divine', 'define', 'nine', 'wine', 'spine', 'resign', 'combine'],
     soul: ['whole', 'role', 'goal', 'toll', 'control', 'scroll', 'patrol', 'console', 'extol'],
-    flow: ['know', 'show', 'grow', 'glow', 'below', 'bestow', 'bestow', 'although', 'aglow', 'radio'],
+    flow: ['know', 'show', 'grow', 'glow', 'below', 'bestow', 'although', 'aglow', 'radio'],
     game: ['name', 'fame', 'claim', 'flame', 'came', 'same', 'blame', 'frame', 'proclaim', 'reclaim'],
     rise: ['eyes', 'skies', 'ties', 'wise', 'disguise', 'surprise', 'flies', 'cries', 'ties', 'demise'],
     wave: ['save', 'brave', 'gave', 'grave', 'behave', 'crave', 'pave', 'cave', 'rave', 'slave'],
@@ -292,7 +306,7 @@ function getRhymes(word: string): string[] {
     deep: ['keep', 'sleep', 'speak', 'seek', 'leap', 'weep', 'reap', 'steep', 'creep'],
     move: ['prove', 'groove', 'improve', 'above', 'approve', 'remove', 'soothe'],
     world: ['swirled', 'hurled', 'curled', 'unfurled', 'twirled'],
-    alone: ['known', 'shown', 'bone', 'stone', 'phone', 'zone', 'drone', 'throne', 'tone', 'own'],
+    alone: ['known', 'shown', 'bone', 'stone', 'phone', 'zone', 'drone', 'throne', 'tone', 'own', 'overthrown', 'microphone', 'cornerstone'],
     strong: ['long', 'song', 'along', 'belong', 'prolong', 'wrong', 'all along'],
     floor: ['more', 'core', 'score', 'before', 'restore', 'explore', 'adore', 'ignore', 'soar'],
     way: ['say', 'day', 'play', 'stay', 'away', 'okay', 'lay', 'pay', 'ray', 'sway', 'relay'],
@@ -306,7 +320,6 @@ function getRhymes(word: string): string[] {
     break: ['take', 'make', 'shake', 'wake', 'fake', 'lake', 'sake', 'heartache', 'mistake'],
     fly: ['sky', 'high', 'try', 'cry', 'by', 'my', 'deny', 'defy', 'rely', 'reply', 'supply'],
     cold: ['bold', 'told', 'hold', 'old', 'sold', 'gold', 'unfold', 'behold', 'controlled'],
-    alone: ['zone', 'stone', 'phone', 'own', 'known', 'shown', 'bone', 'throne', 'tone', 'overthrown'],
     feel: ['real', 'deal', 'heal', 'reveal', 'appeal', 'steel', 'conceal', 'ideal', 'kneel'],
     stay: ['day', 'way', 'say', 'play', 'away', 'okay', 'lay', 'pay', 'ray', 'sway', 'relay'],
     pray: ['day', 'way', 'say', 'play', 'stay', 'away', 'okay', 'lay', 'pay', 'ray', 'sway'],
@@ -350,6 +363,8 @@ function getChordSuggestion(genre?: string, mood?: string): string {
     blues: ['I – IV – I – V – IV – I (12-bar blues)', 'i – iv – i – V', 'I7 – IV7 – I7 – V7'],
     trap: ['i – VI – III – VII', 'i – VII – VI – VII', 'i – iv – bVII – i', 'i – bIII – bVII – IV'],
     soul: ['I – IV – iii – vi', 'ii – V – I – VI', 'Imaj7 – IVmaj7 – ii – V', 'I – III – IV – iv'],
+    phonk: ['i – bVII – bVI – V', 'i – iv – bVII – i', 'i – VI – III – VII', 'i – bIII – bVII – i'],
+    lofi: ['Imaj7 – IVmaj7 – iii – vi', 'ii – V – Imaj7', 'I – vi – IV – V (laid back)', 'Imaj7 – iii – vi – IV'],
     folk: ['I – IV – V – I', 'I – V – IV – I', 'vi – IV – I – V', 'I – IV – I – V – IV'],
     afrobeats: ['I – IV – V – vi', 'i – VII – VI – VII', 'I – V – vi – IV', 'i – VI – III – VII'],
     dancehall: ['I – IV – I – V', 'i – VII – VI – VII', 'I – bVII – IV', 'i – iv – bVII – i'],

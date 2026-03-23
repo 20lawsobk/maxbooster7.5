@@ -213,6 +213,63 @@ router.get('/my', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/tax-rates', async (req: Request, res: Response) => {
+  try {
+    const { country, state } = req.query;
+
+    if (!country) {
+      return res.status(400).json({ error: 'country is required' });
+    }
+
+    const rates = invoiceService.getTaxRates(country as string, state as string);
+    return res.json({ rates });
+  } catch (error: any) {
+    logger.error('Error fetching tax rates:', error);
+    res.status(500).json({ error: 'Failed to fetch tax rates' });
+  }
+});
+
+router.get('/marketplace-disputes', async (req: Request, res: Response) => {
+  try {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { status } = req.query;
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    const isAdmin = isAdminUser(req.user);
+
+    let disputes;
+    if (isAdmin) {
+      disputes = await db
+        .select()
+        .from(marketplaceDisputes)
+        .orderBy(desc(marketplaceDisputes.createdAt))
+        .limit(200);
+    } else {
+      disputes = await db
+        .select()
+        .from(marketplaceDisputes)
+        .where(or(
+          eq(marketplaceDisputes.buyerId, userId),
+          eq(marketplaceDisputes.sellerId, userId)
+        ))
+        .orderBy(desc(marketplaceDisputes.createdAt))
+        .limit(100);
+    }
+
+    if (status && typeof status === 'string') {
+      disputes = disputes.filter(d => d.status === status);
+    }
+
+    return res.json({ disputes });
+  } catch (error: any) {
+    logger.error('Error fetching marketplace disputes:', error);
+    res.status(500).json({ error: 'Failed to fetch disputes' });
+  }
+});
+
 router.get('/:contractId', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
@@ -592,22 +649,6 @@ router.get('/invoices/overdue/list', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error fetching overdue invoices:', error);
     res.status(500).json({ error: 'Failed to fetch overdue invoices' });
-  }
-});
-
-router.get('/tax-rates', async (req: Request, res: Response) => {
-  try {
-    const { country, state } = req.query;
-
-    if (!country) {
-      return res.status(400).json({ error: 'country is required' });
-    }
-
-    const rates = invoiceService.getTaxRates(country as string, state as string);
-    return res.json({ rates });
-  } catch (error: any) {
-    logger.error('Error fetching tax rates:', error);
-    res.status(500).json({ error: 'Failed to fetch tax rates' });
   }
 });
 
@@ -1198,47 +1239,6 @@ router.post('/marketplace-disputes', async (req: Request, res: Response) => {
   } catch (error: any) {
     logger.error('Error creating marketplace dispute:', error);
     res.status(500).json({ error: 'Failed to create dispute' });
-  }
-});
-
-router.get('/marketplace-disputes', async (req: Request, res: Response) => {
-  try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const { status } = req.query;
-    const userId = req.user!.id;
-    const userRole = req.user!.role;
-    const isAdmin = isAdminUser(req.user);
-
-    let disputes;
-    if (isAdmin) {
-      disputes = await db
-        .select()
-        .from(marketplaceDisputes)
-        .orderBy(desc(marketplaceDisputes.createdAt))
-        .limit(200);
-    } else {
-      disputes = await db
-        .select()
-        .from(marketplaceDisputes)
-        .where(or(
-          eq(marketplaceDisputes.buyerId, userId),
-          eq(marketplaceDisputes.sellerId, userId)
-        ))
-        .orderBy(desc(marketplaceDisputes.createdAt))
-        .limit(100);
-    }
-
-    if (status && typeof status === 'string') {
-      disputes = disputes.filter(d => d.status === status);
-    }
-
-    return res.json({ disputes });
-  } catch (error: any) {
-    logger.error('Error fetching marketplace disputes:', error);
-    res.status(500).json({ error: 'Failed to fetch disputes' });
   }
 });
 
