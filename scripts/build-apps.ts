@@ -26,7 +26,7 @@ import * as path from 'path';
 
 const APP_NAME = 'Max Booster';
 const APP_ID = 'com.blawzmusic.maxbooster';
-const PRODUCTION_URL = 'https://maxbooster.replit.app';
+const PRODUCTION_URL = process.env.PRODUCTION_URL || 'https://maxbooster.replit.app';
 
 function log(message: string, type: 'info' | 'success' | 'error' | 'warn' = 'info') {
   const icons = { info: 'ℹ️', success: '✅', error: '❌', warn: '⚠️' };
@@ -56,7 +56,8 @@ function updatePackageJson(updates: Partial<any>): void {
   const packagePath = path.join(process.cwd(), 'package.json');
   const pkg = getPackageJson();
   Object.assign(pkg, updates);
-  fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '\n');
+  fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2) + '
+');
 }
 
 function bumpVersion(type: 'major' | 'minor' | 'patch' = 'patch'): string {
@@ -103,6 +104,13 @@ function buildDesktop(): void {
   log('='.repeat(60), 'info');
   log('BUILDING DESKTOP APPLICATION', 'info');
   log('='.repeat(60), 'info');
+
+  try {
+    require('child_process').execSync('npx --no-install electron-builder --version', { stdio: 'ignore' });
+  } catch (e) {
+    log('Fatal: electron-builder not found. Please install it globally or locally.', 'error');
+    process.exit(1);
+  }
 
   const pkg = getPackageJson();
 
@@ -294,6 +302,13 @@ function buildMobile(webAssetsAlreadyBuilt = false): void {
   log('BUILDING MOBILE APPLICATIONS', 'info');
   log('='.repeat(60), 'info');
 
+  try {
+    require('child_process').execSync('npx cap --version', { stdio: 'ignore' });
+  } catch(e) {
+    log('Fatal: Capacitor CLI not found.', 'error');
+    process.exit(1);
+  }
+
   validateCapacitorConfig();
 
   if (!webAssetsAlreadyBuilt) {
@@ -389,7 +404,8 @@ function generateBuildInfo(): void {
     },
   };
 
-  fs.writeFileSync('build-info.json', JSON.stringify(buildInfo, null, 2) + '\n');
+  fs.writeFileSync('build-info.json', JSON.stringify(buildInfo, null, 2) + '
+');
   log('Build info written to build-info.json', 'success');
 }
 
@@ -448,8 +464,7 @@ Commands:
 Environment variables:
   FORCE_FULL_BUILD=true   Run a full Electron build even inside Replit
 
-Examples:
-  npx tsx scripts/build-apps.ts github         # Preferred for production
+Examples:  npx tsx scripts/build-apps.ts github         # Preferred for production
   npx tsx scripts/build-apps.ts desktop        # Local build for current OS
   npx tsx scripts/build-apps.ts desktop+mobile # Build both in one pass
   npx tsx scripts/build-apps.ts mobile         # Capacitor setup only
