@@ -337,9 +337,19 @@ export function FlowStatePluginBrowser({
           <TabsContent value={category} className="mt-4 pb-6">
             <ScrollArea className="h-[450px]">
               {isLoading ? (
-                <div className="flex flex-col items-center justify-center h-[350px] text-white/40">
-                  <Loader2 className="h-12 w-12 mb-4 animate-spin" />
-                  <p>Loading plugins...</p>
+                <div className="grid grid-cols-2 gap-3 p-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-3 space-y-2 animate-pulse">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 rounded-md bg-white/10" />
+                        <div className="flex-1 space-y-1">
+                          <div className="h-3 bg-white/10 rounded w-3/4" />
+                          <div className="h-2 bg-white/10 rounded w-1/2" />
+                        </div>
+                      </div>
+                      <div className="h-2 bg-white/10 rounded w-full" />
+                    </div>
+                  ))}
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center h-[350px] text-white/40">

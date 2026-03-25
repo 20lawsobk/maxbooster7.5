@@ -11,6 +11,7 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Brain, Target, TrendingUp, Calendar, CheckCircle, Clock, 
@@ -61,17 +62,17 @@ export default function CareerCoach() {
     }
   ]);
 
-  const { data: goalsData} = useQuery<{ goals: CareerGoal[] }>({
+  const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{ goals: CareerGoal[] }>({
     queryKey: ['/api/career-coach/goals'],
     enabled: !!user,
   });
 
-  const { data: recommendationsData } = useQuery<{ recommendations: Recommendation[] }>({
+  const { data: recommendationsData, isLoading: isLoadingRecs } = useQuery<{ recommendations: Recommendation[] }>({
     queryKey: ['/api/career-coach/recommendations'],
     enabled: !!user,
   });
 
-  const { data: insightsData } = useQuery<{ insights: any }>({
+  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{ insights: any }>({
     queryKey: ['/api/career-coach/insights'],
     enabled: !!user,
   });
@@ -183,7 +184,33 @@ return (
               </TabsList>
 
               <TabsContent value="recommendations" className="space-y-4">
-                {recommendations.length === 0 ? (
+                {isLoadingRecs ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3 flex-1">
+                              <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                              <div className="flex-1 space-y-2">
+                                <Skeleton className="h-4 w-48" />
+                                <Skeleton className="h-3 w-full" />
+                                <Skeleton className="h-3 w-3/4" />
+                              </div>
+                            </div>
+                            <Skeleton className="h-5 w-16 rounded-full ml-3" />
+                          </div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center gap-4">
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                            <Skeleton className="h-4 w-28" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : recommendations.length === 0 ? (
                   <Card className="p-8 text-center">
                     <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-medium">No recommendations yet</h3>
@@ -232,7 +259,44 @@ return (
               </TabsContent>
 
               <TabsContent value="goals" className="space-y-4">
-                {goals.length === 0 ? (
+                {isLoadingGoals ? (
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <Card key={i}>
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-4 w-4" />
+                              <Skeleton className="h-4 w-48" />
+                            </div>
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Skeleton className="h-3 w-3" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <Skeleton className="h-3 w-16" />
+                              <Skeleton className="h-3 w-8" />
+                            </div>
+                            <Skeleton className="h-2 w-full rounded-full" />
+                          </div>
+                          <div className="space-y-2">
+                            {[1, 2, 3].map((j) => (
+                              <div key={j} className="flex items-center gap-2">
+                                <Skeleton className="h-4 w-4 rounded-full" />
+                                <Skeleton className="h-3 w-40" />
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : goals.length === 0 ? (
                   <Card className="p-8 text-center">
                     <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <h3 className="font-medium">Set your first career goal</h3>
@@ -293,7 +357,43 @@ return (
               </TabsContent>
 
               <TabsContent value="insights" className="space-y-4">
-                <div className="grid md:grid-cols-2 gap-4">
+                {isLoadingInsights ? (
+                  <div className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <Card key={i}>
+                          <CardHeader>
+                            <div className="flex items-center gap-2">
+                              <Skeleton className="h-5 w-5" />
+                              <Skeleton className="h-4 w-28" />
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <Skeleton className="h-8 w-20 mb-1" />
+                            <Skeleton className="h-3 w-36" />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                    <Card>
+                      <CardHeader>
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-64 mt-1" />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-24 w-24 rounded-full" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-3 w-3/4" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ) : (
+                <><div className="grid md:grid-cols-2 gap-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-base flex items-center gap-2">
@@ -395,6 +495,7 @@ return (
                     </div>
                   </CardContent>
                 </Card>
+                </>)}
               </TabsContent>
             </Tabs>
           </div>

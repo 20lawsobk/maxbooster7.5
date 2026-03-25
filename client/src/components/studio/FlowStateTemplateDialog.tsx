@@ -249,9 +249,16 @@ export function FlowStateTemplateDialog({
             <ScrollArea className="h-[350px]">
               <div className="p-4">
                 {isLoading ? (
-                  <div className="flex flex-col items-center justify-center h-[250px] text-white/40">
-                    <Loader2 className="h-8 w-8 animate-spin mb-4" />
-                    <p>Loading templates...</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} className="rounded-lg border border-white/10 bg-white/5 p-4 space-y-3 animate-pulse">
+                        <div className="h-24 bg-white/10 rounded-md" />
+                        <div className="space-y-1.5">
+                          <div className="h-3 bg-white/10 rounded w-3/4" />
+                          <div className="h-2 bg-white/10 rounded w-1/2" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : error ? (
                   <div className="flex flex-col items-center justify-center h-[250px] text-white/40">
