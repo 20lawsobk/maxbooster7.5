@@ -1,17 +1,23 @@
 /**
- * Max Booster Service Worker v5
+ * Max Booster Service Worker v7
  *
- * Key improvements over v4:
- *  • PRECACHE_APP_CHUNKS handler — after first load, the app sends the hashed
- *    JS/CSS chunk URLs; we store them in STATIC_CACHE so the next visit is
- *    served entirely from disk (near-instant on mobile).
- *  • App-shell stale-while-revalidate — index.html is served from cache
- *    immediately; a background fetch keeps it fresh.
- *  • Faster install — skipWaiting() fires unconditionally (no addAll bottleneck).
- *  • Bumped cache version → old v4 caches are evicted on first activate.
+ * Key improvements:
+ *  • DEV MODE bypass — on localhost (Vite dev server), the SW is a transparent
+ *    pass-through: no caching of the app shell, no stale HTML, no hashed-asset
+ *    mismatches. Caching is only active on production domains.
+ *  • PRECACHE_APP_CHUNKS handler — after first load in production, the app sends
+ *    the hashed JS/CSS chunk URLs for near-instant repeat visits.
+ *  • Network-first for app shell — always fetches fresh HTML from server.
+ *  • Faster install — skipWaiting() fires unconditionally.
  */
 
-const CACHE_VER    = 'v6';
+const IS_DEV = self.location.hostname === 'localhost' ||
+               self.location.hostname === '127.0.0.1' ||
+               self.location.port === '5000' ||
+               self.location.hostname.endsWith('.replit.dev') ||
+               self.location.hostname.endsWith('.picard.replit.dev');
+
+const CACHE_VER    = 'v7';
 const STATIC_CACHE = 'max-booster-static-' + CACHE_VER;
 const DYNAMIC_CACHE= 'max-booster-dynamic-' + CACHE_VER;
 const API_CACHE    = 'max-booster-api-' + CACHE_VER;
@@ -83,6 +89,15 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  // DEV MODE: transparent pass-through — no caching whatsoever.
+  // Prevents stale production-hashed HTML from being served by Vite dev server.
+  if (IS_DEV) {
+    if (request.method === 'POST' && url.pathname === '/api/sync/batch') {
+      event.respondWith(handleSyncRequest(request));
+    }
+    return; // let browser handle everything else natively
+  }
 
   if (request.method !== 'GET') {
     if (request.method === 'POST' && url.pathname === '/api/sync/batch') {

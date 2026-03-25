@@ -1505,8 +1505,8 @@ export default function Distribution() {
           const releases = releasesData?.releases || [];
           const tableData = releases.map((release: any) => [
             release.title || 'Untitled',
-            release.artistName || 'Unknown Artist',
-            release.genre || 'N/A',
+            (release.metadata as any)?.artistName || release.artistName || 'Unknown Artist',
+            (release.metadata as any)?.primaryGenre || release.genre || 'N/A',
             release.releaseDate ? new Date(release.releaseDate).toLocaleDateString() : 'Not Set',
             release.status || 'Draft',
             release.platforms?.length || 0,
@@ -2083,16 +2083,20 @@ return (
                             {release.title}
                           </h3>
                           <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                            {release.artistName}
+                            {(release.metadata as any)?.artistName || release.artistName || '—'}
                           </p>
                           <div className="flex items-center space-x-2">
-                            <Badge variant="outline" className="text-xs">
-                              {release.releaseType}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {release.primaryGenre}
-                            </Badge>
-                            {release.isExplicit && (
+                            {(release.metadata as any)?.releaseType && (
+                              <Badge variant="outline" className="text-xs capitalize">
+                                {(release.metadata as any).releaseType}
+                              </Badge>
+                            )}
+                            {(release.metadata as any)?.primaryGenre && (
+                              <Badge variant="outline" className="text-xs">
+                                {(release.metadata as any).primaryGenre}
+                              </Badge>
+                            )}
+                            {((release.metadata as any)?.isExplicit || release.isExplicit) && (
                               <Badge variant="destructive" className="text-xs">
                                 Explicit
                               </Badge>
@@ -2120,11 +2124,15 @@ return (
                         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
                           <div className="flex items-center space-x-1">
                             <CalendarIcon className="w-4 h-4" />
-                            <span>{new Date(release.releaseDate).toLocaleDateString()}</span>
+                            <span>
+                              {release.releaseDate
+                                ? new Date(release.releaseDate).toLocaleDateString()
+                                : 'No date set'}
+                            </span>
                           </div>
                           <div className="flex items-center space-x-1">
                             <Globe className="w-4 h-4" />
-                            <span>{release.upcCode}</span>
+                            <span>{(release.metadata as any)?.upcCode || release.upcCode || '—'}</span>
                           </div>
                         </div>
 
@@ -2150,7 +2158,7 @@ return (
                               setSelectedRelease(release);
                               setEditReleaseForm({
                                 title: release.title,
-                                artistName: release.artistName || '',
+                                artistName: (release.metadata as any)?.artistName || release.artistName || '',
                                 releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : '',
                                 primaryGenre: (release.metadata as any)?.primaryGenre || '',
                               });
@@ -3290,7 +3298,7 @@ return (
                           </div>
                           <div className="flex-1">
                             <p className="font-medium">{release.title}</p>
-                            <p className="text-sm text-muted-foreground">{release.artistName}</p>
+                            <p className="text-sm text-muted-foreground">{(release.metadata as any)?.artistName || release.artistName || '—'}</p>
                           </div>
                           <Badge
                             variant={release.status === 'live' ? 'default' : release.status === 'processing' ? 'secondary' : 'outline'}
@@ -4123,6 +4131,94 @@ return (
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* View Release Detail Dialog */}
+        <Dialog open={showReleaseDetails} onOpenChange={setShowReleaseDetails}>
+          <DialogContent className="sm:max-w-lg bg-white dark:bg-gray-800">
+            <DialogHeader>
+              <DialogTitle className="text-xl">{selectedRelease?.title}</DialogTitle>
+              <DialogDescription>Full release details</DialogDescription>
+            </DialogHeader>
+            {selectedRelease && (
+              <div className="space-y-4 py-2">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Artist</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any)?.artistName || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Status</p>
+                    <Badge variant={selectedRelease.status === 'live' ? 'default' : 'secondary'} className="capitalize">
+                      {selectedRelease.status}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Release Type</p>
+                    <p className="font-medium capitalize">{(selectedRelease.metadata as any)?.releaseType || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Genre</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any)?.primaryGenre || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Release Date</p>
+                    <p className="font-medium">
+                      {selectedRelease.releaseDate
+                        ? new Date(selectedRelease.releaseDate).toLocaleDateString()
+                        : 'Not scheduled'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Language</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any)?.language || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Copyright Owner</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any)?.copyrightOwner || '—'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Copyright Year</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any)?.copyrightYear || '—'}</p>
+                  </div>
+                </div>
+                {(selectedRelease.metadata as any)?.selectedPlatforms?.length > 0 && (
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-2">Platforms</p>
+                    <div className="flex flex-wrap gap-1">
+                      {(selectedRelease.metadata as any).selectedPlatforms.map((p: string) => (
+                        <Badge key={p} variant="outline" className="text-xs capitalize">{p}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {(selectedRelease.metadata as any)?.labelName && (
+                  <div>
+                    <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Label</p>
+                    <p className="font-medium">{(selectedRelease.metadata as any).labelName}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowReleaseDetails(false)}>Close</Button>
+              <Button onClick={() => {
+                setShowReleaseDetails(false);
+                if (selectedRelease) {
+                  setEditReleaseForm({
+                    title: selectedRelease.title,
+                    artistName: (selectedRelease.metadata as any)?.artistName || '',
+                    releaseDate: selectedRelease.releaseDate ? new Date(selectedRelease.releaseDate).toISOString().split('T')[0] : '',
+                    primaryGenre: (selectedRelease.metadata as any)?.primaryGenre || '',
+                  });
+                  setShowEditRelease(true);
+                }
+              }}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Release
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

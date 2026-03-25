@@ -204,7 +204,7 @@ function injectMeta(html: string, meta: { title: string; description: string; im
   return html;
 }
 
-const DIST_PATH = path.resolve(__dirname, "public");
+const DIST_PATH = path.resolve(process.cwd(), "dist", "public");
 
 const EXT_CONTENT_TYPE: Record<string, string> = {
   '.js':   'application/javascript; charset=utf-8',

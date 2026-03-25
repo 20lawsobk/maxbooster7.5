@@ -84,6 +84,7 @@ interface ReleaseWizardProps {
 export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizardProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [metadataErrors, setMetadataErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -285,51 +286,64 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
   });
 
   const validateStep = (step: number): boolean => {
-    try {
-      switch (step) {
-        case 1:
-          metadataSchema.parse(metadataData);
-          return true;
-        case 2:
-          tracksSchema.parse({ audioFiles, artwork });
-          return true;
-        case 3:
-          // Lyrics are optional
-          return true;
-        case 4:
-          if (selectedPlatforms.length === 0) {
-            toast({
-              title: 'Validation error',
-              description: 'Please select at least one distribution platform.',
-              variant: 'destructive',
-            });
-            return false;
-          }
-          return true;
-        case 5:
-          if (!releaseDate) {
-            toast({
-              title: 'Validation error',
-              description: 'Please select a release date.',
-              variant: 'destructive',
-            });
-            return false;
-          }
-          return true;
-        case 6:
-          return true;
-        default:
-          return true;
+    switch (step) {
+      case 1: {
+        const result = metadataSchema.safeParse(metadataData);
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.errors.forEach((e) => {
+            const field = e.path[0] as string;
+            if (field) fieldErrors[field] = e.message;
+          });
+          setMetadataErrors(fieldErrors);
+          const firstMessage = result.error.errors[0]?.message || 'Please fill in all required fields.';
+          toast({
+            title: 'Missing required fields',
+            description: firstMessage,
+            variant: 'destructive',
+          });
+          return false;
+        }
+        setMetadataErrors({});
+        return true;
       }
-    } catch (error: unknown) {
-      if (error instanceof z.ZodError) {
-        toast({
-          title: 'Validation error',
-          description: error.errors[0].message,
-          variant: 'destructive',
-        });
+      case 2: {
+        const result = tracksSchema.safeParse({ audioFiles, artwork });
+        if (!result.success) {
+          const firstMessage = result.error.errors[0]?.message || 'Please upload at least one track.';
+          toast({
+            title: 'Validation error',
+            description: firstMessage,
+            variant: 'destructive',
+          });
+          return false;
+        }
+        return true;
       }
-      return false;
+      case 3:
+        return true;
+      case 4:
+        if (selectedPlatforms.length === 0) {
+          toast({
+            title: 'Validation error',
+            description: 'Please select at least one distribution platform.',
+            variant: 'destructive',
+          });
+          return false;
+        }
+        return true;
+      case 5:
+        if (!releaseDate) {
+          toast({
+            title: 'Validation error',
+            description: 'Please select a release date.',
+            variant: 'destructive',
+          });
+          return false;
+        }
+        return true;
+      default:
+        return true;
     }
   };
 
@@ -421,7 +435,11 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
           {currentStep === 1 && (
             <MetadataForm
               data={metadataData}
-              onChange={(updates) => setMetadataData({ ...metadataData, ...updates })}
+              onChange={(updates) => {
+                setMetadataData({ ...metadataData, ...updates });
+                setMetadataErrors({});
+              }}
+              errors={metadataErrors}
             />
           )}
 

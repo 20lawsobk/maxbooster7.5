@@ -53,6 +53,23 @@ Max Booster operates on a three-point data flow:
 - **Admin Functionality**: Dedicated admin UI for financial configuration.
 - **Error Handling and Fixing**: `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` provide reactive and proactive system health monitoring and runtime patching.
 
+## Known Fixes Applied (Distribution Module)
+
+### Release Card Metadata Fix (Mar 2026)
+`distroReleases` table stores artist name, release type, genre, explicit flag, and UPC in a JSONB `metadata` column — NOT as direct DB columns. `Distribution.tsx` release cards now correctly read from `(release.metadata as any)?.artistName` (etc.) instead of non-existent direct fields.
+
+### Release Card Null Date Guard (Mar 2026)
+`release.releaseDate` is `null` on draft releases. The card date display now uses a conditional: `release.releaseDate ? new Date(release.releaseDate).toLocaleDateString() : 'No date set'` instead of crashing with `new Date(null)`.
+
+### View Release Dialog (Mar 2026)
+The View (eye icon) button on release cards sets `showReleaseDetails` state, but no dialog was ever rendered. A full View Release Detail Dialog was added (above the Edit Release dialog in Distribution.tsx) showing Artist, Status, Release Type, Genre, Language, Copyright Owner, Copyright Year fields, plus "Close" and "Edit Release" footer buttons.
+
+### ReleaseWizard Validation Fix (Mar 2026)
+`validateStep()` used `metadataSchema.parse()` (throws) + `instanceof z.ZodError` check — fragile due to ESM bundler class identity issues. Replaced with `metadataSchema.safeParse()` which never throws, extracts per-field errors into `metadataErrors` state, and passes them to `MetadataForm` via the `errors` prop for inline field-level highlighting. Clears errors on any field change.
+
+### Dev Static Asset Serving Fix (Mar 2026)
+In `server/static.ts`, `DIST_PATH` was computed as `path.resolve(__dirname, "public")` which resolved to `server/public/` (non-existent) when running via `tsx`. Fixed to `path.resolve(process.cwd(), "dist", "public")`. Also confirmed that in dev mode, `setupVite()` handles all frontend serving (Vite HMR middleware); `serveStaticFiles()` is correctly limited to production.
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.
