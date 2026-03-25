@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Bell, Users, RefreshCw } from 'lucide-react';
-import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
+import { CheckCircle, Link as LinkIcon, Unlink, AlertCircle, Users, RefreshCw } from 'lucide-react';
+import { TwitterIcon, LinkedInIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -17,8 +17,6 @@ interface Platform {
   connected: boolean;
   username?: string;
   oauth: boolean;
-  comingSoon?: boolean;
-  comingSoonDate?: string;
   followers?: number;
   profileUrl?: string;
   metadata?: Record<string, any>;
@@ -250,7 +248,7 @@ export function PlatformConnections() {
             {platforms.map((platform) => {
               const IconComponent = platform.icon;
               return (
-                <Card key={platform.id} className={platform.connected ? 'border-green-500/50' : platform.comingSoon ? 'border-amber-500/30 bg-amber-500/5' : ''}>
+                <Card key={platform.id} className={platform.connected ? 'border-green-500/50' : ''}>
                   <CardContent className="pt-6">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -260,16 +258,9 @@ export function PlatformConnections() {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{platform.name}</p>
-                            {platform.comingSoon && (
-                              <Badge variant="outline" className="text-blue-500 border-blue-500/50 text-[10px] px-1.5 py-0">
-                                Beta
-                              </Badge>
-                            )}
                           </div>
                           {platform.connected && platform.username ? (
                             <p className="text-xs text-muted-foreground">@{platform.username}</p>
-                          ) : platform.comingSoon ? (
-                            <p className="text-xs text-amber-500/80">{platform.comingSoonDate}</p>
                           ) : (
                             <p className="text-xs text-muted-foreground">
                               {platform.oauth ? 'OAuth Connection' : 'Not connected'}
@@ -297,15 +288,7 @@ export function PlatformConnections() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {platform.comingSoon && !platform.connected ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                          >
-                            <Bell className="h-4 w-4 mr-1" />
-                            Notify Me
-                          </Button>
-                        ) : platform.connected ? (
+                        {platform.connected ? (
                           <>
                             <Button
                               variant="ghost"

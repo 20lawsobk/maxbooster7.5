@@ -768,7 +768,7 @@ The AI learns from your engagement data — content improves automatically over 
 
 **Platform-specific notes:**
 • **Instagram:** You must have a Creator or Business account (not Personal). Connect via Facebook Page — this is Instagram's requirement, not ours.
-• **TikTok:** Currently in sandbox mode — posts go to your draft queue for manual review before publishing. Live posting coming soon.
+• **TikTok:** Supports both sandbox and live posting modes. Sandbox mode queues posts as drafts for your review before they go live.
 • **YouTube:** Uses your Google account. Only the channels you own are accessible.
 • **Twitter/X:** Supports multi-account connection (different profiles)
 • **Facebook:** Connect your Facebook Page (not personal profile) to post

@@ -269,7 +269,6 @@ router.get('/platforms', requireAuth, async (req: AuthenticatedRequest, res: Res
       id: key,
       name: config.name,
       enabled: config.enabled,
-      comingSoon: (config as any).comingSoon || null,
     }));
   res.json(platformList);
 });
@@ -286,8 +285,8 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
 
     if (!config.enabled) {
       return res.status(503).json({ 
-        message: `${config.name} connection is coming soon!`,
-        comingSoon: (config as any).comingSoon || 'Coming Soon'
+        error: `${config.name} is not yet configured. Please contact support to enable this platform.`,
+        needsConfiguration: true
       });
     }
     
