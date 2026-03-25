@@ -47,6 +47,7 @@ import {
   BarChart3,
   Plus,
   Wallet,
+  Music2,
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -869,9 +870,11 @@ return (
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground py-8 text-center">
-                      No platform data available
-                    </p>
+                    <div className="flex flex-col items-center py-10 text-center">
+                      <BarChart3 className="w-10 h-10 mb-3 text-muted-foreground/30" />
+                      <p className="text-sm font-medium text-muted-foreground">No platform data yet</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Royalty breakdowns will appear once your first statement is processed.</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -901,7 +904,11 @@ return (
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground py-8 text-center">No recent payouts</p>
+                    <div className="flex flex-col items-center py-10 text-center">
+                      <Banknote className="w-10 h-10 mb-3 text-muted-foreground/30" />
+                      <p className="text-sm font-medium text-muted-foreground">No payouts yet</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Your first payout will appear here once earnings reach the minimum threshold.</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -943,9 +950,11 @@ return (
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground py-8 text-center">
-                      No track data available
-                    </p>
+                    <div className="flex flex-col items-center py-10 text-center">
+                      <Music2 className="w-10 h-10 mb-3 text-muted-foreground/30" />
+                      <p className="text-sm font-medium text-muted-foreground">No track data yet</p>
+                      <p className="text-xs text-muted-foreground/70 mt-1">Per-track royalty data will appear after your first streaming cycle.</p>
+                    </div>
                   )}
                 </CardContent>
               </Card>
@@ -1086,8 +1095,10 @@ return (
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={7} className="text-center py-8 text-muted-foreground">
-                            No statements available
+                          <td colSpan={7} className="py-14 text-center">
+                            <Receipt className="w-10 h-10 mx-auto mb-3 text-muted-foreground/30" />
+                            <p className="text-sm font-medium text-muted-foreground">No statements yet</p>
+                            <p className="text-xs text-muted-foreground/70 mt-1">Statements will appear here after your first royalty reporting period.</p>
                           </td>
                         </tr>
                       )}

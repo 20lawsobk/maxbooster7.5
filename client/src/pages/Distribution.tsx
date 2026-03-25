@@ -579,7 +579,13 @@ function PlaylistPitchingContent() {
                     ))}
                   </>
                 ) : pitches.length === 0 ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-gray-500">No pitches tracked yet.</td></tr>
+                  <tr>
+                    <td colSpan={4} className="py-14 text-center">
+                      <Target className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">No pitches tracked yet</p>
+                      <p className="text-sm text-gray-400 mt-1">Track every curator, blog, and radio pitch in one place.</p>
+                    </td>
+                  </tr>
                 ) : pitches.map((pitch) => (
                   <tr key={pitch.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
                     <td className="p-4">
@@ -701,10 +707,25 @@ function ShowsContent() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
-          <p>Loading shows...</p>
+          <>
+            {[1,2,3].map(i => (
+              <Card key={i} className="p-6 space-y-3">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-8 w-24 mt-2" />
+              </Card>
+            ))}
+          </>
         ) : shows.length === 0 ? (
-          <Card className="col-span-full p-12 text-center text-gray-500">
-            No shows scheduled yet.
+          <Card className="col-span-full p-16 text-center">
+            <Ticket className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-lg font-semibold text-gray-700 dark:text-gray-300 mb-1">No shows scheduled yet</p>
+            <p className="text-sm text-gray-500 mb-6">Add your first show to start tracking ticket sales, revenue, and attendance.</p>
+            <Button onClick={() => setShowCreateDialog(true)} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Add Your First Show
+            </Button>
           </Card>
         ) : shows.map((show) => (
           <Card key={show.id}>
@@ -941,7 +962,13 @@ function SyncLicensingContent() {
                     ))}
                   </>
                 ) : catalog.length === 0 ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">No tracks in catalog.</td></tr>
+                  <tr>
+                    <td colSpan={5} className="py-14 text-center">
+                      <Music className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-gray-600 dark:text-gray-400 font-medium">No tracks in your catalog yet</p>
+                      <p className="text-sm text-gray-400 mt-1">Distribute your first release to see tracks appear here.</p>
+                    </td>
+                  </tr>
                 ) : catalog.map((item) => (
                   <tr key={item.id} className="hover:bg-gray-50/50 dark:hover:bg-gray-800/50">
                     <td className="p-4">
@@ -2428,9 +2455,11 @@ return (
                         </div>
                       ))
                     ) : (
-                      <p className="text-center text-gray-500 py-4">
-                        No streaming data available yet
-                      </p>
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <BarChart3 className="w-10 h-10 mb-3 text-gray-300" />
+                        <p className="text-sm font-medium text-gray-500">No streaming trends yet</p>
+                        <p className="text-xs text-gray-400 mt-1">Trend data will appear as your releases accumulate streams.</p>
+                      </div>
                     )}
                   </div>
                 </CardContent>
@@ -2499,9 +2528,11 @@ return (
                       </div>
                     ))
                   ) : (
-                    <p className="col-span-full text-center text-gray-500 py-4">
-                      No geographic data available yet
-                    </p>
+                    <div className="col-span-full flex flex-col items-center justify-center py-10 text-center">
+                      <MapPin className="w-10 h-10 mb-3 text-gray-300" />
+                      <p className="text-sm font-medium text-gray-500">No geographic data yet</p>
+                      <p className="text-xs text-gray-400 mt-1">Listener locations will appear here once your music is streaming.</p>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -2692,9 +2723,11 @@ return (
                       );
                     })
                   ) : (
-                    <p className="text-center text-gray-500 py-4">
-                      No platform earnings data available yet
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <PieChart className="w-10 h-10 mb-3 text-gray-300" />
+                      <p className="text-sm font-medium text-gray-500">No earnings data yet</p>
+                      <p className="text-xs text-gray-400 mt-1">Platform earnings will appear here once your first royalty cycle completes.</p>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -2747,9 +2780,11 @@ return (
                       </div>
                     ))
                   ) : (
-                    <p className="text-center text-gray-500 py-4">
-                      No payout history available yet
-                    </p>
+                    <div className="flex flex-col items-center justify-center py-10 text-center">
+                      <Banknote className="w-10 h-10 mb-3 text-gray-300" />
+                      <p className="text-sm font-medium text-gray-500">No payouts yet</p>
+                      <p className="text-xs text-gray-400 mt-1">Your first payout will appear here once earnings reach the minimum threshold.</p>
+                    </div>
                   )}
                 </div>
               </CardContent>

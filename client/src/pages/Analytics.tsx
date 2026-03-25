@@ -551,8 +551,10 @@ const CohortAnalysisChart = memo(({ cohorts }: { cohorts: CohortData[] | undefin
 
   if (data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-32">
-        <p className="text-muted-foreground text-sm">No cohort data available yet. Data will appear as your audience grows.</p>
+      <div className="flex flex-col items-center justify-center py-10 text-center">
+        <Users className="h-10 w-10 mb-3 opacity-20" />
+        <p className="text-sm font-medium text-muted-foreground">No cohort data yet</p>
+        <p className="text-xs text-muted-foreground/70 mt-1">Audience retention data will build up as your listeners grow.</p>
       </div>
     );
   }

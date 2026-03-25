@@ -3106,9 +3106,14 @@ return (
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8">
-                    <Brain className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">No AI insights available yet</p>
+                  <div className="text-center py-10">
+                    <Brain className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
+                    <p className="font-medium text-gray-600 dark:text-gray-400">AI is learning your audience</p>
+                    <p className="text-sm text-muted-foreground mt-1 mb-5">Post your first content and Max Booster will start generating personalized insights.</p>
+                    <Button size="sm" onClick={() => setActiveTab('create')} className="gap-2">
+                      <Plus className="w-4 h-4" />
+                      Create Your First Post
+                    </Button>
                   </div>
                 )}
               </CardContent>
@@ -3155,7 +3160,10 @@ return (
                       </div>
                     ))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No trending topics available</p>
+                    <div className="flex flex-col items-center py-6 text-center">
+                      <TrendingUp className="w-8 h-8 mb-2 text-muted-foreground/40" />
+                      <p className="text-sm text-muted-foreground">Trending topics will appear as your genre data builds up.</p>
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -3194,9 +3202,14 @@ return (
                       </div>
                     ))
                   ) : (
-                    <div className="text-center py-8">
-                      <Sparkles className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                      <p className="text-muted-foreground">No content ideas available yet</p>
+                    <div className="text-center py-10">
+                      <Sparkles className="w-12 h-12 mx-auto text-muted-foreground/40 mb-4" />
+                      <p className="font-medium text-gray-600 dark:text-gray-400">Ideas are on the way</p>
+                      <p className="text-sm text-muted-foreground mt-1 mb-5">Connect your platforms and post a few times — AI will generate tailored content ideas for your style.</p>
+                      <Button size="sm" onClick={() => setActiveTab('create')} className="gap-2">
+                        <Sparkles className="w-4 h-4" />
+                        Start Creating
+                      </Button>
                     </div>
                   )}
                 </div>
