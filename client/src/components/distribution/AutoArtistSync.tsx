@@ -4,6 +4,9 @@ import {
   CheckCircle2, XCircle, ExternalLink, ChevronDown, ChevronUp,
   Loader2, Globe, Info, Key, Wrench, Music2, AlertCircle,
   RefreshCw, Search, Edit2, Save, X, Zap, BarChart2,
+  Shield, Download, Upload, Link2, Activity, Network,
+  Dna, History, ScanSearch, GitBranch, Hash, Star,
+  TriangleAlert, Fingerprint, BookOpen, Share2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -160,6 +163,31 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const [editingId, setEditingId] = useState('');
   const [instructionsOpen, setInstructionsOpen] = useState<string | null>(null);
 
+  // ── New Phase 1-3 state ────────────────────────────────────────────────────
+  const [healthOpen, setHealthOpen] = useState(false);
+  const [isrcDiscoverOpen, setIsrcDiscoverOpen] = useState(false);
+  const [isrcResults, setIsrcResults] = useState<any>(null);
+  const [isrcRunning, setIsrcRunning] = useState(false);
+  const [splitScanOpen, setSplitScanOpen] = useState(false);
+  const [splitResults, setSplitResults] = useState<any>(null);
+  const [splitRunning, setSplitRunning] = useState(false);
+  const [dnaOpen, setDnaOpen] = useState(false);
+  const [dnaSnapRunning, setDnaSnapRunning] = useState(false);
+  const [portabilityOpen, setPortabilityOpen] = useState(false);
+  const [portabilityRunning, setPortabilityRunning] = useState(false);
+  const [portabilityReport, setPortabilityReport] = useState<any>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importSource, setImportSource] = useState('');
+  const [importIsrcs, setImportIsrcs] = useState('');
+  const [importUpcs, setImportUpcs] = useState('');
+  const [handleOpen, setHandleOpen] = useState(false);
+  const [handlePlatform, setHandlePlatform] = useState<string>('instagram');
+  const [handleValue, setHandleValue] = useState('');
+  const [multiFixerOpen, setMultiFixerOpen] = useState(false);
+  const [multiFixerIds, setMultiFixerIds] = useState<Record<string, string>>({});
+  const [graphOpen, setGraphOpen] = useState(false);
+  const [watchRunning, setWatchRunning] = useState(false);
+
   const { data: hub, isLoading, refetch: refetchHub } = useQuery<HubData>({
     queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`],
     queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/profile-hub`).then(r => r.json()),
@@ -215,6 +243,214 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       variant: 'destructive',
     }),
   });
+
+  // ── Phase 2: Health Score ──────────────────────────────────────────────────
+  const { data: healthData, refetch: refetchHealth, isLoading: healthLoading } = useQuery<{
+    score: number; breakdown: Record<string, number>; recommendations: string[]; grade: string;
+  }>({
+    queryKey: [`/api/artist-profiles/${profile.id}/health`],
+    queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/health`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+
+  // ── Phase 1: Claim Pipeline ───────────────────────────────────────────────
+  const { data: pipelineData, refetch: refetchPipeline } = useQuery<{ pipeline: any[] }>({
+    queryKey: [`/api/artist-profiles/${profile.id}/claim-pipeline`],
+    queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/claim-pipeline`).then(r => r.json()),
+    staleTime: 30_000,
+  });
+
+  const updateClaimMutation = useMutation({
+    mutationFn: (data: { platform: string; state: string; notes?: string }) =>
+      apiRequest('PATCH', `/api/artist-profiles/${profile.id}/claim-state`, data).then(r => r.json()),
+    onSuccess: () => {
+      refetchPipeline();
+      toast({ title: 'Claim progress updated' });
+    },
+  });
+
+  // ── Phase 3: DNA Snapshots ────────────────────────────────────────────────
+  const { data: dnaData, refetch: refetchDna } = useQuery<{ snapshots: any[] }>({
+    queryKey: [`/api/artist-profiles/${profile.id}/dna-snapshots`],
+    queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/dna-snapshots`).then(r => r.json()),
+    staleTime: 60_000,
+    enabled: dnaOpen,
+  });
+
+  // ── Phase 2: Identity Graph ───────────────────────────────────────────────
+  const { data: graphData, refetch: refetchGraph } = useQuery<{
+    nodes: any[]; links: any[]; confirmationScore: number;
+  }>({
+    queryKey: [`/api/artist-profiles/${profile.id}/identity-graph`],
+    queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/identity-graph`).then(r => r.json()),
+    staleTime: 60_000,
+    enabled: graphOpen,
+  });
+
+  // ── Multi-platform Fixer ──────────────────────────────────────────────────
+  const multiFixerMutation = useMutation({
+    mutationFn: () =>
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/fixer-multi`, {
+        targetPlatformIds: multiFixerIds,
+        notes: fixerNotes,
+      }).then(r => r.json()),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      onUpdated();
+      setMultiFixerOpen(false);
+      setMultiFixerIds({});
+      toast({ title: 'Multi-platform re-mapping submitted', description: 'Will apply to future releases on all selected platforms' });
+    },
+    onError: (err: any) => toast({ title: 'Failed', description: err?.message, variant: 'destructive' }),
+  });
+
+  // ── Social Handle Resolver ────────────────────────────────────────────────
+  const resolveHandleMutation = useMutation({
+    mutationFn: () =>
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/resolve-handle`, {
+        platform: handlePlatform,
+        handle: handleValue,
+      }).then(r => r.json()),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      onUpdated();
+      setHandleValue('');
+      toast({ title: data.saved ? 'Handle linked' : 'Profile URL generated', description: data.profileUrl });
+    },
+    onError: () => toast({ title: 'Handle resolution failed', variant: 'destructive' }),
+  });
+
+  // ── Import History ────────────────────────────────────────────────────────
+  const importMutation = useMutation({
+    mutationFn: () =>
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/import-history`, {
+        sourceDistributor: importSource,
+        isrcList: importIsrcs.split(/[\n,\s]+/).filter(s => s.trim().length === 12),
+        upcList: importUpcs.split(/[\n,\s]+/).filter(s => s.trim().length >= 8),
+      }).then(r => r.json()),
+    onSuccess: (data: any) => {
+      setImportSource(''); setImportIsrcs(''); setImportUpcs('');
+      setImportOpen(false);
+      toast({ title: 'Import queued', description: `${data.isrcsQueued} ISRCs + ${data.upcsQueued} UPCs submitted for discovery` });
+    },
+    onError: () => toast({ title: 'Import failed', variant: 'destructive' }),
+  });
+
+  // ── ISRC Chain Discovery ──────────────────────────────────────────────────
+  const handleIsrcDiscover = async () => {
+    setIsrcRunning(true);
+    setIsrcResults(null);
+    try {
+      const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/isrc-discover`);
+      const data = await res.json();
+      setIsrcResults(data);
+      if (data.savedFields?.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+        queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`] });
+        onUpdated();
+      }
+      toast({
+        title: 'ISRC chain discovery complete',
+        description: data.savedFields?.length > 0
+          ? `Linked: ${data.savedFields.join(', ')}`
+          : data.isrcsSearched?.length === 0
+          ? 'No ISRCs found — distribute music first or import history below'
+          : 'No new IDs found via ISRC chain',
+      });
+    } catch {
+      toast({ title: 'ISRC discovery failed', variant: 'destructive' });
+    } finally {
+      setIsrcRunning(false);
+    }
+  };
+
+  // ── Split Scanner ─────────────────────────────────────────────────────────
+  const handleScanSplits = async () => {
+    setSplitRunning(true);
+    setSplitResults(null);
+    try {
+      const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/scan-splits`);
+      const data = await res.json();
+      setSplitResults(data);
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      onUpdated();
+      if (data.splitsDetected > 0) {
+        toast({ title: `${data.splitsDetected} split profile(s) detected`, description: 'Use the Multi-Platform Fixer to resolve', variant: 'destructive' });
+      } else {
+        toast({ title: 'No split profiles detected', description: 'All ISRCs appear on the correct artist pages' });
+      }
+    } catch {
+      toast({ title: 'Split scan failed', variant: 'destructive' });
+    } finally {
+      setSplitRunning(false);
+    }
+  };
+
+  // ── DNA Snapshot ──────────────────────────────────────────────────────────
+  const handleCreateDnaSnapshot = async () => {
+    setDnaSnapRunning(true);
+    try {
+      const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/dna-snapshot`);
+      const data = await res.json();
+      refetchDna();
+      toast({ title: 'DNA snapshot created', description: `Captured ${Object.keys((data.snapshot as any)?.platformIdsAtSnapshot ?? {}).length} platform IDs at this moment` });
+    } catch {
+      toast({ title: 'Snapshot failed', variant: 'destructive' });
+    } finally {
+      setDnaSnapRunning(false);
+    }
+  };
+
+  // ── Portability Report ────────────────────────────────────────────────────
+  const handlePortabilityReport = async () => {
+    setPortabilityRunning(true);
+    try {
+      const res = await apiRequest('GET', `/api/artist-profiles/${profile.id}/portability-report`);
+      const data = await res.json();
+      setPortabilityReport(data);
+    } catch {
+      toast({ title: 'Report generation failed', variant: 'destructive' });
+    } finally {
+      setPortabilityRunning(false);
+    }
+  };
+
+  const downloadPortabilityReport = () => {
+    if (!portabilityReport) return;
+    const blob = new Blob([JSON.stringify(portabilityReport.jsonLd, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${profile.artistName.replace(/\s+/g, '_')}_artist_identity.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ── Profile Watch ─────────────────────────────────────────────────────────
+  const handleWatch = async () => {
+    setWatchRunning(true);
+    try {
+      const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/watch`);
+      const data = await res.json();
+      queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      onUpdated();
+      toast({
+        title: 'Profile watch complete',
+        description: data.unauthorized?.length > 0
+          ? `${data.unauthorized.length} unauthorized release(s) detected`
+          : `Checked ${data.checked?.length ?? 0} platform(s) — all clear`,
+      });
+    } catch {
+      toast({ title: 'Watch failed', variant: 'destructive' });
+    } finally {
+      setWatchRunning(false);
+    }
+  };
+
+  const getClaimStateForPortal = (platformKey: string) =>
+    pipelineData?.pipeline?.find((p: any) => p.platform === platformKey);
+
+  const CLAIM_STEP_LABELS = ['Not Started', 'Instructions Read', 'Portal Visited', 'ID Submitted', 'Verified', 'Monitoring'];
 
   const handleDiscover = async () => {
     setDiscoverRunning(true);
@@ -279,6 +515,16 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   return (
     <div className="space-y-4 pt-2">
 
+      {/* ── Split Profile Alert — shown prominently if detected ── */}
+      {profile.splitDetected && (
+        <Alert className="border-destructive/50 bg-destructive/5">
+          <TriangleAlert className="h-4 w-4 text-destructive" />
+          <AlertDescription className="text-xs text-destructive">
+            <span className="font-semibold">Split profile detected.</span> Music has landed on a different artist page than expected. Use the Multi-Platform Fixer below to resolve, or run a fresh Split Scan to investigate.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ── Profile header ── */}
       <div className="flex items-start gap-3">
         {hub?.profileImageUrl ? (
@@ -308,6 +554,22 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 <CheckCircle2 className="h-3 w-3 mr-1" />Verified
               </Badge>
             )}
+            {/* Health score badge */}
+            {healthData && (
+              <Badge
+                className={`text-xs cursor-pointer ${
+                  healthData.grade === 'A' ? 'bg-green-600' :
+                  healthData.grade === 'B' ? 'bg-blue-600' :
+                  healthData.grade === 'C' ? 'bg-amber-500' :
+                  'bg-destructive'
+                }`}
+                onClick={() => setHealthOpen(h => !h)}
+                title="Profile Health Score — click to expand"
+              >
+                <Shield className="h-3 w-3 mr-1" />
+                {healthData.score}/100 · {healthData.grade}
+              </Badge>
+            )}
           </div>
           {hub && hub.genres.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-1">
@@ -321,6 +583,16 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           <Button
             variant="ghost"
             size="sm"
+            onClick={handleWatch}
+            disabled={watchRunning}
+            className="h-7 text-xs gap-1"
+            title="Check platforms for unauthorized releases"
+          >
+            {watchRunning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => syncMutation.mutate()}
             disabled={syncMutation.isPending || !hub?.portals.some(p => p.claimed)}
             className="h-7 text-xs gap-1"
@@ -331,6 +603,62 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           </Button>
         </div>
       </div>
+
+      {/* ── Health Score Panel ── */}
+      {healthOpen && (
+        <div className="rounded-lg border p-3 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-primary" /> Profile Health Score</span>
+            {healthLoading
+              ? <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              : <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => refetchHealth()}>Recalculate</Button>}
+          </div>
+          {healthData && (
+            <>
+              <div className="flex items-center gap-3">
+                <div className="text-3xl font-bold">{healthData.score}</div>
+                <div>
+                  <div className={`text-lg font-semibold ${
+                    healthData.grade === 'A' ? 'text-green-500' : healthData.grade === 'B' ? 'text-blue-500' :
+                    healthData.grade === 'C' ? 'text-amber-500' : 'text-destructive'
+                  }`}>Grade {healthData.grade}</div>
+                  <div className="h-2 w-40 rounded-full bg-muted overflow-hidden mt-1">
+                    <div
+                      className={`h-full rounded-full transition-all ${
+                        healthData.score >= 85 ? 'bg-green-500' : healthData.score >= 70 ? 'bg-blue-500' :
+                        healthData.score >= 55 ? 'bg-amber-500' : 'bg-destructive'
+                      }`}
+                      style={{ width: `${healthData.score}%` }}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-1.5">
+                {Object.entries(healthData.breakdown).map(([dim, score]: [string, any]) => (
+                  <div key={dim} className="text-center space-y-1">
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${(score / 25) * 100}%` }} />
+                    </div>
+                    <div className="text-xs text-muted-foreground capitalize">{dim}</div>
+                    <div className="text-xs font-mono">{score}</div>
+                  </div>
+                ))}
+              </div>
+              {healthData.recommendations.length > 0 && (
+                <div className="space-y-1 border-t pt-2">
+                  <p className="text-xs font-medium text-muted-foreground">Recommendations:</p>
+                  {healthData.recommendations.map((rec: string, i: number) => (
+                    <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground">
+                      <Star className="h-3 w-3 mt-0.5 flex-shrink-0 text-amber-500" />
+                      {rec}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── How it works ── */}
       <Collapsible open={howItWorksOpen} onOpenChange={setHowItWorksOpen}>
@@ -812,6 +1140,537 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* ── ISRC Chain Discovery ── */}
+      <Collapsible open={isrcDiscoverOpen} onOpenChange={setIsrcDiscoverOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Hash className="h-3.5 w-3.5" />
+              ISRC Chain Discovery
+              <Badge variant="outline" className="text-xs py-0 ml-1 text-purple-500 border-purple-500/40">Phase 1</Badge>
+            </span>
+            {isrcDiscoverOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Uses ISRCs from your distributed tracks to look up your artist profiles on MusicBrainz, then propagates those IDs across Spotify, Apple Music, Deezer, Audiomack and more. More accurate than name-search because ISRCs uniquely identify recordings.
+            </p>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={handleIsrcDiscover}
+              disabled={isrcRunning}
+            >
+              {isrcRunning
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Running ISRC chain…</>
+                : <><Hash className="h-3.5 w-3.5" /> {isrcResults ? 'Re-run ISRC Discovery' : 'Start ISRC Chain Discovery'}</>}
+            </Button>
+            {isrcResults && (
+              <div className="space-y-2 border-t pt-2">
+                <p className="text-xs font-medium">Results:</p>
+                <div className="grid grid-cols-2 gap-1.5 text-xs">
+                  <div className="rounded bg-muted/30 p-2">
+                    <div className="font-mono text-lg">{isrcResults.isrcsSearched?.length ?? 0}</div>
+                    <div className="text-muted-foreground">ISRCs searched</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2">
+                    <div className="font-mono text-lg text-green-500">{isrcResults.savedFields?.length ?? 0}</div>
+                    <div className="text-muted-foreground">New IDs found</div>
+                  </div>
+                </div>
+                {isrcResults.savedFields?.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {isrcResults.savedFields.map((f: string) => (
+                      <Badge key={f} className="text-xs bg-green-600">{f}</Badge>
+                    ))}
+                  </div>
+                )}
+                {isrcResults.isrcsSearched?.length === 0 && (
+                  <Alert>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-xs">
+                      No ISRCs found in your release catalog yet. Distribute music first, or use the <strong>Import History</strong> panel below to import ISRCs from a previous distributor.
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Split Profile Scanner ── */}
+      <Collapsible open={splitScanOpen} onOpenChange={setSplitScanOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <ScanSearch className="h-3.5 w-3.5" />
+              Split Profile Scanner
+              {profile.splitDetected && (
+                <Badge variant="outline" className="text-xs py-0 ml-1 text-destructive border-destructive/40">Split detected</Badge>
+              )}
+            </span>
+            {splitScanOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Checks whether your releases (by ISRC) appear on the correct artist pages across platforms, or whether some tracks have been captured by a duplicate/split artist profile. Runs across Spotify, Apple Music, and MusicBrainz.
+            </p>
+            <Button
+              size="sm"
+              className={`w-full h-8 text-xs gap-1.5 ${profile.splitDetected ? 'border-destructive text-destructive' : ''}`}
+              variant={profile.splitDetected ? 'outline' : 'default'}
+              onClick={handleScanSplits}
+              disabled={splitRunning}
+            >
+              {splitRunning
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Scanning all platforms…</>
+                : <><ScanSearch className="h-3.5 w-3.5" /> {splitResults ? 'Re-run Split Scan' : 'Scan for Split Profiles'}</>}
+            </Button>
+            {splitResults && (
+              <div className="space-y-2 border-t pt-2">
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-lg">{splitResults.totalReleases ?? 0}</div>
+                    <div className="text-muted-foreground">Releases checked</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-lg text-green-500">{splitResults.cleanProfiles ?? 0}</div>
+                    <div className="text-muted-foreground">Clean</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className={`font-mono text-lg ${(splitResults.splitsDetected ?? 0) > 0 ? 'text-destructive' : 'text-muted-foreground'}`}>{splitResults.splitsDetected ?? 0}</div>
+                    <div className="text-muted-foreground">Splits found</div>
+                  </div>
+                </div>
+                {splitResults.splitsDetected > 0 ? (
+                  <Alert className="border-destructive/50">
+                    <TriangleAlert className="h-4 w-4 text-destructive" />
+                    <AlertDescription className="text-xs">
+                      {splitResults.splitsDetected} split profile(s) detected. Use <strong>Multi-Platform Fixer</strong> below to submit re-mapping requests to your distributor.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <p className="text-xs text-green-500 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> All releases land on the correct artist pages.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Claim Pipeline State Machine ── */}
+      {pipelineData?.pipeline && pipelineData.pipeline.length > 0 && (
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+              <span className="flex items-center gap-1.5">
+                <GitBranch className="h-3.5 w-3.5" />
+                Claim Pipeline ({pipelineData.pipeline.filter((p: any) => p.currentState === 'monitoring').length}/{pipelineData.pipeline.length} complete)
+              </span>
+              <ChevronDown className="h-3.5 w-3.5" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="rounded-lg border p-3 space-y-3 mt-1">
+              <p className="text-xs text-muted-foreground">Track your artist verification / claim progress per platform through the 6-stage pipeline.</p>
+              {pipelineData.pipeline.map((entry: any) => {
+                const stateIdx = CLAIM_STEP_LABELS.indexOf(entry.currentState ?? 'Not Started');
+                const pct = Math.max(0, ((stateIdx) / (CLAIM_STEP_LABELS.length - 1)) * 100);
+                return (
+                  <div key={entry.platform} className="space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="capitalize font-medium">{entry.platform}</span>
+                      <span className="text-muted-foreground">{CLAIM_STEP_LABELS[stateIdx] ?? 'Not Started'}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${pct === 100 ? 'bg-green-500' : pct >= 50 ? 'bg-blue-500' : 'bg-amber-500'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex gap-1 flex-wrap">
+                      {CLAIM_STEP_LABELS.slice(1).map((label, idx) => (
+                        <button
+                          key={label}
+                          onClick={() => updateClaimMutation.mutate({ platform: entry.platform, state: label.toLowerCase().replace(/\s+/g, '_') })}
+                          className={`text-xs px-1.5 py-0.5 rounded border transition-colors ${
+                            stateIdx > idx
+                              ? 'bg-green-500/10 border-green-500/30 text-green-600'
+                              : stateIdx === idx + 1
+                              ? 'bg-primary/10 border-primary/30 text-primary'
+                              : 'border-muted-foreground/20 text-muted-foreground/50 hover:text-muted-foreground'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* ── Multi-Platform Fixer ── */}
+      <Collapsible open={multiFixerOpen} onOpenChange={setMultiFixerOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Wrench className="h-3.5 w-3.5" />
+              Multi-Platform Profile Fixer
+              <Badge variant="outline" className="text-xs py-0 ml-1 text-blue-500 border-blue-500/40">Phase 2</Badge>
+              {profile.fixerPending && (
+                <Badge variant="outline" className="text-xs py-0 text-amber-500 border-amber-500/40">Pending</Badge>
+              )}
+            </span>
+            {multiFixerOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Submit re-mapping requests across multiple platforms at once — Spotify, Apple Music, Tidal, Amazon Music, Deezer. Enter the correct artist ID/URI for each platform where music landed on the wrong profile.
+            </p>
+            {(['spotify', 'apple', 'tidal', 'amazon', 'deezer'] as const).map(platform => (
+              <div key={platform} className="space-y-1.5">
+                <Label className="text-xs capitalize">{platform === 'apple' ? 'Apple Music' : platform === 'amazon' ? 'Amazon Music' : platform} — correct artist ID</Label>
+                <Input
+                  placeholder={
+                    platform === 'spotify' ? 'spotify:artist:...' :
+                    platform === 'apple' ? 'e.g. 12345678' :
+                    platform === 'tidal' ? 'e.g. 7654321' :
+                    platform === 'amazon' ? 'e.g. B01234ABCD' :
+                    'e.g. 1234567'
+                  }
+                  value={multiFixerIds[platform] ?? ''}
+                  onChange={e => setMultiFixerIds(prev => ({ ...prev, [platform]: e.target.value }))}
+                  className="h-7 text-xs font-mono"
+                />
+              </div>
+            ))}
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes (optional)</Label>
+              <Textarea
+                placeholder="Describe the issue for your distributor…"
+                value={fixerNotes}
+                onChange={e => setFixerNotes(e.target.value)}
+                className="text-xs min-h-[50px] resize-none"
+                maxLength={1000}
+              />
+            </div>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs"
+              onClick={() => multiFixerMutation.mutate()}
+              disabled={multiFixerMutation.isPending || Object.values(multiFixerIds).every(v => !v)}
+            >
+              {multiFixerMutation.isPending
+                ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Submitting…</>
+                : 'Submit Multi-Platform Re-mapping Request'}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Social Handle → DSP Bridging ── */}
+      <Collapsible open={handleOpen} onOpenChange={setHandleOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Link2 className="h-3.5 w-3.5" />
+              Link Social Handle → DSP Profiles
+            </span>
+            {handleOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Enter your Instagram, TikTok, YouTube, or Twitter handle and MaxBooster will resolve it to your artist profile URLs on streaming platforms, cross-referencing your known metadata.
+            </p>
+            <div className="flex gap-2">
+              <div className="space-y-1.5 flex-shrink-0">
+                <Label className="text-xs">Platform</Label>
+                <select
+                  value={handlePlatform}
+                  onChange={e => setHandlePlatform(e.target.value)}
+                  className="h-8 text-xs rounded-md border border-input bg-background px-2"
+                >
+                  {['instagram', 'tiktok', 'youtube', 'twitter', 'facebook', 'threads'].map(p => (
+                    <option key={p} value={p} className="capitalize">{p.charAt(0).toUpperCase() + p.slice(1)}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5 flex-1">
+                <Label className="text-xs">Handle</Label>
+                <Input
+                  placeholder={`@${handlePlatform}handle`}
+                  value={handleValue}
+                  onChange={e => setHandleValue(e.target.value.replace(/^@/, ''))}
+                  className="h-8 text-xs font-mono"
+                />
+              </div>
+            </div>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={() => resolveHandleMutation.mutate()}
+              disabled={resolveHandleMutation.isPending || !handleValue.trim()}
+            >
+              {resolveHandleMutation.isPending
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Resolving…</>
+                : <><Link2 className="h-3.5 w-3.5" /> Resolve Handle</>}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Artist DNA Snapshots ── */}
+      <Collapsible open={dnaOpen} onOpenChange={setDnaOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Dna className="h-3.5 w-3.5" />
+              Artist DNA Snapshots
+              {dnaData?.snapshots && dnaData.snapshots.length > 0 && (
+                <Badge variant="outline" className="text-xs py-0 ml-1">{dnaData.snapshots.length} saved</Badge>
+              )}
+            </span>
+            {dnaOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Create immutable snapshots of your artist identity at any point in time — platform IDs, ISRCs, metadata keys, verified status. These serve as proof-of-identity records and let you track profile drift over time.
+            </p>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={handleCreateDnaSnapshot}
+              disabled={dnaSnapRunning}
+            >
+              {dnaSnapRunning
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Capturing snapshot…</>
+                : <><Dna className="h-3.5 w-3.5" /> Capture DNA Snapshot Now</>}
+            </Button>
+            {dnaData?.snapshots && dnaData.snapshots.length > 0 && (
+              <div className="space-y-2 border-t pt-2 max-h-40 overflow-y-auto">
+                {dnaData.snapshots.map((snap: any) => (
+                  <div key={snap.id} className="flex items-center justify-between text-xs rounded bg-muted/30 px-2 py-1.5">
+                    <div className="flex items-center gap-2">
+                      <Fingerprint className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="font-mono text-muted-foreground">{snap.snapshotLabel ?? new Date(snap.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">{Object.keys(snap.platformIdsAtSnapshot ?? {}).length} platform IDs</span>
+                      {snap.triggeredBy && <Badge variant="outline" className="text-xs py-0">{snap.triggeredBy}</Badge>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Distributor Portability Report ── */}
+      <Collapsible open={portabilityOpen} onOpenChange={setPortabilityOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5" />
+              Distributor Portability Report
+              <Badge variant="outline" className="text-xs py-0 ml-1 text-green-500 border-green-500/40">JSON-LD</Badge>
+            </span>
+            {portabilityOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Generate a structured JSON-LD artist identity export — all your platform IDs, ISRCs, UPCs, social handles, verified status, health score, and release history in one portable file. Useful when switching distributors.
+            </p>
+            {!portabilityReport ? (
+              <Button
+                size="sm"
+                className="w-full h-8 text-xs gap-1.5"
+                onClick={handlePortabilityReport}
+                disabled={portabilityRunning}
+              >
+                {portabilityRunning
+                  ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Building report…</>
+                  : <><BookOpen className="h-3.5 w-3.5" /> Generate Portability Report</>}
+              </Button>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-base">{portabilityReport.summary?.platformsCovered ?? 0}</div>
+                    <div className="text-muted-foreground">Platforms</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-base">{portabilityReport.summary?.isrcCount ?? 0}</div>
+                    <div className="text-muted-foreground">ISRCs</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-base">{portabilityReport.summary?.healthScore ?? 0}</div>
+                    <div className="text-muted-foreground">Health</div>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    className="flex-1 h-8 text-xs gap-1.5"
+                    onClick={downloadPortabilityReport}
+                  >
+                    <Download className="h-3.5 w-3.5" /> Download JSON-LD
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5"
+                    onClick={() => { setPortabilityReport(null); handlePortabilityReport(); }}
+                    disabled={portabilityRunning}
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Artist Identity Graph ── */}
+      <Collapsible open={graphOpen} onOpenChange={setGraphOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Network className="h-3.5 w-3.5" />
+              Artist Identity Graph
+            </span>
+            {graphOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Your artist identity graph shows every verified link between your profiles across platforms. Each node is a platform identity; edges show how they were confirmed (ISRC match, manual claim, MusicBrainz lookup, etc.).
+            </p>
+            {graphData ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-3 gap-1.5 text-xs">
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-base">{graphData.nodes?.length ?? 0}</div>
+                    <div className="text-muted-foreground">Identity nodes</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className="font-mono text-base">{graphData.links?.length ?? 0}</div>
+                    <div className="text-muted-foreground">Verified links</div>
+                  </div>
+                  <div className="rounded bg-muted/30 p-2 text-center">
+                    <div className={`font-mono text-base ${(graphData.confirmationScore ?? 0) >= 80 ? 'text-green-500' : 'text-amber-500'}`}>
+                      {graphData.confirmationScore ?? 0}%
+                    </div>
+                    <div className="text-muted-foreground">Confidence</div>
+                  </div>
+                </div>
+                {graphData.nodes && graphData.nodes.length > 0 && (
+                  <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    {graphData.nodes.map((node: any) => (
+                      <div key={node.id} className="flex items-center justify-between text-xs rounded bg-muted/20 px-2 py-1">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${node.confirmed ? 'bg-green-500' : 'bg-amber-500'}`} />
+                          <span className="capitalize font-medium">{node.platform}</span>
+                          <span className="font-mono text-muted-foreground truncate max-w-[120px]">{node.platformId}</span>
+                        </div>
+                        <div className="font-mono text-muted-foreground">{node.confidence ?? 0}%</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button size="sm" variant="outline" className="w-full h-7 text-xs" onClick={() => refetchGraph()}>
+                  <RefreshCw className="h-3 w-3 mr-1.5" /> Refresh Graph
+                </Button>
+              </div>
+            ) : (
+              <Button size="sm" className="w-full h-8 text-xs gap-1.5" onClick={() => refetchGraph()}>
+                <Network className="h-3.5 w-3.5" /> Load Identity Graph
+              </Button>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Cross-Distributor History Import ── */}
+      <Collapsible open={importOpen} onOpenChange={setImportOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
+            <span className="flex items-center gap-1.5">
+              <Upload className="h-3.5 w-3.5" />
+              Import Distributor History
+            </span>
+            {importOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="rounded-lg border p-3 space-y-3 mt-1">
+            <p className="text-xs text-muted-foreground">
+              Moving from a previous distributor? Paste ISRCs and UPCs from your old distributor's reports to bootstrap ISRC chain discovery — MaxBooster will look up these recordings across all platforms and link any matching profiles.
+            </p>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Previous Distributor</Label>
+              <Input
+                placeholder="e.g. DistroKid, TuneCore, CD Baby…"
+                value={importSource}
+                onChange={e => setImportSource(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ISRCs (one per line or comma-separated)</Label>
+              <Textarea
+                placeholder={"USRC12345678\nUSRC87654321"}
+                value={importIsrcs}
+                onChange={e => setImportIsrcs(e.target.value)}
+                className="text-xs font-mono min-h-[60px] resize-none"
+              />
+              <p className="text-xs text-muted-foreground">{importIsrcs.split(/[\n,\s]+/).filter(s => s.trim().length === 12).length} valid ISRCs detected</p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">UPCs (optional)</Label>
+              <Input
+                placeholder="00602557698992, 00602558..."
+                value={importUpcs}
+                onChange={e => setImportUpcs(e.target.value)}
+                className="h-8 text-xs font-mono"
+              />
+            </div>
+            <Button
+              size="sm"
+              className="w-full h-8 text-xs gap-1.5"
+              onClick={() => importMutation.mutate()}
+              disabled={importMutation.isPending || (!importIsrcs.trim() && !importUpcs.trim())}
+            >
+              {importMutation.isPending
+                ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Importing…</>
+                : <><Upload className="h-3.5 w-3.5" /> Import & Begin Discovery</>}
+            </Button>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
     </div>
   );
 }

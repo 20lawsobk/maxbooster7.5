@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type { Request, Response } from 'express';
 import { z } from 'zod';
 import { artistProfileService } from '../services/artistProfileService.js';
+import type { ClaimState } from '../services/artistProfileService.js';
+import { CLAIM_STATES } from '../services/artistProfileService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 
@@ -267,6 +269,226 @@ router.post('/:id/verify', async (req: Request, res: Response) => {
   } catch (err) {
     logger.error('[ArtistProfiles] POST /:id/verify error:', err);
     res.status(500).json({ error: 'Verification failed' });
+  }
+});
+
+// ── Phase 1: ISRC Chain Discovery ─────────────────────────────────────────────
+router.post('/:id/isrc-discover', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.isrcChainDiscover(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/isrc-discover error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'ISRC chain discovery failed' });
+  }
+});
+
+// ── Phase 1: Split Profile Scanner ────────────────────────────────────────────
+router.post('/:id/scan-splits', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.scanForSplitProfiles(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/scan-splits error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Split profile scan failed' });
+  }
+});
+
+// ── Phase 1: Claim Pipeline — Get full pipeline state ────────────────────────
+router.get('/:id/claim-pipeline', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.getClaimPipeline(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/claim-pipeline error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to get claim pipeline' });
+  }
+});
+
+// ── Phase 1: Claim Pipeline — Update state for a platform ────────────────────
+const claimStateSchema = z.object({
+  platform: z.string().min(1).max(80),
+  state: z.enum(CLAIM_STATES),
+  notes: z.string().max(1000).optional(),
+  triggeredBy: z.enum(['user', 'system']).optional().default('user'),
+});
+
+router.patch('/:id/claim-state', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const parsed = claimStateSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
+    }
+    const { platform, state, notes, triggeredBy } = parsed.data;
+    const result = await artistProfileService.updateClaimState(
+      req.params.id, req.user!.id, platform,
+      state as ClaimState, triggeredBy as 'user' | 'system', notes,
+    );
+    res.json({ pipelineRow: result });
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] PATCH /:id/claim-state error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to update claim state' });
+  }
+});
+
+// ── Phase 2: Profile Health Score ─────────────────────────────────────────────
+router.get('/:id/health', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.calculateHealthScore(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/health error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Health score calculation failed' });
+  }
+});
+
+// ── Phase 2: Artist Identity Graph ─────────────────────────────────────────────
+router.get('/:id/identity-graph', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.getIdentityGraph(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/identity-graph error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to get identity graph' });
+  }
+});
+
+// ── Phase 3: DNA Snapshot ──────────────────────────────────────────────────────
+router.post('/:id/dna-snapshot', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { releaseId, upc, isrcs } = req.body ?? {};
+    const snapshot = await artistProfileService.snapshotArtistDNA(
+      req.params.id, req.user!.id,
+      releaseId, upc,
+      Array.isArray(isrcs) ? isrcs : undefined,
+    );
+    res.json({ snapshot });
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/dna-snapshot error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'DNA snapshot failed' });
+  }
+});
+
+router.get('/:id/dna-snapshots', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const snapshots = await artistProfileService.getDnaSnapshots(req.params.id, req.user!.id);
+    res.json({ snapshots });
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/dna-snapshots error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to fetch DNA snapshots' });
+  }
+});
+
+// ── Phase 3: Multi-platform Fixer ─────────────────────────────────────────────
+const multiFixerSchema = z.object({
+  targetPlatformIds: z.record(z.string(), z.string()).refine(
+    obj => Object.keys(obj).length > 0, { message: 'At least one platform target required' },
+  ),
+  notes: z.string().max(1000).optional(),
+});
+
+router.post('/:id/fixer-multi', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const parsed = multiFixerSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
+    }
+    const profile = await artistProfileService.submitMultiPlatformFixer(
+      req.params.id, req.user!.id,
+      parsed.data.targetPlatformIds,
+      parsed.data.notes,
+    );
+    if (!profile) return res.status(404).json({ error: 'Artist profile not found' });
+    res.json({ profile, message: 'Multi-platform fixer submitted. Re-mapping will apply to future releases.' });
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/fixer-multi error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    if (err.message?.includes('Invalid Spotify')) return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Multi-platform fixer failed' });
+  }
+});
+
+// ── Phase 2: Cross-distributor History Import ──────────────────────────────────
+const importHistorySchema = z.object({
+  sourceDistributor: z.string().min(1).max(100),
+  isrcList: z.array(z.string()).max(200).default([]),
+  upcList: z.array(z.string()).max(200).default([]),
+});
+
+router.post('/:id/import-history', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const parsed = importHistorySchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
+    }
+    const result = await artistProfileService.importDistributorHistory(
+      req.params.id, req.user!.id,
+      parsed.data.sourceDistributor,
+      parsed.data.isrcList,
+      parsed.data.upcList,
+    );
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/import-history error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'History import failed' });
+  }
+});
+
+// ── Phase 3: Distributor Portability Report ────────────────────────────────────
+router.get('/:id/portability-report', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const report = await artistProfileService.exportPortabilityReport(req.params.id, req.user!.id);
+    res.json(report);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] GET /:id/portability-report error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Portability report generation failed' });
+  }
+});
+
+// ── Phase 3: Social Handle → DSP Bridging ─────────────────────────────────────
+const resolveHandleSchema = z.object({
+  platform: z.enum(['instagram', 'tiktok', 'twitter', 'youtube', 'soundcloud', 'bandcamp']),
+  handle: z.string().min(1).max(100),
+});
+
+router.post('/:id/resolve-handle', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const parsed = resolveHandleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
+    }
+    const result = await artistProfileService.resolveHandleToDSP(
+      req.params.id, req.user!.id,
+      parsed.data.platform,
+      parsed.data.handle,
+    );
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/resolve-handle error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Handle resolution failed' });
+  }
+});
+
+// ── Phase 1: Profile Watch ─────────────────────────────────────────────────────
+router.post('/:id/watch', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const result = await artistProfileService.watchProfileForUnauthorizedReleases(req.params.id, req.user!.id);
+    res.json(result);
+  } catch (err: any) {
+    logger.error('[ArtistProfiles] POST /:id/watch error:', err);
+    if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
+    res.status(500).json({ error: 'Profile watch failed' });
   }
 });
 

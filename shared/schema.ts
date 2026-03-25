@@ -4304,19 +4304,38 @@ export const artistProfiles = pgTable("artist_profiles", {
   deezerArtistId: varchar("deezer_artist_id", { length: 255 }),
   soundcloudArtistId: varchar("soundcloud_artist_id", { length: 255 }),
   amazonMusicArtistId: varchar("amazon_music_artist_id", { length: 255 }),
+  musicbrainzId: varchar("musicbrainz_id", { length: 255 }),
+  bandcampSlug: varchar("bandcamp_slug", { length: 255 }),
+  audiomackSlug: varchar("audiomack_slug", { length: 255 }),
 
   // Verification state
   isVerified: boolean("is_verified").notNull().default(false),
   verifiedAt: timestamp("verified_at"),
   verifiedPlatforms: jsonb("verified_platforms").$type<string[]>().default(sql`'[]'::jsonb`),
 
-  // Fixer mechanism – re-map misattributed releases
+  // Fixer mechanism – re-map misattributed releases (now multi-platform)
   fixerPending: boolean("fixer_pending").notNull().default(false),
   fixerTargetSpotifyUri: varchar("fixer_target_spotify_uri", { length: 255 }),
+  fixerTargetPlatformIds: jsonb("fixer_target_platform_ids").$type<Record<string, string>>().default(sql`'{}'::jsonb`),
+  fixerTargetPlatforms: jsonb("fixer_target_platforms").$type<string[]>().default(sql`'[]'::jsonb`),
   fixerNotes: text("fixer_notes"),
   fixerStatus: varchar("fixer_status", { length: 50 }).default("none"),
   fixerRequestedAt: timestamp("fixer_requested_at"),
   fixerResolvedAt: timestamp("fixer_resolved_at"),
+
+  // Profile health (0–100 composite score)
+  healthScore: integer("health_score").default(0),
+  healthBreakdown: jsonb("health_breakdown").$type<Record<string, number>>().default(sql`'{}'::jsonb`),
+  lastHealthAt: timestamp("last_health_at"),
+
+  // Profile watch — detect unauthorized releases on known artist pages
+  watchEnabled: boolean("watch_enabled").notNull().default(true),
+  lastWatchedAt: timestamp("last_watched_at"),
+  splitDetected: boolean("split_detected").notNull().default(false),
+
+  // Extra metadata
+  profileBio: text("profile_bio"),
+  socialHandles: jsonb("social_handles").$type<Record<string, string>>().default(sql`'{}'::jsonb`),
 
   profileImageUrl: varchar("profile_image_url", { length: 500 }),
   genres: jsonb("genres").$type<string[]>().default(sql`'[]'::jsonb`),
@@ -4338,6 +4357,117 @@ export const artistProfileReleases = pgTable("artist_profile_releases", {
 });
 
 export type ArtistProfileRelease = typeof artistProfileReleases.$inferSelect;
+
+// ============================================================================
+// PROFILE CLAIM PIPELINE — 6-state machine per (artist_profile, platform)
+// States: unstarted → instructions_viewed → portal_opened → id_submitted → verified → watching
+// ============================================================================
+export const profileClaimPipeline = pgTable("profile_claim_pipeline", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  platform: varchar("platform", { length: 80 }).notNull(),
+  state: varchar("state", { length: 50 }).notNull().default("unstarted"),
+  instructionsViewedAt: timestamp("instructions_viewed_at"),
+  portalOpenedAt: timestamp("portal_opened_at"),
+  idSubmittedAt: timestamp("id_submitted_at"),
+  verifiedAt: timestamp("verified_at"),
+  watchingStartedAt: timestamp("watching_started_at"),
+  lastTransitionAt: timestamp("last_transition_at").defaultNow(),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+export type ProfileClaimPipeline = typeof profileClaimPipeline.$inferSelect;
+
+// ============================================================================
+// PROFILE CLAIM EVENTS — Audit log of every claim state transition
+// ============================================================================
+export const profileClaimEvents = pgTable("profile_claim_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  platform: varchar("platform", { length: 80 }).notNull(),
+  fromState: varchar("from_state", { length: 50 }),
+  toState: varchar("to_state", { length: 50 }).notNull(),
+  triggeredBy: varchar("triggered_by", { length: 50 }).default("user"),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ProfileClaimEvent = typeof profileClaimEvents.$inferSelect;
+
+// ============================================================================
+// ARTIST IDENTITY LINKS — Identity graph adjacency table
+// Connects platform IDs across DSPs with confidence weights.
+// When one ID is confirmed, confidence propagates to connected nodes.
+// ============================================================================
+export const artistIdentityLinks = pgTable("artist_identity_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  platformA: varchar("platform_a", { length: 80 }).notNull(),
+  idA: varchar("id_a", { length: 255 }).notNull(),
+  platformB: varchar("platform_b", { length: 80 }).notNull(),
+  idB: varchar("id_b", { length: 255 }).notNull(),
+  confidence: integer("confidence").notNull().default(0),
+  source: varchar("source", { length: 80 }).default("auto_discover"),
+  bridgeType: varchar("bridge_type", { length: 50 }).default("name_match"),
+  discoveredAt: timestamp("discovered_at").defaultNow().notNull(),
+  confirmedAt: timestamp("confirmed_at"),
+});
+export type ArtistIdentityLink = typeof artistIdentityLinks.$inferSelect;
+
+// ============================================================================
+// ARTIST DNA SNAPSHOTS — Immutable record of all platform IDs at release time
+// Taken the moment a release is submitted to the distributor.
+// Proves intent for retroactive attribution disputes.
+// ============================================================================
+export const artistDnaSnapshots = pgTable("artist_dna_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  releaseId: varchar("release_id"),
+  distributionReleaseId: varchar("distribution_release_id"),
+  snapshotJson: jsonb("snapshot_json").$type<Record<string, unknown>>().notNull(),
+  platformIdsAtSnapshot: jsonb("platform_ids_at_snapshot").$type<Record<string, string>>().default(sql`'{}'::jsonb`),
+  isrcList: jsonb("isrc_list").$type<string[]>().default(sql`'[]'::jsonb`),
+  upc: varchar("upc", { length: 50 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type ArtistDnaSnapshot = typeof artistDnaSnapshots.$inferSelect;
+
+// ============================================================================
+// PROFILE SPLIT EVENTS — Detected split profiles (music on wrong artist page)
+// ============================================================================
+export const profileSplitEvents = pgTable("profile_split_events", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  platform: varchar("platform", { length: 80 }).notNull(),
+  storedArtistId: varchar("stored_artist_id", { length: 255 }).notNull(),
+  detectedArtistId: varchar("detected_artist_id", { length: 255 }).notNull(),
+  isrc: varchar("isrc", { length: 50 }),
+  releaseTitle: text("release_title"),
+  affectedIsrcs: jsonb("affected_isrcs").$type<string[]>().default(sql`'[]'::jsonb`),
+  detectedAt: timestamp("detected_at").defaultNow().notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  resolution: varchar("resolution", { length: 50 }),
+  fixerSubmittedAt: timestamp("fixer_submitted_at"),
+});
+export type ProfileSplitEvent = typeof profileSplitEvents.$inferSelect;
+
+// ============================================================================
+// DISTRIBUTOR HISTORY IMPORTS — Bulk ISRC/UPC import from other distributors
+// Enables cross-distributor discovery bootstrapping.
+// ============================================================================
+export const distributorHistoryImports = pgTable("distributor_history_imports", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  artistProfileId: varchar("artist_profile_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  sourceDistributor: varchar("source_distributor", { length: 100 }).notNull(),
+  isrcList: jsonb("isrc_list").$type<string[]>().default(sql`'[]'::jsonb`),
+  upcList: jsonb("upc_list").$type<string[]>().default(sql`'[]'::jsonb`),
+  status: varchar("status", { length: 50 }).default("pending"),
+  discoveredPlatforms: jsonb("discovered_platforms").$type<Record<string, string>>().default(sql`'{}'::jsonb`),
+  importedAt: timestamp("imported_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+});
+export type DistributorHistoryImport = typeof distributorHistoryImports.$inferSelect;
 
 // ============================================================================
 // INSERT SCHEMAS FOR NEW TABLES (must be at end after all tables defined)

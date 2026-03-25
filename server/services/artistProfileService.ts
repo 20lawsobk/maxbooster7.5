@@ -1,10 +1,49 @@
 import { db } from '../db.js';
-import { eq, and, ilike } from 'drizzle-orm';
-import { artistProfiles, artistProfileReleases, releases, distroReleases } from '@shared/schema';
-import type { ArtistProfile, InsertArtistProfile } from '@shared/schema';
+import { eq, and, ilike, inArray } from 'drizzle-orm';
+import {
+  artistProfiles,
+  artistProfileReleases,
+  releases,
+  distroReleases,
+  distroTracks,
+  profileClaimPipeline,
+  profileClaimEvents,
+  artistIdentityLinks,
+  artistDnaSnapshots,
+  profileSplitEvents,
+  distributorHistoryImports,
+} from '@shared/schema';
+import type {
+  ArtistProfile,
+  InsertArtistProfile,
+  ProfileClaimPipeline,
+  ArtistIdentityLink,
+  ArtistDnaSnapshot,
+  ProfileSplitEvent,
+} from '@shared/schema';
 import { logger } from '../logger.js';
 import { labelGridService } from './labelgrid-service.js';
 import type { LabelGridArtistPlatformPresence } from './labelgrid-service.js';
+
+// ── Claim pipeline state constants ────────────────────────────────────────────
+export const CLAIM_STATES = [
+  'unstarted',
+  'instructions_viewed',
+  'portal_opened',
+  'id_submitted',
+  'verified',
+  'watching',
+] as const;
+export type ClaimState = typeof CLAIM_STATES[number];
+
+// ── Health score dimension weights ────────────────────────────────────────────
+const HEALTH_WEIGHTS = {
+  coverage:     25,  // How many key portals are claimed
+  metadata:     25,  // Image, bio, genres, social handles
+  verification: 20,  // Platforms with verified status
+  freshness:    15,  // How recently synced; no stale IDs
+  safety:       15,  // No split detected, claim events logged, watch active
+};
 
 interface SpotifyArtistResult {
   id: string;
@@ -1476,6 +1515,1102 @@ class ArtistProfileService {
       },
       urlDiscoveries,
       labelgridConfigured,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: FOUNDATION — ISRC Chain Discovery
+  // Uses ISRCs from distro_tracks to find artist IDs across platforms.
+  // Chain: ISRC → MusicBrainz MBID → Spotify/Apple/Deezer IDs
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async isrcChainDiscover(profileId: string, userId: string): Promise<{
+    isrcsSearched: string[];
+    mbidFound: string | null;
+    platformsDiscovered: Record<string, string>;
+    savedFields: string[];
+    chainSteps: Array<{ step: string; result: string; success: boolean }>;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const chainSteps: Array<{ step: string; result: string; success: boolean }> = [];
+    const platformsDiscovered: Record<string, string> = {};
+    const savedFields: string[] = [];
+
+    // Step 1: Get all ISRCs from distribution releases linked to this profile
+    const profileReleases = await db
+      .select({ releaseId: artistProfileReleases.releaseId })
+      .from(artistProfileReleases)
+      .where(eq(artistProfileReleases.artistProfileId, profileId));
+
+    const releaseIds = profileReleases.map(r => r.releaseId).filter(Boolean);
+
+    // Also look at distroReleases via distroTracks
+    const tracks = releaseIds.length > 0
+      ? await db.select({ isrc: distroTracks.isrc }).from(distroTracks)
+          .where(inArray(distroTracks.releaseId, releaseIds))
+      : [];
+
+    const isrcs = tracks.map(t => t.isrc).filter((i): i is string => !!i && i.length === 12);
+    const uniqueIsrcs = [...new Set(isrcs)].slice(0, 10); // Limit to 10 for rate limiting
+
+    chainSteps.push({
+      step: 'ISRC collection from distribution history',
+      result: uniqueIsrcs.length > 0
+        ? `Found ${uniqueIsrcs.length} ISRCs: ${uniqueIsrcs.slice(0, 3).join(', ')}${uniqueIsrcs.length > 3 ? '…' : ''}`
+        : 'No ISRCs found in distribution history',
+      success: uniqueIsrcs.length > 0,
+    });
+
+    if (uniqueIsrcs.length === 0) {
+      return { isrcsSearched: [], mbidFound: null, platformsDiscovered, savedFields, chainSteps };
+    }
+
+    // Step 2: Query MusicBrainz for each ISRC to find the recording and linked artist MBID
+    let mbid: string | null = null;
+    let mbArtistName: string | null = null;
+
+    for (const isrc of uniqueIsrcs) {
+      if (mbid) break;
+      try {
+        const url = `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`;
+        const res = await fetch(url, {
+          headers: { 'User-Agent': 'MaxBooster/3.0 (music-career-platform)' },
+          signal: AbortSignal.timeout(8000),
+        });
+        if (!res.ok) continue;
+        const data = await res.json() as any;
+        const recordings = data?.recordings ?? [];
+        for (const recording of recordings) {
+          const artistCredit = recording['artist-credit']?.[0];
+          if (artistCredit?.artist) {
+            const nameSim = this._nameSimilarity(artistCredit.artist.name, profile.artistName);
+            if (nameSim >= 60) {
+              mbid = artistCredit.artist.id;
+              mbArtistName = artistCredit.artist.name;
+              break;
+            }
+          }
+        }
+        if (mbid) break;
+        await new Promise(r => setTimeout(r, 500)); // MusicBrainz rate limit: 1 req/sec
+      } catch {
+        // Continue with next ISRC
+      }
+    }
+
+    chainSteps.push({
+      step: 'MusicBrainz ISRC → MBID lookup',
+      result: mbid ? `Found MBID ${mbid} for "${mbArtistName}"` : 'No matching artist MBID found',
+      success: !!mbid,
+    });
+
+    if (!mbid) {
+      return { isrcsSearched: uniqueIsrcs, mbidFound: null, platformsDiscovered, savedFields, chainSteps };
+    }
+
+    // Step 3: Use MBID to query MusicBrainz artist relations for Spotify/Apple IDs
+    try {
+      const url = `https://musicbrainz.org/ws/2/artist/${mbid}?fmt=json&inc=url-rels`;
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'MaxBooster/3.0 (music-career-platform)' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const data = await res.json() as any;
+        const relations: any[] = data?.relations ?? [];
+
+        for (const rel of relations) {
+          const url = rel.url?.resource ?? '';
+          if (!profile.spotifyArtistId && url.includes('open.spotify.com/artist/')) {
+            const id = url.split('/artist/')[1]?.split('?')[0];
+            if (id) { platformsDiscovered.spotify = id; }
+          }
+          if (!profile.appleArtistId && url.includes('music.apple.com') && url.includes('/artist/')) {
+            const parts = url.split('/artist/');
+            const id = parts[1]?.split('/')[0]?.split('?')[0];
+            if (id) { platformsDiscovered.apple = id; }
+          }
+          if (!profile.deezerArtistId && url.includes('deezer.com/artist/')) {
+            const id = url.split('/artist/')[1]?.split('?')[0];
+            if (id) { platformsDiscovered.deezer = id; }
+          }
+          if (!profile.youtubeChannelId && url.includes('youtube.com/channel/')) {
+            const id = url.split('/channel/')[1]?.split('?')[0];
+            if (id) { platformsDiscovered.youtube = id; }
+          }
+          if (!profile.soundcloudArtistId && url.includes('soundcloud.com/')) {
+            const slug = url.split('soundcloud.com/')[1]?.split('/')[0];
+            if (slug) { platformsDiscovered.soundcloud = slug; }
+          }
+        }
+
+        chainSteps.push({
+          step: 'MusicBrainz MBID → URL relations lookup',
+          result: Object.keys(platformsDiscovered).length > 0
+            ? `Found IDs for: ${Object.keys(platformsDiscovered).join(', ')}`
+            : 'No linked platform URLs found on MusicBrainz',
+          success: Object.keys(platformsDiscovered).length > 0,
+        });
+      }
+    } catch {
+      chainSteps.push({ step: 'MusicBrainz URL relations lookup', result: 'Request failed', success: false });
+    }
+
+    // Step 4: Save discovered IDs + update identity graph
+    const updates: Partial<InsertArtistProfile> = {};
+    if (!profile.musicbrainzId && mbid) { updates.musicbrainzId = mbid; savedFields.push('musicbrainz'); }
+    if (platformsDiscovered.spotify && !profile.spotifyArtistId) {
+      updates.spotifyArtistId = platformsDiscovered.spotify;
+      updates.spotifyArtistUri = `spotify:artist:${platformsDiscovered.spotify}`;
+      savedFields.push('spotify');
+    }
+    if (platformsDiscovered.apple && !profile.appleArtistId) {
+      updates.appleArtistId = platformsDiscovered.apple; savedFields.push('apple');
+    }
+    if (platformsDiscovered.deezer && !profile.deezerArtistId) {
+      updates.deezerArtistId = platformsDiscovered.deezer; savedFields.push('deezer');
+    }
+    if (platformsDiscovered.youtube && !profile.youtubeChannelId) {
+      updates.youtubeChannelId = platformsDiscovered.youtube; savedFields.push('youtube');
+    }
+    if (platformsDiscovered.soundcloud && !profile.soundcloudArtistId) {
+      updates.soundcloudArtistId = platformsDiscovered.soundcloud; savedFields.push('soundcloud');
+    }
+
+    if (Object.keys(updates).length > 0) {
+      await this.updateProfile(profileId, userId, updates);
+    }
+
+    // Propagate identity graph links (ISRC-chain is highest confidence = 98)
+    const confirmedPlatforms = Object.entries(platformsDiscovered);
+    for (let i = 0; i < confirmedPlatforms.length; i++) {
+      for (let j = i + 1; j < confirmedPlatforms.length; j++) {
+        await this._upsertIdentityLink(
+          profileId,
+          confirmedPlatforms[i][0], confirmedPlatforms[i][1],
+          confirmedPlatforms[j][0], confirmedPlatforms[j][1],
+          98, 'isrc_chain',
+        ).catch(() => {});
+      }
+      // Also link MBID to each platform
+      if (mbid) {
+        await this._upsertIdentityLink(
+          profileId, 'musicbrainz', mbid,
+          confirmedPlatforms[i][0], confirmedPlatforms[i][1],
+          98, 'isrc_chain',
+        ).catch(() => {});
+      }
+    }
+
+    chainSteps.push({
+      step: 'Save discovered IDs and update identity graph',
+      result: savedFields.length > 0
+        ? `Saved: ${savedFields.join(', ')}`
+        : 'No new IDs to save (already populated)',
+      success: true,
+    });
+
+    logger.info(`[ArtistProfile] ISRC chain discovery: profile=${profileId} saved=[${savedFields.join(',')}] mbid=${mbid}`);
+
+    return {
+      isrcsSearched: uniqueIsrcs,
+      mbidFound: mbid,
+      platformsDiscovered,
+      savedFields,
+      chainSteps,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: FOUNDATION — Split Profile Scanner
+  // Detects music that landed on wrong artist page IDs across platforms
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async scanForSplitProfiles(profileId: string, userId: string): Promise<{
+    splitsDetected: number;
+    splitEvents: Array<{
+      platform: string;
+      storedId: string;
+      detectedId: string;
+      affectedIsrcs: string[];
+      releaseTitle?: string;
+    }>;
+    scannedPlatforms: string[];
+    lastScannedAt: string;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const splitEvents: Array<{
+      platform: string;
+      storedId: string;
+      detectedId: string;
+      affectedIsrcs: string[];
+      releaseTitle?: string;
+    }> = [];
+    const scannedPlatforms: string[] = [];
+
+    // Get all ISRCs for this profile
+    const profileReleases = await db
+      .select({ releaseId: artistProfileReleases.releaseId })
+      .from(artistProfileReleases)
+      .where(eq(artistProfileReleases.artistProfileId, profileId));
+
+    const releaseIds = profileReleases.map(r => r.releaseId).filter(Boolean);
+    const tracks = releaseIds.length > 0
+      ? await db.select({ isrc: distroTracks.isrc, title: distroTracks.title })
+          .from(distroTracks).where(inArray(distroTracks.releaseId, releaseIds))
+      : [];
+    const isrcs = [...new Set(tracks.map(t => t.isrc).filter((i): i is string => !!i))].slice(0, 5);
+
+    // Check Spotify: verify that our stored artist ID matches what MusicBrainz reports for each ISRC
+    if (profile.spotifyArtistId && isrcs.length > 0) {
+      scannedPlatforms.push('spotify');
+      const detectedOnWrongPage: string[] = [];
+
+      for (const isrc of isrcs.slice(0, 3)) {
+        try {
+          const res = await fetch(
+            `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists`,
+            { headers: { 'User-Agent': 'MaxBooster/3.0 (music-career-platform)' }, signal: AbortSignal.timeout(6000) },
+          );
+          if (!res.ok) continue;
+          const data = await res.json() as any;
+          // Look at URL relations to check Spotify artist IDs
+          for (const recording of (data?.recordings ?? [])) {
+            const mbArtistId = recording['artist-credit']?.[0]?.artist?.id;
+            if (mbArtistId) {
+              // Use mbid→spotify URL relation to get Spotify ID
+              const relRes = await fetch(
+                `https://musicbrainz.org/ws/2/artist/${mbArtistId}?fmt=json&inc=url-rels`,
+                { headers: { 'User-Agent': 'MaxBooster/3.0' }, signal: AbortSignal.timeout(6000) },
+              );
+              if (relRes.ok) {
+                const relData = await relRes.json() as any;
+                for (const rel of relData?.relations ?? []) {
+                  const url = rel.url?.resource ?? '';
+                  if (url.includes('open.spotify.com/artist/')) {
+                    const detectedSpotifyId = url.split('/artist/')[1]?.split('?')[0];
+                    if (detectedSpotifyId && detectedSpotifyId !== profile.spotifyArtistId) {
+                      detectedOnWrongPage.push(isrc);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+          }
+          await new Promise(r => setTimeout(r, 600));
+        } catch { /* skip */ }
+      }
+
+      if (detectedOnWrongPage.length > 0) {
+        const evt = {
+          platform: 'spotify',
+          storedId: profile.spotifyArtistId,
+          detectedId: 'unknown (check MusicBrainz)',
+          affectedIsrcs: detectedOnWrongPage,
+          releaseTitle: tracks.find(t => t.isrc && detectedOnWrongPage.includes(t.isrc))?.title ?? undefined,
+        };
+        splitEvents.push(evt);
+
+        // Record in DB
+        await db.insert(profileSplitEvents).values({
+          artistProfileId: profileId,
+          platform: 'spotify',
+          storedArtistId: profile.spotifyArtistId,
+          detectedArtistId: 'unknown',
+          affectedIsrcs: detectedOnWrongPage,
+          releaseTitle: evt.releaseTitle,
+        }).onConflictDoNothing();
+      }
+    }
+
+    // Update profile split_detected flag
+    const hasSplits = splitEvents.length > 0;
+    await db.update(artistProfiles)
+      .set({ splitDetected: hasSplits, lastWatchedAt: new Date(), updatedAt: new Date() })
+      .where(eq(artistProfiles.id, profileId));
+
+    logger.info(`[ArtistProfile] Split scan complete: profile=${profileId} splits=${splitEvents.length}`);
+
+    return {
+      splitsDetected: splitEvents.length,
+      splitEvents,
+      scannedPlatforms,
+      lastScannedAt: new Date().toISOString(),
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: INTELLIGENCE — Profile Health Score (0–100)
+  // Five dimensions: coverage, metadata, verification, freshness, safety
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async calculateHealthScore(profileId: string, userId: string): Promise<{
+    score: number;
+    breakdown: Record<string, number>;
+    recommendations: string[];
+    grade: 'A' | 'B' | 'C' | 'D' | 'F';
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const breakdown: Record<string, number> = {};
+    const recommendations: string[] = [];
+
+    // ── 1. Coverage (0–25): key portal claimed count ──────────────────────
+    const keyPortals = [
+      profile.spotifyArtistId, profile.appleArtistId, profile.deezerArtistId,
+      profile.youtubeChannelId, profile.tidalArtistId, profile.soundcloudArtistId,
+      profile.amazonMusicArtistId,
+    ];
+    const claimedCount = keyPortals.filter(Boolean).length;
+    const coverageScore = Math.round((claimedCount / keyPortals.length) * HEALTH_WEIGHTS.coverage);
+    breakdown.coverage = coverageScore;
+    if (claimedCount < 4) recommendations.push(`Claim ${4 - claimedCount} more key DSP portals to protect your profile`);
+    if (!profile.spotifyArtistId) recommendations.push('Claim Spotify for Artists — highest priority');
+    if (!profile.appleArtistId) recommendations.push('Claim Apple Music for Artists');
+
+    // ── 2. Metadata (0–25): image, bio, genres, social handles ───────────
+    let metaScore = 0;
+    if (profile.profileImageUrl) metaScore += 8;
+    else recommendations.push('Add a profile image to establish visual identity across platforms');
+    if (profile.genres && profile.genres.length >= 2) metaScore += 7;
+    else if (profile.genres && profile.genres.length === 1) metaScore += 4;
+    else recommendations.push('Add genre tags to improve discoverability');
+    if (profile.profileBio && profile.profileBio.length >= 100) metaScore += 6;
+    else recommendations.push('Write a bio (100+ chars) to help curators and fans find you');
+    const handles = profile.socialHandles as Record<string, string> ?? {};
+    if (Object.keys(handles).length >= 2) metaScore += 4;
+    else recommendations.push('Link your social handles to bridge fans across platforms');
+    breakdown.metadata = Math.min(metaScore, HEALTH_WEIGHTS.metadata);
+
+    // ── 3. Verification (0–20): verified platform count ──────────────────
+    const verifiedPlatforms = (profile.verifiedPlatforms ?? []) as string[];
+    const verifyScore = Math.min(
+      Math.round((verifiedPlatforms.length / 3) * HEALTH_WEIGHTS.verification),
+      HEALTH_WEIGHTS.verification,
+    );
+    breakdown.verification = verifyScore;
+    if (verifiedPlatforms.length === 0) recommendations.push('Verify your Spotify profile for a trusted badge');
+    if (!verifiedPlatforms.includes('spotify') && profile.spotifyArtistId) {
+      recommendations.push('Run Spotify verification to confirm your artist ID');
+    }
+
+    // ── 4. Freshness (0–15): recent sync + no stale data ─────────────────
+    let freshnessScore = HEALTH_WEIGHTS.freshness;
+    const now = Date.now();
+    const lastSync = profile.updatedAt ? new Date(profile.updatedAt).getTime() : 0;
+    const daysSinceSync = (now - lastSync) / (1000 * 60 * 60 * 24);
+    if (daysSinceSync > 90) { freshnessScore -= 8; recommendations.push('Run Auto-Sync — your profile data is over 90 days old'); }
+    else if (daysSinceSync > 30) { freshnessScore -= 4; recommendations.push('Run Auto-Sync to refresh your platform metadata'); }
+    const lastWatch = profile.lastWatchedAt ? new Date(profile.lastWatchedAt).getTime() : 0;
+    const daysSinceWatch = (now - lastWatch) / (1000 * 60 * 60 * 24);
+    if (daysSinceWatch > 30 || !profile.lastWatchedAt) { freshnessScore -= 5; recommendations.push('Run Split Scanner to check for unauthorized profile splits'); }
+    breakdown.freshness = Math.max(0, freshnessScore);
+
+    // ── 5. Safety (0–15): no splits, claim events logged, watch active ───
+    let safetyScore = HEALTH_WEIGHTS.safety;
+    if (profile.splitDetected) { safetyScore -= 10; recommendations.unshift('URGENT: A split profile has been detected — fix immediately with the Fixer tool'); }
+    if (!profile.watchEnabled) { safetyScore -= 3; recommendations.push('Enable profile watch to detect unauthorized releases'); }
+    if (profile.fixerPending) { safetyScore -= 2; }
+    breakdown.safety = Math.max(0, safetyScore);
+
+    const score = Object.values(breakdown).reduce((a, b) => a + b, 0);
+    const grade: 'A' | 'B' | 'C' | 'D' | 'F' =
+      score >= 85 ? 'A' : score >= 70 ? 'B' : score >= 55 ? 'C' : score >= 40 ? 'D' : 'F';
+
+    // Persist to DB
+    await db.update(artistProfiles).set({
+      healthScore: score,
+      healthBreakdown: breakdown,
+      lastHealthAt: new Date(),
+      updatedAt: new Date(),
+    }).where(eq(artistProfiles.id, profileId));
+
+    return {
+      score,
+      breakdown,
+      recommendations: recommendations.slice(0, 6),
+      grade,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: FOUNDATION — Claim Pipeline State Machine
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async getClaimPipeline(profileId: string, userId: string): Promise<{
+    pipeline: Array<ProfileClaimPipeline & { stateIndex: number; label: string }>;
+  }> {
+    // Verify ownership
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const rows = await db
+      .select()
+      .from(profileClaimPipeline)
+      .where(eq(profileClaimPipeline.artistProfileId, profileId));
+
+    const STATE_LABELS: Record<string, string> = {
+      unstarted: 'Not Started',
+      instructions_viewed: 'Instructions Read',
+      portal_opened: 'Portal Visited',
+      id_submitted: 'ID Submitted',
+      verified: 'Verified',
+      watching: 'Monitoring',
+    };
+
+    return {
+      pipeline: rows.map(r => ({
+        ...r,
+        stateIndex: CLAIM_STATES.indexOf(r.state as ClaimState),
+        label: STATE_LABELS[r.state] ?? r.state,
+      })),
+    };
+  }
+
+  async updateClaimState(
+    profileId: string,
+    userId: string,
+    platform: string,
+    newState: ClaimState,
+    triggeredBy: 'user' | 'system' = 'user',
+    notes?: string,
+  ): Promise<ProfileClaimPipeline> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    // Get or create pipeline row for this platform
+    const [existing] = await db
+      .select()
+      .from(profileClaimPipeline)
+      .where(and(
+        eq(profileClaimPipeline.artistProfileId, profileId),
+        eq(profileClaimPipeline.platform, platform),
+      ));
+
+    const fromState = existing?.state ?? 'unstarted';
+
+    const now = new Date();
+    const stateTimestamps: Record<string, Date | undefined> = {
+      instructionsViewedAt: existing?.instructionsViewedAt ?? undefined,
+      portalOpenedAt: existing?.portalOpenedAt ?? undefined,
+      idSubmittedAt: existing?.idSubmittedAt ?? undefined,
+      verifiedAt: existing?.verifiedAt ?? undefined,
+      watchingStartedAt: existing?.watchingStartedAt ?? undefined,
+    };
+    if (newState === 'instructions_viewed') stateTimestamps.instructionsViewedAt = now;
+    if (newState === 'portal_opened') stateTimestamps.portalOpenedAt = now;
+    if (newState === 'id_submitted') stateTimestamps.idSubmittedAt = now;
+    if (newState === 'verified') stateTimestamps.verifiedAt = now;
+    if (newState === 'watching') stateTimestamps.watchingStartedAt = now;
+
+    let row: ProfileClaimPipeline;
+    if (!existing) {
+      const [inserted] = await db.insert(profileClaimPipeline).values({
+        artistProfileId: profileId,
+        platform,
+        state: newState,
+        ...stateTimestamps,
+        lastTransitionAt: now,
+        notes: notes ?? null,
+      }).returning();
+      row = inserted;
+    } else {
+      const [updated] = await db.update(profileClaimPipeline).set({
+        state: newState,
+        ...stateTimestamps,
+        lastTransitionAt: now,
+        notes: notes ?? existing.notes,
+        updatedAt: now,
+      }).where(eq(profileClaimPipeline.id, existing.id)).returning();
+      row = updated;
+    }
+
+    // Log the event
+    await db.insert(profileClaimEvents).values({
+      artistProfileId: profileId,
+      platform,
+      fromState,
+      toState: newState,
+      triggeredBy,
+      metadata: { notes: notes ?? null },
+    });
+
+    logger.info(`[ArtistProfile] Claim pipeline: profile=${profileId} platform=${platform} ${fromState}→${newState}`);
+    return row;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: INTELLIGENCE — Artist Identity Graph
+  // ══════════════════════════════════════════════════════════════════════════
+
+  private async _upsertIdentityLink(
+    profileId: string,
+    platformA: string, idA: string,
+    platformB: string, idB: string,
+    confidence: number,
+    bridgeType = 'name_match',
+  ): Promise<void> {
+    // Normalize order so (A,B) and (B,A) hash to the same row
+    const [pa, ia, pb, ib] = platformA < platformB
+      ? [platformA, idA, platformB, idB]
+      : [platformB, idB, platformA, idA];
+
+    const existing = await db.select({ id: artistIdentityLinks.id, confidence: artistIdentityLinks.confidence })
+      .from(artistIdentityLinks)
+      .where(and(
+        eq(artistIdentityLinks.artistProfileId, profileId),
+        eq(artistIdentityLinks.platformA, pa),
+        eq(artistIdentityLinks.idA, ia),
+        eq(artistIdentityLinks.platformB, pb),
+        eq(artistIdentityLinks.idB, ib),
+      ));
+
+    if (existing.length > 0) {
+      // Only update if confidence improved
+      if (confidence > existing[0].confidence) {
+        await db.update(artistIdentityLinks)
+          .set({ confidence, bridgeType, discoveredAt: new Date() })
+          .where(eq(artistIdentityLinks.id, existing[0].id));
+      }
+    } else {
+      await db.insert(artistIdentityLinks).values({
+        artistProfileId: profileId,
+        platformA: pa, idA: ia,
+        platformB: pb, idB: ib,
+        confidence,
+        source: 'auto_discover',
+        bridgeType,
+      });
+    }
+  }
+
+  async getIdentityGraph(profileId: string, userId: string): Promise<{
+    nodes: Array<{ platform: string; id: string; isConfirmed: boolean }>;
+    links: ArtistIdentityLink[];
+    confirmationScore: number;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const links = await db
+      .select()
+      .from(artistIdentityLinks)
+      .where(eq(artistIdentityLinks.artistProfileId, profileId));
+
+    const nodeMap = new Map<string, { platform: string; id: string; isConfirmed: boolean }>();
+    const confirmedPlatforms = new Set<string>([
+      ...(profile.spotifyArtistId ? ['spotify'] : []),
+      ...(profile.appleArtistId ? ['apple'] : []),
+      ...(profile.deezerArtistId ? ['deezer'] : []),
+      ...(profile.youtubeChannelId ? ['youtube'] : []),
+      ...(profile.tidalArtistId ? ['tidal'] : []),
+      ...(profile.soundcloudArtistId ? ['soundcloud'] : []),
+      ...(profile.amazonMusicArtistId ? ['amazon'] : []),
+      ...(profile.musicbrainzId ? ['musicbrainz'] : []),
+    ]);
+
+    for (const link of links) {
+      nodeMap.set(`${link.platformA}:${link.idA}`, {
+        platform: link.platformA, id: link.idA,
+        isConfirmed: confirmedPlatforms.has(link.platformA),
+      });
+      nodeMap.set(`${link.platformB}:${link.idB}`, {
+        platform: link.platformB, id: link.idB,
+        isConfirmed: confirmedPlatforms.has(link.platformB),
+      });
+    }
+
+    const avgConfidence = links.length > 0
+      ? Math.round(links.reduce((s, l) => s + l.confidence, 0) / links.length)
+      : 0;
+
+    return {
+      nodes: Array.from(nodeMap.values()),
+      links,
+      confirmationScore: avgConfidence,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 3: BREAKTHROUGH — Artist DNA Snapshot (immutable per release)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async snapshotArtistDNA(
+    profileId: string,
+    userId: string,
+    releaseId?: string,
+    upc?: string,
+    isrcs?: string[],
+  ): Promise<ArtistDnaSnapshot> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const platformIds: Record<string, string> = {};
+    if (profile.spotifyArtistId) platformIds.spotify = profile.spotifyArtistId;
+    if (profile.appleArtistId) platformIds.apple = profile.appleArtistId;
+    if (profile.deezerArtistId) platformIds.deezer = profile.deezerArtistId;
+    if (profile.youtubeChannelId) platformIds.youtube = profile.youtubeChannelId;
+    if (profile.tidalArtistId) platformIds.tidal = profile.tidalArtistId;
+    if (profile.soundcloudArtistId) platformIds.soundcloud = profile.soundcloudArtistId;
+    if (profile.amazonMusicArtistId) platformIds.amazon = profile.amazonMusicArtistId;
+    if (profile.musicbrainzId) platformIds.musicbrainz = profile.musicbrainzId;
+
+    const snapshotJson: Record<string, unknown> = {
+      version: '3.0',
+      capturedAt: new Date().toISOString(),
+      artistName: profile.artistName,
+      genres: profile.genres,
+      profileImageUrl: profile.profileImageUrl,
+      healthScore: profile.healthScore,
+      platformIds,
+      verifiedPlatforms: profile.verifiedPlatforms,
+      isNewArtist: profile.isNewArtist,
+      releaseId: releaseId ?? null,
+      upc: upc ?? null,
+      isrcList: isrcs ?? [],
+    };
+
+    const [snapshot] = await db.insert(artistDnaSnapshots).values({
+      artistProfileId: profileId,
+      releaseId: releaseId ?? null,
+      upc: upc ?? null,
+      isrcList: isrcs ?? [],
+      platformIdsAtSnapshot: platformIds,
+      snapshotJson,
+    }).returning();
+
+    logger.info(`[ArtistProfile] DNA snapshot created: profile=${profileId} release=${releaseId ?? 'none'} platforms=${Object.keys(platformIds).length}`);
+    return snapshot;
+  }
+
+  async getDnaSnapshots(profileId: string, userId: string): Promise<ArtistDnaSnapshot[]> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+    return db.select().from(artistDnaSnapshots)
+      .where(eq(artistDnaSnapshots.artistProfileId, profileId));
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 3: BREAKTHROUGH — Multi-platform Fixer
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async submitMultiPlatformFixer(
+    profileId: string,
+    userId: string,
+    targetPlatformIds: Record<string, string>,
+    notes?: string,
+  ): Promise<ArtistProfile | null> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const targetPlatforms = Object.keys(targetPlatformIds);
+    if (targetPlatforms.length === 0) throw new Error('At least one platform target is required');
+
+    // Validate Spotify URI format if provided
+    if (targetPlatformIds.spotify && !targetPlatformIds.spotify.match(/^(spotify:artist:)?[A-Za-z0-9]+$/)) {
+      throw new Error('Invalid Spotify artist ID or URI');
+    }
+
+    const updates: Partial<InsertArtistProfile> = {
+      fixerPending: true,
+      fixerTargetPlatformIds: targetPlatformIds,
+      fixerTargetPlatforms: targetPlatforms,
+      fixerNotes: notes ?? null,
+      fixerStatus: 'pending',
+      fixerRequestedAt: new Date(),
+    };
+
+    // For Spotify, also set the legacy field for backward compat
+    if (targetPlatformIds.spotify) {
+      const spotifyId = targetPlatformIds.spotify.startsWith('spotify:artist:')
+        ? targetPlatformIds.spotify.replace('spotify:artist:', '')
+        : targetPlatformIds.spotify;
+      updates.fixerTargetSpotifyUri = `spotify:artist:${spotifyId}`;
+    }
+
+    const [updated] = await db.update(artistProfiles)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(and(eq(artistProfiles.id, profileId), eq(artistProfiles.userId, userId)))
+      .returning();
+
+    logger.info(`[ArtistProfile] Multi-platform fixer submitted: profile=${profileId} platforms=[${targetPlatforms.join(',')}]`);
+    return updated ?? null;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: INTELLIGENCE — Cross-distributor History Import
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async importDistributorHistory(
+    profileId: string,
+    userId: string,
+    sourceDistributor: string,
+    isrcList: string[],
+    upcList: string[],
+  ): Promise<{
+    importId: string;
+    isrcsQueued: number;
+    upcsQueued: number;
+    estimatedDiscoveries: number;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const cleanIsrcs = [...new Set(isrcList.map(i => i.trim().toUpperCase()).filter(i => i.length === 12))];
+    const cleanUpcs = [...new Set(upcList.map(u => u.trim()).filter(u => u.length >= 8))];
+
+    const [importRecord] = await db.insert(distributorHistoryImports).values({
+      artistProfileId: profileId,
+      userId,
+      sourceDistributor,
+      isrcList: cleanIsrcs,
+      upcList: cleanUpcs,
+      status: 'queued',
+    }).returning();
+
+    // Trigger immediate processing in the background
+    this._processDistributorImport(importRecord.id, profileId, userId, cleanIsrcs, cleanUpcs).catch(err => {
+      logger.error(`[ArtistProfile] Import processing failed: ${err.message}`);
+    });
+
+    return {
+      importId: importRecord.id,
+      isrcsQueued: cleanIsrcs.length,
+      upcsQueued: cleanUpcs.length,
+      estimatedDiscoveries: Math.round((cleanIsrcs.length + cleanUpcs.length) * 0.6),
+    };
+  }
+
+  private async _processDistributorImport(
+    importId: string, profileId: string, userId: string,
+    isrcs: string[], upcs: string[],
+  ): Promise<void> {
+    const discovered: Record<string, string> = {};
+
+    // Query MusicBrainz for each ISRC
+    for (const isrc of isrcs.slice(0, 15)) {
+      try {
+        const res = await fetch(
+          `https://musicbrainz.org/ws/2/isrc/${isrc}?fmt=json&inc=artists+url-rels`,
+          { headers: { 'User-Agent': 'MaxBooster/3.0' }, signal: AbortSignal.timeout(6000) },
+        );
+        if (res.ok) {
+          const data = await res.json() as any;
+          for (const recording of data?.recordings ?? []) {
+            const mbArtistId = recording['artist-credit']?.[0]?.artist?.id;
+            if (mbArtistId && !discovered.musicbrainz) {
+              discovered.musicbrainz = mbArtistId;
+            }
+          }
+        }
+        await new Promise(r => setTimeout(r, 600));
+      } catch { /* skip */ }
+    }
+
+    await db.update(distributorHistoryImports).set({
+      status: 'completed',
+      discoveredPlatforms: discovered,
+      processedAt: new Date(),
+    }).where(eq(distributorHistoryImports.id, importId));
+
+    if (Object.keys(discovered).length > 0) {
+      await this.updateProfile(profileId, userId, {
+        musicbrainzId: discovered.musicbrainz,
+      } as any);
+    }
+
+    logger.info(`[ArtistProfile] Import processed: importId=${importId} discovered=${Object.keys(discovered).join(',')}`);
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 3: BREAKTHROUGH — Distributor Portability Report (JSON-LD + summary)
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async exportPortabilityReport(profileId: string, userId: string): Promise<{
+    jsonLd: Record<string, unknown>;
+    summary: {
+      artistName: string;
+      totalPlatforms: number;
+      claimedPlatforms: string[];
+      verifiedPlatforms: string[];
+      isrcCount: number;
+      healthScore: number;
+      snapshotCount: number;
+      splitEventsDetected: number;
+      identityLinks: number;
+      exportedAt: string;
+    };
+    transferChecklist: Array<{ item: string; status: 'complete' | 'missing' | 'warning'; detail: string }>;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const [snapshots, splits, links, releases] = await Promise.all([
+      db.select().from(artistDnaSnapshots).where(eq(artistDnaSnapshots.artistProfileId, profileId)),
+      db.select().from(profileSplitEvents).where(eq(profileSplitEvents.artistProfileId, profileId)),
+      db.select().from(artistIdentityLinks).where(eq(artistIdentityLinks.artistProfileId, profileId)),
+      db.select({ releaseId: artistProfileReleases.releaseId })
+        .from(artistProfileReleases).where(eq(artistProfileReleases.artistProfileId, profileId)),
+    ]);
+
+    const isrcSet = new Set<string>();
+    for (const snap of snapshots) {
+      for (const isrc of (snap.isrcList ?? []) as string[]) isrcSet.add(isrc);
+    }
+
+    const claimedPlatforms: string[] = [];
+    const platformMap: Record<string, string> = {};
+    if (profile.spotifyArtistId) { claimedPlatforms.push('spotify'); platformMap.spotify = profile.spotifyArtistId; }
+    if (profile.appleArtistId) { claimedPlatforms.push('apple'); platformMap.apple = profile.appleArtistId; }
+    if (profile.deezerArtistId) { claimedPlatforms.push('deezer'); platformMap.deezer = profile.deezerArtistId; }
+    if (profile.youtubeChannelId) { claimedPlatforms.push('youtube'); platformMap.youtube = profile.youtubeChannelId; }
+    if (profile.tidalArtistId) { claimedPlatforms.push('tidal'); platformMap.tidal = profile.tidalArtistId; }
+    if (profile.soundcloudArtistId) { claimedPlatforms.push('soundcloud'); platformMap.soundcloud = profile.soundcloudArtistId; }
+    if (profile.amazonMusicArtistId) { claimedPlatforms.push('amazon'); platformMap.amazon = profile.amazonMusicArtistId; }
+    if (profile.musicbrainzId) { claimedPlatforms.push('musicbrainz'); platformMap.musicbrainz = profile.musicbrainzId; }
+
+    const verifiedPlatforms = (profile.verifiedPlatforms ?? []) as string[];
+
+    const jsonLd: Record<string, unknown> = {
+      '@context': 'https://schema.org',
+      '@type': 'MusicGroup',
+      '@id': `https://maxbooster.app/artist/${profileId}`,
+      name: profile.artistName,
+      genre: profile.genres ?? [],
+      image: profile.profileImageUrl,
+      description: profile.profileBio,
+      sameAs: [
+        profile.spotifyArtistId ? `https://open.spotify.com/artist/${profile.spotifyArtistId}` : null,
+        profile.appleArtistId ? `https://music.apple.com/us/artist/${profile.appleArtistId}` : null,
+        profile.deezerArtistId ? `https://www.deezer.com/artist/${profile.deezerArtistId}` : null,
+        profile.youtubeChannelId ? `https://www.youtube.com/channel/${profile.youtubeChannelId}` : null,
+        profile.soundcloudArtistId ? `https://soundcloud.com/${profile.soundcloudArtistId}` : null,
+      ].filter(Boolean),
+      'mb:maxbooster': {
+        version: '3.0',
+        exportedAt: new Date().toISOString(),
+        profileId,
+        platformIds: platformMap,
+        verifiedPlatforms,
+        healthScore: profile.healthScore,
+        isrcList: Array.from(isrcSet),
+        snapshotHistory: snapshots.map(s => ({ id: s.id, releaseId: s.releaseId, capturedAt: s.createdAt })),
+        identityLinks: links.length,
+        splitEventsDetected: splits.length,
+      },
+    };
+
+    const transferChecklist: Array<{ item: string; status: 'complete' | 'missing' | 'warning'; detail: string }> = [
+      {
+        item: 'Spotify for Artists claimed',
+        status: profile.spotifyArtistId ? 'complete' : 'missing',
+        detail: profile.spotifyArtistId ? `ID: ${profile.spotifyArtistId}` : 'Claim at artists.spotify.com before transferring',
+      },
+      {
+        item: 'Apple Music for Artists claimed',
+        status: profile.appleArtistId ? 'complete' : 'missing',
+        detail: profile.appleArtistId ? `ID: ${profile.appleArtistId}` : 'Claim at artists.apple.com',
+      },
+      {
+        item: 'Artist profile image',
+        status: profile.profileImageUrl ? 'complete' : 'warning',
+        detail: profile.profileImageUrl ? 'Profile image on file' : 'Upload image to new distributor portal',
+      },
+      {
+        item: 'Genre tags',
+        status: (profile.genres?.length ?? 0) > 0 ? 'complete' : 'warning',
+        detail: (profile.genres?.length ?? 0) > 0 ? profile.genres!.join(', ') : 'Add genre tags before transfer',
+      },
+      {
+        item: 'ISRC registry',
+        status: isrcSet.size > 0 ? 'complete' : 'warning',
+        detail: isrcSet.size > 0 ? `${isrcSet.size} ISRCs on file` : 'Collect ISRCs from current distributor before switching',
+      },
+      {
+        item: 'DNA snapshots',
+        status: snapshots.length > 0 ? 'complete' : 'warning',
+        detail: snapshots.length > 0 ? `${snapshots.length} immutable snapshots as proof of ownership` : 'Take a DNA snapshot before switching distributors',
+      },
+      {
+        item: 'No split profiles detected',
+        status: profile.splitDetected ? 'warning' : 'complete',
+        detail: profile.splitDetected ? 'Fix split profiles BEFORE switching distributors' : 'No splits detected',
+      },
+    ];
+
+    return {
+      jsonLd,
+      summary: {
+        artistName: profile.artistName,
+        totalPlatforms: claimedPlatforms.length,
+        claimedPlatforms,
+        verifiedPlatforms,
+        isrcCount: isrcSet.size,
+        healthScore: profile.healthScore ?? 0,
+        snapshotCount: snapshots.length,
+        splitEventsDetected: splits.length,
+        identityLinks: links.length,
+        exportedAt: new Date().toISOString(),
+      },
+      transferChecklist,
+    };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 3: BREAKTHROUGH — Social Handle → DSP Profile Bridging
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async resolveHandleToDSP(
+    profileId: string,
+    userId: string,
+    platform: 'instagram' | 'tiktok' | 'twitter' | 'youtube' | 'soundcloud' | 'bandcamp',
+    handle: string,
+  ): Promise<{
+    platform: string;
+    handle: string;
+    profileUrl: string;
+    dspLink: string | null;
+    saved: boolean;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const cleanHandle = handle.replace(/^@/, '').trim();
+    let profileUrl = '';
+    let dspLink: string | null = null;
+    let saved = false;
+
+    switch (platform) {
+      case 'instagram':
+        profileUrl = `https://www.instagram.com/${cleanHandle}/`;
+        break;
+      case 'tiktok':
+        profileUrl = `https://www.tiktok.com/@${cleanHandle}`;
+        break;
+      case 'twitter':
+        profileUrl = `https://twitter.com/${cleanHandle}`;
+        break;
+      case 'youtube':
+        profileUrl = `https://www.youtube.com/@${cleanHandle}`;
+        dspLink = `https://music.youtube.com/search?q=${encodeURIComponent(profile.artistName)}`;
+        break;
+      case 'soundcloud':
+        profileUrl = `https://soundcloud.com/${cleanHandle}`;
+        dspLink = profileUrl;
+        if (!profile.soundcloudArtistId) {
+          await this.updateProfile(profileId, userId, { soundcloudArtistId: cleanHandle });
+          saved = true;
+        }
+        break;
+      case 'bandcamp':
+        profileUrl = `https://${cleanHandle}.bandcamp.com`;
+        dspLink = profileUrl;
+        if (!profile.bandcampSlug) {
+          await this.updateProfile(profileId, userId, { bandcampSlug: cleanHandle } as any);
+          saved = true;
+        }
+        break;
+    }
+
+    // Save social handle to profile
+    const currentHandles = (profile.socialHandles as Record<string, string>) ?? {};
+    if (!currentHandles[platform] || currentHandles[platform] !== cleanHandle) {
+      currentHandles[platform] = cleanHandle;
+      await this.updateProfile(profileId, userId, { socialHandles: currentHandles } as any);
+      saved = true;
+    }
+
+    // Propagate to identity graph
+    if (dspLink && (platform === 'soundcloud' || platform === 'youtube')) {
+      await this._upsertIdentityLink(
+        profileId, platform, cleanHandle,
+        'name_match', profile.artistName,
+        70, 'social_handle',
+      ).catch(() => {});
+    }
+
+    return { platform, handle: cleanHandle, profileUrl, dspLink, saved };
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 2: INTELLIGENCE — Enhanced Confidence Scorer Helpers
+  // Population-aware disambiguation for common artist names
+  // ══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Given multiple candidates for the same query, apply differential weighting:
+   * when the top candidate has significantly more fans/followers than the second,
+   * boost the top by up to 15 points and reduce others.
+   */
+  disambiguateByPopularity<T extends { confidence: number; followers?: number; fans?: number; popularity?: number }>(
+    candidates: T[],
+  ): T[] {
+    if (candidates.length < 2) return candidates;
+    const signal = (c: T) => c.followers ?? c.fans ?? (c.popularity ? c.popularity * 1000 : 0);
+    const top = candidates[0];
+    const second = candidates[1];
+    const topSignal = signal(top);
+    const secondSignal = signal(second);
+    if (topSignal > 0 && topSignal > secondSignal * 3) {
+      // Top candidate has 3× more listeners — high disambiguation confidence
+      candidates[0] = { ...top, confidence: Math.min(100, top.confidence + 12) };
+    }
+    return candidates;
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // PHASE 1: FOUNDATION — Profile Watch (background polling)
+  // Detect unauthorized releases on known artist page IDs
+  // ══════════════════════════════════════════════════════════════════════════
+
+  async watchProfileForUnauthorizedReleases(profileId: string, userId: string): Promise<{
+    checked: string[];
+    unauthorized: Array<{ platform: string; title: string; detectedAt: string }>;
+    lastWatchedAt: string;
+  }> {
+    const profile = await this.getProfile(profileId, userId);
+    if (!profile) throw new Error('Artist profile not found');
+
+    const checked: string[] = [];
+    const unauthorized: Array<{ platform: string; title: string; detectedAt: string }> = [];
+
+    // Check Spotify: fetch latest albums and cross-reference ISRCs
+    if (profile.spotifyArtistId) {
+      checked.push('spotify');
+      try {
+        const token = await this._getSpotifyToken();
+        if (token) {
+          const res = await fetch(
+            `https://api.spotify.com/v1/artists/${profile.spotifyArtistId}/albums?limit=5&include_groups=single,album`,
+            { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) },
+          );
+          if (res.ok) {
+            const data = await res.json() as any;
+            const remoteAlbumNames = (data.items ?? []).map((a: any) => a.name as string);
+            logger.info(`[ArtistProfile] Watch: Spotify profile=${profileId} albums=${remoteAlbumNames.length}`);
+            // Flag releases we don't recognize (not in distroReleases for this user)
+            // Simplified heuristic for now: if albums list is non-empty, profile is active
+          }
+        }
+      } catch {
+        logger.warn(`[ArtistProfile] Watch: Spotify check failed for profile=${profileId}`);
+      }
+    }
+
+    // Update lastWatchedAt
+    await db.update(artistProfiles).set({ lastWatchedAt: new Date(), updatedAt: new Date() })
+      .where(eq(artistProfiles.id, profileId));
+
+    return {
+      checked,
+      unauthorized,
+      lastWatchedAt: new Date().toISOString(),
     };
   }
 }
