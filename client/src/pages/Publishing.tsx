@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -230,7 +231,17 @@ export default function Publishing() {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <div className="py-8 text-center text-muted-foreground">Loading works...</div>
+              <div className="space-y-2 py-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-3 border-b last:border-0">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                  </div>
+                ))}
+              </div>
             ) : works.length === 0 ? (
               <div className="py-8 text-center text-muted-foreground">
                 No registered works yet. Register your first work to start tracking royalties!

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -253,7 +254,17 @@ export default function PlaylistPitching() {
                   </thead>
                   <tbody className="divide-y divide-gray-800 text-gray-300">
                     {pitchesLoading ? (
-                      <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading pitches...</td></tr>
+                      <>
+                        {[1, 2, 3, 4].map((i) => (
+                          <tr key={i}>
+                            <td className="p-4"><Skeleton className="h-4 w-40" /></td>
+                            <td className="p-4"><Skeleton className="h-4 w-28" /></td>
+                            <td className="p-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                            <td className="p-4"><Skeleton className="h-4 w-20" /></td>
+                            <td className="p-4 text-right"><Skeleton className="h-7 w-14 rounded ml-auto" /></td>
+                          </tr>
+                        ))}
+                      </>
                     ) : pitches.length === 0 ? (
                       <tr><td colSpan={5} className="p-8 text-center text-gray-500">No pitches tracked yet.</td></tr>
                     ) : pitches.map((pitch) => (

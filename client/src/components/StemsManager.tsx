@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Play, Pause, Trash2, Upload, Download, DollarSign, Music2, FileAudio } from 'lucide-react';
+import { Play, Pause, Trash2, Upload, Download, DollarSign, Music2, FileAudio, Loader2 } from 'lucide-react';
 import { StemUploadDialog } from './StemUploadDialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
@@ -162,7 +162,10 @@ export function StemsManager({ listingId, isOwner }: StemsManagerProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8 text-gray-500">Loading stems...</div>
+          <div className="flex flex-col items-center justify-center py-10 text-gray-500">
+            <Loader2 className="h-6 w-6 animate-spin mb-2" />
+            <p className="text-sm">Fetching your stems...</p>
+          </div>
         </CardContent>
       </Card>
     );

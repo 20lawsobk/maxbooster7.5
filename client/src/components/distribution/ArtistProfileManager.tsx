@@ -132,7 +132,10 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
       </div>
 
       {isLoading && (
-        <div className="text-sm text-muted-foreground py-4 text-center">Loading artist profiles…</div>
+        <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Loading artist profiles…</span>
+        </div>
       )}
 
       {!isLoading && profiles.length === 0 && (

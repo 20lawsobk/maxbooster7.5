@@ -46,6 +46,7 @@ import {
   RefreshCw,
   Settings2,
   TrendingUp,
+  Loader2,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -596,7 +597,10 @@ function AutopilotTab({
         </div>
 
         {workflowsLoading ? (
-          <div className="text-center py-6 text-muted-foreground text-sm">Loading workflows…</div>
+          <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground text-sm">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading workflows…</span>
+          </div>
         ) : sharingWorkflows.length === 0 ? (
           <div className="border border-dashed rounded-lg p-6 text-center">
             <Bot className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />

@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, BarChart3 } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle2, XCircle, AlertCircle, BarChart3, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRequireAdmin } from '@/hooks/useRequireAuth';
 import { Link } from 'wouter';
@@ -265,7 +265,10 @@ export default function SupportDashboard() {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="text-center py-8">Loading tickets...</div>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin mb-3" />
+              <p className="text-sm">Loading support tickets...</p>
+            </div>
           ) : tickets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No tickets found</div>
           ) : (

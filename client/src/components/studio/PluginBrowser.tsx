@@ -1,6 +1,6 @@
 import { logger } from '@/lib/logger';
 import { useState, useEffect, useMemo } from 'react';
-import { X, Search, Grid, List, Music, Sliders, ChevronRight } from 'lucide-react';
+import { X, Search, Grid, List, Music, Sliders, ChevronRight, Loader2 } from 'lucide-react';
 import type { PluginDefinition } from './PluginDialog';
 
 interface PluginBrowserProps {
@@ -197,8 +197,9 @@ export function PluginBrowser({ isOpen, onClose, onSelect, filterCategory }: Plu
           
           <div className="flex-1 p-4 overflow-y-auto">
             {loading ? (
-              <div className="flex items-center justify-center h-full text-slate-500">
-                Loading plugins...
+              <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="text-sm">Scanning plugins...</span>
               </div>
             ) : filteredPlugins.length === 0 ? (
               <div className="flex items-center justify-center h-full text-slate-500">

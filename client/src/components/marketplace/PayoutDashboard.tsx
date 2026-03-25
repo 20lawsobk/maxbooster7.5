@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import {
@@ -431,7 +432,20 @@ export function PayoutDashboard() {
         </CardHeader>
         <CardContent>
           {historyLoading ? (
-            <div className="text-center py-8 text-muted-foreground">Loading history...</div>
+            <div className="space-y-3 py-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <div className="text-right space-y-1.5">
+                    <Skeleton className="h-4 w-16 ml-auto" />
+                    <Skeleton className="h-5 w-14 rounded-full ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : payoutHistory && payoutHistory.payouts.length > 0 ? (
             <div className="space-y-4">
               {payoutHistory.payouts.map((payout) => (
