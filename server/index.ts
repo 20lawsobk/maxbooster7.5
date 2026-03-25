@@ -24,7 +24,7 @@ import {
   stripeRawBodyParser,
 } from "./safety/index.ts";
 
-import helmet from "helmet";
+import { securityMiddleware } from './middleware/security.js';
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;
@@ -52,7 +52,8 @@ async function loadOptionalModules() {
 
 const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false })); // Security auto-fix
+// Apply rate limiting and production-grade CSP
+app.use(securityMiddleware as any);
 
 setupStartupEndpoints(app);
 
