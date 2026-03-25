@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MonitorSpeaker, Search, CheckCircle } from 'lucide-react';
+import { MonitorSpeaker, Search, CheckCircle, Loader2 } from 'lucide-react';
 import {
   SpotifyIcon,
   AppleMusicIcon,
@@ -387,9 +387,9 @@ export function DSPSelector({ selectedPlatforms, onChange }: DSPSelectorProps) {
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="p-8 text-center">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="mt-4 text-muted-foreground">Loading platforms...</p>
+        <CardContent className="p-8 flex flex-col items-center justify-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">Fetching available platforms…</p>
         </CardContent>
       </Card>
     );

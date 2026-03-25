@@ -267,7 +267,7 @@ export default function SupportDashboard() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Loader2 className="h-8 w-8 animate-spin mb-3" />
-              <p className="text-sm">Loading support tickets...</p>
+              <p className="text-sm text-muted-foreground">Fetching support tickets…</p>
             </div>
           ) : tickets.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">No tickets found</div>

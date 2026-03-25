@@ -1245,7 +1245,7 @@ export class ContentGenerator {
       energetic: ['#Hype', '#TurnUp', '#LetsGo', '#Energy', '#Banger'],
       promotional: ['#NewRelease', '#OutNow', '#StreamNow', '#LinkInBio', '#PreSave'],
     };
-    toneHashtags[tone].forEach(h => hashtags.add(h));
+    (toneHashtags[tone] || toneHashtags.casual).forEach(h => hashtags.add(h));
 
     if (trending) {
       const trendingTags = this.getTrendingHashtags(platform);
@@ -1279,7 +1279,7 @@ export class ContentGenerator {
     const { tone = 'casual', content = '', count = 3, genre = '' } = options;
     const emojis: Set<string> = new Set();
 
-    const toneEmojis = TONE_EMOJIS[tone];
+    const toneEmojis = TONE_EMOJIS[tone] || TONE_EMOJIS.casual;
     const shuffled = [...toneEmojis].sort(() => Math.random() - 0.5);
     shuffled.slice(0, Math.ceil(count / 2)).forEach(e => emojis.add(e));
 

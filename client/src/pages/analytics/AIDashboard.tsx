@@ -443,8 +443,8 @@ export default function AIDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading AI Analytics...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Crunching your AI analytics…</p>
         </div>
       </div>
     );
@@ -1084,7 +1084,7 @@ export default function AIDashboard() {
                 {loadingMilestones ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Loading milestones...</p>
+                    <p className="text-sm text-muted-foreground">Fetching career milestones…</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -1338,7 +1338,7 @@ export default function AIDashboard() {
                     {loadingPlatformMetrics ? (
                       <div className="text-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Loading platform metrics...</p>
+                        <p className="text-sm text-muted-foreground">Fetching platform metrics…</p>
                       </div>
                     ) : (
                       <>
@@ -1427,7 +1427,7 @@ export default function AIDashboard() {
                     {loadingAdminAnalytics ? (
                       <div className="text-center py-12">
                         <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                        <p className="text-sm text-muted-foreground">Loading admin analytics...</p>
+                        <p className="text-sm text-muted-foreground">Fetching admin analytics…</p>
                       </div>
                     ) : (
                       <div className="space-y-4">

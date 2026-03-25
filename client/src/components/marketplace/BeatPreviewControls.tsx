@@ -193,7 +193,7 @@ export function BeatPreviewControls({
             ) : (
               <Play className="h-4 w-4 mr-2" />
             )}
-            {isLoading ? 'Loading...' : isThisPlaying ? 'Pause' : 'Preview'}
+            {isLoading ? 'Buffering…' : isThisPlaying ? 'Pause' : 'Preview'}
           </Button>
           
           <Button

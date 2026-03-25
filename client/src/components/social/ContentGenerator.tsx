@@ -1138,7 +1138,7 @@ export function ContentGenerator() {
             {loadingTrends ? (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Loading trends...</p>
+                <p className="text-sm text-muted-foreground">Fetching trending topics…</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -1183,7 +1183,7 @@ export function ContentGenerator() {
             {loadingTimes ? (
               <div className="text-center py-8">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Loading schedule...</p>
+                <p className="text-sm text-muted-foreground">Fetching optimal posting times…</p>
               </div>
             ) : (
               <div className="space-y-2">

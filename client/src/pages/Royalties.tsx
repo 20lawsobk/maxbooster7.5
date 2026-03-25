@@ -48,6 +48,7 @@ import {
   Plus,
   Wallet,
   Music2,
+  Loader2,
 } from 'lucide-react';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -625,8 +626,8 @@ return (
       {(authLoading || isLoading) ? (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            <p className="text-muted-foreground">Loading Royalties...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Fetching your earnings…</p>
           </div>
         </div>
       ) : (

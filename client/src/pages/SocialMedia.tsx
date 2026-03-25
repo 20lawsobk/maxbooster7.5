@@ -98,6 +98,7 @@ import {
   Mic2,
   CheckCircle2,
   AlertTriangle,
+  Loader2,
 } from 'lucide-react';
 import {
   FacebookIcon,
@@ -1219,8 +1220,8 @@ return (
       {isLoading ? (
         <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
           <div className="flex flex-col items-center gap-4">
-            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-            <p className="text-muted-foreground">Loading Social Media...</p>
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-muted-foreground">Setting up your social hub…</p>
           </div>
         </div>
       ) : (

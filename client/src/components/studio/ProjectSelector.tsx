@@ -69,7 +69,7 @@ export function ProjectSelector({ currentProjectId, onProjectChange, className }
         >
           <Music className="w-4 h-4 text-emerald-400" />
           <span className="max-w-[200px] truncate">
-            {isLoading ? 'Loading...' : currentProject?.title || 'New Project'}
+            {isLoading ? 'Loading…' : currentProject?.title || 'New Project'}
           </span>
           <ChevronDown className="w-4 h-4 text-zinc-500" />
         </Button>

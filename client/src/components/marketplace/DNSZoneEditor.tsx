@@ -506,7 +506,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
           {recordsLoading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-              <span className="ml-3 text-muted-foreground">Loading DNS records...</span>
+              <span className="ml-3 text-muted-foreground">Fetching DNS records…</span>
             </div>
           ) : records.length === 0 ? (
             <div className="text-center py-12">

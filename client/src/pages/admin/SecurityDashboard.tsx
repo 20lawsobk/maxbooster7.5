@@ -220,8 +220,8 @@ export default function SecurityDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-gray-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
-          <p className="text-muted-foreground">Loading Security Dashboard...</p>
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-muted-foreground">Running security checks…</p>
         </div>
       </div>
     );
@@ -264,7 +264,7 @@ export default function SecurityDashboard() {
             {loadingMetrics ? (
               <div className="col-span-full text-center py-12">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">Loading metrics...</p>
+                <p className="text-sm text-muted-foreground">Fetching security metrics…</p>
               </div>
             ) : (
               securityMetrics && (
@@ -613,7 +613,7 @@ export default function SecurityDashboard() {
                 ) : loadingPenTest ? (
                   <div className="text-center py-12">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Loading assessment results...</p>
+                    <p className="text-sm text-muted-foreground">Running security assessment…</p>
                   </div>
                 ) : (
                   penTestData && (

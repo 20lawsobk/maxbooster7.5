@@ -23,6 +23,7 @@ import {
   Download,
   Gift,
   Tag,
+  Loader2,
 } from 'lucide-react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { Star, UserPlus, UserCheck, Pause } from 'lucide-react';
@@ -423,9 +424,9 @@ export default function Storefront() {
   if (storefrontLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading storefront...</p>
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+          <p className="text-muted-foreground">Opening your storefront…</p>
         </div>
       </div>
     );

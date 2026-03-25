@@ -21,15 +21,27 @@ router.use(aiRateLimiter);
 
 router.post('/content/generate', requireAuth, async (req: Request, res: Response) => {
   try {
+    const VALID_TONES = ['professional', 'casual', 'energetic', 'promotional'] as const;
+    const VALID_PLATFORMS = ['twitter', 'instagram', 'tiktok', 'youtube', 'facebook', 'linkedin'] as const;
+    const VALID_CONTENT_TYPES = ['release', 'behind-the-scenes', 'announcement', 'engagement', 'promotional'] as const;
+
+    const rawTone = req.body.tone as string;
+    const rawPlatform = req.body.platform as string;
+    const rawContentType = req.body.contentType as string;
+
+    const tone = (VALID_TONES as readonly string[]).includes(rawTone) ? rawTone as typeof VALID_TONES[number] : 'casual';
+    const platform = (VALID_PLATFORMS as readonly string[]).includes(rawPlatform) ? rawPlatform as typeof VALID_PLATFORMS[number] : 'instagram';
+    const contentType = (VALID_CONTENT_TYPES as readonly string[]).includes(rawContentType) ? rawContentType as typeof VALID_CONTENT_TYPES[number] : 'release';
+
     const options: ContentGenerationOptions = {
-      tone: req.body.tone || 'casual',
-      platform: req.body.platform || 'twitter',
+      tone,
+      platform,
+      contentType,
+      topic: req.body.topic,
       maxLength: req.body.maxLength,
       genre: req.body.genre,
-      mood: req.body.mood,
-      audience: req.body.audience,
-      style: req.body.style,
-      keywords: req.body.keywords,
+      trackTitle: req.body.trackTitle,
+      artistName: req.body.artistName,
       customPrompt: req.body.customPrompt,
       userId: req.user?.id,
       projectId: req.body.projectId,
