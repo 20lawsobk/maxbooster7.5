@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Clock, Users, RefreshCw } from 'lucide-react';
+import { CheckCircle, XCircle, Link as LinkIcon, Unlink, AlertCircle, Bell, Users, RefreshCw } from 'lucide-react';
 import { TwitterIcon, InstagramIcon, LinkedInIcon, FacebookIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, GoogleIcon, MetaIcon, SpotifyIcon } from '@/components/ui/brand-icons';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { apiRequest } from '@/lib/queryClient';
@@ -261,9 +261,8 @@ export function PlatformConnections() {
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{platform.name}</p>
                             {platform.comingSoon && (
-                              <Badge variant="outline" className="text-amber-500 border-amber-500/50 text-[10px] px-1.5 py-0">
-                                <Clock className="h-2.5 w-2.5 mr-0.5" />
-                                Coming Soon
+                              <Badge variant="outline" className="text-blue-500 border-blue-500/50 text-[10px] px-1.5 py-0">
+                                Beta
                               </Badge>
                             )}
                           </div>
@@ -302,11 +301,9 @@ export function PlatformConnections() {
                           <Button
                             variant="outline"
                             size="sm"
-                            disabled
-                            className="opacity-50"
                           >
-                            <Clock className="h-4 w-4 mr-1" />
-                            Coming Soon
+                            <Bell className="h-4 w-4 mr-1" />
+                            Notify Me
                           </Button>
                         ) : platform.connected ? (
                           <>

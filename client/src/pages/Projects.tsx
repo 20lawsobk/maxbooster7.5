@@ -712,7 +712,7 @@ return (
                           ) : (
                             <Play className="h-4 w-4 mr-2" />
                           )}
-                          {audioLoading === project.id ? 'Loading...' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
+                          {audioLoading === project.id ? 'Buffering…' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() => setLocation(`/studio/${project.id}`)}
@@ -807,7 +807,7 @@ return (
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      {audioLoading === project.id ? 'Loading...' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
+                      {audioLoading === project.id ? 'Buffering…' : currentlyPlaying === project.id ? 'Pause' : 'Play'}
                     </Button>
                     {project.workflowStage === 'delivery' || project.status === 'completed' ? (
                       <Button

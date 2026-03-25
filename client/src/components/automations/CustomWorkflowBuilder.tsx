@@ -577,9 +577,19 @@ export function CustomWorkflowTab() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin mr-2" />
-        Loading your automations…
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="h-9 w-9 rounded-lg bg-muted animate-pulse" />
+              <div className="space-y-1.5 flex-1">
+                <div className="h-4 bg-muted animate-pulse rounded w-40" />
+                <div className="h-3 bg-muted animate-pulse rounded w-60" />
+              </div>
+            </div>
+            <div className="h-5 w-10 bg-muted animate-pulse rounded-full ml-4" />
+          </div>
+        ))}
       </div>
     );
   }

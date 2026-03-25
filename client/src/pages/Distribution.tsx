@@ -855,7 +855,17 @@ function VenueBookingCRM() {
       </CardHeader>
       <CardContent>
         {isLoading ? (
-          <p className="text-sm text-gray-400 py-4">Loading venues...</p>
+          <div className="space-y-2 py-2">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="space-y-1">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+              </div>
+            ))}
+          </div>
         ) : venues.length === 0 ? (
           <div className="text-center py-8 text-gray-400">
             <MapPin className="w-10 h-10 mx-auto mb-2 opacity-30" />

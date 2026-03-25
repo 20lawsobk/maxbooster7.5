@@ -273,7 +273,7 @@ export function VideoContentGenerator({
           artistName,
           releaseName: releaseName || contentText.substring(0, 30),
           releaseType: 'single',
-          releaseDate: 'Coming Soon',
+          releaseDate: 'TBA',
         } as ReleaseAnnouncementOptions;
         break;
         
