@@ -21,7 +21,7 @@
     "start": "bash -c 'pgrep -x boosterstate > /dev/null || ([ -f ./boosterstate/target/release/boosterstate ] && BOOSTERSTATE_PORT=${BOOSTERSTATE_SIDECAR_PORT:-9877} ./boosterstate/target/release/boosterstate & sleep 2); UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE:-4096} dist/cluster.cjs'",
     "postinstall": "node scripts/postinstall.mjs",
     "check": "tsc",
-    "db:push": "drizzle-kit push",
+    "db:push": "node scripts/db-push.js",
     "electron:dev": "electron .",
     "electron:build": "electron-builder --projectDir electron",
     "build:desktop": "tsx scripts/build-apps.ts desktop",
@@ -44,7 +44,8 @@
     "security:audit": "tsx scripts/security-audit.ts",
     "test:all": "npm run security:audit && npm run test:load && npm run test:security",
     "prelaunch": "tsx scripts/pre-launch-check.ts",
-    "bootstrap:admin": "tsx -e \"import { bootstrapAdmin } from './server/init-admin'; bootstrapAdmin().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\""
+    "bootstrap:admin": "tsx -e \"import { bootstrapAdmin } from './server/init-admin'; bootstrapAdmin().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\"",
+    "db:push:force": "node scripts/db-push.js --force"
   },
   "build": {
     "appId": "com.blawzmusic.maxbooster",

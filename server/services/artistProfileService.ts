@@ -1246,6 +1246,29 @@ class ArtistProfileService {
     if (saved) {
       await this.updateProfile(profileId, userId, updates);
       logger.info(`[ArtistProfile] Auto-discover saved: profile=${profileId} platforms=[${savedFields.join(',')}]`);
+
+      // Breakthrough: auto-init claim pipeline for every newly discovered platform
+      // This creates the pipeline row at 'unstarted' state so claim tracking begins immediately
+      const claimablePlatforms = savedFields.filter(f => !f.endsWith('_confirmed'));
+      const platformMap: Record<string, string> = {
+        spotify: 'spotify',
+        apple: 'apple_music',
+        deezer: 'deezer',
+        youtube: 'youtube',
+        soundcloud: 'soundcloud',
+        audiomack: 'audiomack',
+        musicbrainz: 'musicbrainz',
+      };
+      for (const field of claimablePlatforms) {
+        const platformKey = platformMap[field];
+        if (platformKey) {
+          try {
+            await this.updateClaimState(profileId, userId, platformKey, 'unstarted', 'system', 'Auto-initialized on platform discovery');
+          } catch {
+            // Non-fatal — don't block discovery if claim init fails
+          }
+        }
+      }
     }
 
     if (bonus > 0) {

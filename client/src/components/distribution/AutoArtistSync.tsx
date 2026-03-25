@@ -199,6 +199,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/health`] });
       setEditingPortal(null);
       setEditingId('');
       onUpdated();
@@ -213,6 +214,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/health`] });
       onUpdated();
       const synced = data.synced ?? [];
       toast({
@@ -221,6 +223,13 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           ? `Updated from: ${synced.join(', ')}`
           : 'No changes found',
       });
+      // Breakthrough: auto-capture DNA snapshot after every successful sync
+      apiRequest('POST', `/api/artist-profiles/${profile.id}/dna-snapshot`, {
+        triggeredBy: 'auto-sync',
+        notes: synced.length > 0 ? `Auto-snapshot after syncing from: ${synced.join(', ')}` : 'Auto-snapshot after sync (no changes)',
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/dna-snapshots`] });
+      }).catch(() => {});
     },
     onError: () => toast({ title: 'Sync failed', variant: 'destructive' }),
   });
@@ -233,6 +242,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       }).then(r => r.json()),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/health`] });
       onUpdated();
       setFixerOpen(false);
       toast({ title: 'Re-mapping request submitted', description: 'Will be applied to future releases' });
@@ -263,9 +273,14 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   const updateClaimMutation = useMutation({
     mutationFn: (data: { platform: string; state: string; notes?: string }) =>
       apiRequest('PATCH', `/api/artist-profiles/${profile.id}/claim-state`, data).then(r => r.json()),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       refetchPipeline();
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/health`] });
       toast({ title: 'Claim progress updated' });
+      // Breakthrough: auto-init pipeline to 'instructions_read' the first time a portal is claimed
+      if (variables.state === 'portal_claimed' || variables.state === 'instructions_read') {
+        queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
+      }
     },
   });
 
@@ -463,6 +478,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       setDiscoverResults(data);
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/profile-hub`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/artist-profiles/${profile.id}/health`] });
       onUpdated();
       const fields = data.savedFields?.filter((f: string) => !f.endsWith('_confirmed')) ?? [];
       toast({

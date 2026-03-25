@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2, Zap, Loader2 } from 'lucide-react';
+import { Plus, Music2, CheckCircle2, ChevronDown, ChevronUp, Trash2, Zap, Loader2, Shield, TriangleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import AutoArtistSync from './AutoArtistSync';
@@ -31,6 +32,22 @@ interface ArtistProfile {
   fixerStatus: string;
   profileImageUrl: string | null;
   genres: string[];
+  // Phase 2 — health + safety
+  healthScore: number | null;
+  healthBreakdown: Record<string, number> | null;
+  splitDetected: boolean;
+  lastHealthAt: string | null;
+  musicbrainzId: string | null;
+  watchEnabled: boolean;
+}
+
+function healthGrade(score: number | null): { grade: string; color: string } {
+  if (score === null || score === undefined) return { grade: '?', color: 'text-muted-foreground' };
+  if (score >= 85) return { grade: 'A', color: 'text-green-500' };
+  if (score >= 70) return { grade: 'B', color: 'text-blue-500' };
+  if (score >= 55) return { grade: 'C', color: 'text-amber-500' };
+  if (score >= 40) return { grade: 'D', color: 'text-orange-500' };
+  return { grade: 'F', color: 'text-destructive' };
 }
 
 interface Props {
@@ -160,11 +177,12 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
           const isSelected = selectedProfileId === profile.id;
           const isExpanded = expandedId === profile.id;
           const isDiscovering = discoveringId === profile.id;
+          const { grade, color } = healthGrade(profile.healthScore);
 
           return (
             <Card
               key={profile.id}
-              className={`transition-all ${isSelected ? 'ring-2 ring-primary' : 'hover:border-primary/50'}`}
+              className={`transition-all ${isSelected ? 'ring-2 ring-primary' : 'hover:border-primary/50'} ${profile.splitDetected ? 'border-destructive/40' : ''}`}
             >
               <Collapsible open={isExpanded} onOpenChange={open => setExpandedId(open ? profile.id : null)}>
                 <CollapsibleTrigger asChild>
@@ -176,18 +194,53 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      {profile.profileImageUrl ? (
-                        <img
-                          src={profile.profileImageUrl}
-                          alt={profile.artistName}
-                          className="h-12 w-12 rounded-full object-cover flex-shrink-0"
-                          onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                        />
-                      ) : (
-                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
-                          <Music2 className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
+                      {/* Avatar with health ring */}
+                      <div className="relative flex-shrink-0">
+                        {profile.profileImageUrl ? (
+                          <img
+                            src={profile.profileImageUrl}
+                            alt={profile.artistName}
+                            className="h-12 w-12 rounded-full object-cover"
+                            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                            <Music2 className="h-5 w-5 text-muted-foreground" />
+                          </div>
+                        )}
+                        {/* Health grade ring — bottom-right of avatar */}
+                        {profile.healthScore !== null && (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={`absolute -bottom-1 -right-1 h-5 w-5 rounded-full border-2 border-background flex items-center justify-center text-[10px] font-bold cursor-default ${
+                                  grade === 'A' ? 'bg-green-500 text-white' :
+                                  grade === 'B' ? 'bg-blue-500 text-white' :
+                                  grade === 'C' ? 'bg-amber-500 text-white' :
+                                  grade === 'D' ? 'bg-orange-500 text-white' :
+                                  'bg-destructive text-white'
+                                }`}>
+                                  {grade}
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="text-xs">
+                                <p className="font-medium">Profile Health: {profile.healthScore}/100</p>
+                                {profile.healthBreakdown && (
+                                  <div className="mt-1 space-y-0.5">
+                                    {Object.entries(profile.healthBreakdown).map(([k, v]) => (
+                                      <div key={k} className="flex justify-between gap-3">
+                                        <span className="capitalize text-muted-foreground">{k}</span>
+                                        <span>{v}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                <p className="text-muted-foreground mt-1">Expand to recalculate</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -198,8 +251,25 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
                           {isDiscovering && (
                             <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" title="Searching platforms…" />
                           )}
+                          {profile.splitDetected && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="outline" className="text-xs text-destructive border-destructive/40 gap-1 cursor-default">
+                                    <TriangleAlert className="h-3 w-3" /> Split
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent className="text-xs max-w-xs">
+                                  A split profile was detected. Music has landed on a duplicate or wrong artist page. Expand this profile and use the Multi-Platform Fixer to resolve.
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
                           {profile.fixerPending && (
                             <Badge variant="secondary" className="text-xs">Fixer pending</Badge>
+                          )}
+                          {profile.musicbrainzId && (
+                            <Badge variant="outline" className="text-xs text-purple-500 border-purple-500/30" title={`MusicBrainz: ${profile.musicbrainzId}`}>MB</Badge>
                           )}
                         </div>
 

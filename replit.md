@@ -70,6 +70,35 @@ The View (eye icon) button on release cards sets `showReleaseDetails` state, but
 ### Dev Static Asset Serving Fix (Mar 2026)
 In `server/static.ts`, `DIST_PATH` was computed as `path.resolve(__dirname, "public")` which resolved to `server/public/` (non-existent) when running via `tsx`. Fixed to `path.resolve(process.cwd(), "dist", "public")`. Also confirmed that in dev mode, `setupVite()` handles all frontend serving (Vite HMR middleware); `serveStaticFiles()` is correctly limited to production.
 
+### Profile Claiming System v2 — Phase 3 Complete (Mar 2026)
+Full pipeline implemented across 6 new DB tables (`profileDnaSnapshots`, `profilePortabilityReports`, `profileIsrcChains`, `profileSplitDetections`, `profileClaimPipeline`, `profileClaimEvents`). Service: `server/services/artistProfileService.ts` (~2600 lines). Routes: 12 new endpoints in `server/routes/artistProfiles.ts`. UI: `AutoArtistSync.tsx` upgraded with 8 collapsible panels (health score gauge, ISRC chain discovery, split scanner, claim pipeline state machine, multi-platform fixer, social handle resolver, DNA snapshots, portability report + JSON-LD download, identity graph, history import). API returns `healthScore`, `splitDetected`, `healthBreakdown`, `healthGrade`, `lastHealthAt`, `watchEnabled`, `socialHandles`, `verifiedPlatforms` on all profile queries.
+
+### Breakthrough Features (Mar 2026)
+
+**1. Permanent DB Push Automation** (`scripts/db-push.js`)
+- `npm run db:push` is now non-interactive. The PTY wrapper script spawns drizzle-kit and auto-sends Enter for all disambiguation prompts ("created or renamed" / "❯ create table" patterns).
+- `npm run db:push:force` also available.
+- NEVER write SQL migrations manually — always use `npm run db:push`.
+
+**2. Health Grade Badge on Every Profile Card**
+- `ArtistProfileManager.tsx`: every profile card now shows a color-coded A–F grade badge overlaid on the avatar (bottom-right), derived from `profile.healthScore` (already in the GET /api/artist-profiles response).
+- Tooltip on hover shows full score breakdown by category.
+- Profile cards with `splitDetected=true` get a red border + "⚠ Split" badge inline with the artist name — visible without expanding.
+- MusicBrainz-linked profiles show a purple "MB" badge.
+
+**3. Auto-DNA-Snapshot on Every Sync**
+- `AutoArtistSync.tsx syncMutation.onSuccess`: after every successful auto-sync, silently POSTs to `/api/artist-profiles/:id/dna-snapshot` with `triggeredBy: 'auto-sync'`.
+- Invalidates the DNA snapshots query so the timeline panel stays current automatically.
+
+**4. Auto Health Score Refresh After Any Mutation**
+- All mutations in `AutoArtistSync.tsx` now invalidate `['/api/artist-profiles/:id/health']`:
+  - `savePlatformMutation`, `syncMutation`, `fixerMutation`, `updateClaimMutation`, `handleDiscover`
+- The health gauge panel auto-refreshes after any data change without the user manually pressing Recalculate.
+
+**5. Auto-Init Claim Pipeline on Platform Discovery**
+- `artistProfileService.autoDiscover()`: after saving newly discovered platforms (Spotify, Apple, Deezer, YouTube, SoundCloud, Audiomack, MusicBrainz), immediately calls `updateClaimState(..., 'unstarted', 'system')` for each one.
+- This creates the claim pipeline row automatically, so the Claim Pipeline panel in AutoArtistSync immediately shows all discovered platforms ready for tracking — no manual "Add platform" step needed.
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.
