@@ -1,9 +1,13 @@
 import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { db } from './db';
 import { listings, storefronts, users } from '@shared/schema';
 import { and, eq } from 'drizzle-orm';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SITE_URL = 'https://maxbooster.replit.app';
 
