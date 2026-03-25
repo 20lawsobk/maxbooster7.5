@@ -13,6 +13,7 @@ import {
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { useLocation } from 'wouter';
+import { Skeleton } from '@/components/ui/skeleton';
 
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -3609,7 +3610,22 @@ function RadioPitchingContent() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : filteredPitches.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-5 w-16 rounded-full" />
+                    </div>
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-7 w-20 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : filteredPitches.length === 0 ? (
             <div className="text-center py-12">
               <Newspaper className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No outreach tracked yet.</p>
@@ -3747,7 +3763,24 @@ function FanCampaignsContent() {
               </div>
             </CardHeader>
             <CardContent>
-              {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : campaigns.length === 0 ? (
+              {isLoading ? (
+                <div className="space-y-3 py-2">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg space-y-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                          </div>
+                          <Skeleton className="h-3 w-56" />
+                        </div>
+                        <Skeleton className="h-7 w-16 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : campaigns.length === 0 ? (
                 <div className="text-center py-12">
                   <Mail className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                   <p className="text-gray-500">No campaigns yet.</p>

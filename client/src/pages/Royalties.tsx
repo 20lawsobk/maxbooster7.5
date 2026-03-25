@@ -1071,7 +1071,7 @@ return (
                             <td className="text-right p-3">
                               {getStatusBadge(royalty.payoutStatus)}
                             </td>
-                            <td className="text-right p-3">{royalty.payoutDate || 'TBD'}</td>
+                            <td className="text-right p-3">{royalty.payoutDate || <span className="text-muted-foreground text-xs">Pending</span>}</td>
                             <td className="text-right p-3">
                               <Button
                                 variant="ghost"

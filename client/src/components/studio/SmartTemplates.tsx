@@ -816,14 +816,14 @@ export function SmartTemplates({
                             className="w-12 h-12 mx-auto mb-4"
                             style={{ color: 'var(--studio-text-subtle)' }}
                           />
-                          <p style={{ color: 'var(--studio-text-muted)' }}>
-                            Community templates coming soon
+                          <p style={{ color: 'var(--studio-text-muted)' }} className="font-medium">
+                            No community templates yet
                           </p>
                           <p
                             className="text-sm mt-1"
                             style={{ color: 'var(--studio-text-subtle)' }}
                           >
-                            Share your templates with other producers
+                            Save one of your custom templates to share it with other producers
                           </p>
                           <Button
                             variant="outline"
@@ -835,7 +835,7 @@ export function SmartTemplates({
                             }}
                           >
                             <TrendingUp className="w-4 h-4 mr-2" />
-                            Browse Community
+                            Share a Template
                           </Button>
                         </div>
                       ) : category === 'custom' && customTemplates.length === 0 ? (

@@ -383,11 +383,23 @@ export function ApprovalDashboard() {
 
         <TabsContent value="pending" className="space-y-4">
           {isLoadingPending ? (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                Loading...
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              {[1,2,3].map(i => (
+                <Card key={i}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                      <div className="space-y-1 flex-1">
+                        <div className="h-3 bg-muted animate-pulse rounded w-32" />
+                        <div className="h-2 bg-muted animate-pulse rounded w-20" />
+                      </div>
+                    </div>
+                    <div className="h-3 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : pendingApprovals?.posts?.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
@@ -401,11 +413,23 @@ export function ApprovalDashboard() {
 
         <TabsContent value="my-posts" className="space-y-4">
           {isLoadingMyPosts ? (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                Loading...
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              {[1,2,3].map(i => (
+                <Card key={i}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+                      <div className="space-y-1 flex-1">
+                        <div className="h-3 bg-muted animate-pulse rounded w-32" />
+                        <div className="h-2 bg-muted animate-pulse rounded w-20" />
+                      </div>
+                    </div>
+                    <div className="h-3 bg-muted animate-pulse rounded w-full" />
+                    <div className="h-3 bg-muted animate-pulse rounded w-3/4" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           ) : myPosts?.posts?.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">

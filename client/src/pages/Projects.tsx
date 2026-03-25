@@ -946,7 +946,21 @@ function SongwritingTab() {
           </Dialog>
         </div>
 
-        {isLoading ? <div className="text-center py-8 text-gray-400">Loading...</div> : sessions.length === 0 ? (
+        {isLoading ? (
+          <div className="space-y-3">
+            {[1,2,3].map(i => (
+              <Card key={i} className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : sessions.length === 0 ? (
           <Card className="p-8 text-center">
             <Mic2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className="text-gray-500">No sessions yet. Create your first song!</p>

@@ -42,6 +42,7 @@ export default function Shows() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [setlistCreateDialog, setSetlistCreateDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   
   const [newShow, setNewShow] = useState({
@@ -54,6 +55,12 @@ export default function Shows() {
     ticketUrl: "",
     notes: ""
   });
+
+  const [newSetlist, setNewSetlist] = useState({
+    name: "",
+    tracks: [] as { title: string; duration: string; notes: string }[],
+  });
+  const [newTrack, setNewTrack] = useState({ title: "", duration: "", notes: "" });
 
   const { data: showsData, isLoading } = useQuery<Show[]>({
     queryKey: ["/api/shows"],
@@ -98,6 +105,37 @@ export default function Shows() {
       queryClient.invalidateQueries({ queryKey: ["/api/shows"] });
       queryClient.invalidateQueries({ queryKey: ["/api/shows/stats"] });
       toast({ title: "Show deleted", description: "The show has been removed from your calendar." });
+    },
+  });
+
+  const { data: setlistsData = [] } = useQuery<Setlist[]>({
+    queryKey: ["/api/shows/setlists"],
+  });
+
+  const createSetlistMutation = useMutation({
+    mutationFn: async (data: typeof newSetlist) => {
+      const res = await apiRequest("POST", "/api/shows/setlists", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shows/setlists"] });
+      setSetlistCreateDialog(false);
+      setNewSetlist({ name: "", tracks: [] });
+      setNewTrack({ title: "", duration: "", notes: "" });
+      toast({ title: "Setlist created", description: "Your setlist is ready for performance." });
+    },
+    onError: () => {
+      toast({ title: "Error", description: "Failed to create setlist.", variant: "destructive" });
+    },
+  });
+
+  const deleteSetlistMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/shows/setlists/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/shows/setlists"] });
+      toast({ title: "Setlist deleted" });
     },
   });
 
@@ -368,17 +406,160 @@ export default function Shows() {
           </TabsContent>
 
           <TabsContent value="setlists">
-             <Card className="p-12 text-center">
-                <Music className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
-                <h3 className="text-xl font-medium">Setlist Management</h3>
-                <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                  Build and manage setlists for your performances.
-                </p>
-                <Button className="mt-6" variant="outline" disabled>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Setlist Template
-                </Button>
-              </Card>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{setlistsData.length} setlist{setlistsData.length !== 1 ? 's' : ''}</p>
+                <Dialog open={setlistCreateDialog} onOpenChange={setSetlistCreateDialog}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Setlist
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                      <DialogTitle>Create Setlist</DialogTitle>
+                      <DialogDescription>Build a setlist for your upcoming performance.</DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="setlist-name">Setlist Name</Label>
+                        <Input
+                          id="setlist-name"
+                          placeholder="e.g. Summer Tour 2025 Main Set"
+                          value={newSetlist.name}
+                          onChange={e => setNewSetlist(s => ({ ...s, name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Tracks</Label>
+                        {newSetlist.tracks.length > 0 && (
+                          <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                            {newSetlist.tracks.map((t, i) => (
+                              <div key={i} className="flex items-center justify-between px-3 py-2 rounded-md bg-muted text-sm">
+                                <span className="font-medium">{t.title}</span>
+                                <div className="flex items-center gap-2">
+                                  {t.duration && <span className="text-muted-foreground text-xs">{t.duration}</span>}
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => setNewSetlist(s => ({ ...s, tracks: s.tracks.filter((_, j) => j !== i) }))}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Track title"
+                            value={newTrack.title}
+                            onChange={e => setNewTrack(t => ({ ...t, title: e.target.value }))}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter' && newTrack.title.trim()) {
+                                setNewSetlist(s => ({ ...s, tracks: [...s.tracks, { ...newTrack }] }));
+                                setNewTrack({ title: "", duration: "", notes: "" });
+                              }
+                            }}
+                          />
+                          <Input
+                            placeholder="Duration"
+                            className="w-24"
+                            value={newTrack.duration}
+                            onChange={e => setNewTrack(t => ({ ...t, duration: e.target.value }))}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => {
+                              if (!newTrack.title.trim()) return;
+                              setNewSetlist(s => ({ ...s, tracks: [...s.tracks, { ...newTrack }] }));
+                              setNewTrack({ title: "", duration: "", notes: "" });
+                            }}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Press Enter or click + to add a track</p>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setSetlistCreateDialog(false)}>Cancel</Button>
+                      <Button
+                        onClick={() => createSetlistMutation.mutate(newSetlist)}
+                        disabled={!newSetlist.name.trim() || createSetlistMutation.isPending}
+                      >
+                        {createSetlistMutation.isPending ? "Creating…" : "Create Setlist"}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              {setlistsData.length === 0 ? (
+                <Card className="p-12 text-center">
+                  <Music className="h-16 w-16 text-muted-foreground mx-auto mb-4 opacity-20" />
+                  <h3 className="text-xl font-medium">No setlists yet</h3>
+                  <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+                    Create your first setlist to organize tracks for your live performances.
+                  </p>
+                  <Button className="mt-6" onClick={() => setSetlistCreateDialog(true)}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Your First Setlist
+                  </Button>
+                </Card>
+              ) : (
+                <div className="grid gap-4 md:grid-cols-2">
+                  {setlistsData.map((sl) => {
+                    const tracks = (sl.tracks as { title: string; duration?: string }[]) || [];
+                    return (
+                      <Card key={sl.id} className="flex flex-col">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between">
+                            <div>
+                              <CardTitle className="text-base">{sl.name}</CardTitle>
+                              <CardDescription>{tracks.length} track{tracks.length !== 1 ? 's' : ''}</CardDescription>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                              onClick={() => deleteSetlistMutation.mutate(sl.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                          {tracks.length === 0 ? (
+                            <p className="text-sm text-muted-foreground">No tracks added yet.</p>
+                          ) : (
+                            <ol className="space-y-1">
+                              {tracks.slice(0, 5).map((t, i) => (
+                                <li key={i} className="flex items-center justify-between text-sm">
+                                  <span className="flex items-center gap-2">
+                                    <span className="text-muted-foreground w-4 text-right">{i + 1}.</span>
+                                    {t.title}
+                                  </span>
+                                  {t.duration && <span className="text-xs text-muted-foreground">{t.duration}</span>}
+                                </li>
+                              ))}
+                              {tracks.length > 5 && (
+                                <li className="text-xs text-muted-foreground pl-6">+{tracks.length - 5} more tracks</li>
+                              )}
+                            </ol>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>

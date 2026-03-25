@@ -338,21 +338,21 @@ export function NoAIInsights({ onAction }: EmptyStateProps) {
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold mb-2">AI Insights Coming Soon</h3>
+      <h3 className="text-xl font-semibold mb-2">Your AI Insights Are Being Built</h3>
       <p className="text-muted-foreground mb-6 max-w-md">
-        Once you have more data, AI will analyze your performance and provide personalized recommendations to grow your audience and improve engagement.
+        Post your first few pieces of content and Max Booster's AI will start analyzing your performance — giving you personalized strategies to grow faster.
       </p>
 
-      <Button onClick={onAction} variant="outline" className="gap-2">
+      <Button onClick={onAction} className="gap-2 gradient-bg text-white">
         <Share2 className="w-4 h-4" />
-        Start Posting to Get Insights
+        Create Your First Post
       </Button>
 
       <div className="mt-8 flex flex-wrap justify-center gap-2">
-        {['Content Ideas', 'Best Times', 'Hashtag Suggestions', 'Audience Analysis'].map((insight) => (
+        {['Best Posting Times', 'Hashtag Strategy', 'Content Ideas', 'Audience Breakdown'].map((insight) => (
           <div
             key={insight}
-            className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs text-muted-foreground"
+            className="px-3 py-1 bg-primary/10 border border-primary/20 rounded-full text-xs font-medium text-primary"
           >
             {insight}
           </div>

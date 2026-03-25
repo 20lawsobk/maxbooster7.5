@@ -889,7 +889,7 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
                   style={{ color: 'var(--studio-text-muted)' }}
                 >
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current" />
-                  <p className="text-sm">Loading...</p>
+                  <p className="text-sm">Scanning your library…</p>
                 </div>
               ) : content.length === 0 ? (
                 <div

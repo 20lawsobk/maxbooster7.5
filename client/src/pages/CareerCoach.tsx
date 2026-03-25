@@ -384,7 +384,7 @@ return (
                       </div>
                       <div className="flex-1">
                         <h4 className={`font-medium ${(insights?.careerHealthScore ?? 0) >= 80 ? 'text-green-500' : (insights?.careerHealthScore ?? 0) >= 60 ? 'text-blue-500' : 'text-amber-500'}`}>
-                          {insights?.healthLabel ?? 'Loading...'}
+                          {insights?.healthLabel ?? 'Analyzing your career…'}
                         </h4>
                         <p className="text-sm text-muted-foreground">
                           {(insights?.careerHealthScore ?? 0) >= 60

@@ -727,11 +727,30 @@ export function ScoreEditor({
   }, [selectedNotes, notes, onNotesChange, editingLyric, handleLyricSubmit, updateNote]);
   
   const handleExportPDF = useCallback(() => {
-    toast({
-      title: 'PDF Export Coming Soon',
-      description: 'PDF export will be available in a future update. Use the Print button to print the score.',
-    });
-  }, [toast]);
+    if (!canvasRef.current) return;
+    const dataUrl = canvasRef.current.toDataURL('image/png');
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Score Export — Max Booster</title>
+            <style>
+              body { margin: 0; display: flex; justify-content: center; align-items: flex-start; background: #fff; }
+              img { max-width: 100%; height: auto; }
+              @media print { body { margin: 0; } }
+            </style>
+          </head>
+          <body onload="window.print()">
+            <img src="${dataUrl}" alt="Score" />
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } else {
+      toast({ title: 'Pop-up blocked', description: 'Please allow pop-ups to export your score as PDF.' });
+    }
+  }, [toast, canvasRef]);
   
   const handlePrint = useCallback(() => {
     if (!canvasRef.current) return;

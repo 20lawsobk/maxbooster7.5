@@ -275,7 +275,7 @@ export function OfflineDataViewer({
                         <CollapsibleContent>
                           <div className="pl-10 pr-3 py-2 space-y-1">
                             {entries.length === 0 ? (
-                              <p className="text-xs text-muted-foreground py-2">Loading...</p>
+                              <p className="text-xs text-muted-foreground py-2">No data cached for this category.</p>
                             ) : (
                               entries.slice(0, 10).map((entry) => (
                                 <div

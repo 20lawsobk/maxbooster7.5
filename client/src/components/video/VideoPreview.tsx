@@ -223,7 +223,7 @@ export function VideoPreview({
           <div className="absolute inset-0 flex items-center justify-center bg-black/50">
             <div className="text-center text-white">
               <Loader2 className="w-8 h-8 mx-auto mb-2 animate-spin" />
-              <p className="text-sm">Loading...</p>
+              <p className="text-sm">Rendering preview…</p>
             </div>
           </div>
         )}

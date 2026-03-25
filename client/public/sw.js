@@ -11,7 +11,7 @@
  *  • Bumped cache version → old v4 caches are evicted on first activate.
  */
 
-const CACHE_VER    = 'v5';
+const CACHE_VER    = 'v6';
 const STATIC_CACHE = 'max-booster-static-' + CACHE_VER;
 const DYNAMIC_CACHE= 'max-booster-dynamic-' + CACHE_VER;
 const API_CACHE    = 'max-booster-api-' + CACHE_VER;
@@ -98,10 +98,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell (index.html / navigation requests): stale-while-revalidate.
-  // The cached version is served instantly; a fresh copy is fetched in background.
+  // App shell (index.html / navigation requests): network-first.
+  // Always fetch a fresh copy from the server; fall back to cache if offline.
   if (request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(shellStaleWhileRevalidate(request));
+    event.respondWith(shellNetworkFirst(request));
     return;
   }
 
@@ -121,18 +121,20 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(staleWhileRevalidate(request));
 });
 
-// ── App shell — stale-while-revalidate ───────────────────────────────────────
-// Serve cached HTML instantly, update cache in background.
-async function shellStaleWhileRevalidate(request) {
+// ── App shell — network-first ─────────────────────────────────────────────────
+// Always fetch a fresh copy from the server; fall back to cache when offline.
+async function shellNetworkFirst(request) {
   const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(request);
-  const fetchPromise = fetch(request).then((response) => {
+  try {
+    const response = await fetch(request);
     if (response.ok) {
       cache.put(request, response.clone());
     }
     return response;
-  }).catch(() => null);
-  return cached || fetchPromise || caches.match('/offline.html');
+  } catch {
+    const cached = await cache.match(request);
+    return cached || caches.match('/offline.html');
+  }
 }
 
 // ── Cache-first ───────────────────────────────────────────────────────────────

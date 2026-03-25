@@ -216,6 +216,16 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
   res.json(show);
 }));
 
+// GET /api/shows/setlists - list all setlists for user
+router.get("/setlists", requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const userSetlists = await db.select()
+    .from(setlists)
+    .where(eq(setlists.userId, userId))
+    .orderBy(desc(setlists.updatedAt));
+  res.json(userSetlists);
+}));
+
 // GET /api/shows/:id/setlist - get setlist for a show
 router.get("/:id/setlist", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;

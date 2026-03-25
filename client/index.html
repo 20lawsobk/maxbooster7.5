@@ -57,21 +57,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!--
-      ASYNC FONT LOADING — industry best practice (used by Vercel, Linear, Notion).
-      Using media="print" + onload trick prevents Google Fonts from blocking render.
-      The browser fetches the font in the background; onload swaps it to "all" when ready.
-      A <noscript> fallback ensures fonts still load without JS.
-      Eliminates up to 400-800ms of render-blocking time on first visit.
+      ASYNC FONT LOADING — display=swap means Google Fonts never blocks rendering.
+      Loaded as a standard stylesheet; the font-display swap in the CSS handles FOUT.
     -->
     <link
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
-      media="print"
-      onload="this.media='all'"
     />
-    <noscript>
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
-    </noscript>
 
     <script type="application/ld+json">
     {
@@ -259,7 +251,7 @@
 
         <p id="mb-loader-msg">Loading Max Booster...</p>
         <p id="mb-loader-sub"></p>
-        <button id="mb-loader-reload" onclick="location.reload()">Reload</button>
+        <button id="mb-loader-reload">Reload</button>
       </div>
     </div>
 
@@ -293,6 +285,8 @@
         var sub   = document.getElementById('mb-loader-sub');
         var btn   = document.getElementById('mb-loader-reload');
         var gone  = false;
+
+        if (btn) { btn.addEventListener('click', function() { location.reload(); }); }
 
         function setProgress(pct) {
           if (bar && !gone) bar.style.width = pct + '%';
@@ -354,7 +348,23 @@
           if (document.getElementById('root') && document.getElementById('root').children.length <= 1) {
             var d = document.createElement('div');
             d.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;font-family:Inter,system-ui,sans-serif;padding:20px;z-index:99999;text-align:center;';
-            d.innerHTML = '<div style="max-width:500px"><h1 style="font-size:20px;color:#f87171;margin-bottom:12px">Loading Error</h1><p style="margin-bottom:8px;font-size:14px;line-height:1.5">' + (e.message || 'Unknown error') + '</p><p style="font-size:12px;color:#94a3b8;margin-bottom:16px">' + (e.filename || '') + (e.lineno ? ':' + e.lineno : '') + '</p><button onclick="location.reload()" style="background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px">Reload</button></div>';
+            var inner = document.createElement('div');
+            inner.style.cssText = 'max-width:500px';
+            var h = document.createElement('h1');
+            h.style.cssText = 'font-size:20px;color:#f87171;margin-bottom:12px';
+            h.textContent = 'Loading Error';
+            var p1 = document.createElement('p');
+            p1.style.cssText = 'margin-bottom:8px;font-size:14px;line-height:1.5';
+            p1.textContent = e.message || 'Unknown error';
+            var p2 = document.createElement('p');
+            p2.style.cssText = 'font-size:12px;color:#94a3b8;margin-bottom:16px';
+            p2.textContent = (e.filename || '') + (e.lineno ? ':' + e.lineno : '');
+            var btn = document.createElement('button');
+            btn.style.cssText = 'background:#3b82f6;color:white;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:14px';
+            btn.textContent = 'Reload';
+            btn.addEventListener('click', function() { location.reload(); });
+            inner.appendChild(h); inner.appendChild(p1); inner.appendChild(p2); inner.appendChild(btn);
+            d.appendChild(inner);
             document.body.appendChild(d);
           }
         });

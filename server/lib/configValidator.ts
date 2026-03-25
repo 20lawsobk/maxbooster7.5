@@ -50,7 +50,7 @@ export function validateScaleConfig(): ValidationResult {
   }
 
   // ── Secrets ───────────────────────────────────────────────────────────────
-  if (!process.env.WEBHOOK_SECRET) {
+  if (!process.env.WEBHOOK_SECRET && !process.env.STRIPE_WEBHOOK_SECRET) {
     warnings.push('[ScaleConfig] WEBHOOK_SECRET is not set. Webhook signature verification is disabled — set WEBHOOK_SECRET to enable it.');
   }
 

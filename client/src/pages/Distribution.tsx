@@ -568,7 +568,16 @@ function PlaylistPitchingContent() {
               </thead>
               <tbody className="divide-y">
                 {pitchesLoading ? (
-                  <tr><td colSpan={4} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                  <>
+                    {[1,2,3].map(i => (
+                      <tr key={i} className="border-b">
+                        <td className="p-4"><Skeleton className="h-4 w-32 mb-1" /><Skeleton className="h-3 w-20" /></td>
+                        <td className="p-4"><Skeleton className="h-4 w-24" /></td>
+                        <td className="p-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                        <td className="p-4"><Skeleton className="h-3 w-20" /></td>
+                      </tr>
+                    ))}
+                  </>
                 ) : pitches.length === 0 ? (
                   <tr><td colSpan={4} className="p-8 text-center text-gray-500">No pitches tracked yet.</td></tr>
                 ) : pitches.map((pitch) => (
@@ -920,7 +929,17 @@ function SyncLicensingContent() {
               </thead>
               <tbody className="divide-y">
                 {isLoading ? (
-                  <tr><td colSpan={5} className="p-8 text-center text-gray-500">Loading...</td></tr>
+                  <>
+                    {[1,2,3].map(i => (
+                      <tr key={i} className="border-b">
+                        <td className="p-4"><Skeleton className="h-4 w-32 mb-1" /><Skeleton className="h-3 w-20" /></td>
+                        <td className="p-4"><Skeleton className="h-4 w-20 mb-1" /><Skeleton className="h-3 w-16" /></td>
+                        <td className="p-4"><Skeleton className="h-4 w-24" /></td>
+                        <td className="p-4"><Skeleton className="h-5 w-16 rounded-full" /></td>
+                        <td className="p-4"><Skeleton className="h-4 w-14" /></td>
+                      </tr>
+                    ))}
+                  </>
                 ) : catalog.length === 0 ? (
                   <tr><td colSpan={5} className="p-8 text-center text-gray-500">No tracks in catalog.</td></tr>
                 ) : catalog.map((item) => (
@@ -2586,7 +2605,7 @@ return (
                         Next payout:{' '}
                         {earningsBreakdown?.nextPayoutDate
                           ? new Date(earningsBreakdown.nextPayoutDate).toLocaleDateString()
-                          : 'TBD'}
+                          : <span className="text-purple-500/70">Pending</span>}
                       </p>
                     </div>
                     <div className="p-3 bg-purple-200 dark:bg-purple-800 rounded-full">
@@ -4290,7 +4309,19 @@ function ARSubmissionsContent() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : submissions.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <Skeleton className="h-8 w-28 ml-4" />
+                </div>
+              ))}
+            </div>
+          ) : submissions.length === 0 ? (
             <div className="text-center py-12">
               <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No submissions tracked yet.</p>
@@ -4427,7 +4458,19 @@ function SampleClearanceContent() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : clearances.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <Skeleton className="h-8 w-28 ml-4" />
+                </div>
+              ))}
+            </div>
+          ) : clearances.length === 0 ? (
             <div className="text-center py-12">
               <Shield className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No samples tracked.</p>
@@ -4573,7 +4616,19 @@ function MusicVideosContent() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p className="text-center py-8 text-gray-400">Loading...</p> : videos.length === 0 ? (
+          {isLoading ? (
+            <div className="space-y-3 py-2">
+              {[1,2,3].map(i => (
+                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-3 w-56" />
+                  </div>
+                  <Skeleton className="h-8 w-28 ml-4" />
+                </div>
+              ))}
+            </div>
+          ) : videos.length === 0 ? (
             <div className="text-center py-12">
               <Video className="w-12 h-12 mx-auto mb-3 text-gray-300" />
               <p className="text-gray-500">No music videos tracked yet.</p>
