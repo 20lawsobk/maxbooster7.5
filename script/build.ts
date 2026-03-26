@@ -1,6 +1,7 @@
 import { build as esbuild } from "esbuild";
-// vite is a devDependency — lazy-loaded only when actually building the frontend
-// so the deployment platform can install --omit=dev without breaking this script.
+// vite is in dependencies (not devDependencies) so the deployment platform has it
+// available when running npm run build. Lazy-loaded here so it isn't required at
+// module startup — only imported when the frontend build branch actually executes.
 import { rm, readFile, access, readdir, stat, writeFile } from "fs/promises";
 import { brotliCompress, gzip, constants as zlibConstants } from "zlib";
 import { promisify } from "util";
@@ -47,8 +48,9 @@ const allowlist: string[] = [];
 //   esbuild              — server/self-evolution-engine.ts (static top-level import)
 //
 // Packages safely left in "devDependencies" (never loaded in production):
-//   vite    — only loaded inside `else` branch (NODE_ENV !== "production")
 //   vitest  — only appears in a template string inside generateTestsForUpgrade()
+//   vite    — moved to dependencies; required by deployment build (platform installs
+//             --omit=dev before running npm run build)
 //   All @radix-ui/*, react, framer-motion, etc. — bundled into dist/public by Vite
 // ─────────────────────────────────────────────────────────────────────────────
 

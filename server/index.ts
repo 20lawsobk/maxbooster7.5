@@ -25,6 +25,7 @@ import {
 } from "./safety/index.ts";
 
 import { securityMiddleware } from './middleware/security.js';
+import helmet from "helmet";
 
 // Dynamic imports for monitoring services (optional)
 let metricsCollector: any = null;
@@ -51,6 +52,8 @@ async function loadOptionalModules() {
 }
 
 const app = express();
+
+app.use(helmet({ contentSecurityPolicy: false })); // Security auto-fix
 
 // Apply rate limiting and production-grade CSP
 app.use(securityMiddleware as any);
