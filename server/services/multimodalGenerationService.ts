@@ -26,7 +26,10 @@ async function maxcorePost(path: string, body: unknown): Promise<any> {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      ...(MAXCORE_KEY ? { Authorization: `Bearer ${MAXCORE_KEY}` } : {}),
+      ...(MAXCORE_KEY ? {
+        'Authorization': `Bearer ${MAXCORE_KEY}`,
+        'X-API-Key': MAXCORE_KEY,
+      } : {}),
     },
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(30_000),
