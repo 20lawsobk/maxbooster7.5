@@ -9,6 +9,7 @@ import {
   type PackId,
   PACK_DEFINITIONS,
 } from '@shared/types/multimodalGeneration.js';
+import { PLATFORM_RULES } from '@shared/config/platformRules.js';
 
 const router = Router();
 
@@ -66,6 +67,21 @@ router.post('/generate', requireAuthOnly, async (req: Request, res: Response) =>
     logger.error('[POST /multimodal/generate]', err);
     return res.status(500).json({ error: err.message || 'Generation failed' });
   }
+});
+
+// GET /api/multimodal/platform-rules  — return all platform rules (for maxcore and frontend)
+router.get('/platform-rules', requireAuthOnly, (_req: Request, res: Response) => {
+  return res.json({ platformRules: PLATFORM_RULES });
+});
+
+// GET /api/multimodal/platform-rules/:platform  — rules for a single platform
+router.get('/platform-rules/:platform', requireAuthOnly, (req: Request, res: Response) => {
+  const platform = req.params.platform as Platform;
+  const rules = PLATFORM_RULES[platform];
+  if (!rules) {
+    return res.status(404).json({ error: `Unknown platform: ${platform}` });
+  }
+  return res.json({ platform, rules });
 });
 
 // GET /api/multimodal/packs  — list available pack definitions
