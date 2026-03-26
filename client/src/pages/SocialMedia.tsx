@@ -627,11 +627,12 @@ export default function SocialMedia() {
   });
 
   const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
-  const toMultimodalPlatform = (id: string): string => {
-    if (id === 'meta')          return 'facebook';       // Meta covers Facebook + Instagram
-    if (id === 'googlebusiness') return 'google_business';
-    if (id === 'twitter')        return 'twitter';        // not in server list, filtered out
-    return id;
+  // Expand UI platform IDs to server-accepted platform IDs (meta → facebook + instagram)
+  const expandPlatform = (id: string): string[] => {
+    if (id === 'meta')           return ['facebook', 'instagram'];
+    if (id === 'googlebusiness') return ['google_business'];
+    if (id === 'twitter')        return [];  // not supported by generation server
+    return [id];
   };
   const fromMultimodalPlatform = (id: string): string => {
     if (id === 'facebook' || id === 'instagram') return 'meta';
@@ -725,8 +726,7 @@ export default function SocialMedia() {
       format?: string;
       [key: string]: unknown;
     }) => {
-      const mappedPlatforms = data.platforms
-        .map(toMultimodalPlatform)
+      const mappedPlatforms = [...new Set(data.platforms.flatMap(expandPlatform))]
         .filter(p => MULTIMODAL_PLATFORMS.has(p));
       const outputModality = data.format || 'text';
       const response = await apiRequest('POST', '/api/multimodal/generate', {
@@ -794,8 +794,7 @@ export default function SocialMedia() {
       targetAudience: string;
       format: string;
     }) => {
-      const mappedPlatforms = data.platforms
-        .map(toMultimodalPlatform)
+      const mappedPlatforms = [...new Set(data.platforms.flatMap(expandPlatform))]
         .filter(p => MULTIMODAL_PLATFORMS.has(p));
       const outputModality = data.format || 'text';
       const response = await apiRequest('POST', '/api/multimodal/generate', {
