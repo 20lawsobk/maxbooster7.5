@@ -72,6 +72,7 @@ client/dist/public/
 # Binary image assets — PNG/WebP/ICO/JPG files are binary and must NOT be in git.
 # Replit's deployment layer push rejects non-UTF-8 (binary) files.
 dist/public/favicon.png
+dist/public/favicon16.png
 dist/public/favicon.ico
 dist/public/logo.png
 dist/public/logo.webp
@@ -79,6 +80,7 @@ dist/public/icons/
 dist/public/screenshots/
 # Source-tree binary assets (also excluded by .dockerignore via client/ + assets/)
 client/public/favicon.png
+client/public/favicon16.png
 client/public/favicon.ico
 client/public/logo.png
 client/public/logo.webp
