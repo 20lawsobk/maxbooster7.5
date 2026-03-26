@@ -3890,6 +3890,7 @@ export async function registerRoutes(
     { path: "/api/social/approvals", name: "socialApprovals", loader: () => import("./routes/socialApprovals") },
     { path: "/api/social/bulk", name: "socialBulk", loader: () => import("./routes/socialBulk") },
     { path: "/api/social", name: "socialAI", loader: () => import("./routes/socialAI") },
+    { path: "/api/multimodal", name: "multimodal", loader: () => import("./routes/multimodal") },
     { path: "/api/organic", name: "organic", loader: () => import("./routes/organic") },
     { path: "/api/advertising", name: "advertising", loader: () => import("./routes/advertising") },
     { path: "/api/advertising/autopilot", name: "advertisingAutopilot", loader: () => import("./routes/advertisingAutopilot") },

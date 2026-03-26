@@ -57,6 +57,10 @@ import {
   Palette,
   Video,
   Image,
+  Layers,
+  Package,
+  CheckSquare,
+  Square,
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -106,6 +110,63 @@ interface AIGenerateResult {
   content?: any;
 }
 
+type PackId = 'singlereleasefull_pack' | 'announcement_pack' | 'tourdatespack' | 'evergreenbrandpack';
+type OutputModality = 'text' | 'image' | 'audio' | 'video';
+type PackPlatform = 'facebook' | 'instagram' | 'threads' | 'tiktok' | 'youtube' | 'google_business' | 'linkedin';
+
+interface GeneratedAsset {
+  id: string;
+  modality: OutputModality;
+  payload: string;
+  platform?: PackPlatform;
+  slotId?: string;
+  purpose?: string;
+  metadata?: Record<string, any>;
+}
+
+interface MultimodalPackage {
+  requestId: string;
+  assets: GeneratedAsset[];
+  generatedAt: string;
+}
+
+const PACK_OPTIONS: { value: PackId; label: string; description: string }[] = [
+  { value: 'singlereleasefull_pack', label: 'Single Release — Full Pack', description: 'FB post, IG caption, Story, Threads, TikTok hook, YT title/desc, Google Business, LinkedIn + cover image' },
+  { value: 'announcement_pack',      label: 'Announcement Pack',          description: 'Cross-platform announcement for FB, IG, Threads, TikTok, LinkedIn' },
+  { value: 'tourdatespack',          label: 'Tour Dates Pack',            description: 'Tour announcement for FB, IG, TikTok, Google Business + tour graphic' },
+  { value: 'evergreenbrandpack',     label: 'Evergreen Brand Pack',       description: 'Brand storytelling for FB, IG, LinkedIn, Google Business + brand image' },
+];
+
+const PACK_PLATFORMS: { value: PackPlatform; label: string }[] = [
+  { value: 'facebook',       label: 'Facebook' },
+  { value: 'instagram',      label: 'Instagram' },
+  { value: 'threads',        label: 'Threads' },
+  { value: 'tiktok',         label: 'TikTok' },
+  { value: 'youtube',        label: 'YouTube' },
+  { value: 'google_business',label: 'Google Business' },
+  { value: 'linkedin',       label: 'LinkedIn' },
+];
+
+const PLATFORM_LABEL: Record<PackPlatform, string> = {
+  facebook: 'Facebook',
+  instagram: 'Instagram',
+  threads: 'Threads',
+  tiktok: 'TikTok',
+  youtube: 'YouTube',
+  google_business: 'Google Business',
+  linkedin: 'LinkedIn',
+};
+
+const PLATFORM_COLOR: Record<PackPlatform, string> = {
+  facebook:       'border-l-blue-600',
+  instagram:      'border-l-pink-500',
+  threads:        'border-l-gray-800',
+  tiktok:         'border-l-black',
+  youtube:        'border-l-red-600',
+  google_business:'border-l-green-600',
+  linkedin:       'border-l-blue-800',
+};
+
 interface TrendingTopic {
   id: string;
   topic: string;
@@ -149,6 +210,11 @@ export function ContentGenerator() {
   const [urlAnalysis, setUrlAnalysis] = useState<any>(null);
   const [urlImporting, setUrlImporting] = useState(false);
   const [visualSpec, setVisualSpec] = useState<any>(null);
+
+  const [packId, setPackId] = useState<PackId>('singlereleasefull_pack');
+  const [packInput, setPackInput] = useState('');
+  const [packPlatforms, setPackPlatforms] = useState<PackPlatform[]>(['facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'linkedin']);
+  const [packResult, setPackResult] = useState<MultimodalPackage | null>(null);
 
   const { data: trendingTopics, isLoading: loadingTrends } = useQuery<TrendingTopic[]>({
     queryKey: ['/api/social/ai-content/trending-topics'],
@@ -315,6 +381,39 @@ export function ContentGenerator() {
     },
   });
 
+  const packGenerateMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest('POST', '/api/multimodal/generate', {
+        input: { modality: 'text', payload: packInput },
+        platforms: packPlatforms,
+        packId,
+        intent: 'release',
+      });
+      return await res.json() as MultimodalPackage;
+    },
+    onSuccess: (data) => {
+      setPackResult(data);
+      const count = data.assets?.length ?? 0;
+      toast({
+        title: 'Content Pack Generated',
+        description: `Created ${count} asset${count !== 1 ? 's' : ''} across ${packPlatforms.length} platform${packPlatforms.length !== 1 ? 's' : ''}`,
+      });
+    },
+    onError: (err: any) => {
+      toast({
+        title: 'Pack Generation Failed',
+        description: err.message || 'Unable to generate content pack',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const togglePackPlatform = (p: PackPlatform) => {
+    setPackPlatforms(prev =>
+      prev.includes(p) ? prev.filter(x => x !== p) : [...prev, p]
+    );
+  };
+
   const handleGenerateContent = () => {
     if (!contentPrompt.trim()) {
       toast({
@@ -471,10 +570,14 @@ export function ContentGenerator() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="generate" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="generate">
               <Wand2 className="w-4 h-4 mr-1" />
               Generate
+            </TabsTrigger>
+            <TabsTrigger value="pack">
+              <Layers className="w-4 h-4 mr-1" />
+              Pack
             </TabsTrigger>
             <TabsTrigger value="trends">
               <TrendingUp className="w-4 h-4 mr-1" />
@@ -1126,6 +1229,154 @@ export function ContentGenerator() {
                   </div>
                 )}
               </div>
+            )}
+          </TabsContent>
+
+          {/* ── Content Pack Tab ──────────────────────────────────────── */}
+          <TabsContent value="pack" className="space-y-4">
+
+            {/* Pack selector */}
+            <div className="space-y-1">
+              <Label className="flex items-center gap-1"><Package className="w-4 h-4" /> Content Pack</Label>
+              <Select value={packId} onValueChange={(v) => setPackId(v as PackId)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PACK_OPTIONS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {PACK_OPTIONS.find(p => p.value === packId)?.description}
+              </p>
+            </div>
+
+            {/* Platform selector */}
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1"><Globe className="w-4 h-4" /> Platforms</Label>
+              <div className="flex flex-wrap gap-2">
+                {PACK_PLATFORMS.map((p) => {
+                  const selected = packPlatforms.includes(p.value);
+                  return (
+                    <button
+                      key={p.value}
+                      type="button"
+                      onClick={() => togglePackPlatform(p.value)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                        selected
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-background border-border text-muted-foreground hover:border-primary'
+                      }`}
+                    >
+                      {selected ? <CheckSquare className="w-3 h-3" /> : <Square className="w-3 h-3" />}
+                      {p.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Prompt */}
+            <div className="space-y-1">
+              <Label className="flex items-center gap-1"><FileText className="w-4 h-4" /> What to promote</Label>
+              <Textarea
+                placeholder="e.g. My new single 'Neon Lights' is out now on Spotify — upbeat pop with a summer vibe, featuring a saxophone riff…"
+                value={packInput}
+                onChange={(e) => setPackInput(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            <Button
+              onClick={() => packGenerateMutation.mutate()}
+              disabled={!packInput.trim() || packPlatforms.length === 0 || packGenerateMutation.isPending}
+              className="w-full"
+            >
+              {packGenerateMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Pack…
+                </>
+              ) : (
+                <>
+                  <Layers className="w-4 h-4 mr-2" />
+                  Generate Content Pack
+                </>
+              )}
+            </Button>
+
+            {/* Results */}
+            {packResult && packResult.assets && packResult.assets.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-semibold">
+                    {packResult.assets.length} asset{packResult.assets.length !== 1 ? 's' : ''} generated
+                  </span>
+                  <Badge variant="secondary" className="text-xs">
+                    {new Date(packResult.generatedAt).toLocaleTimeString()}
+                  </Badge>
+                </div>
+
+                {/* Text assets */}
+                {packResult.assets.filter(a => a.modality === 'text').map((asset) => (
+                  <Card key={asset.id} className={`border-l-4 ${asset.platform ? PLATFORM_COLOR[asset.platform] : 'border-l-primary'} bg-muted/30`}>
+                    <CardContent className="p-3 space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {asset.platform && (
+                            <Badge variant="outline" className="text-xs">
+                              {PLATFORM_LABEL[asset.platform] ?? asset.platform}
+                            </Badge>
+                          )}
+                          {asset.purpose && (
+                            <span className="text-xs text-muted-foreground">{asset.purpose}</span>
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-6 px-2"
+                          onClick={() => copyToClipboard(asset.payload)}
+                        >
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <p className="text-sm whitespace-pre-wrap">{asset.payload}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Image assets */}
+                {packResult.assets.filter(a => a.modality === 'image' && a.payload).map((asset) => (
+                  <Card key={asset.id} className="border-l-4 border-l-violet-500 bg-muted/30">
+                    <CardContent className="p-3 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <Image className="w-4 h-4 text-violet-500" />
+                        <Badge variant="outline" className="text-xs">Image</Badge>
+                        {asset.purpose && (
+                          <span className="text-xs text-muted-foreground">{asset.purpose}</span>
+                        )}
+                      </div>
+                      <img
+                        src={asset.payload}
+                        alt={asset.purpose ?? 'Generated image'}
+                        className="rounded-md w-full max-h-64 object-cover"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {packResult && packResult.assets && packResult.assets.length === 0 && (
+              <Alert>
+                <AlertDescription>No assets were generated. Try adjusting your prompt or platform selection.</AlertDescription>
+              </Alert>
             )}
           </TabsContent>
 
