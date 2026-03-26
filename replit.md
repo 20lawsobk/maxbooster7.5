@@ -10,7 +10,7 @@ I prefer iterative development, with clear communication before significant chan
 - **Node.js**: 22 (required — project uses Node 22+ APIs)
 - **Package Manager**: npm (with `legacy-peer-deps=true` in `.npmrc`)
 - **Workflow**: "Start application" runs `NODE_ENV=development npx tsx server/index.ts` on port 5000 (webview)
-- **Deployment**: Autoscale — build: `npm run build`, run: `bash start.sh`
+- **Deployment**: `autoscale` — build: `npm run deploy:build`, run: `node dist/cluster.cjs`
 - **Key Fix Applied**: Added ESM-compatible `__dirname` shim to `server/static.ts` (project uses `"type": "module"` so `__dirname` is not natively available in server files)
 - **Optional services not configured in dev**: Redis/REDIS_URL (falls back to in-memory), Stripe keys (optional for payments), ADMIN_EMAIL (admin init skipped without it)
 
@@ -27,6 +27,7 @@ I prefer iterative development, with clear communication before significant chan
 - **`.gitignore` alone is NOT sufficient** to exclude files from the Repl layer — physical file deletion is required.
 - **Git index cleanliness is critical**: The Repl layer is built from the git index (equivalent to `git archive HEAD`). Files with non-UTF-8 bytes in their **filename** (not just content) will also cause "invalid UTF-8" failures. A binary-named file `\x01\xd0%\x02@\x18\xfd` was found as Entry 0 in the git index and removed via direct Python index surgery. The `deploy-clean-binary.mjs` script now also purges the git index of any binary-named entries and any `attached_assets/` entries at every deploy.
 - **Attached screenshots auto-create binary PNG files** in `attached_assets/`. These are gitignored but `deploy-clean-binary.mjs` also purges them from the git index if they somehow get committed.
+- **CRITICAL — `vm` deployment is permanently broken for this workspace**: A binary-named file (`\x01\xd0%\x02@\x18\xfd`, 0 bytes) exists in the workspace root. The Replit sandbox blocks ALL syscalls with non-UTF-8 paths (unlink, rename, open, etc.) so the file CANNOT be deleted. The `vm` deployment type validates every workspace filename as UTF-8 and fails on this file. **We switched to `autoscale` which uses containers and does not have this restriction.** Do NOT switch back to `vm` — it will never work in this workspace.
 
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.
