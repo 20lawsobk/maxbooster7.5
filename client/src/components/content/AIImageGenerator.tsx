@@ -110,6 +110,7 @@ export function AIImageGenerator({
   const [copied, setCopied] = useState(false);
 
   const apiEndpoint = endpoint || '/api/social/generate-image';
+  const isMultimodalEndpoint = apiEndpoint.includes('/multimodal/generate');
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -125,19 +126,46 @@ export function AIImageGenerator({
     setResult(null);
 
     try {
-      const response = await apiRequest('POST', apiEndpoint, {
-        topic,
-        platform,
-        tone: selectedTone,
-        goal,
-        artist_name: artistName || undefined,
-        style: selectedStyle,
-      });
+      let data: any;
 
-      const data = await response.json();
-
-      if (!data.success) {
-        throw new Error(data.message || 'Image generation failed');
+      if (isMultimodalEndpoint) {
+        const mmPlatform = platform === 'instagram_reels' ? 'instagram' : platform;
+        const validPlatforms = ['facebook','instagram','threads','tiktok','youtube','google_business','linkedin'];
+        const resolvedPlatform = validPlatforms.includes(mmPlatform) ? mmPlatform : 'instagram';
+        const response = await apiRequest('POST', apiEndpoint, {
+          input: {
+            modality: 'text',
+            payload: topic,
+          },
+          platforms: [resolvedPlatform],
+          intent: `${selectedTone} image creative for ${artistName || 'artist'}`,
+          constraints: { styleTags: [selectedStyle, selectedTone] },
+        });
+        const mmData = await response.json();
+        const imageAsset = (mmData.assets || []).find((a: any) => a.modality === 'image');
+        if (!imageAsset) throw new Error('No image asset returned');
+        data = {
+          success: true,
+          url: imageAsset.payload || null,
+          width: 1080,
+          height: 1080,
+          format: 'png',
+          platform,
+          prompt_used: imageAsset.metadata?.prompt || topic,
+          color_scheme: { primary: '#000000', secondary: '#ffffff', accent: '#6366f1', background: '#000000' },
+          processing_time_ms: 0,
+        };
+      } else {
+        const response = await apiRequest('POST', apiEndpoint, {
+          topic,
+          platform,
+          tone: selectedTone,
+          goal,
+          artist_name: artistName || undefined,
+          style: selectedStyle,
+        });
+        data = await response.json();
+        if (!data.success) throw new Error(data.message || 'Image generation failed');
       }
 
       setResult(data);

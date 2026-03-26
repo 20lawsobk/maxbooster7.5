@@ -157,17 +157,27 @@ export function CreativeVariantGenerator() {
   const generateMutation = useMutation({
     mutationFn: async () => {
       const topic = bulkTopic.trim() || 'music distribution and promotion';
-      const res = await apiRequest('POST', '/api/advertising/generate-content', {
-        contentType: 'promotional',
-        platform: 'instagram',
-        topic,
-        tone: 'energetic',
+      const res = await apiRequest('POST', '/api/multimodal/generate', {
+        input: {
+          modality: 'text',
+          payload: topic,
+        },
+        platforms: ['instagram', 'facebook', 'tiktok'],
+        intent: 'promotional',
       });
       return res.json();
     },
     onSuccess: (data) => {
-      if (data?.success && data?.content) {
-        setGeneratedContent(data.content);
+      const textAssets = (data.assets || []).filter((a: any) => a.modality === 'text');
+      if (textAssets.length > 0) {
+        const first = textAssets[0];
+        setGeneratedContent({
+          hook: first.metadata?.hook || first.payload?.split('\n')[0] || '',
+          body: first.metadata?.body || first.payload || '',
+          cta: first.metadata?.cta || '',
+          caption: first.payload || '',
+          hashtags: first.metadata?.hashtags || [],
+        });
         toast({ title: 'Variants Generated', description: `AI created ${bulkCount} creative variants for your campaign.` });
       } else {
         toast({ title: 'Generation Complete', description: 'AI content generated successfully.', variant: 'default' });

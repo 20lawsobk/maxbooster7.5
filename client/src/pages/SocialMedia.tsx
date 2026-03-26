@@ -610,6 +610,24 @@ export default function SocialMedia() {
     enabled: !!user,
   });
 
+  const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
+  const toMultimodalPlatform = (id: string) => id === 'googlebusiness' ? 'google_business' : id;
+  const fromMultimodalPlatform = (id: string) => id === 'google_business' ? 'googlebusiness' : id;
+  const mapAssetsToGeneratedContent = (assets: any[]): GeneratedContent[] =>
+    (assets || [])
+      .filter((a: any) => a.modality === 'text')
+      .map((a: any) => ({
+        platform: fromMultimodalPlatform(a.platform || 'instagram'),
+        content: a.payload || '',
+        hashtags: a.metadata?.hashtags,
+        format: 'text',
+        hook: a.metadata?.hook,
+        body: a.metadata?.body,
+        cta: a.metadata?.cta,
+        source: 'python_ai_model',
+        optimalPostTime: a.metadata?.optimalPostTime,
+      }));
+
   // Mutations
   const generateContentMutation = useMutation({
     mutationFn: async (data: {
@@ -619,37 +637,32 @@ export default function SocialMedia() {
       format?: string;
       [key: string]: unknown;
     }) => {
-      const response = await apiRequest('POST', '/api/social/generate-content', data);
+      const mappedPlatforms = data.platforms
+        .map(toMultimodalPlatform)
+        .filter(p => MULTIMODAL_PLATFORMS.has(p));
+      const response = await apiRequest('POST', '/api/multimodal/generate', {
+        input: {
+          modality: 'text',
+          payload: data.topic?.trim() || `Generate ${data.tone} social media content`,
+        },
+        platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ['instagram'],
+        intent: data.tone,
+        constraints: data.format ? { styleTags: [data.format] } : undefined,
+      });
       return response.json();
     },
     onSuccess: (data) => {
-      if (data.generatedContent && data.generatedContent.length > 0) {
-        setUrlGeneratedContent(data.generatedContent);
-        const first = data.generatedContent[0];
+      const generatedContent = mapAssetsToGeneratedContent(data.assets);
+      if (generatedContent.length > 0) {
+        setUrlGeneratedContent(generatedContent);
+        const first = generatedContent[0];
         const fullContent = [first.hook, first.body, first.cta].filter(Boolean).join('\n\n');
-        setPostContent(fullContent || first.content || first.caption || data.content || '');
+        setPostContent(fullContent || first.content || '');
       } else {
         setUrlGeneratedContent([]);
-        setPostContent(data.content || '');
       }
-      
-      if (data.outcome) {
-        const { variationsCount, hasHashtags, optimalTime } = data.outcome;
-        handleContentGenerated(variationsCount || data.generatedContent?.length || 1, hasHashtags, optimalTime);
-      } else {
-        const formatLabel =
-          regularContentFormat === 'text'
-            ? 'text'
-            : regularContentFormat === 'image'
-              ? 'image'
-              : regularContentFormat === 'audio'
-                ? 'audio'
-                : 'video';
-        toast({
-          title: 'Content Generated!',
-          description: `AI has created ${formatLabel} content for your selected platforms.`,
-        });
-      }
+      const hasHashtags = generatedContent.some(c => c.hashtags && c.hashtags.length > 0);
+      handleContentGenerated(generatedContent.length || 1, hasHashtags, undefined);
       setIsGeneratingContent(false);
     },
     onError: () => {
@@ -691,22 +704,25 @@ export default function SocialMedia() {
       targetAudience: string;
       format: string;
     }) => {
-      const response = await apiRequest('POST', '/api/social/generate-from-url', data);
+      const mappedPlatforms = data.platforms
+        .map(toMultimodalPlatform)
+        .filter(p => MULTIMODAL_PLATFORMS.has(p));
+      const response = await apiRequest('POST', '/api/multimodal/generate', {
+        input: {
+          modality: 'url',
+          payload: data.url,
+        },
+        platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ['instagram'],
+        intent: data.targetAudience || undefined,
+      });
       return response.json();
     },
     onSuccess: (data) => {
-      setUrlGeneratedContent(data.generatedContent || data);
-      const formatLabel =
-        contentFormat === 'text'
-          ? 'text'
-          : contentFormat === 'image'
-            ? 'image'
-            : contentFormat === 'audio'
-              ? 'audio'
-              : 'video';
+      const generatedContent = mapAssetsToGeneratedContent(data.assets);
+      setUrlGeneratedContent(generatedContent);
       toast({
         title: 'Content Generated from URL!',
-        description: `AI has created ${formatLabel} content for your selected platforms.`,
+        description: `AI has created content for your selected platforms.`,
       });
       setIsGeneratingFromUrl(false);
     },

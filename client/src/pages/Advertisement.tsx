@@ -939,7 +939,7 @@ export default function Advertisement() {
                       tone="energetic"
                       goal={campaignForm.objective || 'growth'}
                       artistName={user?.displayName || user?.email?.split('@')[0] || 'Artist'}
-                      endpoint="/api/advertising/generate-image"
+                      endpoint="/api/multimodal/generate"
                       onImageGenerated={(url) => {
                         setGeneratedAdImages((prev) => [...prev, { url, createdAt: new Date() }]);
                       }}
