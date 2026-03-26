@@ -84,97 +84,447 @@ function validateTaskPlan(raw: any, requestId: string): TaskPlan {
 
 // ── Local URL analyzer ────────────────────────────────────────────────────────
 
-function detectMusicPlatform(url: string): { platform: string; type: string; id?: string } {
+type UrlCategory =
+  | 'music_stream'   // Spotify, Apple Music, Tidal, Deezer, Audiomack, Bandcamp
+  | 'music_video'    // YouTube music video, Vevo
+  | 'video'          // YouTube non-music, Vimeo, Dailymotion
+  | 'social_post'    // Instagram, TikTok, X/Twitter, Facebook, Threads
+  | 'podcast'        // Podcast platforms
+  | 'article'        // Blog post, news article, Medium
+  | 'ecommerce'      // Online store, merch, product
+  | 'website'        // General website / artist site
+  | 'press'          // Music press: Pitchfork, Rolling Stone, NME, etc.
+  | 'event'          // Show listing, ticketing (Eventbrite, Dice, Ticketmaster)
+  | 'other';
+
+interface UrlContext {
+  category:   UrlCategory;
+  platform:   string;
+  contentType: string;
+  id?:         string;
+}
+
+const BROWSER_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
+
+function classifyUrl(url: string): UrlContext {
   try {
-    const u = new URL(url);
-    const host = u.hostname.replace(/^www\./, '');
+    const u     = new URL(url);
+    const host  = u.hostname.replace(/^www\./, '').toLowerCase();
     const parts = u.pathname.split('/').filter(Boolean);
-    if (host.includes('spotify.com'))    return { platform: 'Spotify',      type: parts[0] ?? 'track', id: parts[1] };
-    if (host.includes('youtube.com') || host.includes('youtu.be')) return { platform: 'YouTube', type: 'video', id: u.searchParams.get('v') ?? parts[0] };
-    if (host.includes('soundcloud.com')) return { platform: 'SoundCloud',    type: 'track', id: parts.join('/') };
-    if (host.includes('apple.com'))      return { platform: 'Apple Music',   type: 'album' };
-    if (host.includes('tidal.com'))      return { platform: 'Tidal',         type: 'track' };
-    if (host.includes('deezer.com'))     return { platform: 'Deezer',        type: 'track' };
-    if (host.includes('audiomack.com'))  return { platform: 'Audiomack',     type: 'song' };
-    if (host.includes('bandcamp.com'))   return { platform: 'Bandcamp',      type: 'track' };
-    if (host.includes('instagram.com'))  return { platform: 'Instagram',     type: 'post' };
-    if (host.includes('tiktok.com'))     return { platform: 'TikTok',        type: 'video' };
-    if (host.includes('twitter.com') || host.includes('x.com')) return { platform: 'X/Twitter', type: 'post' };
-    return { platform: host, type: 'link' };
+
+    // ── Music streaming ─────────────────────────────────────────
+    if (host.includes('spotify.com'))       return { category: 'music_stream', platform: 'Spotify',     contentType: parts[0] ?? 'track', id: parts[1] };
+    if (host.includes('music.apple.com'))   return { category: 'music_stream', platform: 'Apple Music', contentType: 'album' };
+    if (host.includes('tidal.com'))         return { category: 'music_stream', platform: 'Tidal',       contentType: 'track' };
+    if (host.includes('deezer.com'))        return { category: 'music_stream', platform: 'Deezer',      contentType: 'track' };
+    if (host.includes('audiomack.com'))     return { category: 'music_stream', platform: 'Audiomack',   contentType: 'song' };
+    if (host.includes('bandcamp.com'))      return { category: 'music_stream', platform: 'Bandcamp',    contentType: 'track' };
+    if (host.includes('soundcloud.com'))    return { category: 'music_stream', platform: 'SoundCloud',  contentType: 'track', id: parts.join('/') };
+    if (host.includes('boomplay.com'))      return { category: 'music_stream', platform: 'Boomplay',    contentType: 'track' };
+    if (host.includes('pandora.com'))       return { category: 'music_stream', platform: 'Pandora',     contentType: 'station' };
+    if (host.includes('music.amazon'))      return { category: 'music_stream', platform: 'Amazon Music',contentType: 'track' };
+    if (host.includes('napster.com'))       return { category: 'music_stream', platform: 'Napster',     contentType: 'track' };
+    if (host.includes('anghami.com'))       return { category: 'music_stream', platform: 'Anghami',     contentType: 'track' };
+    if (host.includes('kkbox.com'))         return { category: 'music_stream', platform: 'KKBOX',       contentType: 'track' };
+    if (host.includes('joox.com'))          return { category: 'music_stream', platform: 'JOOX',        contentType: 'track' };
+    if (host.includes('gaana.com'))         return { category: 'music_stream', platform: 'Gaana',       contentType: 'song' };
+    if (host.includes('jiosaavn.com'))      return { category: 'music_stream', platform: 'JioSaavn',    contentType: 'song' };
+    if (host.includes('music.youtube.com')) return { category: 'music_stream', platform: 'YouTube Music',contentType: 'track' };
+    if (host.includes('vevo.com'))          return { category: 'music_video',  platform: 'Vevo',        contentType: 'video' };
+
+    // ── Video ────────────────────────────────────────────────────
+    if (host.includes('youtube.com') || host.includes('youtu.be')) return { category: 'video', platform: 'YouTube', contentType: 'video', id: u.searchParams.get('v') ?? parts[0] };
+    if (host.includes('vimeo.com'))         return { category: 'video', platform: 'Vimeo',       contentType: 'video' };
+    if (host.includes('dailymotion.com'))   return { category: 'video', platform: 'Dailymotion',  contentType: 'video' };
+    if (host.includes('twitch.tv'))         return { category: 'video', platform: 'Twitch',       contentType: 'stream' };
+    if (host.includes('kick.com'))          return { category: 'video', platform: 'Kick',         contentType: 'stream' };
+    if (host.includes('rumble.com'))        return { category: 'video', platform: 'Rumble',       contentType: 'video' };
+
+    // ── Social posts ─────────────────────────────────────────────
+    if (host.includes('instagram.com'))     return { category: 'social_post', platform: 'Instagram', contentType: parts[0] === 'p' || parts[0] === 'reel' ? parts[0] : 'post' };
+    if (host.includes('tiktok.com'))        return { category: 'social_post', platform: 'TikTok',   contentType: 'video' };
+    if (host.includes('twitter.com') || host.includes('x.com')) return { category: 'social_post', platform: 'X (Twitter)', contentType: 'tweet' };
+    if (host.includes('facebook.com'))      return { category: 'social_post', platform: 'Facebook', contentType: 'post' };
+    if (host.includes('threads.net'))       return { category: 'social_post', platform: 'Threads',  contentType: 'post' };
+    if (host.includes('linkedin.com'))      return { category: 'social_post', platform: 'LinkedIn', contentType: 'post' };
+    if (host.includes('pinterest.com'))     return { category: 'social_post', platform: 'Pinterest',contentType: 'pin' };
+    if (host.includes('reddit.com'))        return { category: 'social_post', platform: 'Reddit',   contentType: 'post' };
+
+    // ── Podcast ──────────────────────────────────────────────────
+    if (host.includes('podcasts.apple.com'))return { category: 'podcast', platform: 'Apple Podcasts', contentType: 'episode' };
+    if (host.includes('open.spotify.com') && parts[0] === 'episode') return { category: 'podcast', platform: 'Spotify Podcasts', contentType: 'episode' };
+    if (host.includes('anchor.fm') || host.includes('podcasters.spotify.com')) return { category: 'podcast', platform: 'Spotify Podcasts', contentType: 'episode' };
+    if (host.includes('buzzsprout.com'))    return { category: 'podcast', platform: 'Buzzsprout',  contentType: 'episode' };
+    if (host.includes('podbean.com'))       return { category: 'podcast', platform: 'Podbean',     contentType: 'episode' };
+
+    // ── Events / ticketing ───────────────────────────────────────
+    if (host.includes('eventbrite.com'))    return { category: 'event', platform: 'Eventbrite',    contentType: 'event' };
+    if (host.includes('dice.fm'))           return { category: 'event', platform: 'Dice',          contentType: 'event' };
+    if (host.includes('ticketmaster.com'))  return { category: 'event', platform: 'Ticketmaster',  contentType: 'event' };
+    if (host.includes('axs.com'))           return { category: 'event', platform: 'AXS',           contentType: 'event' };
+    if (host.includes('songkick.com'))      return { category: 'event', platform: 'Songkick',      contentType: 'event' };
+    if (host.includes('bandsintown.com'))   return { category: 'event', platform: 'Bandsintown',   contentType: 'event' };
+    if (host.includes('seetickets.com'))    return { category: 'event', platform: 'See Tickets',   contentType: 'event' };
+    if (host.includes('skiddle.com'))       return { category: 'event', platform: 'Skiddle',       contentType: 'event' };
+
+    // ── Music press ──────────────────────────────────────────────
+    if (['pitchfork.com','rollingstone.com','nme.com','billboard.com','stereogum.com',
+         'theneedledrop.com','xxlmag.com','hotnewhiphop.com','complex.com',
+         'consequence.net','allmusic.com','discogs.com'].some(d => host.includes(d)))
+      return { category: 'press', platform: host.replace(/\.com$/, ''), contentType: 'review' };
+
+    // ── E-commerce / merch ───────────────────────────────────────
+    if (host.includes('merch') || host.includes('shop') ||
+        host.includes('store') || host.includes('bigcartel.com') ||
+        host.includes('shopify.com') || host.includes('etsy.com'))
+      return { category: 'ecommerce', platform: host, contentType: 'product' };
+
+    // ── Article / blog ───────────────────────────────────────────
+    if (host.includes('medium.com') || host.includes('substack.com') ||
+        host.includes('wordpress.com') || host.includes('ghost.io') ||
+        host.includes('blogspot.com'))
+      return { category: 'article', platform: host, contentType: 'article' };
+
+    return { category: 'website', platform: host, contentType: 'page' };
   } catch {
-    return { platform: '', type: 'link' };
+    return { category: 'other', platform: '', contentType: 'link' };
   }
 }
 
-async function fetchUrlMetadata(url: string): Promise<{
-  title?: string;
+function decodeHtmlEntities(str: string): string {
+  return str
+    .replace(/&amp;/g,   '&')
+    .replace(/&lt;/g,    '<')
+    .replace(/&gt;/g,    '>')
+    .replace(/&quot;/g,  '"')
+    .replace(/&#039;/g,  "'")
+    .replace(/&#x27;/g,  "'")
+    .replace(/&nbsp;/g,  ' ')
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .trim();
+}
+
+interface PageMeta {
+  title?:       string;
   description?: string;
-  siteName?: string;
-  image?: string;
-}> {
-  // Try YouTube oEmbed first (no API key needed)
-  if (url.includes('youtube.com') || url.includes('youtu.be')) {
-    try {
-      const oembed = await fetch(
-        `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
-        { signal: AbortSignal.timeout(8_000) }
-      );
-      if (oembed.ok) {
-        const data = await oembed.json();
-        return {
-          title:       data.title,
-          description: `YouTube video by ${data.author_name}`,
-          siteName:    'YouTube',
-        };
-      }
-    } catch { /* fall through to HTML fetch */ }
-  }
+  siteName?:    string;
+  image?:       string;
+  author?:      string;
+  type?:        string;  // og:type (article, music.song, video.other, etc.)
+  publishDate?: string;
+}
 
-  // Try SoundCloud oEmbed
-  if (url.includes('soundcloud.com')) {
-    try {
-      const oembed = await fetch(
-        `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
-        { signal: AbortSignal.timeout(8_000) }
-      );
-      if (oembed.ok) {
-        const data = await oembed.json();
-        return {
-          title:       data.title,
-          description: `Track by ${data.author_name} on SoundCloud`,
-          siteName:    'SoundCloud',
-        };
-      }
-    } catch { /* fall through */ }
-  }
-
-  // Generic HTML meta-tag fetch
+async function tryOEmbed(oembedUrl: string): Promise<PageMeta | null> {
   try {
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; MaxBoosterBot/1.0; +https://maxbooster.app)',
-        'Accept':     'text/html,application/xhtml+xml',
-      },
-      signal: AbortSignal.timeout(12_000),
+    const res = await fetch(oembedUrl, {
+      headers: { 'User-Agent': BROWSER_UA },
+      signal: AbortSignal.timeout(8_000),
     });
-    if (!res.ok) return {};
-    const html = await res.text();
-
-    const getMeta = (prop: string): string | undefined => {
-      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']{1,400})["']`, 'i'))
-              ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']{1,400})["'][^>]+(?:property|name)=["']${prop}["']`, 'i'));
-      return m?.[1];
-    };
-    const title = getMeta('og:title') ?? getMeta('twitter:title')
-               ?? html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1];
+    if (!res.ok) return null;
+    const d = await res.json();
     return {
-      title:       title?.trim(),
-      description: getMeta('og:description') ?? getMeta('twitter:description') ?? getMeta('description'),
-      siteName:    getMeta('og:site_name'),
-      image:       getMeta('og:image') ?? getMeta('twitter:image'),
+      title:    d.title,
+      author:   d.author_name,
+      siteName: d.provider_name,
     };
   } catch {
+    return null;
+  }
+}
+
+function inferSiteNameFromUrl(url: string): string | undefined {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    // "en.wikipedia.org" → "Wikipedia"
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const domain = parts[parts.length - 2];
+      return domain.charAt(0).toUpperCase() + domain.slice(1);
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+async function scrapeHtml(url: string): Promise<PageMeta> {
+  const res = await fetch(url, {
+    headers: {
+      'User-Agent':      BROWSER_UA,
+      'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Encoding': 'gzip, deflate, br',
+      'Cache-Control':   'no-cache',
+    },
+    signal: AbortSignal.timeout(14_000),
+    redirect: 'follow',
+  });
+  if (!res.ok) return {};
+
+  const html = await res.text();
+
+  // ── 1. Meta tag extractor (handles both attribute orderings) ──
+  const getMeta = (...props: string[]): string | undefined => {
+    for (const prop of props) {
+      const escaped = prop.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const m =
+        html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${escaped}["'][^>]+content=["']([^"']{1,600})["']`, 'i')) ??
+        html.match(new RegExp(`<meta[^>]+content=["']([^"']{1,600})["'][^>]+(?:property|name)=["']${escaped}["']`, 'i'));
+      if (m?.[1]) return decodeHtmlEntities(m[1]);
+    }
+    return undefined;
+  };
+
+  // ── 2. JSON-LD structured data ─────────────────────────────────
+  let jsonLdTitle: string | undefined;
+  let jsonLdDescription: string | undefined;
+  let jsonLdAuthor: string | undefined;
+  let jsonLdDate: string | undefined;
+  try {
+    const ldMatches = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+    for (const m of ldMatches) {
+      try {
+        const ld = JSON.parse(m[1].trim());
+        const items = Array.isArray(ld) ? ld : [ld];
+        for (const item of items) {
+          if (!jsonLdTitle && item.name)          jsonLdTitle       = String(item.name);
+          if (!jsonLdTitle && item.headline)      jsonLdTitle       = String(item.headline);
+          if (!jsonLdDescription && item.description) jsonLdDescription = String(item.description).slice(0, 400);
+          if (!jsonLdAuthor && item.author)       jsonLdAuthor      = typeof item.author === 'string' ? item.author : item.author?.name ?? '';
+          if (!jsonLdDate && item.datePublished)  jsonLdDate        = String(item.datePublished);
+        }
+      } catch { /* malformed JSON-LD */ }
+    }
+  } catch { /* ignore */ }
+
+  // ── 3. oEmbed discovery from HTML link tag ─────────────────────
+  let oembedResult: PageMeta | null = null;
+  try {
+    const oembedLink = html.match(/<link[^>]+type=["']application\/json\+oembed["'][^>]+href=["']([^"']+)["']/i)
+                    ?? html.match(/<link[^>]+href=["']([^"']+)["'][^>]+type=["']application\/json\+oembed["']/i);
+    if (oembedLink?.[1]) {
+      oembedResult = await tryOEmbed(oembedLink[1]);
+    }
+  } catch { /* ignore */ }
+
+  // ── 4. Fallback: h1 + first paragraph ─────────────────────────
+  const h1 = html.match(/<h1[^>]*>([^<]{3,200})<\/h1>/i)?.[1];
+  const firstPara = html.match(/<p[^>]*>([^<]{30,400})<\/p>/i)?.[1];
+
+  // ── 5. Assemble with priority ──────────────────────────────────
+  // OG/twitter titles are already clean — only strip site-suffix from <title> tags
+  const ogTitle      = oembedResult?.title ?? getMeta('og:title', 'twitter:title', 'dc.title') ?? jsonLdTitle;
+  const rawPageTitle = html.match(/<title[^>]*>([^<]{1,250})<\/title>/i)?.[1];
+  const h1Title      = h1 ? decodeHtmlEntities(h1) : undefined;
+
+  // Strip "Page Title | Site Name" or "Page Title - Site Name" only from <title> tag
+  const cleanPageTitle = rawPageTitle
+    ? decodeHtmlEntities(rawPageTitle).replace(/\s+[|\u2013\u2014]\s+[^|\u2013\u2014]{2,60}$/, '').trim()
+    : undefined;
+
+  const siteNameFromMeta = oembedResult?.siteName ?? getMeta('og:site_name');
+  const inferredSiteName = inferSiteNameFromUrl(url);
+  const effectiveSiteName = siteNameFromMeta ?? inferredSiteName;
+
+  let finalTitle = ogTitle
+    ? decodeHtmlEntities(ogTitle).trim()
+    : (cleanPageTitle ?? h1Title);
+  // Strip site-name suffix from title (e.g. "Miles Davis - Wikipedia" → "Miles Davis")
+  if (finalTitle && effectiveSiteName) {
+    const esc = effectiveSiteName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    finalTitle = finalTitle.replace(new RegExp(`\\s*[-–—|]\\s*${esc}\\s*$`, 'i'), '').trim() || finalTitle;
+  }
+
+  const rawDesc =
+    getMeta('og:description', 'twitter:description', 'description', 'dc.description') ??
+    jsonLdDescription ??
+    (firstPara ? decodeHtmlEntities(firstPara.replace(/<[^>]+>/g, '')) : undefined);
+
+  const cleanDesc = rawDesc?.replace(/<[^>]+>/g, '').trim();
+  const BOT_WALL_DESC = [
+    /confirm.*you.*re a human/i,
+    /not a (robot|bot|spambot)/i,
+    /verify.*you.*re a human/i,
+    /ddos protection/i,
+    /cloudflare.*ray id/i,
+    /enable.*javascript.*cookies/i,
+    /please enable cookies/i,
+  ];
+  const safeDesc = (cleanDesc && BOT_WALL_DESC.some(re => re.test(cleanDesc))) ? undefined : cleanDesc;
+
+  return {
+    title:       finalTitle || undefined,
+    description: safeDesc,
+    siteName:    effectiveSiteName ?? undefined,
+    image:       getMeta('og:image', 'twitter:image') ?? undefined,
+    author:      oembedResult?.author ?? jsonLdAuthor ?? getMeta('author', 'dc.creator') ?? undefined,
+    type:        getMeta('og:type') ?? undefined,
+    publishDate: jsonLdDate ?? getMeta('article:published_time') ?? undefined,
+  };
+}
+
+async function fetchUrlMetadata(url: string, ctx: UrlContext): Promise<PageMeta> {
+  // ── Known oEmbed endpoints (no need to scrape HTML first) ──────
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    const r = await tryOEmbed(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+    if (r?.title) return { ...r, siteName: 'YouTube', description: `Video by ${r.author ?? 'creator'}` };
+  }
+  if (url.includes('spotify.com')) {
+    const r = await tryOEmbed(`https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`);
+    if (r?.title) return { ...r, siteName: 'Spotify', description: r.author ? `by ${r.author} on Spotify` : 'Streaming on Spotify' };
+  }
+  if (url.includes('soundcloud.com')) {
+    const r = await tryOEmbed(`https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+    if (r?.title) return { ...r, siteName: 'SoundCloud', description: r.author ? `Track by ${r.author} on SoundCloud` : undefined };
+  }
+  if (url.includes('vimeo.com')) {
+    const r = await tryOEmbed(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`);
+    if (r?.title) return { ...r, siteName: 'Vimeo', description: r.author ? `Video by ${r.author}` : undefined };
+  }
+  if (url.includes('twitter.com') || url.includes('x.com')) {
+    const r = await tryOEmbed(`https://publish.twitter.com/oembed?url=${encodeURIComponent(url)}&omit_script=true`);
+    if (r?.title) return { ...r, siteName: 'X (Twitter)' };
+  }
+  if (url.includes('bandcamp.com')) {
+    const r = await tryOEmbed(`https://bandcamp.com/api/oembed?url=${encodeURIComponent(url)}&format=json`);
+    if (r?.title) return { ...r, siteName: 'Bandcamp', description: r.author ? `by ${r.author} on Bandcamp` : undefined };
+  }
+
+  // ── HTML scrape with full extraction pipeline ──────────────────
+  try {
+    const meta = await scrapeHtml(url);
+    // Strip generic "shell" titles returned by JS-rendered apps
+    const GENERIC_TITLES = [
+      /^spotify\s*[-–—|]/i,
+      /^spotify$/i,
+      /^soundcloud\s*[-–—|]/i,
+      /^soundcloud$/i,
+      /^tiktok\s*[-–—|]/i,
+      /^tiktok$/i,
+      /^instagram\s*[-–—|]/i,
+      /^instagram$/i,
+      /^facebook\s*[-–—|]/i,
+      /^facebook$/i,
+      /^twitter\s*[-–—|]/i,
+      /^x\s*[-–—|]/i,
+      /^medium$/i,
+      /^home$/i,
+      /^just a moment/i,
+      /^loading/i,
+      /^please wait/i,
+      /^access denied/i,
+      /^403/i,
+      /^404/i,
+      /^page not found/i,
+      /^error/i,
+      /^verify to continue/i,
+      /^security check/i,
+      /^attention required/i,
+      /^ddos protection/i,
+      /^bot.*detected/i,
+      /^captcha/i,
+      /^one more step/i,
+      /^checking your browser/i,
+    ];
+    if (meta.title) {
+      const isGeneric = GENERIC_TITLES.some(re => re.test(meta.title!));
+      if (isGeneric) meta.title = undefined;
+    }
+    // Also strip if title exactly matches site name
+    if (meta.title && meta.siteName && meta.title.toLowerCase() === meta.siteName.toLowerCase()) {
+      meta.title = undefined;
+    }
+    // Wipe description if it looks like a bot-wall / captcha page
+    if (meta.description) {
+      const BOT_WALL = [
+        /confirm.*you.*re a human/i,
+        /not a (robot|bot|spambot)/i,
+        /verify.*you.*re a human/i,
+        /security check/i,
+        /cloudflare.*ray id/i,
+        /enable.*javascript.*cookies/i,
+      ];
+      if (BOT_WALL.some(re => re.test(meta.description!))) {
+        meta.description = undefined;
+      }
+    }
+    return meta;
+  } catch {
     return {};
+  }
+}
+
+function buildCopyFromContext(
+  ctx: UrlContext,
+  meta: PageMeta,
+  intent: string,
+): { hook: string; body: string; cta: string } {
+  const title    = meta.title ?? '';
+  const desc     = meta.description ?? '';
+  const platform = meta.siteName ?? ctx.platform;
+  const author   = meta.author ?? '';
+
+  switch (ctx.category) {
+    case 'music_stream':
+      return {
+        hook: title ? `🎵 "${title}" is streaming now on ${platform}!` : `🎵 New music on ${platform}!`,
+        body: desc || (title ? `Listen to "${title}" — link in bio!` : `Stream the latest on ${platform}`),
+        cta:  `Stream on ${platform} 🔗 Link in bio!`,
+      };
+    case 'music_video':
+      return {
+        hook: title ? `🎬 "${title}" — official music video just dropped!` : `🎬 New music video just dropped!`,
+        body: desc || `Watch the official video — link in bio!`,
+        cta:  `Watch on ${platform} 🎬 Link in bio!`,
+      };
+    case 'video':
+      return {
+        hook: title ? `📹 Watch: "${title}"` : `📹 New video — check it out!`,
+        body: desc || (author ? `by ${author}` : '') || 'Link in bio!',
+        cta:  `Watch on ${platform} ▶️ Link in bio!`,
+      };
+    case 'social_post':
+      return {
+        hook: title || `Check out this ${ctx.contentType} 👀`,
+        body: desc || `See what I posted on ${platform}!`,
+        cta:  `Follow me on ${platform} 🔗 Link in bio!`,
+      };
+    case 'podcast':
+      return {
+        hook: title ? `🎙️ New episode: "${title}"` : `🎙️ New podcast episode out now!`,
+        body: desc || 'Listen to the latest episode — link in bio!',
+        cta:  `Listen on ${platform} 🎙️ Link in bio!`,
+      };
+    case 'event':
+      return {
+        hook: title ? `🎟️ ${title}` : `🎟️ Tickets on sale now!`,
+        body: desc || 'Get your tickets before they sell out!',
+        cta:  `Grab tickets on ${platform} 🎟️ Link in bio!`,
+      };
+    case 'press':
+      return {
+        hook: title ? `📰 "${title}"` : `📰 Press feature just dropped!`,
+        body: desc || (author ? `Review by ${author}` : '') || `Read the full feature — link in bio!`,
+        cta:  `Read on ${platform} 📰 Link in bio!`,
+      };
+    case 'ecommerce':
+      return {
+        hook: title ? `🛍️ ${title}` : `🛍️ New merch drop!`,
+        body: desc || 'Shop the latest — link in bio!',
+        cta:  `Shop now 🛍️ Link in bio!`,
+      };
+    case 'article':
+      return {
+        hook: title ? `✍️ "${title}"` : `✍️ New post just went live!`,
+        body: desc || (author ? `Written by ${author}` : '') || 'Read it — link in bio!',
+        cta:  `Read more ✍️ Link in bio!`,
+      };
+    default:
+      return {
+        hook: title ? `🔗 ${title}` : `🔗 Check this out!`,
+        body: desc || 'Link in bio!',
+        cta:  platform ? `Visit on ${platform} 🔗 Link in bio!` : '🔗 Link in bio!',
+      };
   }
 }
 
@@ -183,39 +533,37 @@ async function localAnalyzeUrl(
   req: GenerationRequest,
   platformRulesSubset: Record<string, PlatformRules>,
 ): Promise<any> {
-  const ctx  = detectMusicPlatform(url);
-  const meta = await fetchUrlMetadata(url);
+  const ctx  = classifyUrl(url);
+  const meta = await fetchUrlMetadata(url, ctx);
 
-  const title       = meta.title?.replace(/&amp;/g, '&').replace(/&#039;/g, "'") ?? '';
-  const description = meta.description?.replace(/&amp;/g, '&') ?? '';
-  const siteName    = meta.siteName ?? ctx.platform;
+  const title    = meta.title ?? '';
+  const desc     = meta.description ?? '';
+  const siteName = meta.siteName ?? ctx.platform;
 
-  const hook = title
-    ? `${title} is ${siteName ? 'on ' + siteName : 'out now'}! 🎵`
-    : (siteName ? `New drop on ${siteName}! 🔥` : 'New music out now! 🔥');
-  const body = description.slice(0, 200)
-    || (title ? `Check out "${title}" — streaming everywhere` : 'Stream the latest now on all platforms');
-  const cta  = siteName ? `Stream on ${siteName} 🔗 Link in bio!` : 'Stream now 🎵 Link in bio!';
+  const copy = buildCopyFromContext(ctx, { ...meta, siteName }, req.intent ?? 'promote');
 
-  const summary = [title, description.slice(0, 100)].filter(Boolean).join(' — ')
-               || `New release on ${siteName || 'streaming platforms'}`;
+  const summary = [title, desc.slice(0, 120)].filter(Boolean).join(' — ')
+               || `${ctx.category === 'event' ? 'Upcoming event' : 'New content'} on ${siteName || url}`;
 
-  logger.info(`[MultimodalGen] URL analyzed locally: "${title || '(no title)'}" from ${siteName || url}`);
+  logger.info(`[MultimodalGen] URL analyzed: category=${ctx.category} title="${title || '(none)'}" platform=${siteName || ctx.platform}`);
 
   return {
     summary,
-    hook,
-    body,
-    cta,
+    hook:        copy.hook,
+    body:        copy.body,
+    cta:         copy.cta,
     title,
-    description,
+    description: desc,
     siteName,
-    imageUrl:  meta.image,
-    sourceUrl: url,
-    modality:  'url',
-    platforms: req.platforms,
-    intent:    req.intent,
-    metadata:  { ...(req.input.metadata || {}), sourceUrl: url, title, siteName },
+    author:      meta.author,
+    imageUrl:    meta.image,
+    publishDate: meta.publishDate,
+    sourceUrl:   url,
+    urlCategory: ctx.category,
+    modality:    'url',
+    platforms:   req.platforms,
+    intent:      req.intent,
+    metadata:    { ...(req.input.metadata || {}), sourceUrl: url, title, siteName, urlCategory: ctx.category },
     platformRules: platformRulesSubset,
   };
 }
