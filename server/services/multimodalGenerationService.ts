@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
+import { generateVideo as generateVideoFFmpeg } from './videoGeneratorService.js';
 import {
   type GenerationRequest,
   type GeneratedAsset,
@@ -543,29 +544,45 @@ const videoWorker = {
     const platform = step.params?.platform as Platform | undefined;
     const videoRules = platform ? getRules(platform).video : null;
 
-    const result = await maxcorePost('/generate/video', {
-      step,
-      inputs,
-      constraints: req.constraints,
-      artistProfileId: req.artistProfileId,
-      intent: req.intent,
-      platformRules: videoRules,
+    // MaxCore does not expose a /generate/video endpoint — use the local
+    // FFmpeg-based generator instead.
+    const normalized = inputs?.normalized ?? {};
+    const summary: string = typeof normalized.summary === 'string' ? normalized.summary : '';
+    const genre: string = normalized.genre ?? req.constraints?.genre ?? 'default';
+
+    const result = await generateVideoFFmpeg({
+      topic:        summary.slice(0, 120) || req.intent || 'new music',
+      platform:     platform ?? (req.platforms[0] as any) ?? 'tiktok',
+      duration:     videoRules?.maxDurationSec ? Math.min(videoRules.maxDurationSec, 30) : 15,
+      aspect_ratio: videoRules?.aspectRatios?.[0] ?? '9:16',
+      tone:         req.constraints?.tone ?? 'energetic',
+      goal:         req.constraints?.goal ?? 'growth',
+      quality:      'cinematic',
+      genre,
+      artist_name:  normalized.artistName,
+      hook:         normalized.hook,
+      body:         normalized.body,
+      cta:          normalized.cta,
     });
-    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-    return outputs.map((o: any) => ({
+
+    if (!result.success || !result.url) {
+      throw new Error(result.error ?? 'Local video generation failed');
+    }
+
+    return [{
       id: randomUUID(),
       modality: 'video' as OutputModality,
-      payload: o.url || '',
-      platform: o.platform as Platform | undefined,
-      slotId: o.slotId,
+      payload: result.url,
+      platform,
       metadata: {
-        ...(o.meta ?? {}),
-        aspectRatio: o.aspectRatio ?? videoRules?.aspectRatios[0],
+        aspectRatio: videoRules?.aspectRatios?.[0],
         maxDurationSec: videoRules?.maxDurationSec,
         requiresHook: videoRules?.requiresHook,
         platformRules: videoRules,
+        source: 'ffmpeg',
+        genre,
       },
-    }));
+    }];
   },
 };
 

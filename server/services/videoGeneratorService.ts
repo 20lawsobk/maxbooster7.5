@@ -773,16 +773,18 @@ async function applyAudioAndLogo(
 
   // ── filter_complex ─────────────────────────────────────────────────────────
   const parts: string[] = [];
-  const outputLabels: string[] = ['-map', '[vfinal]', '-map', '[afinal]'];
+  // Without a logo the video needs no filtergraph processing — map it directly
+  // from input 0 so we can use -c:v copy.  FFmpeg forbids stream-copy on a
+  // filtergraph output pad, so [0:v]copy[vfinal] + "-c:v copy" always fails.
+  const videoMap: string[] = hasLogo ? ['-map', '[vfinal]'] : ['-map', '0:v'];
+  const outputLabels: string[] = [...videoMap, '-map', '[afinal]'];
 
-  // Video chain
+  // Video chain — only needed when overlaying the logo
   if (hasLogo) {
     parts.push(
       `[${logoIdx}:v]scale=iw*0.14:ih*0.14[logo]`,
       `[0:v][logo]overlay=W-w-24:24:enable='between(t\\,0\\,${totalDur})'[vfinal]`,
     );
-  } else {
-    parts.push(`[0:v]copy[vfinal]`);
   }
 
   // Procedural synth mix (bass=1, beat=2, pad=3)
