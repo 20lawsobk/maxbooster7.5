@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
 import { generateVideo as generateVideoFFmpeg } from './videoGeneratorService.js';
+import { sharpImageService } from './sharpImageService.js';
 import {
   type GenerationRequest,
   type GeneratedAsset,
@@ -19,7 +20,10 @@ import {
   type PlatformRules,
 } from '@shared/config/platformRules.js';
 
-const MAXCORE_URL = process.env.AI_SERVER_URL || 'https://secure-ai-forge.replit.app';
+// Strip any trailing /api so the base is always the root, then append /api.
+// This means AI_SERVER_URL can be set to either the root or the /api form and both work.
+const _MAXCORE_BASE = (process.env.AI_SERVER_URL || 'https://secure-ai-forge.replit.app').replace(/\/api\/?$/, '');
+const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 
 async function maxcorePost(path: string, body: unknown): Promise<any> {
@@ -332,6 +336,52 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
   return { requestId: req.id, steps };
 }
 
+function buildLocalTextAssets(
+  rawSlots: any[],
+  inputs: any,
+  req: GenerationRequest,
+): GeneratedAsset[] {
+  const normalized = inputs?.normalized ?? {};
+  const summary: string = typeof normalized.summary === 'string'
+    ? normalized.summary
+    : (typeof req.input?.payload === 'string' ? req.input.payload.slice(0, 280) : '');
+  const hook: string = normalized.hook ?? (summary.slice(0, 100) || req.intent || 'New music out now');
+  const body: string = normalized.body ?? (summary || hook);
+  const cta:  string = normalized.cta  ?? 'Stream now 🎵';
+  const artist: string = normalized.artistName ?? '';
+
+  const TEMPLATES: Record<string, (h: string, b: string, c: string, a: string) => string> = {
+    instagram:       (h, b, c, a) => `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ''}\n\n#music #newmusic #artist #hiphop`,
+    tiktok:          (h, _b, c)   => `${h} 🎵 ${c}`,
+    twitter:         (h, _b, c)   => `${h} ${c}`,
+    threads:         (h, b, c)    => `${h}\n\n${c}${b ? `\n${b}` : ''}`,
+    facebook:        (h, b, c, a) => `${h}\n\n${b}\n\n${c}${a ? `\n\n— ${a}` : ''}`,
+    youtube:         (h, b, c)    => `${h}\n\n${b}\n\n${c}\n\nSubscribe for more 🔔`,
+    linkedin:        (h, b, c, a) => `${a ? `${a} | ` : ''}${h}\n\n${b}\n\n${c}`,
+    google_business: (h, b, c)    => `${h}\n\n${b}\n\n${c}`,
+  };
+
+  return rawSlots.map((slot: any) => {
+    const platform = (slot.platform ?? req.platforms[0]) as Platform;
+    const rules = platform ? getRules(platform) : null;
+    const tplFn = TEMPLATES[platform] ?? TEMPLATES.instagram;
+    let payload = tplFn(hook, body, cta, artist);
+    if (rules) payload = enforceTextLength(payload, rules.text);
+    const enriched = rules
+      ? enrichTextAssetMetadata(payload, platform, rules, { platformRules: rules.text })
+      : {};
+    return {
+      id: randomUUID(),
+      modality: 'text' as OutputModality,
+      payload,
+      platform,
+      slotId:  slot.id,
+      purpose: slot.purpose ?? 'Post copy',
+      metadata: { ...enriched, source: 'local' },
+    };
+  });
+}
+
 const textWorker = {
   async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
     const packSpec = req.packId ? PACK_DEFINITIONS[req.packId] ?? null : null;
@@ -344,39 +394,44 @@ const textWorker = {
       platformRules: getRules(slot.platform as Platform)?.text ?? null,
     }));
 
-    const result = await maxcorePost('/generate/text', {
-      mode: 'content',
-      step,
-      inputs,
-      slots: slotsWithRules,
-      constraints: req.constraints,
-      artistProfileId: req.artistProfileId,
-      intent: req.intent,
-      platformRules: Object.fromEntries(
-        req.platforms.map(p => [p, getRules(p).text])
-      ),
-    });
+    try {
+      const result = await maxcorePost('/generate/text', {
+        mode: 'content',
+        step,
+        inputs,
+        slots: slotsWithRules,
+        constraints: req.constraints,
+        artistProfileId: req.artistProfileId,
+        intent: req.intent,
+        platformRules: Object.fromEntries(
+          req.platforms.map(p => [p, getRules(p).text])
+        ),
+      });
 
-    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-    return outputs.map((o: any) => {
-      const rules = o.platform ? getRules(o.platform as Platform) : null;
-      let payload: string = o.text || o.content || '';
-      if (rules) payload = enforceTextLength(payload, rules.text);
+      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+      if (outputs.length === 0) return buildLocalTextAssets(rawSlots, inputs, req);
 
-      const enriched = rules
-        ? enrichTextAssetMetadata(payload, o.platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
-        : { ...(o.meta ?? {}), platformRules: null };
-
-      return {
-        id: randomUUID(),
-        modality: 'text' as OutputModality,
-        payload,
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        purpose: o.purpose,
-        metadata: enriched,
-      };
-    });
+      return outputs.map((o: any) => {
+        const rules = o.platform ? getRules(o.platform as Platform) : null;
+        let payload: string = o.text || o.content || '';
+        if (rules) payload = enforceTextLength(payload, rules.text);
+        const enriched = rules
+          ? enrichTextAssetMetadata(payload, o.platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
+          : { ...(o.meta ?? {}), platformRules: null };
+        return {
+          id: randomUUID(),
+          modality: 'text' as OutputModality,
+          payload,
+          platform: o.platform as Platform | undefined,
+          slotId: o.slotId,
+          purpose: o.purpose,
+          metadata: enriched,
+        };
+      });
+    } catch (err) {
+      logger.warn('[MultimodalGen] MaxCore /generate/text unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
+      return buildLocalTextAssets(rawSlots, inputs, req);
+    }
   },
 };
 
@@ -481,20 +536,7 @@ const imageWorker = {
       platformRules: getRules(slot.platform as Platform)?.image ?? null,
     }));
 
-    const result = await maxcorePost('/generate/image', {
-      step,
-      inputs,
-      slots: slotsWithRules,
-      constraints: req.constraints,
-      artistProfileId: req.artistProfileId,
-      intent: req.intent,
-      platformRules: Object.fromEntries(
-        req.platforms.map(p => [p, getRules(p).image])
-      ),
-    });
-
-    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-    return outputs.map((o: any) => ({
+    const mapOutputs = (outputs: any[]) => outputs.map((o: any) => ({
       id: randomUUID(),
       modality: 'image' as OutputModality,
       payload: o.url || o.src || '',
@@ -507,6 +549,51 @@ const imageWorker = {
         platformRules: o.platform ? getRules(o.platform as Platform).image : null,
       },
     }));
+
+    try {
+      const result = await maxcorePost('/generate/image', {
+        step,
+        inputs,
+        slots: slotsWithRules,
+        constraints: req.constraints,
+        artistProfileId: req.artistProfileId,
+        intent: req.intent,
+        platformRules: Object.fromEntries(
+          req.platforms.map(p => [p, getRules(p).image])
+        ),
+      });
+      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+      if (outputs.length > 0) return mapOutputs(outputs);
+    } catch (err) {
+      logger.warn('[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
+    }
+
+    // Local fallback: Sharp-based image generation
+    const normalized = inputs?.normalized ?? {};
+    const prompt = normalized.summary ?? req.input?.payload ?? req.intent ?? 'music artist promotional image';
+    const platform = (step.params?.platform ?? req.platforms[0]) as Platform;
+    const rules = getRules(platform);
+    try {
+      const img = await sharpImageService.generateImage({
+        prompt: String(prompt).slice(0, 200),
+        platform,
+        tone: (req.constraints as any)?.tone ?? 'creative',
+      });
+      return [{
+        id: randomUUID(),
+        modality: 'image' as OutputModality,
+        payload: img.publicUrl,
+        platform,
+        metadata: {
+          aspectRatio: step.params?.recommendedAspectRatio ?? rules.image.aspectRatios?.[0],
+          platformRules: rules.image,
+          source: 'local-sharp',
+        },
+      }];
+    } catch (sharpErr) {
+      logger.warn('[MultimodalGen] Sharp image fallback also failed:', sharpErr instanceof Error ? sharpErr.message : String(sharpErr));
+      return [];
+    }
   },
 };
 
@@ -515,27 +602,35 @@ const audioWorker = {
     const platform = step.params?.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
 
-    const result = await maxcorePost('/generate/audio', {
-      step,
-      inputs,
-      constraints: req.constraints,
-      artistProfileId: req.artistProfileId,
-      intent: req.intent,
-      platformRules: audioRules,
-    });
-    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-    return outputs.map((o: any) => ({
-      id: randomUUID(),
-      modality: 'audio' as OutputModality,
-      payload: o.url || '',
-      platform: o.platform as Platform | undefined,
-      slotId: o.slotId,
-      metadata: {
-        ...(o.meta ?? {}),
-        maxDurationSec: audioRules?.maxDurationSec,
+    try {
+      const result = await maxcorePost('/generate/audio', {
+        step,
+        inputs,
+        constraints: req.constraints,
+        artistProfileId: req.artistProfileId,
+        intent: req.intent,
         platformRules: audioRules,
-      },
-    }));
+      });
+      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+      if (outputs.length > 0) {
+        return outputs.map((o: any) => ({
+          id: randomUUID(),
+          modality: 'audio' as OutputModality,
+          payload: o.url || '',
+          platform: o.platform as Platform | undefined,
+          slotId: o.slotId,
+          metadata: {
+            ...(o.meta ?? {}),
+            maxDurationSec: audioRules?.maxDurationSec,
+            platformRules: audioRules,
+          },
+        }));
+      }
+    } catch (err) {
+      logger.warn('[MultimodalGen] MaxCore /generate/audio unavailable — no local audio fallback available:', err instanceof Error ? err.message : String(err));
+    }
+    // No local audio generation available; return empty (video worker handles audio via FFmpeg)
+    return [];
   },
 };
 

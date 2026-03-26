@@ -89,7 +89,7 @@ async function probeConnectivity(): Promise<void> {
 
   // MaxCore inference node
   if (AI_SERVER_URL && AI_SERVER_KEY) {
-    const { ok } = await fetchMaxCore('/health', { timeout: HEALTH_TIMEOUT });
+    const { ok } = await fetchMaxCore('/api/health', { timeout: HEALTH_TIMEOUT });
     if (ok) {
       logger.info(`[MaxCoreSync] MaxCore inference ✅ reachable — ${AI_SERVER_URL}`);
     } else {
@@ -103,7 +103,7 @@ async function probeConnectivity(): Promise<void> {
   if (PEER_NODE && MBS_KEY) {
     const peerUrl = PEER_NODE.startsWith('pdim://') ? null : PEER_NODE;
     if (peerUrl) {
-      const { ok } = await fetchMaxCore('/health', { key: 'peer', timeout: HEALTH_TIMEOUT });
+      const { ok } = await fetchMaxCore('/api/health', { key: 'peer', timeout: HEALTH_TIMEOUT });
       if (ok) {
         logger.info(`[MaxCoreSync] Training peer ✅ reachable — ${PEER_NODE}`);
       } else {

@@ -139,7 +139,7 @@ export class MaxCoreAIClient {
       return MaxCoreAIClient._available;
     }
     try {
-      const r = await fetch(`${MC_AI_URL}/health`, {
+      const r = await fetch(`${MC_AI_URL}/api/health`, {
         headers: { 'X-API-Key': MC_AI_KEY },
         signal: AbortSignal.timeout(4000),
       });
