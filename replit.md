@@ -19,6 +19,12 @@ I prefer iterative development, with clear communication before significant chan
 - **Deployment build installs only production deps** — `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, and all frontend UI packages (`react`, `react-dom`, `lucide-react`, `@radix-ui/*`, `@tanstack/react-query`, `framer-motion`, `zustand`, `wouter`, etc.) have been moved to `dependencies` for this reason.
 - **`script/build.ts`** uses dynamic `await import("vite")` (not static import) so vite can be loaded from dependencies without triggering ESM issues.
 - **Do NOT move `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, or any client package back to `devDependencies`** — it will break both the deployment build and the dev server startup.
+- **Repl layer requires valid UTF-8 for ALL files** — The Replit VM deployment Repl layer push validates every file in the workspace. Binary files (PNG, .br, .gz, .so, executables) and files with non-UTF-8 bytes in filenames or content will cause "invalid UTF-8" errors. The deploy:build pipeline handles this:
+  1. `script/build.ts` builds and pre-compresses assets (creates `.br`/`.gz` binary files)
+  2. `script/deploy-clean-binary.mjs` runs AFTER the build and deletes ALL binary files from `dist/public/`, `client/public/`, and `boosterstate/target/debug/`
+  3. At VM startup, `server/cluster.ts` (`compressAssetsAtStartup`) regenerates `.br`/`.gz` files using Node's built-in `zlib` module so production serving stays fast
+- **Do NOT add PNG/ICO/binary files to `dist/public/` or `client/public/`** without also updating the `BINARY_EXTENSIONS` list in `script/deploy-clean-binary.mjs`.
+- **`.gitignore` alone is NOT sufficient** to exclude files from the Repl layer — physical file deletion is required.
 
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.

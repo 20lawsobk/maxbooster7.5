@@ -3,6 +3,7 @@ import os from 'os';
 import path from 'path';
 import http from 'http';
 import fs from 'fs';
+import zlib from 'zlib';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 import { spawnSync, spawn } from 'child_process';
@@ -71,6 +72,49 @@ import { spawnSync, spawn } from 'child_process';
   console.log('[Cluster] boosterstate sidecar started — waiting 2 s for init');
   // Synchronous 2-second wait so workers don't race against boosterstate init.
   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 2000);
+})();
+
+// ── Startup-time asset pre-compression ────────────────────────────────────────
+// The Repl layer (pushed during deployment) cannot contain binary files.
+// The deploy:build script deletes all .br/.gz files before layer push.
+// Re-generate them here at VM startup so static serving stays fast.
+(function compressAssetsAtStartup() {
+  const COMPRESSIBLE = /\.(js|css|svg|html|json|txt|xml|webmanifest)$/;
+  const assetsDir = path.join(process.cwd(), 'dist', 'public', 'assets');
+  if (!fs.existsSync(assetsDir)) return;
+
+  function compressDir(dir: string) {
+    let count = 0;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) { count += compressDir(full); continue; }
+      if (!COMPRESSIBLE.test(entry.name)) continue;
+      if (entry.name.endsWith('.br') || entry.name.endsWith('.gz')) continue;
+      try {
+        const src = fs.readFileSync(full);
+        if (!fs.existsSync(full + '.br')) {
+          const br = zlib.brotliCompressSync(src, {
+            params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 6 },
+          });
+          fs.writeFileSync(full + '.br', br);
+          count++;
+        }
+        if (!fs.existsSync(full + '.gz')) {
+          const gz = zlib.gzipSync(src, { level: 9 });
+          fs.writeFileSync(full + '.gz', gz);
+          count++;
+        }
+      } catch {}
+    }
+    return count;
+  }
+
+  try {
+    const compressed = compressDir(assetsDir);
+    if (compressed > 0) console.log(`[Cluster] Asset pre-compression complete — ${compressed} file(s) written`);
+  } catch (err) {
+    console.warn('[Cluster] Asset pre-compression skipped:', (err as Error).message);
+  }
 })();
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
