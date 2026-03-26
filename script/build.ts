@@ -1,5 +1,6 @@
 import { build as esbuild } from "esbuild";
-import { build as viteBuild } from "vite";
+// vite is a devDependency — lazy-loaded only when actually building the frontend
+// so the deployment platform can install --omit=dev without breaking this script.
 import { rm, readFile, access, readdir, stat, writeFile } from "fs/promises";
 import { brotliCompress, gzip, constants as zlibConstants } from "zlib";
 import { promisify } from "util";
@@ -145,6 +146,7 @@ async function buildAll() {
     } else {
       console.log("building client...");
     }
+    const { build: viteBuild } = await import("vite");
     await viteBuild();
     console.log("pre-compressing assets with brotli + gzip...");
     await precompressAssets("dist/public");
