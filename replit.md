@@ -14,6 +14,12 @@ I prefer iterative development, with clear communication before significant chan
 - **Key Fix Applied**: Added ESM-compatible `__dirname` shim to `server/static.ts` (project uses `"type": "module"` so `__dirname` is not natively available in server files)
 - **Optional services not configured in dev**: Redis/REDIS_URL (falls back to in-memory), Stripe keys (optional for payments), ADMIN_EMAIL (admin init skipped without it)
 
+### Critical Deployment Notes
+- **`NODE_ENV=production` is set globally in the Replit shell** — npm install will ONLY install `dependencies`, never `devDependencies`. All packages needed at build time OR runtime MUST be in `dependencies`.
+- **Deployment build installs only production deps** — `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, and all frontend UI packages (`react`, `react-dom`, `lucide-react`, `@radix-ui/*`, `@tanstack/react-query`, `framer-motion`, `zustand`, `wouter`, etc.) have been moved to `dependencies` for this reason.
+- **`script/build.ts`** uses dynamic `await import("vite")` (not static import) so vite can be loaded from dependencies without triggering ESM issues.
+- **Do NOT move `vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, or any client package back to `devDependencies`** — it will break both the deployment build and the dev server startup.
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.
 

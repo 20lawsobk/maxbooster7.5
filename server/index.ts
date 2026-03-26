@@ -934,7 +934,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
       });
 })().catch((error) => {
-  logger.error('FATAL: Server startup failed:', error);
+  console.error('FATAL: Server startup failed:', error);
+  logger.error({ err: error }, 'FATAL: Server startup failed');
   process.exit(1);
 });
 
