@@ -82,6 +82,146 @@ function validateTaskPlan(raw: any, requestId: string): TaskPlan {
   return { requestId, steps };
 }
 
+// ── Local URL analyzer ────────────────────────────────────────────────────────
+
+function detectMusicPlatform(url: string): { platform: string; type: string; id?: string } {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.replace(/^www\./, '');
+    const parts = u.pathname.split('/').filter(Boolean);
+    if (host.includes('spotify.com'))    return { platform: 'Spotify',      type: parts[0] ?? 'track', id: parts[1] };
+    if (host.includes('youtube.com') || host.includes('youtu.be')) return { platform: 'YouTube', type: 'video', id: u.searchParams.get('v') ?? parts[0] };
+    if (host.includes('soundcloud.com')) return { platform: 'SoundCloud',    type: 'track', id: parts.join('/') };
+    if (host.includes('apple.com'))      return { platform: 'Apple Music',   type: 'album' };
+    if (host.includes('tidal.com'))      return { platform: 'Tidal',         type: 'track' };
+    if (host.includes('deezer.com'))     return { platform: 'Deezer',        type: 'track' };
+    if (host.includes('audiomack.com'))  return { platform: 'Audiomack',     type: 'song' };
+    if (host.includes('bandcamp.com'))   return { platform: 'Bandcamp',      type: 'track' };
+    if (host.includes('instagram.com'))  return { platform: 'Instagram',     type: 'post' };
+    if (host.includes('tiktok.com'))     return { platform: 'TikTok',        type: 'video' };
+    if (host.includes('twitter.com') || host.includes('x.com')) return { platform: 'X/Twitter', type: 'post' };
+    return { platform: host, type: 'link' };
+  } catch {
+    return { platform: '', type: 'link' };
+  }
+}
+
+async function fetchUrlMetadata(url: string): Promise<{
+  title?: string;
+  description?: string;
+  siteName?: string;
+  image?: string;
+}> {
+  // Try YouTube oEmbed first (no API key needed)
+  if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    try {
+      const oembed = await fetch(
+        `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+        { signal: AbortSignal.timeout(8_000) }
+      );
+      if (oembed.ok) {
+        const data = await oembed.json();
+        return {
+          title:       data.title,
+          description: `YouTube video by ${data.author_name}`,
+          siteName:    'YouTube',
+        };
+      }
+    } catch { /* fall through to HTML fetch */ }
+  }
+
+  // Try SoundCloud oEmbed
+  if (url.includes('soundcloud.com')) {
+    try {
+      const oembed = await fetch(
+        `https://soundcloud.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+        { signal: AbortSignal.timeout(8_000) }
+      );
+      if (oembed.ok) {
+        const data = await oembed.json();
+        return {
+          title:       data.title,
+          description: `Track by ${data.author_name} on SoundCloud`,
+          siteName:    'SoundCloud',
+        };
+      }
+    } catch { /* fall through */ }
+  }
+
+  // Generic HTML meta-tag fetch
+  try {
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MaxBoosterBot/1.0; +https://maxbooster.app)',
+        'Accept':     'text/html,application/xhtml+xml',
+      },
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!res.ok) return {};
+    const html = await res.text();
+
+    const getMeta = (prop: string): string | undefined => {
+      const m = html.match(new RegExp(`<meta[^>]+(?:property|name)=["']${prop}["'][^>]+content=["']([^"']{1,400})["']`, 'i'))
+              ?? html.match(new RegExp(`<meta[^>]+content=["']([^"']{1,400})["'][^>]+(?:property|name)=["']${prop}["']`, 'i'));
+      return m?.[1];
+    };
+    const title = getMeta('og:title') ?? getMeta('twitter:title')
+               ?? html.match(/<title[^>]*>([^<]{1,200})<\/title>/i)?.[1];
+    return {
+      title:       title?.trim(),
+      description: getMeta('og:description') ?? getMeta('twitter:description') ?? getMeta('description'),
+      siteName:    getMeta('og:site_name'),
+      image:       getMeta('og:image') ?? getMeta('twitter:image'),
+    };
+  } catch {
+    return {};
+  }
+}
+
+async function localAnalyzeUrl(
+  url: string,
+  req: GenerationRequest,
+  platformRulesSubset: Record<string, PlatformRules>,
+): Promise<any> {
+  const ctx  = detectMusicPlatform(url);
+  const meta = await fetchUrlMetadata(url);
+
+  const title       = meta.title?.replace(/&amp;/g, '&').replace(/&#039;/g, "'") ?? '';
+  const description = meta.description?.replace(/&amp;/g, '&') ?? '';
+  const siteName    = meta.siteName ?? ctx.platform;
+
+  const hook = title
+    ? `${title} is ${siteName ? 'on ' + siteName : 'out now'}! 🎵`
+    : (siteName ? `New drop on ${siteName}! 🔥` : 'New music out now! 🔥');
+  const body = description.slice(0, 200)
+    || (title ? `Check out "${title}" — streaming everywhere` : 'Stream the latest now on all platforms');
+  const cta  = siteName ? `Stream on ${siteName} 🔗 Link in bio!` : 'Stream now 🎵 Link in bio!';
+
+  const summary = [title, description.slice(0, 100)].filter(Boolean).join(' — ')
+               || `New release on ${siteName || 'streaming platforms'}`;
+
+  logger.info(`[MultimodalGen] URL analyzed locally: "${title || '(no title)'}" from ${siteName || url}`);
+
+  return {
+    summary,
+    hook,
+    body,
+    cta,
+    title,
+    description,
+    siteName,
+    imageUrl:  meta.image,
+    sourceUrl: url,
+    modality:  'url',
+    platforms: req.platforms,
+    intent:    req.intent,
+    metadata:  { ...(req.input.metadata || {}), sourceUrl: url, title, siteName },
+    platformRules: platformRulesSubset,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function normalizeInput(req: GenerationRequest): Promise<any> {
   const platformRulesSubset = req.platforms.reduce<Record<string, PlatformRules>>((acc, p) => {
     acc[p] = getRules(p);
@@ -99,12 +239,23 @@ async function normalizeInput(req: GenerationRequest): Promise<any> {
       platformRules: platformRulesSubset,
     });
   } catch (err) {
-    logger.warn('[MultimodalGen] MaxCore /analyze unavailable, using local fallback:', err);
+    logger.warn('[MultimodalGen] MaxCore /analyze unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
+
+    // For URL inputs: fetch the page and extract real metadata
+    const payload = req.input.payload ?? '';
+    if (req.input.modality === 'url' && /^https?:\/\//i.test(payload)) {
+      try {
+        return await localAnalyzeUrl(payload, req, platformRulesSubset);
+      } catch (urlErr) {
+        logger.warn('[MultimodalGen] URL metadata fetch failed:', urlErr instanceof Error ? urlErr.message : String(urlErr));
+      }
+    }
+
     return {
-      summary: req.input.payload,
+      summary:  payload,
       modality: req.input.modality,
       platforms: req.platforms,
-      intent: req.intent,
+      intent:   req.intent,
       metadata: req.input.metadata || {},
       platformRules: platformRulesSubset,
     };
