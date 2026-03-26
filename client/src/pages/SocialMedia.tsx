@@ -191,6 +191,22 @@ interface GeneratedContent {
   cta?: string;
   source?: string;
   optimalPostTime?: string;
+  charCount?: number;
+  charLimit?: number;
+  wordCount?: number;
+  emojiCount?: number;
+  engagementScore?: number;
+  sentimentLabel?: 'positive' | 'neutral' | 'negative';
+  suggestions?: string[];
+  imagePrompt?: string;
+  aspectRatio?: string;
+  audioBpm?: number;
+  audioKey?: string;
+  audioDurationSec?: number;
+  videoDurationSec?: number;
+  videoResolution?: string;
+  requiresHook?: boolean;
+  extractedTitle?: string;
 }
 
 interface PlatformPerformance {
@@ -613,24 +629,83 @@ export default function SocialMedia() {
   const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
   const toMultimodalPlatform = (id: string) => id === 'googlebusiness' ? 'google_business' : id;
   const fromMultimodalPlatform = (id: string) => id === 'google_business' ? 'googlebusiness' : id;
-  const mapAssetsToGeneratedContent = (assets: any[], filterModality?: string): GeneratedContent[] =>
-    (assets || [])
+  const mapAssetsToGeneratedContent = (assets: any[], filterModality?: string): GeneratedContent[] => {
+    const hashtagRe = /#[\w\u0080-\uFFFF]+/g;
+    const emojiRe   = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
+
+    const autoParseStructure = (text: string): { hook?: string; body?: string; cta?: string } => {
+      const clean      = text.replace(hashtagRe, '').trim();
+      const paragraphs = clean.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+      let hook: string | undefined, body: string | undefined, cta: string | undefined;
+
+      if (paragraphs.length >= 3) {
+        hook = paragraphs[0];
+        cta  = paragraphs[paragraphs.length - 1];
+        body = paragraphs.slice(1, -1).join('\n\n');
+      } else if (paragraphs.length === 2) {
+        hook = paragraphs[0];
+        body = paragraphs[1];
+      } else {
+        const sentences = clean.split(/(?<=[.!?])\s+/);
+        if (sentences.length >= 2) { hook = sentences[0]; body = sentences.slice(1).join(' '); }
+      }
+      if (body) {
+        const ctaKw  = /\b(subscribe|follow|check out|stream now|listen now|tap|click|link in bio|watch|download|buy|shop|join|sign up|get it|available now|out now)\b/i;
+        const lines  = body.split('\n');
+        const ctaIdx = lines.map((l, i) => ({ l, i })).filter(({ l }) => ctaKw.test(l)).pop()?.i ?? -1;
+        if (ctaIdx > 0) { cta = lines.slice(ctaIdx).join('\n').trim(); body = lines.slice(0, ctaIdx).join('\n').trim(); }
+      }
+      return { hook, body, cta };
+    };
+
+    return (assets || [])
       .filter((a: any) => !filterModality || a.modality === filterModality)
       .map((a: any) => {
+        const m       = a.metadata ?? {};
         const isMedia = a.modality === 'image' || a.modality === 'audio' || a.modality === 'video';
+        const rawText = isMedia ? (m.caption || '') : (a.payload || '');
+
+        const extractedTags: string[] = rawText.match(hashtagRe) ?? [];
+        const emojiCount  = (rawText.match(emojiRe) ?? []).length;
+        const wordCount   = rawText.replace(hashtagRe, '').split(/\s+/).filter(Boolean).length;
+
+        let hook = m.hook;
+        let body = m.body;
+        let cta  = m.cta;
+        if (!isMedia && !hook && !body && !cta && rawText) {
+          ({ hook, body, cta } = autoParseStructure(rawText));
+        }
+
         return {
-          platform: fromMultimodalPlatform(a.platform || 'instagram'),
-          content: isMedia ? (a.metadata?.caption || '') : (a.payload || ''),
-          hashtags: a.metadata?.hashtags,
-          format: a.modality || 'text',
-          mediaUrl: isMedia ? (a.payload || '') : undefined,
-          hook: a.metadata?.hook,
-          body: a.metadata?.body,
-          cta: a.metadata?.cta,
-          source: 'python_ai_model',
-          optimalPostTime: a.metadata?.optimalPostTime,
-        };
+          platform:       fromMultimodalPlatform(a.platform || 'instagram'),
+          content:        rawText,
+          format:         a.modality || 'text',
+          mediaUrl:       isMedia ? (a.payload || '') : undefined,
+          hook,
+          body,
+          cta,
+          hashtags:       m.hashtags ?? (extractedTags.length > 0 ? extractedTags : undefined),
+          source:         'python_ai_model',
+          optimalPostTime:m.optimalPostTime,
+          charCount:      m.charCount ?? rawText.length,
+          charLimit:      m.charLimit ?? m.platformRules?.maxCharCount,
+          wordCount:      m.wordCount ?? wordCount,
+          emojiCount:     m.emojiCount ?? emojiCount,
+          engagementScore:m.engagementScore,
+          sentimentLabel: m.sentimentLabel,
+          suggestions:    m.suggestions,
+          imagePrompt:    m.prompt ?? m.imagePrompt,
+          aspectRatio:    m.aspectRatio,
+          audioBpm:       m.bpm ?? m.audioBpm,
+          audioKey:       m.key ?? m.audioKey,
+          audioDurationSec: m.durationSec ?? m.audioDurationSec ?? m.maxDurationSec,
+          videoDurationSec: m.durationSec ?? m.videoDurationSec ?? m.maxDurationSec,
+          videoResolution:  m.resolution ?? m.videoResolution,
+          requiresHook:     m.requiresHook,
+          extractedTitle:   m.title ?? m.extractedTitle,
+        } as GeneratedContent;
       });
+  };
 
   // Mutations
   const generateContentMutation = useMutation({
@@ -1900,10 +1975,6 @@ return (
                             ) : item.content ? (
                               <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                                 {item.content}
-                              </p>
-                            ) : (item.format === 'image' || item.format === 'audio' || item.format === 'video') && !item.mediaUrl ? (
-                              <p className="text-sm text-muted-foreground italic">
-                                Media generation unavailable — use the prompt with your preferred tool.
                               </p>
                             ) : null}
 

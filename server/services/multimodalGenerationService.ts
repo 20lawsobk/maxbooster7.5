@@ -335,104 +335,133 @@ const textWorker = {
       platformRules: getRules(slot.platform as Platform)?.text ?? null,
     }));
 
-    try {
-      const result = await maxcorePost('/generate/text', {
-        mode: 'content',
-        step,
-        inputs,
-        slots: slotsWithRules,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
-        platformRules: Object.fromEntries(
-          req.platforms.map(p => [p, getRules(p).text])
-        ),
-      });
+    const result = await maxcorePost('/generate/text', {
+      mode: 'content',
+      step,
+      inputs,
+      slots: slotsWithRules,
+      constraints: req.constraints,
+      artistProfileId: req.artistProfileId,
+      intent: req.intent,
+      platformRules: Object.fromEntries(
+        req.platforms.map(p => [p, getRules(p).text])
+      ),
+    });
 
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      if (outputs.length > 0) {
-        return outputs.map((o: any) => {
-          const rules = o.platform ? getRules(o.platform as Platform) : null;
-          let payload: string = o.text || o.content || '';
-          if (rules) payload = enforceTextLength(payload, rules.text);
+    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+    return outputs.map((o: any) => {
+      const rules = o.platform ? getRules(o.platform as Platform) : null;
+      let payload: string = o.text || o.content || '';
+      if (rules) payload = enforceTextLength(payload, rules.text);
 
-          return {
-            id: randomUUID(),
-            modality: 'text' as OutputModality,
-            payload,
-            platform: o.platform as Platform | undefined,
-            slotId: o.slotId,
-            purpose: o.purpose,
-            metadata: {
-              ...(o.meta ?? {}),
-              platformRules: rules?.text ?? null,
-            },
-          };
-        });
-      }
-    } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore text worker failed, using fallback:', err);
-    }
+      const enriched = rules
+        ? enrichTextAssetMetadata(payload, o.platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
+        : { ...(o.meta ?? {}), platformRules: null };
 
-    return localTextFallback(rawSlots, inputs, req);
+      return {
+        id: randomUUID(),
+        modality: 'text' as OutputModality,
+        payload,
+        platform: o.platform as Platform | undefined,
+        slotId: o.slotId,
+        purpose: o.purpose,
+        metadata: enriched,
+      };
+    });
   },
 };
 
-function localTextFallback(
-  slots: Array<{ id: string; platform: any; modality: string; purpose: string }>,
-  inputs: any,
-  req: GenerationRequest,
-): GeneratedAsset[] {
-  const summary: string = inputs?.normalized?.summary || inputs?.summary || req.input.payload || '';
-  const intent = req.intent || 'announcement';
+const PLATFORM_OPTIMAL_TIMES: Record<string, string> = {
+  instagram:      '6–9 PM local',
+  facebook:       '1–4 PM local',
+  tiktok:         '7–9 PM local',
+  youtube:        '2–4 PM EST',
+  linkedin:       '10 AM–12 PM local',
+  threads:        '9 AM or 8 PM local',
+  google_business:'9–11 AM local',
+};
 
-  const platformTemplates: Record<string, (s: string, rules: PlatformRules) => string> = {
-    facebook: (s, r) => {
-      const maxTags = r.text.hashtags?.max ?? 3;
-      const tags = Array(Math.min(maxTags, 2)).fill(0).map((_, i) => ['#NewMusic', '#MusicRelease'][i]).join(' ');
-      return `🎵 ${s}\n\nShare this with someone who needs to hear it! ${tags}`;
-    },
-    instagram: (s, r) => {
-      const maxTags = r.text.hashtags?.max ?? 8;
-      const allTags = ['#NewMusic', '#MusicArtist', '#NewRelease', '#MusicProducer', '#IndieArtist', '#MusicLover', '#NowPlaying', '#StreamNow'];
-      return `${s} ✨\n\n${allTags.slice(0, maxTags).join(' ')}`;
-    },
-    threads: (s) => `Just dropped: ${s} — go check it out!`,
-    tiktok: (s, r) => {
-      const maxTags = r.text.hashtags?.max ?? 5;
-      const tags = ['#NewMusic', '#MusicTikTok', '#FYP', '#MusicRelease', '#Viral'].slice(0, maxTags).join(' ');
-      return `POV: You just discovered your new favorite track 🎧\n${s}\n\n${tags}`;
-    },
-    youtube: (s) => `${s}\n\n🎬 Subscribe for more music, behind-the-scenes, and exclusive content.\n\n#YouTube #Music #NewRelease`,
-    google_business: (s) => `New release: ${s}. Available now on all major streaming platforms!`,
-    linkedin: (s, r) => {
-      const maxTags = r.text.hashtags?.max ?? 5;
-      const tags = ['#Music', '#CreativeIndustry', '#MusicBusiness', '#NewRelease', '#Artist'].slice(0, maxTags).join(' ');
-      return `Excited to share my latest work: ${s}. This project represents months of creative work and artistic growth. ${tags}`;
-    },
+function enrichTextAssetMetadata(
+  payload: string,
+  platform: string,
+  rules: PlatformRules,
+  existingMeta: Record<string, any> = {},
+): Record<string, any> {
+  const hashtagRegex = /#[\w\u0080-\uFFFF]+/g;
+  const extractedHashtags: string[] = payload.match(hashtagRegex) ?? [];
+  const cleanText = payload.replace(hashtagRegex, '').trim();
+
+  const emojiRegex = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
+  const emojiCount = (payload.match(emojiRegex) ?? []).length;
+  const wordCount = cleanText.split(/\s+/).filter(Boolean).length;
+  const charCount = payload.length;
+  const charLimit = rules.text.maxCharCount ?? null;
+
+  let hook: string | undefined = existingMeta.hook;
+  let body: string | undefined = existingMeta.body;
+  let cta: string | undefined  = existingMeta.cta;
+
+  if (!hook && !body && !cta && cleanText) {
+    const paragraphs = cleanText.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+    if (paragraphs.length >= 3) {
+      hook = paragraphs[0];
+      cta  = paragraphs[paragraphs.length - 1];
+      body = paragraphs.slice(1, -1).join('\n\n');
+    } else if (paragraphs.length === 2) {
+      hook = paragraphs[0];
+      body = paragraphs[1];
+    } else {
+      const sentences = cleanText.split(/(?<=[.!?])\s+/);
+      if (sentences.length >= 2) {
+        hook = sentences[0];
+        body = sentences.slice(1).join(' ');
+      }
+    }
+    if (body) {
+      const ctaKw = /\b(subscribe|follow|check out|stream now|listen now|tap|click|link in bio|watch|download|buy|shop|join|sign up|get it|available now|out now)\b/i;
+      const lines = body.split('\n');
+      const ctaIdx = lines.map((l, i) => ({ l, i })).filter(({ l }) => ctaKw.test(l)).pop()?.i ?? -1;
+      if (ctaIdx > 0) {
+        cta  = lines.slice(ctaIdx).join('\n').trim();
+        body = lines.slice(0, ctaIdx).join('\n').trim();
+      }
+    }
+  }
+
+  let score = 50;
+  if (emojiCount >= 1 && emojiCount <= 5) score += 10;
+  if (extractedHashtags.length > 0 && extractedHashtags.length <= 10) score += 10;
+  if (wordCount >= 15 && wordCount <= 60) score += 10;
+  if (hook) score += 10;
+  if (cta)  score += 10;
+  score = Math.min(100, score);
+
+  const suggestions: string[] = [];
+  if (emojiCount === 0) suggestions.push('Add 1–3 emojis to increase engagement');
+  if (extractedHashtags.length === 0) suggestions.push('Include relevant hashtags');
+  if (charLimit && charCount > charLimit * 0.9) suggestions.push('Near character limit — consider trimming');
+  if (!cta) suggestions.push('Add a clear call-to-action');
+  if (wordCount < 10) suggestions.push('Expand content for better reach');
+
+  const positive = /\b(amazing|excited|love|great|best|awesome|happy|proud|thrilled|celebrate|new|launch|drop|release)\b/i;
+  const negative = /\b(struggle|hard|difficult|bad|fail|problem|issue|concern)\b/i;
+  const sentimentLabel = positive.test(payload) ? 'positive' : negative.test(payload) ? 'negative' : 'neutral';
+
+  return {
+    ...existingMeta,
+    hook: hook ?? existingMeta.hook,
+    body: body ?? existingMeta.body,
+    cta:  cta  ?? existingMeta.cta,
+    hashtags:      existingMeta.hashtags ?? (extractedHashtags.length > 0 ? extractedHashtags : undefined),
+    charCount,
+    charLimit,
+    wordCount,
+    emojiCount,
+    engagementScore: score,
+    sentimentLabel,
+    suggestions,
+    optimalPostTime: existingMeta.optimalPostTime ?? PLATFORM_OPTIMAL_TIMES[platform] ?? '6 PM local',
   };
-
-  return slots.map(slot => {
-    const rules = getRules(slot.platform as Platform);
-    const templateFn = platformTemplates[slot.platform] || ((s: string) => s);
-    let payload = templateFn(summary, rules);
-
-    payload = enforceTextLength(payload, rules.text);
-
-    return {
-      id: randomUUID(),
-      modality: 'text' as OutputModality,
-      payload,
-      platform: slot.platform as Platform,
-      slotId: slot.id,
-      purpose: slot.purpose,
-      metadata: {
-        source: 'local_fallback',
-        intent,
-        platformRules: rules.text,
-      },
-    };
-  });
 }
 
 const imageWorker = {
@@ -443,49 +472,32 @@ const imageWorker = {
       platformRules: getRules(slot.platform as Platform)?.image ?? null,
     }));
 
-    try {
-      const result = await maxcorePost('/generate/image', {
-        step,
-        inputs,
-        slots: slotsWithRules,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
-        platformRules: Object.fromEntries(
-          req.platforms.map(p => [p, getRules(p).image])
-        ),
-      });
+    const result = await maxcorePost('/generate/image', {
+      step,
+      inputs,
+      slots: slotsWithRules,
+      constraints: req.constraints,
+      artistProfileId: req.artistProfileId,
+      intent: req.intent,
+      platformRules: Object.fromEntries(
+        req.platforms.map(p => [p, getRules(p).image])
+      ),
+    });
 
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      return outputs.map((o: any) => ({
-        id: randomUUID(),
-        modality: 'image' as OutputModality,
-        payload: o.url || o.src || '',
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        purpose: o.purpose,
-        metadata: {
-          ...(o.meta ?? {}),
-          aspectRatio: o.aspectRatio ?? step.params?.recommendedAspectRatio,
-          platformRules: o.platform ? getRules(o.platform as Platform).image : null,
-        },
-      }));
-    } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore image worker failed:', err);
-      return slots.map((slot: any) => ({
-        id: randomUUID(),
-        modality: 'image' as OutputModality,
-        payload: '',
-        platform: slot.platform as Platform,
-        slotId: slot.id,
-        purpose: slot.purpose,
-        metadata: {
-          source: 'local_fallback',
-          note: 'image_generation_unavailable',
-          platformRules: getRules(slot.platform as Platform).image,
-        },
-      }));
-    }
+    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+    return outputs.map((o: any) => ({
+      id: randomUUID(),
+      modality: 'image' as OutputModality,
+      payload: o.url || o.src || '',
+      platform: o.platform as Platform | undefined,
+      slotId: o.slotId,
+      purpose: o.purpose,
+      metadata: {
+        ...(o.meta ?? {}),
+        aspectRatio: o.aspectRatio ?? step.params?.recommendedAspectRatio,
+        platformRules: o.platform ? getRules(o.platform as Platform).image : null,
+      },
+    }));
   },
 };
 
@@ -494,32 +506,27 @@ const audioWorker = {
     const platform = step.params?.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
 
-    try {
-      const result = await maxcorePost('/generate/audio', {
-        step,
-        inputs,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
+    const result = await maxcorePost('/generate/audio', {
+      step,
+      inputs,
+      constraints: req.constraints,
+      artistProfileId: req.artistProfileId,
+      intent: req.intent,
+      platformRules: audioRules,
+    });
+    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+    return outputs.map((o: any) => ({
+      id: randomUUID(),
+      modality: 'audio' as OutputModality,
+      payload: o.url || '',
+      platform: o.platform as Platform | undefined,
+      slotId: o.slotId,
+      metadata: {
+        ...(o.meta ?? {}),
+        maxDurationSec: audioRules?.maxDurationSec,
         platformRules: audioRules,
-      });
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      return outputs.map((o: any) => ({
-        id: randomUUID(),
-        modality: 'audio' as OutputModality,
-        payload: o.url || '',
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        metadata: {
-          ...(o.meta ?? {}),
-          maxDurationSec: audioRules?.maxDurationSec,
-          platformRules: audioRules,
-        },
-      }));
-    } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore audio worker failed:', err);
-      return [];
-    }
+      },
+    }));
   },
 };
 
@@ -528,34 +535,29 @@ const videoWorker = {
     const platform = step.params?.platform as Platform | undefined;
     const videoRules = platform ? getRules(platform).video : null;
 
-    try {
-      const result = await maxcorePost('/generate/video', {
-        step,
-        inputs,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
+    const result = await maxcorePost('/generate/video', {
+      step,
+      inputs,
+      constraints: req.constraints,
+      artistProfileId: req.artistProfileId,
+      intent: req.intent,
+      platformRules: videoRules,
+    });
+    const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+    return outputs.map((o: any) => ({
+      id: randomUUID(),
+      modality: 'video' as OutputModality,
+      payload: o.url || '',
+      platform: o.platform as Platform | undefined,
+      slotId: o.slotId,
+      metadata: {
+        ...(o.meta ?? {}),
+        aspectRatio: o.aspectRatio ?? videoRules?.aspectRatios[0],
+        maxDurationSec: videoRules?.maxDurationSec,
+        requiresHook: videoRules?.requiresHook,
         platformRules: videoRules,
-      });
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      return outputs.map((o: any) => ({
-        id: randomUUID(),
-        modality: 'video' as OutputModality,
-        payload: o.url || '',
-        platform: o.platform as Platform | undefined,
-        slotId: o.slotId,
-        metadata: {
-          ...(o.meta ?? {}),
-          aspectRatio: o.aspectRatio ?? videoRules?.aspectRatios[0],
-          maxDurationSec: videoRules?.maxDurationSec,
-          requiresHook: videoRules?.requiresHook,
-          platformRules: videoRules,
-        },
-      }));
-    } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore video worker failed:', err);
-      return [];
-    }
+      },
+    }));
   },
 };
 
