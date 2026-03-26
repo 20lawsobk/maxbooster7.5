@@ -252,14 +252,61 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
       });
     }
   } else {
-    for (const platform of req.platforms) {
+    const rawModality = (req.constraints?.outputModality as string) || 'text';
+    const outputModality: 'text' | 'image' | 'audio' | 'video' =
+      ['text', 'image', 'audio', 'video'].includes(rawModality)
+        ? (rawModality as 'text' | 'image' | 'audio' | 'video')
+        : 'text';
+
+    if (outputModality === 'image') {
+      const imageSlots = req.platforms.map(p => ({
+        id: `${p}_image`,
+        platform: p,
+        modality: 'image',
+        purpose: 'Platform image creative',
+      }));
       steps.push({
-        id: `step_text_${platform}`,
+        id: 'step_image',
         type: 'generate',
-        worker: 'text',
+        worker: 'image',
         inputFrom: 'normalizedInput',
-        params: buildStepParamsForPlatform(platform, 'text'),
+        params: {
+          slots: imageSlots.map(slot => ({
+            ...slot,
+            ...buildStepParamsForPlatform(slot.platform as Platform, 'image', slot.id, slot.purpose),
+          })),
+        },
       });
+    } else if (outputModality === 'audio') {
+      for (const platform of req.platforms) {
+        steps.push({
+          id: `step_audio_${platform}`,
+          type: 'generate',
+          worker: 'audio',
+          inputFrom: 'normalizedInput',
+          params: buildStepParamsForPlatform(platform, 'audio', `${platform}_audio`, 'Audio voiceover'),
+        });
+      }
+    } else if (outputModality === 'video') {
+      for (const platform of req.platforms) {
+        steps.push({
+          id: `step_video_${platform}`,
+          type: 'generate',
+          worker: 'video',
+          inputFrom: 'normalizedInput',
+          params: buildStepParamsForPlatform(platform, 'video', `${platform}_video`, 'Video content'),
+        });
+      }
+    } else {
+      for (const platform of req.platforms) {
+        steps.push({
+          id: `step_text_${platform}`,
+          type: 'generate',
+          worker: 'text',
+          inputFrom: 'normalizedInput',
+          params: buildStepParamsForPlatform(platform, 'text'),
+        });
+      }
     }
   }
 

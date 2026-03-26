@@ -613,20 +613,24 @@ export default function SocialMedia() {
   const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
   const toMultimodalPlatform = (id: string) => id === 'googlebusiness' ? 'google_business' : id;
   const fromMultimodalPlatform = (id: string) => id === 'google_business' ? 'googlebusiness' : id;
-  const mapAssetsToGeneratedContent = (assets: any[]): GeneratedContent[] =>
+  const mapAssetsToGeneratedContent = (assets: any[], filterModality?: string): GeneratedContent[] =>
     (assets || [])
-      .filter((a: any) => a.modality === 'text')
-      .map((a: any) => ({
-        platform: fromMultimodalPlatform(a.platform || 'instagram'),
-        content: a.payload || '',
-        hashtags: a.metadata?.hashtags,
-        format: 'text',
-        hook: a.metadata?.hook,
-        body: a.metadata?.body,
-        cta: a.metadata?.cta,
-        source: 'python_ai_model',
-        optimalPostTime: a.metadata?.optimalPostTime,
-      }));
+      .filter((a: any) => !filterModality || a.modality === filterModality)
+      .map((a: any) => {
+        const isMedia = a.modality === 'image' || a.modality === 'audio' || a.modality === 'video';
+        return {
+          platform: fromMultimodalPlatform(a.platform || 'instagram'),
+          content: isMedia ? (a.metadata?.caption || '') : (a.payload || ''),
+          hashtags: a.metadata?.hashtags,
+          format: a.modality || 'text',
+          mediaUrl: isMedia ? (a.payload || '') : undefined,
+          hook: a.metadata?.hook,
+          body: a.metadata?.body,
+          cta: a.metadata?.cta,
+          source: 'python_ai_model',
+          optimalPostTime: a.metadata?.optimalPostTime,
+        };
+      });
 
   // Mutations
   const generateContentMutation = useMutation({
@@ -640,6 +644,7 @@ export default function SocialMedia() {
       const mappedPlatforms = data.platforms
         .map(toMultimodalPlatform)
         .filter(p => MULTIMODAL_PLATFORMS.has(p));
+      const outputModality = data.format || 'text';
       const response = await apiRequest('POST', '/api/multimodal/generate', {
         input: {
           modality: 'text',
@@ -647,12 +652,13 @@ export default function SocialMedia() {
         },
         platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ['instagram'],
         intent: data.tone,
-        constraints: data.format ? { styleTags: [data.format] } : undefined,
+        constraints: { outputModality, styleTags: [outputModality] },
       });
       return response.json();
     },
     onSuccess: (data) => {
-      const generatedContent = mapAssetsToGeneratedContent(data.assets);
+      const outputModality = regularContentFormat || 'text';
+      const generatedContent = mapAssetsToGeneratedContent(data.assets, outputModality);
       if (generatedContent.length > 0) {
         setUrlGeneratedContent(generatedContent);
         const first = generatedContent[0];
@@ -707,6 +713,7 @@ export default function SocialMedia() {
       const mappedPlatforms = data.platforms
         .map(toMultimodalPlatform)
         .filter(p => MULTIMODAL_PLATFORMS.has(p));
+      const outputModality = data.format || 'text';
       const response = await apiRequest('POST', '/api/multimodal/generate', {
         input: {
           modality: 'url',
@@ -714,15 +721,17 @@ export default function SocialMedia() {
         },
         platforms: mappedPlatforms.length > 0 ? mappedPlatforms : ['instagram'],
         intent: data.targetAudience || undefined,
+        constraints: { outputModality, styleTags: [outputModality] },
       });
       return response.json();
     },
     onSuccess: (data) => {
-      const generatedContent = mapAssetsToGeneratedContent(data.assets);
+      const outputModality = contentFormat || 'text';
+      const generatedContent = mapAssetsToGeneratedContent(data.assets, outputModality);
       setUrlGeneratedContent(generatedContent);
       toast({
         title: 'Content Generated from URL!',
-        description: `AI has created content for your selected platforms.`,
+        description: `AI has created ${outputModality} content for your selected platforms.`,
       });
       setIsGeneratingFromUrl(false);
     },
@@ -1841,6 +1850,32 @@ return (
                               </div>
                             </div>
 
+                            {item.format === 'image' && item.mediaUrl && (
+                              <div className="mb-2">
+                                <img
+                                  src={item.mediaUrl}
+                                  alt="Generated image"
+                                  className="max-w-full h-auto rounded-lg border"
+                                />
+                              </div>
+                            )}
+                            {item.format === 'audio' && item.mediaUrl && (
+                              <div className="mb-2">
+                                <audio controls className="w-full">
+                                  <source src={item.mediaUrl} type="audio/mpeg" />
+                                  Your browser does not support the audio element.
+                                </audio>
+                              </div>
+                            )}
+                            {item.format === 'video' && item.mediaUrl && (
+                              <div className="mb-2">
+                                <video controls className="max-w-full h-auto rounded-lg border">
+                                  <source src={item.mediaUrl} type="video/mp4" />
+                                  Your browser does not support the video element.
+                                </video>
+                              </div>
+                            )}
+
                             {hasStructured ? (
                               <div className="space-y-2">
                                 {item.hook && (
@@ -1862,11 +1897,15 @@ return (
                                   </div>
                                 )}
                               </div>
-                            ) : (
+                            ) : item.content ? (
                               <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
                                 {item.content}
                               </p>
-                            )}
+                            ) : (item.format === 'image' || item.format === 'audio' || item.format === 'video') && !item.mediaUrl ? (
+                              <p className="text-sm text-muted-foreground italic">
+                                Media generation unavailable — use the prompt with your preferred tool.
+                              </p>
+                            ) : null}
 
                             {item.hashtags && item.hashtags.length > 0 && (
                               <div className="flex flex-wrap gap-1">
