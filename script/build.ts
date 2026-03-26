@@ -254,6 +254,7 @@ async function buildAll() {
       platform: "node" as const,
       bundle: true,
       format: "cjs" as const,
+      charset: "utf8" as const,
       define: {
         "process.env.NODE_ENV": '"production"',
         "import.meta.url": "__importMetaUrl__",
