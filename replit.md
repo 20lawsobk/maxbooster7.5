@@ -25,6 +25,8 @@ I prefer iterative development, with clear communication before significant chan
   3. At VM startup, `server/cluster.ts` (`compressAssetsAtStartup`) regenerates `.br`/`.gz` files using Node's built-in `zlib` module so production serving stays fast
 - **Do NOT add PNG/ICO/binary files to `dist/public/` or `client/public/`** without also updating the `BINARY_EXTENSIONS` list in `script/deploy-clean-binary.mjs`.
 - **`.gitignore` alone is NOT sufficient** to exclude files from the Repl layer — physical file deletion is required.
+- **Git index cleanliness is critical**: The Repl layer is built from the git index (equivalent to `git archive HEAD`). Files with non-UTF-8 bytes in their **filename** (not just content) will also cause "invalid UTF-8" failures. A binary-named file `\x01\xd0%\x02@\x18\xfd` was found as Entry 0 in the git index and removed via direct Python index surgery. The `deploy-clean-binary.mjs` script now also purges the git index of any binary-named entries and any `attached_assets/` entries at every deploy.
+- **Attached screenshots auto-create binary PNG files** in `attached_assets/`. These are gitignored but `deploy-clean-binary.mjs` also purges them from the git index if they somehow get committed.
 
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design.
