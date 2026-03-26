@@ -198,8 +198,11 @@ function getBgVfPrefix(bgType: BgType, bg: string, width: number, height: number
 //
 // Formula guide:
 //   bass  — constant sub-bass foundation (50–100 Hz, rich harmonics)
-//   beat  — amplitude-modulated kick: pow(abs(sin(PI*bps*t)),pw) gates the
+//   beat  — amplitude-modulated kick: abs(sin(PI*bps*t))^pw gates the
 //            bass carrier to create a punchy beat at the song's BPM
+//            NOTE: pow(x,n) is written as x^n to avoid commas in the
+//            expression — FFmpeg's lavfi parser treats ',' as a filter
+//            separator, so pow(x,n) breaks the filter graph parser.
 //   pad   — chord/melody layer (mid-range harmony, lower volume)
 //   bps   — beats per second (BPM / 60)
 //   pw    — sharpness exponent for the beat envelope (higher = punchier)
@@ -219,7 +222,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 90 BPM — deep 808 sub, punchy kick envelope, Cm chord pad
     bps: 1.5, pw: 8,
     bass: '0.22*sin(2*PI*55*t)+0.14*sin(2*PI*110*t)+0.07*sin(2*PI*165*t)+0.04*sin(2*PI*220*t)',
-    beat: '0.40*pow(abs(sin(PI*1.5*t)),8)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*3.0*t)),10)*sin(2*PI*220*t)',
+    beat: '0.40*abs(sin(PI*1.5*t))^8*sin(2*PI*55*t)+0.12*abs(sin(PI*3.0*t))^10*sin(2*PI*220*t)',
     pad:  '0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392.00*t)+0.03*sin(2*PI*523.25*t)',
     filters: 'equalizer=f=60:width_type=o:width=1.5:g=5,equalizer=f=200:width_type=o:width=2:g=3,lowpass=f=8000,acompressor=threshold=0.3:ratio=5:attack=3:release=40,bass=g=4,dynaudnorm=p=0.95',
   },
@@ -227,7 +230,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 70 BPM half-time — booming 808, tight hi-hat rolls, minimal chord
     bps: 1.167, pw: 10,
     bass: '0.28*sin(2*PI*41.2*t)+0.18*sin(2*PI*82.4*t)+0.08*sin(2*PI*123.6*t)+0.04*sin(2*PI*164.8*t)',
-    beat: '0.50*pow(abs(sin(PI*1.167*t)),10)*sin(2*PI*41.2*t)+0.08*pow(abs(sin(PI*7.0*t)),14)*(sin(2*PI*6000*t)+sin(2*PI*6273*t))',
+    beat: '0.50*abs(sin(PI*1.167*t))^10*sin(2*PI*41.2*t)+0.08*abs(sin(PI*7.0*t))^14*(sin(2*PI*6000*t)+sin(2*PI*6273*t))',
     pad:  '0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.025*sin(2*PI*329.63*t)',
     filters: 'equalizer=f=45:width_type=o:width=1:g=7,equalizer=f=160:width_type=o:width=2:g=4,lowpass=f=6000,acompressor=threshold=0.25:ratio=8:attack=1:release=25,bass=g=6,dynaudnorm=p=0.95',
   },
@@ -235,7 +238,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 80 BPM — smooth Am7 chord, soft kick, silky pad
     bps: 1.333, pw: 6,
     bass: '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.09*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)+0.04*sin(2*PI*277.18*t)',
-    beat: '0.30*pow(abs(sin(PI*1.333*t)),6)*sin(2*PI*110*t)+0.08*pow(abs(sin(PI*2.667*t)),8)*sin(2*PI*330*t)',
+    beat: '0.30*abs(sin(PI*1.333*t))^6*sin(2*PI*110*t)+0.08*abs(sin(PI*2.667*t))^8*sin(2*PI*330*t)',
     pad:  '0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)',
     filters: 'equalizer=f=80:width_type=o:width=2:g=3,equalizer=f=3000:width_type=o:width=3:g=-2,treble=g=-1,lowpass=f=12000,acompressor=threshold=0.35:ratio=4:attack=5:release=60,dynaudnorm=p=0.90',
   },
@@ -243,7 +246,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 120 BPM — bright C major, tight 4-on-the-floor kick, sparkly pad
     bps: 2.0, pw: 8,
     bass: '0.18*sin(2*PI*65.41*t)+0.12*sin(2*PI*130.81*t)+0.07*sin(2*PI*196*t)+0.04*sin(2*PI*261.63*t)',
-    beat: '0.38*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*65.41*t)+0.10*pow(abs(sin(PI*4.0*t)),10)*sin(2*PI*392*t)',
+    beat: '0.38*abs(sin(PI*2.0*t))^8*sin(2*PI*65.41*t)+0.10*abs(sin(PI*4.0*t))^10*sin(2*PI*392*t)',
     pad:  '0.07*sin(2*PI*261.63*t)+0.06*sin(2*PI*329.63*t)+0.06*sin(2*PI*392*t)+0.04*sin(2*PI*523.25*t)+0.03*sin(2*PI*659.26*t)',
     filters: 'equalizer=f=100:width_type=o:width=2:g=2,treble=g=3,equalizer=f=8000:width_type=o:width=2:g=2,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92',
   },
@@ -251,7 +254,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 128 BPM EDM — pounding kick, saw-like bass, supersawpad chord
     bps: 2.133, pw: 10,
     bass: '0.24*sin(2*PI*55*t)+0.16*sin(2*PI*110*t)+0.10*sin(2*PI*165*t)+0.06*sin(2*PI*220*t)+0.03*sin(2*PI*275*t)',
-    beat: '0.50*pow(abs(sin(PI*2.133*t)),10)*sin(2*PI*55*t)+0.12*pow(abs(sin(PI*2.133*t)),12)*(sin(2*PI*440*t)+sin(2*PI*443*t))',
+    beat: '0.50*abs(sin(PI*2.133*t))^10*sin(2*PI*55*t)+0.12*abs(sin(PI*2.133*t))^12*(sin(2*PI*440*t)+sin(2*PI*443*t))',
     pad:  '0.05*(sin(2*PI*440*t)+sin(2*PI*441.5*t))+0.04*(sin(2*PI*523.25*t)+sin(2*PI*524.8*t))+0.03*sin(2*PI*659.26*t)',
     filters: 'equalizer=f=60:width_type=o:width=1:g=6,treble=g=4,equalizer=f=200:width_type=o:width=2:g=3,acompressor=threshold=0.2:ratio=8:attack=1:release=20,bass=g=5,dynaudnorm=p=0.95',
   },
@@ -259,7 +262,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 95 BPM — warm Am tonality, syncopated feel, tropical percussive pad
     bps: 1.583, pw: 7,
     bass: '0.20*sin(2*PI*110*t)+0.14*sin(2*PI*146.83*t)+0.10*sin(2*PI*164.81*t)+0.06*sin(2*PI*220*t)',
-    beat: '0.35*pow(abs(sin(PI*1.583*t)),7)*sin(2*PI*110*t)+0.12*pow(abs(sin(PI*3.167*t)),8)*sin(2*PI*349.23*t)',
+    beat: '0.35*abs(sin(PI*1.583*t))^7*sin(2*PI*110*t)+0.12*abs(sin(PI*3.167*t))^8*sin(2*PI*349.23*t)',
     pad:  '0.06*sin(2*PI*220*t)+0.05*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.04*sin(2*PI*440*t)',
     filters: 'equalizer=f=90:width_type=o:width=2:g=4,treble=g=2,lowpass=f=14000,acompressor=threshold=0.32:ratio=4:attack=4:release=45,dynaudnorm=p=0.90',
   },
@@ -267,7 +270,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 100 BPM — bright Dm tonality, salsa-inflected rhythm, treble-forward
     bps: 1.667, pw: 7,
     bass: '0.18*sin(2*PI*73.42*t)+0.13*sin(2*PI*146.83*t)+0.09*sin(2*PI*195.99*t)+0.05*sin(2*PI*293.66*t)',
-    beat: '0.36*pow(abs(sin(PI*1.667*t)),7)*sin(2*PI*73.42*t)+0.14*pow(abs(sin(PI*3.333*t)),9)*sin(2*PI*392*t)',
+    beat: '0.36*abs(sin(PI*1.667*t))^7*sin(2*PI*73.42*t)+0.14*abs(sin(PI*3.333*t))^9*sin(2*PI*392*t)',
     pad:  '0.06*sin(2*PI*293.66*t)+0.05*sin(2*PI*349.23*t)+0.04*sin(2*PI*440*t)+0.04*sin(2*PI*587.33*t)',
     filters: 'treble=g=3,equalizer=f=100:width_type=o:width=2:g=3,lowpass=f=16000,acompressor=threshold=0.3:ratio=4:attack=3:release=35,dynaudnorm=p=0.92',
   },
@@ -275,7 +278,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 90 BPM — G major, warm twangy chord, steady kick
     bps: 1.5, pw: 6,
     bass: '0.16*sin(2*PI*98*t)+0.12*sin(2*PI*130.81*t)+0.08*sin(2*PI*196*t)+0.05*sin(2*PI*261.63*t)',
-    beat: '0.32*pow(abs(sin(PI*1.5*t)),6)*sin(2*PI*98*t)+0.10*pow(abs(sin(PI*3.0*t)),7)*sin(2*PI*392*t)',
+    beat: '0.32*abs(sin(PI*1.5*t))^6*sin(2*PI*98*t)+0.10*abs(sin(PI*3.0*t))^7*sin(2*PI*392*t)',
     pad:  '0.06*sin(2*PI*196*t)+0.05*sin(2*PI*246.94*t)+0.05*sin(2*PI*293.66*t)+0.04*sin(2*PI*392*t)',
     filters: 'treble=g=2,equalizer=f=120:width_type=o:width=2:g=2,lowpass=f=12000,acompressor=threshold=0.35:ratio=3:attack=5:release=50,dynaudnorm=p=0.88',
   },
@@ -283,7 +286,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 120 BPM — power chord E5, distorted edge via harmonics, driving beat
     bps: 2.0, pw: 8,
     bass: '0.22*sin(2*PI*82.41*t)+0.15*sin(2*PI*164.81*t)+0.09*sin(2*PI*247.22*t)+0.06*sin(2*PI*329.63*t)+0.04*sin(2*PI*412.04*t)',
-    beat: '0.45*pow(abs(sin(PI*2.0*t)),8)*sin(2*PI*82.41*t)+0.12*pow(abs(sin(PI*4.0*t)),10)*(sin(2*PI*440*t)+sin(2*PI*880*t))*0.5',
+    beat: '0.45*abs(sin(PI*2.0*t))^8*sin(2*PI*82.41*t)+0.12*abs(sin(PI*4.0*t))^10*(sin(2*PI*440*t)+sin(2*PI*880*t))*0.5',
     pad:  '0.05*(sin(2*PI*329.63*t)+sin(2*PI*493.88*t)+sin(2*PI*659.26*t))',
     filters: 'bass=g=5,treble=g=3,equalizer=f=250:width_type=o:width=2:g=3,equalizer=f=5000:width_type=o:width=2:g=2,acompressor=threshold=0.25:ratio=6:attack=2:release=30,dynaudnorm=p=0.95',
   },
@@ -291,7 +294,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 120 BPM swing — Dm7 chord, walking-bass feel, mellow
     bps: 2.0, pw: 5,
     bass: '0.15*sin(2*PI*73.42*t)+0.11*sin(2*PI*110*t)+0.08*sin(2*PI*146.83*t)+0.06*sin(2*PI*220*t)',
-    beat: '0.25*pow(abs(sin(PI*2.0*t)),5)*sin(2*PI*73.42*t)+0.08*pow(abs(sin(PI*3.0*t)),6)*sin(2*PI*349.23*t)',
+    beat: '0.25*abs(sin(PI*2.0*t))^5*sin(2*PI*73.42*t)+0.08*abs(sin(PI*3.0*t))^6*sin(2*PI*349.23*t)',
     pad:  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*311.13*t)+0.04*sin(2*PI*392*t)+0.03*sin(2*PI*466.16*t)',
     filters: 'equalizer=f=150:width_type=o:width=2:g=2,treble=g=-1,lowpass=f=10000,acompressor=threshold=0.4:ratio=3:attack=8:release=80,dynaudnorm=p=0.85',
   },
@@ -299,7 +302,7 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
     // 100 BPM — neutral Am chord, gentle beat, balanced
     bps: 1.667, pw: 7,
     bass: '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.08*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)',
-    beat: '0.32*pow(abs(sin(PI*1.667*t)),7)*sin(2*PI*110*t)+0.09*pow(abs(sin(PI*3.333*t)),8)*sin(2*PI*330*t)',
+    beat: '0.32*abs(sin(PI*1.667*t))^7*sin(2*PI*110*t)+0.09*abs(sin(PI*3.333*t))^8*sin(2*PI*330*t)',
     pad:  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.03*sin(2*PI*440*t)',
     filters: 'equalizer=f=80:width_type=o:width=2:g=3,lowpass=f=12000,acompressor=threshold=0.3:ratio=4:attack=4:release=40,dynaudnorm=p=0.90',
   },
