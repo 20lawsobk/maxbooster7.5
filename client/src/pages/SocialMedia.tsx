@@ -627,8 +627,17 @@ export default function SocialMedia() {
   });
 
   const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
-  const toMultimodalPlatform = (id: string) => id === 'googlebusiness' ? 'google_business' : id;
-  const fromMultimodalPlatform = (id: string) => id === 'google_business' ? 'googlebusiness' : id;
+  const toMultimodalPlatform = (id: string): string => {
+    if (id === 'meta')          return 'facebook';       // Meta covers Facebook + Instagram
+    if (id === 'googlebusiness') return 'google_business';
+    if (id === 'twitter')        return 'twitter';        // not in server list, filtered out
+    return id;
+  };
+  const fromMultimodalPlatform = (id: string): string => {
+    if (id === 'facebook' || id === 'instagram') return 'meta';
+    if (id === 'google_business')                return 'googlebusiness';
+    return id;
+  };
   const mapAssetsToGeneratedContent = (assets: any[], filterModality?: string): GeneratedContent[] => {
     const hashtagRe = /#[\w\u0080-\uFFFF]+/g;
     const emojiRe   = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
