@@ -725,9 +725,9 @@ async function applyAudioAndLogo(
   const fo      = fadeOut.toFixed(2);
 
   // ── Three lavfi sources for layered synthesis ──────────────────────────────
-  const src1 = `aevalsrc=${audioProfile.bass}:s=44100:c=stereo`;
-  const src2 = `aevalsrc=${audioProfile.beat}:s=44100:c=stereo`;
-  const src3 = `aevalsrc=${audioProfile.pad}:s=44100:c=stereo`;
+  const src1 = `aevalsrc=${audioProfile.bass}|${audioProfile.bass}:sample_rate=44100:channel_layout=stereo`;
+  const src2 = `aevalsrc=${audioProfile.beat}|${audioProfile.beat}:sample_rate=44100:channel_layout=stereo`;
+  const src3 = `aevalsrc=${audioProfile.pad}|${audioProfile.pad}:sample_rate=44100:channel_layout=stereo`;
 
   const hasLogo = !!(logoPath && existsSync(logoPath));
   const hasUser = !!(userAudioPath && existsSync(userAudioPath));

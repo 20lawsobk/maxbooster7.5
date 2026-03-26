@@ -35,6 +35,11 @@ async function maxcorePost(path: string, body: unknown): Promise<any> {
     const text = await res.text().catch(() => '');
     throw new Error(`MaxCore ${path} → HTTP ${res.status}: ${text.slice(0, 200)}`);
   }
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`MaxCore ${path} returned non-JSON (${ct || 'no content-type'}): ${text.slice(0, 200)}`);
+  }
   return res.json();
 }
 
