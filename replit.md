@@ -195,6 +195,30 @@ Ten hardcoded/random data sources replaced with real DB-sourced or deterministic
   - Occasional burst resets (~12% chance) simulate musical transients
   - Full peak hold logic matching BT-7 behavior (40-tick hold, 0.97× release)
 
+### Data Integrity Breakthroughs (Mar 2026) — Session 4
+
+**BT-11 — autoPostGenerator: seeded deterministic template selection**
+- `seededIndex(seed, length)` added (FNV-1a, identical to advancedSocialAIService pattern).
+- All 8 `Math.floor(Math.random() * templates.length)` calls across `generateAwarenessHeadline`, `generateAwarenessBody`, `generateEngagementHeadline`, `generateEngagementBody`, `generateConversionHeadline`, `generateConversionBody`, `generateViralHeadline`, `generateViralBody` now use distinct context seeds: `"awareness-headline:${artist}:${topic}:${tone}"` etc.
+- Same artist + topic + tone → same post template selection every time.
+
+**BT-12 — custom-ai-engine: fully deterministic content pipeline**
+- `seededIndex` + `seededShuffle` helpers added (FNV-1a PRNG, identical algorithm).
+- `generateHook`: template pick + `{percentage}` value seeded from `${topic}:${hookType}`.
+- `generateHashtags`: `sort(() => Math.random() - 0.5)` replaced with `seededShuffle` seeded from content + platform.
+- `optimizeSocialPosting`: `bestPostingTime` seeded per platform; `selectContentFormat` seeded by platform + weight string.
+- `selectHookType` fallback: seeded from sorted businessGoals.
+- `buildContentFromTemplate`: emojiSet, emoji, and hook-from-template all seeded from `${topic}:${template.id}:${variationIndex}`.
+- `selectCallToAction`: all three CTA branches seeded from `${template.id}:${sorted goals}`.
+- `selectByWeight` (ML weighted template selector): deterministic seeded weighted selection replaces `Math.random() * adjustedTotal`; weights and recency penalties fully preserved; cursor position derived from `seededIndex(seed, 10000)`.
+- `analyzeMusicTrack`: BPM, key, mood, confidence, genre all seeded from JSON-stringified audioData input.
+- `selectGenreWithTrends`: `Math.random() > 0.5` trend/non-trend flip seeded from trends array; both branches use deterministic index.
+
+**BT-13 — WaveformAudioPlayer: deterministic waveform visualization**
+- Marketplace beat player was regenerating 100 random bar heights on every component mount, making the waveform visually different each load.
+- Replaced with a seeded PRNG (FNV-1a seed init → xorshift iterations) seeded from `audioUrl || title || 'default'`.
+- Same track URL → identical waveform shape every time. Different tracks → visually distinct shapes.
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.

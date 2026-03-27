@@ -1,5 +1,36 @@
 import { logger } from './logger.js';
 
+/**
+ * FNV-1a 32-bit hash for deterministic seeded selection.
+ * Same algorithm used across all content-generation services for consistency.
+ */
+function seededIndex(seed: string, length: number): number {
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0;
+  }
+  return hash % length;
+}
+
+/**
+ * Seeded Fisher-Yates shuffle — produces a deterministic ordering from a string seed.
+ */
+function seededShuffle<T>(arr: T[], seed: string): T[] {
+  const out = [...arr];
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0;
+  }
+  for (let i = out.length - 1; i > 0; i--) {
+    hash = (hash * 16777619 + i) >>> 0;
+    const j = hash % (i + 1);
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
 interface ModelParameters {
   [key: string]: any;
 }
@@ -543,12 +574,13 @@ class CustomAIEngine {
 
   generateHook(topic: string, hookType: HookType): string {
     const templates = HOOK_TEMPLATES[hookType] || HOOK_TEMPLATES.teaser;
-    const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+    const selectedTemplate = templates[seededIndex(`hook-template:${topic}:${hookType}`, templates.length)];
 
     let hook = selectedTemplate.replace(/{topic}/g, topic);
 
     if (hook.includes('{percentage}')) {
-      const percentage = Math.floor(Math.random() * 40) + 60;
+      const pctBase = seededIndex(`hook-pct:${topic}:${hookType}`, 40);
+      const percentage = 60 + pctBase;
       hook = hook.replace(/{percentage}/g, percentage.toString());
     }
 
@@ -617,10 +649,10 @@ class CustomAIEngine {
       }
     };
 
-    const shuffled = [...categoryTags].sort(() => Math.random() - 0.5);
+    const shuffled = seededShuffle([...categoryTags], `hashtags:${content.slice(0, 32)}:${platform}:cat`);
     shuffled.forEach(tag => addUniqueTag(tag));
 
-    const shuffledGeneral = [...generalTags].sort(() => Math.random() - 0.5);
+    const shuffledGeneral = seededShuffle([...generalTags], `hashtags:${content.slice(0, 32)}:${platform}:gen`);
     shuffledGeneral.forEach(tag => addUniqueTag(tag));
 
     const performanceTags = this.getHighPerformingHashtags(platform, count - selectedTags.length);
@@ -726,12 +758,22 @@ class CustomAIEngine {
     const genreDepth = modelParams.genreClassificationDepth || 3;
     const recentTrends = modelParams.recentGenreTrends || [];
 
+    // Seed from audioData so the same input always produces the same analysis output.
+    const dataSeed = typeof audioData === 'string'
+      ? audioData
+      : JSON.stringify(audioData ?? 'unknown');
+
+    const keys = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+    const moods = ['energetic', 'calm', 'melancholic', 'uplifting'];
+    const bpmVariance = seededIndex(`bpm:${dataSeed}`, 600); // 0–599 → /10 → 0.0–59.9
+    const confVariance = seededIndex(`conf:${dataSeed}`, 1000); // 0–999 → /1000
+
     const analysis = {
-      bpm: 120 + Math.random() * 60,
-      key: ['C', 'D', 'E', 'F', 'G', 'A', 'B'][Math.floor(Math.random() * 7)],
-      genre: this.selectGenreWithTrends(recentTrends, genreDepth),
-      mood: ['energetic', 'calm', 'melancholic', 'uplifting'][Math.floor(Math.random() * 4)],
-      confidence: keyConfidenceThreshold + Math.random() * (1 - keyConfidenceThreshold),
+      bpm: 120 + bpmVariance / 10,
+      key: keys[seededIndex(`key:${dataSeed}`, keys.length)],
+      genre: this.selectGenreWithTrends(recentTrends, genreDepth, dataSeed),
+      mood: moods[seededIndex(`mood:${dataSeed}`, moods.length)],
+      confidence: keyConfidenceThreshold + (confVariance / 1000) * (1 - keyConfidenceThreshold),
       trendAligned: recentTrends.length > 0,
     };
 
@@ -744,14 +786,16 @@ class CustomAIEngine {
     return analysis;
   }
 
-  private selectGenreWithTrends(recentTrends: string[], depth: number): string {
+  private selectGenreWithTrends(recentTrends: string[], depth: number, seed: string = ''): string {
     const allGenres = ['Hip-Hop', 'Pop', 'EDM', 'R&B', 'Rock', 'Country', 'Jazz', 'Classical'];
+    const trendSeed = `genre:${seed}:${recentTrends.join(':')}`;
 
-    if (recentTrends.length > 0 && Math.random() > 0.5) {
-      return recentTrends[Math.floor(Math.random() * recentTrends.length)];
+    if (recentTrends.length > 0 && seededIndex(trendSeed, 2) === 1) {
+      return recentTrends[seededIndex(`${trendSeed}:pick`, recentTrends.length)];
     }
 
-    return allGenres.slice(0, depth * 2)[Math.floor(Math.random() * depth * 2)];
+    const pool = allGenres.slice(0, Math.max(1, depth * 2));
+    return pool[seededIndex(`${trendSeed}:all`, pool.length)];
   }
 
   async optimizeSocialPosting(platform: string, content: unknown): Promise<any> {
@@ -765,8 +809,8 @@ class CustomAIEngine {
     const boostFactor = platformSpecific.boostFactor || 1.0;
 
     const recommendation = {
-      bestPostingTime: optimalTimes[Math.floor(Math.random() * optimalTimes.length)],
-      contentFormat: this.selectContentFormat(contentMix, platformSpecific.contentFormatPriority),
+      bestPostingTime: optimalTimes[seededIndex(`posting-time:${platform}`, optimalTimes.length)],
+      contentFormat: this.selectContentFormat(contentMix, platformSpecific.contentFormatPriority, platform),
       expectedEngagement: (0.05 * boostFactor).toFixed(4),
       platformOptimized: !!platformSpecific.adjustedTiming,
       engagementHooks: modelParams.engagementHooks || [],
@@ -781,12 +825,16 @@ class CustomAIEngine {
     return recommendation;
   }
 
-  private selectContentFormat(mixRatio: { video: number; image: number; text: number }, priority?: string): string {
+  private selectContentFormat(mixRatio: { video: number; image: number; text: number }, priority?: string, platformSeed: string = ''): string {
     if (priority) return priority;
 
-    const rand = Math.random();
-    if (rand < mixRatio.video) return 'video';
-    if (rand < mixRatio.video + mixRatio.image) return 'image';
+    // Weighted deterministic selection seeded by platform so the same platform
+    // always maps to the same format unless the mix ratios themselves change.
+    const weights = [mixRatio.video, mixRatio.image, 1 - mixRatio.video - mixRatio.image];
+    const seed = `content-format:${platformSeed}:${weights.join(',')}`;
+    const slot = seededIndex(seed, 20);
+    if (slot < Math.round(weights[0] * 20)) return 'video';
+    if (slot < Math.round((weights[0] + weights[1]) * 20)) return 'image';
     return 'text';
   }
 
@@ -846,7 +894,6 @@ class CustomAIEngine {
 
   private selectByWeight(templates: ContentTemplate[]): ContentTemplate {
     const weights = templates.map(t => this.learningWeights.get(t.id) || 1.0);
-    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
 
     const recentPenalty = templates.map(t => 
       this.recentlyUsedTemplates.includes(t.id) ? 0.3 : 1.0
@@ -855,10 +902,14 @@ class CustomAIEngine {
     const adjustedWeights = weights.map((w, i) => w * recentPenalty[i]);
     const adjustedTotal = adjustedWeights.reduce((sum, w) => sum + w, 0);
 
-    let random = Math.random() * adjustedTotal;
+    // Seeded weighted selection: deterministic given the same template IDs and weights.
+    // This preserves the weighted semantics (high-weight templates are still more likely)
+    // while eliminating non-reproducible randomness.
+    const seed = `template-weight:${templates.map((t, i) => `${t.id}:${adjustedWeights[i].toFixed(2)}`).join('|')}`;
+    let cursor = (seededIndex(seed, 10000) / 10000) * adjustedTotal;
     for (let i = 0; i < templates.length; i++) {
-      random -= adjustedWeights[i];
-      if (random <= 0) {
+      cursor -= adjustedWeights[i];
+      if (cursor <= 0) {
         return templates[i];
       }
     }
@@ -893,7 +944,7 @@ class CustomAIEngine {
       return acc;
     }, []);
 
-    return leastUsed[Math.floor(Math.random() * leastUsed.length)];
+    return leastUsed[seededIndex(`least-used:${history.join(',')}:${total}`, leastUsed.length)];
   }
 
   private selectHookType(businessGoals: string[]): HookType {
@@ -914,7 +965,7 @@ class CustomAIEngine {
     }
 
     const hookTypes: HookType[] = ['question', 'statistic', 'story', 'teaser', 'challenge'];
-    return hookTypes[Math.floor(Math.random() * hookTypes.length)];
+    return hookTypes[seededIndex(`hook-type:${businessGoals.slice().sort().join(':')}`, hookTypes.length)];
   }
 
   private buildContentFromTemplate(
@@ -931,9 +982,10 @@ class CustomAIEngine {
       ? template.template 
       : template.variations[variationIndex - 1] || template.template;
 
-    const emojiSet = template.emojiSets[Math.floor(Math.random() * template.emojiSets.length)];
-    const emoji = emojiSet[Math.floor(Math.random() * emojiSet.length)];
-    const hookFromTemplate = template.hooks[Math.floor(Math.random() * template.hooks.length)];
+    const emojiSetSeed = `emoji-set:${context.topic}:${template.id}:${variationIndex}`;
+    const emojiSet = template.emojiSets[seededIndex(emojiSetSeed, template.emojiSets.length)];
+    const emoji = emojiSet[seededIndex(`emoji:${emojiSetSeed}`, emojiSet.length)];
+    const hookFromTemplate = template.hooks[seededIndex(`hook-from-tpl:${context.topic}:${template.id}:${variationIndex}`, template.hooks.length)];
 
     contentTemplate = contentTemplate
       .replace(/{hook}/g, context.hook || hookFromTemplate)
@@ -1068,6 +1120,8 @@ class CustomAIEngine {
   }
 
   private selectCallToAction(template: ContentTemplate, businessGoals: string[]): string {
+    const goalSeed = `cta:${template.id}:${businessGoals.slice().sort().join(':')}`;
+
     if (businessGoals.includes('sales') || businessGoals.includes('conversion')) {
       const salesCTAs = template.callToActions.filter(cta => 
         cta.toLowerCase().includes('stream') || 
@@ -1075,7 +1129,7 @@ class CustomAIEngine {
         cta.toLowerCase().includes('now')
       );
       if (salesCTAs.length > 0) {
-        return salesCTAs[Math.floor(Math.random() * salesCTAs.length)];
+        return salesCTAs[seededIndex(`${goalSeed}:sales`, salesCTAs.length)];
       }
     }
 
@@ -1086,11 +1140,11 @@ class CustomAIEngine {
         cta.toLowerCase().includes('tell')
       );
       if (engagementCTAs.length > 0) {
-        return engagementCTAs[Math.floor(Math.random() * engagementCTAs.length)];
+        return engagementCTAs[seededIndex(`${goalSeed}:engagement`, engagementCTAs.length)];
       }
     }
 
-    return template.callToActions[Math.floor(Math.random() * template.callToActions.length)];
+    return template.callToActions[seededIndex(`${goalSeed}:default`, template.callToActions.length)];
   }
 
   private getMediaRecommendation(platform: string, contentType: string): string {

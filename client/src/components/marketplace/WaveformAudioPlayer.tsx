@@ -78,13 +78,30 @@ export function WaveformAudioPlayer({
 
   useEffect(() => {
     if (!waveformData || waveformData.length === 0) {
+      // Seeded waveform: same audioUrl always produces the same waveform shape.
+      // Uses FNV-1a hash to derive a deterministic PRNG seed from the URL.
+      const seed = audioUrl || title || 'default';
+      let hash = 2166136261;
+      for (let i = 0; i < seed.length; i++) {
+        hash ^= seed.charCodeAt(i);
+        hash = Math.imul(hash, 16777619) >>> 0;
+      }
+      const seededRand = () => {
+        hash ^= hash << 13;
+        hash ^= hash >> 17;
+        hash ^= hash << 5;
+        hash = hash >>> 0;
+        return hash / 0xffffffff;
+      };
       const bars = 100;
-      const generated = Array.from({ length: bars }, () => 
-        0.2 + Math.random() * 0.6 + Math.sin(Math.random() * Math.PI) * 0.2
-      );
+      const generated = Array.from({ length: bars }, (_, i) => {
+        const r1 = seededRand();
+        const r2 = seededRand();
+        return 0.2 + r1 * 0.6 + Math.sin(r2 * Math.PI) * 0.2;
+      });
       setGeneratedWaveform(generated);
     }
-  }, [waveformData]);
+  }, [waveformData, audioUrl, title]);
 
   const waveform = waveformData && waveformData.length > 0 ? waveformData : generatedWaveform;
 

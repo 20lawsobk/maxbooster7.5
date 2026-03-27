@@ -10,6 +10,19 @@ import { pythonAIService } from './pythonAIService.js';
 import { veoMusicService } from './veoMusicService.js';
 
 /**
+ * FNV-1a 32-bit hash for deterministic seeded selection.
+ * Same algorithm used across all content-generation services for consistency.
+ */
+function seededIndex(seed: string, length: number): number {
+  let hash = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    hash ^= seed.charCodeAt(i);
+    hash = (hash * 16777619) >>> 0;
+  }
+  return hash % length;
+}
+
+/**
  * Auto-Post Generator Service v2.0
  * AI-optimized content generation with quality scoring, variant selection,
  * platform optimization, and multilingual support.
@@ -589,7 +602,7 @@ class AutoPostGenerator {
       `${artist} has entered a new era with ${topic}`,
       `No more waiting — ${topic} is officially here`,
     ];
-    return templates[Math.floor(Math.random() * templates.length)];
+    return templates[seededIndex(`awareness-headline:${artist}:${topic}:${tone}`, templates.length)];
   }
 
   private generateAwarenessBody(artist: string, topic: string, tone: string): string {
@@ -601,7 +614,7 @@ class AutoPostGenerator {
       `${topic} represents everything I've been working toward. Every lyric, every note, every decision — made with purpose. Grateful to share this with you all.`,
       `I've been holding onto ${topic} for a while, and today I finally get to let it go. Hope it resonates. Your ears are the last stop on a long journey.`,
     ];
-    return bodies[Math.floor(Math.random() * bodies.length)];
+    return bodies[seededIndex(`awareness-body:${artist}:${topic}:${tone}`, bodies.length)];
   }
 
   private generateEngagementHeadline(artist: string, topic: string, tone: string): string {
@@ -617,7 +630,7 @@ class AutoPostGenerator {
       `What's your favorite part of ${topic}? Drop it below`,
       `Settle this for me: does ${topic} belong in your rotation?`,
     ];
-    return templates[Math.floor(Math.random() * templates.length)];
+    return templates[seededIndex(`engagement-headline:${artist}:${topic}:${tone}`, templates.length)];
   }
 
   private generateEngagementBody(artist: string, topic: string, tone: string): string {
@@ -629,7 +642,7 @@ class AutoPostGenerator {
       `Working on the next project and ${topic} is going to be a big part of it. What do you want more of? What can ${artist} do better? Real answers only.`,
       `Your playlist, your rules — but I'll be honest, ${topic} was made with you in mind. Tell me if I got it right. First comment gets a shoutout.`,
     ];
-    return bodies[Math.floor(Math.random() * bodies.length)];
+    return bodies[seededIndex(`engagement-body:${artist}:${topic}:${tone}`, bodies.length)];
   }
 
   private generateConversionHeadline(artist: string, topic: string, tone: string): string {
@@ -645,7 +658,7 @@ class AutoPostGenerator {
       `IT'S OUT. ${topic} by ${artist} — go stream it now`,
       `${topic} is charting. Don't sleep on it — stream now`,
     ];
-    return templates[Math.floor(Math.random() * templates.length)];
+    return templates[seededIndex(`conversion-headline:${artist}:${topic}:${tone}`, templates.length)];
   }
 
   private generateConversionBody(artist: string, topic: string, tone: string): string {
@@ -657,7 +670,7 @@ class AutoPostGenerator {
       `${topic} is available everywhere right now. I don't ask for much — just one honest listen. If it hits, share it. If it hits twice, add it to your playlist. That's all I need.`,
       `New music from ${artist}: ${topic} is live. This one was built for streaming, built for repeat plays, and built for YOUR playlist. Go find out why. Link in bio.`,
     ];
-    return bodies[Math.floor(Math.random() * bodies.length)];
+    return bodies[seededIndex(`conversion-body:${artist}:${topic}:${tone}`, bodies.length)];
   }
 
   private generateViralHeadline(artist: string, topic: string, tone: string): string {
@@ -674,7 +687,7 @@ class AutoPostGenerator {
       `Unpopular opinion: ${topic} is the best thing ${artist} has ever done`,
       `Rate this 1-10 in the comments — ${topic} just dropped 🔥`,
     ];
-    return templates[Math.floor(Math.random() * templates.length)];
+    return templates[seededIndex(`viral-headline:${artist}:${topic}:${tone}`, templates.length)];
   }
 
   private generateViralBody(artist: string, topic: string, tone: string): string {
@@ -686,7 +699,7 @@ class AutoPostGenerator {
       `${topic} is the song I wrote when I stopped trying to make what people expected and started making what I actually felt. Turns out — the most personal thing you can create is also the most universal. This one's for everyone.`,
       `Some songs are made. ${topic} happened. There's a difference. I was in the studio at 2AM, not planning anything, and in two hours the whole thing was done. Those are always the real ones. Tag someone who needs to hear this.`,
     ];
-    return bodies[Math.floor(Math.random() * bodies.length)];
+    return bodies[seededIndex(`viral-body:${artist}:${topic}:${tone}`, bodies.length)];
   }
 
   private generateHashtags(topic: string, platforms: string[]): string[] {
