@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
+import { generateAudio as generateLocalAudio } from './audioGeneratorService.js';
 import { sharpImageService } from './sharpImageService.js';
 import {
   type GenerationRequest,
@@ -1638,9 +1639,10 @@ const imageWorker = {
 
 const audioWorker = {
   async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
-    const platform = step.params?.platform as Platform | undefined;
+    const platform  = step.params?.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
 
+    // 1. Try MaxCore remote audio generation first
     try {
       const result = await maxcorePost('/generate/audio', {
         step,
@@ -1666,9 +1668,46 @@ const audioWorker = {
         }));
       }
     } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore /generate/audio unavailable — no local audio fallback available:', err instanceof Error ? err.message : String(err));
+      logger.warn('[MultimodalGen] MaxCore /generate/audio unavailable — falling back to local audio generator:', err instanceof Error ? err.message : String(err));
     }
-    // No local audio generation available; return empty (video worker handles audio via FFmpeg)
+
+    // 2. Local FFmpeg audio generator fallback — produces a real .mp3 file
+    try {
+      const normalized = inputs?.normalized ?? {};
+      const genre   = normalized.genre ?? req.constraints?.genre ?? 'default';
+      const maxSec  = audioRules?.maxDurationSec ?? 30;
+      const ttsText = [normalized.hook, normalized.body, normalized.cta, normalized.summary]
+        .filter(Boolean).join('. ');
+
+      const audioResult = await generateLocalAudio({
+        genre,
+        duration: Math.min(maxSec, 60),
+        text:     ttsText || req.intent || undefined,
+        topic:    req.intent,
+        artistName: normalized.artistName,
+      });
+
+      if (audioResult.success && audioResult.url) {
+        logger.info(`[MultimodalGen] Local audio generated: ${audioResult.url}`);
+        return [{
+          id: randomUUID(),
+          modality: 'audio' as OutputModality,
+          payload: audioResult.url,
+          platform,
+          metadata: {
+            source:       'local_ffmpeg',
+            durationSec:  audioResult.durationSec,
+            maxDurationSec: audioRules?.maxDurationSec,
+            platformRules: audioRules,
+          },
+        }];
+      }
+
+      logger.warn('[MultimodalGen] Local audio generator returned no file:', audioResult.error);
+    } catch (localErr) {
+      logger.warn('[MultimodalGen] Local audio generator threw:', localErr instanceof Error ? localErr.message : String(localErr));
+    }
+
     return [];
   },
 };

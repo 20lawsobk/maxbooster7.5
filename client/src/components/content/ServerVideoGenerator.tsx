@@ -48,6 +48,12 @@ interface ServerVideoGeneratorProps {
   initialTemplate?: string;
   initialBgColor?: string;
   initialAccentColor?: string;
+  /**
+   * When true the component immediately starts video generation on mount using
+   * the supplied topic/hook/body/cta — the user already expressed intent by
+   * clicking "Generate", so no second click is needed.
+   */
+  autoStart?: boolean;
 }
 
 type InputMode = 'text' | 'audio' | 'image';
@@ -98,11 +104,14 @@ export function ServerVideoGenerator({
   initialTemplate = '',
   initialBgColor = '',
   initialAccentColor = '',
+  autoStart = false,
 }: ServerVideoGeneratorProps) {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
 
   const [inputMode, setInputMode] = useState<InputMode>('text');
+  // Tracks whether autoStart has already fired so it never fires twice
+  const autoStartFiredRef = useRef(false);
 
   // Text mode state
   const [textTopic, setTextTopic] = useState('');
@@ -273,6 +282,32 @@ export function ServerVideoGenerator({
     }
   };
 
+  // Auto-start: fire generation immediately when the parent already has the
+  // user's topic/content and just needs the video rendered.  We use a short
+  // delay so React has flushed the initial state (textTopic from topicProp).
+  // Must be placed after callGenerateVideo is defined to avoid TDZ issues.
+  useEffect(() => {
+    if (!autoStart || autoStartFiredRef.current) return;
+    const hasContent = !!(topicProp?.trim() || initialHook?.trim());
+    if (!hasContent) return;
+    autoStartFiredRef.current = true;
+    const id = setTimeout(() => {
+      callGenerateVideo({
+        topic: topicProp?.trim() || initialHook?.trim(),
+        hook:  initialHook  || undefined,
+        body:  initialBody  || undefined,
+        cta:   initialCta   || undefined,
+        template: initialTemplate || undefined,
+        quality:  initialTemplate ? 'cinematic' : undefined,
+        bg_color:     initialBgColor     || undefined,
+        accent_color: initialAccentColor || undefined,
+        voiceover: false,
+      });
+    }, 400);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Text mode ────────────────────────────────────────────────────────────────
 
   const handleGenerateFromText = async () => {
@@ -401,20 +436,115 @@ export function ServerVideoGenerator({
     { id: 'image', label: 'Image', icon: <Image className="h-3.5 w-3.5" /> },
   ];
 
+  // In autoStart mode show only the progress/result view — no form
+  const isAutoMode = autoStart && !!(topicProp?.trim() || initialHook?.trim());
+
   return (
     <Card className={className}>
       <CardHeader className="pb-3">
         <CardTitle className="text-lg flex items-center gap-2">
           <Film className="h-5 w-5" />
-          AI Video Studio
+          {isAutoMode ? 'Creating Your Video' : 'AI Video Studio'}
         </CardTitle>
         <CardDescription>
-          Generate cinematic videos from text, audio, or artwork
+          {isAutoMode
+            ? videoUrl
+              ? 'Your video is ready — watch and download below.'
+              : isGenerating
+              ? 'Your video is rendering. This usually takes 1–3 minutes.'
+              : 'Something went wrong. Customize the settings below and try again.'
+            : 'Generate cinematic videos from text, audio, or artwork'}
         </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-4">
 
+        {/* ── AUTO-START: show only progress + result, hide the form ── */}
+        {isAutoMode && (isGenerating || videoUrl) && (
+          <div className="space-y-4">
+            {isGenerating && (
+              <div className="flex flex-col items-center gap-4 py-8">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                  <Film className="absolute inset-0 m-auto h-6 w-6 text-primary" />
+                </div>
+                <div className="text-center space-y-1">
+                  <p className="text-sm font-medium">
+                    {generatingStage || 'Preparing your video…'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Rendering scenes, adding music, and compositing your clip
+                  </p>
+                </div>
+                {topicProp && (
+                  <div className="max-w-xs text-center rounded-lg bg-muted/50 px-3 py-2">
+                    <p className="text-xs text-muted-foreground truncate">"{topicProp}"</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {videoUrl && (
+              <div className="space-y-3">
+                <div className="rounded-lg overflow-hidden border bg-black">
+                  <video
+                    src={videoUrl}
+                    className="w-full"
+                    style={{ maxHeight: 420 }}
+                    controls
+                    autoPlay
+                    muted
+                  />
+                </div>
+                {videoInfo && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="secondary" className="text-[10px]">
+                        {videoInfo.width}×{videoInfo.height}
+                      </Badge>
+                      {videoInfo.scenesRendered > 1 && (
+                        <Badge variant="outline" className="text-[10px]">
+                          <Layers className="h-2.5 w-2.5 mr-1" />
+                          {videoInfo.scenesRendered} Scenes
+                        </Badge>
+                      )}
+                      <Badge variant="outline" className="text-[10px]">
+                        {(videoInfo.processingTime / 1000).toFixed(1)}s render
+                      </Badge>
+                      {videoInfo.source === 'ai_model' && (
+                        <Badge variant="default" className="text-[10px]">
+                          <Sparkles className="h-2.5 w-2.5 mr-1" />
+                          AI Generated
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                )}
+                <a
+                  href={videoUrl}
+                  download={`maxbooster-video-${platform}.mp4`}
+                  className="inline-flex items-center justify-center w-full rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download MP4
+                </a>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* When autoStart errored (not generating, no video) — show minimal retry */}
+        {isAutoMode && !isGenerating && !videoUrl && autoStartFiredRef.current && (
+          <div className="space-y-3">
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3 text-sm text-amber-700 dark:text-amber-400">
+              Video generation didn't complete. You can retry with the settings below.
+            </div>
+          </div>
+        )}
+
+        {/* Hide the full form when autoStart succeeded or is in progress */}
+        {!(isAutoMode && (isGenerating || videoUrl)) && (
+          <>
         {/* Input mode tabs */}
         <div className="flex rounded-lg border overflow-hidden">
           {inputModes.map((m) => (
@@ -856,6 +986,8 @@ export function ServerVideoGenerator({
               Download MP4
             </a>
           </div>
+        )}
+        </>
         )}
       </CardContent>
     </Card>

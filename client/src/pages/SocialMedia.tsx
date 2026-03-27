@@ -1397,7 +1397,13 @@ return (
               {isGeneratingContent ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Generating...
+                  {regularContentFormat === 'audio'
+                    ? 'Creating audio clip...'
+                    : regularContentFormat === 'video'
+                    ? 'Building video...'
+                    : regularContentFormat === 'image'
+                    ? 'Generating image...'
+                    : 'Generating...'}
                 </>
               ) : (
                 <>
@@ -1858,7 +1864,13 @@ return (
                           {isGeneratingContent ? (
                             <>
                               <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                              Generating...
+                              {regularContentFormat === 'audio'
+                                ? 'Creating audio clip...'
+                                : regularContentFormat === 'video'
+                                ? 'Building video...'
+                                : regularContentFormat === 'image'
+                                ? 'Generating image...'
+                                : 'Generating...'}
                             </>
                           ) : (
                             <>
@@ -1978,16 +1990,25 @@ return (
                                   <source src={item.mediaUrl} type="audio/mpeg" />
                                   Your browser does not support the audio element.
                                 </audio>
+                                <div className="flex justify-between items-center mt-1">
+                                  <span className="text-xs text-muted-foreground">AI-generated audio clip</span>
+                                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+                                    <a href={item.mediaUrl} download>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </a>
+                                  </Button>
+                                </div>
                               </div>
                             )}
                             {item.format === 'audio' && !item.mediaUrl && (
-                              <div className="mb-2 rounded-lg border bg-muted/40 p-3">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Mic2 className="h-4 w-4 text-muted-foreground" />
-                                  <span className="text-sm font-medium text-muted-foreground">Voiceover Script</span>
+                              <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                  <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Audio clip not ready</span>
                                 </div>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                                  {item.content || 'Use the generated text below as your voiceover script.'}
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  The audio file didn't finish generating. Switch to "Audio" format and regenerate to get your clip.
                                 </p>
                               </div>
                             )}
@@ -1997,6 +2018,15 @@ return (
                                   <source src={item.mediaUrl} type="video/mp4" />
                                   Your browser does not support the video element.
                                 </video>
+                                <div className="flex justify-between items-center mt-1">
+                                  <span className="text-xs text-muted-foreground">AI-generated video clip</span>
+                                  <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+                                    <a href={item.mediaUrl} download={`maxbooster-video-${item.platform || 'clip'}.mp4`}>
+                                      <Download className="h-3 w-3 mr-1" />
+                                      Download
+                                    </a>
+                                  </Button>
+                                </div>
                               </div>
                             )}
 
@@ -2241,7 +2271,13 @@ return (
                       {isGeneratingFromUrl ? (
                         <>
                           <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Analyzing URL...
+                          {contentFormat === 'audio'
+                            ? 'Creating audio clip...'
+                            : contentFormat === 'video'
+                            ? 'Building video...'
+                            : contentFormat === 'image'
+                            ? 'Generating image...'
+                            : 'Analyzing URL...'}
                         </>
                       ) : (
                         <>
@@ -2338,15 +2374,24 @@ return (
                                     <source src={item.mediaUrl} type="audio/mpeg" />
                                     Your browser does not support the audio element.
                                   </audio>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-muted-foreground">AI-generated audio clip</span>
+                                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+                                      <a href={item.mediaUrl} download>
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download
+                                      </a>
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : item.format === 'audio' && !item.mediaUrl ? (
-                                <div className="mb-2 rounded-lg border bg-muted/40 p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <Mic2 className="h-4 w-4 text-muted-foreground" />
-                                    <span className="text-sm font-medium text-muted-foreground">Voiceover Script</span>
+                                <div className="mb-2 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                                    <span className="text-sm font-medium text-amber-700 dark:text-amber-400">Audio clip not ready</span>
                                   </div>
-                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                                    {item.content || 'Audio voiceover script will appear here once the audio generation service is available. Use the text content below as your script.'}
+                                  <p className="text-xs text-muted-foreground mb-2">
+                                    The audio file didn't finish generating. Select "Audio / Voice" format and click Generate again to get your clip.
                                   </p>
                                 </div>
                               ) : item.format === 'video' && item.mediaUrl ? (
@@ -2355,6 +2400,15 @@ return (
                                     <source src={item.mediaUrl} type="video/mp4" />
                                     Your browser does not support the video element.
                                   </video>
+                                  <div className="flex justify-between items-center mt-1">
+                                    <span className="text-xs text-muted-foreground">AI-generated video clip</span>
+                                    <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" asChild>
+                                      <a href={item.mediaUrl} download={`maxbooster-video-${item.platform || 'clip'}.mp4`}>
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download
+                                      </a>
+                                    </Button>
+                                  </div>
                                 </div>
                               ) : item.format === 'video' && !item.mediaUrl ? (
                                 <div className="mb-2">
@@ -2370,6 +2424,7 @@ return (
                                     initialTemplate={item.genre === 'trap' ? 'fire_ember' : item.genre === 'r&b' ? 'aurora' : item.genre === 'pop' ? 'music_video' : item.genre === 'edm' ? 'neon_pulse' : 'cinematic_promo'}
                                     initialBgColor={item.bg_color || ''}
                                     initialAccentColor={item.accent_color || ''}
+                                    autoStart={true}
                                     onVideoGenerated={(videoUrl: string) => {
                                       const updated = [...urlGeneratedContent];
                                       updated[index] = { ...updated[index], mediaUrl: videoUrl };

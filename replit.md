@@ -52,6 +52,14 @@ Max Booster operates on a three-point data flow:
 - **Veo Quality Gate**: Enhanced content quality gate to align with 90% of Google Veo model standards, including a new `scoreNarrativeAuthenticity` dimension and rebalanced scoring weights.
 - **URL Content Generation**: Implemented asynchronous FFmpeg jobs for video generation and improved resilience for multimodal pipelines with client-side fallbacks.
 - **Caffeine Mode**: A deadline pressure system (`computeSchedulePressure`) that dynamically adjusts quality gates, HyperLearning cycles, and autopilot timing when behind schedule.
+- **Local Audio Generation** (`server/services/audioGeneratorService.ts`): FFmpeg `aevalsrc` synthesis (bass+beat+pad) with TTS via FFmpeg `flite` lavfi filter, outputs real `.mp3` files to `uploads/audio/`. Served via `/uploads/audio` static route. `audioWorker` in `multimodalGenerationService.ts` calls this as a fallback when MaxCore is unavailable.
+- **Video Audio Filter Fallback** (`server/services/videoGeneratorService.ts`): `applyAudioAndLogo` catches FFmpeg filter-not-found errors and retries with a safe `volume=0.9` chain instead of `equalizer/acompressor/dynaudnorm`.
+- **Audio & Video UX Overhaul** (`client/src/pages/SocialMedia.tsx`, `client/src/components/content/ServerVideoGenerator.tsx`):
+  - Replaced confusing "Voiceover Script" fallback cards with a clear amber "Audio clip not ready" state
+  - Added Download buttons to all audio player and inline video player cards
+  - Format-aware loading button copy ("Creating audio clip…", "Building video…", "Generating image…")
+  - `ServerVideoGenerator` gains an `autoStart` prop — when `true`, it fires generation immediately on mount without requiring a second user click; shows a cinematic progress view instead of the form
+  - `autoStart={true}` passed from the URL-tab results fallback so video begins rendering as soon as the user's generate request completes
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.

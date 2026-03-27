@@ -792,6 +792,8 @@ async function applyAudioAndLogo(
   }
 
   // Procedural synth mix (bass=1, beat=2, pad=3)
+  // Two variants: full EQ chain (preferred) and safe fallback (volume only).
+  // The safe fallback is used if the full chain triggers an FFmpeg filter error.
   parts.push(`[1:a][2:a][3:a]amix=inputs=3:normalize=0:weights=1.2 0.9 0.5[synth_raw]`);
   parts.push(`[synth_raw]${audioProfile.filters},afade=t=in:st=0:d=${fd},afade=t=out:st=${fo}:d=${fd}[synth]`);
 
@@ -837,7 +839,34 @@ async function applyAudioAndLogo(
     outputPath,
   ];
 
-  await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
+  try {
+    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
+  } catch (ffmpegErr) {
+    // Some FFmpeg builds don't support equalizer/acompressor/dynaudnorm filters.
+    // Retry with a safe filter chain (volume + afade only) so audio is always present.
+    const errMsg = ffmpegErr instanceof Error ? ffmpegErr.message : String(ffmpegErr);
+    if (/No such filter|Invalid option|filter.*not found|option.*not found/i.test(errMsg)) {
+      logger.warn('[VideoGen] Complex audio filters unavailable, retrying with safe fallback chain:', errMsg.slice(0, 120));
+      const safeParts = parts.map((p) =>
+        p.replace(`[synth_raw]${audioProfile.filters},`, '[synth_raw]volume=0.9,'),
+      );
+      const safeArgs = [
+        '-y',
+        ...inputs,
+        '-filter_complex', safeParts.join(';'),
+        ...outputLabels,
+        '-c:v', hasLogo ? 'libx264' : 'copy',
+        ...(hasLogo ? ['-preset', 'fast', '-crf', '22', '-pix_fmt', 'yuv420p'] : []),
+        '-c:a', 'aac', '-b:a', '160k',
+        '-movflags', '+faststart',
+        '-t', String(totalDur),
+        outputPath,
+      ];
+      await execFileAsync(FFMPEG, safeArgs, { timeout: 90_000 });
+    } else {
+      throw ffmpegErr;
+    }
+  }
 
   // Clean up temp voiceover file
   if (hasVoiceover && voiceoverPath) {
