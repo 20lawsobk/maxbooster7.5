@@ -22,6 +22,23 @@ import { userBrandVoices, autopilotPreferences, socialConnections } from '@share
 import { eq } from 'drizzle-orm';
 
 // ============================================================================
+// SEEDED PRNG HELPER
+// Returns a deterministic index into an array of `length` items based on a
+// string seed. Same seed → same index every time; different seeds → varied
+// results spread across the full range.
+// ============================================================================
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+
+// ============================================================================
 // MAX BOOSTER PLATFORM KNOWLEDGE
 // Injected into content generation engine so every AI post reflects the full
 // breadth of what Max Booster offers independent musicians.
@@ -1186,7 +1203,8 @@ class AdvancedSocialAIService {
 
     const contentType = request.contentType || 'announcement';
     const templates = hookTemplates[contentType] || hookTemplates.announcement;
-    let hook = templates[Math.floor(Math.random() * templates.length)];
+    const hookSeed = seededIndex(`${request.artistName}:${request.topic}:${contentType}:hook`, templates.length);
+    let hook = templates[hookSeed];
 
     // ── Curiosity gap injection (30% of viral/engagement generations) ─────────
     if ((request.objective === 'viral' || request.objective === 'engagement') && Math.random() < 0.30) {
@@ -1197,7 +1215,7 @@ class AdvancedSocialAIService {
     // ── Platform-native opener prefix (25% chance) ────────────────────────────
     const platformDNA = PLATFORM_NATIVE_DNA[request.platforms[0]?.toLowerCase()] || null;
     if (platformDNA && Math.random() < 0.25) {
-      const nativeOpener = platformDNA.openers[Math.floor(Math.random() * platformDNA.openers.length)];
+      const nativeOpener = platformDNA.openers[seededIndex(`${request.artistName}:${request.topic}:${contentType}:opener`, platformDNA.openers.length)];
       // Only prepend if hook doesn't already start with a platform-native opener
       const alreadyNative = platformDNA.openers.some(o => hook.toLowerCase().startsWith(o.toLowerCase().substring(0, 6)));
       if (!alreadyNative) hook = `${nativeOpener} ${hook}`;
@@ -1222,14 +1240,15 @@ class AdvancedSocialAIService {
     const arcTemplates = EMOTIONAL_ARC_TEMPLATES[contentType] || EMOTIONAL_ARC_TEMPLATES.announcement;
     if (!arcTemplates || arcTemplates.length === 0) return null;
 
-    const template = arcTemplates[Math.floor(Math.random() * arcTemplates.length)];
+    const arcSeed = `${request.artistName}:${topic}:${contentType}:arc`;
+    const template = arcTemplates[seededIndex(arcSeed, arcTemplates.length)];
     const fill = (s: string) => s
       .replace(/\{topic\}/g, topic)
       .replace(/\{genre\}/g, genre)
       .replace(/\{artist\}/g, artist || 'I');
 
     const platformDNA = PLATFORM_NATIVE_DNA[request.platforms[0]?.toLowerCase()] || PLATFORM_NATIVE_DNA.instagram;
-    const opener = platformDNA.openers[Math.floor(Math.random() * platformDNA.openers.length)];
+    const opener = platformDNA.openers[seededIndex(`${arcSeed}:opener`, platformDNA.openers.length)];
 
     const arc = [
       fill(template.hook),
@@ -1238,8 +1257,9 @@ class AdvancedSocialAIService {
       fill(template.resolution),
     ].join(' ');
 
+    const siPhrases = SELF_IDENTIFICATION_PHRASES.universal;
     const selfId = request.objective === 'viral' || request.objective === 'engagement'
-      ? SELF_IDENTIFICATION_PHRASES.universal[Math.floor(Math.random() * SELF_IDENTIFICATION_PHRASES.universal.length)]
+      ? siPhrases[seededIndex(`${arcSeed}:selfid`, siPhrases.length)]
       : null;
 
     const parts: string[] = [arc];
@@ -1257,7 +1277,7 @@ class AdvancedSocialAIService {
     const genre = request.genre || 'music';
     if (request.objective !== 'viral' && request.objective !== 'engagement') return null;
 
-    const pattern = CURIOSITY_GAP_PATTERNS[Math.floor(Math.random() * CURIOSITY_GAP_PATTERNS.length)];
+    const pattern = CURIOSITY_GAP_PATTERNS[seededIndex(`${topic}:${genre}:curiosity`, CURIOSITY_GAP_PATTERNS.length)];
     return pattern
       .replace(/\{topic\}/g, topic)
       .replace(/\{genre\}/g, genre);
@@ -1413,7 +1433,7 @@ class AdvancedSocialAIService {
 
       const contentType = request.contentType || 'announcement';
       const bodyVariantList = contentBodyVariants[contentType] || contentBodyVariants.announcement;
-      const selectedBodyVariant = bodyVariantList[Math.floor(Math.random() * bodyVariantList.length)];
+      const selectedBodyVariant = bodyVariantList[seededIndex(`${request.artistName}:${topic}:${contentType}:body`, bodyVariantList.length)];
       bodyParts.push(...selectedBodyVariant.slice(0, 2));
     }
 
@@ -1424,7 +1444,7 @@ class AdvancedSocialAIService {
         `This one comes from a real place.`,
         `Music is how I speak when words aren't enough.`,
       ];
-      bodyParts.push(emotionalClosers[Math.floor(Math.random() * emotionalClosers.length)]);
+      bodyParts.push(emotionalClosers[seededIndex(`${request.artistName}:${topic}:emotional`, emotionalClosers.length)]);
     }
 
     if (request.objective === 'conversions') {
@@ -1433,7 +1453,7 @@ class AdvancedSocialAIService {
         `First week numbers determine everything.`,
         `Every stream in the first 24 hours counts double.`,
       ];
-      bodyParts.push(urgencyLines[Math.floor(Math.random() * urgencyLines.length)]);
+      bodyParts.push(urgencyLines[seededIndex(`${request.artistName}:${topic}:urgency`, urgencyLines.length)]);
     }
 
     let body = bodyParts.join(' ');
@@ -1511,7 +1531,7 @@ class AdvancedSocialAIService {
     };
 
     const ctas = ctasByObjective[request.objective] || ctasByObjective.engagement;
-    let cta = ctas[Math.floor(Math.random() * ctas.length)];
+    let cta = ctas[seededIndex(`${request.artistName}:${request.topic}:${request.objective}:cta`, ctas.length)];
 
     if (tone.energy > 0.7 && !cta.includes('!')) {
       cta = cta.replace(/\.$/, '!');

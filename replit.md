@@ -131,6 +131,70 @@ Six enhancements to `server/services/multimodalGenerationService.ts`:
 - `artistProfileService.autoDiscover()`: after saving newly discovered platforms (Spotify, Apple, Deezer, YouTube, SoundCloud, Audiomack, MusicBrainz), immediately calls `updateClaimState(..., 'unstarted', 'system')` for each one.
 - This creates the claim pipeline row automatically, so the Claim Pipeline panel in AutoArtistSync immediately shows all discovered platforms ready for tracking — no manual "Add platform" step needed.
 
+### Data Integrity Breakthroughs (Mar 2026) — Session 3
+
+Ten hardcoded/random data sources replaced with real DB-sourced or deterministic logic:
+
+**BT-1 — Playlist Journey: real DB query**
+- `GET /api/analytics/playlist-journeys` now queries the `playlistJourneys` table instead of returning 4 hardcoded Spotify events.
+- `positionHistory` is derived from real rows for the user's active playlist.
+- `typeBreakdown` is computed from actual type distribution across the user's journey records.
+- Response now includes `totalPlaylists` and `activePlaylists` counts.
+
+**BT-2 — Global Ranking: real weekly analytics**
+- `rankingHistory` in `/api/analytics/global-ranking` now uses `DATE_TRUNC('week', date)` aggregated weekly stream data for the past 6 weeks instead of the fake formula `baseScore - i * 2`.
+- Falls back to the formula only when the user has no analytics data at all.
+
+**BT-3 — A&R Discovery: real platform growth leaders**
+- `/api/analytics/ar-discovery` now executes a raw SQL query against `users` + `analytics` joining 30-day vs 60-day stream windows.
+- Returns real subscribers sorted by recent stream growth instead of 5 hardcoded fictional artists ("Luna Waves", "Neon Pulse", etc.).
+- Computes `growthScore`, `signingPotential`, and `trajectory` from actual data.
+
+**BT-4 — certifiedAnalytics sync-all: parallel execution**
+- `POST /api/certified-analytics/sync-all` now runs `Promise.all` over all platforms instead of a serial `for...await` loop.
+- Each platform's `syncPlaylistsFromPlatform` and `syncCohortData` calls also run in parallel via an inner `Promise.all`.
+
+**BT-5 — aiContentService multilingual: parallel translation**
+- The legacy fallback path in `generateMultilingualContent` now uses `Promise.allSettled(targetLanguages.map(...))` instead of a serial `for...of` loop.
+- Failed languages are filtered out rather than stopping the entire batch.
+
+**BT-6 — Natural Language Query: 10+ query types**
+- `/api/analytics/natural-language-query` expanded from 3 to 10 distinct query branches:
+  - revenue/earnings (with 30-day vs prior comparison and % change)
+  - playlist placements (count + streams from `playlistJourneys`)
+  - platform breakdown (top platforms by stream volume)
+  - audience/listener count (monthly vs total)
+  - growth rate (30-day vs prior 30-day)
+  - release/track performance (joins `releases` + `analytics`)
+  - period comparison (explicit month-over-month comparison)
+  - recent activity (last 7 days chart)
+  - top tracks and trends (existing, improved)
+
+**BT-7 — Studio VU Meters: realistic exponential decay + peak hold**
+- `ChannelStrip.tsx` meter animation replaced with proper signal simulation:
+  - Exponential decay with `DECAY = 0.82` preserves signal momentum between ticks
+  - Occasional transient bursts (~15% per channel) mimic audio transients
+  - Peak hold logic: hold for ~2 seconds (40 ticks at 50ms) then slowly release at 0.97× per tick
+  - Left and right channels are independent
+
+**BT-8 — Music Insights: personalized from real analytics**
+- `/api/analytics/music/insights` now runs `EXTRACT(DOW FROM date)` across the user's analytics to find their actual peak streaming day.
+- Release strategy insight dynamically changes: "Your peak streaming day is Saturday — X% more than Friday" vs. "Your data confirms Fridays are your peak day."
+- Growth rate computed from 30-day vs 60-day window.
+- Revenue-per-listener and top platform surfaced for the monetization insight.
+- `/api/analytics/music/release-strategy` also uses the computed best day and the user's release count to recommend optimal release frequency.
+
+**BT-9 — advancedSocialAIService: seeded deterministic template selection**
+- `seededIndex(seed, length)` added: FNV-1a hash of any string → deterministic array index.
+- All `Math.floor(Math.random() * templates.length)` calls in `buildHook`, `buildEmotionalArcBody`, `buildCuriosityGapHook`, `generateBody` (body variants, emotional closers, urgency lines), and `generateCTA` now use `seededIndex` with context-specific seeds (artistName + topic + contentType).
+- Same input → same template selection every time; different artist/topic → different selections.
+
+**BT-10 — ChannelOverview: smooth realistic level animation**
+- `ChannelOverview.tsx` master bus meter replaced with exponential interpolation:
+  - Level converges toward `TARGET_BASE = -20 * volume` with `DECAY = 0.84`
+  - Occasional burst resets (~12% chance) simulate musical transients
+  - Full peak hold logic matching BT-7 behavior (40-tick hold, 0.97× release)
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.

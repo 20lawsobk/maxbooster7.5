@@ -8,7 +8,8 @@ import {
   socialCampaigns, 
   campaigns,
   projects,
-  releases
+  releases,
+  playlistJourneys,
 } from '@shared/schema';
 import { eq, and, desc, sql, gte, lte, count, avg } from 'drizzle-orm';
 import { requireAuth, requireAdmin } from '../middleware/auth';
@@ -660,42 +661,107 @@ router.get('/music/insights', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    const dayStreams = await db.execute(sql`
+      SELECT EXTRACT(DOW FROM date)::int AS dow,
+             COALESCE(SUM(streams), 0)::bigint AS total_streams,
+             COUNT(*)::int AS data_points
+      FROM analytics
+      WHERE user_id = ${userId}
+      GROUP BY dow
+      ORDER BY total_streams DESC
+    `);
+    const dayRows = (dayStreams as any).rows ?? dayStreams;
+
+    const bestDow = dayRows.length > 0 ? Number(dayRows[0].dow) : 5;
+    const bestDay = DAY_NAMES[bestDow] ?? 'Friday';
+    const bestDayStreams = dayRows.length > 0 ? Number(dayRows[0].total_streams) : 0;
+    const fridayStreams = dayRows.find((r: any) => Number(r.dow) === 5)
+      ? Number(dayRows.find((r: any) => Number(r.dow) === 5).total_streams)
+      : 0;
+    const bestDayBoost = bestDayStreams > 0 && fridayStreams > 0 && bestDow !== 5
+      ? Math.round(((bestDayStreams - fridayStreams) / fridayStreams) * 100)
+      : 0;
+    const releaseInsightDescription = bestDow === 5
+      ? `Your data confirms Fridays are your peak streaming day. Releasing on Fridays aligns with your audience activity.`
+      : `Your peak streaming day is ${bestDay}${bestDayBoost > 0 ? ` — ${bestDayBoost}% more streams than Friday` : ''}. Consider experimenting with ${bestDay} releases.`;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const sixtyDaysAgo = new Date();
+    sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
+
+    const [recentStats] = await db
+      .select({
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)`,
+        listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+      })
+      .from(analytics)
+      .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)));
+    const [prevStats] = await db
+      .select({ streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` })
+      .from(analytics)
+      .where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), lte(analytics.date, thirtyDaysAgo)));
+
+    const recentStreams = Number(recentStats?.streams ?? 0);
+    const prevStreams = Number(prevStats?.streams ?? 0);
+    const growthRate = prevStreams > 0 ? Math.round(((recentStreams - prevStreams) / prevStreams) * 100) : 0;
+    const recentRevenue = Number(recentStats?.revenue ?? 0);
+    const recentListeners = Number(recentStats?.listeners ?? 0);
+    const rpu = recentListeners > 0 ? (recentRevenue / recentListeners) : 0;
+
+    const topPlatformRow = await db
+      .select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` })
+      .from(analytics)
+      .where(eq(analytics.userId, userId))
+      .groupBy(analytics.platform)
+      .orderBy(desc(sql`SUM(${analytics.streams})`))
+      .limit(1);
+    const topPlatform = topPlatformRow[0]?.platform ?? null;
+
     const insights = [
       {
         category: 'release_strategy' as const,
         title: 'Optimal Release Schedule',
-        description: 'Data suggests releasing on Fridays yields 30% more streams in the first week.',
+        description: releaseInsightDescription,
         impact: 'high' as const,
         actionable: [
-          'Schedule your next release for a Friday',
-          'Announce release 1-2 weeks in advance',
-          'Prepare promotional content ahead of time',
+          `Schedule your next release for a ${bestDay}`,
+          'Announce the release 1-2 weeks in advance to build momentum',
+          'Prepare promotional content and social posts ahead of time',
         ],
         priority: 1,
+        data: { bestDay, bestDow, bestDayStreams },
       },
       {
         category: 'audience_growth' as const,
-        title: 'Untapped Audience Potential',
-        description: 'Your music resonates with 18-24 age group. Consider targeting this demographic more.',
-        impact: 'medium' as const,
-        actionable: [
-          'Use TikTok for short-form content',
-          'Collaborate with influencers in this age range',
-          'Create content that appeals to younger listeners',
-        ],
+        title: growthRate >= 20 ? 'Strong Growth Momentum' : growthRate >= 0 ? 'Steady Audience Growth' : 'Growth Opportunity',
+        description: growthRate !== 0
+          ? `Your streams ${growthRate >= 0 ? 'grew' : 'dropped'} ${Math.abs(growthRate)}% over the last 30 days (${recentStreams.toLocaleString()} vs ${prevStreams.toLocaleString()} prior period).`
+          : `You have ${recentStreams.toLocaleString()} streams in the last 30 days. Consistent releases and social engagement drive growth.`,
+        impact: growthRate >= 20 ? 'high' as const : 'medium' as const,
+        actionable: growthRate >= 0
+          ? ['Keep your release cadence consistent', 'Engage your audience with behind-the-scenes content', 'Pitch to editorial playlists during your release week']
+          : ['Experiment with new content formats (reels, shorts, clips)', 'Collaborate with artists in adjacent genres', 'Re-engage your audience with throwback or acoustic versions'],
         priority: 2,
+        data: { growthRate, recentStreams, prevStreams },
       },
       {
         category: 'monetization' as const,
-        title: 'Revenue Optimization',
-        description: 'Your streaming-to-revenue ratio suggests opportunities for direct-to-fan sales.',
+        title: rpu < 0.001 ? 'Revenue Optimization Opportunity' : 'Healthy Revenue Per Listener',
+        description: topPlatform
+          ? `${topPlatform} is driving the most streams. ${rpu < 0.001 ? 'Diversifying platforms can improve your per-stream rate.' : `At $${rpu.toFixed(4)} per listener, you are on track for sustainable streaming income.`}`
+          : 'Diversify across streaming platforms to maximize revenue per stream.',
         impact: 'medium' as const,
         actionable: [
-          'Set up merchandise store',
-          'Offer exclusive content to super fans',
-          'Create tiered fan club memberships',
+          'Set up a direct-to-fan store for merchandise and exclusive content',
+          'Offer early access or bonus tracks to super fans via your storefront',
+          'Create tiered fan memberships with exclusive perks',
         ],
         priority: 3,
+        data: { topPlatform, revenuePerListener: rpu, recentRevenue },
       },
     ];
 
@@ -718,10 +784,29 @@ router.get('/music/release-strategy', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    const DAY_NAMES_RS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayStreamsRS = await db.execute(sql`
+      SELECT EXTRACT(DOW FROM date)::int AS dow,
+             COALESCE(SUM(streams), 0)::bigint AS total_streams
+      FROM analytics
+      WHERE user_id = ${userId}
+      GROUP BY dow
+      ORDER BY total_streams DESC
+    `);
+    const dayRowsRS = (dayStreamsRS as any).rows ?? dayStreamsRS;
+    const bestDowRS = dayRowsRS.length > 0 ? Number(dayRowsRS[0].dow) : 5;
+    const bestDayRS = DAY_NAMES_RS[bestDowRS] ?? 'Friday';
+
+    const releaseCountRow = await db
+      .select({ count: count() })
+      .from(releases)
+      .where(eq(releases.userId, userId));
+    const releaseCount = Number(releaseCountRow[0]?.count ?? 0);
+
     return res.json({
-      bestReleaseDay: 'Friday',
+      bestReleaseDay: bestDayRS,
       bestReleaseTime: '12:00 AM (Midnight)',
-      optimalFrequency: 'Every 4-6 weeks',
+      optimalFrequency: releaseCount > 10 ? 'Every 2-3 weeks' : releaseCount > 5 ? 'Every 4-6 weeks' : 'Monthly to build momentum',
       genreTrends: [
         { genre: 'Pop', trend: 'rising' as const, score: 85 },
         { genre: 'Hip-Hop', trend: 'stable' as const, score: 78 },
@@ -734,7 +819,7 @@ router.get('/music/release-strategy', async (req: Request, res: Response) => {
         'Collaboration tracks perform 40% better',
       ],
       recommendations: [
-        'Release singles consistently to maintain momentum',
+        `Release singles consistently on ${bestDayRS}s to align with your audience peak`,
         'Build anticipation with teasers 1-2 weeks before release',
         'Leverage playlist pitching immediately after release',
         'Create visual content (music videos, lyric videos) for each release',
@@ -1003,16 +1088,31 @@ router.get('/global-ranking', async (req: Request, res: Response) => {
       };
     });
 
-    const rankingHistory = [];
-    for (let i = 0; i < 6; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i * 7);
-      rankingHistory.push({
-        date: date.toISOString().split('T')[0],
-        score: baseScore - i * 2,
-        rank: globalRank + i * 1000,
-      });
-    }
+    const sixWeeksAgo = new Date();
+    sixWeeksAgo.setDate(sixWeeksAgo.getDate() - 42);
+    const weeklyAnalytics = await db
+      .select({
+        week: sql<string>`DATE_TRUNC('week', ${analytics.date})::date`,
+        streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`,
+      })
+      .from(analytics)
+      .where(and(eq(analytics.userId, userId), gte(analytics.date, sixWeeksAgo)))
+      .groupBy(sql`DATE_TRUNC('week', ${analytics.date})`)
+      .orderBy(sql`DATE_TRUNC('week', ${analytics.date})`);
+    const rankingHistory = weeklyAnalytics.length > 0
+      ? weeklyAnalytics.map(row => {
+          const wk = Number(row.streams);
+          return {
+            date: row.week,
+            score: Math.min(100, Math.floor(Math.log10(wk + 1) * 15)),
+            rank: Math.max(1000, 500000 - Math.floor(wk / 10)),
+          };
+        })
+      : Array.from({ length: 6 }, (_, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - i * 7);
+          return { date: d.toISOString().split('T')[0], score: Math.max(0, baseScore - i * 2), rank: globalRank + i * 1000 };
+        }).reverse();
 
     const similarArtists: { name: string; score: number; rank: number; genre: string; monthlyListeners: number; comparison: string }[] = [];
 
@@ -1127,18 +1227,168 @@ router.post('/natural-language-query', async (req: Request, res: Response) => {
       });
     }
 
-    if (queryLower.includes('revenue') || queryLower.includes('earn')) {
+    if (queryLower.includes('revenue') || queryLower.includes('earn') || queryLower.includes('money') || queryLower.includes('paid')) {
+      const thirtyDaysAgo2 = new Date();
+      thirtyDaysAgo2.setDate(thirtyDaysAgo2.getDate() - 30);
+      const [recentRevRow] = await db
+        .select({ revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
+        .from(analytics)
+        .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo2)));
+      const recentRev = Number(recentRevRow?.revenue ?? 0);
+      const totalRev = Number(stats.totalRevenue);
+      const prevRev = totalRev - recentRev;
+      const revChange = prevRev > 0 ? Math.round(((recentRev - prevRev) / prevRev) * 100) : 0;
       return res.json({
         success: true,
         result: {
           type: 'metric',
           title: 'Revenue Summary',
-          summary: `You have earned a total of $${Number(stats.totalRevenue).toLocaleString()} from ${Number(stats.totalStreams).toLocaleString()} streams.`,
+          summary: `Total earnings: $${totalRev.toLocaleString()}. Last 30 days: $${recentRev.toLocaleString()}${revChange !== 0 ? ` (${revChange > 0 ? '+' : ''}${revChange}% vs prior period)` : ''}.`,
+          data: { value: totalRev, label: 'Total Revenue', change: revChange, recent: recentRev },
+        },
+      });
+    }
+
+    if (queryLower.includes('playlist') || queryLower.includes('added to') || queryLower.includes('editorial')) {
+      const playlists = await db
+        .select({ count: count(), totalStreams: sql<number>`COALESCE(SUM(${playlistJourneys.streamsFromPlaylist}), 0)`, active: sql<number>`COALESCE(SUM(CASE WHEN ${playlistJourneys.isActive} THEN 1 ELSE 0 END), 0)` })
+        .from(playlistJourneys)
+        .where(eq(playlistJourneys.userId, userId));
+      const pl = playlists[0];
+      return res.json({
+        success: true,
+        result: {
+          type: 'metric',
+          title: 'Playlist Placements',
+          summary: `You have ${Number(pl?.count ?? 0)} playlist placements generating ${Number(pl?.totalStreams ?? 0).toLocaleString()} streams. ${Number(pl?.active ?? 0)} currently active.`,
+          data: { value: Number(pl?.count ?? 0), label: 'Playlists', active: Number(pl?.active ?? 0), totalStreams: Number(pl?.totalStreams ?? 0) },
+        },
+      });
+    }
+
+    if (queryLower.includes('platform') || queryLower.includes('best platform') || queryLower.includes('which platform') || queryLower.includes('where do')) {
+      const platformData = await db
+        .select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
+        .from(analytics)
+        .where(eq(analytics.userId, userId))
+        .groupBy(analytics.platform)
+        .orderBy(desc(sql`SUM(${analytics.streams})`))
+        .limit(5);
+      const best = platformData[0];
+      return res.json({
+        success: true,
+        result: {
+          type: 'table',
+          title: 'Platform Breakdown',
+          summary: best ? `Your best platform is ${best.platform} with ${Number(best.streams).toLocaleString()} streams.` : 'No platform data yet.',
+          data: { platforms: platformData.map(p => ({ name: p.platform, streams: Number(p.streams), revenue: Number(p.revenue) })) },
+        },
+      });
+    }
+
+    if (queryLower.includes('audience') || queryLower.includes('fan') || queryLower.includes('listener') || queryLower.includes('who listen')) {
+      const thirtyDaysAgo3 = new Date();
+      thirtyDaysAgo3.setDate(thirtyDaysAgo3.getDate() - 30);
+      const [listenerRow] = await db
+        .select({ listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)` })
+        .from(analytics)
+        .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo3)));
+      const monthlyListeners = Number(listenerRow?.listeners ?? 0);
+      const totalListeners = Number(stats.totalListeners);
+      return res.json({
+        success: true,
+        result: {
+          type: 'metric',
+          title: 'Audience Size',
+          summary: `${monthlyListeners.toLocaleString()} active listeners in the last 30 days across ${totalListeners.toLocaleString()} total.`,
+          data: { value: monthlyListeners, label: 'Monthly Listeners', total: totalListeners },
+        },
+      });
+    }
+
+    if (queryLower.includes('growth') || queryLower.includes('growing') || queryLower.includes('increase') || queryLower.includes('change')) {
+      const thirtyDaysAgo4 = new Date();
+      thirtyDaysAgo4.setDate(thirtyDaysAgo4.getDate() - 30);
+      const sixtyDaysAgo4 = new Date();
+      sixtyDaysAgo4.setDate(sixtyDaysAgo4.getDate() - 60);
+      const [recentStreams] = await db.select({ v: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo4)));
+      const [prevStreams] = await db.select({ v: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo4), lte(analytics.date, thirtyDaysAgo4)));
+      const recent = Number(recentStreams?.v ?? 0);
+      const prev = Number(prevStreams?.v ?? 0);
+      const growthRate = prev > 0 ? Math.round(((recent - prev) / prev) * 100) : 0;
+      return res.json({
+        success: true,
+        result: {
+          type: 'metric',
+          title: 'Growth Rate (Last 30 Days)',
+          summary: `${recent.toLocaleString()} streams in the last 30 days vs ${prev.toLocaleString()} in the prior 30 days — ${growthRate >= 0 ? '+' : ''}${growthRate}% growth.`,
+          data: { value: growthRate, label: '% Growth', recent, prev },
+        },
+      });
+    }
+
+    if (queryLower.includes('release') || queryLower.includes('track') || queryLower.includes('song') || queryLower.includes('best release')) {
+      const releaseData = await db
+        .select({ title: releases.title, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
+        .from(releases)
+        .leftJoin(analytics, eq(analytics.userId, releases.userId))
+        .where(eq(releases.userId, userId))
+        .groupBy(releases.id, releases.title)
+        .orderBy(desc(sql`SUM(${analytics.streams})`))
+        .limit(5);
+      const best = releaseData[0];
+      return res.json({
+        success: true,
+        result: {
+          type: 'table',
+          title: 'Top Releases',
+          summary: best ? `"${best.title}" is your top release with ${Number(best.streams).toLocaleString()} streams.` : 'No release data yet.',
+          data: { releases: releaseData.map(r => ({ name: r.title, streams: Number(r.streams), revenue: Number(r.revenue) })) },
+        },
+      });
+    }
+
+    if (queryLower.includes('compare') || queryLower.includes('vs') || queryLower.includes('against')) {
+      const thirtyDaysAgo5 = new Date();
+      thirtyDaysAgo5.setDate(thirtyDaysAgo5.getDate() - 30);
+      const sixtyDaysAgo5 = new Date();
+      sixtyDaysAgo5.setDate(sixtyDaysAgo5.getDate() - 60);
+      const [curr] = await db.select({ s: sql<number>`COALESCE(SUM(${analytics.streams}),0)`, r: sql<number>`COALESCE(SUM(${analytics.revenue}),0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo5)));
+      const [prev] = await db.select({ s: sql<number>`COALESCE(SUM(${analytics.streams}),0)`, r: sql<number>`COALESCE(SUM(${analytics.revenue}),0)` }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo5), lte(analytics.date, thirtyDaysAgo5)));
+      const streamGrowth = Number(prev?.s) > 0 ? Math.round(((Number(curr?.s) - Number(prev?.s)) / Number(prev?.s)) * 100) : 0;
+      return res.json({
+        success: true,
+        result: {
+          type: 'table',
+          title: 'Period Comparison (Last 30 Days vs Prior)',
+          summary: `Streams ${streamGrowth >= 0 ? 'up' : 'down'} ${Math.abs(streamGrowth)}% compared to the prior 30-day period.`,
           data: {
-            value: Number(stats.totalRevenue),
-            label: 'Total Revenue',
-            change: 12,
+            current: { streams: Number(curr?.s ?? 0), revenue: Number(curr?.r ?? 0), label: 'Last 30 Days' },
+            previous: { streams: Number(prev?.s ?? 0), revenue: Number(prev?.r ?? 0), label: 'Prior 30 Days' },
+            streamGrowth, revenueGrowth: Number(prev?.r) > 0 ? Math.round(((Number(curr?.r) - Number(prev?.r)) / Number(prev?.r)) * 100) : 0,
           },
+        },
+      });
+    }
+
+    if (queryLower.includes('today') || queryLower.includes('this week') || queryLower.includes('recent') || queryLower.includes('latest')) {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      const recentData = await db
+        .select({ date: sql<string>`DATE(${analytics.date})`, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, revenue: sql<number>`COALESCE(SUM(${analytics.revenue}), 0)` })
+        .from(analytics)
+        .where(and(eq(analytics.userId, userId), gte(analytics.date, sevenDaysAgo)))
+        .groupBy(sql`DATE(${analytics.date})`)
+        .orderBy(desc(sql`DATE(${analytics.date})`))
+        .limit(7);
+      const totalRecent = recentData.reduce((s, d) => s + Number(d.streams), 0);
+      return res.json({
+        success: true,
+        result: {
+          type: 'chart',
+          title: 'Recent Activity (Last 7 Days)',
+          summary: `${totalRecent.toLocaleString()} streams in the last 7 days.`,
+          data: { chartType: 'bar', labels: recentData.map(d => d.date).reverse(), values: recentData.map(d => Number(d.streams)).reverse() },
         },
       });
     }
@@ -1148,8 +1398,8 @@ router.post('/natural-language-query', async (req: Request, res: Response) => {
       result: {
         type: 'text',
         title: 'Analytics Summary',
-        summary: `You have ${Number(stats.totalStreams).toLocaleString()} total streams, ${Number(stats.totalListeners).toLocaleString()} listeners, and $${Number(stats.totalRevenue).toLocaleString()} in revenue.`,
-        data: { message: 'Ask about your top tracks, streaming trends, revenue, or country performance.' },
+        summary: `You have ${Number(stats.totalStreams).toLocaleString()} total streams, ${Number(stats.totalListeners).toLocaleString()} listeners, and $${Number(stats.totalRevenue).toFixed(2)} in revenue.`,
+        data: { message: 'Try asking: "show my top platform", "revenue last month", "playlist placements", "how am I growing?", "compare this month vs last", "best release", or "streams this week".' },
       },
     });
   } catch (error) {
@@ -1169,29 +1419,56 @@ router.get('/playlist-journeys', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const events = [
-      { id: '1', playlistName: 'Today\'s Top Hits', platform: 'Spotify', type: 'editorial', action: 'added', date: new Date().toISOString(), position: 45, followers: 35000000, estimatedStreams: 125000, trackName: 'Your Hit Song' },
-      { id: '2', playlistName: 'New Music Friday', platform: 'Spotify', type: 'editorial', action: 'added', date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), position: 12, followers: 12500000, estimatedStreams: 85000, trackName: 'Latest Release' },
-      { id: '3', playlistName: 'Discover Weekly', platform: 'Spotify', type: 'algorithmic', action: 'added', date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), followers: 0, estimatedStreams: 15000, trackName: 'Your Hit Song' },
-      { id: '4', playlistName: 'Release Radar', platform: 'Spotify', type: 'algorithmic', action: 'added', date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), followers: 0, estimatedStreams: 12000, trackName: 'Latest Release' },
-    ];
+    const journeyRows = await db
+      .select()
+      .from(playlistJourneys)
+      .where(eq(playlistJourneys.userId, userId))
+      .orderBy(desc(playlistJourneys.addedAt))
+      .limit(100);
 
-    const positionHistory = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      positionHistory.push({
-        date: date.toISOString().split('T')[0],
-        position: 45 + i * 3,
-        playlistName: 'Today\'s Top Hits',
-      });
+    const events = journeyRows.map(j => ({
+      id: j.id,
+      playlistName: j.playlistName,
+      platform: j.platform,
+      type: j.playlistType || 'editorial',
+      action: j.removedAt ? 'removed' : 'added',
+      date: (j.addedAt || j.createdAt || new Date()).toISOString(),
+      position: j.position ?? 0,
+      followers: j.followerCount ?? 0,
+      estimatedStreams: j.streamsFromPlaylist ?? 0,
+      trackName: j.trackId,
+      peakPosition: j.peakPosition ?? j.position,
+      daysOnPlaylist: j.daysOnPlaylist ?? 0,
+      curator: j.curatorName ?? null,
+    }));
+
+    const topPlaylist = journeyRows.find(j => !j.removedAt);
+    const positionHistory = topPlaylist
+      ? journeyRows
+          .filter(j => j.playlistId === topPlaylist.playlistId)
+          .map(j => ({
+            date: (j.addedAt || j.createdAt || new Date()).toISOString().split('T')[0],
+            position: j.position ?? 0,
+            playlistName: j.playlistName,
+          }))
+      : [];
+
+    const typeCounts: Record<string, { count: number; totalReach: number; totalStreams: number }> = {};
+    for (const j of journeyRows) {
+      const t = j.playlistType || 'editorial';
+      if (!typeCounts[t]) typeCounts[t] = { count: 0, totalReach: 0, totalStreams: 0 };
+      typeCounts[t].count++;
+      typeCounts[t].totalReach += j.followerCount ?? 0;
+      typeCounts[t].totalStreams += j.streamsFromPlaylist ?? 0;
     }
-
-    const typeBreakdown = [
-      { type: 'editorial', count: 5, percentage: 35, totalReach: 50000000, avgStreamsPerDay: 8500 },
-      { type: 'algorithmic', count: 8, percentage: 45, totalReach: 0, avgStreamsPerDay: 3200 },
-      { type: 'user', count: 12, percentage: 20, totalReach: 2500000, avgStreamsPerDay: 1200 },
-    ];
+    const totalJourneys = Object.values(typeCounts).reduce((s, v) => s + v.count, 0) || 1;
+    const typeBreakdown = Object.entries(typeCounts).map(([type, d]) => ({
+      type,
+      count: d.count,
+      percentage: Math.round((d.count / totalJourneys) * 100),
+      totalReach: d.totalReach,
+      avgStreamsPerDay: d.count > 0 ? Math.round(d.totalStreams / Math.max(1, d.count)) : 0,
+    }));
 
     return res.json({
       success: true,
@@ -1199,6 +1476,8 @@ router.get('/playlist-journeys', async (req: Request, res: Response) => {
         events,
         positionHistory,
         typeBreakdown,
+        totalPlaylists: journeyRows.length,
+        activePlaylists: journeyRows.filter(j => !j.removedAt && j.isActive).length,
       },
     });
   } catch (error) {
@@ -1220,30 +1499,77 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
 
     const { genre, country, minGrowth } = req.query;
 
-    let artists = [
-      { id: '1', name: 'Luna Waves', genre: 'Indie Pop', country: 'Sweden', countryCode: 'SE', growthScore: 94, signingPotential: 'high', monthlyListeners: 285000, monthlyGrowth: 156, socialFollowing: 125000, recentReleases: 3, playlistReach: 4500000, engagementRate: 8.5, topTrack: 'Midnight Dreams', trajectory: [45, 58, 72, 85, 94] },
-      { id: '2', name: 'Neon Pulse', genre: 'Electronic', country: 'Germany', countryCode: 'DE', growthScore: 89, signingPotential: 'high', monthlyListeners: 420000, monthlyGrowth: 89, socialFollowing: 95000, recentReleases: 2, playlistReach: 3200000, engagementRate: 6.8, topTrack: 'Digital Dreams', trajectory: [52, 61, 73, 81, 89] },
-      { id: '3', name: 'Sunset Drive', genre: 'Pop', country: 'United States', countryCode: 'US', growthScore: 85, signingPotential: 'high', monthlyListeners: 560000, monthlyGrowth: 67, socialFollowing: 210000, recentReleases: 4, playlistReach: 6800000, engagementRate: 5.2, topTrack: 'Golden Hour', trajectory: [48, 58, 68, 78, 85] },
-      { id: '4', name: 'Arctic Echo', genre: 'Alternative', country: 'Norway', countryCode: 'NO', growthScore: 78, signingPotential: 'medium', monthlyListeners: 175000, monthlyGrowth: 45, socialFollowing: 68000, recentReleases: 2, playlistReach: 1900000, engagementRate: 7.1, topTrack: 'Northern Lights', trajectory: [42, 52, 62, 71, 78] },
-      { id: '5', name: 'Velvet Storm', genre: 'R&B', country: 'United Kingdom', countryCode: 'GB', growthScore: 72, signingPotential: 'medium', monthlyListeners: 145000, monthlyGrowth: 38, socialFollowing: 82000, recentReleases: 1, playlistReach: 1200000, engagementRate: 9.2, topTrack: 'Silk Road', trajectory: [38, 48, 55, 64, 72] },
-    ];
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
 
-    if (genre) {
-      artists = artists.filter(a => a.genre.toLowerCase().includes((genre as string).toLowerCase()));
-    }
-    if (country) {
-      artists = artists.filter(a => a.country.toLowerCase().includes((country as string).toLowerCase()) || a.countryCode.toLowerCase() === (country as string).toLowerCase());
-    }
+    const growthRows = await db.execute(sql`
+      SELECT
+        u.id,
+        COALESCE(u.username, 'Artist') AS name,
+        COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)::int AS recent_streams,
+        COALESCE(SUM(CASE WHEN a.date >= ${sixtyDaysAgo} AND a.date < ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)::int AS prev_streams,
+        COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.total_listeners ELSE 0 END), 0)::int AS monthly_listeners,
+        COUNT(DISTINCT a.platform)::int AS platform_count,
+        (SELECT COUNT(*) FROM releases r WHERE r.user_id = u.id AND r.created_at >= ${thirtyDaysAgo})::int AS recent_releases
+      FROM users u
+      LEFT JOIN analytics a ON a.user_id = u.id
+      WHERE u.id != ${userId}
+        AND u.subscription_tier IN ('monthly','yearly','lifetime')
+      GROUP BY u.id, u.username
+      HAVING COALESCE(SUM(a.streams), 0) > 0
+      ORDER BY (
+        COALESCE(SUM(CASE WHEN a.date >= ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)
+        - COALESCE(SUM(CASE WHEN a.date >= ${sixtyDaysAgo} AND a.date < ${thirtyDaysAgo} THEN a.streams ELSE 0 END), 0)
+      ) DESC
+      LIMIT 20
+    `);
+
+    const rows = (growthRows as any).rows ?? growthRows;
+    let artists = rows.map((row: any, idx: number) => {
+      const recent = Number(row.recent_streams ?? 0);
+      const prev = Number(row.prev_streams ?? 0);
+      const growth = prev > 0 ? Math.round(((recent - prev) / prev) * 100) : (recent > 0 ? 100 : 0);
+      const monthlyListeners = Number(row.monthly_listeners ?? 0);
+      const recentReleases = Number(row.recent_releases ?? 0);
+      const growthScore = Math.min(100, Math.floor(Math.log10(recent + 1) * 12 + growth * 0.3));
+      const signingPotential = growthScore >= 80 ? 'high' : growthScore >= 50 ? 'medium' : 'low';
+      const trajectory = [
+        Math.max(0, growthScore - 20),
+        Math.max(0, growthScore - 14),
+        Math.max(0, growthScore - 8),
+        Math.max(0, growthScore - 3),
+        growthScore,
+      ];
+      return {
+        id: row.id,
+        name: row.name,
+        genre: 'Music',
+        country: 'Global',
+        countryCode: '',
+        growthScore,
+        signingPotential,
+        monthlyListeners,
+        monthlyGrowth: growth,
+        socialFollowing: 0,
+        recentReleases,
+        playlistReach: 0,
+        engagementRate: monthlyListeners > 0 ? parseFloat((recent / monthlyListeners).toFixed(1)) : 0,
+        topTrack: '',
+        trajectory,
+      };
+    });
+
     if (minGrowth) {
-      artists = artists.filter(a => a.monthlyGrowth >= (parseInt(minGrowth as string) || 0));
+      const minG = parseInt(minGrowth as string) || 0;
+      artists = artists.filter((a: any) => a.monthlyGrowth >= minG);
     }
 
     return res.json({
       success: true,
-      data: artists,
+      data: artists.slice(0, 10),
       filters: {
-        genres: ['Indie Pop', 'Electronic', 'Pop', 'Alternative', 'R&B', 'Hip-Hop', 'Rock'],
-        countries: ['Sweden', 'Germany', 'United States', 'Norway', 'United Kingdom', 'Canada', 'Australia'],
+        genres: ['All'],
+        countries: ['All'],
       },
     });
   } catch (error) {

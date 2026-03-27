@@ -369,21 +369,18 @@ export class AIContentService {
     } catch (error) {
       logger.error('Enhanced translation failed, using legacy:', error);
       
-      const results: MultilingualContent[] = [];
-      for (const lang of targetLanguages) {
-        const template = this.languageTemplates[lang];
-        if (!template) continue;
-
-        const culturalAdaptations = this.getCulturalAdaptations(lang, prompt);
-        let translatedContent = this.translateContent(prompt, lang);
-
-        results.push({
-          language: template.name,
-          content: translatedContent,
-          culturalAdaptations,
-        });
-      }
-      return results;
+      const settled = await Promise.allSettled(
+        targetLanguages.map(async (lang) => {
+          const template = this.languageTemplates[lang];
+          if (!template) return null;
+          const culturalAdaptations = this.getCulturalAdaptations(lang, prompt);
+          const translatedContent = this.translateContent(prompt, lang);
+          return { language: template.name, content: translatedContent, culturalAdaptations } as MultilingualContent;
+        })
+      );
+      return settled
+        .filter((r): r is PromiseFulfilledResult<MultilingualContent> => r.status === 'fulfilled' && r.value !== null)
+        .map(r => r.value);
     }
   }
 

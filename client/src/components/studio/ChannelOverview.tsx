@@ -179,11 +179,34 @@ export function ChannelOverview({
       return;
     }
 
+    let currentLevel = -20 * volume;
+    let peakHeld = -60;
+    let peakHoldTicks = 0;
+    const PEAK_HOLD = 40;
+    const DECAY = 0.84;
+    const TARGET_BASE = -20 * volume;
+
     const interval = setInterval(() => {
-      const baseLevel = -20 + (Math.random() * 15 - 7.5);
-      const newLevel = baseLevel * volume;
-      setLocalMeterLevel(newLevel);
-      setLocalPeakLevel((prev) => Math.max(prev - 0.5, newLevel));
+      // Occasional transient burst toward a new target
+      if (Math.random() < 0.12) {
+        currentLevel = TARGET_BASE + (Math.random() * 8 - 4);
+      }
+      // Smooth exponential interpolation toward target + small noise
+      currentLevel = currentLevel * DECAY + TARGET_BASE * (1 - DECAY) + (Math.random() * 2 - 1) * volume;
+      currentLevel = Math.max(-60, Math.min(0, currentLevel));
+
+      if (currentLevel >= peakHeld) {
+        peakHeld = currentLevel;
+        peakHoldTicks = PEAK_HOLD;
+      } else if (peakHoldTicks > 0) {
+        peakHoldTicks--;
+      } else {
+        peakHeld = peakHeld * 0.97 - 0.1;
+      }
+      peakHeld = Math.max(-60, peakHeld);
+
+      setLocalMeterLevel(currentLevel);
+      setLocalPeakLevel(peakHeld);
     }, 50);
 
     return () => clearInterval(interval);

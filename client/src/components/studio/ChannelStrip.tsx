@@ -57,24 +57,47 @@ export function ChannelStrip({
   const [meterLevel, setMeterLevel] = useState([0, 0]); // L, R
   const [peakLevel, setPeakLevel] = useState([0, 0]);
 
-  // Simulated meter animation (replace with real audio metering)
+  // Realistic VU meter simulation with exponential decay + transient bursts + peak hold
   useEffect(() => {
     if (mute) {
       setMeterLevel([0, 0]);
+      setPeakLevel([0, 0]);
       return;
     }
 
-    const interval = setInterval(() => {
-      // Simulate meter movement
-      const newLevelL = Math.random() * volume * 0.8;
-      const newLevelR = Math.random() * volume * 0.8;
-      setMeterLevel([newLevelL, newLevelR]);
+    // Internal state persisted between ticks via closure refs
+    let levelL = 0;
+    let levelR = 0;
+    let peakHoldL = 0;
+    let peakHoldR = 0;
+    let peakHoldCounterL = 0;
+    let peakHoldCounterR = 0;
+    const PEAK_HOLD_TICKS = 40; // ~2 seconds at 50ms
+    const DECAY = 0.82;
+    const NOISE_SCALE = 0.12;
 
-      // Update peaks
-      setPeakLevel((prev) => [
-        Math.max(prev[0] * 0.95, newLevelL),
-        Math.max(prev[1] * 0.95, newLevelR),
-      ]);
+    const interval = setInterval(() => {
+      // Occasional transient bursts (~15% chance each channel, independent)
+      if (Math.random() < 0.15) levelL = Math.min(1, volume * (0.5 + Math.random() * 0.5));
+      if (Math.random() < 0.15) levelR = Math.min(1, volume * (0.5 + Math.random() * 0.5));
+
+      // Exponential decay + small continuous noise
+      levelL = levelL * DECAY + (Math.random() * NOISE_SCALE * volume);
+      levelR = levelR * DECAY + (Math.random() * NOISE_SCALE * volume);
+      levelL = Math.min(1, Math.max(0, levelL));
+      levelR = Math.min(1, Math.max(0, levelR));
+
+      // Peak hold: reset hold timer when new peak exceeds stored peak
+      if (levelL >= peakHoldL) { peakHoldL = levelL; peakHoldCounterL = PEAK_HOLD_TICKS; }
+      else if (peakHoldCounterL > 0) { peakHoldCounterL--; }
+      else { peakHoldL = peakHoldL * 0.97; }
+
+      if (levelR >= peakHoldR) { peakHoldR = levelR; peakHoldCounterR = PEAK_HOLD_TICKS; }
+      else if (peakHoldCounterR > 0) { peakHoldCounterR--; }
+      else { peakHoldR = peakHoldR * 0.97; }
+
+      setMeterLevel([levelL, levelR]);
+      setPeakLevel([peakHoldL, peakHoldR]);
     }, 50);
 
     return () => clearInterval(interval);

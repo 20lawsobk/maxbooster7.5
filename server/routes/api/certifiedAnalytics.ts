@@ -403,10 +403,12 @@ router.post('/sync-all', async (req: AuthenticatedRequest, res: Response) => {
 
     const result = await dspAnalyticsService.syncAllPlatforms(userId, start, end);
 
-    for (const platform of result.success) {
-      await playlistAttributionService.syncPlaylistsFromPlatform(userId, platform as DSPPlatform);
-      await cohortAnalyticsService.syncCohortData(userId, platform as DSPPlatform);
-    }
+    await Promise.all(result.success.map(async (platform) => {
+      await Promise.all([
+        playlistAttributionService.syncPlaylistsFromPlatform(userId, platform as DSPPlatform),
+        cohortAnalyticsService.syncCohortData(userId, platform as DSPPlatform),
+      ]);
+    }));
 
     return res.json({
       success: true,
