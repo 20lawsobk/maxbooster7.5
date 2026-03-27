@@ -562,42 +562,7 @@ export function ServerVideoGenerator({
           </div>
         )}
 
-        {/* When autoStart errored (not generating, no video) — show retry button */}
-        {isAutoMode && !isGenerating && !videoUrl && autoStartFiredRef.current && (
-          <div className="space-y-3">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4">
-              <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
-                Video generation didn't complete. Click below to try again.
-              </p>
-              <Button
-                size="sm"
-                onClick={() => {
-                  autoStartFiredRef.current = false;
-                  const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
-                  const platformTemplate = PLATFORM_DEFAULT_TEMPLATE[platform] || 'cinematic_promo';
-                  callGenerateVideo({
-                    topic: topicProp?.trim() || initialHook?.trim(),
-                    hook:  initialHook  || undefined,
-                    body:  initialBody  || undefined,
-                    cta:   initialCta   || undefined,
-                    template: initialTemplate || platformTemplate,
-                    quality:  'cinematic',
-                    bg_color:     initialBgColor     || undefined,
-                    accent_color: initialAccentColor || undefined,
-                    voiceover: hasScript,
-                  });
-                  autoStartFiredRef.current = true;
-                }}
-              >
-                Try Again
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Hide the full form when autoStart succeeded or is in progress, when
-            autoStart is pending its 400ms delay, or when it errored (retry
-            button above handles it) */}
+        {/* Hide the full form while auto-generating, after success, or during startup delay */}
         {!(isAutoMode && (isGenerating || videoUrl)) && !autoStartPending && !(isAutoMode && autoStartFiredRef.current) && (
           <>
         {/* Input mode tabs */}
