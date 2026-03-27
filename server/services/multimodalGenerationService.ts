@@ -1233,6 +1233,17 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
         });
       }
     } else if (outputModality === 'video') {
+      // Always include a text step so the URL-extracted hook/body/cta is returned
+      // in data.assets — the client uses it to seed the video generator topic.
+      for (const platform of req.platforms) {
+        steps.push({
+          id: `step_text_${platform}`,
+          type: 'generate',
+          worker: 'text',
+          inputFrom: 'normalizedInput',
+          params: buildStepParamsForPlatform(platform, 'text'),
+        });
+      }
       for (const platform of req.platforms) {
         steps.push({
           id: `step_video_${platform}`,
