@@ -814,15 +814,28 @@ export default function SocialMedia() {
       // Video: if the server-side FFmpeg generation failed/timed-out and no video
       // assets came back, inject a synthetic item per platform so ServerVideoGenerator
       // always surfaces for the user to kick off generation manually.
+      // Pull hook/body/cta from URL-extracted text assets so the topic is real content,
+      // not the "New music" fallback — works for any URL, not just music.
       if (outputModality === 'video' && generatedContent.length === 0) {
         const platforms = selectedPlatforms.length > 0 ? selectedPlatforms : ['tiktok'];
-        generatedContent = platforms.map((pid) => ({
-          platform: pid,
-          content: '',
-          format: 'video',
-          mediaUrl: undefined,
-          source: 'python_ai_model',
-        } as GeneratedContent));
+        const textAssets = mapAssetsToGeneratedContent(data.assets, 'text');
+        generatedContent = platforms.map((pid) => {
+          const asset = textAssets.find(a => a.platform === pid) || textAssets[0];
+          return {
+            platform: pid,
+            content: asset?.content || '',
+            format: 'video',
+            mediaUrl: undefined,
+            source: 'python_ai_model',
+            extractedTitle: asset?.hook?.slice(0, 80)
+              || asset?.extractedTitle?.slice(0, 80)
+              || asset?.content?.slice(0, 80)
+              || '',
+            hook: asset?.hook || '',
+            body: asset?.body || '',
+            cta:  asset?.cta  || '',
+          } as GeneratedContent;
+        });
       }
 
       // Audio: if MaxCore audio generation is unavailable and no audio assets came
