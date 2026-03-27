@@ -300,11 +300,13 @@ const AUDIO_PROFILES: Record<string, AudioProfile> = {
   },
   default: {
     // 100 BPM — neutral Am chord, gentle beat, balanced
+    // Amplitudes reduced to avoid the droning low-freq hum; dynaudnorm target
+    // lowered so normalization doesn't blast the sine waves to full volume.
     bps: 1.667, pw: 7,
-    bass: '0.18*sin(2*PI*110*t)+0.12*sin(2*PI*138.59*t)+0.08*sin(2*PI*164.81*t)+0.05*sin(2*PI*220*t)',
-    beat: '0.32*abs(sin(PI*1.667*t))^7*sin(2*PI*110*t)+0.09*abs(sin(PI*3.333*t))^8*sin(2*PI*330*t)',
-    pad:  '0.05*sin(2*PI*220*t)+0.04*sin(2*PI*261.63*t)+0.04*sin(2*PI*329.63*t)+0.03*sin(2*PI*440*t)',
-    filters: 'equalizer=f=80:width_type=o:width=2:g=3,lowpass=f=12000,acompressor=threshold=0.3:ratio=4:attack=4:release=40,dynaudnorm=p=0.90',
+    bass: '0.09*sin(2*PI*110*t)+0.06*sin(2*PI*138.59*t)+0.04*sin(2*PI*164.81*t)+0.03*sin(2*PI*220*t)',
+    beat: '0.16*abs(sin(PI*1.667*t))^7*sin(2*PI*110*t)+0.05*abs(sin(PI*3.333*t))^8*sin(2*PI*330*t)',
+    pad:  '0.04*sin(2*PI*220*t)+0.03*sin(2*PI*261.63*t)+0.03*sin(2*PI*329.63*t)+0.02*sin(2*PI*440*t)',
+    filters: 'highpass=f=80,lowpass=f=12000,acompressor=threshold=0.4:ratio=3:attack=5:release=50,dynaudnorm=p=0.60',
   },
 };
 
@@ -699,11 +701,13 @@ async function generateVoiceover(
 
     const outPath = path.join(os.tmpdir(), `vo_${randomBytes(6).toString('hex')}.wav`);
 
-    // Use flite lavfi source → trim to video duration → PCM WAV
+    // Use flite lavfi source → highpass to keep speech freqs → trim to video duration → PCM WAV
+    // kal16 is 16kHz (2× better than kal's 8kHz) — much cleaner, less robotic hum
     await execFileAsync(FFMPEG, [
       '-y',
       '-f', 'lavfi',
-      '-i', `flite=text='${spoken.replace(/'/g, '')}':voice=kal`,
+      '-i', `flite=text='${spoken.replace(/'/g, '')}':voice=kal16`,
+      '-af', 'highpass=f=120,acompressor=threshold=0.4:ratio=3:attack=5:release=50,volume=1.3',
       '-t', String(totalDur),
       '-ar', '44100',
       '-ac', '2',

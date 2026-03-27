@@ -302,6 +302,7 @@ export function ServerVideoGenerator({
     autoStartFiredRef.current = true;
     const id = setTimeout(() => {
       setAutoStartPending(false);
+      const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
       callGenerateVideo({
         topic: topicProp?.trim() || initialHook?.trim(),
         hook:  initialHook  || undefined,
@@ -311,7 +312,7 @@ export function ServerVideoGenerator({
         quality:  initialTemplate ? 'cinematic' : undefined,
         bg_color:     initialBgColor     || undefined,
         accent_color: initialAccentColor || undefined,
-        voiceover: false,
+        voiceover: hasScript,
       });
     }, 400);
     return () => clearTimeout(id);
@@ -554,6 +555,7 @@ export function ServerVideoGenerator({
                 size="sm"
                 onClick={() => {
                   autoStartFiredRef.current = false;
+                  const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
                   callGenerateVideo({
                     topic: topicProp?.trim() || initialHook?.trim(),
                     hook:  initialHook  || undefined,
@@ -563,7 +565,7 @@ export function ServerVideoGenerator({
                     quality:  initialTemplate ? 'cinematic' : undefined,
                     bg_color:     initialBgColor     || undefined,
                     accent_color: initialAccentColor || undefined,
-                    voiceover: false,
+                    voiceover: hasScript,
                   });
                   autoStartFiredRef.current = true;
                 }}
