@@ -6,6 +6,70 @@ import { aiService } from './aiService';
 import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
 import { pythonAIService } from './pythonAIService.js';
 
+// ── Caffeine Mode — Deadline Pressure System ──────────────────────────────────
+// Tracks how far behind schedule the autonomous autopilot is.
+// pressure = postsStillNeeded / hoursRemaining
+//   0       → on track / ahead of schedule  (normal mode)
+//   0–0.5   → mild lag                      (gate floor −4 pts, wider posting window)
+//   0.5–1.5 → behind                        (gate floor −7 pts, accelerated learning)
+//   > 1.5   → CAFFEINE MODE (critical)      (gate floor −10 pts, max acceleration)
+//
+// The gate THRESHOLD lowers under pressure so the system can still publish, but
+// urgency-themed content simultaneously scores HIGHER — meaning only posts that
+// genuinely feel time-sensitive clear the lowered bar.  Like a student on a late-
+// night caffeine run who narrows focus to the highest-yield exam material first.
+// ─────────────────────────────────────────────────────────────────────────────
+let _currentPressure = 0;
+
+export function updateSchedulePressure(pressure: number): void {
+  _currentPressure = Math.max(0, pressure);
+  if (pressure > 1.5) {
+    logger.warn(
+      `⚡ [CaffeineMode] CRITICAL schedule pressure: ${pressure.toFixed(2)} posts/hr needed` +
+      ` — quality gate + urgency scoring adapting`
+    );
+  } else if (pressure > 0.5) {
+    logger.info(
+      `☕ [CaffeineMode] Moderate schedule pressure: ${pressure.toFixed(2)} posts/hr` +
+      ` — gate relaxing, urgency content boosted`
+    );
+  } else if (pressure === 0 && _currentPressure > 0) {
+    logger.info(`😌 [CaffeineMode] Schedule pressure cleared — returning to normal quality gate`);
+  }
+}
+
+export function getCurrentPressure(): number { return _currentPressure; }
+
+/**
+ * Pressure-adjusted quality gate minimum score.
+ * Normal floor is 60.  Under deadline pressure it lowers—but urgency signals
+ * in content simultaneously raise the engagement score, so the effective bar
+ * stays meaningful; only truly urgent-feeling posts benefit from the relief.
+ */
+function pressureAdjustedMinScore(baseMin: number): number {
+  if (_currentPressure <= 0)   return baseMin;
+  if (_currentPressure > 1.5) return Math.max(50, baseMin - 10); // critical
+  if (_currentPressure > 0.5) return Math.max(53, baseMin - 7);  // moderate
+  return Math.max(56, baseMin - 4);                               // mild
+}
+
+/**
+ * Urgency scoring bonus when behind schedule.
+ * Like caffeine making a student zero in on high-yield material — content that
+ * signals time-pressure (now, tonight, last chance, dropping soon) is rewarded
+ * with an engagement score boost proportional to how behind we are.
+ * Max +12 pts at critical pressure.
+ */
+function pressureUrgencyBoost(content: string): number {
+  if (_currentPressure <= 0) return 0;
+  const urgencyRx = /\b(now|tonight|today|last chance|limited|dropping|coming|soon|hours? left|don'?t miss|before|exclusive|only|this week|right now|immediately)\b/i;
+  if (!urgencyRx.test(content)) return 0;
+  const factor    = Math.min(1, _currentPressure / 1.5);
+  const maxBoost  = _currentPressure > 1.5 ? 12 : _currentPressure > 0.5 ? 8 : 4;
+  return Math.round(maxBoost * factor);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 export interface ContentVariant {
   id: string;
   content: string;
@@ -714,8 +778,13 @@ class ContentQualityPipeline {
 
     const platformPenalty = platformOpt.isValid ? 0 : 15;
 
+    // Caffeine Mode: urgency-themed content gets an engagement bonus when
+    // the system is behind schedule — sharpens focus on high-impact posts.
+    const urgencyBoost = pressureUrgencyBoost(content);
+    const boostedEngagement = Math.min(100, engagement + urgencyBoost);
+
     const overall = Math.max(0, Math.min(100,
-      engagement * weights.engagement +
+      boostedEngagement * weights.engagement +
       clarity * weights.clarity +
       sentiment * weights.sentiment +
       brandAlignment * weights.brandAlignment +
@@ -1012,13 +1081,25 @@ class ContentQualityPipeline {
     variants: ContentVariant[],
     minScore: number = 60
   ): Promise<ContentVariant | null> {
-    const validVariants = variants.filter(v => 
-      v.scores.overall >= minScore && v.platformOptimizations.isValid
+    // Caffeine Mode: gate floor lowers under deadline pressure, but urgency
+    // content already scored higher in scoreContent — so only urgency-rich posts
+    // benefit from the relief.  Like a tired student accepting a solid B instead
+    // of holding out for an A when the exam clock is almost out.
+    const effectiveMin = pressureAdjustedMinScore(minScore);
+    if (effectiveMin !== minScore && _currentPressure > 0) {
+      logger.info(
+        `☕ [CaffeineMode] Gate threshold: ${minScore} → ${effectiveMin}` +
+        ` (pressure: ${_currentPressure.toFixed(2)})`
+      );
+    }
+
+    const validVariants = variants.filter(v =>
+      v.scores.overall >= effectiveMin && v.platformOptimizations.isValid
     );
 
     if (validVariants.length === 0) {
       const best = variants.sort((a, b) => b.scores.overall - a.scores.overall)[0];
-      if (best && best.scores.overall >= minScore * 0.8) {
+      if (best && best.scores.overall >= effectiveMin * 0.8) {
         logger.warn(`Selected variant with platform issues: ${best.platformOptimizations.issues.join(', ')}`);
         return best;
       }
@@ -1035,7 +1116,10 @@ class ContentQualityPipeline {
     minScore: number = 60
   ): Promise<{ selected: ContentVariant | null; variants: ContentVariant[]; context: ContentContext }> {
     const context = await this.buildContext(userId, baseContext);
-    const variants = await this.generateVariants(context, variantCount);
+    // Caffeine Mode: generate more variants under pressure so we try harder
+    // to find one that clears the (already-relaxed) bar.
+    const pressureExtra = _currentPressure > 1.5 ? 3 : _currentPressure > 0.5 ? 2 : 0;
+    const variants = await this.generateVariants(context, variantCount + pressureExtra);
     const selected = await this.selectBestVariant(variants, minScore);
 
     logger.info(`Generated ${variants.length} variants, selected: ${selected?.id || 'none'} (score: ${selected?.scores.overall.toFixed(1) || 'N/A'})`);

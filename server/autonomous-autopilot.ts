@@ -5,6 +5,7 @@ import { customAI } from './custom-ai-engine.js';
 import { logger } from './logger.js';
 import { autopilotCoordinatorService, type AutopilotType } from './services/autopilotCoordinatorService.js';
 import { hyperLearningEngine } from './services/hyperLearningEngine.js';
+import { updateSchedulePressure } from './services/contentQualityPipeline.js';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
 function seededIndex(seed: string, length: number): number {
@@ -52,6 +53,8 @@ export class AutonomousAutopilot extends EventEmitter {
   private userId: string;
   private autopilotType: AutopilotType = 'social';
   private coordinatorEnabled: boolean = true;
+  // Caffeine Mode — last broadcast pressure value; avoids redundant reschedules
+  private _lastBroadcastPressure = 0;
 
   constructor(userId: string, autopilotType: AutopilotType = 'social') {
     super();
@@ -325,9 +328,22 @@ export class AutonomousAutopilot extends EventEmitter {
       return false;
     }
 
-    // Ensure minimum posts per day are met
+    // Compute schedule pressure and broadcast to quality pipeline + HyperLearning
+    const pressure = this.computeSchedulePressure(platform);
+    this.broadcastPressure(pressure);
+
     const hoursLeft = 24 - new Date().getHours();
     const postsNeeded = this.config.minPostsPerDay - dailyPostCount;
+
+    // Caffeine Mode: under critical pressure generate on every check — no waiting
+    // for the optimal window.  Like a student who has to submit something before
+    // the exam starts, even if conditions aren't perfect.
+    if (pressure > 1.5 && postsNeeded > 0) {
+      logger.warn(
+        `⚡ [CaffeineMode] ${platform}: critical pressure (${pressure.toFixed(2)}) — generating immediately`
+      );
+      return true;
+    }
 
     if (hoursLeft <= 4 && postsNeeded > 0) {
       return true; // Must post to meet minimum
@@ -337,7 +353,9 @@ export class AutonomousAutopilot extends EventEmitter {
     const currentHour = new Date().getHours();
     const optimalHours = this.optimalTimingCache.get(platform) || [14];
 
-    return optimalHours.some((hour) => Math.abs(hour - currentHour) <= 1);
+    // Under moderate pressure expand the acceptable posting window from ±1 h to ±2 h
+    const window = pressure > 0.5 ? 2 : 1;
+    return optimalHours.some((hour) => Math.abs(hour - currentHour) <= window);
   }
 
   private async generateAndPublishAutonomousContent(platform: string): Promise<void> {
@@ -881,12 +899,56 @@ export class AutonomousAutopilot extends EventEmitter {
     return bestTopic;
   }
 
+  // ── Caffeine Mode — Deadline Pressure Utilities ─────────────────────────────
+
+  /**
+   * Computes how many posts per remaining hour are needed to hit the daily
+   * minimum for the given platform.
+   *   0      = on track or ahead
+   *   0–0.5  = mild lag
+   *   0.5–1.5= behind (moderate caffeine)
+   *   >1.5   = critical (max caffeine — all-nighter mode)
+   */
+  private computeSchedulePressure(platform: string): number {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const postsToday = this.contentPerformanceHistory.filter(
+      c => c.platform === platform && new Date(c.publishedAt) >= today
+    ).length;
+    const now = new Date();
+    const hoursLeft = Math.max(0.5, 24 - now.getHours() - now.getMinutes() / 60);
+    const postsNeeded = Math.max(0, this.config.minPostsPerDay - postsToday);
+    return postsNeeded / hoursLeft;
+  }
+
+  /**
+   * Broadcasts the current platform pressure to the quality pipeline and the
+   * HyperLearning engine.  Only fires when the pressure tier changes to avoid
+   * flooding the interval scheduler with redundant updates.
+   */
+  private broadcastPressure(pressure: number): void {
+    const tier   = pressure > 1.5 ? 3 : pressure > 0.5 ? 2 : pressure > 0 ? 1 : 0;
+    const pTier  = this._lastBroadcastPressure > 1.5 ? 3 :
+                   this._lastBroadcastPressure > 0.5 ? 2 :
+                   this._lastBroadcastPressure > 0   ? 1 : 0;
+    if (tier === pTier) return;
+    this._lastBroadcastPressure = pressure;
+    updateSchedulePressure(pressure);
+    hyperLearningEngine.applyDeadlinePressure(pressure);
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+
   // Utility Methods
   private calculateNextGenerationInterval(): number {
-    // Adaptive interval based on performance and engagement
-    const baseInterval = 2 * 60 * 60 * 1000; // 2 hours
-    const maxInterval = 6 * 60 * 60 * 1000; // 6 hours
-    const minInterval = 30 * 60 * 1000; // 30 minutes
+    const baseInterval         = 2  * 60 * 60 * 1000; // 2 hours
+    const maxInterval          = 6  * 60 * 60 * 1000; // 6 hours
+    const minInterval          = 30 * 60 * 1000;       // 30 minutes
+    const caffeineModeInterval = 20 * 60 * 1000;       // 20 minutes — critical crunch
+
+    // Caffeine Mode overrides engagement-based timing when behind schedule
+    const pressure = this._lastBroadcastPressure;
+    if (pressure > 1.5) return caffeineModeInterval;
+    if (pressure > 0.5) return minInterval;
 
     if (this.contentPerformanceHistory.length < 10) {
       return baseInterval; // Standard interval initially

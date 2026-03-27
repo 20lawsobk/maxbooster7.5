@@ -303,6 +303,13 @@ Ten hardcoded/random data sources replaced with real DB-sourced or deterministic
 - Converted both to `Promise.allSettled(fileIds.map(async (fileId) => { ... }))`.
 - All N file operations now fire in parallel; per-ID error tracking fully preserved.
 
+**BT-29 — Caffeine Mode: deadline pressure system across quality gate + HyperLearning + autopilot**
+- Modeled on the late-night study session before a pass/fail exam: when behind schedule, every system intensifies instead of giving up.
+- **Pressure gauge** (`autonomous-autopilot.ts`): `computeSchedulePressure(platform) = postsStillNeeded / hoursRemaining`. Broadcast via `broadcastPressure()` only when tier changes, avoiding redundant reschedules. Four tiers: 0 = on track, 0–0.5 = mild, 0.5–1.5 = moderate (☕), >1.5 = CRITICAL (⚡).
+- **Quality gate** (`contentQualityPipeline.ts`): Added `pressureAdjustedMinScore()` — gate floor drops from 60 → 56 (mild), 53 (moderate), 50 (critical). Added `pressureUrgencyBoost()` — content with urgency signals ("now", "tonight", "last chance", "dropping", "limited", etc.) gets up to +12 pts on engagement score at critical pressure, so the loosened gate still rewards urgency-appropriate content and doesn't accept low-quality filler. `generateAndSelect()` generates 2–3 extra variants under pressure (more attempts = higher chance of clearing the gate).
+- **HyperLearning cycles** (`hyperLearningEngine.ts`): `applyDeadlinePressure()` dynamically compresses the 5-minute learning interval → 3.5 min (moderate) → 2 min (high) → 75 seconds (critical — max caffeine). Interval only reschedules when the pressure tier actually changes, avoiding interval churn.
+- **Autopilot timing** (`autonomous-autopilot.ts`): `calculateNextGenerationInterval()` now prioritizes pressure over engagement-based timing — 30 min (moderate) → 20 min (critical). `shouldGenerateContentForPlatform()` expands optimal posting window from ±1 hr to ±2 hrs under moderate pressure and triggers generation on every check under critical pressure. `updateSchedulePressure()` exported from pipeline for cross-module use.
+
 **BT-28 — routes/distribution.ts: content-ID fingerprint generation serial loop → Promise.allSettled**
 - `POST /distribution/content-id/generate-all` looped through release tracks serially, calling `await storage.updateDistroTrack(...)` for each.
 - Converted to `Promise.allSettled(tracks.map(...))` — all track updates fire in parallel.

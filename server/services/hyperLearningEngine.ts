@@ -164,6 +164,10 @@ class HyperLearningEngine extends EventEmitter {
   private readonly CROSS_PLATFORM_MIN_OVERLAP = 0.3;
   private readonly PREDICTION_CONFIDENCE_THRESHOLD = 0.7;
 
+  // Caffeine Mode — deadline pressure compresses learning cycles so the engine
+  // absorbs feedback faster when the autopilot is behind its posting schedule.
+  private _pressureLevel = 0;
+
   constructor() {
     super();
     logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (3x owner · 24x baseline)`);
@@ -212,6 +216,64 @@ class HyperLearningEngine extends EventEmitter {
     logger.info('🛑 HyperLearning Engine stopped');
     this.emit('stopped');
   }
+
+  /**
+   * Caffeine Mode — compress (or restore) learning cycle interval based on how
+   * far behind schedule the autonomous autopilot is.
+   *
+   * pressure = postsStillNeeded / hoursRemaining
+   *   > 1.5  → CRITICAL  → 75-second cycles   (maximum caffeine — all-nighter mode)
+   *   1–1.5  → HIGH      → 2-minute cycles
+   *   0.5–1  → MODERATE  → 3.5-minute cycles
+   *   ≤ 0.5  → NORMAL    → restored to 5-minute cycles
+   *
+   * Only reschedules if the interval target actually changed by more than a small
+   * delta, avoiding a flurry of clearInterval calls from minor pressure fluctuations.
+   */
+  applyDeadlinePressure(pressure: number): void {
+    const prev = this._pressureLevel;
+    this._pressureLevel = Math.max(0, pressure);
+
+    let targetMs: number;
+    if      (pressure > 1.5) targetMs = 75  * 1000;       // 75 s — max caffeine
+    else if (pressure > 1.0) targetMs = 2   * 60 * 1000;  // 2 min
+    else if (pressure > 0.5) targetMs = 3.5 * 60 * 1000;  // 3.5 min
+    else                     targetMs = this.LEARNING_INTERVAL_MS; // 5 min (normal)
+
+    // Determine previous target to avoid unnecessary rescheduling
+    let prevTargetMs: number;
+    if      (prev > 1.5) prevTargetMs = 75  * 1000;
+    else if (prev > 1.0) prevTargetMs = 2   * 60 * 1000;
+    else if (prev > 0.5) prevTargetMs = 3.5 * 60 * 1000;
+    else                 prevTargetMs = this.LEARNING_INTERVAL_MS;
+
+    if (targetMs === prevTargetMs) return; // no change needed
+
+    if (this.isRunning && this.learningInterval) {
+      clearInterval(this.learningInterval);
+      this.learningInterval = setInterval(async () => {
+        await this.runLearningCycle();
+      }, targetMs);
+
+      if (pressure > 1.5) {
+        logger.warn(
+          `⚡ [CaffeineMode] HyperLearning TURBO → ${(targetMs / 1000).toFixed(0)}s cycles` +
+          ` (was ${(prevTargetMs / 1000).toFixed(0)}s) — pressure: ${pressure.toFixed(2)}`
+        );
+      } else if (pressure > 0.5) {
+        logger.info(
+          `☕ [CaffeineMode] HyperLearning accelerated → ${(targetMs / 1000).toFixed(0)}s cycles` +
+          ` — pressure: ${pressure.toFixed(2)}`
+        );
+      } else {
+        logger.info(
+          `😌 [CaffeineMode] HyperLearning returning to normal ${(targetMs / 60000).toFixed(1)}-min cycles — pressure cleared`
+        );
+      }
+    }
+  }
+
+  getPressureLevel(): number { return this._pressureLevel; }
 
   private async runLearningCycle(): Promise<void> {
     const cycleStart = Date.now();
