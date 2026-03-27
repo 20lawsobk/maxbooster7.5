@@ -193,7 +193,12 @@ export function ServerVideoGenerator({
       const text = await resp.text();
       let data: any;
       try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
-      if (data.status === 'done' && data.success && data.url) return data;
+
+      // Server returns status='completed' with video_url — normalise to the
+      // shape callGenerateVideo expects: {success:true, url, ...rest}
+      const videoUrl = data.url || data.video_url;
+      const isDone = (data.status === 'done' || data.status === 'completed') && videoUrl;
+      if (isDone) return { ...data, success: true, url: videoUrl };
       if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
       setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
     }
