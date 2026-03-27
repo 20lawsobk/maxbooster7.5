@@ -451,6 +451,10 @@ async function renderWithPython(
     pythonCfgObj.style = BG_TO_PYTHON[style.bgType] || 'plasma_fractal';
   }
 
+  // Unique seed per render — ensures visually distinct output on every call
+  // even when topic/style/genre are identical.
+  pythonCfgObj.seed = parseInt(randomBytes(4).toString('hex'), 16);
+
   const pythonCfg = JSON.stringify(pythonCfgObj);
 
   // Scale up from internal resolution, then apply text overlays

@@ -47,6 +47,11 @@ except Exception:
 PI  = math.pi
 TAU = math.tau
 
+# Render seed — set once per process from the JSON config.
+# All np.random.seed() calls combine this with a class-specific offset so
+# every render with a different seed produces visually distinct output.
+_RENDER_SEED: int = 0
+
 
 # ── Color Helpers ──────────────────────────────────────────────────────────────
 
@@ -381,8 +386,8 @@ class CrystalFacets:
         self.intensity = intensity
         self.lut = lut_palette(bg, ac, white() * 0.92)
         # Precompute static Voronoi-like cell pattern
-        # 16 cell centres deterministically placed
-        np.random.seed(42)
+        # 16 cell centres — vary per render via _RENDER_SEED
+        np.random.seed(_RENDER_SEED + 42)
         n = 16
         self.cx = np.random.uniform(-1, 1, n).astype(np.float32)
         self.cy = np.random.uniform(-1, 1, n).astype(np.float32)
@@ -623,7 +628,7 @@ class CityNights:
         self.sky_h = sky_h
         self.ground_y = ground_y
 
-        np.random.seed(7)
+        np.random.seed(_RENDER_SEED + 7)
         n_drops = 280
         self.rain_x = np.random.uniform(0, W, n_drops).astype(np.float32)
         self.rain_y = np.random.uniform(0, H, n_drops).astype(np.float32)
@@ -853,7 +858,7 @@ class GoldenHour:
         self.sun_y = sun_y
         self.sun_r = sun_r
         self.hor_y = hor_y
-        np.random.seed(11)
+        np.random.seed(_RENDER_SEED + 11)
         n_p = 60
         self.px = np.random.uniform(0, W, n_p).astype(np.float32)
         self.py = np.random.uniform(0, hor_y, n_p).astype(np.float32)
@@ -924,8 +929,8 @@ class NeonCityscape:
         _vgrad(draw, W, 0, street_y, (2, 2, 6), (6, 4, 12))
         _vgrad(draw, W, street_y, H, (8, 8, 16), (4, 4, 10))
 
-        np.random.seed(17)
-        rng = np.random.RandomState(17)
+        np.random.seed(_RENDER_SEED + 17)
+        rng = np.random.RandomState(_RENDER_SEED + 17)
         building_data = []
         x_cur = 0
         while x_cur < W:
@@ -979,7 +984,7 @@ class NeonCityscape:
         self.ped_base = [px_i for (px_i, _) in ped_imgs]
         self.ped_speed = [rng.uniform(8, 22) * (1 if i%2==0 else -1) for i in range(4)]
 
-        np.random.seed(23)
+        np.random.seed(_RENDER_SEED + 23)
         n_d = 320
         self.rain_x = np.random.uniform(0, W, n_d).astype(np.float32)
         self.rain_y = np.random.uniform(0, H, n_d).astype(np.float32)
@@ -1156,6 +1161,11 @@ GENRE_DEFAULTS = {
 
 def main():
     cfg = json.loads(sys.argv[1] if len(sys.argv) > 1 else '{}')
+
+    # Apply the per-render seed so every call with a unique seed produces
+    # visually distinct output (hardcoded class seeds use _RENDER_SEED + offset).
+    global _RENDER_SEED
+    _RENDER_SEED = int(cfg.get('seed', 0)) & 0x7FFFFFFF
 
     W           = int(cfg.get('width',        1080))
     H           = int(cfg.get('height',       1920))

@@ -1,6 +1,5 @@
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
-import { generateVideo as generateVideoFFmpeg } from './videoGeneratorService.js';
 import { sharpImageService } from './sharpImageService.js';
 import {
   type GenerationRequest,
@@ -1675,49 +1674,24 @@ const audioWorker = {
 };
 
 const videoWorker = {
-  async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
-    const platform = step.params?.platform as Platform | undefined;
-    const videoRules = platform ? getRules(platform).video : null;
-
-    // MaxCore does not expose a /generate/video endpoint — use the local
-    // FFmpeg-based generator instead.
-    const normalized = inputs?.normalized ?? {};
-    const summary: string = typeof normalized.summary === 'string' ? normalized.summary : '';
-    const genre: string = normalized.genre ?? req.constraints?.genre ?? 'default';
-
-    const result = await generateVideoFFmpeg({
-      topic:        summary.slice(0, 120) || req.intent || 'new music',
-      platform:     platform ?? (req.platforms[0] as any) ?? 'tiktok',
-      duration:     videoRules?.maxDurationSec ? Math.min(videoRules.maxDurationSec, 30) : 15,
-      aspect_ratio: videoRules?.aspectRatios?.[0] ?? '9:16',
-      tone:         req.constraints?.tone ?? 'energetic',
-      goal:         req.constraints?.goal ?? 'growth',
-      quality:      'cinematic',
-      genre,
-      artist_name:  normalized.artistName,
-      hook:         normalized.hook,
-      body:         normalized.body,
-      cta:          normalized.cta,
-    });
-
-    if (!result.success || !result.url) {
-      throw new Error(result.error ?? 'Local video generation failed');
-    }
-
-    return [{
-      id: randomUUID(),
-      modality: 'video' as OutputModality,
-      payload: result.url,
-      platform,
-      metadata: {
-        aspectRatio: videoRules?.aspectRatios?.[0],
-        maxDurationSec: videoRules?.maxDurationSec,
-        requiresHook: videoRules?.requiresHook,
-        platformRules: videoRules,
-        source: 'ffmpeg',
-        genre,
-      },
-    }];
+  async run(step: TaskStep, _inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
+    // FFmpeg video generation takes 2–5 minutes and cannot be run inline inside
+    // a synchronous HTTP request (the client timeout fires first, leaving the
+    // caller with a network error rather than a usable result).
+    //
+    // The correct path for video generation is the dedicated async job endpoint:
+    //   POST /api/social/generate-video  →  GET /api/social/video-job/:jobId
+    //
+    // Returning an empty array here is intentional — the client detects zero
+    // video assets and renders the ServerVideoGenerator widget, which drives the
+    // async job flow described above.
+    logger.info(
+      `[MultimodalGen] videoWorker: skipping inline FFmpeg for step ${step.id} ` +
+      `(req ${req.id}) — client will use the async ServerVideoGenerator instead`,
+    );
+    // Return empty so the client's zero-asset guard fires and renders the
+    // ServerVideoGenerator widget (which drives the async job endpoint instead).
+    return [];
   },
 };
 
