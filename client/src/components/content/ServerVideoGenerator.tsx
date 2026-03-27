@@ -112,6 +112,10 @@ export function ServerVideoGenerator({
   const [inputMode, setInputMode] = useState<InputMode>('text');
   // Tracks whether autoStart has already fired so it never fires twice
   const autoStartFiredRef = useRef(false);
+  // True during the 400ms warm-up delay before autoStart fires — hides the form
+  const [autoStartPending, setAutoStartPending] = useState(
+    autoStart && !!(topicProp?.trim() || initialHook?.trim())
+  );
 
   // Text mode state
   const [textTopic, setTextTopic] = useState('');
@@ -297,6 +301,7 @@ export function ServerVideoGenerator({
     if (!hasContent) return;
     autoStartFiredRef.current = true;
     const id = setTimeout(() => {
+      setAutoStartPending(false);
       callGenerateVideo({
         topic: topicProp?.trim() || initialHook?.trim(),
         hook:  initialHook  || undefined,
@@ -538,17 +543,41 @@ export function ServerVideoGenerator({
           </div>
         )}
 
-        {/* When autoStart errored (not generating, no video) — show minimal retry */}
+        {/* When autoStart errored (not generating, no video) — show retry button */}
         {isAutoMode && !isGenerating && !videoUrl && autoStartFiredRef.current && (
           <div className="space-y-3">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3 text-sm text-amber-700 dark:text-amber-400">
-              Video generation didn't complete. You can retry with the settings below.
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-4">
+              <p className="text-sm text-amber-700 dark:text-amber-400 mb-3">
+                Video generation didn't complete. Click below to try again.
+              </p>
+              <Button
+                size="sm"
+                onClick={() => {
+                  autoStartFiredRef.current = false;
+                  callGenerateVideo({
+                    topic: topicProp?.trim() || initialHook?.trim(),
+                    hook:  initialHook  || undefined,
+                    body:  initialBody  || undefined,
+                    cta:   initialCta   || undefined,
+                    template: initialTemplate || undefined,
+                    quality:  initialTemplate ? 'cinematic' : undefined,
+                    bg_color:     initialBgColor     || undefined,
+                    accent_color: initialAccentColor || undefined,
+                    voiceover: false,
+                  });
+                  autoStartFiredRef.current = true;
+                }}
+              >
+                Try Again
+              </Button>
             </div>
           </div>
         )}
 
-        {/* Hide the full form when autoStart succeeded or is in progress */}
-        {!(isAutoMode && (isGenerating || videoUrl)) && (
+        {/* Hide the full form when autoStart succeeded or is in progress, when
+            autoStart is pending its 400ms delay, or when it errored (retry
+            button above handles it) */}
+        {!(isAutoMode && (isGenerating || videoUrl)) && !autoStartPending && !(isAutoMode && autoStartFiredRef.current) && (
           <>
         {/* Input mode tabs */}
         <div className="flex rounded-lg border overflow-hidden">
