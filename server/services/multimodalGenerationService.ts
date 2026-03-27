@@ -1598,32 +1598,42 @@ const imageWorker = {
       logger.warn('[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
     }
 
-    // Local fallback: Sharp-based image generation
+    // Local fallback: Sharp-based image generation.
+    // Iterate over every slot so we produce one image per platform (not just
+    // the first platform).  If no slots are present, fall back to one image
+    // for each platform in the request.
     const normalized = inputs?.normalized ?? {};
     const prompt = normalized.summary ?? req.input?.payload ?? req.intent ?? 'music artist promotional image';
-    const platform = (step.params?.platform ?? req.platforms[0]) as Platform;
-    const rules = getRules(platform);
-    try {
-      const img = await sharpImageService.generateImage({
-        prompt: String(prompt).slice(0, 200),
-        platform,
-        tone: (req.constraints as any)?.tone ?? 'creative',
-      });
-      return [{
-        id: randomUUID(),
-        modality: 'image' as OutputModality,
-        payload: img.publicUrl,
-        platform,
-        metadata: {
-          aspectRatio: step.params?.recommendedAspectRatio ?? rules.image.aspectRatios?.[0],
-          platformRules: rules.image,
-          source: 'local-sharp',
-        },
-      }];
-    } catch (sharpErr) {
-      logger.warn('[MultimodalGen] Sharp image fallback also failed:', sharpErr instanceof Error ? sharpErr.message : String(sharpErr));
-      return [];
+    const fallbackPlatforms: Platform[] = (slots.length > 0
+      ? slots.map((s: any) => s.platform as Platform)
+      : req.platforms as Platform[]
+    ).filter(Boolean);
+
+    const generated: GeneratedAsset[] = [];
+    for (const plat of fallbackPlatforms) {
+      const rules = getRules(plat);
+      try {
+        const img = await sharpImageService.generateImage({
+          prompt: String(prompt).slice(0, 200),
+          platform: plat,
+          tone: (req.constraints as any)?.tone ?? 'creative',
+        });
+        generated.push({
+          id: randomUUID(),
+          modality: 'image' as OutputModality,
+          payload: img.publicUrl,
+          platform: plat,
+          metadata: {
+            aspectRatio: step.params?.recommendedAspectRatio ?? rules.image.aspectRatios?.[0],
+            platformRules: rules.image,
+            source: 'local-sharp',
+          },
+        });
+      } catch (sharpErr) {
+        logger.warn(`[MultimodalGen] Sharp fallback failed for platform ${plat}:`, sharpErr instanceof Error ? sharpErr.message : String(sharpErr));
+      }
     }
+    return generated;
   },
 };
 
