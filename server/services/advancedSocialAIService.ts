@@ -38,6 +38,18 @@ function seededIndex(seed: string, length: number): number {
   return h % length;
 }
 
+// seededGate: deterministic probability gate — replaces Math.random() < threshold.
+// Same seed → same true/false outcome every time. threshold range: 0.0–1.0.
+function seededGate(seed: string, threshold: number): boolean {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return (h % 1000) < Math.round(threshold * 1000);
+}
+
 // ============================================================================
 // MAX BOOSTER PLATFORM KNOWLEDGE
 // Injected into content generation engine so every AI post reflects the full
@@ -1207,14 +1219,14 @@ class AdvancedSocialAIService {
     let hook = templates[hookSeed];
 
     // ── Curiosity gap injection (30% of viral/engagement generations) ─────────
-    if ((request.objective === 'viral' || request.objective === 'engagement') && Math.random() < 0.30) {
+    if ((request.objective === 'viral' || request.objective === 'engagement') && seededGate(`${request.artistName}:${request.topic}:${contentType}:curiosity`, 0.30)) {
       const curiosityHook = this.buildCuriosityGapHook(request);
       if (curiosityHook) hook = curiosityHook;
     }
 
     // ── Platform-native opener prefix (25% chance) ────────────────────────────
     const platformDNA = PLATFORM_NATIVE_DNA[request.platforms[0]?.toLowerCase()] || null;
-    if (platformDNA && Math.random() < 0.25) {
+    if (platformDNA && seededGate(`${request.artistName}:${request.topic}:${contentType}:native`, 0.25)) {
       const nativeOpener = platformDNA.openers[seededIndex(`${request.artistName}:${request.topic}:${contentType}:opener`, platformDNA.openers.length)];
       // Only prepend if hook doesn't already start with a platform-native opener
       const alreadyNative = platformDNA.openers.some(o => hook.toLowerCase().startsWith(o.toLowerCase().substring(0, 6)));
@@ -1298,7 +1310,7 @@ class AdvancedSocialAIService {
     // ── Emotional Arc Body (40% of generations for storytelling/announcement) ─
     const contentType = request.contentType || 'announcement';
     const useEmotionalArc = (contentType === 'storytelling' || contentType === 'announcement' || contentType === 'behind_scenes')
-      && Math.random() < 0.55;
+      && seededGate(`${artist}:${topic}:${contentType}:emotional`, 0.55);
     if (useEmotionalArc) {
       const arcBody = this.buildEmotionalArcBody(request, platform);
       if (arcBody) return arcBody;
@@ -2137,12 +2149,41 @@ class AdvancedSocialAIService {
       .map(([key]) => key)
       .slice(0, 2);
 
+    // ── Real demographic alignment score ────────────────────────────────────
+    // Measures how well the content's vocabulary and length complexity match the
+    // target audience's age range. Younger audiences (Gen Z, <27) respond to
+    // punchy, short content; older audiences prefer detailed, sophisticated text.
+    const wordCount = content.split(/\s+/).length;
+    const contentWords = content.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(w => w.length > 2);
+    const avgWordLen = contentWords.reduce((s, w) => s + w.length, 0) / Math.max(contentWords.length, 1);
+    const ageMid = (audience.ageRange.min + audience.ageRange.max) / 2;
+
+    // Age-appropriate vocabulary signals keyed by generation
+    const genZSignals = ['tiktok', 'fyp', 'vibe', 'aesthetic', 'slay', 'lowkey', 'goat', 'based', 'rent', 'era', 'core'];
+    const millennialSignals = ['throwback', 'nostalgic', 'hustle', 'authentic', 'chill', 'squad', 'relatable', 'journey', 'grind'];
+    const genXSignals = ['classic', 'legendary', 'craft', 'artistry', 'timeless', 'iconic', 'original', 'real'];
+    const targetSignals = ageMid < 27 ? genZSignals : ageMid < 44 ? millennialSignals : genXSignals;
+    const signalHits = targetSignals.filter(s => contentWords.includes(s)).length;
+    const signalScore = signalHits > 0 ? Math.min(1, signalHits / Math.max(targetSignals.length * 0.15, 1)) : 0.5;
+
+    // Content complexity alignment: shorter + simpler → Gen Z; longer + richer → Gen X
+    const complexityAlignment = ageMid < 27
+      ? (wordCount < 50 && avgWordLen < 5 ? 1.0 : 0.65)
+      : ageMid < 44
+      ? (wordCount >= 30 && wordCount < 100 ? 1.0 : 0.72)
+      : (wordCount >= 50 && avgWordLen >= 5 ? 1.0 : 0.72);
+
+    // Composite: base 55 + vocabulary signal (0-20) + interest overlap (0-15) + complexity (0-10)
+    const demographicMatch = Math.min(100, Math.max(55,
+      55 + signalScore * 20 + interestMatch * 15 + complexityAlignment * 10
+    ));
+
     return {
       primarySegment: audience.name,
       secondarySegments,
       resonanceScore: Math.min(100, Math.max(0, resonanceScore)),
       psychographicMatch: valueMatch * 100,
-      demographicMatch: 70 + Math.random() * 20,
+      demographicMatch,
       behavioralMatch: (interestMatch + lengthMatch) * 50,
     };
   }

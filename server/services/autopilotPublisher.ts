@@ -191,10 +191,17 @@ class AutopilotPublisher {
         }
       }
 
-      // Generate content recommendations
+      // Generate content recommendations — seeded so the same user + config
+      // always picks the same content type (deterministic, auditable)
       const contentTypes = config.contentTypes || ['tips', 'insights'];
+      const ctSeed = `${userId}:${contentTypes.join(',')}`;
+      const ctIdx = (() => {
+        let h = 2166136261;
+        for (let i = 0; i < ctSeed.length; i++) { h ^= ctSeed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+        return h % contentTypes.length;
+      })();
       const recommendations = await socialAI.generateContentRecommendations(
-        contentTypes[Math.floor(Math.random() * contentTypes.length)],
+        contentTypes[ctIdx],
         multimodalFeatures
       );
 

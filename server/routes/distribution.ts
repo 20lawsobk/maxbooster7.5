@@ -4184,19 +4184,21 @@ router.post('/content-id/generate-all', requireAuth, async (req: Request, res: R
     const { releaseId } = req.body;
 
     const tracks = await storage.getDistroTracks(releaseId);
-    let count = 0;
 
-    for (const track of tracks) {
-      const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
-      await storage.updateDistroTrack(track.id, {
-        metadata: {
-          ...track.metadata,
-          fingerprint,
-          contentIdStatus: 'generating',
-        },
-      });
-      count++;
-    }
+    const results = await Promise.allSettled(
+      tracks.map((track) => {
+        const fingerprint = `fp_${Date.now()}_${randomBytes(4).toString('hex')}`;
+        return storage.updateDistroTrack(track.id, {
+          metadata: {
+            ...track.metadata,
+            fingerprint,
+            contentIdStatus: 'generating',
+          },
+        });
+      })
+    );
+
+    const count = results.filter((r) => r.status === 'fulfilled').length;
 
     res.json({
       success: true,

@@ -350,6 +350,19 @@ function getDefaultSuggestions(prompt: string, genre: string, mood: string): str
   ];
 }
 
+// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 function getChordSuggestion(genre?: string, mood?: string): string {
   const progressions: Record<string, string[]> = {
     pop: ['I – V – vi – IV (C–G–Am–F)', 'I – IV – V (C–F–G)', 'vi – IV – I – V (Am–F–C–G)', 'I – V – IV – I'],
@@ -400,7 +413,7 @@ function getChordSuggestion(genre?: string, mood?: string): string {
   }
 
   const options = progressions[g] || progressions['pop'];
-  return options[Math.floor(Math.random() * options.length)];
+  return options[seededIndex(g + ':' + m, options.length)];
 }
 
 function getSongStructures(): string[] {

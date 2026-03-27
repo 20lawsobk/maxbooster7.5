@@ -1,5 +1,18 @@
 import { logger } from '../logger.js';
 
+// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 interface ConversationMessage {
   role: 'user' | 'assistant';
   content: string;
@@ -2524,7 +2537,7 @@ export function generateMaxResponse(
   if (followUpCategory) {
     const categoryEntries = KNOWLEDGE_BASE.filter((e) => e.category === followUpCategory);
     if (categoryEntries.length > 0) {
-      const entry = categoryEntries[Math.floor(Math.random() * categoryEntries.length)];
+      const entry = categoryEntries[seededIndex(followUpCategory + ':' + userMessage.slice(0, 48), categoryEntries.length)];
       return {
         content: entry.answer,
         category: followUpCategory,

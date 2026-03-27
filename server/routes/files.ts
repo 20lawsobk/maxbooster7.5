@@ -324,36 +324,38 @@ router.post('/bulk-restore', async (req: Request, res: Response) => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS);
 
-    for (const fileId of fileIds) {
-      try {
-        const [file] = await db.select()
-          .from(userStorageFiles)
-          .where(and(
-            eq(userStorageFiles.id, fileId),
-            eq(userStorageFiles.userId, req.user.id),
-            isNotNull(userStorageFiles.deletedAt)
-          ))
-          .limit(1);
+    await Promise.allSettled(
+      fileIds.map(async (fileId: string) => {
+        try {
+          const [file] = await db.select()
+            .from(userStorageFiles)
+            .where(and(
+              eq(userStorageFiles.id, fileId),
+              eq(userStorageFiles.userId, req.user!.id),
+              isNotNull(userStorageFiles.deletedAt)
+            ))
+            .limit(1);
 
-        if (!file) {
-          results.failed.push({ id: fileId, error: 'File not found in trash' });
-          continue;
+          if (!file) {
+            results.failed.push({ id: fileId, error: 'File not found in trash' });
+            return;
+          }
+
+          if (file.deletedAt && file.deletedAt < cutoffDate) {
+            results.failed.push({ id: fileId, error: 'Restoration window expired' });
+            return;
+          }
+
+          await db.update(userStorageFiles)
+            .set({ deletedAt: null })
+            .where(eq(userStorageFiles.id, fileId));
+
+          results.success.push(fileId);
+        } catch (err) {
+          results.failed.push({ id: fileId, error: err instanceof Error ? err.message : 'Unknown error' });
         }
-
-        if (file.deletedAt && file.deletedAt < cutoffDate) {
-          results.failed.push({ id: fileId, error: 'Restoration window expired' });
-          continue;
-        }
-
-        await db.update(userStorageFiles)
-          .set({ deletedAt: null })
-          .where(eq(userStorageFiles.id, fileId));
-
-        results.success.push(fileId);
-      } catch (err) {
-        results.failed.push({ id: fileId, error: err instanceof Error ? err.message : 'Unknown error' });
-      }
-    }
+      })
+    );
 
     return res.json({
       success: true,
@@ -587,45 +589,44 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
       failed: [] as { id: string; error: string }[],
     };
 
-    for (const fileId of fileIds) {
-      try {
-        const [file] = await db.select()
-          .from(userStorageFiles)
-          .where(and(
-            eq(userStorageFiles.id, fileId),
-            eq(userStorageFiles.userId, req.user.id),
-            isNull(userStorageFiles.deletedAt)
-          ))
-          .limit(1);
+    await Promise.allSettled(
+      fileIds.map(async (fileId: string) => {
+        try {
+          const [file] = await db.select()
+            .from(userStorageFiles)
+            .where(and(
+              eq(userStorageFiles.id, fileId),
+              eq(userStorageFiles.userId, req.user!.id),
+              isNull(userStorageFiles.deletedAt)
+            ))
+            .limit(1);
 
-        if (!file) {
-          results.failed.push({ id: fileId, error: 'File not found' });
-          continue;
+          if (!file) {
+            results.failed.push({ id: fileId, error: 'File not found' });
+            return;
+          }
+
+          if (permanent) {
+            await storageService.deleteFile(file.fileKey);
+            await db.delete(userStorageFiles).where(eq(userStorageFiles.id, fileId));
+            await db.update(userStorage)
+              .set({
+                totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
+                fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
+              })
+              .where(eq(userStorage.userId, req.user!.id));
+          } else {
+            await db.update(userStorageFiles)
+              .set({ deletedAt: new Date() })
+              .where(eq(userStorageFiles.id, fileId));
+          }
+
+          results.success.push(fileId);
+        } catch (err) {
+          results.failed.push({ id: fileId, error: err instanceof Error ? err.message : 'Unknown error' });
         }
-
-        if (permanent) {
-          // Permanent delete
-          await storageService.deleteFile(file.fileKey);
-          await db.delete(userStorageFiles).where(eq(userStorageFiles.id, fileId));
-          
-          await db.update(userStorage)
-            .set({
-              totalBytes: sql`GREATEST(${userStorage.totalBytes} - ${file.sizeBytes || 0}, 0)`,
-              fileCount: sql`GREATEST(${userStorage.fileCount} - 1, 0)`,
-            })
-            .where(eq(userStorage.userId, req.user.id));
-        } else {
-          // Soft delete
-          await db.update(userStorageFiles)
-            .set({ deletedAt: new Date() })
-            .where(eq(userStorageFiles.id, fileId));
-        }
-
-        results.success.push(fileId);
-      } catch (err) {
-        results.failed.push({ id: fileId, error: err instanceof Error ? err.message : 'Unknown error' });
-      }
-    }
+      })
+    );
 
     return res.json({
       success: true,

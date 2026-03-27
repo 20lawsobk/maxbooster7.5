@@ -3,6 +3,19 @@ import { aiService } from './aiService';
 import { MaxCoreAIClient } from './unifiedAIController.js';
 import { db } from '../db';
 
+// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 import {
   aiModels,
   aiModelVersions,
@@ -632,14 +645,15 @@ export class AIContentService {
         const emojis = ['🎵', '🎶', '✨', '🔥', '💯', '🎧', '🎤'];
         const emojiCount = profile.emojiUsage === 'heavy' ? 3 : 2;
         for (let i = 0; i < emojiCount; i++) {
-          const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+          const emoji = emojis[seededIndex(`${userId}:${prompt.slice(0, 32)}:emoji:${i}`, emojis.length)];
           content += ` ${emoji}`;
         }
       }
 
-      if (profile.commonPhrases.length > 0 && Math.random() > 0.5) {
+      const phraseGateSeed = seededIndex(`${userId}:${prompt.slice(0, 32)}:phrasegate`, 1000);
+      if (profile.commonPhrases.length > 0 && phraseGateSeed >= 500) {
         const phrase =
-          profile.commonPhrases[Math.floor(Math.random() * profile.commonPhrases.length)];
+          profile.commonPhrases[seededIndex(`${userId}:${prompt.slice(0, 32)}:phrase`, profile.commonPhrases.length)];
         content = `${phrase}! ${content}`;
       }
 
@@ -1402,12 +1416,12 @@ export class AIContentService {
   ): void {
     ctx.globalAlpha = 0.1;
 
-    // Add abstract shapes
+    // Add abstract shapes — seeded from tone so same tone → same visual layout
     for (let i = 0; i < 15; i++) {
       ctx.beginPath();
-      const x = Math.random() * dimensions.width;
-      const y = Math.random() * dimensions.height;
-      const radius = Math.random() * 100 + 50;
+      const x = (seededIndex(`${tone}:${i}:x`, 10000) / 10000) * dimensions.width;
+      const y = (seededIndex(`${tone}:${i}:y`, 10000) / 10000) * dimensions.height;
+      const radius = (seededIndex(`${tone}:${i}:r`, 100) / 100) * 100 + 50;
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fillStyle = '#ffffff';
       ctx.fill();

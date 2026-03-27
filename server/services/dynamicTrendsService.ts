@@ -3,6 +3,19 @@ import { db } from '../db';
 import { hashtagResearch } from '@shared/schema';
 import { eq, desc, and, gte } from 'drizzle-orm';
 
+// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 export interface TrendingTopic {
   topic: string;
   category: 'music' | 'social' | 'cultural' | 'holiday' | 'industry' | 'platform';
@@ -174,7 +187,7 @@ class DynamicTrendsService {
         trends.push({
           topic,
           category: 'music',
-          popularity: 70 + Math.floor(Math.random() * 20),
+          popularity: 70 + seededIndex(topic + ':popularity', 20),
           hashtags: [`#${topic.replace(/\s+/g, '')}`, ...MUSIC_GENRE_TRENDS[genre].hashtags.slice(0, 2)],
           expiresAt: new Date(Date.now() + 86400000),
         });

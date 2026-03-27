@@ -5,6 +5,19 @@ import { customAI } from './custom-ai-engine.ts';
 import { logger } from './logger.js';
 import { advancedSocialAIService } from './services/advancedSocialAIService.js';
 
+// ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
+function seededIndex(seed: string, length: number): number {
+  if (length <= 0) return 0;
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+    h >>>= 0;
+  }
+  return h % length;
+}
+// ────────────────────────────────────────────────────────────────────────────
+
 interface AutopilotJob {
   id: string;
   type: 'content_generation' | 'content_publishing' | 'performance_analysis';
@@ -294,7 +307,7 @@ export class AutopilotEngine extends EventEmitter {
 
   private selectContentType(): string {
     const types = this.config.contentTypes;
-    return types[Math.floor(Math.random() * types.length)];
+    return types[seededIndex(this.userId + ':' + types.join(','), types.length)];
   }
 
   // Job Processing
