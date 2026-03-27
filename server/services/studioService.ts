@@ -435,15 +435,13 @@ export class StudioService {
       const automation = await storageAny.getProjectAutomation(projectId);
       const markers = await storageAny.getProjectMarkers(projectId);
 
-      const audioClips: AudioClip[] = [];
-      const midiClips: unknown[] = [];
-
-      for (const track of tracks) {
-        const trackAudioClips = await storageAny.getTrackAudioClips(track.id);
-        const trackMidiClips = await storageAny.getTrackMidiClips(track.id);
-        audioClips.push(...trackAudioClips);
-        midiClips.push(...trackMidiClips);
-      }
+      // Batch-fetch all clips in parallel (eliminates N+1: was 2×tracks serial queries)
+      const [allAudioClipArrays, allMidiClipArrays] = await Promise.all([
+        Promise.all(tracks.map((t: any) => storageAny.getTrackAudioClips(t.id))),
+        Promise.all(tracks.map((t: any) => storageAny.getTrackMidiClips(t.id))),
+      ]);
+      const audioClips: AudioClip[] = allAudioClipArrays.flat();
+      const midiClips: unknown[] = allMidiClipArrays.flat();
 
       return {
         project,

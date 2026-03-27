@@ -14,7 +14,7 @@ import { PLATFORM_RULES } from '@shared/config/platformRules.js';
 const router = Router();
 
 const VALID_PLATFORMS = new Set<Platform>([
-  'facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'google_business', 'linkedin',
+  'facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'google_business', 'linkedin', 'twitter',
 ]);
 
 const VALID_PACKS = new Set<PackId>(

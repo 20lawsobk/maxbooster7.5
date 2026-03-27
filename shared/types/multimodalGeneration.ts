@@ -5,7 +5,8 @@ export type Platform =
   | 'tiktok'
   | 'youtube'
   | 'google_business'
-  | 'linkedin';
+  | 'linkedin'
+  | 'twitter';
 
 export type InputModality = 'text' | 'url' | 'image' | 'audio' | 'video';
 export type OutputModality = 'text' | 'image' | 'audio' | 'video';

@@ -90,6 +90,21 @@ In `server/static.ts`, `DIST_PATH` was computed as `path.resolve(__dirname, "pub
 ### Profile Claiming System v2 — Phase 3 Complete (Mar 2026)
 Full pipeline implemented across 6 new DB tables (`profileDnaSnapshots`, `profilePortabilityReports`, `profileIsrcChains`, `profileSplitDetections`, `profileClaimPipeline`, `profileClaimEvents`). Service: `server/services/artistProfileService.ts` (~2600 lines). Routes: 12 new endpoints in `server/routes/artistProfiles.ts`. UI: `AutoArtistSync.tsx` upgraded with 8 collapsible panels (health score gauge, ISRC chain discovery, split scanner, claim pipeline state machine, multi-platform fixer, social handle resolver, DNA snapshots, portability report + JSON-LD download, identity graph, history import). API returns `healthScore`, `splitDetected`, `healthBreakdown`, `healthGrade`, `lastHealthAt`, `watchEnabled`, `socialHandles`, `verifiedPlatforms` on all profile queries.
 
+### Multimodal Generation Engine v2 (Mar 2026)
+Six enhancements to `server/services/multimodalGenerationService.ts`:
+
+**B1 — Per-platform differentiated copy**: `buildCopyFromContext` accepts `targetPlatform` and returns genuinely distinct copy per platform. TikTok: POV/hook-first; Facebook: conversational/story; LinkedIn: professional; Twitter: punchy ≤240 chars; Threads: casual/no-hashtags; Instagram: punchy+aesthetic. `localAnalyzeUrl` generates `perPlatformCopy` map stored in `normalized.perPlatformCopy[platform]`.
+
+**B2 — Dynamic hashtag engine**: `HASHTAG_LIBRARY` + `getHashtagsForPlatform()` replaces all hardcoded hashtags. Category+platform-aware selection: Instagram max 8, Facebook max 3, Threads 0, TikTok max 5, Twitter max 2. Category matching on `music_stream`, `music_video`, `event`, `website`, etc.
+
+**B3 — Parallel step execution**: `handleGeneration` orchestrator runs all independent text/image steps via `Promise.all`. All per-platform steps now log `[parallel]` and fire concurrently (6 platforms = 1 parallel batch, not 6 serial calls).
+
+**B4 — Platform-calibrated engagement scoring**: `enrichTextAssetMetadata` has per-platform scoring logic with tailored suggestions. Hook/body/cta passed as `existingMeta` so scoring accurately detects structured content without re-parsing. TikTok scores hook-first momentum, LinkedIn scores word count, Instagram scores emoji+hashtag density.
+
+**B5 — Studio N+1 fix**: `server/services/studioService.ts` `loadProject` batch-fetches all audio+MIDI clips via `Promise.all` instead of a serial loop.
+
+**B6 — Twitter/X platform restored**: Added `twitter` to `shared/types/multimodalGeneration.ts`, `shared/config/platformRules.ts` (280-char, 2 hashtags, punchy tone), `server/routes/multimodal.ts` `VALID_PLATFORMS`, and client `MULTIMODAL_PLATFORMS`. `expandPlatform('twitter')` returns `['twitter']`. Validated end-to-end: Twitter assets generate correctly within 280-char limit with score=100.
+
 ### Breakthrough Features (Mar 2026)
 
 **1. Permanent DB Push Automation** (`scripts/db-push.js`)

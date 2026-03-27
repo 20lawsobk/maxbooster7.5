@@ -626,12 +626,11 @@ export default function SocialMedia() {
     enabled: !!user,
   });
 
-  const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin']);
+  const MULTIMODAL_PLATFORMS = new Set(['facebook','instagram','threads','tiktok','youtube','google_business','linkedin','twitter']);
   // Expand UI platform IDs to server-accepted platform IDs (meta → facebook + instagram)
   const expandPlatform = (id: string): string[] => {
     if (id === 'meta')           return ['facebook', 'instagram'];
     if (id === 'googlebusiness') return ['google_business'];
-    if (id === 'twitter')        return [];  // not supported by generation server
     return [id];
   };
   const fromMultimodalPlatform = (id: string): string => {

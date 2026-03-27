@@ -185,6 +185,27 @@ export const PLATFORM_RULES: Record<Platform, PlatformRules> = {
       tone: ['professional', 'clear'],
     },
   },
+
+  twitter: {
+    text: {
+      maxLength: 280,
+      recommendedLength: 240,
+      hashtags: { allowed: true, max: 2 },
+      tone: ['punchy', 'direct', 'witty'],
+    },
+    image: {
+      aspectRatios: ['16:9', '1:1'],
+      recommended: '16:9',
+    },
+    video: {
+      aspectRatios: ['16:9', '1:1'],
+      maxDurationSec: 140,
+      recommendedDurationSec: 30,
+    },
+    audio: {
+      voiceover: false,
+    },
+  },
 };
 
 export function getRules(platform: Platform): PlatformRules {

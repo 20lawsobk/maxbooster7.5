@@ -454,77 +454,504 @@ async function fetchUrlMetadata(url: string, ctx: UrlContext): Promise<PageMeta>
   }
 }
 
+// ─── Dynamic Hashtag Engine ──────────────────────────────────────────────────
+// Per content-category, per platform hashtag pools (ordered by performance weight)
+const HASHTAG_LIBRARY: Record<string, Record<string, string[]>> = {
+  music_stream: {
+    instagram:      ['#newmusic', '#nowplaying', '#streaming', '#newrelease', '#indieartist', '#musician', '#hiphop', '#rnb', '#music', '#artist'],
+    facebook:       ['#newmusic', '#streaming', '#music'],
+    tiktok:         ['#newmusic', '#fyp', '#music', '#artist', '#viral'],
+    twitter:        ['#newmusic', '#music'],
+    youtube:        [],
+    linkedin:       ['#music', '#newrelease', '#artist'],
+    threads:        [],
+    google_business:[],
+  },
+  music_video: {
+    instagram:      ['#musicvideo', '#officialvideo', '#newvideo', '#nowplaying', '#musician', '#newmusic', '#hiphop', '#vibes', '#music', '#artist'],
+    facebook:       ['#musicvideo', '#newrelease', '#music'],
+    tiktok:         ['#musicvideo', '#fyp', '#newmusic', '#official', '#viral'],
+    twitter:        ['#musicvideo', '#music'],
+    youtube:        [],
+    linkedin:       ['#music', '#musicvideo', '#artist'],
+    threads:        [],
+    google_business:[],
+  },
+  video: {
+    instagram:      ['#newvideo', '#contentcreator', '#behindthescenes', '#music', '#artist', '#vlog', '#viral', '#fyp'],
+    facebook:       ['#video', '#music', '#artist'],
+    tiktok:         ['#fyp', '#viral', '#artist', '#music', '#trending'],
+    twitter:        ['#video', '#music'],
+    youtube:        [],
+    linkedin:       ['#video', '#music', '#artist'],
+    threads:        [],
+    google_business:[],
+  },
+  event: {
+    instagram:      ['#concert', '#livemusic', '#tickets', '#event', '#live', '#musicfestival', '#tour', '#artist'],
+    facebook:       ['#concert', '#livemusic', '#tickets'],
+    tiktok:         ['#concert', '#fyp', '#livemusic', '#tickets', '#tour'],
+    twitter:        ['#concert', '#livemusic'],
+    youtube:        [],
+    linkedin:       ['#event', '#music', '#concert'],
+    threads:        [],
+    google_business:[],
+  },
+  press: {
+    instagram:      ['#press', '#feature', '#media', '#artist', '#music', '#interview', '#magazine', '#promo'],
+    facebook:       ['#press', '#feature', '#music'],
+    tiktok:         ['#press', '#fyp', '#music', '#feature', '#viral'],
+    twitter:        ['#press', '#music'],
+    youtube:        [],
+    linkedin:       ['#press', '#media', '#music', '#feature', '#musicindustry'],
+    threads:        [],
+    google_business:[],
+  },
+  ecommerce: {
+    instagram:      ['#merch', '#drop', '#shopnow', '#limitededition', '#newdrop', '#merchandise', '#artist', '#fashion'],
+    facebook:       ['#merch', '#drop', '#shopnow'],
+    tiktok:         ['#merch', '#fyp', '#drop', '#shopnow', '#tiktokshop'],
+    twitter:        ['#merch', '#drop'],
+    youtube:        [],
+    linkedin:       ['#merch', '#merchandise', '#artist'],
+    threads:        [],
+    google_business:[],
+  },
+  podcast: {
+    instagram:      ['#podcast', '#newepisode', '#music', '#interview', '#podcastlife', '#listen', '#nowplaying'],
+    facebook:       ['#podcast', '#newepisode', '#music'],
+    tiktok:         ['#podcast', '#fyp', '#newepisode', '#music', '#podcastclips'],
+    twitter:        ['#podcast', '#music'],
+    youtube:        [],
+    linkedin:       ['#podcast', '#music', '#interview', '#content'],
+    threads:        [],
+    google_business:[],
+  },
+  article: {
+    instagram:      ['#article', '#blog', '#music', '#read', '#musicindustry', '#artist', '#culture'],
+    facebook:       ['#article', '#blog', '#music'],
+    tiktok:         ['#music', '#fyp', '#article', '#learn'],
+    twitter:        ['#music', '#article'],
+    youtube:        [],
+    linkedin:       ['#article', '#musicindustry', '#music', '#insights'],
+    threads:        [],
+    google_business:[],
+  },
+  social_post: {
+    instagram:      ['#music', '#artist', '#vibes', '#content', '#newpost'],
+    facebook:       ['#music', '#artist'],
+    tiktok:         ['#fyp', '#music', '#artist', '#viral'],
+    twitter:        ['#music', '#artist'],
+    youtube:        [],
+    linkedin:       ['#music', '#artist'],
+    threads:        [],
+    google_business:[],
+  },
+};
+
+function getHashtagsForPlatform(
+  category: string,
+  platform: string,
+  max: number,
+  artistName?: string,
+): string {
+  if (max === 0) return '';
+  const pool = HASHTAG_LIBRARY[category]?.[platform] ?? HASHTAG_LIBRARY['social_post']?.[platform] ?? [];
+  const tags = pool.slice(0, max - (artistName ? 1 : 0));
+  if (artistName) {
+    const artistTag = '#' + artistName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+    if (artistTag.length > 1 && !tags.includes(artistTag)) tags.push(artistTag);
+  }
+  return tags.length > 0 ? '\n\n' + tags.join(' ') : '';
+}
+
+// ─── Per-Platform Copy Builder ────────────────────────────────────────────────
+// Returns genuinely differentiated copy for each target platform.
+// Content style, length, tone, and angle all vary by platform norms.
 function buildCopyFromContext(
   ctx: UrlContext,
   meta: PageMeta,
   intent: string,
+  targetPlatform?: string,
 ): { hook: string; body: string; cta: string } {
   const title    = meta.title ?? '';
   const desc     = meta.description ?? '';
   const platform = meta.siteName ?? ctx.platform;
   const author   = meta.author ?? '';
+  const tp       = targetPlatform ?? '';
 
+  // Per-platform copy factories per content category
   switch (ctx.category) {
-    case 'music_stream':
+
+    case 'music_stream': {
+      if (tp === 'tiktok') return {
+        hook: title ? `POV: "${title}" just hit different 🎵` : `POV: This song just changed everything 🎵`,
+        body: desc.slice(0, 80) || 'The vibes are immaculate 🔥',
+        cta:  `🔗 Link in bio to stream`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🎵 "${title}" is out now on ${platform}` : `🎵 New music just dropped`,
+        body: desc.slice(0, 100) || '',
+        cta:  `Stream it 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `New Release: "${title}" — Out Now on ${platform}` : `New Music — Out Now`,
+        body: desc || `Stream "${title}" on ${platform}. Drop a comment with your favorite lyric! 🎤`,
+        cta:  `🔔 Subscribe for more and hit the like button!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Excited to announce my latest release: "${title}"` : `New music release announcement`,
+        body: desc || `After months of work, this track is finally out on ${platform}. Music is the universal language — I hope it resonates.`,
+        cta:  `Stream it now — link in the first comment.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" is out now 🎶` : `New music just dropped`,
+        body: desc.slice(0, 100) || `Feels like the right time for this one`,
+        cta:  `Link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🎵 "${title}" is now streaming everywhere!` : `🎵 New music is now streaming!`,
+        body: desc || `I've been working on this for a while and I'm so excited to finally share it. This track means a lot to me and I can't wait for you all to hear it.`,
+        cta:  `Stream now on ${platform} — link in the comments 🔗`,
+      };
+      if (tp === 'google_business') return {
+        hook: title ? `New Music Release: "${title}"` : `New music release`,
+        body: desc || `Now available on all major streaming platforms.`,
+        cta:  `Listen now on ${platform}`,
+      };
       return {
         hook: title ? `🎵 "${title}" is streaming now on ${platform}!` : `🎵 New music on ${platform}!`,
         body: desc || (title ? `Listen to "${title}" — link in bio!` : `Stream the latest on ${platform}`),
         cta:  `Stream on ${platform} 🔗 Link in bio!`,
       };
-    case 'music_video':
+    }
+
+    case 'music_video': {
+      if (tp === 'tiktok') return {
+        hook: title ? `🎬 We need to talk about this music video "${title}"` : `🎬 This music video hits HARD`,
+        body: `Tell me your favorite part in the comments 👇`,
+        cta:  `🔗 Full video — link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🎬 "${title}" — official video is out` : `🎬 New music video just dropped`,
+        body: '',
+        cta:  `Watch now 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `Official Music Video: "${title}"` : `Official Music Video — Out Now`,
+        body: desc || `Watch the official music video. If you love it, hit subscribe and turn on notifications for more!`,
+        cta:  `🔔 Subscribe for new music videos and hit the like button!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Proud to share the official music video for "${title}"` : `New music video release`,
+        body: desc || `Storytelling through visuals — this video took months of creative work to bring to life.`,
+        cta:  `Watch the full video — link below.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `music video for "${title}" is live 🎬` : `new music video is live 🎬`,
+        body: desc.slice(0, 80) || `go watch it`,
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🎬 The official music video for "${title}" is HERE!` : `🎬 New music video just dropped!`,
+        body: desc || `I'm so proud of this one. Every scene tells a story. Watch the full video and let me know what you think in the comments!`,
+        cta:  `Watch on ${platform} — link below! 🎬`,
+      };
       return {
         hook: title ? `🎬 "${title}" — official music video just dropped!` : `🎬 New music video just dropped!`,
         body: desc || `Watch the official video — link in bio!`,
         cta:  `Watch on ${platform} 🎬 Link in bio!`,
       };
-    case 'video':
+    }
+
+    case 'video': {
+      if (tp === 'tiktok') return {
+        hook: title ? `you need to watch this "${title}" 👀` : `you need to see this 👀`,
+        body: author ? `by ${author}` : '',
+        cta:  `🔗 Watch the full thing`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `📹 "${title}"` : `📹 New video`,
+        body: author ? `by ${author}` : '',
+        cta:  `Watch 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `Watch: "${title}"` : `New Video — Watch Now`,
+        body: desc || (author ? `by ${author}` : '') || 'Like and subscribe for more content!',
+        cta:  `🔔 Subscribe and hit the like button!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Worth watching: "${title}"` : `Sharing this video`,
+        body: desc || (author ? `by ${author}` : '') || 'Great perspective here.',
+        cta:  `Full video in the comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" 📹` : `new video 📹`,
+        body: desc.slice(0, 80) || '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `📹 Watch: "${title}"` : `📹 New video — check it out!`,
+        body: desc || (author ? `by ${author}` : '') || 'Let me know what you think in the comments!',
+        cta:  `Watch on ${platform} ▶️`,
+      };
       return {
         hook: title ? `📹 Watch: "${title}"` : `📹 New video — check it out!`,
         body: desc || (author ? `by ${author}` : '') || 'Link in bio!',
         cta:  `Watch on ${platform} ▶️ Link in bio!`,
       };
-    case 'social_post':
+    }
+
+    case 'social_post': {
+      if (tp === 'tiktok') return {
+        hook: title || `check this out 👀`,
+        body: desc.slice(0, 60) || '',
+        cta:  `🔗 follow for more`,
+      };
+      if (tp === 'twitter') return {
+        hook: title || `Check this out`,
+        body: '',
+        cta:  `🔗`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title || `Worth sharing`,
+        body: desc || `Interesting content from ${platform}.`,
+        cta:  `Link in comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title || `look at this`,
+        body: desc.slice(0, 80) || '',
+        cta:  ``,
+      };
       return {
         hook: title || `Check out this ${ctx.contentType} 👀`,
         body: desc || `See what I posted on ${platform}!`,
         cta:  `Follow me on ${platform} 🔗 Link in bio!`,
       };
-    case 'podcast':
+    }
+
+    case 'podcast': {
+      if (tp === 'tiktok') return {
+        hook: title ? `🎙️ this podcast episode "${title}" changed how I think about music` : `🎙️ this podcast episode is insane`,
+        body: desc.slice(0, 80) || '',
+        cta:  `🔗 full episode — link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🎙️ New episode: "${title}"` : `🎙️ New podcast episode out`,
+        body: desc.slice(0, 80) || '',
+        cta:  `Listen 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `New Episode: "${title}"` : `New Podcast Episode — Out Now`,
+        body: desc || `Listen to the full episode. Subscribe and leave a comment!`,
+        cta:  `🔔 Subscribe for new episodes every week!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `New podcast episode: "${title}"` : `New podcast episode out now`,
+        body: desc || `Diving deep into topics that matter for artists and creators.`,
+        cta:  `Listen in the link below.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `new episode: "${title}" 🎙️` : `new podcast episode just dropped 🎙️`,
+        body: desc.slice(0, 80) || '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🎙️ New podcast episode: "${title}"` : `🎙️ New podcast episode!`,
+        body: desc || `We covered so much ground in this one. Whether you're an artist, producer, or music fan — this episode is for you. Drop your thoughts in the comments!`,
+        cta:  `Listen on ${platform} 🎙️ Link in comments!`,
+      };
       return {
         hook: title ? `🎙️ New episode: "${title}"` : `🎙️ New podcast episode out now!`,
         body: desc || 'Listen to the latest episode — link in bio!',
         cta:  `Listen on ${platform} 🎙️ Link in bio!`,
       };
-    case 'event':
+    }
+
+    case 'event': {
+      if (tp === 'tiktok') return {
+        hook: title ? `🎟️ get your tickets NOW for "${title}" before they sell out` : `🎟️ tickets dropping NOW — don't miss this`,
+        body: desc.slice(0, 80) || `these go FAST`,
+        cta:  `🔗 grab tickets — link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🎟️ ${title}` : `🎟️ Tickets on sale now`,
+        body: desc.slice(0, 80) || '',
+        cta:  `Get yours 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `Live Event: "${title}" — Get Your Tickets Now` : `Live Event — Tickets Available Now`,
+        body: desc || `Don't miss this live experience. Tickets available now. Subscribe for tour updates!`,
+        cta:  `🔔 Subscribe for announcements and upcoming dates!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Excited to announce: "${title}"` : `Event announcement`,
+        body: desc || `This is going to be an incredible experience. Come join us.`,
+        cta:  `Tickets available — link in comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" 🎟️` : `tickets are up 🎟️`,
+        body: desc.slice(0, 80) || `get em before they're gone`,
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🎟️ Tickets are LIVE for "${title}"!` : `🎟️ Tickets are on sale now!`,
+        body: desc || `Don't wait — these tickets WILL sell out. Tag a friend you want to come with and grab your tickets now!`,
+        cta:  `Get your tickets on ${platform} 🎟️ Link in comments!`,
+      };
       return {
         hook: title ? `🎟️ ${title}` : `🎟️ Tickets on sale now!`,
         body: desc || 'Get your tickets before they sell out!',
         cta:  `Grab tickets on ${platform} 🎟️ Link in bio!`,
       };
-    case 'press':
+    }
+
+    case 'press': {
+      if (tp === 'tiktok') return {
+        hook: title ? `🗞️ they wrote about me "${title}" and I'm not okay` : `🗞️ press feature just dropped and I'm emotional`,
+        body: author ? `shoutout ${author} for the love` : `grateful for the coverage`,
+        cta:  `🔗 read the full article — link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `📰 "${title}"` : `📰 Press feature just dropped`,
+        body: author ? `via ${author}` : '',
+        cta:  `Read it 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `Press Feature: "${title}"` : `Press Feature — Read Now`,
+        body: desc || (author ? `Written by ${author}` : '') || `Read the full article. Subscribe for more updates!`,
+        cta:  `🔔 Subscribe for more news and updates!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Honored to be featured: "${title}"` : `Exciting press coverage`,
+        body: desc || (author ? `A thoughtful piece by ${author}` : '') || `Grateful for the recognition and the opportunity to share my story.`,
+        cta:  `Read the full feature — link in comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" 📰` : `press feature just went up 📰`,
+        body: author ? `written by ${author}` : '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `📰 Just got featured: "${title}"` : `📰 Press feature just dropped!`,
+        body: desc || (author ? `Thank you to ${author} for this incredible piece. Read the full article and let me know what you think!` : `So grateful for this feature. Read the full article — link below!`),
+        cta:  `Read on ${platform} 📰 Link in comments!`,
+      };
       return {
         hook: title ? `📰 "${title}"` : `📰 Press feature just dropped!`,
         body: desc || (author ? `Review by ${author}` : '') || `Read the full feature — link in bio!`,
         cta:  `Read on ${platform} 📰 Link in bio!`,
       };
-    case 'ecommerce':
+    }
+
+    case 'ecommerce': {
+      if (tp === 'tiktok') return {
+        hook: title ? `🛍️ the "${title}" drop is HERE and it's selling OUT` : `🛍️ new merch drop and it's going FAST`,
+        body: `get it before it's gone 🔥`,
+        cta:  `🔗 shop now — link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🛍️ ${title} — just dropped` : `🛍️ New merch drop`,
+        body: '',
+        cta:  `Shop now 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `New Merch Drop: "${title}" — Available Now` : `New Merch — Shop Now`,
+        body: desc || `Grab the latest before it sells out. Subscribe for future drops!`,
+        cta:  `🔔 Subscribe for exclusive drops and announcements!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `New merchandise available: "${title}"` : `New merchandise drop`,
+        body: desc || `Excited to share the latest merch drop with the community.`,
+        cta:  `Shop now — link in comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" merch is live 🛍️` : `new merch just dropped 🛍️`,
+        body: desc.slice(0, 80) || `grab it before it's gone`,
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🛍️ NEW DROP: "${title}" is available NOW!` : `🛍️ New merch just dropped!`,
+        body: desc || `We worked hard on this and I think you're going to love it. Quantities are limited — don't sleep on this! Tag someone who needs this in their life.`,
+        cta:  `Shop now 🛍️ Link in comments!`,
+      };
       return {
         hook: title ? `🛍️ ${title}` : `🛍️ New merch drop!`,
         body: desc || 'Shop the latest — link in bio!',
         cta:  `Shop now 🛍️ Link in bio!`,
       };
-    case 'article':
+    }
+
+    case 'article': {
+      if (tp === 'tiktok') return {
+        hook: title ? `📖 "${title}" — read this if you care about your music career` : `📖 this article on music is required reading`,
+        body: author ? `by ${author}` : '',
+        cta:  `🔗 link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `✍️ "${title}"` : `✍️ New post just went live`,
+        body: author ? `by ${author}` : '',
+        cta:  `Read 🔗`,
+      };
+      if (tp === 'youtube') return {
+        hook: title ? `Read This: "${title}"` : `New Article — Read Now`,
+        body: desc || (author ? `by ${author}` : '') || `New content out now. Subscribe for more!`,
+        cta:  `🔔 Subscribe for regular content and updates!`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title ? `Worth reading: "${title}"` : `New article I think you should read`,
+        body: desc || (author ? `Written by ${author}` : '') || `Insightful read for anyone in the music industry.`,
+        cta:  `Full article in the comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title ? `"${title}" ✍️` : `new post just went live ✍️`,
+        body: desc.slice(0, 80) || '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `✍️ New article: "${title}"` : `✍️ New post just went live!`,
+        body: desc || (author ? `Written by ${author}` : '') || `Really proud of this one. Read it and let me know what you think in the comments!`,
+        cta:  `Read more ✍️ Link in comments!`,
+      };
       return {
         hook: title ? `✍️ "${title}"` : `✍️ New post just went live!`,
         body: desc || (author ? `Written by ${author}` : '') || 'Read it — link in bio!',
         cta:  `Read more ✍️ Link in bio!`,
       };
-    default:
+    }
+
+    default: {
+      if (tp === 'tiktok') return {
+        hook: title ? `check this out "${title}" 🔗` : `you need to see this 🔗`,
+        body: desc.slice(0, 60) || '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'twitter') return {
+        hook: title ? `🔗 ${title}` : `🔗 Check this out`,
+        body: '',
+        cta:  `🔗`,
+      };
+      if (tp === 'linkedin') return {
+        hook: title || `Worth sharing`,
+        body: desc || `Sharing this with my network.`,
+        cta:  platform ? `More on ${platform} — link in comments.` : `Link in comments.`,
+      };
+      if (tp === 'threads') return {
+        hook: title || `look at this`,
+        body: desc.slice(0, 80) || '',
+        cta:  `link in bio`,
+      };
+      if (tp === 'facebook') return {
+        hook: title ? `🔗 ${title}` : `🔗 Check this out!`,
+        body: desc || `Sharing this with all of you. Let me know your thoughts in the comments!`,
+        cta:  platform ? `Visit on ${platform} 🔗 Link in comments!` : `🔗 Link in comments!`,
+      };
       return {
         hook: title ? `🔗 ${title}` : `🔗 Check this out!`,
         body: desc || 'Link in bio!',
         cta:  platform ? `Visit on ${platform} 🔗 Link in bio!` : '🔗 Link in bio!',
       };
+    }
   }
 }
 
@@ -540,7 +967,12 @@ async function localAnalyzeUrl(
   const desc     = meta.description ?? '';
   const siteName = meta.siteName ?? ctx.platform;
 
+  // Generate shared (generic) copy and per-platform differentiated copy
   const copy = buildCopyFromContext(ctx, { ...meta, siteName }, req.intent ?? 'promote');
+  const perPlatformCopy: Record<string, { hook: string; body: string; cta: string }> = {};
+  for (const p of req.platforms) {
+    perPlatformCopy[p] = buildCopyFromContext(ctx, { ...meta, siteName }, req.intent ?? 'promote', p);
+  }
 
   const summary = [title, desc.slice(0, 120)].filter(Boolean).join(' — ')
                || `${ctx.category === 'event' ? 'Upcoming event' : 'New content'} on ${siteName || url}`;
@@ -552,6 +984,7 @@ async function localAnalyzeUrl(
     hook:        copy.hook,
     body:        copy.body,
     cta:         copy.cta,
+    perPlatformCopy,
     title,
     description: desc,
     siteName,
@@ -849,25 +1282,46 @@ function buildLocalTextAssets(
   const cta:  string = normalized.cta  ?? 'Stream now 🎵';
   const artist: string = normalized.artistName ?? '';
 
-  const TEMPLATES: Record<string, (h: string, b: string, c: string, a: string) => string> = {
-    instagram:       (h, b, c, a) => `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ''}\n\n#music #newmusic #artist #hiphop`,
-    tiktok:          (h, _b, c)   => `${h} 🎵 ${c}`,
-    twitter:         (h, _b, c)   => `${h} ${c}`,
-    threads:         (h, b, c)    => `${h}\n\n${c}${b ? `\n${b}` : ''}`,
-    facebook:        (h, b, c, a) => `${h}\n\n${b}\n\n${c}${a ? `\n\n— ${a}` : ''}`,
-    youtube:         (h, b, c)    => `${h}\n\n${b}\n\n${c}\n\nSubscribe for more 🔔`,
-    linkedin:        (h, b, c, a) => `${a ? `${a} | ` : ''}${h}\n\n${b}\n\n${c}`,
-    google_business: (h, b, c)    => `${h}\n\n${b}\n\n${c}`,
+  const TEMPLATES: Record<string, (h: string, b: string, c: string, a: string, tags: string) => string> = {
+    instagram:       (h, b, c, a, tags) => `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ''}${tags}`,
+    tiktok:          (h, _b, c, _a, tags) => `${h} ${c}${tags}`,
+    twitter:         (h, _b, c, _a, _tags) => `${h} ${c}`.trim(),
+    threads:         (h, b, c, _a, _tags) => `${h}\n\n${c}${b ? `\n${b}` : ''}`,
+    facebook:        (h, b, c, a, tags) => `${h}\n\n${b}\n\n${c}${a ? `\n\n— ${a}` : ''}${tags}`,
+    youtube:         (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}\n\nSubscribe for more 🔔`,
+    linkedin:        (h, b, c, a, _tags) => `${a ? `${a} | ` : ''}${h}\n\n${b}\n\n${c}`,
+    google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
   };
 
   return rawSlots.map((slot: any) => {
     const platform = (slot.platform ?? req.platforms[0]) as Platform;
     const rules = platform ? getRules(platform) : null;
+
+    // Use per-platform differentiated copy if available (from localAnalyzeUrl)
+    const perCopy = normalized.perPlatformCopy?.[platform];
+    const platformHook = perCopy?.hook ?? hook;
+    const platformBody = perCopy?.body ?? body;
+    const platformCta  = perCopy?.cta  ?? cta;
+
+    // Dynamic hashtags: respect platform rules for allowed count
+    const maxHashtags = rules?.text.hashtags?.allowed ? (rules.text.hashtags.max ?? 5) : 0;
+    const tags = getHashtagsForPlatform(
+      normalized.urlCategory ?? 'social_post',
+      platform,
+      maxHashtags,
+      artist || undefined,
+    );
+
     const tplFn = TEMPLATES[platform] ?? TEMPLATES.instagram;
-    let payload = tplFn(hook, body, cta, artist);
+    let payload = tplFn(platformHook, platformBody, platformCta, artist, tags);
     if (rules) payload = enforceTextLength(payload, rules.text);
     const enriched = rules
-      ? enrichTextAssetMetadata(payload, platform, rules, { platformRules: rules.text })
+      ? enrichTextAssetMetadata(payload, platform, rules, {
+          platformRules: rules.text,
+          hook: platformHook,
+          body: platformBody,
+          cta:  platformCta,
+        })
       : {};
     return {
       id: randomUUID(),
@@ -991,20 +1445,97 @@ function enrichTextAssetMetadata(
     }
   }
 
+  // Platform-calibrated engagement scoring
   let score = 50;
-  if (emojiCount >= 1 && emojiCount <= 5) score += 10;
-  if (extractedHashtags.length > 0 && extractedHashtags.length <= 10) score += 10;
-  if (wordCount >= 15 && wordCount <= 60) score += 10;
-  if (hook) score += 10;
-  if (cta)  score += 10;
-  score = Math.min(100, score);
-
   const suggestions: string[] = [];
-  if (emojiCount === 0) suggestions.push('Add 1–3 emojis to increase engagement');
-  if (extractedHashtags.length === 0) suggestions.push('Include relevant hashtags');
+
+  switch (platform) {
+    case 'tiktok':
+      // TikTok: hook-first wins, keep it SHORT, 1–2 emojis max, a few hashtags
+      if (hook) score += 20; else suggestions.push('Start with a viral hook in the first 5 words to stop the scroll');
+      if (wordCount <= 15) score += 15; else if (wordCount > 25) suggestions.push('Keep TikTok captions under 15 words for best performance');
+      if (emojiCount >= 1 && emojiCount <= 3) score += 10; else if (emojiCount === 0) suggestions.push('Add 1–2 trending emojis');
+      if (extractedHashtags.length >= 2 && extractedHashtags.length <= 5) score += 5;
+      if (cta) score += 10; else suggestions.push('Add a "link in bio" or "follow for more" CTA');
+      break;
+
+    case 'instagram':
+      // Instagram: hashtags are essential (5–8 optimal), emoji adds flair, hook + CTA needed
+      if (hook) score += 10; else suggestions.push('Open with an attention-grabbing first line');
+      if (extractedHashtags.length >= 5) score += 20;
+      else if (extractedHashtags.length >= 2) score += 10;
+      else suggestions.push('Add 5–8 hashtags for maximum Instagram reach');
+      if (emojiCount >= 2 && emojiCount <= 8) score += 10; else if (emojiCount === 0) suggestions.push('Add 2–4 emojis to boost visual appeal');
+      if (cta) score += 10; else suggestions.push('Add "Link in bio" to drive traffic');
+      if (wordCount >= 20 && wordCount <= 150) score += 10;
+      break;
+
+    case 'facebook':
+      // Facebook: conversational, moderate length, story-driven
+      if (hook) score += 10; else suggestions.push('Start with an engaging personal statement or question');
+      if (wordCount >= 20 && wordCount <= 80) score += 15; else if (wordCount < 10) suggestions.push('Expand the post — Facebook users engage more with 40–80 word posts');
+      if (emojiCount >= 1 && emojiCount <= 5) score += 10; else if (emojiCount > 8) suggestions.push('Too many emojis can reduce Facebook reach — keep it to 3–5');
+      if (cta) score += 15; else suggestions.push('Add a call-to-action directing users to the link in comments');
+      if (extractedHashtags.length <= 3) score += 5;
+      else if (extractedHashtags.length > 5) suggestions.push('Facebook posts perform best with 1–3 hashtags');
+      break;
+
+    case 'twitter':
+      // Twitter/X: punchy, witty, under 240 chars is ideal, 1–2 hashtags only
+      if (charCount <= 240) score += 20; else if (charCount > 270) suggestions.push('Keep tweets under 240 characters for best engagement');
+      if (hook) score += 20; else suggestions.push('Lead with your most interesting point — no warmup needed on X');
+      if (extractedHashtags.length <= 2) score += 10; else suggestions.push('1–2 hashtags max on X/Twitter — more reduces engagement');
+      if (cta) score += 10;
+      break;
+
+    case 'linkedin':
+      // LinkedIn: professional, insightful, longer is OK, minimal emoji, strong hook
+      if (hook) score += 20; else suggestions.push('Open with a bold professional insight or surprising statistic');
+      if (wordCount >= 50) score += 15; else suggestions.push('LinkedIn posts with 150+ words see 3x more engagement');
+      if (emojiCount <= 2) score += 10; else suggestions.push('Reduce emojis for a more professional and credible tone');
+      if (cta) score += 15; else suggestions.push('End with a question or CTA to drive comments');
+      if (extractedHashtags.length >= 2 && extractedHashtags.length <= 5) score += 5; else if (extractedHashtags.length === 0) suggestions.push('Add 3–5 professional hashtags to increase discoverability');
+      break;
+
+    case 'youtube':
+      // YouTube: SEO-rich description, subscribe CTA is critical, keyword density matters
+      if (/subscribe|🔔/i.test(payload)) score += 25; else suggestions.push('Always include a subscribe + notification bell CTA for YouTube');
+      if (wordCount >= 30) score += 15; else suggestions.push('YouTube descriptions should be 100–300 words for SEO');
+      if (hook) score += 15; else suggestions.push('Put key info and keywords in the first 2 sentences of your description');
+      if (cta) score += 10;
+      if (emojiCount >= 1 && emojiCount <= 6) score += 5;
+      break;
+
+    case 'threads':
+      // Threads: casual, authentic, conversational — NO hashtags, minimal emoji
+      if (extractedHashtags.length === 0) score += 15; else suggestions.push('Threads performs better without hashtags — remove them');
+      if (emojiCount <= 3) score += 10; else suggestions.push('Keep it casual — max 2–3 emojis on Threads');
+      if (wordCount >= 10 && wordCount <= 60) score += 15; else if (wordCount > 100) suggestions.push('Shorter, more conversational posts work best on Threads');
+      if (hook) score += 10;
+      break;
+
+    case 'google_business':
+      // Google Business: professional, local, clear action CTA
+      if (cta) score += 25; else suggestions.push('Google Business posts must include a clear action (Visit, Call, Book)');
+      if (wordCount >= 20 && wordCount <= 100) score += 15;
+      if (hook) score += 10;
+      if (extractedHashtags.length === 0) score += 10; else suggestions.push('Google Business posts do not use hashtags');
+      break;
+
+    default:
+      if (emojiCount >= 1 && emojiCount <= 5) score += 10;
+      if (extractedHashtags.length > 0 && extractedHashtags.length <= 10) score += 10;
+      if (wordCount >= 15 && wordCount <= 60) score += 10;
+      if (hook) score += 10;
+      if (cta)  score += 10;
+      if (emojiCount === 0) suggestions.push('Add 1–3 emojis to increase engagement');
+      if (extractedHashtags.length === 0) suggestions.push('Include relevant hashtags');
+      if (!cta) suggestions.push('Add a clear call-to-action');
+      if (wordCount < 10) suggestions.push('Expand content for better reach');
+  }
+
   if (charLimit && charCount > charLimit * 0.9) suggestions.push('Near character limit — consider trimming');
-  if (!cta) suggestions.push('Add a clear call-to-action');
-  if (wordCount < 10) suggestions.push('Expand content for better reach');
+  score = Math.min(100, score);
 
   const positive = /\b(amazing|excited|love|great|best|awesome|happy|proud|thrilled|celebrate|new|launch|drop|release)\b/i;
   const negative = /\b(struggle|hard|difficult|bad|fail|problem|issue|concern)\b/i;
@@ -1195,25 +1726,46 @@ export async function handleGeneration(req: GenerationRequest): Promise<Multimod
 
   const stepOutputs = new Map<string, GeneratedAsset[]>();
 
-  for (const step of plan.steps) {
+  // Separate steps that depend only on normalized input (can run in parallel)
+  // from steps that depend on earlier step outputs (must run serially after dependencies)
+  const independentSteps = plan.steps.filter(
+    (s) => !s.inputFrom || s.inputFrom === 'normalizedInput',
+  );
+  const dependentSteps = plan.steps.filter(
+    (s) => s.inputFrom && s.inputFrom !== 'normalizedInput',
+  );
+
+  // Run all independent steps concurrently
+  if (independentSteps.length > 0) {
+    await Promise.all(
+      independentSteps.map(async (step) => {
+        const worker = workers[step.worker];
+        if (!worker) {
+          logger.warn(`[MultimodalGen] Unknown worker: ${step.worker}`);
+          return;
+        }
+        const assets = await worker.run(step, { normalized }, req);
+        stepOutputs.set(step.id, assets);
+        logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [parallel]`);
+      }),
+    );
+  }
+
+  // Run dependent steps serially, each resolving its upstream outputs
+  for (const step of dependentSteps) {
     const worker = workers[step.worker];
     if (!worker) {
       logger.warn(`[MultimodalGen] Unknown worker: ${step.worker}`);
       continue;
     }
-
-    const inputs =
-      step.inputFrom === 'normalizedInput'
-        ? { normalized }
-        : {
-            normalized,
-            stepAssets: (Array.isArray(step.inputFrom) ? step.inputFrom : [step.inputFrom])
-              .flatMap(id => stepOutputs.get(id) ?? []),
-          };
-
+    const inputs = {
+      normalized,
+      stepAssets: (Array.isArray(step.inputFrom) ? step.inputFrom : [step.inputFrom])
+        .flatMap((id: string) => stepOutputs.get(id) ?? []),
+    };
     const assets = await worker.run(step, inputs, req);
     stepOutputs.set(step.id, assets);
-    logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s)`);
+    logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [sequential]`);
   }
 
   const allAssets = Array.from(stepOutputs.values()).flat();
