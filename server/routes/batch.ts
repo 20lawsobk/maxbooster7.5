@@ -48,21 +48,19 @@ router.post('/releases/submit', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(distroReleases)
-          .set({ status: 'pending' })
-          .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
-          .returning({ id: distroReleases.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Release not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to submit release' });
-      }
+    const _settled0 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(distroReleases)
+        .set({ status: 'pending' })
+        .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
+        .returning({ id: distroReleases.id });
+      if (result.length === 0) throw new Error('Release not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled0.length; _i++) {
+      const _r = _settled0[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to submit release' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -87,21 +85,19 @@ router.post('/releases/takedown', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(distroReleases)
-          .set({ status: 'takedown' })
-          .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
-          .returning({ id: distroReleases.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Release not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to takedown release' });
-      }
+    const _settled1 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(distroReleases)
+        .set({ status: 'takedown' })
+        .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
+        .returning({ id: distroReleases.id });
+      if (result.length === 0) throw new Error('Release not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled1.length; _i++) {
+      const _r = _settled1[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to takedown release' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -131,21 +127,19 @@ router.put('/releases/update', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(distroReleases)
-          .set(allowedUpdate)
-          .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
-          .returning({ id: distroReleases.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Release not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to update release' });
-      }
+    const _settled2 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(distroReleases)
+        .set(allowedUpdate)
+        .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
+        .returning({ id: distroReleases.id });
+      if (result.length === 0) throw new Error('Release not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled2.length; _i++) {
+      const _r = _settled2[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to update release' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -170,21 +164,19 @@ router.post('/releases/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(distroReleases)
-          .set({ status: 'deleted' })
-          .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
-          .returning({ id: distroReleases.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Release not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete release' });
-      }
+    const _settled3 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(distroReleases)
+        .set({ status: 'deleted' })
+        .where(and(eq(distroReleases.id, id), eq(distroReleases.artistId, userId)))
+        .returning({ id: distroReleases.id });
+      if (result.length === 0) throw new Error('Release not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled3.length; _i++) {
+      const _r = _settled3[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete release' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -210,21 +202,19 @@ router.post('/posts/schedule', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(posts)
-          .set({ scheduledAt, status: 'scheduled' })
-          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
-          .returning({ id: posts.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Post not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to schedule post' });
-      }
+    const _settled4 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(posts)
+        .set({ scheduledAt, status: 'scheduled' })
+        .where(and(eq(posts.id, id), eq(posts.userId, userId)))
+        .returning({ id: posts.id });
+      if (result.length === 0) throw new Error('Post not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled4.length; _i++) {
+      const _r = _settled4[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to schedule post' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -249,20 +239,18 @@ router.post('/posts/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .delete(posts)
-          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
-          .returning({ id: posts.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Post not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete post' });
-      }
+    const _settled5 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .delete(posts)
+        .where(and(eq(posts.id, id), eq(posts.userId, userId)))
+        .returning({ id: posts.id });
+      if (result.length === 0) throw new Error('Post not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled5.length; _i++) {
+      const _r = _settled5[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete post' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -292,21 +280,19 @@ router.put('/posts/update', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(posts)
-          .set(allowedUpdate)
-          .where(and(eq(posts.id, id), eq(posts.userId, userId)))
-          .returning({ id: posts.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Post not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to update post' });
-      }
+    const _settled6 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(posts)
+        .set(allowedUpdate)
+        .where(and(eq(posts.id, id), eq(posts.userId, userId)))
+        .returning({ id: posts.id });
+      if (result.length === 0) throw new Error('Post not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled6.length; _i++) {
+      const _r = _settled6[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to update post' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -331,21 +317,19 @@ router.post('/files/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(userStorageFiles)
-          .set({ deletedAt: new Date() })
-          .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
-          .returning({ id: userStorageFiles.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'File not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete file' });
-      }
+    const _settled7 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(userStorageFiles)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
+        .returning({ id: userStorageFiles.id });
+      if (result.length === 0) throw new Error('File not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled7.length; _i++) {
+      const _r = _settled7[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete file' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -371,21 +355,19 @@ router.post('/files/move', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(userStorageFiles)
-          .set({ folder: targetFolder })
-          .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
-          .returning({ id: userStorageFiles.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'File not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to move file' });
-      }
+    const _settled8 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(userStorageFiles)
+        .set({ folder: targetFolder })
+        .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
+        .returning({ id: userStorageFiles.id });
+      if (result.length === 0) throw new Error('File not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled8.length; _i++) {
+      const _r = _settled8[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to move file' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -410,21 +392,19 @@ router.post('/files/download', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const [file] = await db
-          .select({ id: userStorageFiles.id })
-          .from(userStorageFiles)
-          .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)))
-          .limit(1);
-        if (!file) {
-          failures.push({ id, error: 'File not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to prepare download' });
-      }
+    const _settled9 = await Promise.allSettled(ids.map(async (id) => {
+      const [file] = await db
+        .select({ id: userStorageFiles.id })
+        .from(userStorageFiles)
+        .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)))
+        .limit(1);
+      if (!file) throw new Error('File not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled9.length; _i++) {
+      const _r = _settled9[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to prepare download' });
     }
 
     const downloadUrl = successIds.length > 0
@@ -461,21 +441,19 @@ router.put('/files/update', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(userStorageFiles)
-          .set(allowedUpdate)
-          .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
-          .returning({ id: userStorageFiles.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'File not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to update file' });
-      }
+    const _settled10 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(userStorageFiles)
+        .set(allowedUpdate)
+        .where(and(eq(userStorageFiles.id, id), eq(userStorageFiles.userId, userId)))
+        .returning({ id: userStorageFiles.id });
+      if (result.length === 0) throw new Error('File not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled10.length; _i++) {
+      const _r = _settled10[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to update file' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -506,21 +484,19 @@ router.put('/marketplace/update', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(listings)
-          .set(allowedUpdate)
-          .where(and(eq(listings.id, id), eq(listings.userId, userId)))
-          .returning({ id: listings.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Listing not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to update listing' });
-      }
+    const _settled11 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(listings)
+        .set(allowedUpdate)
+        .where(and(eq(listings.id, id), eq(listings.userId, userId)))
+        .returning({ id: listings.id });
+      if (result.length === 0) throw new Error('Listing not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled11.length; _i++) {
+      const _r = _settled11[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to update listing' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -545,21 +521,19 @@ router.post('/marketplace/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(listings)
-          .set({ isPublished: false })
-          .where(and(eq(listings.id, id), eq(listings.userId, userId)))
-          .returning({ id: listings.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Listing not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete listing' });
-      }
+    const _settled12 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(listings)
+        .set({ isPublished: false })
+        .where(and(eq(listings.id, id), eq(listings.userId, userId)))
+        .returning({ id: listings.id });
+      if (result.length === 0) throw new Error('Listing not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled12.length; _i++) {
+      const _r = _settled12[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete listing' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -736,28 +710,23 @@ router.post('/tracks/move', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const updatePayload: Record<string, unknown> = {};
-        if (targetProjectId) updatePayload.projectId = targetProjectId;
-        if (newOrder !== null) updatePayload.order = newOrder;
-        if (Object.keys(updatePayload).length === 0) {
-          successIds.push(id);
-          continue;
-        }
-        const result = await db
-          .update(studioTracks)
-          .set(updatePayload)
-          .where(eq(studioTracks.id, id))
-          .returning({ id: studioTracks.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Track not found' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to move track' });
-      }
+    const _settled13 = await Promise.allSettled(ids.map(async (id) => {
+      const updatePayload: Record<string, unknown> = {};
+      if (targetProjectId) updatePayload.projectId = targetProjectId;
+      if (newOrder !== null) updatePayload.order = newOrder;
+      if (Object.keys(updatePayload).length === 0) return id;
+      const result = await db
+        .update(studioTracks)
+        .set(updatePayload)
+        .where(eq(studioTracks.id, id))
+        .returning({ id: studioTracks.id });
+      if (result.length === 0) throw new Error('Track not found');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled13.length; _i++) {
+      const _r = _settled13[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to move track' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -782,26 +751,24 @@ router.post('/tracks/tag', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const [existing] = await db
-          .select({ metadata: studioTracks.metadata })
-          .from(studioTracks)
-          .where(eq(studioTracks.id, id))
-          .limit(1);
-        if (!existing) {
-          failures.push({ id, error: 'Track not found' });
-          continue;
-        }
-        const existingMeta = (existing.metadata as Record<string, unknown>) || {};
-        await db
-          .update(studioTracks)
-          .set({ metadata: { ...existingMeta, tags } })
-          .where(eq(studioTracks.id, id));
-        successIds.push(id);
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to tag track' });
-      }
+    const _settled14 = await Promise.allSettled(ids.map(async (id) => {
+      const [existing] = await db
+        .select({ metadata: studioTracks.metadata })
+        .from(studioTracks)
+        .where(eq(studioTracks.id, id))
+        .limit(1);
+      if (!existing) throw new Error('Track not found');
+      const existingMeta = (existing.metadata as Record<string, unknown>) || {};
+      await db
+        .update(studioTracks)
+        .set({ metadata: { ...existingMeta, tags } })
+        .where(eq(studioTracks.id, id));
+      return id;
+    }));
+    for (let _i = 0; _i < _settled14.length; _i++) {
+      const _r = _settled14[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to tag track' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -890,20 +857,18 @@ router.post('/tracks/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .delete(studioTracks)
-          .where(eq(studioTracks.id, id))
-          .returning({ id: studioTracks.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Track not found' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete track' });
-      }
+    const _settled15 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .delete(studioTracks)
+        .where(eq(studioTracks.id, id))
+        .returning({ id: studioTracks.id });
+      if (result.length === 0) throw new Error('Track not found');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled15.length; _i++) {
+      const _r = _settled15[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete track' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -935,21 +900,19 @@ router.put('/beats/update', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(beats)
-          .set(allowedUpdate)
-          .where(and(eq(beats.id, id), eq(beats.userId, userId)))
-          .returning({ id: beats.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Beat not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to update beat' });
-      }
+    const _settled16 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(beats)
+        .set(allowedUpdate)
+        .where(and(eq(beats.id, id), eq(beats.userId, userId)))
+        .returning({ id: beats.id });
+      if (result.length === 0) throw new Error('Beat not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled16.length; _i++) {
+      const _r = _settled16[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to update beat' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -974,21 +937,19 @@ router.post('/beats/delete', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(beats)
-          .set({ isPublished: false })
-          .where(and(eq(beats.id, id), eq(beats.userId, userId)))
-          .returning({ id: beats.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Beat not found or access denied' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to delete beat' });
-      }
+    const _settled17 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(beats)
+        .set({ isPublished: false })
+        .where(and(eq(beats.id, id), eq(beats.userId, userId)))
+        .returning({ id: beats.id });
+      if (result.length === 0) throw new Error('Beat not found or access denied');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled17.length; _i++) {
+      const _r = _settled17[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to delete beat' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));
@@ -1013,21 +974,19 @@ router.post('/posts/approve', async (req: Request, res: Response) => {
     const successIds: string[] = [];
     const failures: Array<{ id: string; error: string }> = [];
 
-    for (const id of ids) {
-      try {
-        const result = await db
-          .update(posts)
-          .set({ approvalStatus: 'approved', reviewedBy: userId, reviewedAt: new Date() })
-          .where(eq(posts.id, id))
-          .returning({ id: posts.id });
-        if (result.length === 0) {
-          failures.push({ id, error: 'Post not found' });
-        } else {
-          successIds.push(id);
-        }
-      } catch (error: any) {
-        failures.push({ id, error: error.message || 'Failed to approve post' });
-      }
+    const _settled18 = await Promise.allSettled(ids.map(async (id) => {
+      const result = await db
+        .update(posts)
+        .set({ approvalStatus: 'approved', reviewedBy: userId, reviewedAt: new Date() })
+        .where(eq(posts.id, id))
+        .returning({ id: posts.id });
+      if (result.length === 0) throw new Error('Post not found');
+      return id;
+    }));
+    for (let _i = 0; _i < _settled18.length; _i++) {
+      const _r = _settled18[_i];
+      if (_r.status === 'fulfilled') successIds.push(_r.value);
+      else failures.push({ id: ids[_i], error: _r.reason?.message || 'Failed to approve post' });
     }
 
     res.json(createBatchResult(successIds, failures, ids.length));

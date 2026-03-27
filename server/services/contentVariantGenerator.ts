@@ -4,6 +4,31 @@ import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.j
 
 import { pythonAIService } from './pythonAIService.js';
 
+function seededIndex(seed: string, len: number): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  return h % len;
+}
+
+function seededShuffle<T>(array: T[], seed: string): T[] {
+  const shuffled = [...array];
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = (h * 0x01000193) >>> 0;
+  }
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    h ^= i;
+    h = (h * 0x01000193) >>> 0;
+    const j = h % (i + 1);
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export interface ContentData {
   id?: string;
   caption: string;
@@ -203,16 +228,18 @@ class ContentVariantGeneratorService {
       if (content.caption.toLowerCase().includes('music') || 
           content.caption.toLowerCase().includes('beat') ||
           content.caption.toLowerCase().includes('song')) {
-        const musicTags = this.shuffleArray([...this.hashtagCategories.music])
+        const musicTags = seededShuffle([...this.hashtagCategories.music], `${content.id || content.caption}:music-tags`)
           .slice(0, 2);
         set.push(...musicTags);
       }
 
       while (set.length < config.total) {
         const allTags = Object.values(this.hashtagCategories).flat();
-        const randomTag = allTags[Math.floor(Math.random() * allTags.length)];
+        const randomTag = allTags[seededIndex(`${content.id || content.caption}:hashtag-fill:${set.length}`, allTags.length)];
         if (!set.includes(randomTag)) {
           set.push(randomTag);
+        } else {
+          set.push(allTags[(seededIndex(`${content.id || content.caption}:hashtag-fill:${set.length}`, allTags.length) + set.length) % allTags.length]);
         }
       }
 
@@ -228,7 +255,7 @@ class ContentVariantGeneratorService {
     const topic = this.extractTopic(content.caption);
 
     for (const [type, templates] of Object.entries(this.hookTemplates)) {
-      const template = templates[Math.floor(Math.random() * templates.length)];
+      const template = templates[seededIndex(`${content.id || content.caption}:hook:${type}`, templates.length)];
       const hookText = template
         .replace('{topic}', topic)
         .replace('{Topic}', topic.charAt(0).toUpperCase() + topic.slice(1))
@@ -344,7 +371,7 @@ class ContentVariantGeneratorService {
     const hasEmotion = emotions.some(e => text.toLowerCase().includes(e));
     
     if (!hasEmotion) {
-      const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+      const randomEmotion = emotions[seededIndex(`${text}:emotion`, emotions.length)];
       return text.replace(/\.$/, ` - ${randomEmotion}!`);
     }
     
@@ -360,13 +387,8 @@ class ContentVariantGeneratorService {
     return words.slice(0, 5).map(w => `#${w}`);
   }
 
-  private shuffleArray<T>(array: T[]): T[] {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
+  private shuffleArray<T>(array: T[], seed: string = 'default'): T[] {
+    return seededShuffle(array, seed);
   }
 
   private predictHookStrength(hookText: string, type: string): number {

@@ -463,11 +463,21 @@ export class SocialMediaContentGenerator {
 
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
 
-    // Generate AI-optimized waveform based on music data
-    for (let x = 0; x < width; x += barWidth + barSpacing) {
-      const barHeight = Math.random() * maxBarHeight;
-      const y = centerY - barHeight / 2;
+    const seedStr = typeof musicData === 'object' && musicData !== null
+      ? ((musicData as Record<string, unknown>).artist || '') + ':' + ((musicData as Record<string, unknown>).title || '')
+      : String(musicData ?? 'waveform');
 
+    const fnv = (s: string) => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      return h;
+    };
+
+    let barIndex = 0;
+    for (let x = 0; x < width; x += barWidth + barSpacing) {
+      const h = fnv(`${seedStr}:waveform:${barIndex++}`);
+      const barHeight = (h / 0xffffffff) * maxBarHeight;
+      const y = centerY - barHeight / 2;
       this.ctx.fillRect(x, y, barWidth, barHeight);
     }
   }
@@ -514,11 +524,21 @@ export class SocialMediaContentGenerator {
     this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     this.ctx.lineWidth = 2;
 
+    const seedStr = typeof musicData === 'object' && musicData !== null
+      ? ((musicData as Record<string, unknown>).artist || '') + ':' + ((musicData as Record<string, unknown>).title || '')
+      : String(musicData ?? 'pattern');
+
+    const fnv = (s: string) => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      return h;
+    };
+
     for (let i = 0; i < 20; i++) {
-      const x1 = Math.random() * width;
-      const y1 = Math.random() * height;
-      const x2 = Math.random() * width;
-      const y2 = Math.random() * height;
+      const x1 = (fnv(`${seedStr}:pattern:${i}:x1`) / 0xffffffff) * width;
+      const y1 = (fnv(`${seedStr}:pattern:${i}:y1`) / 0xffffffff) * height;
+      const x2 = (fnv(`${seedStr}:pattern:${i}:x2`) / 0xffffffff) * width;
+      const y2 = (fnv(`${seedStr}:pattern:${i}:y2`) / 0xffffffff) * height;
 
       this.ctx.beginPath();
       this.ctx.moveTo(x1, y1);

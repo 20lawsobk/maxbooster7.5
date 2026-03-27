@@ -219,6 +219,35 @@ Ten hardcoded/random data sources replaced with real DB-sourced or deterministic
 - Replaced with a seeded PRNG (FNV-1a seed init → xorshift iterations) seeded from `audioUrl || title || 'default'`.
 - Same track URL → identical waveform shape every time. Different tracks → visually distinct shapes.
 
+### Data Integrity Breakthroughs (Mar 2026) — Session 5
+
+**BT-14 — batch.ts: 19 serial DB loops → Promise.allSettled parallel**
+- Every batch API endpoint (releases, posts, files, marketplace, tracks, beats) was processing IDs one at a time in sequential `for (const id of ids) { await db... }` loops.
+- Converted all 19 loops across 19 endpoints to `Promise.allSettled(ids.map(async (id) => { ... }))`.
+- Pattern: throw on not-found → collect fulfilled IDs as successes, rejected reasons as failures, mapped by index.
+- Affected endpoints: `/releases/submit`, `/releases/takedown`, `/releases/update`, `/releases/delete`, `/posts/schedule`, `/posts/delete`, `/posts/update`, `/posts/approve`, `/files/delete`, `/files/move`, `/files/download`, `/files/update`, `/marketplace/update`, `/marketplace/delete`, `/tracks/move`, `/tracks/tag`, `/tracks/delete`, `/beats/update`, `/beats/delete`.
+- Tracks/tag (2-step read+update) and tracks/move (conditional no-op) both safely parallelized.
+
+**BT-15 — contentVariantGenerator: seeded hashtag/hook/emotion/shuffle**
+- `seededIndex` and `seededShuffle` (FNV-1a) added at module level.
+- Hashtag fill loop: seeded from `${content.id || content.caption}:hashtag-fill:${set.length}`.
+- Music tag shuffle: seeded from `${content.id || content.caption}:music-tags`.
+- Hook template selection per type: seeded from `${content.id || content.caption}:hook:${type}`.
+- Emotion word injection: seeded from `${text}:emotion`.
+- `shuffleArray()` private method now delegates to `seededShuffle` (accepts optional seed param).
+
+**BT-16 — image-generation.ts: seeded waveform + geometric patterns in generated images**
+- Social media cover images regenerated random bar heights and 20 random line endpoints on every call.
+- Both `addWaveformVisualization` and `addAIPatterns` now use inline FNV-1a seeded from `musicData.artist + ':' + musicData.title`.
+- Waveform: each bar's height seeded from `${seed}:waveform:${barIndex}`.
+- Pattern lines: each of 20 lines seeded from `${seed}:pattern:${i}:x1/y1/x2/y2`.
+- Same artist + title → identical generated image every time.
+
+**BT-17 — contentQualityPipeline: seeded template picker in generateContentByStrategy**
+- Local `rnd(arr)` helper used `Math.random()` to pick among template arrays by strategy (storytelling, announcement, teaser, milestone, journey, question, poll-style, FOMO, controversy, viral, educational, CTA).
+- Replaced with inline `seededIndex` seeded from `${artistName}:${topic}:${strategy}:${objective}`.
+- Same artist + topic + strategy + objective → same template variant every time.
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.

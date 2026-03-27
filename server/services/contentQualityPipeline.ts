@@ -339,8 +339,13 @@ class ContentQualityPipeline {
     const { artistName, topic, objective, tone, genre } = context;
     const genreTag = genre ? ` #${genre.replace(/\s+/g, '')}` : '';
 
+    const seededIndex = (seed: string, len: number): number => {
+      let h = 0x811c9dc5;
+      for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = (h * 0x01000193) >>> 0; }
+      return h % len;
+    };
     const rnd = (arr: Array<{ headline: string; body: string; cta: string }>) =>
-      arr[Math.floor(Math.random() * arr.length)];
+      arr[seededIndex(`${artistName}:${topic}:${strategy}:${objective}`, arr.length)];
 
     const templates: Record<string, Record<string, Array<{ headline: string; body: string; cta: string }>>> = {
       awareness: {
