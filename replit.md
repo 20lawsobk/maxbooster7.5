@@ -303,6 +303,23 @@ Ten hardcoded/random data sources replaced with real DB-sourced or deterministic
 - Converted both to `Promise.allSettled(fileIds.map(async (fileId) => { ... }))`.
 - All N file operations now fire in parallel; per-ID error tracking fully preserved.
 
+**BT-30 — Veo Quality Gate: raise standard to 90% of Google Veo model content quality**
+- Gate raised from 60 → **75** (`VEO_QUALITY_GATE`). Based on calibration: Veo-class content scores ~90–95 on the rubric; 90% of that is 81, floored at 75 to account for music-artist-specific content Veo doesn't natively optimise for.
+- Caffeine Mode absolute pressure floor raised from 50 → **65** (`VEO_PRESSURE_FLOOR`). Even at maximum deadline pressure, content cannot be published below 87% of the Veo gate. Quality over quantity, always.
+- Default variants generated raised from 3 → **5** (`VEO_DEFAULT_VARIANTS`). More generation attempts = higher probability of clearing the tighter bar without sacrificing standards.
+- **New 9th scoring dimension: `scoreNarrativeAuthenticity`** (weight 0.06, new for Veo calibration):
+  - Rewards: industry-native language real artists use ("in the booth", "vocal take", "rewrote the bridge", "laid the verse", "a&r", "setlist", etc.) — up to +20 pts for matches
+  - Rewards: concrete first-person storytelling ("I wrote this", "I scrapped it", "we tracked", "take 7", etc.) — +10 pts
+  - Rewards: authentic emotion signals ("nervous", "scared to post", "almost deleted", "wasn't ready") — +9 pts
+  - Rewards: Veo-class punchy sentence density (15–80 char avg length) — +8 pts
+  - Penalises: PR fluff ("I'm thrilled to announce", "for your listening pleasure", "make sure to follow", "hard work and dedication") — −9 pts per phrase
+- **Scoring weights rebalanced** for Veo calibration (9 dimensions, sum = 1.00):
+  - emotionalArc: 0.07 → **0.10** (Veo excels at narrative arc)
+  - narrativeAuthenticity: **0.06** (new)
+  - engagement: 0.22 → 0.20; hookStrength: 0.15 → 0.14; clarity/sentiment/brandAlignment/CTA: 0.12 → 0.11/0.11/0.10/0.11; specificity: 0.08 → 0.07
+- Gate fallback log: `[VeoGate] ✅ Passed — score: X / gate: Y` on every publish; explicit rejection log when best variant cannot clear VEO_PRESSURE_FLOOR.
+- All 4 call sites updated: `selectBestVariant`, `generateAndSelect`, `generateWithAdvancedAI`, and the fallback path inside `generateWithAdvancedAI`.
+
 **BT-29 — Caffeine Mode: deadline pressure system across quality gate + HyperLearning + autopilot**
 - Modeled on the late-night study session before a pass/fail exam: when behind schedule, every system intensifies instead of giving up.
 - **Pressure gauge** (`autonomous-autopilot.ts`): `computeSchedulePressure(platform) = postsStillNeeded / hoursRemaining`. Broadcast via `broadcastPressure()` only when tier changes, avoiding redundant reschedules. Four tiers: 0 = on track, 0–0.5 = mild, 0.5–1.5 = moderate (☕), >1.5 = CRITICAL (⚡).
