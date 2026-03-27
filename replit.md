@@ -320,6 +320,15 @@ Ten hardcoded/random data sources replaced with real DB-sourced or deterministic
 - Gate fallback log: `[VeoGate] ✅ Passed — score: X / gate: Y` on every publish; explicit rejection log when best variant cannot clear VEO_PRESSURE_FLOOR.
 - All 4 call sites updated: `selectBestVariant`, `generateAndSelect`, `generateWithAdvancedAI`, and the fallback path inside `generateWithAdvancedAI`.
 
+**BT-31 — URL Content Generation: async FFmpeg jobs + audio/video render fixes**
+- **Async FFmpeg job store** (`server/routes/socialMedia.ts`): Added `ffmpegJobs` Map + `pruneStaleFFmpegJobs()` (10-min TTL). The `/api/social/generate-video` route now fires FFmpeg asynchronously and immediately returns `{ job_id }` — no more 6+ minute HTTP timeouts.
+- **`/video-job/:jobId` polling** (`server/routes/socialMedia.ts`): Updated to check `ffmpegJobs` map FIRST (for `ffmpeg_*`-prefixed job IDs), then fall through to Python AI service for non-FFmpeg jobs. Previously this always hit Python AI → 503 for every FFmpeg job poll.
+- **Multimodal pipeline resilience** (`server/services/multimodalGenerationService.ts`): Wrapped each step execution in individual try/catch inside `Promise.allSettled`. A failing video or audio worker no longer aborts the entire pipeline — empty assets are returned instead, triggering client-side fallback UI.
+- **Client-side 401 fix** (`client/src/components/content/ServerVideoGenerator.tsx`): `window.location.href` redirect on 401 replaced with wouter `setLocation()` + toast to prevent full page reload killing in-flight jobs. Added 6-minute `AbortController` timeout with distinct abort vs error messages.
+- **Video/MP4 dropdown wiring** (`client/src/pages/SocialMedia.tsx`): When `contentFormat === 'video'` and the multimodal pipeline returns 0 video assets (FFmpeg failed), synthetic video items are injected per selected platform — `ServerVideoGenerator` ALWAYS surfaces for the user.
+- **Audio from URL render fix** (`client/src/pages/SocialMedia.tsx`): When `contentFormat === 'audio'` and MaxCore `/generate/audio` is unavailable (returns empty), synthetic audio items are injected with available text content as the voiceover script.
+- **Voiceover Script fallback UI** (`client/src/pages/SocialMedia.tsx`): Added `item.format === 'audio' && !item.mediaUrl` branch in both the URL tab and the Create Post tab — displays a `Mic2`-icon "Voiceover Script" card with the generated text instead of rendering nothing.
+
 **BT-29 — Caffeine Mode: deadline pressure system across quality gate + HyperLearning + autopilot**
 - Modeled on the late-night study session before a pass/fail exam: when behind schedule, every system intensifies instead of giving up.
 - **Pressure gauge** (`autonomous-autopilot.ts`): `computeSchedulePressure(platform) = postsStillNeeded / hoursRemaining`. Broadcast via `broadcastPressure()` only when tier changes, avoiding redundant reschedules. Four tiers: 0 = on track, 0–0.5 = mild, 0.5–1.5 = moderate (☕), >1.5 = CRITICAL (⚡).

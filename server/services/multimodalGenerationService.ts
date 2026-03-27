@@ -1735,18 +1735,28 @@ export async function handleGeneration(req: GenerationRequest): Promise<Multimod
     (s) => s.inputFrom && s.inputFrom !== 'normalizedInput',
   );
 
-  // Run all independent steps concurrently
+  // Run all independent steps concurrently.
+  // Each step is wrapped in try/catch so a failing video/audio render
+  // doesn't abort the entire pipeline — the client handles empty assets
+  // by showing appropriate fallback UI (e.g. ServerVideoGenerator).
   if (independentSteps.length > 0) {
-    await Promise.all(
+    await Promise.allSettled(
       independentSteps.map(async (step) => {
         const worker = workers[step.worker];
         if (!worker) {
           logger.warn(`[MultimodalGen] Unknown worker: ${step.worker}`);
+          stepOutputs.set(step.id, []);
           return;
         }
-        const assets = await worker.run(step, { normalized }, req);
-        stepOutputs.set(step.id, assets);
-        logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [parallel]`);
+        try {
+          const assets = await worker.run(step, { normalized }, req);
+          stepOutputs.set(step.id, assets);
+          logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [parallel]`);
+        } catch (err) {
+          logger.warn(`[MultimodalGen] Step ${step.id} (${step.worker}) failed — returning empty assets:`,
+            err instanceof Error ? err.message : String(err));
+          stepOutputs.set(step.id, []);
+        }
       }),
     );
   }
@@ -1763,9 +1773,15 @@ export async function handleGeneration(req: GenerationRequest): Promise<Multimod
       stepAssets: (Array.isArray(step.inputFrom) ? step.inputFrom : [step.inputFrom])
         .flatMap((id: string) => stepOutputs.get(id) ?? []),
     };
-    const assets = await worker.run(step, inputs, req);
-    stepOutputs.set(step.id, assets);
-    logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [sequential]`);
+    try {
+      const assets = await worker.run(step, inputs, req);
+      stepOutputs.set(step.id, assets);
+      logger.info(`[MultimodalGen] Step ${step.id} (${step.worker}) → ${assets.length} asset(s) [sequential]`);
+    } catch (err) {
+      logger.warn(`[MultimodalGen] Step ${step.id} (${step.worker}) failed — returning empty assets:`,
+        err instanceof Error ? err.message : String(err));
+      stepOutputs.set(step.id, []);
+    }
   }
 
   const allAssets = Array.from(stepOutputs.values()).flat();

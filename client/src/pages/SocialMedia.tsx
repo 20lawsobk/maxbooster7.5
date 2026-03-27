@@ -809,7 +809,38 @@ export default function SocialMedia() {
     },
     onSuccess: (data) => {
       const outputModality = contentFormat || 'text';
-      const generatedContent = mapAssetsToGeneratedContent(data.assets, outputModality);
+      let generatedContent = mapAssetsToGeneratedContent(data.assets, outputModality);
+
+      // Video: if the server-side FFmpeg generation failed/timed-out and no video
+      // assets came back, inject a synthetic item per platform so ServerVideoGenerator
+      // always surfaces for the user to kick off generation manually.
+      if (outputModality === 'video' && generatedContent.length === 0) {
+        const platforms = selectedPlatforms.length > 0 ? selectedPlatforms : ['tiktok'];
+        generatedContent = platforms.map((pid) => ({
+          platform: pid,
+          content: '',
+          format: 'video',
+          mediaUrl: undefined,
+          source: 'python_ai_model',
+        } as GeneratedContent));
+      }
+
+      // Audio: if MaxCore audio generation is unavailable and no audio assets came
+      // back, inject a synthetic item per platform so the voiceover-script fallback UI
+      // renders instead of a silent blank.
+      if (outputModality === 'audio' && generatedContent.length === 0) {
+        const allText = mapAssetsToGeneratedContent(data.assets);
+        const platforms = selectedPlatforms.length > 0 ? selectedPlatforms : ['instagram'];
+        const baseText = allText.length > 0 ? (allText[0].content || '') : '';
+        generatedContent = platforms.map((pid) => ({
+          platform: pid,
+          content: baseText,
+          format: 'audio',
+          mediaUrl: undefined,
+          source: 'python_ai_model',
+        } as GeneratedContent));
+      }
+
       setUrlGeneratedContent(generatedContent);
       toast({
         title: 'Content Generated from URL!',
@@ -1949,6 +1980,17 @@ return (
                                 </audio>
                               </div>
                             )}
+                            {item.format === 'audio' && !item.mediaUrl && (
+                              <div className="mb-2 rounded-lg border bg-muted/40 p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Mic2 className="h-4 w-4 text-muted-foreground" />
+                                  <span className="text-sm font-medium text-muted-foreground">Voiceover Script</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                                  {item.content || 'Use the generated text below as your voiceover script.'}
+                                </p>
+                              </div>
+                            )}
                             {item.format === 'video' && item.mediaUrl && (
                               <div className="mb-2">
                                 <video controls className="max-w-full h-auto rounded-lg border">
@@ -2296,6 +2338,16 @@ return (
                                     <source src={item.mediaUrl} type="audio/mpeg" />
                                     Your browser does not support the audio element.
                                   </audio>
+                                </div>
+                              ) : item.format === 'audio' && !item.mediaUrl ? (
+                                <div className="mb-2 rounded-lg border bg-muted/40 p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <Mic2 className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium text-muted-foreground">Voiceover Script</span>
+                                  </div>
+                                  <p className="text-sm text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                                    {item.content || 'Audio voiceover script will appear here once the audio generation service is available. Use the text content below as your script.'}
+                                  </p>
                                 </div>
                               ) : item.format === 'video' && item.mediaUrl ? (
                                 <div className="mb-2">

@@ -20,6 +20,28 @@ import {
 
 const router = Router();
 
+// ── Async FFmpeg job store ─────────────────────────────────────────────────────
+// Holds in-progress and completed FFmpeg video jobs.  Jobs are pruned after
+// 10 minutes so memory never grows unbounded.  The client uses the existing
+// /video-job/:jobId polling endpoint to check completion — same contract as
+// the Python AI service, so no client changes are needed.
+
+interface FFmpegJob {
+  status: 'processing' | 'done' | 'error';
+  result?: any;
+  error?: string;
+  createdAt: number;
+}
+
+const ffmpegJobs = new Map<string, FFmpegJob>();
+
+function pruneStaleFFmpegJobs() {
+  const now = Date.now();
+  for (const [id, job] of ffmpegJobs.entries()) {
+    if (now - job.createdAt > 10 * 60 * 1000) ffmpegJobs.delete(id);
+  }
+}
+
 // Type for authenticated requests
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -1738,8 +1760,16 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       }
     }
 
-    logger.info('[VideoGen] Using synchronous FFmpeg generator');
-    const result = await generateVideoFFmpeg({
+    // ── Async FFmpeg job — respond immediately, client polls for result ───────
+    // FFmpeg generation takes 2–5 minutes.  Holding the HTTP connection open
+    // that long causes proxy / browser timeouts and session-expiry 401s that
+    // the client interprets as auth failures.  Instead, fire the job in the
+    // background and return a job_id so the client can poll via /video-job/:id.
+    const jobId = `ffmpeg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    pruneStaleFFmpegJobs();
+    ffmpegJobs.set(jobId, { status: 'processing', createdAt: Date.now() });
+
+    const ffmpegParams = {
       topic: topic || hook || body || 'new music',
       platform: platform || 'tiktok',
       template: template || undefined,
@@ -1756,13 +1786,27 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       accent_color: accent_color || undefined,
       user_audio_path: user_audio_path || undefined,
       voiceover: !!voiceover,
+    };
+
+    logger.info(`[VideoGen] Starting async FFmpeg job ${jobId}`);
+
+    // Fire and forget — result stored in ffmpegJobs map
+    generateVideoFFmpeg(ffmpegParams).then((result: any) => {
+      if (result.success) {
+        ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
+        logger.info(`[VideoGen] Async FFmpeg job ${jobId} done`);
+      } else {
+        ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
+        logger.warn(`[VideoGen] Async FFmpeg job ${jobId} failed: ${result.error}`);
+      }
+    }).catch((err: any) => {
+      ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
+      logger.error(`[VideoGen] Async FFmpeg job ${jobId} threw:`, err);
     });
 
-    if (!result.success) {
-      return res.status(500).json({ success: false, message: result.error || 'Video generation failed' });
-    }
+    // Respond immediately so the HTTP connection is freed
+    return res.json({ success: true, job_id: jobId, status: 'processing' });
 
-    res.json(result);
   } catch (error) {
     logger.error('Failed to generate video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
@@ -1772,6 +1816,31 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
 router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { jobId } = req.params;
+
+    // Check the local FFmpeg job map first (jobs created by the async generate-video route).
+    // FFmpeg job IDs are prefixed with "ffmpeg_" so they never collide with Python AI job IDs.
+    const ffmpegJob = ffmpegJobs.get(jobId);
+    if (ffmpegJob) {
+      if (ffmpegJob.status === 'processing') {
+        return res.json({ status: 'processing', progress: 50 });
+      }
+      if (ffmpegJob.status === 'done' && ffmpegJob.result) {
+        const r = ffmpegJob.result;
+        return res.json({
+          status: 'completed',
+          video_url: r.url ?? null,
+          thumbnail_url: r.thumbnail_url ?? r.thumbnailUrl ?? null,
+          metadata: r.metadata ?? {},
+        });
+      }
+      // error or unknown state
+      return res.status(500).json({
+        status: 'error',
+        message: ffmpegJob.error ?? 'Video generation failed',
+      });
+    }
+
+    // Fall through to Python AI service for non-FFmpeg jobs
     const result = await pythonAIService.getVideoJobStatus(jobId);
     if (!result.success) {
       return res.status(503).json({ success: false, status: 'error', message: result.error });

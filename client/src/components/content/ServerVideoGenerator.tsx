@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -99,6 +100,7 @@ export function ServerVideoGenerator({
   initialAccentColor = '',
 }: ServerVideoGeneratorProps) {
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const [inputMode, setInputMode] = useState<InputMode>('text');
 
@@ -194,11 +196,19 @@ export function ServerVideoGenerator({
     setGeneratingStage('Starting…');
     setVideoUrl(null);
     setVideoInfo(null);
+
+    // 6-minute client-side timeout — FFmpeg generation can take up to ~5 min.
+    // Using AbortController prevents dangling connections from triggering hard
+    // navigations if the proxy drops the request mid-flight.
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6 * 60 * 1000);
+
     try {
       const response = await fetch('/api/social/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        signal: controller.signal,
         body: JSON.stringify({
           platform,
           aspect_ratio: aspectRatio,
@@ -215,8 +225,15 @@ export function ServerVideoGenerator({
       try { data = JSON.parse(rawText); } catch {
         throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
+
       if (response.status === 401) {
-        window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname)}`;
+        // SPA navigation — no full-page reload, no session loss
+        toast({
+          title: 'Session expired',
+          description: 'Please sign in again to continue.',
+          variant: 'destructive',
+        });
+        setLocation(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
         return;
       }
       if (!response.ok) throw new Error(data?.message || data?.error || 'Video generation failed');
@@ -235,12 +252,22 @@ export function ServerVideoGenerator({
         throw new Error(data.error || 'Video generation failed');
       }
     } catch (error: any) {
-      toast({
-        title: 'Generation Failed',
-        description: error.message || 'Could not generate video',
-        variant: 'destructive',
-      });
+      // Distinguish user-visible messages: abort (timeout/proxy drop) vs other errors
+      if (error.name === 'AbortError') {
+        toast({
+          title: 'Generation Timed Out',
+          description: 'The video took too long to generate. Try a shorter duration or simpler settings.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Generation Failed',
+          description: error.message || 'Could not generate video',
+          variant: 'destructive',
+        });
+      }
     } finally {
+      clearTimeout(timeoutId);
       setIsGenerating(false);
       setGeneratingStage('');
     }
