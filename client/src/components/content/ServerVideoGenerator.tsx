@@ -90,6 +90,22 @@ const PLATFORM_DEFAULT_RATIO: Record<string, string> = {
   threads: '1:1',
 };
 
+// Platform-specific visual templates — each platform has a distinct look & feel:
+//  TikTok/Reels: fast neon energy  |  YouTube: dark cinematic  |  LinkedIn: clean minimal
+//  Instagram: plasma promo  |  Twitter: punchy quick promo  |  Threads: storyteller
+//  Facebook: announcement  |  Google Business: gold luxury branding
+const PLATFORM_DEFAULT_TEMPLATE: Record<string, string> = {
+  tiktok:          'neon_pulse',
+  instagram:       'cinematic_promo',
+  instagram_reels: 'neon_pulse',
+  youtube:         'dark_cinema',
+  facebook:        'announcement',
+  twitter:         'promo',
+  linkedin:        'elegant_minimal',
+  threads:         'storyteller',
+  google_business: 'gold_luxury',
+};
+
 export function ServerVideoGenerator({
   platform,
   topic: topicProp,
@@ -303,13 +319,15 @@ export function ServerVideoGenerator({
     const id = setTimeout(() => {
       setAutoStartPending(false);
       const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
+      const platformTemplate = PLATFORM_DEFAULT_TEMPLATE[platform] || 'cinematic_promo';
+      const chosenTemplate   = initialTemplate || platformTemplate;
       callGenerateVideo({
         topic: topicProp?.trim() || initialHook?.trim(),
         hook:  initialHook  || undefined,
         body:  initialBody  || undefined,
         cta:   initialCta   || undefined,
-        template: initialTemplate || undefined,
-        quality:  initialTemplate ? 'cinematic' : undefined,
+        template: chosenTemplate,
+        quality:  'cinematic',
         bg_color:     initialBgColor     || undefined,
         accent_color: initialAccentColor || undefined,
         voiceover: hasScript,
@@ -556,13 +574,14 @@ export function ServerVideoGenerator({
                 onClick={() => {
                   autoStartFiredRef.current = false;
                   const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
+                  const platformTemplate = PLATFORM_DEFAULT_TEMPLATE[platform] || 'cinematic_promo';
                   callGenerateVideo({
                     topic: topicProp?.trim() || initialHook?.trim(),
                     hook:  initialHook  || undefined,
                     body:  initialBody  || undefined,
                     cta:   initialCta   || undefined,
-                    template: initialTemplate || undefined,
-                    quality:  initialTemplate ? 'cinematic' : undefined,
+                    template: initialTemplate || platformTemplate,
+                    quality:  'cinematic',
                     bg_color:     initialBgColor     || undefined,
                     accent_color: initialAccentColor || undefined,
                     voiceover: hasScript,

@@ -694,8 +694,10 @@ async function generateVoiceover(
 ): Promise<string | null> {
   try {
     // Build spoken text: hook . pause . body . pause . cta
+    // sanitizeVideoText strips emoji, URLs, hashtags, non-ASCII — all of which
+    // crash the flite lavfi filter and silently fail voiceover generation.
     const spoken = [hook, body, cta]
-      .map(t => t.replace(/['"\\]/g, ' ').replace(/\s+/g, ' ').trim())
+      .map(t => sanitizeVideoText(t, 300))
       .filter(Boolean)
       .join(' ... ');
 
@@ -715,8 +717,9 @@ async function generateVoiceover(
     ], { timeout: 30_000 });
 
     return existsSync(outPath) ? outPath : null;
-  } catch (e) {
-    logger.warn('[VideoGen] Voiceover generation failed, skipping:', e);
+  } catch (e: any) {
+    const msg = e?.stderr || e?.message || String(e);
+    logger.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
     return null;
   }
 }
