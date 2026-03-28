@@ -298,7 +298,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     { serveStatic, serveStaticFiles },
     { default: session },
     { verifyReadReplica },
-    { createFallbackSessionStore, getSessionConfig },
+    { createSessionStore, getSessionConfig },
     { ensureStripeProductsAndPrices },
     { originValidation },
     { distributedCache },
@@ -398,14 +398,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Store reference to session store for WebSocket authentication
   let activeSessionStore: any = null;
 
-  // FallbackSessionStore: always initializes PG first (guaranteed), then tries
-  // Redis/PDIM. If PDIM is up → Redis is primary, PG is auto-fallback.
-  // If PDIM is down → PG serves sessions immediately; Redis resumes when PDIM
-  // comes back (checked every 30 s). Logins never fail due to PDIM being down.
-  activeSessionStore = await createFallbackSessionStore();
+  activeSessionStore = await createSessionStore();
   const sessionConfig = getSessionConfig(activeSessionStore);
   app.use(session(sessionConfig));
-  logger.info('✅ Session store initialized (FallbackSessionStore: Redis/PDIM → PG)');
+  logger.info('✅ Session store initialized (PDIM)');
 
   // distributedCache.connect() is deferred to the setImmediate block below.
   // Keeping it here would stall route registration for up to ~20 s if PDIM is

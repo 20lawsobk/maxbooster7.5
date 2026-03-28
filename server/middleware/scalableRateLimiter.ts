@@ -2,31 +2,12 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
-// Fast timeout for Redis rate-limit ops — prevents PDIM congestion from blocking
-// every API request. Falls back to local sliding-window limiter immediately.
-const REDIS_RATELIMIT_TIMEOUT_MS = 400;
-
-function withRedisTimeout<T>(p: Promise<T>, ms = REDIS_RATELIMIT_TIMEOUT_MS): Promise<T> {
-  return Promise.race([
-    p,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`[RateLimit] Redis op timed out (${ms}ms)`)), ms)
-    ),
-  ]);
-}
-
 interface RateLimiterConfig {
   windowMs: number;
   maxRequests: number;
   keyGenerator?: (req: Request) => string;
   skip?: (req: Request) => boolean;
   onRateLimit?: (req: Request, res: Response) => void;
-}
-
-interface SlidingWindowEntry {
-  count: number;
-  resetTime: number;
-  tokens: number[];
 }
 
 const isProductionEnv = (): boolean =>
@@ -65,74 +46,28 @@ const skipRateLimiting = (req: Request): boolean => {
 };
 
 export class DistributedRateLimiter {
-  private localStore: Map<string, SlidingWindowEntry> = new Map();
   private config: RateLimiterConfig;
-  private redisClient: any = null;
+  private redisClient: any;
 
-  constructor(config: RateLimiterConfig, redisClient?: any) {
+  constructor(config: RateLimiterConfig, redisClient: any) {
     this.config = config;
-    this.redisClient = redisClient ?? null;
+    this.redisClient = redisClient;
   }
 
   async isRateLimited(key: string): Promise<{ limited: boolean; remaining: number }> {
-    if (this.redisClient) {
-      try {
-        const redisKey = `ratelimit:${key}`;
-        const windowSecs = Math.ceil(this.config.windowMs / 1000);
+    const redisKey = `ratelimit:${key}`;
+    const windowSecs = Math.ceil(this.config.windowMs / 1000);
 
-        // Fixed-window counter using INCR + EXPIRE — no Lua required, fully PDIM-compatible.
-        // withRedisTimeout ensures PDIM congestion never blocks the request for seconds;
-        // any timeout throws and the catch block falls back to localRateLimit immediately.
-        const count: number = await withRedisTimeout(this.redisClient.incr(redisKey));
-        if (count === 1) {
-          // First request in this window — set the expiry (fire-and-forget)
-          this.redisClient.expire(redisKey, windowSecs).catch(() => {});
-        }
-
-        const limited = count > this.config.maxRequests;
-        const remaining = Math.max(0, this.config.maxRequests - count);
-        return { limited, remaining };
-      } catch (error) {
-        const msg = (error as Error)?.message ?? String(error);
-        if (isProductionEnv()) {
-          // PDIM congested or Redis unavailable — fall back to per-process sliding-window
-          // limiter rather than failing open (which would be a security gap).
-          logger.warn('[RateLimit] Redis/PDIM unavailable — local sliding-window fallback engaged:', msg);
-          return this.localRateLimit(key);
-        }
-        logger.warn('[RateLimit] Redis counter failed in dev — using local fallback');
-      }
+    // Fixed-window counter using INCR + EXPIRE — PDIM-compatible.
+    const count: number = await this.redisClient.incr(redisKey);
+    if (count === 1) {
+      // First request in this window — set the expiry (fire-and-forget)
+      this.redisClient.expire(redisKey, windowSecs).catch(() => {});
     }
 
-    if (isProductionEnv()) {
-      // No Redis client configured in production — use local limiter rather than
-      // failing open. This should be rare since buildDistributedGlobal requires Redis.
-      logger.warn('[RateLimit] No Redis client in production — local sliding-window fallback engaged');
-      return this.localRateLimit(key);
-    }
-
-    return this.localRateLimit(key);
-  }
-
-  private localRateLimit(key: string): { limited: boolean; remaining: number } {
-    const now = Date.now();
-    const windowStart = now - this.config.windowMs;
-
-    let entry = this.localStore.get(key);
-
-    if (!entry) {
-      entry = { count: 0, resetTime: now + this.config.windowMs, tokens: [] };
-      this.localStore.set(key, entry);
-    }
-
-    entry.tokens = entry.tokens.filter(t => t > windowStart);
-
-    if (entry.tokens.length >= this.config.maxRequests) {
-      return { limited: true, remaining: 0 };
-    }
-
-    entry.tokens.push(now);
-    return { limited: false, remaining: this.config.maxRequests - entry.tokens.length };
+    const limited = count > this.config.maxRequests;
+    const remaining = Math.max(0, this.config.maxRequests - count);
+    return { limited, remaining };
   }
 
   middleware(): RequestHandler {
@@ -143,7 +78,13 @@ export class DistributedRateLimiter {
       }
 
       const key = this.config.keyGenerator?.(req) || req.ip || 'unknown';
-      const result = await this.isRateLimited(key);
+
+      let result: { limited: boolean; remaining: number };
+      try {
+        result = await this.isRateLimited(key);
+      } catch (err) {
+        return next(err);
+      }
 
       res.setHeader('X-RateLimit-Limit', this.config.maxRequests);
       res.setHeader('X-RateLimit-Remaining', result.remaining);
@@ -170,19 +111,7 @@ function buildDistributedGlobal(
   maxRequests: number,
   keyPrefix = 'global'
 ): RequestHandler {
-  let redisClient: any = null;
-
-  try {
-    redisClient = getRedisClient();
-  } catch (err) {
-    if (isProductionEnv()) {
-      throw new Error(
-        `[RateLimit] Redis is required in production for distributed rate limiting (${keyPrefix}). ` +
-        `Ensure REDIS_URL is set and Redis is reachable. Original error: ${err}`
-      );
-    }
-    logger.warn(`[RateLimit] Redis unavailable in dev — ${keyPrefix} rate limiter using in-memory fallback`);
-  }
+  const redisClient = getRedisClient();
 
   const limiter = new DistributedRateLimiter(
     {
@@ -202,24 +131,7 @@ function buildDistributedGlobal(
 }
 
 export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>): RequestHandler => {
-  let redisClient: any = null;
-
-  if (isProductionEnv()) {
-    try {
-      redisClient = getRedisClient();
-    } catch (err) {
-      throw new Error(
-        `[RateLimit] Redis is required in production for distributed rate limiting. ` +
-        `Ensure REDIS_URL is set. Original error: ${err}`
-      );
-    }
-  } else {
-    try {
-      redisClient = getRedisClient();
-    } catch {
-      logger.warn('[RateLimit] Redis unavailable — createScalableRateLimiter using in-memory (dev only)');
-    }
-  }
+  const redisClient = getRedisClient();
 
   const limiter = new DistributedRateLimiter(
     {

@@ -1,27 +1,19 @@
 import session from 'express-session';
 import { RedisStore } from 'connect-redis';
-import connectPgSimple from 'connect-pg-simple';
 import crypto from 'crypto';
 import { getRedisClient } from '../lib/redisClient.js';
 import { logger } from '../logger.js';
 
-const PgSessionStore = connectPgSimple(session);
-
 /**
- * In-process session cache — eliminates repeated PDIM/Postgres lookups when
- * PDIM is rate-limited or slow.  Each session is fetched from the backing
- * store at most once per L1_TTL_MS window.  set()/destroy() immediately
- * invalidate the cache entry so auth state changes (login, logout) take
- * effect instantly — there is no risk of a user staying logged in after
- * logout due to this cache.
+ * In-process session cache — eliminates repeated PDIM round-trips for hot
+ * session lookups.  Each session is fetched from PDIM at most once per
+ * L1_TTL_MS window.  set()/destroy() immediately invalidate the cache entry
+ * so auth state changes (login, logout) take effect instantly.
  *
  * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
  */
-// 5-minute L1 TTL gives in-process sessions a long runway to survive PDIM
-// outages (marked-down period is 30s, but same-worker requests are instant).
-// Logout calls destroy() which invalidates L1 immediately — no security risk.
-const L1_TTL_MS   = 300_000; // 5 minutes — covers entire PDIM recovery window
-const L1_MAX_SIZE = 5_000;   // max entries (LRU eviction on oldest-first key)
+const L1_TTL_MS   = 60_000; // 1 minute
+const L1_MAX_SIZE = 5_000;
 
 interface L1Entry { data: session.SessionData | null; expiresAt: number; }
 
@@ -30,17 +22,16 @@ class SessionL1Cache {
 
   get(sid: string): session.SessionData | null | undefined {
     const entry = this.map.get(sid);
-    if (!entry) return undefined;          // cache miss
+    if (!entry) return undefined;
     if (Date.now() > entry.expiresAt) {
       this.map.delete(sid);
-      return undefined;                    // expired
+      return undefined;
     }
-    return entry.data;                     // cache hit (may be null = no session)
+    return entry.data;
   }
 
   set(sid: string, data: session.SessionData | null): void {
     if (this.map.size >= L1_MAX_SIZE) {
-      // evict the oldest entry (Map insertion order)
       const oldest = this.map.keys().next().value;
       if (oldest) this.map.delete(oldest);
     }
@@ -52,212 +43,6 @@ class SessionL1Cache {
   }
 
   get size(): number { return this.map.size; }
-}
-
-/**
- * FallbackSessionStore
- *
- * Wraps a primary (Redis/PDIM) and secondary (PG) session store.
- * All operations are tried on the primary first. If the primary throws,
- * returns an error, or exceeds PRIMARY_OP_TIMEOUT_MS, the operation is
- * transparently retried on the secondary.
- *
- * PDIM HTTP abort timeout is 20 s — far too long for session ops during
- * auth.  PRIMARY_OP_TIMEOUT_MS caps each primary attempt at 3 s so login
- * and page loads never stall waiting for a slow PDIM.
- *
- * L1 in-process cache (SessionL1Cache) sits in front of both stores:
- * - get()     → returns from L1 if fresh; otherwise fetches from primary/PG
- *               and populates L1 for subsequent requests in the TTL window.
- * - set()     → writes through to primary/PG AND updates L1 immediately.
- * - destroy() → invalidates L1 immediately AND propagates to both stores.
- * - touch()   → refreshes L1 TTL; does NOT skip the underlying touch().
- *
- * VM-reserved deployment: PDIM is always-on, but may have brief hiccups
- * during restarts. PG catches all edge cases automatically.
- */
-class FallbackSessionStore extends session.Store {
-  private primaryDown = false;
-  private lastPrimaryCheck = 0;
-  private readonly PRIMARY_RETRY_MS    = 30_000; // re-probe primary every 30 s
-  private readonly PRIMARY_OP_TIMEOUT  = 500;    // max ms to wait for PDIM per op
-  // 500 ms: PG fallback is always available so there's no benefit waiting
-  // longer.  Old 3 000 ms value stalled requests for 3 s each during PDIM
-  // congestion; 800 ms was the first reduction, 500 ms further caps the overhead.
-  // Under healthy PDIM (<500 ms), sessions still serve from Redis.  Under
-  // congestion, PG fallback fires immediately — saving ~300 ms per request.
-  private readonly l1 = new SessionL1Cache();
-
-  /**
-   * Race a callback-based primary store operation against PRIMARY_OP_TIMEOUT.
-   * If the operation doesn't complete in time we treat it as a failure and
-   * fall through to Postgres — without waiting for PDIM's 20 s HTTP timeout.
-   */
-  private withPrimaryTimeout<T>(
-    op: (cb: (err: any, result?: T) => void) => void
-  ): Promise<{ ok: true; result: T | undefined } | { ok: false; err: any }> {
-    return new Promise((resolve) => {
-      let done = false;
-
-      const timer = setTimeout(() => {
-        if (done) return;
-        done = true;
-        resolve({ ok: false, err: new Error(`[SessionStore] PDIM op timed out (${this.PRIMARY_OP_TIMEOUT}ms)`) });
-      }, this.PRIMARY_OP_TIMEOUT);
-
-      op((err, result) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        if (err) resolve({ ok: false, err });
-        else resolve({ ok: true, result: result as T | undefined });
-      });
-    });
-  }
-
-  constructor(
-    private readonly primary: session.Store,
-    private readonly secondary: session.Store,
-  ) {
-    super();
-  }
-
-  private canTryPrimary(): boolean {
-    if (!this.primaryDown) return true;
-    if (Date.now() - this.lastPrimaryCheck >= this.PRIMARY_RETRY_MS) {
-      this.primaryDown = false; // allow a probe attempt
-      this.lastPrimaryCheck = Date.now();
-    }
-    return !this.primaryDown;
-  }
-
-  private markPrimaryDown(err: unknown) {
-    if (!this.primaryDown) {
-      logger.warn('[SessionStore] Primary (Redis/PDIM) failed — falling back to PostgreSQL:', (err as any)?.message ?? err);
-      this.primaryDown = true;
-      this.lastPrimaryCheck = Date.now();
-    }
-  }
-
-  private markPrimaryUp() {
-    if (this.primaryDown) {
-      logger.info('[SessionStore] Primary (Redis/PDIM) recovered — resuming Redis sessions');
-      this.primaryDown = false;
-    }
-  }
-
-  get(sid: string, cb: (err: any, session?: session.SessionData | null) => void): void {
-    // L1 hit — no PDIM/PG round-trip needed
-    const cached = this.l1.get(sid);
-    if (cached !== undefined) return cb(null, cached);
-
-    const onResult = (data: session.SessionData | null) => {
-      this.l1.set(sid, data);
-      cb(null, data);
-    };
-
-    if (!this.canTryPrimary()) {
-      return this.secondary.get(sid, (err, data) => {
-        if (err) return cb(err);
-        onResult(data ?? null);
-      });
-    }
-
-    this.withPrimaryTimeout<session.SessionData | null>(
-      (done) => this.primary.get(sid, (err, data) => done(err, data ?? null))
-    ).then((r) => {
-      if (r.ok) {
-        this.markPrimaryUp();
-        onResult(r.result ?? null);
-      } else {
-        this.markPrimaryDown(r.err);
-        this.secondary.get(sid, (err2, data2) => {
-          if (err2) return cb(err2);
-          onResult(data2 ?? null);
-        });
-      }
-    });
-  }
-
-  set(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
-    // Write-through: update L1 immediately so subsequent get()s see the new data
-    this.l1.set(sid, sess);
-
-    if (!this.canTryPrimary()) {
-      return this.secondary.set(sid, sess, cb);
-    }
-
-    this.withPrimaryTimeout<void>(
-      (done) => this.primary.set(sid, sess, (err) => done(err))
-    ).then(async (r) => {
-      if (r.ok) {
-        this.markPrimaryUp();
-        // Synchronously mirror to PG (with a 300ms cap) before calling cb.
-        // This ensures every session write is durable in Postgres so that
-        // cross-worker L1 misses during PDIM outages never produce a 401.
-        await new Promise<void>((resolve) => {
-          const cap = setTimeout(resolve, 300);
-          this.secondary.set(sid, sess, (err) => {
-            clearTimeout(cap);
-            if (err) logger.warn('[SessionStore] PG write-through error (session durability reduced):', err);
-            resolve();
-          });
-        });
-        cb?.();
-      } else {
-        this.markPrimaryDown(r.err);
-        this.secondary.set(sid, sess, cb);
-      }
-    });
-  }
-
-  destroy(sid: string, cb?: (err?: any) => void): void {
-    // Invalidate L1 immediately — logout must take effect at once
-    this.l1.invalidate(sid);
-
-    const done = (err?: any) => cb?.(err);
-    if (!this.canTryPrimary()) {
-      return this.secondary.destroy(sid, done);
-    }
-
-    this.withPrimaryTimeout<void>(
-      (resolve) => this.primary.destroy(sid, (err) => resolve(err))
-    ).then((r) => {
-      if (!r.ok) this.markPrimaryDown(r.err);
-      else this.markPrimaryUp();
-      // Always attempt secondary cleanup too (belt-and-suspenders)
-      this.secondary.destroy(sid, done);
-    });
-  }
-
-  touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
-    // Refresh L1 TTL on touch so active users don't keep re-fetching
-    this.l1.set(sid, sess);
-
-    if (!this.canTryPrimary()) {
-      // Mirror touch to PG so session TTL stays fresh even while PDIM is down
-      (this.secondary as any).touch?.(sid, sess, cb) ?? cb?.();
-      return;
-    }
-
-    const primaryTouch = (this.primary as any).touch;
-    if (!primaryTouch) {
-      // No touch on Redis store — still refresh PG TTL
-      (this.secondary as any).touch?.(sid, sess, () => {});
-      cb?.();
-      return;
-    }
-
-    this.withPrimaryTimeout<void>(
-      (resolve) => primaryTouch.call(this.primary, sid, sess, (err?: any) => resolve(err))
-    ).then((r) => {
-      if (!r.ok) this.markPrimaryDown(r.err);
-      else this.markPrimaryUp();
-      // Keep PG TTL in sync so session doesn't expire in fallback store
-      (this.secondary as any).touch?.(sid, sess, () => {});
-      cb?.();
-    });
-  }
 }
 
 /**
@@ -325,8 +110,58 @@ function createIoredisAdapter(ioredisClient: any) {
   };
 }
 
+/**
+ * PDIM session store with L1 in-process cache on top.
+ *
+ * PDIM is always reachable — no PG fallback, no degraded mode.
+ * get()     → L1 hit returns immediately; miss fetches from PDIM and caches.
+ * set()     → writes through to PDIM AND updates L1 immediately.
+ * destroy() → invalidates L1 AND propagates to PDIM.
+ * touch()   → refreshes L1 TTL and forwards to PDIM store.
+ */
+class PdimSessionStore extends session.Store {
+  private readonly l1 = new SessionL1Cache();
+  private readonly inner: session.Store;
+
+  constructor(inner: session.Store) {
+    super();
+    this.inner = inner;
+  }
+
+  get(sid: string, cb: (err: any, session?: session.SessionData | null) => void): void {
+    const cached = this.l1.get(sid);
+    if (cached !== undefined) return cb(null, cached);
+
+    this.inner.get(sid, (err, data) => {
+      if (err) return cb(err);
+      const result = data ?? null;
+      this.l1.set(sid, result);
+      cb(null, result);
+    });
+  }
+
+  set(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+    this.l1.set(sid, sess);
+    this.inner.set(sid, sess, cb);
+  }
+
+  destroy(sid: string, cb?: (err?: any) => void): void {
+    this.l1.invalidate(sid);
+    this.inner.destroy(sid, cb);
+  }
+
+  touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+    this.l1.set(sid, sess);
+    const primaryTouch = (this.inner as any).touch;
+    if (primaryTouch) {
+      primaryTouch.call(this.inner, sid, sess, cb);
+    } else {
+      cb?.();
+    }
+  }
+}
+
 // VM-reserved deployment: retry PDIM ping a few times on startup.
-// The VM might be briefly unresponsive right as our server starts.
 async function pingWithRetry(client: any, maxAttempts = 8, delayMs = 2_000): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -343,132 +178,27 @@ async function pingWithRetry(client: any, maxAttempts = 8, delayMs = 2_000): Pro
   throw lastErr;
 }
 
+/**
+ * Create the PDIM-backed session store.
+ * PDIM is always reachable — throws on failure rather than falling back.
+ */
 export async function createSessionStore(): Promise<session.Store> {
   try {
     const ioredisClient = getRedisClient();
     await pingWithRetry(ioredisClient);
 
-    const store = new RedisStore({
+    const redisStore = new RedisStore({
       client: createIoredisAdapter(ioredisClient) as any,
       prefix: 'sess:',
       ttl: 24 * 60 * 60,
     });
 
-    logger.info('✅ Redis session store created (sessions survive restarts, shared across instances)');
-    return store;
+    logger.info('✅ PDIM session store created (sessions survive restarts, shared across instances)');
+    return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Failed to create Redis session store:', errMsg);
+    logger.error('❌ Failed to create PDIM session store:', errMsg);
     throw new Error(`Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`);
-  }
-}
-
-/**
- * Create a PostgreSQL-backed session store using the app's existing DB connection.
- * Shared across all cluster workers — unlike MemoryStore which is per-process.
- * Falls back gracefully if the table can't be created.
- */
-export async function createPgSessionStore(): Promise<session.Store> {
-  try {
-    const connectionString = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL;
-    if (!connectionString) {
-      throw new Error('No database connection string available');
-    }
-
-    const store = new PgSessionStore({
-      conString: connectionString,
-      createTableIfMissing: true,
-      tableName: 'session',
-      ttl: 24 * 60 * 60, // 24 hours in seconds
-      pruneSessionInterval: 60 * 60, // Prune expired sessions every hour
-    });
-
-    // Verify the store is working
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => reject(new Error('PG session store ping timed out')), 5000);
-      (store as any).pool?.query('SELECT 1', (err: any) => {
-        clearTimeout(timeout);
-        if (err) reject(err);
-        else resolve();
-      });
-      // If pool isn't exposed, just resolve — createTableIfMissing handles setup
-      if (!(store as any).pool) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
-
-    logger.info('✅ PostgreSQL session store ready (shared across all workers)');
-    return store;
-  } catch (error: unknown) {
-    const errMsg = error instanceof Error ? error.message : String(error);
-    logger.error('❌ PostgreSQL session store failed:', errMsg);
-    throw new Error(`PostgreSQL session store failed: ${errMsg}`);
-  }
-}
-
-/**
- * createFallbackSessionStore
- *
- * Always initializes PostgreSQL as the guaranteed fallback.
- * Then attempts to initialize Redis/PDIM as the primary.
- *
- * If PDIM is up → returns a FallbackSessionStore(Redis, PG) that
- *   transparently uses Redis for all operations but falls back to PG
- *   automatically on any error (and retries Redis every 30 s).
- *
- * If PDIM is down → returns the PG store directly so logins work
- *   immediately; the FallbackSessionStore will switch back to Redis
- *   once PDIM recovers (on the next 30 s probe cycle).
- */
-export async function createFallbackSessionStore(): Promise<session.Store> {
-  // PG must succeed — it's the guaranteed safety net
-  let pgStore: session.Store;
-  try {
-    pgStore = await createPgSessionStore();
-  } catch (pgErr) {
-    logger.error('[SessionStore] CRITICAL: PostgreSQL session store failed to initialize:', pgErr);
-    throw pgErr;
-  }
-
-  // Try Redis/PDIM — fail gracefully if it's not available
-  let redisStore: session.Store | null = null;
-  try {
-    const ioredisClient = getRedisClient();
-    // Fast check only — if PDIM is VM-reserved it'll answer immediately;
-    // if autoscale/down it'll 503 immediately. Either way we don't block.
-    await Promise.race([
-      ioredisClient.ping(),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('PDIM ping timeout')), 3000)),
-    ]);
-
-    redisStore = new RedisStore({
-      client: createIoredisAdapter(ioredisClient) as any,
-      prefix: 'sess:',
-      ttl: 24 * 60 * 60,
-    });
-    logger.info('✅ Redis/PDIM session store created — using FallbackSessionStore (Redis → PG)');
-  } catch (redisErr) {
-    const msg = redisErr instanceof Error ? redisErr.message : String(redisErr);
-    logger.warn(`[SessionStore] Redis/PDIM unavailable at startup (${msg}) — starting with PG only; will auto-recover when PDIM comes back`);
-  }
-
-  if (redisStore) {
-    return new FallbackSessionStore(redisStore, pgStore);
-  }
-  // Start PG-only but wrap in FallbackSessionStore so PDIM auto-reconnect
-  // works once the server detects it. We pass a lazy-init "pending" Redis
-  // store that will fail gracefully (markPrimaryDown keeps routing to PG).
-  try {
-    const ioredisClient = getRedisClient();
-    const lazyRedisStore = new RedisStore({
-      client: createIoredisAdapter(ioredisClient) as any,
-      prefix: 'sess:',
-      ttl: 24 * 60 * 60,
-    });
-    return new FallbackSessionStore(lazyRedisStore, pgStore);
-  } catch {
-    return pgStore;
   }
 }
 

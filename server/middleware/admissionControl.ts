@@ -10,7 +10,7 @@
  * limit and provides protection before write-scaling infrastructure is in
  * place.
  *
- * Falls back gracefully to an in-process counter when Redis is unavailable.
+ * PDIM is always reachable — no per-process fallback.
  */
 
 import type { Request, Response, NextFunction } from 'express';
@@ -21,64 +21,21 @@ const COUNTER_KEY = 'api:inflight';
 const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '50000', 10);
 const RETRY_AFTER_SECONDS = 5;
 
-// When Redis is unavailable, each replica falls back to independent per-process tracking.
-// VM Reserve runs a single Node.js process (no internal cluster), so the per-process
-// limit equals the global limit. Default of '1' is correct for VM Reserve; set
-// CLUSTER_WORKERS env var to the actual worker count only if you add Node.js clustering.
-const CLUSTER_WORKERS_PER_REPLICA = parseInt(process.env.CLUSTER_WORKERS ?? '1', 10);
-const DEGRADED_PER_PROCESS_LIMIT = Math.max(
-  50,
-  Math.ceil(MAX_CONCURRENT_REQUESTS / CLUSTER_WORKERS_PER_REPLICA)
-);
-
 const isProduction = () =>
   process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
 
-let _inProcess = 0;
-let _redisFailed = false;
-
-// Fast timeout for Redis operations — prevents PDIM congestion from blocking
-// admission control checks for seconds. If Redis takes longer than this, we
-// immediately fall back to in-process counting. Matches ioredis commandTimeout.
-const REDIS_OP_TIMEOUT_MS = 400;
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error(`[AdmissionControl] Redis op timed out (${ms}ms)`)), ms)
-    ),
-  ]);
-}
-
 async function increment(): Promise<number> {
-  try {
-    const redis = getRedisClient();
-    const count = await withTimeout(redis.incr(COUNTER_KEY), REDIS_OP_TIMEOUT_MS);
-    // Fire-and-forget expire — don't block the request for this housekeeping op
-    redis.expire(COUNTER_KEY, 60).catch(() => {});
-    _redisFailed = false;
-    return count;
-  } catch {
-    if (!_redisFailed) {
-      logger.warn(
-        `[AdmissionControl] Redis unavailable — degraded mode, per-process limit: ${DEGRADED_PER_PROCESS_LIMIT}`
-      );
-      _redisFailed = true;
-    }
-    return ++_inProcess;
-  }
+  const redis = getRedisClient();
+  const count = await redis.incr(COUNTER_KEY);
+  // Fire-and-forget expire — don't block the request for this housekeeping op
+  redis.expire(COUNTER_KEY, 60).catch(() => {});
+  return count;
 }
 
 async function decrement(): Promise<void> {
-  try {
-    const redis = getRedisClient();
-    const v = await withTimeout(redis.decr(COUNTER_KEY), REDIS_OP_TIMEOUT_MS);
-    if (v < 0) redis.set(COUNTER_KEY, '0').catch(() => {});
-    _redisFailed = false;
-  } catch {
-    if (_inProcess > 0) _inProcess--;
-  }
+  const redis = getRedisClient();
+  const v = await redis.decr(COUNTER_KEY);
+  if (v < 0) redis.set(COUNTER_KEY, '0').catch(() => {});
 }
 
 export async function admissionControl(
@@ -90,15 +47,17 @@ export async function admissionControl(
     return next();
   }
 
-  const current = await increment();
-  const effectiveLimit = _redisFailed ? DEGRADED_PER_PROCESS_LIMIT : MAX_CONCURRENT_REQUESTS;
+  let current: number;
+  try {
+    current = await increment();
+  } catch (err) {
+    return next(err);
+  }
 
-  if (current > effectiveLimit) {
-    await decrement();
+  if (current > MAX_CONCURRENT_REQUESTS) {
+    await decrement().catch(() => {});
     logger.warn(
-      `[AdmissionControl] Shedding request — inflight: ${current}/${effectiveLimit}` +
-      (_redisFailed ? ` (degraded/per-process)` : ` (global)`) +
-      ` path: ${req.path}`
+      `[AdmissionControl] Shedding request — inflight: ${current}/${MAX_CONCURRENT_REQUESTS} (global) path: ${req.path}`
     );
     res.setHeader('Retry-After', String(RETRY_AFTER_SECONDS));
     res.status(503).json({
