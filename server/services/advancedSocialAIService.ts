@@ -1053,7 +1053,36 @@ class AdvancedSocialAIService {
     logger.info('[AdvancedSocialAI] GPT-5.2 level social AI engine initialized');
   }
 
+  // ── In-memory content cache ────────────────────────────────────────────────
+  // Prevents redundant computation when the same topic+platform+tone combination
+  // is requested within a short window (e.g. autopilot batch, retries).
+  // TTL: 90 seconds. Max entries: 200 (LRU-lite: evict oldest when full).
+  private static _contentCache = new Map<string, { ts: number; result: AdvancedGeneratedContent }>();
+  private static readonly _CACHE_TTL_MS = 90_000;
+  private static readonly _CACHE_MAX    = 200;
+
+  private static _cacheKey(r: AdvancedContentRequest): string {
+    return [
+      r.userId || 'anon',
+      (r.platforms || []).join(','),
+      r.topic || '',
+      r.tone || '',
+      r.genre || '',
+      r.contentType || '',
+      r.objective || '',
+      r.artistName || '',
+    ].join('|');
+  }
+
   async generateAdvancedContent(request: AdvancedContentRequest): Promise<AdvancedGeneratedContent> {
+    // Check cache
+    const cacheKey = AdvancedSocialAIService._cacheKey(request);
+    const cached   = AdvancedSocialAIService._contentCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < AdvancedSocialAIService._CACHE_TTL_MS) {
+      logger.info(`[AdvancedSocialAI] Cache hit for key=${cacheKey.slice(0, 60)}`);
+      return cached.result;
+    }
+
     await this.initialize();
 
     const userContext = await this.getUserContext(request.userId);
@@ -1080,7 +1109,7 @@ class AdvancedSocialAIService {
 
     logger.info(`[AdvancedSocialAI] Generated content for user ${request.userId}: score=${scoring.overall.toFixed(1)}`);
 
-    return {
+    const result: AdvancedGeneratedContent = {
       primary: {
         headline: hook,
         body: fullContent,
@@ -1098,22 +1127,22 @@ class AdvancedSocialAIService {
       viralPotential,
       audienceResonance,
     };
+
+    // Store in cache (evict oldest entry if at capacity)
+    if (AdvancedSocialAIService._contentCache.size >= AdvancedSocialAIService._CACHE_MAX) {
+      const oldestKey = AdvancedSocialAIService._contentCache.keys().next().value;
+      if (oldestKey) AdvancedSocialAIService._contentCache.delete(oldestKey);
+    }
+    AdvancedSocialAIService._contentCache.set(cacheKey, { ts: Date.now(), result });
+    return result;
   }
 
   private async getUserContext(userId: string): Promise<any> {
     try {
-      const [brandVoice] = await db
-        .select()
-        .from(userBrandVoices)
-        .where(eq(userBrandVoices.userId, userId))
-        .limit(1);
-
-      const [preferences] = await db
-        .select()
-        .from(autopilotPreferences)
-        .where(eq(autopilotPreferences.userId, userId))
-        .limit(1);
-
+      const [[brandVoice], [preferences]] = await Promise.all([
+        db.select().from(userBrandVoices).where(eq(userBrandVoices.userId, userId)).limit(1),
+        db.select().from(autopilotPreferences).where(eq(autopilotPreferences.userId, userId)).limit(1),
+      ]);
       return {
         brandVoice: brandVoice?.voiceProfile,
         artistName: preferences?.artistName || 'Artist',

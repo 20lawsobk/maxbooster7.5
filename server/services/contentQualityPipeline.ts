@@ -308,17 +308,10 @@ const SELF_IDENTIFICATION_PHRASES = [
 class ContentQualityPipeline {
   async buildContext(userId: string, baseContext: Partial<ContentContext>): Promise<ContentContext> {
     try {
-      const [brandVoiceResult] = await db
-        .select()
-        .from(userBrandVoices)
-        .where(eq(userBrandVoices.userId, userId))
-        .limit(1);
-
-      const [preferencesResult] = await db
-        .select()
-        .from(autopilotPreferences)
-        .where(eq(autopilotPreferences.userId, userId))
-        .limit(1);
+      const [[brandVoiceResult], [preferencesResult]] = await Promise.all([
+        db.select().from(userBrandVoices).where(eq(userBrandVoices.userId, userId)).limit(1),
+        db.select().from(autopilotPreferences).where(eq(autopilotPreferences.userId, userId)).limit(1),
+      ]);
 
       const brandVoice = brandVoiceResult?.voiceProfile as BrandVoiceData | undefined;
 
@@ -517,6 +510,62 @@ class ContentQualityPipeline {
    *  - If the primary signal is weak, inject the minimum effective change:
    *    upgrade the CTA and optionally prepend a signal-boosting phrase.
    */
+  /**
+   * Validate that generated content meets platform-specific constraints.
+   * Checks character limits, hashtag count, and emoji count.
+   * Returns a PlatformOptimization descriptor used by the scoring pipeline.
+   * Called both internally (as this.validatePlatformConstraints) and
+   * externally from contentQualityGate (as contentQualityPipeline.validatePlatformConstraints).
+   */
+  validatePlatformConstraints(
+    content: string,
+    hashtags: string[],
+    platform: string
+  ): PlatformOptimization {
+    const key = platform.toLowerCase().replace(/[^a-z]/g, '');
+
+    const PLATFORM_LIMITS: Record<string, { maxChars: number; optimalHashtags: number; optimalEmojis: number }> = {
+      instagram:       { maxChars: 2200,  optimalHashtags: 10, optimalEmojis: 5 },
+      tiktok:          { maxChars: 2200,  optimalHashtags: 5,  optimalEmojis: 3 },
+      twitter:         { maxChars: 280,   optimalHashtags: 2,  optimalEmojis: 2 },
+      x:               { maxChars: 280,   optimalHashtags: 2,  optimalEmojis: 2 },
+      linkedin:        { maxChars: 3000,  optimalHashtags: 5,  optimalEmojis: 1 },
+      facebook:        { maxChars: 5000,  optimalHashtags: 3,  optimalEmojis: 4 },
+      youtube:         { maxChars: 5000,  optimalHashtags: 5,  optimalEmojis: 2 },
+      threads:         { maxChars: 500,   optimalHashtags: 3,  optimalEmojis: 3 },
+      googlebusiness:  { maxChars: 1500,  optimalHashtags: 0,  optimalEmojis: 2 },
+    };
+
+    const limits = PLATFORM_LIMITS[key] || { maxChars: 2200, optimalHashtags: 5, optimalEmojis: 3 };
+
+    const emojiCount    = (content.match(/\p{Emoji_Presentation}/gu) || []).length;
+    const hashtagCount  = hashtags.length;
+    const characterCount = content.length;
+    const issues: string[] = [];
+
+    if (characterCount > limits.maxChars) {
+      issues.push(`Content too long: ${characterCount} / ${limits.maxChars} characters`);
+    }
+    if (hashtagCount > limits.optimalHashtags * 2) {
+      issues.push(`Too many hashtags: ${hashtagCount} (optimal: ${limits.optimalHashtags})`);
+    }
+    if (emojiCount > limits.optimalEmojis * 3) {
+      issues.push(`Too many emojis: ${emojiCount} (optimal: ${limits.optimalEmojis})`);
+    }
+
+    return {
+      platform: key,
+      characterCount,
+      maxCharacters: limits.maxChars,
+      hashtagCount,
+      optimalHashtags: limits.optimalHashtags,
+      emojiCount,
+      optimalEmojis: limits.optimalEmojis,
+      isValid: issues.length === 0,
+      issues,
+    };
+  }
+
   private applyAlgorithmSignalOptimization(
     headline: string,
     body: string,
