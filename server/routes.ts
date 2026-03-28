@@ -4077,10 +4077,12 @@ export async function registerRoutes(
 
   for (const { path, platform } of oauthCallbackPaths) {
     app.get(path, (req: Request, res: Response) => {
-      // Forward to the existing OAuth callback handler with query params
-      const queryString = new URLSearchParams(req.query as Record<string, string>).toString();
-      const redirectUrl = `/api/social/callback/${platform}${queryString ? '?' + queryString : ''}`;
-      res.redirect(redirectUrl);
+      // Preserve the raw query string exactly as received — re-serialising via
+      // URLSearchParams can corrupt OAuth codes/state that contain '+' or other
+      // characters that round-trip differently through qs.parse → URLSearchParams.
+      const rawQuery = req.url.split('?').slice(1).join('?');
+      const redirectUrl = `/api/social/callback/${platform}${rawQuery ? '?' + rawQuery : ''}`;
+      res.redirect(302, redirectUrl);
     });
   }
   log('OAuth callback redirect routes registered');

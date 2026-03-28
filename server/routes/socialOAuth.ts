@@ -34,6 +34,9 @@ const PLATFORMS = {
     scope: 'threads_basic,threads_content_publish',
     clientId: process.env.THREADS_APP_ID,
     clientSecret: process.env.THREADS_APP_SECRET,
+    // redirectUri must be set explicitly and match exactly what is registered
+    // in the Meta developer console under Threads → Valid OAuth Redirect URIs.
+    redirectUri: process.env.THREADS_REDIRECT_URI || `${process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app'}/auth/threads/callback`,
     usePKCE: false,
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
