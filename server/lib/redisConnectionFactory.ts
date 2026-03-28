@@ -1,103 +1,45 @@
 /**
- * Redis Connection Factory (async / BoosterState-aware)
+ * Redis Connection Factory
  *
- * Alternative entry-point for code that wants Redis lazily and is happy to
- * receive null when no broker is configured.  Prefers a real ioredis
- * connection (REDIS_URL) and falls back to BoosterState (the KV sidecar).
- *
- * Distinct from redisClient.ts which is synchronous and used by BullMQ.
- * Used by: queryCache, services that need optional Redis
+ * Max Booster uses PDIM as its sole Redis-compatible backend.
+ * All Redis operations route through the PDIM HTTP exec endpoint.
  *
  * Exports:
- *   getRedisClient()    — async, returns ioredis|BoosterState|null
- *   createRedisClient() — always creates a fresh ioredis instance (for BullMQ)
- *   isRedisHealthy()    — boolean liveness check
- *   shutdownRedis()     — graceful shutdown for both backends
+ *   getRedisClient()  — returns the PDIM client (ioredis-compatible)
+ *   createRedisClient() — returns a duplicate PDIM connection (for BullMQ)
+ *   isRedisHealthy()  — PDIM liveness check
+ *   shutdownRedis()   — no-op (PDIM manages its own lifecycle)
  */
 
-import { getBoosterStateClient, isBoosterStateHealthy, shutdownBoosterState } from './boosterStateClient.js';
 import { logger } from '../logger.js';
-import Redis from 'ioredis';
-import { config } from '../config/defaults.js';
-import { applyIoredisCompatShim } from './redisCompat.js';
 import { getPdimClient, isPdimConfigured } from './pdimClient.js';
 
 export type RedisClientType = any;
 
-let redisClient: Redis | null = null;
-
 export async function getRedisClient(): Promise<any> {
-  // Priority 1: PDIM — complete replacement for Redis AND internal PD storage.
-  // Always preferred when configured; no BoosterState or ioredis fallback needed.
-  if (isPdimConfigured()) {
-    return getPdimClient();
+  if (!isPdimConfigured()) {
+    throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
   }
-
-  // Priority 2: Direct ioredis connection (non-PDIM environments)
-  if (config.redis.url) {
-    if (!redisClient) {
-      redisClient = new Redis(config.redis.url, {
-        maxRetriesPerRequest: config.redis.maxRetries,
-        retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
-        connectTimeout: 2000,
-        commandTimeout: 500,
-        enableReadyCheck: false,
-      });
-      redisClient.on('error', (err) => logger.error('Redis error:', err));
-      applyIoredisCompatShim(redisClient);
-    }
-    return redisClient;
-  }
-
-  // Priority 3: BoosterState sidecar (legacy / dev environments without PDIM or Redis)
-  try {
-    return await getBoosterStateClient();
-  } catch (error: unknown) {
-    logger.warn('⚠️ No Redis backend available (no PDIM, REDIS_URL, or BoosterState) — in-memory fallback only');
-    return null;
-  }
+  return getPdimClient();
 }
 
 export async function createRedisClient(): Promise<any> {
-  // PDIM fully replaces Redis and internal PD — use it when configured
-  if (isPdimConfigured()) {
-    return getPdimClient().duplicate();
+  if (!isPdimConfigured()) {
+    throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
   }
-  if (config.redis.url) {
-    const client = new Redis(config.redis.url, {
-      maxRetriesPerRequest: config.redis.maxRetries,
-      retryStrategy: (times) => Math.min(times * config.redis.retryDelay, 2000),
-      connectTimeout: 2000,
-      commandTimeout: 500,
-      enableReadyCheck: false,
-    });
-    client.on('error', (err) => logger.error('Redis error (new client):', err));
-    applyIoredisCompatShim(client);
-    return client;
-  }
-  return getRedisClient();
+  return getPdimClient().duplicate();
 }
 
 export async function isRedisHealthy(): Promise<boolean> {
-  // PDIM is the primary backend — ping it to assess health
-  if (isPdimConfigured()) {
-    try {
-      await getPdimClient().ping();
-      return true;
-    } catch {
-      return false;
-    }
+  if (!isPdimConfigured()) return false;
+  try {
+    await getPdimClient().ping();
+    return true;
+  } catch {
+    return false;
   }
-  if (config.redis.url && redisClient) {
-    return redisClient.status === 'ready';
-  }
-  return await isBoosterStateHealthy();
 }
 
 export async function shutdownRedis(): Promise<void> {
-  if (redisClient) {
-    await redisClient.quit();
-    redisClient = null;
-  }
-  return await shutdownBoosterState();
+  logger.info('[Redis] PDIM manages its own lifecycle — no shutdown action needed');
 }
