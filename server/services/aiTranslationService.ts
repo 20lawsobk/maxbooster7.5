@@ -270,13 +270,9 @@ class AITranslationService {
         );
         results.push(translated);
       } catch (error) {
-        logger.error(`Translation to ${targetLang} failed:`, error);
-        results.push(this.createFallbackTranslation(
-          request.content,
-          request.headline,
-          request.hashtags || [],
-          targetLang
-        ));
+        const msg = (error as Error)?.message ?? String(error);
+        logger.error(`[Translation] Failed to translate to ${targetLang}: ${msg}`);
+        throw error;
       }
     }
 
@@ -294,7 +290,7 @@ class AITranslationService {
   ): Promise<TranslatedContent> {
     const langData = LANGUAGE_DATA[targetLang];
     if (!langData) {
-      return this.createFallbackTranslation(content, headline, hashtags, targetLang);
+      throw new Error(`[Translation] Language '${targetLang}' is not supported by the translation engine`);
     }
 
     let translatedContent = this.applyPhraseTranslations(content, targetLang);

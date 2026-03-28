@@ -715,47 +715,9 @@ export class AIContentService {
 
       return trends;
     } catch (error) {
-      logger.error('Dynamic trends failed, using fallback:', error);
-      
-      const now = new Date();
-      const dayOfWeek = now.getDay();
-      const month = now.getMonth();
-
-      const trends: TrendingTopic[] = [];
-
-      if (dayOfWeek === 5 || dayOfWeek === 6) {
-        trends.push({
-          topic: 'Weekend Vibes',
-          category: 'social',
-          popularity: 85,
-          hashtags: ['#WeekendVibes', '#TGIF', '#WeekendMusic'],
-        });
-      }
-
-      if (month === 11) {
-        trends.push({
-          topic: 'Year in Review',
-          category: 'holiday',
-          popularity: 90,
-          hashtags: ['#2026Wrapped', '#YearInReview', '#BestOf2026'],
-        });
-      }
-
-      const musicTrends = [
-        { topic: 'New Music Friday', category: 'music' as const, popularity: 80, hashtags: ['#NewMusicFriday', '#NewMusic', '#MusicRelease'] },
-        { topic: 'Throwback Thursday', category: 'social' as const, popularity: 75, hashtags: ['#ThrowbackThursday', '#TBT', '#ClassicHits'] },
-        { topic: 'Independent Artists', category: 'industry' as const, popularity: 70, hashtags: ['#IndieMusic', '#IndependentArtist', '#SupportIndieMusic'] },
-      ];
-
-      if (dayOfWeek === 5) trends.push(musicTrends[0]);
-      if (dayOfWeek === 4) trends.push(musicTrends[1]);
-      trends.push(musicTrends[2]);
-
-      if (platform === 'tiktok') {
-        trends.push({ topic: 'Viral Dance Challenge', category: 'social', popularity: 95, hashtags: ['#DanceChallenge', '#ViralDance', '#TikTokDance'] });
-      }
-
-      return trends;
+      const msg = (error as Error)?.message ?? String(error);
+      logger.error(`[AIContent] Dynamic trends engine failed (${msg})`);
+      throw error;
     }
   }
 

@@ -15,26 +15,22 @@ export class AdvertisingNormalizationService {
     peaks: any[];
     globalPeaks: any[];
   }> {
-    const fallback = { patterns: {}, peaks: [], globalPeaks: [] };
-    try {
-      const redis = await getRedisClient();
-      if (!redis) return fallback;
-
-      const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
-        redis.get(`mb:ads:${artistId}:patterns`).catch(() => null),
-        redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1).catch(() => []),
-        redis.lrange('mb:ads:global:peaks', 0, -1).catch(() => []),
-      ]);
-
-      return {
-        patterns: patternRaw ? JSON.parse(patternRaw) : {},
-        peaks: (peaksRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
-        globalPeaks: (globalRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
-      };
-    } catch (e: any) {
-      logger.warn(`[AdvertisingNorm] PDIM ad data fetch failed: ${e.message}`);
-      return fallback;
+    const redis = await getRedisClient();
+    if (!redis) {
+      throw new Error('[AdvertisingNorm] PDIM/Redis client unavailable — cannot load trained ad patterns');
     }
+
+    const [patternRaw, peaksRaw, globalRaw] = await Promise.all([
+      redis.get(`mb:ads:${artistId}:patterns`),
+      redis.lrange(`mb:ads:${artistId}:peaks`, 0, -1),
+      redis.lrange('mb:ads:global:peaks', 0, -1),
+    ]);
+
+    return {
+      patterns: patternRaw ? JSON.parse(patternRaw) : {},
+      peaks: (peaksRaw || []).map((r: string) => JSON.parse(r)),
+      globalPeaks: (globalRaw || []).map((r: string) => JSON.parse(r)),
+    };
   }
   // Platform content requirements for optimal organic performance
   private platformLimits = {

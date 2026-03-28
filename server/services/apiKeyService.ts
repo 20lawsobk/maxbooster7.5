@@ -216,10 +216,11 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
 
       next();
     } catch (redisError: unknown) {
-      logger.error('Redis rate limiting error:', redisError);
-      // Fallback: Allow request but log error
-      logger.warn('⚠️  Rate limiting bypassed due to Redis error');
-      next();
+      logger.error('Redis rate limiting error — request blocked:', redisError);
+      return res.status(503).json({
+        error: 'Service Unavailable',
+        message: 'Rate limiting is temporarily unavailable. Please try again shortly.',
+      });
     }
   } catch (error: unknown) {
     logger.error('Error in rate limiting middleware:', error);

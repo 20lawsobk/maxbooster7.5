@@ -252,20 +252,14 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
       conditions.push(arrayOverlaps(studioSamples.tags, tagList));
     }
 
-    // Try DB first; fall back to hardcoded array if DB is empty or errors
-    let dbSamples: any[] = [];
-    try {
-      dbSamples = await db
-        .select()
-        .from(studioSamples)
-        .where(and(...conditions))
-        .limit(limitNum)
-        .offset(offsetNum);
-    } catch (dbErr) {
-      logger.warn('DB samples query failed, using hardcoded fallback:', dbErr);
-    }
+    // Query DB for samples. If DB has results, use them. If empty, serve built-in library.
+    const dbSamples = await db
+      .select()
+      .from(studioSamples)
+      .where(and(...conditions))
+      .limit(limitNum)
+      .offset(offsetNum);
 
-    // If DB returned results, use them. Otherwise fall back to in-memory array.
     if (dbSamples.length > 0) {
       const countRows = await db
         .select({ count: drizzleSql<number>`COUNT(*)` })
@@ -293,7 +287,7 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
       });
     }
 
-    // Fallback: in-memory hardcoded samples
+    // DB is empty — serve the built-in sample library
     let samples = [...BUILT_IN_SAMPLES];
     if (category)   samples = samples.filter(s => s.category === category);
     if (subcategory)samples = samples.filter(s => s.subcategory === subcategory);
