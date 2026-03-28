@@ -31,7 +31,7 @@ const PLATFORMS = {
     name: 'Threads',
     authUrl: 'https://www.threads.com/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
-    scope: 'threads_basic,threads_content_publish',
+    scope: 'threads_basic,threads_content_publish,threads_delete,threads_keyword_search,threads_location_tagging,threads_manage_insights,threads_profile_discovery',
     clientId: process.env.THREADS_APP_ID,
     clientSecret: process.env.THREADS_APP_SECRET,
     // redirectUri must be set explicitly and match exactly what is registered

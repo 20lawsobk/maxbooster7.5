@@ -331,7 +331,7 @@ export class SocialOAuthService {
       clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '',
       authUrl: 'https://www.threads.com/oauth/authorize',
       tokenUrl: 'https://graph.threads.net/oauth/access_token',
-      scopes: ['threads_basic', 'threads_content_publish', 'threads_manage_insights'],
+      scopes: ['threads_basic', 'threads_content_publish', 'threads_delete', 'threads_keyword_search', 'threads_location_tagging', 'threads_manage_insights', 'threads_profile_discovery'],
       redirectUri: process.env.THREADS_REDIRECT_URI || `${getOAuthDomain()}/auth/threads/callback`,
     });
 
