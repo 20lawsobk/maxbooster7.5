@@ -60,7 +60,8 @@ export function ContentAnalyzer() {
           ? { url }
           : { imageUrl: url };
 
-      const response = await apiRequest('POST', endpoint, payload);
+      const rawResponse = await apiRequest('POST', endpoint, payload);
+      const response = await rawResponse.json();
 
       if (response.success) {
         setResult({

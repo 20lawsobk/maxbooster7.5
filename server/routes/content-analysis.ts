@@ -242,14 +242,18 @@ router.post('/website', async (req, res) => {
   try {
     const { url } = req.body;
 
+    logger.info({ receivedUrl: url, bodyKeys: Object.keys(req.body || {}), contentType: req.headers['content-type'] }, '[ContentAnalysis] /website request received');
+
     if (!url) {
+      logger.warn({ body: req.body }, '[ContentAnalysis] /website rejected — url missing');
       return res.status(400).json({ error: 'url is required' });
     }
 
     let safeUrl: string;
     try {
       safeUrl = validateExternalUrl(url);
-    } catch {
+    } catch (validationError) {
+      logger.warn({ url, err: validationError }, '[ContentAnalysis] /website rejected — URL validation failed');
       return res.status(400).json({ error: 'Invalid or unsafe URL' });
     }
 
