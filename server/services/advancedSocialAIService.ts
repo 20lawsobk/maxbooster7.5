@@ -1150,7 +1150,9 @@ class AdvancedSocialAIService {
         preferences,
       };
     } catch (error) {
-      return {};
+      const msg = (error as Error)?.message ?? String(error);
+      logger.error(`[AdvancedSocialAI] Failed to load user context for ${userId}: ${msg}`);
+      throw error;
     }
   }
 

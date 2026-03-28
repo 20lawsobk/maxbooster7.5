@@ -1216,50 +1216,8 @@ class ContentQualityPipeline {
     } catch (error) {
       const errMsg = (error as Error)?.message ?? String(error);
       const errStack = (error as Error)?.stack?.split('\n')[1]?.trim() ?? '';
-      logger.error(`[AdvancedAI] Error post-processing advanced content (${errMsg}) ${errStack}`);
-
-      // Fallback: generate variants through the pipeline, then return the
-      // best available regardless of the quality gate — the caller may still
-      // log a warning if the score is low, but we never return null from here.
-      try {
-        const variants = await this.generateVariants(context, variantCount);
-        // Sort descending and take the best without enforcing the floor.
-        const sorted = variants.sort((a, b) => b.scores.overall - a.scores.overall);
-        const best = sorted[0] || null;
-        if (best) {
-          logger.info(
-            `[AdvancedAI] Fallback variant selected — score=${best.scores.overall.toFixed(1)} ` +
-            `(below gate, returning best-effort for downstream use)`
-          );
-        }
-        return {
-          selected: best,
-          variants,
-          context,
-          advancedInsights: {
-            viralPotential: 50,
-            audienceResonance: 60,
-            optimalTiming: { day: 3, hour: 12 },
-            mediaRecommendation: 'image' as const,
-            improvements: [],
-          },
-        };
-      } catch (fallbackErr) {
-        const fbMsg = (fallbackErr as Error)?.message ?? String(fallbackErr);
-        logger.error(`[AdvancedAI] Fallback generation also failed: ${fbMsg}`);
-        return {
-          selected: null,
-          variants: [],
-          context,
-          advancedInsights: {
-            viralPotential: 50,
-            audienceResonance: 60,
-            optimalTiming: { day: 3, hour: 12 },
-            mediaRecommendation: 'image' as const,
-            improvements: [],
-          },
-        };
-      }
+      logger.error(`[AdvancedAI] Content pipeline failed (${errMsg}) ${errStack}`);
+      throw error;
     }
   }
 
