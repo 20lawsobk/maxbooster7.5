@@ -275,12 +275,46 @@ class AutopilotPublisher {
         return { posts: 0, error: `Confidence ${confidence.toFixed(2)} below threshold ${minThreshold}` };
       }
 
+      // ── Veo Quality Gate — trained model path ────────────────────────────────
+      // The trained model passes its own confidence check, but the content still
+      // must clear the same Veo-calibrated quality bar as untrained content.
+      // scoreAndGateExisting() scores the already-generated text and, if it
+      // falls short, runs the full A/B retry loop to find a passing variant.
+      const rawText = bestRecommendation.content || bestRecommendation.text || '';
+      const gateResult = await contentQualityGate.scoreAndGateExisting(
+        userId,
+        rawText,
+        bestRecommendation.platform || platforms[0] || 'instagram',
+        {
+          topic:          config.topic || 'new music',
+          objective:      'engagement',
+          tone:           config.brandVoice,
+          genre:          config.genre,
+          targetAudience: config.targetAudience,
+        }
+      );
+
+      if (!gateResult) {
+        logger.warn(`[Autopilot] User ${userId}: trained-model content below Veo pressure floor — skipping post to protect quality`);
+        return { posts: 0, error: 'Veo quality gate: trained model content below minimum floor (73). Skipping to protect brand quality.' };
+      }
+
+      const finalText = gateResult.winner.headline
+        ? `${gateResult.winner.headline}\n\n${gateResult.winner.content}`
+        : gateResult.winner.content || rawText;
+
+      logger.info(
+        `[Autopilot] User ${userId}: trained-model content cleared Veo gate — ` +
+        `score=${gateResult.winner.scores.overall.toFixed(1)} threshold=${gateResult.thresholdUsed} ` +
+        `variants_tried=${gateResult.totalVariantsTried}`
+      );
+
       // Generate actual media asset using in-house AI Content Service
       // CRITICAL: No silent fallbacks - if media generation fails, we must propagate the error
       let mediaUrl: string | undefined;
       if (bestRecommendation.mediaType !== 'text') {
         const generatedAsset = await aiContentService.generateContent({
-          prompt: bestRecommendation.content || bestRecommendation.text,
+          prompt: finalText,
           platform: bestRecommendation.platform as any,
           format: bestRecommendation.mediaType,
           tone: 'creative',
@@ -293,10 +327,12 @@ class AutopilotPublisher {
         logger.info(`✅ Generated ${bestRecommendation.mediaType} asset for user ${userId}: ${mediaUrl}`);
       }
 
-      // Create post content with actual media type and URL from in-house generation
+      // Create post content with quality-gated text
       const postContent: PostContent = {
-        text: bestRecommendation.content || bestRecommendation.text,
-        hashtags: bestRecommendation.hashtags,
+        text: finalText,
+        hashtags: gateResult.winner.hashtags.length > 0
+          ? gateResult.winner.hashtags
+          : bestRecommendation.hashtags,
         mediaType: mediaUrl ? bestRecommendation.mediaType : 'text',
         mediaUrl,
       };
@@ -316,8 +352,12 @@ class AutopilotPublisher {
         'social_autopilot'
       );
 
-      logger.info(`✅ User ${userId}: Scheduled ${bestRecommendation.mediaType} post ${scheduledPost.id} for ${bestRecommendation.platform} at ${nextOptimalTime.toISOString()} (confidence: ${confidence.toFixed(2)})`);
-      
+      logger.info(
+        `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for ${bestRecommendation.platform} ` +
+        `at ${nextOptimalTime.toISOString()} (confidence: ${confidence.toFixed(2)}, ` +
+        `quality: ${gateResult.winner.scores.overall.toFixed(1)})`
+      );
+
       return { posts: 1 };
     } catch (error: any) {
       logger.error('Error in publishSocialContent:', error);

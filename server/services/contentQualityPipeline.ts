@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { aiService } from './aiService';
 import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
 import { pythonAIService } from './pythonAIService.js';
+import { MaxCoreAIClient } from './unifiedAIController.js';
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
@@ -1232,10 +1233,52 @@ class ContentQualityPipeline {
         ? Math.ceil(variantCount * 0.33)  // moderate: +33 % (e.g. 30 → 40)
         : 0;
     const variants = await this.generateVariants(context, variantCount + pressureExtra);
+
+    // ── MaxCore re-scoring: enhance top candidates with inference server ───────
+    // Run top-3 local candidates through MaxCore for a calibrated score blend.
+    // MaxCore returns a 0-100 score; we blend it at 35% weight with the
+    // local score (65%) to preserve the Veo-calibrated rubric while benefiting
+    // from MaxCore's trained weights.  If MaxCore is offline the local score
+    // stands unchanged — no silent quality degradation.
+    const topCandidates = [...variants]
+      .sort((a, b) => b.scores.overall - a.scores.overall)
+      .slice(0, 3);
+
+    const maxcoreAvailable = await MaxCoreAIClient.isAvailable();
+    if (maxcoreAvailable) {
+      await Promise.all(topCandidates.map(async (variant) => {
+        try {
+          const result = await MaxCoreAIClient.infer<{ score: number; feedback?: string }>(
+            '/api/content/score',
+            {
+              text:     `${variant.headline}\n\n${variant.content}`,
+              platform: context.platform,
+              cta:      variant.callToAction,
+              hashtags: variant.hashtags,
+              userId,
+            }
+          );
+          if (result?.score !== undefined) {
+            const mcScore = Math.min(100, Math.max(0, result.score));
+            const blended = variant.scores.overall * 0.65 + mcScore * 0.35;
+            logger.debug(
+              `[MaxCore] Scored variant ${variant.id}: local=${variant.scores.overall.toFixed(1)} ` +
+              `maxcore=${mcScore.toFixed(1)} blended=${blended.toFixed(1)}`
+            );
+            variant.scores.overall = blended;
+          }
+        } catch { /* MaxCore timeout — local score unchanged */ }
+      }));
+
+      // Re-sort after MaxCore blend
+      variants.sort((a, b) => b.scores.overall - a.scores.overall);
+    }
+
     const selected = await this.selectBestVariant(variants, minScore);
 
     logger.info(
-      `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}), ` +
+      `[VeoGate] Generated ${variants.length} variant(s) (base: ${variantCount} + pressure extra: ${pressureExtra}` +
+      `${maxcoreAvailable ? ' + MaxCore blend' : ''}), ` +
       `selected: ${selected?.id || 'none'} (score: ${selected?.scores.overall.toFixed(1) || 'N/A'} / gate: ${VEO_QUALITY_GATE})`
     );
 

@@ -3,6 +3,7 @@ import { autopilotLearningData, autopilotInsights } from '@shared/schema';
 import { eq, and, desc, gte, sql, avg, count } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { pushTrainingFeedback } from './maxcoreSync.js';
+import { contentQualityGate } from './contentQualityGate.js';
 
 const CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD = 3.0;
 
@@ -95,6 +96,19 @@ class AutopilotLearningService {
       logger.info(`Recorded performance for user ${userId} on ${postData.platform}`);
 
       await this.updateInsightsIfNeeded(userId, postData.platform);
+
+      // Feed real engagement back to the quality gate so its PDIM threshold
+      // and MaxCore training signal adapt to what actually resonated.
+      contentQualityGate.recordEngagementOutcome(
+        userId,
+        postData.platform,
+        postData.contentType || 'social_post',
+        postData.hookType   || 'unknown',
+        engagementRate,
+        0   // qualityScore unknown at this point — gate recorded it at publish time
+      ).catch(err =>
+        logger.warn('[AutopilotLearning] Quality gate feedback skipped (non-fatal):', err)
+      );
 
       if (engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD) {
         this.dispatchCurriculumSessionAsync(engagementRate, postData).catch(err =>

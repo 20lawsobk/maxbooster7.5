@@ -32,6 +32,8 @@ import {
   type ContentContext,
 } from './contentQualityPipeline.js';
 import { pocketManager } from '../pocket-dimension/index.js';
+import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
+import { pushTrainingFeedback } from './maxcoreSync.js';
 
 export interface QualityGateResult {
   winner: ContentVariant;
@@ -183,6 +185,23 @@ export class ContentQualityGate {
   }
 
   private async getUserThreshold(userId: string): Promise<number> {
+    // 1. PDIM first — holds the live adaptive value updated by engagement feedback
+    try {
+      if (isPdimConfigured()) {
+        const pdim = getPdimClient();
+        const pdimVal = await pdim.get(`mbs:quality:threshold:${userId}`);
+        if (pdimVal !== null) {
+          const parsed = parseFloat(pdimVal);
+          if (!isNaN(parsed) && parsed >= VEO_PRESSURE_FLOOR) {
+            return parsed;
+          }
+        }
+      }
+    } catch (e: any) {
+      logger.debug(`[QualityGate] PDIM threshold read failed (non-fatal): ${e.message}`);
+    }
+
+    // 2. DB fallback — user-configured threshold
     try {
       const [prefs] = await db
         .select({ contentQualityThreshold: autopilotPreferences.contentQualityThreshold })
@@ -194,6 +213,135 @@ export class ContentQualityGate {
     } catch {
       return DEFAULT_THRESHOLD;
     }
+  }
+
+  /**
+   * Record real engagement outcome for a published post.
+   *
+   * Adapts the per-user quality threshold stored in PDIM:
+   *   • High engagement (≥ 5 %)  → raise threshold up to 95
+   *   • Low engagement  (< 2 %)  → lower threshold, floor = VEO_PRESSURE_FLOOR
+   * Also pushes a training feedback signal to MaxCore + PDIM queue so the
+   * inference model learns from what actually resonated with the audience.
+   */
+  async recordEngagementOutcome(
+    userId: string,
+    platform: string,
+    contentType: string,
+    hookType: string,
+    engagementRate: number,
+    qualityScore: number
+  ): Promise<void> {
+    try {
+      const currentThreshold = await this.getUserThreshold(userId);
+      let newThreshold = currentThreshold;
+
+      if (engagementRate >= 5) {
+        // Content performing well → raise the bar by 1 point (max 95)
+        newThreshold = Math.min(95, currentThreshold + 1);
+      } else if (engagementRate < 2) {
+        // Content underperforming → relax by 1 point (floor = VEO_PRESSURE_FLOOR)
+        newThreshold = Math.max(VEO_PRESSURE_FLOOR, currentThreshold - 1);
+      }
+
+      if (newThreshold !== currentThreshold && isPdimConfigured()) {
+        const pdim = getPdimClient();
+        await pdim.set(
+          `mbs:quality:threshold:${userId}`,
+          String(newThreshold),
+          'EX',
+          60 * 60 * 24 * 30   // 30-day TTL — persists across restarts
+        );
+        logger.info(
+          `[QualityGate] Threshold adapted for user ${userId}: ` +
+          `${currentThreshold} → ${newThreshold} ` +
+          `(engagement=${engagementRate.toFixed(2)}%, qualityScore=${qualityScore.toFixed(1)})`
+        );
+      }
+
+      // Push training signal to MaxCore + PDIM training queue
+      const curriculum =
+        engagementRate >= 5 ? 'reinforce_winner' :
+        engagementRate <  2 ? 'improve_weak'     : 'neutral';
+
+      await pushTrainingFeedback({
+        source:          'quality_gate_outcome',
+        trigger:         engagementRate >= 5 ? 'high_engagement' : engagementRate < 2 ? 'low_engagement' : 'normal',
+        engagement_rate: engagementRate,
+        platform,
+        content_type:    contentType,
+        hook_type:       hookType,
+        media_type:      'text',
+        curriculum_hint: curriculum,
+        dispatched_at:   new Date().toISOString(),
+      });
+    } catch (e: any) {
+      logger.warn(`[QualityGate] recordEngagementOutcome failed (non-fatal): ${e.message}`);
+    }
+  }
+
+  /**
+   * Score already-generated content and gate it.
+   * Used by the trained-model path which produces content itself —
+   * runs the content through the Veo-calibrated pipeline scorer,
+   * and if it fails, falls through to the full A/B retry gate.
+   *
+   * Returns null only when nothing clears VEO_PRESSURE_FLOOR.
+   */
+  async scoreAndGateExisting(
+    userId: string,
+    existingContent: string,
+    platform: string,
+    baseContext: Partial<ContentContext>
+  ): Promise<QualityGateResult | null> {
+    const threshold = await this.getUserThreshold(userId);
+    const context   = await contentQualityPipeline.buildContext(userId, {
+      ...baseContext,
+      platform,
+    });
+
+    const platformOpt = contentQualityPipeline.validatePlatformConstraints(
+      existingContent,
+      [],
+      platform
+    );
+    const scores = contentQualityPipeline.scoreContent(
+      existingContent,
+      existingContent.split('\n')[0] || existingContent.substring(0, 80),
+      '',
+      context,
+      platformOpt
+    );
+
+    if (scores.overall >= threshold) {
+      logger.info(
+        `[QualityGate] Trained-model content passed gate — score=${scores.overall.toFixed(1)} threshold=${threshold} platform=${platform}`
+      );
+      // Wrap in a synthetic QualityGateResult so callers have a uniform interface
+      return {
+        winner: {
+          id:                  `trained_model_${Date.now()}`,
+          content:             existingContent,
+          headline:            existingContent.split('\n')[0] || '',
+          hashtags:            [],
+          callToAction:        '',
+          scores,
+          platformOptimizations: platformOpt,
+        },
+        passedOnAttempt:    0,
+        totalVariantsTried: 1,
+        rejectedVariants:   [],
+        thresholdUsed:      threshold,
+        storedKey:          null,
+      };
+    }
+
+    logger.info(
+      `[QualityGate] Trained-model content scored ${scores.overall.toFixed(1)} < threshold ${threshold} ` +
+      `— handing off to A/B gate for ${platform}`
+    );
+    // Content didn't clear the bar — run the full A/B generation gate
+    return this.run(userId, baseContext, threshold);
   }
 
   /**
