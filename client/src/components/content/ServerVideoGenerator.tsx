@@ -171,6 +171,9 @@ export function ServerVideoGenerator({
 
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const userCancelledRef = useRef(false);
+  const [generatingElapsed, setGeneratingElapsed] = useState(0);
 
   useEffect(() => {
     setAspectRatio(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
@@ -231,11 +234,17 @@ export function ServerVideoGenerator({
     setVideoUrl(null);
     setVideoInfo(null);
 
-    // 6-minute client-side timeout — FFmpeg generation can take up to ~5 min.
-    // Using AbortController prevents dangling connections from triggering hard
-    // navigations if the proxy drops the request mid-flight.
+    // 45-second timeout on the initial POST — the server responds immediately
+    // (job queued) so >45s means the server is unreachable or the session is
+    // stuck.  Polling has its own 120-second budget via maxAttempts.
+    userCancelledRef.current = false;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6 * 60 * 1000);
+    abortControllerRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), 45 * 1000);
+
+    // Elapsed-time counter (updates every second so the user sees progress)
+    setGeneratingElapsed(0);
+    const elapsedInterval = setInterval(() => setGeneratingElapsed(s => s + 1), 1000);
 
     try {
       const response = await fetch('/api/social/generate-video', {
@@ -286,13 +295,19 @@ export function ServerVideoGenerator({
         throw new Error(data.error || 'Video generation failed');
       }
     } catch (error: any) {
-      // Distinguish user-visible messages: abort (timeout/proxy drop) vs other errors
       if (error.name === 'AbortError') {
-        toast({
-          title: 'Generation Timed Out',
-          description: 'The video took too long to generate. Try a shorter duration or simpler settings.',
-          variant: 'destructive',
-        });
+        if (userCancelledRef.current) {
+          toast({
+            title: 'Cancelled',
+            description: 'Video generation was cancelled.',
+          });
+        } else {
+          toast({
+            title: 'Generation Timed Out',
+            description: 'The server didn\'t respond in time. Please try again.',
+            variant: 'destructive',
+          });
+        }
       } else {
         toast({
           title: 'Generation Failed',
@@ -302,8 +317,12 @@ export function ServerVideoGenerator({
       }
     } finally {
       clearTimeout(timeoutId);
+      clearInterval(elapsedInterval);
+      abortControllerRef.current = null;
+      userCancelledRef.current = false;
       setIsGenerating(false);
       setGeneratingStage('');
+      setGeneratingElapsed(0);
     }
   };
 
@@ -504,11 +523,27 @@ export function ServerVideoGenerator({
                   <p className="text-xs text-muted-foreground">
                     Rendering scenes, adding music, and compositing your clip
                   </p>
+                  {isGenerating && generatingElapsed > 0 && (
+                    <p className="text-xs text-muted-foreground tabular-nums">
+                      {generatingElapsed}s elapsed
+                    </p>
+                  )}
                 </div>
                 {topicProp && (
                   <div className="max-w-xs text-center rounded-lg bg-muted/50 px-3 py-2">
                     <p className="text-xs text-muted-foreground truncate">"{topicProp}"</p>
                   </div>
+                )}
+                {isGenerating && (
+                  <button
+                    onClick={() => {
+                      userCancelledRef.current = true;
+                      abortControllerRef.current?.abort();
+                    }}
+                    className="mt-1 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                  >
+                    Cancel
+                  </button>
                 )}
               </div>
             )}

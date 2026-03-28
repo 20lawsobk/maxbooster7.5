@@ -1939,9 +1939,10 @@ return (
                         const platform = SOCIAL_PLATFORMS.find((p) => p.id === item.platform);
                         const IconComponent = platform?.icon;
                         const hasStructured = item.hook || item.body || item.cta;
+                        const itemKey = `${item.platform}-${(item.extractedTitle || item.content || '').slice(0, 20)}-${index}`;
                         return (
                           <div
-                            key={index}
+                            key={itemKey}
                             className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800 space-y-3"
                           >
                             <div className="flex items-center justify-between">
@@ -2324,9 +2325,10 @@ return (
                         {urlGeneratedContent.map((item, index) => {
                           const platform = SOCIAL_PLATFORMS.find((p) => p.id === item.platform);
                           const IconComponent = platform?.icon;
+                          const itemKey = `${item.platform}-${(item.extractedTitle || item.content || '').slice(0, 20)}-${index}`;
                           return (
                             <div
-                              key={index}
+                              key={itemKey}
                               className="p-4 border rounded-lg bg-gray-50 dark:bg-gray-800"
                             >
                               <div className="flex items-center justify-between mb-2">
