@@ -1728,57 +1728,45 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     pruneStaleFFmpegJobs();
     ffmpegJobs.set(jobId, { status: 'processing', createdAt: Date.now() });
 
-    // ── Background job: pipeline → Python AI → FFmpeg fallback ───────────────
+    // ── Background job: AI content → Python AI renderer → FFmpeg ─────────────
     (async () => {
       try {
-        // Stage 1 — Advanced content pipeline (always runs first).
-        // Whether Python AI or FFmpeg renders the final video, the text
-        // content (hook / body / CTA) MUST flow through the quality gate.
+        // Stage 1 — Advanced Social AI generates hook / body / CTA.
+        // Hook/body/cta passed directly from the client are used as-is.
         let hook = rawHook || '';
         let body = rawBody || '';
         let cta  = rawCta  || '';
 
         if (!hook && !body && !cta && topic) {
-          try {
-            // Call Advanced Social AI directly — this path is proven reliable
-            // (returns score≈65.7 on every call).  The quality gate wrapper
-            // (generateWithAdvancedAI) adds pipeline scoring on top, but it
-            // currently throws during variant post-processing; for video text
-            // overlays we just need the best-available content, not gated output.
-            const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
-            const objective = goal === 'sales' || goal === 'traffic'
-              ? 'conversions'
-              : goal === 'viral' ? 'viral' : 'engagement';
-            const aiResult = await advAI.generateAdvancedContent({
-              userId: userId || 'anonymous',
-              topic,
-              platforms: [platform || 'tiktok'],
-              objective,
-              tone: (tone || 'energetic') as any,
-              genre: genre || undefined,
-              artistName: artist_name || undefined,
-              contentType: objective === 'conversions' ? 'promotional'
-                : objective === 'viral' ? 'storytelling' : 'announcement',
-              includeHashtags: true,
-              includeEmojis: true,
-              variantCount: 1,
-              trendContext: genre ? [`genre:${genre}`] : undefined,
-            });
-            hook = aiResult.primary.headline.slice(0, 80);
-            body = aiResult.primary.body.split('\n')[0].slice(0, 120);
-            cta  = aiResult.primary.callToAction.slice(0, 60);
-            logger.info(
-              `[VideoGen] AI content ready — score=${aiResult.scoring.overall.toFixed(1)} ` +
-              `hook="${hook.slice(0, 40)}…"`
-            );
-          } catch (pipeErr) {
-            const msg = (pipeErr as Error)?.message ?? String(pipeErr);
-            logger.warn(`[VideoGen] Content generation failed (${msg}), video will use topic as hook`);
-            hook = topic.slice(0, 80);
-          }
+          const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
+          const objective = goal === 'sales' || goal === 'traffic'
+            ? 'conversions'
+            : goal === 'viral' ? 'viral' : 'engagement';
+          const aiResult = await advAI.generateAdvancedContent({
+            userId: userId || 'anonymous',
+            topic,
+            platforms: [platform || 'tiktok'],
+            objective,
+            tone: (tone || 'energetic') as any,
+            genre: genre || undefined,
+            artistName: artist_name || undefined,
+            contentType: objective === 'conversions' ? 'promotional'
+              : objective === 'viral' ? 'storytelling' : 'announcement',
+            includeHashtags: true,
+            includeEmojis: true,
+            variantCount: 1,
+            trendContext: genre ? [`genre:${genre}`] : undefined,
+          });
+          hook = aiResult.primary.headline.slice(0, 80);
+          body = aiResult.primary.body.split('\n')[0].slice(0, 120);
+          cta  = aiResult.primary.callToAction.slice(0, 60);
+          logger.info(
+            `[VideoGen] AI content ready — score=${aiResult.scoring.overall.toFixed(1)} ` +
+            `hook="${hook.slice(0, 40)}…"`
+          );
         }
 
-        // Shared video params for both renderers
+        // Shared render params for all video renderers.
         const videoParams = {
           topic:      topic || hook || body || 'new music',
           platform:   platform   || 'tiktok',
@@ -1800,11 +1788,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
           userId,
         };
 
-        // Stage 2 — Try Python AI renderer (when server is available).
-        // Content already quality-gated above; Python AI only renders frames.
+        // Stage 2 — Python AI renderer (primary renderer, fed by Stage 1 content).
+        // FFmpeg runs when Python AI is unavailable.
         const pyAvailable = await pythonAIService.isAvailable();
         if (pyAvailable) {
-          logger.info(`[VideoGen] Python AI available — starting renderer job ${jobId}`);
+          logger.info(`[VideoGen] Python AI renderer active — starting job ${jobId}`);
           const jobResult = await pythonAIService.startVideoJob({
             ...videoParams,
             template: template || 'cinematic_promo',
@@ -1826,27 +1814,24 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
                   break;
                 }
                 if (d.status === 'error') {
-                  logger.warn('[VideoGen] Python AI job failed — falling back to FFmpeg:', d.error);
+                  logger.error('[VideoGen] Python AI renderer job failed:', d.error);
                   break;
                 }
               }
             }
             if (pyDone) return;
-            logger.warn('[VideoGen] Python AI path did not complete — falling back to FFmpeg');
           }
         }
 
-        // Stage 3 — FFmpeg fallback (or primary when Python AI is offline).
-        // generateVideoFFmpeg also runs the quality pipeline internally as a
-        // safety net if hook/body/cta are still empty after Stage 1.
-        logger.info(`[VideoGen] Starting FFmpeg render for job ${jobId}`);
+        // Stage 3 — FFmpeg renderer (runs when Python AI is unavailable).
+        logger.info(`[VideoGen] FFmpeg renderer starting for job ${jobId}`);
         const result = await generateVideoFFmpeg(videoParams);
         if (result.success) {
           ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
           logger.info(`[VideoGen] FFmpeg job ${jobId} done`);
         } else {
           ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
-          logger.warn(`[VideoGen] FFmpeg job ${jobId} failed: ${result.error}`);
+          logger.error(`[VideoGen] FFmpeg job ${jobId} failed: ${result.error}`);
         }
       } catch (err: any) {
         ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
