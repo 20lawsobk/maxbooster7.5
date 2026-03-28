@@ -89,30 +89,21 @@ class PostDeploySelfTest {
     try {
       const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
       const client = await getRedisClient();
-      
-      if (!client) {
-        return {
-          name: 'boosterstate',
-          status: 'skip',
-          durationMs: Date.now() - startTime,
-          details: { reason: 'BoosterState not available' },
-        };
-      }
-      
+
       const testKey = `selftest:${Date.now()}`;
       await client.setex(testKey, 10, 'test');
       const value = await client.get(testKey);
       await client.del(testKey);
-      
+
       return {
-        name: 'boosterstate',
+        name: 'pdim',
         status: value === 'test' ? 'pass' : 'fail',
         durationMs: Date.now() - startTime,
         details: { valueMatch: value === 'test' },
       };
     } catch (error) {
       return {
-        name: 'boosterstate',
+        name: 'pdim',
         status: 'fail',
         durationMs: Date.now() - startTime,
         error: error instanceof Error ? error.message : String(error),

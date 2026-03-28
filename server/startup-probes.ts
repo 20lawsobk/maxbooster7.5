@@ -108,21 +108,13 @@ class StartupProbeManager {
     try {
       const { getRedisClient } = await import('./lib/redisConnectionFactory.js');
       const client = await getRedisClient();
-      
-      if (!client) {
-        this.status.probes.redis.status = 'degraded';
-        this.status.probes.redis.lastCheck = new Date();
-        this.status.probes.redis.error = 'BoosterState not available';
-        logger.warn('⚠️ BoosterState probe: not available');
-        return true;
-      }
-      
+
       await client.ping();
       this.status.probes.redis.status = 'ready';
       this.status.probes.redis.lastCheck = new Date();
       this.status.probes.redis.latencyMs = Date.now() - startTime;
       this.status.probes.redis.error = undefined;
-      logger.info(`✅ BoosterState probe ready (${this.status.probes.redis.latencyMs}ms)`);
+      logger.info(`✅ PDIM probe ready (${this.status.probes.redis.latencyMs}ms)`);
       return true;
     } catch (error) {
       this.status.probes.redis.status = 'degraded';

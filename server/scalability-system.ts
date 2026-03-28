@@ -14,21 +14,16 @@ let hasLoggedWarning = false;
 // Scalability Optimization System
 export class ScalabilitySystem {
   private static instance: ScalabilitySystem;
-  private client: BoosterStateClient | null;
-  private clientAvailable: boolean = false;
+  private client!: BoosterStateClient;
   private loadBalancer: LoadBalancer;
-  private cacheManager: CacheManager;
+  private cacheManager!: CacheManager;
   private performanceMonitor: PerformanceMonitor;
   private autoScaler: AutoScaler;
   private metrics: ScalabilityMetrics;
   private isOptimized: boolean = false;
 
   private constructor() {
-    this.client = null;
-    this.clientAvailable = false;
-
     this.loadBalancer = new LoadBalancer();
-    this.cacheManager = new CacheManager();
     this.performanceMonitor = new PerformanceMonitor();
     this.autoScaler = new AutoScaler();
     this.metrics = {
@@ -56,44 +51,19 @@ export class ScalabilitySystem {
 
   // Initialize scalability system
   private async initializeSystem(): Promise<void> {
-    try {
-      try {
-        const bsClient = await getBoosterStateClient();
-        if (bsClient) {
-          this.client = bsClient;
-          this.clientAvailable = true;
-          this.cacheManager = new CacheManager(this.client);
-          logger.info('✅ BoosterState connected for caching');
-        } else {
-          logger.warn('⚠️  BoosterState unavailable - running without caching/autoscaling');
-        }
-      } catch (error: unknown) {
-        logger.warn('⚠️  BoosterState unavailable - running without caching/autoscaling:', error);
-        this.client = null;
-        this.clientAvailable = false;
-      }
+    this.client = await getBoosterStateClient();
+    this.cacheManager = new CacheManager(this.client);
+    logger.info('✅ BoosterState connected for caching');
 
-      // Start performance monitoring (works without BoosterState)
-      this.startPerformanceMonitoring();
+    this.startPerformanceMonitoring();
+    this.startAutoScaling();
+    this.startOptimization();
 
-      // Start auto-scaling (works without BoosterState)
-      this.startAutoScaling();
-
-      // Start optimization (works without BoosterState)
-      this.startOptimization();
-
-      // Setup cluster if in production
-      if (process.env.NODE_ENV === 'production') {
-        this.setupCluster();
-      }
-
-      logger.info(
-        '🚀 Scalability system initialized' +
-        (this.clientAvailable ? ' with BoosterState' : ' (degraded mode)')
-      );
-    } catch (error: unknown) {
-      logger.error('❌ Failed to initialize scalability system:', error);
+    if (process.env.NODE_ENV === 'production') {
+      this.setupCluster();
     }
+
+    logger.info('🚀 Scalability system initialized with BoosterState');
   }
 
   // Setup cluster for multi-core processing
@@ -176,10 +146,7 @@ export class ScalabilitySystem {
       const errorRate = await this.getErrorRate();
       this.metrics.errorRate = errorRate;
 
-      // Store metrics in BoosterState if available
-      if (this.client && this.clientAvailable) {
-        await this.client.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
-      }
+      await this.client.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
     } catch (error: unknown) {
       logger.error('Error collecting metrics:', error);
     }
@@ -221,10 +188,6 @@ export class ScalabilitySystem {
 
   // Get throughput
   private async getThroughput(): Promise<number> {
-    if (!this.client || !this.clientAvailable) {
-      return 0;
-    }
-
     try {
       // Calculate requests per second
       const currentTime = Date.now();
@@ -246,10 +209,6 @@ export class ScalabilitySystem {
 
   // Get error rate
   private async getErrorRate(): Promise<number> {
-    if (!this.client || !this.clientAvailable) {
-      return 0;
-    }
-
     try {
       const totalRequests = await this.client.get('scalability:requests:total');
       const errorRequests = await this.client.get('scalability:requests:errors');
@@ -449,19 +408,14 @@ export class ScalabilitySystem {
     // Track request
     this.metrics.totalRequests++;
 
-    // Track in BoosterState if available
-    if (this.client && this.clientAvailable) {
-      this.client.incr('scalability:requests:count');
-      this.client.incr('scalability:requests:total');
-    }
+    this.client.incr('scalability:requests:count');
+    this.client.incr('scalability:requests:total');
 
-    // Track response time
     res.on('finish', async () => {
       const responseTime = Date.now() - startTime;
       this.metrics.averageResponseTime = (this.metrics.averageResponseTime + responseTime) / 2;
 
-      // Track errors
-      if (res.statusCode >= 400 && this.client && this.clientAvailable) {
+      if (res.statusCode >= 400) {
         await this.client.incr('scalability:requests:errors');
       }
     });
@@ -472,11 +426,6 @@ export class ScalabilitySystem {
   // Cache middleware
   public cacheMiddleware = (ttl: number = 300) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      // Skip caching if BoosterState is unavailable
-      if (!this.client || !this.clientAvailable) {
-        return next();
-      }
-
       const cacheKey = `cache:${req.method}:${req.url}`;
 
       try {
@@ -485,15 +434,11 @@ export class ScalabilitySystem {
           return res.json(JSON.parse(cached));
         }
 
-        // Store original send method
         const originalSend = res.send;
         const client = this.client;
-        const available = this.clientAvailable;
 
-        // Override send method to cache response
         res.send = function (data) {
-          // Cache successful responses
-          if (res.statusCode === 200 && client && available) {
+          if (res.statusCode === 200) {
             client.setex(cacheKey, ttl, typeof data === 'string' ? data : JSON.stringify(data));
           }
           return originalSend.call(this, data);
@@ -509,10 +454,6 @@ export class ScalabilitySystem {
   // Rate limiting middleware
   public rateLimitMiddleware = (maxRequests: number = 100, windowMs: number = 60000) => {
     return async (req: Request, res: Response, next: NextFunction) => {
-      // Skip rate limiting if BoosterState is unavailable
-      if (!this.client || !this.clientAvailable) {
-        return next();
-      }
 
       const clientId = req.ip || 'unknown';
       const key = `rate_limit:${clientId}`;
@@ -559,47 +500,30 @@ class LoadBalancer {
 }
 
 class CacheManager {
-  private client: BoosterStateClient | null;
+  private client: BoosterStateClient;
   private hitCount: number = 0;
   private missCount: number = 0;
 
-  constructor(client?: BoosterStateClient | null) {
-    this.client = client ?? null;
+  constructor(client?: BoosterStateClient) {
+    if (!client) throw new Error('CacheManager requires a BoosterStateClient');
+    this.client = client;
   }
 
   async get(key: string): Promise<string | null> {
-    if (!this.client) {
+    const value = await this.client.get(key);
+    if (value) {
+      this.hitCount++;
+    } else {
       this.missCount++;
-      return null;
     }
-
-    try {
-      const value = await this.client.get(key);
-      if (value) {
-        this.hitCount++;
-      } else {
-        this.missCount++;
-      }
-      return value;
-    } catch (error: unknown) {
-      this.missCount++;
-      return null;
-    }
+    return value;
   }
 
   async set(key: string, value: string, ttl?: number): Promise<void> {
-    if (!this.client) {
-      return;
-    }
-
-    try {
-      if (ttl) {
-        await this.client.setex(key, ttl, value);
-      } else {
-        await this.client.set(key, value);
-      }
-    } catch (error: unknown) {
-      logger.error('Cache set error:', error);
+    if (ttl) {
+      await this.client.setex(key, ttl, value);
+    } else {
+      await this.client.set(key, value);
     }
   }
 

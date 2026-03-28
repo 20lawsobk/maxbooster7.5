@@ -1,31 +1,16 @@
 /**
  * BoosterState Client
  *
- * HTTP client for the BoosterState sidecar service — a lightweight KV, queue,
- * sorted-set, and token-bucket rate-limiter that runs alongside the main server.
+ * HTTP client for the BoosterState sidecar — a built-in Max Booster component
+ * providing KV, queue, sorted-set, and token-bucket rate-limiting services.
  *
- * All methods fail-open with graceful fallbacks: if BoosterState is unavailable
- * (e.g. during development or before the sidecar starts) every operation returns
- * a safe zero/null/empty value instead of throwing.  A single warning is emitted
- * the first time an unavailability is detected to avoid log spam.
- *
- * Usage: import { getBoosterStateClient } from './boosterStateClient.js'
- *        const client = await getBoosterStateClient();
- *        if (client) await client.set('key', 'value');
+ * BoosterState is always available when Max Booster is running.
+ * All methods throw on failure — no silent degradation.
  */
 
 import { logger } from '../logger.js';
 
 const BASE_URL = `http://127.0.0.1:${process.env.PORT || 5000}/api/boosterstate`;
-
-let warnedOnce = false;
-
-function logWarnOnce(msg: string) {
-  if (!warnedOnce) {
-    logger.warn(msg);
-    warnedOnce = true;
-  }
-}
 
 function authHeaders(): Record<string, string> {
   const secret = process.env.BOOSTERSTATE_SECRET;
@@ -42,66 +27,41 @@ async function post(path: string, body: Record<string, any>): Promise<any> {
     body: JSON.stringify(body),
   });
   if (!res.ok) {
-    throw new Error(`boosterstate ${path} returned ${res.status}`);
+    throw new Error(`BoosterState ${path} returned ${res.status}`);
   }
   const text = await res.text();
   return text ? JSON.parse(text) : {};
 }
 
 export class BoosterStateClient {
-  private _isOpen = false;
-
   get isOpen(): boolean {
-    return this._isOpen;
+    return true;
   }
 
   async connect(): Promise<void> {
-    try {
-      const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
-      if (res.ok) {
-        this._isOpen = true;
-        logger.info('✅ BoosterState client connected');
-      }
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      this._isOpen = false;
+    const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
+    if (!res.ok) {
+      throw new Error(`BoosterState ping returned ${res.status}`);
     }
+    logger.info('✅ BoosterState client connected');
   }
 
   async ping(): Promise<string> {
-    try {
-      const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
-      return await res.text();
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 'PONG';
-    }
+    const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
+    return await res.text();
   }
 
   async get(key: string): Promise<string | null> {
-    try {
-      const data = await post('/kv/get', { key });
-      return data.value ?? null;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return null;
-    }
+    const data = await post('/kv/get', { key });
+    return data.value ?? null;
   }
 
   async set(key: string, value: string): Promise<void> {
-    try {
-      await post('/kv/set', { key, value });
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-    }
+    await post('/kv/set', { key, value });
   }
 
   async setex(key: string, ttl: number, value: string): Promise<void> {
-    try {
-      await post('/kv/set', { key, value, ttl_secs: ttl });
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-    }
+    await post('/kv/set', { key, value, ttl_secs: ttl });
   }
 
   async setEx(key: string, ttl: number, value: string): Promise<void> {
@@ -117,118 +77,65 @@ export class BoosterStateClient {
         flatKeys.push(k);
       }
     }
-    try {
-      const data = await post('/kv/del', { keys: flatKeys });
-      return data.deleted ?? 0;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 0;
-    }
+    const data = await post('/kv/del', { keys: flatKeys });
+    return data.deleted ?? 0;
   }
 
   async exists(key: string): Promise<number> {
-    try {
-      const data = await post('/kv/exists', { key });
-      return data.exists ? 1 : 0;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 0;
-    }
+    const data = await post('/kv/exists', { key });
+    return data.exists ? 1 : 0;
   }
 
   async incr(key: string): Promise<number> {
-    try {
-      const data = await post('/kv/incr', { key });
-      return data.value ?? 0;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 0;
-    }
+    const data = await post('/kv/incr', { key });
+    return data.value ?? 0;
   }
 
   async expire(key: string, seconds: number): Promise<void> {
-    try {
-      await post('/kv/expire', { key, seconds });
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-    }
+    await post('/kv/expire', { key, seconds });
   }
 
   async keys(pattern: string): Promise<string[]> {
-    try {
-      const data = await post('/kv/keys', { pattern });
-      return data.keys ?? [];
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return [];
-    }
+    const data = await post('/kv/keys', { pattern });
+    return data.keys ?? [];
   }
 
   async zAdd(key: string, member: { score: number; value: string }): Promise<void> {
-    try {
-      await post('/zset/add', { key, score: member.score, value: member.value });
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-    }
+    await post('/zset/add', { key, score: member.score, value: member.value });
   }
 
   async zCard(key: string): Promise<number> {
-    try {
-      const data = await post('/zset/card', { key });
-      return data.count ?? 0;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 0;
-    }
+    const data = await post('/zset/card', { key });
+    return data.count ?? 0;
   }
 
   async zRange(key: string, start: number, end: number, options?: { REV?: boolean }): Promise<string[]> {
-    try {
-      const data = await post('/zset/range', {
-        key,
-        start,
-        end,
-        rev: options?.REV ?? false,
-      });
-      return data.values ?? [];
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return [];
-    }
+    const data = await post('/zset/range', {
+      key,
+      start,
+      end,
+      rev: options?.REV ?? false,
+    });
+    return data.values ?? [];
   }
 
   async zRemRangeByScore(key: string, min: string | number, max: string | number): Promise<number> {
-    try {
-      const data = await post('/zset/rem-range-by-score', {
-        key,
-        min: String(min),
-        max: String(max),
-      });
-      return data.removed ?? 0;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return 0;
-    }
+    const data = await post('/zset/rem-range-by-score', {
+      key,
+      min: String(min),
+      max: String(max),
+    });
+    return data.removed ?? 0;
   }
 
   async queuePush(queue: string, data: any, priority?: number): Promise<string | null> {
-    try {
-      const result = await post('/queue/push', { queue, data, priority });
-      return result.id ?? null;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return null;
-    }
+    const result = await post('/queue/push', { queue, data, priority });
+    return result.id ?? null;
   }
 
   async queuePop(queue: string): Promise<{ id: string; data: any } | null> {
-    try {
-      const result = await post('/queue/pop', { queue });
-      return result.item ?? null;
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return null;
-    }
+    const result = await post('/queue/pop', { queue });
+    return result.item ?? null;
   }
 
   async rateTake(
@@ -237,53 +144,29 @@ export class BoosterStateClient {
     capacity?: number,
     refillPerSec?: number
   ): Promise<{ allowed: boolean; remaining: number }> {
-    try {
-      const body: Record<string, any> = { key, tokens };
-      if (capacity !== undefined) body.capacity = capacity;
-      if (refillPerSec !== undefined) body.refill_per_sec = refillPerSec;
-      const data = await post('/rate/take', body);
-      return { allowed: data.allowed ?? true, remaining: data.remaining ?? 0 };
-    } catch {
-      logWarnOnce('⚠️ BoosterState server unavailable - using graceful fallbacks');
-      return { allowed: true, remaining: 0 };
-    }
+    const body: Record<string, any> = { key, tokens };
+    if (capacity !== undefined) body.capacity = capacity;
+    if (refillPerSec !== undefined) body.refill_per_sec = refillPerSec;
+    const data = await post('/rate/take', body);
+    return { allowed: data.allowed ?? true, remaining: data.remaining ?? 0 };
   }
 
   async quit(): Promise<void> {
-    this._isOpen = false;
+    // BoosterState is built-in — no teardown needed
   }
 }
 
 let singleton: BoosterStateClient | null = null;
-let initPromise: Promise<BoosterStateClient | null> | null = null;
 
-export async function getBoosterStateClient(): Promise<BoosterStateClient | null> {
-  if (singleton && singleton.isOpen) {
+export async function getBoosterStateClient(): Promise<BoosterStateClient> {
+  if (singleton) {
     return singleton;
   }
 
-  if (initPromise) {
-    return initPromise;
-  }
-
-  initPromise = (async () => {
-    try {
-      const client = new BoosterStateClient();
-      await client.connect();
-      if (client.isOpen) {
-        singleton = client;
-        return client;
-      }
-      return null;
-    } catch {
-      logWarnOnce('⚠️ BoosterState client initialization failed');
-      return null;
-    } finally {
-      initPromise = null;
-    }
-  })();
-
-  return initPromise;
+  const client = new BoosterStateClient();
+  await client.connect();
+  singleton = client;
+  return client;
 }
 
 export async function isBoosterStateHealthy(): Promise<boolean> {
@@ -298,9 +181,6 @@ export async function isBoosterStateHealthy(): Promise<boolean> {
 }
 
 export async function shutdownBoosterState(): Promise<void> {
-  if (singleton) {
-    await singleton.quit();
-    singleton = null;
-  }
+  singleton = null;
   logger.info('✅ BoosterState client shut down');
 }

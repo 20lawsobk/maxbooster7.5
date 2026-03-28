@@ -93,7 +93,6 @@ class AutoPostingServiceV2 {
     this.workerInterval = setInterval(async () => {
       try {
         const client = await getBoosterStateClient();
-        if (!client) return;
 
         const item = await client.queuePop('scheduled-posts');
         if (!item) return;

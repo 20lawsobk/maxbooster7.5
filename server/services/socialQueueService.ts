@@ -86,10 +86,6 @@ class SocialQueueService {
   async checkRateLimit(platform: string, accountId: string): Promise<boolean> {
     try {
       const client = await getBoosterStateClient();
-      if (!client) {
-        logger.warn('BoosterState unavailable - rate limit check skipped, allowing request');
-        return true;
-      }
 
       const backoffStatus = await this.isInBackoff(platform, accountId);
       if (backoffStatus.inBackoff) {
@@ -122,10 +118,6 @@ class SocialQueueService {
   async incrementRateLimit(platform: string, accountId: string): Promise<void> {
     try {
       const client = await getBoosterStateClient();
-      if (!client) {
-        logger.warn('BoosterState unavailable - rate limit increment skipped');
-        return;
-      }
 
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
@@ -148,9 +140,6 @@ class SocialQueueService {
 
     try {
       const client = await getBoosterStateClient();
-      if (!client) {
-        return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
-      }
 
       const backoffKey = `backoff:${platform}:${accountId}`;
 
@@ -203,9 +192,6 @@ class SocialQueueService {
   async isInBackoff(platform: string, accountId: string): Promise<{ inBackoff: boolean; remainingMs?: number }> {
     try {
       const client = await getBoosterStateClient();
-      if (!client) {
-        return { inBackoff: false };
-      }
 
       const backoffKey = `backoff:${platform}:${accountId}`;
       const stateJson = await client.get(backoffKey);
@@ -233,7 +219,6 @@ class SocialQueueService {
   async clearBackoff(platform: string, accountId: string): Promise<void> {
     try {
       const client = await getBoosterStateClient();
-      if (!client) return;
 
       const backoffKey = `backoff:${platform}:${accountId}`;
       await client.del(backoffKey);
@@ -257,16 +242,6 @@ class SocialQueueService {
 
     try {
       const client = await getBoosterStateClient();
-      if (!client) {
-        return {
-          withinLimits: true,
-          hourlyUsed: 0,
-          hourlyLimit: platformConfig.postsPerHour,
-          dailyUsed: 0,
-          dailyLimit: platformConfig.postsPerDay,
-          inBackoff: false,
-        };
-      }
 
       const hourKey = `rate:${platform}:${accountId}:hour`;
       const dayKey = `rate:${platform}:${accountId}:day`;
