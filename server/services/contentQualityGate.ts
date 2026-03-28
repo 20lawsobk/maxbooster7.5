@@ -218,12 +218,42 @@ export class ContentQualityGate {
   /**
    * Record real engagement outcome for a published post.
    *
-   * Adapts the per-user quality threshold stored in PDIM:
-   *   • High engagement (≥ 5 %)  → raise threshold up to 95
-   *   • Low engagement  (< 2 %)  → lower threshold, floor = VEO_PRESSURE_FLOOR
+   * Adapts the per-user quality threshold stored in PDIM using platform-specific
+   * engagement benchmarks — because each platform has its own engagement economy:
+   *
+   *   Platform   │ Avg rate │ High trigger │ Low trigger │ Why
+   *   ───────────┼──────────┼──────────────┼─────────────┼────────────────────────────
+   *   Twitter/X  │ 0.5–1 %  │    ≥ 2 %     │   < 0.5 %   │ Follow-based, noisy feed
+   *   Instagram  │ 1–3 %    │    ≥ 5 %     │   < 1 %     │ Mixed algo + follow
+   *   TikTok     │ 5–9 %    │    ≥ 8 %     │   < 3 %     │ FYP exposes to strangers
+   *   LinkedIn   │ 2–5 %    │    ≥ 4 %     │   < 1 %     │ Professional, lower volume
+   *   Facebook   │ 0.5–1 %  │    ≥ 2 %     │   < 0.5 %   │ Heavily pay-to-play
+   *   Threads    │ 1–3 %    │    ≥ 3 %     │   < 1 %     │ New, algo still maturing
+   *   YouTube    │ 1–3 %    │    ≥ 4 %     │   < 1 %     │ Long-form, lower rate
+   *
+   * High engagement → raise threshold 1 pt (ceiling 95) — content is punching above its weight
+   * Low engagement  → lower threshold 1 pt (floor 73)   — relax before the gate over-rejects
+   * Neutral zone    → no change — normal performance, no signal either way
+   *
    * Also pushes a training feedback signal to MaxCore + PDIM queue so the
-   * inference model learns from what actually resonated with the audience.
+   * inference model learns what actually resonated on each platform.
    */
+
+  private getPlatformEngagementBenchmarks(platform: string): { high: number; low: number } {
+    const p = platform.toLowerCase().replace(/[^a-z]/g, '');
+    const benchmarks: Record<string, { high: number; low: number }> = {
+      twitter:   { high: 2.0, low: 0.5 },
+      x:         { high: 2.0, low: 0.5 },
+      instagram: { high: 5.0, low: 1.0 },
+      tiktok:    { high: 8.0, low: 3.0 },
+      linkedin:  { high: 4.0, low: 1.0 },
+      facebook:  { high: 2.0, low: 0.5 },
+      threads:   { high: 3.0, low: 1.0 },
+      youtube:   { high: 4.0, low: 1.0 },
+    };
+    return benchmarks[p] ?? { high: 5.0, low: 2.0 };
+  }
+
   async recordEngagementOutcome(
     userId: string,
     platform: string,
@@ -233,14 +263,15 @@ export class ContentQualityGate {
     qualityScore: number
   ): Promise<void> {
     try {
+      const { high, low } = this.getPlatformEngagementBenchmarks(platform);
       const currentThreshold = await this.getUserThreshold(userId);
       let newThreshold = currentThreshold;
 
-      if (engagementRate >= 5) {
-        // Content performing well → raise the bar by 1 point (max 95)
+      if (engagementRate >= high) {
+        // Punching above the platform's norm → raise the bar by 1 point (max 95)
         newThreshold = Math.min(95, currentThreshold + 1);
-      } else if (engagementRate < 2) {
-        // Content underperforming → relax by 1 point (floor = VEO_PRESSURE_FLOOR)
+      } else if (engagementRate < low) {
+        // Below the platform's floor → relax by 1 point (floor = VEO_PRESSURE_FLOOR)
         newThreshold = Math.max(VEO_PRESSURE_FLOOR, currentThreshold - 1);
       }
 
@@ -253,20 +284,21 @@ export class ContentQualityGate {
           60 * 60 * 24 * 30   // 30-day TTL — persists across restarts
         );
         logger.info(
-          `[QualityGate] Threshold adapted for user ${userId}: ` +
+          `[QualityGate] Threshold adapted for user ${userId} on ${platform}: ` +
           `${currentThreshold} → ${newThreshold} ` +
-          `(engagement=${engagementRate.toFixed(2)}%, qualityScore=${qualityScore.toFixed(1)})`
+          `(engagement=${engagementRate.toFixed(2)}% vs high=${high}%/low=${low}%, ` +
+          `qualityScore=${qualityScore.toFixed(1)})`
         );
       }
 
       // Push training signal to MaxCore + PDIM training queue
-      const curriculum =
-        engagementRate >= 5 ? 'reinforce_winner' :
-        engagementRate <  2 ? 'improve_weak'     : 'neutral';
+      const isHigh = engagementRate >= high;
+      const isLow  = engagementRate < low;
+      const curriculum = isHigh ? 'reinforce_winner' : isLow ? 'improve_weak' : 'neutral';
 
       await pushTrainingFeedback({
         source:          'quality_gate_outcome',
-        trigger:         engagementRate >= 5 ? 'high_engagement' : engagementRate < 2 ? 'low_engagement' : 'normal',
+        trigger:         isHigh ? 'high_engagement' : isLow ? 'low_engagement' : 'normal',
         engagement_rate: engagementRate,
         platform,
         content_type:    contentType,
