@@ -103,12 +103,16 @@ class AutoPostGenerator {
         genre: request.genre,
       });
 
+      if (!gateResult) {
+        throw new Error('Content quality gate: all variants below minimum threshold. Post skipped to protect quality.');
+      }
+
       const selected = gateResult.winner;
       const variants = [selected, ...gateResult.rejectedVariants];
 
       if (gateResult.passedOnAttempt > 1) {
         logger.info(
-          `[AutoPost] Quality gate: passed on attempt ${gateResult.passedOnAttempt}/${5}, ` +
+          `[AutoPost] Quality gate: passed on attempt ${gateResult.passedOnAttempt}/${10}, ` +
           `tried ${gateResult.totalVariantsTried} variants, ` +
           `score=${selected.scores.overall.toFixed(1)}, threshold=${gateResult.thresholdUsed}, ` +
           `archived=${gateResult.storedKey ?? 'no'}`

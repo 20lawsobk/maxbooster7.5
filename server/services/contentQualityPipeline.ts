@@ -8,24 +8,27 @@ import { pythonAIService } from './pythonAIService.js';
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
-// pipeline's rubric.  "At least 90% of Veo quality" = 90% × ~90 = 81.  We use
-// 75 as the operational gate to account for music-artist-specific content that
-// Veo (a general-purpose model) doesn't natively optimise for: scene slang,
-// release-phase urgency, genre vocabulary, and authentic musician voice.
+// pipeline's rubric.  "At least 90% of Veo quality" = 90% × ~90 = 81.
 //
-// This raises the gate from 60 → 75, eliminating every post that would have
-// been "good enough" under the old threshold but not actually competitive with
-// professional-grade AI-generated content.  Quality over quantity.
+// VEO_QUALITY_GATE is set to 81 — this is the hard per-batch minimum that every
+// variant must clear before being passed up to the A/B testing retry loop.
+// Music-artist-specific vocabulary (scene slang, release urgency, genre voice)
+// earns its own +bonus in narrativeAuthenticity/emotionalArc, so the gate is
+// achievable without watering it down.
 //
-//   VEO_QUALITY_GATE    75  — default minimum score to pass
-//   VEO_PRESSURE_FLOOR  65  — absolute floor even at max Caffeine Mode pressure
-//                             (87% of the gate — sacrifices quality by ≤13% max)
-//   VEO_DEFAULT_VARIANTS 5  — variants generated per request; more attempts =
-//                             higher probability of clearing the tighter bar
+// VEO_PRESSURE_FLOOR is 73 — even under maximum Caffeine Mode schedule pressure
+// we never publish content that scores below 90% of the gate itself.  This
+// preserves the "quality over quantity" contract at all times.
+//
+//   VEO_QUALITY_GATE     81  — per-batch minimum (90 % of Veo's ~90 baseline)
+//   VEO_PRESSURE_FLOOR   73  — absolute floor under max deadline pressure
+//   VEO_DEFAULT_VARIANTS 30  — variants per batch; 30+ parallel attempts dramatically
+//                              shortens training time and maximises the probability of
+//                              clearing the 81 bar on the first round
 // ─────────────────────────────────────────────────────────────────────────────
-const VEO_QUALITY_GATE    = 75;
-const VEO_PRESSURE_FLOOR  = 65;
-const VEO_DEFAULT_VARIANTS = 5;
+const VEO_QUALITY_GATE    = 81;
+const VEO_PRESSURE_FLOOR  = 73;
+const VEO_DEFAULT_VARIANTS = 30;
 
 // ── Caffeine Mode — Deadline Pressure System ──────────────────────────────────
 // Tracks how far behind schedule the autonomous autopilot is.
@@ -1220,8 +1223,14 @@ class ContentQualityPipeline {
     minScore: number = VEO_QUALITY_GATE
   ): Promise<{ selected: ContentVariant | null; variants: ContentVariant[]; context: ContentContext }> {
     const context = await this.buildContext(userId, baseContext);
-    // Caffeine Mode: generate extra variants under pressure (quality requires more attempts)
-    const pressureExtra = _currentPressure > 1.5 ? 3 : _currentPressure > 0.5 ? 2 : 0;
+    // Caffeine Mode: add proportional extra variants under deadline pressure.
+    // With a 30-variant base, extras are 20% / 33% / 50% more to meaningfully
+    // increase the quality hit probability without doubling compute.
+    const pressureExtra = _currentPressure > 1.5
+      ? Math.ceil(variantCount * 0.50)   // critical: +50 % (e.g. 30 → 45)
+      : _currentPressure > 0.5
+        ? Math.ceil(variantCount * 0.33)  // moderate: +33 % (e.g. 30 → 40)
+        : 0;
     const variants = await this.generateVariants(context, variantCount + pressureExtra);
     const selected = await this.selectBestVariant(variants, minScore);
 

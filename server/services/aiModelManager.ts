@@ -97,6 +97,16 @@ class AIModelManager {
         if (baseState?.state) {
           model.deserializeMetadata(baseState.state);
           logger.info(`[AIModelManager] Seeded Social AI for user ${userId} with base training knowledge`);
+
+          // Re-train on the base history to rebuild TF platform models and mark isTrained=true.
+          // deserializeMetadata only restores scalers/stats — the TF weights are not persisted,
+          // so we must run trainOnUserEngagementData to build them and flip isTrained.
+          const baseHistory = baseState.state.trainingHistory;
+          if (Array.isArray(baseHistory) && baseHistory.length >= 50) {
+            await model.trainOnUserEngagementData(baseHistory);
+            await this.persistSocialModel(userId, model);
+            logger.info(`[AIModelManager] Base-trained Social AI for user ${userId} (${baseHistory.length} records) — autopilot ready`);
+          }
         }
       } catch (err) {
         logger.warn(`[AIModelManager] Could not apply Social base state for user ${userId}:`, err);

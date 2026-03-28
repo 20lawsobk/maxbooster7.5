@@ -6,6 +6,7 @@ import { autoPostingServiceV2 } from './autoPostingServiceV2.js';
 import type { PostContent } from './autoPostingServiceV2.js';
 import { aiContentService } from './aiContentService.js';
 import { advancedSocialAIService } from './advancedSocialAIService.js';
+import { contentQualityGate } from './contentQualityGate.js';
 
 /**
  * Automated Autopilot Publisher
@@ -183,29 +184,29 @@ class AutopilotPublisher {
       const socialAI = await aiModelManager.getSocialAutopilot(userId);
 
       if (!socialAI.getIsTrained()) {
-        // Model not trained yet — fall back to Advanced Social AI (no training required)
-        logger.info(`[Autopilot] User ${userId}: model untrained, using Advanced Social AI fallback`);
+        // Model not trained yet — route through the A/B quality gate (up to 10 rounds × 7
+        // variants each) so every post still meets ≥ 90% of Veo quality before scheduling.
+        logger.info(`[Autopilot] User ${userId}: model untrained — running A/B quality gate (target: 81/100 = 90% Veo)`);
 
-        const toneMap: Record<string, 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling'> = {
-          professional: 'professional', casual: 'casual', energetic: 'energetic',
-          inspirational: 'inspirational', humorous: 'humorous', storytelling: 'storytelling',
-        };
-        const tone = toneMap[config.brandVoice] ?? 'professional';
-
-        const advancedResult = await advancedSocialAIService.generateAdvancedContent({
-          userId,
-          platforms: platforms.map((p: string) => p.toLowerCase()),
+        const gateResult = await contentQualityGate.run(userId, {
+          topic: config.topic || 'new music',
           objective: 'engagement',
-          tone,
-          contentType: 'engagement',
-          includeHashtags: true,
-          includeEmojis: true,
-          variantCount: 1,
+          platform: platforms[0] || 'instagram',
+          tone: config.brandVoice,
+          genre: config.genre,
+          targetAudience: config.targetAudience,
         });
 
+        if (!gateResult) {
+          logger.warn(`[Autopilot] User ${userId}: quality gate rejected all variants — skipping post to protect quality`);
+          return { posts: 0, error: 'Content quality gate: all variants below minimum threshold (73). Skipping to protect brand quality.' };
+        }
+
         const postContent: PostContent = {
-          text: advancedResult.primary.body,
-          hashtags: advancedResult.primary.hashtags,
+          text: gateResult.winner.headline
+            ? `${gateResult.winner.headline}\n\n${gateResult.winner.content}`
+            : gateResult.winner.content,
+          hashtags: gateResult.winner.hashtags,
           mediaType: 'text',
         };
 
@@ -222,7 +223,12 @@ class AutopilotPublisher {
           'social_autopilot'
         );
 
-        logger.info(`✅ User ${userId}: Scheduled Advanced-AI post ${scheduledPost.id} for [${platforms.join(',')}] at ${nextOptimalTime.toISOString()}`);
+        logger.info(
+          `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for [${platforms.join(',')}] ` +
+          `at ${nextOptimalTime.toISOString()} — ` +
+          `score=${gateResult.winner.scores.overall.toFixed(1)} (passed round ${gateResult.passedOnAttempt}/${10}, ` +
+          `${gateResult.totalVariantsTried} variants tried)`
+        );
         return { posts: 1 };
       }
 
