@@ -210,7 +210,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // primary returns 503 on any health path, the deployment times out even after
   // workers come up (OS SO_REUSEPORT load-balances between primary + workers so
   // the primary always handles a fraction of incoming requests).
-  const HEALTH_PATHS = new Set(['/health', '/api/health', '/api/ping']);
+  const HEALTH_PATHS = new Set(['/', '/health', '/api/health', '/api/ping']);
   const primaryHealthServer = http.createServer((req, res) => {
     const url = (req.url ?? '').split('?')[0]; // strip query string
     if (HEALTH_PATHS.has(url)) {
