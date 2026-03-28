@@ -16,9 +16,13 @@ import { eq } from 'drizzle-orm';
 const PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|::1$|fc|fd)/i;
 
 function validateExternalUrl(raw: string): string {
+  let normalised = raw.trim();
+  if (normalised && !/^https?:\/\//i.test(normalised)) {
+    normalised = 'https://' + normalised;
+  }
   let parsed: URL;
   try {
-    parsed = new URL(raw);
+    parsed = new URL(normalised);
   } catch {
     throw new Error('Invalid URL');
   }

@@ -591,7 +591,11 @@ export function ContentAnalyzer() {
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                 />
                 <Button
-                  onClick={() => analyzeContent('website', websiteUrl)}
+                  onClick={() => {
+                    const url = websiteUrl.trim();
+                    const normalized = url && !/^https?:\/\//i.test(url) ? `https://${url}` : url;
+                    analyzeContent('website', normalized);
+                  }}
                   disabled={analyzing || !websiteUrl}
                 >
                   {analyzing ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Analyze'}
