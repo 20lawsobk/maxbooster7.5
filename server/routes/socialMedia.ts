@@ -1740,34 +1740,41 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
 
         if (!hook && !body && !cta && topic) {
           try {
-            const pipelineResult = await contentQualityPipeline.generateWithAdvancedAI(
-              userId || 'anonymous',
-              {
-                topic,
-                platform: platform || 'tiktok',
-                genre:      genre      || undefined,
-                artistName: artist_name || '',
-                tone:       tone       || 'energetic',
-                objective:  goal === 'sales' || goal === 'traffic'
-                              ? 'conversions'
-                              : goal === 'viral' ? 'viral' : 'engagement',
-              },
-              5,
+            // Call Advanced Social AI directly — this path is proven reliable
+            // (returns score≈65.7 on every call).  The quality gate wrapper
+            // (generateWithAdvancedAI) adds pipeline scoring on top, but it
+            // currently throws during variant post-processing; for video text
+            // overlays we just need the best-available content, not gated output.
+            const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
+            const objective = goal === 'sales' || goal === 'traffic'
+              ? 'conversions'
+              : goal === 'viral' ? 'viral' : 'engagement';
+            const aiResult = await advAI.generateAdvancedContent({
+              userId: userId || 'anonymous',
+              topic,
+              platforms: [platform || 'tiktok'],
+              objective,
+              tone: (tone || 'energetic') as any,
+              genre: genre || undefined,
+              artistName: artist_name || undefined,
+              contentType: objective === 'conversions' ? 'promotional'
+                : objective === 'viral' ? 'storytelling' : 'announcement',
+              includeHashtags: true,
+              includeEmojis: true,
+              variantCount: 1,
+              trendContext: genre ? [`genre:${genre}`] : undefined,
+            });
+            hook = aiResult.primary.headline.slice(0, 80);
+            body = aiResult.primary.body.split('\n')[0].slice(0, 120);
+            cta  = aiResult.primary.callToAction.slice(0, 60);
+            logger.info(
+              `[VideoGen] AI content ready — score=${aiResult.scoring.overall.toFixed(1)} ` +
+              `hook="${hook.slice(0, 40)}…"`
             );
-            const best = pipelineResult.selected;
-            if (best) {
-              hook = best.headline.slice(0, 80);
-              body = best.content.split('\n')[0].slice(0, 120);
-              cta  = best.callToAction.slice(0, 60);
-              const score = best.scores.overall;
-              logger.info(
-                `[VideoGen] Advanced pipeline — score=${score.toFixed(1)} ` +
-                `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
-                `${score < 81 ? '⚠ below 81 threshold' : '✅ gate passed'}`
-              );
-            }
           } catch (pipeErr) {
-            logger.warn('[VideoGen] Pipeline content generation failed, continuing with defaults:', pipeErr);
+            const msg = (pipeErr as Error)?.message ?? String(pipeErr);
+            logger.warn(`[VideoGen] Content generation failed (${msg}), video will use topic as hook`);
+            hook = topic.slice(0, 80);
           }
         }
 

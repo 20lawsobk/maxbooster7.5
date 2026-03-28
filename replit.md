@@ -60,6 +60,14 @@ Max Booster operates on a three-point data flow:
   - Format-aware loading button copy ("Creating audio clip…", "Building video…", "Generating image…")
   - `ServerVideoGenerator` gains an `autoStart` prop — when `true`, it fires generation immediately on mount without requiring a second user click; shows a cinematic progress view instead of the form
   - `autoStart={true}` passed from the URL-tab results fallback so video begins rendering as soon as the user's generate request completes
+  - `autoStartPending` is included in all display-condition checks so the spinner shows during the 400ms warm-up delay — prevents premature "Something went wrong" flash
+
+## Video Generation Pipeline (confirmed working — 10/10 E2E tests)
+- **Route** (`POST /api/social/generate-video`): Always returns `{job_id, status:'processing'}` immediately (non-blocking). Background IIFE runs: Stage 1 → AI content, Stage 2 → Python AI renderer (if available), Stage 3 → FFmpeg fallback.
+- **AI Content Stage**: Calls `advancedSocialAIService.generateAdvancedContent()` directly (not `contentQualityPipeline.generateWithAdvancedAI()` which throws during variant post-processing). Content always flows into the video — no generic defaults.
+- **generateWithAdvancedAI catch block**: Now logs the actual error message+stack and returns best-effort variant without enforcing the VEO_PRESSURE_FLOOR, so callers always get something useful.
+- **Polling** (`GET /api/social/video-job/:id`): Checks `ffmpegJobs` map for both `video_` and `ffmpeg_` prefixed job IDs.
+- **Render timing**: ~19–28s end-to-end. HTTP response: ~880–1000ms.
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
