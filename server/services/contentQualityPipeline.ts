@@ -6,6 +6,7 @@ import { aiService } from './aiService';
 import { advancedSocialAIService, type AdvancedContentRequest, type ContentScoring as AdvancedScoring } from './advancedSocialAIService.js';
 import { pythonAIService } from './pythonAIService.js';
 import { MaxCoreAIClient } from './unifiedAIController.js';
+import { platformAlgorithmOptimizer } from './platformAlgorithmOptimizer.js';
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
@@ -115,6 +116,7 @@ export interface ContentScores {
   brandAlignment: number;
   hookStrength: number;
   callToActionEffectiveness: number;
+  algorithmAlignment: number;
 }
 
 export interface PlatformOptimization {
@@ -408,6 +410,17 @@ class ContentQualityPipeline {
       hashtags = this.generateOptimizedHashtags(context);
     }
 
+    // ── Algorithm signal injection ─────────────────────────────────────────────
+    // After content is generated (from any path), upgrade the headline and CTA
+    // to target the platform's primary algorithmic signal.  This ensures every
+    // variant is engineered to trigger distribution levers — not just scored.
+    const optimised = this.applyAlgorithmSignalOptimization(
+      headline!, body!, cta!, context.platform
+    );
+    headline = optimised.headline;
+    body     = optimised.body;
+    cta      = optimised.cta;
+
     const fullContent = `${headline!}\n\n${body!}`;
     const platformOpt = this.validatePlatformConstraints(fullContent, hashtags!, context.platform);
     const scores = this.scoreContent(fullContent, headline!, cta!, context, platformOpt);
@@ -421,6 +434,114 @@ class ContentQualityPipeline {
       scores,
       platformOptimizations: platformOpt,
     };
+  }
+
+  /**
+   * Apply platform algorithm signal optimization to any generated content.
+   *
+   * This runs after content is generated (AI or template path) and surgically
+   * upgrades the headline and CTA to target the platform's primary algorithmic
+   * distribution lever — without altering the core creative content.
+   *
+   * Approach:
+   *  - If the content already has a strong algorithm signal (detected by the
+   *    optimizer), leave it untouched — don't over-engineer.
+   *  - If the primary signal is weak, inject the minimum effective change:
+   *    upgrade the CTA and optionally prepend a signal-boosting phrase.
+   */
+  private applyAlgorithmSignalOptimization(
+    headline: string,
+    body: string,
+    cta: string,
+    platform: string
+  ): { headline: string; body: string; cta: string } {
+    const key = platform.toLowerCase().replace(/[^a-z]/g, '');
+
+    // Score current alignment — only modify if it's weak (< 60)
+    const currentScore = platformAlgorithmOptimizer.scoreAlgorithmAlignment(
+      body, headline, cta, platform
+    );
+    if (currentScore.score >= 60) {
+      // Already well-aligned — trust the generated content
+      return { headline, body, cta };
+    }
+
+    // ── Platform-specific signal upgrades ──────────────────────────────────────
+    switch (key) {
+      case 'twitter':
+      case 'x': {
+        // Reply velocity — add a question to the CTA if missing
+        const hasQuestion = /\?/.test(cta) || /what do you think|agree|disagree|your take/i.test(cta);
+        const upgradedCta = hasQuestion ? cta : `${cta} What's your take? Drop it below ↓`;
+        // Remove external links from headline if present
+        const cleanHeadline = headline.replace(/https?:\/\/\S+/gi, '').trim();
+        return { headline: cleanHeadline, body, cta: upgradedCta };
+      }
+
+      case 'instagram': {
+        // Saves — inject a save-trigger phrase if missing
+        const hasSaveTrigger = /save|bookmark/i.test(cta + headline);
+        const upgradedCta = hasSaveTrigger
+          ? cta
+          : `Save this post for later 🔖 — ${cta}`;
+        return { headline, body, cta: upgradedCta };
+      }
+
+      case 'tiktok': {
+        // Watch completion — prepend a curiosity-gap hook if headline is weak
+        const hasHook = /pov:|unpopular opinion|this changed|nobody tells|plot twist|here'?s why/i.test(headline);
+        const boostedHeadline = hasHook
+          ? headline
+          : `POV: ${headline}`;
+        const hasRewatch = /watch again|rewatch|duet|part 2/i.test(cta);
+        const upgradedCta = hasRewatch ? cta : `${cta} — Watch again if you missed it 🔁`;
+        return { headline: boostedHeadline, body, cta: upgradedCta };
+      }
+
+      case 'linkedin': {
+        // Dwell time — append a professional question if CTA is weak
+        const hasQuestion = /\?/.test(cta) || /what'?s your|how (do|are|have) you/i.test(cta);
+        const upgradedCta = hasQuestion
+          ? cta
+          : `${cta}\n\nWhat's been your experience with this? Drop it in the comments.`;
+        // Warn if body contains a link (should be in comments)
+        const bodyHasLink = /https?:\/\/\S+/i.test(body);
+        const cleanBody = bodyHasLink
+          ? body.replace(/https?:\/\/\S+/gi, '[link in first comment]')
+          : body;
+        return { headline, body: cleanBody, cta: upgradedCta };
+      }
+
+      case 'facebook': {
+        // Emotional reactions — inject a tag-a-friend CTA if missing
+        const hasTagCta = /tag (a|someone|your)/i.test(cta);
+        const upgradedCta = hasTagCta
+          ? cta
+          : `${cta} Tag someone who needs to hear this ❤️`;
+        return { headline, body, cta: upgradedCta };
+      }
+
+      case 'threads': {
+        // Replies — add a dialogue-inviting question if CTA is just a statement
+        const hasDialogue = /\?/.test(cta) || /what'?s your|anyone else|reply with/i.test(cta);
+        const upgradedCta = hasDialogue
+          ? cta
+          : `${cta} What's your experience with this? 👇`;
+        return { headline, body, cta: upgradedCta };
+      }
+
+      case 'youtube': {
+        // CTR × watch time — add a subscribe + watch-next CTA if weak
+        const hasWatchNext = /subscribe|watch (this|next|more)/i.test(cta);
+        const upgradedCta = hasWatchNext
+          ? cta
+          : `${cta} Subscribe for more, and watch the next one in the description.`;
+        return { headline, body, cta: upgradedCta };
+      }
+
+      default:
+        return { headline, body, cta };
+    }
   }
 
   private generateContentByStrategy(
@@ -793,20 +914,31 @@ class ContentQualityPipeline {
     const emotionalArc         = this.scoreEmotionalArc(content, headline);
     const narrativeAuthenticiy = this.scoreNarrativeAuthenticity(content, headline);
 
-    // ── Veo-calibrated weights (9 dimensions, sum = 1.00) ─────────────────────
-    // emotionalArc boosted from 0.07 → 0.10; narrativeAuthenticity added at 0.06.
+    // ── Algorithm alignment: 10th dimension ───────────────────────────────────
+    // Scores how well the content targets the platform's specific algorithm
+    // signals (watch completion, saves, reply velocity, dwell time, etc.).
+    // A beautifully-written post that doesn't trigger the right lever won't
+    // get distributed — this dimension ensures the algorithm works with us.
+    const algoAlignment = platformAlgorithmOptimizer.scoreAlgorithmAlignment(
+      content, headline, cta, context.platform
+    );
+    platformAlgorithmOptimizer.logAlignment(context.platform, algoAlignment);
+    const algorithmAlignment = algoAlignment.score;
+
+    // ── Veo-calibrated weights (10 dimensions, sum = 1.00) ────────────────────
+    // algorithmAlignment added at 0.10 — signals that engineer distribution.
     // Other weights reduced proportionally to maintain the total at 1.0.
-    // Quality over quantity: authenticity and arc now outweigh generic engagement.
     const weights = {
-      engagement:                0.20,  // was 0.22
-      hookStrength:              0.14,  // was 0.15
-      clarity:                   0.11,  // was 0.12
-      sentiment:                 0.11,  // was 0.12
-      brandAlignment:            0.10,  // was 0.12
-      callToActionEffectiveness: 0.11,  // was 0.12
-      specificity:               0.07,  // was 0.08
-      emotionalArc:              0.10,  // was 0.07 — Veo excels at narrative arcs
-      narrativeAuthenticity:     0.06,  // NEW  — real artist voice vs. PR fluff
+      engagement:                0.17,  // was 0.20
+      hookStrength:              0.12,  // was 0.14
+      clarity:                   0.10,  // was 0.11
+      sentiment:                 0.10,  // was 0.11
+      brandAlignment:            0.09,  // was 0.10
+      callToActionEffectiveness: 0.09,  // was 0.11
+      specificity:               0.07,  // unchanged
+      emotionalArc:              0.10,  // unchanged
+      narrativeAuthenticity:     0.06,  // unchanged
+      algorithmAlignment:        0.10,  // NEW  — platform algorithm signal targeting
     };                                  // total: 1.00
 
     const platformPenalty = platformOpt.isValid ? 0 : 15;
@@ -825,7 +957,8 @@ class ContentQualityPipeline {
       ctaEffectiveness           * weights.callToActionEffectiveness +
       specificity                * weights.specificity +
       emotionalArc               * weights.emotionalArc +
-      narrativeAuthenticiy       * weights.narrativeAuthenticity -
+      narrativeAuthenticiy       * weights.narrativeAuthenticity +
+      algorithmAlignment         * weights.algorithmAlignment -
       platformPenalty
     ));
 
@@ -837,6 +970,7 @@ class ContentQualityPipeline {
       brandAlignment,
       hookStrength,
       callToActionEffectiveness: ctaEffectiveness,
+      algorithmAlignment,
     };
   }
 
