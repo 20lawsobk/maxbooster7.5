@@ -1890,6 +1890,16 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
       });
     }
 
+    // video_* jobs are always FFmpeg-backed.  If they're not in the map the
+    // server must have restarted and the job is gone — tell the client clearly
+    // so it can show a retry prompt instead of hanging forever.
+    if (jobId.startsWith('video_')) {
+      return res.status(410).json({
+        status: 'error',
+        error: 'Server was restarted while your video was rendering. Please generate again.',
+      });
+    }
+
     // Fall through to Python AI service for non-FFmpeg jobs
     const result = await pythonAIService.getVideoJobStatus(jobId);
     if (!result.success) {

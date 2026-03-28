@@ -132,6 +132,10 @@ export function ServerVideoGenerator({
   const [autoStartPending, setAutoStartPending] = useState(
     autoStart && !!(topicProp?.trim() || initialHook?.trim())
   );
+  // How many times auto-start has silently retried after failure (max 1 auto-retry)
+  const autoStartRetryCountRef = useRef(0);
+  // True while waiting for the retry timeout — keeps the spinner visible seamlessly
+  const [autoStartRetrying, setAutoStartRetrying] = useState(false);
 
   // Text mode state
   const [textTopic, setTextTopic] = useState('');
@@ -309,11 +313,38 @@ export function ServerVideoGenerator({
           });
         }
       } else {
+        const isRestartError = error.message?.includes('restarted');
         toast({
-          title: 'Generation Failed',
+          title: isRestartError ? 'Server Restarted' : 'Generation Failed',
           description: error.message || 'Could not generate video',
           variant: 'destructive',
         });
+      }
+      // In auto-start mode: silently retry once (covers server-restart scenario
+      // where the old job_id is gone from memory), then fall back to the form.
+      if (autoStart && autoStartRetryCountRef.current < 1) {
+        autoStartRetryCountRef.current += 1;
+        setAutoStartRetrying(true);
+        setTimeout(() => {
+          setAutoStartRetrying(false);
+          autoStartFiredRef.current = true;
+          const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
+          const platformTemplate = PLATFORM_DEFAULT_TEMPLATE[platform] || 'cinematic_promo';
+          callGenerateVideo({
+            topic: topicProp?.trim() || initialHook?.trim(),
+            hook:  initialHook  || undefined,
+            body:  initialBody  || undefined,
+            cta:   initialCta   || undefined,
+            template: initialTemplate || platformTemplate,
+            quality:  'cinematic',
+            bg_color:     initialBgColor     || undefined,
+            accent_color: initialAccentColor || undefined,
+            voiceover: hasScript,
+          });
+        }, 2000);
+      } else if (autoStart) {
+        // All retries exhausted — unlock the form so the user can adjust & try manually
+        autoStartFiredRef.current = false;
       }
     } finally {
       clearTimeout(timeoutId);
@@ -498,9 +529,9 @@ export function ServerVideoGenerator({
           {isAutoMode
             ? videoUrl
               ? 'Your video is ready — watch and download below.'
-              : isGenerating || autoStartPending
+              : isGenerating || autoStartPending || autoStartRetrying
               ? 'Your video is rendering. This usually takes 1–3 minutes.'
-              : 'Something went wrong. Customize the settings below and try again.'
+              : 'Something went wrong. Adjust settings below and try again.'
             : 'Generate cinematic videos from text, audio, or artwork'}
         </CardDescription>
       </CardHeader>
@@ -508,9 +539,9 @@ export function ServerVideoGenerator({
       <CardContent className="space-y-4">
 
         {/* ── AUTO-START: show only progress + result, hide the form ── */}
-        {isAutoMode && (isGenerating || videoUrl || autoStartPending) && (
+        {isAutoMode && (isGenerating || videoUrl || autoStartPending || autoStartRetrying) && (
           <div className="space-y-4">
-            {(isGenerating || autoStartPending) && (() => {
+            {(isGenerating || autoStartPending || autoStartRetrying) && (() => {
               // Progress estimate: asymptotically approaches 99% based on elapsed seconds.
               // Average render ≈ 25s → reaches ~95% at 25s, then slows to a crawl.
               const EXPECTED_S = 25;
@@ -625,8 +656,10 @@ export function ServerVideoGenerator({
           </div>
         )}
 
-        {/* Hide the full form while auto-generating, after success, or during startup delay */}
-        {!(isAutoMode && (isGenerating || videoUrl)) && !autoStartPending && !(isAutoMode && autoStartFiredRef.current) && (
+        {/* Hide the full form while auto-generating, after success, during startup delay,
+            or while an auto-retry is pending. After all retries are exhausted
+            autoStartFiredRef is reset to false so the form appears naturally. */}
+        {!(isAutoMode && (isGenerating || videoUrl)) && !autoStartPending && !autoStartRetrying && !(isAutoMode && autoStartFiredRef.current) && (
           <>
         {/* Input mode tabs */}
         <div className="flex rounded-lg border overflow-hidden">
