@@ -694,10 +694,16 @@ async function generateVoiceover(
 ): Promise<string | null> {
   try {
     // Build spoken text: hook . pause . body . pause . cta
-    // sanitizeVideoText strips emoji, URLs, hashtags, non-ASCII — all of which
-    // crash the flite lavfi filter and silently fail voiceover generation.
+    // sanitizeVideoText strips emoji, URLs, hashtags, non-ASCII.
+    // Then strip lavfi option-parser special chars: : ? = , ; [ ] \
+    // These break the flite=text='...' filter option even inside single quotes.
     const spoken = [hook, body, cta]
       .map(t => sanitizeVideoText(t, 300))
+      .map(t => t
+        .replace(/[?:=,;[\]\\]/g, '')   // strip lavfi option syntax chars
+        .replace(/\s+/g, ' ')
+        .trim()
+      )
       .filter(Boolean)
       .join(' ... ');
 

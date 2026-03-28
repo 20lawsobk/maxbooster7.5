@@ -57,7 +57,7 @@ export function ContentAnalyzer() {
           : type === 'audio'
           ? { audioUrl: url }
           : type === 'website'
-          ? { websiteUrl: url }
+          ? { url }
           : { imageUrl: url };
 
       const response = await apiRequest('POST', endpoint, payload);
