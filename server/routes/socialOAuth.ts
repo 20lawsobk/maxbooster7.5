@@ -29,7 +29,7 @@ const PLATFORMS = {
   },
   threads: {
     name: 'Threads',
-    authUrl: 'https://www.threads.com/oauth/authorize',
+    authUrl: 'https://threads.net/oauth/authorize',
     tokenUrl: 'https://graph.threads.net/oauth/access_token',
     scope: 'threads_basic,threads_content_publish,threads_delete,threads_keyword_search,threads_location_tagging,threads_manage_insights,threads_profile_discovery',
     clientId: process.env.THREADS_APP_ID,
