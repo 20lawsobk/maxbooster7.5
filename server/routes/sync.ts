@@ -10,7 +10,7 @@ const batchSyncActionSchema = z.object({
   id: z.string(),
   type: z.string(),
   payload: z.unknown(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 const batchSyncRequestSchema = z.object({

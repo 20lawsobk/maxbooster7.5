@@ -113,7 +113,7 @@ router.post('/trigger', requireAuth, async (req: Request, res: Response) => {
     const userId = req.user!.id;
     const schema = z.object({
       eventType: z.string().min(1),
-      data: z.record(z.any()).optional(),
+      data: z.record(z.string(), z.any()).optional(),
     });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) {

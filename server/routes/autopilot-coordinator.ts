@@ -35,7 +35,7 @@ const updatePostSchema = z.object({
 const shareInsightSchema = z.object({
   sourceAutopilot: z.enum(['social', 'advertising']),
   insightType: z.enum(['timing', 'content', 'audience', 'platform', 'engagement']),
-  data: z.record(z.any()),
+  data: z.record(z.string(), z.any()),
 });
 
 const scheduleFilterSchema = z.object({

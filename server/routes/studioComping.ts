@@ -15,7 +15,7 @@ const createTakeGroupSchema = z.object({
   startTime: z.number().min(0),
   endTime: z.number().min(0),
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const updateTakeGroupSchema = z.object({
@@ -25,7 +25,7 @@ const updateTakeGroupSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   status: z.enum(['recording', 'editing', 'comped', 'rendered', 'archived']).optional(),
   isExpanded: z.boolean().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const createTakeLaneSchema = z.object({
@@ -37,7 +37,7 @@ const createTakeLaneSchema = z.object({
   color: z.string().regex(/^#[0-9A-Fa-f]{6}$/).optional(),
   rating: z.number().int().min(0).max(5).optional(),
   notes: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const updateTakeLaneSchema = z.object({
@@ -50,7 +50,7 @@ const updateTakeLaneSchema = z.object({
   rating: z.number().int().min(0).max(5).optional(),
   notes: z.string().optional(),
   audioClipId: z.string().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const createTakeSegmentSchema = z.object({
@@ -65,7 +65,7 @@ const createTakeSegmentSchema = z.object({
   gain: z.number().optional(),
   isSelected: z.boolean().optional(),
   order: z.number().int().min(0).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const updateTakeSegmentSchema = z.object({
@@ -77,7 +77,7 @@ const updateTakeSegmentSchema = z.object({
   gain: z.number().optional(),
   isSelected: z.boolean().optional(),
   order: z.number().int().min(0).optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
 });
 
 const createCompVersionSchema = z.object({

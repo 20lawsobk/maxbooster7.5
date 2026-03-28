@@ -17,7 +17,7 @@ const updateCampaignSchema = z.object({
   body: z.string().min(1).max(100_000).optional(),
   campaignType: z.enum(['newsletter', 'announcement', 'promotion', 'event']).optional(),
   status: z.enum(['draft', 'scheduled', 'sent', 'cancelled']).optional(),
-  segmentFilter: z.record(z.unknown()).optional(),
+  segmentFilter: z.record(z.string(), z.unknown()).optional(),
   scheduledAt: z.string().datetime().nullable().optional(),
 });
 

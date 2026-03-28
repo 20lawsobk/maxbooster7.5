@@ -13,11 +13,11 @@ const router = Router();
 const instantiatePluginSchema = z.object({
   trackId: z.string().optional(),
   chainPosition: z.number().int().min(0).default(0),
-  parameters: z.record(z.union([z.number(), z.boolean(), z.string()])).optional(),
+  parameters: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])).optional(),
 });
 
 const updateParametersSchema = z.object({
-  parameters: z.record(z.union([z.number(), z.boolean(), z.string()])),
+  parameters: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
   bypassed: z.boolean().optional(),
 });
 
@@ -40,7 +40,7 @@ const renderEffectSchema = z.object({
 const savePresetSchema = z.object({
   pluginId: z.string(),
   name: z.string().min(1).max(100),
-  parameters: z.record(z.union([z.number(), z.boolean(), z.string()])),
+  parameters: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
   category: z.string().max(50).optional(),
   isPublic: z.boolean().optional(),
 });
@@ -495,8 +495,8 @@ router.get('/factory-presets/:id', requireAuth, async (req, res) => {
 
 const abCompareSchema = z.object({
   instanceId: z.string(),
-  slotA: z.record(z.union([z.number(), z.boolean(), z.string()])),
-  slotB: z.record(z.union([z.number(), z.boolean(), z.string()])),
+  slotA: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
+  slotB: z.record(z.string(), z.union([z.number(), z.boolean(), z.string()])),
 });
 
 const bounceSchema = z.object({

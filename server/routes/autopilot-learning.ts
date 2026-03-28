@@ -121,7 +121,7 @@ const recordPerformanceSchema = z.object({
   mediaType: z.string().optional(),
   postId: z.string().optional(),
   postedAt: z.string().datetime().optional(),
-  metadata: z.record(z.any()).optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
   analytics: z.object({
     impressions: z.number().optional(),
     clicks: z.number().optional(),

@@ -896,7 +896,7 @@ const reportTypeSchema = z.object({
     end: z.string(),
   }).optional(),
   entityId: z.string().optional(),
-  options: z.record(z.unknown()).optional(),
+  options: z.record(z.string(), z.unknown()).optional(),
   emailDelivery: z.boolean().default(false),
 });
 

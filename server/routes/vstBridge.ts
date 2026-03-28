@@ -24,7 +24,7 @@ const createInstanceSchema = z.object({
 });
 
 const updateParametersSchema = z.object({
-  parameters: z.record(z.number()),
+  parameters: z.record(z.string(), z.number()),
 });
 
 const loadProgramSchema = z.object({

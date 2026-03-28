@@ -74,7 +74,7 @@ const transformSchema = z.object({
     'augment', 'diminish', 'quantize', 'legato', 'staccato',
     'velocityCurve', 'randomize'
   ]),
-  options: z.record(z.any()).optional(),
+  options: z.record(z.string(), z.any()).optional(),
 });
 
 const ornamentSchema = z.object({

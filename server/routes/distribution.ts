@@ -2802,7 +2802,7 @@ router.post('/workflow/transition', requireAuth, async (req: Request, res: Respo
       targetStatus: z.string(),
       requestType: z.string(),
       reason: z.string().optional(),
-      metadata: z.record(z.any()).optional()
+      metadata: z.record(z.string(), z.any()).optional()
     }).parse(req.body);
     
     const result = await enhancedWorkflowService.transition(

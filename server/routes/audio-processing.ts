@@ -21,7 +21,7 @@ const processAudioSchema = z.object({
   rightChannel: z.array(z.number()).optional(),
   processingChain: z.array(z.object({
     type: z.enum(['eq', 'compressor', 'reverb', 'limiter', 'gain']),
-    parameters: z.record(z.any()),
+    parameters: z.record(z.string(), z.any()),
   })),
 });
 

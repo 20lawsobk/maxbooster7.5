@@ -48,7 +48,7 @@ const cancellationSchema = z.object({
 const featureEventSchema = z.object({
   featureName: z.string().max(200),
   action: z.enum(['used', 'discovered', 'completed', 'skipped']).default('used'),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 router.post('/nps', requireAuth, async (req: any, res) => {

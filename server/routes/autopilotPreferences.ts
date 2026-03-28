@@ -40,7 +40,7 @@ const preferencesSchema = z.object({
   contentThemes: z.array(z.string().max(100)).optional(),
   avoidTopics: z.array(z.string().max(100)).optional(),
   callToActionStyle: z.string().max(50).optional(),
-  platformSettings: z.record(z.unknown()).optional(),
+  platformSettings: z.record(z.string(), z.unknown()).optional(),
   postingSchedule: postingScheduleSchema,
   adAutopilotEnabled: z.boolean().optional(),
   organicGrowthPriority: z.string().max(50).optional(),
