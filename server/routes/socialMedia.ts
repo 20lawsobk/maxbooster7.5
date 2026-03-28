@@ -1711,9 +1711,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     const {
       hook, body, cta, platform, aspect_ratio, template,
       duration, bg_color, text_color, accent_color,
-      artist_name, topic, goal, tone, quality,
+      artist_name, topic, goal, tone, quality, genre,
       user_audio_path, voiceover,
     } = req.body;
+
+    const userId = req.user?.id;
 
     const pyAvailable = await pythonAIService.isAvailable();
 
@@ -1726,6 +1728,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         template: template || 'cinematic_promo',
         duration: duration || 10,
         artist_name,
+        genre: genre || undefined,
         goal: goal || 'growth',
         tone: tone || 'energetic',
         quality: quality || 'cinematic',
@@ -1778,6 +1781,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       tone: tone || 'energetic',
       goal: goal || 'growth',
       artist_name,
+      genre: genre || undefined,
       quality: quality || 'cinematic',
       hook,
       body,
@@ -1786,6 +1790,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       accent_color: accent_color || undefined,
       user_audio_path: user_audio_path || undefined,
       voiceover: !!voiceover,
+      userId,
     };
 
     logger.info(`[VideoGen] Starting async FFmpeg job ${jobId}`);

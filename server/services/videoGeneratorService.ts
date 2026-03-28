@@ -33,7 +33,7 @@ import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import os from 'os';
 import path from 'path';
 import { randomBytes } from 'crypto';
-import { unifiedAIController } from './unifiedAIController.js';
+import { contentQualityPipeline } from './contentQualityPipeline.js';
 import { logger } from '../logger.js';
 
 const execFileAsync = promisify(execFile);
@@ -908,6 +908,7 @@ export interface VideoGenOptions {
   scene_prompt?: string;
   bg_color?: string;
   accent_color?: string;
+  userId?: string;
 }
 
 export interface VideoGenResult {
@@ -957,33 +958,50 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
   const scenePrompt = opts.scene_prompt?.trim() ||
     (opts.topic ? `${opts.topic} ${genre} music` : undefined);
 
-  // ── AI content generation ──
+  // ── AI content generation via Advanced Content Pipeline ──────────────────
+  // When content is not provided: generate through the full quality pipeline
+  // (AdvancedSocialAI → 10-dimension scoring → algorithm signal injection).
+  // When content IS provided: score it through the same pipeline and warn if
+  // it falls below the 81/100 threshold so it can be logged for monitoring.
   let hook = opts.hook || '';
   let body = opts.body || '';
   let cta  = opts.cta  || '';
-  let aiSource = 'template';
+  let aiSource = 'provided';
 
   if (!hook && !body && !cta && opts.topic) {
     try {
-      const aiResult = await unifiedAIController.generateContent({
-        topic: opts.topic,
-        platform,
-        tone: opts.tone || 'energetic',
-        contentType: 'promotional',
-        includeHashtags: false,
-        includeEmojis: false,
-        genre,
-        artistName: opts.artist_name,
-      });
-      if (aiResult.success && aiResult.data) {
-        const d = aiResult.data as Record<string, string>;
-        hook = d.hook || d.caption?.split('\n')[0] || `New Music: ${opts.topic}`;
-        body = d.body || d.caption?.split('\n')[1] || 'Stream now on all platforms';
-        cta  = d.cta  || 'Follow for more';
-        aiSource = 'ai_model';
+      const userId = opts.userId || 'anonymous';
+      const pipelineResult = await contentQualityPipeline.generateWithAdvancedAI(
+        userId,
+        {
+          topic:      opts.topic,
+          platform,
+          genre:      genre !== 'default' ? genre : undefined,
+          artistName: opts.artist_name || '',
+          tone:       opts.tone || 'energetic',
+          objective:  opts.goal === 'sales' || opts.goal === 'traffic'
+                        ? 'conversions'
+                        : opts.goal === 'viral'
+                          ? 'viral'
+                          : 'engagement',
+        },
+        5,  // 5 variants — fast enough for synchronous video generation
+      );
+      const best = pipelineResult.selected;
+      if (best) {
+        hook = best.headline.slice(0, 80);
+        body = best.content.split('\n')[0].slice(0, 120);
+        cta  = best.callToAction.slice(0, 60);
+        const score = best.scores.overall;
+        aiSource = `pipeline_${score.toFixed(0)}`;
+        logger.info(
+          `[VideoGen] Pipeline content — score=${score.toFixed(1)} ` +
+          `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
+          `${score < 81 ? '⚠ below 81 threshold' : '✅ gate passed'}`
+        );
       }
     } catch (e) {
-      logger.warn('[VideoGen] AI content failed, using defaults:', e);
+      logger.warn('[VideoGen] Pipeline content generation failed, using defaults:', e);
     }
   }
 
