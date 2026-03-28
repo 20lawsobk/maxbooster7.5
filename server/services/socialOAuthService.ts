@@ -329,7 +329,7 @@ export class SocialOAuthService {
     this.oauthConfigs.set('threads', {
       clientId: process.env.THREADS_APP_ID || process.env.FACEBOOK_APP_ID || '',
       clientSecret: process.env.THREADS_APP_SECRET || process.env.FACEBOOK_APP_SECRET || '',
-      authUrl: 'https://threads.net/oauth/authorize',
+      authUrl: 'https://www.threads.com/oauth/authorize',
       tokenUrl: 'https://graph.threads.net/oauth/access_token',
       scopes: ['threads_basic', 'threads_content_publish', 'threads_manage_insights'],
       redirectUri: process.env.THREADS_REDIRECT_URI || `${getOAuthDomain()}/auth/threads/callback`,
