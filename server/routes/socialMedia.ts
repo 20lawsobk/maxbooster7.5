@@ -12,6 +12,7 @@ import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
+import { contentQualityPipeline } from '../services/contentQualityPipeline.js';
 import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
 import {
   analyzeUrl, analyzeAudio, analyzeImage,
@@ -1709,7 +1710,8 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
 router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
-      hook, body, cta, platform, aspect_ratio, template,
+      hook: rawHook, body: rawBody, cta: rawCta,
+      platform, aspect_ratio, template,
       duration, bg_color, text_color, accent_color,
       artist_name, topic, goal, tone, quality, genre,
       user_audio_path, voiceover,
@@ -1717,103 +1719,139 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
 
     const userId = req.user?.id;
 
-    const pyAvailable = await pythonAIService.isAvailable();
-
-    if (pyAvailable) {
-      logger.info('[VideoGen] Python AI service available — starting server-side job');
-      const jobResult = await pythonAIService.startVideoJob({
-        hook, body, cta, topic,
-        platform: platform || 'tiktok',
-        aspect_ratio,
-        template: template || 'cinematic_promo',
-        duration: duration || 10,
-        artist_name,
-        genre: genre || undefined,
-        goal: goal || 'growth',
-        tone: tone || 'energetic',
-        quality: quality || 'cinematic',
-        user_audio_path: user_audio_path || undefined,
-        voiceover: !!voiceover,
-      });
-
-      if (jobResult.success && jobResult.data?.job_id) {
-        const jobId = jobResult.data.job_id;
-        logger.info(`[VideoGen] Polling job ${jobId} server-side (avoids multi-replica routing)`);
-        const maxAttempts = 90;
-        let jobFailed = false;
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          await new Promise(r => setTimeout(r, 2000));
-          const statusResult = await pythonAIService.getVideoJobStatus(jobId);
-          if (statusResult.success && statusResult.data) {
-            const d = statusResult.data;
-            if (d.status === 'done' && d.success && d.url) {
-              logger.info(`[VideoGen] Python job done in ~${(attempt + 1) * 2}s`);
-              return res.json(d);
-            }
-            if (d.status === 'error') {
-              logger.warn('[VideoGen] Python job failed, falling back to FFmpeg:', d.error);
-              jobFailed = true;
-              break;
-            }
-          }
-        }
-        if (!jobFailed) {
-          logger.warn('[VideoGen] Python job timed out server-side, falling back to FFmpeg');
-        }
-      }
-    }
-
-    // ── Async FFmpeg job — respond immediately, client polls for result ───────
-    // FFmpeg generation takes 2–5 minutes.  Holding the HTTP connection open
-    // that long causes proxy / browser timeouts and session-expiry 401s that
-    // the client interprets as auth failures.  Instead, fire the job in the
-    // background and return a job_id so the client can poll via /video-job/:id.
-    const jobId = `ffmpeg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    // ── Always respond immediately — client polls via /video-job/:id ─────────
+    // Holding the HTTP connection open during generation (2–5 min) triggers
+    // proxy timeouts that the client misreads as auth failures.  All paths
+    // (Python AI and FFmpeg) now run in a background job and store their
+    // result in the ffmpegJobs map so the polling endpoint can serve it.
+    const jobId = `video_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
     pruneStaleFFmpegJobs();
     ffmpegJobs.set(jobId, { status: 'processing', createdAt: Date.now() });
 
-    const ffmpegParams = {
-      topic: topic || hook || body || 'new music',
-      platform: platform || 'tiktok',
-      template: template || undefined,
-      aspect_ratio,
-      duration: duration || 10,
-      tone: tone || 'energetic',
-      goal: goal || 'growth',
-      artist_name,
-      genre: genre || undefined,
-      quality: quality || 'cinematic',
-      hook,
-      body,
-      cta,
-      bg_color: bg_color || undefined,
-      accent_color: accent_color || undefined,
-      user_audio_path: user_audio_path || undefined,
-      voiceover: !!voiceover,
-      userId,
-    };
+    // ── Background job: pipeline → Python AI → FFmpeg fallback ───────────────
+    (async () => {
+      try {
+        // Stage 1 — Advanced content pipeline (always runs first).
+        // Whether Python AI or FFmpeg renders the final video, the text
+        // content (hook / body / CTA) MUST flow through the quality gate.
+        let hook = rawHook || '';
+        let body = rawBody || '';
+        let cta  = rawCta  || '';
 
-    logger.info(`[VideoGen] Starting async FFmpeg job ${jobId}`);
+        if (!hook && !body && !cta && topic) {
+          try {
+            const pipelineResult = await contentQualityPipeline.generateWithAdvancedAI(
+              userId || 'anonymous',
+              {
+                topic,
+                platform: platform || 'tiktok',
+                genre:      genre      || undefined,
+                artistName: artist_name || '',
+                tone:       tone       || 'energetic',
+                objective:  goal === 'sales' || goal === 'traffic'
+                              ? 'conversions'
+                              : goal === 'viral' ? 'viral' : 'engagement',
+              },
+              5,
+            );
+            const best = pipelineResult.selected;
+            if (best) {
+              hook = best.headline.slice(0, 80);
+              body = best.content.split('\n')[0].slice(0, 120);
+              cta  = best.callToAction.slice(0, 60);
+              const score = best.scores.overall;
+              logger.info(
+                `[VideoGen] Advanced pipeline — score=${score.toFixed(1)} ` +
+                `algoAlign=${(best.scores.algorithmAlignment ?? 0).toFixed(1)} ` +
+                `${score < 81 ? '⚠ below 81 threshold' : '✅ gate passed'}`
+              );
+            }
+          } catch (pipeErr) {
+            logger.warn('[VideoGen] Pipeline content generation failed, continuing with defaults:', pipeErr);
+          }
+        }
 
-    // Fire and forget — result stored in ffmpegJobs map
-    generateVideoFFmpeg(ffmpegParams).then((result: any) => {
-      if (result.success) {
-        ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
-        logger.info(`[VideoGen] Async FFmpeg job ${jobId} done`);
-      } else {
-        ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
-        logger.warn(`[VideoGen] Async FFmpeg job ${jobId} failed: ${result.error}`);
+        // Shared video params for both renderers
+        const videoParams = {
+          topic:      topic || hook || body || 'new music',
+          platform:   platform   || 'tiktok',
+          template:   template   || undefined,
+          aspect_ratio,
+          duration:   duration   || 10,
+          tone:       tone       || 'energetic',
+          goal:       goal       || 'growth',
+          artist_name,
+          genre:      genre      || undefined,
+          quality:    quality    || 'cinematic',
+          hook,
+          body,
+          cta,
+          bg_color:        bg_color        || undefined,
+          accent_color:    accent_color    || undefined,
+          user_audio_path: user_audio_path || undefined,
+          voiceover: !!voiceover,
+          userId,
+        };
+
+        // Stage 2 — Try Python AI renderer (when server is available).
+        // Content already quality-gated above; Python AI only renders frames.
+        const pyAvailable = await pythonAIService.isAvailable();
+        if (pyAvailable) {
+          logger.info(`[VideoGen] Python AI available — starting renderer job ${jobId}`);
+          const jobResult = await pythonAIService.startVideoJob({
+            ...videoParams,
+            template: template || 'cinematic_promo',
+          });
+
+          if (jobResult.success && jobResult.data?.job_id) {
+            const pyJobId = jobResult.data.job_id;
+            const maxAttempts = 90;
+            let pyDone = false;
+            for (let attempt = 0; attempt < maxAttempts; attempt++) {
+              await new Promise(r => setTimeout(r, 2000));
+              const statusResult = await pythonAIService.getVideoJobStatus(pyJobId);
+              if (statusResult.success && statusResult.data) {
+                const d = statusResult.data;
+                if (d.status === 'done' && d.success && d.url) {
+                  logger.info(`[VideoGen] Python AI job done in ~${(attempt + 1) * 2}s`);
+                  ffmpegJobs.set(jobId, { status: 'done', result: d, createdAt: Date.now() });
+                  pyDone = true;
+                  break;
+                }
+                if (d.status === 'error') {
+                  logger.warn('[VideoGen] Python AI job failed — falling back to FFmpeg:', d.error);
+                  break;
+                }
+              }
+            }
+            if (pyDone) return;
+            logger.warn('[VideoGen] Python AI path did not complete — falling back to FFmpeg');
+          }
+        }
+
+        // Stage 3 — FFmpeg fallback (or primary when Python AI is offline).
+        // generateVideoFFmpeg also runs the quality pipeline internally as a
+        // safety net if hook/body/cta are still empty after Stage 1.
+        logger.info(`[VideoGen] Starting FFmpeg render for job ${jobId}`);
+        const result = await generateVideoFFmpeg(videoParams);
+        if (result.success) {
+          ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
+          logger.info(`[VideoGen] FFmpeg job ${jobId} done`);
+        } else {
+          ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
+          logger.warn(`[VideoGen] FFmpeg job ${jobId} failed: ${result.error}`);
+        }
+      } catch (err: any) {
+        ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
+        logger.error(`[VideoGen] Background job ${jobId} threw:`, err);
       }
-    }).catch((err: any) => {
-      ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
-      logger.error(`[VideoGen] Async FFmpeg job ${jobId} threw:`, err);
-    });
+    })();
 
-    // Respond immediately so the HTTP connection is freed
+    logger.info(`[VideoGen] Job ${jobId} queued — responding immediately`);
     return res.json({ success: true, job_id: jobId, status: 'processing' });
 
   } catch (error) {
-    logger.error('Failed to generate video:', error);
+    logger.error('Failed to start video generation:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
   }
 });

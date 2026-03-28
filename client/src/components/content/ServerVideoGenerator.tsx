@@ -479,7 +479,7 @@ export function ServerVideoGenerator({
           {isAutoMode
             ? videoUrl
               ? 'Your video is ready — watch and download below.'
-              : isGenerating
+              : isGenerating || autoStartPending
               ? 'Your video is rendering. This usually takes 1–3 minutes.'
               : 'Something went wrong. Customize the settings below and try again.'
             : 'Generate cinematic videos from text, audio, or artwork'}
@@ -489,9 +489,9 @@ export function ServerVideoGenerator({
       <CardContent className="space-y-4">
 
         {/* ── AUTO-START: show only progress + result, hide the form ── */}
-        {isAutoMode && (isGenerating || videoUrl) && (
+        {isAutoMode && (isGenerating || videoUrl || autoStartPending) && (
           <div className="space-y-4">
-            {isGenerating && (
+            {(isGenerating || autoStartPending) && (
               <div className="flex flex-col items-center gap-4 py-8">
                 <div className="relative">
                   <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
