@@ -241,7 +241,7 @@ export class DatabaseStorage implements IStorage {
     const result = await dbRead.execute(sql`
       SELECT id, preferences
       FROM users
-      WHERE (preferences->>'advertisingAutopilotConfig')::jsonb->>'enabled' = 'true'
+      WHERE (preferences->>'autopilotConfig')::jsonb->>'enabled' = 'true'
       LIMIT 1000
     `);
     const rows = (result as any).rows ?? result;
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
       const prefs = typeof user.preferences === 'string'
         ? JSON.parse(user.preferences)
         : (user.preferences ?? {});
-      const config = prefs?.advertisingAutopilotConfig;
+      const config = prefs?.autopilotConfig;
       return { userId: user.id, ...config };
     }) : [];
   }

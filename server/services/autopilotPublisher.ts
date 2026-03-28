@@ -5,6 +5,7 @@ import { aiModelManager } from './aiModelManager.js';
 import { autoPostingServiceV2 } from './autoPostingServiceV2.js';
 import type { PostContent } from './autoPostingServiceV2.js';
 import { aiContentService } from './aiContentService.js';
+import { advancedSocialAIService } from './advancedSocialAIService.js';
 
 /**
  * Automated Autopilot Publisher
@@ -174,13 +175,58 @@ class AutopilotPublisher {
   private async publishSocialContent(config: any): Promise<{ posts: number; error?: string }> {
     try {
       const userId = config.userId;
-      
+      const platforms: string[] = config.platforms && config.platforms.length > 0
+        ? config.platforms
+        : ['twitter', 'instagram'];
+
       // Get the user's trained social media AI model
       const socialAI = await aiModelManager.getSocialAutopilot(userId);
-      
+
       if (!socialAI.getIsTrained()) {
-        return { posts: 0, error: 'Social AI model not trained yet' };
+        // Model not trained yet — fall back to Advanced Social AI (no training required)
+        logger.info(`[Autopilot] User ${userId}: model untrained, using Advanced Social AI fallback`);
+
+        const toneMap: Record<string, 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling'> = {
+          professional: 'professional', casual: 'casual', energetic: 'energetic',
+          inspirational: 'inspirational', humorous: 'humorous', storytelling: 'storytelling',
+        };
+        const tone = toneMap[config.brandVoice] ?? 'professional';
+
+        const advancedResult = await advancedSocialAIService.generateAdvancedContent({
+          userId,
+          platforms: platforms.map((p: string) => p.toLowerCase()),
+          objective: 'engagement',
+          tone,
+          contentType: 'engagement',
+          includeHashtags: true,
+          includeEmojis: true,
+          variantCount: 1,
+        });
+
+        const postContent: PostContent = {
+          text: advancedResult.primary.body,
+          hashtags: advancedResult.primary.hashtags,
+          mediaType: 'text',
+        };
+
+        const nextOptimalTime = this.calculateNextOptimalPostingTime(
+          platforms[0],
+          config.postingFrequency || 'daily'
+        );
+
+        const scheduledPost = await autoPostingServiceV2.schedulePost(
+          userId,
+          platforms,
+          postContent,
+          nextOptimalTime,
+          'social_autopilot'
+        );
+
+        logger.info(`✅ User ${userId}: Scheduled Advanced-AI post ${scheduledPost.id} for [${platforms.join(',')}] at ${nextOptimalTime.toISOString()}`);
+        return { posts: 1 };
       }
+
+      // Trained model path ─────────────────────────────────────────────────────
 
       // Get multimodal features if enabled
       let multimodalFeatures = null;
@@ -245,8 +291,8 @@ class AutopilotPublisher {
       const postContent: PostContent = {
         text: bestRecommendation.content || bestRecommendation.text,
         hashtags: bestRecommendation.hashtags,
-        mediaType: mediaUrl ? bestRecommendation.mediaType : 'text', // Use AI's media type if asset generated
-        mediaUrl, // Include generated media URL
+        mediaType: mediaUrl ? bestRecommendation.mediaType : 'text',
+        mediaUrl,
       };
 
       // Calculate next optimal posting time for this platform
@@ -256,12 +302,11 @@ class AutopilotPublisher {
       );
 
       // Schedule post for optimal time (not immediate)
-      const platforms = [bestRecommendation.platform]; // Use AI-selected platform
       const scheduledPost = await autoPostingServiceV2.schedulePost(
         userId,
-        platforms,
+        [bestRecommendation.platform],
         postContent,
-        nextOptimalTime, // Schedule at optimal time
+        nextOptimalTime,
         'social_autopilot'
       );
 
