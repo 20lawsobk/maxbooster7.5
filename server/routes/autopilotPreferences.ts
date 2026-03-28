@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { db } from '../db';
 import { autopilotPreferences } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { logger } from '../logger';
 import { requireAuth } from '../middleware/auth.js';
 
@@ -108,41 +108,36 @@ router.post('/', async (req: Request, res: Response) => {
   try {
     const parsed = preferencesSchema.safeParse(req.body);
     if (!parsed.success) {
-      return res.status(400).json({ error: parsed.error.errors[0]?.message || 'Invalid input' });
+      const msg = parsed.error.errors[0]?.message || 'Invalid input';
+      logger.warn({ validationErrors: parsed.error.errors }, 'Autopilot preferences validation failed');
+      return res.status(400).json({ error: msg });
     }
 
-    const data = {
-      userId: req.user.id,
+    const updatePayload = {
       ...parsed.data,
       isActive: parsed.data.isActive ?? true,
       lastUpdated: new Date(),
     };
 
-    const [existing] = await db
-      .select()
-      .from(autopilotPreferences)
-      .where(eq(autopilotPreferences.userId, req.user.id))
-      .limit(1);
+    const insertPayload = {
+      userId: req.user.id,
+      ...updatePayload,
+    };
 
-    let result;
-    if (existing) {
-      [result] = await db
-        .update(autopilotPreferences)
-        .set(data)
-        .where(eq(autopilotPreferences.userId, req.user.id))
-        .returning();
-    } else {
-      [result] = await db
-        .insert(autopilotPreferences)
-        .values(data)
-        .returning();
-    }
+    const [result] = await db
+      .insert(autopilotPreferences)
+      .values(insertPayload)
+      .onConflictDoUpdate({
+        target: autopilotPreferences.userId,
+        set: updatePayload,
+      })
+      .returning();
 
     logger.info(`Autopilot preferences saved for user ${req.user.id}`);
     res.json(result);
-  } catch (error) {
-    logger.error('Error saving autopilot preferences:', error);
-    res.status(500).json({ error: 'Failed to save preferences' });
+  } catch (error: any) {
+    logger.error({ err: error, message: error?.message, code: error?.code }, 'Error saving autopilot preferences');
+    res.status(500).json({ error: 'Failed to save preferences', detail: error?.message });
   }
 });
 
@@ -176,9 +171,9 @@ router.patch('/', async (req: Request, res: Response) => {
 
     logger.info(`Autopilot preferences updated for user ${req.user.id}`);
     res.json(result);
-  } catch (error) {
-    logger.error('Error updating autopilot preferences:', error);
-    res.status(500).json({ error: 'Failed to update preferences' });
+  } catch (error: any) {
+    logger.error({ err: error, message: error?.message, code: error?.code }, 'Error updating autopilot preferences');
+    res.status(500).json({ error: 'Failed to update preferences', detail: error?.message });
   }
 });
 
