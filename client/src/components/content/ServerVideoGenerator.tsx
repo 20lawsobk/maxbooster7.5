@@ -510,43 +510,71 @@ export function ServerVideoGenerator({
         {/* ── AUTO-START: show only progress + result, hide the form ── */}
         {isAutoMode && (isGenerating || videoUrl || autoStartPending) && (
           <div className="space-y-4">
-            {(isGenerating || autoStartPending) && (
-              <div className="flex flex-col items-center gap-4 py-8">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-                  <Film className="absolute inset-0 m-auto h-6 w-6 text-primary" />
-                </div>
-                <div className="text-center space-y-1">
-                  <p className="text-sm font-medium">
-                    {generatingStage || 'Preparing your video…'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Rendering scenes, adding music, and compositing your clip
-                  </p>
-                  {isGenerating && generatingElapsed > 0 && (
-                    <p className="text-xs text-muted-foreground tabular-nums">
-                      {generatingElapsed}s elapsed
-                    </p>
+            {(isGenerating || autoStartPending) && (() => {
+              // Progress estimate: asymptotically approaches 99% based on elapsed seconds.
+              // Average render ≈ 25s → reaches ~95% at 25s, then slows to a crawl.
+              const EXPECTED_S = 25;
+              const pct = autoStartPending
+                ? 0
+                : Math.min(99, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
+
+              // Stage label from elapsed
+              const stageLabel = autoStartPending
+                ? 'Starting up…'
+                : generatingStage && generatingStage !== 'Starting…'
+                  ? generatingStage
+                  : generatingElapsed < 3
+                    ? 'Queuing job…'
+                    : generatingElapsed < 10
+                      ? 'Generating AI script…'
+                      : generatingElapsed < 18
+                        ? 'Rendering scenes…'
+                        : 'Adding music & compositing…';
+
+              return (
+                <div className="flex flex-col items-center gap-5 py-8">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+                    <Film className="absolute inset-0 m-auto h-6 w-6 text-primary" />
+                  </div>
+
+                  <div className="w-full max-w-xs space-y-2">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{stageLabel}</span>
+                      <span className="tabular-nums">{pct}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    {isGenerating && generatingElapsed > 0 && (
+                      <p className="text-right text-xs text-muted-foreground tabular-nums">
+                        {generatingElapsed}s elapsed
+                      </p>
+                    )}
+                  </div>
+
+                  {topicProp && (
+                    <div className="max-w-xs text-center rounded-lg bg-muted/50 px-3 py-2">
+                      <p className="text-xs text-muted-foreground truncate">"{topicProp}"</p>
+                    </div>
+                  )}
+                  {isGenerating && (
+                    <button
+                      onClick={() => {
+                        userCancelledRef.current = true;
+                        abortControllerRef.current?.abort();
+                      }}
+                      className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                    >
+                      Cancel
+                    </button>
                   )}
                 </div>
-                {topicProp && (
-                  <div className="max-w-xs text-center rounded-lg bg-muted/50 px-3 py-2">
-                    <p className="text-xs text-muted-foreground truncate">"{topicProp}"</p>
-                  </div>
-                )}
-                {isGenerating && (
-                  <button
-                    onClick={() => {
-                      userCancelledRef.current = true;
-                      abortControllerRef.current?.abort();
-                    }}
-                    className="mt-1 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-                  >
-                    Cancel
-                  </button>
-                )}
-              </div>
-            )}
+              );
+            })()}
 
             {videoUrl && (
               <div className="space-y-3">
@@ -986,6 +1014,35 @@ export function ServerVideoGenerator({
             </>
           )}
         </Button>
+
+        {/* Progress bar — manual mode */}
+        {isGenerating && !isAutoMode && (() => {
+          const EXPECTED_S = 25;
+          const pct = Math.min(99, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
+          const stageLabel = generatingStage && generatingStage !== 'Starting…'
+            ? generatingStage
+            : generatingElapsed < 3
+              ? 'Queuing job…'
+              : generatingElapsed < 10
+                ? 'Generating AI script…'
+                : generatingElapsed < 18
+                  ? 'Rendering scenes…'
+                  : 'Adding music & compositing…';
+          return (
+            <div className="space-y-1.5 pt-1">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{stageLabel}</span>
+                <span className="tabular-nums">{pct}%{generatingElapsed > 0 ? ` · ${generatingElapsed}s` : ''}</span>
+              </div>
+              <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-primary transition-all duration-1000 ease-out"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Result */}
         {videoUrl && (
