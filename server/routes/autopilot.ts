@@ -20,6 +20,13 @@ const autopilotConfigSchema = z.object({
   useMultimodalAnalysis: z.boolean().default(true),
   autoAnalyzeBeforePosting: z.boolean().default(true),
   minConfidenceThreshold: z.number().min(0).max(1).default(0.7),
+  topics: z.array(z.string()).optional(),
+  mediaTypes: z.array(z.string()).optional(),
+  targetAudience: z.string().optional(),
+  businessGoals: z.array(z.string()).optional(),
+  optimalTimesOnly: z.boolean().optional(),
+  crossPostingEnabled: z.boolean().optional(),
+  engagementThreshold: z.number().min(0).max(1).optional(),
 });
 
 // Get autopilot status
