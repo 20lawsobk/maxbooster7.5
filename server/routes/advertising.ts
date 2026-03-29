@@ -5,7 +5,6 @@ import { unifiedAIController } from '../services/unifiedAIController.js';
 import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
-import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
 import { db } from '../db.js';
 import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';

@@ -11,7 +11,6 @@ import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
-import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
 import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
 import { contentQualityPipeline } from '../services/contentQualityPipeline.js';
 import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
