@@ -61,6 +61,9 @@ import {
   Package,
   CheckSquare,
   Square,
+  Info,
+  UserCircle,
+  Settings,
 } from 'lucide-react';
 
 const PLATFORMS = [
@@ -194,6 +197,19 @@ interface PostingTime {
   engagement_score: number;
 }
 
+interface GenerationContext {
+  hasContext: boolean;
+  artistName: string | null;
+  genre: string | null;
+  brandVoice: string | null;
+  targetAudience: string | null;
+  contentThemes: string[];
+  avoidTopics: string[];
+  preferredHashtags: string[];
+  recentPostCount: number;
+  platformBreakdown: Record<string, number>;
+}
+
 export function ContentGenerator() {
   const { toast } = useToast();
   const [selectedLanguage, setSelectedLanguage] = useState('en');
@@ -242,6 +258,20 @@ export function ContentGenerator() {
     },
     retry: false,
     staleTime: 300000,
+  });
+
+  const { data: generationContext } = useQuery<GenerationContext>({
+    queryKey: ['/api/social/generate/context'],
+    queryFn: async () => {
+      try {
+        const res = await apiRequest('GET', '/api/social/generate/context');
+        return await res.json();
+      } catch {
+        return null;
+      }
+    },
+    retry: false,
+    staleTime: 60000,
   });
 
   const analyzeBrandVoiceMutation = useMutation({
@@ -1032,6 +1062,87 @@ export function ContentGenerator() {
                 className="min-h-[100px]"
               />
             </div>
+
+            {/* Context awareness panel */}
+            {generationContext && (
+              <div className={`rounded-lg border px-3 py-2.5 text-xs ${
+                generationContext.hasContext
+                  ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/30'
+                  : 'border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/30'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <div className="mt-0.5 shrink-0">
+                    {generationContext.hasContext
+                      ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      : <Info className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    }
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    {generationContext.hasContext ? (
+                      <>
+                        <p className="font-medium text-emerald-800 dark:text-emerald-300">
+                          Generating with your artist context
+                        </p>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {generationContext.artistName && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <UserCircle className="w-2.5 h-2.5" />
+                              {generationContext.artistName}
+                            </span>
+                          )}
+                          {generationContext.genre && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <Music className="w-2.5 h-2.5" />
+                              {generationContext.genre}
+                            </span>
+                          )}
+                          {generationContext.brandVoice && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <Mic className="w-2.5 h-2.5" />
+                              {generationContext.brandVoice}
+                            </span>
+                          )}
+                          {generationContext.targetAudience && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <Users className="w-2.5 h-2.5" />
+                              {generationContext.targetAudience.slice(0, 28)}{generationContext.targetAudience.length > 28 ? '…' : ''}
+                            </span>
+                          )}
+                          {generationContext.recentPostCount > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <FileText className="w-2.5 h-2.5" />
+                              {generationContext.recentPostCount} recent post{generationContext.recentPostCount !== 1 ? 's' : ''} analyzed
+                            </span>
+                          )}
+                          {generationContext.contentThemes.length > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-100 dark:bg-emerald-900/50 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-300">
+                              <Target className="w-2.5 h-2.5" />
+                              {generationContext.contentThemes.slice(0, 2).join(', ')}
+                            </span>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-amber-800 dark:text-amber-300">
+                          No artist context configured
+                        </p>
+                        <p className="text-amber-700 dark:text-amber-400">
+                          Set up your Autopilot preferences to generate content tailored to your artist identity, brand voice, and audience.
+                        </p>
+                        <a
+                          href="/autopilot"
+                          className="inline-flex items-center gap-1 mt-1 text-amber-700 dark:text-amber-400 underline hover:no-underline"
+                        >
+                          <Settings className="w-3 h-3" />
+                          Configure Autopilot
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button

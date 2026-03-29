@@ -33,9 +33,22 @@ import { AdvancedTimeSeriesModel, type MetricType, type PredictionHorizon, type 
 // TYPE DEFINITIONS
 // ============================================================================
 
+export interface UserGenerationContext {
+  artistBio?: string;
+  genre?: string;
+  brandVoice?: string;
+  targetAudience?: string;
+  contentThemes?: string[];
+  avoidTopics?: string[];
+  preferredHashtags?: string[];
+  recentPostSnippets?: string[];
+  artistName?: string;
+}
+
 export interface ContentGenerationOptions extends GenerationOptions {
   userId?: string;
   projectId?: string;
+  userContext?: UserGenerationContext;
 }
 
 export interface SentimentAnalysisOptions {
@@ -289,6 +302,8 @@ export class UnifiedAIController {
         ? platformAliases[options.platform]
         : (options.platform || 'instagram');
 
+      const ctx = options.userContext;
+
       // Priority 1: MaxCore trained model server
       if (await MaxCoreAIClient.isAvailable()) {
         try {
@@ -296,7 +311,16 @@ export class UnifiedAIController {
             platform: mappedPlatform,
             topic: options.topic || options.genre || 'new music',
             tone: options.tone || 'energetic',
-            genre: options.genre,
+            genre: options.genre || ctx?.genre,
+            // User context — enables personalized output
+            artist_name:      ctx?.artistName    || options.artistName,
+            artist_bio:       ctx?.artistBio,
+            brand_voice:      ctx?.brandVoice,
+            target_audience:  ctx?.targetAudience,
+            content_themes:   ctx?.contentThemes,
+            avoid_topics:     ctx?.avoidTopics,
+            preferred_hashtags: ctx?.preferredHashtags,
+            recent_post_snippets: ctx?.recentPostSnippets,
           });
           if (mc?.caption || mc?.hook) {
             const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
@@ -331,7 +355,10 @@ export class UnifiedAIController {
             options.tone || 'energetic',
             'growth',
             true,
-            options.genre
+            options.genre || ctx?.genre,
+            ctx?.artistName || options.artistName,
+            options.trackTitle,
+            options.contentType,
           );
           if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
             const d = aiResult.data;

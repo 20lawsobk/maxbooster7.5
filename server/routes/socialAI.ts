@@ -2,11 +2,14 @@ import { Router, Request, Response } from 'express';
 import { socialChatbotService, ChatbotMessage } from '../services/socialChatbotService';
 import { socialListeningService } from '../services/socialListeningService';
 import { socialStrategyAIService } from '../services/socialStrategyAIService';
-import { unifiedAIController } from '../services/unifiedAIController';
+import { unifiedAIController, type UserGenerationContext } from '../services/unifiedAIController';
 import { aiContentService } from '../services/aiContentService';
 import { logger } from '../logger';
 import { requireAuth } from '../middleware/auth.js';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
+import { db } from '../db.js';
+import { autopilotPreferences, posts } from '@shared/schema';
+import { eq, desc } from 'drizzle-orm';
 
 const router = Router();
 router.use(aiRateLimiter);
@@ -713,6 +716,45 @@ function getBestPostingTime(platform: string): { dayOfWeek: string; hour: number
   return { dayOfWeek: bestDay, hour: nextHour, label: `${label12}:00 ${period}` };
 }
 
+// ── GET /generate/context ────────────────────────────────────────────────────
+// Returns the active generation context for the authenticated user so the
+// frontend can show what artist identity and preferences will be applied.
+router.get('/generate/context', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const [prefs, recentPostRows] = await Promise.all([
+      db.select().from(autopilotPreferences).where(eq(autopilotPreferences.userId, userId)).limit(1).then(r => r[0] ?? null),
+      db.select({ platform: posts.platform })
+        .from(posts)
+        .where(eq(posts.userId, userId))
+        .orderBy(desc(posts.createdAt))
+        .limit(20),
+    ]);
+
+    const hasContext = !!prefs;
+    const platformBreakdown: Record<string, number> = {};
+    for (const p of recentPostRows) {
+      platformBreakdown[p.platform] = (platformBreakdown[p.platform] || 0) + 1;
+    }
+
+    res.json({
+      hasContext,
+      artistName:       prefs?.artistName       ?? null,
+      genre:            prefs?.genre             ?? null,
+      brandVoice:       prefs?.brandVoice        ?? null,
+      targetAudience:   prefs?.targetAudience    ?? null,
+      contentThemes:    prefs?.contentThemes     ?? [],
+      avoidTopics:      prefs?.avoidTopics       ?? [],
+      preferredHashtags: prefs?.preferredHashtags ?? [],
+      recentPostCount:  recentPostRows.length,
+      platformBreakdown,
+    });
+  } catch (err) {
+    logger.error('[socialAI] GET /generate/context error:', err);
+    res.status(500).json({ error: 'Failed to load generation context' });
+  }
+});
+
 router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   const generationStart = Date.now();
   try {
@@ -818,16 +860,60 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
 
     const enrichedTopic = contextParts.filter(Boolean).join(' — ');
 
+    // ── Context awareness ────────────────────────────────────────────────────
+    // Fetch the user's autopilot preferences (artist identity, brand voice,
+    // content guidelines) and their last 5 published posts (recent topics /
+    // variety signal) in parallel. Both are fast indexed DB reads.
+    const userId = req.user!.id;
+    const [autopilotPrefs, recentPostRows] = await Promise.all([
+      db.select().from(autopilotPreferences).where(eq(autopilotPreferences.userId, userId)).limit(1).then(r => r[0] ?? null),
+      db.select({ content: posts.content, platform: posts.platform })
+        .from(posts)
+        .where(eq(posts.userId, userId))
+        .orderBy(desc(posts.createdAt))
+        .limit(5),
+    ]).catch(() => [null, []] as [null, { content: string | null; platform: string }[]]);
+
+    // Build structured user context for AI
+    const userContext: UserGenerationContext = {};
+    if (autopilotPrefs) {
+      if (autopilotPrefs.artistName)    userContext.artistName    = autopilotPrefs.artistName;
+      if (autopilotPrefs.artistBio)     userContext.artistBio     = autopilotPrefs.artistBio;
+      if (autopilotPrefs.genre)         userContext.genre         = autopilotPrefs.genre;
+      if (autopilotPrefs.brandVoice)    userContext.brandVoice    = autopilotPrefs.brandVoice;
+      if (autopilotPrefs.targetAudience) userContext.targetAudience = autopilotPrefs.targetAudience;
+      if (autopilotPrefs.contentThemes?.length) userContext.contentThemes = autopilotPrefs.contentThemes;
+      if (autopilotPrefs.avoidTopics?.length)   userContext.avoidTopics   = autopilotPrefs.avoidTopics;
+      if (autopilotPrefs.preferredHashtags?.length) userContext.preferredHashtags = autopilotPrefs.preferredHashtags;
+    }
+    if (recentPostRows.length > 0) {
+      userContext.recentPostSnippets = recentPostRows
+        .filter(p => p.content)
+        .map(p => (p.content as string).slice(0, 120).trim());
+    }
+
+    // Inject user context signals into the enriched topic descriptor so
+    // template-based and MaxCore inference both see the same identity cues.
+    const userContextParts: string[] = [];
+    if (userContext.artistName && !artistName) userContextParts.push(`Artist: ${userContext.artistName}`);
+    if (userContext.genre && !rawGenre)        userContextParts.push(`Genre: ${userContext.genre}`);
+    if (userContext.brandVoice)                userContextParts.push(`Voice: ${userContext.brandVoice}`);
+    if (userContext.targetAudience)            userContextParts.push(`Audience: ${userContext.targetAudience}`);
+    if (userContext.contentThemes?.length)     userContextParts.push(`Themes: ${userContext.contentThemes.slice(0, 3).join(', ')}`);
+
+    const finalTopic = [enrichedTopic || 'new music', ...userContextParts].filter(Boolean).join(' | ');
+
     const result = await unifiedAIController.generateContent({
       tone: resolvedTone,
       platform: resolvedPlatform as any,
-      topic: enrichedTopic || 'new music',
-      genre: detectedGenre,
-      artistName: artistName || undefined,
+      topic: finalTopic,
+      genre: detectedGenre || userContext.genre,
+      artistName: artistName || userContext.artistName,
       trackTitle: trackTitle || undefined,
       contentType: validContentTypes.includes(mappedContentType) ? mappedContentType as any : 'engagement',
       includeHashtags: true,
       includeEmojis: true,
+      userContext,
     });
 
     if (!result.success) {
