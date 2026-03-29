@@ -28,7 +28,7 @@ async function pollMaxCoreVideoJob(jobId: string): Promise<VideoGenResult | null
   for (let attempt = 0; attempt < MAXCORE_VIDEO_MAX_ATTEMPTS; attempt++) {
     await new Promise(r => setTimeout(r, MAXCORE_VIDEO_POLL_INTERVAL_MS));
     try {
-      const status = await MaxCoreAIClient.infer<any>('/video-job/' + jobId, {});
+      const status = await MaxCoreAIClient.get<any>('/video-job/' + jobId);
       if (!status) continue;
       if (status.status === 'done' && status.success && status.url) {
         return {

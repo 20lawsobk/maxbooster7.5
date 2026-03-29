@@ -145,6 +145,26 @@ export class MaxCoreAIClient {
   private static _lastCheck = 0;
   private static readonly CHECK_TTL = 30_000;
 
+  // Per-endpoint 404 suppression — if an endpoint returns 404/HTML we stop
+  // retrying it for ENDPOINT_SUPPRESS_MS so we don't waste time on dead paths.
+  private static _endpointSuppressed = new Map<string, number>();
+  private static readonly ENDPOINT_SUPPRESS_MS = 10 * 60_000; // 10 minutes
+
+  private static isEndpointSuppressed(path: string): boolean {
+    const suppressedUntil = MaxCoreAIClient._endpointSuppressed.get(path) ?? 0;
+    return Date.now() < suppressedUntil;
+  }
+
+  private static suppressEndpoint(path: string): void {
+    MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
+    logger.warn(`[MaxCoreAI] ${path} not available — suppressed for 10 min`);
+  }
+
+  private static isJson(r: Response): boolean {
+    const ct = r.headers.get('content-type') || '';
+    return ct.includes('application/json') || ct.includes('text/json');
+  }
+
   static async isAvailable(): Promise<boolean> {
     if (!MC_AI_URL || !MC_AI_KEY) return false;
     const now = Date.now();
@@ -153,10 +173,10 @@ export class MaxCoreAIClient {
     }
     try {
       const r = await fetch(`${MC_AI_URL}/api/health`, {
-        headers: { 'X-API-Key': MC_AI_KEY },
+        headers: { 'X-API-Key': MC_AI_KEY, 'Authorization': `Bearer ${MC_AI_KEY}` },
         signal: AbortSignal.timeout(4000),
       });
-      MaxCoreAIClient._available = r.ok;
+      MaxCoreAIClient._available = r.ok && MaxCoreAIClient.isJson(r);
     } catch {
       MaxCoreAIClient._available = false;
     }
@@ -164,19 +184,50 @@ export class MaxCoreAIClient {
     return MaxCoreAIClient._available;
   }
 
-  static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
+  static async get<T = any>(endpoint: string): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
+    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
     try {
-      const r = await fetch(`${MC_AI_URL}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': MC_AI_KEY },
-        body: JSON.stringify(body),
+      const r = await fetch(`${MC_AI_URL}${path}`, {
+        method: 'GET',
+        headers: { 'X-API-Key': MC_AI_KEY, 'Authorization': `Bearer ${MC_AI_KEY}` },
         signal: AbortSignal.timeout(8000),
       });
-      if (!r.ok) return null;
+      if (!r.ok || !MaxCoreAIClient.isJson(r)) {
+        MaxCoreAIClient.suppressEndpoint(path);
+        return null;
+      }
       return await r.json() as T;
     } catch (e: any) {
-      logger.warn(`[MaxCoreAI] ${endpoint} failed: ${e.message}`);
+      logger.warn(`[MaxCoreAI] GET ${path} failed: ${e.message}`);
+      return null;
+    }
+  }
+
+  static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
+    if (!MC_AI_URL || !MC_AI_KEY) return null;
+    // Normalise path — all MaxCore API routes live under /api/
+    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
+    try {
+      const r = await fetch(`${MC_AI_URL}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'X-API-Key':     MC_AI_KEY,
+          'Authorization': `Bearer ${MC_AI_KEY}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!r.ok || !MaxCoreAIClient.isJson(r)) {
+        MaxCoreAIClient.suppressEndpoint(path);
+        return null;
+      }
+      return await r.json() as T;
+    } catch (e: any) {
+      logger.warn(`[MaxCoreAI] ${path} failed: ${e.message}`);
       return null;
     }
   }
