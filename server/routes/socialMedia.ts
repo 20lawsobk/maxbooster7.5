@@ -1737,24 +1737,24 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         let body = rawBody || '';
         let cta  = rawCta  || '';
 
-        // If the topic is a bare URL, resolve it to artist-specific context so
-        // MaxCore generates music content instead of generic platform promo copy.
+        // If the topic is a bare URL, convert it to a descriptive topic so MaxCore
+        // can generate meaningful content instead of just printing the raw URL.
+        // URL  →  platform/product promo  (e.g. "MaxBooster music career platform")
+        // Text →  artist / music content  (no change)
         let resolvedTopic = topic || '';
         if (topic && /^https?:\/\//.test(topic.trim())) {
           try {
-            const profile   = userId ? await storage.getUser(userId) : null;
-            const name      = artist_name || (profile as any)?.artistName || (profile as any)?.firstName || 'Artist';
-            const g         = genre || (profile as any)?.genre || 'music';
-            const urlDomain = (() => {
-              try { return new URL(topic.trim()).hostname.replace(/^www\./, ''); } catch { return ''; }
-            })();
-            // Blend artist identity + platform context so MaxCore generates content
-            // that references both the artist AND the destination (e.g. MaxBooster).
-            resolvedTopic = urlDomain
-              ? `${name} ${g} new release promo on ${urlDomain}`
-              : `${name} ${g} new release music content`;
+            const urlDomain = new URL(topic.trim()).hostname.replace(/^www\./, '');
+            // Convert domain to a readable product/platform name:
+            //   "maxbooster.replit.app" → "MaxBooster"
+            //   "my-beats.com"          → "My Beats"
+            const platformName = urlDomain
+              .split('.')[0]
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, (c: string) => c.toUpperCase());
+            resolvedTopic = `${platformName} music platform promotional video — features, benefits, and why artists should join`;
           } catch {
-            resolvedTopic = `${artist_name || 'Artist'} new music release`;
+            resolvedTopic = topic;
           }
         }
 
