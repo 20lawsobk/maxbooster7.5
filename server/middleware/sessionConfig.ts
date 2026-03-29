@@ -154,7 +154,15 @@ class PdimSessionStore extends session.Store {
     this.l1.set(sid, sess);
     const primaryTouch = (this.inner as any).touch;
     if (primaryTouch) {
-      primaryTouch.call(this.inner, sid, sess, cb);
+      primaryTouch.call(this.inner, sid, sess, (err?: any) => {
+        if (err) {
+          // PDIM congestion during TTL refresh is non-critical — the session
+          // remains valid at its original TTL. Swallow the error so express-session
+          // does not propagate it after the response has already been sent.
+          logger.warn('[SessionStore] PDIM congested during touch — TTL refresh skipped:', (err as Error).message);
+        }
+        cb?.();
+      });
     } else {
       cb?.();
     }
