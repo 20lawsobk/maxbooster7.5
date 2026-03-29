@@ -1738,30 +1738,63 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         let cta  = rawCta  || '';
 
         if (!hook && !body && !cta && topic) {
-          const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
-          const objective = goal === 'sales' || goal === 'traffic'
-            ? 'conversions'
-            : goal === 'viral' ? 'viral' : 'engagement';
-          const aiResult = await advAI.generateAdvancedContent({
-            userId: userId || 'anonymous',
-            topic,
-            platforms: [platform || 'tiktok'],
-            objective,
-            tone: (tone || 'energetic') as any,
-            genre: genre || undefined,
-            artistName: artist_name || undefined,
-            contentType: objective === 'conversions' ? 'promotional'
-              : objective === 'viral' ? 'storytelling' : 'announcement',
-            includeHashtags: true,
-            includeEmojis: true,
-            variantCount: 1,
-            trendContext: genre ? [`genre:${genre}`] : undefined,
-          });
-          hook = aiResult.primary.headline.slice(0, 80);
-          body = aiResult.primary.body.split('\n')[0].slice(0, 120);
-          cta  = aiResult.primary.callToAction.slice(0, 60);
+          // Stage 1: MaxCore → Python AI → ContentGenerator for video script
+          // Route through the full advanced AI pipeline so MaxCore-trained content
+          // feeds the video renderer, not the template engine.
+          let scriptSource = 'template';
+          try {
+            const scriptResult = await unifiedAIController.generateContent({
+              platform: (platform || 'tiktok') as any,
+              tone: (tone || 'energetic') as any,
+              topic,
+              contentType: (goal === 'sales' || goal === 'traffic')
+                ? 'promotional'
+                : goal === 'viral' ? 'engagement' : 'engagement',
+              includeHashtags: false,
+              includeEmojis: false,
+              genre: genre || undefined,
+            });
+
+            if (scriptResult.success && scriptResult.data) {
+              const d = scriptResult.data as any;
+              hook = (d.hook || d.caption || '').slice(0, 80);
+              body = (d.body || d.caption || '').split('\n')[0].slice(0, 120);
+              cta  = (d.cta || '').slice(0, 60);
+              scriptSource = scriptResult.source || 'AI';
+            }
+          } catch (scriptErr) {
+            logger.warn('[VideoGen] Advanced AI script generation failed, falling through to AdvancedSocialAI:', scriptErr);
+          }
+
+          // Fall through to AdvancedSocialAI only if MaxCore/PythonAI produced nothing
+          if (!hook && !body) {
+            const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
+            const objective = goal === 'sales' || goal === 'traffic'
+              ? 'conversions'
+              : goal === 'viral' ? 'viral' : 'engagement';
+            const aiResult = await advAI.generateAdvancedContent({
+              userId: userId || 'anonymous',
+              topic,
+              platforms: [platform || 'tiktok'],
+              objective,
+              tone: (tone || 'energetic') as any,
+              genre: genre || undefined,
+              artistName: artist_name || undefined,
+              contentType: objective === 'conversions' ? 'promotional'
+                : objective === 'viral' ? 'storytelling' : 'announcement',
+              includeHashtags: false,
+              includeEmojis: false,
+              variantCount: 1,
+              trendContext: genre ? [`genre:${genre}`] : undefined,
+            });
+            hook = aiResult.primary.headline.slice(0, 80);
+            body = aiResult.primary.body.split('\n')[0].slice(0, 120);
+            cta  = aiResult.primary.callToAction.slice(0, 60);
+            scriptSource = 'AdvancedSocialAI';
+          }
+
           logger.info(
-            `[VideoGen] AI content ready — score=${aiResult.scoring.overall.toFixed(1)} ` +
+            `[VideoGen] Video script ready via ${scriptSource} — ` +
             `hook="${hook.slice(0, 40)}…"`
           );
         }
