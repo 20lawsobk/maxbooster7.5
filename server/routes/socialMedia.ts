@@ -1742,10 +1742,17 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         let resolvedTopic = topic || '';
         if (topic && /^https?:\/\//.test(topic.trim())) {
           try {
-            const profile = userId ? await storage.getUser(userId) : null;
-            const name   = artist_name || (profile as any)?.artistName || (profile as any)?.firstName || 'Artist';
-            const g      = genre || (profile as any)?.genre || 'music';
-            resolvedTopic = `${name} ${g} new release music content`;
+            const profile   = userId ? await storage.getUser(userId) : null;
+            const name      = artist_name || (profile as any)?.artistName || (profile as any)?.firstName || 'Artist';
+            const g         = genre || (profile as any)?.genre || 'music';
+            const urlDomain = (() => {
+              try { return new URL(topic.trim()).hostname.replace(/^www\./, ''); } catch { return ''; }
+            })();
+            // Blend artist identity + platform context so MaxCore generates content
+            // that references both the artist AND the destination (e.g. MaxBooster).
+            resolvedTopic = urlDomain
+              ? `${name} ${g} new release promo on ${urlDomain}`
+              : `${name} ${g} new release music content`;
           } catch {
             resolvedTopic = `${artist_name || 'Artist'} new music release`;
           }
