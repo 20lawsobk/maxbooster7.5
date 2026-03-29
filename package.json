@@ -11,7 +11,7 @@
   "license": "MIT",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "bash -c './boosterstate/target/debug/boosterstate & sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
+    "dev": "bash -c '([ -x ./boosterstate/target/debug/boosterstate ] && ./boosterstate/target/debug/boosterstate &); sleep 1 && NODE_ENV=development npx tsx server/index.ts'",
     "security-fix": "npx tsx script/security-fix.ts",
     "build": "npx tsx script/security-fix.ts && npx tsx script/build.ts",
     "deploy:build": "npm install --omit=dev --no-audit --no-fund && npx tsx script/security-fix.ts && npx tsx script/build.ts && node script/deploy-clean-binary.mjs",

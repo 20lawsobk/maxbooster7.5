@@ -2,6 +2,7 @@ import session from 'express-session';
 import { RedisStore } from 'connect-redis';
 import crypto from 'crypto';
 import { getRedisClient } from '../lib/redisClient.js';
+import { isPdimConfigured } from '../lib/pdimClient.js';
 import { logger } from '../logger.js';
 
 /**
@@ -188,9 +189,14 @@ async function pingWithRetry(client: any, maxAttempts = 8, delayMs = 2_000): Pro
 
 /**
  * Create the PDIM-backed session store.
- * PDIM is always reachable — throws on failure rather than falling back.
+ * Falls back to in-memory store when PDIM is not configured (development mode).
  */
 export async function createSessionStore(): Promise<session.Store> {
+  if (!isPdimConfigured()) {
+    logger.warn('⚠️  PDIM not configured — using in-memory session store (development mode, sessions will not persist across restarts)');
+    const MemoryStore = (await import('memorystore')).default(session);
+    return new MemoryStore({ checkPeriod: 86400000 });
+  }
   try {
     const ioredisClient = getRedisClient();
     await pingWithRetry(ioredisClient);

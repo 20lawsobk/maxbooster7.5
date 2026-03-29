@@ -94,3 +94,37 @@ Six optimizations applied across the content generation stack:
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
 - **Search APIs**: Exa, Tavily.
+
+## Replit Environment Setup
+
+### Node.js Runtime
+- Requires Node.js 22+ (installed via Replit modules as `nodejs-22`)
+- Uses npm for package management
+
+### Development Workflow
+- **Start command**: `npm run dev` — runs boosterstate sidecar (if built) + Express server with Vite middleware on port 5000
+- **Workflow name**: "Start application"
+- **Port**: 5000 (Express + Vite SSR middleware in dev, serves both API and frontend)
+
+### Deployment
+- **Build command**: `bash build.sh` 
+- **Start command**: `bash start.sh` (runs cluster mode from `dist/cluster.cjs`)
+- **Target**: Autoscale
+
+### Required Environment Variables
+- `DATABASE_URL` — PostgreSQL connection (auto-provisioned by Replit)
+- `SESSION_SECRET` — Auto-generated if not set in dev mode
+- `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — Payment processing (optional for dev)
+- `SENDGRID_API_KEY` — Email delivery (optional for dev)
+- `PDIM_HTTP_EXEC_URL`, `PDIM_BEARER_TOKEN` — PDIM storage backend (optional for dev; falls back to in-memory)
+
+### Dev Mode Fallbacks (when PDIM not configured)
+- Rate limiters are disabled (pass-through middleware)
+- Session store uses in-memory (memorystore) instead of PDIM/Redis
+- BullMQ queues and workers are unavailable (warnings logged)
+- Distributed cache falls back to in-memory
+
+### Key Code Modifications for Replit
+1. `server/middleware/scalableRateLimiter.ts` — Gracefully skips PDIM rate limiters when unconfigured
+2. `server/middleware/sessionConfig.ts` — Falls back to memorystore sessions when PDIM unavailable
+3. `package.json` dev script — Made boosterstate sidecar optional (skips if binary not built)

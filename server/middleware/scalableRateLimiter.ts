@@ -1,6 +1,9 @@
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
+import { isPdimConfigured } from '../lib/pdimClient.js';
+
+const _passThrough: RequestHandler = (_req, _res, next) => next();
 
 interface RateLimiterConfig {
   windowMs: number;
@@ -114,6 +117,10 @@ function buildDistributedGlobal(
   maxRequests: number,
   keyPrefix = 'global'
 ): RequestHandler {
+  if (!isPdimConfigured()) {
+    logger.warn(`[RateLimiter] PDIM not configured — ${keyPrefix} rate limiter disabled (dev mode)`);
+    return _passThrough;
+  }
   const redisClient = getRedisClient();
 
   const limiter = new DistributedRateLimiter(
@@ -134,6 +141,10 @@ function buildDistributedGlobal(
 }
 
 export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>): RequestHandler => {
+  if (!isPdimConfigured()) {
+    logger.warn(`[RateLimiter] PDIM not configured — custom rate limiter disabled (dev mode)`);
+    return _passThrough;
+  }
   const redisClient = getRedisClient();
 
   const limiter = new DistributedRateLimiter(
