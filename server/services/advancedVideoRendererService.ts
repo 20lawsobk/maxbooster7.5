@@ -11,6 +11,8 @@
  *   Stage 3 — FFmpeg renderer         (videoGeneratorService.generateVideo)
  */
 
+import fs from 'fs';
+import path from 'path';
 import { logger } from '../logger.js';
 import { pythonAIService } from './pythonAIService.js';
 import { generateVideo as generateVideoFFmpeg, type VideoGenOptions, type VideoGenResult } from './videoGeneratorService.js';
@@ -20,6 +22,40 @@ const MAXCORE_VIDEO_POLL_INTERVAL_MS = 2000;
 const MAXCORE_VIDEO_MAX_ATTEMPTS     = 90;   // 3 minutes max
 const PYTHON_AI_POLL_INTERVAL_MS     = 2000;
 const PYTHON_AI_MAX_ATTEMPTS         = 90;
+
+const MAXCORE_ORIGIN = (process.env.AI_SERVER_URL || '').replace(/\/+$/, '');
+const LOCAL_VIDEO_DIR = path.join(process.cwd(), 'uploads', 'videos');
+
+/**
+ * Fetch a MaxCore video from its relative URL and save it locally.
+ * Returns the local serving URL (/uploads/videos/<filename>) or null on failure.
+ */
+async function downloadMaxCoreVideo(relativeUrl: string): Promise<string | null> {
+  try {
+    const absoluteUrl = relativeUrl.startsWith('http')
+      ? relativeUrl
+      : `${MAXCORE_ORIGIN}${relativeUrl}`;
+    const filename = path.basename(relativeUrl.split('?')[0]);
+    const localPath = path.join(LOCAL_VIDEO_DIR, filename);
+
+    if (!fs.existsSync(LOCAL_VIDEO_DIR)) {
+      fs.mkdirSync(LOCAL_VIDEO_DIR, { recursive: true });
+    }
+
+    const response = await fetch(absoluteUrl);
+    if (!response.ok) {
+      logger.warn(`[AdvancedVideoRenderer] Failed to download MaxCore video (${response.status}): ${absoluteUrl}`);
+      return null;
+    }
+    const buffer = Buffer.from(await response.arrayBuffer());
+    fs.writeFileSync(localPath, buffer);
+    logger.info(`[AdvancedVideoRenderer] MaxCore video saved locally: ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
+    return `/uploads/videos/${filename}`;
+  } catch (err: any) {
+    logger.warn('[AdvancedVideoRenderer] MaxCore video download failed:', err.message);
+    return null;
+  }
+}
 
 /**
  * Poll MaxCore for a video job until done / error / timeout.
@@ -31,9 +67,10 @@ async function pollMaxCoreVideoJob(jobId: string): Promise<VideoGenResult | null
       const status = await MaxCoreAIClient.get<any>('/video-job/' + jobId);
       if (!status) continue;
       if (status.status === 'done' && status.url) {
+        const localUrl = await downloadMaxCoreVideo(status.url);
         return {
           success: true,
-          url: status.url,
+          url: localUrl ?? `${MAXCORE_ORIGIN}${status.url.startsWith('/') ? '' : '/'}${status.url}`,
           filename: status.filename,
           width: status.width,
           height: status.height,
@@ -102,7 +139,9 @@ async function pollPythonAIVideoJob(pyJobId: string): Promise<VideoGenResult | n
  *
  * Returns a VideoGenResult with `source` indicating which stage succeeded.
  */
-export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult> {
+export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenResult> {
+  let opts = inputOpts;
+  let maxcoreScriptUsed = false;
   const startMs = Date.now();
 
   // ── Stage 1: MaxCore video renderer ─────────────────────────────────────────
@@ -130,11 +169,22 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
       if (jobResp?.job_id) {
         const result = await pollMaxCoreVideoJob(jobResp.job_id);
         if (result) {
-          logger.info(`[AdvancedVideoRenderer] Stage 1 complete (MaxCore) in ${Date.now() - startMs}ms`);
-          return { ...result, processing_time_ms: Date.now() - startMs };
+          if (result.url && result.url.startsWith('/uploads/videos/')) {
+            // Video downloaded and stored locally — serve it directly
+            logger.info(`[AdvancedVideoRenderer] Stage 1 complete (MaxCore local) in ${Date.now() - startMs}ms`);
+            return { ...result, source: 'MaxCoreAI', processing_time_ms: Date.now() - startMs };
+          }
+          // MaxCore generated the AI script but the file isn't accessible.
+          // Enrich opts with MaxCore's content and fall through to Stage 3 (local render).
+          logger.info('[AdvancedVideoRenderer] MaxCore script retrieved — routing to local renderer with AI content');
+          if (result.hook) opts = { ...opts, hook: result.hook };
+          if (result.body) opts = { ...opts, body: result.body };
+          if (result.cta)  opts = { ...opts, cta:  result.cta  };
+          if (result.template_name) opts = { ...opts, template: result.template_name };
+          maxcoreScriptUsed = true;
         }
-      } else if (jobResp?.url) {
-        // Synchronous response (MaxCore returned URL directly)
+      } else if (jobResp?.url && jobResp.url.startsWith('/uploads/videos/')) {
+        // Synchronous response with local URL
         logger.info(`[AdvancedVideoRenderer] Stage 1 complete (MaxCore sync) in ${Date.now() - startMs}ms`);
         return {
           success: true,
@@ -185,11 +235,14 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
   }
 
   // ── Stage 3: FFmpeg renderer ─────────────────────────────────────────────────
-  logger.info('[AdvancedVideoRenderer] Stage 3 — FFmpeg renderer starting');
+  logger.info(`[AdvancedVideoRenderer] Stage 3 — FFmpeg renderer starting${maxcoreScriptUsed ? ' (MaxCore AI script)' : ''}`);
   const ffmpegResult = await generateVideoFFmpeg(opts);
   return {
     ...ffmpegResult,
-    source: 'FFmpegRenderer',
+    source: maxcoreScriptUsed ? 'MaxCoreAI' : 'FFmpegRenderer',
+    hook: opts.hook || ffmpegResult.hook,
+    body: opts.body || ffmpegResult.body,
+    cta:  opts.cta  || ffmpegResult.cta,
     processing_time_ms: Date.now() - startMs,
   };
 }

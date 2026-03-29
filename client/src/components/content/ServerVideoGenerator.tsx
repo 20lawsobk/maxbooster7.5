@@ -608,7 +608,7 @@ export function ServerVideoGenerator({
                       <Badge variant="outline" className="text-[10px]">
                         {(videoInfo.processingTime / 1000).toFixed(1)}s render
                       </Badge>
-                      {videoInfo.source === 'ai_model' && (
+                      {(videoInfo.source === 'ai_model' || videoInfo.source === 'MaxCoreAI') && (
                         <Badge variant="default" className="text-[10px]">
                           <Sparkles className="h-2.5 w-2.5 mr-1" />
                           AI Generated
