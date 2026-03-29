@@ -122,10 +122,10 @@ async function probeConnectivity(): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MODEL_ENDPOINTS: Array<{ name: string; endpoint: string }> = [
-  { name: 'social_base',       endpoint: '/models/social/state'       },
-  { name: 'advertising_base',  endpoint: '/models/advertising/state'  },
-  { name: 'content_base',      endpoint: '/models/content/state'      },
-  { name: 'engagement_base',   endpoint: '/models/engagement/state'   },
+  { name: 'social_base',       endpoint: '/api/models/social/state'       },
+  { name: 'advertising_base',  endpoint: '/api/models/advertising/state'  },
+  { name: 'content_base',      endpoint: '/api/models/content/state'      },
+  { name: 'engagement_base',   endpoint: '/api/models/engagement/state'   },
 ];
 
 async function syncWeightsFromMaxCore(): Promise<void> {
@@ -190,7 +190,7 @@ export async function pushTrainingFeedback(payload: TrainingFeedbackPayload): Pr
   const peerIsPdim = PEER_NODE.startsWith('pdim://');
   if (PEER_NODE && MBS_KEY && !peerIsPdim) {
     try {
-      const r = await fetch(`${PEER_NODE}/train/feedback`, {
+      const r = await fetch(`${PEER_NODE}/api/train/feedback`, {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',
@@ -218,7 +218,7 @@ export async function pushTrainingFeedback(payload: TrainingFeedbackPayload): Pr
 
   // Also notify inference server if different from training peer
   if (AI_SERVER_URL && AI_SERVER_KEY && AI_SERVER_URL !== PEER_NODE) {
-    fetchMaxCore('/train/feedback', {
+    fetchMaxCore('/api/train/feedback', {
       method:  'POST',
       body:    enriched,
       timeout: 3_000,
