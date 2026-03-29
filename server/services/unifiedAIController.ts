@@ -425,15 +425,44 @@ export class UnifiedAIController {
     const startTime = Date.now();
     await this.ensureInitialized();
 
+    const platform = (options.platform || 'instagram') as string;
+    const topic = options.musicData
+      ? `${options.musicData.title} by ${options.musicData.artist}`
+      : (options.customPrompt || 'new music');
+    const tone = options.tone || 'energetic';
+
     try {
+      // Priority 1: MaxCore trained model server
+      if (await MaxCoreAIClient.isAvailable()) {
+        try {
+          const mc = await MaxCoreAIClient.infer<any>('/generate/content', {
+            platform,
+            topic,
+            tone,
+            genre: options.musicData?.genre,
+          });
+          if (mc?.caption || mc?.hook) {
+            const parts = mc.caption
+              ? [mc.caption]
+              : [mc.hook, mc.body, mc.cta].filter(Boolean);
+            return {
+              success: true,
+              data: { content: parts },
+              processingTimeMs: Date.now() - startTime,
+              source: 'MaxCoreAI',
+              confidence: mc.confidence || 0.95,
+            };
+          }
+        } catch (mcErr) {
+          logger.warn('[UnifiedAI] MaxCore social content failed, falling through:', mcErr);
+        }
+      }
+
+      // Priority 2: Python AI model
       if (await pythonAIService.isAvailable()) {
         try {
-          const platform = options.platform || 'instagram';
-          const topic = options.musicData
-            ? `${options.musicData.title} by ${options.musicData.artist}`
-            : (options.customPrompt || 'new music');
           const aiResult = await pythonAIService.generateContent(
-            platform, topic, options.tone || 'energetic', 'growth', true
+            platform, topic, tone, 'growth', true
           );
           if (aiResult.success && aiResult.data) {
             const d = aiResult.data;
@@ -451,6 +480,7 @@ export class UnifiedAIController {
         }
       }
 
+      // Priority 3: In-house JS model (ContentGenerator via aiService)
       const result = await this.aiService.generateSocialContent(options);
       
       return {

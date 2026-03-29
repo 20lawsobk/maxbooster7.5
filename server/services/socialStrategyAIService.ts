@@ -2,6 +2,7 @@ import { randomBytes } from 'crypto';
 
 import { logger } from '../logger';
 import { pythonAIService } from './pythonAIService.js';
+import { unifiedAIController } from './unifiedAIController.js';
 
 export interface ContentRecommendation {
   id: string;
@@ -298,16 +299,25 @@ class SocialStrategyAIService {
   }
 
   private async generateSuggestedContentAsync(title: string, platform: string): Promise<string> {
-    if (await pythonAIService.isAvailable()) {
-      try {
-        const result = await pythonAIService.generateContent(platform, title, 'energetic', 'growth', false);
-        if (result.success && result.data && result.data.hook) {
-          return `${result.data.hook}\n\n${result.data.body}\n\n${result.data.cta}`;
-        }
-      } catch (err) {
-        logger.warn('[SocialStrategy] Python AI failed for suggested content:', err);
+    // Priority 1: full advanced AI pipeline (MaxCore → Python AI → in-house JS)
+    try {
+      const aiResult = await unifiedAIController.generateContent({
+        platform: platform as any,
+        tone: 'energetic' as any,
+        topic: title,
+        contentType: 'engagement',
+        includeHashtags: true,
+        includeEmojis: true,
+      });
+      if (aiResult.success && aiResult.data) {
+        const d = aiResult.data as any;
+        const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
+        if (caption) return caption;
       }
+    } catch (err) {
+      logger.warn('[SocialStrategy] Advanced AI failed for suggested content:', err);
     }
+    // Last-resort: static template
     return this.generateSuggestedContent(title, platform);
   }
 

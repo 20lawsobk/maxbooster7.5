@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 import { aiService } from './aiService';
-import { MaxCoreAIClient } from './unifiedAIController.js';
+import { MaxCoreAIClient, unifiedAIController } from './unifiedAIController.js';
 import { db } from '../db';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
@@ -295,37 +295,58 @@ export class AIContentService {
   async generateText(options: ContentGenerationOptions): Promise<GeneratedContent> {
     const startTime = Date.now();
     try {
-      const { prompt, platform, tone = 'creative', length = 'medium' } = options;
+      const { prompt, platform = 'instagram', tone = 'energetic', length = 'medium' } = options;
 
-      const result = await aiService.generateSocialContent({
-        platform,
-        contentType: 'post',
-        tone,
-        customPrompt: prompt,
+      // Route through the full advanced AI pipeline:
+      // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
+      const aiResult = await unifiedAIController.generateContent({
+        platform: platform as any,
+        tone: tone as any,
+        topic: prompt || 'new music',
+        contentType: 'engagement',
+        includeHashtags: true,
+        includeEmojis: true,
       });
 
       const executionTimeMs = Date.now() - startTime;
+
+      let content: string[];
+      if (aiResult.success && aiResult.data) {
+        const d = aiResult.data as any;
+        const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
+        content = caption ? [caption] : (d.content || []);
+      } else {
+        // Last-resort: template engine
+        const fallback = await aiService.generateSocialContent({
+          platform: platform as any,
+          contentType: 'post',
+          tone: tone as any,
+          customPrompt: prompt,
+        });
+        content = fallback.content;
+      }
+
       const inferenceId = await this.logInference(
         'multilingual',
         { prompt, platform, tone, length },
-        { content: result.content, confidence: 0.9 },
+        { content, confidence: aiResult.confidence || 0.9 },
         undefined,
         executionTimeMs
       );
 
       if (inferenceId) {
         await this.logExplanation(inferenceId, {
-          text: `Generated ${platform} content with ${tone} tone`,
+          text: `Generated ${platform} content via ${aiResult.source || 'AI'} with ${tone} tone`,
           features: { platform: 0.3, tone: 0.4, length: 0.3 },
-          confidence: 0.9,
+          confidence: aiResult.confidence || 0.9,
         });
       }
 
       return {
         id: `text_${randomBytes(8).toString('hex')}`,
         type: 'text',
-        content: result.content,
-        metadata: { platform, tone, length, executionTimeMs },
+        content,
+        metadata: { platform, tone, length, executionTimeMs, source: aiResult.source },
         createdAt: new Date(),
       };
     } catch (error: unknown) {
@@ -1015,106 +1036,97 @@ export class AIContentService {
     variationType: 'headline' | 'CTA' | 'emoji' | 'length' | 'tone' = 'tone'
   ): Promise<ABVariant[]> {
     const startTime = Date.now();
-    const variants: ABVariant[] = [];
 
-    if (variationType === 'tone') {
-      variants.push(
-        {
-          id: randomBytes(8).toString('hex'),
-          content: baseContent.replace(/!/g, '.'),
-          variationType: 'formal',
-          predictedPerformance: 75,
-          changes: ['Reduced exclamation marks', 'More professional tone'],
-        },
-        {
-          id: randomBytes(8).toString('hex'),
-          content: `${baseContent} 🔥`,
-          variationType: 'energetic',
-          predictedPerformance: 85,
-          changes: ['Added fire emoji', 'More energetic'],
-        },
-        {
-          id: randomBytes(8).toString('hex'),
-          content: baseContent.toLowerCase(),
-          variationType: 'casual',
-          predictedPerformance: 80,
-          changes: ['All lowercase', 'More casual and approachable'],
+    // For all variant types, call the full AI pipeline (MaxCore → Python AI → in-house)
+    // with different tone parameters to produce real AI-generated alternatives.
+    const toneMap: Record<string, Array<{ tone: string; label: string; desc: string }>> = {
+      tone: [
+        { tone: 'professional', label: 'formal',    desc: 'Professional and polished tone' },
+        { tone: 'energetic',    label: 'energetic',  desc: 'High-energy, hype-driven tone' },
+        { tone: 'casual',       label: 'casual',     desc: 'Friendly, conversational tone' },
+      ],
+      emoji: [
+        { tone: 'energetic',    label: 'emoji-vibrant',  desc: 'Vibrant emoji-rich variation' },
+        { tone: 'casual',       label: 'emoji-warm',     desc: 'Warm emoji variation' },
+        { tone: 'promotional',  label: 'emoji-hype',     desc: 'Hype emoji variation' },
+      ],
+      CTA: [
+        { tone: 'promotional',  label: 'cta-stream',     desc: 'Stream-focused call to action' },
+        { tone: 'energetic',    label: 'cta-hype',       desc: 'Hype call to action' },
+        { tone: 'casual',       label: 'cta-friendly',   desc: 'Friendly call to action' },
+      ],
+      length: [
+        { tone: 'casual',       label: 'short',      desc: 'Short, punchy variation' },
+        { tone: 'professional', label: 'long',        desc: 'Extended, detailed variation' },
+      ],
+      headline: [
+        { tone: 'energetic',    label: 'headline-hype',  desc: 'High-energy headline variant' },
+        { tone: 'professional', label: 'headline-news',  desc: 'News-style headline variant' },
+        { tone: 'casual',       label: 'headline-warm',  desc: 'Warm headline variant' },
+      ],
+    };
+
+    const variantSpecs = toneMap[variationType] || toneMap.tone;
+
+    // Call AI in parallel for every variant
+    const variantResults = await Promise.all(
+      variantSpecs.map(async (spec) => {
+        try {
+          const aiResult = await unifiedAIController.generateContent({
+            platform: 'instagram' as any,
+            tone: spec.tone as any,
+            topic: baseContent,
+            contentType: 'engagement',
+            includeHashtags: true,
+            includeEmojis: true,
+          });
+
+          let generatedText = baseContent;
+          if (aiResult.success && aiResult.data) {
+            const d = aiResult.data as any;
+            generatedText = d.caption
+              || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n')
+              || baseContent;
+          }
+
+          return {
+            id: randomBytes(8).toString('hex'),
+            content: generatedText,
+            variationType: spec.label,
+            predictedPerformance: aiResult.confidence ? Math.round(aiResult.confidence * 100) : 80,
+            changes: [spec.desc, `Source: ${aiResult.source || 'AI'}`],
+          } as ABVariant;
+        } catch {
+          // If AI fails for a specific tone variant, fall through to template
+          return {
+            id: randomBytes(8).toString('hex'),
+            content: baseContent,
+            variationType: spec.label,
+            predictedPerformance: 70,
+            changes: [spec.desc],
+          } as ABVariant;
         }
-      );
-    } else if (variationType === 'emoji') {
-      const emojis = [
-        ['🎵', '🎶'],
-        ['✨', '💫'],
-        ['🔥', '💯'],
-      ];
-      emojis.forEach((emojiSet, i) => {
-        variants.push({
-          id: randomBytes(8).toString('hex'),
-          content: `${baseContent} ${emojiSet.join(' ')}`,
-          variationType: `emoji-set-${i + 1}`,
-          predictedPerformance: 78 + i * 3,
-          changes: [`Added emojis: ${emojiSet.join(' ')}`],
-        });
-      });
-    } else if (variationType === 'CTA') {
-      const ctas = ['Listen now!', 'Check it out!', "Don't miss this!", 'Stream it here!'];
-      ctas.forEach((cta, i) => {
-        variants.push({
-          id: randomBytes(8).toString('hex'),
-          content: `${baseContent} ${cta}`,
-          variationType: `cta-${i + 1}`,
-          predictedPerformance: 82 + i * 2,
-          changes: [`Added CTA: "${cta}"`],
-        });
-      });
-    } else if (variationType === 'length') {
-      variants.push(
-        {
-          id: randomBytes(8).toString('hex'),
-          content: baseContent.split(' ').slice(0, 10).join(' ') + '...',
-          variationType: 'short',
-          predictedPerformance: 88,
-          changes: ['Shortened to 10 words', 'More concise'],
-        },
-        {
-          id: randomBytes(8).toString('hex'),
-          content: `${baseContent} This is an extended version with more context and details to engage the audience.`,
-          variationType: 'long',
-          predictedPerformance: 72,
-          changes: ['Extended with additional context', 'More detailed'],
-        }
-      );
-    } else if (variationType === 'headline') {
-      const headlines = ['🚨 BREAKING:', '✨ NEW:', '🎵 JUST DROPPED:'];
-      headlines.forEach((headline, i) => {
-        variants.push({
-          id: randomBytes(8).toString('hex'),
-          content: `${headline} ${baseContent}`,
-          variationType: `headline-${i + 1}`,
-          predictedPerformance: 80 + i * 4,
-          changes: [`Added headline: "${headline}"`],
-        });
-      });
-    }
+      })
+    );
 
     const executionTimeMs = Date.now() - startTime;
     const inferenceId = await this.logInference(
       'multilingual',
       { baseContent, variationType },
-      { variants, count: variants.length },
+      { variants: variantResults, count: variantResults.length },
       undefined,
       executionTimeMs
     );
 
     if (inferenceId) {
       await this.logExplanation(inferenceId, {
-        text: `Generated ${variants.length} A/B test variants for ${variationType}`,
+        text: `Generated ${variantResults.length} AI A/B test variants for ${variationType}`,
         features: { variationType: 0.5, baseContent: 0.3, count: 0.2 },
-        confidence: 0.86,
+        confidence: 0.9,
       });
     }
 
-    return variants;
+    return variantResults;
   }
 
   /**
@@ -1139,7 +1151,8 @@ export class AIContentService {
   }
 
   /**
-   * Generate text content (already working)
+   * Generate text content — routes through full advanced AI pipeline:
+   * MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
    */
   private async generateTextContent(
     prompt: string,
@@ -1147,11 +1160,36 @@ export class AIContentService {
     tone?: string,
     length?: string
   ): Promise<GeneratedContent> {
-    const content = await aiService.generateSocialContent(prompt, platform, length || 'medium');
+    const aiResult = await unifiedAIController.generateContent({
+      platform: platform as any,
+      tone: (tone || 'energetic') as any,
+      topic: prompt || 'new music',
+      contentType: 'engagement',
+      includeHashtags: true,
+      includeEmojis: true,
+    });
+
+    let content: string[];
+    if (aiResult.success && aiResult.data) {
+      const d = aiResult.data as any;
+      const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
+      content = caption ? [caption] : (d.content || []);
+    } else {
+      // Last-resort: template engine
+      const fallback = await aiService.generateSocialContent({
+        platform: platform as any,
+        contentType: 'post',
+        tone: (tone || 'energetic') as any,
+        customPrompt: prompt,
+      });
+      content = fallback.content;
+    }
+
     return {
       id: `txt_${randomBytes(8).toString('hex')}`,
       type: 'text',
       content,
+      metadata: { platform, tone, length, source: aiResult.source },
       createdAt: new Date(),
     };
   }
