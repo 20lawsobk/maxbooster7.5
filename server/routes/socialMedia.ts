@@ -12,6 +12,7 @@ import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
+import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
 import { contentQualityPipeline } from '../services/contentQualityPipeline.js';
 import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
 import {
@@ -1821,50 +1822,18 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
           userId,
         };
 
-        // Stage 2 — Python AI renderer (primary renderer, fed by Stage 1 content).
-        // FFmpeg runs when Python AI is unavailable.
-        const pyAvailable = await pythonAIService.isAvailable();
-        if (pyAvailable) {
-          logger.info(`[VideoGen] Python AI renderer active — starting job ${jobId}`);
-          const jobResult = await pythonAIService.startVideoJob({
-            ...videoParams,
-            template: template || 'cinematic_promo',
-          });
-
-          if (jobResult.success && jobResult.data?.job_id) {
-            const pyJobId = jobResult.data.job_id;
-            const maxAttempts = 90;
-            let pyDone = false;
-            for (let attempt = 0; attempt < maxAttempts; attempt++) {
-              await new Promise(r => setTimeout(r, 2000));
-              const statusResult = await pythonAIService.getVideoJobStatus(pyJobId);
-              if (statusResult.success && statusResult.data) {
-                const d = statusResult.data;
-                if (d.status === 'done' && d.success && d.url) {
-                  logger.info(`[VideoGen] Python AI job done in ~${(attempt + 1) * 2}s`);
-                  ffmpegJobs.set(jobId, { status: 'done', result: d, createdAt: Date.now() });
-                  pyDone = true;
-                  break;
-                }
-                if (d.status === 'error') {
-                  logger.error('[VideoGen] Python AI renderer job failed:', d.error);
-                  break;
-                }
-              }
-            }
-            if (pyDone) return;
-          }
-        }
-
-        // Stage 3 — FFmpeg renderer (runs when Python AI is unavailable).
-        logger.info(`[VideoGen] FFmpeg renderer starting for job ${jobId}`);
-        const result = await generateVideoFFmpeg(videoParams);
+        // Stages 2–4 — Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+        logger.info(`[VideoGen] Routing job ${jobId} through Advanced Video Renderer`);
+        const result = await renderAdvancedVideo({
+          ...videoParams,
+          template: template || 'cinematic_promo',
+        });
         if (result.success) {
           ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
-          logger.info(`[VideoGen] FFmpeg job ${jobId} done`);
+          logger.info(`[VideoGen] Job ${jobId} done via ${result.source || 'renderer'}`);
         } else {
           ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
-          logger.error(`[VideoGen] FFmpeg job ${jobId} failed: ${result.error}`);
+          logger.error(`[VideoGen] Job ${jobId} failed: ${result.error}`);
         }
       } catch (err: any) {
         ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });

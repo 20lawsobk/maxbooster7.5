@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { aiService } from './aiService';
 import { MaxCoreAIClient, unifiedAIController } from './unifiedAIController.js';
+import { renderVideo as renderAdvancedVideo } from './advancedVideoRendererService.js';
 import { db } from '../db';
 
 // ── Deterministic PRNG — FNV-1a 32-bit ──────────────────────────────────────
@@ -1232,85 +1233,68 @@ export class AIContentService {
   }
 
   /**
-   * In-house video generation using FFmpeg + Sharp
-   * Creates animated promotional videos with text overlays
+   * Video generation — routes through the Advanced Video Renderer:
+   * MaxCore renderer → Python AI renderer → FFmpeg renderer.
+   * First generates the video script via the unified AI pipeline so the
+   * content going into the renderer is MaxCore-quality, not template-based.
    */
   async generateVideoContent(
     prompt: string,
     platform: string,
     tone?: string
   ): Promise<GeneratedContent> {
-    const dimensions = this.getPlatformVideoDimensions(platform);
-    const duration = this.getPlatformVideoDuration(platform);
-    const filename = `${randomBytes(8).toString('hex')}.mp4`;
-    const outputDir = path.join(process.cwd(), 'public', 'generated-content', 'videos');
-    const outputPath = path.join(outputDir, filename);
-    const publicUrl = `/generated-content/videos/${filename}`;
-
+    // Step 1 — Generate script (hook/body/cta) via full AI pipeline
+    let hook = '';
+    let body = '';
+    let cta  = '';
     try {
-      await fs.mkdir(outputDir, { recursive: true });
-
-      // Generate frame images
-      const framesDir = path.join(outputDir, `frames_${randomBytes(8).toString('hex')}`);
-      await fs.mkdir(framesDir, { recursive: true });
-
-      const fps = 30;
-      const totalFrames = duration * fps;
-
-      // Generate animated frames
-      for (let i = 0; i < totalFrames; i++) {
-        const progress = i / totalFrames;
-        await this.generateVideoFrame(framesDir, i, dimensions, prompt, tone || 'creative', progress);
+      const scriptResult = await unifiedAIController.generateContent({
+        platform: platform as any,
+        tone: (tone || 'energetic') as any,
+        topic: prompt || 'new music',
+        contentType: 'engagement',
+        includeHashtags: false,
+        includeEmojis: false,
+      });
+      if (scriptResult.success && scriptResult.data) {
+        const d = scriptResult.data as any;
+        hook = (d.hook || d.caption || '').slice(0, 80);
+        body = (d.body || d.caption || '').split('\n')[0].slice(0, 120);
+        cta  = (d.cta  || '').slice(0, 60);
       }
-
-      // Verify frames were generated before compiling
-      const frameFiles = await fs.readdir(framesDir);
-      const pngFrames = frameFiles.filter(f => f.endsWith('.png'));
-      logger.info(`📽️ Generated ${pngFrames.length} frames for video`);
-      
-      if (pngFrames.length === 0) {
-        await fs.rm(framesDir, { recursive: true, force: true });
-        throw new Error('Video generation failed: no frames were created');
-      }
-
-      // Use FFmpeg to compile frames into video
-      await this.compileFramesToVideo(framesDir, outputPath, fps, dimensions);
-
-      // Cleanup frames
-      await fs.rm(framesDir, { recursive: true, force: true });
-
-      // Verify the video file was created
-      let stats;
-      try {
-        stats = await fs.stat(outputPath);
-        if (stats.size < 1000) {
-          throw new Error('Video file is too small, generation may have failed');
-        }
-        logger.info(`✅ Generated video: ${publicUrl} (${duration}s, ${dimensions.width}x${dimensions.height}, ${stats.size} bytes)`);
-      } catch (statError: any) {
-        if (statError.message?.includes('too small')) throw statError;
-        logger.error(`Video file not found after FFmpeg: ${outputPath}`);
-        throw new Error('Video generation failed: output file not created');
-      }
-
-      return {
-        id: `vid_${randomBytes(8).toString('hex')}`,
-        type: 'video',
-        content: prompt,
-        url: publicUrl,
-        metadata: {
-          platform,
-          dimensions,
-          duration,
-          fps,
-          fileSize: stats.size,
-        },
-        createdAt: new Date(),
-      };
-    } catch (error: any) {
-      logger.error(`Video generation failed: ${error.message}`);
-      throw error;
+    } catch (scriptErr) {
+      logger.warn('[ContentService] Video script generation failed, renderer will use topic as script:', scriptErr);
     }
+
+    // Step 2 — Render through Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+    const result = await renderAdvancedVideo({
+      topic:    prompt || 'new music',
+      platform: platform || 'tiktok',
+      tone:     tone    || 'energetic',
+      hook,
+      body,
+      cta,
+      template: 'cinematic_promo',
+      quality:  'cinematic',
+    });
+
+    if (!result.success || !result.url) {
+      throw new Error(result.error || 'Video generation failed');
+    }
+
+    return {
+      id: `vid_${randomBytes(8).toString('hex')}`,
+      type: 'video',
+      content: prompt,
+      url: result.url,
+      metadata: {
+        platform,
+        tone,
+        source: result.source,
+        processingTimeMs: result.processing_time_ms,
+      },
+      createdAt: new Date(),
+    };
   }
 
   /**

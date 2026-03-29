@@ -6,6 +6,7 @@ import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { generateVideo as generateVideoFFmpeg } from '../services/videoGeneratorService.js';
+import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
 import { db } from '../db.js';
 import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
 import { adCampaigns, adCreatives } from '@shared/schema';
@@ -676,24 +677,8 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       tone, goal, artist_name, quality,
     } = req.body;
 
-    const pyResult = await pythonAIService.generateVideo({
-      topic,
-      platform: platform || 'instagram',
-      template: template || 'cinematic_promo',
-      aspect_ratio,
-      duration: duration || 10,
-      tone: tone || 'energetic',
-      goal: goal || 'growth',
-      artist_name,
-      quality: quality || 'cinematic',
-    });
-
-    if (pyResult.success && pyResult.data?.success) {
-      return res.json(pyResult.data);
-    }
-
-    logger.info('[AdVideoGen] Python AI unavailable, using FFmpeg generator');
-    const result = await generateVideoFFmpeg({
+    // Route through the Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+    const result = await renderAdvancedVideo({
       topic: topic || 'music promotion',
       platform: platform || 'instagram',
       template: template || 'cinematic_promo',
@@ -709,6 +694,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
       return res.status(500).json({ success: false, message: result.error || 'Video generation failed' });
     }
 
+    logger.info(`[AdVideoGen] Video ready via ${result.source || 'renderer'}`);
     res.json(result);
   } catch (error) {
     logger.error('Failed to generate ad video:', error);
