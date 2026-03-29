@@ -1737,6 +1737,20 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         let body = rawBody || '';
         let cta  = rawCta  || '';
 
+        // If the topic is a bare URL, resolve it to artist-specific context so
+        // MaxCore generates music content instead of generic platform promo copy.
+        let resolvedTopic = topic || '';
+        if (topic && /^https?:\/\//.test(topic.trim())) {
+          try {
+            const profile = userId ? await storage.getUser(userId) : null;
+            const name   = artist_name || (profile as any)?.artistName || (profile as any)?.firstName || 'Artist';
+            const g      = genre || (profile as any)?.genre || 'music';
+            resolvedTopic = `${name} ${g} new release music content`;
+          } catch {
+            resolvedTopic = `${artist_name || 'Artist'} new music release`;
+          }
+        }
+
         if (!hook && !body && !cta && topic) {
           // Stage 1: MaxCore → Python AI → ContentGenerator for video script
           // Route through the full advanced AI pipeline so MaxCore-trained content
@@ -1746,7 +1760,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
             const scriptResult = await unifiedAIController.generateContent({
               platform: (platform || 'tiktok') as any,
               tone: (tone || 'energetic') as any,
-              topic,
+              topic: resolvedTopic,
               contentType: (goal === 'sales' || goal === 'traffic')
                 ? 'promotional'
                 : goal === 'viral' ? 'engagement' : 'engagement',
@@ -1774,7 +1788,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
               : goal === 'viral' ? 'viral' : 'engagement';
             const aiResult = await advAI.generateAdvancedContent({
               userId: userId || 'anonymous',
-              topic,
+              topic: resolvedTopic,
               platforms: [platform || 'tiktok'],
               objective,
               tone: (tone || 'energetic') as any,
@@ -1801,7 +1815,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
 
         // Shared render params for all video renderers.
         const videoParams = {
-          topic:      topic || hook || body || 'new music',
+          topic:      resolvedTopic || hook || body || 'new music',
           platform:   platform   || 'tiktok',
           template:   template   || undefined,
           aspect_ratio,

@@ -175,11 +175,12 @@ export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenR
             return { ...result, source: 'MaxCoreAI', processing_time_ms: Date.now() - startMs };
           }
           // MaxCore generated the AI script but the file isn't accessible.
-          // Enrich opts with MaxCore's content and fall through to Stage 3 (local render).
+          // Enrich opts with MaxCore's content only where opts lacks it — never
+          // replace already-good content from the caller's text generation step.
           logger.info('[AdvancedVideoRenderer] MaxCore script retrieved — routing to local renderer with AI content');
-          if (result.hook) opts = { ...opts, hook: result.hook };
-          if (result.body) opts = { ...opts, body: result.body };
-          if (result.cta)  opts = { ...opts, cta:  result.cta  };
+          if (result.hook && !opts.hook) opts = { ...opts, hook: result.hook };
+          if (result.body && !opts.body) opts = { ...opts, body: result.body };
+          if (result.cta  && !opts.cta)  opts = { ...opts, cta:  result.cta  };
           if (result.template_name) opts = { ...opts, template: result.template_name };
           maxcoreScriptUsed = true;
         }
