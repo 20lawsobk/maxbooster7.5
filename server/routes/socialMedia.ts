@@ -1096,7 +1096,7 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
               characterCount: result.data.characterCount,
               estimatedEngagement: result.data.estimatedEngagement,
               optimalPostTime: getOptimalPostTime(platform),
-              source: 'unified_ai',
+              source: result.source || 'unified_ai',
             });
           } else {
             failedPlatforms.push({ platform, error: 'Generation failed' });
@@ -1454,7 +1454,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
             contentType,
             format,
             targetAudience: targetAudience || undefined,
-            source:         'unified_ai',
+            source:         result.source || 'unified_ai',
           });
         }
       }

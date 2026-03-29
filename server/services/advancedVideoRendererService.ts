@@ -30,7 +30,7 @@ async function pollMaxCoreVideoJob(jobId: string): Promise<VideoGenResult | null
     try {
       const status = await MaxCoreAIClient.get<any>('/video-job/' + jobId);
       if (!status) continue;
-      if (status.status === 'done' && status.success && status.url) {
+      if (status.status === 'done' && status.url) {
         return {
           success: true,
           url: status.url,
