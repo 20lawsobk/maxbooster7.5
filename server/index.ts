@@ -588,6 +588,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     next();
   });
 
+  const { multiTenantRouter } = await import('./middleware/multiTenantRouter.js');
+  app.use(multiTenantRouter);
+
   await registerRoutes(httpServer, app);
 
   // Start retention background services

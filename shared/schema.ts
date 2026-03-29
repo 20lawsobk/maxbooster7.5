@@ -372,6 +372,30 @@ export const insertDnsRecordCacheSchema = createInsertSchema(dnsRecordCache).omi
 export type InsertDnsRecordCache = z.infer<typeof insertDnsRecordCacheSchema>;
 
 // ============================================================================
+// STOREFRONT DOMAINS (Per-artist deployment system)
+// ============================================================================
+export const storefrontDomains = pgTable("storefront_domains", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  storefrontId: varchar("storefront_id").notNull(),
+  domain: text("domain").notNull().unique(),
+  type: text("type").notNull(), // 'managed_subdomain' | 'custom_domain'
+  status: text("status").notNull().default("pending"), // 'pending' | 'active' | 'verification_failed' | 'disabled'
+  isPrimary: boolean("is_primary").default(false),
+  verificationToken: text("verification_token"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStorefrontDomainSchema = createInsertSchema(storefrontDomains).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertStorefrontDomain = z.infer<typeof insertStorefrontDomainSchema>;
+export type StorefrontDomain = typeof storefrontDomains.$inferSelect;
+
+// ============================================================================
 // DNS TEMPLATES (Reusable DNS record configurations)
 // ============================================================================
 export const dnsTemplates = pgTable("dns_templates", {

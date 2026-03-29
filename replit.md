@@ -47,6 +47,7 @@ Max Booster operates on a three-point data flow:
 - **Admin Functionality**: Dedicated admin UI for financial configuration.
 - **Error Handling and Fixing**: `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` provide reactive and proactive system health monitoring and runtime patching.
 - **Profile Claiming System v2**: Full pipeline implemented across 6 new DB tables for artist profile management and claim tracking.
+- **Per-Artist Storefront Deployment System** (2026-03-29): Replaces legacy marketplace custom URL generator. Components: `storefrontDomains` table in Neon (`neondb`), DNS validators (`server/modules/domains/dnsValidators.ts`), domain controller (`server/modules/domains/domain.controller.ts`), publish service (`server/modules/publish/publish.service.ts`), multi-tenant router (`server/middleware/multiTenantRouter.ts`), and routes at `/api/storefront-domains`. Endpoints: `POST /managed/check`, `POST /managed/reserve`, `POST /custom/request`, `POST /custom/verify`, `GET /storefront/:id`, `POST /storefront/:id/publish`, `POST /storefront/:id/unpublish`. Also updated `storefront.ts`: `GET /suggest-url` generates slug + checks availability, `GET /check-domain` validates against storefrontDomains. BASE_DOMAIN env var controls managed subdomain suffix (defaults to `maxboostermusic.com`).
 - **Advanced Video Renderer Service (2026-03-29)** (`server/services/advancedVideoRendererService.ts`): Dedicated rendering pipeline owned by the advanced AI content stack. All video generation routes through this service — never directly to Python AI or FFmpeg. Priority chain: Stage 1 = MaxCore `/generate/video` (polls `/video-job/:id`), Stage 2 = Python AI renderer (`pythonAIService.startVideoJob`), Stage 3 = FFmpeg (`videoGeneratorService.generateVideo`). Wired into all three video entry points: `POST /api/social/generate-video` (socialMedia.ts), `POST /api/advertising/generate-video` (advertising.ts), and `aiContentService.generateVideoContent()`. `generateVideoContent` also generates the video script (hook/body/cta) through `unifiedAIController.generateContent()` before rendering. Script generation: Video pipeline entry points now call `unifiedAIController.generateContent()` first for the hook/body/CTA, with `advancedSocialAIService` only as last resort.
 - **Advanced AI Routing — All Text Generation Unified (2026-03-29)**: All content text generation now routes through the full MaxCore → Python AI → ContentGenerator priority chain. Three previously bypassed paths have been fixed: (1) `aiContentService.generateText()` and `generateTextContent()` — were calling `aiService.generateSocialContent()` (template engine) directly; now call `unifiedAIController.generateContent()` first. (2) `aiContentService.generateABVariants()` — was doing pure string manipulation (append emoji/lowercase/etc); now calls `unifiedAIController.generateContent()` in parallel for each variant with different tone parameters, producing real AI-generated alternatives. (3) `socialStrategyAIService.generateSuggestedContentAsync()` — was Python AI only (no MaxCore); now routes through `unifiedAIController.generateContent()` which includes MaxCore as Priority 1. Also added MaxCore as Priority 1 to `unifiedAIController.generateSocialContent()` (was Python AI only).
 - **Determinism Breakthroughs**: Significant updates across various services (`advancedSocialAIService`, `autoPostGenerator`, `custom-ai-engine`, `WaveformAudioPlayer`, `contentVariantGenerator`, `image-generation.ts`, `contentQualityPipeline`, `autonomous-autopilot.ts`, `autopilot-engine.ts`, `autopilotPublisher.ts`, `routes/songwriting.ts`, `services/aiContentService.ts`, `services/dynamicTrendsService.ts`, `services/maxAssistantService.ts`, `routes/files.ts`) ensuring seeded, deterministic outcomes for content generation, aesthetic elements, and AI decision-making. This includes the implementation of UCB1 Multi-Armed Bandit for topic selection in the autopilot.
@@ -112,11 +113,19 @@ Six optimizations applied across the content generation stack:
 - **Target**: Autoscale
 
 ### Required Environment Variables
-- `DATABASE_URL` — PostgreSQL connection (auto-provisioned by Replit)
+- `DATABASE_URL` — Replit local PostgreSQL (auto-provisioned; used only for direct psql/testing)
+- `NEON_DATABASE_URL` — **Primary application database** (Neon PostgreSQL `neondb`). The app's `db` instance (`drizzle`) and `db:push` always use `NEON_DATABASE_URL` first. All schema tables must be created here.
 - `SESSION_SECRET` — Auto-generated if not set in dev mode
 - `STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — Payment processing (optional for dev)
 - `SENDGRID_API_KEY` — Email delivery (optional for dev)
 - `PDIM_HTTP_EXEC_URL`, `PDIM_BEARER_TOKEN` — PDIM storage backend (optional for dev; falls back to in-memory)
+
+### Database Architecture Note
+**Two separate PostgreSQL instances exist:**
+1. `DATABASE_URL` → `heliumdb` (Replit's local PostgreSQL) — used only for raw psql commands in shell
+2. `NEON_DATABASE_URL` → `neondb` (Neon PostgreSQL) — **the actual app database** used by Drizzle ORM, all routes, and `npm run db:push`
+
+When creating new tables: always use `npm run db:push` or run SQL against `$NEON_DATABASE_URL`. Never use `$DATABASE_URL` for schema changes.
 
 ### Dev Mode Fallbacks (when PDIM not configured)
 - Rate limiters are disabled (pass-through middleware)

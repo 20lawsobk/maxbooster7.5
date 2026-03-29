@@ -11,7 +11,7 @@
  *         npm run db:push
  */
 
-const { spawn } = require('child_process');
+import { spawn } from 'child_process';
 
 const args = process.argv.slice(2);
 const force = args.includes('--force') || true; // always force in this wrapper
