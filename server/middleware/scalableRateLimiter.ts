@@ -83,7 +83,10 @@ export class DistributedRateLimiter {
       try {
         result = await this.isRateLimited(key);
       } catch (err) {
-        return next(err);
+        // PDIM queue temporarily congested — pass request through uncounted rather
+        // than fail it. PDIM is always reachable; this is transient backpressure.
+        logger.warn('[RateLimit] PDIM congested — passing request through uncounted:', (err as Error).message);
+        result = { limited: false, remaining: -1 };
       }
 
       res.setHeader('X-RateLimit-Limit', this.config.maxRequests);

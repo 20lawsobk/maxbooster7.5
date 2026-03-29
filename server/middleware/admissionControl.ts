@@ -51,7 +51,10 @@ export async function admissionControl(
   try {
     current = await increment();
   } catch (err) {
-    return next(err);
+    // PDIM queue temporarily congested — pass request through rather than fail it.
+    // PDIM is always reachable; this is transient backpressure, not a server outage.
+    logger.warn('[AdmissionControl] PDIM congested — passing request through:', (err as Error).message);
+    return next();
   }
 
   if (current > MAX_CONCURRENT_REQUESTS) {
