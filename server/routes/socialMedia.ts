@@ -1863,6 +1863,7 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
       if (ffmpegJob.status === 'done' && ffmpegJob.result) {
         const r = ffmpegJob.result;
         return res.json({
+          ...r,
           status: 'completed',
           video_url: r.url ?? null,
           thumbnail_url: r.thumbnail_url ?? r.thumbnailUrl ?? null,
