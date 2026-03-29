@@ -4,12 +4,19 @@ import { socialListeningService } from '../services/socialListeningService';
 import { socialStrategyAIService } from '../services/socialStrategyAIService';
 import { unifiedAIController, type UserGenerationContext } from '../services/unifiedAIController';
 import { aiContentService } from '../services/aiContentService';
+import { analyzeUrl } from '../services/mediaAnalyzerService';
 import { logger } from '../logger';
 import { requireAuth } from '../middleware/auth.js';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import { db } from '../db.js';
 import { autopilotPreferences, posts } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+
+/** Extract the first HTTP/HTTPS URL from arbitrary text. */
+function extractFirstUrl(text: string): string | null {
+  const m = text.match(/https?:\/\/[^\s"'<>)]+/i);
+  return m ? m[0].replace(/[.,;:!?]+$/, '') : null;  // strip trailing punctuation
+}
 
 const router = Router();
 router.use(aiRateLimiter);
@@ -803,31 +810,81 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
                               contentType === 'announcement' ? 'announcement' :
                               contentType === 'tips' ? 'engagement' : 'promotional';
 
+    // ── Inline URL detection ─────────────────────────────────────────────────
+    // When the user types something like "A stunning promo for https://example.com/pricing"
+    // we detect the URL in their text, fetch its content, and inject the analysis
+    // automatically — no manual import step required.
+    // Only fires when the client has NOT already passed URL analysis data.
+    let inlineUrlAnalysis: Record<string, any> | null = null;
+    const embeddedUrl = extractFirstUrl(String(topic));
+    if (embeddedUrl && !urlContentType && !urlDescription) {
+      try {
+        const ua = await analyzeUrl(embeddedUrl);
+        if (ua && !ua.error) {
+          inlineUrlAnalysis = ua as any;
+          logger.info(`[socialAI] Inline URL analyzed: ${embeddedUrl} → ${ua.content_type} / "${ua.title}"`);
+        }
+      } catch (err) {
+        // Non-fatal — generation proceeds without page context
+        logger.warn('[socialAI] Inline URL analysis failed (non-fatal):', err);
+      }
+    }
+
+    // Merge inline analysis fields with any client-passed values (client wins on conflicts)
+    const effectiveUrlContentType = urlContentType || inlineUrlAnalysis?.content_type;
+    const effectiveUrlDescription  = urlDescription  || inlineUrlAnalysis?.summary || inlineUrlAnalysis?.description;
+    const effectiveKeywords         = (keywords as string[] | undefined)?.length
+                                        ? keywords
+                                        : inlineUrlAnalysis?.keywords;
+    const effectiveTags             = (tags as string[] | undefined)?.length
+                                        ? tags
+                                        : inlineUrlAnalysis?.tags;
+    const effectiveArtistName       = artistName || inlineUrlAnalysis?.artist;
+    const effectiveTrackTitle       = trackTitle || inlineUrlAnalysis?.track;
+    const effectiveAlbumName        = albumName  || inlineUrlAnalysis?.album;
+    const effectiveLabel            = label      || inlineUrlAnalysis?.label;
+    const effectiveReleaseDate      = releaseDate || inlineUrlAnalysis?.release_date;
+    const effectiveDuration         = duration   || inlineUrlAnalysis?.duration;
+    const effectivePrice            = (req.body.price as string | undefined) || undefined;
+    const inlineTitle               = inlineUrlAnalysis?.title;
+    const inlineBodyPreview         = inlineUrlAnalysis?.body_preview;
+    const inlineContentCategory     = inlineUrlAnalysis?.content_category || inlineUrlAnalysis?.platform_category;
+
     // Determine if URL source is a website/platform/SaaS (not a music track/artist/video page)
-    const isWebsitePromo = urlContentType === 'website';
+    const isWebsitePromo = effectiveUrlContentType === 'website';
 
     // Genre detection: skip for website content types; use rawGenre or detect from topic
-    const detectedGenre = rawGenre || (isWebsitePromo ? 'pop' : detectGenre(String(topic)));
+    const detectedGenre = rawGenre
+      || (inlineUrlAnalysis?.genre && inlineUrlAnalysis.genre !== 'default' ? inlineUrlAnalysis.genre : null)
+      || (isWebsitePromo ? 'pop' : detectGenre(String(topic)));
 
     // Build a rich context descriptor from all available URL analysis fields
     const contextParts: string[] = [];
 
-    // Core identity
-    if (trackTitle) contextParts.push(`"${trackTitle}"`);
-    if (artistName) contextParts.push(`by ${artistName}`);
-    if (albumName && !trackTitle) contextParts.push(`from album "${albumName}"`);
-    if (label) contextParts.push(`on ${label}`);
+    // Core identity — use effective (merged) values so inline URL analysis contributes
+    if (effectiveTrackTitle) contextParts.push(`"${effectiveTrackTitle}"`);
+    if (effectiveArtistName) contextParts.push(`by ${effectiveArtistName}`);
+    if (effectiveAlbumName && !effectiveTrackTitle) contextParts.push(`from album "${effectiveAlbumName}"`);
+    if (effectiveLabel) contextParts.push(`on ${effectiveLabel}`);
 
-    // User's own prompt is always included
-    contextParts.push(String(topic));
+    // User's own prompt — strip the bare URL from display text so it doesn't repeat
+    const cleanTopic = embeddedUrl ? String(topic).replace(embeddedUrl, '').trim().replace(/\s+/g, ' ') : String(topic);
+    contextParts.push(cleanTopic || String(topic));
+
+    // Inline URL analysis: inject page title + category + body preview as context
+    if (inlineUrlAnalysis) {
+      if (inlineTitle && inlineTitle !== cleanTopic) contextParts.push(`Page: "${inlineTitle}"`);
+      if (inlineContentCategory)                     contextParts.push(`Category: ${inlineContentCategory}`);
+      if (inlineBodyPreview)                         contextParts.push(String(inlineBodyPreview).slice(0, 200));
+    }
 
     // URL-derived description (only if it adds new info)
-    if (urlDescription && urlDescription !== String(topic)) contextParts.push(urlDescription);
+    if (effectiveUrlDescription && effectiveUrlDescription !== String(topic)) contextParts.push(effectiveUrlDescription);
 
     // Music metadata
     const musicMeta: string[] = [];
-    if (releaseDate) musicMeta.push(`released ${releaseDate}`);
-    if (duration) musicMeta.push(`${duration}`);
+    if (effectiveReleaseDate) musicMeta.push(`released ${effectiveReleaseDate}`);
+    if (effectiveDuration)    musicMeta.push(`${effectiveDuration}`);
     if (musicMeta.length) contextParts.push(musicMeta.join(', '));
 
     // Engagement signals — let AI reference real numbers when available
@@ -851,12 +908,14 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     if (eventParts.length) contextParts.push(eventParts.join(' '));
 
     // Product/brand context
-    if (brand && brand !== artistName) contextParts.push(`by ${brand}`);
-    if (price) contextParts.push(`${price}`);
+    if (brand && brand !== effectiveArtistName) contextParts.push(`by ${brand}`);
+    if (effectivePrice) contextParts.push(`${effectivePrice}`);
     if (rating) contextParts.push(`${rating} rating`);
 
-    // Keywords as features list (feeds the [Features:] parser in Python AI)
-    if (keywords?.length) contextParts.push(`[Features: ${(keywords as string[]).slice(0, 8).join(', ')}]`);
+    // Keywords as features list — use effective (merged) keywords
+    const allKeywords = [...(effectiveKeywords ?? []), ...(effectiveTags ?? [])].filter(Boolean);
+    const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
+    if (uniqueKeywords.length) contextParts.push(`[Features: ${uniqueKeywords.join(', ')}]`);
 
     const enrichedTopic = contextParts.filter(Boolean).join(' — ');
 
@@ -908,8 +967,8 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       platform: resolvedPlatform as any,
       topic: finalTopic,
       genre: detectedGenre || userContext.genre,
-      artistName: artistName || userContext.artistName,
-      trackTitle: trackTitle || undefined,
+      artistName: effectiveArtistName || userContext.artistName,
+      trackTitle: effectiveTrackTitle || undefined,
       contentType: validContentTypes.includes(mappedContentType) ? mappedContentType as any : 'engagement',
       includeHashtags: true,
       includeEmojis: true,
@@ -929,8 +988,8 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     // When URL analysis provides tags/keywords, build context-specific hashtags
     // and override the AI's generic music hashtags (e.g., for website/platform promos)
     let hashtags: string[] = aiHashtags;
-    const urlTags: string[] = Array.isArray(tags) ? tags : [];
-    const urlKeywords: string[] = Array.isArray(keywords) ? keywords : [];
+    const urlTags: string[] = Array.isArray(effectiveTags) ? effectiveTags : [];
+    const urlKeywords: string[] = Array.isArray(effectiveKeywords) ? effectiveKeywords : [];
     const combined = [...urlTags, ...urlKeywords];
     if (combined.length >= 3) {
       const contextHashtags = combined

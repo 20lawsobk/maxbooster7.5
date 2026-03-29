@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -227,6 +227,12 @@ export function ContentGenerator() {
   const [urlImporting, setUrlImporting] = useState(false);
   const [visualSpec, setVisualSpec] = useState<any>(null);
 
+  // Inline URL auto-detection states
+  const [detectedUrl, setDetectedUrl] = useState<string | null>(null);
+  const [promptUrlAnalysis, setPromptUrlAnalysis] = useState<any>(null);
+  const [promptUrlFetching, setPromptUrlFetching] = useState(false);
+  const promptUrlDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [packId, setPackId] = useState<PackId>('singlereleasefull_pack');
   const [packInput, setPackInput] = useState('');
   const [packPlatforms, setPackPlatforms] = useState<PackPlatform[]>(['facebook', 'instagram', 'threads', 'tiktok', 'youtube', 'linkedin']);
@@ -454,34 +460,33 @@ export function ContentGenerator() {
       return;
     }
 
-    const urlContext = urlAnalysis ? {
-      genre:          urlAnalysis.genre && urlAnalysis.genre !== 'default' ? urlAnalysis.genre : undefined,
-      artistName:     urlAnalysis.artist || undefined,
-      trackTitle:     urlAnalysis.track || undefined,
-      albumName:      urlAnalysis.album || undefined,
-      label:          urlAnalysis.label || undefined,
-      releaseDate:    urlAnalysis.release_date || undefined,
-      duration:       urlAnalysis.duration || undefined,
-      urlContentType: urlAnalysis.content_type || undefined,
-      contentType:    urlAnalysis.content_type && urlAnalysis.content_type !== 'website' ? urlAnalysis.content_type : undefined,
-      contentCategory: urlAnalysis.content_category || undefined,
-      keywords:       urlAnalysis.keywords?.length ? urlAnalysis.keywords : undefined,
-      tags:           urlAnalysis.tags?.length ? urlAnalysis.tags : undefined,
-      urlDescription: urlAnalysis.summary && urlAnalysis.summary !== contentPrompt ? urlAnalysis.summary : undefined,
-      // Engagement context (lets AI reference popularity)
-      viewCount:      urlAnalysis.view_count ?? undefined,
-      likeCount:      urlAnalysis.like_count ?? undefined,
-      playCount:      urlAnalysis.play_count ?? undefined,
-      // Event context
-      eventDate:      urlAnalysis.event_date || undefined,
-      eventLocation:  urlAnalysis.event_location || undefined,
-      performers:     urlAnalysis.performers?.length ? urlAnalysis.performers : undefined,
-      // Product context
-      price:          urlAnalysis.price || undefined,
-      brand:          urlAnalysis.brand || undefined,
-      rating:         urlAnalysis.rating || undefined,
-      // Platform
-      sourcePlatform: urlAnalysis.platform && urlAnalysis.platform !== 'web' ? urlAnalysis.platform : undefined,
+    // Merge import-flow analysis with inline prompt-URL analysis.
+    // Import-flow (urlAnalysis) wins on conflict since the user explicitly chose it.
+    const activeAnalysis = urlAnalysis ?? promptUrlAnalysis ?? null;
+    const urlContext = activeAnalysis ? {
+      genre:          activeAnalysis.genre && activeAnalysis.genre !== 'default' ? activeAnalysis.genre : undefined,
+      artistName:     activeAnalysis.artist || undefined,
+      trackTitle:     activeAnalysis.track || undefined,
+      albumName:      activeAnalysis.album || undefined,
+      label:          activeAnalysis.label || undefined,
+      releaseDate:    activeAnalysis.release_date || undefined,
+      duration:       activeAnalysis.duration || undefined,
+      urlContentType: activeAnalysis.content_type || undefined,
+      contentType:    activeAnalysis.content_type && activeAnalysis.content_type !== 'website' ? activeAnalysis.content_type : undefined,
+      contentCategory: activeAnalysis.content_category || undefined,
+      keywords:       activeAnalysis.keywords?.length ? activeAnalysis.keywords : undefined,
+      tags:           activeAnalysis.tags?.length ? activeAnalysis.tags : undefined,
+      urlDescription: activeAnalysis.summary && activeAnalysis.summary !== contentPrompt ? activeAnalysis.summary : undefined,
+      viewCount:      activeAnalysis.view_count ?? undefined,
+      likeCount:      activeAnalysis.like_count ?? undefined,
+      playCount:      activeAnalysis.play_count ?? undefined,
+      eventDate:      activeAnalysis.event_date || undefined,
+      eventLocation:  activeAnalysis.event_location || undefined,
+      performers:     activeAnalysis.performers?.length ? activeAnalysis.performers : undefined,
+      price:          activeAnalysis.price || undefined,
+      brand:          activeAnalysis.brand || undefined,
+      rating:         activeAnalysis.rating || undefined,
+      sourcePlatform: activeAnalysis.platform && activeAnalysis.platform !== 'web' ? activeAnalysis.platform : undefined,
     } : {};
 
     aiGenerateMutation.mutate({
@@ -553,6 +558,56 @@ export function ContentGenerator() {
     video:       <Globe className="w-3 h-3" />,
     entertainment:<Globe className="w-3 h-3" />,
   };
+
+  // ── Inline URL auto-detection ────────────────────────────────────────────
+  // Scans `contentPrompt` for an embedded URL as the user types.
+  // Debounced 600ms to avoid hammering the server. When found, calls
+  // /analyze-url and stores the result in promptUrlAnalysis so generate
+  // can use it without the user manually using the Import flow.
+  useEffect(() => {
+    const URL_RE = /https?:\/\/[^\s"'<>)]+/i;
+    const m = contentPrompt.match(URL_RE);
+    const found = m ? m[0].replace(/[.,;:!?]+$/, '') : null;
+
+    if (found === detectedUrl) return; // nothing changed
+
+    // URL removed from text — clear analysis
+    if (!found) {
+      setDetectedUrl(null);
+      setPromptUrlAnalysis(null);
+      setPromptUrlFetching(false);
+      if (promptUrlDebounce.current) clearTimeout(promptUrlDebounce.current);
+      return;
+    }
+
+    // New URL detected — debounce the fetch
+    setDetectedUrl(found);
+    setPromptUrlAnalysis(null);
+    setPromptUrlFetching(true);
+    if (promptUrlDebounce.current) clearTimeout(promptUrlDebounce.current);
+
+    promptUrlDebounce.current = setTimeout(async () => {
+      try {
+        const res = await apiRequest('POST', '/api/social/analyze-url', {
+          url: found,
+          platform: selectedPlatform,
+        });
+        const data = await res.json();
+        if (data.success && data.analysis) {
+          setPromptUrlAnalysis(data.analysis);
+        }
+      } catch {
+        // Non-fatal — generation still works without page context
+      } finally {
+        setPromptUrlFetching(false);
+      }
+    }, 600);
+
+    return () => {
+      if (promptUrlDebounce.current) clearTimeout(promptUrlDebounce.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contentPrompt]);
 
   const handleUrlImport = async () => {
     if (!importUrl.trim()) return;
@@ -1062,6 +1117,37 @@ export function ContentGenerator() {
                 className="min-h-[100px]"
               />
             </div>
+
+            {/* Inline URL detection status */}
+            {detectedUrl && (
+              <div className="flex items-center gap-2 text-xs rounded-md border px-3 py-2 bg-blue-50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800">
+                <Globe className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {promptUrlFetching ? (
+                    <span className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      Analyzing link…
+                      <span className="text-blue-500 truncate max-w-[200px]">{detectedUrl}</span>
+                    </span>
+                  ) : promptUrlAnalysis ? (
+                    <span className="text-blue-800 dark:text-blue-200">
+                      <span className="font-medium">Link analyzed:</span>{' '}
+                      {promptUrlAnalysis.title || promptUrlAnalysis.domain}
+                      {promptUrlAnalysis.content_type && (
+                        <span className="ml-1.5 text-blue-600 dark:text-blue-400">
+                          · {promptUrlAnalysis.content_type}
+                          {promptUrlAnalysis.content_category && ` · ${promptUrlAnalysis.content_category}`}
+                        </span>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="text-blue-600 dark:text-blue-400 truncate">
+                      Link detected — context will be applied on generate
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Context awareness panel */}
             {generationContext && (
