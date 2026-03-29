@@ -4397,6 +4397,15 @@ export async function registerRoutes(
     log(`Warning: Could not load infrastructure routes - ${error.message}`);
   }
 
+  // Unified Content Generation Pipeline — social + ad content for artist AND Max Booster
+  try {
+    const unifiedContentRouter = (await import('./routes/unifiedContent.js')).default;
+    app.use('/api/content/generate-unified', unifiedContentRouter);
+    log('Loaded route: unifiedContent');
+  } catch (error: any) {
+    log(`Warning: Could not load unifiedContent routes - ${error.message}`);
+  }
+
   // Collaboration routes
   try {
     const collaborationRouter = (await import('./routes/collaboration.js')).default;
