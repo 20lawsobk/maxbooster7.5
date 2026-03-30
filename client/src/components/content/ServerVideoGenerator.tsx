@@ -270,6 +270,7 @@ export function ServerVideoGenerator({
   };
 
   const callGenerateVideo = async (payload: Record<string, any>) => {
+    fetch('/api/errors', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ message: 'SVG:callGenerateVideo_entered', stack: JSON.stringify(payload).slice(0,200), url: window.location.href }) }).catch(()=>{});
     setIsGenerating(true);
     setGeneratingStage('Starting…');
     setVideoUrl(null);
@@ -383,6 +384,7 @@ export function ServerVideoGenerator({
     if (!hasContent) return;
     autoStartFiredRef.current = true;
     const id = setTimeout(() => {
+      fetch('/api/errors', { method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include', body: JSON.stringify({ message: 'SVG:timer_fired autoStart=true', stack: `platform=${platform} topic=${topicProp?.slice(0,40)}`, url: window.location.href }) }).catch(()=>{});
       setAutoStartPending(false);
       const hasScript = !!(initialHook?.trim() || initialBody?.trim() || initialCta?.trim());
       const platformTemplate = PLATFORM_DEFAULT_TEMPLATE[platform] || 'cinematic_promo';

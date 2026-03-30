@@ -4098,7 +4098,7 @@ export async function registerRoutes(
           url: String(errorData.url || '').substring(0, 200),
           timestamp: new Date().toISOString(),
         };
-        logger.info("[Client Error]", JSON.stringify(safeError));
+        logger.info(`[Client Error] ${safeError.message} | stack: ${safeError.stack?.split('\n')[0] || ''} | url: ${safeError.url}`);
       }
     } catch {}
     res.json({ received: true });
