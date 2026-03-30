@@ -47,6 +47,11 @@ async function downloadMaxCoreVideo(relativeUrl: string): Promise<string | null>
       logger.warn(`[AdvancedVideoRenderer] Failed to download MaxCore video (${response.status}): ${absoluteUrl}`);
       return null;
     }
+    const contentType = response.headers.get('content-type') ?? '';
+    if (!contentType.includes('video') && !contentType.includes('octet-stream') && !contentType.includes('binary')) {
+      logger.warn(`[AdvancedVideoRenderer] MaxCore video URL returned non-video content-type (${contentType}) — skipping download`);
+      return null;
+    }
     const buffer = Buffer.from(await response.arrayBuffer());
     fs.writeFileSync(localPath, buffer);
     logger.info(`[AdvancedVideoRenderer] MaxCore video saved locally: ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
@@ -152,7 +157,7 @@ export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenR
         hook:         opts.hook || '',
         body:         opts.body || '',
         cta:          opts.cta  || '',
-        topic:        opts.topic,
+        topic:        opts.topic || opts.hook || opts.body || 'music video',
         platform:     opts.platform     || 'tiktok',
         aspect_ratio: opts.aspect_ratio,
         template:     opts.template     || 'cinematic_promo',

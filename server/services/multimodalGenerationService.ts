@@ -1376,18 +1376,22 @@ const textWorker = {
       if (outputs.length === 0) return buildLocalTextAssets(rawSlots, inputs, req);
 
       return outputs.map((o: any) => {
-        const rules = o.platform ? getRules(o.platform as Platform) : null;
+        // MaxCore returns platform/slotId either at top level OR inside a `slot` array
+        const slotEntry = Array.isArray(o.slot) && o.slot.length > 0 ? o.slot[0] : null;
+        const platform: string | undefined = o.platform ?? slotEntry?.platform ?? undefined;
+        const slotId: string | undefined   = o.slotId   ?? slotEntry?.slotId   ?? undefined;
+        const rules = platform ? getRules(platform as Platform) : null;
         let payload: string = o.text || o.content || '';
         if (rules) payload = enforceTextLength(payload, rules.text);
         const enriched = rules
-          ? enrichTextAssetMetadata(payload, o.platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
+          ? enrichTextAssetMetadata(payload, platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
           : { ...(o.meta ?? {}), platformRules: null };
         return {
           id: randomUUID(),
           modality: 'text' as OutputModality,
           payload,
-          platform: o.platform as Platform | undefined,
-          slotId: o.slotId,
+          platform: platform as Platform | undefined,
+          slotId,
           purpose: o.purpose,
           metadata: enriched,
         };
