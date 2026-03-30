@@ -241,7 +241,7 @@ export async function generateHashtags(ctx: GeneratorContext): Promise<HashtagSe
     facebook: ['#Music', '#NewRelease'],
     threads: ['#MusicThreads', '#NewMusic'],
     linkedin: ['#MusicIndustry', '#IndieArtist', '#CreativeEconomy'],
-    spotify: [],
+    google_business: [],
   };
 
   const combined = [

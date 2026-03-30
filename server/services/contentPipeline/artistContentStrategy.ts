@@ -263,7 +263,7 @@ function buildArtistHashtags(
     instagram: ['#Reels', '#InstaMusic', '#MusicReels'],
     youtube: ['#YouTubeMusic', '#MusicVideo'],
     twitter: ['#NowPlaying', '#MusicTwitter'],
-    spotify: [],
+    google_business: [],
   };
 
   return [

@@ -281,7 +281,7 @@ async function buildPlatformBundle(
     // Pick the right caption length for this slot
     const rawBody = slot === 'text_post' || slot === 'thread'
       ? captions.long
-      : slot === 'story' || slot === 'canvas_loop'
+      : slot === 'story' || slot === 'google_post'
       ? captions.short
       : captions.medium;
 

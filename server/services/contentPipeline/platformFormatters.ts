@@ -5,7 +5,7 @@
  * supported social media platform in Max Booster. All limits, aspect ratios,
  * and slot definitions are sourced from current platform developer documentation.
  *
- * Platforms: TikTok, Instagram, YouTube, Twitter/X, Facebook, Threads, LinkedIn, Spotify
+ * Platforms: TikTok, Instagram, YouTube, Twitter/X, Facebook, Threads, LinkedIn, Google Business
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,7 +18,7 @@ export type SupportedPlatform =
   | 'facebook'
   | 'threads'
   | 'linkedin'
-  | 'spotify';
+  | 'google_business';
 
 export type ContentSlot =
   | 'short_video'       // ≤60s vertical video (TikTok, Reels, Shorts)
@@ -28,7 +28,7 @@ export type ContentSlot =
   | 'story'             // 15s ephemeral vertical
   | 'text_post'         // Text-only post (Twitter, Threads, LinkedIn)
   | 'thread'            // Multi-part text sequence
-  | 'canvas_loop'       // Spotify Canvas (8–15s loop)
+  | 'google_post'       // Google Business Profile post
   | 'ad_banner'         // Paid ad creative
   | 'ad_video';         // Paid video ad
 
@@ -279,30 +279,31 @@ export const PLATFORM_SPECS: Record<SupportedPlatform, PlatformSpec> = {
     adFormats: ['Sponsored Content', 'Message Ad', 'Dynamic Ad', 'Text Ad'],
   },
 
-  spotify: {
-    platform: 'spotify',
-    displayName: 'Spotify',
-    captionMaxChars: 0,
+  google_business: {
+    platform: 'google_business',
+    displayName: 'Google Business',
+    captionMaxChars: 1500,
     hashtagMaxCount: 0,
     hashtagPosition: 'end',
-    videoAspectRatios: ['9:16'],
-    videoMaxDurationSeconds: 8,
-    videoMinDurationSeconds: 3,
-    imageAspectRatios: ['1:1'],
-    supportedSlots: ['canvas_loop'],
-    emojiSupported: false,
-    linksInCaption: false,
+    videoAspectRatios: ['16:9', '1:1'],
+    videoMaxDurationSeconds: 30,
+    videoMinDurationSeconds: 1,
+    imageAspectRatios: ['4:3', '1:1', '16:9'],
+    supportedSlots: ['google_post', 'static_post', 'ad_banner'],
+    emojiSupported: true,
+    linksInCaption: true,
     mentionFormat: '',
     hashtagFormat: '',
-    bestPostingDays: ['Friday'],
-    bestPostingHours: [0],
+    bestPostingDays: ['Tuesday', 'Wednesday', 'Thursday'],
+    bestPostingHours: [9, 11, 14],
     contentNotes: [
-      'Canvas: 3–8 second seamless loop (9:16, ≤5MB)',
-      'Looping video keeps listeners from swiping away',
-      'Abstract / mood visuals outperform literal music videos',
-      'Bright, high-contrast visuals increase Canvas completion rate',
+      'Posts expire after 7 days (standard) or 6 months (Events/Offers)',
+      'CTA button types: Book, Order, Learn more, Sign up, Get offer, Call now',
+      'Photos minimum 250×250px; recommended 1200×900px (4:3)',
+      'Keyword-rich descriptions improve Local SEO ranking',
+      'Event and Offer post types get higher visibility than standard updates',
     ],
-    adFormats: ['Audio Ad', 'Sponsored Session', 'Overlay', 'Sponsored Playlist'],
+    adFormats: ['Local Services Ad', 'Smart Campaign', 'Performance Max', 'Display Ad'],
   },
 };
 
@@ -369,14 +370,13 @@ export function getVisualSpec(
 ): VisualSpec {
   const spec = PLATFORM_SPECS[platform];
 
-  const isVertical = ['tiktok', 'instagram', 'threads', 'spotify'].includes(platform)
+  const isVertical = ['tiktok', 'instagram', 'threads'].includes(platform)
     || slot === 'story'
     || slot === 'short_video';
 
   return {
     aspectRatio: isVertical ? '9:16' : spec.imageAspectRatios[0],
-    durationSeconds: slot === 'canvas_loop' ? 8
-      : slot === 'short_video' ? 30
+    durationSeconds: slot === 'short_video' ? 30
       : slot === 'story' ? 15
       : undefined,
     overlayText: undefined,
