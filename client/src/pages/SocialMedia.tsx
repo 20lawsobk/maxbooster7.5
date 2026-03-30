@@ -2028,7 +2028,7 @@ return (
                             )}
                             {item.format === 'video' && item.mediaUrl && (
                               <div className="mb-2">
-                                <video controls className="max-w-full h-auto rounded-lg border">
+                                <video controls muted playsInline className="max-w-full h-auto rounded-lg border">
                                   <source src={item.mediaUrl} type="video/mp4" />
                                   Your browser does not support the video element.
                                 </video>
@@ -2411,7 +2411,7 @@ return (
                                 </div>
                               ) : item.format === 'video' && item.mediaUrl ? (
                                 <div className="mb-2">
-                                  <video controls className="max-w-full h-auto rounded-lg border">
+                                  <video controls muted playsInline className="max-w-full h-auto rounded-lg border">
                                     <source src={item.mediaUrl} type="video/mp4" />
                                     Your browser does not support the video element.
                                   </video>

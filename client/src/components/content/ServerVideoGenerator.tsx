@@ -174,6 +174,8 @@ export function ServerVideoGenerator({
   const abortControllerRef = useRef<AbortController | null>(null);
   const userCancelledRef = useRef(false);
   const [generatingElapsed, setGeneratingElapsed] = useState(0);
+  // Persists the active job ID so the visibilitychange handler can resume polling
+  const activeJobIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     setAspectRatio(PLATFORM_DEFAULT_RATIO[platform] || '9:16');
@@ -182,6 +184,32 @@ export function ServerVideoGenerator({
   useEffect(() => {
     if (topicProp && !textTopic) setTextTopic(topicProp);
   }, [topicProp]);
+
+  // Resume polling when the page becomes visible again (e.g. user returns from
+  // background on mobile).  If a job is still active, immediately check its status
+  // so the result surfaces without waiting for the next 2s poll tick.
+  useEffect(() => {
+    const onVisible = () => {
+      const jobId = activeJobIdRef.current;
+      if (!jobId || document.visibilityState !== 'visible') return;
+      fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' })
+        .then(r => r.json())
+        .then((data: any) => {
+          const url = data.url || data.video_url;
+          if ((data.status === 'done' || data.status === 'completed') && url) {
+            activeJobIdRef.current = null;
+            applyVideoResult({ ...data, success: true, url });
+            setIsGenerating(false);
+            setGeneratingStage('');
+            setGeneratingElapsed(0);
+          }
+        })
+        .catch(() => { /* silent — the running poll loop will handle it */ });
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Clean up image preview URL on unmount
   useEffect(() => {
@@ -209,21 +237,34 @@ export function ServerVideoGenerator({
   };
 
   const pollJobUntilDone = async (jobId: string): Promise<any> => {
-    const maxAttempts = 60;
+    activeJobIdRef.current = jobId;
+    const maxAttempts = 90; // 3 min budget (90 × 2s)
+    let consecutiveErrors = 0;
     for (let i = 0; i < maxAttempts; i++) {
       await new Promise(r => setTimeout(r, 2000));
-      const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
-      const text = await resp.text();
-      let data: any;
-      try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
+      if (userCancelledRef.current) throw new Error('Cancelled');
+      try {
+        const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
+        const text = await resp.text();
+        let data: any;
+        try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
+        consecutiveErrors = 0;
 
-      // Server returns status='completed' with video_url — normalise to the
-      // shape callGenerateVideo expects: {success:true, url, ...rest}
-      const videoUrl = data.url || data.video_url;
-      const isDone = (data.status === 'done' || data.status === 'completed') && videoUrl;
-      if (isDone) return { ...data, success: true, url: videoUrl };
-      if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
-      setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
+        // Server returns status='completed' with video_url — normalise to the
+        // shape callGenerateVideo expects: {success:true, url, ...rest}
+        const videoUrl = data.url || data.video_url;
+        const isDone = (data.status === 'done' || data.status === 'completed') && videoUrl;
+        if (isDone) { activeJobIdRef.current = null; return { ...data, success: true, url: videoUrl }; }
+        if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
+        setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
+      } catch (err: any) {
+        if (err.message === 'Cancelled' || err.message === 'Video generation failed') throw err;
+        // Network/parse error — retry up to 5 times before giving up
+        consecutiveErrors++;
+        if (consecutiveErrors >= 5) throw new Error('Network error during video generation. Please check your connection.');
+        // Back off briefly on error then retry
+        await new Promise(r => setTimeout(r, 1000 * consecutiveErrors));
+      }
     }
     throw new Error('Video generation timed out. Please try again.');
   };
@@ -325,6 +366,7 @@ export function ServerVideoGenerator({
       clearInterval(elapsedInterval);
       abortControllerRef.current = null;
       userCancelledRef.current = false;
+      activeJobIdRef.current = null;
       setIsGenerating(false);
       setGeneratingStage('');
       setGeneratingElapsed(0);
@@ -591,6 +633,7 @@ export function ServerVideoGenerator({
                     controls
                     autoPlay
                     muted
+                    playsInline
                   />
                 </div>
                 {videoInfo && (
@@ -1061,6 +1104,7 @@ export function ServerVideoGenerator({
                 controls
                 autoPlay
                 muted
+                playsInline
               />
             </div>
 
