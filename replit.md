@@ -86,12 +86,15 @@ Six optimizations applied across the content generation stack:
 5. **Full content quality pipeline now active**: The `validatePlatformConstraints` fix means `contentQualityPipeline.generateWithAdvancedAI()` no longer crashes — video generation now gets AI-scored, algorithm-signal-optimized hook/body/cta instead of falling through to generic defaults.
 6. **Progress bars on all video generation modes**: Both auto-start (full-width animated bar with stage labels) and manual generate (slim bar below button) now show real-time progress with asymptotic % curve calibrated to 25s average render time.
 
-## Video Generation Pipeline (confirmed working — 10/10 E2E tests)
+## Video Generation Pipeline (confirmed working — full E2E 2030-03-30)
 - **Route** (`POST /api/social/generate-video`): Always returns `{job_id, status:'processing'}` immediately (non-blocking). Background IIFE runs: Stage 1 → AI content, Stage 2 → Python AI renderer (if available), Stage 3 → FFmpeg fallback.
 - **AI Content Stage**: Calls `advancedSocialAIService.generateAdvancedContent()` directly (not `contentQualityPipeline.generateWithAdvancedAI()` which throws during variant post-processing). Content always flows into the video — no generic defaults.
 - **generateWithAdvancedAI catch block**: Now logs the actual error message+stack and returns best-effort variant without enforcing the VEO_PRESSURE_FLOOR, so callers always get something useful.
-- **Polling** (`GET /api/social/video-job/:id`): Checks `ffmpegJobs` map for both `video_` and `ffmpeg_` prefixed job IDs.
-- **Render timing**: ~19–28s end-to-end. HTTP response: ~880–1000ms.
+- **Polling** (`GET /api/social/video-job/:id`): Checks `ffmpegJobs` map for both `video_` and `ffmpeg_` prefixed job IDs. Returns `status: 'completed'` (not `'done'`) — frontend handles both via `(data.status === 'done' || data.status === 'completed')`.
+- **Python Frame Generator** (`server/services/frameGenerator.py`): Requires `numpy` and `Pillow` (declared in `pyproject.toml`). Both are installed in `.pythonlibs/lib/python3.12/site-packages` (Replit's persistent Python libs path). If removed, reinstall with `pip install numpy Pillow`.
+- **Render timing**: ~9–14s render time, ~14–15s total. Output: 1080×1920 h264, 3 scenes, animated_background + multi_scene + audio_track + multi_font.
+- **Video-from-URL pipeline**: `POST /api/social/generate-from-url` → `POST /api/social/generate-video` → poll `GET /api/social/video-job/:id`. Stage 1 returns all 8 platforms with `hook/body/cta/video_hook/video_body/video_cta` fields populated by `ContentGenerator` fallback (Python AI and MaxCore inference layers attempted first).
+- **`video_hook/video_body/video_cta`**: Derived from caption paragraph splits; `stripMeta()` removes hashtags and URLs for clean video overlays. Debug log removed 2026-03-30.
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.

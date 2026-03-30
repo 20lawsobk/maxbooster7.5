@@ -1435,17 +1435,28 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
 
         if (result.success && result.data) {
           const captionText = result.data.caption + `\n\n🔗 ${url}`;
+          // Extract hook/body/cta from structured fields or parse from caption paragraphs
+          const rawCaption = result.data.caption || '';
+          const captionParts = rawCaption.split(/\n\n+/).map((s: string) => s.trim()).filter(Boolean);
+          const derivedHook = result.data.hook || captionParts[0] || rawCaption.split('\n')[0] || '';
+          const derivedBody = result.data.body || captionParts[1] || '';
+          const derivedCta  = result.data.cta  || captionParts[2] || '';
+          // Video overlays need short, punchy text (no hashtags, no URLs)
+          const stripMeta = (s: string) => s.replace(/#\w+/g, '').replace(/https?:\/\/\S+/g, '').replace(/🔗.*$/g, '').trim();
+          const videoHook = stripMeta(derivedHook).slice(0, 80);
+          const videoBody = stripMeta(derivedBody).slice(0, 100);
+          const videoCta  = stripMeta(derivedCta).slice(0, 50) || 'Join Max Booster';
           generatedContent.push({
             platform,
             caption:        captionText,
             content:        captionText,
             hashtags:       result.data.hashtags,
-            hook:           result.data.hook,
-            body:           result.data.body,
-            cta:            result.data.cta,
-            video_hook:     result.data.hook,
-            video_body:     result.data.body,
-            video_cta:      result.data.cta,
+            hook:           derivedHook,
+            body:           derivedBody,
+            cta:            derivedCta,
+            video_hook:     videoHook,
+            video_body:     videoBody,
+            video_cta:      videoCta,
             artist_name:    seed.artist || '',
             genre:          seed.genre  || 'hip-hop',
             thumbnail_url:  seed.og_image || seed.thumbnail_url || '',
