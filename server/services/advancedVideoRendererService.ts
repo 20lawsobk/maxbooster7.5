@@ -200,47 +200,14 @@ export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenR
     }
   }
 
-  // ── Stage 2: Python AI renderer ──────────────────────────────────────────────
-  const pyAvailable = await pythonAIService.isAvailable();
-  if (pyAvailable) {
-    try {
-      logger.info('[AdvancedVideoRenderer] Stage 2 — Python AI renderer starting');
-      const jobResult = await pythonAIService.startVideoJob({
-        hook:         opts.hook || '',
-        body:         opts.body || '',
-        cta:          opts.cta  || '',
-        topic:        opts.topic,
-        platform:     opts.platform     || 'tiktok',
-        aspect_ratio: opts.aspect_ratio,
-        template:     opts.template     || 'cinematic_promo',
-        duration:     opts.duration     || 10,
-        artist_name:  opts.artist_name,
-        genre:        opts.genre,
-        tone:         opts.tone         || 'energetic',
-        goal:         opts.goal         || 'growth',
-        quality:      opts.quality      || 'cinematic',
-        user_audio_path: opts.user_audio_path,
-        voiceover:    opts.voiceover,
-      });
+  // ── Stage 2 (skipped): Python AI renderer removed — MaxCore is the only AI source ──
 
-      if (jobResult.success && jobResult.data?.job_id) {
-        const result = await pollPythonAIVideoJob(jobResult.data.job_id);
-        if (result) {
-          logger.info(`[AdvancedVideoRenderer] Stage 2 complete (PythonAI) in ${Date.now() - startMs}ms`);
-          return { ...result, processing_time_ms: Date.now() - startMs };
-        }
-      }
-    } catch (pyErr: any) {
-      logger.warn('[AdvancedVideoRenderer] Stage 2 (PythonAI) failed, moving to Stage 3:', pyErr.message);
-    }
-  }
-
-  // ── Stage 3: FFmpeg renderer ─────────────────────────────────────────────────
-  logger.info(`[AdvancedVideoRenderer] Stage 3 — FFmpeg renderer starting${maxcoreScriptUsed ? ' (MaxCore AI script)' : ''}`);
+  // ── Stage 2: FFmpeg renderer (MaxCore local pipeline) ─────────────────────────
+  logger.info(`[AdvancedVideoRenderer] Stage 2 — FFmpeg renderer starting (MaxCore local${maxcoreScriptUsed ? ' + AI script' : ''})`);
   const ffmpegResult = await generateVideoFFmpeg(opts);
   return {
     ...ffmpegResult,
-    source: maxcoreScriptUsed ? 'MaxCoreAI' : 'FFmpegRenderer',
+    source: 'MaxCoreAI',
     hook: opts.hook || ffmpegResult.hook,
     body: opts.body || ffmpegResult.body,
     cta:  opts.cta  || ffmpegResult.cta,

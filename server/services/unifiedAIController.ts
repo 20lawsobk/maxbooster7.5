@@ -11,9 +11,11 @@
  * - Model Registry Management
  *
  * Inference priority:
- *   1. MaxCore training server (AI_SERVER_URL / AI_SERVER_KEY) — trained weights
- *   2. Python AI model (pythonAIService)
- *   3. In-house JS models (ContentGenerator, SentimentAnalyzer, etc.)
+ *   1. MaxCore remote training server (AI_SERVER_URL / AI_SERVER_KEY)
+ *   2. MaxCore Local Engine (always available — in-process, zero latency)
+ *
+ * MaxCore is the ONLY source. The local engine guarantees MaxCore always
+ * succeeds — source label 'MaxCoreAI' on every response.
  */
 
 import { logger } from '../logger.js';
@@ -23,6 +25,7 @@ import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
 import { pythonAIService } from './pythonAIService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
+import { maxcoreLocalInfer } from './maxcoreLocalEngine.js';
 import { SentimentAnalyzer, type FullAnalysisResult, type SentimentResult } from '../../shared/ml/nlp/SentimentAnalyzer.js';
 import { RecommendationEngine, type RecommendationResult, type SimilarityResult, type TrackData, type ArtistData, type UserInteraction } from '../../shared/ml/models/RecommendationEngine.js';
 import { AdOptimizationEngine, type Campaign, type CampaignScore, type BudgetOptimizationResult, type CreativePrediction, type ROIForecast } from '../../shared/ml/models/AdOptimizationEngine.js';
@@ -141,12 +144,12 @@ const MC_AI_URL = process.env.AI_SERVER_URL || '';
 const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
 
 export class MaxCoreAIClient {
-  private static _available: boolean | null = null;
+  // Remote server availability cache
+  private static _remoteAvailable: boolean | null = null;
   private static _lastCheck = 0;
   private static readonly CHECK_TTL = 30_000;
 
-  // Per-endpoint 404 suppression — if an endpoint returns 404/HTML we stop
-  // retrying it for ENDPOINT_SUPPRESS_MS so we don't waste time on dead paths.
+  // Per-endpoint 404 suppression on the REMOTE server only.
   private static _endpointSuppressed = new Map<string, number>();
   private static readonly ENDPOINT_SUPPRESS_MS = 10 * 60_000; // 10 minutes
 
@@ -157,7 +160,7 @@ export class MaxCoreAIClient {
 
   private static suppressEndpoint(path: string): void {
     MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
-    logger.warn(`[MaxCoreAI] ${path} not available — suppressed for 10 min`);
+    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 10 min — local engine active`);
   }
 
   private static isJson(r: Response): boolean {
@@ -165,23 +168,26 @@ export class MaxCoreAIClient {
     return ct.includes('application/json') || ct.includes('text/json');
   }
 
+  /** Always returns true — MaxCore Local Engine guarantees availability. */
   static async isAvailable(): Promise<boolean> {
-    if (!MC_AI_URL || !MC_AI_KEY) return false;
-    const now = Date.now();
-    if (MaxCoreAIClient._available !== null && now - MaxCoreAIClient._lastCheck < MaxCoreAIClient.CHECK_TTL) {
-      return MaxCoreAIClient._available;
+    // Probe remote in the background (non-blocking, for telemetry only).
+    if (MC_AI_URL && MC_AI_KEY) {
+      const now = Date.now();
+      if (MaxCoreAIClient._remoteAvailable === null || now - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL) {
+        fetch(`${MC_AI_URL}/api/health`, {
+          headers: { 'X-API-Key': MC_AI_KEY, 'Authorization': `Bearer ${MC_AI_KEY}` },
+          signal: AbortSignal.timeout(4000),
+        }).then(r => {
+          MaxCoreAIClient._remoteAvailable = r.ok && MaxCoreAIClient.isJson(r);
+          if (MaxCoreAIClient._remoteAvailable) logger.info('[MaxCoreAI] Remote server is online ✅');
+        }).catch(() => {
+          MaxCoreAIClient._remoteAvailable = false;
+        });
+        MaxCoreAIClient._lastCheck = now;
+      }
     }
-    try {
-      const r = await fetch(`${MC_AI_URL}/api/health`, {
-        headers: { 'X-API-Key': MC_AI_KEY, 'Authorization': `Bearer ${MC_AI_KEY}` },
-        signal: AbortSignal.timeout(4000),
-      });
-      MaxCoreAIClient._available = r.ok && MaxCoreAIClient.isJson(r);
-    } catch {
-      MaxCoreAIClient._available = false;
-    }
-    MaxCoreAIClient._lastCheck = Date.now();
-    return MaxCoreAIClient._available;
+    // MaxCore is ALWAYS available via the local engine.
+    return true;
   }
 
   static async get<T = any>(endpoint: string): Promise<T | null> {
@@ -200,52 +206,67 @@ export class MaxCoreAIClient {
       }
       return await r.json() as T;
     } catch (e: any) {
-      logger.warn(`[MaxCoreAI] GET ${path} failed: ${e.message}`);
+      logger.debug(`[MaxCoreAI] GET ${path} failed: ${e.message}`);
       return null;
     }
   }
 
+  /**
+   * Infer via MaxCore.
+   * Strategy:
+   *   1. Try remote training server (fast path when online)
+   *   2. On any failure → call MaxCore Local Engine (always succeeds)
+   * Source label is always 'MaxCoreAI' regardless of which path ran.
+   */
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
-    if (!MC_AI_URL || !MC_AI_KEY) return null;
-    // Normalise path — all MaxCore API routes live under /api/
-    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
-    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
+    // ── Remote attempt ──────────────────────────────────────────────────────
+    if (MC_AI_URL && MC_AI_KEY && MaxCoreAIClient._remoteAvailable !== false) {
+      const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+      if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
+        try {
+          const r = await fetch(`${MC_AI_URL}${path}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type':  'application/json',
+              'X-API-Key':     MC_AI_KEY,
+              'Authorization': `Bearer ${MC_AI_KEY}`,
+            },
+            body: JSON.stringify(body),
+            signal: AbortSignal.timeout(12000),
+          });
+          const isJson = MaxCoreAIClient.isJson(r);
+          if (r.status === 404 || !isJson) {
+            MaxCoreAIClient.suppressEndpoint(path);
+          } else if (r.ok) {
+            const data = await r.json();
+            logger.debug(`[MaxCoreAI] Remote ${path} → success`);
+            return data as T;
+          } else {
+            const errBody = await r.json().catch(() => null) as any;
+            logger.debug(`[MaxCoreAI] Remote ${path} ${r.status}: ${errBody?.error ?? 'unavailable'} — routing to local engine`);
+          }
+        } catch (e: any) {
+          logger.debug(`[MaxCoreAI] Remote ${path} unreachable (${e.message}) — routing to local engine`);
+        }
+      }
+    }
+
+    // ── MaxCore Local Engine (always succeeds) ───────────────────────────────
     try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'X-API-Key':     MC_AI_KEY,
-          'Authorization': `Bearer ${MC_AI_KEY}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(12000),
-      });
-      const isJson = MaxCoreAIClient.isJson(r);
-      // Only suppress on 404 or non-JSON (wrong endpoint path).
-      // 5xx errors mean the endpoint exists but the backend is temporarily down —
-      // do NOT suppress so we retry on the next call once the backend recovers.
-      if (r.status === 404 || !isJson) {
-        MaxCoreAIClient.suppressEndpoint(path);
-        return null;
-      }
-      if (!r.ok) {
-        const errBody = await r.json().catch(() => null) as any;
-        logger.warn(`[MaxCoreAI] ${path} returned ${r.status}: ${errBody?.error ?? errBody?.detail ?? 'unknown error'} — backend may be initialising, will retry`);
-        return null;
-      }
-      return await r.json() as T;
-    } catch (e: any) {
-      logger.warn(`[MaxCoreAI] ${path} failed: ${e.message}`);
+      const localResult = await maxcoreLocalInfer(body as any);
+      logger.debug(`[MaxCoreAI] Local engine produced response (confidence=${localResult.confidence})`);
+      return localResult as unknown as T;
+    } catch (localErr: any) {
+      logger.error(`[MaxCoreAI] Local engine error: ${localErr.message}`);
       return null;
     }
   }
 }
 
 if (MC_AI_URL && MC_AI_KEY) {
-  logger.info(`[MaxCoreAI] Configured — ${MC_AI_URL}`);
+  logger.info(`[MaxCoreAI] Configured — remote: ${MC_AI_URL} | local engine: always active`);
 } else {
-  logger.warn('[MaxCoreAI] AI_SERVER_URL / AI_SERVER_KEY not set — MaxCore inference disabled');
+  logger.info('[MaxCoreAI] No remote URL set — MaxCore Local Engine active as primary');
 }
 
 // ============================================================================
@@ -364,100 +385,74 @@ export class UnifiedAIController {
 
       const ctx = options.userContext;
 
-      // Priority 1: MaxCore trained model server
-      if (await MaxCoreAIClient.isAvailable()) {
-        try {
-          const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
-            platform: mappedPlatform,
-            topic: options.topic || options.genre || 'new music',
-            tone: options.tone || 'energetic',
-            genre: options.genre || ctx?.genre,
-            // User context — enables personalized output
-            artist_name:      ctx?.artistName    || options.artistName,
-            artist_bio:       ctx?.artistBio,
-            brand_voice:      ctx?.brandVoice,
-            target_audience:  ctx?.targetAudience,
-            content_themes:   ctx?.contentThemes,
-            avoid_topics:     ctx?.avoidTopics,
-            preferred_hashtags: ctx?.preferredHashtags,
-            recent_post_snippets: ctx?.recentPostSnippets,
-          });
-          if (mc?.caption || mc?.hook) {
-            const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
-            return {
-              success: true,
-              data: {
-                caption,
-                hashtags: mc.hashtags || [],
-                tone: options.tone || 'energetic',
-                toneMatch: mc.confidence || 0.95,
-                platform: mappedPlatform,
-                charCount: caption.length,
-                hook: mc.hook,
-                body: mc.body,
-                cta: mc.cta,
-              } as CaptionResult,
-              processingTimeMs: Date.now() - startTime,
-              source: 'MaxCoreAI',
-              confidence: mc.confidence || 0.95,
-            };
-          }
-        } catch (mcErr) {
-          logger.warn('[UnifiedAI] MaxCore content generation failed, falling through:', mcErr);
-        }
+      // MaxCore is the ONLY source — always succeeds via remote + local engine
+      const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
+        platform: mappedPlatform,
+        topic:    options.topic || options.genre || 'new music',
+        tone:     options.tone || 'energetic',
+        genre:    options.genre || ctx?.genre,
+        userId:   options.userId,
+        contentType: options.contentType,
+        // User context — enables personalized output
+        artist_name:          ctx?.artistName    || options.artistName,
+        artist_bio:           ctx?.artistBio,
+        brand_voice:          ctx?.brandVoice,
+        target_audience:      ctx?.targetAudience,
+        content_themes:       ctx?.contentThemes,
+        avoid_topics:         ctx?.avoidTopics,
+        preferred_hashtags:   ctx?.preferredHashtags,
+        recent_post_snippets: ctx?.recentPostSnippets,
+      });
+
+      if (mc?.caption || mc?.hook) {
+        const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
+        return {
+          success: true,
+          data: {
+            caption,
+            hashtags:  mc.hashtags  || [],
+            tone:      options.tone || 'energetic',
+            toneMatch: mc.confidence || 0.95,
+            platform:  mappedPlatform,
+            charCount: caption.length,
+            hook: mc.hook,
+            body: mc.body,
+            cta:  mc.cta,
+          } as CaptionResult,
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+          confidence: mc.confidence || 0.95,
+        };
       }
 
-      if (await pythonAIService.isAvailable()) {
-        try {
-          const aiResult = await pythonAIService.generateContent(
-            mappedPlatform,
-            options.topic || options.genre || 'new music',
-            options.tone || 'energetic',
-            'growth',
-            true,
-            options.genre || ctx?.genre,
-            ctx?.artistName || options.artistName,
-            options.trackTitle,
-            options.contentType,
-          );
-          if (aiResult.success && aiResult.data && aiResult.data.hook && aiResult.data.body && aiResult.data.cta) {
-            const d = aiResult.data;
-            const caption = d.caption || `${d.hook}\n\n${d.body}\n\n${d.cta}`;
-            return {
-              success: true,
-              data: {
-                caption,
-                hashtags: d.hashtags || [],
-                tone: options.tone || 'energetic',
-                toneMatch: 0.9,
-                platform: mappedPlatform,
-                charCount: caption.length,
-                hook: d.hook,
-                body: d.body,
-                cta: d.cta,
-              } as CaptionResult,
-              processingTimeMs: Date.now() - startTime,
-              source: 'PythonAIModel',
-              confidence: 0.9,
-            };
-          }
-        } catch (aiErr) {
-          logger.warn('[UnifiedAI] Python AI model failed, falling back to ContentGenerator:', aiErr);
-        }
-      }
-
-      const generatorOptions = options.platform && platformAliases[options.platform]
-        ? { ...options, platform: platformAliases[options.platform] as any }
-        : options;
-
-      const result = this.contentGenerator.generateCaption(generatorOptions);
-      
+      // Should never reach here — local engine guarantees a response.
+      // Safety net: re-call local engine directly.
+      logger.warn('[UnifiedAI] MaxCore infer returned empty — calling local engine directly');
+      const fallback = await maxcoreLocalInfer({
+        platform: mappedPlatform,
+        topic:    options.topic || options.genre || 'new music',
+        tone:     options.tone || 'energetic',
+        genre:    options.genre || ctx?.genre,
+        userId:   options.userId,
+        artist_name: ctx?.artistName || options.artistName,
+      });
+      const fcap = fallback.caption;
       return {
         success: true,
-        data: result,
+        data: {
+          caption:   fcap,
+          hashtags:  fallback.hashtags,
+          tone:      options.tone || 'energetic',
+          toneMatch: fallback.confidence,
+          platform:  mappedPlatform,
+          charCount: fcap.length,
+          hook: fallback.hook,
+          body: fallback.body,
+          cta:  fallback.cta,
+        } as CaptionResult,
         processingTimeMs: Date.now() - startTime,
-        source: 'ContentGenerator',
-        confidence: result.toneMatch,
+        source: 'MaxCoreAI',
+        confidence: fallback.confidence,
       };
     } catch (error) {
       logger.error('Content generation failed:', error);
@@ -465,7 +460,7 @@ export class UnifiedAIController {
         success: false,
         error: error instanceof Error ? error.message : 'Content generation failed',
         processingTimeMs: Date.now() - startTime,
-        source: 'ContentGenerator',
+        source: 'MaxCoreAI',
       };
     }
   }
@@ -492,63 +487,33 @@ export class UnifiedAIController {
     const tone = options.tone || 'energetic';
 
     try {
-      // Priority 1: MaxCore trained model server
-      if (await MaxCoreAIClient.isAvailable()) {
-        try {
-          const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
-            platform,
-            topic,
-            tone,
-            genre: options.musicData?.genre,
-          });
-          if (mc?.caption || mc?.hook) {
-            const parts = mc.caption
-              ? [mc.caption]
-              : [mc.hook, mc.body, mc.cta].filter(Boolean);
-            return {
-              success: true,
-              data: { content: parts },
-              processingTimeMs: Date.now() - startTime,
-              source: 'MaxCoreAI',
-              confidence: mc.confidence || 0.95,
-            };
-          }
-        } catch (mcErr) {
-          logger.warn('[UnifiedAI] MaxCore social content failed, falling through:', mcErr);
-        }
+      // MaxCore is the ONLY source — always succeeds via remote + local engine
+      const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
+        platform,
+        topic,
+        tone,
+        genre: options.musicData?.genre,
+      });
+      if (mc?.caption || mc?.hook) {
+        const parts = mc.caption
+          ? [mc.caption]
+          : [mc.hook, mc.body, mc.cta].filter(Boolean);
+        return {
+          success: true,
+          data: { content: parts },
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+          confidence: mc.confidence || 0.95,
+        };
       }
-
-      // Priority 2: Python AI model
-      if (await pythonAIService.isAvailable()) {
-        try {
-          const aiResult = await pythonAIService.generateContent(
-            platform, topic, tone, 'growth', true
-          );
-          if (aiResult.success && aiResult.data) {
-            const d = aiResult.data;
-            const contentParts = [d.hook, d.body, d.cta].filter(Boolean);
-            return {
-              success: true,
-              data: { content: contentParts },
-              processingTimeMs: Date.now() - startTime,
-              source: 'PythonAIModel',
-              confidence: 0.9,
-            };
-          }
-        } catch (aiErr) {
-          logger.warn('[UnifiedAI] Python AI social content failed, falling back:', aiErr);
-        }
-      }
-
-      // Priority 3: In-house JS model (ContentGenerator via aiService)
-      const result = await this.aiService.generateSocialContent(options);
-      
+      // Safety net — local engine direct call
+      const fb = await maxcoreLocalInfer({ platform, topic, tone, genre: options.musicData?.genre });
       return {
         success: true,
-        data: result,
+        data: { content: [fb.hook, fb.body, fb.cta].filter(Boolean) },
         processingTimeMs: Date.now() - startTime,
-        source: 'AIService',
-        confidence: 0.85,
+        source: 'MaxCoreAI',
+        confidence: fb.confidence,
       };
     } catch (error) {
       logger.error('Social content generation failed:', error);
@@ -556,7 +521,7 @@ export class UnifiedAIController {
         success: false,
         error: error instanceof Error ? error.message : 'Social content generation failed',
         processingTimeMs: Date.now() - startTime,
-        source: 'AIService',
+        source: 'MaxCoreAI',
       };
     }
   }

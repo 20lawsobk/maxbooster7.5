@@ -18,6 +18,11 @@ import {
   analyzeUrl, analyzeAudio, analyzeImage,
   urlToContentSeed, audioToContentSeed, imageToContentSeed,
 } from '../services/mediaAnalyzerService.js';
+import {
+  getVisualSpec,
+  type SupportedPlatform as ContentSupportedPlatform,
+  ALL_PLATFORMS as CONTENT_ALL_PLATFORMS,
+} from '../services/contentPipeline/platformFormatters.js';
 
 const router = Router();
 
@@ -1045,65 +1050,46 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
     const generatedContent = [];
     const failedPlatforms = [];
 
-    const pyAvailable = await pythonAIService.isAvailable();
-
-    if (pyAvailable) {
-      const pyResult = await pythonAIService.generateMultiPlatform({
-        platforms,
-        topic: topic || 'music',
-        tone: validTones.includes(tone) ? tone : 'energetic',
-        goal: 'growth',
-      });
-
-      if (pyResult.success && pyResult.data?.generated_content) {
-        for (const item of pyResult.data.generated_content) {
-          generatedContent.push({
-            platform: item.platform,
-            caption: item.caption,
-            content: item.content,
-            hashtags: item.hashtags,
-            hook: item.hook,
-            body: item.body,
-            cta: item.cta,
-            optimalPostTime: getOptimalPostTime(item.platform),
-            source: 'python_ai_model',
-          });
-        }
-      }
-    }
-
-    if (generatedContent.length === 0) {
-      for (const platform of platforms) {
-        if (!validPlatforms.includes(platform)) continue;
-
-        try {
-          const result = await unifiedAIController.generateContent({
-            tone: validTones.includes(tone) ? tone : 'energetic',
+    // MaxCore AI is the only source — all platforms in parallel
+    const mcResults = await Promise.allSettled(
+      platforms
+        .filter((p: string) => validPlatforms.includes(p))
+        .map((platform: string) =>
+          unifiedAIController.generateContent({
+            tone:            validTones.includes(tone) ? tone : 'energetic',
             platform,
-            topic: topic || 'music',
-            contentType: contentTypeMap[contentType] || 'engagement',
+            topic:           topic || 'music',
+            contentType:     contentTypeMap[contentType] || 'engagement',
+            userId:          (req as any).user?.id,
             includeHashtags: true,
-            includeEmojis: true,
-          });
+            includeEmojis:   true,
+          }).then(result => ({ platform, result }))
+        )
+    );
 
-          if (result.success && result.data) {
-            generatedContent.push({
-              platform,
-              caption: result.data.caption,
-              content: result.data.caption,
-              hashtags: result.data.hashtags,
-              emojis: result.data.emojis,
-              characterCount: result.data.characterCount,
-              estimatedEngagement: result.data.estimatedEngagement,
-              optimalPostTime: getOptimalPostTime(platform),
-              source: result.source || 'unified_ai',
-            });
-          } else {
-            failedPlatforms.push({ platform, error: 'Generation failed' });
-          }
-        } catch (err) {
-          failedPlatforms.push({ platform, error: 'Service temporarily unavailable' });
-        }
+    for (const settled of mcResults) {
+      if (settled.status !== 'fulfilled') {
+        failedPlatforms.push({ platform: 'unknown', error: 'Generation failed' });
+        continue;
+      }
+      const { platform, result } = settled.value;
+      if (result.success && result.data) {
+        generatedContent.push({
+          platform,
+          caption:             result.data.caption,
+          content:             result.data.caption,
+          hashtags:            result.data.hashtags,
+          hook:                result.data.hook,
+          body:                result.data.body,
+          cta:                 result.data.cta,
+          emojis:              result.data.emojis,
+          characterCount:      result.data.charCount,
+          estimatedEngagement: result.data.estimatedEngagement,
+          optimalPostTime:     getOptimalPostTime(platform),
+          source:              'MaxCoreAI',
+        });
+      } else {
+        failedPlatforms.push({ platform, error: 'Generation failed' });
       }
     }
 
@@ -1358,67 +1344,66 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
     const generatedContent: any[] = [];
 
-    const pyAvailable = await pythonAIService.isAvailable();
+    // MaxCore AI is the only source — generate for all platforms in parallel
+    const platformResults = await Promise.allSettled(
+      platforms
+        .filter((p: string) => validPlatforms.includes(p))
+        .map((platform: string) =>
+          unifiedAIController.generateContent({
+            tone:            validTones.includes(tone) ? tone : 'energetic',
+            platform,
+            topic:           topic.substring(0, 120),
+            genre:           seed.genre || 'hip-hop',
+            artistName:      seed.artist || '',
+            trackTitle:      seed.track  || '',
+            userId:          (req as any).user?.id,
+            includeHashtags: true,
+            includeEmojis:   true,
+          }).then(result => ({ platform, result }))
+        )
+    );
 
-    if (pyAvailable) {
-      const pyResult = await pythonAIService.generateMultiPlatform({
-        platforms,
-        topic: topic.substring(0, 120),
-        tone: validTones.includes(tone) ? tone : 'energetic',
-        goal: 'growth',
-        genre:       seed.genre   || 'hip-hop',
-        artist:      seed.artist  || undefined,
-        track:       seed.track   || undefined,
-        contentType: contentType  || undefined,
+    for (const settled of platformResults) {
+      if (settled.status !== 'fulfilled') continue;
+      const { platform, result } = settled.value;
+      if (!result.success || !result.data) continue;
+
+      const captionText = result.data.caption + `\n\n🔗 ${url}`;
+      const rawCaption  = result.data.caption || '';
+      const captionParts = rawCaption.split(/\n\n+/).map((s: string) => s.trim()).filter(Boolean);
+      const derivedHook = result.data.hook || captionParts[0] || rawCaption.split('\n')[0] || '';
+      const derivedBody = result.data.body || captionParts[1] || '';
+      const derivedCta  = result.data.cta  || captionParts[2] || '';
+      // Video overlays need short, punchy text (no hashtags, no URLs)
+      const stripMeta = (s: string) => s.replace(/#\w+/g, '').replace(/https?:\/\/\S+/g, '').replace(/🔗.*$/g, '').trim();
+      const videoHook = stripMeta(derivedHook).slice(0, 80);
+      const videoBody = stripMeta(derivedBody).slice(0, 100);
+      const videoCta  = stripMeta(derivedCta).slice(0, 50) || 'Join Max Booster';
+      generatedContent.push({
+        platform,
+        caption:        captionText,
+        content:        captionText,
+        hashtags:       result.data.hashtags,
+        hook:           derivedHook,
+        body:           derivedBody,
+        cta:            derivedCta,
+        video_hook:     videoHook,
+        video_body:     videoBody,
+        video_cta:      videoCta,
+        artist_name:    seed.artist || '',
+        genre:          seed.genre  || 'hip-hop',
+        thumbnail_url:  seed.og_image || seed.thumbnail_url || '',
+        sourceUrl:      url,
+        extractedTitle: analysis.title,
+        contentType,
         format,
-        url,
         targetAudience: targetAudience || undefined,
+        source:         'MaxCoreAI',
       });
-
-      if (pyResult.success && pyResult.data?.generated_content) {
-        for (const item of pyResult.data.generated_content) {
-          // Social caption gets the URL appended; video content stays clean
-          const captionText = item.content.includes(url) ? item.content : item.content + `\n\n🔗 ${url}`;
-          generatedContent.push({
-            platform:       item.platform,
-            caption:        captionText,
-            content:        captionText,
-            hashtags:       item.hashtags,
-            // Social hook/body/cta (full-length for captions)
-            hook:           item.hook,
-            body:           item.body,
-            cta:            item.cta,
-            // Video-optimized hook/body/cta (short & punchy for overlay text)
-            video_hook:     item.video_hook || item.hook,
-            video_body:     item.video_body || item.body,
-            video_cta:      item.video_cta  || item.cta,
-            // Metadata for the video generator
-            artist_name:    seed.artist || '',
-            genre:          seed.genre  || 'hip-hop',
-            bg_color:       analysis.platform === 'youtube'  ? '#0f0f0f'
-                          : analysis.platform === 'spotify'  ? '#191414'
-                          : analysis.platform === 'soundcloud' ? '#1a0a00'
-                          : '#1a1a2e',
-            accent_color:   seed.genre === 'trap'       ? '#ff3c00'
-                          : seed.genre === 'r&b'        ? '#c77dff'
-                          : seed.genre === 'pop'        ? '#00d4ff'
-                          : seed.genre === 'edm'        ? '#00ffcc'
-                          : seed.genre === 'country'    ? '#d4af37'
-                          : seed.genre === 'rock'       ? '#ff4500'
-                          : '#e94560',
-            thumbnail_url:  seed.og_image || seed.thumbnail_url || '',
-            sourceUrl:      url,
-            extractedTitle: analysis.title,
-            contentType,
-            format,
-            targetAudience: targetAudience || undefined,
-            source:         'python_ai_model',
-          });
-        }
-      }
     }
 
     if (generatedContent.length === 0) {
+      // Should never reach here — but keep a last-resort loop as safety net
       for (const platform of platforms) {
         if (!validPlatforms.includes(platform)) continue;
 
@@ -1429,19 +1414,18 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
           genre:           seed.genre || 'hip-hop',
           artistName:      seed.artist || '',
           trackTitle:      seed.track  || '',
+          userId:          (req as any).user?.id,
           includeHashtags: true,
           includeEmojis:   true,
         });
 
         if (result.success && result.data) {
           const captionText = result.data.caption + `\n\n🔗 ${url}`;
-          // Extract hook/body/cta from structured fields or parse from caption paragraphs
           const rawCaption = result.data.caption || '';
           const captionParts = rawCaption.split(/\n\n+/).map((s: string) => s.trim()).filter(Boolean);
           const derivedHook = result.data.hook || captionParts[0] || rawCaption.split('\n')[0] || '';
           const derivedBody = result.data.body || captionParts[1] || '';
           const derivedCta  = result.data.cta  || captionParts[2] || '';
-          // Video overlays need short, punchy text (no hashtags, no URLs)
           const stripMeta = (s: string) => s.replace(/#\w+/g, '').replace(/https?:\/\/\S+/g, '').replace(/🔗.*$/g, '').trim();
           const videoHook = stripMeta(derivedHook).slice(0, 80);
           const videoBody = stripMeta(derivedBody).slice(0, 100);
@@ -1465,7 +1449,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
             contentType,
             format,
             targetAudience: targetAudience || undefined,
-            source:         result.source || 'unified_ai',
+            source:         'MaxCoreAI',
           });
         }
       }
@@ -2360,27 +2344,39 @@ router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest
     if (description && description !== topic) contextParts.push(description);
     const enrichedTopic = contextParts.filter(Boolean).join(' — ');
 
-    // Generate a rich visual spec from URL context
-    const specResult = await pythonAIService.generateVisualSpec({
-      topic:         enrichedTopic || topic,
-      platform:      platform || 'instagram',
-      tone:          tone || 'energetic',
-      artist:        resolvedArtist || '',
-      track:         resolvedTrack || '',
-      genre:         genre || '',
-      thumbnail_url: thumbnail_url || '',
-      keywords:      Array.isArray(keywords) ? keywords : [],
-      description:   description || urlDescription || '',
-    });
+    // Generate a rich visual spec using MaxCore local pipeline
+    const resolvedPlatform = (
+      CONTENT_ALL_PLATFORMS.includes(platform as ContentSupportedPlatform)
+        ? platform
+        : 'instagram'
+    ) as ContentSupportedPlatform;
 
-    if (!specResult.success) {
-      return res.status(500).json({
-        success: false,
-        message: specResult.error || 'Visual spec generation failed',
-      });
-    }
+    const toneColorMap: Record<string, string[]> = {
+      energetic:    ['#ff6b35', '#f7c59f', '#1a1a2e', '#ffffff'],
+      chill:        ['#a8dadc', '#457b9d', '#1d3557', '#f1faee'],
+      professional: ['#2b2d42', '#8d99ae', '#edf2f4', '#ef233c'],
+      playful:      ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec'],
+      nostalgic:    ['#d4a373', '#ccd5ae', '#e9edc9', '#fefae0'],
+    };
+    const resolvedTone = String(tone || 'energetic').toLowerCase();
+    const colorPalette = toneColorMap[resolvedTone] ?? toneColorMap.energetic;
 
-    res.json({ success: true, visual_spec: specResult.data, image_url: null, ...specResult.data });
+    const visualSpec = getVisualSpec(resolvedPlatform, 'video_post', colorPalette);
+
+    const specData = {
+      ...visualSpec,
+      topic:        enrichedTopic || topic,
+      platform:     resolvedPlatform,
+      tone:         resolvedTone,
+      artist:       resolvedArtist || '',
+      track:        resolvedTrack || '',
+      genre:        genre || '',
+      keywords:     Array.isArray(keywords) ? keywords : [],
+      description:  description || urlDescription || '',
+      source:       'MaxCoreAI',
+    };
+
+    res.json({ success: true, visual_spec: specData, image_url: null, ...specData });
   } catch (error) {
     logger.error('Failed to generate social image:', error);
     res.status(500).json({ success: false, message: 'Image generation failed' });

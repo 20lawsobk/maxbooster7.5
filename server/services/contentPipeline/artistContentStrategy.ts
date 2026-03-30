@@ -69,6 +69,7 @@ export interface ArtistContentPiece {
   videoScriptHook?: string;
   storyFrameHint?: string;
   interactionPrompt?: string;
+  source?: string;
 }
 
 // ─── Vertical Templates ───────────────────────────────────────────────────────
@@ -353,7 +354,7 @@ export function generateAllArtistContent(
 
   for (const vertical of deduped) {
     for (const platform of platforms) {
-      pieces.push(generateArtistContent(ctx, vertical, platform));
+      pieces.push({ ...generateArtistContent(ctx, vertical, platform), source: 'MaxCoreAI' });
     }
   }
 

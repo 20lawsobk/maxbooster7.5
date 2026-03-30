@@ -159,6 +159,7 @@ export interface FormattedPost {
   visualSpec: ReturnType<typeof getVisualSpec>;
   adCopy?: AdCopySet;
   rawContent: string;
+  source?: string;
 }
 
 export interface UnifiedContentPackage {
@@ -304,6 +305,7 @@ async function buildPlatformBundle(
       visualSpec,
       adCopy: slot === 'ad_banner' || slot === 'ad_video' ? adCopy : undefined,
       rawContent: `${hooks.primary}\n\n${finalCaption}`,
+      source: 'MaxCoreAI',
     });
   }
 

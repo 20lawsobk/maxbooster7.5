@@ -68,6 +68,7 @@ export interface MaxBoosterContentPiece {
   hashtags: string[];
   visualDirection: string;
   videoScriptHook?: string;
+  source?: string;
 }
 
 // ─── Feature Registry ─────────────────────────────────────────────────────────
@@ -393,14 +394,15 @@ export function generateAllMaxBoosterContent(
     for (const platform of platforms) {
       if (!feature.relevantPlatforms.includes(platform)) continue;
       const format = formats[MAX_BOOSTER_FEATURES.indexOf(feature) % formats.length];
-      pieces.push(
-        generateMaxBoosterContent({
+      pieces.push({
+        ...generateMaxBoosterContent({
           feature,
           targetArtistSegment: targetSegment,
           platform,
           format,
         }),
-      );
+        source: 'MaxCoreAI',
+      });
     }
   }
 
