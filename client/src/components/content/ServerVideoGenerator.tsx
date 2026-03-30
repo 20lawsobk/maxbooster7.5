@@ -398,8 +398,15 @@ export function ServerVideoGenerator({
         accent_color: initialAccentColor || undefined,
         voiceover: hasScript,
       });
-    }, 400);
-    return () => clearTimeout(id);
+    }, 100);
+    return () => {
+      clearTimeout(id);
+      // Reset so a React StrictMode double-invocation (or real remount) can
+      // start the timer again — without this the second invocation sees
+      // autoStartFiredRef.current = true and returns early, leaving
+      // autoStartPending = true forever.
+      autoStartFiredRef.current = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
