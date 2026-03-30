@@ -105,22 +105,22 @@ export interface StoryFrame {
 
 async function callMaxCore(prompt: string, ctx: GeneratorContext): Promise<string | null> {
   try {
-    const result = await MaxCoreAIClient.infer<{ content?: string; text?: string; result?: string }>(
-      '/api/generate/content',
+    const result = await MaxCoreAIClient.infer<{ content?: string; text?: string; result?: string; caption?: string; hook?: string }>(
+      '/content/generate',
       {
-        prompt,
+        topic: prompt,
         platform: ctx.platform,
         tone: ctx.brandVoice,
-        artistName: ctx.artistName,
         genre: ctx.genre,
         mood: ctx.mood,
-        targetAudience: ctx.targetAudience,
-        campaignGoal: ctx.campaignGoal,
+        artist_name: ctx.artistName,
+        target_audience: ctx.targetAudience,
+        campaign_goal: ctx.campaignGoal,
         keywords: ctx.keywords,
-        extraContext: ctx.extraContext ?? '',
+        extra_context: ctx.extraContext ?? '',
       },
     );
-    return result?.content ?? result?.text ?? result?.result ?? null;
+    return result?.content ?? result?.text ?? result?.result ?? result?.caption ?? result?.hook ?? null;
   } catch {
     return null;
   }

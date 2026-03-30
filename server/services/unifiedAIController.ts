@@ -221,8 +221,17 @@ export class MaxCoreAIClient {
         body: JSON.stringify(body),
         signal: AbortSignal.timeout(12000),
       });
-      if (!r.ok || !MaxCoreAIClient.isJson(r)) {
+      const isJson = MaxCoreAIClient.isJson(r);
+      // Only suppress on 404 or non-JSON (wrong endpoint path).
+      // 5xx errors mean the endpoint exists but the backend is temporarily down —
+      // do NOT suppress so we retry on the next call once the backend recovers.
+      if (r.status === 404 || !isJson) {
         MaxCoreAIClient.suppressEndpoint(path);
+        return null;
+      }
+      if (!r.ok) {
+        const errBody = await r.json().catch(() => null) as any;
+        logger.warn(`[MaxCoreAI] ${path} returned ${r.status}: ${errBody?.error ?? errBody?.detail ?? 'unknown error'} — backend may be initialising, will retry`);
         return null;
       }
       return await r.json() as T;
@@ -358,7 +367,7 @@ export class UnifiedAIController {
       // Priority 1: MaxCore trained model server
       if (await MaxCoreAIClient.isAvailable()) {
         try {
-          const mc = await MaxCoreAIClient.infer<any>('/generate/content', {
+          const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
             platform: mappedPlatform,
             topic: options.topic || options.genre || 'new music',
             tone: options.tone || 'energetic',
@@ -486,7 +495,7 @@ export class UnifiedAIController {
       // Priority 1: MaxCore trained model server
       if (await MaxCoreAIClient.isAvailable()) {
         try {
-          const mc = await MaxCoreAIClient.infer<any>('/generate/content', {
+          const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
             platform,
             topic,
             tone,
