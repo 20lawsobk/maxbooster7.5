@@ -121,70 +121,118 @@ function getBgSourceArgs(bgType: BgType, bg: string, width: number, height: numb
   return ['-f', 'lavfi', '-i', `nullsrc=s=${s}:r=30:d=${dur}`];
 }
 
-function getBgVfPrefix(bgType: BgType, bg: string, width: number, height: number): string {
-  const hex = bg.replace('0x', '');
-  const R = parseInt(hex.slice(0, 2), 16);
-  const G = parseInt(hex.slice(2, 4), 16);
-  const B = parseInt(hex.slice(4, 6), 16);
-  const aR = Math.floor((255 - R) * 0.45);
-  const aG = Math.floor((255 - G) * 0.40);
-  const aB = Math.floor((255 - B) * 0.50);
-  const H = height, W = width;
+/**
+ * Returns a geq= VF expression for animated gradient backgrounds.
+ * All expressions render at the HALF-resolution passed in (iW × iH) and are
+ * designed to be lanczos-upscaled to the final output size afterwards.
+ * Spatial frequencies are calibrated for ~540×960 (half of 1080×1920).
+ * The returned string does NOT include format=yuv420p — callers must append
+ * a scale + format step.
+ *
+ * @param ac  Accent color hex string (e.g. '0xe94560').  When supplied the
+ *            animation morphs from bg → ac rather than bg → white.
+ */
+function getBgVfPrefix(bgType: BgType, bg: string, iW: number, iH: number, ac?: string): string {
+  const parseHex = (s: string) => {
+    const h = s.replace('0x', '').replace('#', '');
+    return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)] as const;
+  };
+  const [R, G, B] = parseHex(bg);
 
-  // geq uses capital T for time (T), capital X/Y for pixel coords.
-  // Use sin(x)*sin(x) instead of abs(sin(x)) — always non-negative, no multi-arg funcs.
-  // Avoid double parentheses: write sin(X/n-Y/n) instead of sin((X-Y)/n).
+  // When an accent colour is provided, animate between bg and ac.
+  // When not provided, animate toward a white-ish highlight.
+  const [AR, AG, AB] = ac ? parseHex(ac) : [255, 255, 255];
+  // Delta: how much each channel shifts when the sine wave peaks at 1.
+  const aR = AR - R;   // can be negative if ac is darker than bg in that channel
+  const aG = AG - G;
+  const aB = AB - B;
+
+  // Calibrated for ~540×960.  T = time in seconds, X/Y = pixel coords.
+  // sin(x)*sin(x) ≥ 0 avoids negative artefacts.
+
+  // Spatial period constants (pixels per full sine cycle = 2π × divisor).
+  // Using iW/iH (~540×960) as reference.  Each divisor below is chosen so
+  // that exactly 1-3 smooth "humps" appear across the frame dimension.
+  //   1 hump → divisor ≈ dim / (2π)   e.g. 540/(2π) ≈ 86
+  //   2 humps → divisor ≈ dim / (4π)  e.g. 540/(4π) ≈ 43
+  // All expressions use sin(expr)*sin(expr) so values are always ≥ 0.
+
+  // Pre-compute 1-hump and 2-hump divisors for this frame size
+  const dX1 = Math.round(iW / 6.28);   // ~1 cycle across width
+  const dX2 = Math.round(iW / 12.57);  // ~2 cycles across width
+  const dY1 = Math.round(iH / 6.28);   // ~1 cycle across height
+  const dY2 = Math.round(iH / 12.57);  // ~2 cycles across height
+  const dD1 = Math.round(Math.hypot(iW, iH) / 6.28); // ~1 cycle across diagonal
 
   switch (bgType) {
-    case 'plasma':
+    case 'plasma': {
+      // Three channels peak at different spatial positions and drift at different
+      // speeds — classic plasma look with smooth, large color blobs.
       return (
         `geq=` +
-        `r='${R}+${aR}*sin(X/20+T*1.8)*sin(Y/30-T*1.2)':` +
-        `g='${G}+${aG}*sin(X/25+Y/25+T*1.5)*sin(X/25+Y/25+T*1.5)':` +
-        `b='${B}+${aB}*sin(X/18-Y/22+T*2.0)*sin(X/18-Y/22+T*2.0)',format=yuv420p`
+        `r='${R}+${aR}*sin(X/${dX1}+T*1.1)*sin(X/${dX1}+T*1.1)':` +
+        `g='${G}+${aG}*sin(Y/${dY2}-T*0.9)*sin(Y/${dY2}-T*0.9)':` +
+        `b='${B}+${aB}*sin(X/${dX2}+Y/${dY1}+T*0.7)*sin(X/${dX2}+Y/${dY1}+T*0.7)'`
       );
-    case 'aurora':
+    }
+    case 'aurora': {
+      // Tall horizontal bands that drift slowly — aurora borealis curtains.
+      const gAmp = Math.min(aG, 180);
+      const bAmp = Math.min(aB, 200);
       return (
         `geq=` +
-        `r='${R}+20*sin(X/40+T*0.8)*sin(X/40+T*0.8)':` +
-        `g='${G}+${Math.min(80, 255-G)}*sin(Y/25+T*1.2)*sin(Y/25+T*1.2)*sin(X/60+T*0.5)*sin(X/60+T*0.5)':` +
-        `b='${B}+${Math.min(60, 255-B)}*sin(X/30-Y/30+T*1.5)*sin(X/30-Y/30+T*1.5)',format=yuv420p`
+        `r='${R}+${Math.min(aR, 60)}*sin(X/${dX1}+T*0.4)*sin(X/${dX1}+T*0.4)':` +
+        `g='${G}+${gAmp}*sin(Y/${dY1}+T*0.6)*sin(Y/${dY1}+T*0.6)':` +
+        `b='${B}+${bAmp}*sin(X/${dX1}+Y/${dY2}*0.3+T*0.5)*sin(X/${dX1}+Y/${dY2}*0.3+T*0.5)'`
       );
-    case 'neon_pulse':
+    }
+    case 'neon_pulse': {
+      // Each channel pulses on a different axis — electric grid feel.
       return (
         `geq=` +
-        `r='${R}+${aR}*sin(X/50+T*2.5)*sin(X/50+T*2.5)':` +
-        `g='${G}+${aG}*sin(Y/50+T*2.0)*sin(Y/50+T*2.0)':` +
-        `b='${B}+${aB}*sin(X/60+Y/60+T*3.0)*sin(X/60+Y/60+T*3.0)',format=yuv420p`
+        `r='${R}+${aR}*sin(X/${dX2}+T*2.0)*sin(X/${dX2}+T*2.0)':` +
+        `g='${G}+${aG}*sin(Y/${dY2}+T*1.6)*sin(Y/${dY2}+T*1.6)':` +
+        `b='${B}+${aB}*sin(X/${dX1}+Y/${dY1}+T*2.4)*sin(X/${dX1}+Y/${dY1}+T*2.4)'`
       );
-    case 'gradient_sweep':
+    }
+    case 'gradient_sweep': {
+      // Slow animated diagonal gradient — branded / editorial feel.
       return (
         `geq=` +
-        `r='${R}+${aR}*Y/${H}+${Math.floor(aR*0.3)}*sin(T*0.8+X/200)*sin(T*0.8+X/200)':` +
-        `g='${G}+${aG}*X/${W}+${Math.floor(aG*0.25)}*sin(T*0.6+Y/200)*sin(T*0.6+Y/200)':` +
-        `b='${B}+${aB}*sin(T*0.7)*sin(T*0.7)',format=yuv420p`
+        `r='${R}+${aR}*(0.6*Y/${iH}+0.4*sin(X/${dX1}+T*0.4)*sin(X/${dX1}+T*0.4))':` +
+        `g='${G}+${aG}*(0.5*X/${iW}+0.5*sin(Y/${dY1}+T*0.3)*sin(Y/${dY1}+T*0.3))':` +
+        `b='${B}+${aB}*sin(X/${dD1}+Y/${dD1}+T*0.5)*sin(X/${dD1}+Y/${dD1}+T*0.5)'`
       );
-    case 'wave':
+    }
+    case 'wave': {
+      // Slow diagonal ripple — like light on water.
       return (
         `geq=` +
-        `r='${R}+${Math.min(40, aR)}*sin(Y/50+X/80+T*2)*sin(Y/50+X/80+T*2)':` +
-        `g='${G}+${Math.min(60, aG)}*sin(Y/60+T*1.5)*sin(Y/60+T*1.5)':` +
-        `b='${B}+${Math.min(80, aB)}*sin(X/55-T*1.8)*sin(X/55-T*1.8)',format=yuv420p`
+        `r='${R}+${aR}*sin(Y/${dY2}+X/${dX1}*0.4+T*1.4)*sin(Y/${dY2}+X/${dX1}*0.4+T*1.4)':` +
+        `g='${G}+${aG}*sin(Y/${dY1}+T*1.0)*sin(Y/${dY1}+T*1.0)':` +
+        `b='${B}+${aB}*sin(X/${dX2}-T*1.2)*sin(X/${dX2}-T*1.2)'`
       );
-    case 'fire':
+    }
+    case 'fire': {
+      // Bright at the bottom, dark at the top — upward rolling fire.
+      const rAmp = Math.min(220, 255 - R);
+      const gAmp = Math.min(70, 255 - G);
       return (
         `geq=` +
-        `r='${R}+${Math.min(120, 255-R)}*sin(X/20+T*3)*sin(X/20+T*3)*(${H}-Y)/${H}':` +
-        `g='${G}+${Math.min(50, 255-G)}*sin(X/25+T*3.5)*sin(X/25+T*3.5)*(${H}-Y)/${H}*0.4':` +
-        `b='${B}+8*sin(T*5)*sin(T*5)',format=yuv420p`
+        `r='${R}+${rAmp}*sin(X/${dX2}+T*3)*sin(X/${dX2}+T*3)*(${iH}-Y)/${iH}':` +
+        `g='${G}+${gAmp}*sin(X/${dX2}+T*3.2)*sin(X/${dX2}+T*3.2)*(${iH}-Y)/${iH}':` +
+        `b='${B}+10*sin(T*4)*sin(T*4)'`
       );
-    case 'warp':
+    }
+    case 'warp': {
+      // Slow orbital colour rotation — cosmic / sci-fi feel.
       return (
         `geq=` +
-        `r='${R}+${aR}*sin(X/W*6.28-Y/H*6.28+T*2)*sin(X/W*6.28-Y/H*6.28+T*2)':` +
-        `g='${G}+${aG}*sin(X/W*9.42+T*1.5)*sin(X/W*9.42+T*1.5)':` +
-        `b='${B}+${aB}*sin(Y/H*6.28-T*2.5)*sin(Y/H*6.28-T*2.5)',format=yuv420p`
+        `r='${R}+${aR}*sin(X/${dX1}-Y/${dY2}+T*1.5)*sin(X/${dX1}-Y/${dY2}+T*1.5)':` +
+        `g='${G}+${aG}*sin(X/${dX2}+Y/${dY1}+T*1.0)*sin(X/${dX2}+Y/${dY1}+T*1.0)':` +
+        `b='${B}+${aB}*sin(Y/${dY1}-T*1.8)*sin(Y/${dY1}-T*1.8)'`
       );
+    }
     case 'solid':
     default:
       return 'format=yuv420p';
@@ -614,8 +662,8 @@ async function renderScene(spec: SceneSpec): Promise<void> {
 
   const scenePrompt = spec.scene_prompt || '';
 
-  if (style.bgType === 'solid' && !scenePrompt) {
-    // Solid background — fast FFmpeg-only path (only when no scene prompt)
+  if (style.bgType === 'solid') {
+    // Solid background — fast FFmpeg color source
     const vf = ['format=yuv420p', ...textVfParts].join(',');
     await execFileAsync(FFMPEG, [
       '-y',
@@ -627,12 +675,21 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       outPath,
     ], { timeout: 90_000 });
   } else {
-    // Animated background — Python NumPy/PIL scene engine piped to FFmpeg
-    // Render at half resolution internally, FFmpeg scales up (4x faster)
-    const scale  = 2;
-    const innerW = Math.floor(width / scale);
-    const innerH = Math.floor(height / scale);
-    await renderWithPython(innerW, innerH, width, height, dur, style, genre, textVfParts, outPath, scenePrompt || undefined);
+    // Animated background — pure FFmpeg geq animated gradient (no Python dependency).
+    // Render geq at half resolution for speed, then lanczos-upscale to full output size.
+    const iW = Math.floor(width / 2);
+    const iH = Math.floor(height / 2);
+    const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
+    const vf = [bgGeq, `scale=${width}:${height}:flags=lanczos`, 'format=yuv420p', ...textVfParts].join(',');
+    await execFileAsync(FFMPEG, [
+      '-y',
+      '-f', 'lavfi', '-i', `nullsrc=s=${iW}x${iH}:r=30:d=${dur}`,
+      '-vf', vf,
+      '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+      '-an', '-t', String(dur),
+      outPath,
+    ], { timeout: 90_000 });
   }
 }
 
@@ -1126,7 +1183,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         `:alpha='if(lt(t\\,${(ctaStart+0.3).toFixed(1)})\\,min(1\\,(t-${ctaStart.toFixed(1)})*3)\\,1)'`
       );
 
-      if (style.bgType === 'solid' && !scenePrompt) {
+      if (style.bgType === 'solid') {
         await execFileAsync(FFMPEG, [
           '-y',
           '-f', 'lavfi', '-i', `color=c=${style.bg}:s=${width}x${height}:d=${totalDur}:r=30`,
@@ -1136,10 +1193,19 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
           '-an', '-t', String(totalDur), scenePath,
         ], { timeout: 90_000 });
       } else {
-        const scale  = 2;
-        const innerW = Math.floor(width / scale);
-        const innerH = Math.floor(height / scale);
-        await renderWithPython(innerW, innerH, width, height, totalDur, style, genre, vfParts, scenePath, scenePrompt || undefined);
+        // Animated background — pure FFmpeg geq at half-res, lanczos upscale
+        const iW = Math.floor(width / 2);
+        const iH = Math.floor(height / 2);
+        const bgGeq = getBgVfPrefix(style.bgType, style.bg, iW, iH, style.ac);
+        const vfAnim = [bgGeq, `scale=${width}:${height}:flags=lanczos`, 'format=yuv420p', ...vfParts].join(',');
+        await execFileAsync(FFMPEG, [
+          '-y',
+          '-f', 'lavfi', '-i', `nullsrc=s=${iW}x${iH}:r=30:d=${totalDur}`,
+          '-vf', vfAnim,
+          '-c:v', 'libx264', '-preset', 'fast', '-crf', '22',
+          '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
+          '-an', '-t', String(totalDur), scenePath,
+        ], { timeout: 90_000 });
       }
 
       // Add audio + optional logo + optional user audio
