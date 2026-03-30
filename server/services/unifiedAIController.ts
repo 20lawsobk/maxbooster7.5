@@ -776,7 +776,8 @@ export class UnifiedAIController {
             totalBudget: options.totalBudget,
             forecastPeriod: options.forecastPeriod,
           });
-          if (mc && (mc.score !== undefined || mc.allocations || mc.predictedCTR !== undefined || mc.expectedROI !== undefined)) {
+          // MaxCore returns {action, confidence, source} — accept any non-empty response
+          if (mc && (mc.score !== undefined || mc.allocations || mc.predictedCTR !== undefined || mc.expectedROI !== undefined || mc.confidence !== undefined)) {
             return {
               success: true,
               data: mc,
@@ -876,7 +877,8 @@ export class UnifiedAIController {
             content: options.content,
             postsPerWeek: options.postsPerWeek,
           });
-          if (mc && (mc.bestTime || mc.viralScore !== undefined || mc.schedule || mc.contentType)) {
+          // MaxCore returns {action, platform, confidence, source} — accept any non-empty response
+          if (mc && (mc.bestTime || mc.viralScore !== undefined || mc.schedule || mc.contentType || mc.confidence !== undefined)) {
             return {
               success: true,
               data: mc,

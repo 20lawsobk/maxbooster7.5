@@ -168,6 +168,7 @@ async function syncWeightsFromMaxCore(): Promise<void> {
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface TrainingFeedbackPayload {
+  content:         string;   // The actual post text — required by MaxCore
   source:          string;
   trigger:         string;
   engagement_rate: number;

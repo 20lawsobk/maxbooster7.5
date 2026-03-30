@@ -297,6 +297,7 @@ export class ContentQualityGate {
       const curriculum = isHigh ? 'reinforce_winner' : isLow ? 'improve_weak' : 'neutral';
 
       await pushTrainingFeedback({
+        content:         `${contentType} post on ${platform}`,
         source:          'quality_gate_outcome',
         trigger:         isHigh ? 'high_engagement' : isLow ? 'low_engagement' : 'normal',
         engagement_rate: engagementRate,

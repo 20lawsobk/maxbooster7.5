@@ -764,6 +764,7 @@ class AutopilotLearningService {
    */
   private async dispatchCurriculumSessionAsync(engagementRate: number, postData: PostData): Promise<void> {
     await pushTrainingFeedback({
+      content:         postData.contentText  || '',
       source:          'autopilot_learning',
       trigger:         'high_engagement_post',
       engagement_rate: engagementRate,

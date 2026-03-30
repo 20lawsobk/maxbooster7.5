@@ -1747,21 +1747,33 @@ class HyperLearningEngine extends EventEmitter {
     winner: ABTestResult['variants'][number]
   ): Promise<void> {
     try {
+      const aiKey = process.env.AI_SERVER_KEY || '';
       const payload = {
+        content:          `AB test winner: ${winner.id} — ${winner.engagementRate.toFixed(2)}% engagement`,
         source:           'hyper_ab_test',
-        test_id:          test.id,
-        winner_id:        winner.id,
+        trigger:          'ab_winner',
         engagement_rate:  winner.engagementRate,
+        platform:         (test as any).platform    || 'unknown',
+        content_type:     (test as any).contentType || 'post',
+        hook_type:        (winner as any).hookType  || 'unknown',
+        media_type:       (winner as any).mediaType || 'text',
+        curriculum_hint:  'reinforce_winning_visual_style',
+        dispatched_at:    new Date().toISOString(),
+        // Extra context (non-schema fields — MaxCore ignores extras)
+        test_id:          test.testId,
+        winner_id:        winner.id,
         confidence:       winner.statisticalSignificance,
         variate_count:    test.variants.length,
         learnings:        test.learnings,
-        trigger:          'ab_winner',
-        curriculum_hint:  'reinforce_winning_visual_style',
       };
 
-      const resp = await fetch(`${AI_SERVER_URL}/train/feedback`, {
+      const resp = await fetch(`${AI_SERVER_URL}/api/train/feedback`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type':  'application/json',
+          'Authorization': `Bearer ${aiKey}`,
+          'X-API-Key':     aiKey,
+        },
         body:    JSON.stringify(payload),
         signal:  AbortSignal.timeout(5000),
       });
