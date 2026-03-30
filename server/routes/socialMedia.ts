@@ -1344,6 +1344,24 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
     const generatedContent: any[] = [];
 
+    // Combine keywords + tags from URL analysis into a deduplicated keyword list
+    const allKeywords = [...new Set([
+      ...(seed.keywords || []),
+      ...(seed.tags     || []),
+    ])].slice(0, 20);
+
+    // Build rich extra_context from headings, event/product data, and content signals
+    const extraParts: string[] = [];
+    if (seed.headings?.length)       extraParts.push(seed.headings.slice(0, 3).join(' • '));
+    if (seed.event_date)             extraParts.push(`Event: ${seed.event_date}${seed.event_location ? ' @ ' + seed.event_location : ''}`);
+    if (seed.performers?.length)     extraParts.push(`Performers: ${seed.performers.slice(0, 3).join(', ')}`);
+    if (seed.price)                  extraParts.push(`Price: ${seed.currency || ''}${seed.price}`);
+    if (seed.view_count)             extraParts.push(`${seed.view_count.toLocaleString()} views`);
+    if (seed.like_count)             extraParts.push(`${seed.like_count.toLocaleString()} likes`);
+    if (seed.play_count)             extraParts.push(`${seed.play_count.toLocaleString()} plays`);
+    if (seed.subscriber_count)       extraParts.push(`${seed.subscriber_count.toLocaleString()} subscribers`);
+    if (targetAudience)              extraParts.push(`Target: ${targetAudience}`);
+
     // MaxCore AI is the only source — generate for all platforms in parallel
     const platformResults = await Promise.allSettled(
       platforms
@@ -1356,6 +1374,14 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
             genre:           seed.genre || 'hip-hop',
             artistName:      seed.artist || '',
             trackTitle:      seed.track  || '',
+            album:           seed.album  || undefined,
+            releaseDate:     seed.release_date || undefined,
+            label:           seed.label  || undefined,
+            keywords:        allKeywords.length ? allKeywords : undefined,
+            mood:            seed.tone !== 'default' ? seed.tone : undefined,
+            description:     analysis.description?.slice(0, 200) || undefined,
+            bodyPreview:     seed.body_preview?.slice(0, 300) || undefined,
+            extraContext:    extraParts.length ? extraParts.join(' | ') : undefined,
             userId:          (req as any).user?.id,
             includeHashtags: true,
             includeEmojis:   true,
@@ -2408,14 +2434,27 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
           ? `New music by ${seed.artist}`
           : seed.topic.slice(0, 80);
 
+    const urlKeywords = [...new Set([...(seed.keywords || []), ...(seed.tags || [])])].slice(0, 20);
     const content = await unifiedAIController.generateContent({
-      type:       'social_post',
-      platform:   platform || 'instagram',
-      topic:      aiTopic,
-      tone:       seed.tone !== 'default' ? seed.tone : 'energetic',
-      genre:      seed.genre !== 'default' ? seed.genre : 'hip-hop',
-      artistName: seed.artist,
-      trackTitle: seed.track,
+      platform:    platform || 'instagram',
+      topic:       aiTopic,
+      tone:        seed.tone !== 'default' ? seed.tone : 'energetic',
+      genre:       seed.genre !== 'default' ? seed.genre : 'hip-hop',
+      artistName:  seed.artist,
+      trackTitle:  seed.track,
+      album:       seed.album      || undefined,
+      releaseDate: seed.release_date || undefined,
+      label:       seed.label      || undefined,
+      keywords:    urlKeywords.length ? urlKeywords : undefined,
+      description: analysis.description?.slice(0, 200) || undefined,
+      bodyPreview: seed.body_preview?.slice(0, 300)    || undefined,
+      extraContext: [
+        seed.view_count   ? `${seed.view_count.toLocaleString()} views`  : '',
+        seed.like_count   ? `${seed.like_count.toLocaleString()} likes`  : '',
+        seed.play_count   ? `${seed.play_count.toLocaleString()} plays`  : '',
+      ].filter(Boolean).join(' | ') || undefined,
+      includeHashtags: true,
+      includeEmojis:   true,
     });
 
     // Derive genre-based default colors for the video template

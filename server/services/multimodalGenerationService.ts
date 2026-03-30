@@ -1009,6 +1009,20 @@ async function normalizeInput(req: GenerationRequest): Promise<any> {
     return acc;
   }, {});
 
+  const payload = req.input.payload ?? '';
+  let prefetchedMeta: PageMeta | null = null;
+
+  // Pre-fetch URL metadata so MaxCore gets the full page content, not just a bare URL
+  if (req.input.modality === 'url' && /^https?:\/\//i.test(payload)) {
+    try {
+      const ctx = classifyUrl(payload);
+      prefetchedMeta = await fetchUrlMetadata(payload, ctx);
+      logger.debug(`[MultimodalGen] Pre-fetched URL metadata: title="${prefetchedMeta.title ?? ''}" siteName="${prefetchedMeta.siteName ?? ''}"`);
+    } catch (fetchErr) {
+      logger.debug('[MultimodalGen] URL pre-fetch failed (non-fatal):', fetchErr instanceof Error ? fetchErr.message : String(fetchErr));
+    }
+  }
+
   try {
     return await maxcorePost('/analyze', {
       modality: req.input.modality,
@@ -1016,14 +1030,24 @@ async function normalizeInput(req: GenerationRequest): Promise<any> {
       artistProfileId: req.artistProfileId,
       platforms: req.platforms,
       intent: req.intent,
-      metadata: req.input.metadata,
+      // Merge pre-fetched metadata so MaxCore has the actual page content
+      metadata: {
+        ...(req.input.metadata || {}),
+        ...(prefetchedMeta ? {
+          title:       prefetchedMeta.title,
+          description: prefetchedMeta.description,
+          siteName:    prefetchedMeta.siteName,
+          author:      prefetchedMeta.author,
+          image:       prefetchedMeta.image,
+          publishDate: prefetchedMeta.publishDate,
+        } : {}),
+      },
       platformRules: platformRulesSubset,
     });
   } catch (err) {
     logger.warn('[MultimodalGen] MaxCore /analyze unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
 
-    // For URL inputs: fetch the page and extract real metadata
-    const payload = req.input.payload ?? '';
+    // For URL inputs: use the pre-fetched meta if available, otherwise fetch now
     if (req.input.modality === 'url' && /^https?:\/\//i.test(payload)) {
       try {
         return await localAnalyzeUrl(payload, req, platformRulesSubset);

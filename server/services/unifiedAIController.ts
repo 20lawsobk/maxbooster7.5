@@ -52,6 +52,19 @@ export interface ContentGenerationOptions extends GenerationOptions {
   userId?: string;
   projectId?: string;
   userContext?: UserGenerationContext;
+  // Rich content context — feeds directly into MaxCore for better AI output
+  keywords?: string[];
+  mood?: string;
+  extraContext?: string;
+  album?: string;
+  releaseDate?: string;
+  similarArtists?: string[];
+  bodyPreview?: string;
+  description?: string;
+  label?: string;
+  tracklist?: string[];
+  viewCount?: number | null;
+  likeCount?: number | null;
 }
 
 export interface SentimentAnalysisOptions {
@@ -386,15 +399,62 @@ export class UnifiedAIController {
       const ctx = options.userContext;
 
       // MaxCore is the ONLY source — always succeeds via remote + local engine
+      // ── Build a focused topic string for MaxCore's template engine ──────────
+      // MaxCore uses `topic` as its content body signal, so keep it concise and
+      // punchy (artist + track + genre + mood + top keywords, max ~120 chars).
+      // Verbose context (stats, description, album details) goes into
+      // extra_context so MaxCore stores it, and we use it in post-processing.
+      const baseTopic = options.topic || options.genre || 'new music';
+      const artist = ctx?.artistName || options.artistName;
+      const topicParts: string[] = [baseTopic];
+      // Only append artist/track if not already present in the base topic
+      if (artist && !baseTopic.toLowerCase().includes(artist.toLowerCase())) {
+        topicParts.push(`by ${artist}`);
+      }
+      if (options.trackTitle && !baseTopic.toLowerCase().includes(options.trackTitle.toLowerCase())) {
+        topicParts.push(`"${options.trackTitle}"`);
+      }
+      if (options.mood) topicParts.push(options.mood);
+      if (options.keywords?.length) topicParts.push(options.keywords.slice(0, 4).join(', '));
+      const enrichedTopic = topicParts.join(' — ').slice(0, 120);
+
+      // ── Build comprehensive extra_context for MaxCore and local enrichment ──
+      const extraParts: string[] = [];
+      if (options.album)       extraParts.push(`Album: ${options.album}`);
+      if (options.releaseDate) extraParts.push(`Released: ${options.releaseDate}`);
+      if (options.label)       extraParts.push(`Label: ${options.label}`);
+      if (options.tracklist?.length) extraParts.push(`Tracklist: ${options.tracklist.slice(0, 4).join(', ')}`);
+      if (options.viewCount != null && options.viewCount > 0) {
+        extraParts.push(`${(options.viewCount / 1_000_000 >= 1
+          ? (options.viewCount / 1_000_000).toFixed(1) + 'M'
+          : (options.viewCount / 1000).toFixed(0) + 'K')} views`);
+      }
+      if (options.likeCount != null && options.likeCount > 0) {
+        extraParts.push(`${(options.likeCount / 1000).toFixed(0)}K likes`);
+      }
+      if (options.bodyPreview) {
+        const clean = options.bodyPreview.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+        if (clean) extraParts.push(clean);
+      } else if (options.description) {
+        const clean = options.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
+        if (clean) extraParts.push(clean);
+      }
+      if (options.extraContext) extraParts.push(options.extraContext.slice(0, 200));
+      const combinedExtra = extraParts.length ? extraParts.join(' | ') : undefined;
+
       const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
         platform: mappedPlatform,
-        topic:    options.topic || options.genre || 'new music',
+        topic:    enrichedTopic,
         tone:     options.tone || 'energetic',
         genre:    options.genre || ctx?.genre,
+        mood:     options.mood,
         userId:   options.userId,
         contentType: options.contentType,
+        track_title:  options.trackTitle,
+        keywords:     options.keywords?.length ? options.keywords : undefined,
+        extra_context: combinedExtra?.slice(0, 500),
         // User context — enables personalized output
-        artist_name:          ctx?.artistName    || options.artistName,
+        artist_name:          artist,
         artist_bio:           ctx?.artistBio,
         brand_voice:          ctx?.brandVoice,
         target_audience:      ctx?.targetAudience,
@@ -406,11 +466,31 @@ export class UnifiedAIController {
 
       if (mc?.caption || mc?.hook) {
         const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
+
+        // ── Enrich hashtags with artist-specific keywords ─────────────────────
+        // MaxCore always returns generic platform hashtags (#fyp, #viral, etc.).
+        // Merge the user's actual keywords (from URL metadata, labels, etc.)
+        // so the post reaches the right audience. Keep MaxCore's hashtags but
+        // prepend keyword-derived ones, capped at 15 total.
+        const mcHashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
+        const keywordHashtags = (options.keywords ?? [])
+          .filter((k: string) => k && k.length > 1)
+          .map((k: string) => k.startsWith('#') ? k : `#${k.replace(/\s+/g, '').toLowerCase()}`)
+          .filter((h: string) => !mcHashtags.includes(h));
+        // Also derive hashtag from artist name if available and not already present
+        const artistTag = artist
+          ? `#${artist.replace(/\s+/g, '').toLowerCase()}`
+          : null;
+        if (artistTag && !mcHashtags.includes(artistTag) && !keywordHashtags.includes(artistTag)) {
+          keywordHashtags.unshift(artistTag);
+        }
+        const enrichedHashtags = [...keywordHashtags, ...mcHashtags].slice(0, 15);
+
         return {
           success: true,
           data: {
             caption,
-            hashtags:  mc.hashtags  || [],
+            hashtags:  enrichedHashtags.length ? enrichedHashtags : mcHashtags,
             tone:      options.tone || 'energetic',
             toneMatch: mc.confidence || 0.95,
             platform:  mappedPlatform,
@@ -492,7 +572,10 @@ export class UnifiedAIController {
         platform,
         topic,
         tone,
-        genre: options.musicData?.genre,
+        genre:       options.musicData?.genre,
+        mood:        options.musicData?.mood,
+        artist_name: options.musicData?.artist,
+        contentType: options.contentType,
       });
       if (mc?.caption || mc?.hook) {
         const parts = mc.caption
