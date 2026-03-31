@@ -3,7 +3,13 @@ name = "repl-nix-workspace"
 version = "0.1.0"
 description = "Add your description here"
 requires-python = ">=3.12"
-dependencies = [
-    "numpy>=2.4.3",
-    "pillow>=12.1.1",
-]
+# No dependencies here — all Python packages (numpy, pillow, etc.) are
+# installed by build.sh into .venv/ using `uv pip install`.
+# This keeps the Replit auto-`uv sync` from trying to write to the
+# read-only Nix store before build.sh has a chance to create the venv.
+dependencies = []
+
+[tool.uv]
+# Do not treat this project as an installable package.
+# Makes `uv sync` a true no-op (nothing to install, nothing to build).
+package = false
