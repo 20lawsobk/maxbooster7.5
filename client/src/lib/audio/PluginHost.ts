@@ -1,15 +1,15 @@
-import { BasePlugin } from '../../../../built-in plugins dsp/BasePlugin';
-import { CompressorPlugin } from '../../../../built-in plugins dsp/CompressorPlugin';
-import { EQPlugin } from '../../../../built-in plugins dsp/EQPlugin';
-import { ReverbPlugin } from '../../../../built-in plugins dsp/ReverbPlugin';
-import { DelayPlugin } from '../../../../built-in plugins dsp/DelayPlugin';
-import { DistortionPlugin } from '../../../../built-in plugins dsp/DistortionPlugin';
-import { ChorusPlugin } from '../../../../built-in plugins dsp/ChorusPlugin';
-import { FlangerPlugin } from '../../../../built-in plugins dsp/FlangerPlugin';
-import { PhaserPlugin } from '../../../../built-in plugins dsp/PhaserPlugin';
-import { DeEsserPlugin } from '../../../../built-in plugins dsp/DeEsserPlugin';
-import { VocoderPlugin } from '../../../../built-in plugins dsp/VocoderPlugin';
-import { DynamicEQPlugin } from '../../../../built-in plugins dsp/DynamicEQPlugin';
+import { BasePlugin } from '@plugins/BasePlugin';
+import { CompressorPlugin } from '@plugins/CompressorPlugin';
+import { EQPlugin } from '@plugins/EQPlugin';
+import { ReverbPlugin } from '@plugins/ReverbPlugin';
+import { DelayPlugin } from '@plugins/DelayPlugin';
+import { DistortionPlugin } from '@plugins/DistortionPlugin';
+import { ChorusPlugin } from '@plugins/ChorusPlugin';
+import { FlangerPlugin } from '@plugins/FlangerPlugin';
+import { PhaserPlugin } from '@plugins/PhaserPlugin';
+import { DeEsserPlugin } from '@plugins/DeEsserPlugin';
+import { VocoderPlugin } from '@plugins/VocoderPlugin';
+import { DynamicEQPlugin } from '@plugins/DynamicEQPlugin';
 
 /**
  * Plugin Host - Manages audio plugin chains

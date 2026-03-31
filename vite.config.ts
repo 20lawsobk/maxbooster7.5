@@ -17,6 +17,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "client", "src"),
       "@shared": path.resolve(__dirname, "shared"),
       "@assets": path.resolve(__dirname, "attached_assets"),
+      "@plugins": path.resolve(__dirname, "built-in plugins dsp"),
     },
     dedupe: ["react", "react-dom"],
   },
@@ -42,8 +43,8 @@ export default defineConfig({
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",
         manualChunks: (id) => {
-          // Studio chunk (heaviest page)
-          if (id.includes('/studio/')) {
+          // Studio chunk (heaviest page) — includes DSP plugin processors
+          if (id.includes('/studio/') || id.includes('built-in plugins dsp') || id.includes('@plugins/')) {
             return 'studio';
           }
 
@@ -127,7 +128,8 @@ export default defineConfig({
     port: 5000,
     allowedHosts: true,
     fs: {
-      strict: true,
+      strict: false,
+      allow: [__dirname],
       deny: ["**/.*"],
     },
   },
