@@ -19,6 +19,10 @@ export interface AudioClip {
   sourceUrl?: string;
   muted: boolean;
   locked: boolean;
+  sampleRate?: number;
+  totalSamples?: number;
+  reversed?: boolean;
+  normalized?: boolean;
 }
 
 export interface MidiNote {

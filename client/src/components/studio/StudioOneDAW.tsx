@@ -1521,8 +1521,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     const arrayBuffer = await response.arrayBuffer();
                     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
                     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                    useStudioStore.getState().updateAudioClip(track.id, clip.id, { 
-                      duration: audioBuffer.duration 
+                    const sampleRate = audioBuffer.sampleRate;
+                    const totalSamples = audioBuffer.length;
+                    const durationSeconds = totalSamples / sampleRate;
+                    useStudioStore.getState().updateAudioClip(track.id, clip.id, {
+                      duration: durationSeconds,
+                      sampleRate,
+                      totalSamples,
                     });
                     audioContext.close();
                   } catch (e) {
@@ -2733,10 +2738,23 @@ interface AudioClipViewProps {
 
 function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSelect }: AudioClipViewProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const pixelsPerSecond = 40 * zoom * (tempo / 60);
-  const left = clip.startTime * pixelsPerSecond;
-  const isLoading = !clip.duration || clip.duration <= 0;
-  const width = isLoading ? 100 : clip.duration * pixelsPerSecond;
+  const timeSignatureNumerator = useStudioStore((s) => s.transport.timeSignatureNumerator) || 4;
+
+  const pixelsPerBeat = 40 * zoom;
+  const pixelsPerBar = pixelsPerBeat * timeSignatureNumerator;
+  const pixelsPerSecond = pixelsPerBeat * (tempo / 60);
+
+  const durationSeconds = clip.duration || 0;
+  const beats = durationSeconds * (tempo / 60);
+  const bars = beats / timeSignatureNumerator;
+  const pixelWidth = bars * pixelsPerBar;
+
+  const startBeats = (clip.startTime || 0) * (tempo / 60);
+  const startBars = startBeats / timeSignatureNumerator;
+  const left = startBars * pixelsPerBar;
+
+  const isLoading = durationSeconds <= 0;
+  const width = isLoading ? 100 : pixelWidth;
   const clampedWidth = Math.max(width, 20);
 
   const [drag, setDrag] = useState<{
@@ -2841,8 +2859,7 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
     const clipStartTime = clip.startTime || 0;
     const clipDuration = clip.duration || 0;
     const secondsPerBeat = 60 / tempo;
-    const tsNum = useStudioStore.getState().transport.timeSignatureNumerator || 4;
-    const secondsPerBar = secondsPerBeat * tsNum;
+    const secondsPerBar = secondsPerBeat * timeSignatureNumerator;
 
     if (clipDuration > 0 && secondsPerBar > 0) {
       const firstBar = Math.ceil(clipStartTime / secondsPerBar);
@@ -2887,7 +2904,7 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
       const x = (i / barsToRender) * drawW;
       ctx.fillRect(x, (drawH - h) / 2, Math.max(drawW / barsToRender, 1), h);
     }
-  }, [clip.waveformData, clip.startTime, clip.duration, displayWidth, trackColor, zoom, tempo]);
+  }, [clip.waveformData, clip.startTime, clip.duration, displayWidth, trackColor, zoom, tempo, timeSignatureNumerator]);
 
   return (
     <ContextMenu>
