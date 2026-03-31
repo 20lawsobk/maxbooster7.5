@@ -1,7 +1,15 @@
 /**
- * Max Booster Service Worker v7
+ * Max Booster Service Worker v8
  *
- * Key improvements:
+ * Key improvements (v8):
+ *  • Silent push handler — processes background sync events from the server
+ *    without showing a visible notification (feed refresh, message sync, etc.)
+ *  • Category-specific notification actions — Security, Royalties, Collab, etc.
+ *    each get contextual action buttons matched to the notification type
+ *  • Rich notification display — image, badge, vibrate patterns, renotify
+ *  • notificationclose tracking — tells the client when a notification is closed
+ *
+ * Pre-v8 features:
  *  • DEV MODE bypass — on localhost (Vite dev server), the SW is a transparent
  *    pass-through: no caching of the app shell, no stale HTML, no hashed-asset
  *    mismatches. Caching is only active on production domains.
@@ -17,7 +25,7 @@ const IS_DEV = self.location.hostname === 'localhost' ||
                self.location.hostname.endsWith('.replit.dev') ||
                self.location.hostname.endsWith('.picard.replit.dev');
 
-const CACHE_VER    = 'v7';
+const CACHE_VER    = 'v8';
 const STATIC_CACHE = 'max-booster-static-' + CACHE_VER;
 const DYNAMIC_CACHE= 'max-booster-dynamic-' + CACHE_VER;
 const API_CACHE    = 'max-booster-api-' + CACHE_VER;
@@ -285,33 +293,125 @@ async function processBackgroundSync() {
 }
 
 // ── Push notifications ────────────────────────────────────────────────────────
+
+function getCategoryActions(category, actions) {
+  if (actions && actions.length) return actions;
+  switch (category) {
+    case 'account_security':
+      return [{ action: 'open', title: 'Review Now' }, { action: 'dismiss', title: 'Dismiss' }];
+    case 'direct_interaction':
+      return [{ action: 'open', title: 'View' }, { action: 'reply', title: 'Reply' }];
+    case 'royalties':
+      return [{ action: 'open', title: 'View Earnings' }, { action: 'dismiss', title: 'Later' }];
+    case 'distribution':
+      return [{ action: 'open', title: 'View Release' }, { action: 'dismiss', title: 'Got It' }];
+    case 'collaboration':
+      return [{ action: 'open', title: 'Open Project' }, { action: 'dismiss', title: 'Later' }];
+    case 'marketplace':
+      return [{ action: 'open', title: 'View Sale' }, { action: 'dismiss', title: 'Got It' }];
+    case 'engagement_summary':
+      return [{ action: 'open', title: 'See Stats' }, { action: 'dismiss', title: 'Got It' }];
+    case 'platform_generated':
+      return [{ action: 'open', title: 'Explore' }, { action: 'dismiss', title: 'Not Now' }];
+    case 'content_based':
+      return [{ action: 'open', title: 'View Content' }, { action: 'dismiss', title: 'Later' }];
+    case 'achievements':
+      return [{ action: 'open', title: 'View Badge' }, { action: 'dismiss', title: 'Got It' }];
+    default:
+      return [{ action: 'open', title: 'Open Max Booster' }, { action: 'dismiss', title: 'Dismiss' }];
+  }
+}
+
+function getVibrate(category, requireInteraction) {
+  if (category === 'account_security') return [200, 100, 200, 100, 200];
+  if (requireInteraction) return [100, 50, 100, 50, 100];
+  return [100, 50, 100];
+}
+
 self.addEventListener('push', (event) => {
   if (!event.data) return;
-  const data = event.data.json();
+
+  let data;
+  try { data = event.data.json(); }
+  catch { return; }
+
+  // Silent push — background sync, no notification shown
+  if (data.silent === true || data.silent === 'true') {
+    const reason = data.reason || 'feed_refresh';
+    event.waitUntil(
+      clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+        windowClients.forEach((client) => {
+          client.postMessage({ type: 'SILENT_PUSH', reason, timestamp: Date.now() });
+        });
+      })
+    );
+    return;
+  }
+
+  const category = data.category || 'system';
+  const actions  = getCategoryActions(category, data.actions);
+  const vibrate  = data.vibrate || getVibrate(category, data.requireInteraction);
+
+  const notifOptions = {
+    body:              data.body || 'New notification from Max Booster',
+    icon:              data.icon  || '/icons/icon-192x192.png',
+    badge:             data.badge || '/icons/icon-72x72.png',
+    vibrate,
+    tag:               data.tag  || `maxbooster-${category}`,
+    renotify:          data.renotify ?? false,
+    requireInteraction: data.requireInteraction ?? (category === 'account_security'),
+    silent:            false,
+    timestamp:         data.timestamp || Date.now(),
+    actions,
+    data: {
+      url:          data.url   || (data.data && data.data.url) || '/',
+      category,
+      tag:          data.tag,
+      dateOfArrival: Date.now(),
+      ...(data.data || {}),
+    },
+  };
+
+  // image only supported in Chromium
+  if (data.image) notifOptions.image = data.image;
+
   event.waitUntil(
-    self.registration.showNotification(data.title || 'Max Booster', {
-      body: data.body || 'New notification from Max Booster',
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/icon-72x72.png',
-      vibrate: [100, 50, 100],
-      data: { url: data.url || '/', dateOfArrival: Date.now() },
-      actions: data.actions || [{ action: 'open', title: 'Open' }, { action: 'dismiss', title: 'Dismiss' }]
-    })
+    self.registration.showNotification(data.title || 'Max Booster', notifOptions)
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  if (event.action === 'dismiss') return;
-  const url = event.notification.data?.url || '/';
+
+  const notifData = event.notification.data || {};
+  const action    = event.action;
+
+  if (action === 'dismiss') return;
+
+  const url = notifData.url || '/';
+
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url === url && 'focus' in client) return client.focus();
+        const clientUrl = new URL(client.url);
+        const targetUrl = new URL(url, self.location.origin);
+        if (clientUrl.origin === targetUrl.origin && 'focus' in client) {
+          client.postMessage({ type: 'NOTIFICATION_CLICKED', action, url, data: notifData });
+          return client.focus();
+        }
       }
       if (clients.openWindow) return clients.openWindow(url);
     })
   );
+});
+
+self.addEventListener('notificationclose', (event) => {
+  const notifData = event.notification.data || {};
+  clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+    clientList.forEach((client) => {
+      client.postMessage({ type: 'NOTIFICATION_CLOSED', tag: event.notification.tag, data: notifData });
+    });
+  });
 });
 
 // ── Message handlers ──────────────────────────────────────────────────────────

@@ -113,7 +113,7 @@ Six optimizations applied across the content generation stack:
 - **Payment Processing**: Stripe (requires STRIPE_SECRET_KEY env var).
 - **Email Delivery**: SendGrid.
 - **Error Tracking**: Sentry.
-- **Push Notifications**: Web Push Protocol.
+- **Push Notifications**: Three-channel system — Web Push (VAPID/Web Push API), Desktop Push (desktop-filtered browser push), Mobile Push (FCM v1 API / legacy FCM for Android & iOS native apps). Central `notificationDispatcher` routes to all channels. Service Worker v8.
 - **Music Integrations**: Spotify, LabelGrid.
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.

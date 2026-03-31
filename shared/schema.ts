@@ -5394,3 +5394,23 @@ export const listingStems = pgTable("listing_stems", {
 export const insertListingStemSchema = createInsertSchema(listingStems).omit({ id: true, createdAt: true, downloadCount: true });
 export type ListingStem = typeof listingStems.$inferSelect;
 export type InsertListingStem = z.infer<typeof insertListingStemSchema>;
+
+// ============================================================================
+// MOBILE DEVICE TOKENS (FCM / APNs)
+// ============================================================================
+export const mobileDeviceTokens = pgTable("mobile_device_tokens", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  token: text("token").notNull().unique(),
+  platform: varchar("platform", { length: 16 }).notNull().default("android"),
+  deviceName: text("device_name"),
+  appVersion: varchar("app_version", { length: 32 }),
+  isActive: boolean("is_active").notNull().default(true),
+  lastSeenAt: timestamp("last_seen_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertMobileDeviceTokenSchema = createInsertSchema(mobileDeviceTokens).omit({ id: true, createdAt: true, updatedAt: true, lastSeenAt: true });
+export type MobileDeviceToken = typeof mobileDeviceTokens.$inferSelect;
+export type InsertMobileDeviceToken = z.infer<typeof insertMobileDeviceTokenSchema>;

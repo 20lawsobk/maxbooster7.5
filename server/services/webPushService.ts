@@ -1,10 +1,11 @@
 import webpush from 'web-push';
 import { db } from '../db';
 import { pushSubscriptions } from '@shared/schema';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import type { RichPushPayload } from './pushNotificationTypes.js';
 
-interface PushPayload {
+export interface PushPayload {
   title: string;
   body: string;
   url?: string;
@@ -12,6 +13,12 @@ interface PushPayload {
   badge?: string;
   tag?: string;
   actions?: Array<{ action: string; title: string }>;
+  silent?: boolean;
+  requireInteraction?: boolean;
+  renotify?: boolean;
+  vibrate?: number[];
+  image?: string;
+  data?: Record<string, unknown>;
 }
 
 class WebPushService {
@@ -124,6 +131,40 @@ class WebPushService {
     }
   }
 
+  private async deliverToSubscriptions(
+    subscriptions: Awaited<ReturnType<typeof this.getUserSubscriptions>>,
+    serializedPayload: string
+  ): Promise<{ sent: number; failed: number }> {
+    let sent = 0;
+    let failed = 0;
+
+    for (const sub of subscriptions) {
+      try {
+        await webpush.sendNotification(
+          {
+            endpoint: sub.endpoint,
+            keys: {
+              p256dh: sub.p256dh,
+              auth: sub.auth,
+            },
+          },
+          serializedPayload
+        );
+        sent++;
+      } catch (error: any) {
+        failed++;
+        if (error.statusCode === 410 || error.statusCode === 404) {
+          logger.info(`Removing expired push subscription: ${sub.endpoint.substring(0, 50)}...`);
+          await this.removeSubscription(sub.endpoint).catch(() => {});
+        } else {
+          logger.error(`Push notification failed for subscription ${sub.id}:`, error.statusCode || error.message);
+        }
+      }
+    }
+
+    return { sent, failed };
+  }
+
   async sendToUser(userId: string, payload: PushPayload): Promise<{ sent: number; failed: number }> {
     if (!this.initialized) {
       logger.warn('Web Push not initialized, skipping push notification');
@@ -146,40 +187,63 @@ class WebPushService {
         { action: 'open', title: 'Open' },
         { action: 'dismiss', title: 'Dismiss' },
       ],
+      silent: payload.silent || false,
+      requireInteraction: payload.requireInteraction || false,
+      renotify: payload.renotify || false,
+      vibrate: payload.vibrate || [100, 50, 100],
+      image: payload.image,
+      data: { ...payload.data, url: payload.url || '/' },
     });
 
-    let sent = 0;
-    let failed = 0;
+    const result = await this.deliverToSubscriptions(subscriptions, pushPayload);
 
-    for (const sub of subscriptions) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: {
-              p256dh: sub.p256dh,
-              auth: sub.auth,
-            },
-          },
-          pushPayload
-        );
-        sent++;
-      } catch (error: any) {
-        failed++;
-        if (error.statusCode === 410 || error.statusCode === 404) {
-          logger.info(`Removing expired push subscription: ${sub.endpoint.substring(0, 50)}...`);
-          await this.removeSubscription(sub.endpoint);
-        } else {
-          logger.error(`Push notification failed for subscription ${sub.id}:`, error.statusCode || error.message);
-        }
+    if (result.sent > 0) {
+      logger.info(`Push notification sent to ${result.sent}/${subscriptions.length} devices for user ${userId}`);
+    }
+
+    return result;
+  }
+
+  async sendRichToUser(userId: string, richPayload: RichPushPayload): Promise<{ sent: number; failed: number }> {
+    if (!this.initialized) {
+      logger.warn('Web Push not initialized, skipping push notification');
+      return { sent: 0, failed: 0 };
+    }
+
+    const subscriptions = await this.getUserSubscriptions(userId);
+    if (subscriptions.length === 0) {
+      return { sent: 0, failed: 0 };
+    }
+
+    const serialized = JSON.stringify({
+      title: richPayload.title,
+      body: richPayload.body,
+      url: richPayload.url,
+      icon: richPayload.icon,
+      badge: richPayload.badge,
+      tag: richPayload.tag,
+      category: richPayload.category,
+      actions: richPayload.actions,
+      silent: richPayload.silent,
+      requireInteraction: richPayload.requireInteraction,
+      renotify: richPayload.renotify,
+      vibrate: richPayload.vibrate,
+      image: richPayload.image,
+      timestamp: richPayload.timestamp || Date.now(),
+      data: { ...richPayload.data, url: richPayload.url },
+    });
+
+    const result = await this.deliverToSubscriptions(subscriptions, serialized);
+
+    if (richPayload.silent) {
+      if (result.sent > 0) {
+        logger.info(`Silent push sent to ${result.sent} device(s) for user ${userId} (${richPayload.data?.reason || 'background sync'})`);
       }
+    } else if (result.sent > 0) {
+      logger.info(`Rich push [${richPayload.tag}] sent to ${result.sent}/${subscriptions.length} devices for user ${userId}`);
     }
 
-    if (sent > 0) {
-      logger.info(`Push notification sent to ${sent}/${subscriptions.length} devices for user ${userId}`);
-    }
-
-    return { sent, failed };
+    return result;
   }
 }
 

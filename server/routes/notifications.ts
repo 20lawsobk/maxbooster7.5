@@ -6,6 +6,8 @@ import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
+import { webPushService } from '../services/webPushService.js';
+import { buildSilentPayload } from '../services/pushNotificationTypes.js';
 
 const router = Router();
 
@@ -62,10 +64,16 @@ const defaultPreferences: NotificationPreferences = {
       royalties: true,
       collaboration: true,
       system: true,
+      direct_interaction: true,
+      platform_generated: false,
+      content_based: true,
+      engagement_summary: true,
+      location_based: false,
     },
   },
   push: {
     enabled: false,
+    silentSync: true,
     categories: {
       account_security: true,
       distribution: true,
@@ -74,6 +82,11 @@ const defaultPreferences: NotificationPreferences = {
       royalties: true,
       collaboration: true,
       system: true,
+      direct_interaction: true,
+      platform_generated: false,
+      content_based: false,
+      engagement_summary: false,
+      location_based: false,
     },
   },
   sms: {
@@ -505,10 +518,7 @@ router.post('/test', async (req: Request, res: Response) => {
       title: 'Test Notification',
       message: 'This is a test notification to verify the system is working correctly.',
       actionUrl: '/dashboard',
-      metadata: {
-        priority: 'normal',
-        category: 'system',
-      },
+      metadata: { priority: 'normal', category: 'system' },
     });
 
     if (typeof (global as any).broadcastNotification === 'function') {
@@ -519,14 +529,20 @@ router.post('/test', async (req: Request, res: Response) => {
       });
     }
 
+    const { notificationDispatcher } = await import('../services/notificationDispatcher.js');
+    const pushResult = await notificationDispatcher.sendTestToUser(req.user.id);
+
     return res.json({
       success: true,
       message: 'Test notification sent',
       notification,
+      push: pushResult,
       outcome: {
         type: 'delivered',
         success: true,
-        message: 'Test notification delivered',
+        message: pushResult.totalSent > 0
+          ? `Test delivered to ${pushResult.totalSent} device(s) via [${pushResult.channels.join(', ')}]`
+          : 'In-app notification sent (no push subscriptions registered)',
       },
     });
   } catch (error) {
@@ -535,37 +551,168 @@ router.post('/test', async (req: Request, res: Response) => {
   }
 });
 
+router.get('/push/status', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const { notificationDispatcher } = await import('../services/notificationDispatcher.js');
+    const { desktopPushService } = await import('../services/desktopPushService.js');
+    const { mobilePushService } = await import('../services/mobilePushService.js');
+
+    const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
+      desktopPushService.getSubscriptionBreakdown(req.user.id),
+      mobilePushService.getUserTokenStatus(req.user.id),
+      Promise.resolve(notificationDispatcher.getStatus()),
+    ]);
+
+    return res.json({
+      services: serviceStatus,
+      subscriptions: {
+        web: breakdown,
+        mobile: mobileStatus,
+      },
+    });
+  } catch (error) {
+    logger.error('Push status error:', error);
+    return res.status(500).json({ error: 'Failed to get push status' });
+  }
+});
+
+router.post('/mobile-tokens', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const { token, platform, deviceName, appVersion } = req.body;
+
+    if (!token) return res.status(400).json({ error: 'Device token is required' });
+    if (!['android', 'ios'].includes(platform)) {
+      return res.status(400).json({ error: 'Platform must be android or ios' });
+    }
+
+    const { mobilePushService } = await import('../services/mobilePushService.js');
+    await mobilePushService.registerToken(req.user.id, token, platform, deviceName, appVersion);
+
+    return res.json({
+      success: true,
+      outcome: {
+        type: 'push_permission_granted',
+        success: true,
+        message: `Mobile push registered for ${platform} device`,
+      },
+    });
+  } catch (error) {
+    logger.error('Mobile token register error:', error);
+    return res.status(500).json({ error: 'Failed to register mobile device token' });
+  }
+});
+
+router.delete('/mobile-tokens', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const { token } = req.body;
+    const { mobilePushService } = await import('../services/mobilePushService.js');
+
+    if (token) {
+      await mobilePushService.deactivateToken(token);
+    } else {
+      await mobilePushService.removeUserTokens(req.user.id);
+    }
+
+    return res.json({
+      success: true,
+      outcome: {
+        type: 'channel_toggled',
+        success: true,
+        message: token ? 'Mobile device unregistered' : 'All mobile devices unregistered',
+      },
+    });
+  } catch (error) {
+    logger.error('Mobile token remove error:', error);
+    return res.status(500).json({ error: 'Failed to remove mobile device token' });
+  }
+});
+
+router.get('/mobile-tokens', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+  try {
+    const { mobilePushService } = await import('../services/mobilePushService.js');
+    const status = await mobilePushService.getUserTokenStatus(req.user.id);
+    return res.json(status);
+  } catch (error) {
+    logger.error('Mobile tokens list error:', error);
+    return res.status(500).json({ error: 'Failed to list mobile device tokens' });
+  }
+});
+
 function getCategory(type: string): string {
   const categoryMap: Record<string, string> = {
+    // Collaboration
     collaboration_invite: 'collaboration',
     collaboration_accepted: 'collaboration',
     collaboration_declined: 'collaboration',
     collaboration_comment: 'collaboration',
     collaboration_mention: 'collaboration',
+    // Royalties
     payment_received: 'royalties',
     payout_completed: 'royalties',
     payout_failed: 'royalties',
+    payment_failed: 'royalties',
     royalty_statement_ready: 'royalties',
+    // Distribution
     release_milestone: 'distribution',
     release_live: 'distribution',
     release_rejected: 'distribution',
     release_submitted: 'distribution',
     release_processing: 'distribution',
     platform_update: 'distribution',
-    social_like: 'social_media',
-    social_comment: 'social_media',
-    social_share: 'social_media',
-    social_follow: 'social_media',
+    upload_complete: 'distribution',
+    stream_milestone: 'distribution',
+    ai_processing_complete: 'distribution',
+    // Social media (scheduling/publishing)
     social_post_scheduled: 'social_media',
     social_post_published: 'social_media',
-    social_engagement_alert: 'social_media',
+    social_token_expiring: 'account_security',
+    // Direct Interaction (likes, comments, follows, etc.)
+    social_like: 'direct_interaction',
+    social_comment: 'direct_interaction',
+    social_reply: 'direct_interaction',
+    social_mention: 'direct_interaction',
+    social_dm: 'direct_interaction',
+    social_follow: 'direct_interaction',
+    social_share: 'direct_interaction',
+    follower_milestone: 'engagement_summary',
+    // Platform Generated
+    platform_suggested_account: 'platform_generated',
+    platform_trending_topic: 'platform_generated',
+    platform_group_activity: 'platform_generated',
+    platform_event_invite: 'platform_generated',
+    platform_birthday_reminder: 'platform_generated',
+    // Content Based
+    content_new_post: 'content_based',
+    content_live_stream: 'content_based',
+    content_recommended: 'content_based',
+    // Engagement Summary
+    engagement_digest: 'engagement_summary',
+    engagement_milestone: 'engagement_summary',
+    engagement_story_reaction: 'engagement_summary',
+    social_engagement_alert: 'engagement_summary',
+    // Location Based
+    location_nearby_event: 'location_based',
+    location_trending_local: 'location_based',
+    // Marketplace
     marketplace_purchase: 'marketplace',
     marketplace_sale: 'marketplace',
     marketplace_review: 'marketplace',
     marketplace_offer: 'marketplace',
+    beat_play_milestone: 'marketplace',
+    // System
     system_announcement: 'system',
     system_maintenance: 'system',
     system_update: 'system',
+    storage_quota_warning: 'system',
+    promotion: 'system',
+    ad_campaign_created: 'system',
+    ad_campaign_milestone: 'system',
+    ad_campaign_optimized: 'system',
+    // Account Security
     security_new_login: 'account_security',
     security_password_changed: 'account_security',
     security_2fa_enabled: 'account_security',
@@ -573,10 +720,50 @@ function getCategory(type: string): string {
     security_suspicious_activity: 'account_security',
     account_verified: 'account_security',
     account_warning: 'account_security',
+    subscription_expiring: 'account_security',
+    subscription_renewed: 'account_security',
+    subscription_changed: 'account_security',
+    // Achievements
+    achievement_unlocked: 'achievements',
+    streak_milestone: 'achievements',
+    // Platform admin
+    admin_new_user: 'platform_admin',
+    admin_payment_issue: 'platform_admin',
+    admin_storage_critical: 'platform_admin',
+    admin_marketplace_review: 'platform_admin',
+    admin_user_report: 'platform_admin',
+    admin_revenue_milestone: 'platform_admin',
+    admin_health_alert: 'platform_admin',
+    admin_user_flagged: 'platform_admin',
+    admin_support_ticket: 'platform_admin',
   };
 
   return categoryMap[type] || 'system';
 }
+
+router.post('/push/silent', async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    const { reason = 'feed_refresh' } = req.body;
+    const validReasons = ['feed_refresh', 'message_sync', 'count_update'];
+    const safeReason = validReasons.includes(reason) ? reason : 'feed_refresh';
+
+    if (!webPushService.isReady()) {
+      return res.json({ success: false, message: 'Push not configured' });
+    }
+
+    const payload = buildSilentPayload(safeReason as any);
+    const result = await webPushService.sendRichToUser(req.user.id, payload);
+
+    return res.json({ success: true, sent: result.sent, reason: safeReason });
+  } catch (error) {
+    logger.error('Silent push error:', error);
+    return res.status(500).json({ error: 'Failed to send silent push' });
+  }
+});
 
 router.get('/unread-count', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;

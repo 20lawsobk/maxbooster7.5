@@ -23,6 +23,11 @@ import {
   AlertCircle,
   Trophy,
   LayoutDashboard,
+  Heart,
+  Flame,
+  FileText,
+  BarChart2,
+  MapPin,
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -106,15 +111,20 @@ const defaultPreferences: NotificationPreferencesType = {
 };
 
 const categoryIcons: Record<NotificationCategory, React.ElementType> = {
-  account_security: Shield,
-  distribution: Music2,
-  social_media: MessageSquare,
-  marketplace: ShoppingBag,
-  royalties: DollarSign,
-  collaboration: Users,
-  achievements: Trophy,
-  system: Megaphone,
-  platform_admin: LayoutDashboard,
+  account_security:   Shield,
+  distribution:       Music2,
+  social_media:       MessageSquare,
+  direct_interaction: Heart,
+  platform_generated: Flame,
+  content_based:      FileText,
+  engagement_summary: BarChart2,
+  location_based:     MapPin,
+  marketplace:        ShoppingBag,
+  royalties:          DollarSign,
+  collaboration:      Users,
+  achievements:       Trophy,
+  system:             Megaphone,
+  platform_admin:     LayoutDashboard,
 };
 
 const timezones = [

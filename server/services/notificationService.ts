@@ -4,6 +4,7 @@ import { notifications, users } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { webPushService } from './webPushService.js';
+import { buildPushPayload } from './pushNotificationTypes.js';
 
 interface NotificationOptions {
   userId: string;
@@ -83,7 +84,7 @@ class NotificationService {
       }
 
       if (shouldSendBrowser) {
-        await this.sendBrowserNotification(user, title, message, link);
+        await this.sendBrowserNotification(user, title, message, link, type, metadata);
       }
 
       // Broadcast notification via WebSocket for real-time updates
@@ -131,21 +132,53 @@ class NotificationService {
     user: unknown,
     title: string,
     message: string,
-    link?: string
+    link?: string,
+    type?: string,
+    metadata?: any
   ): Promise<void> {
     try {
       if (!webPushService.isReady()) {
         logger.info('Web Push not ready, skipping push notification');
         return;
       }
-      const result = await webPushService.sendToUser((user as any).id, {
-        title,
-        body: message,
-        url: link || '/',
-        tag: `notification-${Date.now()}`,
-      });
+
+      let richPayload;
+      if (type) {
+        const ctx = {
+          actorName: metadata?.actorName,
+          contentTitle: metadata?.contentTitle || title,
+          contentPreview: metadata?.contentPreview || message,
+          platform: metadata?.platform,
+          url: link,
+          imageUrl: metadata?.imageUrl,
+          location: metadata?.location,
+          count: metadata?.count,
+          milestone: metadata?.milestone,
+          amount: metadata?.amount,
+        };
+        richPayload = buildPushPayload(type, ctx);
+      } else {
+        richPayload = {
+          title,
+          body: message,
+          url: link || '/',
+          icon: '/icons/icon-192x192.png',
+          badge: '/icons/icon-72x72.png',
+          tag: `notification-${Date.now()}`,
+          category: 'system',
+          actions: [{ action: 'open', title: 'Open' }, { action: 'dismiss', title: 'Dismiss' }],
+          silent: false,
+          requireInteraction: false,
+          renotify: false,
+          vibrate: [100, 50, 100],
+          data: { url: link || '/' },
+          timestamp: Date.now(),
+        };
+      }
+
+      const result = await webPushService.sendRichToUser((user as any).id, richPayload as any);
       if (result.sent > 0) {
-        logger.info(`🔔 Push notification delivered to ${result.sent} device(s)`);
+        logger.info(`🔔 Push notification [${type || 'generic'}] delivered to ${result.sent} device(s)`);
       }
     } catch (error) {
       logger.error('Failed to send push notification:', error);

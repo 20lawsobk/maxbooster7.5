@@ -1893,6 +1893,27 @@ export async function registerRoutes(
     }
   });
 
+  // Mobile Device Tokens: Remove (must be before /:id wildcard)
+  app.delete("/api/notifications/mobile-tokens", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { token } = req.body;
+      const { mobilePushService } = await import('./services/mobilePushService.js');
+      if (token) {
+        await mobilePushService.deactivateToken(token);
+      } else {
+        await mobilePushService.removeUserTokens(req.user.id);
+      }
+      return res.json({
+        success: true,
+        outcome: { type: 'channel_toggled', success: true, message: token ? 'Mobile device unregistered' : 'All mobile devices unregistered' },
+      });
+    } catch (error) {
+      logger.error('Mobile token remove error:', error);
+      return res.status(500).json({ error: 'Failed to remove mobile device token' });
+    }
+  });
+
   // Notifications: Delete notification
   app.delete("/api/notifications/:id", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -2146,23 +2167,96 @@ export async function registerRoutes(
     }
   });
 
-  // Push Notifications: Send test push
+  // Push Notifications: Send test push (all channels)
   app.post("/api/notifications/push-test", async (req: Request, res: Response) => {
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { webPushService } = await import('./services/webPushService.ts');
-      const result = await webPushService.sendToUser(req.user.id, {
-        title: 'Max Booster',
-        body: 'Push notifications are working! You will receive alerts about releases, sales, and more.',
-        url: '/dashboard',
-        tag: 'test-notification',
+      const { notificationDispatcher } = await import('./services/notificationDispatcher.js');
+      const result = await notificationDispatcher.sendTestToUser(req.user.id);
+      return res.json({
+        success: true,
+        push: result,
+        message: result.totalSent > 0
+          ? `Test push sent to ${result.totalSent} device(s) via [${result.channels.join(', ')}]`
+          : 'No push subscriptions registered',
       });
-      return res.json({ success: true, ...result });
     } catch (error) {
       logger.error("Test push notification error:", error);
       return res.status(500).json({ message: "Failed to send test push notification" });
+    }
+  });
+
+  // Push Notifications: Enhanced multi-channel status
+  app.get("/api/notifications/push/status", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { notificationDispatcher } = await import('./services/notificationDispatcher.js');
+      const { desktopPushService } = await import('./services/desktopPushService.js');
+      const { mobilePushService } = await import('./services/mobilePushService.js');
+      const [breakdown, mobileStatus, serviceStatus] = await Promise.all([
+        desktopPushService.getSubscriptionBreakdown(req.user.id),
+        mobilePushService.getUserTokenStatus(req.user.id),
+        Promise.resolve(notificationDispatcher.getStatus()),
+      ]);
+      return res.json({ services: serviceStatus, subscriptions: { web: breakdown, mobile: mobileStatus } });
+    } catch (error) {
+      logger.error("Push status error:", error);
+      return res.status(500).json({ error: 'Failed to get push status' });
+    }
+  });
+
+  // Mobile Device Tokens: Register FCM/APNs token
+  app.post("/api/notifications/mobile-tokens", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { token, platform, deviceName, appVersion } = req.body;
+      if (!token) return res.status(400).json({ error: 'Device token is required' });
+      if (!['android', 'ios'].includes(platform)) {
+        return res.status(400).json({ error: 'Platform must be android or ios' });
+      }
+      const { mobilePushService } = await import('./services/mobilePushService.js');
+      await mobilePushService.registerToken(req.user.id, token, platform, deviceName, appVersion);
+      return res.json({
+        success: true,
+        outcome: {
+          type: 'push_permission_granted',
+          success: true,
+          message: `Mobile push registered for ${platform} device`,
+        },
+      });
+    } catch (error) {
+      logger.error('Mobile token register error:', error);
+      return res.status(500).json({ error: 'Failed to register mobile device token' });
+    }
+  });
+
+  // Mobile Device Tokens: Get list
+  app.get("/api/notifications/mobile-tokens", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { mobilePushService } = await import('./services/mobilePushService.js');
+      const status = await mobilePushService.getUserTokenStatus(req.user.id);
+      return res.json(status);
+    } catch (error) {
+      logger.error('Mobile tokens list error:', error);
+      return res.status(500).json({ error: 'Failed to list mobile device tokens' });
+    }
+  });
+
+
+  // Push Notifications: Silent push (background sync)
+  app.post("/api/notifications/push/silent", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const { reason = 'feed_refresh' } = req.body;
+      const { notificationDispatcher } = await import('./services/notificationDispatcher.js');
+      const result = await notificationDispatcher.dispatchSilent(req.user.id, reason);
+      return res.json({ success: true, ...result });
+    } catch (error) {
+      logger.error('Silent push error:', error);
+      return res.status(500).json({ error: 'Failed to send silent push' });
     }
   });
 
