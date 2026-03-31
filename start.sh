@@ -7,9 +7,9 @@ set -e
 # ── 1. Locate node ────────────────────────────────────────────────────────────
 # Strategy (in order):
 #   a) node already in PATH (dev / repl environment)
-#   b) Replit's available-pid2-node-paths helper (deployment — returns exact paths)
-#   c) Known deterministic Nix store paths for Node.js 22.x on stable-25_05
-#   d) Standard Linux binary dirs
+#   b) .node_bin_dir written by build.sh — most reliable (same Nix store, same hashes)
+#   c) Replit's available-pid2-node-paths helper (deployment — returns exact paths)
+#   d) Known deterministic Nix store paths for Node.js 22.x on stable-25_05
 #   e) Brute-force find in /nix/store as a last resort
 
 # Replit-provided helper that prints the canonical node binary path(s)
@@ -19,7 +19,17 @@ _locate_node() {
   # a) Already in PATH
   if command -v node &>/dev/null; then return 0; fi
 
-  # b) Replit deployment helper
+  # b) Read the node path saved by build.sh at build time
+  #    (most reliable — build and run containers share the same Nix store)
+  if [ -f ".node_bin_dir" ]; then
+    _saved_dir=$(cat .node_bin_dir)
+    if [ -n "$_saved_dir" ] && [ -x "$_saved_dir/node" ]; then
+      export PATH="$_saved_dir:$PATH"
+      return 0
+    fi
+  fi
+
+  # c) Replit deployment helper
   local _helper=""
   if command -v available-pid2-node-paths &>/dev/null; then
     _helper="available-pid2-node-paths"
@@ -35,7 +45,7 @@ _locate_node() {
     done < <("$_helper" 2>/dev/null)
   fi
 
-  # c) Known deterministic Nix store paths (content-addressed — same on any machine
+  # d) Known deterministic Nix store paths (content-addressed — same on any machine
   #    using the same nixpkgs input, so safe to hardcode as high-priority fallbacks)
   for _dir in \
     /nix/store/bl6iwirn83qj9r8wng43kfdqd5mfahj8-nodejs-22.22.0/bin \
@@ -52,7 +62,7 @@ _locate_node() {
     fi
   done
 
-  # d) Last resort: brute-force scan — exclude wrappers (symlinks that re-exec npm/npx)
+  # e) Last resort: brute-force scan — exclude wrappers (symlinks that re-exec npm/npx)
   local _found
   _found=$(find /nix/store -maxdepth 5 -name "node" -type f -executable 2>/dev/null \
     | grep -v "wrapped\|wrapper" | head -1)

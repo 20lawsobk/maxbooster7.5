@@ -1,6 +1,34 @@
 #!/bin/bash
 set -e
 
+# ─── Save node binary location for start.sh ──────────────────────────────────
+# The build container always has node in PATH. Write its exact directory to
+# .node_bin_dir so start.sh can reliably find node in the runtime container
+# even if $PATH differs between build and run containers.
+# Prefer the unwrapped binary (pid2 paths) over the wrapper shim — the wrapper
+# relies on build-env vars that may not exist in the runtime container.
+{
+  # 1. Try Replit's pid2 helper — returns unwrapped node paths (preferred)
+  if command -v available-pid2-node-paths &>/dev/null; then
+    _PID2_NODE=$(available-pid2-node-paths 2>/dev/null | head -1)
+    if [ -n "$_PID2_NODE" ] && [ -x "$_PID2_NODE" ]; then
+      echo "$(dirname "$_PID2_NODE")" > .node_bin_dir
+      echo "==> node path saved (unwrapped pid2): $_PID2_NODE"
+      _NODE_BIN="$_PID2_NODE"
+    fi
+  fi
+  # 2. Fall back to whatever node is in PATH (may be the wrapper shim)
+  if [ -z "${_NODE_BIN:-}" ]; then
+    _NODE_BIN=$(command -v node 2>/dev/null)
+    if [ -n "$_NODE_BIN" ]; then
+      echo "$(dirname "$_NODE_BIN")" > .node_bin_dir
+      echo "==> node path saved (PATH): $_NODE_BIN"
+    else
+      echo "==> WARNING: node not found during build — .node_bin_dir not written"
+    fi
+  fi
+}
+
 # ─────────────────────────────────────────────────────────────────────────────
 # FAST PATH vs SLOW PATH
 #
