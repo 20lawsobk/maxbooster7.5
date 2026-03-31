@@ -8,18 +8,38 @@ set -e
 # Prefer the unwrapped binary (pid2 paths) over the wrapper shim — the wrapper
 # relies on build-env vars that may not exist in the runtime container.
 {
+  _NODE_BIN=""
   # 1. Try Replit's pid2 helper — returns unwrapped node paths (preferred)
+  _HELPER=""
   if command -v available-pid2-node-paths &>/dev/null; then
-    _PID2_NODE=$(available-pid2-node-paths 2>/dev/null | head -1)
+    _HELPER="available-pid2-node-paths"
+  else
+    for _h in /nix/store/*-replit-runtime-path/bin/available-pid2-node-paths; do
+      [ -x "$_h" ] && { _HELPER="$_h"; break; }
+    done
+  fi
+  if [ -n "$_HELPER" ]; then
+    _PID2_NODE=$("$_HELPER" 2>/dev/null | head -1 || true)
     if [ -n "$_PID2_NODE" ] && [ -x "$_PID2_NODE" ]; then
       echo "$(dirname "$_PID2_NODE")" > .node_bin_dir
       echo "==> node path saved (unwrapped pid2): $_PID2_NODE"
       _NODE_BIN="$_PID2_NODE"
     fi
   fi
-  # 2. Fall back to whatever node is in PATH (may be the wrapper shim)
-  if [ -z "${_NODE_BIN:-}" ]; then
-    _NODE_BIN=$(command -v node 2>/dev/null)
+  # 2. Glob: any nodejs-22 in the Nix store (hash-independent, fast)
+  if [ -z "$_NODE_BIN" ]; then
+    for _d in /nix/store/*-nodejs-22*/bin /nix/store/*-nodejs-*/bin; do
+      if [ -x "$_d/node" ]; then
+        echo "$_d" > .node_bin_dir
+        echo "==> node path saved (glob): $_d/node"
+        _NODE_BIN="$_d/node"
+        break
+      fi
+    done
+  fi
+  # 3. Fall back to whatever node is in PATH
+  if [ -z "$_NODE_BIN" ]; then
+    _NODE_BIN=$(command -v node 2>/dev/null || true)
     if [ -n "$_NODE_BIN" ]; then
       echo "$(dirname "$_NODE_BIN")" > .node_bin_dir
       echo "==> node path saved (PATH): $_NODE_BIN"
