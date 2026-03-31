@@ -34,7 +34,19 @@ fi
 
 echo "[start.sh] node: $(command -v node) ($(node --version))"
 
-# ── 2. Start boosterstate sidecar ────────────────────────────────────────────
+# ── 2. Activate Python virtual environment ────────────────────────────────────
+# Prepend .venv/bin to PATH so python3 and all installed packages (numpy,
+# pillow, etc.) resolve from the project-local venv created by build.sh,
+# never from the read-only Nix store.
+if [ -d ".venv/bin" ]; then
+  export PATH="$(pwd)/.venv/bin:$PATH"
+  export VIRTUAL_ENV="$(pwd)/.venv"
+  echo "[start.sh] Python venv activated: $(python3 --version 2>&1)"
+else
+  echo "[start.sh] WARNING: .venv not found — Python scripts may use system packages"
+fi
+
+# ── 3. Start boosterstate sidecar ────────────────────────────────────────────
 # BOOSTERSTATE_PORT may equal PORT (5000) in the one-port configuration — clients
 # reach the sidecar via the /api/boosterstate Express proxy.  The binary itself
 # must always bind to an internal port that does not conflict with the main app.
@@ -51,7 +63,7 @@ else
   echo "[start.sh] boosterstate already running"
 fi
 
-# ── 3. Launch the cluster ─────────────────────────────────────────────────────
+# ── 4. Launch the cluster ─────────────────────────────────────────────────────
 export UV_THREADPOOL_SIZE="${UV_THREADPOOL_SIZE:-8}"
 export TF_NUM_INTEROP_THREADS="${TF_NUM_INTEROP_THREADS:-2}"
 export TF_NUM_INTRAOP_THREADS="${TF_NUM_INTRAOP_THREADS:-2}"

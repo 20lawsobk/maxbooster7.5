@@ -226,8 +226,44 @@ echo "   Removed: changelog/readme files inside node_modules"
 
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 
-# .pythonlibs — do NOT strip. All Python packages are required for production
-# functionality (AI inference, audio processing, scientific computing, etc.).
+# ─── Python virtual environment ──────────────────────────────────────────────
+# The Nix store (/nix/store/...) is READ-ONLY in the deployment build container.
+# UV must not try to install packages there. We create a project-local .venv
+# so all Python packages land in a writable directory inside the project root.
+# UV_PROJECT_ENVIRONMENT tells UV 0.9+ to use this venv for all operations.
+echo "==> Setting up Python virtual environment in .venv/ ..."
+export UV_PROJECT_ENVIRONMENT=".venv"
+
+# Locate a system python3 binary (Nix or fallback)
+_PYTHON3=""
+for _p in \
+  /nix/var/nix/profiles/default/bin/python3 \
+  /home/runner/.nix-profile/bin/python3 \
+  /usr/bin/python3 \
+  python3; do
+  if command -v "$_p" &>/dev/null 2>&1; then
+    _PYTHON3="$_p"
+    break
+  fi
+done
+
+if [ -n "$_PYTHON3" ] && command -v uv &>/dev/null 2>&1; then
+  # Create the virtual environment if it doesn't already exist
+  if [ ! -x ".venv/bin/python" ] && [ ! -x ".venv/bin/python3" ]; then
+    uv venv .venv --python "$_PYTHON3" 2>/dev/null || uv venv .venv 2>/dev/null || true
+  fi
+
+  # Install required Python packages into the local venv
+  if [ -x ".venv/bin/python3" ] || [ -x ".venv/bin/python" ]; then
+    _VENV_PY=$([ -x ".venv/bin/python3" ] && echo ".venv/bin/python3" || echo ".venv/bin/python")
+    uv pip install --python "$_VENV_PY" numpy pillow 2>/dev/null || true
+    echo "   Python venv ready: $($_VENV_PY --version 2>&1) with numpy + pillow"
+  else
+    echo "   WARNING: could not create .venv — Python scripts may fail"
+  fi
+else
+  echo "   WARNING: uv or python3 not found — skipping venv setup"
+fi
 
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────
 # Vite's vite-plugin-compression generates .gz and .br variants of every JS/CSS

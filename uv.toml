@@ -1,0 +1,9 @@
+# UV configuration — project-level settings.
+# The virtual environment is created in .venv/ by build.sh via
+# UV_PROJECT_ENVIRONMENT=.venv so UV never writes to the read-only Nix store.
+
+# Only download Python if no system python is found (keep Nix python).
+python-preference = "only-system"
+
+# Do not auto-download Python interpreters.
+python-downloads = "never"
