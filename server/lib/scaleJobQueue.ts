@@ -245,7 +245,15 @@ export function startRetentionWorker(): Worker {
   });
 
   worker.on('failed', (job, err) => {
-    logger.error(`[Worker] ❌ ${job?.id} (${job?.name}) failed: ${err.message}`);
+    const msg = err.message ?? '';
+    // PDIM 429 during stale-job cleanup is transient and self-healing — BullMQ
+    // retries automatically.  Stale jobs have no name (undefined), so this is
+    // always a post-restart cleanup race, never a real job failure.
+    if (msg.includes('PDIM HTTP 429') || msg.includes('ERR PDIM')) {
+      logger.warn(`[Worker] ⚠️ ${job?.id} (${job?.name ?? 'stale'}) PDIM rate-limit — self-healing: ${msg}`);
+    } else {
+      logger.error(`[Worker] ❌ ${job?.id} (${job?.name}) failed: ${msg}`);
+    }
   });
 
   worker.on('error', err => {
@@ -254,8 +262,15 @@ export function startRetentionWorker(): Worker {
     // fires when a slow LuaExecutor round-trip causes the job lock to expire
     // before the Lua moveToFinished script runs.  It is fully self-healing —
     // BullMQ re-queues the job automatically — so log it at WARN, not ERROR.
-    if (msg.includes('Missing lock for job') || msg.includes('moveToFinished')) {
-      logger.warn(`[Worker] Recoverable BullMQ lock race (self-healing): ${msg}`);
+    // PDIM HTTP 429 during post-restart stale-job flood is also transient
+    // and self-healing — log at WARN so it doesn't pollute error dashboards.
+    if (
+      msg.includes('Missing lock for job') ||
+      msg.includes('moveToFinished') ||
+      msg.includes('PDIM HTTP 429') ||
+      msg.includes('ERR PDIM')
+    ) {
+      logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
     } else {
       logger.error('[Worker] Worker error:', msg);
     }

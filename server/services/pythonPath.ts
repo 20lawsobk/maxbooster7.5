@@ -36,9 +36,8 @@ export const PYTHON: string = resolved ?? 'python3';
 export const PYTHON_AVAILABLE: boolean = resolved !== null;
 
 if (!PYTHON_AVAILABLE) {
-  process.stderr.write(
-    '[Python] python3 not found in PATH — video/audio analysis features will be unavailable. ' +
-    'Install Python 3.11 and run: python3 -m venv .venv && .venv/bin/pip install numpy Pillow\n'
+  process.stdout.write(
+    '[Python] python3 not available — video/audio analysis features disabled (non-fatal, expected in production)\n'
   );
 }
 

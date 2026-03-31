@@ -24,7 +24,7 @@ import { spawnSync, spawn } from 'child_process';
 
   const bin = path.join(process.cwd(), 'boosterstate', 'target', 'release', 'boosterstate');
   if (!fs.existsSync(bin)) {
-    console.warn('[Cluster] boosterstate binary not found — skipping sidecar startup');
+    console.log('[Cluster] boosterstate binary not found — skipping sidecar startup');
     return;
   }
   const already = spawnSync('pgrep', ['-x', 'boosterstate'], { stdio: 'ignore' }).status === 0;
