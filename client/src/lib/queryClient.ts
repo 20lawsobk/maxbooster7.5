@@ -588,6 +588,12 @@ export const queryClient = new QueryClient({
       if ((query.options as any)?.meta?.silentError) return;
       const apiError = error as ApiError & { userMessage?: string; status?: number };
       if (apiError.status === 401 || apiError.status === 403) return;
+      // Suppress toast for background refetch failures — the query already has
+      // stale data displayed and re-showing a red banner while the user is
+      // typing/pasting is disruptive and misleading.  Only surface the error
+      // when there is NO prior successful data (i.e. initial load failed).
+      const hasExistingData = query.state.dataUpdatedAt > 0;
+      if (hasExistingData) return;
       const message =
         apiError.userMessage ||
         error.message ||

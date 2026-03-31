@@ -229,6 +229,7 @@ function DashboardContent({ user }: { user: any }) {
     queryKey: ['/api/dashboard/comprehensive'],
     refetchInterval: 30000, // Refresh every 30 seconds
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
+    meta: { silentError: true }, // Background polls must never show a red banner
   });
 
   const { data: projectsData, isLoading: projectsLoading } = useQuery({

@@ -1746,7 +1746,7 @@ export async function registerRoutes(
         db.select({ total: sum(socialAccounts.followerCount) }).from(socialAccounts).where(and(eq(socialAccounts.userId, userId), eq(socialAccounts.isActive, true))),
         db.select({ total: sum(analytics.revenue) }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo))),
         db.select({ total: sum(analytics.revenue) }).from(analytics).where(and(eq(analytics.userId, userId), gte(analytics.date, sixtyDaysAgo), sql`${analytics.date} < ${thirtyDaysAgo}`)),
-        storage.getNotifications(userId),
+        storage.getNotifications(userId).catch(() => []),
         db.select().from(releases).where(and(eq(releases.userId, userId), sql`${releases.releaseDate} > NOW()`)).orderBy(releases.releaseDate).limit(5),
       ]);
 
