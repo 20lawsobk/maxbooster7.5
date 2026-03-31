@@ -5,10 +5,19 @@
  *   - Android devices via FCM (Firebase Cloud Messaging) HTTP v1 API
  *   - iOS devices via APNs routed through FCM
  *
- * Activation: set the following env vars
- *   FCM_PROJECT_ID             — Firebase project ID
- *   FCM_SERVICE_ACCOUNT_KEY    — Full JSON service-account key (stringified)
- *   or FCM_SERVER_KEY          — Legacy FCM server key (fallback)
+ * Activation: set ONE of the following env var combinations
+ *
+ *   Option A (full JSON):
+ *     FCM_PROJECT_ID             — Firebase project ID
+ *     FCM_SERVICE_ACCOUNT_KEY    — Full JSON service-account key (stringified)
+ *
+ *   Option B (individual parts — easier to paste):
+ *     FCM_PROJECT_ID             — Firebase project ID  (e.g. max-booster-6808c)
+ *     FCM_SERVICE_ACCOUNT_KEY    — Raw private key PEM or base64 body only
+ *     FCM_CLIENT_EMAIL           — Service account email from Firebase Console
+ *
+ *   Option C (legacy):
+ *     FCM_SERVER_KEY             — Legacy FCM server key (Cloud Messaging tab)
  *
  * If no credentials are present the service starts in "unavailable" mode and
  * all calls return { sent: 0, failed: 0 } silently.
