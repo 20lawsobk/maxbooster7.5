@@ -90,12 +90,20 @@ export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
 # ── 2. Activate Python virtual environment ────────────────────────────────────
-if [ -d ".venv/bin" ]; then
+# Use the explicit .venv/bin/python3 path — NEVER bare 'python3' which may
+# invoke the Replit python-wrapper (a Go binary) that panics when Python is
+# not configured in the minimal run container.
+_VENV_PY="$(pwd)/.venv/bin/python3"
+if [ -f "$_VENV_PY" ] && "$_VENV_PY" --version >/dev/null 2>&1; then
   export PATH="$(pwd)/.venv/bin:$PATH"
   export VIRTUAL_ENV="$(pwd)/.venv"
-  echo "[start.sh] Python venv activated: $(python3 --version 2>&1)"
+  echo "[start.sh] Python venv activated: $("$_VENV_PY" --version 2>&1)"
+elif [ -f "$(pwd)/.venv/bin/python" ] && "$(pwd)/.venv/bin/python" --version >/dev/null 2>&1; then
+  export PATH="$(pwd)/.venv/bin:$PATH"
+  export VIRTUAL_ENV="$(pwd)/.venv"
+  echo "[start.sh] Python venv activated (python): $($(pwd)/.venv/bin/python --version 2>&1)"
 else
-  echo "[start.sh] WARNING: .venv not found — Python scripts may use system packages"
+  echo "[start.sh] WARNING: .venv Python not functional — Python features disabled (video/audio analysis unavailable)"
 fi
 
 # ── 3. Start boosterstate sidecar ────────────────────────────────────────────

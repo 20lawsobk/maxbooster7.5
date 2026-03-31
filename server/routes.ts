@@ -4106,7 +4106,7 @@ export async function registerRoutes(
 
   function getStableBuildId(): string {
     try {
-      return execSync('git rev-parse --short HEAD', { timeout: 3000 }).toString().trim();
+      return execSync('git rev-parse --short HEAD', { stdio: 'pipe', timeout: 3000 }).toString().trim();
     } catch {
       try {
         const pkg = JSON.parse(fs.readFileSync('./package.json', 'utf8'));

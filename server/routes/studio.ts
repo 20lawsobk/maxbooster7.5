@@ -253,7 +253,7 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
     }
 
     // Query DB for samples. If DB has results, use them. If empty, serve built-in library.
-    const dbSamples = await db
+    let dbSamples = await db
       .select()
       .from(studioSamples)
       .where(and(...conditions))
