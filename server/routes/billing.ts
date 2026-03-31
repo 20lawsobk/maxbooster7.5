@@ -581,8 +581,9 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       .where(eq(users.id, userId))
       .limit(1);
     
+    // No Stripe customer yet — user has no billing history
     if (!user?.stripeCustomerId || !stripe) {
-      res.status(500).json({ error: 'Internal server error' });
+      return res.json([]);
     }
     
     try {
@@ -604,9 +605,8 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       return res.json(history);
     } catch (err) {
       logger.warn('[Billing] Failed to fetch invoices:', err);
+      return res.json([]);
     }
-    
-    res.status(500).json({ error: 'Internal server error' });
   } catch (error) {
     logger.error('[Billing] Failed to get billing history:', error);
     res.status(500).json({ error: 'Failed to get billing history' });
