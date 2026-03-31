@@ -152,6 +152,7 @@ export function AutonomousDashboard() {
   const { data: autopilotData, isLoading: statusLoading, error: statusError } = useQuery({
     queryKey: ['/api/advertising/status'],
     refetchInterval: 30000,
+    meta: { silentError: true },
   });
 
   useEffect(() => {

@@ -236,11 +236,11 @@ router.get('/weekly-stats', requireAuth, async (req: AuthenticatedRequest, res: 
 router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const insights = await storage.getSocialAIInsights?.(userId) || [];
+    const insights = await (storage.getSocialAIInsights?.(userId) ?? Promise.resolve([])).catch(() => []);
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get AI insights:', error);
-    res.status(500).json({ error: 'Failed to get AI insights:' });
+    res.json([]);
   }
 });
 

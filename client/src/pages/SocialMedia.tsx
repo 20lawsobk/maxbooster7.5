@@ -603,6 +603,7 @@ export default function SocialMedia() {
   const { data: aiInsights, isLoading: aiInsightsLoading } = useQuery<AIInsightsData>({
     queryKey: ['/api/social/ai-insights'],
     enabled: !!user,
+    meta: { silentError: true },
   });
 
   const { data: activity = [], isLoading: activityLoading } = useQuery<ActivityItem[]>({
@@ -1017,7 +1018,8 @@ export default function SocialMedia() {
   const { data: autopilotStatus, isLoading: autopilotLoading } = useQuery<AutopilotStatus>({
     queryKey: ['/api/autopilot/status'],
     enabled: !!user,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
+    meta: { silentError: true },
   });
 
   const configureAutopilotMutation = useMutation({

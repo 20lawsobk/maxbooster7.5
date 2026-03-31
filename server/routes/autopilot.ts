@@ -33,12 +33,26 @@ const autopilotConfigSchema = z.object({
 router.get('/status', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
-    const config = await storage.getAutopilotConfig(userId);
-    
-    const socialModel = await aiModelManager.getSocialAutopilot(userId);
-    const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
-    
+
+    const config = await storage.getAutopilotConfig(userId).catch(() => null);
+
+    let socialTrained = false, socialVersion = '1.0.0';
+    let advertisingTrained = false, advertisingVersion = '1.0.0';
+    try {
+      const socialModel = await aiModelManager.getSocialAutopilot(userId);
+      socialTrained = socialModel.getIsTrained();
+      socialVersion = socialModel.getVersion();
+    } catch (e) {
+      logger.warn('getSocialAutopilot unavailable, using defaults:', e);
+    }
+    try {
+      const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
+      advertisingTrained = advertisingModel.getIsTrained();
+      advertisingVersion = advertisingModel.getVersion();
+    } catch (e) {
+      logger.warn('getAdvertisingAutopilot unavailable, using defaults:', e);
+    }
+
     res.json({
       isRunning: config?.enabled || false,
       config: config || {
@@ -53,14 +67,8 @@ router.get('/status', requireAuth, async (req, res) => {
         minConfidenceThreshold: 0.70,
       },
       modelStatus: {
-        social: {
-          trained: socialModel.getIsTrained(),
-          version: socialModel.getVersion(),
-        },
-        advertising: {
-          trained: advertisingModel.getIsTrained(),
-          version: advertisingModel.getVersion(),
-        },
+        social: { trained: socialTrained, version: socialVersion },
+        advertising: { trained: advertisingTrained, version: advertisingVersion },
       },
     });
   } catch (error) {

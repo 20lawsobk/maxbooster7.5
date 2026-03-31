@@ -450,6 +450,7 @@ export default function Advertisement() {
     queryKey: ['/api/autopilot/status'],
     enabled: !!user,
     refetchInterval: 30000,
+    meta: { silentError: true },
   });
 
   if (authLoading) {

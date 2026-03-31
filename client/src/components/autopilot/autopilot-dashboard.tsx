@@ -133,6 +133,7 @@ export function AutopilotDashboard() {
   const { data: autopilotData, isLoading: statusLoading, error: statusError } = useQuery({
     queryKey: ['/api/autopilot/status'],
     refetchInterval: 30000,
+    meta: { silentError: true },
   });
 
   useEffect(() => {
