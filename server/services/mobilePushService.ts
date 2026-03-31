@@ -94,16 +94,45 @@ class MobilePushService {
     const projectId = process.env.FCM_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
     const serviceAccountRaw = process.env.FCM_SERVICE_ACCOUNT_KEY || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     const serverKey = process.env.FCM_SERVER_KEY || process.env.FIREBASE_SERVER_KEY;
+    const clientEmail = process.env.FCM_CLIENT_EMAIL;
 
     if (projectId && serviceAccountRaw) {
+      // Option A: full JSON service account file
       try {
-        this.serviceAccountKey = JSON.parse(serviceAccountRaw);
+        const parsed = JSON.parse(serviceAccountRaw);
+        this.serviceAccountKey = parsed;
         this.projectId = projectId;
         this.mode = 'fcm_v1';
-        logger.info('📱 Mobile Push Service: FCM v1 API ready');
+        logger.info('📱 Mobile Push Service: FCM v1 API ready (full JSON)');
         return;
       } catch {
-        logger.error('📱 Mobile Push Service: Failed to parse FCM service account key');
+        // Not JSON — try Option B: raw private key + FCM_CLIENT_EMAIL
+      }
+
+      // Option B: raw private key (PEM or base64 body) + FCM_CLIENT_EMAIL
+      if (clientEmail) {
+        try {
+          // Normalise the raw key: strip leading junk chars, wrap in PEM headers if missing
+          let rawKey = serviceAccountRaw.trim().replace(/^[^-M]+/, ''); // strip leading garbage
+          if (!rawKey.startsWith('-----')) {
+            rawKey = `-----BEGIN PRIVATE KEY-----\n${rawKey}\n-----END PRIVATE KEY-----\n`;
+          }
+          this.serviceAccountKey = {
+            type: 'service_account',
+            project_id: projectId,
+            private_key: rawKey,
+            client_email: clientEmail,
+            token_uri: 'https://oauth2.googleapis.com/token',
+          } as Record<string, string>;
+          this.projectId = projectId;
+          this.mode = 'fcm_v1';
+          logger.info('📱 Mobile Push Service: FCM v1 API ready (raw key + email)');
+          return;
+        } catch (err) {
+          logger.error('📱 Mobile Push Service: Failed to reconstruct service account from raw key', err);
+        }
+      } else {
+        logger.warn('📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode');
       }
     }
 
@@ -114,7 +143,7 @@ class MobilePushService {
       return;
     }
 
-    logger.info('📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY to activate.');
+    logger.info('📱 Mobile Push Service: No credentials configured — mobile push unavailable. Set FCM_PROJECT_ID + FCM_SERVICE_ACCOUNT_KEY (+ FCM_CLIENT_EMAIL for raw key) to activate.');
   }
 
   isReady(): boolean {
