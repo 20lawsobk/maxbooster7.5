@@ -5,29 +5,66 @@
 set -e
 
 # ── 1. Locate node ────────────────────────────────────────────────────────────
-# Try stable profile paths first, then fall back to a find in the Nix store.
-for _dir in \
-  /nix/var/nix/profiles/default/bin \
-  /home/runner/.nix-profile/bin \
-  /root/.nix-profile/bin \
-  /usr/local/bin \
-  /usr/bin \
-  /bin; do
-  if [ -x "$_dir/node" ]; then
-    export PATH="$_dir:$PATH"
-    break
-  fi
-done
+# Strategy (in order):
+#   a) node already in PATH (dev / repl environment)
+#   b) Replit's available-pid2-node-paths helper (deployment — returns exact paths)
+#   c) Known deterministic Nix store paths for Node.js 22.x on stable-25_05
+#   d) Standard Linux binary dirs
+#   e) Brute-force find in /nix/store as a last resort
 
-if ! command -v node &>/dev/null; then
-  # Last resort: scan the Nix store for a node binary.
-  _found=$(find /nix/store -maxdepth 4 -name "node" -type f -executable 2>/dev/null | head -1)
+# Replit-provided helper that prints the canonical node binary path(s)
+_PID2_HELPER="/nix/store/hf82lxy09dr6mxizcyksjjjsn6szd1ba-replit-runtime-path/bin/available-pid2-node-paths"
+
+_locate_node() {
+  # a) Already in PATH
+  if command -v node &>/dev/null; then return 0; fi
+
+  # b) Replit deployment helper
+  local _helper=""
+  if command -v available-pid2-node-paths &>/dev/null; then
+    _helper="available-pid2-node-paths"
+  elif [ -x "$_PID2_HELPER" ]; then
+    _helper="$_PID2_HELPER"
+  fi
+  if [ -n "$_helper" ]; then
+    while IFS= read -r _candidate; do
+      if [ -x "$_candidate" ]; then
+        export PATH="$(dirname "$_candidate"):$PATH"
+        return 0
+      fi
+    done < <("$_helper" 2>/dev/null)
+  fi
+
+  # c) Known deterministic Nix store paths (content-addressed — same on any machine
+  #    using the same nixpkgs input, so safe to hardcode as high-priority fallbacks)
+  for _dir in \
+    /nix/store/bl6iwirn83qj9r8wng43kfdqd5mfahj8-nodejs-22.22.0/bin \
+    /nix/store/nvf9kaarb9kqqdbygl9cbzhli1y8yjik-nodejs-22.20.0/bin \
+    /nix/var/nix/profiles/default/bin \
+    /home/runner/.nix-profile/bin \
+    /root/.nix-profile/bin \
+    /usr/local/bin \
+    /usr/bin \
+    /bin; do
+    if [ -x "$_dir/node" ]; then
+      export PATH="$_dir:$PATH"
+      return 0
+    fi
+  done
+
+  # d) Last resort: brute-force scan — exclude wrappers (symlinks that re-exec npm/npx)
+  local _found
+  _found=$(find /nix/store -maxdepth 5 -name "node" -type f -executable 2>/dev/null \
+    | grep -v "wrapped\|wrapper" | head -1)
   if [ -n "$_found" ]; then
     export PATH="$(dirname "$_found"):$PATH"
+    return 0
   fi
-fi
 
-if ! command -v node &>/dev/null; then
+  return 1
+}
+
+if ! _locate_node; then
   echo "[start.sh] FATAL: cannot locate node binary" >&2
   exit 1
 fi
@@ -55,7 +92,7 @@ if ! pgrep -x boosterstate > /dev/null 2>&1; then
   if [ -x "./boosterstate/target/release/boosterstate" ]; then
     _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT:-9877}"
     BOOSTERSTATE_PORT="$_SIDECAR_PORT" ./boosterstate/target/release/boosterstate &
-    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT — no sleep needed, workers take >2s to init"
+    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT"
   else
     echo "[start.sh] WARNING: boosterstate binary not found — skipping sidecar"
   fi
