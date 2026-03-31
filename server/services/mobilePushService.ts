@@ -115,12 +115,13 @@ class MobilePushService {
           let rawKey = serviceAccountRaw.trim();
 
           if (rawKey.includes('-----BEGIN')) {
-            // Already has PEM headers — use as-is (normalize escaped newlines)
-            rawKey = rawKey.replace(/\\n/g, '\n');
+            // Already has PEM headers — normalize escaped newlines then use as-is
+            rawKey = rawKey.split('\\n').join('\n');
           } else {
-            // Extract the longest base64 run (the actual key body) — strips any leading garbage
-            const b64Match = rawKey.match(/[A-Za-z0-9+/]{50,}[A-Za-z0-9+/=]*/);
-            const keyBody = b64Match ? b64Match[0] : rawKey.replace(/^[^A-Z]+/, '');
+            // Strip any leading garbage before the base64 key body (e.g. leading 'n', '/n')
+            let keyBody = rawKey.replace(/^[^M]+/, '');
+            // Strip all internal literal '\n' sequences and real newlines to get flat base64
+            keyBody = keyBody.split('\\n').join('').replace(/\s/g, '');
             rawKey = `-----BEGIN PRIVATE KEY-----\n${keyBody}\n-----END PRIVATE KEY-----\n`;
           }
 
