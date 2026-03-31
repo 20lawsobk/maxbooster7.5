@@ -2879,7 +2879,7 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
       const firstBeat = Math.ceil(clipStartTime / secondsPerBeat);
       const lastBeat = Math.floor((clipStartTime + clipDuration) / secondsPerBeat);
       for (let beat = firstBeat; beat <= lastBeat; beat++) {
-        if (beat % tsNum === 0) continue;
+        if (beat % timeSignatureNumerator === 0) continue;
         const t = beat * secondsPerBeat;
         const x = ((t - clipStartTime) / clipDuration) * drawW;
         if (x > 0 && x < drawW) {
