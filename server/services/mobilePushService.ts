@@ -112,11 +112,18 @@ class MobilePushService {
       // Option B: raw private key (PEM or base64 body) + FCM_CLIENT_EMAIL
       if (clientEmail) {
         try {
-          // Normalise the raw key: strip leading junk chars, wrap in PEM headers if missing
-          let rawKey = serviceAccountRaw.trim().replace(/^[^-M]+/, ''); // strip leading garbage
-          if (!rawKey.startsWith('-----')) {
-            rawKey = `-----BEGIN PRIVATE KEY-----\n${rawKey}\n-----END PRIVATE KEY-----\n`;
+          let rawKey = serviceAccountRaw.trim();
+
+          if (rawKey.includes('-----BEGIN')) {
+            // Already has PEM headers — use as-is (normalize escaped newlines)
+            rawKey = rawKey.replace(/\\n/g, '\n');
+          } else {
+            // Extract the longest base64 run (the actual key body) — strips any leading garbage
+            const b64Match = rawKey.match(/[A-Za-z0-9+/]{50,}[A-Za-z0-9+/=]*/);
+            const keyBody = b64Match ? b64Match[0] : rawKey.replace(/^[^A-Z]+/, '');
+            rawKey = `-----BEGIN PRIVATE KEY-----\n${keyBody}\n-----END PRIVATE KEY-----\n`;
           }
+
           this.serviceAccountKey = {
             type: 'service_account',
             project_id: projectId,
