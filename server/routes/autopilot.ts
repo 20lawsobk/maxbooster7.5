@@ -6,6 +6,9 @@ import { logger } from '../logger.js';
 import { aiModelManager } from '../services/aiModelManager.js';
 import { promotionalToolsService } from '../services/promotionalToolsService.js';
 import { MaxCoreAIClient } from '../services/unifiedAIController.js';
+import { db } from '../db';
+import { socialAutopilotContent } from '@shared/schema';
+import { eq, count, lt, gte, gt, min, desc, and, isNotNull, isNull } from 'drizzle-orm';
 
 const router = Router();
 
@@ -33,6 +36,7 @@ const autopilotConfigSchema = z.object({
 router.get('/status', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
+    const now = new Date();
 
     const config = await storage.getAutopilotConfig(userId).catch(() => null);
 
@@ -53,6 +57,38 @@ router.get('/status', requireAuth, async (req, res) => {
       logger.warn('getAdvertisingAutopilot unavailable, using defaults:', e);
     }
 
+    // Real activity stats from socialAutopilotContent table
+    const [totalGenRow, publishedRow, pendingRow, nextJobRow, recentRows] = await Promise.all([
+      db.select({ value: count() }).from(socialAutopilotContent)
+        .where(eq(socialAutopilotContent.userId, userId)),
+      db.select({ value: count() }).from(socialAutopilotContent)
+        .where(and(eq(socialAutopilotContent.userId, userId), isNotNull(socialAutopilotContent.postingTime), lt(socialAutopilotContent.postingTime, now))),
+      db.select({ value: count() }).from(socialAutopilotContent)
+        .where(and(eq(socialAutopilotContent.userId, userId), gte(socialAutopilotContent.postingTime, now))),
+      db.select({ value: min(socialAutopilotContent.postingTime) }).from(socialAutopilotContent)
+        .where(and(eq(socialAutopilotContent.userId, userId), gt(socialAutopilotContent.postingTime, now))),
+      db.select().from(socialAutopilotContent)
+        .where(eq(socialAutopilotContent.userId, userId))
+        .orderBy(desc(socialAutopilotContent.createdAt))
+        .limit(10),
+    ]).catch(() => [[], [], [], [], []]);
+
+    const totalGenerated = Number((totalGenRow as any[])[0]?.value ?? 0);
+    const totalPublished = Number((publishedRow as any[])[0]?.value ?? 0);
+    const pendingCount = Number((pendingRow as any[])[0]?.value ?? 0);
+    const nextScheduledJob = (nextJobRow as any[])[0]?.value ?? null;
+
+    const recentActivity = (recentRows as any[]).map((row: any) => {
+      const isPast = row.postingTime && new Date(row.postingTime) < now;
+      const isFuture = row.postingTime && new Date(row.postingTime) >= now;
+      return {
+        status: isPast ? 'completed' : isFuture ? 'scheduled' : 'pending',
+        title: `${row.type ? row.type.charAt(0).toUpperCase() + row.type.slice(1) : 'Content'} on ${row.platform || 'social media'}`,
+        description: `${row.format || 'text'} • ${row.hookType || ''} hook • ${row.tone || ''} tone`.replace(/• {2,}/g, '• ').replace(/^• |• $/g, ''),
+        time: row.postingTime || row.createdAt,
+      };
+    });
+
     res.json({
       isRunning: config?.enabled || false,
       config: config || {
@@ -65,6 +101,13 @@ router.get('/status', requireAuth, async (req, res) => {
         useMultimodalAnalysis: true,
         autoAnalyzeBeforePosting: true,
         minConfidenceThreshold: 0.70,
+      },
+      status: {
+        totalGenerated,
+        totalPublished,
+        pendingCount,
+        nextScheduledJob,
+        recentActivity,
       },
       modelStatus: {
         social: { trained: socialTrained, version: socialVersion },

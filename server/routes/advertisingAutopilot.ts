@@ -5,6 +5,9 @@ import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { aiModelManager } from '../services/aiModelManager.js';
 import { MaxCoreAIClient } from '../services/unifiedAIController.js';
+import { db } from '../db';
+import { adCampaigns } from '@shared/schema';
+import { eq, count, sum, avg, gt, desc, and, isNotNull } from 'drizzle-orm';
 
 const router = Router();
 
@@ -38,13 +41,61 @@ const advertisingAutopilotConfigSchema = z.object({
 router.get('/status', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
-    
-    // Get user's advertising autopilot configuration
-    const config = await storage.getAdvertisingAutopilotConfig(userId);
-    
-    // Get AI model status
-    const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
-    
+    const now = new Date();
+
+    const config = await storage.getAdvertisingAutopilotConfig(userId).catch(() => null);
+
+    let modelTrained = false, modelVersion = '1.0.0';
+    let audienceSegments = 0, viralSuccessRate = 0, organicReachMultiplier = 1;
+    try {
+      const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
+      modelTrained = advertisingModel.getIsTrained();
+      modelVersion = advertisingModel.getVersion();
+      audienceSegments = advertisingModel.getAudienceSegments().length;
+      viralSuccessRate = advertisingModel.getViralSuccessRate();
+      organicReachMultiplier = advertisingModel.getAvgOrganicReachMultiplier();
+    } catch (e) {
+      logger.warn('getAdvertisingAutopilot unavailable, using defaults:', e);
+    }
+
+    // Real campaign stats from ad_campaigns table
+    const [totalRow, nextCampaignRow, recentCampaignRows] = await Promise.all([
+      db.select({ value: count() }).from(adCampaigns)
+        .where(eq(adCampaigns.userId, userId)),
+      db.select({ startDate: adCampaigns.startDate }).from(adCampaigns)
+        .where(and(eq(adCampaigns.userId, userId), isNotNull(adCampaigns.startDate), gt(adCampaigns.startDate, now)))
+        .orderBy(adCampaigns.startDate)
+        .limit(1),
+      db.select().from(adCampaigns)
+        .where(eq(adCampaigns.userId, userId))
+        .orderBy(desc(adCampaigns.createdAt))
+        .limit(10),
+    ]).catch(() => [[], [], []]);
+
+    const totalCampaigns = Number((totalRow as any[])[0]?.value ?? 0);
+    const nextScheduledCampaign = (nextCampaignRow as any[])[0]?.startDate ?? null;
+
+    // Aggregate reach and engagement from campaign performance JSON
+    let totalReach = 0;
+    let engagementRateSum = 0;
+    let engagementRateCount = 0;
+    for (const c of (recentCampaignRows as any[])) {
+      const perf = c.performance as any;
+      if (perf) {
+        totalReach += Number(perf.reach || perf.impressions || 0);
+        const rate = perf.engagementRate || perf.engagement_rate;
+        if (rate != null) { engagementRateSum += Number(rate); engagementRateCount++; }
+      }
+    }
+    const avgEngagementRate = engagementRateCount > 0 ? engagementRateSum / engagementRateCount : 0;
+
+    const recentActivity = (recentCampaignRows as any[]).map((c: any) => ({
+      status: c.status === 'active' || c.status === 'completed' ? 'completed' : c.status === 'failed' ? 'failed' : 'scheduled',
+      title: c.name || 'Campaign',
+      description: `${c.platform || 'multi-platform'} • ${c.objective || 'awareness'}`,
+      time: c.startDate || c.createdAt,
+    }));
+
     res.json({
       isRunning: config?.enabled || false,
       config: config || {
@@ -72,18 +123,18 @@ router.get('/status', requireAuth, async (req, res) => {
         autoAnalyzeBeforePosting: true,
       },
       status: {
-        totalCampaigns: 0,
-        totalReach: 0,
-        avgEngagementRate: 0,
-        nextScheduledCampaign: null,
-        recentActivity: [],
+        totalCampaigns,
+        totalReach,
+        avgEngagementRate,
+        nextScheduledCampaign,
+        recentActivity,
       },
       modelStatus: {
-        trained: advertisingModel.getIsTrained(),
-        version: advertisingModel.getVersion(),
-        audienceSegments: advertisingModel.getAudienceSegments().length,
-        viralSuccessRate: advertisingModel.getViralSuccessRate(),
-        organicReachMultiplier: advertisingModel.getAvgOrganicReachMultiplier(),
+        trained: modelTrained,
+        version: modelVersion,
+        audienceSegments,
+        viralSuccessRate,
+        organicReachMultiplier,
       },
     });
   } catch (error) {
