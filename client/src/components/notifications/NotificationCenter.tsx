@@ -23,6 +23,11 @@ import {
   VolumeX,
   Trophy,
   LayoutDashboard,
+  Heart,
+  Flame,
+  FileText,
+  BarChart2,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -53,15 +58,20 @@ import { categoryConfig, typeToCategory } from './types';
 type TabFilter = 'all' | 'unread' | NotificationCategory;
 
 const categoryIcons: Record<NotificationCategory, React.ElementType> = {
-  account_security: Shield,
-  distribution: Music2,
-  social_media: MessageSquare,
-  marketplace: ShoppingBag,
-  royalties: DollarSign,
-  collaboration: Users,
-  achievements: Trophy,
-  system: Megaphone,
-  platform_admin: LayoutDashboard,
+  account_security:   Shield,
+  distribution:       Music2,
+  social_media:       MessageSquare,
+  direct_interaction: Heart,
+  platform_generated: Flame,
+  content_based:      FileText,
+  engagement_summary: BarChart2,
+  location_based:     MapPin,
+  marketplace:        ShoppingBag,
+  royalties:          DollarSign,
+  collaboration:      Users,
+  achievements:       Trophy,
+  system:             Megaphone,
+  platform_admin:     LayoutDashboard,
 };
 
 const defaultPreferences: NotificationPreferences = {
@@ -199,6 +209,11 @@ export function NotificationCenter() {
       account_security: [],
       distribution: [],
       social_media: [],
+      direct_interaction: [],
+      platform_generated: [],
+      content_based: [],
+      engagement_summary: [],
+      location_based: [],
       marketplace: [],
       royalties: [],
       collaboration: [],
