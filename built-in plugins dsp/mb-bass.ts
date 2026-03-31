@@ -1,0 +1,5 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbBassPlugin: PluginDefinition = { id: 'mb-bass', slug: 'mb-bass', name: 'MB Bass', category: 'instrument', type: 'bass', version: '1.0.0', description: 'Deep bass synthesizer with sub and harmonics', author: 'Max Booster', oscillators: [{ type: 'sine', detune: 0, gain: 0.6 }, { type: 'sawtooth', detune: -1200, gain: 0.3 }, { type: 'square', detune: 0, gain: 0.1 }], envelope: { attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.2 }, parameters: [{ id: 'sub', name: 'Sub Level', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true }, { id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'cutoff', name: 'Filter Cutoff', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { sub: 0.7, drive: 0.3, cutoff: 0.5, volume: 0.8 } };
+
+export default MbBassPlugin;

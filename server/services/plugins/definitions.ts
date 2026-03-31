@@ -2,8 +2,12 @@
 // Extracted from pluginHostService.ts to break circular imports.
 
 export type PluginCategory = 'instrument' | 'effect';
-export type InstrumentType = 'piano' | 'strings' | 'drums' | 'bass' | 'pad' | 'synth' | 'analog' | 'fm' | 'wavetable' | 'sampler';
-export type EffectType = 'reverb' | 'delay' | 'chorus' | 'compressor' | 'eq' | 'limiter' | 'gate' | 'distortion' | 'phaser' | 'flanger';
+export type InstrumentType =
+  | 'piano' | 'strings' | 'drums' | 'bass' | 'pad' | 'synth' | 'analog' | 'fm' | 'wavetable' | 'sampler'
+  | 'brass' | 'woodwind' | 'guitar' | 'organ' | 'vocal' | 'ethnic' | 'mallet' | 'bell';
+export type EffectType =
+  | 'reverb' | 'delay' | 'chorus' | 'compressor' | 'eq' | 'limiter' | 'gate' | 'distortion' | 'phaser' | 'flanger'
+  | 'stereo' | 'microphone' | 'mastering' | 'mixing';
 
 export interface PluginParameter {
   id: string;

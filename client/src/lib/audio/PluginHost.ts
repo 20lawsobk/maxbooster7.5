@@ -43,10 +43,36 @@ export class PluginHost {
   }
 
   /**
-   * Create a plugin instance
+   * Resolve a plugin type string (slug or type field) to a canonical base type.
+   * mb-* slugs embed the type in their id: mb-reverb-hall → reverb, mb-comp-studio → compressor, etc.
+   */
+  private resolveType(type: string): string {
+    if (type.startsWith('mb-')) {
+      if (type.includes('reverb'))    return 'reverb';
+      if (type.includes('delay'))     return 'delay';
+      if (type.includes('chorus'))    return 'chorus';
+      if (type.includes('comp') || type.includes('compressor')) return 'compressor';
+      if (type.includes('eq') || type.includes('vintage-eq')) return 'eq';
+      if (type.includes('flanger'))   return 'flanger';
+      if (type.includes('phaser'))    return 'phaser';
+      if (type.includes('dist') || type.includes('fuzz') || type.includes('overdrive') || type.includes('bitcrush')) return 'distortion';
+      if (type.includes('deesser') || type.includes('de-ess')) return 'deesser';
+      if (type.includes('vocoder'))   return 'vocoder';
+      if (type.includes('gate') || type.includes('expander')) return 'dynamiceq';
+      if (type.includes('limiter') || type.includes('maximizer') || type.includes('leveler')) return 'compressor';
+      if (type.includes('tremolo') || type.includes('vibrato') || type.includes('rotary')) return 'chorus';
+      if (type.includes('vocal'))     return 'vocoder';
+    }
+    return type;
+  }
+
+  /**
+   * Create a plugin instance by type slug or type name.
+   * Routes mb-* plugin slugs to the appropriate Web Audio API processor.
    */
   createPlugin(type: string): BasePlugin | null {
-    switch (type) {
+    const resolved = this.resolveType(type);
+    switch (resolved) {
       case 'compressor':
         return new CompressorPlugin(this.context);
       case 'eq':

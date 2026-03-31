@@ -1,0 +1,5 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbCreativeRingmodPlugin: PluginDefinition = { id: 'mb-creative-ringmod', slug: 'mb-creative-ringmod', name: 'MB Ring Modulator Pro', category: 'effect', type: 'distortion' as any, version: '1.0.0', description: 'Advanced ring modulation with LFO and sidechain input', author: 'Max Booster', parameters: [{ id: 'frequency', name: 'Frequency', type: 'float', defaultValue: 440, minValue: 20, maxValue: 5000, automatable: true }, { id: 'depth', name: 'Depth', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }, { id: 'lfoRate', name: 'LFO Rate', type: 'float', defaultValue: 0, minValue: 0, maxValue: 20, automatable: true }, { id: 'lfoDepth', name: 'LFO Depth', type: 'float', defaultValue: 0, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { frequency: 440, depth: 1, lfoRate: 0, lfoDepth: 0, mix: 0.5 } };
+
+export default MbCreativeRingmodPlugin;

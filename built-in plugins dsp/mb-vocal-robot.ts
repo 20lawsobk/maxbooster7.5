@@ -1,0 +1,5 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbVocalRobotPlugin: PluginDefinition = { id: 'mb-vocal-robot', slug: 'mb-vocal-robot', name: 'MB Robot Voice', category: 'instrument', type: 'vocal' as any, version: '1.0.0', description: 'Robotic vocal synthesizer with digital artifacts', author: 'Max Booster', oscillators: [{ type: 'square', detune: 0, gain: 0.4 }, { type: 'sawtooth', detune: 0, gain: 0.3 }, { type: 'sine', detune: 0, gain: 0.3 }], envelope: { attack: 0.005, decay: 0.1, sustain: 0.95, release: 0.05 }, parameters: [{ id: 'digital', name: 'Digital', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true }, { id: 'formant', name: 'Formant', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'glitch', name: 'Glitch', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true }, { id: 'volume', name: 'Volume', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { digital: 0.7, formant: 0.5, glitch: 0.3, volume: 0.8 } };
+
+export default MbVocalRobotPlugin;

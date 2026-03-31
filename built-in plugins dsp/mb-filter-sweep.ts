@@ -1,0 +1,5 @@
+import type { PluginDefinition } from '../server/services/pluginHostService';
+
+const MbFilterSweepPlugin: PluginDefinition = { id: 'mb-filter-sweep', slug: 'mb-filter-sweep', name: 'MB Filter Sweep', category: 'effect', type: 'eq' as any, version: '1.0.0', description: 'LFO-driven filter sweep with tempo sync', author: 'Max Booster', parameters: [{ id: 'rate', name: 'Rate', type: 'float', defaultValue: 1, minValue: 0.01, maxValue: 20, automatable: true }, { id: 'minFreq', name: 'Min Freq', type: 'float', defaultValue: 200, minValue: 20, maxValue: 5000, automatable: true }, { id: 'maxFreq', name: 'Max Freq', type: 'float', defaultValue: 8000, minValue: 500, maxValue: 20000, automatable: true }, { id: 'resonance', name: 'Resonance', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { rate: 1, minFreq: 200, maxFreq: 8000, resonance: 0.4, mix: 1 } };
+
+export default MbFilterSweepPlugin;
