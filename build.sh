@@ -1,53 +1,36 @@
 #!/bin/bash
 set -e
 
-# ─── Save node binary location for start.sh ──────────────────────────────────
-# The build container always has node in PATH. Write its exact directory to
-# .node_bin_dir so start.sh can reliably find node in the runtime container
-# even if $PATH differs between build and run containers.
-# Prefer the unwrapped binary (pid2 paths) over the wrapper shim — the wrapper
-# relies on build-env vars that may not exist in the runtime container.
-{
-  _NODE_BIN=""
-  # 1. Try Replit's pid2 helper — returns unwrapped node paths (preferred)
-  _HELPER=""
-  if command -v available-pid2-node-paths &>/dev/null; then
-    _HELPER="available-pid2-node-paths"
+# ─── Bundle a portable Node.js binary for the run container ──────────────────
+# The BUILD container has Node.js (via Nix), but the RUN container is a minimal
+# image with NO Node.js at all. We download the official nodejs.org binary
+# (links against glibc — present on the Debian-based run container) and store
+# it in .node_bin/ which becomes part of the deployment image via the build
+# layer (not the Repl/git layer — binary files in build artifacts are fine).
+#
+# Architecture: Replit GCE containers are x86_64 Linux.
+# Version: match the build container's node version for node_modules compat.
+_NODE_VERSION=$(node --version 2>/dev/null | tr -d 'v' || echo "22.22.0")
+_NODE_ARCH="linux-x64"
+_NODE_TARBALL="node-v${_NODE_VERSION}-${_NODE_ARCH}.tar.gz"
+_NODE_URL="https://nodejs.org/dist/v${_NODE_VERSION}/${_NODE_TARBALL}"
+_NODE_BIN_FILE=".node_bin/node"
+
+mkdir -p .node_bin
+
+if [ -f "$_NODE_BIN_FILE" ] && "$_NODE_BIN_FILE" --version >/dev/null 2>&1; then
+  echo "==> Portable node already present: $("$_NODE_BIN_FILE" --version)"
+else
+  echo "==> Downloading portable Node.js v${_NODE_VERSION} (${_NODE_ARCH}) from nodejs.org..."
+  if curl -sL --max-time 120 "$_NODE_URL" \
+       | tar xz --strip-components=2 -C .node_bin \
+           "node-v${_NODE_VERSION}-${_NODE_ARCH}/bin/node" 2>/dev/null; then
+    chmod +x "$_NODE_BIN_FILE"
+    echo "==> Portable node ready: $("$_NODE_BIN_FILE" --version) at $_NODE_BIN_FILE"
   else
-    for _h in /nix/store/*-replit-runtime-path/bin/available-pid2-node-paths; do
-      [ -x "$_h" ] && { _HELPER="$_h"; break; }
-    done
+    echo "==> WARNING: portable node download failed — falling back to Nix path"
   fi
-  if [ -n "$_HELPER" ]; then
-    _PID2_NODE=$("$_HELPER" 2>/dev/null | head -1 || true)
-    if [ -n "$_PID2_NODE" ] && [ -x "$_PID2_NODE" ]; then
-      echo "$(dirname "$_PID2_NODE")" > .node_bin_dir
-      echo "==> node path saved (unwrapped pid2): $_PID2_NODE"
-      _NODE_BIN="$_PID2_NODE"
-    fi
-  fi
-  # 2. Glob: any nodejs-22 in the Nix store (hash-independent, fast)
-  if [ -z "$_NODE_BIN" ]; then
-    for _d in /nix/store/*-nodejs-22*/bin /nix/store/*-nodejs-*/bin; do
-      if [ -x "$_d/node" ]; then
-        echo "$_d" > .node_bin_dir
-        echo "==> node path saved (glob): $_d/node"
-        _NODE_BIN="$_d/node"
-        break
-      fi
-    done
-  fi
-  # 3. Fall back to whatever node is in PATH
-  if [ -z "$_NODE_BIN" ]; then
-    _NODE_BIN=$(command -v node 2>/dev/null || true)
-    if [ -n "$_NODE_BIN" ]; then
-      echo "$(dirname "$_NODE_BIN")" > .node_bin_dir
-      echo "==> node path saved (PATH): $_NODE_BIN"
-    else
-      echo "==> WARNING: node not found during build — .node_bin_dir not written"
-    fi
-  fi
-}
+fi
 
 # ─────────────────────────────────────────────────────────────────────────────
 # FAST PATH vs SLOW PATH
