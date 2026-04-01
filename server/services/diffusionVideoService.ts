@@ -196,37 +196,70 @@ export function generateDiffusionFrames(
 // ── PyTorch Diffusion API (new video_diffusion/ module) ───────────────────
 
 export interface PyTorchDiffusionRequest {
-  prompt?:          string;
-  T?:               number;
-  H?:               number;
-  W?:               number;
-  bpm?:             number;
-  energy?:          number;
-  energy_peak?:     number;
-  style_name?:      string;
-  beat_index?:      number;
-  total_beats?:     number;
-  is_drop?:         boolean;
-  emotional_goal?:  string;
+  prompt?:           string;
+  T?:                number;
+  H?:                number;
+  W?:                number;
+  bpm?:              number;
+  energy?:           number;
+  energy_peak?:      number;
+  style_name?:       string;
+  beat_index?:       number;
+  total_beats?:      number;
+  is_drop?:          boolean;
+  emotional_goal?:   string;
   blend_style_name?: string;
-  blend_weight?:    number;
-  seed?:            number;
-  output_format?:   'frames_b64' | 'mp4_b64' | 'json_shape';
-  platform?:        string;
+  blend_weight?:     number;
+  seed?:             number;
+  output_format?:    'frames_b64' | 'mp4_b64' | 'json_shape';
+  platform?:         string;
+  // DigitalGPU controls
+  use_digital_gpu?:  boolean;
+  temporal_smooth?:  boolean;
 }
 
 export interface PyTorchDiffusionResult {
-  status:       string;
-  frames_b64?:  string[];
-  mp4_b64?:     string;
-  shape?:       number[];
-  style_used?:  string;
-  device?:      string;
-  num_frames?:  number;
+  status:         string;
+  frames_b64?:    string[];
+  mp4_b64?:       string;
+  shape?:         number[];
+  style_used?:    string;
+  scene_name?:    string;
+  device?:        string;
+  num_frames?:    number;
+  gpu_applied?:   boolean;
+  scene_metadata?: Record<string, unknown>;
+}
+
+export interface DigitalGPUStatus {
+  device:               string;
+  backend:              string;
+  cuda_available:       boolean;
+  bf16:                 boolean;
+  tf32:                 boolean;
+  vram_total?:          number;
+  vram_allocated?:      number;
+  vram_free?:           number;
+  postprocessor_ready:  boolean;
+  pipeline_ready:       boolean;
+  available_scenes:     string[];
 }
 
 const PYTORCH_API_BASE =
   process.env.VIDEO_DIFFUSION_URL ?? 'http://127.0.0.1:8010';
+
+/** Query DigitalGPU backend capabilities from the diffusion API server. */
+export async function getDigitalGPUStatus(): Promise<DigitalGPUStatus | null> {
+  try {
+    const res = await fetch(`${PYTORCH_API_BASE}/gpu/status`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<DigitalGPUStatus>;
+  } catch {
+    return null;
+  }
+}
 
 /** Check if the PyTorch diffusion API server is alive. */
 export async function isPyTorchDiffusionReady(): Promise<boolean> {
@@ -245,23 +278,25 @@ export async function generatePyTorchDiffusionVideo(
   opts: PyTorchDiffusionRequest,
 ): Promise<PyTorchDiffusionResult> {
   const payload: PyTorchDiffusionRequest = {
-    prompt:          opts.prompt ?? '',
-    T:               opts.T ?? 16,
-    H:               opts.H ?? 256,
-    W:               opts.W ?? 256,
-    bpm:             opts.bpm ?? 120,
-    energy:          opts.energy ?? 0.65,
-    energy_peak:     opts.energy_peak ?? 0.85,
-    style_name:      opts.style_name ?? 'neon_tunnel',
-    beat_index:      opts.beat_index ?? 0,
-    total_beats:     opts.total_beats ?? 4,
-    is_drop:         opts.is_drop ?? false,
-    emotional_goal:  opts.emotional_goal ?? 'curiosity',
+    prompt:           opts.prompt ?? '',
+    T:                opts.T ?? 16,
+    H:                opts.H ?? 256,
+    W:                opts.W ?? 256,
+    bpm:              opts.bpm ?? 120,
+    energy:           opts.energy ?? 0.65,
+    energy_peak:      opts.energy_peak ?? 0.85,
+    style_name:       opts.style_name ?? 'neon_tunnel',
+    beat_index:       opts.beat_index ?? 0,
+    total_beats:      opts.total_beats ?? 4,
+    is_drop:          opts.is_drop ?? false,
+    emotional_goal:   opts.emotional_goal ?? 'curiosity',
     blend_style_name: opts.blend_style_name,
-    blend_weight:    opts.blend_weight ?? 0,
-    seed:            opts.seed,
-    output_format:   opts.output_format ?? 'mp4_b64',
-    platform:        opts.platform ?? 'tiktok',
+    blend_weight:     opts.blend_weight ?? 0,
+    seed:             opts.seed,
+    output_format:    opts.output_format ?? 'mp4_b64',
+    platform:         opts.platform ?? 'tiktok',
+    use_digital_gpu:  opts.use_digital_gpu ?? true,
+    temporal_smooth:  opts.temporal_smooth ?? true,
   };
 
   const res = await fetch(`${PYTORCH_API_BASE}/generate`, {
@@ -282,11 +317,17 @@ export async function generatePyTorchDiffusionVideo(
 /** Generate a single representative keyframe via the PyTorch diffusion API. */
 export async function generatePyTorchKeyframe(
   opts: Omit<PyTorchDiffusionRequest, 'T' | 'output_format'>,
-): Promise<{ frame_b64?: string; style_used?: string }> {
+): Promise<{
+  frame_b64?:      string;
+  style_used?:     string;
+  scene_name?:     string;
+  gpu_applied?:    boolean;
+  scene_metadata?: Record<string, unknown>;
+}> {
   const res = await fetch(`${PYTORCH_API_BASE}/generate/keyframe`, {
     method:  'POST',
     headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify(opts),
+    body:    JSON.stringify({ ...opts, use_digital_gpu: opts.use_digital_gpu ?? true }),
     signal:  AbortSignal.timeout(60_000),
   });
 
@@ -295,7 +336,7 @@ export async function generatePyTorchKeyframe(
     throw new Error(`PyTorch keyframe API error ${res.status}: ${msg}`);
   }
 
-  return res.json() as Promise<{ frame_b64?: string; style_used?: string }>;
+  return res.json();
 }
 
 
