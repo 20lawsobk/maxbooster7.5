@@ -983,111 +983,45 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     <div ref={containerRef} style={cssVars as React.CSSProperties} className="h-full w-full flex flex-col bg-[#0f0f12] text-white overflow-hidden select-none">
 
       {/* ════ TOP BAR ════ */}
-      <div className="h-10 flex items-center shrink-0 border-b border-[#1e1e26] bg-[#111115] px-2 gap-2 z-20">
-        {/* Brand */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shrink-0">
-            <Music className="h-3 w-3 text-white" />
-          </div>
-          <span className="text-xs font-semibold max-w-[100px] truncate text-gray-200">{project.name || 'Untitled'}</span>
-          {project.isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" title="Unsaved" />}
-        </div>
-
-        <div className="w-px h-4 bg-[#2a2a32] shrink-0" />
-
-        {/* Transport */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button onClick={handleRewind} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
-            <SkipBack className="h-3 w-3" />
-          </button>
-          {transport.isPlaying ? (
-            <button onClick={handlePause} className="h-7 w-7 flex items-center justify-center rounded bg-emerald-600 hover:bg-emerald-500 transition-colors">
-              <Pause className="h-3 w-3 text-white" />
-            </button>
-          ) : (
-            <button onClick={handlePlay} className="h-7 w-7 flex items-center justify-center rounded bg-emerald-600 hover:bg-emerald-500 transition-colors">
-              <Play className="h-3 w-3 text-white" />
-            </button>
-          )}
-          <button onClick={handleStop} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
-            <Square className="h-3 w-3" />
-          </button>
-          <button
-            onClick={handleRecord}
-            className={cn("h-7 w-7 flex items-center justify-center rounded transition-colors", transport.isRecording ? "bg-red-500/20 text-red-400" : "hover:bg-[#22222c] text-gray-500 hover:text-white")}
-          >
-            <Circle className={cn("h-3 w-3", transport.isRecording && "fill-red-400 text-red-400")} />
-          </button>
-          <button
-            onClick={handleToggleLoop}
-            className={cn("h-7 w-7 flex items-center justify-center rounded transition-colors", transport.isLooping ? "bg-cyan-500/20 text-cyan-400" : "hover:bg-[#22222c] text-gray-500 hover:text-white")}
-          >
-            <Repeat className="h-3 w-3" />
-          </button>
-        </div>
-
-        {/* Position + Tempo */}
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="font-mono text-[11px] bg-[#18181e] border border-[#28282e] rounded px-2 py-0.5 text-emerald-400 min-w-[86px] text-center tabular-nums">
-            {formatBars(livePosition)}
-          </div>
-          <div className="font-mono text-[11px] bg-[#18181e] border border-[#28282e] rounded px-2 py-0.5 text-gray-500 min-w-[62px] text-center tabular-nums">
-            {formatTime(livePosition)}
-          </div>
-          <div className="flex items-center gap-0.5">
-            <input
-              type="number"
-              value={transport.tempo}
-              onChange={(e) => store.setTempo(Number(e.target.value))}
-              className="w-[52px] h-6 font-mono text-xs bg-[#18181e] border border-[#28282e] rounded px-1.5 text-center text-white focus:outline-none focus:border-emerald-500"
-              min={20} max={300}
-            />
-            <span className="text-[10px] text-gray-700">BPM</span>
-          </div>
-          <span className="text-[11px] text-gray-600 font-mono tabular-nums">
-            {transport.timeSignatureNumerator}/{transport.timeSignatureDenominator}
-          </span>
-        </div>
-
-        <div className="flex-1" />
-
-        {/* Right controls */}
-        <div className="flex items-center gap-0.5 shrink-0">
-          <button onClick={() => setShowVersionManagement(true)} className="flex items-center gap-1 px-2 h-7 rounded text-[11px] text-gray-500 hover:text-white hover:bg-[#22222c] transition-colors">
-            <Camera className="h-3 w-3" />
-            <span className="hidden md:inline">Versions</span>
-          </button>
-          <div className="w-px h-4 bg-[#2a2a32] mx-0.5" />
-          <button onClick={() => store.undo()} disabled={!canUndo} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
-            <Undo className="h-3 w-3" />
-          </button>
-          <button onClick={() => store.redo()} disabled={!canRedo} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
-            <Redo className="h-3 w-3" />
-          </button>
-          <div className="w-px h-4 bg-[#2a2a32] mx-0.5" />
-          <button
-            onClick={() => setExpertMode(!expertMode)}
-            className={cn(
-              "h-7 px-2 rounded text-[11px] font-medium border transition-colors",
-              expertMode
-                ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
-                : "border-[#28282e] bg-[#18181e] text-gray-600 hover:text-white"
-            )}
-          >
-            {expertMode ? 'Expert' : 'Simple'}
-          </button>
-          <button
-            onClick={handleSave}
-            className={cn("h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] transition-colors", project.isDirty ? "text-amber-400" : "text-gray-500 hover:text-white")}
-            title="Save"
-          >
-            <Save className="h-3 w-3" />
-          </button>
-          <button onClick={handleToggleFullscreen} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
-            {isFullscreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
-          </button>
-        </div>
-      </div>
+      <TransportBar
+        transport={transport}
+        project={project}
+        livePosition={livePosition}
+        canUndo={canUndo}
+        canRedo={canRedo}
+        isDirty={project.isDirty}
+        formatTime={formatTime}
+        formatBars={formatBars}
+        onPlay={handlePlay}
+        onPause={handlePause}
+        onStop={handleStop}
+        onRecord={handleRecord}
+        onRewind={handleRewind}
+        onToggleLoop={handleToggleLoop}
+        onUndo={() => store.undo()}
+        onRedo={() => store.redo()}
+        onSave={handleSave}
+        onTempoChange={(tempo) => store.setTempo(tempo)}
+        onOpenPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
+        onOpenAI={() => setShowAIPanel(!showAIPanel)}
+        onOpenGenerator={() => setShowMusicGenerator(true)}
+        showAIPanel={showAIPanel}
+        punchIn={punchIn}
+        punchOut={punchOut}
+        punchInTime={punchInTime}
+        punchOutTime={punchOutTime}
+        loopRecord={loopRecord}
+        onTogglePunchIn={() => setPunchIn(!punchIn)}
+        onTogglePunchOut={() => setPunchOut(!punchOut)}
+        onPunchInTimeChange={setPunchInTime}
+        onPunchOutTimeChange={setPunchOutTime}
+        onToggleLoopRecord={() => setLoopRecord(!loopRecord)}
+        expertMode={expertMode}
+        onToggleExpertMode={() => setExpertMode(!expertMode)}
+        onOpenVersions={() => setShowVersionManagement(true)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
+      />
 
       {/* ════ BODY ════ */}
       <div className="flex-1 flex overflow-hidden">
@@ -1935,6 +1869,11 @@ interface TransportBarProps {
   onPunchInTimeChange: (t: number) => void;
   onPunchOutTimeChange: (t: number) => void;
   onToggleLoopRecord: () => void;
+  expertMode?: boolean;
+  onToggleExpertMode?: () => void;
+  onOpenVersions?: () => void;
+  isFullscreen?: boolean;
+  onToggleFullscreen?: () => void;
 }
 
 function TransportBar({
@@ -1942,7 +1881,8 @@ function TransportBar({
   onPlay, onPause, onStop, onRecord, onRewind, onToggleLoop,
   onUndo, onRedo, onSave, onTempoChange, onOpenPlugins, onOpenAI, onOpenGenerator, showAIPanel,
   punchIn, punchOut, punchInTime, punchOutTime, loopRecord,
-  onTogglePunchIn, onTogglePunchOut, onPunchInTimeChange, onPunchOutTimeChange, onToggleLoopRecord
+  onTogglePunchIn, onTogglePunchOut, onPunchInTimeChange, onPunchOutTimeChange, onToggleLoopRecord,
+  expertMode, onToggleExpertMode, onOpenVersions, isFullscreen, onToggleFullscreen,
 }: TransportBarProps) {
   return (
     <div className="bg-[#252529] border-b border-[#333] shrink-0 overflow-x-auto" style={{ height: 'var(--transport-h)' }}>
@@ -2184,9 +2124,62 @@ function TransportBar({
 
       <div className="h-6 w-px bg-[#444]" />
 
-      <div className="text-sm text-gray-400 shrink-0 truncate max-w-48">
-        {project.name || 'Untitled Project'}
+      <div className="flex items-center gap-1.5 shrink-0 truncate max-w-48">
+        <div className="w-5 h-5 rounded bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shrink-0">
+          <Music className="h-2.5 w-2.5 text-white" />
+        </div>
+        <span className="text-sm text-gray-400 truncate">{project.name || 'Untitled Project'}</span>
+        {isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />}
       </div>
+
+      {(onOpenVersions || onToggleExpertMode || onToggleFullscreen) && (
+        <>
+          <div className="h-6 w-px bg-[#444]" />
+          <div className="flex items-center gap-1">
+            {onOpenVersions && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={onOpenVersions} className="h-8 gap-1.5 text-xs">
+                    <Camera className="h-4 w-4" />
+                    Versions
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Version History</TooltipContent>
+              </Tooltip>
+            )}
+            {onToggleExpertMode && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onToggleExpertMode}
+                    className={cn(
+                      "h-8 px-3 text-xs font-medium border",
+                      expertMode
+                        ? "border-purple-500/50 bg-purple-500/10 text-purple-300 hover:bg-purple-500/20"
+                        : "border-[#444] text-gray-500 hover:text-white"
+                    )}
+                  >
+                    {expertMode ? 'Expert' : 'Simple'}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{expertMode ? 'Switch to Simple mode' : 'Switch to Expert mode'}</TooltipContent>
+              </Tooltip>
+            )}
+            {onToggleFullscreen && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="sm" onClick={onToggleFullscreen} className="h-8 w-8 p-0">
+                    {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+        </>
+      )}
       </div>
     </div>
   );
