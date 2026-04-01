@@ -265,14 +265,152 @@ async function getStyleSelector() {
   return _styleSelector;
 }
 
+// ─── CreativeContext — shared musical intelligence across all pipeline stages ──
+
+interface CreativeContext {
+  /** CreativePlannerModel output — structural frame for the whole video */
+  plannerSuggestion: import('../../shared/ml/models/CreativePlannerModel.js').CreativePlannerOutput | null;
+  /** Per-beat style selections from KeyframeStyleSelector (keyed by beat index) */
+  styleMap: Map<number, import('../../shared/ml/models/KeyframeStyleSelector.js').KeyframeSelectorOutput>;
+  /** Per-beat alignment data from BeatSyncAlignmentModel */
+  alignmentMap: import('../../shared/ml/models/BeatSyncAlignmentModel.js').BeatAlignmentOutput[];
+  energyMean: number;
+  energyPeak: number;
+  energyVariance: number;
+}
+
+/**
+ * Pre-computation phase — runs ALL four in-house models in parallel before
+ * any MaxCore call. The resulting CreativeContext is threaded through every
+ * stage so MaxCore receives quantitative musical intelligence as hard
+ * constraints rather than starting from scratch.
+ */
+async function precomputeMusicalIntelligence(
+  brief: CreativeBrief,
+  musicMeta: MusicMeta,
+  estimatedBeatCount: number,
+): Promise<CreativeContext> {
+  const energyMean = musicMeta.energyCurve.length > 0
+    ? musicMeta.energyCurve.reduce((a, b) => a + b, 0) / musicMeta.energyCurve.length
+    : 0.6;
+  const energyPeak = musicMeta.energyCurve.length > 0
+    ? Math.max(...musicMeta.energyCurve) : 0.9;
+  const energyVariance = musicMeta.energyCurve.length > 1
+    ? energyPeak - Math.min(...musicMeta.energyCurve) : 0.3;
+
+  const plannerInput = {
+    platform: brief.platform,
+    goal: brief.goal,
+    tone: brief.tone,
+    domain: brief.domain,
+    bpm: musicMeta.bpm,
+    energyMean,
+    sectionCount: musicMeta.sections.length,
+    hasDrop: musicMeta.sections.some(s =>
+      s.name.toLowerCase().includes('drop') || s.name.toLowerCase().includes('chorus')),
+    isMinor: musicMeta.key.toLowerCase().includes('minor'),
+    tempoStability: 0.8,
+    energyPeak,
+    moodEnergy: musicMeta.mood.includes('driving') || musicMeta.mood.includes('energetic') ? 0.85 : 0.55,
+  };
+
+  // Compute planner first to get beat count for style/alignment maps
+  const plannerSuggestion = await getPlanner()
+    .then(m => m.predictPlan(plannerInput))
+    .catch(() => null);
+
+  const beatCount = plannerSuggestion?.optimalBeatCount ?? estimatedBeatCount;
+
+  // Run style selections and alignment for every beat in parallel
+  const beatIndices = Array.from({ length: beatCount }, (_, i) => i);
+  const secondsPerBeat = 60 / musicMeta.bpm;
+
+  const [styleResults, alignmentResults] = await Promise.all([
+    // All style selections in parallel
+    Promise.all(beatIndices.map(async i => {
+      const sel = await getStyleSelector().catch(() => null);
+      if (!sel) return null;
+      return sel.selectStyle({
+        platform: brief.platform,
+        tone: brief.tone,
+        genre: brief.domain === 'music' ? (brief.style.genre as string ?? 'pop') : 'pop',
+        bpm: musicMeta.bpm,
+        energyAtBeat: musicMeta.energyCurve[i % Math.max(1, musicMeta.energyCurve.length)] ?? energyMean,
+        aesthetic: brief.style.aesthetic as string ?? 'cinematic',
+        emotionalGoal: 'curiosity', // refined per-beat once plan is known
+        beatIndexNorm: i / Math.max(1, beatCount - 1),
+      }).catch(() => null);
+    })),
+    // All alignment computations in parallel
+    Promise.all(beatIndices.map(async i => {
+      const defaultStart = i * secondsPerBeat * 4;
+      const energyAtBeat = musicMeta.energyCurve[i % Math.max(1, musicMeta.energyCurve.length)] ?? energyMean;
+      const acc = Math.min(1, (i / beatCount) * energyMean + energyAtBeat * 0.2);
+      const al = await getAligner().catch(() => null);
+      if (!al) return null;
+      return al.alignBeat({
+        bpm: musicMeta.bpm,
+        sectionEnergy: energyAtBeat,
+        beatIndex: i,
+        totalBeats: beatCount,
+        energyVariance,
+        isChorussOrDrop: musicMeta.sections.some(s =>
+          s.start <= defaultStart && s.end >= defaultStart &&
+          (s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop'))),
+        accumulatedEnergy: acc,
+        transitionMomentum: i / Math.max(1, beatCount - 1),
+      }).catch(() => null);
+    })),
+  ]);
+
+  const styleMap = new Map<number, import('../../shared/ml/models/KeyframeStyleSelector.js').KeyframeSelectorOutput>();
+  styleResults.forEach((r, i) => { if (r) styleMap.set(i, r); });
+
+  const alignmentMap = alignmentResults.filter(Boolean) as import('../../shared/ml/models/BeatSyncAlignmentModel.js').BeatAlignmentOutput[];
+
+  logger.info('[CreativeModel] Musical intelligence pre-computed', {
+    plannerBeatCount: plannerSuggestion?.optimalBeatCount,
+    stylesComputed: styleMap.size,
+    alignmentsComputed: alignmentMap.length,
+  });
+
+  return { plannerSuggestion, styleMap, alignmentMap, energyMean, energyPeak, energyVariance };
+}
+
 // ─── Stage 2: Creative Planning ───────────────────────────────────────────────
 
-async function planningStage(brief: CreativeBrief, musicMeta: MusicMeta): Promise<CreativePlan> {
+async function planningStage(
+  brief: CreativeBrief,
+  musicMeta: MusicMeta,
+  ctx: CreativeContext,
+): Promise<CreativePlan> {
   logger.info('[CreativeModel] Stage 2: Creative planning');
 
+  const ps = ctx.plannerSuggestion;
+  const ctaLabel = ps
+    ? ps.ctaUrgency > 0.75 ? 'HIGH-PRESSURE' : ps.ctaUrgency > 0.45 ? 'MODERATE' : 'SOFT'
+    : 'MODERATE';
+  const variantCount = ps
+    ? ps.variantDiversity > 0.7 ? 4 : ps.variantDiversity > 0.4 ? 3 : 2
+    : 3;
+
+  const constraintsBlock = ps ? `
+MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
+- Optimal beat count: ${ps.optimalBeatCount} (your "beats" array MUST have exactly ${ps.optimalBeatCount} items)
+- Hook emotional intensity: ${Math.round(ps.hookEmotionalWeight * 100)}% (${ps.hookEmotionalWeight > 0.7 ? 'high-impact opener needed' : ps.hookEmotionalWeight > 0.4 ? 'moderate emotional draw' : 'informational hook'})
+- CTA urgency: ${ctaLabel} (${Math.round(ps.ctaUrgency * 100)}%)
+- Testing variants: generate ${variantCount} distinct variants
+`.trim() : '';
+
+  const styleHintsBlock = ctx.styleMap.size > 0 ? `
+PER-BEAT STYLE GUIDANCE (pre-selected from audio energy + genre):
+${Array.from(ctx.styleMap.entries()).map(([i, s]) =>
+  `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round(s.topStyles[0]?.probability * 100 ?? 0)}%), alt=${s.topStyles[1]?.style ?? 'n/a'} (${Math.round(s.topStyles[1]?.probability * 100 ?? 0)}%)`
+).join('\n')}
+`.trim() : '';
+
   const prompt = `
-You are a world-class music marketing creative director.
-Given the following brief and music metadata, produce a detailed creative plan for a short-form video ad.
+You are a world-class music marketing creative director working with an AI music analysis system.
 
 BRIEF:
 - Domain: ${brief.domain}
@@ -285,12 +423,15 @@ BRIEF:
 - Visual style: ${JSON.stringify(brief.style)}
 
 MUSIC:
-- BPM: ${musicMeta.bpm} | Key: ${musicMeta.key}
+- BPM: ${musicMeta.bpm} | Key: ${musicMeta.key} | Energy peak: ${ctx.energyPeak.toFixed(2)} | Mean: ${ctx.energyMean.toFixed(2)}
 - Mood: ${musicMeta.mood.join(', ')}
 - Sections: ${musicMeta.sections.map(s => `${s.name} (${s.start}s–${s.end}s)`).join(', ')}
-- Energy curve: ${musicMeta.energyCurve.join(', ')}
 
-Return JSON only:
+${constraintsBlock}
+
+${styleHintsBlock}
+
+Return JSON only — beats array must match the constraint count exactly:
 {
   "beats": [
     { "timecodeHint": "0-3s", "description": "...", "emotionalGoal": "..." }
@@ -299,24 +440,6 @@ Return JSON only:
   "hooks": ["...", "..."],
   "testingVariants": ["origin_story", "bold_claim", "fan_reaction"]
 }`.trim();
-
-  // Always run CreativePlannerModel to get music-informed structural suggestions
-  const plannerSuggestion = await getPlanner().then(m => m.predictPlan({
-    platform: brief.platform,
-    goal: brief.goal,
-    tone: brief.tone,
-    domain: brief.domain,
-    bpm: musicMeta.bpm,
-    energyMean: musicMeta.energyCurve.length > 0
-      ? musicMeta.energyCurve.reduce((a, b) => a + b, 0) / musicMeta.energyCurve.length
-      : 0.6,
-    sectionCount: musicMeta.sections.length,
-    hasDrop: musicMeta.sections.some(s => s.name.toLowerCase().includes('drop') || s.name.toLowerCase().includes('chorus')),
-    isMinor: musicMeta.key.toLowerCase().includes('minor'),
-    tempoStability: 0.8,
-    energyPeak: musicMeta.energyCurve.length > 0 ? Math.max(...musicMeta.energyCurve) : 0.9,
-    moodEnergy: musicMeta.mood.includes('driving') || musicMeta.mood.includes('energetic') ? 0.85 : 0.55,
-  })).catch(() => null);
 
   try {
     const raw = await maxcorePost('/generate/text', {
@@ -340,36 +463,29 @@ Return JSON only:
         }))
       : defaultBeats(brief);
 
-    // Augment beat count from in-house model if model suggests more detail
-    const targetBeatCount = plannerSuggestion?.optimalBeatCount ?? maxCoreBeats.length;
+    // Enforce beat count from in-house model — pad or trim to match
+    const targetBeatCount = ps?.optimalBeatCount ?? maxCoreBeats.length;
     const beats = maxCoreBeats.length >= targetBeatCount
-      ? maxCoreBeats
+      ? maxCoreBeats.slice(0, targetBeatCount)
       : [...maxCoreBeats, ...defaultBeats(brief).slice(0, targetBeatCount - maxCoreBeats.length)];
 
-    const variants = Array.isArray(parsed.testingVariants ?? parsed.testing_variants)
+    const variants: string[] = Array.isArray(parsed.testingVariants ?? parsed.testing_variants)
       ? (parsed.testingVariants ?? parsed.testing_variants)
       : ['origin_story', 'bold_claim', 'fan_reaction'];
-
-    // Add extra variants if model recommends high diversity
-    if (plannerSuggestion && plannerSuggestion.variantDiversity > 0.7 && variants.length < 4) {
-      variants.push('social_proof');
-    }
+    while (variants.length < variantCount) variants.push('social_proof');
 
     return {
       beats,
       visuals: Array.isArray(parsed.visuals) ? parsed.visuals : ['studio shots', 'crowd'],
       hooks: Array.isArray(parsed.hooks) ? parsed.hooks : [brief.offer],
-      testingVariants: variants,
+      testingVariants: variants.slice(0, variantCount),
     };
   } catch (err) {
     logger.warn('[CreativeModel] Planning: MaxCore unavailable — using in-house CreativePlannerModel', { err });
 
-    // Full in-house fallback using model suggestions
-    const beatCount = plannerSuggestion?.optimalBeatCount ?? 3;
+    const beatCount = ps?.optimalBeatCount ?? 3;
     const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
-
-    // Add CTA urgency-adjusted beat if model recommends it
-    if (plannerSuggestion && plannerSuggestion.ctaUrgency > 0.65 && beats.length < beatCount) {
+    if (ps && ps.ctaUrgency > 0.65 && beats.length < beatCount) {
       beats.push({ timecodeHint: `${beats.length * 4}-${beats.length * 4 + 3}s`, description: `Urgent CTA: ${brief.callToAction}`, emotionalGoal: 'action' });
     }
 
@@ -377,8 +493,7 @@ Return JSON only:
       beats,
       visuals: ['studio shots', 'crowd', 'UI overlays'],
       hooks: [brief.offer, brief.callToAction],
-      testingVariants: ['origin_story', 'bold_claim', 'fan_reaction',
-        ...(plannerSuggestion && plannerSuggestion.variantDiversity > 0.7 ? ['social_proof'] : [])],
+      testingVariants: ['origin_story', 'bold_claim', 'fan_reaction', 'social_proof'].slice(0, variantCount),
     };
   }
 }
@@ -393,8 +508,20 @@ function defaultBeats(brief: CreativeBrief): BeatNote[] {
 
 // ─── Stage 3: Script Generation ───────────────────────────────────────────────
 
-async function scriptStage(brief: CreativeBrief, plan: CreativePlan): Promise<string> {
+async function scriptStage(
+  brief: CreativeBrief,
+  plan: CreativePlan,
+  ctx: CreativeContext,
+): Promise<string> {
   logger.info('[CreativeModel] Stage 3: Script generation');
+
+  const ps = ctx.plannerSuggestion;
+  const hookGuidance = ps
+    ? `Hook emotional intensity: ${Math.round(ps.hookEmotionalWeight * 100)}% — ${ps.hookEmotionalWeight > 0.7 ? 'make it visceral and immediate' : ps.hookEmotionalWeight > 0.4 ? 'draw viewers in with curiosity' : 'lead with information'}`
+    : '';
+  const ctaGuidance = ps
+    ? `CTA pressure: ${ps.ctaUrgency > 0.75 ? 'urgent — create scarcity or FOMO' : ps.ctaUrgency > 0.45 ? 'direct — clear next step' : 'soft — invite, do not demand'}`
+    : '';
 
   try {
     const raw = await maxcorePost('/generate/text', {
@@ -406,9 +533,11 @@ async function scriptStage(brief: CreativeBrief, plan: CreativePlan): Promise<st
       brand_voice: brief.tone,
       extra_context: [
         `Hook: ${plan.hooks[0]}`,
-        `Beats: ${plan.beats.map(b => `[${b.timecodeHint}] ${b.description}`).join(' | ')}`,
+        hookGuidance,
+        ctaGuidance,
+        `Beats: ${plan.beats.map(b => `[${b.timecodeHint}] ${b.description} (goal: ${b.emotionalGoal})`).join(' | ')}`,
         `CTA: ${brief.callToAction}`,
-      ].join('\n'),
+      ].filter(Boolean).join('\n'),
     });
 
     return (
@@ -430,61 +559,73 @@ async function keyframesStage(
   plan: CreativePlan,
   brief: CreativeBrief,
   musicMeta: MusicMeta,
+  ctx: CreativeContext,
 ): Promise<string[]> {
   logger.info('[CreativeModel] Stage 4: Keyframe generation', { beatCount: plan.beats.length });
 
-  const keyframePaths: string[] = [];
-
-  const selector = await getStyleSelector().catch(() => null);
   const totalBeats = plan.beats.length;
+  const isVertical = ['tiktok', 'reels', 'shorts'].includes(brief.platform);
 
-  for (let i = 0; i < totalBeats; i++) {
-    const beat = plan.beats[i];
+  // All keyframe generation in parallel — style data already pre-computed in ctx.styleMap
+  const keyframePaths = await Promise.all(plan.beats.map(async (beat, i) => {
+    // Pull from context — no re-computation needed
+    const styleResult = ctx.styleMap.get(i) ?? null;
+    const primaryStyle = styleResult?.primaryStyle ?? 'neon_tunnel';
+    const altStyle = styleResult?.topStyles[1]?.style;
+    const altProb = styleResult?.topStyles[1]?.probability ?? 0;
+    const primaryProb = styleResult?.topStyles[0]?.probability ?? 0.8;
+    const closeMatch = altStyle && (primaryProb - altProb) < 0.15;
 
-    // Always run KeyframeStyleSelector for music-informed style selection
-    const styleResult = selector ? await selector.selectStyle({
+    // Refine style selection with the now-known emotional goal from the plan
+    const refinedSelector = await getStyleSelector().catch(() => null);
+    const refinedStyle = refinedSelector ? await refinedSelector.selectStyle({
       platform: brief.platform,
       tone: brief.tone,
       genre: brief.domain === 'music' ? (brief.style.genre as string ?? 'pop') : 'pop',
-      bpm: musicMeta?.bpm ?? 120,
-      energyAtBeat: musicMeta?.energyCurve?.[i % (musicMeta.energyCurve.length || 1)] ?? 0.7,
+      bpm: musicMeta.bpm,
+      energyAtBeat: musicMeta.energyCurve[i % Math.max(1, musicMeta.energyCurve.length)] ?? ctx.energyMean,
       aesthetic: brief.style.aesthetic as string ?? 'cinematic',
       emotionalGoal: beat.emotionalGoal,
       beatIndexNorm: i / Math.max(1, totalBeats - 1),
     }).catch(() => null) : null;
 
-    const selectedStyle = styleResult?.primaryStyle ?? 'neon_tunnel';
+    const selectedStyle = refinedStyle?.primaryStyle ?? primaryStyle;
+
+    const blendInstruction = closeMatch && altStyle
+      ? `Blend visual elements of "${selectedStyle}" and "${altStyle}" — the model is split (${Math.round(primaryProb * 100)}% vs ${Math.round(altProb * 100)}%).`
+      : '';
 
     const prompt = [
-      `${selectedStyle} visual style,`,
+      `${selectedStyle} visual style${blendInstruction ? ` with ${altStyle} elements` : ''},`,
       `${brief.style.aesthetic ?? brief.tone} aesthetic,`,
       beat.description,
       `emotional tone: ${beat.emotionalGoal},`,
       `platform: ${brief.platform},`,
       `visual: ${plan.visuals[i % plan.visuals.length]},`,
+      blendInstruction,
       brief.style.vibe ?? '',
     ].filter(Boolean).join(' ');
 
     try {
       const raw = await maxcorePost('/generate/image', {
         prompt,
-        aspect_ratio: brief.platform === 'tiktok' || brief.platform === 'reels' || brief.platform === 'shorts'
-          ? '9:16'
-          : '16:9',
-        style: { ...brief.style, selectedVideoStyle: selectedStyle },
+        aspect_ratio: isVertical ? '9:16' : '16:9',
+        style: {
+          ...brief.style,
+          selectedVideoStyle: selectedStyle,
+          blendStyle: closeMatch ? altStyle : undefined,
+          blendWeight: closeMatch ? altProb / (primaryProb + altProb) : undefined,
+        },
         beat_index: i,
         timecode: beat.timecodeHint,
         video_style: selectedStyle,
+        style_confidence: primaryProb,
       });
-      keyframePaths.push(
-        raw.url ?? raw.image_url ?? raw.path ?? `keyframe_${i}_${selectedStyle}`,
-      );
-    } catch (err) {
-      logger.warn(`[CreativeModel] Keyframe ${i} MaxCore unavailable — using style: ${selectedStyle}`, { err });
-      // Store the style name as the placeholder so videoAssembly can use it
-      keyframePaths.push(`style:${selectedStyle}`);
+      return raw.url ?? raw.image_url ?? raw.path ?? `keyframe_${i}_${selectedStyle}`;
+    } catch {
+      return `style:${selectedStyle}`;
     }
-  }
+  }));
 
   return keyframePaths;
 }
@@ -494,75 +635,60 @@ async function keyframesStage(
 async function alignmentStage(
   plan: CreativePlan,
   musicMeta: MusicMeta,
+  ctx: CreativeContext,
 ): Promise<AlignedTimeline> {
   logger.info('[CreativeModel] Stage 5: Temporal alignment');
 
   const secondsPerBeat = 60 / musicMeta.bpm;
-  const aligner = await getAligner().catch(() => null);
 
-  // BeatSyncAlignmentModel: per-beat cut point and transition type
-  const accumulatedEnergy = { value: 0 };
-  const timeline = await Promise.all(plan.beats.map(async (beat, i) => {
+  // Build the timeline using pre-computed alignment map from context — no re-computation
+  const timeline = plan.beats.map((beat, i) => {
     const defaultStart = i * secondsPerBeat * 4;
     const defaultEnd = defaultStart + secondsPerBeat * 4;
     const timeHintMatch = beat.timecodeHint.match(/([\d.]+)[s]?\s*[-–]\s*([\d.]+)[s]?/);
     let start = timeHintMatch ? parseFloat(timeHintMatch[1]) : defaultStart;
     const end = timeHintMatch ? parseFloat(timeHintMatch[2]) : defaultEnd;
 
-    const energyAtBeat = musicMeta.energyCurve[i % Math.max(1, musicMeta.energyCurve.length)] ?? 0.6;
-    accumulatedEnergy.value = Math.min(1, accumulatedEnergy.value + energyAtBeat * 0.2);
-
-    if (aligner) {
-      const alignment = await aligner.alignBeat({
-        bpm: musicMeta.bpm,
-        sectionEnergy: energyAtBeat,
-        beatIndex: i,
-        totalBeats: plan.beats.length,
-        energyVariance: musicMeta.energyCurve.length > 1
-          ? Math.max(...musicMeta.energyCurve) - Math.min(...musicMeta.energyCurve)
-          : 0.3,
-        isChorussOrDrop: musicMeta.sections.some(s =>
-          s.start <= start && s.end >= start &&
-          (s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop'))
-        ),
-        accumulatedEnergy: accumulatedEnergy.value,
-        transitionMomentum: i / Math.max(1, plan.beats.length - 1),
-      }).catch(() => null);
-
-      if (alignment) {
-        start = Math.max(0, start + alignment.cutTimeDelta);
-      }
+    const alignment = ctx.alignmentMap[i];
+    if (alignment) {
+      start = Math.max(0, start + alignment.cutTimeDelta);
     }
-
     return { start, end, beat };
-  }));
+  });
 
-  // BeatSyncAlignmentModel: transitions per cut
-  const transitions = await Promise.all(plan.beats.map(async (beat, i) => {
+  const transitions: string[] = plan.beats.map((_, i) => {
+    const alignment = ctx.alignmentMap[i];
+    if (alignment) return alignment.transitionType;
     const energyAtBeat = musicMeta.energyCurve[i % Math.max(1, musicMeta.energyCurve.length)] ?? 0.6;
-    if (aligner) {
-      const alignment = await aligner.alignBeat({
-        bpm: musicMeta.bpm,
-        sectionEnergy: energyAtBeat,
-        beatIndex: i,
-        totalBeats: plan.beats.length,
-        energyVariance: 0.3,
-        isChorussOrDrop: energyAtBeat > 0.75,
-        accumulatedEnergy: 0.5,
-        transitionMomentum: i / Math.max(1, plan.beats.length - 1),
-      }).catch(() => null);
-      if (alignment) return alignment.transitionType;
-    }
     return energyAtBeat > 0.7 ? 'cut_on_beat' : energyAtBeat > 0.4 ? 'crossfade' : 'dissolve';
-  }));
+  });
+
+  // Send the full pre-computed alignment map to MaxCore as ground truth constraints.
+  // MaxCore's role is now to validate and enhance — not generate from scratch.
+  const alignmentConstraintsBlock = `
+BEAT ALIGNMENT MAP (computed from BPM mathematics and energy analysis — treat as ground truth):
+${timeline.map((t, i) => {
+  const al = ctx.alignmentMap[i];
+  return `  Beat ${i + 1}: start=${t.start.toFixed(3)}s, end=${t.end.toFixed(3)}s, transition=${transitions[i]}${al ? ` (cut Δ${al.cutTimeDelta >= 0 ? '+' : ''}${al.cutTimeDelta.toFixed(3)}s, confidence: ${Math.round(al.transitionScore * 100)}%)` : ''}`;
+}).join('\n')}
+
+Only override a beat's timing or transition if there is a strong narrative reason. Explain any deviation in a "notes" field.`.trim();
 
   try {
     const raw = await maxcorePost('/generate/text', {
       mode: 'content',
       format: 'json',
-      topic: 'Temporal alignment refinement',
-      extra_context: JSON.stringify({ timeline, musicMeta }),
-      prompt: `Refine this timeline for music-video sync. Return JSON: { "timeline": [...], "transitions": [...] }`,
+      topic: 'Music-video temporal alignment validation',
+      extra_context: [
+        alignmentConstraintsBlock,
+        `BPM: ${musicMeta.bpm} | Key: ${musicMeta.key} | Energy peak: ${ctx.energyPeak.toFixed(2)}`,
+        `Sections: ${musicMeta.sections.map(s => `${s.name} ${s.start}s–${s.end}s`).join(', ')}`,
+      ].join('\n'),
+      prompt: `Validate and optionally enhance the provided beat alignment map. For each beat, only change start/end/transition if there is a clear narrative or musical reason. Return JSON:
+{
+  "timeline": [{ "start": 0.0, "end": 3.0, "note": "optional reason for any change" }],
+  "transitions": ["cut_on_beat", "crossfade", ...]
+}`,
     });
 
     const text: string = raw.text ?? raw.content ?? JSON.stringify(raw);
@@ -579,9 +705,10 @@ async function alignmentStage(
       };
     }
   } catch (err) {
-    logger.warn('[CreativeModel] Alignment fallback to local math', { err });
+    logger.warn('[CreativeModel] Alignment: MaxCore unavailable — using BeatSyncAlignmentModel map directly', { err });
   }
 
+  // MaxCore unavailable or returned no changes — local alignment map is the final output
   return { timeline, transitions };
 }
 
@@ -622,11 +749,30 @@ async function scoringStage(
   plan: CreativePlan,
   musicMeta: MusicMeta,
   brief: CreativeBrief,
+  ctx: CreativeContext,
 ): Promise<EngagementScores> {
-  logger.info('[CreativeModel] Stage 7: Engagement scoring');
+  logger.info('[CreativeModel] Stage 7: Engagement scoring (parallel blend)');
 
-  try {
-    const raw = await maxcorePost('/generate/text', {
+  const localScorerInput = {
+    platform: brief.platform,
+    goal: brief.goal,
+    tone: brief.tone,
+    bpm: musicMeta.bpm,
+    energyMean: ctx.energyMean,
+    hookWordCount: plan.hooks[0]?.split(' ').length ?? 5,
+    hasQuestionHook: plan.hooks.some(h => h.includes('?')),
+    hasStatementHook: plan.hooks.some(h => !h.includes('?')),
+    beatCount: plan.beats.length,
+    visualDiversity: new Set(plan.visuals).size / Math.max(1, plan.visuals.length),
+    hasCTA: !!brief.callToAction,
+    genreEnergy: musicMeta.mood.includes('driving') || musicMeta.mood.includes('energetic') ? 0.85 : 0.55,
+    moodEnergy: ctx.energyPeak,
+    scriptLength: script.length,
+  };
+
+  // Always run both in parallel — neither is fallback, both always contribute
+  const [maxcoreResult, localResult] = await Promise.allSettled([
+    maxcorePost('/generate/text', {
       mode: 'content',
       format: 'json',
       topic: 'Engagement prediction scoring',
@@ -637,58 +783,72 @@ async function scoringStage(
         hooks: plan.hooks,
         beats: plan.beats,
         bpm: musicMeta.bpm,
+        energyMean: ctx.energyMean,
+        energyPeak: ctx.energyPeak,
         mood: musicMeta.mood,
         goal: brief.goal,
+        beatCount: plan.beats.length,
+        hookWordCount: localScorerInput.hookWordCount,
+        hasQuestionHook: localScorerInput.hasQuestionHook,
       }),
-      prompt: `Predict engagement for this short-form video creative. Return JSON only:
+      prompt: `Predict engagement for this short-form video creative. Consider beat count, hook type, CTA urgency (${ctx.plannerSuggestion ? Math.round(ctx.plannerSuggestion.ctaUrgency * 100) : 50}%), and energy peak (${ctx.energyPeak.toFixed(2)}). Return JSON only:
 {
   "watchTimeScore": 0.0-1.0,
   "hookStrength": 0.0-1.0,
   "conversionScore": 0.0-1.0
 }`,
+    }),
+    getScorer().then(m => m.scoreCreative(localScorerInput)),
+  ]);
+
+  const maxcore = maxcoreResult.status === 'fulfilled'
+    ? (() => {
+        const parsed = tryParseJson(maxcoreResult.value?.text ?? maxcoreResult.value?.content ?? '{}');
+        return {
+          watchTimeScore: clamp(parsed.watchTimeScore ?? parsed.watch_time_score),
+          hookStrength: clamp(parsed.hookStrength ?? parsed.hook_strength),
+          conversionScore: clamp(parsed.conversionScore ?? parsed.conversion_score),
+        };
+      })()
+    : null;
+
+  const local = localResult.status === 'fulfilled' ? localResult.value : null;
+
+  if (maxcore && local) {
+    // Both succeeded — weighted blend (MaxCore 60%, local 40%)
+    const agreement = 1 - (
+      Math.abs(maxcore.watchTimeScore - local.watchTimeScore) +
+      Math.abs(maxcore.hookStrength - local.hookStrength) +
+      Math.abs(maxcore.conversionScore - local.conversionScore)
+    ) / 3;
+
+    logger.info('[CreativeModel] Scoring blended', {
+      maxcore, local, agreement: agreement.toFixed(2), method: 'blended',
     });
 
-    const text: string = raw.text ?? raw.content ?? JSON.stringify(raw);
-    const parsed = tryParseJson(text);
-
     return {
-      watchTimeScore: clamp(parsed.watchTimeScore ?? parsed.watch_time_score ?? 0.7),
-      hookStrength: clamp(parsed.hookStrength ?? parsed.hook_strength ?? 0.75),
-      conversionScore: clamp(parsed.conversionScore ?? parsed.conversion_score ?? 0.65),
+      watchTimeScore: clamp(maxcore.watchTimeScore * 0.6 + local.watchTimeScore * 0.4),
+      hookStrength: clamp(maxcore.hookStrength * 0.6 + local.hookStrength * 0.4),
+      conversionScore: clamp(maxcore.conversionScore * 0.6 + local.conversionScore * 0.4),
     };
-  } catch (err) {
-    logger.warn('[CreativeModel] Scoring: MaxCore unavailable — using in-house VideoCreativeScorer', { err });
-
-    try {
-      const scorerModel = await getScorer();
-      const scored = await scorerModel.scoreCreative({
-        platform: brief.platform,
-        goal: brief.goal,
-        tone: brief.tone,
-        bpm: musicMeta.bpm,
-        energyMean: musicMeta.energyCurve.length > 0
-          ? musicMeta.energyCurve.reduce((a, b) => a + b, 0) / musicMeta.energyCurve.length
-          : 0.65,
-        hookWordCount: plan.hooks[0]?.split(' ').length ?? 5,
-        hasQuestionHook: plan.hooks.some(h => h.includes('?')),
-        hasStatementHook: plan.hooks.some(h => !h.includes('?')),
-        beatCount: plan.beats.length,
-        visualDiversity: new Set(plan.visuals).size / Math.max(1, plan.visuals.length),
-        hasCTA: !!brief.callToAction,
-        genreEnergy: musicMeta.mood.includes('driving') || musicMeta.mood.includes('energetic') ? 0.85 : 0.55,
-        moodEnergy: musicMeta.energyCurve.length > 0 ? Math.max(...musicMeta.energyCurve) : 0.7,
-        scriptLength: script.length,
-      });
-      return {
-        watchTimeScore: scored.watchTimeScore,
-        hookStrength: scored.hookStrength,
-        conversionScore: scored.conversionScore,
-      };
-    } catch (localErr) {
-      logger.warn('[CreativeModel] VideoCreativeScorer also failed, using safe defaults', { localErr });
-      return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
-    }
   }
+
+  if (maxcore) {
+    logger.info('[CreativeModel] Scoring: MaxCore only (local scorer unavailable)');
+    return maxcore;
+  }
+
+  if (local) {
+    logger.info('[CreativeModel] Scoring: local only (MaxCore unavailable)');
+    return {
+      watchTimeScore: local.watchTimeScore,
+      hookStrength: local.hookStrength,
+      conversionScore: local.conversionScore,
+    };
+  }
+
+  logger.warn('[CreativeModel] Scoring: both failed — using safe defaults');
+  return { watchTimeScore: 0.7, hookStrength: 0.75, conversionScore: 0.65 };
 }
 
 function clamp(v: number, min = 0, max = 1): number {
@@ -746,16 +906,30 @@ export async function generateCreativePackage(opts: GenerateOptions): Promise<Cr
 
   logger.info('[CreativeModel] Pipeline start', { assetId, platform: brief.platform, goal: brief.goal });
 
-  const [musicMeta] = await Promise.all([analyzeMusicStage(audioPath, brief)]);
-  const plan = await planningStage(brief, musicMeta);
+  // Stage 1: Music analysis
+  const musicMeta = await analyzeMusicStage(audioPath, brief);
+
+  // Pre-computation: run all four in-house models in parallel before any MaxCore call.
+  // Estimated beat count from section count — planner will refine this.
+  const estimatedBeatCount = Math.max(3, Math.min(musicMeta.sections.length * 2, 8));
+  const ctx = await precomputeMusicalIntelligence(brief, musicMeta, estimatedBeatCount);
+
+  // Stage 2: Planning — MaxCore receives the pre-computed musical frame as constraints
+  const plan = await planningStage(brief, musicMeta, ctx);
+
+  // Stages 3 + 4 in parallel — script uses hook intelligence, keyframes use style map
   const [script, keyframePaths] = await Promise.all([
-    scriptStage(brief, plan),
-    keyframesStage(plan, brief, musicMeta),
+    scriptStage(brief, plan, ctx),
+    keyframesStage(plan, brief, musicMeta, ctx),
   ]);
-  const timing = await alignmentStage(plan, musicMeta);
+
+  // Stage 5: Alignment — local map already built, MaxCore validates and enhances
+  const timing = await alignmentStage(plan, musicMeta, ctx);
+
+  // Stages 6 + 7 in parallel — assembly and scoring both run simultaneously
   const [videoPath, scores] = await Promise.all([
     assemblyStage(keyframePaths, timing, audioPath, brief),
-    scoringStage(script, plan, musicMeta, brief),
+    scoringStage(script, plan, musicMeta, brief, ctx),
   ]);
 
   await feedbackStage(assetId, userId, brief, scores);
@@ -791,10 +965,11 @@ export async function scoreCreative(
     bpm: 120,
     key: 'C major',
     sections: [],
-    energyCurve: [],
+    energyCurve: [0.65],
     mood: [brief.tone],
   };
-  return scoringStage(script, plan, musicMeta, brief);
+  const ctx = await precomputeMusicalIntelligence(brief, musicMeta, plan.beats.length);
+  return scoringStage(script, plan, musicMeta, brief, ctx);
 }
 
 /**
@@ -806,8 +981,10 @@ export async function planCreative(
   audioPath: string,
 ): Promise<{ musicMeta: MusicMeta; plan: CreativePlan; script: string }> {
   const musicMeta = await analyzeMusicStage(audioPath, brief);
-  const plan = await planningStage(brief, musicMeta);
-  const script = await scriptStage(brief, plan);
+  const estimatedBeatCount = Math.max(3, Math.min(musicMeta.sections.length * 2, 8));
+  const ctx = await precomputeMusicalIntelligence(brief, musicMeta, estimatedBeatCount);
+  const plan = await planningStage(brief, musicMeta, ctx);
+  const script = await scriptStage(brief, plan, ctx);
   return { musicMeta, plan, script };
 }
 
