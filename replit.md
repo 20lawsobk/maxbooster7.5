@@ -38,7 +38,7 @@ Max Booster operates on a three-point data flow:
 - **Performance Hardening**: Pagination, Redis query caching, composite DB indexes, Neon PostgreSQL, and request correlation IDs.
 - **Reliability Fixes**: Various background service safeguards and fallbacks.
 - **Gamified Onboarding**: RPG-style persona selector, XP system, and achievements.
-- **Studio DAW UI/UX**: Customizable toolbar, resizable panels, and Web Audio API integration.
+- **Studio DAW UI/UX**: Spec-compliant layout with TopBar (transport + position + tempo + mode toggle) + LeftSidebar Browser (Tracks/Files/Plugins/Presets tabs, collapsible) + MainArea with view tabs (Timeline / Mixer / Node Graph [Expert] / Flow) + RightSidebar Universal Inspector (collapsible). Beginner/Expert mode toggle in TopBar. Mixer tab renders MixerPanel full-embedded. Node Graph tab (Expert) shows bezier signal-flow with SVG. Flow tab shows project overview map. All panels animate with framer-motion. 413 DSP plugins (218 effects + 195 instruments) via `@plugins` alias in vite.config.ts.
 - **CI/CD**: GitHub Actions workflows for desktop and mobile platforms.
 - **Python Audio Analysis Engine**: Utilizes `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch` for server-side audio intelligence (requires local Python 3.11 setup).
 - **Distribution Analytics**: Aggregates data from LabelGrid and royalty transactions.

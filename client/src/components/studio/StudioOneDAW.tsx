@@ -159,6 +159,12 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showPitchShiftDialog, setShowPitchShiftDialog] = useState<string | null>(null);
   const { ref: containerRef, scale: uiScale, cssVars, trackHeaderWidth, aiPanelWidth } = useStudioScale();
 
+  const [activeView, setActiveView] = useState<'timeline' | 'mixer' | 'nodegraph' | 'flow'>('timeline');
+  const [expertMode, setExpertMode] = useState(false);
+  const [leftSidebarTab, setLeftSidebarTab] = useState<'tracks' | 'files' | 'plugins' | 'presets'>('tracks');
+  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
+  const [inspectorOpen, setInspectorOpen] = useState(true);
+
   useEffect(() => {
     if (projectId && projectId !== projectLoadedRef.current) {
       // Clear previous project's loaded clips/tracks refs
@@ -974,192 +980,520 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   }
 
   return (
-    <div ref={containerRef} style={cssVars as React.CSSProperties} className="h-full w-full flex flex-col bg-[#1a1a1e] text-white overflow-hidden select-none">
-      <TransportBar
-        transport={transport}
-        project={project}
-        livePosition={livePosition}
-        canUndo={canUndo}
-        canRedo={canRedo}
-        isDirty={project.isDirty}
-        formatTime={formatTime}
-        formatBars={formatBars}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onStop={handleStop}
-        onRecord={handleRecord}
-        onRewind={handleRewind}
-        onToggleLoop={handleToggleLoop}
-        onUndo={() => store.undo()}
-        onRedo={() => store.redo()}
-        onSave={handleSave}
-        onTempoChange={(tempo) => store.setTempo(tempo)}
-        onOpenPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
-        onOpenAI={() => setShowAIPanel(!showAIPanel)}
-        onOpenGenerator={() => setShowMusicGenerator(true)}
-        showAIPanel={showAIPanel}
-        punchIn={punchIn}
-        punchOut={punchOut}
-        punchInTime={punchInTime}
-        punchOutTime={punchOutTime}
-        loopRecord={loopRecord}
-        onTogglePunchIn={() => setPunchIn(!punchIn)}
-        onTogglePunchOut={() => setPunchOut(!punchOut)}
-        onPunchInTimeChange={setPunchInTime}
-        onPunchOutTimeChange={setPunchOutTime}
-        onToggleLoopRecord={() => setLoopRecord(!loopRecord)}
-      />
+    <div ref={containerRef} style={cssVars as React.CSSProperties} className="h-full w-full flex flex-col bg-[#0f0f12] text-white overflow-hidden select-none">
 
-      <div className="flex-1 flex overflow-hidden">
-        {showInspector && selectedTrack && (
-          <TrackInspector
-            track={selectedTrack}
-            onClose={() => setShowInspector(false)}
-            onUpdate={(updates) => handleTrackUpdate(selectedTrackId!, updates)}
-            onOpenPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
-          />
-        )}
-
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <Toolbar
-            zoom={zoom}
-            onZoomIn={() => setZoom(z => Math.min(z * 1.25, 4))}
-            onZoomOut={() => setZoom(z => Math.max(z / 1.25, 0.25))}
-            onAddTrack={handleAddTrack}
-            showInspector={showInspector}
-            showEditor={showEditor}
-            showMixer={showMixer}
-            onToggleInspector={() => setShowInspector(!showInspector)}
-            onToggleEditor={() => setShowEditor(!showEditor)}
-            onToggleMixer={() => setShowMixer(!showMixer)}
-            onOpenAllPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
-            onOpenInstruments={() => { setPluginFilter('instruments'); setShowPluginBrowser(true); }}
-            onOpenEffects={() => { setPluginFilter('effects'); setShowPluginBrowser(true); }}
-            onOpenShortcuts={() => setShowKeyboardShortcuts(true)}
-            onExport={() => setShowExportDialog(true)}
-            onImportAudio={() => setShowImportAudio(true)}
-            onStemExport={() => setShowStemExport(true)}
-            showAutomation={showAutomation}
-            onToggleAutomation={() => setShowAutomation(!showAutomation)}
-            showSurroundPanel={showSurroundPanel}
-            onToggleSurround={() => setShowSurroundPanel(!showSurroundPanel)}
-            showVideoTrack={showVideoTrack}
-            onToggleVideo={() => setShowVideoTrack(!showVideoTrack)}
-            showLyrics={showLyrics}
-            onToggleLyrics={() => setShowLyrics(!showLyrics)}
-            onOpenAudioDevices={() => setShowAudioDevices(true)}
-            isFullscreen={isFullscreen}
-            onToggleFullscreen={handleToggleFullscreen}
-          />
-
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <TimelineRuler zoom={zoom} scrollX={scrollX} tempo={transport.tempo} timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`} onSeek={handleSeek} />
-
-            <div className="flex-1 overflow-auto" ref={arrangeScrollRef} onScroll={handleArrangeScroll}>
-              <ArrangeView
-                tracks={tracks}
-                selectedTrackId={selectedTrackId}
-                selectedClipId={selectedClipId}
-                zoom={zoom}
-                scrollX={scrollX}
-                tempo={transport.tempo}
-                playheadPosition={livePosition}
-                isPlaying={transport.isPlaying}
-                trackHeaderWidth={trackHeaderWidth}
-                onSelectTrack={setSelectedTrackId}
-                onSelectClip={setSelectedClipId}
-                onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
-                onDeleteTrack={handleDeleteTrack}
-                onDuplicateTrack={(id) => { store.duplicateTrack(id); toast({ title: 'Track Duplicated' }); }}
-                showAutomation={showAutomation}
-                automationLanes={automationLanes}
-                onAutomationLanesChange={setAutomationLanes}
-                showVideoTrack={showVideoTrack}
-                allTracks={tracks}
-              />
-            </div>
+      {/* ════ TOP BAR ════ */}
+      <div className="h-10 flex items-center shrink-0 border-b border-[#1e1e26] bg-[#111115] px-2 gap-2 z-20">
+        {/* Brand */}
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="w-6 h-6 rounded bg-gradient-to-br from-emerald-500 to-cyan-600 flex items-center justify-center shrink-0">
+            <Music className="h-3 w-3 text-white" />
           </div>
-
-          {showEditor && (
-            <EditorPanel
-              track={selectedTrack}
-              onClose={() => setShowEditor(false)}
-            />
-          )}
-
-          {showLyrics && !platform.isMobile && (
-            <LyricsPanel
-              isPlaying={transport.isPlaying}
-              playheadPosition={livePosition}
-              tempo={transport.tempo}
-              onSeek={handleSeek}
-              sections={lyricsSections}
-              activeSectionId={lyricsActiveSectionId}
-              onSectionsChange={setLyricsSections}
-              onActiveSectionChange={setLyricsActiveSectionId}
-            />
-          )}
-
-          <MobileLyricsPanel
-            open={showLyrics && platform.isMobile}
-            onClose={() => setShowLyrics(false)}
-            sections={lyricsSections}
-            activeSectionId={lyricsActiveSectionId}
-            onSectionsChange={setLyricsSections}
-            onActiveSectionChange={setLyricsActiveSectionId}
-            currentTime={livePosition}
-            onSeek={handleSeek}
-            isPlaying={transport.isPlaying}
-          />
+          <span className="text-xs font-semibold max-w-[100px] truncate text-gray-200">{project.name || 'Untitled'}</span>
+          {project.isDirty && <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" title="Unsaved" />}
         </div>
 
-        <AnimatePresence>
-          {showAIPanel && (
+        <div className="w-px h-4 bg-[#2a2a32] shrink-0" />
+
+        {/* Transport */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button onClick={handleRewind} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
+            <SkipBack className="h-3 w-3" />
+          </button>
+          {transport.isPlaying ? (
+            <button onClick={handlePause} className="h-7 w-7 flex items-center justify-center rounded bg-emerald-600 hover:bg-emerald-500 transition-colors">
+              <Pause className="h-3 w-3 text-white" />
+            </button>
+          ) : (
+            <button onClick={handlePlay} className="h-7 w-7 flex items-center justify-center rounded bg-emerald-600 hover:bg-emerald-500 transition-colors">
+              <Play className="h-3 w-3 text-white" />
+            </button>
+          )}
+          <button onClick={handleStop} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
+            <Square className="h-3 w-3" />
+          </button>
+          <button
+            onClick={handleRecord}
+            className={cn("h-7 w-7 flex items-center justify-center rounded transition-colors", transport.isRecording ? "bg-red-500/20 text-red-400" : "hover:bg-[#22222c] text-gray-500 hover:text-white")}
+          >
+            <Circle className={cn("h-3 w-3", transport.isRecording && "fill-red-400 text-red-400")} />
+          </button>
+          <button
+            onClick={handleToggleLoop}
+            className={cn("h-7 w-7 flex items-center justify-center rounded transition-colors", transport.isLooping ? "bg-cyan-500/20 text-cyan-400" : "hover:bg-[#22222c] text-gray-500 hover:text-white")}
+          >
+            <Repeat className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Position + Tempo */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="font-mono text-[11px] bg-[#18181e] border border-[#28282e] rounded px-2 py-0.5 text-emerald-400 min-w-[86px] text-center tabular-nums">
+            {formatBars(livePosition)}
+          </div>
+          <div className="font-mono text-[11px] bg-[#18181e] border border-[#28282e] rounded px-2 py-0.5 text-gray-500 min-w-[62px] text-center tabular-nums">
+            {formatTime(livePosition)}
+          </div>
+          <div className="flex items-center gap-0.5">
+            <input
+              type="number"
+              value={transport.tempo}
+              onChange={(e) => store.setTempo(Number(e.target.value))}
+              className="w-[52px] h-6 font-mono text-xs bg-[#18181e] border border-[#28282e] rounded px-1.5 text-center text-white focus:outline-none focus:border-emerald-500"
+              min={20} max={300}
+            />
+            <span className="text-[10px] text-gray-700">BPM</span>
+          </div>
+          <span className="text-[11px] text-gray-600 font-mono tabular-nums">
+            {transport.timeSignatureNumerator}/{transport.timeSignatureDenominator}
+          </span>
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Right controls */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button onClick={() => setShowVersionManagement(true)} className="flex items-center gap-1 px-2 h-7 rounded text-[11px] text-gray-500 hover:text-white hover:bg-[#22222c] transition-colors">
+            <Camera className="h-3 w-3" />
+            <span className="hidden md:inline">Versions</span>
+          </button>
+          <div className="w-px h-4 bg-[#2a2a32] mx-0.5" />
+          <button onClick={() => store.undo()} disabled={!canUndo} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
+            <Undo className="h-3 w-3" />
+          </button>
+          <button onClick={() => store.redo()} disabled={!canRedo} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white disabled:opacity-30 transition-colors">
+            <Redo className="h-3 w-3" />
+          </button>
+          <div className="w-px h-4 bg-[#2a2a32] mx-0.5" />
+          <button
+            onClick={() => setExpertMode(!expertMode)}
+            className={cn(
+              "h-7 px-2 rounded text-[11px] font-medium border transition-colors",
+              expertMode
+                ? "border-purple-500/50 bg-purple-500/10 text-purple-300"
+                : "border-[#28282e] bg-[#18181e] text-gray-600 hover:text-white"
+            )}
+          >
+            {expertMode ? 'Expert' : 'Simple'}
+          </button>
+          <button
+            onClick={handleSave}
+            className={cn("h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] transition-colors", project.isDirty ? "text-amber-400" : "text-gray-500 hover:text-white")}
+            title="Save"
+          >
+            <Save className="h-3 w-3" />
+          </button>
+          <button onClick={handleToggleFullscreen} className="h-7 w-7 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-500 hover:text-white transition-colors">
+            {isFullscreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
+          </button>
+        </div>
+      </div>
+
+      {/* ════ BODY ════ */}
+      <div className="flex-1 flex overflow-hidden">
+
+        {/* ── Left Sidebar (Browser) ── */}
+        <AnimatePresence initial={false}>
+          {leftSidebarOpen && (
             <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: aiPanelWidth, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="shrink-0 border-l border-[#333] overflow-hidden"
+              initial={{ width: 0 }}
+              animate={{ width: 188 }}
+              exit={{ width: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              className="shrink-0 border-r border-[#1e1e26] bg-[#111115] flex flex-col overflow-hidden z-10"
             >
-              <FlowStateAIPanel
-                projectId={projectId}
-                tracks={tracks}
-                currentTime={livePosition}
-                tempo={transport.tempo}
-                musicalKey={musicalKey}
-                scale={musicalScale}
-                onAIMix={handleAIMix}
-                onAIMaster={handleAIMaster}
-                onGenerateMelody={handleGenerateMelody}
-                onGenerateDrums={handleGenerateDrums}
-                onGeneratePercussion={handleGeneratePercussion}
-                onGenerateBass={handleGenerateBass}
-                onGenerateChords={handleGenerateChords}
-                onAnalyzeAudio={handleAnalyzeAudio}
-                onDetectKey={handleDetectKey}
-                onAutoArrange={handleAutoArrange}
-                onSuggestChords={handleSuggestChords}
-                onClose={() => setShowAIPanel(false)}
-                isAIMixing={isAIMixing}
-                isAIMastering={isAIMastering}
-              />
+              {/* Tab strip */}
+              <div className="flex shrink-0 border-b border-[#1e1e26]">
+                {(['tracks', 'files', 'plugins', 'presets'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setLeftSidebarTab(tab)}
+                    className={cn(
+                      "flex-1 py-1.5 text-[9px] font-semibold uppercase tracking-wider transition-colors",
+                      leftSidebarTab === tab
+                        ? "text-white border-b-2 border-emerald-500"
+                        : "text-gray-700 hover:text-gray-400"
+                    )}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex-1 overflow-y-auto">
+                {/* TRACKS tab */}
+                {leftSidebarTab === 'tracks' && (
+                  <div className="p-1 space-y-px">
+                    <button
+                      onClick={handleAddTrack}
+                      className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-xs text-emerald-400 hover:bg-[#1a1a22] transition-colors"
+                    >
+                      <Plus className="h-3 w-3" /> Add Track
+                    </button>
+                    {tracks.map((track) => (
+                      <button
+                        key={track.id}
+                        onClick={() => { setSelectedTrackId(track.id); setInspectorOpen(true); setActiveView('timeline'); }}
+                        className={cn(
+                          "w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-left transition-colors group",
+                          selectedTrackId === track.id ? "bg-[#1e1e2a] text-white" : "text-gray-500 hover:bg-[#1a1a22] hover:text-white"
+                        )}
+                      >
+                        <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: track.color || '#3b82f6' }} />
+                        <span className="truncate flex-1 text-[11px]">{track.name}</span>
+                        <div className="flex gap-0.5 shrink-0">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleTrackUpdate(track.id, { muted: !track.muted }); }}
+                            className={cn("h-4 w-4 rounded text-[8px] font-bold flex items-center justify-center transition-colors", track.muted ? "bg-yellow-500/20 text-yellow-400" : "text-gray-700 hover:text-gray-400")}
+                          >M</button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleTrackUpdate(track.id, { solo: !track.solo }); }}
+                            className={cn("h-4 w-4 rounded text-[8px] font-bold flex items-center justify-center transition-colors", track.solo ? "bg-cyan-500/20 text-cyan-400" : "text-gray-700 hover:text-gray-400")}
+                          >S</button>
+                        </div>
+                      </button>
+                    ))}
+                    {tracks.length === 0 && (
+                      <p className="text-[11px] text-gray-700 text-center py-6 px-2 leading-relaxed">No tracks yet.</p>
+                    )}
+                  </div>
+                )}
+
+                {/* FILES tab */}
+                {leftSidebarTab === 'files' && (
+                  <div className="p-2 space-y-0.5">
+                    <button onClick={() => setShowImportAudio(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white border border-dashed border-[#28282e] transition-colors mb-1">
+                      <FolderOpen className="h-3 w-3 text-blue-400" /> Import Audio
+                    </button>
+                    <button onClick={() => setShowStemExport(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-500 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Layers className="h-3 w-3 text-purple-400" /> Stem Export
+                    </button>
+                    <button onClick={() => setShowExportDialog(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-500 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Headphones className="h-3 w-3 text-emerald-400" /> Export Mix
+                    </button>
+                    <button onClick={() => setShowProjectSettings(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-500 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Settings className="h-3 w-3 text-gray-500" /> Project Settings
+                    </button>
+                  </div>
+                )}
+
+                {/* PLUGINS tab */}
+                {leftSidebarTab === 'plugins' && (
+                  <div className="p-1 space-y-px">
+                    <button onClick={() => { setPluginFilter('all'); setShowPluginBrowser(true); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Library className="h-3 w-3 text-purple-400" /> All Plugins (413)
+                    </button>
+                    <button onClick={() => { setPluginFilter('instruments'); setShowPluginBrowser(true); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Piano className="h-3 w-3 text-blue-400" /> Instruments (195)
+                    </button>
+                    <button onClick={() => { setPluginFilter('effects'); setShowPluginBrowser(true); }} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Sliders className="h-3 w-3 text-green-400" /> Effects (218)
+                    </button>
+                    <div className="mx-2 my-1.5 border-t border-[#22222c]" />
+                    <div className="px-2 py-0.5 text-[9px] text-gray-700 uppercase tracking-wider">MaxCore AI</div>
+                    <button onClick={() => setShowMusicGenerator(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors">
+                      <Sparkles className="h-3 w-3 text-amber-400" /> AI Generator
+                    </button>
+                    <button onClick={() => setShowAIPanel(!showAIPanel)} className={cn("w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs hover:bg-[#1a1a22] transition-colors", showAIPanel ? "text-emerald-400 bg-emerald-500/10" : "text-gray-400 hover:text-white")}>
+                      <Brain className="h-3 w-3" /> AI Co-Producer
+                    </button>
+                  </div>
+                )}
+
+                {/* PRESETS tab */}
+                {leftSidebarTab === 'presets' && (
+                  <div className="p-3 text-center">
+                    <p className="text-[11px] text-gray-700 py-4 leading-relaxed">
+                      {selectedTrackId ? 'Preset browser coming soon.' : 'Select a track first.'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar footer */}
+              <div className="border-t border-[#1e1e26] p-1 flex items-center gap-0.5 shrink-0">
+                <button onClick={() => setShowAudioDevices(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-gray-700 hover:text-gray-300 hover:bg-[#1a1a22] transition-colors">
+                  <Headphones className="h-3 w-3" /> I/O
+                </button>
+                <button onClick={() => setShowKeyboardShortcuts(true)} className="flex items-center gap-1 px-2 py-1 rounded text-[10px] text-gray-700 hover:text-gray-300 hover:bg-[#1a1a22] transition-colors">
+                  <Keyboard className="h-3 w-3" /> Keys
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Sidebar collapse toggle */}
+        <button
+          onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+          className="shrink-0 w-2 bg-[#111115] hover:bg-[#1a1a22] border-r border-[#1e1e26] flex items-center justify-center transition-colors"
+          title={leftSidebarOpen ? 'Collapse browser' : 'Expand browser'}
+        >
+          <ChevronRight className={cn("h-2.5 w-2.5 text-gray-700 transition-transform", leftSidebarOpen && "rotate-180")} />
+        </button>
+
+        {/* ── Main Area ── */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* View tab bar */}
+          <div className="h-8 shrink-0 border-b border-[#1e1e26] bg-[#0f0f12] flex items-center px-1 gap-0">
+            {([
+              { id: 'timeline' as const, label: 'Timeline', Icon: Waves },
+              { id: 'mixer' as const, label: 'Mixer', Icon: Sliders },
+              { id: 'nodegraph' as const, label: 'Node Graph', Icon: Activity, expert: true },
+              { id: 'flow' as const, label: 'Flow', Icon: Layers },
+            ]).filter(v => !v.expert || expertMode).map(({ id, label, Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveView(id)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 h-full text-[11px] font-medium border-b-2 transition-colors shrink-0",
+                  activeView === id
+                    ? "border-emerald-500 text-white bg-[#111115]"
+                    : "border-transparent text-gray-600 hover:text-gray-300"
+                )}
+              >
+                <Icon className="h-3 w-3" />
+                {label}
+              </button>
+            ))}
+            <div className="flex-1" />
+            {/* Contextual toolbar for timeline view */}
+            {activeView === 'timeline' && (
+              <div className="flex items-center gap-0.5 pr-1">
+                <button onClick={() => setZoom(z => Math.max(z / 1.25, 0.25))} className="h-6 w-6 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-600 hover:text-white transition-colors">
+                  <ZoomOut className="h-3 w-3" />
+                </button>
+                <span className="text-[10px] text-gray-700 w-8 text-center tabular-nums">{Math.round(zoom * 100)}%</span>
+                <button onClick={() => setZoom(z => Math.min(z * 1.25, 4))} className="h-6 w-6 flex items-center justify-center rounded hover:bg-[#22222c] text-gray-600 hover:text-white transition-colors">
+                  <ZoomIn className="h-3 w-3" />
+                </button>
+                <div className="w-px h-4 bg-[#28282e] mx-0.5" />
+                <button onClick={handleAddTrack} className="flex items-center gap-1 px-2 h-6 rounded text-[10px] text-gray-500 hover:text-white hover:bg-[#22222c] transition-colors">
+                  <Plus className="h-3 w-3" /> Track
+                </button>
+                <button onClick={() => setShowAutomation(!showAutomation)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showAutomation ? "text-amber-400 bg-amber-500/10" : "text-gray-500 hover:text-white")}>
+                  <Radio className="h-3 w-3" /> Auto
+                </button>
+                <button onClick={() => setShowEditor(!showEditor)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showEditor ? "text-purple-400 bg-purple-500/10" : "text-gray-500 hover:text-white")}>
+                  <Pencil className="h-3 w-3" /> Editor
+                </button>
+                <button onClick={() => setShowLyrics(!showLyrics)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showLyrics ? "text-pink-400 bg-pink-500/10" : "text-gray-500 hover:text-white")}>
+                  <FileText className="h-3 w-3" /> Lyrics
+                </button>
+                {expertMode && <>
+                  <button onClick={() => setShowSurroundPanel(!showSurroundPanel)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showSurroundPanel ? "text-cyan-400 bg-cyan-500/10" : "text-gray-500 hover:text-white")}>
+                    <Speaker className="h-3 w-3" /> Spatial
+                  </button>
+                  <button onClick={() => setShowVideoTrack(!showVideoTrack)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showVideoTrack ? "text-blue-400 bg-blue-500/10" : "text-gray-500 hover:text-white")}>
+                    <Film className="h-3 w-3" /> Video
+                  </button>
+                </>}
+                <button onClick={() => setShowAIPanel(!showAIPanel)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showAIPanel ? "text-emerald-400 bg-emerald-500/10" : "text-gray-500 hover:text-white")}>
+                  <Brain className="h-3 w-3" /> AI
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* ── Active View ── */}
+          <div className="flex-1 flex overflow-hidden">
+            {/* TIMELINE */}
+            {activeView === 'timeline' && (
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <TimelineRuler
+                  zoom={zoom}
+                  scrollX={scrollX}
+                  tempo={transport.tempo}
+                  timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`}
+                  onSeek={handleSeek}
+                />
+                <div className="flex-1 overflow-auto" ref={arrangeScrollRef} onScroll={handleArrangeScroll}>
+                  <ArrangeView
+                    tracks={tracks}
+                    selectedTrackId={selectedTrackId}
+                    selectedClipId={selectedClipId}
+                    zoom={zoom}
+                    scrollX={scrollX}
+                    tempo={transport.tempo}
+                    playheadPosition={livePosition}
+                    isPlaying={transport.isPlaying}
+                    trackHeaderWidth={trackHeaderWidth}
+                    onSelectTrack={(id) => { setSelectedTrackId(id); setInspectorOpen(true); }}
+                    onSelectClip={setSelectedClipId}
+                    onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
+                    onDeleteTrack={handleDeleteTrack}
+                    onDuplicateTrack={(id) => { store.duplicateTrack(id); toast({ title: 'Track Duplicated' }); }}
+                    showAutomation={showAutomation}
+                    automationLanes={automationLanes}
+                    onAutomationLanesChange={setAutomationLanes}
+                    showVideoTrack={showVideoTrack}
+                    allTracks={tracks}
+                  />
+                </div>
+                {showEditor && <EditorPanel track={selectedTrack} onClose={() => setShowEditor(false)} />}
+                {showLyrics && !platform.isMobile && (
+                  <LyricsPanel
+                    isPlaying={transport.isPlaying}
+                    playheadPosition={livePosition}
+                    tempo={transport.tempo}
+                    onSeek={handleSeek}
+                    sections={lyricsSections}
+                    activeSectionId={lyricsActiveSectionId}
+                    onSectionsChange={setLyricsSections}
+                    onActiveSectionChange={setLyricsActiveSectionId}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* MIXER — full embedded view */}
+            {activeView === 'mixer' && (
+              <MixerPanel
+                tracks={tracks}
+                masterTrack={masterTrack}
+                selectedTrackId={selectedTrackId}
+                onSelectTrack={(id) => { setSelectedTrackId(id); setInspectorOpen(true); }}
+                onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
+                onClose={() => setActiveView('timeline')}
+                projectId={projectId || ''}
+                embedded
+              />
+            )}
+
+            {/* NODE GRAPH — expert only */}
+            {activeView === 'nodegraph' && expertMode && (
+              <NodeGraphView
+                tracks={tracks}
+                masterTrack={masterTrack}
+                selectedTrackId={selectedTrackId}
+                onSelectTrack={(id) => { setSelectedTrackId(id); setInspectorOpen(true); }}
+                onOpenPlugins={(trackId) => {
+                  setSelectedTrackId(trackId);
+                  setPluginFilter('effects');
+                  setShowPluginBrowser(true);
+                }}
+              />
+            )}
+
+            {/* FLOW — project map */}
+            {activeView === 'flow' && (
+              <FlowView
+                tracks={tracks}
+                tempo={transport.tempo}
+                timeSignature={`${transport.timeSignatureNumerator}/${transport.timeSignatureDenominator}`}
+                selectedTrackId={selectedTrackId}
+                onSelectTrack={(id) => { setSelectedTrackId(id); setInspectorOpen(true); }}
+                onAddTrack={handleAddTrack}
+                onOpenMixer={() => setActiveView('mixer')}
+                onOpenTimeline={() => setActiveView('timeline')}
+                onOpenNodeGraph={expertMode ? () => setActiveView('nodegraph') : undefined}
+                projectName={project.name}
+                livePosition={livePosition}
+                isPlaying={transport.isPlaying}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* ── Right Sidebar (Universal Inspector) ── */}
+        <AnimatePresence initial={false}>
+          {inspectorOpen && (
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: 240 }}
+              exit={{ width: 0 }}
+              transition={{ duration: 0.15, ease: 'easeInOut' }}
+              className="shrink-0 border-l border-[#1e1e26] bg-[#111115] flex flex-col overflow-hidden z-10"
+            >
+              <div className="h-8 border-b border-[#1e1e26] flex items-center px-3 shrink-0">
+                <span className="text-[10px] font-semibold text-gray-400 flex-1 uppercase tracking-wider">Inspector</span>
+                <button onClick={() => setInspectorOpen(false)} className="h-5 w-5 flex items-center justify-center text-gray-700 hover:text-gray-300 rounded transition-colors">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+
+              {selectedTrack ? (
+                <TrackInspector
+                  track={selectedTrack}
+                  onClose={() => setSelectedTrackId(null)}
+                  onUpdate={(updates) => handleTrackUpdate(selectedTrackId!, updates)}
+                  onOpenPlugins={() => { setPluginFilter('all'); setShowPluginBrowser(true); }}
+                  embedded
+                />
+              ) : (
+                <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4 text-center">
+                  <Settings className="h-8 w-8 text-gray-800" />
+                  <p className="text-[11px] text-gray-700 leading-relaxed">
+                    Select a track to inspect its properties and plugin chain.
+                  </p>
+                  {expertMode && (
+                    <div className="w-full mt-3 space-y-0.5">
+                      <div className="text-[9px] text-gray-700 uppercase tracking-wider text-left px-1 mb-1">Session</div>
+                      <button onClick={() => setShowProjectSettings(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-600 hover:bg-[#1a1a22] hover:text-gray-200 transition-colors">
+                        <Settings className="h-3 w-3" /> Project Settings
+                      </button>
+                      <button onClick={() => setShowVersionManagement(true)} className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-xs text-gray-600 hover:bg-[#1a1a22] hover:text-gray-200 transition-colors">
+                        <Camera className="h-3 w-3" /> Version Branches
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {showAIPanel && (
+                <div className="border-t border-[#1e1e26] overflow-hidden shrink-0" style={{ maxHeight: 340 }}>
+                  <FlowStateAIPanel
+                    projectId={projectId}
+                    tracks={tracks}
+                    currentTime={livePosition}
+                    tempo={transport.tempo}
+                    musicalKey={musicalKey}
+                    scale={musicalScale}
+                    onAIMix={handleAIMix}
+                    onAIMaster={handleAIMaster}
+                    onGenerateMelody={handleGenerateMelody}
+                    onGenerateDrums={handleGenerateDrums}
+                    onGeneratePercussion={handleGeneratePercussion}
+                    onGenerateBass={handleGenerateBass}
+                    onGenerateChords={handleGenerateChords}
+                    onAnalyzeAudio={handleAnalyzeAudio}
+                    onDetectKey={handleDetectKey}
+                    onAutoArrange={handleAutoArrange}
+                    onSuggestChords={handleSuggestChords}
+                    onClose={() => setShowAIPanel(false)}
+                    isAIMixing={isAIMixing}
+                    isAIMastering={isAIMastering}
+                  />
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Inspector collapsed toggle */}
+        {!inspectorOpen && (
+          <button
+            onClick={() => setInspectorOpen(true)}
+            className="shrink-0 w-2 bg-[#111115] hover:bg-[#1a1a22] border-l border-[#1e1e26] flex items-center justify-center transition-colors"
+            title="Open inspector"
+          >
+            <ChevronRight className="h-2.5 w-2.5 text-gray-700" />
+          </button>
+        )}
       </div>
 
-      {showMixer && (
-        <MixerPanel
-          tracks={tracks}
-          masterTrack={masterTrack}
-          selectedTrackId={selectedTrackId}
-          onSelectTrack={setSelectedTrackId}
-          onUpdateTrack={(id, updates) => handleTrackUpdate(id, updates)}
-          onClose={() => setShowMixer(false)}
-          projectId={projectId || ''}
-        />
-      )}
+      {/* ════ OVERLAYS ════ */}
+      <MobileLyricsPanel
+        open={showLyrics && platform.isMobile}
+        onClose={() => setShowLyrics(false)}
+        sections={lyricsSections}
+        activeSectionId={lyricsActiveSectionId}
+        onSectionsChange={setLyricsSections}
+        onActiveSectionChange={setLyricsActiveSectionId}
+        currentTime={livePosition}
+        onSeek={handleSeek}
+        isPlaying={transport.isPlaying}
+      />
 
       {tracks.some(t => t.armed) && projectId && (
         <RecordingPanel
@@ -3182,17 +3516,18 @@ interface TrackInspectorProps {
   onClose: () => void;
   onUpdate: (updates: any) => void;
   onOpenPlugins: () => void;
+  embedded?: boolean;
 }
 
-function TrackInspector({ track, onClose, onUpdate, onOpenPlugins }: TrackInspectorProps) {
+function TrackInspector({ track, onClose, onUpdate, onOpenPlugins, embedded }: TrackInspectorProps) {
   return (
-    <div className="bg-[#1f1f23] border-r border-[#333] flex flex-col shrink-0 overflow-hidden" style={{ width: 'var(--inspector-w)' }}>
-      <div className="h-10 flex items-center justify-between px-3 border-b border-[#333]">
+    <div className={embedded ? "flex-1 flex flex-col overflow-hidden" : "bg-[#1f1f23] border-r border-[#333] flex flex-col shrink-0 overflow-hidden"} style={embedded ? undefined : { width: 'var(--inspector-w)' }}>
+      {!embedded && <div className="h-10 flex items-center justify-between px-3 border-b border-[#333]">
         <span className="text-sm font-medium">Inspector</span>
         <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
           <PanelRightClose className="h-3.5 w-3.5" />
         </Button>
-      </div>
+      </div>}
 
       <div className="flex-1 overflow-auto p-3 space-y-4">
         <div>
@@ -3353,11 +3688,12 @@ interface MixerPanelProps {
   onUpdateTrack: (id: string, updates: any) => void;
   onClose: () => void;
   projectId: string;
+  embedded?: boolean;
 }
 
-function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpdateTrack, onClose, projectId }: MixerPanelProps) {
+function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpdateTrack, onClose, projectId, embedded }: MixerPanelProps) {
   const [showSnapshotMenu, setShowSnapshotMenu] = useState(false);
-  const [mixerHeight, setMixerHeight] = useState(240);
+  const [mixerHeight, setMixerHeight] = useState(embedded ? 9999 : 240);
   const mixerDragRef = useRef<{ startY: number; startH: number } | null>(null);
   const queryClient = useQueryClient();
 
@@ -3423,12 +3759,12 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
   });
 
   return (
-    <div className="bg-[#1a1a1e] border-t border-[#333] flex flex-col shrink-0" style={{ height: mixerHeight }}>
-      <div
+    <div className={cn("bg-[#1a1a1e] border-t border-[#333] flex flex-col", embedded ? "flex-1 overflow-hidden" : "shrink-0")} style={embedded ? undefined : { height: mixerHeight }}>
+      {!embedded && <div
         className="h-1.5 bg-[#333] hover:bg-blue-500/50 active:bg-blue-500 cursor-ns-resize shrink-0 transition-colors"
         onMouseDown={handleMixerResizeStart}
         title="Drag to resize"
-      />
+      />}
       <div className="h-8 flex items-center justify-between px-3 bg-[#1f1f23] border-b border-[#333] shrink-0">
         <span className="text-sm font-medium">Mixer</span>
         <div className="flex items-center gap-1">
@@ -3644,6 +3980,210 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
 
       <div className="text-[10px] text-center py-1 text-gray-400">
         {Math.round(track.volume * 100)}%
+      </div>
+    </div>
+  );
+}
+
+// ════ NODE GRAPH VIEW ════
+interface NodeGraphViewProps {
+  tracks: any[];
+  masterTrack: any;
+  selectedTrackId: string | null;
+  onSelectTrack: (id: string) => void;
+  onOpenPlugins: (trackId: string) => void;
+}
+
+function NodeGraphView({ tracks, masterTrack, selectedTrackId, onSelectTrack, onOpenPlugins }: NodeGraphViewProps) {
+  const nodeW = 140;
+  const nodeH = 72;
+  const colGap = 48;
+  const startX = 32;
+  const startY = 32;
+  const masterX = startX + nodeW + colGap + (Math.max(tracks.length - 1, 0) * (nodeW + colGap)) / 2;
+  const masterY = startY + nodeH + 80;
+
+  return (
+    <div className="flex-1 overflow-auto bg-[#0a0a0d] relative">
+      <svg
+        className="absolute inset-0"
+        style={{ width: Math.max(startX * 2 + tracks.length * (nodeW + colGap), 600), height: masterY + nodeH + startY }}
+      >
+        {/* Connections: track → master */}
+        {tracks.map((t, i) => {
+          const tx = startX + i * (nodeW + colGap) + nodeW / 2;
+          const ty = startY + nodeH;
+          const mx = masterX + nodeW / 2;
+          const my = masterY;
+          return (
+            <path
+              key={t.id}
+              d={`M ${tx} ${ty} C ${tx} ${ty + 40} ${mx} ${my - 40} ${mx} ${my}`}
+              fill="none"
+              stroke={t.id === selectedTrackId ? '#10b981' : '#2a2a3a'}
+              strokeWidth={t.id === selectedTrackId ? 2 : 1.5}
+            />
+          );
+        })}
+      </svg>
+
+      {/* Track nodes */}
+      {tracks.map((t, i) => (
+        <button
+          key={t.id}
+          onClick={() => onSelectTrack(t.id)}
+          className={cn(
+            "absolute rounded-lg border text-left transition-all",
+            t.id === selectedTrackId
+              ? "border-emerald-500 bg-[#111a1a] shadow-lg shadow-emerald-900/20"
+              : "border-[#2a2a3a] bg-[#12121a] hover:border-[#3a3a4a]"
+          )}
+          style={{ left: startX + i * (nodeW + colGap), top: startY, width: nodeW, height: nodeH }}
+        >
+          <div className="p-2">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: t.color || '#3b82f6' }} />
+              <span className="text-[11px] font-medium truncate text-white">{t.name}</span>
+            </div>
+            <div className="flex items-center gap-1 text-[9px] text-gray-600">
+              <span className={cn("px-1 py-px rounded", t.muted ? "bg-yellow-500/20 text-yellow-500" : "bg-[#1e1e28] text-gray-600")}>M</span>
+              <span className={cn("px-1 py-px rounded", t.solo ? "bg-cyan-500/20 text-cyan-500" : "bg-[#1e1e28] text-gray-600")}>S</span>
+              <span className="flex-1 text-right">{t.plugins?.length || 0} fx</span>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); onOpenPlugins(t.id); }}
+              className="mt-1 w-full text-center text-[9px] text-gray-700 hover:text-gray-300 transition-colors"
+            >
+              + Add FX
+            </button>
+          </div>
+        </button>
+      ))}
+
+      {/* Master node */}
+      <div
+        className="absolute rounded-lg border border-emerald-800/60 bg-[#0e1a14] text-left"
+        style={{ left: masterX, top: masterY, width: nodeW, height: nodeH }}
+      >
+        <div className="p-2">
+          <div className="flex items-center gap-1.5 mb-1.5">
+            <Activity className="h-2.5 w-2.5 text-emerald-400 shrink-0" />
+            <span className="text-[11px] font-semibold text-emerald-300">Master</span>
+          </div>
+          <div className="text-[9px] text-gray-600">{tracks.length} track{tracks.length !== 1 ? 's' : ''} → output</div>
+        </div>
+      </div>
+
+      {tracks.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <p className="text-sm text-gray-700">Add tracks to see the signal flow graph.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ════ FLOW VIEW ════
+interface FlowViewProps {
+  tracks: any[];
+  tempo: number;
+  timeSignature: string;
+  selectedTrackId: string | null;
+  onSelectTrack: (id: string) => void;
+  onAddTrack: () => void;
+  onOpenMixer: () => void;
+  onOpenTimeline: () => void;
+  onOpenNodeGraph?: () => void;
+  projectName: string;
+  livePosition: number;
+  isPlaying: boolean;
+}
+
+function FlowView({
+  tracks,
+  tempo,
+  timeSignature,
+  selectedTrackId,
+  onSelectTrack,
+  onAddTrack,
+  onOpenMixer,
+  onOpenTimeline,
+  onOpenNodeGraph,
+  projectName,
+  livePosition,
+  isPlaying,
+}: FlowViewProps) {
+  return (
+    <div className="flex-1 overflow-auto bg-[#0a0a0d] p-6">
+      <div className="max-w-3xl mx-auto space-y-4">
+        {/* Project overview card */}
+        <div className="rounded-xl border border-[#1e1e28] bg-[#111118] p-4">
+          <div className="flex items-start justify-between mb-3">
+            <div>
+              <h2 className="text-base font-semibold text-white">{projectName || 'Untitled Project'}</h2>
+              <p className="text-xs text-gray-600 mt-0.5">{tempo} BPM · {timeSignature} · {tracks.length} track{tracks.length !== 1 ? 's' : ''}</p>
+            </div>
+            <div className={cn("flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium", isPlaying ? "bg-emerald-500/10 text-emerald-400" : "bg-[#1a1a22] text-gray-600")}>
+              <div className={cn("h-1.5 w-1.5 rounded-full", isPlaying ? "bg-emerald-400 animate-pulse" : "bg-gray-700")} />
+              {isPlaying ? 'Playing' : 'Stopped'}
+            </div>
+          </div>
+
+          {/* Quick-nav buttons */}
+          <div className="flex flex-wrap gap-2">
+            <button onClick={onOpenTimeline} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a22] hover:bg-[#22222c] text-xs text-gray-300 transition-colors">
+              <Waves className="h-3 w-3 text-emerald-400" /> Timeline
+            </button>
+            <button onClick={onOpenMixer} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a22] hover:bg-[#22222c] text-xs text-gray-300 transition-colors">
+              <Sliders className="h-3 w-3 text-blue-400" /> Mixer
+            </button>
+            {onOpenNodeGraph && (
+              <button onClick={onOpenNodeGraph} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1a1a22] hover:bg-[#22222c] text-xs text-gray-300 transition-colors">
+                <Activity className="h-3 w-3 text-purple-400" /> Node Graph
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tracks overview */}
+        <div className="rounded-xl border border-[#1e1e28] bg-[#111118] overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#1e1e28]">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Tracks</span>
+            <button onClick={onAddTrack} className="flex items-center gap-1 px-2 py-1 rounded text-xs text-emerald-400 hover:bg-emerald-500/10 transition-colors">
+              <Plus className="h-3 w-3" /> Add
+            </button>
+          </div>
+          {tracks.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-sm text-gray-700 mb-3">No tracks yet</p>
+              <button onClick={onAddTrack} className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm transition-colors">
+                Add First Track
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#1a1a22]">
+              {tracks.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => onSelectTrack(t.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors",
+                    t.id === selectedTrackId ? "bg-[#1a1a26]" : "hover:bg-[#141420]"
+                  )}
+                >
+                  <div className="h-2.5 w-2.5 rounded-full shrink-0" style={{ backgroundColor: t.color || '#3b82f6' }} />
+                  <span className="text-sm text-white flex-1 truncate">{t.name}</span>
+                  <div className="flex items-center gap-2 text-[10px] text-gray-600">
+                    {t.muted && <span className="px-1 py-px rounded bg-yellow-500/10 text-yellow-600">MUTED</span>}
+                    {t.solo && <span className="px-1 py-px rounded bg-cyan-500/10 text-cyan-600">SOLO</span>}
+                    <span>{t.plugins?.length || 0} fx</span>
+                    <span>{Math.round((t.volume || 0.8) * 100)}%</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
