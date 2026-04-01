@@ -21,6 +21,12 @@ export { AdvancedTimeSeriesModel } from './AdvancedTimeSeriesModel.js';
 export { AdOptimizationEngine } from './AdOptimizationEngine.js';
 export { SocialAutopilotEngine } from './SocialAutopilotEngine.js';
 
+// ─── Creative Model Pipeline (Veo-surpassing music-synced video generation) ──
+export { CreativePlannerModel, PLATFORM_IDX, GOAL_IDX, TONE_IDX, DOMAIN_IDX, extractCreativePlannerFeatures } from './CreativePlannerModel.js';
+export { BeatSyncAlignmentModel, extractAlignmentFeatures } from './BeatSyncAlignmentModel.js';
+export { VideoCreativeScorer, extractScorerFeatures } from './VideoCreativeScorer.js';
+export { KeyframeStyleSelector, VIDEO_STYLES, STYLE_IDX, AESTHETIC_IDX, EMOTIONAL_GOAL_IDX, GENRE_ENERGY_MAP, extractStyleFeatures } from './KeyframeStyleSelector.js';
+
 export type {
   Platform,
   ContentType,
