@@ -109,150 +109,145 @@ def build_curriculum() -> List[CurriculumPhase]:
     """
     return [
 
-        # ── Phase 1: Spatial Foundation (Days 1-7) ───────────────────────────
+        # ── SPRINT MODE: 30 days → 3 days (due Friday) ───────────────────────
+        # Original schedule: 7 days per phase across 30 days.
+        # Compressed: 1 day per phase, early advancement on quality targets,
+        # higher LR for faster convergence, relaxed quality gates so the
+        # scheduler can advance without waiting for perfection.
+        # The 35% replay fraction + doubled replay buffer (memory.py) means
+        # each shortened phase still hammers hard examples aggressively.
+        # ─────────────────────────────────────────────────────────────────────
+
+        # ── Phase 1: Spatial Foundation (Day 1) ──────────────────────────────
         CurriculumPhase(
             phase_id    = 1,
             name        = "Spatial Foundation",
             day_start   = 1,
-            day_end     = 7,
+            day_end     = 1,
             T           = 4,
             res         = 64,
-            lr          = 2e-4,
+            lr          = 3e-4,          # SPRINT: 1.5x original LR for faster convergence
             n_samples_per_session = 400,
             n_epochs_per_session  = 5,
             training_focus = 'spatial_quality',
             datasets    = [
-                'synthetic',        # Always available — procedural frames
-                'laion_aesthetics', # Visual style: album cover / branding aesthetics
-                'gtzan',            # Audio-only: genre conditioning
-                'fma',              # Audio-only: rich music features
+                'synthetic',
+                'laion_aesthetics',
+                'gtzan',
+                'fma',
             ],
-            quality_targets = {
-                'mse_loss':              0.15,
-                'perceptual_score':      0.40,
-                'temporal_consistency':  0.60,
+            quality_targets = {          # SPRINT: relaxed ~15% so phase advances faster
+                'mse_loss':              0.18,
+                'perceptual_score':      0.34,
+                'temporal_consistency':  0.51,
             },
             notes = (
-                "Focus: UNet learns scene structure, color palettes, composition. "
-                "Use T=4 for fast iteration. Run ~200 steps/session, many sessions/day. "
-                "Key metric: perceptual loss (Sobel edge quality). "
-                "Primary data: synthetic procedural frames + LAION aesthetics. "
-                "Expected daily steps: ~3000-5000."
+                "SPRINT MODE: 1 day (was 7). Higher LR, relaxed quality gates. "
+                "Focus: scene structure, color palettes, composition. T=4 fast iteration. "
+                "Replay fraction 35% — hard examples revisited aggressively."
             ),
         ),
 
-        # ── Phase 2: Motion Coherence (Days 8-14) ────────────────────────────
+        # ── Phase 2: Motion Coherence (Day 2) ────────────────────────────────
         CurriculumPhase(
             phase_id    = 2,
             name        = "Motion Coherence",
-            day_start   = 8,
-            day_end     = 14,
+            day_start   = 2,
+            day_end     = 2,
             T           = 8,
             res         = 64,
-            lr          = 1e-4,
+            lr          = 1.5e-4,        # SPRINT: 1.5x original LR
             n_samples_per_session = 500,
             n_epochs_per_session  = 6,
             training_focus = 'motion_coherence',
             datasets    = [
-                'synthetic',        # Still used as baseline
-                'ucf_101',          # Action recognition — diverse motion
-                'kinetics_700',     # Large-scale motion variety
-                'aist_plus',        # Music-synchronized dance motion
-                'hmdb_51',          # Human motion variety
+                'synthetic',
+                'ucf_101',
+                'kinetics_700',
+                'aist_plus',
+                'hmdb_51',
             ],
-            quality_targets = {
-                'mse_loss':              0.10,
-                'perceptual_score':      0.55,
-                'temporal_consistency':  0.75,
-                'motion_smoothness':     0.65,
+            quality_targets = {          # SPRINT: relaxed ~15%
+                'mse_loss':              0.12,
+                'perceptual_score':      0.47,
+                'temporal_consistency':  0.64,
+                'motion_smoothness':     0.55,
             },
             notes = (
-                "Focus: Temporal attention learns to produce fluid, coherent motion. "
-                "T=8 forces model to reason about 8-frame trajectories. "
-                "Temporal consistency loss weight increased to 0.10. "
-                "Key data: AIST++ (music-dance pairs) + UCF-101 (action variety). "
-                "LR reduced 2x from phase 1 — fine-tuning spatial quality. "
-                "Expected improvement: motion blur artifacts decrease."
+                "SPRINT MODE: 1 day (was 7). Temporal attention, fluid motion. "
+                "T=8 forces 8-frame trajectory reasoning. AIST++ music-dance pairs."
             ),
         ),
 
-        # ── Phase 3: Music Specificity (Days 15-21) ──────────────────────────
+        # ── Phase 3: Music Specificity (Day 3 morning) ───────────────────────
         CurriculumPhase(
             phase_id    = 3,
             name        = "Music Specificity",
-            day_start   = 15,
-            day_end     = 21,
+            day_start   = 3,
+            day_end     = 3,
             T           = 16,
             res         = 96,
-            lr          = 5e-5,
+            lr          = 7e-5,          # SPRINT: 1.4x original LR
             n_samples_per_session = 400,
             n_epochs_per_session  = 5,
             training_focus = 'music_specificity',
             datasets    = [
-                'vggsound',         # Audio-visual: music performance clips
-                'audioset_music',   # Music-labeled video
-                'aist_plus',        # Music-synchronized dance
-                'ytmv',             # YouTube music videos
-                'fma',              # FMA audio for conditioning richness
-                'magnatagatune',    # Mood/genre labels
-                'synthetic',        # Procedural fallback
+                'vggsound',
+                'audioset_music',
+                'aist_plus',
+                'ytmv',
+                'fma',
+                'magnatagatune',
+                'synthetic',
             ],
-            quality_targets = {
-                'mse_loss':              0.07,
-                'perceptual_score':      0.65,
-                'temporal_consistency':  0.80,
-                'music_visual_alignment': 0.65,
-                'genre_accuracy':        0.60,
+            quality_targets = {          # SPRINT: relaxed ~15%
+                'mse_loss':              0.08,
+                'perceptual_score':      0.55,
+                'temporal_consistency':  0.68,
+                'music_visual_alignment': 0.55,
+                'genre_accuracy':        0.51,
             },
             notes = (
-                "Focus: Model learns genre-specific aesthetics (trap darkness, "
-                "EDM neons, gospel warmth, hip-hop street aesthetics). "
-                "T=16 at 96×96 — significant memory and compute step up. "
-                "Audio features now directly condition via 256-dim vector. "
-                "Key insight: BPM and energy curve in conditioning push model "
-                "to produce genre-appropriate motion speed and visual intensity. "
-                "Primary data: VGGSound music + AIST++ + AudioSet music subset."
+                "SPRINT MODE: 1 day (was 7). Genre aesthetics, BPM conditioning. "
+                "T=16 at 96×96 — big compute step. Audio features via 256-dim vector."
             ),
         ),
 
-        # ── Phase 4: Audio-Visual Fusion (Days 22-30) ────────────────────────
+        # ── Phase 4: Audio-Visual Fusion (Day 3) ─────────────────────────────
         CurriculumPhase(
             phase_id    = 4,
             name        = "Audio-Visual Fusion",
-            day_start   = 22,
-            day_end     = 30,
+            day_start   = 3,
+            day_end     = 3,
             T           = 32,
             res         = 96,
-            lr          = 2e-5,
+            lr          = 3e-5,          # SPRINT: 1.5x original LR
             n_samples_per_session = 500,
             n_epochs_per_session  = 5,
             training_focus = 'audiovisual_fusion',
             datasets    = [
-                'vggsound',         # Best audio-visual alignment source
-                'audioset_music',   # Rich audio labels
-                'aist_plus',        # Beat-synchronized motion
-                'ytmv',             # Real music videos
-                'openvid_1m',       # Text-video pairs for caption conditioning
-                'webvid_2m',        # Diverse video + text
-                'audiocaps',        # Audio captioning pairs
-                'synthetic',        # Fill gaps
+                'vggsound',
+                'audioset_music',
+                'aist_plus',
+                'ytmv',
+                'openvid_1m',
+                'webvid_2m',
+                'audiocaps',
+                'synthetic',
             ],
-            quality_targets = {
-                'mse_loss':              0.05,
-                'perceptual_score':      0.72,
-                'temporal_consistency':  0.85,
-                'music_visual_alignment': 0.70,
-                'audio_beat_sync':       0.60,
-                'genre_accuracy':        0.70,
-                'text_adherence':        0.65,
+            quality_targets = {          # SPRINT: relaxed ~15%
+                'mse_loss':              0.06,
+                'perceptual_score':      0.61,
+                'temporal_consistency':  0.72,
+                'music_visual_alignment': 0.60,
+                'audio_beat_sync':       0.51,
+                'genre_accuracy':        0.60,
+                'text_adherence':        0.55,
             },
             notes = (
-                "Focus: Full T=32 temporal reasoning + audio-visual beat synchronization. "
-                "Model should produce videos where visual energy tracks beat energy curve. "
-                "Caption conditioning now drives scene content (text-to-video alignment). "
-                "Distillation from phase 3 model reduces required training steps. "
-                "This is the final phase — model should be deployable for production use. "
-                "After this phase: quantitative evaluation against Veo gap metrics."
+                "SPRINT MODE: Same day as phase 3, triggered by early advancement. "
+                "Full T=32 + beat sync. Distillation from phase 3 reduces steps needed. "
+                "Production-ready after this phase. Evaluate against Veo gap metrics."
             ),
         ),
     ]

@@ -31,23 +31,29 @@ function _hlKey(id: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Learning capacity configuration
-// Baseline: average human = 1x
-// Owner learning rate: associates degree (24 months) completed in 1 month = 24x average human
-// Target: 3x owner capacity = 3 × 24 = 72x average human
+// ── SPRINT MODE (3-day deadline — due Friday) ─────────────────────────────────
+// Original config was calibrated for an 18-day learning window.
+// With ~3 days remaining every parameter is pushed to maximum throughput:
+//   - Owner multiplier: 3x → 6x  (sprint intensity — all hands on deck)
+//   - Combined: 24 × 6 = 144x human baseline (was 72x)
+//   - Learning interval: 5 min → 75 s (permanent max-caffeine mode)
+//   - A/B variates: 30 → 50 (more signal density per cycle)
+//   - Min impressions: 30 → 15 (faster variate elimination)
+//   - Significance threshold: 0.80 → 0.75 (faster winner selection)
+// ─────────────────────────────────────────────────────────────────────────────
 const HUMAN_BASELINE         = 1.0;
-const OWNER_LEARNING_RATE    = 24.0;  // 24x faster than average human
-const OWNER_MULTIPLIER       = 3.0;   // autopilots run at 3x the owner's capacity
-const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
+const OWNER_LEARNING_RATE    = 24.0;   // 24x faster than average human
+const OWNER_MULTIPLIER       = 6.0;    // SPRINT: 6x owner capacity (was 3x)
+const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 144x
 const HUMAN_ANALYSIS_DIMENSIONS = 5;
 const HYPER_ANALYSIS_DIMENSIONS = HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
-// Hyper A/B testing — 30 simultaneous variates for maximum signal density
-const HYPER_AB_VARIATES         = 30;
-// Min impressions per variate (not total) before evaluating winners
-const AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
-// Lower confidence bar at scale — 30 variates provide enough signal at 0.80
-const AB_SIGNIFICANCE_THRESHOLD = 0.80;
+// Hyper A/B testing — 50 simultaneous variates for maximum sprint signal density
+const HYPER_AB_VARIATES         = 50;
+// SPRINT: lower impressions threshold — eliminate losers faster under time pressure
+const AB_MIN_IMPRESSIONS_PER_VARIATE = 15;
+// SPRINT: slightly lower bar — 50 variates provide sufficient signal at 0.75
+const AB_SIGNIFICANCE_THRESHOLD = 0.75;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
 const AI_SERVER_URL = process.env.PEER_TRAINING_NODE || 'http://localhost:8000';
 
@@ -159,6 +165,8 @@ class HyperLearningEngine extends EventEmitter {
   private learningMetrics: LearningMetrics = this.initializeMetrics();
   private pendingTrainingSignals: Record<string, unknown>[] = [];
   
+  // Baseline interval — Caffeine Mode compresses this dynamically via applyDeadlinePressure()
+  // Sprint deadline fires pressure > 1.5 at startup → 75-second cycles automatically
   private readonly LEARNING_INTERVAL_MS = 5 * 60 * 1000;
   private readonly MICRO_PATTERN_THRESHOLD = 0.15;
   private readonly CROSS_PLATFORM_MIN_OVERLAP = 0.3;

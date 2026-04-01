@@ -36,6 +36,16 @@ setTimeout(() => {
   hyperLearningEngine.start().catch(err => {
     logger.warn('HyperLearning Engine failed to auto-start:', err);
   });
+
+  // ── SPRINT MODE: 3-day deadline — due Friday ───────────────────────────────
+  // Immediately apply critical deadline pressure (> 1.5 threshold) so Caffeine
+  // Mode engages at maximum intensity right from the first cycle:
+  //   pressure > 1.5 → 75-second cycles (all-nighter mode)
+  // This uses the existing Caffeine Mode mechanism — no hardcoded intervals.
+  // Remove / lower this once the deadline has passed.
+  hyperLearningEngine.applyDeadlinePressure(2.0);
+  logger.warn('⚡ [SPRINT] Caffeine Mode CRITICAL engaged at startup — 75s learning cycles (3-day deadline)');
+  // ─────────────────────────────────────────────────────────────────────────
 }, 90_000);
 
 router.get('/status', requireAuth, async (req, res) => {

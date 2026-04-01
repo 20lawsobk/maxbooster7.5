@@ -39,9 +39,14 @@ const META_PATH    = path.join(__dirname, 'diffusion', 'meta.json');
 const MEMORY_PATH  = path.join(__dirname, 'diffusion', 'memory.json');
 const STATUS_PATH  = path.join(os.tmpdir(), 'diffusion_bg_status.json');
 
-// Tier rotation sequence — quick first, then alternates medium/deep
+// ── SPRINT MODE (3-day deadline) ─────────────────────────────────────────────
+// Original 18-day schedule started with a quick warmup then alternated
+// medium/deep.  With only 3 days until Friday, every session must be DEEP
+// (1000 samples × 30 epochs = maximum knowledge per session).
+// Cool-downs are also cut to the minimum needed for memory saves.
+// ─────────────────────────────────────────────────────────────────────────────
 const TIER_SEQUENCE: Array<'quick' | 'medium' | 'deep'> = [
-  'quick', 'medium', 'deep', 'medium', 'deep', 'medium', 'deep',
+  'deep', 'deep', 'deep', 'deep', 'deep', 'deep', 'deep',
 ];
 
 interface BgStatus {
@@ -85,12 +90,9 @@ function _appendLog(line: string) {
   }
 }
 
-function _getTier(sessionIndex: number): 'quick' | 'medium' | 'deep' {
-  if (sessionIndex < TIER_SEQUENCE.length) {
-    return TIER_SEQUENCE[sessionIndex];
-  }
-  // After initial sequence: alternate medium/deep
-  return sessionIndex % 2 === 0 ? 'medium' : 'deep';
+function _getTier(_sessionIndex: number): 'quick' | 'medium' | 'deep' {
+  // SPRINT MODE: always deep — no warmup, no medium, maximum samples every session
+  return 'deep';
 }
 
 function _syncMemoryStats() {
@@ -190,12 +192,13 @@ async function _trainingLoop() {
     const ok   = await _runSession(tier);
 
     if (!ok && !_stopFlag) {
-      _appendLog('[BgTrainer] Session failed — retrying in 60s');
-      await _sleep(60_000);
-    } else if (!_stopFlag) {
-      // 10-second cool-down between sessions (let server breathe)
-      _appendLog('[BgTrainer] Cool-down 10s before next session...');
+      // SPRINT MODE: 10s retry (was 60s) — no time to waste on long pauses
+      _appendLog('[BgTrainer] Session failed — retrying in 10s (sprint mode)');
       await _sleep(10_000);
+    } else if (!_stopFlag) {
+      // SPRINT MODE: 2s cool-down (was 10s) — just enough for memory.json flush
+      _appendLog('[BgTrainer] Cool-down 2s before next session (sprint mode)...');
+      await _sleep(2_000);
     }
   }
 

@@ -29,10 +29,16 @@ import numpy as np
 
 MEMORY_PATH = os.path.join(os.path.dirname(__file__), 'memory.json')
 
-# Replay buffer caps
-MAX_REPLAY_ENTRIES = 500        # max frames stored in replay buffer
-REPLAY_LOSS_THRESHOLD = 0.75    # store examples above this percentile of losses
-REPLAY_FRACTION = 0.20          # 20% of each training batch comes from replay
+# ── SPRINT MODE (3-day deadline — due Friday) ────────────────────────────────
+# Original 18-day tuning: capture top-25% hard examples, replay 20% of batch.
+# With 3 days, we need to learn from failures FASTER:
+#   - Double the replay buffer (more hard examples retained)
+#   - Capture top-45% instead of top-25% (wider hard-example net)
+#   - 35% replay fraction (was 20%) — model revisits weaknesses more aggressively
+# ─────────────────────────────────────────────────────────────────────────────
+MAX_REPLAY_ENTRIES    = 1000    # SPRINT: doubled (was 500) — retain more hard examples
+REPLAY_LOSS_THRESHOLD = 0.55    # SPRINT: capture top-45% (was top-25% at 0.75)
+REPLAY_FRACTION       = 0.35    # SPRINT: 35% of batch from replay (was 20%)
 
 
 # ── Replay Buffer ──────────────────────────────────────────────────────────
