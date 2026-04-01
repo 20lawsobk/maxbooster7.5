@@ -314,6 +314,72 @@ export async function generatePyTorchDiffusionVideo(
   return res.json() as Promise<PyTorchDiffusionResult>;
 }
 
+/**
+ * Returns the URL for the SSE streaming endpoint.
+ * The client (DigitalGPUVideoPlayer streamMode + streamUrl props) connects
+ * directly to this — no server round-trip needed after this call.
+ */
+export function getPyTorchStreamUrl(opts: PyTorchDiffusionRequest): string {
+  const url = `${PYTORCH_API_BASE}/generate/stream`;
+  return url;
+}
+
+/**
+ * Consume the SSE streaming endpoint as an async iterator on the server.
+ * Each yielded item is { index, frame_b64, total, scene_name, gpu_applied }.
+ * Useful for server-to-server streaming pipelines.
+ */
+export async function* streamPyTorchDiffusion(
+  opts: PyTorchDiffusionRequest,
+): AsyncGenerator<{
+  index:        number;
+  frame_b64:    string;
+  total:        number;
+  scene_name:   string;
+  gpu_applied:  boolean;
+  done?:        boolean;
+}> {
+  const payload: PyTorchDiffusionRequest = {
+    ...opts,
+    use_digital_gpu: opts.use_digital_gpu ?? true,
+    temporal_smooth: opts.temporal_smooth ?? true,
+    output_format:   'frames_b64',
+  };
+
+  const res = await fetch(`${PYTORCH_API_BASE}/generate/stream`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+    signal:  AbortSignal.timeout(180_000),
+  });
+
+  if (!res.ok || !res.body) {
+    throw new Error(`PyTorch stream error ${res.status}: ${res.statusText}`);
+  }
+
+  const reader  = res.body.getReader();
+  const decoder = new TextDecoder();
+  let   buffer  = '';
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n\n');
+    buffer = lines.pop() ?? '';
+
+    for (const line of lines) {
+      if (!line.startsWith('data: ')) continue;
+      try {
+        const evt = JSON.parse(line.slice(6));
+        yield evt;
+        if (evt.done) return;
+      } catch { /* skip malformed */ }
+    }
+  }
+}
+
 /** Generate a single representative keyframe via the PyTorch diffusion API. */
 export async function generatePyTorchKeyframe(
   opts: Omit<PyTorchDiffusionRequest, 'T' | 'output_format'>,
