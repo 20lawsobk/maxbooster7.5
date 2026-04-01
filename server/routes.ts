@@ -4500,6 +4500,15 @@ export async function registerRoutes(
     log(`Warning: Could not load unifiedContent routes - ${error.message}`);
   }
 
+  // AdvancedCreativeModel pipeline — music-synced short-form video creative generation
+  try {
+    const creativeModelRouter = (await import('./routes/creativeModel.js')).default;
+    app.use('/api/content/creative-model', creativeModelRouter);
+    log('Loaded route: creativeModel');
+  } catch (error: any) {
+    log(`Warning: Could not load creativeModel routes - ${error.message}`);
+  }
+
   // Collaboration routes
   try {
     const collaborationRouter = (await import('./routes/collaboration.js')).default;
