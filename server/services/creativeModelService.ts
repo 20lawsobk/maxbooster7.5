@@ -27,8 +27,11 @@
  *     MaxCore /api/generate/text when available
  *
  *   Stage 6 — Video Assembly
- *     videoGeneratorService (FFmpeg + Python frame generator, 13 visual styles)
- *     — now receives per-beat style assignments from KeyframeStyleSelector
+ *     [Priority 1] PyTorch latent video diffusion API (video_diffusion/, port 8010)
+ *       — music-conditioned: BPM, energy, style, beat position, emotional goal
+ *       — two-stage cascade: base 256×256/16f → SR 512×512/32f
+ *     [Priority 2] videoGeneratorService (FFmpeg + Python, 13 visual styles)
+ *     [Priority 3] placeholder path
  *
  *   Stage 7 — Engagement Scoring
  *     MaxCore AI /api/generate/text → VideoCreativeScorer (in-house TF.js)
@@ -719,9 +722,81 @@ async function assemblyStage(
   timing: AlignedTimeline,
   audioPath: string,
   brief: CreativeBrief,
+  musicMeta: MusicMeta,
+  ctx: CreativeContext,
+  plan: CreativePlan,
 ): Promise<string> {
   logger.info('[CreativeModel] Stage 6: Video assembly');
 
+  // ── Priority 1: PyTorch latent video diffusion (music-conditioned) ──────────
+  try {
+    const {
+      isPyTorchDiffusionReady,
+      generatePyTorchDiffusionVideo,
+    } = await import('./diffusionVideoService.js');
+
+    const diffusionReady = await isPyTorchDiffusionReady();
+    if (diffusionReady) {
+      logger.info('[CreativeModel] Stage 6: Using PyTorch diffusion API (music-conditioned)');
+
+      // Use the dominant style from the first beat's KeyframeStyleSelector output
+      const firstBeatStyle = ctx.styleMap.get(0);
+      const styleName: string  = firstBeatStyle?.primaryStyle ?? 'neon_tunnel';
+      const secondaryEntry     = firstBeatStyle?.topStyles?.[1];
+      const blendStyle: string | undefined = secondaryEntry?.style;
+      // Blend weight: proportional to confidence gap between top-2 styles
+      const topProb   = firstBeatStyle?.topStyles?.[0]?.probability ?? 1;
+      const secProb   = secondaryEntry?.probability ?? 0;
+      const blendWeight: number = Math.max(0, Math.min(0.5, 1 - (topProb - secProb)));
+
+      // Derive drop presence from musical sections
+      const isDropSection = musicMeta.sections.some(
+        s => (s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop')),
+      );
+
+      // Use emotional goal from plan's first beat
+      const emotionalGoal: string = plan.beats?.[0]?.emotionalGoal ?? 'curiosity';
+
+      const result = await generatePyTorchDiffusionVideo({
+        prompt:          `${brief.domain ?? ''} music video, ${brief.tone ?? ''}`.trim(),
+        T:               16,
+        H:               512,
+        W:               512,
+        bpm:             musicMeta.bpm,
+        energy:          ctx.energyMean,
+        energy_peak:     ctx.energyPeak,
+        style_name:      styleName,
+        beat_index:      0,
+        total_beats:     plan.beats?.length ?? 4,
+        is_drop:         isDropSection,
+        emotional_goal:  emotionalGoal,
+        blend_style_name: blendStyle,
+        blend_weight:    blendWeight,
+        output_format:   'mp4_b64',
+        platform:        brief.platform,
+      });
+
+      if (result.status === 'ok' && result.mp4_b64) {
+        // Write the base64 MP4 to a temp file and return its path
+        const { writeFileSync, mkdirSync } = await import('fs');
+        const { tmpdir } = await import('os');
+        const { join } = await import('path');
+        const outDir = join(tmpdir(), 'maxbooster_diffusion');
+        mkdirSync(outDir, { recursive: true });
+        const outPath = join(outDir, `diffusion_${randomUUID()}.mp4`);
+        writeFileSync(outPath, Buffer.from(result.mp4_b64, 'base64'));
+        logger.info(
+          `[CreativeModel] Stage 6: PyTorch diffusion OK → ${outPath} ` +
+          `(${result.num_frames ?? '?'} frames, style=${result.style_used ?? styleName})`,
+        );
+        return outPath;
+      }
+    }
+  } catch (err) {
+    logger.warn('[CreativeModel] PyTorch diffusion API unavailable, falling back', { err });
+  }
+
+  // ── Priority 2: videoGeneratorService (FFmpeg + Python frames) ─────────────
   try {
     const { videoGeneratorService } = await import('./videoGeneratorService.js');
     if (videoGeneratorService && typeof videoGeneratorService.generateVideo === 'function') {
@@ -739,6 +814,7 @@ async function assemblyStage(
     logger.warn('[CreativeModel] videoGeneratorService unavailable, using placeholder', { err });
   }
 
+  // ── Priority 3: placeholder ─────────────────────────────────────────────────
   return `creative_video_${randomUUID()}_placeholder`;
 }
 
@@ -928,7 +1004,7 @@ export async function generateCreativePackage(opts: GenerateOptions): Promise<Cr
 
   // Stages 6 + 7 in parallel — assembly and scoring both run simultaneously
   const [videoPath, scores] = await Promise.all([
-    assemblyStage(keyframePaths, timing, audioPath, brief),
+    assemblyStage(keyframePaths, timing, audioPath, brief, musicMeta, ctx, plan),
     scoringStage(script, plan, musicMeta, brief, ctx),
   ]);
 

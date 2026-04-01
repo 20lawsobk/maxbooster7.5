@@ -193,6 +193,112 @@ export function generateDiffusionFrames(
 }
 
 
+// ── PyTorch Diffusion API (new video_diffusion/ module) ───────────────────
+
+export interface PyTorchDiffusionRequest {
+  prompt?:          string;
+  T?:               number;
+  H?:               number;
+  W?:               number;
+  bpm?:             number;
+  energy?:          number;
+  energy_peak?:     number;
+  style_name?:      string;
+  beat_index?:      number;
+  total_beats?:     number;
+  is_drop?:         boolean;
+  emotional_goal?:  string;
+  blend_style_name?: string;
+  blend_weight?:    number;
+  seed?:            number;
+  output_format?:   'frames_b64' | 'mp4_b64' | 'json_shape';
+  platform?:        string;
+}
+
+export interface PyTorchDiffusionResult {
+  status:       string;
+  frames_b64?:  string[];
+  mp4_b64?:     string;
+  shape?:       number[];
+  style_used?:  string;
+  device?:      string;
+  num_frames?:  number;
+}
+
+const PYTORCH_API_BASE =
+  process.env.VIDEO_DIFFUSION_URL ?? 'http://127.0.0.1:8010';
+
+/** Check if the PyTorch diffusion API server is alive. */
+export async function isPyTorchDiffusionReady(): Promise<boolean> {
+  try {
+    const res = await fetch(`${PYTORCH_API_BASE}/ready`, { signal: AbortSignal.timeout(2000) });
+    if (!res.ok) return false;
+    const body = await res.json() as { ready?: boolean };
+    return body.ready === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Generate a full music-synced video via the PyTorch diffusion API. */
+export async function generatePyTorchDiffusionVideo(
+  opts: PyTorchDiffusionRequest,
+): Promise<PyTorchDiffusionResult> {
+  const payload: PyTorchDiffusionRequest = {
+    prompt:          opts.prompt ?? '',
+    T:               opts.T ?? 16,
+    H:               opts.H ?? 256,
+    W:               opts.W ?? 256,
+    bpm:             opts.bpm ?? 120,
+    energy:          opts.energy ?? 0.65,
+    energy_peak:     opts.energy_peak ?? 0.85,
+    style_name:      opts.style_name ?? 'neon_tunnel',
+    beat_index:      opts.beat_index ?? 0,
+    total_beats:     opts.total_beats ?? 4,
+    is_drop:         opts.is_drop ?? false,
+    emotional_goal:  opts.emotional_goal ?? 'curiosity',
+    blend_style_name: opts.blend_style_name,
+    blend_weight:    opts.blend_weight ?? 0,
+    seed:            opts.seed,
+    output_format:   opts.output_format ?? 'mp4_b64',
+    platform:        opts.platform ?? 'tiktok',
+  };
+
+  const res = await fetch(`${PYTORCH_API_BASE}/generate`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(payload),
+    signal:  AbortSignal.timeout(120_000),  // 2-min budget for inference
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`PyTorch diffusion API error ${res.status}: ${msg}`);
+  }
+
+  return res.json() as Promise<PyTorchDiffusionResult>;
+}
+
+/** Generate a single representative keyframe via the PyTorch diffusion API. */
+export async function generatePyTorchKeyframe(
+  opts: Omit<PyTorchDiffusionRequest, 'T' | 'output_format'>,
+): Promise<{ frame_b64?: string; style_used?: string }> {
+  const res = await fetch(`${PYTORCH_API_BASE}/generate/keyframe`, {
+    method:  'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body:    JSON.stringify(opts),
+    signal:  AbortSignal.timeout(60_000),
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => res.statusText);
+    throw new Error(`PyTorch keyframe API error ${res.status}: ${msg}`);
+  }
+
+  return res.json() as Promise<{ frame_b64?: string; style_used?: string }>;
+}
+
+
 // ── Quick sanity test ──────────────────────────────────────────────────────
 
 export async function testDiffusionModel(): Promise<{

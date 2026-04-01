@@ -1,0 +1,40 @@
+vae:
+  in_ch: 3
+  base_ch: 128
+  ch_mult: [1, 2, 4, 4]
+  temporal_down: [1, 2, 2, 2]
+  latent_ch: 16
+  scale_factor: 8
+
+vae_ckpt: ""           # path to trained VAE checkpoint
+dit_ckpt: ""           # path to trained DiT checkpoint
+text_cond_ckpt: ""
+music_cond_ckpt: ""
+
+dit:
+  in_ch: 16
+  embed_dim: 1024
+  depth: 24
+  n_heads: 16
+  pt: 2
+  ph: 4
+  pw: 4
+  time_dim: 256
+
+text:
+  dim: 768             # CLIP ViT-L / text encoder output dim
+
+diffusion:
+  num_steps: 1000
+  schedule: cosine
+
+infer:
+  steps: 50
+  guidance_scale: 7.5
+  eta: 0.0
+  sr_steps: 20
+  sr_guidance: 4.0
+
+# Optional SR stage — leave empty to disable
+sr: {}
+sr_ckpt: ""
