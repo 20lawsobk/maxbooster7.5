@@ -66,7 +66,7 @@ const PLATFORM_COLORS: Record<string, string> = {
   googlebusiness: '#4285F4',
 };
 
-const STATUS_CONFIG = {
+const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; bg: string; label: string }> = {
   draft: {
     icon: AlertCircle,
     color: 'text-gray-500',
@@ -78,6 +78,12 @@ const STATUS_CONFIG = {
     color: 'text-blue-500',
     bg: 'bg-blue-100 dark:bg-blue-900',
     label: 'Scheduled',
+  },
+  pending: {
+    icon: Clock,
+    color: 'text-yellow-500',
+    bg: 'bg-yellow-100 dark:bg-yellow-900',
+    label: 'Pending',
   },
   published: {
     icon: CheckCircle,
@@ -93,10 +99,19 @@ const STATUS_CONFIG = {
   },
 };
 
+const DEFAULT_STATUS_CONFIG = {
+  icon: AlertCircle,
+  color: 'text-gray-500',
+  bg: 'bg-gray-100 dark:bg-gray-800',
+  label: 'Unknown',
+};
+
 export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTimelineViewProps) {
-  const sortedPosts = [...posts].sort(
-    (a, b) => new Date(a.scheduledFor).getTime() - new Date(b.scheduledFor).getTime()
-  );
+  const sortedPosts = [...posts].sort((a, b) => {
+    const ta = a.scheduledFor ? new Date(a.scheduledFor).getTime() : 0;
+    const tb = b.scheduledFor ? new Date(b.scheduledFor).getTime() : 0;
+    return ta - tb;
+  });
 
   const formatDateTime = (dateString: string) => {
     try {
@@ -128,7 +143,7 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
         ) : (
           <div className="space-y-4">
             {sortedPosts.map((post) => {
-              const statusConfig = STATUS_CONFIG[post.status];
+              const statusConfig = STATUS_CONFIG[post.status] ?? DEFAULT_STATUS_CONFIG;
               const StatusIcon = statusConfig.icon;
               const dateTime = formatDateTime(post.scheduledFor);
 
