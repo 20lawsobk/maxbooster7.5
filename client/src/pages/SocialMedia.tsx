@@ -319,7 +319,9 @@ interface ActivityItem {
   platform: string;
   user?: string;
   content: string;
-  time: string;
+  status?: string;
+  createdAt?: string;
+  time?: string;
   action?: string;
   engagement?: string;
 }
@@ -2700,24 +2702,56 @@ return (
               <CardContent>
                 <div className="space-y-4">
                   {activity && activity.length > 0 ? (
-                    activity.slice(0, 4).map((act: ActivityItem, idx: number) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
-                      >
-                        <div className="flex items-center space-x-3">
-                          <Share2 className="w-4 h-4 text-blue-600" />
-                          <div>
-                            <p className="font-semibold text-sm">{act.platform}</p>
-                            <p className="text-xs text-gray-600">{act.action}</p>
+                    activity.slice(0, 4).map((act: ActivityItem, idx: number) => {
+                      let snippet = act.action || '';
+                      if (!snippet && act.content) {
+                        try {
+                          const parsed = JSON.parse(act.content);
+                          snippet = parsed.text || parsed.caption || act.content;
+                        } catch {
+                          snippet = act.content;
+                        }
+                      }
+                      snippet = snippet.length > 60 ? snippet.slice(0, 57) + '…' : snippet;
+
+                      const relTime = (() => {
+                        const ts = act.createdAt || act.time;
+                        if (!ts) return '';
+                        const diff = Date.now() - new Date(ts).getTime();
+                        const mins = Math.floor(diff / 60000);
+                        if (mins < 60) return `${mins}m ago`;
+                        const hrs = Math.floor(mins / 60);
+                        if (hrs < 24) return `${hrs}h ago`;
+                        return `${Math.floor(hrs / 24)}d ago`;
+                      })();
+
+                      const statusColor = act.status === 'published' ? 'text-green-600'
+                        : act.status === 'failed' ? 'text-red-500'
+                        : act.engagement ? 'text-green-600'
+                        : 'text-yellow-500';
+                      const statusLabel = act.status === 'published' ? 'Published'
+                        : act.status === 'failed' ? 'Failed'
+                        : act.engagement || (act.status === 'pending' ? 'Pending' : 'Queued');
+
+                      return (
+                        <div
+                          key={act.id || idx}
+                          className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
+                        >
+                          <div className="flex items-center space-x-3 min-w-0">
+                            <Share2 className="w-4 h-4 text-blue-600 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="font-semibold text-sm capitalize">{act.platform}</p>
+                              <p className="text-xs text-gray-600 dark:text-gray-400 truncate max-w-[180px]">{snippet}</p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0 ml-2">
+                            <p className="text-xs text-gray-500">{relTime}</p>
+                            <p className={`text-xs font-semibold ${statusColor}`}>{statusLabel}</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs text-gray-500">{act.time}</p>
-                          <p className="text-xs text-green-600 font-semibold">{act.engagement}</p>
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8">
                       <Activity className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
