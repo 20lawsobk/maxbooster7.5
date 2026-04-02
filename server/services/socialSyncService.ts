@@ -467,22 +467,39 @@ export async function syncPlatformData(
         syncedProfileUrl = profileData.profile || `https://www.linkedin.com/in/${profileData.sub}`;
         syncedMetadata = { ...syncedMetadata, email: profileData.email, picture: profileData.picture };
 
-        // Try network size (requires r_organization_social scope)
+        // Try to get connection count via OAuth 2.0 — LinkedIn exposes this through
+        // multiple endpoints depending on which scopes were granted at connect-time.
         if (syncedPlatformUserId) {
           try {
-            const personUrn = encodeURIComponent(`urn:li:person:${syncedPlatformUserId}`);
-            const networkRes = await fetch(
-              `https://api.linkedin.com/v2/networkSizes/${personUrn}?edgeType=CompanyFollowedByMember`,
-              { headers: { Authorization: `Bearer ${accessToken}` } }
+            // Attempt 1: r_network scope → connections list (count in paging._total)
+            const connectionsRes = await fetch(
+              'https://api.linkedin.com/v2/connections?q=viewer&start=0&count=0',
+              { headers: { Authorization: `Bearer ${accessToken}`, 'LinkedIn-Version': '202304' } }
             );
-            const networkData = await networkRes.json();
-            if (typeof networkData.firstDegreeSize === 'number') {
-              syncedFollowerCount = networkData.firstDegreeSize;
+            const connectionsData = await connectionsRes.json();
+            const connCount = connectionsData?.paging?._total ?? connectionsData?.paging?.total;
+            if (typeof connCount === 'number' && connCount > 0) {
+              syncedFollowerCount = connCount;
+              logger.info(`[SocialSync] LinkedIn connections (r_network): ${connCount}`);
             } else {
-              logger.debug(`[SocialSync] LinkedIn networkSize: ${JSON.stringify(networkData).slice(0, 200)}`);
+              // Attempt 2: networkSizes endpoint (company-follower count, requires r_organization_social)
+              const personUrn = encodeURIComponent(`urn:li:person:${syncedPlatformUserId}`);
+              const networkRes = await fetch(
+                `https://api.linkedin.com/v2/networkSizes/${personUrn}?edgeType=CompanyFollowedByMember`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+              );
+              const networkData = await networkRes.json();
+              if (typeof networkData.firstDegreeSize === 'number') {
+                syncedFollowerCount = networkData.firstDegreeSize;
+                logger.info(`[SocialSync] LinkedIn company followers (r_organization_social): ${networkData.firstDegreeSize}`);
+              } else {
+                // LinkedIn OAuth 2.0 does not expose connection/follower counts without
+                // r_network or r_organization_social scope — 0 is correct until re-auth with those scopes.
+                logger.debug(`[SocialSync] LinkedIn: no connection count accessible with current OAuth scopes — ${JSON.stringify(connectionsData).slice(0, 150)}`);
+              }
             }
           } catch (linkedInErr) {
-            logger.debug(`[SocialSync] LinkedIn follower count restricted: ${linkedInErr}`);
+            logger.debug(`[SocialSync] LinkedIn follower count error: ${linkedInErr}`);
           }
         }
 
