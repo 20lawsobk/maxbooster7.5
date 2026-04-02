@@ -26,15 +26,18 @@ import { format } from 'date-fns';
 interface TimelinePost {
   id: string;
   title?: string;
-  content?: string;
+  content?: string | { caption?: string; text?: string; hashtags?: string[] };
   scheduledFor?: string;
-  publishedAt?: string;
+  scheduledAt?: string;
+  publishedAt?: string | null;
   platform?: string;
   platforms?: string[];
   postType?: string;
+  contentType?: string;
   type?: string;
   status?: string;
   hashtags?: string[];
+  tags?: string[];
   mentions?: string[];
   location?: string;
 }
@@ -87,6 +90,12 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; color: string; bg
     bg: 'bg-yellow-100 dark:bg-yellow-900',
     label: 'Pending',
   },
+  planned: {
+    icon: Clock,
+    color: 'text-blue-400',
+    bg: 'bg-blue-50 dark:bg-blue-950',
+    label: 'Planned',
+  },
   published: {
     icon: CheckCircle,
     color: 'text-green-500',
@@ -108,10 +117,28 @@ const DEFAULT_STATUS_CONFIG = {
   label: 'Unknown',
 };
 
+function resolveDate(post: TimelinePost): string {
+  return post.scheduledAt || post.scheduledFor || '';
+}
+
+function resolveContent(post: TimelinePost): { text: string; hashtags: string[] } {
+  const raw = post.content;
+  if (!raw) return { text: '', hashtags: [] };
+  if (typeof raw === 'object') {
+    return { text: raw.caption || raw.text || '', hashtags: raw.hashtags || [] };
+  }
+  try {
+    const p = JSON.parse(raw);
+    return { text: p.text || p.caption || raw, hashtags: Array.isArray(p.hashtags) ? p.hashtags : [] };
+  } catch {
+    return { text: raw, hashtags: [] };
+  }
+}
+
 export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTimelineViewProps) {
   const sortedPosts = [...posts].sort((a, b) => {
-    const ta = a.scheduledFor ? new Date(a.scheduledFor).getTime() : 0;
-    const tb = b.scheduledFor ? new Date(b.scheduledFor).getTime() : 0;
+    const ta = resolveDate(a) ? new Date(resolveDate(a)).getTime() : 0;
+    const tb = resolveDate(b) ? new Date(resolveDate(b)).getTime() : 0;
     return ta - tb;
   });
 
@@ -147,7 +174,7 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
             {sortedPosts.map((post) => {
               const statusConfig = STATUS_CONFIG[post.status ?? ''] ?? DEFAULT_STATUS_CONFIG;
               const StatusIcon = statusConfig.icon;
-              const dateTime = formatDateTime(post.scheduledFor ?? '');
+              const dateTime = formatDateTime(resolveDate(post));
 
               // Normalize platform: DB returns single `platform`, UI expects array `platforms`
               const platformList: string[] =
@@ -157,19 +184,16 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
                   ? [post.platform]
                   : [];
 
-              // Parse content — DB stores it as a JSON string
-              let contentText = post.content ?? '';
-              let inlineHashtags: string[] = [];
-              try {
-                const parsed = JSON.parse(contentText);
-                contentText = parsed.text ?? parsed.caption ?? contentText;
-                if (Array.isArray(parsed.hashtags)) inlineHashtags = parsed.hashtags;
-              } catch {
-                /* plain string — use as-is */
-              }
+              // Parse content — may be object or JSON string
+              const { text: contentText, hashtags: inlineHashtags } = resolveContent(post);
 
-              const hashtags = (post.hashtags ?? []).length > 0 ? (post.hashtags ?? []) : inlineHashtags;
-              const postLabel = post.postType ?? post.type ?? 'post';
+              const hashtags =
+                (post.hashtags ?? []).length > 0
+                  ? (post.hashtags ?? [])
+                  : (post.tags ?? []).length > 0
+                  ? (post.tags ?? [])
+                  : inlineHashtags;
+              const postLabel = post.postType ?? post.contentType ?? post.type ?? 'post';
               const title = post.title ?? (contentText.slice(0, 40) || 'Untitled');
 
               return (
@@ -253,7 +277,7 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
                           </Button>
                         </>
                       )}
-                      {post.status === 'published' && post.publishedAt && (
+                      {post.status === 'published' && post.publishedAt && typeof post.publishedAt === 'string' && (
                         <div className="text-xs text-green-600 dark:text-green-400">
                           Published {formatDateTime(post.publishedAt).date}
                         </div>

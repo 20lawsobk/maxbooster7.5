@@ -16,12 +16,16 @@ import { MessageCircle } from 'lucide-react';
 
 interface CalendarPost {
   id: string;
-  title: string;
-  scheduledFor: string;
-  platforms: string[];
-  postType: string;
-  status: string;
-  content: string;
+  title?: string;
+  scheduledFor?: string;
+  scheduledAt?: string;
+  platform?: string;
+  platforms?: string[];
+  postType?: string;
+  contentType?: string;
+  status?: string;
+  content?: string | { caption?: string; text?: string; hashtags?: string[] };
+  tags?: string[];
 }
 
 interface ContentCalendarViewProps {
@@ -90,12 +94,35 @@ export function ContentCalendarView({ posts, onDateClick }: ContentCalendarViewP
   const getPostsForDate = (day: number): CalendarPost[] => {
     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return posts.filter((post) => {
-      if (!post.scheduledFor) return false;
-      const d = new Date(post.scheduledFor);
+      const rawDate = post.scheduledAt || post.scheduledFor;
+      if (!rawDate) return false;
+      const d = new Date(rawDate);
       if (isNaN(d.getTime())) return false;
       const postDate = d.toISOString().split('T')[0];
       return postDate === dateStr;
     });
+  };
+
+  const getContentLabel = (post: CalendarPost): string => {
+    if (post.title) return post.title;
+    if (typeof post.content === 'object' && post.content !== null) {
+      return post.content.caption || post.content.text || 'Untitled';
+    }
+    if (typeof post.content === 'string') {
+      try {
+        const p = JSON.parse(post.content);
+        return p.text || p.caption || post.content;
+      } catch {
+        return post.content;
+      }
+    }
+    return 'Untitled';
+  };
+
+  const getPlatformList = (post: CalendarPost): string[] => {
+    if (Array.isArray(post.platforms) && post.platforms.length > 0) return post.platforms;
+    if (post.platform) return [post.platform];
+    return [];
   };
 
   const renderCalendarDays = () => {
@@ -140,7 +167,7 @@ export function ContentCalendarView({ posts, onDateClick }: ContentCalendarViewP
                     className="text-xs p-1 rounded bg-gray-100 dark:bg-gray-800 truncate"
                   >
                     <div className="flex items-center gap-1 mb-1">
-                      {post.platforms.slice(0, 3).map((platform) => {
+                      {getPlatformList(post).slice(0, 3).map((platform) => {
                         const Icon = PLATFORM_ICONS[platform];
                         return Icon ? (
                           <Icon
@@ -150,13 +177,13 @@ export function ContentCalendarView({ posts, onDateClick }: ContentCalendarViewP
                           />
                         ) : null;
                       })}
-                      {post.platforms.length > 3 && (
+                      {getPlatformList(post).length > 3 && (
                         <span className="text-[10px] text-gray-500">
-                          +{post.platforms.length - 3}
+                          +{getPlatformList(post).length - 3}
                         </span>
                       )}
                     </div>
-                    <div className="truncate">{post.title || post.content}</div>
+                    <div className="truncate">{getContentLabel(post)}</div>
                   </div>
                 ))}
                 {dayPosts.length > 3 && (

@@ -335,16 +335,21 @@ interface WeeklyStats {
 
 interface CalendarPost {
   id: string;
-  title: string;
-  content?: string;
-  scheduledFor: string;
+  title?: string;
+  content?: string | { caption?: string; text?: string; hashtags?: string[] };
+  scheduledFor?: string;
+  scheduledAt?: string;
+  platform?: string;
   platforms?: string[];
   postType?: string;
-  mediaUrls?: string[];
+  contentType?: string;
+  mediaUrls?: string[] | null;
   hashtags?: string[];
+  tags?: string[];
   mentions?: string[];
   location?: string;
   status?: string;
+  publishedAt?: string | null;
 }
 
 interface CalendarStats {
