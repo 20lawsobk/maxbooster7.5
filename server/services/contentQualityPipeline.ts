@@ -566,6 +566,59 @@ class ContentQualityPipeline {
     };
   }
 
+  /**
+   * Aggregate all scoring dimensions into a single ContentScores object.
+   * This is the central scoring method called by every content generation path.
+   * Public so contentQualityGate can score externally-supplied content.
+   */
+  scoreContent(
+    content: string,
+    headline: string,
+    cta: string,
+    context: ContentContext,
+    platformOpt: PlatformOptimization
+  ): ContentScores {
+    const hookStrength              = this.scoreHook(headline);
+    const callToActionEffectiveness = this.scoreCTA(cta);
+    const clarity                   = this.scoreClarity(content);
+    const sentiment                 = this.scoreSentiment(content, context.objective);
+    const brandAlignment            = this.scoreBrandAlignment(content, context);
+    const engagement                = this.predictEngagement(content, headline, context);
+    const specificity               = this.scoreSpecificity(content, headline);
+    const emotionalArc              = this.scoreEmotionalArc(content, headline);
+    const narrativeAuthenticity     = this.scoreNarrativeAuthenticity(content, headline);
+    const algorithmAlignment        = platformAlgorithmOptimizer.scoreAlgorithmAlignment(
+      content, headline, cta, platformOpt.platform
+    ).score;
+
+    const platformPenalty = platformOpt.isValid ? 0 : Math.min(10, platformOpt.issues.length * 3);
+
+    const overall = Math.max(0, Math.min(100, Math.round(
+      engagement                * 0.25 +
+      hookStrength              * 0.18 +
+      callToActionEffectiveness * 0.13 +
+      sentiment                 * 0.10 +
+      clarity                   * 0.08 +
+      brandAlignment            * 0.08 +
+      algorithmAlignment        * 0.08 +
+      specificity               * 0.05 +
+      emotionalArc              * 0.03 +
+      narrativeAuthenticity     * 0.02 -
+      platformPenalty
+    )));
+
+    return {
+      overall,
+      engagement,
+      clarity,
+      sentiment,
+      brandAlignment,
+      hookStrength,
+      callToActionEffectiveness,
+      algorithmAlignment,
+    };
+  }
+
   private applyAlgorithmSignalOptimization(
     headline: string,
     body: string,
