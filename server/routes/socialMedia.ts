@@ -311,30 +311,71 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         const fb = connectionMap.get('facebook');
         const ig = connectionMap.get('instagram');
         const isConnected = !!(fb || ig);
-        const followers = (fb?.followerCount || 0) + (ig?.followerCount || 0);
-        const primaryConn = fb || ig;
+
+        // Sum followers from BOTH Facebook and Instagram
+        const fbFollowers = fb?.followerCount || 0;
+        const igFollowers = ig?.followerCount || 0;
+        const followers = fbFollowers + igFollowers;
+
+        const fbMeta = fb?.metadata as any;
+        const igMeta = ig?.metadata as any;
+
+        // Average engagement across both (only include platforms with real data)
+        const rates = [fbMeta?.engagementRate, igMeta?.engagementRate].filter(r => typeof r === 'number' && r > 0);
+        const engagement = rates.length > 0
+          ? Math.round((rates.reduce((a: number, b: number) => a + b, 0) / rates.length) * 100) / 100
+          : 0;
+
+        // Most recent sync across FB + IG
+        const fbSync = fbMeta?.lastSyncedAt ? new Date(fbMeta.lastSyncedAt).getTime() : 0;
+        const igSync = igMeta?.lastSyncedAt ? new Date(igMeta.lastSyncedAt).getTime() : 0;
+        const lastSync = new Date(Math.max(fbSync, igSync) || Date.now()).toISOString();
+
+        // Primary conn for username/profileUrl — prefer IG, fall back to FB
+        const primaryConn = ig || fb;
+        const secondaryConn = ig ? fb : undefined;
+
         return {
           id: 'meta',
           name: platform.name,
           isConnected,
           followers,
-          engagement: 0,
-          lastSync: (primaryConn?.metadata as any)?.lastSyncedAt || primaryConn?.createdAt?.toISOString() || '',
+          engagement,
+          lastSync,
           status: isConnected ? 'active' : 'inactive',
           username: primaryConn?.username || undefined,
           profileUrl: primaryConn?.profileUrl || '',
           platformUserId: primaryConn?.platformUserId || '',
-          metadata: primaryConn?.metadata || {},
+          // Expose per-platform breakdown in metadata for UI tooltip/detail
+          metadata: {
+            ...(primaryConn?.metadata || {}),
+            facebook: {
+              followers: fbFollowers,
+              username: fb?.username || null,
+              profileUrl: fb?.profileUrl || null,
+              engagementRate: fbMeta?.engagementRate || 0,
+            },
+            instagram: {
+              followers: igFollowers,
+              username: ig?.username || null,
+              profileUrl: ig?.profileUrl || null,
+              engagementRate: igMeta?.engagementRate || 0,
+            },
+          },
+          // Extra field used by the connected accounts detail view
+          secondaryUsername: secondaryConn?.username || undefined,
         };
       }
       const conn = connectionMap.get(platform.id);
+      const connMeta = conn?.metadata as any;
+      const engagement = typeof connMeta?.engagementRate === 'number' ? connMeta.engagementRate : 0;
       return {
         id: platform.id,
         name: platform.name,
         isConnected: !!conn,
         followers: conn?.followerCount || 0,
-        engagement: 0,
-        lastSync: (conn?.metadata as any)?.lastSyncedAt || conn?.createdAt?.toISOString() || '',
+        engagement,
+        lastSync: connMeta?.lastSyncedAt || conn?.createdAt?.toISOString() || '',
         status: conn ? 'active' : 'inactive',
         username: conn?.username || undefined,
         profileUrl: conn?.profileUrl || '',
