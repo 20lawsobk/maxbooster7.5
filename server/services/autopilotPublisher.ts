@@ -171,14 +171,41 @@ class AutopilotPublisher {
   }
 
   /**
-   * Publish social media content for a user
+   * Round-robin platform selector — picks the platform with the fewest existing posts
+   * so that all enabled platforms get equal coverage over time.
    */
+  private async pickNextPlatform(userId: string, platforms: string[]): Promise<string> {
+    if (platforms.length === 1) return platforms[0];
+    try {
+      // Count existing posts per platform for this user
+      const existing = await storage.getUserSocialPosts(userId);
+      const counts: Record<string, number> = {};
+      for (const p of platforms) counts[p] = 0;
+      for (const post of (existing || [])) {
+        const pl = post.platform;
+        if (pl && counts[pl] !== undefined) counts[pl]++;
+      }
+      // Pick the platform with the fewest posts
+      const sorted = platforms.slice().sort((a, b) => counts[a] - counts[b]);
+      logger.info(`[Autopilot] Platform rotation counts: ${JSON.stringify(counts)} → picking "${sorted[0]}"`);
+      return sorted[0];
+    } catch {
+      // Fallback: rotate by minute so we spread across platforms even without DB data
+      const minuteIndex = Math.floor(Date.now() / 60000) % platforms.length;
+      return platforms[minuteIndex];
+    }
+  }
+
   private async publishSocialContent(config: any): Promise<{ posts: number; error?: string }> {
     try {
       const userId = config.userId;
       const platforms: string[] = config.platforms && config.platforms.length > 0
         ? config.platforms
         : ['twitter', 'instagram'];
+
+      // Pick the target platform for this cycle via round-robin
+      const targetPlatform = await this.pickNextPlatform(userId, platforms);
+      logger.info(`[Autopilot] User ${userId}: targeting platform "${targetPlatform}" this cycle`);
 
       // Get the user's trained social media AI model
       const socialAI = await aiModelManager.getSocialAutopilot(userId);
@@ -191,7 +218,7 @@ class AutopilotPublisher {
         const gateResult = await contentQualityGate.run(userId, {
           topic: config.topic || 'new music',
           objective: 'engagement',
-          platform: platforms[0] || 'instagram',
+          platform: targetPlatform,
           tone: config.brandVoice,
           genre: config.genre,
           targetAudience: config.targetAudience,
@@ -211,20 +238,20 @@ class AutopilotPublisher {
         };
 
         const nextOptimalTime = this.calculateNextOptimalPostingTime(
-          platforms[0],
+          targetPlatform,
           config.postingFrequency || 'daily'
         );
 
         const scheduledPost = await autoPostingServiceV2.schedulePost(
           userId,
-          platforms,
+          [targetPlatform],
           postContent,
           nextOptimalTime,
           'social_autopilot'
         );
 
         logger.info(
-          `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for [${platforms.join(',')}] ` +
+          `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for "${targetPlatform}" ` +
           `at ${nextOptimalTime.toISOString()} — ` +
           `score=${gateResult.winner.scores.overall.toFixed(1)} (passed round ${gateResult.passedOnAttempt}/${10}, ` +
           `${gateResult.totalVariantsTried} variants tried)`
@@ -284,7 +311,7 @@ class AutopilotPublisher {
       const gateResult = await contentQualityGate.scoreAndGateExisting(
         userId,
         rawText,
-        bestRecommendation.platform || platforms[0] || 'instagram',
+        targetPlatform,
         {
           topic:          config.topic || 'new music',
           objective:      'engagement',
@@ -315,7 +342,7 @@ class AutopilotPublisher {
       if (bestRecommendation.mediaType !== 'text') {
         const generatedAsset = await aiContentService.generateContent({
           prompt: finalText,
-          platform: bestRecommendation.platform as any,
+          platform: targetPlatform as any,
           format: bestRecommendation.mediaType,
           tone: 'creative',
           length: 'medium',
@@ -339,14 +366,14 @@ class AutopilotPublisher {
 
       // Calculate next optimal posting time for this platform
       const nextOptimalTime = this.calculateNextOptimalPostingTime(
-        bestRecommendation.platform,
+        targetPlatform,
         config.postingFrequency || 'daily'
       );
 
       // Schedule post for optimal time (not immediate)
       const scheduledPost = await autoPostingServiceV2.schedulePost(
         userId,
-        [bestRecommendation.platform],
+        [targetPlatform],
         postContent,
         nextOptimalTime,
         'social_autopilot'
