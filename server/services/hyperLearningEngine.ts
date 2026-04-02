@@ -178,7 +178,7 @@ class HyperLearningEngine extends EventEmitter {
 
   constructor() {
     super();
-    logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (3x owner · 24x baseline)`);
+    logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (${OWNER_MULTIPLIER}x owner · ${OWNER_LEARNING_RATE}x baseline) [SPRINT MODE]`);
   }
 
   private initializeMetrics(): LearningMetrics {
