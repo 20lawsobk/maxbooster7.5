@@ -25,13 +25,15 @@ import { format } from 'date-fns';
 
 interface TimelinePost {
   id: string;
-  title: string;
-  content: string;
-  scheduledFor: string;
+  title?: string;
+  content?: string;
+  scheduledFor?: string;
   publishedAt?: string;
-  platforms: string[];
-  postType: string;
-  status: 'draft' | 'scheduled' | 'published' | 'failed';
+  platform?: string;
+  platforms?: string[];
+  postType?: string;
+  type?: string;
+  status?: string;
   hashtags?: string[];
   mentions?: string[];
   location?: string;
@@ -143,9 +145,32 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
         ) : (
           <div className="space-y-4">
             {sortedPosts.map((post) => {
-              const statusConfig = STATUS_CONFIG[post.status] ?? DEFAULT_STATUS_CONFIG;
+              const statusConfig = STATUS_CONFIG[post.status ?? ''] ?? DEFAULT_STATUS_CONFIG;
               const StatusIcon = statusConfig.icon;
-              const dateTime = formatDateTime(post.scheduledFor);
+              const dateTime = formatDateTime(post.scheduledFor ?? '');
+
+              // Normalize platform: DB returns single `platform`, UI expects array `platforms`
+              const platformList: string[] =
+                Array.isArray(post.platforms) && post.platforms.length > 0
+                  ? post.platforms
+                  : post.platform
+                  ? [post.platform]
+                  : [];
+
+              // Parse content — DB stores it as a JSON string
+              let contentText = post.content ?? '';
+              let inlineHashtags: string[] = [];
+              try {
+                const parsed = JSON.parse(contentText);
+                contentText = parsed.text ?? parsed.caption ?? contentText;
+                if (Array.isArray(parsed.hashtags)) inlineHashtags = parsed.hashtags;
+              } catch {
+                /* plain string — use as-is */
+              }
+
+              const hashtags = (post.hashtags ?? []).length > 0 ? (post.hashtags ?? []) : inlineHashtags;
+              const postLabel = post.postType ?? post.type ?? 'post';
+              const title = post.title ?? (contentText.slice(0, 40) || 'Untitled');
 
               return (
                 <div
@@ -155,7 +180,7 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
-                        <h3 className="font-semibold text-lg">{post.title}</h3>
+                        <h3 className="font-semibold text-lg">{title}</h3>
                         <Badge className={`${statusConfig.bg} ${statusConfig.color}`}>
                           <StatusIcon className="h-3 w-3 mr-1" />
                           {statusConfig.label}
@@ -169,31 +194,33 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
                             {dateTime.date} at {dateTime.time}
                           </span>
                         </div>
-                        <Badge variant="outline">{post.postType}</Badge>
+                        <Badge variant="outline">{postLabel}</Badge>
                       </div>
 
-                      <div className="flex items-center gap-2 mb-3">
-                        {post.platforms.map((platform) => {
-                          const Icon = PLATFORM_ICONS[platform];
-                          return Icon ? (
-                            <div
-                              key={platform}
-                              className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
-                            >
-                              <Icon size={14} style={{ color: PLATFORM_COLORS[platform] }} />
-                              <span className="capitalize">{platform}</span>
-                            </div>
-                          ) : null;
-                        })}
-                      </div>
+                      {platformList.length > 0 && (
+                        <div className="flex items-center gap-2 mb-3">
+                          {platformList.map((platform) => {
+                            const Icon = PLATFORM_ICONS[platform];
+                            return Icon ? (
+                              <div
+                                key={platform}
+                                className="flex items-center gap-1 text-xs bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded"
+                              >
+                                <Icon size={14} style={{ color: PLATFORM_COLORS[platform] }} />
+                                <span className="capitalize">{platform}</span>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
 
                       <p className="text-sm text-gray-700 dark:text-gray-300 mb-2 line-clamp-2">
-                        {post.content}
+                        {contentText}
                       </p>
 
-                      {post.hashtags && post.hashtags.length > 0 && (
+                      {hashtags.length > 0 && (
                         <div className="flex flex-wrap gap-1 mb-2">
-                          {post.hashtags.map((tag, index) => (
+                          {hashtags.map((tag, index) => (
                             <Badge key={index} variant="secondary" className="text-xs">
                               {tag}
                             </Badge>
@@ -210,7 +237,7 @@ export function PostTimelineView({ posts, onEdit, onDelete, onPublish }: PostTim
                     </div>
 
                     <div className="flex flex-col gap-2 ml-4">
-                      {(post.status === 'draft' || post.status === 'scheduled') && (
+                      {(post.status === 'draft' || post.status === 'scheduled' || post.status === 'pending') && (
                         <>
                           <Button size="sm" variant="outline" onClick={() => onEdit(post)}>
                             <Edit className="h-4 w-4 mr-1" />
