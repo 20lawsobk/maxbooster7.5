@@ -376,6 +376,9 @@ export class DatabaseStorage implements IStorage {
     if (content !== undefined) updateValues.content = typeof content === 'string' ? content : JSON.stringify(content);
     if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
     if (results !== undefined) updateValues.engagement = results;
+    if (updateValues.status === 'completed' || updateValues.status === 'published') {
+      updateValues.publishedAt = new Date();
+    }
     const [updated] = await db.update(posts).set(updateValues).where(eq(posts.id, id)).returning();
     return updated;
   }

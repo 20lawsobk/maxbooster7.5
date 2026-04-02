@@ -404,6 +404,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       const conn = connectionMap.get(platform.id);
       const connMeta = conn?.metadata as any;
       const engagement = typeof connMeta?.engagementRate === 'number' ? connMeta.engagementRate : 0;
+      const needsReconnect = !!connMeta?.needsReconnect;
       return {
         id: platform.id,
         name: platform.name,
@@ -411,7 +412,9 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         followers: conn?.followerCount || 0,
         engagement,
         lastSync: connMeta?.lastSyncedAt || conn?.createdAt?.toISOString() || '',
-        status: conn ? 'active' : 'inactive',
+        status: conn ? (needsReconnect ? 'needs_reconnect' : 'active') : 'inactive',
+        needsReconnect,
+        tokenRefreshFailedAt: connMeta?.tokenRefreshFailedAt || null,
         username: conn?.username || undefined,
         profileUrl: conn?.profileUrl || '',
         platformUserId: conn?.platformUserId || '',

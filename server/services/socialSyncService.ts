@@ -1,7 +1,195 @@
 import { db } from '../db';
 import { socialAccounts, posts } from '@shared/schema';
-import { eq, and, isNotNull, desc } from 'drizzle-orm';
+import { eq, and, isNotNull, desc, inArray } from 'drizzle-orm';
 import { logger } from '../logger';
+
+// ─── Token refresh helpers ────────────────────────────────────────────────────
+
+interface TokenRefreshResult {
+  accessToken: string;
+  expiresAt: Date | null;
+  refreshToken?: string;
+}
+
+async function refreshOAuth2Token(
+  tokenUrl: string,
+  clientId: string,
+  clientSecret: string,
+  refreshToken: string,
+  extraParams: Record<string, string> = {}
+): Promise<TokenRefreshResult | null> {
+  try {
+    const body = new URLSearchParams({
+      grant_type: 'refresh_token',
+      refresh_token: refreshToken,
+      client_id: clientId,
+      client_secret: clientSecret,
+      ...extraParams,
+    });
+    const res = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: body.toString(),
+    });
+    const data = await res.json();
+    if (!data.access_token) {
+      logger.warn(`[TokenRefresh] No access_token in response from ${tokenUrl}:`, JSON.stringify(data));
+      return null;
+    }
+    const expiresAt = data.expires_in
+      ? new Date(Date.now() + data.expires_in * 1000)
+      : null;
+    return {
+      accessToken: data.access_token,
+      expiresAt,
+      refreshToken: data.refresh_token || refreshToken,
+    };
+  } catch (err) {
+    logger.warn(`[TokenRefresh] Failed to refresh token from ${tokenUrl}:`, err);
+    return null;
+  }
+}
+
+/**
+ * Returns a valid access token for the given social account connection,
+ * refreshing it first if expired. Updates the DB when a new token is issued.
+ */
+async function getValidAccessToken(
+  connection: { id: string; platform: string; accessToken: string | null; refreshToken: string | null; tokenExpiresAt: Date | null }
+): Promise<string | null> {
+  const token = connection.accessToken;
+  if (!token) return null;
+
+  // If no expiry stored, assume the token is still valid
+  const expiry = connection.tokenExpiresAt ? new Date(connection.tokenExpiresAt).getTime() : null;
+  const isExpired = expiry !== null && expiry < Date.now() + 60_000; // refresh 60s before expiry
+
+  if (!isExpired) return token;
+  if (!connection.refreshToken) {
+    logger.warn(`[TokenRefresh] ${connection.platform}: token expired but no refresh_token stored`);
+    return token; // return the expired token; the API call will fail and we'll log it
+  }
+
+  logger.info(`[TokenRefresh] ${connection.platform}: access token expired — refreshing`);
+
+  let refreshed: TokenRefreshResult | null = null;
+  const p = connection.platform;
+
+  if (p === 'youtube' || p === 'googlebusiness') {
+    refreshed = await refreshOAuth2Token(
+      'https://oauth2.googleapis.com/token',
+      process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_BUSINESS_CLIENT_ID || '',
+      process.env.YOUTUBE_CLIENT_SECRET || process.env.GOOGLE_BUSINESS_CLIENT_SECRET || '',
+      connection.refreshToken
+    );
+  } else if (p === 'twitter') {
+    const clientId = process.env.TWITTER_CLIENT_ID || process.env.TWITTER_API_KEY || '';
+    const clientSecret = process.env.TWITTER_CLIENT_SECRET || process.env.TWITTER_API_SECRET || '';
+    // Twitter OAuth2 uses Basic auth for refresh
+    const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    try {
+      const res = await fetch('https://api.x.com/2/oauth2/token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          Authorization: `Basic ${basicAuth}`,
+        },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: connection.refreshToken,
+          client_id: clientId,
+        }).toString(),
+      });
+      const data = await res.json();
+      if (data.access_token) {
+        refreshed = {
+          accessToken: data.access_token,
+          expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+          refreshToken: data.refresh_token || connection.refreshToken,
+        };
+      } else {
+        logger.warn(`[TokenRefresh] Twitter: ${JSON.stringify(data)}`);
+      }
+    } catch (err) {
+      logger.warn(`[TokenRefresh] Twitter refresh failed:`, err);
+    }
+  } else if (p === 'tiktok' || p === 'tiktok_sandbox') {
+    refreshed = await refreshOAuth2Token(
+      'https://open.tiktokapis.com/v2/oauth/token/',
+      process.env.TIKTOK_CLIENT_KEY || '',
+      process.env.TIKTOK_CLIENT_SECRET || '',
+      connection.refreshToken
+    );
+  } else if (p === 'linkedin') {
+    refreshed = await refreshOAuth2Token(
+      'https://www.linkedin.com/oauth/v2/accessToken',
+      process.env.LINKEDIN_CLIENT_ID || '',
+      process.env.LINKEDIN_CLIENT_SECRET || '',
+      connection.refreshToken
+    );
+  } else if (p === 'threads') {
+    // Threads uses a simple GET for token refresh
+    try {
+      const res = await fetch(
+        `https://graph.threads.net/refresh_access_token?grant_type=th_refresh_token&access_token=${connection.refreshToken}`
+      );
+      const data = await res.json();
+      if (data.access_token) {
+        refreshed = {
+          accessToken: data.access_token,
+          expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+        };
+      } else {
+        logger.warn(`[TokenRefresh] Threads: ${JSON.stringify(data)}`);
+      }
+    } catch (err) {
+      logger.warn(`[TokenRefresh] Threads refresh failed:`, err);
+    }
+  } else if (p === 'facebook' || p === 'instagram') {
+    // Facebook long-lived token exchange
+    try {
+      const appId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID || '';
+      const appSecret = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET || '';
+      const res = await fetch(
+        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${token}`
+      );
+      const data = await res.json();
+      if (data.access_token) {
+        refreshed = {
+          accessToken: data.access_token,
+          expiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : null,
+        };
+      } else {
+        logger.warn(`[TokenRefresh] Facebook: ${JSON.stringify(data)}`);
+      }
+    } catch (err) {
+      logger.warn(`[TokenRefresh] Facebook refresh failed:`, err);
+    }
+  }
+
+  if (!refreshed) {
+    // Refresh failed — mark the connection as needing reconnection so the UI can prompt the user
+    try {
+      const currentMeta = (await db.select({ metadata: socialAccounts.metadata }).from(socialAccounts).where(eq(socialAccounts.id, connection.id)).limit(1))[0]?.metadata as Record<string, any> || {};
+      await db.update(socialAccounts).set({
+        metadata: { ...currentMeta, needsReconnect: true, tokenRefreshFailedAt: new Date().toISOString() },
+      }).where(eq(socialAccounts.id, connection.id));
+    } catch (metaErr) {
+      logger.debug(`[TokenRefresh] Could not persist needsReconnect flag: ${metaErr}`);
+    }
+    return token; // fall back to expired token (API call will fail and log the error)
+  }
+
+  // Persist the new token and clear any needsReconnect flag
+  await db.update(socialAccounts).set({
+    accessToken: refreshed.accessToken,
+    tokenExpiresAt: refreshed.expiresAt,
+    ...(refreshed.refreshToken ? { refreshToken: refreshed.refreshToken } : {}),
+  }).where(eq(socialAccounts.id, connection.id));
+
+  logger.info(`[TokenRefresh] ${p}: token refreshed successfully, expires ${refreshed.expiresAt?.toISOString() ?? 'unknown'}`);
+  return refreshed.accessToken;
+}
 
 interface SyncResult {
   username: string;
@@ -19,7 +207,8 @@ interface SyncResult {
 async function calcEngagementRate(userId: string, platform: string, followers: number): Promise<number> {
   if (followers === 0) return 0;
   try {
-    const recentPosts = await db
+    // First try posts with publishedAt set (actually published)
+    let recentPosts = await db
       .select()
       .from(posts)
       .where(and(
@@ -29,6 +218,20 @@ async function calcEngagementRate(userId: string, platform: string, followers: n
       ))
       .orderBy(desc(posts.createdAt))
       .limit(30);
+
+    // Fallback: also include posts with status='published' or 'completed'
+    if (!recentPosts.length) {
+      recentPosts = await db
+        .select()
+        .from(posts)
+        .where(and(
+          eq(posts.userId, userId),
+          eq(posts.platform, platform),
+          inArray(posts.status, ['published', 'completed'])
+        ))
+        .orderBy(desc(posts.createdAt))
+        .limit(30);
+    }
 
     if (!recentPosts.length) return 0;
 
@@ -71,6 +274,13 @@ export async function syncPlatformData(
       continue;
     }
 
+    // Get a valid (refreshed if needed) access token before making any API calls
+    const accessToken = await getValidAccessToken(connection);
+    if (!accessToken) {
+      results[p] = { error: 'Could not obtain valid access token' };
+      continue;
+    }
+
     let syncedFollowerCount = connection.followerCount || 0;
     let syncedProfileUrl = connection.profileUrl || '';
     let syncedPlatformUserId = connection.platformUserId || '';
@@ -81,9 +291,10 @@ export async function syncPlatformData(
       if (p === 'facebook') {
         // Step 1: basic personal profile
         const userRes = await fetch(
-          `https://graph.facebook.com/me?fields=id,name,picture&access_token=${connection.accessToken}`
+          `https://graph.facebook.com/me?fields=id,name,picture&access_token=${accessToken}`
         );
         const userData = await userRes.json();
+        if (userData.error) logger.warn(`[SocialSync] Facebook profile error:`, JSON.stringify(userData.error));
         syncedUsername = userData.name || syncedUsername;
         syncedPlatformUserId = userData.id || syncedPlatformUserId;
         syncedProfileUrl = `https://www.facebook.com/${userData.id}`;
@@ -91,7 +302,7 @@ export async function syncPlatformData(
 
         // Step 2: fetch managed pages and sum their fan/follower counts
         const pagesRes = await fetch(
-          `https://graph.facebook.com/me/accounts?fields=id,name,fan_count,followers_count&access_token=${connection.accessToken}`
+          `https://graph.facebook.com/me/accounts?fields=id,name,fan_count,followers_count&access_token=${accessToken}`
         );
         const pagesData = await pagesRes.json();
         if (pagesData.data && pagesData.data.length > 0) {
@@ -117,7 +328,7 @@ export async function syncPlatformData(
       } else if (p === 'instagram') {
         // Fetch Instagram Business account via the Facebook Graph API
         const pagesRes = await fetch(
-          `https://graph.facebook.com/me/accounts?fields=id,name,access_token&access_token=${connection.accessToken}`
+          `https://graph.facebook.com/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
         );
         const pagesData = await pagesRes.json();
 
@@ -173,7 +384,7 @@ export async function syncPlatformData(
       } else if (p === 'twitter') {
         const userRes = await fetch(
           'https://api.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description',
-          { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         const userData = await userRes.json();
         if (userData.data) {
@@ -189,13 +400,15 @@ export async function syncPlatformData(
             profileImageUrl: userData.data.profile_image_url,
           };
         } else {
-          logger.warn(`[SocialSync] Twitter API returned no data:`, userData);
+          const isAuthError = userData.status === 401 || userData.title === 'Unauthorized';
+          logger.warn(`[SocialSync] Twitter response (no .data): ${JSON.stringify(userData).slice(0, 400)}`);
+          if (isAuthError) syncedMetadata = { ...syncedMetadata, needsReconnect: true, tokenRefreshFailedAt: new Date().toISOString() };
         }
 
       } else if (p === 'youtube') {
         const userRes = await fetch(
           'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
-          { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         const userData = await userRes.json();
         const channel = userData.items?.[0];
@@ -212,13 +425,13 @@ export async function syncPlatformData(
             thumbnailUrl: channel.snippet?.thumbnails?.default?.url,
           };
         } else {
-          logger.warn(`[SocialSync] YouTube API returned no channels:`, userData);
+          logger.warn(`[SocialSync] YouTube no channels: ${JSON.stringify(userData).slice(0, 400)}`);
         }
 
       } else if (p === 'tiktok' || p === 'tiktok_sandbox') {
         const userRes = await fetch(
           'https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count',
-          { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+          { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         const userData = await userRes.json();
         const tiktokData = userData.data?.user;
@@ -234,14 +447,21 @@ export async function syncPlatformData(
             videoCount: tiktokData.video_count || 0,
           };
         } else {
-          logger.warn(`[SocialSync] TikTok API returned no user data:`, userData);
+          const errCode = userData.error?.code;
+          logger.warn(`[SocialSync] TikTok no user data: ${JSON.stringify(userData).slice(0, 400)}`);
+          if (errCode === 'access_token_invalid' || errCode === 'token_expired') {
+            syncedMetadata = { ...syncedMetadata, needsReconnect: true, tokenRefreshFailedAt: new Date().toISOString() };
+          }
         }
 
       } else if (p === 'linkedin') {
         const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
-          headers: { Authorization: `Bearer ${connection.accessToken}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         const profileData = await profileRes.json();
+        if (profileData.error || profileData.status === 401) {
+          logger.warn(`[SocialSync] LinkedIn profile error: ${JSON.stringify(profileData).slice(0, 400)}`);
+        }
         syncedUsername = profileData.name || syncedUsername;
         syncedPlatformUserId = profileData.sub || syncedPlatformUserId;
         syncedProfileUrl = profileData.profile || `https://www.linkedin.com/in/${profileData.sub}`;
@@ -253,11 +473,13 @@ export async function syncPlatformData(
             const personUrn = encodeURIComponent(`urn:li:person:${syncedPlatformUserId}`);
             const networkRes = await fetch(
               `https://api.linkedin.com/v2/networkSizes/${personUrn}?edgeType=CompanyFollowedByMember`,
-              { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+              { headers: { Authorization: `Bearer ${accessToken}` } }
             );
             const networkData = await networkRes.json();
             if (typeof networkData.firstDegreeSize === 'number') {
               syncedFollowerCount = networkData.firstDegreeSize;
+            } else {
+              logger.debug(`[SocialSync] LinkedIn networkSize: ${JSON.stringify(networkData).slice(0, 200)}`);
             }
           } catch (linkedInErr) {
             logger.debug(`[SocialSync] LinkedIn follower count restricted: ${linkedInErr}`);
@@ -267,7 +489,7 @@ export async function syncPlatformData(
       } else if (p === 'threads') {
         // Include followers_count in the fields
         const userRes = await fetch(
-          `https://graph.threads.net/me?fields=id,username,threads_profile_picture_url,followers_count&access_token=${connection.accessToken}`
+          `https://graph.threads.net/me?fields=id,username,threads_profile_picture_url,followers_count&access_token=${accessToken}`
         );
         const userData = await userRes.json();
         if (userData.id) {
@@ -277,12 +499,16 @@ export async function syncPlatformData(
           syncedProfileUrl = `https://www.threads.net/@${userData.username}`;
           syncedMetadata = { ...syncedMetadata, profilePictureUrl: userData.threads_profile_picture_url };
         } else {
-          logger.warn(`[SocialSync] Threads API error:`, userData);
+          logger.warn(`[SocialSync] Threads error: ${JSON.stringify(userData).slice(0, 400)}`);
+          const threadsErrCode = userData.error?.code;
+          if (threadsErrCode === 190 || userData.error?.type === 'OAuthException') {
+            syncedMetadata = { ...syncedMetadata, needsReconnect: true, tokenRefreshFailedAt: new Date().toISOString() };
+          }
         }
 
       } else if (p === 'google' || p === 'googlebusiness') {
         const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
-          headers: { Authorization: `Bearer ${connection.accessToken}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
         const userData = await userRes.json();
         syncedUsername = userData.name || syncedUsername;
@@ -294,14 +520,14 @@ export async function syncPlatformData(
         try {
           const accountsRes = await fetch(
             'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-            { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+            { headers: { Authorization: `Bearer ${accessToken}` } }
           );
           const accountsData = await accountsRes.json();
           const account = accountsData.accounts?.[0];
           if (account) {
             const locRes = await fetch(
               `https://mybusiness.googleapis.com/v4/${account.name}/locations`,
-              { headers: { Authorization: `Bearer ${connection.accessToken}` } }
+              { headers: { Authorization: `Bearer ${accessToken}` } }
             );
             const locData = await locRes.json();
             const location = locData.locations?.[0];

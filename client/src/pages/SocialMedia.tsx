@@ -141,7 +141,9 @@ interface SocialPlatform {
   followers: number;
   engagement: number;
   lastSync: string;
-  status: 'active' | 'inactive' | 'error';
+  status: 'active' | 'inactive' | 'error' | 'needs_reconnect';
+  needsReconnect?: boolean;
+  tokenRefreshFailedAt?: string | null;
 }
 
 interface SocialPost {
@@ -2604,18 +2606,20 @@ return (
                 return (
                   <Card
                     key={platform.id}
-                    className={`${platform.isConnected ? 'border-green-200 dark:border-green-800' : 'border-gray-200'}`}
+                    className={`${platform.needsReconnect ? 'border-orange-300 dark:border-orange-700' : platform.isConnected ? 'border-green-200 dark:border-green-800' : 'border-gray-200'}`}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-2">
                         <IconComponent className="w-6 h-6" style={{ color: platform.color }} />
                         <div
-                          className={`w-2 h-2 rounded-full ${platform.isConnected ? 'bg-green-500' : 'bg-gray-300'}`}
+                          className={`w-2 h-2 rounded-full ${platform.needsReconnect ? 'bg-orange-400' : platform.isConnected ? 'bg-green-500' : 'bg-gray-300'}`}
                         />
                       </div>
                       <h3 className="font-semibold text-sm mb-1">{platform.name}</h3>
                       <p className="text-xs text-gray-500">
-                        {platform.isConnected ? 'Connected' : 'Not Connected'}
+                        {platform.needsReconnect ? (
+                          <span className="text-orange-500 font-medium">⚠ Reconnect needed</span>
+                        ) : platform.isConnected ? 'Connected' : 'Not Connected'}
                       </p>
                       {platform.isConnected && (
                         <div className="mt-3 space-y-1">
