@@ -244,6 +244,10 @@ router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: R
   }
 });
 
+// Track the time this server process started — any sync older than this used the old
+// code and must be re-fetched immediately regardless of the 1-hour guard.
+const SERVER_BOOT_MS = Date.now();
+
 // Get platform status - returns connected social accounts from OAuth connections
 // Returns array format for SocialMedia page, also works for Advertisement page
 router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -273,7 +277,8 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         const lastSync = meta?.lastSyncedAt
           ? new Date(meta.lastSyncedAt).getTime()
           : conn.createdAt ? new Date(conn.createdAt).getTime() : 0;
-        if (now - lastSync > ONE_HOUR_MS) {
+        // Stale if: older than 1 hour OR synced before this server boot (old code)
+        if (now - lastSync > ONE_HOUR_MS || lastSync < SERVER_BOOT_MS) {
           stalePlatforms.push(conn.platform);
         }
       }
@@ -281,6 +286,12 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
 
     if (stalePlatforms.length > 0) {
       const uniquePlatforms = new Set<string>();
+      const hasPreBootStale = stalePlatforms.some(p => {
+        const conn = connections.find(c => c.platform === p);
+        const meta = conn?.metadata as any;
+        const lastSync = meta?.lastSyncedAt ? new Date(meta.lastSyncedAt).getTime() : 0;
+        return lastSync < SERVER_BOOT_MS;
+      });
       for (const p of stalePlatforms) {
         if (p === 'facebook' || p === 'instagram') {
           uniquePlatforms.add('meta');
@@ -288,10 +299,34 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
           uniquePlatforms.add(p);
         }
       }
-      for (const p of uniquePlatforms) {
-        syncPlatformData(userId, p).catch(err => {
-          logger.warn(`Background sync failed for ${p}:`, err);
-        });
+      if (hasPreBootStale) {
+        // Pre-boot data used the old sync code — block and wait so the response
+        // contains fresh follower/engagement numbers rather than stale zeros.
+        logger.info(`[SocialSync] Pre-boot stale data detected — running blocking sync for ${[...uniquePlatforms].join(', ')}`);
+        await Promise.all(
+          [...uniquePlatforms].map(p =>
+            syncPlatformData(userId, p).catch(err =>
+              logger.warn(`Blocking sync failed for ${p}:`, err)
+            )
+          )
+        );
+        // Refresh the connection map with newly synced data
+        const freshConns = await db
+          .select()
+          .from(socialAccounts)
+          .where(eq(socialAccounts.userId, userId))
+          .limit(50);
+        connectionMap.clear();
+        for (const conn of freshConns) {
+          if (conn.isActive) connectionMap.set(conn.platform, conn);
+        }
+      } else {
+        // Normal background refresh — return current data immediately
+        for (const p of uniquePlatforms) {
+          syncPlatformData(userId, p).catch(err => {
+            logger.warn(`Background sync failed for ${p}:`, err);
+          });
+        }
       }
     }
     
