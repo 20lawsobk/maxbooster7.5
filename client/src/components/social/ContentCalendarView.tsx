@@ -90,7 +90,10 @@ export function ContentCalendarView({ posts, onDateClick }: ContentCalendarViewP
   const getPostsForDate = (day: number): CalendarPost[] => {
     const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return posts.filter((post) => {
-      const postDate = new Date(post.scheduledFor).toISOString().split('T')[0];
+      if (!post.scheduledFor) return false;
+      const d = new Date(post.scheduledFor);
+      if (isNaN(d.getTime())) return false;
+      const postDate = d.toISOString().split('T')[0];
       return postDate === dateStr;
     });
   };
