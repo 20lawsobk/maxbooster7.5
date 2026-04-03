@@ -459,17 +459,26 @@ export async function syncPlatformData(
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const profileData = await profileRes.json();
-        if (profileData.error || profileData.status === 401) {
+        const liErr = profileData.error || (profileData.status === 401 ? profileData : null);
+        if (liErr) {
           logger.warn(`[SocialSync] LinkedIn profile error: ${JSON.stringify(profileData).slice(0, 400)}`);
+          // DISABLED_APPLICATION (65606) or any 401 means the OAuth app/token is invalid
+          const isDisabled = profileData.code === 'DISABLED_APPLICATION' || profileData.serviceErrorCode === 65606;
+          if (profileData.status === 401 || isDisabled) {
+            syncedMetadata = { ...syncedMetadata, needsReconnect: true, tokenRefreshFailedAt: new Date().toISOString() };
+          }
+        } else {
+          syncedUsername = profileData.name || syncedUsername;
+          syncedPlatformUserId = profileData.sub || syncedPlatformUserId;
+          // Use syncedPlatformUserId (already has fallback) rather than raw profileData.sub
+          syncedProfileUrl = profileData.profile || `https://www.linkedin.com/in/${syncedPlatformUserId}`;
+          syncedMetadata = { ...syncedMetadata, email: profileData.email, picture: profileData.picture };
         }
-        syncedUsername = profileData.name || syncedUsername;
-        syncedPlatformUserId = profileData.sub || syncedPlatformUserId;
-        syncedProfileUrl = profileData.profile || `https://www.linkedin.com/in/${profileData.sub}`;
-        syncedMetadata = { ...syncedMetadata, email: profileData.email, picture: profileData.picture };
 
         // Try to get connection count via OAuth 2.0 — LinkedIn exposes this through
         // multiple endpoints depending on which scopes were granted at connect-time.
-        if (syncedPlatformUserId) {
+        // Skip if the app itself returned an error (disabled, 401, etc.)
+        if (syncedPlatformUserId && !liErr) {
           try {
             // Attempt 1: r_network scope → connections list (count in paging._total)
             const connectionsRes = await fetch(
