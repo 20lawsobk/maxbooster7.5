@@ -78,6 +78,8 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
     } else {
       log(`Warning: Could not load ${name} - ${error.message}`);
     }
+    // Always emit to stderr so it appears in deployment logs regardless of log level
+    console.error(`[routes] LOAD FAILURE '${name}': ${error.message}\n${error.stack || ''}`);
     return null;
   }
 }
@@ -4018,6 +4020,24 @@ export async function registerRoutes(
     }
   });
 
+  // Direct registration for socialMedia — bypasses the lazy module loader entirely.
+  // In production CJS bundles, the lazy-init ordering can cause socialMedia's
+  // module-level `log` helper (Jt) to be undefined when safeLoadRoute first calls it,
+  // making the catch-block throw silently and leaving the routes unregistered.
+  // Eagerly importing + mounting here guarantees the router is always present.
+  try {
+    const { default: socialMediaRouter } = await import('./routes/socialMedia.js');
+    if (socialMediaRouter && typeof socialMediaRouter === 'function' && socialMediaRouter.stack !== undefined) {
+      app.use('/api/social', socialMediaRouter);
+      log('Loaded route: socialMedia (direct)');
+      console.log('[routes] socialMedia router registered directly at /api/social');
+    } else {
+      console.error('[routes] socialMedia direct load: no usable router export (type=' + typeof socialMediaRouter + ')');
+    }
+  } catch (e: any) {
+    console.error('[routes] socialMedia direct load FAILED:', e.message, '\n', e.stack || '');
+  }
+
   // Dynamically load and mount route modules (with error handling)
   const routeModules = [
     // Core Platform Routes
@@ -4044,7 +4064,7 @@ export async function registerRoutes(
 
     // Social & Advertising
     { path: "/api/social", name: "socialOAuth", loader: () => import("./routes/socialOAuth") },
-    { path: "/api/social", name: "socialMedia", loader: () => import("./routes/socialMedia") },
+    // socialMedia is registered directly above via eager import (avoids production bundle lazy-init issue)
     { path: "/api/social/approvals", name: "socialApprovals", loader: () => import("./routes/socialApprovals") },
     { path: "/api/social/bulk", name: "socialBulk", loader: () => import("./routes/socialBulk") },
     { path: "/api/social", name: "socialAI", loader: () => import("./routes/socialAI") },
