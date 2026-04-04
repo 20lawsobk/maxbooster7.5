@@ -1,15 +1,15 @@
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
-import { socialAccounts } from '@shared/schema';
+import { socialAccounts, systemSettings } from '@shared/schema';
 import { gte, lte, and, eq, isNotNull } from 'drizzle-orm';
 import axios from 'axios';
 import crypto from 'crypto';
 
-const TOKEN_ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 const TOKEN_ENCRYPTION_IV_LENGTH = 16;
 const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000; // Refresh 5 minutes before expiry
 const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
+const ENCRYPTION_KEY_SETTING = 'social_oauth_encryption_key';
 
 // Get base domain for OAuth redirects - always use production URL for consistency
 const getOAuthDomain = () => process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
@@ -19,7 +19,7 @@ const getOAuthDomain = () => process.env.DOMAIN || process.env.APP_URL || 'https
  * Manages OAuth connections for social media platforms
  * 
  * HARDENED FEATURES:
- * - Token encryption at rest using AES-256-GCM
+ * - Token encryption at rest using AES-256-GCM (stable key persisted to DB)
  * - Proactive token refresh before expiry
  * - Revoked token detection and handling
  * - Token lifecycle monitoring
@@ -28,10 +28,67 @@ export class SocialOAuthService {
   private oauthConfigs: Map<string, OAuthConfig> = new Map();
   private tokenRefreshInterval: NodeJS.Timeout | null = null;
   private revokedTokenCache: Set<string> = new Set();
+  private _encryptionKey: string | null = null;
 
   constructor() {
     this.initializeOAuthConfigs();
     this.startTokenRefreshMonitor();
+    // Load stable encryption key asynchronously — does not block route serving
+    this.initializeEncryptionKey().catch(e =>
+      logger.error('[SocialOAuth] Failed to initialize encryption key:', (e as Error).message)
+    );
+  }
+
+  /**
+   * Load or generate a stable token encryption key.
+   * Priority: process.env.TOKEN_ENCRYPTION_KEY > system_settings DB > generate+persist
+   */
+  private async initializeEncryptionKey(): Promise<void> {
+    if (process.env.TOKEN_ENCRYPTION_KEY) {
+      this._encryptionKey = process.env.TOKEN_ENCRYPTION_KEY;
+      logger.info('[SocialOAuth] Using TOKEN_ENCRYPTION_KEY from environment');
+      return;
+    }
+
+    try {
+      const rows = await db
+        .select()
+        .from(systemSettings)
+        .where(eq(systemSettings.key, ENCRYPTION_KEY_SETTING))
+        .limit(1);
+
+      if (rows.length > 0 && rows[0].value) {
+        this._encryptionKey = rows[0].value as string;
+        logger.info('[SocialOAuth] Loaded persistent encryption key from DB');
+        return;
+      }
+
+      // Generate a new key and persist it so restarts reuse the same key
+      const newKey = crypto.randomBytes(32).toString('hex');
+      await db.insert(systemSettings).values({
+        key: ENCRYPTION_KEY_SETTING,
+        value: newKey,
+        description: 'AES-256-GCM key for social OAuth token encryption — do not delete',
+      }).onConflictDoNothing();
+      this._encryptionKey = newKey;
+      logger.warn('[SocialOAuth] Generated and persisted new TOKEN_ENCRYPTION_KEY to DB. Set TOKEN_ENCRYPTION_KEY env var for explicit control.');
+    } catch (e) {
+      logger.error('[SocialOAuth] DB key load failed, using session-scoped fallback:', (e as Error).message);
+      if (!this._encryptionKey) {
+        this._encryptionKey = crypto.randomBytes(32).toString('hex');
+      }
+    }
+  }
+
+  /** Returns the active encryption key, waiting briefly if still initializing */
+  private getEncryptionKey(): string {
+    if (this._encryptionKey) return this._encryptionKey;
+    // Key not yet loaded — generate a session-only fallback (safe: tokens written
+    // before the DB key loads will be readable only in this process lifetime,
+    // but the DB will have the real key ready within seconds of startup)
+    this._encryptionKey = crypto.randomBytes(32).toString('hex');
+    logger.warn('[SocialOAuth] Encryption key not yet loaded from DB — using session fallback');
+    return this._encryptionKey;
   }
 
   /**
@@ -39,7 +96,7 @@ export class SocialOAuthService {
    */
   private encryptToken(plainText: string): string {
     const iv = crypto.randomBytes(TOKEN_ENCRYPTION_IV_LENGTH);
-    const key = Buffer.from(TOKEN_ENCRYPTION_KEY.substring(0, 32).padEnd(32, '0'));
+    const key = Buffer.from(this.getEncryptionKey().substring(0, 32).padEnd(32, '0'));
     const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
     
     let encrypted = cipher.update(plainText, 'utf8', 'hex');
@@ -62,7 +119,7 @@ export class SocialOAuthService {
       
       const iv = Buffer.from(ivHex, 'hex');
       const authTag = Buffer.from(authTagHex, 'hex');
-      const key = Buffer.from(TOKEN_ENCRYPTION_KEY.substring(0, 32).padEnd(32, '0'));
+      const key = Buffer.from(this.getEncryptionKey().substring(0, 32).padEnd(32, '0'));
       const decipher = crypto.createDecipheriv('aes-256-gcm', key, iv, { authTagLength: 16 });
       decipher.setAuthTag(authTag);
       

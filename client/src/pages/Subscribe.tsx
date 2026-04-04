@@ -312,7 +312,7 @@ export default function Subscribe() {
     
     try {
       const response = await apiRequest('POST', '/api/create-subscription', {
-        priceId: plan.priceId,
+        planName: plan.id,
       });
       const data = await response.json();
       

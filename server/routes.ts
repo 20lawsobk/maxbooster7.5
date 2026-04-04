@@ -3696,25 +3696,88 @@ export async function registerRoutes(
     }
   });
 
-  // Create subscription endpoint
+  // Create subscription endpoint — accepts planName (monthly/yearly/lifetime)
+  // and returns a Stripe clientSecret for use with Stripe Elements.
   app.post("/api/create-subscription", async (req: Request, res: Response) => {
     try {
-      const { priceId, email } = req.body;
-      if (!priceId) {
-        return res.status(400).json({ message: "Price ID required" });
+      if (!req.isAuthenticated() || !req.user) {
+        return res.status(401).json({ message: "Authentication required" });
       }
 
-      if (!stripe) throw new Error('Stripe is not initialized');
-      const session = await stripe.checkout.sessions.create({
-        mode: 'subscription',
-        payment_method_types: ['card'],
-        line_items: [{ price: priceId, quantity: 1 }],
-        success_url: `${process.env.APP_URL || 'https://maxbooster.replit.app'}/register/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_URL || 'https://maxbooster.replit.app'}/subscribe?canceled=true`,
-        customer_email: email,
+      if (!stripe) {
+        return res.status(503).json({ message: "Payment service unavailable", code: "STRIPE_NOT_CONFIGURED" });
+      }
+
+      // Accept either planName (preferred) or a raw priceId (legacy)
+      const { planName, priceId: rawPriceId } = req.body;
+      const validPlans = ['monthly', 'yearly', 'lifetime'] as const;
+
+      let resolvedPriceId: string;
+
+      if (planName && validPlans.includes(planName)) {
+        // Look up the real Stripe price ID from server-side cache
+        const priceIds = getStripePriceIds();
+        resolvedPriceId = priceIds[planName as keyof typeof priceIds];
+      } else if (rawPriceId && rawPriceId.startsWith('price_')) {
+        resolvedPriceId = rawPriceId;
+      } else {
+        return res.status(400).json({ message: "planName (monthly/yearly/lifetime) is required" });
+      }
+
+      const user = req.user as any;
+
+      // Find or create Stripe customer linked to this user
+      let customerId: string | undefined = user.stripeCustomerId;
+      if (!customerId) {
+        const customer = await stripe.customers.create({
+          email: user.email,
+          name: user.username || user.firstName || user.email,
+          metadata: { userId: user.id },
+        });
+        customerId = customer.id;
+        // Persist customer ID (best-effort — billing.ts retry logic handles failures)
+        try {
+          await storage.updateUser(user.id, { stripeCustomerId: customerId });
+        } catch (e) {
+          logger.warn('[create-subscription] Could not persist stripeCustomerId:', (e as Error).message);
+        }
+      }
+
+      // Lifetime is a one-time payment — use PaymentIntent
+      if (planName === 'lifetime' || resolvedPriceId === getStripePriceIds().lifetime) {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: 69900, // $699.00 in cents
+          currency: 'usd',
+          customer: customerId,
+          automatic_payment_methods: { enabled: true },
+          metadata: { userId: user.id, planName: 'lifetime' },
+        });
+        return res.json({ clientSecret: paymentIntent.client_secret, type: 'payment_intent' });
+      }
+
+      // Monthly/yearly — create a subscription (incomplete until payment confirmed)
+      const subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: resolvedPriceId }],
+        payment_behavior: 'default_incomplete',
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        expand: ['latest_invoice.payment_intent'],
+        metadata: { userId: user.id, planName: planName || 'unknown' },
       });
 
-      return res.json({ sessionId: session.id, url: session.url });
+      const invoice = subscription.latest_invoice as Stripe.Invoice;
+      const pi = invoice?.payment_intent as Stripe.PaymentIntent | null;
+
+      if (!pi?.client_secret) {
+        logger.error('[create-subscription] No client_secret in subscription invoice PI', { subscriptionId: subscription.id });
+        return res.status(500).json({ message: "Failed to initialize payment — please try again" });
+      }
+
+      return res.json({
+        clientSecret: pi.client_secret,
+        subscriptionId: subscription.id,
+        type: 'subscription',
+      });
     } catch (error) {
       logger.error("Create subscription error:", error);
       return res.status(500).json({ message: "Failed to create subscription" });
