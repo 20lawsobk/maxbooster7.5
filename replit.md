@@ -74,3 +74,42 @@ Max Booster operates on a three-point data flow:
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
 - **Search APIs**: Exa, Tavily.
+## Production Readiness — Critical Fixes
+
+### Build Rules
+- `dist/index.cjs` and `dist/cluster.cjs` are committed pre-built artifacts used by `start.sh` (`node dist/cluster.cjs`).
+- **Always run `npx tsx script/build.ts` and commit both dist bundles after any server-side changes.**
+- Migration journal is frozen at `0005` — do NOT run `drizzle-kit generate` or `drizzle-kit push`.
+
+### 1. Social Media Page — `/api/social/*` returning 404 in production (FIXED)
+Three-layer root cause, all resolved:
+
+**Layer 1 — CJS bundle lazy-init ordering**: In the esbuild CJS bundle, the `safeLoadRoute` wrapper for `socialMedia` called the module-level `log` helper before its lazy init ran → silent TypeError → router never mounted → 404.
+- Fix: `server/routes.ts` registers the socialMedia router via an eager `await import()` *before* the `routeModules` lazy-load array. Entry removed from `routeModules[]` to prevent double-registration.
+
+**Layer 2 — TensorFlow browser package**: `socialMedia.ts` statically imported `unifiedAIController` → `SocialAutopilotEngine` etc. → `import * as tf from '@tensorflow/tfjs'` (browser build). `@tensorflow/tfjs` auto-requires `@tensorflow/tfjs-backend-webgl` which is not installed in the production container.
+- Partial fix applied (switched 20 shared ML model files to `@tensorflow/tfjs-node`) but `@tensorflow/tfjs-node` also requires `libtensorflow.so.2` native library which is absent from the production container.
+
+**Layer 3 — TF loading at route-registration time (definitive fix)**: The real problem was importing TF-heavy services at module load time. Core social data routes (`/platform-status`, `/posts`, `/weekly-stats`, etc.) never need TF.
+- **Definitive fix**: All TF-heavy service imports in `server/routes/socialMedia.ts` converted from static top-level imports to **lazy async getter functions** (`getUnifiedAI()`, `getContentQuality()`, `getCompetitorBenchmark()`, `getPythonAI()`, `getVeoMusic()`, `getRenderAdvancedVideo()`). These load only on first call inside AI-specific route handlers — never at route-registration time.
+- **Verified**: Fresh production bundle tested *without* any TF library path → all 6 social endpoints return 401 cleanly. E2E browser test confirms "Social Media Management" page loads fully with no errors.
+
+### 2. Boosterstate Binary (FIXED)
+`build.sh` exports `RUSTFLAGS` with standard Debian glibc paths. Binary placed at `./bin/boosterstate`.
+
+### 3. Python Runtime (FIXED)
+`build.sh` downloads CPython 3.12.13 from python-build-standalone. `start.sh` uses `python_runtime/bin/python3` first.
+
+### 4. ShortcutManager TypeError (FIXED)
+Defensive guards in `client/src/lib/shortcuts/ShortcutManager.ts` for undefined key fields in localStorage.
+
+### 5. PDIM ZREMRANGEBYSCORE (non-blocking)
+`chainErrorAutoFixer` auto-degrades to 25% in-memory mode. No code change needed.
+
+### Database Architecture
+- `DATABASE_URL` → `heliumdb` (Replit local) — shell only
+- `NEON_DATABASE_URL` → `neondb` (Neon PostgreSQL) — **actual app database** for all Drizzle/route queries
+
+### Admin Account
+- Email: `blawzmusic@gmail.com` (from `ADMIN_EMAIL` env var)
+- Credentials managed via `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_USERNAME` secrets

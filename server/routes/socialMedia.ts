@@ -1,18 +1,12 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
-import { competitorBenchmarkService } from '../services/competitorBenchmarkService';
-import { unifiedAIController } from '../services/unifiedAIController';
-import { pythonAIService } from '../services/pythonAIService';
-import { veoMusicService } from '../services/veoMusicService';
 import { db } from '../db';
 import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles } from '@shared/schema';
 import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
-import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
-import { contentQualityPipeline } from '../services/contentQualityPipeline.js';
 import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
 import {
   analyzeUrl, analyzeAudio, analyzeImage,
@@ -23,6 +17,59 @@ import {
   type SupportedPlatform as ContentSupportedPlatform,
   ALL_PLATFORMS as CONTENT_ALL_PLATFORMS,
 } from '../services/contentPipeline/platformFormatters.js';
+
+// ── Lazy-loaded AI/TF-heavy services ──────────────────────────────────────────
+// These are only imported on first use inside route handlers — NOT at module
+// load time — so route registration never fails due to missing TF native libs.
+let _unifiedAIController: typeof import('../services/unifiedAIController.js').unifiedAIController | null = null;
+let _contentQualityPipeline: typeof import('../services/contentQualityPipeline.js').contentQualityPipeline | null = null;
+let _competitorBenchmarkService: typeof import('../services/competitorBenchmarkService.js').competitorBenchmarkService | null = null;
+let _pythonAIService: typeof import('../services/pythonAIService.js').pythonAIService | null = null;
+let _veoMusicService: typeof import('../services/veoMusicService.js').veoMusicService | null = null;
+let _renderAdvancedVideo: typeof import('../services/advancedVideoRendererService.js').renderVideo | null = null;
+
+async function getUnifiedAI() {
+  if (!_unifiedAIController) {
+    const m = await import('../services/unifiedAIController.js');
+    _unifiedAIController = m.unifiedAIController;
+  }
+  return _unifiedAIController!;
+}
+async function getContentQuality() {
+  if (!_contentQualityPipeline) {
+    const m = await import('../services/contentQualityPipeline.js');
+    _contentQualityPipeline = m.contentQualityPipeline;
+  }
+  return _contentQualityPipeline!;
+}
+async function getCompetitorBenchmark() {
+  if (!_competitorBenchmarkService) {
+    const m = await import('../services/competitorBenchmarkService.js');
+    _competitorBenchmarkService = m.competitorBenchmarkService;
+  }
+  return _competitorBenchmarkService!;
+}
+async function getPythonAI() {
+  if (!_pythonAIService) {
+    const m = await import('../services/pythonAIService.js');
+    _pythonAIService = m.pythonAIService;
+  }
+  return _pythonAIService!;
+}
+async function getVeoMusic() {
+  if (!_veoMusicService) {
+    const m = await import('../services/veoMusicService.js');
+    _veoMusicService = m.veoMusicService;
+  }
+  return _veoMusicService!;
+}
+async function getRenderAdvancedVideo() {
+  if (!_renderAdvancedVideo) {
+    const m = await import('../services/advancedVideoRendererService.js');
+    _renderAdvancedVideo = m.renderVideo;
+  }
+  return _renderAdvancedVideo!;
+}
 
 const router = Router();
 
@@ -598,7 +645,7 @@ router.get('/listening/alerts', requireAuth, async (req: AuthenticatedRequest, r
 router.get('/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const competitors = await competitorBenchmarkService.getCompetitors(userId);
+    const competitors = await (await getCompetitorBenchmark()).getCompetitors(userId);
     res.json(competitors);
   } catch (error) {
     logger.error('Failed to get competitors:', error);
@@ -616,7 +663,7 @@ router.post('/competitors', requireAuth, async (req: AuthenticatedRequest, res: 
       return res.status(400).json({ error: 'Name and handle are required' });
     }
 
-    const result = await competitorBenchmarkService.addCompetitor(userId, { name, handle, platforms });
+    const result = await (await getCompetitorBenchmark()).addCompetitor(userId, { name, handle, platforms });
     
     if (!result.success) {
       return res.status(400).json({ error: result.error });
@@ -635,7 +682,7 @@ router.delete('/competitors/:id', requireAuth, async (req: AuthenticatedRequest,
     const userId = req.user!.id;
     const { id } = req.params;
 
-    const result = await competitorBenchmarkService.removeCompetitor(userId, id);
+    const result = await (await getCompetitorBenchmark()).removeCompetitor(userId, id);
     
     if (!result.success) {
       return res.status(400).json({ error: result.error });
@@ -664,9 +711,9 @@ router.get('/your-stats', requireAuth, async (req: AuthenticatedRequest, res: Re
 router.get('/benchmark/competitors', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const competitors = await competitorBenchmarkService.getCompetitors(userId);
-    const yourBrand = await competitorBenchmarkService.getYourStats(userId);
-    const comparison = await competitorBenchmarkService.getBenchmarkComparison(userId);
+    const competitors = await (await getCompetitorBenchmark()).getCompetitors(userId);
+    const yourBrand = await (await getCompetitorBenchmark()).getYourStats(userId);
+    const comparison = await (await getCompetitorBenchmark()).getBenchmarkComparison(userId);
     res.json({ competitors, yourBrand, comparison });
   } catch (error) {
     logger.error('Failed to get benchmark competitors:', error);
@@ -678,7 +725,7 @@ router.get('/benchmark/competitors', requireAuth, async (req: AuthenticatedReque
 router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const insights = await competitorBenchmarkService.getInsights(userId);
+    const insights = await (await getCompetitorBenchmark()).getInsights(userId);
     res.json(insights);
   } catch (error) {
     logger.error('Failed to get benchmark insights:', error);
@@ -690,7 +737,7 @@ router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest,
 router.get('/benchmark/share-of-voice', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const shareOfVoice = await competitorBenchmarkService.getShareOfVoice(userId);
+    const shareOfVoice = await (await getCompetitorBenchmark()).getShareOfVoice(userId);
     res.json(shareOfVoice);
   } catch (error) {
     logger.error('Failed to get share of voice:', error);
@@ -1133,8 +1180,9 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
     const mcResults = await Promise.allSettled(
       platforms
         .filter((p: string) => validPlatforms.includes(p))
-        .map((platform: string) =>
-          unifiedAIController.generateContent({
+        .map(async (platform: string) => {
+          const ai = await getUnifiedAI();
+          const result = await ai.generateContent({
             tone:            validTones.includes(tone) ? tone : 'energetic',
             platform,
             topic:           topic || 'music',
@@ -1142,8 +1190,9 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
             userId:          (req as any).user?.id,
             includeHashtags: true,
             includeEmojis:   true,
-          }).then(result => ({ platform, result }))
-        )
+          });
+          return { platform, result };
+        })
     );
 
     for (const settled of mcResults) {
@@ -1445,8 +1494,9 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     const platformResults = await Promise.allSettled(
       platforms
         .filter((p: string) => validPlatforms.includes(p))
-        .map((platform: string) =>
-          unifiedAIController.generateContent({
+        .map(async (platform: string) => {
+          const ai = await getUnifiedAI();
+          const result = await ai.generateContent({
             tone:            validTones.includes(tone) ? tone : 'energetic',
             platform,
             topic:           topic.substring(0, 120),
@@ -1464,8 +1514,9 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
             userId:          (req as any).user?.id,
             includeHashtags: true,
             includeEmojis:   true,
-          }).then(result => ({ platform, result }))
-        )
+          });
+          return { platform, result };
+        })
     );
 
     for (const settled of platformResults) {
@@ -1512,7 +1563,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       for (const platform of platforms) {
         if (!validPlatforms.includes(platform)) continue;
 
-        const result = await unifiedAIController.generateContent({
+        const result = await (await getUnifiedAI()).generateContent({
           tone:            validTones.includes(tone) ? tone : 'energetic',
           platform,
           topic:           topic.substring(0, 120),
@@ -1864,7 +1915,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
           // feeds the video renderer, not the template engine.
           let scriptSource = 'template';
           try {
-            const scriptResult = await unifiedAIController.generateContent({
+            const scriptResult = await (await getUnifiedAI()).generateContent({
               platform: (platform || 'tiktok') as any,
               tone: (tone || 'energetic') as any,
               topic: resolvedTopic,
@@ -1944,7 +1995,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
 
         // Stages 2–4 — Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
         logger.info(`[VideoGen] Routing job ${jobId} through Advanced Video Renderer`);
-        const result = await renderAdvancedVideo({
+        const result = await (await getRenderAdvancedVideo())({
           ...videoParams,
           template: template || 'cinematic_promo',
         });
@@ -2009,7 +2060,7 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
     }
 
     // Fall through to Python AI service for non-FFmpeg jobs
-    const result = await pythonAIService.getVideoJobStatus(jobId);
+    const result = await (await getPythonAI()).getVideoJobStatus(jobId);
     if (!result.success) {
       return res.status(503).json({ success: false, status: 'error', message: result.error });
     }
@@ -2022,7 +2073,7 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
 
 router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const result = await pythonAIService.getCinematicTemplates();
+    const result = await (await getPythonAI()).getCinematicTemplates();
     if (result.success && result.data) {
       res.json({
         ...result.data,
@@ -2078,7 +2129,7 @@ router.post('/veo-campaign', requireAuth, async (req: AuthenticatedRequest, res:
       });
     }
 
-    const result = await veoMusicService.generateCampaign({
+    const result = await (await getVeoMusic()).generateCampaign({
       track_id,
       title,
       artist,
@@ -2121,7 +2172,7 @@ router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedReques
       });
     }
 
-    const asset = await veoMusicService.generateForPost({
+    const asset = await (await getVeoMusic()).generateForPost({
       title,
       artist,
       platform,
@@ -2147,7 +2198,7 @@ router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedReques
 
 router.get('/veo-campaign/platforms', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const data = await veoMusicService.getAvailablePlatforms();
+    const data = await (await getVeoMusic()).getAvailablePlatforms();
     if (!data) {
       return res.status(503).json({
         success: false,
@@ -2163,7 +2214,7 @@ router.get('/veo-campaign/platforms', requireAuth, async (_req: AuthenticatedReq
 
 router.get('/veo-campaign/goals', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const data = await veoMusicService.getAvailableGoals();
+    const data = await (await getVeoMusic()).getAvailableGoals();
     if (!data) {
       return res.status(503).json({
         success: false,
@@ -2180,7 +2231,7 @@ router.get('/veo-campaign/goals', requireAuth, async (_req: AuthenticatedRequest
 router.get('/veo-campaign/recommend/:platform', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { platform } = req.params;
-    const data = await veoMusicService.getRecommendedGoals(platform);
+    const data = await (await getVeoMusic()).getRecommendedGoals(platform);
     if (!data) {
       return res.status(404).json({
         success: false,
@@ -2196,7 +2247,7 @@ router.get('/veo-campaign/recommend/:platform', requireAuth, async (req: Authent
 
 router.get('/veo-campaign/status', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    const status = await veoMusicService.getPipelineStatus();
+    const status = await (await getVeoMusic()).getPipelineStatus();
     if (!status) {
       return res.status(503).json({
         success: false,
@@ -2220,7 +2271,7 @@ router.post('/veo-url/metadata', requireAuth, async (req: AuthenticatedRequest, 
       });
     }
 
-    const data = await veoMusicService.extractUrlMetadata(url);
+    const data = await (await getVeoMusic()).extractUrlMetadata(url);
     if (!data) {
       return res.status(503).json({
         success: false,
@@ -2244,7 +2295,7 @@ router.post('/veo-campaign/from-url', requireAuth, async (req: AuthenticatedRequ
       });
     }
 
-    const result = await veoMusicService.generateCampaignFromUrl(url, overrides);
+    const result = await (await getVeoMusic()).generateCampaignFromUrl(url, overrides);
     if (!result || !result.success) {
       return res.status(result?.error?.includes('unavailable') ? 503 : 500).json({
         success: false,
@@ -2326,7 +2377,7 @@ router.post('/veo-campaign/promote-storefront', requireAuth, async (req: Authent
     if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
     if (keywords.length > 0) campaignRequest.keywords = keywords;
 
-    const result = await veoMusicService.generateCampaign(campaignRequest);
+    const result = await (await getVeoMusic()).generateCampaign(campaignRequest);
     if (!result || !result.success) {
       return res.status(500).json({ success: false, message: result?.error || 'Campaign generation failed' });
     }
@@ -2404,7 +2455,7 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
     if (artworkUrl) campaignRequest.artwork_url = artworkUrl;
     if (category) campaignRequest.genre = category;
 
-    const result = await veoMusicService.generateCampaign(campaignRequest);
+    const result = await (await getVeoMusic()).generateCampaign(campaignRequest);
     if (!result || !result.success) {
       return res.status(500).json({ success: false, message: result?.error || 'Campaign generation failed' });
     }
@@ -2514,7 +2565,7 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
           : seed.topic.slice(0, 80);
 
     const urlKeywords = [...new Set([...(seed.keywords || []), ...(seed.tags || [])])].slice(0, 20);
-    const content = await unifiedAIController.generateContent({
+    const content = await (await getUnifiedAI()).generateContent({
       platform:    platform || 'instagram',
       topic:       aiTopic,
       tone:        seed.tone !== 'default' ? seed.tone : 'energetic',
@@ -2660,7 +2711,7 @@ router.post(
       const platform = (req.body.platform as string) || 'instagram';
 
       // Generate content from audio features
-      const content = await unifiedAIController.generateContent({
+      const content = await (await getUnifiedAI()).generateContent({
         type:       'social_post',
         platform,
         topic:      seed.topic,
@@ -2720,7 +2771,7 @@ router.post(
       const platform = (req.body.platform as string) || 'instagram';
 
       // Generate content from visual mood
-      const content = await unifiedAIController.generateContent({
+      const content = await (await getUnifiedAI()).generateContent({
         type:       'social_post',
         platform,
         topic:      `${analysis.mood} visual aesthetic, ${analysis.genre_hint} music`,
