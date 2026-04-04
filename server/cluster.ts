@@ -22,8 +22,14 @@ import { spawnSync, spawn } from 'child_process';
   _env['TF_NUM_INTEROP_THREADS'] = _env['TF_NUM_INTEROP_THREADS'] || '2';
   _env['TF_NUM_INTRAOP_THREADS'] = _env['TF_NUM_INTRAOP_THREADS'] || '2';
 
-  const bin = path.join(process.cwd(), 'boosterstate', 'target', 'release', 'boosterstate');
-  if (!fs.existsSync(bin)) {
+  // Check portable release binary first (build artifact placed by build.sh),
+  // then fall back to the dev-workspace debug binary.
+  const binCandidates = [
+    path.join(process.cwd(), 'bin', 'boosterstate'),
+    path.join(process.cwd(), 'boosterstate', 'target', 'release', 'boosterstate'),
+  ];
+  const bin = binCandidates.find(p => fs.existsSync(p)) ?? '';
+  if (!bin) {
     console.log('[Cluster] boosterstate binary not found — skipping sidecar startup');
     return;
   }

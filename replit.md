@@ -170,3 +170,30 @@ When creating new tables: always use `npm run db:push` or run SQL against `$NEON
 1. `server/middleware/scalableRateLimiter.ts` — Gracefully skips PDIM rate limiters when unconfigured
 2. `server/middleware/sessionConfig.ts` — Falls back to memorystore sessions when PDIM unavailable
 3. `package.json` dev script — Made boosterstate sidecar optional (skips if binary not built)
+
+## Production Readiness Audit — Completed Fixes
+
+### 1. Boosterstate Sidecar Binary (FIXED)
+- **Root cause**: Binary compiled with Nix store ELF interpreter paths that don't exist in production Debian VMs.
+- **Fix**: `build.sh` exports `RUSTFLAGS` to bake standard Debian paths (`/lib64/ld-linux-x86-64.so.2`, rpath `/lib/x86_64-linux-gnu`). Added `panic = "abort"` to Cargo.toml. Binary placed at `./bin/boosterstate`.
+- **`server/cluster.ts`**: Updated to check `./bin/boosterstate` first, falling back to `boosterstate/target/release/boosterstate`. Both `dist/cluster.cjs` and `dist/index.cjs` rebuilt.
+
+### 2. Portable Python Runtime (FIXED)
+- **Root cause**: `python_runtime/` is linked to Nix store Python with Nix-linked libraries that don't exist in production.
+- **Fix**: `build.sh` downloads CPython 3.12.13 from python-build-standalone (standard glibc), installs numpy 2.4.4 + Pillow 12.2.0 there. `start.sh` checks `python_runtime/bin/python3` first.
+
+### 3. ShortcutManager TypeError (FIXED)
+- **Root cause**: Stale `localStorage` customConfig entries could have `undefined` key field, causing crashes in `register()`, `detectConflicts()`, and `matchesShortcut()`.
+- **Fix**: `client/src/lib/shortcuts/ShortcutManager.ts` — three defensive guards added: `register()` uses `customConfig.key ?? shortcut.key` fallback; `detectConflicts()` skips undefined-key entries; `matchesShortcut()` returns false if either key is missing.
+
+### 4. Social Media Page "Data Load Error" — All `/api/social/*` return 404 (FIXED)
+- **Root cause**: Production runs `node dist/cluster.cjs` (compiled bundle). `build.sh` takes a FAST PATH when pre-built `dist/index.cjs` exists in git, skipping recompilation. The committed stale bundle predated the `socialMedia.ts` route, so `socialMedia` was never registered.
+- **Fix**: Ran `npx tsx script/build.ts` to produce a fresh `dist/index.cjs` (5.2 MB) and `dist/cluster.cjs` containing all current routes. Both bundles committed. All `/api/social/*` endpoints now return 401 (auth required) instead of 404.
+
+### 5. PDIM `ZREMRANGEBYSCORE` Errors (non-blocking)
+- **Root cause**: Unsupported Lua/Redis command from the rate-limiter Redis store inside PDIM.
+- **Status**: `chainErrorAutoFixer` already auto-degrades to 25% in-memory mode. No code change needed.
+
+### Build Integrity Note
+- `dist/index.cjs` and `dist/cluster.cjs` are committed to git as pre-built artifacts.
+- `build.sh` FAST PATH skips recompilation if these files exist — **always run `npx tsx script/build.ts` and commit both dist bundles after any server-side route or code changes** to keep production current.
