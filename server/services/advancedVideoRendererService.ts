@@ -16,7 +16,23 @@ import path from 'path';
 import { logger } from '../logger.js';
 import { pythonAIService } from './pythonAIService.js';
 import { generateVideo as generateVideoFFmpeg, type VideoGenOptions, type VideoGenResult } from './videoGeneratorService.js';
-import { MaxCoreAIClient } from './unifiedAIController.js';
+
+// Lazy-load MaxCoreAIClient so TF initialisation errors never crash this module.
+let _maxcoreClient: typeof import('./unifiedAIController.js')['MaxCoreAIClient'] | null = null;
+let _maxcoreLoadAttempted = false;
+async function getMaxcoreClient() {
+  if (!_maxcoreLoadAttempted) {
+    _maxcoreLoadAttempted = true;
+    try {
+      const m = await import('./unifiedAIController.js');
+      _maxcoreClient = m.MaxCoreAIClient;
+    } catch (e: any) {
+      logger.warn('[AdvancedVideoRenderer] MaxCoreAIClient unavailable, Stage 1 will be skipped:', e.message);
+      _maxcoreClient = null;
+    }
+  }
+  return _maxcoreClient;
+}
 
 const MAXCORE_VIDEO_POLL_INTERVAL_MS = 2000;
 const MAXCORE_VIDEO_MAX_ATTEMPTS     = 90;   // 3 minutes max
@@ -69,7 +85,9 @@ async function pollMaxCoreVideoJob(jobId: string): Promise<VideoGenResult | null
   for (let attempt = 0; attempt < MAXCORE_VIDEO_MAX_ATTEMPTS; attempt++) {
     await new Promise(r => setTimeout(r, MAXCORE_VIDEO_POLL_INTERVAL_MS));
     try {
-      const status = await MaxCoreAIClient.get<any>('/video-job/' + jobId);
+      const mc = await getMaxcoreClient();
+      if (!mc) return null;
+      const status = await mc.get<any>('/video-job/' + jobId);
       if (!status) continue;
       if (status.status === 'done' && status.url) {
         const localUrl = await downloadMaxCoreVideo(status.url);
@@ -150,10 +168,11 @@ export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenR
   const startMs = Date.now();
 
   // ── Stage 1: MaxCore video renderer ─────────────────────────────────────────
-  if (await MaxCoreAIClient.isAvailable()) {
+  const maxcoreClient = await getMaxcoreClient();
+  if (maxcoreClient && await maxcoreClient.isAvailable()) {
     try {
       logger.info('[AdvancedVideoRenderer] Stage 1 — MaxCore video renderer starting');
-      const jobResp = await MaxCoreAIClient.infer<any>('/generate-video', {
+      const jobResp = await maxcoreClient.infer<any>('/generate-video', {
         hook:         opts.hook || '',
         body:         opts.body || '',
         cta:          opts.cta  || '',
