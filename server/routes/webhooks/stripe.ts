@@ -298,8 +298,38 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
 
 registerWebhookHandler('payment_intent.succeeded', async (event) => {
   const paymentIntent = event.data.object as Stripe.PaymentIntent;
-  logger.info(`[Stripe] Payment succeeded: ${paymentIntent.id}`);
-  return { success: true, message: 'Payment intent succeeded' };
+  logger.info(`[Stripe] Payment intent succeeded: ${paymentIntent.id} — amount: $${(paymentIntent.amount / 100).toFixed(2)}`);
+
+  const userId = paymentIntent.metadata?.userId;
+  if (!userId) {
+    logger.warn(`[Stripe] payment_intent.succeeded has no userId in metadata: ${paymentIntent.id}`);
+    return { success: true, message: 'Payment intent succeeded (no user context)' };
+  }
+
+  try {
+    const [existingOrder] = await db
+      .select({ id: orders.id })
+      .from(orders)
+      .where(eq(orders.stripePaymentIntentId, paymentIntent.id))
+      .limit(1);
+
+    if (!existingOrder) {
+      logger.warn(`[Stripe] payment_intent.succeeded: no order found for ${paymentIntent.id} — may have been handled via checkout.session.completed or subscription event`);
+    } else {
+      logger.info(`[Stripe] payment_intent.succeeded: order ${existingOrder.id} confirmed for user ${userId}`);
+    }
+
+    await auditPayment.charge(
+      userId,
+      paymentIntent.amount,
+      paymentIntent.id,
+      true
+    );
+  } catch (err) {
+    logger.error(`[Stripe] payment_intent.succeeded audit error: ${err}`);
+  }
+
+  return { success: true, message: 'Payment intent succeeded and audited' };
 });
 
 registerWebhookHandler('payment_intent.payment_failed', async (event) => {

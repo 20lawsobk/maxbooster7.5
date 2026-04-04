@@ -1,16 +1,16 @@
-import { zstdCompress, zstdDecompress, constants as zlibConstants } from 'zlib';
+import { brotliCompress, brotliDecompress, constants as zlibConstants } from 'zlib';
 import { promisify } from 'util';
 import { createHash } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
-const zstdCompressAsync = promisify(zstdCompress);
-const zstdDecompressAsync = promisify(zstdDecompress);
+const brotliCompressAsync = promisify(brotliCompress);
+const brotliDecompressAsync = promisify(brotliDecompress);
 
 const DICT_DIR = path.join('./pocket-dimensions', '.dicts');
 const DICT_SAMPLE_MAX = 200;
 const DICT_SIZE = 112 * 1024;
-const ZSTD_LEVEL = 9;
+const BROTLI_QUALITY = 9;
 
 interface DictEntry {
   id: string;
@@ -26,24 +26,19 @@ export class ZstdEngine {
   private dictMeta = new Map<string, DictEntry>();
 
   async compress(data: Buffer, dictId?: string): Promise<{ compressed: Buffer; dictId?: string }> {
-    const dict = dictId ? await this.loadDict(dictId) : undefined;
-
-    const opts: Parameters<typeof zstdCompressAsync>[1] = {
+    const opts = {
       params: {
-        [zlibConstants.ZSTD_c_compressionLevel]: ZSTD_LEVEL,
+        [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY,
+        [zlibConstants.BROTLI_PARAM_SIZE_HINT]: data.length,
       },
     };
 
-    if (dict) {
-      (opts.params as any)[zlibConstants.ZSTD_c_enableDedupSequences] = 1;
-    }
-
-    const compressed = await zstdCompressAsync(data, opts);
+    const compressed = await brotliCompressAsync(data, opts);
     return { compressed: compressed as Buffer, dictId };
   }
 
   async decompress(data: Buffer): Promise<Buffer> {
-    const result = await zstdDecompressAsync(data);
+    const result = await brotliDecompressAsync(data);
     return result as Buffer;
   }
 

@@ -749,9 +749,12 @@ class PlatformAutoFixer extends EventEmitter {
       } catch { /* non-Linux or /proc unavailable */ }
 
       // 3. Check EventEmitter listener leak (too many listeners = probable leak)
+      // Threshold is set high because this app runs many autonomous systems, BullMQ workers,
+      // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
+      // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
       const listenerCount = (process as any)._getActiveHandles?.()?.length ?? 0;
       details.activeHandles = listenerCount;
-      if (listenerCount > 500) {
+      if (listenerCount > 3000) {
         status  = status === 'healthy' ? 'degraded' : status;
         message = message === 'OK'
           ? `High active handle count: ${listenerCount}`

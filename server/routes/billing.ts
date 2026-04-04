@@ -165,12 +165,25 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
     );
     
     const customer = result.data;
-    
-    await db
-      .update(users)
-      .set({ stripeCustomerId: customer.id })
-      .where(eq(users.id, user.id));
-    
+
+    let saved = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await db
+          .update(users)
+          .set({ stripeCustomerId: customer.id })
+          .where(eq(users.id, user.id));
+        saved = true;
+        break;
+      } catch (dbErr: any) {
+        logger.warn(`[Billing] Failed to save stripeCustomerId (attempt ${attempt}/3): ${dbErr.message}`);
+        if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 500));
+      }
+    }
+    if (!saved) {
+      logger.error(`[Billing] Could not persist stripeCustomerId ${customer.id} for user ${user.id} after 3 attempts`);
+    }
+
     return customer.id;
   } catch (error: any) {
     logger.error('[Billing] Failed to create Stripe customer:', error.message);
