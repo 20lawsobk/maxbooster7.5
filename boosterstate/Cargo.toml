@@ -18,3 +18,4 @@ num_cpus = "1"
 [profile.release]
 opt-level = 3
 lto = true
+panic = "abort"

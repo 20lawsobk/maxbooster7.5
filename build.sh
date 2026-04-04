@@ -140,6 +140,15 @@ mkdir -p bin
 _CARGO_OK=0
 if command -v cargo >/dev/null 2>&1; then
   echo "   cargo found: $(cargo --version 2>/dev/null)"
+  # RUSTFLAGS bake standard Debian paths into the binary so it runs in the
+  # Debian-based run container (not the Nix-based build container).
+  # --dynamic-linker: use /lib64/ld-linux-x86-64.so.2 (not Nix store path)
+  # -rpath: look for shared libs in standard Debian locations
+  # -static-libgcc: statically link libgcc to remove the libgcc_s.so.1 dep
+  export RUSTFLAGS="-C link-arg=-static-libgcc \
+    -C link-arg=-Wl,--dynamic-linker=/lib64/ld-linux-x86-64.so.2 \
+    -C link-arg=-Wl,-rpath,/lib/x86_64-linux-gnu \
+    -C link-arg=-Wl,-rpath,/lib64"
   if cargo build --release --manifest-path boosterstate/Cargo.toml 2>&1; then
     if cp boosterstate/target/release/boosterstate bin/boosterstate 2>/dev/null; then
       chmod +x bin/boosterstate
@@ -277,70 +286,56 @@ echo "   Removed: changelog/readme files inside node_modules"
 
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 
-# ─── Python virtual environment ──────────────────────────────────────────────
-# Store the venv at ./python_runtime/ — a path NOT listed in .dockerignore —
-# so the environment survives as a build artifact into the run container.
-# (.venv/ IS in .dockerignore which would exclude a dev-workspace copy, so we
-# use a different directory name to guarantee it reaches the run image.)
-# start.sh checks ./python_runtime/bin/python3 before falling back to .venv/.
+# ─── Portable Python runtime ──────────────────────────────────────────────────
+# Download a portable CPython binary from python-build-standalone.
+# This binary links against standard glibc (/lib64/ld-linux-x86-64.so.2) so
+# it runs in the Debian-based run container — unlike Nix-installed Python which
+# embeds Nix store paths that don't exist outside the build container.
+# The install_only tarball extracts as: python/{bin,lib,include}/
+# We strip that top-level 'python/' so ./python_runtime/bin/python3 is ready.
 _PYRUNTIME="python_runtime"
-echo "==> Setting up Python virtual environment in ./${_PYRUNTIME}/ ..."
-export UV_PROJECT_ENVIRONMENT="${_PYRUNTIME}"
+_PYVER="3.12.13"
+_PYDATE="20260325"
+_PYURL="https://github.com/astral-sh/python-build-standalone/releases/download/${_PYDATE}/cpython-${_PYVER}%2B${_PYDATE}-x86_64-unknown-linux-gnu-install_only.tar.gz"
 
-# Locate a system python3 binary — try absolute Nix paths first, then PATH.
-_PYTHON3=""
-for _p in \
-  /nix/var/nix/profiles/default/bin/python3 \
-  /home/runner/.nix-profile/bin/python3 \
-  /usr/bin/python3 \
-  /usr/local/bin/python3 \
-  python3; do
-  if [ -x "$_p" ] || command -v "$_p" >/dev/null 2>&1; then
-    if "$_p" --version >/dev/null 2>&1; then
-      _PYTHON3="$_p"
-      echo "   Python found: $_PYTHON3 ($("$_PYTHON3" --version 2>&1))"
-      break
-    fi
-  fi
-done
-
+echo "==> Downloading portable Python ${_PYVER} (x86_64-linux-gnu) ..."
+mkdir -p "${_PYRUNTIME}"
 _PYENV_OK=0
-if [ -n "$_PYTHON3" ]; then
-  # --- Try uv first (fastest) ---
-  if command -v uv >/dev/null 2>&1; then
-    echo "   Using uv to create venv..."
-    uv venv "${_PYRUNTIME}" --python "$_PYTHON3" 2>&1 || uv venv "${_PYRUNTIME}" 2>&1 || true
-  fi
-
-  # --- Fallback: use python -m venv directly ---
-  if [ ! -x "${_PYRUNTIME}/bin/python3" ] && [ ! -x "${_PYRUNTIME}/bin/python" ]; then
-    echo "   uv venv unavailable or failed — falling back to python -m venv..."
-    "$_PYTHON3" -m venv "${_PYRUNTIME}" 2>&1 || true
-  fi
-
-  # --- Install packages if venv is ready ---
-  _VENV_PY=""
-  [ -x "${_PYRUNTIME}/bin/python3" ] && _VENV_PY="${_PYRUNTIME}/bin/python3"
-  [ -z "$_VENV_PY" ] && [ -x "${_PYRUNTIME}/bin/python" ] && _VENV_PY="${_PYRUNTIME}/bin/python"
-
-  if [ -n "$_VENV_PY" ]; then
-    echo "   Installing numpy + pillow into venv..."
-    if command -v uv >/dev/null 2>&1; then
-      uv pip install --python "$_VENV_PY" numpy pillow 2>&1 || \
-        "$_VENV_PY" -m pip install --no-cache-dir numpy pillow 2>&1 || true
+if curl -sL --max-time 120 "${_PYURL}" \
+     | tar xz --strip-components=1 -C "${_PYRUNTIME}" python/ 2>/dev/null; then
+  if [ -x "${_PYRUNTIME}/bin/python3" ] && "${_PYRUNTIME}/bin/python3" --version >/dev/null 2>&1; then
+    _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
+    echo "   Portable Python installed: ${_PY_VER_STR}"
+    echo "   Installing numpy + pillow ..."
+    "${_PYRUNTIME}/bin/pip3" install --no-cache-dir numpy pillow --quiet 2>&1 || \
+      "${_PYRUNTIME}/bin/python3" -m pip install --no-cache-dir numpy pillow --quiet 2>&1 || true
+    if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL" 2>/dev/null; then
+      echo "   ✅ Python runtime ready: ${_PY_VER_STR} with numpy + Pillow → ./${_PYRUNTIME}/"
+      _PYENV_OK=1
     else
-      "$_VENV_PY" -m pip install --no-cache-dir numpy pillow 2>&1 || true
+      echo "   WARNING: numpy/Pillow import failed — Python runtime incomplete"
     fi
-    echo "   ✅ Python venv ready: $("$_VENV_PY" --version 2>&1) → ./${_PYRUNTIME}/"
-    _PYENV_OK=1
   else
-    echo "   WARNING: venv creation failed — Python features unavailable in production"
+    echo "   WARNING: downloaded Python binary not executable in build container"
   fi
 else
-  echo "   WARNING: python3 not found in build container — Python features unavailable"
+  echo "   WARNING: portable Python download failed — trying system Python fallback..."
+  # System-Python fallback (may or may not survive into run container)
+  _PYTHON3=""
+  for _p in /usr/bin/python3 /usr/local/bin/python3 python3; do
+    if [ -x "$_p" ] && "$_p" --version >/dev/null 2>&1; then _PYTHON3="$_p"; break; fi
+  done
+  if [ -n "$_PYTHON3" ]; then
+    "$_PYTHON3" -m venv "${_PYRUNTIME}" 2>&1 || true
+    if [ -x "${_PYRUNTIME}/bin/python3" ]; then
+      "${_PYRUNTIME}/bin/pip3" install --no-cache-dir numpy pillow --quiet 2>&1 || true
+      echo "   System Python venv created (may not work in run container)"
+      _PYENV_OK=1
+    fi
+  fi
 fi
 if [ "$_PYENV_OK" = "0" ]; then
-  echo "   Python runtime will be unavailable (audio/image analysis disabled)."
+  echo "   Python runtime unavailable — audio/image analysis disabled in production."
 fi
 
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────
