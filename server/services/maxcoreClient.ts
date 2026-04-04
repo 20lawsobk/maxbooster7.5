@@ -85,6 +85,12 @@ export class MaxCoreAIClient {
    *   2. MaxCore Local Engine — always succeeds, zero-latency fallback
    */
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
+    // If the remote was previously marked unavailable, clear that after the TTL so
+    // transient startup failures (e.g. MaxCore waking up) don't permanently block calls.
+    if (MaxCoreAIClient._remoteAvailable === false &&
+        Date.now() - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL) {
+      MaxCoreAIClient._remoteAvailable = null;
+    }
     if (MC_AI_URL && MC_AI_KEY && MaxCoreAIClient._remoteAvailable !== false) {
       const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
       if (!MaxCoreAIClient.isEndpointSuppressed(path)) {

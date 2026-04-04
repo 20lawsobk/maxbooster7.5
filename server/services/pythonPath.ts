@@ -15,6 +15,8 @@ function probe(p: string): boolean {
 
 function resolvePython(): string | null {
   const candidates = [
+    path.join(CWD, 'python_runtime', 'bin', 'python3'),
+    path.join(CWD, 'python_runtime', 'bin', 'python'),
     path.join(CWD, '.venv', 'bin', 'python3'),
     path.join(CWD, '.venv', 'bin', 'python'),
     '/usr/bin/python3',
