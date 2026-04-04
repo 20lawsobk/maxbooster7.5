@@ -134,6 +134,7 @@ export function matchesShortcut(
   event: KeyboardEvent,
   shortcut: ShortcutDefinition
 ): boolean {
+  if (!shortcut.key || !event.key) return false;
   const platform = getPlatformModifiers();
   const modifiers = shortcut.modifiers || [];
   

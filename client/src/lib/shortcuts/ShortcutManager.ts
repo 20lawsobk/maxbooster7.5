@@ -69,9 +69,9 @@ class ShortcutManagerImpl {
     if (customConfig) {
       shortcut = {
         ...shortcut,
-        key: customConfig.key,
-        modifiers: customConfig.modifiers,
-        enabled: customConfig.enabled,
+        key: customConfig.key ?? shortcut.key,
+        modifiers: customConfig.modifiers ?? shortcut.modifiers,
+        enabled: customConfig.enabled ?? shortcut.enabled ?? true,
       };
     }
 
@@ -172,6 +172,7 @@ class ShortcutManagerImpl {
       
       if (!sameContext) return;
 
+      if (!existing.key || !shortcut.key) return;
       const sameKey = existing.key.toLowerCase() === shortcut.key.toLowerCase();
       const sameModifiers = this.modifiersEqual(
         existing.modifiers || [],
