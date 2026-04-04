@@ -90,28 +90,40 @@ export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
 # ── 2. Activate Python virtual environment ────────────────────────────────────
-# Use the explicit .venv/bin/python3 path — NEVER bare 'python3' which may
-# invoke the Replit python-wrapper (a Go binary) that panics when Python is
-# not configured in the minimal run container.
-_VENV_PY="$(pwd)/.venv/bin/python3"
-if [ -f "$_VENV_PY" ] && "$_VENV_PY" --version >/dev/null 2>&1; then
-  export PATH="$(pwd)/.venv/bin:$PATH"
-  export VIRTUAL_ENV="$(pwd)/.venv"
-  echo "[start.sh] Python venv activated: $("$_VENV_PY" --version 2>&1)"
-elif [ -f "$(pwd)/.venv/bin/python" ] && "$(pwd)/.venv/bin/python" --version >/dev/null 2>&1; then
-  export PATH="$(pwd)/.venv/bin:$PATH"
-  export VIRTUAL_ENV="$(pwd)/.venv"
-  echo "[start.sh] Python venv activated (python): $($(pwd)/.venv/bin/python --version 2>&1)"
-else
+# Check ./python_runtime/ first (build artifact created by build.sh, not in
+# .dockerignore), then fall back to .venv/ (dev environment).
+# NEVER use bare 'python3' — the Replit python-wrapper (a Go binary) panics
+# when Python is not configured in the minimal run container.
+_PYENV_ACTIVATED=0
+for _pydir in "$(pwd)/python_runtime" "$(pwd)/.venv"; do
+  for _pysuffix in "bin/python3" "bin/python"; do
+    _VENV_PY="${_pydir}/${_pysuffix}"
+    if [ -f "$_VENV_PY" ] && "$_VENV_PY" --version >/dev/null 2>&1; then
+      export PATH="${_pydir}/bin:$PATH"
+      export VIRTUAL_ENV="${_pydir}"
+      echo "[start.sh] Python venv activated ($("$_VENV_PY" --version 2>&1)): ${_pydir}/"
+      _PYENV_ACTIVATED=1
+      break 2
+    fi
+  done
+done
+if [ "$_PYENV_ACTIVATED" = "0" ]; then
   echo "[start.sh] WARNING: .venv Python not functional — Python features disabled (video/audio analysis unavailable)"
 fi
 
 # ── 3. Start boosterstate sidecar ────────────────────────────────────────────
+# Check ./bin/boosterstate first (compiled by build.sh, not in .dockerignore),
+# then fall back to the dev-build path in boosterstate/target/release/.
 if ! pgrep -x boosterstate >/dev/null 2>&1; then
-  if [ -x "./boosterstate/target/release/boosterstate" ]; then
+  _BOOSTER_BIN=""
+  [ -x "./bin/boosterstate" ] && _BOOSTER_BIN="./bin/boosterstate"
+  [ -z "$_BOOSTER_BIN" ] && [ -x "./boosterstate/target/release/boosterstate" ] && \
+    _BOOSTER_BIN="./boosterstate/target/release/boosterstate"
+
+  if [ -n "$_BOOSTER_BIN" ]; then
     _SIDECAR_PORT="${BOOSTERSTATE_SIDECAR_PORT:-9877}"
-    BOOSTERSTATE_PORT="$_SIDECAR_PORT" ./boosterstate/target/release/boosterstate &
-    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT"
+    BOOSTERSTATE_PORT="$_SIDECAR_PORT" "$_BOOSTER_BIN" &
+    echo "[start.sh] boosterstate started (pid $!) on internal port $_SIDECAR_PORT via $_BOOSTER_BIN"
   else
     echo "[start.sh] WARNING: boosterstate binary not found — skipping sidecar"
   fi

@@ -129,15 +129,35 @@ rm -rf node_modules/@tensorflow/tfjs-node/binding/ 2>/dev/null || true
 echo "   TF native binaries removed."
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
-# The boosterstate binary is intentionally NOT compiled or included in the
-# deployment image. Replit's "Repl layer" packaging rejects any binary
-# (non-UTF-8) file with "invalid UTF-8" — the same reason we can't commit the
-# binary to git. boosterstate/target/ is excluded via .dockerignore.
-# The Node.js cluster already handles the missing sidecar gracefully:
-#   "[Cluster] boosterstate binary not found — skipping sidecar startup"
-echo "==> Rust sidecar: skipped (binary excluded from Repl layer by .dockerignore)"
+# Compile the boosterstate sidecar binary during the build step and store it
+# at ./bin/boosterstate — a path that is NOT in .dockerignore so the binary
+# survives into the run container as a build artifact.
+# NOTE: boosterstate/target/ stays in .dockerignore so dev-workspace binaries
+# never pollute the Repl layer, but ./bin/ is unexcluded so the compiled
+# output is available to start.sh in production.
+echo "==> Rust sidecar: compiling release binary..."
+mkdir -p bin
+_CARGO_OK=0
+if command -v cargo >/dev/null 2>&1; then
+  echo "   cargo found: $(cargo --version 2>/dev/null)"
+  if cargo build --release --manifest-path boosterstate/Cargo.toml 2>&1; then
+    if cp boosterstate/target/release/boosterstate bin/boosterstate 2>/dev/null; then
+      chmod +x bin/boosterstate
+      echo "   ✅ boosterstate compiled and placed at ./bin/boosterstate ($(du -sh bin/boosterstate | cut -f1))"
+      _CARGO_OK=1
+    else
+      echo "   WARNING: binary compile succeeded but cp failed"
+    fi
+  else
+    echo "   WARNING: cargo build --release failed — sidecar unavailable in production"
+  fi
+else
+  echo "   WARNING: cargo not found in build container — sidecar unavailable in production"
+fi
 rm -rf boosterstate/target/ 2>/dev/null || true
-echo "   boosterstate/target/ cleaned up — app will run without sidecar."
+if [ "$_CARGO_OK" = "0" ]; then
+  echo "   App will run without boosterstate sidecar (graceful fallback active)."
+fi
 
 # ─── Full build (SLOW PATH only) ─────────────────────────────────────────────
 if [ "$FAST_PATH" = "0" ]; then
@@ -258,42 +278,69 @@ echo "   Removed: changelog/readme files inside node_modules"
 echo "   Final node_modules size: $(du -sh node_modules | cut -f1)"
 
 # ─── Python virtual environment ──────────────────────────────────────────────
-# The Nix store (/nix/store/...) is READ-ONLY in the deployment build container.
-# UV must not try to install packages there. We create a project-local .venv
-# so all Python packages land in a writable directory inside the project root.
-# UV_PROJECT_ENVIRONMENT tells UV 0.9+ to use this venv for all operations.
-echo "==> Setting up Python virtual environment in .venv/ ..."
-export UV_PROJECT_ENVIRONMENT=".venv"
+# Store the venv at ./python_runtime/ — a path NOT listed in .dockerignore —
+# so the environment survives as a build artifact into the run container.
+# (.venv/ IS in .dockerignore which would exclude a dev-workspace copy, so we
+# use a different directory name to guarantee it reaches the run image.)
+# start.sh checks ./python_runtime/bin/python3 before falling back to .venv/.
+_PYRUNTIME="python_runtime"
+echo "==> Setting up Python virtual environment in ./${_PYRUNTIME}/ ..."
+export UV_PROJECT_ENVIRONMENT="${_PYRUNTIME}"
 
-# Locate a system python3 binary (Nix or fallback)
+# Locate a system python3 binary — try absolute Nix paths first, then PATH.
 _PYTHON3=""
 for _p in \
   /nix/var/nix/profiles/default/bin/python3 \
   /home/runner/.nix-profile/bin/python3 \
   /usr/bin/python3 \
+  /usr/local/bin/python3 \
   python3; do
-  if command -v "$_p" &>/dev/null 2>&1; then
-    _PYTHON3="$_p"
-    break
+  if [ -x "$_p" ] || command -v "$_p" >/dev/null 2>&1; then
+    if "$_p" --version >/dev/null 2>&1; then
+      _PYTHON3="$_p"
+      echo "   Python found: $_PYTHON3 ($("$_PYTHON3" --version 2>&1))"
+      break
+    fi
   fi
 done
 
-if [ -n "$_PYTHON3" ] && command -v uv &>/dev/null 2>&1; then
-  # Create the virtual environment if it doesn't already exist
-  if [ ! -x ".venv/bin/python" ] && [ ! -x ".venv/bin/python3" ]; then
-    uv venv .venv --python "$_PYTHON3" 2>/dev/null || uv venv .venv 2>/dev/null || true
+_PYENV_OK=0
+if [ -n "$_PYTHON3" ]; then
+  # --- Try uv first (fastest) ---
+  if command -v uv >/dev/null 2>&1; then
+    echo "   Using uv to create venv..."
+    uv venv "${_PYRUNTIME}" --python "$_PYTHON3" 2>&1 || uv venv "${_PYRUNTIME}" 2>&1 || true
   fi
 
-  # Install required Python packages into the local venv
-  if [ -x ".venv/bin/python3" ] || [ -x ".venv/bin/python" ]; then
-    _VENV_PY=$([ -x ".venv/bin/python3" ] && echo ".venv/bin/python3" || echo ".venv/bin/python")
-    uv pip install --python "$_VENV_PY" numpy pillow 2>/dev/null || true
-    echo "   Python venv ready: $($_VENV_PY --version 2>&1) with numpy + pillow"
+  # --- Fallback: use python -m venv directly ---
+  if [ ! -x "${_PYRUNTIME}/bin/python3" ] && [ ! -x "${_PYRUNTIME}/bin/python" ]; then
+    echo "   uv venv unavailable or failed — falling back to python -m venv..."
+    "$_PYTHON3" -m venv "${_PYRUNTIME}" 2>&1 || true
+  fi
+
+  # --- Install packages if venv is ready ---
+  _VENV_PY=""
+  [ -x "${_PYRUNTIME}/bin/python3" ] && _VENV_PY="${_PYRUNTIME}/bin/python3"
+  [ -z "$_VENV_PY" ] && [ -x "${_PYRUNTIME}/bin/python" ] && _VENV_PY="${_PYRUNTIME}/bin/python"
+
+  if [ -n "$_VENV_PY" ]; then
+    echo "   Installing numpy + pillow into venv..."
+    if command -v uv >/dev/null 2>&1; then
+      uv pip install --python "$_VENV_PY" numpy pillow 2>&1 || \
+        "$_VENV_PY" -m pip install --no-cache-dir numpy pillow 2>&1 || true
+    else
+      "$_VENV_PY" -m pip install --no-cache-dir numpy pillow 2>&1 || true
+    fi
+    echo "   ✅ Python venv ready: $("$_VENV_PY" --version 2>&1) → ./${_PYRUNTIME}/"
+    _PYENV_OK=1
   else
-    echo "   WARNING: could not create .venv — Python scripts may fail"
+    echo "   WARNING: venv creation failed — Python features unavailable in production"
   fi
 else
-  echo "   WARNING: uv or python3 not found — skipping venv setup"
+  echo "   WARNING: python3 not found in build container — Python features unavailable"
+fi
+if [ "$_PYENV_OK" = "0" ]; then
+  echo "   Python runtime will be unavailable (audio/image analysis disabled)."
 fi
 
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────

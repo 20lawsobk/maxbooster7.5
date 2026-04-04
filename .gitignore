@@ -126,3 +126,9 @@ result
 
 # Portable Node.js binary downloaded by build.sh for deployment run container
 .node_bin/
+
+# Compiled boosterstate sidecar binary (build artifact — binary files rejected by git layer)
+bin/
+
+# Python virtual environment created by build.sh for deployment run container
+python_runtime/
