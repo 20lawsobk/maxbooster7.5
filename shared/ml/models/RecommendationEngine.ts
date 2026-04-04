@@ -12,7 +12,7 @@
  * 100% in-house, no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-node';
 import { BaseModel } from './BaseModel.js';
 import type { ModelMetadata, TrainingOptions, PredictionResult } from '../types.js';
 

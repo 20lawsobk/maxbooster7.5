@@ -16,7 +16,7 @@
  *                        variant_diversity, cta_urgency
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-node';
 import { BaseModel } from './BaseModel.js';
 
 // ─── Lookup Tables ────────────────────────────────────────────────────────────

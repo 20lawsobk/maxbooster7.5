@@ -18,7 +18,7 @@
  * Output (13 values):  softmax probability over 13 visual styles
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-node';
 import { BaseModel } from './BaseModel.js';
 import { PLATFORM_IDX, TONE_IDX } from './CreativePlannerModel.js';
 

@@ -28,7 +28,7 @@
  * 100% in-house, no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs-node';
 import { 
   AdvancedMusicAI, 
   type CreativeParameters,

@@ -131,7 +131,31 @@ else
   echo "[start.sh] boosterstate already running"
 fi
 
-# ── 4. Launch the cluster ─────────────────────────────────────────────────────
+# ── 4. Set up @tensorflow/tfjs-node native library path ──────────────────────
+# @tensorflow/tfjs-node ships libtensorflow.so.2.9.1 inside its npm package but
+# the .node binding looks for the unversioned soname libtensorflow.so.2 via the
+# dynamic linker.  Create the versioned symlinks if they are missing (npm install
+# does not always create them on NixOS/Replit) and add the dir to LD_LIBRARY_PATH
+# so the linker can resolve them without root / system-wide ldconfig.
+_TF_LIB_DIR="$(pwd)/node_modules/@tensorflow/tfjs-node/deps/lib"
+if [ -d "$_TF_LIB_DIR" ]; then
+  # Create libtensorflow.so.2 → libtensorflow.so.2.9.1 symlink if missing
+  if [ ! -f "$_TF_LIB_DIR/libtensorflow.so.2" ] && [ -f "$_TF_LIB_DIR/libtensorflow.so.2.9.1" ]; then
+    ln -sf libtensorflow.so.2.9.1 "$_TF_LIB_DIR/libtensorflow.so.2" 2>/dev/null || true
+    echo "[start.sh] created libtensorflow.so.2 symlink"
+  fi
+  # Create libtensorflow_framework.so.2 → libtensorflow_framework.so.2.9.1 symlink if missing
+  if [ ! -f "$_TF_LIB_DIR/libtensorflow_framework.so.2" ] && [ -f "$_TF_LIB_DIR/libtensorflow_framework.so.2.9.1" ]; then
+    ln -sf libtensorflow_framework.so.2.9.1 "$_TF_LIB_DIR/libtensorflow_framework.so.2" 2>/dev/null || true
+    echo "[start.sh] created libtensorflow_framework.so.2 symlink"
+  fi
+  export LD_LIBRARY_PATH="$_TF_LIB_DIR${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+  echo "[start.sh] LD_LIBRARY_PATH set to include @tensorflow/tfjs-node deps"
+else
+  echo "[start.sh] WARNING: @tensorflow/tfjs-node deps/lib not found — TF ML features may be degraded"
+fi
+
+# ── 5. Launch the cluster ─────────────────────────────────────────────────────
 export UV_THREADPOOL_SIZE="${UV_THREADPOOL_SIZE:-8}"
 export TF_NUM_INTEROP_THREADS="${TF_NUM_INTEROP_THREADS:-2}"
 export TF_NUM_INTRAOP_THREADS="${TF_NUM_INTRAOP_THREADS:-2}"
