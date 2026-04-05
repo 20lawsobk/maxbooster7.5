@@ -48,20 +48,24 @@ jobs:
       github.event.inputs.desktop_platforms == 'linux' ||
       github.event.inputs.desktop_platforms == 'all'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install system dependencies
-        run: sudo apt-get update && sudo apt-get install -y libarchive-tools rpm fakeroot dpkg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libarchive-tools rpm fakeroot dpkg
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Electron dependencies
+      - name: Install Electron process dependencies
         run: npm install --prefix electron --no-audit
 
       - name: Build web assets
@@ -78,14 +82,32 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Linux artifacts
+      - name: List build outputs
+        run: |
+          echo "=== Linux Build Outputs ==="
+          find dist-installers -type f 2>/dev/null || echo "No outputs found"
+
+      - name: Upload Linux AppImage
         uses: actions/upload-artifact@v4
         with:
-          name: linux-builds
-          path: |
-            dist-installers/*.AppImage
-            dist-installers/*.deb
-            dist-installers/*.tar.gz
+          name: linux-appimage
+          path: dist-installers/*.AppImage
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Linux DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: dist-installers/*.deb
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Linux tar.gz
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-tarball
+          path: dist-installers/*.tar.gz
           if-no-files-found: warn
           retention-days: 14
 
@@ -95,9 +117,11 @@ jobs:
       github.event.inputs.desktop_platforms == 'windows' ||
       github.event.inputs.desktop_platforms == 'all'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -105,7 +129,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Electron dependencies
+      - name: Install Electron process dependencies
         shell: bash
         run: npm install --prefix electron --no-audit
 
@@ -120,23 +144,41 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload Windows artifacts
+      - name: List build outputs
+        run: |
+          echo "=== Windows Build Outputs ==="
+          Get-ChildItem -Path dist-installers -Recurse -File | Select-Object FullName, Length
+        shell: pwsh
+
+      - name: Upload Windows NSIS Installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-builds
-          path: dist-installers/*.exe
+          name: windows-nsis-installer
+          path: dist-installers/*Setup*.exe
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload Windows Portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-portable
+          path: |
+            dist-installers/*.exe
+            !dist-installers/*Setup*.exe
           if-no-files-found: warn
           retention-days: 14
 
   build-macos:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     if: >-
       github.event.inputs.desktop_platforms == 'macos' ||
       github.event.inputs.desktop_platforms == 'all'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -144,7 +186,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Electron dependencies
+      - name: Install Electron process dependencies
         run: npm install --prefix electron --no-audit
 
       - name: Build web assets
@@ -153,17 +195,29 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
-      - name: Build macOS packages (cross-compiled from Linux)
+      - name: Build macOS packages
         run: npx electron-builder --mac zip --x64 --arm64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USE_HARD_LINKS: false
 
-      - name: Upload macOS artifacts
+      - name: List build outputs
+        run: |
+          echo "=== macOS Build Outputs ==="
+          find dist-installers -type f 2>/dev/null || echo "No outputs found"
+
+      - name: Upload macOS ZIP (Intel x64)
         uses: actions/upload-artifact@v4
         with:
-          name: macos-builds
-          path: dist-installers/*.zip
+          name: macos-zip-x64
+          path: dist-installers/*mac*.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload macOS ZIP (Apple Silicon arm64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-zip-arm64
+          path: dist-installers/*arm64*.zip
           if-no-files-found: warn
           retention-days: 14
 
@@ -173,19 +227,23 @@ jobs:
       github.event.inputs.mobile_platforms == 'android' ||
       github.event.inputs.mobile_platforms == 'both'
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
-      - uses: actions/setup-java@v4
+      - name: Setup Java
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: ${{ env.JAVA_VERSION }}
 
-      - uses: android-actions/setup-android@v3
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
         with:
           cmdline-tools-version: 12266719
           packages: platform-tools platforms;android-35 build-tools;35.0.0
@@ -219,17 +277,23 @@ jobs:
 
       - name: Sync Capacitor Android
         run: |
-          if [ ! -d "android" ]; then npx cap add android; fi
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
           npx cap sync android
 
       - name: Setup Android Signing
-        if: github.event.inputs.build_type == 'release'
+        id: android_signing
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         run: |
           if [ -z "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" ]; then
-            echo "::warning::No Android keystore provided — release will be unsigned"
+            echo "::warning::No Android keystore provided, release build will be unsigned"
+            echo "ANDROID_SIGNING_CONFIGURED=false" >> $GITHUB_OUTPUT
             exit 0
           fi
+
           echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/release.keystore
+
           cat > android/keystore.properties << EOF
           storeFile=../release.keystore
           storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -237,14 +301,60 @@ jobs:
           keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
           EOF
 
+          cat > android/app/signing.gradle << 'GRADLE'
+          def keystorePropertiesFile = rootProject.file("keystore.properties")
+          if (keystorePropertiesFile.exists()) {
+              def keystoreProperties = new Properties()
+              keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+              android {
+                  signingConfigs {
+                      release {
+                          storeFile file(keystoreProperties['storeFile'].trim())
+                          storePassword keystoreProperties['storePassword'].trim()
+                          keyAlias keystoreProperties['keyAlias'].trim()
+                          keyPassword keystoreProperties['keyPassword'].trim()
+                      }
+                  }
+                  buildTypes {
+                      release {
+                          signingConfig signingConfigs.release
+                      }
+                  }
+              }
+          }
+          GRADLE
+
+          if ! grep -q "signing.gradle" android/app/build.gradle; then
+            echo "" >> android/app/build.gradle
+            echo "apply from: 'signing.gradle'" >> android/app/build.gradle
+          fi
+
+          echo "ANDROID_SIGNING_CONFIGURED=true" >> $GITHUB_OUTPUT
+          echo "Android signing configured successfully"
+
       - name: Build Android Debug APK
         working-directory: android
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Build Android Release APK
-        if: github.event.inputs.build_type == 'release'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         working-directory: android
-        run: ./gradlew assembleRelease bundleRelease --no-daemon
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Build Android App Bundle (AAB)
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: List build outputs
+        run: |
+          echo "=== Debug APK ==="
+          find android -name "*.apk" -path "*/debug/*" 2>/dev/null || echo "No debug APK found"
+          echo "=== Release APK ==="
+          find android -name "*.apk" -path "*/release/*" 2>/dev/null || echo "No release APK found"
+          echo "=== App Bundle ==="
+          find android -name "*.aab" 2>/dev/null || echo "No AAB found"
 
       - name: Upload Android Debug APK
         uses: actions/upload-artifact@v4
@@ -255,7 +365,7 @@ jobs:
           retention-days: 14
 
       - name: Upload Android Release APK
-        if: github.event.inputs.build_type == 'release'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
           name: android-release-apk
@@ -264,10 +374,10 @@ jobs:
           retention-days: 30
 
       - name: Upload Android App Bundle
-        if: github.event.inputs.build_type == 'release'
+        if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.build_type == 'release'
         uses: actions/upload-artifact@v4
         with:
-          name: android-aab
+          name: android-app-bundle
           path: android/app/build/outputs/bundle/release/*.aab
           if-no-files-found: warn
           retention-days: 30
@@ -278,9 +388,17 @@ jobs:
       github.event.inputs.mobile_platforms == 'ios' ||
       github.event.inputs.mobile_platforms == 'both'
     steps:
-      - uses: actions/checkout@v4
+      - name: iOS build requires macOS + Xcode
+        run: |
+          echo "::notice::iOS builds require macOS with Xcode and cannot run on ubuntu-latest."
+          echo "::notice::To build iOS: use a Mac with Xcode 15+, run 'npm run build && npx cap sync ios' then open ios/App/App.xcworkspace in Xcode."
+          echo "iOS_SKIPPED=true" >> $GITHUB_ENV
 
-      - uses: actions/setup-node@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -288,7 +406,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build web assets
+      - name: Build web assets (for Capacitor sync reference)
         run: npx tsx script/build.ts
         env:
           NODE_ENV: production
@@ -330,12 +448,16 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.event.inputs.version_tag, 'alpha') || contains(github.event.inputs.version_tag, 'beta') || contains(github.event.inputs.version_tag, 'rc') }}
           files: |
-            artifacts/linux-builds/*
-            artifacts/windows-builds/*
-            artifacts/macos-builds/*
-            artifacts/android-release-apk/*
-            artifacts/android-aab/*
-            artifacts/ios-release-ipa/*
+            artifacts/linux-appimage/*.AppImage
+            artifacts/linux-deb/*.deb
+            artifacts/linux-tarball/*.tar.gz
+            artifacts/windows-nsis-installer/*.exe
+            artifacts/windows-portable/*.exe
+            artifacts/macos-zip-x64/*.zip
+            artifacts/macos-zip-arm64/*.zip
+            artifacts/android-release-apk/*.apk
+            artifacts/android-app-bundle/*.aab
+            artifacts/ios-release-ipa/*.ipa
           body: |
             ## ${{ env.APP_NAME }} ${{ github.event.inputs.version_tag }}
 
@@ -349,7 +471,7 @@ jobs:
             | Platform | Format | Notes |
             |----------|--------|-------|
             | Windows | NSIS Installer / Portable | Run installer or portable .exe |
-            | macOS | DMG / ZIP | Open DMG and drag to Applications |
+            | macOS | ZIP (x64 + arm64) | Extract and run, or drag to Applications |
             | Linux | AppImage / DEB / tar.gz | `chmod +x *.AppImage` to run |
 
             ### Mobile Downloads
@@ -384,6 +506,13 @@ jobs:
           echo "|----------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Android | ${{ needs.build-android.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| iOS | ${{ needs.build-ios.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux AppImage / DEB / tar.gz (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows NSIS Installer / Portable (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS ZIP x64 + arm64 (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Android Debug APK (14 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- Android Release APK / AAB (30 day retention)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Platform-Adaptive Features" >> $GITHUB_STEP_SUMMARY
           echo "- Lyrics Panel: docked on desktop, full-screen overlay on mobile" >> $GITHUB_STEP_SUMMARY
