@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { useLocation } from 'wouter';
@@ -91,6 +91,10 @@ import {
   Briefcase,
   Video,
   ShieldCheck,
+  Wand2,
+  Loader2,
+  ImagePlus,
+  Mic,
 } from 'lucide-react';
 import {
   SpotifyIcon,
@@ -4662,152 +4666,360 @@ function SampleClearanceContent() {
 
 function MusicVideosContent() {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [isNewOpen, setIsNewOpen] = useState(false);
-  const [newVideo, setNewVideo] = useState({
-    trackTitle: '', director: '', productionCompany: '', budget: '', stage: 'concept', platform: 'youtube', notes: '',
-  });
 
-  const { data: videos = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/music-videos'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/music-videos/stats'] });
+  const [songTitle, setSongTitle] = useState('');
+  const [artistName, setArtistName] = useState('');
+  const [hookText, setHookText] = useState('');
+  const [bodyText, setBodyText] = useState('');
+  const [ctaText, setCtaText] = useState('');
+  const [voiceProfile, setVoiceProfile] = useState('smooth_narrator');
+  const [colorGrade, setColorGrade] = useState('cinematic');
+  const [outputPlatform, setOutputPlatform] = useState('youtube');
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+  const [selectedAudio, setSelectedAudio] = useState<File | null>(null);
+  const [enableVoice, setEnableVoice] = useState(false);
 
-  const createMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/music-videos', data); return res.json(); },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/music-videos'] });
-      setIsNewOpen(false);
-      setNewVideo({ trackTitle: '', director: '', productionCompany: '', budget: '', stage: 'concept', platform: 'youtube', notes: '' });
-      toast({ title: 'Music Video Added', description: 'Video project tracked successfully.' });
-    },
-  });
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [jobStatus, setJobStatus] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [completedVideoUrl, setCompletedVideoUrl] = useState<string | null>(null);
 
-  const updateStageMutation = useMutation({
-    mutationFn: async ({ id, stage }: any) => { const res = await apiRequest('PUT', `/api/music-videos/${id}`, { stage }); return res.json(); },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/music-videos'] }),
-  });
+  const imageInputRef = useRef<HTMLInputElement>(null);
+  const audioInputRef = useRef<HTMLInputElement>(null);
 
-  const STAGES = ['concept', 'pre_production', 'casting', 'filming', 'editing', 'color_grade', 'mastering', 'released'];
-  const stageColors: Record<string, string> = {
-    concept: 'bg-gray-100 text-gray-600',
-    pre_production: 'bg-blue-100 text-blue-600',
-    casting: 'bg-purple-100 text-purple-600',
-    filming: 'bg-orange-100 text-orange-600',
-    editing: 'bg-yellow-100 text-yellow-600',
-    color_grade: 'bg-pink-100 text-pink-600',
-    mastering: 'bg-indigo-100 text-indigo-600',
-    released: 'bg-green-100 text-green-600',
+  const { data: voiceProfiles = [] } = useQuery<any[]>({ queryKey: ['/api/social/voice-profiles'] });
+  const { data: libraryVideos = [] } = useQuery<any[]>({ queryKey: ['/api/music-videos'] });
+
+  useEffect(() => {
+    if (!jobId || jobStatus?.status === 'completed' || jobStatus?.status === 'failed') return;
+    const interval = setInterval(async () => {
+      try {
+        const res = await apiRequest('GET', `/api/social/music-video-job/${jobId}`);
+        const data = await res.json();
+        setJobStatus(data);
+        if (data.status === 'completed') {
+          setCompletedVideoUrl(data.videoUrl || data.outputPath || null);
+          toast({ title: 'Music Video Ready!', description: 'Your AI music video has been generated.' });
+        } else if (data.status === 'failed') {
+          toast({ title: 'Generation Failed', description: data.error || 'Something went wrong.', variant: 'destructive' });
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [jobId, jobStatus?.status, toast]);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []).slice(0, 10 - selectedImages.length);
+    if (!files.length) return;
+    const newPreviews = files.map(f => URL.createObjectURL(f));
+    setSelectedImages(prev => [...prev, ...files].slice(0, 10));
+    setImagePreviews(prev => [...prev, ...newPreviews].slice(0, 10));
+    e.target.value = '';
   };
+
+  const removeImage = (i: number) => {
+    setSelectedImages(prev => prev.filter((_, idx) => idx !== i));
+    setImagePreviews(prev => prev.filter((_, idx) => idx !== i));
+  };
+
+  const handleGenerate = async () => {
+    if (!selectedImages.length) {
+      toast({ title: 'Images required', description: 'Upload at least 1 image to generate a music video.', variant: 'destructive' });
+      return;
+    }
+    setIsSubmitting(true);
+    setJobId(null);
+    setJobStatus(null);
+    setCompletedVideoUrl(null);
+    try {
+      const form = new FormData();
+      selectedImages.forEach(img => form.append('images', img));
+      if (selectedAudio) form.append('audio', selectedAudio);
+      form.append('config', JSON.stringify({
+        songTitle,
+        artistName,
+        hookText,
+        bodyText,
+        ctaText,
+        voiceProfile: enableVoice ? voiceProfile : undefined,
+        colorGrade,
+        outputPlatform,
+        enableVoiceNarration: enableVoice,
+      }));
+      const res = await fetch('/api/social/generate-music-video', {
+        method: 'POST',
+        body: form,
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.jobId) {
+        setJobId(data.jobId);
+        setJobStatus({ status: 'processing', progress: 0 });
+      } else {
+        throw new Error(data.error || 'Failed to start generation');
+      }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const COLOR_GRADES = [
+    { value: 'cinematic', label: 'Cinematic' },
+    { value: 'warm', label: 'Warm' },
+    { value: 'cool', label: 'Cool' },
+    { value: 'neon', label: 'Neon' },
+    { value: 'none', label: 'Natural' },
+  ];
+
+  const PLATFORMS = ['youtube', 'instagram', 'tiktok', 'all_platforms'];
+
+  const FALLBACK_VOICES = [
+    { id: 'smooth_narrator', name: 'Smooth Narrator' },
+    { id: 'hype_man', name: 'Hype Man' },
+    { id: 'radio_announcer', name: 'Radio Announcer' },
+    { id: 'deep_boss', name: 'Deep Boss' },
+    { id: 'ethereal_guide', name: 'Ethereal Guide' },
+    { id: 'r_and_b_smooth', name: 'R&B Smooth' },
+    { id: 'rap_mc', name: 'Rap MC' },
+  ];
+
+  const isGenerating = !!jobId && !!jobStatus && jobStatus.status !== 'completed' && jobStatus.status !== 'failed';
+  const progressValue = jobStatus?.progress ? Math.round(jobStatus.progress * 100) : isGenerating ? 15 : 0;
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {[
-          { label: 'Total Projects', value: stats?.total || 0 },
-          { label: 'In Production', value: stats?.inProduction || 0, color: 'text-orange-500' },
-          { label: 'Released', value: stats?.released || 0, color: 'text-green-600' },
-          { label: 'Total Views', value: (stats?.totalViews || 0).toLocaleString(), color: 'text-blue-600' },
-        ].map((s, i) => (
-          <Card key={i}><CardContent className="p-4 text-center">
-            <p className={`text-2xl font-bold mt-1 ${s.color || ''}`}>{s.value}</p>
-            <p className="text-xs text-gray-500">{s.label}</p>
-          </CardContent></Card>
-        ))}
-      </div>
-
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2"><Video className="w-5 h-5 text-blue-600" />Music Video Production Tracker</CardTitle>
-            <Dialog open={isNewOpen} onOpenChange={setIsNewOpen}>
-              <DialogTrigger asChild><Button size="sm" className="gradient-bg"><Plus className="w-4 h-4 mr-1" />Add Video</Button></DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>Track Music Video</DialogTitle><DialogDescription>Track a music video production from concept to release</DialogDescription></DialogHeader>
-                <div className="space-y-3">
-                  <div><Label>Track Title</Label><Input placeholder="Song this video is for" value={newVideo.trackTitle} onChange={(e) => setNewVideo({...newVideo, trackTitle: e.target.value})} /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Director</Label><Input placeholder="Director name" value={newVideo.director} onChange={(e) => setNewVideo({...newVideo, director: e.target.value})} /></div>
-                    <div><Label>Production Company</Label><Input value={newVideo.productionCompany} onChange={(e) => setNewVideo({...newVideo, productionCompany: e.target.value})} /></div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label>Budget ($)</Label><Input type="number" value={newVideo.budget} onChange={(e) => setNewVideo({...newVideo, budget: e.target.value})} /></div>
-                    <div><Label>Release Platform</Label>
-                      <Select value={newVideo.platform} onValueChange={(v) => setNewVideo({...newVideo, platform: v})}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {['youtube','instagram','tiktok','vevo','all_platforms'].map(p => <SelectItem key={p} value={p}>{p.replace('_', ' ')}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div><Label>Production Stage</Label>
-                    <Select value={newVideo.stage} onValueChange={(v) => setNewVideo({...newVideo, stage: v})}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STAGES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div><Label>Notes</Label><Textarea className="h-16" value={newVideo.notes} onChange={(e) => setNewVideo({...newVideo, notes: e.target.value})} /></div>
-                  <Button className="w-full gradient-bg" onClick={() => createMutation.mutate({...newVideo, budget: newVideo.budget ? parseFloat(newVideo.budget) : undefined})} disabled={!newVideo.trackTitle || createMutation.isPending}>
-                    {createMutation.isPending ? 'Adding...' : 'Track Video'}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Wand2 className="w-5 h-5 text-purple-600" />
+            AI Music Video Generator
+          </CardTitle>
+          <p className="text-sm text-gray-500 mt-0.5">Upload your images and audio — AI composes a beat-synced music video with Ken Burns motion, text overlays, and color grading</p>
         </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-3 py-2">
-              {[1,2,3].map(i => (
-                <div key={i} className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-40" />
-                    <Skeleton className="h-3 w-56" />
-                  </div>
-                  <Skeleton className="h-8 w-28 ml-4" />
+        <CardContent className="space-y-5">
+
+          {/* Image upload grid */}
+          <div>
+            <Label className="text-sm font-medium mb-2 block">
+              Scene Images <span className="text-gray-400 font-normal">(1–10 photos)</span>
+            </Label>
+            <div className="flex flex-wrap gap-2">
+              {imagePreviews.map((src, i) => (
+                <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 group flex-shrink-0">
+                  <img src={src} alt={`Scene ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    onClick={() => removeImage(i)}
+                    className="absolute top-0.5 right-0.5 bg-black/60 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                  <div className="absolute bottom-0.5 left-0.5 bg-black/60 text-white text-[9px] px-1 rounded leading-4">{i + 1}</div>
                 </div>
               ))}
+              {selectedImages.length < 10 && (
+                <button
+                  onClick={() => imageInputRef.current?.click()}
+                  className="w-20 h-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center gap-1 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/20 transition-colors text-gray-400 hover:text-purple-500 flex-shrink-0"
+                >
+                  <ImagePlus className="w-5 h-5" />
+                  <span className="text-[10px]">Add</span>
+                </button>
+              )}
             </div>
-          ) : videos.length === 0 ? (
-            <div className="text-center py-12">
-              <Video className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-              <p className="text-gray-500">No music videos tracked yet.</p>
-              <p className="text-sm text-gray-400 mt-1">Track your music video productions from concept to release.</p>
+            <input ref={imageInputRef} type="file" accept="image/*" multiple className="hidden" onChange={handleImageSelect} />
+            <p className="text-xs text-gray-400 mt-1.5">Images play in order with animated motion paths. Drag to reorder after upload.</p>
+          </div>
+
+          {/* Audio upload */}
+          <div>
+            <Label className="text-sm font-medium mb-1.5 block">
+              Audio Track <span className="text-gray-400 font-normal">(optional — enables beat-sync)</span>
+            </Label>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => audioInputRef.current?.click()} className="text-xs h-8">
+                <Music className="w-3.5 h-3.5 mr-1.5" />
+                {selectedAudio ? selectedAudio.name : 'Upload Audio'}
+              </Button>
+              {selectedAudio && (
+                <button onClick={() => setSelectedAudio(null)} className="text-gray-400 hover:text-red-500 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {videos.map((v: any) => (
-                <div key={v.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <p className="font-semibold">{v.trackTitle}</p>
-                      <p className="text-sm text-gray-500">{v.director && `Dir: ${v.director}`}{v.productionCompany && ` • ${v.productionCompany}`}{v.budget && ` • $${parseFloat(v.budget).toLocaleString()}`}</p>
-                    </div>
-                    <Select value={v.stage} onValueChange={(stage) => updateStageMutation.mutate({ id: v.id, stage })}>
-                      <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {STAGES.map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+            <input ref={audioInputRef} type="file" accept="audio/*" className="hidden" onChange={e => { setSelectedAudio(e.target.files?.[0] || null); e.target.value = ''; }} />
+            <p className="text-xs text-gray-400 mt-1">Scene cuts auto-align to detected beats. MP3, WAV, AAC, FLAC supported.</p>
+          </div>
+
+          {/* Song info */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Song Title</Label>
+              <Input placeholder="Track name" value={songTitle} onChange={e => setSongTitle(e.target.value)} className="h-8 text-sm" />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Artist Name</Label>
+              <Input placeholder="Your artist name" value={artistName} onChange={e => setArtistName(e.target.value)} className="h-8 text-sm" />
+            </div>
+          </div>
+
+          {/* Text overlays */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">
+              Text Overlays <span className="text-gray-400 font-normal text-xs">(optional — animated on-screen text)</span>
+            </Label>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs w-12 text-gray-500 shrink-0">Hook</span>
+                <Input placeholder="Opening hook — first scene" value={hookText} onChange={e => setHookText(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs w-12 text-gray-500 shrink-0">Body</span>
+                <Input placeholder="Middle body text" value={bodyText} onChange={e => setBodyText(e.target.value)} className="h-8 text-sm" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs w-12 text-gray-500 shrink-0">CTA</span>
+                <Input placeholder='Call-to-action e.g. "Stream Now on Spotify"' value={ctaText} onChange={e => setCtaText(e.target.value)} className="h-8 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          {/* Style options */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Color Grade</Label>
+              <Select value={colorGrade} onValueChange={setColorGrade}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {COLOR_GRADES.map(g => <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-gray-500 mb-1 block">Output Platform</Label>
+              <Select value={outputPlatform} onValueChange={setOutputPlatform}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {PLATFORMS.map(p => <SelectItem key={p} value={p}>{p.replace('_', ' ')}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Voice narration */}
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-700">
+            <Checkbox id="voice-enable" checked={enableVoice} onCheckedChange={v => setEnableVoice(!!v)} />
+            <div className="flex-1 min-w-0">
+              <Label htmlFor="voice-enable" className="text-sm font-medium cursor-pointer flex items-center gap-1.5">
+                <Mic className="w-3.5 h-3.5 text-purple-500" />
+                Add AI Voice Narration
+              </Label>
+              <p className="text-xs text-gray-400 mt-0.5">Synthesize a voice-over from your hook / body / CTA text</p>
+            </div>
+            {enableVoice && (
+              <Select value={voiceProfile} onValueChange={setVoiceProfile}>
+                <SelectTrigger className="w-40 h-7 text-xs shrink-0"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {(voiceProfiles.length ? voiceProfiles : FALLBACK_VOICES).map((v: any) => (
+                    <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          {/* Generate button */}
+          <Button
+            className="w-full gradient-bg"
+            onClick={handleGenerate}
+            disabled={!selectedImages.length || isSubmitting || isGenerating}
+          >
+            {isSubmitting ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Submitting…</>
+            ) : isGenerating ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Generating…</>
+            ) : (
+              <><Wand2 className="w-4 h-4 mr-2" />Generate Music Video</>
+            )}
+          </Button>
+
+          {/* Progress / result */}
+          {(isGenerating || jobStatus?.status === 'completed' || jobStatus?.status === 'failed') && (
+            <div className="space-y-2 p-4 rounded-lg bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+              {isGenerating && (
+                <>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-gray-600 dark:text-gray-300 font-medium">
+                      {jobStatus?.step || 'Compositing scenes…'}
+                    </span>
+                    <span className="text-gray-400">{progressValue}%</span>
                   </div>
-                  <div className="flex items-center gap-1 flex-wrap">
-                    {STAGES.map((stage, i) => (
-                      <div key={stage} className="flex items-center">
-                        <div className={`px-2 py-0.5 rounded text-xs font-medium ${STAGES.indexOf(v.stage) >= i ? stageColors[v.stage] || 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-400'}`}>
-                          {stage.replace('_', ' ')}
-                        </div>
-                        {i < STAGES.length - 1 && <div className={`w-3 h-0.5 ${STAGES.indexOf(v.stage) > i ? 'bg-blue-400' : 'bg-gray-200'}`} />}
-                      </div>
-                    ))}
+                  <Progress value={progressValue} className="h-1.5" />
+                  <p className="text-xs text-gray-400 mt-1">Applying Ken Burns motion, beat-synced cuts, and color grade…</p>
+                </>
+              )}
+              {jobStatus?.status === 'completed' && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="text-sm font-medium">Music video ready!</span>
                   </div>
-                  {v.videoUrl && <a href={v.videoUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-500 hover:underline mt-2 inline-flex items-center gap-1"><ExternalLink className="w-3 h-3" />Watch Video</a>}
+                  {completedVideoUrl && (
+                    <>
+                      <video controls className="w-full rounded-lg max-h-64 bg-black" src={completedVideoUrl} />
+                      <Button variant="outline" size="sm" className="w-full" asChild>
+                        <a href={completedVideoUrl} download>
+                          <Download className="w-3.5 h-3.5 mr-1.5" />
+                          Download Video
+                        </a>
+                      </Button>
+                    </>
+                  )}
                 </div>
-              ))}
+              )}
+              {jobStatus?.status === 'failed' && (
+                <div className="flex items-center gap-2 text-red-500">
+                  <XCircle className="w-4 h-4" />
+                  <span className="text-sm">{jobStatus.error || 'Generation failed. Please try again.'}</span>
+                </div>
+              )}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Video library */}
+      {libraryVideos.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Film className="w-4 h-4 text-blue-500" />
+              Video Library
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {libraryVideos.map((v: any) => (
+                <div key={v.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-800 rounded-lg">
+                  <div>
+                    <p className="text-sm font-medium">{v.trackTitle || v.songTitle || 'Untitled'}</p>
+                    <p className="text-xs text-gray-400">{v.stage || v.status || 'Generated'}</p>
+                  </div>
+                  {v.videoUrl && (
+                    <Button variant="ghost" size="sm" asChild>
+                      <a href={v.videoUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
