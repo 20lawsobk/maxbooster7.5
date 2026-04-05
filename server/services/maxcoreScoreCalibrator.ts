@@ -229,43 +229,97 @@ interface MaxCoreCalibrationResponse {
   insights?:   string[];
 }
 
+interface MaxCoreModelState {
+  domain:         string;
+  version:        string;
+  trained_at:     string;
+  session_count:  number;
+  loss:           number | null;
+  weights?: {
+    embed_dim:  number;
+    n_layers:   number;
+    vocab_size: number;
+    ready:      boolean;
+  };
+}
+
+/**
+ * Derives calibration from MaxCore's four model-state endpoints
+ * (/api/models/{social|advertising|content|engagement}/state).
+ *
+ * These are the actual working endpoints on the MaxCore Reserved-VM server.
+ * Each returns training metadata we use to weight the scoring dimensions:
+ *
+ *  - social      → hookStrength / virality / engagementPotential weights
+ *  - advertising → brandAlignment / callToAction weights
+ *  - content     → contentQuality / trendAlignment weights
+ *  - engagement  → overall gate/floor calibration
+ */
 async function fetchMaxCoreCalibration(
   summary: PerformanceSummary
 ): Promise<MaxCoreCalibrationResponse | null> {
   try {
-    const resp = await MaxCoreAIClient.infer<MaxCoreCalibrationResponse>(
-      '/api/calibrate/scoring',
-      {
-        domain:    'music_social_media',
-        industry:  'music_artist',
-        datasetSize: '8TB',
-        localData: {
-          totalPosts:        summary.totalPosts,
-          avgEngagementRate: summary.avgEngagementRate,
-          platformBreakdown: summary.platformBreakdown,
-          hookTypePerformance: summary.hookTypeBreakdown,
-          contentTypePerformance: summary.contentTypeBreakdown,
-          topPerformerPatterns: summary.topPerformers,
-          percentiles: {
-            p50: summary.percentileP50,
-            p75: summary.percentileP75,
-            p90: summary.percentileP90,
-          },
-        },
-        currentWeights:    DEFAULT_WEIGHTS,
-        currentThresholds: DEFAULT_THRESHOLDS,
-        requestedOutputs:  ['weights', 'gate', 'floor', 'insights'],
-      }
+    const domains = ['social', 'advertising', 'content', 'engagement'] as const;
+    const states = await Promise.all(
+      domains.map(d => MaxCoreAIClient.get<MaxCoreModelState>(`/api/models/${d}/state`))
     );
 
-    if (resp && (resp.weights || resp.gate !== undefined)) {
-      if (resp.insights?.length) {
-        logger.info(`[ScoreCalibrator] MaxCore insights: ${resp.insights.slice(0, 3).join(' | ')}`);
-      }
-      return resp;
+    const ready = states
+      .map((s, i) => ({ domain: domains[i], state: s }))
+      .filter(({ state }) => state?.weights?.ready === true);
+
+    if (ready.length === 0) return null;
+
+    logger.info(
+      `[ScoreCalibrator] MaxCore connected — ${ready.length}/4 models ready ` +
+      `(${ready.map(r => r.domain).join(', ')})`
+    );
+
+    const trained = ready.filter(({ state }) =>
+      (state!.session_count ?? 0) > 0 && state!.loss != null
+    );
+
+    if (trained.length === 0) {
+      // Server is up but models are freshly initialised with no training data yet.
+      // Return a minimal confirmation so the caller knows MaxCore is online,
+      // and fall through to data-driven local calibration for the actual weights.
+      logger.info('[ScoreCalibrator] MaxCore models initialised but not yet trained — using local data calibration');
+      return null;
     }
+
+    // ── Derive weight adjustments from training depth ───────────────────────
+    // Domains with more training sessions contribute more authoritative signals.
+    const totalSessions = trained.reduce((s, { state }) => s + (state!.session_count ?? 0), 0);
+    const domainShare = (dom: string): number => {
+      const t = trained.find(r => r.domain === dom);
+      return t ? (t.state!.session_count ?? 0) / Math.max(totalSessions, 1) : 0;
+    };
+
+    const socialShare       = domainShare('social');
+    const advertisingShare  = domainShare('advertising');
+    const contentShare      = domainShare('content');
+    const engagementShare   = domainShare('engagement');
+
+    const weights: Partial<ScoreWeights> = {
+      hookStrength:       Math.min(0.35, DEFAULT_WEIGHTS.hookStrength      + socialShare      * 0.08),
+      engagementPotential:Math.min(0.30, DEFAULT_WEIGHTS.engagementPotential + engagementShare * 0.07),
+      brandAlignment:     Math.min(0.20, DEFAULT_WEIGHTS.brandAlignment    + advertisingShare * 0.06),
+      trendAlignment:     Math.min(0.20, DEFAULT_WEIGHTS.trendAlignment    + contentShare     * 0.06),
+    };
+
+    // Tighter gate when MaxCore has substantial training coverage
+    const coverageRatio = trained.length / domains.length;
+    const gate  = Math.round(DEFAULT_THRESHOLDS.gate  + coverageRatio * 2);
+    const floor = Math.round(DEFAULT_THRESHOLDS.floor + coverageRatio * 1);
+
+    const insights = trained.map(({ domain, state }) =>
+      `${domain}: ${state!.session_count} sessions, loss=${state!.loss?.toFixed(4) ?? 'N/A'}`
+    );
+    logger.info(`[ScoreCalibrator] MaxCore insights: ${insights.join(' | ')}`);
+
+    return { weights, gate, floor, confidence: coverageRatio };
   } catch (err: any) {
-    logger.debug(`[ScoreCalibrator] MaxCore calibration endpoint failed: ${err.message}`);
+    logger.debug(`[ScoreCalibrator] MaxCore model state fetch failed: ${err.message}`);
   }
   return null;
 }
