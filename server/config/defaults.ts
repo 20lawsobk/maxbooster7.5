@@ -186,9 +186,9 @@ export const config: AppConfig = {
   },
 
   rateLimiting: {
-    windowMs: parseEnvInt('RATE_LIMIT_WINDOW_MS', 60000), // 1 minute
-    maxRequests: parseEnvInt('RATE_LIMIT_MAX', 1000),
-    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 200),
+    windowMs:    parseEnvInt('RATE_LIMIT_WINDOW_MS',       60000),          // 1 minute
+    maxRequests: parseEnvInt('RATE_LIMIT_MAX',         7_200_000_000),      // 120M req/s × 60 s
+    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 7_200_000_000),     // 120M req/s × 60 s
   },
 
   upload: {

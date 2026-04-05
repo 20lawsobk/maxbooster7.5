@@ -13,9 +13,12 @@ import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
 
 const adminRouter = Router();
 
+// 120M req/s system capacity — 7.2B req/min per authenticated admin user.
+// The skip() guard already restricts this limiter to authenticated admins only,
+// so the high ceiling does not relax any security boundary.
 const adminEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 20,
+  max: 7_200_000_000,
   keyGenerator: (req) => `admin-email:${(req.user as any)?.id ?? 'anon'}`,
   message: { error: 'Too many email requests, please try again later' },
   standardHeaders: true,

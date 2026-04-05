@@ -13,9 +13,11 @@ router.use(requireAuth);
 
 const MAX_KEYS_PER_USER = 20;
 
+// 120M req/s capacity — 7.2B req/min per authenticated user.
+// requireAuth above already ensures only authenticated users reach this limiter.
 const keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 10,
+  max: 7_200_000_000,
   keyGenerator: (req) => `apikey-create:${(req.user as any)?.id ?? 'anon'}`,
   message: { error: 'Too many API key operations, please try again later' },
   standardHeaders: true,

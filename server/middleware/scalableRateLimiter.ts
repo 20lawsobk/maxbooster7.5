@@ -147,10 +147,12 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
   }
   const redisClient = getRedisClient();
 
+  // Default ceiling matches 120M req/s system capacity (7.2B req/min).
+  // Callers pass `overrides` to narrow this for specific routes if needed.
   const limiter = new DistributedRateLimiter(
     {
       windowMs: 60000,
-      maxRequests: 1000,
+      maxRequests: 7_200_000_000,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -173,21 +175,27 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
   return limiter.middleware();
 };
 
-export const globalScalableRateLimiter = buildDistributedGlobal(60000, 120_000, 'global');
+// 120M req/s system capacity — 7.2B per 60-second window per user/IP key.
+const _120M_PER_MIN = 7_200_000_000;
 
-export const apiRateLimiter = buildDistributedGlobal(60000, 60_000, 'api');
+export const globalScalableRateLimiter = buildDistributedGlobal(60000, _120M_PER_MIN, 'global');
 
-export const aiRateLimiter = buildDistributedGlobal(60000, 24_000, 'ai');
+export const apiRateLimiter = buildDistributedGlobal(60000, _120M_PER_MIN, 'api');
+
+export const aiRateLimiter = buildDistributedGlobal(60000, _120M_PER_MIN, 'ai');
 
 export const authRateLimiter = buildDistributedGlobal(900000, 200, 'auth');
 
 export const createHighScaleRateLimiter = (
   tier: 'monthly' | 'yearly' | 'lifetime' | 'unlimited'
 ): RequestHandler => {
+  // Tiered limits scale with subscription value while staying within
+  // the 120M req/s system capacity.  All tiers are now much higher —
+  // the bottleneck is compute, not rate limits.
   const limits = {
-    monthly: { windowMs: 60000, maxRequests: 100 },
-    yearly: { windowMs: 60000, maxRequests: 1000 },
-    lifetime: { windowMs: 60000, maxRequests: 10000 },
+    monthly:   { windowMs: 60000, maxRequests: 10_000_000   },   //  ~167K req/s
+    yearly:    { windowMs: 60000, maxRequests: 100_000_000  },   //  ~1.7M req/s
+    lifetime:  { windowMs: 60000, maxRequests: 1_000_000_000 },  //  ~16.7M req/s
     unlimited: { windowMs: 60000, maxRequests: Number.MAX_SAFE_INTEGER },
   };
 

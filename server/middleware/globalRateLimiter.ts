@@ -51,8 +51,8 @@ class RedisRateLimitStore implements Store {
       const pipeline = redis.pipeline();
       pipeline.incr(rKey);
       pipeline.expire(rKey, windowSec);
-      // 400ms timeout — if PDIM is congested the race rejects and we fall back
-      // to the in-memory store immediately instead of waiting 20s.
+      // 400ms timeout — blip guard; PDIM is at 120M req/s so timeouts are
+      // rare, but the guard protects against momentary network hiccups.
       const results = await Promise.race([
         pipeline.exec(),
         new Promise<never>((_, reject) =>

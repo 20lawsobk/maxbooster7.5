@@ -38,10 +38,12 @@ function validateExternalUrl(raw: string): string {
 
 const router = Router();
 
-// Rate limiter for content analysis endpoints (expensive operations)
+// 120M req/s system capacity — 7.2B per 15-minute window per user/IP.
+// Content analysis is compute-heavy; the AI inference layer (MaxCore) handles
+// back-pressure independently, so the HTTP rate limit matches global capacity.
 const contentAnalysisLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // 50 requests per 15 minutes
+  windowMs: 15 * 60 * 1000,
+  max: 7_200_000_000,
   message: 'Too many content analysis requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,

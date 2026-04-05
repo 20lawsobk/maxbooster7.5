@@ -9,9 +9,11 @@ import { generateMaxResponse } from '../services/maxAssistantService.ts';
 import { logger } from '../logger.js';
 import rateLimit from 'express-rate-limit';
 
+// 120M req/s system capacity — 7.2B per 60-second window per user/IP.
+// Admin skip retained for zero-friction admin tooling.
 const chatLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 30,
+  max: 7_200_000_000,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many messages — please wait a moment before sending again.' },

@@ -3,26 +3,32 @@ import { randomBytes } from 'crypto';
 import { getRedisClient } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
+// 120M req/s system capacity (PDIM + MaxCore both at 120M req/s).
+// General API limits: 120M/s × 60s window = 7.2B req/min per IP or user.
+// Security-sensitive auth endpoints retain conservative limits to prevent
+// brute-force attacks regardless of backend capacity.
+const _120M_PER_MIN = 7_200_000_000; // 120 000 000 req/s × 60 s
+
 export const RATE_LIMITS = {
   global: {
-    perIP: { windowMs: 60000, max: 100 },
-    perUser: { windowMs: 60000, max: 200 }
+    perIP:  { windowMs: 60000, max: _120M_PER_MIN },
+    perUser: { windowMs: 60000, max: _120M_PER_MIN }
   },
   auth: {
-    login: { windowMs: 900000, max: 50 },
-    register: { windowMs: 3600000, max: 10 },
-    forgotPassword: { windowMs: 3600000, max: 5 },
-    twoFactor: { windowMs: 300000, max: 15 },
+    login:          { windowMs: 900000,   max: 50  },  // brute-force guard — keep conservative
+    register:       { windowMs: 3600000,  max: 10  },  // abuse guard — keep conservative
+    forgotPassword: { windowMs: 3600000,  max: 5   },  // abuse guard — keep conservative
+    twoFactor:      { windowMs: 300000,   max: 15  },  // brute-force guard — keep conservative
     captchaThreshold: 15
   },
   billing: {
-    perUser: { windowMs: 60000, max: 10 }
+    perUser: { windowMs: 60000,   max: _120M_PER_MIN }
   },
   uploads: {
-    perUser: { windowMs: 3600000, max: 50 }
+    perUser: { windowMs: 3600000, max: _120M_PER_MIN }
   },
   ai: {
-    perUser: { windowMs: 3600000, max: 500 }
+    perUser: { windowMs: 3600000, max: _120M_PER_MIN }
   }
 };
 
