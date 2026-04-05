@@ -7,7 +7,7 @@ import { eq, and, desc, gte, or } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
-import { audioUpload, artworkUpload } from '../middleware/uploadHandler.js';
+import { audioUpload, artworkUpload, mediaUpload } from '../middleware/uploadHandler.js';
 import {
   analyzeUrl, analyzeAudio, analyzeImage,
   urlToContentSeed, audioToContentSeed, imageToContentSeed,
@@ -27,6 +27,22 @@ let _competitorBenchmarkService: typeof import('../services/competitorBenchmarkS
 let _pythonAIService: typeof import('../services/pythonAIService.js').pythonAIService | null = null;
 let _veoMusicService: typeof import('../services/veoMusicService.js').veoMusicService | null = null;
 let _renderAdvancedVideo: typeof import('../services/advancedVideoRendererService.js').renderVideo | null = null;
+let _voiceSynthService: typeof import('../services/voiceSynthesisService.js') | null = null;
+let _beatSyncService: typeof import('../services/beatSyncService.js') | null = null;
+let _imageToVideoService: typeof import('../services/imageToVideoService.js') | null = null;
+
+async function getVoiceSynthService() {
+  if (!_voiceSynthService) _voiceSynthService = await import('../services/voiceSynthesisService.js');
+  return _voiceSynthService!;
+}
+async function getBeatSyncService() {
+  if (!_beatSyncService) _beatSyncService = await import('../services/beatSyncService.js');
+  return _beatSyncService!;
+}
+async function getImageToVideoService() {
+  if (!_imageToVideoService) _imageToVideoService = await import('../services/imageToVideoService.js');
+  return _imageToVideoService!;
+}
 
 async function getUnifiedAI() {
   if (!_unifiedAIController) {
@@ -2806,5 +2822,383 @@ router.post(
     }
   },
 );
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// VOICE SYNTHESIS ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * GET /voice-profiles
+ * Returns all available voice profiles with metadata.
+ */
+router.get('/voice-profiles', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const svc = await getVoiceSynthService();
+    res.json({ success: true, profiles: svc.listVoiceProfiles() });
+  } catch (e: any) {
+    logger.error('[Route] voice-profiles:', e?.message);
+    res.status(500).json({ success: false, error: 'Failed to load voice profiles' });
+  }
+});
+
+/**
+ * POST /synthesize-voice
+ * Body: { text, profileId?, speed?, pitch?, volume?, reverbAmount?, outputFormat? }
+ * File (optional): audio field → reference voice sample for profile auto-selection
+ *
+ * Returns: { success, outputPath, publicUrl, durationSeconds, profileUsed }
+ */
+router.post(
+  '/synthesize-voice',
+  requireAuthOnly,
+  (req, res, next) => {
+    // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
+    mediaUpload.single('reference_audio')(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { text, profileId, speed, pitch, volume, reverbAmount, outputFormat, segments } = req.body as {
+        text?: string;
+        profileId?: string;
+        speed?: number;
+        pitch?: number;
+        volume?: number;
+        reverbAmount?: number;
+        outputFormat?: 'wav' | 'mp3';
+        segments?: string;
+      };
+
+      const svc = await getVoiceSynthService();
+      const referenceAudioPath = (req as any).file?.path;
+
+      const options = {
+        profileId,
+        speed: speed ? Number(speed) : undefined,
+        pitch: pitch ? Number(pitch) : undefined,
+        volume: volume ? Number(volume) : undefined,
+        reverbAmount: reverbAmount !== undefined ? Number(reverbAmount) : undefined,
+        outputFormat: outputFormat === 'mp3' ? 'mp3' as const : 'wav' as const,
+        referenceAudioPath,
+      };
+
+      let result;
+      if (segments) {
+        let parsedSegments: Array<{ text: string; pause?: number }> = [];
+        try { parsedSegments = JSON.parse(segments); }
+        catch { return res.status(400).json({ success: false, error: 'Invalid segments JSON' }); }
+        result = await svc.synthesizeSegments(parsedSegments, options);
+      } else {
+        if (!text?.trim()) return res.status(400).json({ success: false, error: 'text is required' });
+        result = await svc.synthesizeVoice(text, options);
+      }
+
+      if (!result.success) return res.status(500).json({ success: false, error: result.error });
+
+      const filename  = result.outputPath!.split('/').pop();
+      const publicUrl = `/uploads/voices/${filename}`;
+      const userId    = req.user?.id?.toString() || req.user?.userId?.toString() || 'anonymous';
+
+      // ── Persist to PDIM (non-blocking — response already sent after this) ──
+      let pdimMeta: any = null;
+      try {
+        const { storeVoiceFile } = await import('../services/pdimMediaStorageService.js');
+        pdimMeta = await storeVoiceFile(userId, result.outputPath!, {
+          profileUsed:     result.profileUsed || profileId || 'smooth_narrator',
+          voiceUsed:       result.voiceUsed   || 'flite',
+          durationSeconds: result.durationSeconds,
+          text: typeof text === 'string' ? text : undefined,
+        });
+      } catch (e: any) {
+        logger.warn('[Route] voice PDIM store skipped:', e?.message?.slice(0, 80));
+      }
+
+      res.json({
+        success: true,
+        publicUrl,
+        filename,
+        durationSeconds:  result.durationSeconds,
+        profileUsed:      result.profileUsed,
+        voiceUsed:        result.voiceUsed,
+        outputPath:       result.outputPath,
+        pdim: pdimMeta ? { key: pdimMeta.pdimKey, compressedSize: pdimMeta.compressedSize } : null,
+      });
+    } catch (e: any) {
+      logger.error('[Route] synthesize-voice:', e?.message);
+      res.status(500).json({ success: false, error: e?.message || 'Voice synthesis failed' });
+    }
+  },
+);
+
+/**
+ * POST /analyze-reference-voice
+ * Body: multipart/form-data with audio field
+ * Returns: { estimatedPitch, estimatedTempo, energy, suggestedProfileId }
+ */
+router.post(
+  '/analyze-reference-voice',
+  requireAuthOnly,
+  (req, res, next) => {
+    mediaUpload.single('audio')(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = (req as any).file;
+      if (!file?.path) {
+        return res.status(400).json({ success: false, error: 'Audio file required' });
+      }
+      const svc = await getVoiceSynthService();
+      const characteristics = await svc.analyzeReferenceVoice(file.path);
+      res.json({ success: true, characteristics });
+    } catch (e: any) {
+      logger.error('[Route] analyze-reference-voice:', e?.message);
+      res.status(500).json({ success: false, error: e?.message || 'Analysis failed' });
+    }
+  },
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BEAT SYNC / AUDIO ANALYSIS ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * POST /analyze-audio-beats
+ * Body: multipart/form-data with audio field
+ * Returns full BeatAnalysis: { bpm, confidence, beats, downbeats, sections,
+ *   energyEnvelope, peakPositions, durationSeconds, tier }
+ */
+router.post(
+  '/analyze-audio-beats',
+  requireAuthOnly,
+  (req, res, next) => {
+    // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
+    mediaUpload.single('audio')(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const file = (req as any).file;
+      if (!file?.path) {
+        return res.status(400).json({ success: false, error: 'Audio file required (multipart/form-data, field: audio)' });
+      }
+
+      // ── Check PDIM cache first ────────────────────────────────────────────
+      let analysis;
+      let cacheHit = false;
+      try {
+        const { getCachedBeatAnalysis, cacheBeatAnalysis } = await import('../services/pdimMediaStorageService.js');
+        const cached = await getCachedBeatAnalysis(file.path);
+        if (cached) {
+          analysis = cached;
+          cacheHit = true;
+        } else {
+          const svc = await getBeatSyncService();
+          analysis = await svc.analyzeAudio(file.path);
+          // Cache the result in PDIM for 24 hours
+          await cacheBeatAnalysis(file.path, analysis);
+        }
+      } catch {
+        // PDIM unavailable — fall through to direct analysis
+        const svc = await getBeatSyncService();
+        analysis = await svc.analyzeAudio(file.path);
+      }
+
+      res.json({ success: true, analysis, cacheHit });
+    } catch (e: any) {
+      logger.error('[Route] analyze-audio-beats:', e?.message);
+      res.status(500).json({ success: false, error: e?.message || 'Beat analysis failed' });
+    }
+  },
+);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// IMAGE-TO-VIDEO / MUSIC VIDEO GENERATION ROUTES
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Track async music video jobs in the same pattern as ffmpegJobs
+interface MusicVideoJob {
+  status: 'processing' | 'done' | 'error';
+  result?: any;
+  error?: string;
+  createdAt: number;
+}
+const musicVideoJobs = new Map<string, MusicVideoJob>();
+
+// Prune jobs older than 15 minutes
+setInterval(() => {
+  const cutoff = Date.now() - 15 * 60 * 1000;
+  for (const [id, job] of musicVideoJobs.entries()) {
+    if (job.createdAt < cutoff) musicVideoJobs.delete(id);
+  }
+}, 3 * 60 * 1000);
+
+/**
+ * POST /generate-music-video
+ * Accepts multipart/form-data:
+ *   images[]         — one or more image files (JPEG/PNG/WebP)
+ *   audio            — audio track (mp3/wav) — optional
+ *   reference_voice  — voice reference sample — optional
+ *
+ * Body fields (all optional):
+ *   template, platform, aspect_ratio, duration, genre,
+ *   hook, body, cta, artistName,
+ *   beatSync (bool), kenBurnsIntensity, colorGrade, transitionType,
+ *   synthesize_voice (bool), voice_text, voice_profile_id
+ *
+ * Returns immediately with jobId — poll /music-video-job/:jobId for result.
+ */
+router.post(
+  '/generate-music-video',
+  requireAuthOnly,
+  (req, res, next) => {
+    // mediaUpload → disk storage, accepts both images + audio in one request
+    mediaUpload.fields([
+      { name: 'images', maxCount: 10 },
+      { name: 'audio',  maxCount: 1 },
+      { name: 'reference_voice', maxCount: 1 },
+    ])(req as any, res as any, next);
+  },
+  async (req: AuthenticatedRequest, res: Response) => {
+    const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    musicVideoJobs.set(jobId, { status: 'processing', createdAt: Date.now() });
+
+    // Respond immediately
+    res.json({ success: true, jobId, message: 'Music video generation started' });
+
+    // Process async
+    (async () => {
+      try {
+        const files = (req as any).files as Record<string, Express.Multer.File[]> | undefined;
+        const imageFiles = files?.images || [];
+        const audioFile  = files?.audio?.[0];
+        const voiceRef   = files?.reference_voice?.[0];
+
+        if (!imageFiles.length) {
+          musicVideoJobs.set(jobId, { status: 'error', error: 'At least one image is required', createdAt: Date.now() });
+          return;
+        }
+
+        const body = req.body as Record<string, string>;
+
+        const imagePaths = imageFiles.map((f: Express.Multer.File) => f.path).filter(Boolean);
+        const audioPath  = audioFile?.path;
+
+        // Optional: synthesize voice narration before rendering
+        let voiceSynthPath: string | undefined;
+        if (body.synthesize_voice === 'true' && body.voice_text?.trim()) {
+          try {
+            const voiceSvc = await getVoiceSynthService();
+            const voiceResult = await voiceSvc.synthesizeVoice(body.voice_text, {
+              profileId: body.voice_profile_id || 'smooth_narrator',
+              referenceAudioPath: voiceRef?.path,
+            });
+            if (voiceResult.success && voiceResult.outputPath) {
+              voiceSynthPath = voiceResult.outputPath;
+            }
+          } catch (e: any) {
+            logger.warn('[MusicVideo] Voice synthesis skipped:', e?.message);
+          }
+        }
+
+        const imgSvc  = await getImageToVideoService();
+        const result  = await imgSvc.imageToMusicVideo({
+          imagePaths,
+          audioPath,
+          voiceSynthPath,
+          template:           body.template,
+          platform:           body.platform,
+          aspect_ratio:       body.aspect_ratio,
+          duration:           body.duration ? Number(body.duration) : undefined,
+          genre:              body.genre,
+          hook:               body.hook,
+          body:               body.body,
+          cta:                body.cta,
+          artistName:         body.artist_name || body.artistName,
+          beatSync:           body.beat_sync !== 'false',
+          kenBurnsIntensity:  (body.intensity as any) || 'moderate',
+          colorGrade:         (body.color_grade as any) || 'cinematic',
+          transitionType:     body.transition,
+        });
+
+        if (!result.success) {
+          musicVideoJobs.set(jobId, { status: 'error', error: result.error || 'Render failed', createdAt: Date.now() });
+          return;
+        }
+
+        // ── Persist rendered video to PDIM as primary storage ────────────────
+        const userId = req.user?.id?.toString() || req.user?.userId?.toString() || 'anonymous';
+        let pdimVideoMeta: any = null;
+        try {
+          const { storeMusicVideo } = await import('../services/pdimMediaStorageService.js');
+          const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
+          pdimVideoMeta = await storeMusicVideo(userId, videoFilePath, result);
+          if (pdimVideoMeta) {
+            result.pdim = { key: pdimVideoMeta.pdimKey, compressedSize: pdimVideoMeta.compressedSize, tier: pdimVideoMeta.tier };
+          }
+        } catch (e: any) {
+          logger.warn(`[MusicVideo] PDIM store skipped for job ${jobId}:`, e?.message?.slice(0, 80));
+        }
+
+        musicVideoJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
+        logger.info(`[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? 'skipped'}`);
+      } catch (e: any) {
+        logger.error(`[MusicVideo] Job ${jobId} failed:`, e?.message);
+        musicVideoJobs.set(jobId, { status: 'error', error: e?.message || 'Music video generation failed', createdAt: Date.now() });
+      }
+    })();
+  },
+);
+
+/**
+ * GET /music-video-job/:jobId
+ * Poll for music video generation status.
+ * Returns: { status: 'processing'|'done'|'error', result?, error? }
+ */
+router.get('/music-video-job/:jobId', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
+  const { jobId } = req.params;
+  const job = musicVideoJobs.get(jobId);
+
+  if (!job) {
+    return res.status(404).json({ success: false, error: 'Job not found or expired' });
+  }
+
+  if (job.status === 'processing') {
+    return res.json({ success: true, status: 'processing', message: 'Music video is being rendered…' });
+  }
+
+  if (job.status === 'error') {
+    return res.status(500).json({ success: false, status: 'error', error: job.error });
+  }
+
+  res.json({ success: true, status: 'done', result: job.result });
+});
+
+/**
+ * GET /music-video-capabilities
+ * Returns all available options for music video generation.
+ */
+router.get('/music-video-capabilities', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const [voiceSvc, imgSvc] = await Promise.all([
+      getVoiceSynthService(),
+      getImageToVideoService(),
+    ]);
+    res.json({
+      success: true,
+      voices: voiceSvc.listVoiceProfiles().map(p => ({
+        id: p.id, name: p.name, description: p.description,
+        category: p.category, gender: p.gender,
+      })),
+      kenBurns: ['subtle', 'moderate', 'dramatic'],
+      colorGrades: ['none', 'warm', 'cool', 'cinematic', 'neon'],
+      transitions: ['fade', 'fadeblack', 'fadewhite', 'slideleft', 'slideright', 'slideup', 'slidedown', 'wipeleft', 'wiperight', 'radial', 'smoothleft', 'smoothright', 'circleopen', 'circlecrop', 'rectcrop', 'dissolve', 'pixelize', 'horzopen', 'vertopen'],
+      aspectRatios: ['9:16', '1:1', '16:9', '4:5'],
+      platforms: ['tiktok', 'instagram', 'instagram_reels', 'youtube', 'facebook', 'twitter', 'linkedin'],
+      genres: ['trap', 'r&b', 'hip_hop', 'pop', 'edm', 'house', 'lofi', 'gospel', 'drill', 'dancehall', 'reggae', 'metal', 'blues', 'classical'],
+      maxImages: 10,
+      maxDurationSeconds: 60,
+    });
+  } catch (e: any) {
+    res.status(500).json({ success: false, error: e?.message || 'Failed to load capabilities' });
+  }
+});
 
 export default router;

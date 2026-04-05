@@ -1,5 +1,7 @@
 import multer from 'multer';
 import path from 'path';
+import { existsSync, mkdirSync } from 'fs';
+import { randomBytes } from 'crypto';
 import { Request, Response, NextFunction } from 'express';
 import { storageService } from '../services/storageService.js';
 import { logger } from '../logger.js';
@@ -127,6 +129,40 @@ export const audioUpload = multer({
       cb(null, true);
     } else {
       cb(new Error(`Invalid audio file type. Allowed: ${UPLOAD_LIMITS.audio.allowedTypes.join(', ')}`));
+    }
+  },
+});
+
+// ── Disk-based upload for music video / voice synthesis (needs file paths for FFmpeg) ──
+const MEDIA_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'media_temp');
+if (!existsSync(MEDIA_UPLOAD_DIR)) mkdirSync(MEDIA_UPLOAD_DIR, { recursive: true });
+
+const mediaDiskStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, MEDIA_UPLOAD_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    cb(null, `media_${randomBytes(8).toString('hex')}${ext}`);
+  },
+});
+
+const MEDIA_ALLOWED_MIMES = [
+  'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
+  'audio/ogg', 'audio/opus', 'audio/x-opus', 'audio/aac', 'audio/x-aac',
+  'audio/flac', 'audio/x-flac', 'audio/mp4', 'audio/x-m4a', 'audio/m4a',
+  'audio/webm', 'audio/aiff', 'audio/x-aiff',
+];
+
+export const mediaUpload = multer({
+  storage: mediaDiskStorage,
+  limits: { fileSize: 300 * 1024 * 1024, files: 15 },
+  fileFilter: (_req, file, cb) => {
+    if (MEDIA_ALLOWED_MIMES.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported media type: ${file.mimetype}. Allowed: images (JPEG/PNG/WebP) and audio (MP3/WAV/AAC/FLAC)`));
     }
   },
 });

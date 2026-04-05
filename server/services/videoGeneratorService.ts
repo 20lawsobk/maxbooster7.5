@@ -323,7 +323,7 @@ interface AudioProfile {
   filters: string;
 }
 
-const AUDIO_PROFILES: Record<string, AudioProfile> = {
+export const AUDIO_PROFILES: Record<string, AudioProfile> = {
   'hip-hop': {
     // 90 BPM — deep 808 sub, punchy kick envelope, Cm chord pad
     bps: 1.5, pw: 8,
@@ -456,7 +456,7 @@ interface TemplateStyle {
   transition: string;
 }
 
-const TEMPLATE_STYLES: Record<string, TemplateStyle> = {
+export const TEMPLATE_STYLES: Record<string, TemplateStyle> = {
   // ── Original 17 templates (fully preserved) ───────────────────────────────
   cinematic_promo:  { bg: '0x1a1a2e', tc: '0xffffff', ac: '0xe94560', cta_bg: '0xe94560', hs: 64, bs: 42, cs: 48, name: 'Cinematic Promo',   bgType: 'plasma',         font: 'bold',      transition: 'fadeblack' },
   neon_pulse:       { bg: '0x0d0221', tc: '0x00fff5', ac: '0xff6ec7', cta_bg: '0xff6ec7', hs: 62, bs: 44, cs: 46, name: 'Neon Pulse',         bgType: 'neon_pulse',     font: 'mono',      transition: 'dissolve'  },
