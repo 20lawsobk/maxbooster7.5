@@ -1383,9 +1383,19 @@ def train_v4(n_epochs: int = 5,
     opt = Adam(lr=lr)
     ema = EMA(decay=ema_decay)
 
-    # ── 100K prompt library + real dataset prompts ────────────────────────────
+    # ── 100K prompt library + MaxCore dataset expansion ───────────────────────
     print(f"[DiffusionTrainer v4] Loading 100K prompt library...", flush=True)
     all_scene_prompts = get_all_prompts(target=100_000)
+
+    # Re-run bridge expansion each training session — picks up MaxCore prompts
+    # as soon as the server reconnects (bridge retries every 60s when offline)
+    try:
+        from diffusion.maxcore_dataset_bridge import get_bridge as _get_bridge
+        _bridge_live = _get_bridge()
+        all_scene_prompts = _bridge_live.expand_scene_prompts(all_scene_prompts, n_extra_per_scene=50)
+    except Exception:
+        pass   # bridge unavailable — continue with local 100K library
+
     scenes = list(all_scene_prompts.keys())
     print(f"[DiffusionTrainer v4] {sum(len(v) for v in all_scene_prompts.values()):,} "
           f"prompts across {len(scenes)} scenes", flush=True)

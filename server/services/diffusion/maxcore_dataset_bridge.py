@@ -218,25 +218,35 @@ class DatasetBridge:
       - `status()` — dict describing connection and dataset availability
     """
 
+    # Retry intervals: short when unreachable (MaxCore is permanent, outage = temporary)
+    _ONLINE_TTL  = 300   # re-check every 5 min when healthy
+    _OFFLINE_TTL = 60    # re-check every 60 s when unreachable (reconnect fast)
+
     def __init__(self):
         self._online: Optional[bool] = None
         self._datasets: Optional[list] = None
         self._last_check = 0
-        self._check_ttl  = 300
+        self._check_ttl  = self._OFFLINE_TTL   # start aggressive; relaxes once online
 
         self._check_connection()
 
     def _check_connection(self) -> bool:
-        if time.time() - self._last_check < self._check_ttl:
+        now = time.time()
+        if now - self._last_check < self._check_ttl:
             return bool(self._online)
-        self._last_check = time.time()
+        self._last_check = now
         health = _mc_get('/api/health')
+        was_online = self._online
         self._online = health is not None
         if self._online:
-            log.info('[MCBridge] MaxCore server online — dataset access enabled')
+            self._check_ttl = self._ONLINE_TTL
+            if not was_online:
+                log.info('[MCBridge] MaxCore server online — dataset access enabled')
             self._fetch_dataset_catalog()
         else:
-            log.info('[MCBridge] MaxCore server offline — using local fallback prompts')
+            self._check_ttl = self._OFFLINE_TTL
+            if was_online is not False:
+                log.warning('[MCBridge] MaxCore unreachable — using local fallback; will retry in 60s')
         return bool(self._online)
 
     def _fetch_dataset_catalog(self):
@@ -348,8 +358,11 @@ class DatasetBridge:
     def expand_scene_prompts(self, scene_dict: dict, n_extra_per_scene: int = 50) -> dict:
         """
         Expand a trainer SCENE_PROMPTS dict with MaxCore-sourced prompts.
+        Re-checks connectivity each call so a reconnected MaxCore is used immediately.
         Returns a new dict with extra prompts added per scene.
         """
+        self._check_connection()   # refresh — MaxCore may have come back online
+
         expanded = {k: list(v) for k, v in scene_dict.items()}
 
         total_extra = len(scene_dict) * n_extra_per_scene
@@ -364,8 +377,9 @@ class DatasetBridge:
             idx += n_extra_per_scene
 
         added = sum(n_extra_per_scene for _ in expanded)
+        source = 'MaxCore 8TB corpus' if self._online else 'local fallback'
         log.info(f'[MCBridge] Expanded SCENE_PROMPTS: +{added} prompts across {len(expanded)} scenes '
-                 f'(source: {"MaxCore" if self._online else "local fallback"})')
+                 f'(source: {source})')
         return expanded
 
     def sample_conditioned_batch(
