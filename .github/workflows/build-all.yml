@@ -211,6 +211,9 @@ jobs:
           cp client/public/logo.png dist/public/logo.png 2>/dev/null || true
           cp client/public/favicon.png dist/public/favicon.png 2>/dev/null || true
 
+      - name: Remove pre-compressed gz duplicates
+        run: find dist/public -name "*.gz" -delete
+
       - name: Sync Capacitor Android
         run: |
           if [ ! -d "android" ]; then npx cap add android; fi
