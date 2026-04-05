@@ -62,6 +62,9 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
+      - name: Remove dangling native module symlinks
+        run: find node_modules -maxdepth 5 -name "*.so" -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+
       - name: Build Linux packages
         run: npx electron-builder --linux --publish never
         env:
@@ -156,7 +159,7 @@ jobs:
           retention-days: 14
 
   build-macos:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'deployment' ||
@@ -184,11 +187,10 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
-      - name: Build macOS packages (cross-compiled from Linux)
+      - name: Build macOS packages
         run: npx electron-builder --mac zip --x64 --arm64 --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          USE_HARD_LINKS: false
 
       - name: List build outputs
         run: |

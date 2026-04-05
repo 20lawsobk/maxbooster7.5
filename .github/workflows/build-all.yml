@@ -70,6 +70,9 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
+      - name: Remove dangling native module symlinks
+        run: find node_modules -maxdepth 5 -name "*.so" -type l ! -exec test -e {} \; -delete 2>/dev/null || true
+
       - name: Build Linux packages
         run: npx electron-builder --linux --publish never
         env:

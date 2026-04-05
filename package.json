@@ -56,7 +56,9 @@
     "buildDependenciesFromSource": false,
     "files": [
       "electron/**/*",
-      "!electron/package-lock.json"
+      "!electron/package-lock.json",
+      "!node_modules/@tensorflow/**/*",
+      "!node_modules/@sentry-internal/node-cpu-profiler/**/*"
     ],
     "directories": {
       "output": "dist-installers",
