@@ -257,23 +257,104 @@ function normalizeInput(input: UnifiedContentInput): {
 
 // ─── Platform Bundle Builder ──────────────────────────────────────────────────
 
+// ─── Generator fallbacks (used when a generator rejects unexpectedly) ─────────
+
+function hooksFallback(ctx: GeneratorContext): HookSet {
+  return {
+    primary: `${ctx.artistName} just changed the game 🎵`,
+    alternates: [`The ${ctx.genre} sound you've been waiting for`, `${ctx.mood} energy × ${ctx.artistName} = this`],
+    questionHook: `Ever wonder what real ${ctx.genre} feels like?`,
+    statementHook: `${ctx.artistName} is ${ctx.mood} and unapologetic.`,
+    cliffhangerHook: `This song almost wasn't released...`,
+  };
+}
+
+function captionsFallback(ctx: GeneratorContext): CaptionSet {
+  return {
+    short: `${ctx.artistName} 🔥 ${ctx.mood} ${ctx.genre} — out now.`,
+    medium: `${ctx.artistName} is bringing the ${ctx.mood} energy to ${ctx.genre}. New music is here. 🎵`,
+    long: `${ctx.artistName} has been working on something special. The ${ctx.mood} atmosphere, the ${ctx.genre} DNA — this is the sound you needed. Stream now.`,
+    platform: ctx.platform,
+  };
+}
+
+function adCopyFallback(ctx: GeneratorContext): AdCopySet {
+  return {
+    headline: `Stream ${ctx.artistName} Now`,
+    subheadline: `${ctx.mood} ${ctx.genre} that hits different`,
+    body: `New music from ${ctx.artistName}. Available everywhere.`,
+    cta: 'Stream Now',
+    variants: [
+      { headline: `${ctx.artistName} — New Release`, body: `The sound you didn't know you needed.`, cta: 'Listen Free' },
+      { headline: `Feel Something Real`, body: `${ctx.artistName} brings the ${ctx.mood} ${ctx.genre} heat.`, cta: 'Play Now' },
+    ],
+  };
+}
+
+function videoScriptFallback(ctx: GeneratorContext): VideoScript {
+  return {
+    hook: `${ctx.artistName} drops the ${ctx.mood} ${ctx.genre} anthem you needed.`,
+    body: [`Show the creative process`, `Highlight the emotion`, `Connect with the audience`],
+    cta: `Follow ${ctx.artistName} now.`,
+    durationHint: '30s',
+    bRoll: [`Close-up of artist`, `Wide performance shot`, `Studio session`, `Fan reactions`],
+    musicNote: `Match ${ctx.mood} atmosphere — ${ctx.genre} tempo`,
+    overlayTexts: [ctx.artistName, ctx.trackTitle ?? 'New Drop', 'Stream Now 🎵'],
+  };
+}
+
+function visualPromptFallback(ctx: GeneratorContext): VisualPrompt {
+  const palette = ctx.colorPalette.join(', ');
+  return {
+    imagePrompt: `A ${ctx.mood} ${ctx.genre} music promotional image for ${ctx.artistName}. Color palette: ${palette}. Cinematic quality.`,
+    thumbnailPrompt: `YouTube/social thumbnail for ${ctx.artistName}. Bold typography, ${ctx.mood} color scheme (${palette}).`,
+    colorDirections: `Primary: ${ctx.colorPalette[0] ?? '#1a1a2e'} | Accent: ${ctx.colorPalette[2] ?? '#e94560'} | Background: ${ctx.colorPalette[1] ?? '#16213e'}`,
+    typographyNote: `Bold, modern sans-serif. Artist name: 48pt+. Track title: 36pt.`,
+    moodBoard: [`${ctx.mood} lighting`, `${ctx.genre} aesthetic`, `Authentic, not over-produced`, `Color story: ${palette}`],
+  };
+}
+
+function storySequenceFallback(ctx: GeneratorContext): StorySequence {
+  return {
+    frames: [
+      { frameNumber: 1, durationSeconds: 5, text: `👀 You need to hear this`, visualNote: `Hook frame` },
+      { frameNumber: 2, durationSeconds: 7, text: `${ctx.artistName} — ${ctx.trackTitle ?? 'New Music'}`, visualNote: `Artist photo` },
+      { frameNumber: 3, durationSeconds: 5, text: `${ctx.mood} ${ctx.genre} energy 🎵`, visualNote: `Lyric overlay` },
+      { frameNumber: 4, durationSeconds: 8, text: `What do you feel when you listen?`, visualNote: `Poll frame`, pollQuestion: `Does this song hit? 🔥 vs 💯` },
+      { frameNumber: 5, durationSeconds: 5, text: `Stream now — link in bio 🎶`, visualNote: `CTA frame`, stickerSuggestion: 'link sticker' },
+    ],
+    totalDurationSeconds: 30,
+  };
+}
+
 async function buildPlatformBundle(
   platform: SupportedPlatform,
   genCtx: Omit<GeneratorContext, 'platform'>,
 ): Promise<PlatformContentBundle> {
   const ctx: GeneratorContext = { ...genCtx, platform };
 
-  // Run all generators for this platform concurrently
-  const [hooks, captions, hashtags, adCopy, videoScript, visualPrompt, storySequence] =
-    await Promise.all([
-      generateHooks(ctx),
-      generateCaptions(ctx),
-      generateHashtags(ctx),
-      generateAdCopy(ctx),
-      generateVideoScript(ctx, 30),
-      generateVisualPrompt(ctx),
-      generateStorySequence(ctx),
-    ]);
+  // Run all generators concurrently — use allSettled so one failure cannot
+  // abort the others; each has a typed fallback that is always valid output.
+  const [
+    hooksResult, captionsResult, hashtagsResult, adCopyResult,
+    videoScriptResult, visualPromptResult, storySequenceResult,
+  ] = await Promise.allSettled([
+    generateHooks(ctx),
+    generateCaptions(ctx),
+    generateHashtags(ctx),
+    generateAdCopy(ctx),
+    generateVideoScript(ctx, 30),
+    generateVisualPrompt(ctx),
+    generateStorySequence(ctx),
+  ]);
+
+  const hooks         = hooksResult.status         === 'fulfilled' ? hooksResult.value         : (logger.warn(`[UCO] generateHooks rejected for ${platform}:`,         (hooksResult as PromiseRejectedResult).reason), hooksFallback(ctx));
+  const captions      = captionsResult.status      === 'fulfilled' ? captionsResult.value      : (logger.warn(`[UCO] generateCaptions rejected for ${platform}:`,      (captionsResult as PromiseRejectedResult).reason), captionsFallback(ctx));
+  const hashtags      = hashtagsResult.status      === 'fulfilled' ? hashtagsResult.value      : (logger.warn(`[UCO] generateHashtags rejected for ${platform}:`,      (hashtagsResult as PromiseRejectedResult).reason), { niche: [], broad: [], trending: [], branded: [`#${ctx.artistName.replace(/\s+/g,'')}`], combined: [`#${ctx.artistName.replace(/\s+/g,'')}`, '#newmusic', '#music'] });
+  const adCopy        = adCopyResult.status        === 'fulfilled' ? adCopyResult.value        : (logger.warn(`[UCO] generateAdCopy rejected for ${platform}:`,        (adCopyResult as PromiseRejectedResult).reason), adCopyFallback(ctx));
+  const videoScript   = videoScriptResult.status   === 'fulfilled' ? videoScriptResult.value   : (logger.warn(`[UCO] generateVideoScript rejected for ${platform}:`,   (videoScriptResult as PromiseRejectedResult).reason), videoScriptFallback(ctx));
+  const visualPrompt  = visualPromptResult.status  === 'fulfilled' ? visualPromptResult.value  : (logger.warn(`[UCO] generateVisualPrompt rejected for ${platform}:`,  (visualPromptResult as PromiseRejectedResult).reason), visualPromptFallback(ctx));
+  const storySequence = storySequenceResult.status === 'fulfilled' ? storySequenceResult.value : (logger.warn(`[UCO] generateStorySequence rejected for ${platform}:`, (storySequenceResult as PromiseRejectedResult).reason), storySequenceFallback(ctx));
 
   const spec = PLATFORM_SPECS[platform];
   const formattedPosts: FormattedPost[] = [];
@@ -350,10 +431,18 @@ class UnifiedContentOrchestrator {
     const maxBoosterContent = generateAllMaxBoosterContent(platforms, targetArtistSegment);
 
     // ── Step 3: Per-platform content bundles (concurrent) ─────────────────
+    // Use allSettled — one platform failing should never abort the others.
     logger.info(`[UCO:${runId}] Step 3: Building platform bundles for [${platforms.join(', ')}]`);
-    const platformBundles = await Promise.all(
+    const bundleResults = await Promise.allSettled(
       platforms.map(platform => buildPlatformBundle(platform, generatorCtx)),
     );
+    const platformBundles: PlatformContentBundle[] = bundleResults
+      .map((result, i) => {
+        if (result.status === 'fulfilled') return result.value;
+        logger.warn(`[UCO:${runId}] Platform bundle failed for ${platforms[i]}: ${(result as PromiseRejectedResult).reason}`);
+        return null;
+      })
+      .filter((b): b is PlatformContentBundle => b !== null);
 
     // ── Step 4: Collect all slot combinations for scheduling ───────────────
     logger.info(`[UCO:${runId}] Step 4: Building schedule manifest`);

@@ -20,7 +20,10 @@ export class MaxCoreAIClient {
   private static readonly CHECK_TTL = 30_000;
 
   private static _endpointSuppressed = new Map<string, number>();
-  private static readonly ENDPOINT_SUPPRESS_MS = 10 * 60_000;
+  // Cold-starts resolve in well under 2 minutes (warmth pinger fires every 90s).
+  // Using 2 min instead of 10 min means a transient deployment hiccup un-suppresses
+  // quickly rather than routing to local engine for the next 10 minutes.
+  private static readonly ENDPOINT_SUPPRESS_MS = 2 * 60_000;
 
   private static isEndpointSuppressed(path: string): boolean {
     const suppressedUntil = MaxCoreAIClient._endpointSuppressed.get(path) ?? 0;
@@ -137,14 +140,29 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed`);
-    return null;
+    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} remote attempts failed — falling back to local engine`);
+    try {
+      const localResult = await maxcoreLocalInfer(body as any);
+      logger.debug(`[MaxCoreAI] generate local engine fallback (confidence=${localResult.confidence})`);
+      return localResult as unknown as T;
+    } catch (localErr: any) {
+      logger.error(`[MaxCoreAI] generate local engine fallback error: ${localErr.message}`);
+      return null;
+    }
   }
+
+  // Timeout for infer() remote attempts — set above the 12-15s cold-start
+  // window so a freshly-warming LLM can respond before we give up.
+  private static readonly INFER_TIMEOUT_MS  = 18_000;
+  private static readonly INFER_MAX_RETRIES = 2;   // transient failures get 2 extra tries
+  private static readonly INFER_BACKOFF_BASE = 800; // ms
 
   /**
    * Infer via MaxCore.
    * Priority:
    *   1. Remote training server (secure-ai-forge.replit.app) — when online
+   *      Up to INFER_MAX_RETRIES retries for transient failures (5xx, network)
+   *      before falling through to the local engine.
    *   2. MaxCore Local Engine — always succeeds, zero-latency fallback
    */
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
@@ -154,34 +172,52 @@ export class MaxCoreAIClient {
         Date.now() - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL) {
       MaxCoreAIClient._remoteAvailable = null;
     }
+
     if (MC_AI_URL && MC_AI_KEY && MaxCoreAIClient._remoteAvailable !== false) {
       const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
       if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-        try {
-          const r = await fetch(`${MC_AI_URL}${path}`, {
-            method: 'POST',
-            headers: {
-              'Content-Type':  'application/json',
-              'X-API-Key':     MC_AI_KEY,
-              'Authorization': `Bearer ${MC_AI_KEY}`,
-            },
-            body: JSON.stringify(body),
-            signal: AbortSignal.timeout(12000),
-          });
-          const isJson = MaxCoreAIClient.isJson(r);
-          if (r.status === 404 || !isJson) {
-            MaxCoreAIClient.suppressEndpoint(path);
-          } else if (r.ok) {
-            const data = await r.json();
-            logger.debug(`[MaxCoreAI] Remote ${path} → success`);
-            return data as T;
-          } else {
-            const errBody = await r.json().catch(() => null) as any;
-            logger.debug(`[MaxCoreAI] Remote ${path} ${r.status}: ${errBody?.error ?? 'unavailable'} — routing to local engine`);
+        for (let attempt = 0; attempt <= MaxCoreAIClient.INFER_MAX_RETRIES; attempt++) {
+          try {
+            const r = await fetch(`${MC_AI_URL}${path}`, {
+              method: 'POST',
+              headers: {
+                'Content-Type':  'application/json',
+                'X-API-Key':     MC_AI_KEY,
+                'Authorization': `Bearer ${MC_AI_KEY}`,
+              },
+              body: JSON.stringify(body),
+              signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+            });
+            const isJson = MaxCoreAIClient.isJson(r);
+
+            // Permanent failure — suppress and fall to local engine immediately.
+            // 404 means the endpoint doesn't exist at all on this deployment;
+            // non-JSON means the server returned an HTML error page.
+            if (r.status === 404 || !isJson) {
+              MaxCoreAIClient.suppressEndpoint(path);
+              break; // exit retry loop → fall through to local engine
+            }
+
+            if (r.ok) {
+              const data = await r.json();
+              logger.debug(`[MaxCoreAI] Remote ${path} → success (attempt ${attempt + 1})`);
+              return data as T;
+            }
+
+            // Transient server error (5xx, 429, etc.) — retry with back-off
+            logger.debug(`[MaxCoreAI] Remote ${path} attempt ${attempt + 1} → ${r.status} (transient)`);
+          } catch (e: any) {
+            // Network error or timeout — retry
+            logger.debug(`[MaxCoreAI] Remote ${path} attempt ${attempt + 1} failed: ${e.message}`);
           }
-        } catch (e: any) {
-          logger.debug(`[MaxCoreAI] Remote ${path} unreachable (${e.message}) — routing to local engine`);
+
+          // Back-off before next attempt (not after the last one)
+          if (attempt < MaxCoreAIClient.INFER_MAX_RETRIES) {
+            const delay = Math.random() * MaxCoreAIClient.INFER_BACKOFF_BASE * Math.pow(2, attempt);
+            await new Promise(res => setTimeout(res, delay));
+          }
         }
+        logger.debug(`[MaxCoreAI] Remote ${path} all attempts exhausted — routing to local engine`);
       }
     }
 

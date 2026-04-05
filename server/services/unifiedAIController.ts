@@ -26,6 +26,7 @@ import * as aiAnalyticsService from './aiAnalyticsService.js';
 import { pythonAIService } from './pythonAIService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
 export { MaxCoreAIClient } from './maxcoreClient.js';
+import { maxcoreLocalInfer } from './maxcoreLocalEngine.js';
 import { SentimentAnalyzer, type FullAnalysisResult, type SentimentResult } from '../../shared/ml/nlp/SentimentAnalyzer.js';
 import { RecommendationEngine, type RecommendationResult, type SimilarityResult, type TrackData, type ArtistData, type UserInteraction } from '../../shared/ml/models/RecommendationEngine.js';
 import { AdOptimizationEngine, type Campaign, type CampaignScore, type BudgetOptimizationResult, type CreativePrediction, type ROIForecast } from '../../shared/ml/models/AdOptimizationEngine.js';
@@ -407,13 +408,51 @@ export class UnifiedAIController {
         confidence: fallback.confidence,
       };
     } catch (error) {
-      logger.error('Content generation failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Content generation failed',
-        processingTimeMs: Date.now() - startTime,
-        source: 'MaxCoreAI',
-      };
+      // Unexpected exception in the happy path — recover via local engine so
+      // content generation NEVER returns success:false.
+      logger.error('[UnifiedAI] generateContent unexpected error — recovering via local engine:', error);
+      try {
+        const ctx = options.userContext;
+        const mappedPlatform = (() => {
+          const aliases: Record<string, string> = { threads: 'instagram', googlebusiness: 'facebook' };
+          return options.platform && aliases[options.platform]
+            ? aliases[options.platform]
+            : (options.platform || 'instagram');
+        })();
+        const fb = await maxcoreLocalInfer({
+          platform: mappedPlatform,
+          topic: options.topic || options.genre || 'new music',
+          tone: options.tone || 'energetic',
+          genre: options.genre || ctx?.genre,
+          userId: options.userId,
+          artist_name: ctx?.artistName || options.artistName,
+        });
+        return {
+          success: true,
+          data: {
+            caption:   fb.caption,
+            hashtags:  fb.hashtags,
+            tone:      options.tone || 'energetic',
+            toneMatch: fb.confidence,
+            platform:  mappedPlatform,
+            charCount: fb.caption.length,
+            hook: fb.hook,
+            body: fb.body,
+            cta:  fb.cta,
+          } as CaptionResult,
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+          confidence: fb.confidence,
+        };
+      } catch (fbErr: any) {
+        logger.error('[UnifiedAI] generateContent local engine recovery also failed:', fbErr);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Content generation failed',
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+        };
+      }
     }
   }
 
@@ -471,13 +510,35 @@ export class UnifiedAIController {
         confidence: fb.confidence,
       };
     } catch (error) {
-      logger.error('Social content generation failed:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Social content generation failed',
-        processingTimeMs: Date.now() - startTime,
-        source: 'MaxCoreAI',
-      };
+      // Recover via local engine — generateSocialContent must never return success:false
+      logger.error('[UnifiedAI] generateSocialContent unexpected error — recovering via local engine:', error);
+      try {
+        const fb = await maxcoreLocalInfer({
+          platform: (options.platform || 'instagram') as string,
+          topic: options.musicData
+            ? `${options.musicData.title} by ${options.musicData.artist}`
+            : (options.customPrompt || 'new music'),
+          tone: options.tone || 'energetic',
+          genre: options.musicData?.genre,
+          artist_name: options.musicData?.artist,
+          contentType: options.contentType,
+        });
+        return {
+          success: true,
+          data: { content: [fb.hook, fb.body, fb.cta].filter(Boolean) },
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+          confidence: fb.confidence,
+        };
+      } catch (fbErr: any) {
+        logger.error('[UnifiedAI] generateSocialContent local engine recovery also failed:', fbErr);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Social content generation failed',
+          processingTimeMs: Date.now() - startTime,
+          source: 'MaxCoreAI',
+        };
+      }
     }
   }
 
