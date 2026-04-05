@@ -196,6 +196,44 @@ export class MaxCoreAIClient {
   }
 }
 
+/**
+ * Keep MaxCore's LLM warm by sending a lightweight generate request on a
+ * regular heartbeat.  Without this, the model goes cold after ~2 minutes of
+ * inactivity, causing the first real request to pay a 12-15s warm-up penalty
+ * that risks timeouts under load.
+ *
+ * Call once at startup.  The interval is unref'd so it does not prevent exit.
+ */
+export function startMaxCoreLLMWarmth(): void {
+  if (!MC_AI_URL || !MC_AI_KEY) return;
+
+  const WARMTH_INTERVAL_MS = 90_000;   // 90 s — safely under the ~2 min idle window
+  const WARMTH_TOPIC       = 'music artist brand new release';
+  const WARMTH_PLATFORM    = 'instagram';
+
+  const ping = () => {
+    // Fire-and-forget — we do not await or process the response.
+    // The sole purpose is to keep the LLM execution path hot.
+    fetch(`${MC_AI_URL}/api/content/generate`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'X-API-Key':     MC_AI_KEY,
+        'Authorization': `Bearer ${MC_AI_KEY}`,
+      },
+      body:   JSON.stringify({ topic: WARMTH_TOPIC, platform: WARMTH_PLATFORM }),
+      signal: AbortSignal.timeout(20_000),
+    }).catch(() => {});  // silence errors — warmth pings are best-effort
+  };
+
+  // Send one ping immediately so the LLM is warm before the calibrator fires.
+  ping();
+
+  const t = setInterval(ping, WARMTH_INTERVAL_MS);
+  if (t.unref) t.unref();   // don't block process exit
+  logger.info('[MaxCoreAI] LLM warmth pinger started — pinging every 90s to prevent cold-start latency');
+}
+
 if (MC_AI_URL && MC_AI_KEY) {
   logger.info(`[MaxCoreAI] Configured — remote: ${MC_AI_URL} | local engine: always active`);
 } else {

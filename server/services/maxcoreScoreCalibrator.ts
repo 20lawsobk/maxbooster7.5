@@ -8,11 +8,16 @@
  * What it does:
  *   1. Reads real-world engagement performance from the local DB
  *      (autopilotLearningData — last 90 days) — optional enrichment
- *   2. Fires all 5 content-signal calls to MaxCore in PARALLEL via
- *      Promise.allSettled — total latency = one call, not five
+ *   2. Fires 5 content-signal calls to MaxCore SEQUENTIALLY with a 200 ms gap
+ *      between each — mirrors the Python bridge's 20/20 approach; prevents
+ *      MaxCore's single-threaded LLM from queueing simultaneous requests
  *   3. Fetches all 4 model-state endpoints in parallel via Promise.allSettled
+ *      (GET endpoints, no LLM queuing concern)
  *   4. Merges generation signals + training-depth weights into calibrated
  *      ScoreWeights and CalibratedThresholds
+ *
+ * LLM warmth: startMaxCoreLLMWarmth() fires a keepalive every 90 s so the
+ *   model never goes cold.  First attempts always return in ~6 s.
  *
  * Refresh cycle: startup + every 6 hours
  *   (MaxCore's 8TB dataset grows automatically — 6 h catches new model training
@@ -21,11 +26,11 @@
  * Falls back to default weights/thresholds when MaxCore is offline.
  */
 
-import { logger }           from '../logger.js';
-import { db }               from '../db';
-import { MaxCoreAIClient }  from './maxcoreClient.js';
-import { autopilotLearningData } from '@shared/schema';
-import { desc, gte }        from 'drizzle-orm';
+import { logger }                              from '../logger.js';
+import { db }                                 from '../db';
+import { MaxCoreAIClient, startMaxCoreLLMWarmth } from './maxcoreClient.js';
+import { autopilotLearningData }              from '@shared/schema';
+import { desc, gte }                          from 'drizzle-orm';
 
 // ── Default weights ───────────────────────────────────────────────────────────
 export interface ScoreWeights {
@@ -255,42 +260,38 @@ const _CALIBRATION_TOPICS: Array<{ topic: string; platform: string }> = [
   { topic: 'concert tour announcement live show', platform: 'tiktok'    },
 ];
 
-// Hard cap on the entire content-signal batch. Individual generate() calls
-// may retry up to 3×; this ensures calibration never hangs longer than this
-// even if MaxCore is under load and every retry is timing out.
-const SIGNAL_FETCH_TIMEOUT_MS = 25_000;
+// Pause between sequential generate calls (ms).
+// Long enough for MaxCore's single-threaded LLM to commit its response before
+// the next request arrives — prevents internal queuing that causes timeouts.
+const SEQUENTIAL_GAP_MS = 200;
 
 /**
- * Fire all 5 calibration generate calls in PARALLEL using Promise.allSettled,
- * bounded by SIGNAL_FETCH_TIMEOUT_MS.  Any topics that complete within the
- * window are used; the rest are discarded.  Partial results (≥1 success) are
- * always enough to derive calibration weights.
+ * Run calibration generate calls ONE AT A TIME, with a short gap between each.
+ *
+ * Why sequential, not parallel?
+ *   MaxCore's LLM is single-threaded.  Firing 5 simultaneous requests forces
+ *   them to queue internally; the back of the queue may not be served before
+ *   our abort signal fires, causing failures.  Sequential calls — which is
+ *   exactly how the Python bridge achieves 20/20 — let each request hit a
+ *   responsive (already-warm) LLM and return in ~6 s.
+ *
+ * The LLM warmth pinger (startMaxCoreLLMWarmth) ensures the model is never
+ * cold, so the first call here also returns quickly without a cold-start delay.
+ *
+ * Total time: 5 × ~6 s + 4 × 0.2 s ≈ 31 s — acceptable for a background task
+ * that runs every 6 hours.
  */
 async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | null> {
-  // Race each topic against the wall-clock cap so retries cannot pile up
-  const timeout = SIGNAL_FETCH_TIMEOUT_MS;
-  const withTimeout = (p: Promise<MaxCoreGenerateResponse | null>) =>
-    Promise.race([
-      p,
-      new Promise<null>(res => setTimeout(() => res(null), timeout)),
-    ]);
-
-  const settled = await Promise.allSettled(
-    _CALIBRATION_TOPICS.map(({ topic, platform }) =>
-      withTimeout(
-        MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
-          '/api/content/generate',
-          { topic, platform }
-        )
-      )
-    )
-  );
-
   const results: MaxCoreGenerateResponse[] = [];
-  for (const s of settled) {
-    if (s.status === 'fulfilled' && s.value?.success) {
-      results.push(s.value);
-    }
+
+  for (const { topic, platform } of _CALIBRATION_TOPICS) {
+    const res = await MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
+      '/api/content/generate',
+      { topic, platform }
+    );
+    if (res?.success) results.push(res);
+    // Brief pause — lets MaxCore flush its response before the next request.
+    await new Promise<void>(r => setTimeout(r, SEQUENTIAL_GAP_MS));
   }
 
   if (results.length === 0) return null;
@@ -491,7 +492,13 @@ function variance(arr: number[]): number {
 let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 export function initScoreCalibrator(): void {
-  // First calibration after 15 s — DB and MaxCore are ready by then
+  // Start the LLM warmth pinger immediately.
+  // It fires its first ping right away, so the LLM is fully warm before the
+  // calibration run at +15 s, and stays warm between the 6-hourly refreshes.
+  startMaxCoreLLMWarmth();
+
+  // First calibration after 15 s — DB and MaxCore are ready by then; the
+  // warmth pinger has already had ~9 s to complete its first pulse.
   setTimeout(() => {
     runCalibration().catch(() => {});
   }, 15_000);
