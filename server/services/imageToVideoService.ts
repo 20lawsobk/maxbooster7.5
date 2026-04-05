@@ -36,6 +36,10 @@ import { logger } from '../logger.js';
 import { analyzeAudio, getBeatAlignedCuts, cutsToSceneDurations } from './beatSyncService.js';
 import type { BeatAnalysis } from './beatSyncService.js';
 import { AUDIO_PROFILES, TEMPLATE_STYLES, type VideoGenResult } from './videoGeneratorService.js';
+import {
+  checkDiffusionAvailable,
+  renderDiffusionScene,
+} from './maxcoreDiffusionSceneService.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -540,8 +544,16 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
     const minDur = 1.5;
     sceneDurations = sceneDurations.map(d => Math.max(d, minDur));
 
-    // ── Render each image with Ken Burns motion + text overlays ─────────────
+    // ── Render each image — Tier 1: PyTorch diffusion → Tier 2: Ken Burns ───
     const scenePaths: string[] = [];
+    const sceneSources: string[] = [];
+
+    // Check diffusion availability once before the loop (2 s probe, 30 s cached).
+    const diffusionAvailable = await checkDiffusionAvailable();
+    if (diffusionAvailable) {
+      logger.info('[ImageToVideo] Tier 1 (PyTorch diffusion) active for this run');
+    }
+
     for (let i = 0; i < imagePaths.length; i++) {
       const sceneDur  = sceneDurations[i];
       const scenePath = tempPath(`scene${i}`);
@@ -563,17 +575,59 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
         hook, body, cta, style, width, height, sceneDur, sceneType, opts.artistName,
       );
 
-      await renderImageWithKenBurns(
-        imagePaths[i],
-        scenePath,
-        width, height,
-        sceneDur,
-        i,                // motionIndex cycles through KEN_BURNS_MOTIONS
-        intensity,
-        colorGrade,
-        textOverlays,
-      );
+      // ── Tier 1: PyTorch diffusion (per-scene AI video synthesis) ──────────
+      let sceneRendered = false;
+      if (diffusionAvailable) {
+        const diffOut = await renderDiffusionScene(
+          {
+            imagePath:    imagePaths[i],
+            outputPath:   scenePath,
+            width,
+            height,
+            durationSec:  sceneDur,
+            genre,
+            colorGrade,
+            platform:     opts.platform,
+            beatAnalysis,
+            sceneIndex:   i,
+            totalScenes:  imagePaths.length,
+            artistName:   opts.artistName,
+            textOverlays,
+          },
+          FFMPEG,
+        );
+        if (diffOut) {
+          sceneRendered = true;
+          sceneSources.push('diffusion');
+        }
+      }
+
+      // ── Tier 2: Ken Burns FFmpeg (always-available fallback) ──────────────
+      if (!sceneRendered) {
+        await renderImageWithKenBurns(
+          imagePaths[i],
+          scenePath,
+          width, height,
+          sceneDur,
+          i,              // motionIndex cycles through KEN_BURNS_MOTIONS
+          intensity,
+          colorGrade,
+          textOverlays,
+        );
+        sceneSources.push('ken_burns');
+      }
+
       scenePaths.push(scenePath);
+    }
+
+    const diffusionScenes  = sceneSources.filter(s => s === 'diffusion').length;
+    const kenBurnsScenes   = sceneSources.filter(s => s === 'ken_burns').length;
+    if (diffusionScenes > 0) {
+      logger.info(
+        `[ImageToVideo] Scene render complete — ` +
+        `diffusion: ${diffusionScenes}/${imagePaths.length} scenes, ` +
+        `ken_burns: ${kenBurnsScenes}/${imagePaths.length} scenes`,
+      );
     }
 
     // ── Combine scenes ──────────────────────────────────────────────────────
@@ -606,6 +660,10 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
       `${imagePaths.length} images | ${beatAnalysis ? `beat-synced BPM=${beatAnalysis.bpm.toFixed(0)}` : 'equal cuts'} | ${renderMs}ms`
     );
 
+    const diffusionUsed = diffusionScenes > 0;
+    const beatLabel     = beatAnalysis ? `beat_sync_${beatAnalysis.tier}` : 'equal_cuts';
+    const tierLabel     = diffusionUsed ? `pytorch_diffusion+${beatLabel}` : beatLabel;
+
     return {
       success: true,
       url: `/uploads/videos/${filename}`,
@@ -617,14 +675,16 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
       scenes_rendered: imagePaths.length,
       processing_time_ms: Date.now() - startMs,
       render_time_ms: renderMs,
-      source: beatAnalysis ? `beat_sync_${beatAnalysis.tier}` : 'equal_cuts',
+      source: tierLabel,
       quality: 'cinematic',
       capabilities: [
-        'ken_burns', 'beat_sync', 'vignette', 'drop_shadow', 'text_outline',
+        ...(diffusionUsed ? ['pytorch_diffusion'] : ['ken_burns']),
+        'beat_sync', 'vignette', 'drop_shadow', 'text_outline',
         'color_grade', 'audio_track', 'multi_font',
         ...(opts.audioPath ? ['user_audio'] : []),
         ...(opts.voiceSynthPath ? ['voice_narration'] : []),
         ...(opts.logoPath ? ['logo_overlay'] : []),
+        ...(diffusionUsed && kenBurnsScenes > 0 ? ['ken_burns_fallback'] : []),
       ],
     };
 
