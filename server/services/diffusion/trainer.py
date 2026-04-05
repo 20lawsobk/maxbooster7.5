@@ -707,15 +707,29 @@ SCENE_PROMPTS = {
 }
 
 # ── MaxCore Dataset Bridge — expand SCENE_PROMPTS from 8TB corpus ─────────────
-# Runs at import time (background thread-safe) — adds 50 extra prompts per scene
-# sourced from MaxCore's music industry + social media datasets.  Falls back
-# silently if the MaxCore server is offline.
+# Runs at import time. MaxCore is the sole prompt source — no local fallback.
+# If MaxCore is unreachable, a WARNING is logged and the base SCENE_PROMPTS
+# are used unchanged until MaxCore reconnects (retried at each train_v4() call).
+import logging as _trainer_log
 try:
     from diffusion.maxcore_dataset_bridge import get_bridge as _get_bridge
     _bridge = _get_bridge()
-    SCENE_PROMPTS = _bridge.expand_scene_prompts(SCENE_PROMPTS, n_extra_per_scene=50)
+    _expanded = _bridge.expand_scene_prompts(SCENE_PROMPTS, n_extra_per_scene=50)
+    if _expanded is not SCENE_PROMPTS and sum(len(v) for v in _expanded.values()) > sum(len(v) for v in SCENE_PROMPTS.values()):
+        SCENE_PROMPTS = _expanded
+        _trainer_log.getLogger('trainer').info(
+            f'[Trainer] SCENE_PROMPTS expanded via MaxCore — '
+            f'{sum(len(v) for v in SCENE_PROMPTS.values())} total prompts across {len(SCENE_PROMPTS)} scenes'
+        )
+    else:
+        _trainer_log.getLogger('trainer').warning(
+            '[Trainer] MaxCore prompt expansion pending — prompts not yet available. '
+            'Training with base SCENE_PROMPTS. Bridge retries every 60s; will expand on next train_v4() call.'
+        )
 except Exception as _bridge_err:
-    pass  # MaxCore offline or bridge not available — continue with local prompts
+    _trainer_log.getLogger('trainer').error(
+        f'[Trainer] MaxCore bridge error at import: {_bridge_err} — training with base SCENE_PROMPTS only'
+    )
 
 # Flat list of all (scene, prompt) pairs — for random sampling
 ALL_PAIRS = [
@@ -1387,14 +1401,22 @@ def train_v4(n_epochs: int = 5,
     print(f"[DiffusionTrainer v4] Loading 100K prompt library...", flush=True)
     all_scene_prompts = get_all_prompts(target=100_000)
 
-    # Re-run bridge expansion each training session — picks up MaxCore prompts
-    # as soon as the server reconnects (bridge retries every 60s when offline)
+    # Re-run bridge expansion each training session — MaxCore is the sole prompt source.
+    # If offline, expansion is skipped and a WARNING is logged.
     try:
         from diffusion.maxcore_dataset_bridge import get_bridge as _get_bridge
         _bridge_live = _get_bridge()
-        all_scene_prompts = _bridge_live.expand_scene_prompts(all_scene_prompts, n_extra_per_scene=50)
-    except Exception:
-        pass   # bridge unavailable — continue with local 100K library
+        _exp = _bridge_live.expand_scene_prompts(all_scene_prompts, n_extra_per_scene=50)
+        before = sum(len(v) for v in all_scene_prompts.values())
+        after  = sum(len(v) for v in _exp.values())
+        if after > before:
+            all_scene_prompts = _exp
+        else:
+            print('[DiffusionTrainer v4] WARNING: MaxCore expansion pending — '
+                  'prompts not yet available from MaxCore. Bridge will retry next session.',
+                  flush=True)
+    except Exception as _be:
+        print(f'[DiffusionTrainer v4] ERROR: MaxCore bridge error during train: {_be}', flush=True)
 
     scenes = list(all_scene_prompts.keys())
     print(f"[DiffusionTrainer v4] {sum(len(v) for v in all_scene_prompts.values()):,} "

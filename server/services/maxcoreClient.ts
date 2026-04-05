@@ -79,6 +79,44 @@ export class MaxCoreAIClient {
   }
 
   /**
+   * Call MaxCore's generation endpoint — remote ONLY.
+   * Never falls back to the local engine. Returns null when MaxCore is unreachable.
+   * Use for POST /api/content/generate and any other generation-class endpoints.
+   */
+  static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
+    if (!MC_AI_URL || !MC_AI_KEY) return null;
+    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
+    try {
+      const r = await fetch(`${MC_AI_URL}${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type':  'application/json',
+          'X-API-Key':     MC_AI_KEY,
+          'Authorization': `Bearer ${MC_AI_KEY}`,
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(15_000),
+      });
+      const isJson = MaxCoreAIClient.isJson(r);
+      if (r.status === 404 || !isJson) {
+        MaxCoreAIClient.suppressEndpoint(path);
+        return null;
+      }
+      if (r.ok) {
+        const data = await r.json();
+        logger.debug(`[MaxCoreAI] generate ${path} → success`);
+        return data as T;
+      }
+      logger.warn(`[MaxCoreAI] generate ${path} ${r.status} — remote unavailable`);
+      return null;
+    } catch (e: any) {
+      logger.warn(`[MaxCoreAI] generate ${path} failed: ${e.message}`);
+      return null;
+    }
+  }
+
+  /**
    * Infer via MaxCore.
    * Priority:
    *   1. Remote training server (secure-ai-forge.replit.app) — when online

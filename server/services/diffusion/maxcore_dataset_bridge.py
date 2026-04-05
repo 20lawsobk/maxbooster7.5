@@ -1,14 +1,11 @@
 """
 MaxCore Dataset Bridge — Diffusion Training Data Pipeline
 
-Connects the UNetV4 LITE training pipeline to the MaxCore server's 8TB corpus
-(music industry, social media, advertising performance) to source:
+Connects the UNetV4 LITE training pipeline to the MaxCore server's 8TB corpus.
+MaxCore is the sole source of training prompts and scene metadata.
 
-  1. Rich scene prompts — genre/mood/BPM-tagged descriptions from real music data
-  2. Style metadata — colour-grade, energy, drop-timing labels from real content
-  3. Batch streaming — returns batches compatible with train_v4()'s data loader API
-
-Falls back to the local SCENE_PROMPTS in trainer.py whenever MaxCore is offline.
+If MaxCore is unreachable, prompt methods return [] and expansions are skipped —
+there is NO local fallback prompt library.
 
 Usage:
     from diffusion.maxcore_dataset_bridge import DatasetBridge
@@ -30,18 +27,18 @@ import numpy as np
 
 log = logging.getLogger('maxcore_dataset_bridge')
 
-_here    = os.path.dirname(os.path.abspath(__file__))
-_parent  = os.path.dirname(_here)
+_here   = os.path.dirname(os.path.abspath(__file__))
+_parent = os.path.dirname(_here)
 if _parent not in sys.path:
     sys.path.insert(0, _parent)
 
-MC_URL   = os.environ.get('AI_SERVER_URL', '').rstrip('/')
-MC_KEY   = os.environ.get('AI_SERVER_KEY', '')
-TIMEOUT  = 10
+MC_URL  = os.environ.get('AI_SERVER_URL', '').rstrip('/')
+MC_KEY  = os.environ.get('AI_SERVER_KEY', '')
+TIMEOUT = 12
 
-_CACHE_TTL   = 6 * 3600
+_CACHE_TTL  = 6 * 3600
 _cache: dict = {}
-_cache_lock  = threading.Lock()
+_cache_lock = threading.Lock()
 
 
 def _mc_get(path: str) -> Optional[dict]:
@@ -83,10 +80,10 @@ def _mc_post(path: str, body: dict) -> Optional[dict]:
             method='POST',
         )
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            if resp.status == 200:
-                ct = resp.headers.get('Content-Type', '')
-                if 'json' in ct:
-                    return json.loads(resp.read().decode())
+            ct = resp.headers.get('Content-Type', '')
+            raw = resp.read().decode()
+            if 'json' in ct:
+                return json.loads(raw)
     except Exception as e:
         log.debug(f'[MCBridge] POST {path} failed: {e}')
     return None
@@ -111,97 +108,50 @@ def _store(tag: str, val):
         _cache[k] = {'val': val, 'ts': time.time()}
 
 
-# ── Local fallback prompts enriched with MaxCore-style vocabulary ─────────────
-# These are used when the remote server is unavailable.  They cover all 20+
-# scene categories in the trainer and include genre/BPM/energy metadata.
-_FALLBACK_PROMPTS = {
-    'music_video': [
-        'hip hop artist concert stage dark neon purple crowd energetic BPM=120',
-        'trap music video city night rain dark glow neon moody BPM=140',
-        'r&b neo soul studio session warm amber intimate smooth BPM=90',
-        'pop concert stadium stage elaborate dancers crowd colorful BPM=128',
-        'electronic edm festival stage laser strobe dark crowd BPM=135',
-        'drill music dark stage uk crowd intense gritty BPM=145',
-        'afrobeats festival stage colorful dancers vibrant crowd BPM=112',
-        'jazz club stage dim amber spotlight quartet intimate BPM=95',
-        'rock arena concert dark guitars crowd moshing intense BPM=165',
-        'latin concert stage horns crowd festive warm energy BPM=100',
-        'gospel church concert choir uplifted spiritual warm BPM=75',
-        'kpop concert stage hyper-produced dancers colorful BPM=132',
-        'lo-fi study session desk chill warm amber dim peaceful BPM=85',
-        'country concert outdoor stage sunset crowd warm BPM=95',
-        'reggae beach concert palm sunset crowd wave energy BPM=80',
-    ],
-    'music_industry': [
-        'recording studio professional large console engineer vocal booth dark',
-        'mastering suite audiophile monitors precision mixing desk workflow',
-        'vinyl pressing plant industrial machines warm nostalgic music heritage',
-        'label signing ceremony conference room executives handshake moment',
-        'streaming dashboard analytics rising chart success digital launch',
-        'music video set director camera crew lighting production professional',
-        'backstage dressing room artist mirror preparation pre-show tension',
-        'tour bus lifestyle road trip highway window artist private moment',
-        'award ceremony stage acceptance speech artist emotional crowd',
-        'radio broadcast station host artist interview microphone studio warm',
-        'merchandise table fan interaction signings authentic connection',
-        'producer beatmaker home studio lo-fi aesthetic creative flow state',
-        'sync licensing film score composer orchestra cinematic grand',
-        'live session acoustic performance intimate raw authentic emotional',
-        'marketing campaign social media content creation authentic artist',
-    ],
-    'social_media': [
-        'tiktok dance challenge vibrant colorful trending youth energy',
-        'instagram aesthetic grid luxury lifestyle artist brand promotion',
-        'youtube music video premiere event live chat excited fans',
-        'twitter announcement new release music text art minimal dark',
-        'behind-the-scenes authentic raw moment artist creative process',
-        'spotify editorial playlist cover art abstract minimal aesthetic',
-        'apple music spatial audio immersive visual abstract premium',
-        'concert announcement poster dramatic lighting tour dates text',
-        'album art reveal moment social media dramatic reveal lighting',
-        'fan interaction reply gratitude artist authentic connection',
-        'countdown release clock anticipation dramatic teaser minimal',
-        'studio session snippet video warm creative authentic raw moment',
-        'merch drop product reveal stylish flat lay dark premium aesthetic',
-        'milestone celebration streaming numbers achievement moment authentic',
-        'collaboration announcement two artists portrait dramatic contrast',
-    ],
-    'advertising': [
-        'music streaming platform brand ad motion graphics minimal premium',
-        'artist endorsement lifestyle brand luxury product placement natural',
-        'concert ticket sale urgency countdown dramatic dark premium',
-        'music festival sponsorship brand activation colorful crowd energy',
-        'headphones audio product ad artist portrait dramatic minimal',
-        'music production software ad creator lifestyle authentic studio',
-        'vinyl record merch ad warm nostalgic lifestyle aesthetic flat lay',
-        'tour merchandise campaign lifestyle editorial dark premium',
-        'distribution platform ad global map music spreading energy abstract',
-        'sync licensing brand ad product lifestyle music moment authentic',
-        'mobile music app ad interface demo smooth premium minimal dark',
-        'label deal announcement press shot dramatic portrait professional',
-        'award nomination announcement dramatic dark text premium minimal',
-        'collaboration project ad two artists bold contrast dramatic',
-        'new era music ad generation z aesthetic bold color minimal',
-    ],
-}
+# ── Music scene topics sent to MaxCore /api/content/generate ─────────────────
+# These are used to generate real MaxCore-sourced training prompts.
+# Organised by genre × platform to maximise vocabulary diversity.
+_MUSIC_TOPICS = [
+    ('hip-hop concert stage performance dark neon crowd',       'instagram'),
+    ('trap music video city night rain moody gritty',           'tiktok'),
+    ('r&b neo soul studio session warm amber intimate',         'instagram'),
+    ('pop concert stadium stage dancers crowd colorful',        'youtube'),
+    ('electronic edm festival stage laser strobe crowd',        'tiktok'),
+    ('drill music uk stage crowd intense dark gritty',          'instagram'),
+    ('afrobeats festival stage dancers vibrant colorful',       'tiktok'),
+    ('jazz club dim amber spotlight quartet intimate',           'instagram'),
+    ('rock arena concert dark guitars crowd moshing',           'youtube'),
+    ('latin concert stage horns crowd festive warm energy',     'instagram'),
+    ('gospel church choir uplifted spiritual warm',             'instagram'),
+    ('kpop concert hyper-produced dancers colorful stage',      'tiktok'),
+    ('lo-fi study session desk chill warm dim peaceful',        'instagram'),
+    ('country outdoor concert sunset crowd warm stage',         'youtube'),
+    ('reggae beach concert palm sunset crowd wave energy',      'instagram'),
+    ('artist recording studio professional vocal booth dark',   'instagram'),
+    ('music video set director camera crew lighting',           'tiktok'),
+    ('vinyl pressing plant industrial heritage warm nostalgic', 'instagram'),
+    ('streaming dashboard analytics rising chart digital',      'tiktok'),
+    ('backstage dressing room artist mirror pre-show tension',  'instagram'),
+]
 
-# ── Genre → BPM/energy metadata map used in training conditioning ─────────────
+# ── Genre → BPM/energy/drop metadata for FiLM conditioning ───────────────────
+# This is conditioning metadata, not content prompts. Always available.
 GENRE_METADATA = {
-    'hip_hop':    {'bpm_range': (85, 115),  'energy': 0.72, 'drop_probability': 0.40},
+    'hip_hop':    {'bpm_range': (85,  115), 'energy': 0.72, 'drop_probability': 0.40},
     'trap':       {'bpm_range': (130, 150), 'energy': 0.85, 'drop_probability': 0.65},
-    'r&b':        {'bpm_range': (75, 100),  'energy': 0.55, 'drop_probability': 0.20},
+    'r&b':        {'bpm_range': (75,  100), 'energy': 0.55, 'drop_probability': 0.20},
     'pop':        {'bpm_range': (120, 135), 'energy': 0.78, 'drop_probability': 0.45},
     'electronic': {'bpm_range': (126, 145), 'energy': 0.88, 'drop_probability': 0.75},
     'rock':       {'bpm_range': (140, 175), 'energy': 0.82, 'drop_probability': 0.35},
-    'jazz':       {'bpm_range': (80, 110),  'energy': 0.48, 'drop_probability': 0.10},
-    'gospel':     {'bpm_range': (70, 95),   'energy': 0.60, 'drop_probability': 0.20},
+    'jazz':       {'bpm_range': (80,  110), 'energy': 0.48, 'drop_probability': 0.10},
+    'gospel':     {'bpm_range': (70,   95), 'energy': 0.60, 'drop_probability': 0.20},
     'afrobeats':  {'bpm_range': (105, 120), 'energy': 0.80, 'drop_probability': 0.30},
-    'latin':      {'bpm_range': (95, 115),  'energy': 0.75, 'drop_probability': 0.25},
+    'latin':      {'bpm_range': (95,  115), 'energy': 0.75, 'drop_probability': 0.25},
     'drill':      {'bpm_range': (135, 150), 'energy': 0.80, 'drop_probability': 0.55},
-    'reggae':     {'bpm_range': (75, 95),   'energy': 0.60, 'drop_probability': 0.15},
-    'country':    {'bpm_range': (90, 110),  'energy': 0.65, 'drop_probability': 0.20},
+    'reggae':     {'bpm_range': (75,   95), 'energy': 0.60, 'drop_probability': 0.15},
+    'country':    {'bpm_range': (90,  110), 'energy': 0.65, 'drop_probability': 0.20},
     'kpop':       {'bpm_range': (120, 145), 'energy': 0.85, 'drop_probability': 0.60},
-    'lo_fi':      {'bpm_range': (75, 95),   'energy': 0.35, 'drop_probability': 0.05},
+    'lo_fi':      {'bpm_range': (75,   95), 'energy': 0.35, 'drop_probability': 0.05},
     'metal':      {'bpm_range': (160, 200), 'energy': 0.95, 'drop_probability': 0.50},
 }
 
@@ -210,25 +160,34 @@ class DatasetBridge:
     """
     Bridges the UNetV4 LITE training pipeline to MaxCore's 8TB dataset corpus.
 
-    Primary functions:
-      - `get_training_prompts(n, domain)` — fetch n prompts from MaxCore or fallback
-      - `get_genre_metadata(genre)` — get BPM/energy/drop metadata for conditioning
-      - `expand_scene_prompts(scene_dict)` — add MaxCore prompts to existing dict
-      - `sample_conditioned_batch(scene_dict, n, rng)` — sample scene + FiLM cond
-      - `status()` — dict describing connection and dataset availability
+    MaxCore is the sole prompt source. No local fallback prompt library exists.
+
+    Primary methods:
+      - get_training_prompts(n, domain) — fetch n prompts from MaxCore; [] if offline
+      - get_genre_metadata(genre)       — BPM/energy/drop metadata (always available)
+      - expand_scene_prompts(scene_dict) — add MaxCore prompts to trainer scene dict
+      - sample_conditioned_batch(scene_dict, n, rng) — FiLM-conditioned batch
+      - status()                        — connection and dataset state dict
     """
 
-    # Retry intervals: short when unreachable (MaxCore is permanent, outage = temporary)
-    _ONLINE_TTL  = 300   # re-check every 5 min when healthy
-    _OFFLINE_TTL = 60    # re-check every 60 s when unreachable (reconnect fast)
+    _ONLINE_TTL  = 300
+    _OFFLINE_TTL = 60
 
     def __init__(self):
         self._online: Optional[bool] = None
         self._datasets: Optional[list] = None
         self._last_check = 0
-        self._check_ttl  = self._OFFLINE_TTL   # start aggressive; relaxes once online
+        self._check_ttl  = self._OFFLINE_TTL
 
         self._check_connection()
+        if self._online:
+            # Synchronous seed fetch of first 5 topics so prompts are ready
+            # before trainer.py calls expand_scene_prompts() at import time.
+            self._sync_seed_fetch()
+            # Background thread fetches the remaining topics.
+            self._start_background_content_fetch()
+
+    # ── Connectivity ──────────────────────────────────────────────────────────
 
     def _check_connection(self) -> bool:
         now = time.time()
@@ -246,28 +205,26 @@ class DatasetBridge:
         else:
             self._check_ttl = self._OFFLINE_TTL
             if was_online is not False:
-                log.warning('[MCBridge] MaxCore unreachable — using local fallback; will retry in 60s')
+                log.warning('[MCBridge] MaxCore unreachable — prompts unavailable; will retry in 60s')
         return bool(self._online)
 
     def _fetch_dataset_catalog(self):
-        """
-        Discovers available MaxCore model domains via the working
-        /api/models/{domain}/state endpoints (the actual MaxCore API).
-        """
         cached = _cached('dataset_catalog')
         if cached:
             self._datasets = cached
             return
-        domains = ['social', 'advertising', 'content', 'engagement']
-        catalog = []
+        domains  = ['social', 'advertising', 'content', 'engagement']
+        catalog  = []
         for domain in domains:
             state = _mc_get(f'/api/models/{domain}/state')
             if state and isinstance(state, dict) and state.get('weights', {}).get('ready'):
                 catalog.append({
-                    'domain':         domain,
-                    'version':        state.get('version', '1.0.0'),
-                    'session_count':  state.get('session_count', 0),
-                    'trained_at':     state.get('trained_at', ''),
+                    'domain':        domain,
+                    'version':       state.get('version', '1.0.0'),
+                    'session_count': state.get('session_count', 0),
+                    'trained_at':    state.get('trained_at', ''),
+                    'vocab_size':    state.get('weights', {}).get('vocab_size', 0),
+                    'embed_dim':     state.get('weights', {}).get('embed_dim', 0),
                 })
         if catalog:
             self._datasets = catalog
@@ -275,78 +232,120 @@ class DatasetBridge:
             domains_ready = [c['domain'] for c in catalog]
             log.info(f'[MCBridge] MaxCore models available: {domains_ready}')
 
-    def _fetch_remote_prompts(self, domain: str, n: int) -> list:
+    # ── Content fetch from POST /api/content/generate ────────────────────────
+
+    def _sync_seed_fetch(self):
         """
-        Returns MaxCore-informed training prompts.
-        MaxCore's model state metadata is used to select genre/energy parameters
-        for the local generative prompt engine — producing semantically richer
-        prompts than pure random sampling.
-        Falls back to the local prompt library when MaxCore is offline.
+        Synchronous seed fetch of the first 5 topics.
+        Blocks __init__ briefly (~30s max) so that prompts are available
+        before trainer.py calls expand_scene_prompts() at import time.
+        Skips topics already cached from a prior run.
         """
-        cached = _cached(f'prompts_{domain}_{n}')
+        if _cached('maxcore_generated_prompts'):
+            return  # already warm from a previous bridge instance
+        prompts = []
+        for topic, platform in _MUSIC_TOPICS[:5]:
+            result = _mc_post('/api/content/generate', {'topic': topic, 'platform': platform})
+            if result and result.get('success'):
+                parts = [topic]
+                hook = (result.get('hook') or '').strip()
+                if hook and len(hook) < 80:
+                    parts.append(hook)
+                kw = ' '.join(h.lstrip('#') for h in result.get('hashtags', []) if h.startswith('#'))
+                if kw:
+                    parts.append(kw)
+                prompts.append(' | '.join(parts))
+        if prompts:
+            _store('maxcore_generated_prompts', prompts)
+            log.info(f'[MCBridge] Seed fetch complete — {len(prompts)} MaxCore prompts ready at startup')
+        else:
+            log.warning('[MCBridge] Seed fetch returned no prompts — MaxCore generation unavailable at startup')
+
+    def _start_background_content_fetch(self):
+        """
+        Fire-and-forget thread: calls POST /api/content/generate for each
+        music topic and caches the resulting prompts.  The main startup path
+        is unblocked; expand_scene_prompts() uses the cache once it's warm.
+        """
+        t = threading.Thread(target=self._bg_fetch_worker, daemon=True)
+        t.start()
+
+    def _bg_fetch_worker(self):
+        """Background worker: fetch remaining MaxCore-generated prompts (topics 6-20)."""
+        existing = _cached('maxcore_generated_prompts') or []
+        all_prompts = list(existing)
+        fetched = 0
+        for topic, platform in _MUSIC_TOPICS[5:]:
+            result = _mc_post('/api/content/generate', {
+                'topic':    topic,
+                'platform': platform,
+            })
+            if result and result.get('success'):
+                # Assemble a rich training prompt from MaxCore's generated content
+                parts = []
+                hook = (result.get('hook') or '').strip()
+                body = (result.get('body') or '').strip()
+                hashtags = result.get('hashtags', [])
+                # Use topic as the primary visual descriptor (MaxCore-confirmed)
+                parts.append(topic)
+                # Append hook as a semantic tag if it adds signal beyond the topic
+                if hook and len(hook) < 80:
+                    parts.append(hook)
+                # Append de-hashed tags as keyword tokens
+                kw = ' '.join(h.lstrip('#') for h in hashtags if h.startswith('#'))
+                if kw:
+                    parts.append(kw)
+                prompt = ' | '.join(parts)
+                all_prompts.append(prompt)
+                fetched += 1
+            time.sleep(0.1)  # polite inter-request gap
+
+        if all_prompts:
+            _store('maxcore_generated_prompts', all_prompts)
+            log.info(
+                f'[MCBridge] MaxCore content fetch complete — '
+                f'{fetched}/{len(_MUSIC_TOPICS)} topics → {len(all_prompts)} prompts cached'
+            )
+        else:
+            log.warning('[MCBridge] MaxCore content fetch returned no prompts')
+
+    # ── Prompt retrieval ──────────────────────────────────────────────────────
+
+    def _fetch_remote_prompts(self, n: int) -> list:
+        """
+        Returns MaxCore-generated prompts from the background cache.
+        If cache is not yet warm (background thread still running), tries a
+        synchronous fetch of the first few topics.
+        Returns [] when MaxCore is unreachable.
+        """
+        cached = _cached('maxcore_generated_prompts')
         if cached:
             return cached
 
-        # Use MaxCore model state to steer local generation parameters
-        # (MaxCore doesn't expose a prompt-generation endpoint — we use its
-        #  model metadata to calibrate the local prompt engine instead)
-        mc_domain = 'social' if domain in ('social_media', 'music_video') else \
-                    'advertising' if domain == 'advertising' else 'content'
-        state = _mc_get(f'/api/models/{mc_domain}/state')
+        # Cache cold — do a synchronous mini-fetch (first 5 topics only)
         prompts = []
-        if state and state.get('weights', {}).get('ready'):
-            # MaxCore doesn't expose a prompt-generation endpoint yet.
-            # Use its model metadata (vocab_size, session_count) to calibrate
-            # the diversity of locally-generated prompts — a richer vocab size
-            # means MaxCore has seen more content types, so we bias toward
-            # higher-diversity sampling from the local corpus.
-            vocab_size    = state.get('weights', {}).get('vocab_size', 128)
-            session_count = state.get('session_count', 0)
-            diversity_boost = min(1.0, vocab_size / 200.0 + session_count * 0.01)
-
-            local_pool = (
-                _FALLBACK_PROMPTS.get(domain)
-                or _FALLBACK_PROMPTS.get('music_video')
-                or []
-            )
-            if local_pool:
-                rng = np.random.default_rng(int(diversity_boost * 1e6) + n)
-                padded = []
-                while len(padded) < n:
-                    block = list(local_pool)
-                    rng.shuffle(block)
-                    padded.extend(block)
-                prompts = padded[:n]
-                log.debug(
-                    f'[MCBridge] MaxCore-guided prompts for {domain}: '
-                    f'{len(prompts)} items (diversity_boost={diversity_boost:.2f})'
-                )
+        for topic, platform in _MUSIC_TOPICS[:5]:
+            result = _mc_post('/api/content/generate', {'topic': topic, 'platform': platform})
+            if result and result.get('success'):
+                parts = [topic]
+                hook = (result.get('hook') or '').strip()
+                if hook and len(hook) < 80:
+                    parts.append(hook)
+                kw = ' '.join(h.lstrip('#') for h in result.get('hashtags', []) if h.startswith('#'))
+                if kw:
+                    parts.append(kw)
+                prompts.append(' | '.join(parts))
 
         if prompts:
-            _store(f'prompts_{domain}_{n}', prompts)
+            _store('maxcore_generated_prompts', prompts)
+            log.info(f'[MCBridge] Synchronous mini-fetch: {len(prompts)} prompts')
         return prompts
 
-    def get_training_prompts(self, n: int = 100,
-                             domain: str = 'music_video') -> list:
-        """
-        Return n training prompts for the given domain.
-        Primary source: MaxCore server.
-        Fallback: local _FALLBACK_PROMPTS (deterministically expanded to n items).
-        """
-        if self._check_connection():
-            remote = self._fetch_remote_prompts(domain, n)
-            if remote:
-                return remote[:n] if len(remote) >= n else self._pad_prompts(remote, n)
-
-        local = _FALLBACK_PROMPTS.get(domain) or _FALLBACK_PROMPTS.get('music_video') or []
-        return self._pad_prompts(local, n)
-
-    @staticmethod
-    def _pad_prompts(prompts: list, n: int) -> list:
-        """Cycle and shuffle prompts to reach exactly n items."""
+    def _cycle_to_n(self, prompts: list, n: int) -> list:
+        """Cycle a list of prompts to reach exactly n items (deterministic, no local data)."""
         if not prompts:
-            return [f'music video scene {i}' for i in range(n)]
-        rng    = np.random.default_rng(42)
+            return []
+        rng    = np.random.default_rng(len(prompts) * 100 + n)
         result = []
         while len(result) < n:
             block = list(prompts)
@@ -354,58 +353,65 @@ class DatasetBridge:
             result.extend(block)
         return result[:n]
 
+    def get_training_prompts(self, n: int = 100,
+                             domain: str = 'music_video') -> list:
+        """
+        Return up to n MaxCore-generated training prompts.
+        Returns [] when MaxCore is unreachable — no local fallback.
+        """
+        if not self._check_connection():
+            log.warning(f'[MCBridge] get_training_prompts({n}) skipped — MaxCore offline')
+            return []
+
+        raw = self._fetch_remote_prompts(n)
+        if not raw:
+            log.warning(f'[MCBridge] get_training_prompts({n}) — no prompts available yet')
+            return []
+
+        return self._cycle_to_n(raw, n)
+
     def get_genre_metadata(self, genre: str) -> dict:
         """
         Returns BPM/energy/drop_probability metadata for FiLM conditioning.
-        Checks MaxCore cache first, falls back to local GENRE_METADATA.
+        This is always available — it is conditioning metadata, not content.
         """
         key = genre.lower().replace('-', '_').replace(' ', '_')
-        cached = _cached(f'genre_meta_{key}')
-        if cached:
-            return cached
-
-        if self._check_connection():
-            resp = _mc_post('/api/analyze/sentiment', {
-                'type':    'genre_metadata',
-                'genre':   genre,
-                'fields':  ['bpm_range', 'energy', 'drop_probability', 'visual_style'],
-            })
-            if resp and isinstance(resp, dict) and 'bpm_range' in resp:
-                meta = {
-                    'bpm_range':         tuple(resp['bpm_range']),
-                    'energy':            float(resp.get('energy', 0.7)),
-                    'drop_probability':  float(resp.get('drop_probability', 0.3)),
-                }
-                _store(f'genre_meta_{key}', meta)
-                return meta
-
         return GENRE_METADATA.get(key, {'bpm_range': (100, 130), 'energy': 0.70, 'drop_probability': 0.30})
+
+    # kept as alias so any callers using the old name still work
+    get_scene_metadata = get_genre_metadata
 
     def expand_scene_prompts(self, scene_dict: dict, n_extra_per_scene: int = 50) -> dict:
         """
         Expand a trainer SCENE_PROMPTS dict with MaxCore-sourced prompts.
-        Re-checks connectivity each call so a reconnected MaxCore is used immediately.
-        Returns a new dict with extra prompts added per scene.
+        If MaxCore is unreachable, returns the original dict unchanged (nothing added).
         """
-        self._check_connection()   # refresh — MaxCore may have come back online
+        self._check_connection()
 
-        expanded = {k: list(v) for k, v in scene_dict.items()}
+        if not self._online:
+            log.warning('[MCBridge] expand_scene_prompts skipped — MaxCore offline')
+            return scene_dict
 
         total_extra = len(scene_dict) * n_extra_per_scene
-        all_prompts = self.get_training_prompts(n=total_extra, domain='music_video')
-        all_prompts += self.get_training_prompts(n=total_extra // 2, domain='music_industry')
+        mc_prompts  = self.get_training_prompts(n=total_extra)
 
-        per_scene_pool = self._pad_prompts(all_prompts, total_extra)
-        idx = 0
+        if not mc_prompts:
+            log.warning('[MCBridge] expand_scene_prompts — no MaxCore prompts available yet')
+            return scene_dict
+
+        expanded = {k: list(v) for k, v in scene_dict.items()}
+        pool     = self._cycle_to_n(mc_prompts, total_extra)
+        idx      = 0
         for scene in expanded:
-            chunk = per_scene_pool[idx: idx + n_extra_per_scene]
+            chunk = pool[idx: idx + n_extra_per_scene]
             expanded[scene].extend(chunk)
             idx += n_extra_per_scene
 
-        added = sum(n_extra_per_scene for _ in expanded)
-        source = 'MaxCore 8TB corpus' if self._online else 'local fallback'
-        log.info(f'[MCBridge] Expanded SCENE_PROMPTS: +{added} prompts across {len(expanded)} scenes '
-                 f'(source: {source})')
+        added  = sum(n_extra_per_scene for _ in expanded)
+        log.info(
+            f'[MCBridge] Expanded SCENE_PROMPTS: +{added} prompts across '
+            f'{len(expanded)} scenes (source: MaxCore 8TB corpus)'
+        )
         return expanded
 
     def sample_conditioned_batch(
@@ -413,17 +419,10 @@ class DatasetBridge:
         scene_dict: dict,
         n: int,
         rng: Optional[np.random.Generator] = None,
-    ) -> list[dict]:
+    ) -> list:
         """
-        Sample n training items, each with:
-          - 'prompt': str
-          - 'scene':  str
-          - 'bpm':    float
-          - 'energy': float
-          - 'beat_index': int  (0-3)
-          - 'is_drop': bool
-
-        These map directly to the FiLM conditioning expected by UNetV4 LITE.
+        Sample n training items with FiLM conditioning fields:
+          prompt, scene, genre, bpm, energy, beat_index, is_drop
         """
         if rng is None:
             rng = np.random.default_rng()
@@ -433,17 +432,17 @@ class DatasetBridge:
         items  = []
 
         for _ in range(n):
-            scene  = scenes[rng.integers(len(scenes))]
+            scene   = scenes[rng.integers(len(scenes))]
             prompts = scene_dict.get(scene, ['music video scene'])
             prompt  = prompts[rng.integers(len(prompts))]
 
-            genre   = genres[rng.integers(len(genres))]
-            meta    = GENRE_METADATA[genre]
+            genre        = genres[rng.integers(len(genres))]
+            meta         = GENRE_METADATA[genre]
             bpm_lo, bpm_hi = meta['bpm_range']
-            bpm     = float(rng.integers(bpm_lo, bpm_hi + 1))
-            energy  = float(np.clip(meta['energy'] + rng.normal(0, 0.08), 0.0, 1.0))
-            is_drop = bool(rng.random() < meta['drop_probability'])
-            beat_index = int(rng.integers(0, 4))
+            bpm          = float(rng.integers(bpm_lo, bpm_hi + 1))
+            energy       = float(np.clip(meta['energy'] + rng.normal(0, 0.08), 0.0, 1.0))
+            is_drop      = bool(rng.random() < meta['drop_probability'])
+            beat_index   = int(rng.integers(0, 4))
 
             items.append({
                 'prompt':     prompt,
@@ -460,14 +459,13 @@ class DatasetBridge:
     def status(self) -> dict:
         self._check_connection()
         return {
-            'online':          bool(self._online),
-            'mc_url':          MC_URL or '(not configured)',
-            'mc_key_present':  bool(MC_KEY),
-            'datasets':        self._datasets or [],
-            'dataset_count':   len(self._datasets) if self._datasets else 0,
-            'local_domains':   list(_FALLBACK_PROMPTS.keys()),
-            'genre_count':     len(GENRE_METADATA),
-            'cache_entries':   len(_cache),
+            'online':        bool(self._online),
+            'mc_url':        MC_URL or '(not configured)',
+            'mc_key_present': bool(MC_KEY),
+            'datasets':      self._datasets or [],
+            'dataset_count': len(self._datasets) if self._datasets else 0,
+            'genre_count':   len(GENRE_METADATA),
+            'cache_entries': len(_cache),
         }
 
 
