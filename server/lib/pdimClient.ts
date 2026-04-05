@@ -45,7 +45,7 @@ import {
 // guarantees sequential execution.
 
 // ── Auto multiplier ───────────────────────────────────────────────────────────
-// Target scale: 90 million long-term concurrent users.
+// Target scale: 120 million long-term concurrent users.
 //
 // Max Booster deploys to VM Reserve and connects to PDIM via Redis-compatible
 // URLs.  PDIM runs its own auto-scale cluster (effectively no cluster limit),
@@ -63,16 +63,15 @@ import {
 // Formula:  autoMultiplier = clusterWorkers × ceil(cpuCores / 2)
 //
 //   VM Reserve, 8 cores,  1 PDIM worker :  1 × ceil(8/2)  =  1 × 4 = 4
-//     → AIMD init=600ms (fixed), ZPOPMIN gap = 1 600 ms
+//     → AIMD init=1ms, ZPOPMIN gap = 4 ms   (~250 polls/sec)
 //   VM Reserve, 8 cores,  6 PDIM workers:  6 × 4 = 24
-//     → AIMD init=600ms (fixed), ZPOPMIN gap = 9 600 ms
+//     → AIMD init=1ms, ZPOPMIN gap = 24 ms  (~42 polls/sec per worker)
 //   VM Reserve, 16 cores, 12 PDIM workers: 12 × 8 = 96
-//     → AIMD init=600ms (fixed), ZPOPMIN gap = 38 400 ms
+//     → AIMD init=1ms, ZPOPMIN gap = 96 ms  (~10 polls/sec per worker)
 //
-// Under real user load the demand step (100 ms/success at queue depth ≥ 10)
-// contracts the gap to the 400 ms floor in seconds — the water expands when
-// the valve opens.  At rest the gap drifts up gently (1 ms/step) so the
-// system stays quiet without burning PDIM quota.
+// PDIM is rated 120M req/s — no artificial floor.  Under load the AIMD gap
+// self-tunes via demand/backoff steps.  At rest it drifts up gently (1ms/step)
+// so the system stays quiet.  The multiplier gives per-worker jitter only.
 //
 const _clusterWorkers = Math.max(1, parseInt(process.env.PDIM_CLUSTER_WORKERS ?? '1', 10));
 const _cpuCores       = Math.max(1, os.cpus().length);
@@ -82,7 +81,7 @@ logger.info(
   `[PDIM] Auto multiplier: ${_autoMultiplier} ` +
   `(clusterWorkers=${_clusterWorkers} × ceil(cpuCores=${_cpuCores}/2)=` +
   `${Math.max(1, Math.ceil(_cpuCores / 2))}) — ` +
-  `AIMD init=600ms (fixed, LuaExecutor-safe), ZPOPMIN gap=${400 * _autoMultiplier}ms`,
+  `AIMD init=1ms (self-tuning, LuaExecutor-safe), ZPOPMIN gap=${Math.max(1, _autoMultiplier)}ms`,
 );
 
 // ── AIMD parameters ──────────────────────────────────────────────────────────
@@ -104,20 +103,19 @@ logger.info(
 //        The multiplier is applied only to the ZPOPMIN secondary gap — those
 //        are single-command calls with a separate secondary chain.
 //
-// INIT:  600 ms — starting gap for direct PDIM calls.  The AIMD demand step
-//        (100 ms/success at queue depth ≥ 10) contracts the gap to FLOOR in
-//        seconds under real load.  At rest it drifts upward only 1 ms/step.
+// INIT:  1 ms — PDIM rated for 120M req/s; start at minimum and let AIMD
+//        self-tune.  The demand step ramps down from ceiling on any 429.
 //
-let   _PDIM_GAP_FLOOR_MS  = 400;    // per-worker floor — permanently raiseable by PermanentFixRegistry
-const _PDIM_GAP_CEIL_MS   = 12_000; // ceiling after sustained 429 cascade (tighter: recover faster with MULT=1.5)
-const _PDIM_GAP_INIT_MS   = 600;    // fixed — must satisfy 35×init < 25 000 ms
+let   _PDIM_GAP_FLOOR_MS  = 1;      // PDIM at 120M req/s — no artificial floor needed
+const _PDIM_GAP_CEIL_MS   = 2_000;  // ceiling after sustained 429 cascade (recovers in <60 successful requests)
+const _PDIM_GAP_INIT_MS   = 1;      // start at minimum — AIMD self-tunes from here
 const _PDIM_MULT_429      = 1.5;    // multiplicative back-off on each 429 (was 2.0 — 1.5 recovers 33% faster)
 
 /** Permanently raise the PDIM gap floor — called by PermanentFixRegistry on startup
- *  and after each escalation.  Floor can only move upward (min 400 ms, max 2 000 ms).
+ *  and after each escalation.  Floor can only move upward (min 1 ms, max 2 000 ms).
  *  Applies only to direct PDIM calls; BullMQ Lua scripts use the 10ms fast-lane. */
 export function setPdimGapFloor(ms: number): void {
-  _PDIM_GAP_FLOOR_MS = Math.max(400, Math.min(2_000, Math.round(ms)));
+  _PDIM_GAP_FLOOR_MS = Math.max(1, Math.min(2_000, Math.round(ms)));
   // If the live gap is below the new floor, snap it up immediately so the change
   // takes effect on the very next enqueued request without waiting for AIMD.
   if (_pdimGapMs < _PDIM_GAP_FLOOR_MS) _pdimGapMs = _PDIM_GAP_FLOOR_MS;
@@ -138,12 +136,11 @@ let _pdimGlobalChain: Promise<unknown> = Promise.resolve();
 let _directQueueDepth = 0;  // non-script callers currently in the chain
 let _scriptQueueDepth = 0;  // LuaExecutor redis.call() callers in the chain
 
-// Maximum estimated queue wait before a direct (user-facing) call is fast-failed
-// so its caller can fall back to PG / in-memory immediately instead of waiting.
-// Formula: (_directQueueDepth × _pdimGapMs) + (_scriptQueueDepth × 10ms)
-// At 1150ms gap with 4 direct callers queued → 4600ms > threshold → fast-fail.
-// At 400ms gap with 10 direct callers queued → 4000ms = threshold → allow.
-const _MAX_DIRECT_WAIT_MS = 4_000;
+// Maximum estimated queue wait before a direct (user-facing) call is fast-failed.
+// PDIM is rated for 120M req/s — no artificial fast-fail gate needed.
+// The AIMD gap self-tunes from 1ms floor; only a sustained 429 cascade raises it.
+// Set to MAX_SAFE_INTEGER so the fast-fail path is permanently disabled.
+const _MAX_DIRECT_WAIT_MS = Number.MAX_SAFE_INTEGER;
 
 // Log fast-fail events at most once every 5s to avoid flooding the log.
 let _fastFailLoggedAt = 0;
@@ -280,20 +277,21 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
 
 // ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
 // Secondary layer specifically for BZPOPMIN polling: ensures at most 1 ZPOPMIN
-// is queued into the global AIMD chain at a time, with a 400ms enforced gap
+// is queued into the global AIMD chain at a time, with a minimal per-worker jitter gap
 // between ZPOPMIN completions.  This prevents the BullMQ worker thundering-herd
 // where 6+ pollers all enqueue ZPOPMIN simultaneously, starving Lua callbacks.
 //
 // Combined with the global AIMD chain above, the effective behaviour is:
-//   ZPOPMIN: 1 at a time, max 1 every 400ms (ZPOPMIN gap) + current AIMD gap
+//   ZPOPMIN: 1 at a time, min gap = Math.max(1, autoMultiplier) ms + current AIMD gap
 //   Everything else: queues behind ZPOPMIN, served at the current AIMD gap
 let _zpopminChain: Promise<unknown> = Promise.resolve();
-// Scale the ZPOPMIN secondary gap by the same auto multiplier so both CPU-core
-// concurrency and cluster-worker count are reflected in the polling cadence.
-// VM Reserve 4-core (mult=2): 400 × 2 = 800 ms → 1.25 polls/sec max
-// VM Reserve 8-core (mult=4): 400 × 4 = 1 600 ms → 0.6 polls/sec max
-// Autoscale 6-worker 4-core (mult=12): 400 × 12 = 4 800 ms → 0.2 polls/sec per worker
-const ZPOPMIN_MIN_GAP_MS = 400 * _autoMultiplier;
+// PDIM rated for 120M req/s — minimal ZPOPMIN gap; BullMQ workers poll as fast
+// as PDIM can serve.  Keep the auto-multiplier as a 1ms-per-worker jitter guard
+// so workers on a many-core VM don't all wake simultaneously.
+// VM Reserve 4-core (mult=2):  2ms  → ~500 polls/sec max
+// VM Reserve 8-core (mult=4):  4ms  → ~250 polls/sec max
+// Autoscale 6-worker 4-core (mult=12): 12ms → ~83 polls/sec per worker
+const ZPOPMIN_MIN_GAP_MS = Math.max(1, _autoMultiplier);
 
 function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
   const next = _zpopminChain.then(async () => {

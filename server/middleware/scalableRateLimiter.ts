@@ -173,11 +173,11 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
   return limiter.middleware();
 };
 
-export const globalScalableRateLimiter = buildDistributedGlobal(60000, 10000, 'global');
+export const globalScalableRateLimiter = buildDistributedGlobal(60000, 120_000, 'global');
 
-export const apiRateLimiter = buildDistributedGlobal(60000, 5000, 'api');
+export const apiRateLimiter = buildDistributedGlobal(60000, 60_000, 'api');
 
-export const aiRateLimiter = buildDistributedGlobal(60000, 2000, 'ai');
+export const aiRateLimiter = buildDistributedGlobal(60000, 24_000, 'ai');
 
 export const authRateLimiter = buildDistributedGlobal(900000, 200, 'auth');
 

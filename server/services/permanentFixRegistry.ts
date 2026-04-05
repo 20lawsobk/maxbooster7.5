@@ -131,7 +131,7 @@ interface Overrides {
 }
 
 const DEFAULTS: Overrides = {
-  pdimGapFloorMs: 400,
+  pdimGapFloorMs: 1,       // PDIM rated for 120M req/s — no artificial floor
   luaWaitMs:      55_000,
   heapWarnRatio:  0.80,
   heapPatchRatio: 0.92,
@@ -211,7 +211,11 @@ class PermanentFixRegistry {
 
       let changed = false;
 
-      if (rawGapFloor) {
+      // Only restore a stored escalation if the default floor is > 1ms.
+      // When DEFAULTS.pdimGapFloorMs === 1 the system is configured for
+      // maximum-capacity PDIM (120M req/s) and stored escalations from a
+      // previously rate-limited deployment are now stale — discard them.
+      if (rawGapFloor && DEFAULTS.pdimGapFloorMs > 1) {
         const v = parseInt(rawGapFloor, 10);
         if (!isNaN(v) && v > DEFAULTS.pdimGapFloorMs) {
           this._overrides.pdimGapFloorMs = v;
@@ -264,7 +268,7 @@ class PermanentFixRegistry {
             const { setPdimAdaptiveGap } = await import('../lib/pdimClient.js');
             if (typeof setPdimAdaptiveGap === 'function') {
               setPdimAdaptiveGap(saved);
-              logger.info(`[PermanentFixer] ✅ AIMD gap restored to ${saved}ms (session continuity — avoids cold 600ms restart)`);
+              logger.info(`[PermanentFixer] ✅ AIMD gap restored to ${saved}ms (session continuity — AIMD will self-tune from here)`);
             }
           } catch { /* optional */ }
         }
