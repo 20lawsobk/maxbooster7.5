@@ -206,6 +206,11 @@ jobs:
           NODE_ENV: production
           SKIP_BOOSTERSTATE: '1'
 
+      - name: Copy logo assets into web dir
+        run: |
+          cp client/public/logo.png dist/public/logo.png 2>/dev/null || true
+          cp client/public/favicon.png dist/public/favicon.png 2>/dev/null || true
+
       - name: Sync Capacitor Android
         run: |
           if [ ! -d "android" ]; then npx cap add android; fi
