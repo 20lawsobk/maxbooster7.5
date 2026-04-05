@@ -144,7 +144,7 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-3">
               <div className="sidebar-logo-icon">
-                <Music className="w-4 h-4 text-amber-400" />
+                <img src="/logo.png" alt="B-Lawz Music" className="w-full h-full object-cover rounded-[9px]" />
               </div>
               <div className="flex flex-col">
                 <h2 className="text-base font-black tracking-tight sidebar-brand-text">Max Booster</h2>
