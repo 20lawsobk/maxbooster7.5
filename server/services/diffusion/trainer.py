@@ -706,6 +706,17 @@ SCENE_PROMPTS = {
     ],
 }
 
+# ── MaxCore Dataset Bridge — expand SCENE_PROMPTS from 8TB corpus ─────────────
+# Runs at import time (background thread-safe) — adds 50 extra prompts per scene
+# sourced from MaxCore's music industry + social media datasets.  Falls back
+# silently if the MaxCore server is offline.
+try:
+    from diffusion.maxcore_dataset_bridge import get_bridge as _get_bridge
+    _bridge = _get_bridge()
+    SCENE_PROMPTS = _bridge.expand_scene_prompts(SCENE_PROMPTS, n_extra_per_scene=50)
+except Exception as _bridge_err:
+    pass  # MaxCore offline or bridge not available — continue with local prompts
+
 # Flat list of all (scene, prompt) pairs — for random sampling
 ALL_PAIRS = [
     (scene, prompt)

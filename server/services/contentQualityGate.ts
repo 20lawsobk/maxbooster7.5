@@ -34,6 +34,7 @@ import {
 import { pocketManager } from '../pocket-dimension/index.js';
 import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
 import { pushTrainingFeedback } from './maxcoreSync.js';
+import { getCalibratedThresholds } from './maxcoreScoreCalibrator.js';
 
 export interface QualityGateResult {
   winner: ContentVariant;
@@ -44,8 +45,10 @@ export interface QualityGateResult {
   storedKey: string | null;
 }
 
-const DEFAULT_THRESHOLD    = 81;   // 90% of Veo's ~90 baseline score
-const VEO_PRESSURE_FLOOR   = 73;   // absolute minimum — never publish below this
+const _DEFAULT_THRESHOLD    = 81;   // 90% of Veo's ~90 baseline score (overridden by calibrator)
+const _VEO_PRESSURE_FLOOR   = 73;   // absolute minimum — overridden by MaxCore calibration
+const DEFAULT_THRESHOLD  = () => getCalibratedThresholds().gate  ?? _DEFAULT_THRESHOLD;
+const VEO_PRESSURE_FLOOR = () => getCalibratedThresholds().floor ?? _VEO_PRESSURE_FLOOR;
 const MAX_ROUNDS           = 10;   // A/B retry budget
 const VARIANTS_PER_ROUND   = 30;   // 30+ variants per batch — maximises quality hit rate
                                    // and shortens the time to reach the 81/100 threshold
@@ -148,11 +151,12 @@ export class ContentQualityGate {
     if (!winner) {
       const best = allTriedVariants.sort((a, b) => b.scores.overall - a.scores.overall)[0];
 
-      if (!best || best.scores.overall < VEO_PRESSURE_FLOOR) {
+      const pressureFloor = VEO_PRESSURE_FLOOR();
+      if (!best || best.scores.overall < pressureFloor) {
         logger.warn(
           `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
           `best score ${best?.scores.overall.toFixed(1) ?? 'N/A'} is below ` +
-          `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Content rejected to protect quality.`
+          `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality.`
         );
         return null;
       }
@@ -162,7 +166,7 @@ export class ContentQualityGate {
       logger.warn(
         `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
         `using best available: score=${winner.scores.overall.toFixed(1)} ` +
-        `(above pressure floor ${VEO_PRESSURE_FLOOR}, below threshold ${threshold})`
+        `(above pressure floor ${pressureFloor}, below threshold ${threshold})`
       );
     }
 
@@ -192,7 +196,7 @@ export class ContentQualityGate {
         const pdimVal = await pdim.get(`mbs:quality:threshold:${userId}`);
         if (pdimVal !== null) {
           const parsed = parseFloat(pdimVal);
-          if (!isNaN(parsed) && parsed >= VEO_PRESSURE_FLOOR) {
+          if (!isNaN(parsed) && parsed >= VEO_PRESSURE_FLOOR()) {
             return parsed;
           }
         }
@@ -208,10 +212,10 @@ export class ContentQualityGate {
         .from(autopilotPreferences)
         .where(eq(autopilotPreferences.userId, userId))
         .limit(1);
-      const stored = prefs?.contentQualityThreshold ?? DEFAULT_THRESHOLD;
-      return Math.max(stored, DEFAULT_THRESHOLD);
+      const stored = prefs?.contentQualityThreshold ?? DEFAULT_THRESHOLD();
+      return Math.max(stored, DEFAULT_THRESHOLD());
     } catch {
-      return DEFAULT_THRESHOLD;
+      return DEFAULT_THRESHOLD();
     }
   }
 
@@ -271,8 +275,8 @@ export class ContentQualityGate {
         // Punching above the platform's norm → raise the bar by 1 point (max 95)
         newThreshold = Math.min(95, currentThreshold + 1);
       } else if (engagementRate < low) {
-        // Below the platform's floor → relax by 1 point (floor = VEO_PRESSURE_FLOOR)
-        newThreshold = Math.max(VEO_PRESSURE_FLOOR, currentThreshold - 1);
+        // Below the platform's floor → relax by 1 point (floor = calibrated pressure floor)
+        newThreshold = Math.max(VEO_PRESSURE_FLOOR(), currentThreshold - 1);
       }
 
       if (newThreshold !== currentThreshold && isPdimConfigured()) {

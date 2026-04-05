@@ -7,6 +7,7 @@ import { advancedSocialAIService, type AdvancedContentRequest, type ContentScori
 import { pythonAIService } from './pythonAIService.js';
 import { MaxCoreAIClient } from './unifiedAIController.js';
 import { platformAlgorithmOptimizer } from './platformAlgorithmOptimizer.js';
+import { getCalibratedWeights } from './maxcoreScoreCalibrator.js';
 
 // ── Veo Quality Gate Calibration ─────────────────────────────────────────────
 // Google's Veo model produces content that consistently scores ~90–95 on this
@@ -593,17 +594,19 @@ class ContentQualityPipeline {
 
     const platformPenalty = platformOpt.isValid ? 0 : Math.min(10, platformOpt.issues.length * 3);
 
+    // Use MaxCore-calibrated weights when available, fall back to defaults
+    const w = getCalibratedWeights();
     const overall = Math.max(0, Math.min(100, Math.round(
-      engagement                * 0.25 +
-      hookStrength              * 0.18 +
-      callToActionEffectiveness * 0.13 +
-      sentiment                 * 0.10 +
-      clarity                   * 0.08 +
-      brandAlignment            * 0.08 +
-      algorithmAlignment        * 0.08 +
-      specificity               * 0.05 +
-      emotionalArc              * 0.03 +
-      narrativeAuthenticity     * 0.02 -
+      engagement                * w.engagement +
+      hookStrength              * w.hookStrength +
+      callToActionEffectiveness * w.callToActionEffectiveness +
+      sentiment                 * w.sentiment +
+      clarity                   * w.clarity +
+      brandAlignment            * w.brandAlignment +
+      algorithmAlignment        * w.algorithmAlignment +
+      specificity               * w.specificity +
+      emotionalArc              * w.emotionalArc +
+      narrativeAuthenticity     * w.narrativeAuthenticity -
       platformPenalty
     )));
 

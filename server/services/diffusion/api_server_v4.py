@@ -697,6 +697,23 @@ def training_status():
         return dict(_train_status)
 
 
+@app.get('/dataset/status')
+def dataset_status():
+    """Return bridge connectivity info and prompt-pool size."""
+    try:
+        from diffusion.maxcore_dataset_bridge import get_bridge as _get_bridge
+        bridge = _get_bridge()
+        return bridge.status()
+    except Exception as exc:
+        all_pairs = getattr(trainer, 'ALL_PAIRS', [])
+        return {
+            'connected':    False,
+            'source':       'local',
+            'total_prompts': len(all_pairs),
+            'error':        str(exc),
+        }
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

@@ -921,6 +921,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           initMaxCoreSync().catch((e: any) => logger.warn('[MaxCoreSync] Init error:', e?.message));
         }).catch(() => {});
 
+        // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus
+        import('./services/maxcoreScoreCalibrator.js').then(({ initScoreCalibrator }) => {
+          initScoreCalibrator();
+        }).catch(() => {});
+
         // Diffusion self-training: starts 60s after boot so server is stable first
         setTimeout(() => {
           import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
