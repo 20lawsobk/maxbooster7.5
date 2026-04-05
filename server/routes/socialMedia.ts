@@ -2001,10 +2001,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         });
         if (result.success) {
           ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
-          logger.info(`[VideoGen] Job ${jobId} done via ${result.source || 'renderer'}`);
+          logger.info(`[VideoGen] Job ${jobId} done via ${result.source || 'renderer'} — url=${result.url}`);
         } else {
-          ffmpegJobs.set(jobId, { status: 'error', error: result.error || 'Video generation failed', createdAt: Date.now() });
-          logger.error(`[VideoGen] Job ${jobId} failed: ${result.error}`);
+          const errMsg = result.error || 'Video generation failed (no error message)';
+          ffmpegJobs.set(jobId, { status: 'error', error: errMsg, createdAt: Date.now() });
+          logger.error(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
         }
       } catch (err: any) {
         ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });

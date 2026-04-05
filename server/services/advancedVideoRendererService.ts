@@ -209,7 +209,16 @@ export async function renderVideo(inputOpts: VideoGenOptions): Promise<VideoGenR
 
   // ── Stage 2: FFmpeg renderer (MaxCore local pipeline) ─────────────────────────
   logger.info(`[AdvancedVideoRenderer] Stage 2 — FFmpeg renderer starting (MaxCore local${maxcoreScriptUsed ? ' + AI script' : ''})`);
-  const ffmpegResult = await generateVideoFFmpeg(opts);
+  let ffmpegResult: VideoGenResult;
+  try {
+    ffmpegResult = await generateVideoFFmpeg(opts);
+  } catch (ffErr: any) {
+    logger.error('[AdvancedVideoRenderer] Stage 2 FFmpeg threw:', ffErr?.message || ffErr);
+    return { success: false, error: `FFmpeg render threw: ${ffErr?.message || 'unknown error'}`, source: 'FFmpegError', processing_time_ms: Date.now() - startMs };
+  }
+  if (!ffmpegResult.success) {
+    logger.error('[AdvancedVideoRenderer] Stage 2 FFmpeg returned failure:', ffmpegResult.error);
+  }
   return {
     ...ffmpegResult,
     source: 'MaxCoreAI',
