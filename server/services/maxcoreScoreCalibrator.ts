@@ -1,38 +1,33 @@
 /**
  * MaxCore Score Calibrator
  *
- * Bridges the 8TB MaxCore dataset corpus (music industry, social media
+ * Bridges the growing 8TB MaxCore dataset corpus (music industry, social media
  * management, advertising performance) with the local VeoGate quality
  * scoring system.
  *
  * What it does:
  *   1. Reads real-world engagement performance from the local DB
- *      (autopilotLearningData + socialCampaigns — last 90 days)
- *   2. Sends a compressed performance summary to the MaxCore server,
- *      which cross-references it against its 8TB corpus to surface
- *      industry-calibrated insights
- *   3. Computes calibrated score weights (which scoring dimension actually
- *      predicts high engagement for THIS user base vs the current hard-coded
- *      0.25/0.18/0.13 …)
- *   4. Returns calibrated thresholds (gate + floor) adjusted for what
- *      actually performs in music-industry social contexts
+ *      (autopilotLearningData — last 90 days) — optional enrichment
+ *   2. Fires all 5 content-signal calls to MaxCore in PARALLEL via
+ *      Promise.allSettled — total latency = one call, not five
+ *   3. Fetches all 4 model-state endpoints in parallel via Promise.allSettled
+ *   4. Merges generation signals + training-depth weights into calibrated
+ *      ScoreWeights and CalibratedThresholds
  *
- * Falls back to default weights/thresholds (no change to current behaviour)
- * whenever MaxCore is offline or data is insufficient.
+ * Refresh cycle: startup + every 6 hours
+ *   (MaxCore's 8TB dataset grows automatically — 6 h catches new model training
+ *    runs without hammering the server)
  *
- * Refresh cycle: on startup + every 24 h.
+ * Falls back to default weights/thresholds when MaxCore is offline.
  */
 
-import { logger }    from '../logger.js';
-import { db }        from '../db';
-import { MaxCoreAIClient } from './maxcoreClient.js';
-import {
-  autopilotLearningData,
-  socialCampaigns,
-} from '@shared/schema';
-import { desc, gte, sql } from 'drizzle-orm';
+import { logger }           from '../logger.js';
+import { db }               from '../db';
+import { MaxCoreAIClient }  from './maxcoreClient.js';
+import { autopilotLearningData } from '@shared/schema';
+import { desc, gte }        from 'drizzle-orm';
 
-// ── Default weights (current hard-coded values in contentQualityPipeline.ts) ─
+// ── Default weights ───────────────────────────────────────────────────────────
 export interface ScoreWeights {
   engagement:                number;
   hookStrength:              number;
@@ -47,8 +42,8 @@ export interface ScoreWeights {
 }
 
 export interface CalibratedThresholds {
-  gate:  number;   // VEO_QUALITY_GATE equivalent
-  floor: number;   // VEO_PRESSURE_FLOOR equivalent
+  gate:  number;
+  floor: number;
 }
 
 const DEFAULT_WEIGHTS: ScoreWeights = {
@@ -69,36 +64,30 @@ const DEFAULT_THRESHOLDS: CalibratedThresholds = {
   floor: 73,
 };
 
-// Cache TTL: 24 hours
-const CALIBRATION_TTL_MS = 24 * 60 * 60 * 1_000;
+// 6 hours — short enough to pick up new MaxCore model training runs as the
+// dataset grows, long enough to avoid hammering the server under normal load.
+const CALIBRATION_TTL_MS = 6 * 60 * 60 * 1_000;
 
-let _cachedWeights:     ScoreWeights            | null = null;
-let _cachedThresholds:  CalibratedThresholds    | null = null;
-let _lastCalibrated = 0;
-let _calibrating    = false;
+let _cachedWeights:    ScoreWeights         | null = null;
+let _cachedThresholds: CalibratedThresholds | null = null;
+let _lastCalibrated  = 0;
+let _calibrating     = false;
 
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
-/** Returns live calibrated weights (falls back to defaults when not ready). */
 export function getCalibratedWeights(): ScoreWeights {
   return _cachedWeights ?? DEFAULT_WEIGHTS;
 }
 
-/** Returns live calibrated thresholds (falls back to defaults when not ready). */
 export function getCalibratedThresholds(): CalibratedThresholds {
   return _cachedThresholds ?? DEFAULT_THRESHOLDS;
 }
 
-/** True once first calibration has completed (may still be default values). */
 export function isCalibrated(): boolean {
   return _lastCalibrated > 0;
 }
 
-/**
- * Trigger a calibration cycle.  Safe to call multiple times — ignores concurrent calls.
- * Called automatically on startup and every CALIBRATION_TTL_MS.
- */
 export async function runCalibration(): Promise<void> {
   if (_calibrating) return;
   if (Date.now() - _lastCalibrated < CALIBRATION_TTL_MS && _lastCalibrated > 0) return;
@@ -107,28 +96,19 @@ export async function runCalibration(): Promise<void> {
   try {
     logger.info('[ScoreCalibrator] Starting calibration cycle against MaxCore 8TB corpus …');
 
-    // Local engagement summary (optional — enriches calibration but not required).
-    // MaxCore content generation signals are always fetched regardless.
+    // Local engagement summary is optional enrichment — never a gate condition.
     const summary = await buildPerformanceSummary();
     if (!summary) {
       logger.info('[ScoreCalibrator] No local engagement data yet — relying on MaxCore generation signals');
     }
 
-    // Always call MaxCore — fetchMaxCoreCalibration uses POST /api/content/generate
-    // which does NOT require local data.  summary may be null here; that is fine.
-    const calibration = await fetchMaxCoreCalibration(summary!);
+    // Always call MaxCore. POST /api/content/generate does not require local data.
+    const calibration = await fetchMaxCoreCalibration(summary);
     if (calibration) {
-      applyCalibration(calibration, summary ?? {
-        totalPosts: 0, avgEngagementRate: 0, platformBreakdown: {},
-        hookTypeBreakdown: {}, contentTypeBreakdown: {}, topPerformers: [],
-        percentileP50: 0, percentileP75: 0, percentileP90: 0,
-      });
+      applyCalibration(calibration, summary ?? EMPTY_SUMMARY);
     } else if (summary) {
-      // MaxCore unavailable — fall back to pure local data calibration
       applyDataDrivenCalibration(summary);
     } else {
-      // No MaxCore AND no local data — retain defaults, mark as calibrated so we
-      // don't spam retries (next attempt is in 24h or on restart)
       logger.info('[ScoreCalibrator] MaxCore unreachable and no local data — retaining defaults');
     }
 
@@ -141,7 +121,7 @@ export async function runCalibration(): Promise<void> {
       `hook=${(_cachedWeights?.hookStrength ?? DEFAULT_WEIGHTS.hookStrength).toFixed(3)}`
     );
   } catch (err: any) {
-    logger.warn(`[ScoreCalibrator] Calibration failed: ${err.message} — retaining previous values`);
+    logger.warn(`[ScoreCalibrator] Calibration error: ${err.message} — retaining previous values`);
   } finally {
     _calibrating = false;
   }
@@ -162,16 +142,21 @@ interface PerformanceSummary {
   percentileP90:        number;
 }
 
+const EMPTY_SUMMARY: PerformanceSummary = {
+  totalPosts: 0, avgEngagementRate: 0, platformBreakdown: {},
+  hookTypeBreakdown: {}, contentTypeBreakdown: {}, topPerformers: [],
+  percentileP50: 0, percentileP75: 0, percentileP90: 0,
+};
+
 async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
   try {
     const since90 = new Date(Date.now() - 90 * 24 * 60 * 60 * 1_000);
 
-    // Pull up to 2000 recent records from autopilotLearningData
     const rows = await db
       .select({
-        platform:      autopilotLearningData.platform,
-        contentType:   autopilotLearningData.contentType,
-        hookType:      autopilotLearningData.hookType,
+        platform:       autopilotLearningData.platform,
+        contentType:    autopilotLearningData.contentType,
+        hookType:       autopilotLearningData.hookType,
         engagementRate: autopilotLearningData.engagementRate,
       })
       .from(autopilotLearningData)
@@ -193,27 +178,18 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
 
     for (const r of rows) {
       const eng = r.engagementRate ?? 0;
-      const plt = r.platform ?? 'unknown';
-      (byPlatform[plt]     ??= []).push(eng);
-      const hk = r.hookType ?? 'unknown';
-      (byHook[hk]          ??= []).push(eng);
-      const ct = r.contentType ?? 'unknown';
-      (byContentType[ct]   ??= []).push(eng);
+      (byPlatform[r.platform ?? 'unknown']    ??= []).push(eng);
+      (byHook[r.hookType ?? 'unknown']         ??= []).push(eng);
+      (byContentType[r.contentType ?? 'unknown'] ??= []).push(eng);
     }
 
     const aggregate = (m: Record<string, number[]>) =>
       Object.fromEntries(
-        Object.entries(m).map(([k, v]) => [
-          k,
-          { count: v.length, avgEng: v.reduce((s, x) => s + x, 0) / v.length },
-        ])
+        Object.entries(m).map(([k, v]) => [k, {
+          count:  v.length,
+          avgEng: v.reduce((s, x) => s + x, 0) / v.length,
+        }])
       );
-
-    // Top 10 performers
-    const topPerformers = rows
-      .filter(r => (r.engagementRate ?? 0) >= p90)
-      .slice(0, 10)
-      .map(r => ({ hookType: r.hookType, contentType: r.contentType, engRate: r.engagementRate ?? 0 }));
 
     return {
       totalPosts:           rows.length,
@@ -221,10 +197,13 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
       platformBreakdown:    aggregate(byPlatform),
       hookTypeBreakdown:    aggregate(byHook),
       contentTypeBreakdown: aggregate(byContentType),
-      topPerformers,
-      percentileP50:        p50,
-      percentileP75:        p75,
-      percentileP90:        p90,
+      topPerformers:        rows
+        .filter(r => (r.engagementRate ?? 0) >= p90)
+        .slice(0, 10)
+        .map(r => ({ hookType: r.hookType, contentType: r.contentType, engRate: r.engagementRate ?? 0 })),
+      percentileP50: p50,
+      percentileP75: p75,
+      percentileP90: p90,
     };
   } catch (err: any) {
     logger.debug(`[ScoreCalibrator] DB query error: ${err.message}`);
@@ -240,15 +219,14 @@ interface MaxCoreCalibrationResponse {
   gate?:       number;
   floor?:      number;
   confidence?: number;
-  insights?:   string[];
 }
 
 interface MaxCoreModelState {
-  domain:         string;
-  version:        string;
-  trained_at:     string;
-  session_count:  number;
-  loss:           number | null;
+  domain:        string;
+  version:       string;
+  trained_at:    string;
+  session_count: number;
+  loss:          number | null;
   weights?: {
     embed_dim:  number;
     n_layers:   number;
@@ -258,66 +236,73 @@ interface MaxCoreModelState {
 }
 
 interface MaxCoreGenerateResponse {
-  success:            boolean;
-  platform:           string;
-  caption?:           string;
-  hook?:              string;
-  body?:              string;
-  cta?:               string;
-  hashtags?:          string[];
-  source?:            string;
+  success:             boolean;
+  platform:            string;
+  hook?:               string;
+  body?:               string;
+  cta?:                string;
+  hashtags?:           string[];
   processing_time_ms?: number;
 }
 
-// Music topics sent to POST /api/content/generate for calibration signals.
+// Music topics for calibration — spread across genres and platforms so
+// MaxCore's growing corpus is sampled broadly.
 const _CALIBRATION_TOPICS: Array<{ topic: string; platform: string }> = [
-  { topic: 'new music release hip-hop artist',   platform: 'instagram' },
+  { topic: 'new music release hip-hop artist',    platform: 'instagram' },
   { topic: 'viral music video drop announcement', platform: 'tiktok'    },
   { topic: 'album launch streaming premiere',     platform: 'youtube'   },
   { topic: 'music artist brand collaboration',    platform: 'instagram' },
   { topic: 'concert tour announcement live show', platform: 'tiktok'    },
 ];
 
+// Hard cap on the entire content-signal batch. Individual generate() calls
+// may retry up to 3×; this ensures calibration never hangs longer than this
+// even if MaxCore is under load and every retry is timing out.
+const SIGNAL_FETCH_TIMEOUT_MS = 25_000;
+
 /**
- * Calls POST /api/content/generate (MaxCore remote ONLY — no local fallback)
- * for a set of music topics and extracts platform-specific content signals.
- *
- * Signals derived:
- *  - Platform hook diversity    → hookStrength weight
- *  - CTA pattern richness       → callToActionEffectiveness weight
- *  - Hashtag count per platform → algorithmAlignment weight
- *  - Cross-platform coverage    → engagement weight
+ * Fire all 5 calibration generate calls in PARALLEL using Promise.allSettled,
+ * bounded by SIGNAL_FETCH_TIMEOUT_MS.  Any topics that complete within the
+ * window are used; the rest are discarded.  Partial results (≥1 success) are
+ * always enough to derive calibration weights.
  */
 async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | null> {
-  const results: MaxCoreGenerateResponse[] = [];
+  // Race each topic against the wall-clock cap so retries cannot pile up
+  const timeout = SIGNAL_FETCH_TIMEOUT_MS;
+  const withTimeout = (p: Promise<MaxCoreGenerateResponse | null>) =>
+    Promise.race([
+      p,
+      new Promise<null>(res => setTimeout(() => res(null), timeout)),
+    ]);
 
-  for (const { topic, platform } of _CALIBRATION_TOPICS) {
-    const r = await MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
-      '/api/content/generate',
-      { topic, platform }
-    );
-    if (r?.success) results.push(r);
+  const settled = await Promise.allSettled(
+    _CALIBRATION_TOPICS.map(({ topic, platform }) =>
+      withTimeout(
+        MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
+          '/api/content/generate',
+          { topic, platform }
+        )
+      )
+    )
+  );
+
+  const results: MaxCoreGenerateResponse[] = [];
+  for (const s of settled) {
+    if (s.status === 'fulfilled' && s.value?.success) {
+      results.push(s.value);
+    }
   }
 
   if (results.length === 0) return null;
 
-  // ── Derive weight signals from MaxCore generation patterns ───────────────
-  const platforms = [...new Set(results.map(r => r.platform))];
-  const hooks     = results.map(r => r.hook ?? '').filter(Boolean);
-  const ctas      = results.map(r => r.cta  ?? '').filter(Boolean);
+  const platforms   = [...new Set(results.map(r => r.platform))];
+  const hooks       = results.map(r => r.hook ?? '').filter(Boolean);
+  const ctas        = results.map(r => r.cta  ?? '').filter(Boolean);
   const avgHashtags = results.reduce((s, r) => s + (r.hashtags?.length ?? 0), 0) / results.length;
 
-  // Hook diversity: unique hooks / total → higher = MaxCore varies hooks well
-  const hookDiversity = hooks.length > 0
-    ? new Set(hooks).size / hooks.length
-    : 0;
-
-  // CTA richness: avg word count of CTAs — longer CTAs → stronger CTA signal
-  const ctaRichness = ctas.length > 0
-    ? ctas.reduce((s, c) => s + c.split(' ').length, 0) / ctas.length / 10
-    : 0;
-
-  // Platform coverage: how many distinct platforms responded
+  const hookDiversity    = hooks.length > 0 ? new Set(hooks).size / hooks.length : 0;
+  const ctaRichness      = ctas.length  > 0
+    ? ctas.reduce((s, c) => s + c.split(' ').length, 0) / ctas.length / 10 : 0;
   const platformCoverage = platforms.length / _CALIBRATION_TOPICS.length;
 
   logger.info(
@@ -327,40 +312,45 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
     `avgHashtags=${avgHashtags.toFixed(1)} platforms=${platforms.join(',')}`
   );
 
-  const weights: Partial<ScoreWeights> = {
-    hookStrength:              Math.min(0.32, DEFAULT_WEIGHTS.hookStrength              + hookDiversity  * 0.10),
-    callToActionEffectiveness: Math.min(0.20, DEFAULT_WEIGHTS.callToActionEffectiveness + ctaRichness    * 0.05),
+  return {
+    hookStrength:              Math.min(0.32, DEFAULT_WEIGHTS.hookStrength              + hookDiversity    * 0.10),
+    callToActionEffectiveness: Math.min(0.20, DEFAULT_WEIGHTS.callToActionEffectiveness + ctaRichness      * 0.05),
     algorithmAlignment:        Math.min(0.15, DEFAULT_WEIGHTS.algorithmAlignment        + (avgHashtags / 10) * 0.04),
     engagement:                Math.min(0.30, DEFAULT_WEIGHTS.engagement                + platformCoverage * 0.04),
   };
-
-  return weights;
 }
 
 /**
- * Derives calibration from MaxCore's four model-state endpoints AND
- * the live POST /api/content/generate generation service.
- *
- * Sources:
- *  - /api/models/{social|advertising|content|engagement}/state → training depth weights
- *  - POST /api/content/generate                                → live generation signals
+ * Fetch all 4 MaxCore model-state endpoints in PARALLEL via Promise.allSettled.
+ * A single slow or failed endpoint does not block the others.
+ */
+async function fetchModelStates(): Promise<Array<{ domain: string; state: MaxCoreModelState | null }>> {
+  const domains = ['social', 'advertising', 'content', 'engagement'] as const;
+  const settled = await Promise.allSettled(
+    domains.map(d => MaxCoreAIClient.get<MaxCoreModelState>(`/api/models/${d}/state`))
+  );
+  return domains.map((d, i) => ({
+    domain: d,
+    state:  settled[i].status === 'fulfilled' ? settled[i].value : null,
+  }));
+}
+
+/**
+ * Derives calibration from MaxCore's model-state endpoints AND
+ * live POST /api/content/generate generation signals — all in parallel.
  */
 async function fetchMaxCoreCalibration(
-  summary: PerformanceSummary
+  summary: PerformanceSummary | null
 ): Promise<MaxCoreCalibrationResponse | null> {
   try {
-    // ── 1. Fetch model states ───────────────────────────────────────────────
-    const domains = ['social', 'advertising', 'content', 'engagement'] as const;
-    const [states, contentSignals] = await Promise.all([
-      Promise.all(domains.map(d => MaxCoreAIClient.get<MaxCoreModelState>(`/api/models/${d}/state`))),
+    // Fire model-state fetches AND content-signal fetches simultaneously
+    const [stateResults, contentSignals] = await Promise.all([
+      fetchModelStates(),
       fetchMaxCoreContentSignals(),
     ]);
 
-    const ready = states
-      .map((s, i) => ({ domain: domains[i], state: s }))
-      .filter(({ state }) => state?.weights?.ready === true);
+    const ready = stateResults.filter(({ state }) => state?.weights?.ready === true);
 
-    // If neither model states nor content signals are available, bail out
     if (ready.length === 0 && !contentSignals) return null;
 
     if (ready.length > 0) {
@@ -370,7 +360,7 @@ async function fetchMaxCoreCalibration(
       );
     }
 
-    // ── 2. Training-depth weight adjustments ────────────────────────────────
+    // Training-depth adjustments (only fires once MaxCore has been trained)
     const trained = ready.filter(({ state }) =>
       (state!.session_count ?? 0) > 0 && state!.loss != null
     );
@@ -382,42 +372,41 @@ async function fetchMaxCoreCalibration(
 
     if (trained.length > 0) {
       const totalSessions = trained.reduce((s, { state }) => s + (state!.session_count ?? 0), 0);
-      const domainShare = (dom: string): number => {
+      const domainShare = (dom: string) => {
         const t = trained.find(r => r.domain === dom);
         return t ? (t.state!.session_count ?? 0) / Math.max(totalSessions, 1) : 0;
       };
 
       depthWeights = {
-        hookStrength:              Math.min(0.35, DEFAULT_WEIGHTS.hookStrength              + domainShare('social')      * 0.08),
-        engagement:                Math.min(0.30, DEFAULT_WEIGHTS.engagement                + domainShare('engagement')  * 0.07),
-        brandAlignment:            Math.min(0.20, DEFAULT_WEIGHTS.brandAlignment            + domainShare('advertising') * 0.06),
-        algorithmAlignment:        Math.min(0.15, DEFAULT_WEIGHTS.algorithmAlignment        + domainShare('content')     * 0.06),
+        hookStrength:       Math.min(0.35, DEFAULT_WEIGHTS.hookStrength       + domainShare('social')      * 0.08),
+        engagement:         Math.min(0.30, DEFAULT_WEIGHTS.engagement         + domainShare('engagement')  * 0.07),
+        brandAlignment:     Math.min(0.20, DEFAULT_WEIGHTS.brandAlignment     + domainShare('advertising') * 0.06),
+        algorithmAlignment: Math.min(0.15, DEFAULT_WEIGHTS.algorithmAlignment + domainShare('content')     * 0.06),
       };
 
-      coverageRatio = trained.length / domains.length;
+      coverageRatio = trained.length / 4;
       gate  = Math.round(DEFAULT_THRESHOLDS.gate  + coverageRatio * 2);
       floor = Math.round(DEFAULT_THRESHOLDS.floor + coverageRatio * 1);
 
-      const insights = trained.map(({ domain, state }) =>
-        `${domain}: ${state!.session_count} sessions, loss=${state!.loss?.toFixed(4) ?? 'N/A'}`
+      logger.info(
+        `[ScoreCalibrator] MaxCore training insights: ` +
+        trained.map(({ domain, state }) =>
+          `${domain}: ${state!.session_count} sessions, loss=${state!.loss?.toFixed(4) ?? 'N/A'}`
+        ).join(' | ')
       );
-      logger.info(`[ScoreCalibrator] MaxCore training insights: ${insights.join(' | ')}`);
     } else if (ready.length > 0) {
       logger.info('[ScoreCalibrator] MaxCore models initialised but not yet trained — using generation signals only');
     }
 
-    // ── 3. Merge training-depth weights with content-generation signals ─────
-    // Generation signals always available (POST /api/content/generate is live).
-    // Training-depth weights add on top once MaxCore has been trained.
-    const mergedWeights: Partial<ScoreWeights> = { ...contentSignals, ...depthWeights };
-    // For keys present in both, take the higher of the two (more authoritative signal wins)
-    if (contentSignals && Object.keys(depthWeights).length > 0) {
-      for (const k of Object.keys(mergedWeights) as Array<keyof ScoreWeights>) {
-        const cs = (contentSignals as any)[k];
-        const dw = (depthWeights  as any)[k];
-        if (cs != null && dw != null) {
-          (mergedWeights as any)[k] = Math.max(cs, dw);
-        }
+    // Merge: content signals always available; depth weights layer on top when trained.
+    const mergedWeights: Partial<ScoreWeights> = { ...contentSignals };
+    for (const k of Object.keys(depthWeights) as Array<keyof ScoreWeights>) {
+      const cs = (contentSignals as any)?.[k];
+      const dw = (depthWeights  as any)[k];
+      if (cs != null && dw != null) {
+        (mergedWeights as any)[k] = Math.max(cs, dw);
+      } else if (dw != null) {
+        (mergedWeights as any)[k] = dw;
       }
     }
 
@@ -430,7 +419,7 @@ async function fetchMaxCoreCalibration(
       confidence: contentSignals ? 0.5 + coverageRatio * 0.5 : coverageRatio,
     };
   } catch (err: any) {
-    logger.debug(`[ScoreCalibrator] MaxCore calibration fetch failed: ${err.message}`);
+    logger.info(`[ScoreCalibrator] MaxCore calibration fetch failed: ${err.message}`);
   }
   return null;
 }
@@ -447,11 +436,7 @@ function normalizeWeights(w: ScoreWeights): ScoreWeights {
   ) as ScoreWeights;
 }
 
-function applyCalibration(
-  resp: MaxCoreCalibrationResponse,
-  summary: PerformanceSummary
-): void {
-  // Merge remote weights with defaults (remote takes precedence, clamped to [0.01, 0.50])
+function applyCalibration(resp: MaxCoreCalibrationResponse, summary: PerformanceSummary): void {
   const merged: ScoreWeights = { ...DEFAULT_WEIGHTS };
   if (resp.weights) {
     for (const [k, v] of Object.entries(resp.weights)) {
@@ -462,30 +447,22 @@ function applyCalibration(
   }
   _cachedWeights = normalizeWeights(merged);
 
-  // Calibrate gate and floor — clamp to sane ranges
   const gate  = resp.gate  != null ? Math.max(75, Math.min(92, resp.gate))  : deriveGate(summary);
   const floor = resp.floor != null ? Math.max(65, Math.min(80, resp.floor)) : Math.max(65, gate - 10);
   _cachedThresholds = { gate, floor };
 }
 
 function applyDataDrivenCalibration(summary: PerformanceSummary): void {
-  // When MaxCore is offline, derive calibration purely from local performance data.
-  // Logic: which hook types / content types beat the P75 threshold?
   const w = { ...DEFAULT_WEIGHTS };
 
-  // If hook types show strong differentiation → boost hookStrength weight
   const hookScores = Object.values(summary.hookTypeBreakdown).map(h => h.avgEng);
-  if (hookScores.length > 1) {
-    const hookVariance = variance(hookScores);
-    if (hookVariance > 0.001) {
-      w.hookStrength = Math.min(0.28, DEFAULT_WEIGHTS.hookStrength + hookVariance * 2);
-    }
+  if (hookScores.length > 1 && variance(hookScores) > 0.001) {
+    w.hookStrength = Math.min(0.28, DEFAULT_WEIGHTS.hookStrength + variance(hookScores) * 2);
   }
 
-  // If content type shows differentiation → boost specificity + narrativeAuthenticity
   const ctScores = Object.values(summary.contentTypeBreakdown).map(c => c.avgEng);
   if (ctScores.length > 1 && variance(ctScores) > 0.001) {
-    w.specificity           = Math.min(0.10, DEFAULT_WEIGHTS.specificity + 0.02);
+    w.specificity           = Math.min(0.10, DEFAULT_WEIGHTS.specificity           + 0.02);
     w.narrativeAuthenticity = Math.min(0.06, DEFAULT_WEIGHTS.narrativeAuthenticity + 0.02);
   }
 
@@ -494,13 +471,11 @@ function applyDataDrivenCalibration(summary: PerformanceSummary): void {
 }
 
 function deriveGate(summary: PerformanceSummary): number {
-  // Map p75 engagement rate to a VeoGate score.
-  // Music-industry benchmarks: <1% eng = low (gate 75), 1-3% = mid (81), >3% = high (87).
   const p75 = summary.percentileP75;
-  if (p75 > 0.05)       return 87;
-  if (p75 > 0.02)       return 84;
-  if (p75 > 0.01)       return 81;
-  if (p75 > 0.005)      return 78;
+  if (p75 > 0.05)  return 87;
+  if (p75 > 0.02)  return 84;
+  if (p75 > 0.01)  return 81;
+  if (p75 > 0.005) return 78;
   return 75;
 }
 
@@ -516,12 +491,12 @@ function variance(arr: number[]): number {
 let _refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 export function initScoreCalibrator(): void {
-  // Run first calibration after a brief delay so DB is ready
+  // First calibration after 15 s — DB and MaxCore are ready by then
   setTimeout(() => {
     runCalibration().catch(() => {});
   }, 15_000);
 
-  // Schedule recurring refresh every 24 h
+  // Recurring refresh every 6 h — matches MaxCore's dataset growth cadence
   if (_refreshTimer) clearInterval(_refreshTimer);
   _refreshTimer = setInterval(() => {
     runCalibration().catch(() => {});

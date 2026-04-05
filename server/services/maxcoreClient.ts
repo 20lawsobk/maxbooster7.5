@@ -79,41 +79,66 @@ export class MaxCoreAIClient {
   }
 
   /**
-   * Call MaxCore's generation endpoint — remote ONLY.
-   * Never falls back to the local engine. Returns null when MaxCore is unreachable.
-   * Use for POST /api/content/generate and any other generation-class endpoints.
+   * Call MaxCore's generation endpoint — remote ONLY, with retry + back-off.
+   * Up to MAX_GENERATE_ATTEMPTS attempts. Permanent failures (404, non-JSON)
+   * suppress the endpoint for 10 min. Transient failures (network, 5xx) retry
+   * with exponential back-off + jitter so a single hiccup never kills a topic.
+   * Never falls back to the local engine.
    */
+  private static readonly MAX_GENERATE_ATTEMPTS = 3;
+  private static readonly GENERATE_BACKOFF_BASE  = 1_500;  // ms
+  private static readonly GENERATE_BACKOFF_MAX   = 8_000;  // ms
+
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     if (!MC_AI_URL || !MC_AI_KEY) return null;
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
     if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
-    try {
-      const r = await fetch(`${MC_AI_URL}${path}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'X-API-Key':     MC_AI_KEY,
-          'Authorization': `Bearer ${MC_AI_KEY}`,
-        },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15_000),
-      });
-      const isJson = MaxCoreAIClient.isJson(r);
-      if (r.status === 404 || !isJson) {
-        MaxCoreAIClient.suppressEndpoint(path);
-        return null;
+
+    for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
+      try {
+        const r = await fetch(`${MC_AI_URL}${path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'X-API-Key':     MC_AI_KEY,
+            'Authorization': `Bearer ${MC_AI_KEY}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(20_000),
+        });
+
+        const isJson = MaxCoreAIClient.isJson(r);
+
+        // Permanent failure — do not retry
+        if (r.status === 404 || !isJson) {
+          MaxCoreAIClient.suppressEndpoint(path);
+          return null;
+        }
+
+        if (r.ok) {
+          const data = await r.json();
+          logger.debug(`[MaxCoreAI] generate ${path} → success`);
+          return data as T;
+        }
+
+        // 5xx or other transient failure — retry
+        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → ${r.status}`);
+      } catch (e: any) {
+        // Network error / timeout — retry
+        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${e.message}`);
       }
-      if (r.ok) {
-        const data = await r.json();
-        logger.debug(`[MaxCoreAI] generate ${path} → success`);
-        return data as T;
+
+      if (attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS - 1) {
+        const ceiling = Math.min(
+          MaxCoreAIClient.GENERATE_BACKOFF_MAX,
+          MaxCoreAIClient.GENERATE_BACKOFF_BASE * Math.pow(2, attempt)
+        );
+        await new Promise(res => setTimeout(res, Math.random() * ceiling));
       }
-      logger.warn(`[MaxCoreAI] generate ${path} ${r.status} — remote unavailable`);
-      return null;
-    } catch (e: any) {
-      logger.warn(`[MaxCoreAI] generate ${path} failed: ${e.message}`);
-      return null;
     }
+
+    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed`);
+    return null;
   }
 
   /**
