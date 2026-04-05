@@ -23,7 +23,11 @@ if _services_dir not in _sys.path:
     _sys.path.insert(0, _services_dir)
 try:
     from digitalgpu import get_gpu as _get_gpu
-    _GPU_AVAILABLE = True
+    # Only activate GPU path when CUDA is actually available.
+    # The digitalgpu conv2d uses a different calling convention (expects
+    # full [H,W,C] tensors with [C_out,C_in,kH,kW] weights) which is
+    # incompatible with the im2col-based NumPy path used here on CPU.
+    _GPU_AVAILABLE = bool(_get_gpu().has_gpu)
 except Exception:
     _GPU_AVAILABLE = False
 
@@ -86,7 +90,7 @@ class Conv2D:
         cols, H_out, W_out = im2col(x, self.k, self.k, self.stride, self.pad)
         if _GPU_AVAILABLE:
             out_flat = _get_gpu().conv2d(cols, self.params['W'],
-                                         bias=self.params['b'])
+                                         b=self.params['b'])
         else:
             out_flat = cols @ self.params['W'].T + self.params['b']
         self._cache = (x.shape, cols)

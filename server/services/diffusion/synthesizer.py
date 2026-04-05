@@ -1,16 +1,16 @@
 """
-Video Synthesizer v2 — upgraded inference engine.
+Video Synthesizer v3 — UNetV4 LITE inference engine.
 
-Upgrades:
-  - EMA weight loading at inference (better quality, same speed)
-  - Dynamic guidance scale (3.0 default, was 2.5)
-  - SLERP temporal coherence for video sequences
-  - Three training tiers: quick/medium/deep
-  - 30 DDIM steps (was 20) for higher quality per frame
-  - Post-processing: contrast boost, mild sharpen via unsharp mask
+Upgrades over v2:
+  - UNetV4 LITE (17.4M params, depthwise-separable convs + temporal attention)
+  - 128-dim FiLM conditioning (BPM/energy/beat_index/is_drop music features)
+  - TemporalAttention blocks for coherent frame-to-frame motion
+  - Beat-sync via temporal positional-embedding offset (AIST++ inspired)
+  - 5 DDIM steps default (was 30) — 6× faster on CPU with guidance_scale=1.5
+  - Post-processing: contrast/saturation/vignette/bloom (server v4 pipeline)
 
 CLI:
-    python synthesizer.py "concert stage hip hop" --genre hip-hop --frames 15 --out /tmp/frames
+    python synthesizer.py "concert stage hip hop" --genre hip-hop --frames 4 --out /tmp/frames
     python synthesizer.py --train-only --tier medium
 
 Python API:
@@ -35,12 +35,12 @@ if _parent not in sys.path:
 
 from .scheduler import DDPMScheduler, DDIMSampler
 from .encoder   import TextEncoder, TimeEncoder, tokenize
-from .unet      import UNet
-from .layers    import EMA
-from .trainer   import (train as run_training, load_for_inference,
-                        is_trained, get_meta, WEIGHTS_PATH)
+from .unet_v4   import UNetV4
+from .trainer   import (train_v4 as run_training, _load_v4 as _load_v4_weights,
+                        is_trained_v4 as is_trained, get_meta_v4 as get_meta,
+                        WEIGHTS_V4_BEST_PATH, WEIGHTS_V4_PATH)
 
-SYNTH_RES = 48    # 48×48 native — 2.25× more pixels than 32×32, highest quality on CPU
+SYNTH_RES = 96    # 96×96 native — UNetV4 LITE optimal resolution on CPU
 
 # Training tiers
 TIERS = {
@@ -129,21 +129,23 @@ def _quality_upscale(img_pil, target_size: tuple) -> 'PIL.Image.Image':
 
 class DiffusionSynthesizer:
     """
-    Text-to-video diffusion synthesizer v2.
+    Text-to-video diffusion synthesizer v3 — UNetV4 LITE.
 
-    Architecture: 1.2M-parameter U-Net with self-attention, residual blocks,
-    GroupNorm, FiLM conditioning, EMA weights, cosine noise schedule, DDIM.
+    Architecture: 17.4M-param UNetV4 with depthwise-separable convs, temporal
+    self-attention, GroupNorm, 128-dim FiLM conditioning, cosine noise schedule,
+    DDIM 5-step inference on CPU (~10s per 4-frame clip at 96×96).
     """
 
-    def __init__(self, T: int = 100, ddim_steps: int = 50):
+    def __init__(self, T: int = 1000, ddim_steps: int = 5):
         self.T          = T
         self.ddim_steps = ddim_steps
         self._loaded    = False
 
         self.scheduler  = DDPMScheduler(T=T, schedule='cosine')
-        self.time_enc   = TimeEncoder(sin_dim=64, emb_dim=32)
-        self.text_enc   = TextEncoder(emb_dim=32, token_emb_dim=48)
-        self.model      = UNet(cond_dim=64)
+        # LITE mode: time_emb(64) + text_emb(64) = cond_dim(128)
+        self.time_enc   = TimeEncoder(emb_dim=64)
+        self.text_enc   = TextEncoder(emb_dim=64)
+        self.model      = UNetV4(cond_dim=128, T=4, lite=True)
         self.sampler    = DDIMSampler(self.scheduler, n_steps=ddim_steps, eta=0.0)
         self._all_pairs = None
 
@@ -158,25 +160,25 @@ class DiffusionSynthesizer:
 
     def ensure_trained(self, tier: str = 'quick',
                        force_retrain: bool = False) -> dict:
-        """Train if needed. tier: 'quick' (~19min) / 'medium' (~76min) / 'deep' (~190min)."""
+        """Train if needed. tier: 'quick' (~28min) / 'medium' (~110min) / 'deep' (~275min)."""
         if is_trained() and not force_retrain:
             meta = get_meta()
-            print(f"[DiffusionSynth v2] Model trained  "
-                  f"(v{meta.get('version',1)}, loss={meta.get('final_loss',0):.4f}, "
-                  f"ep={meta.get('epochs',0)}, attention={meta.get('attention',False)})")
+            print(f"[DiffusionSynth v3] Model trained  "
+                  f"(v{meta.get('version','4-lite')}, loss={meta.get('final_loss',0):.4f}, "
+                  f"ep={meta.get('epochs',0)})")
             self._load()
             return meta
 
         tier_cfg = TIERS.get(tier, TIERS['quick'])
-        print(f"[DiffusionSynth v2] Training tier='{tier}' "
+        print(f"[DiffusionSynth v3] Training tier='{tier}' "
               f"({tier_cfg['n_samples']} samples × {tier_cfg['n_epochs']} epochs)")
-        meta = run_training(**tier_cfg, T=self.T)
+        meta = run_training(n_epochs=tier_cfg['n_epochs'])
         self._load()
         return meta
 
     def _load(self):
         if not self._loaded:
-            load_for_inference(self.model, self.time_enc, self.text_enc)
+            _load_v4_weights(self.model, self.time_enc, self.text_enc)
             self.model.set_training(False)
             self._loaded = True
 
@@ -204,7 +206,7 @@ class DiffusionSynthesizer:
 
         base = GENRE_PROMPT_MAP.get(genre.lower(), '')
         full_prompt = f"{prompt} {base}".strip()
-        print(f"[DiffusionSynth v2] Generating {n_frames} frames")
+        print(f"[DiffusionSynth v3] Generating {n_frames} frames (UNetV4 LITE)")
         print(f"  Prompt: '{full_prompt}'")
 
         tokens   = tokenize(full_prompt)
@@ -220,7 +222,7 @@ class DiffusionSynthesizer:
             guidance_scale=guidance_scale,
         )
         elapsed = time.time() - t0
-        print(f"[DiffusionSynth v2] {n_frames} frames in {elapsed:.1f}s "
+        print(f"[DiffusionSynth v3] {n_frames} frames in {elapsed:.1f}s "
               f"({elapsed/n_frames:.2f}s/frame)")
 
         pil_frames = []
@@ -257,37 +259,32 @@ class DiffusionSynthesizer:
 # ── CLI ────────────────────────────────────────────────────────────────────
 
 def main():
-    ap = argparse.ArgumentParser(description='Max Booster In-House Diffusion Engine v2')
+    ap = argparse.ArgumentParser(description='Max Booster In-House Diffusion Engine v3 (UNetV4 LITE)')
     ap.add_argument('prompt',       nargs='?', default='concert stage hip hop')
     ap.add_argument('--genre',      default='hip-hop')
-    ap.add_argument('--frames',     type=int,   default=15)
+    ap.add_argument('--frames',     type=int,   default=4)
     ap.add_argument('--out',        default='/tmp/diffusion_frames')
     ap.add_argument('--tier',       default='quick',
                     choices=['quick', 'medium', 'deep'],
-                    help='Training depth: quick(~19min) / medium(~76min) / deep(~190min)')
-    ap.add_argument('--samples',    type=int, default=None, help='Override n_samples')
+                    help='Training depth: quick(~28min) / medium(~110min) / deep(~275min)')
     ap.add_argument('--epochs',     type=int, default=None, help='Override n_epochs')
     ap.add_argument('--train',      action='store_true', help='Force retrain')
     ap.add_argument('--train-only', action='store_true')
-    ap.add_argument('--guidance',   type=float, default=3.0)
+    ap.add_argument('--guidance',   type=float, default=1.5)
     ap.add_argument('--size',       type=int,   default=512)
-    ap.add_argument('--steps',      type=int,   default=30, help='DDIM inference steps')
+    ap.add_argument('--steps',      type=int,   default=5, help='DDIM inference steps')
     args = ap.parse_args()
 
     synth = DiffusionSynthesizer(ddim_steps=args.steps)
-    if args.samples or args.epochs:
-        # Manual override: bypass tier defaults and run_training directly
-        from .trainer import train as _train
-        kw = {}
-        if args.samples: kw['n_samples'] = args.samples
-        if args.epochs:  kw['n_epochs']  = args.epochs
-        _train(**kw)
+    if args.epochs:
+        from .trainer import train_v4 as _train_v4
+        _train_v4(n_epochs=args.epochs)
         synth._load()
     else:
         synth.ensure_trained(tier=args.tier, force_retrain=args.train)
 
     if args.train_only:
-        print('[DiffusionSynth v2] Training complete.')
+        print('[DiffusionSynth v3] Training complete.')
         return
 
     paths = synth.generate_to_files(

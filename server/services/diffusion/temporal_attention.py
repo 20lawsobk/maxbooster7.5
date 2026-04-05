@@ -66,6 +66,10 @@ class TemporalAttention1D:
       7. Residual + LayerNorm
     """
 
+    # Maximum sequence length supported — must exceed the largest T we ever
+    # pass at inference time (default 16, but allow up to 64 for safety).
+    _MAX_T: int = 64
+
     def __init__(self, C: int, heads: int = 4, T: int = 8):
         self.C     = C
         self.heads = heads
@@ -73,8 +77,9 @@ class TemporalAttention1D:
         self.d     = C // heads  # head dimension
         assert C % heads == 0, f"C={C} must be divisible by heads={heads}"
 
-        # Learned temporal positional embedding (T, C) — starts as sinusoidal
-        self.pos_embed = _sinusoidal_pos_embed(T, C).copy()
+        # Learned temporal positional embedding allocated at _MAX_T so any
+        # inference T ≤ _MAX_T works without re-allocating or broadcasting errors.
+        self.pos_embed = _sinusoidal_pos_embed(self._MAX_T, C).copy()
 
         # QKV projection (C → 3C)
         scale = 1.0 / math.sqrt(C)
@@ -94,7 +99,7 @@ class TemporalAttention1D:
         self.d_b_qkv = np.zeros_like(self.b_qkv)
         self.d_W_o   = np.zeros_like(self.W_o)
         self.d_b_o   = np.zeros_like(self.b_o)
-        self.d_pos   = np.zeros_like(self.pos_embed)
+        self.d_pos   = np.zeros((self._MAX_T, C), dtype=np.float32)
 
         self._cache  = None
 
