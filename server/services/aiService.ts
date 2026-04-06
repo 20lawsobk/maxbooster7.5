@@ -108,19 +108,18 @@ interface MasterSettings {
 
 export class AIService {
   private readonly REDIS_TTL = 3600;
-  private readonly CONTENT_STRUCTURES_PREFIX = 'ai:contentStructures:';
   private readonly GENRE_PROFILES_PREFIX = 'ai:genreProfiles:';
   private readonly AUDIO_PATTERNS_PREFIX = 'ai:audioPatterns:';
 
   constructor() {
-    this.initializeInHouseAI();
+    this.initializeAudioData();
   }
 
   private async getRedis(): Promise<RedisClientType | null> {
     return await getRedisClient();
   }
 
-  private async initializeInHouseAI(): Promise<void> {
+  private async initializeAudioData(): Promise<void> {
     try {
       const redis = await this.getRedis();
       if (!redis) {
@@ -128,16 +127,12 @@ export class AIService {
         return;
       }
 
-      // Seed defaults only when MaxCore has not yet written trained data for a key.
-      // This preserves any trained/enriched values MaxCore has already pushed to PDIM.
       const seedIfMissing = async (key: string, value: object) => {
         try {
           const existing = await redis.get(key);
           if (!existing) {
             await redis.set(key, JSON.stringify(value));
-            logger.info(`[AIService] Seeded default for ${key}`);
-          } else {
-            logger.info(`[AIService] Using MaxCore-trained data for ${key}`);
+            logger.info(`[AIService] Seeded audio data for ${key}`);
           }
         } catch (e: any) {
           logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
@@ -145,28 +140,6 @@ export class AIService {
       };
 
       await Promise.all([
-        seedIfMissing(`${this.CONTENT_STRUCTURES_PREFIX}twitter`, {
-          maxLength: 280,
-          optimalLength: 120,
-          structures: {
-            professional: ['🎵 {context} • {trackTitle} showcases {artisticElement} • {hashtags}'],
-            casual: ['vibes check: {emotion} • {trackTitle} is {feeling} • {hashtags}'],
-            energetic: ['🔥 {intensity} energy • {trackTitle} bringing the {vibe} • {hashtags}'],
-            creative: ['✨ {artistic} in the studio • {trackTitle} = {creative_process} • {hashtags}'],
-            promotional: ['🎧 LISTEN NOW • {trackTitle} by {artist} • {value_prop} • {hashtags}'],
-          },
-        }),
-        seedIfMissing(`${this.CONTENT_STRUCTURES_PREFIX}instagram`, {
-          maxLength: 2200,
-          optimalLength: 150,
-          structures: {
-            professional: ['Behind the artistry ✨\n\n{detailed_context}\n\n{trackTitle} represents {artistic_vision}.\n\n{hashtags}'],
-            casual: ['Studio life captured 🎵\n\n{casual_story}\n\n{trackTitle} hits different. {personal_touch}\n\n{hashtags}'],
-            energetic: ['ENERGY OVERLOAD 🔥\n\n{high_energy_story}\n\n{trackTitle} is pure {intensity}! {excitement}\n\n{hashtags}'],
-            creative: ['Art in motion 🎨\n\n{creative_journey}\n\n{trackTitle} born from {inspiration}. {artistic_detail}\n\n{hashtags}'],
-            promotional: ['NEW MUSIC ALERT 🚨\n\n{value_proposition}\n\n{trackTitle} by {artist} • {release_info}\n\n{hashtags}'],
-          },
-        }),
         seedIfMissing(`${this.GENRE_PROFILES_PREFIX}electronic`, {
           bpmRange: [120, 140], keyPreferences: ['Fm', 'Am', 'Dm', 'Cm'],
           energyRange: [0.7, 0.95], danceabilityRange: [0.8, 0.98],
@@ -192,47 +165,8 @@ export class AIService {
       ]);
     } catch (error: unknown) {
       if (process.env.NODE_ENV !== 'development') {
-        logger.error('Failed to initialize AI service data in Redis:', error);
+        logger.error('Failed to initialize AI service audio data in Redis:', error);
       }
-    }
-  }
-
-  /**
-   * Advanced AI Social Content Generation
-   * Uses deterministic algorithms based on input parameters
-   */
-  async generateSocialContent(options: SocialContentOptions): Promise<{ content: string[] }> {
-    try {
-      const { platform = 'instagram', contentType, tone, customPrompt, musicData } = options;
-
-      const platformData =
-        (await this.getContentStructure(platform)) || (await this.getContentStructure('instagram'));
-      if (!platformData) {
-        throw new Error('Failed to load content structures');
-      }
-      const structure = platformData.structures[tone];
-
-      // Generate deterministic content based on inputs
-      const generatedContent: string[] = [];
-
-      // Create 3 variations using input-driven algorithms
-      for (let i = 0; i < 3; i++) {
-        const content = this.generateContentVariation(structure, {
-          platform,
-          contentType,
-          tone,
-          customPrompt,
-          musicData,
-          variationIndex: i,
-        });
-
-        generatedContent.push(content);
-      }
-
-      return { content: generatedContent };
-    } catch (error: unknown) {
-      logger.error('AI content generation error:', error);
-      throw new Error('Failed to generate content with in-house AI');
     }
   }
 
@@ -479,208 +413,6 @@ export class AIService {
       melody: hash % 10 > 1, // 90% chance
       harmony: hash % 10 > 3, // 70% chance
     };
-  }
-
-  private generateContentVariation(structure: string, options: unknown): string {
-    const { platform, contentType, tone, customPrompt, musicData, variationIndex } = options;
-
-    // Generate context-aware content elements
-    const elements = {
-      context: this.generateContextElement(tone, contentType, variationIndex),
-      trackTitle: musicData?.title || 'New Track',
-      artist: musicData?.artist || 'Artist',
-      artisticElement: this.generateArtisticElement(musicData?.genre, tone),
-      emotion: this.generateEmotionElement(tone, musicData?.mood),
-      hashtags: this.generateOptimalHashtags(musicData?.genre || 'music', platform),
-      feeling: this.generateFeelingElement(tone, variationIndex),
-      intensity: this.generateIntensityElement(tone),
-      vibe: this.generateVibeElement(musicData?.genre, musicData?.mood),
-      artistic: this.generateArtisticDescriptor(tone),
-      creative_process: this.generateCreativeProcess(musicData?.genre),
-      value_prop: this.generateValueProposition(contentType, musicData?.genre),
-      detailed_context: customPrompt || this.generateDetailedContext(tone, musicData),
-      casual_story: this.generateCasualStory(musicData),
-      personal_touch: this.generatePersonalTouch(tone),
-      high_energy_story: this.generateHighEnergyStory(musicData),
-      excitement: this.generateExcitement(variationIndex),
-      creative_journey: this.generateCreativeJourney(musicData),
-      inspiration: this.generateInspiration(musicData?.genre),
-      artistic_detail: this.generateArtisticDetail(tone),
-      value_proposition: this.generateValueProposition(contentType, musicData?.genre),
-      release_info: this.generateReleaseInfo(contentType),
-    };
-
-    // Replace placeholders in structure
-    return structure.replace(
-      /\{(\w+)\}/g,
-      (match, key) => elements[key as keyof typeof elements] || match
-    );
-  }
-
-  private generateContextElement(tone: string, contentType: string, index: number): string {
-    const contexts = {
-      professional: [
-        'Crafting sonic excellence',
-        'Studio precision achieved',
-        'Artistic vision realized',
-      ][index % 3],
-      casual: ['good vibes only', 'feeling this energy', 'studio magic happening'][index % 3],
-      energetic: ['PURE ENERGY', 'INTENSITY UNLEASHED', 'POWER UNLOCKED'][index % 3],
-      creative: ['artistic flow state', 'creative breakthrough', 'inspiration captured'][index % 3],
-      promotional: ['MUST HEAR', 'BREAKING BOUNDARIES', 'CHART-READY'][index % 3],
-    };
-    return contexts[tone as keyof typeof contexts] || contexts.creative;
-  }
-
-  private generateArtisticElement(genre?: string, tone?: string): string {
-    const elements = {
-      electronic: 'cutting-edge sound design',
-      'hip-hop': 'lyrical prowess and beats',
-      pop: 'catchy melodies and hooks',
-      rock: 'raw energy and guitar work',
-    };
-    return elements[genre?.toLowerCase() as keyof typeof elements] || 'musical artistry';
-  }
-
-  private generateEmotionElement(tone: string, mood?: string): string {
-    if (mood) return mood.toLowerCase();
-
-    const emotions = {
-      professional: 'focused',
-      casual: 'relaxed',
-      energetic: 'hyped',
-      creative: 'inspired',
-      promotional: 'excited',
-    };
-    return emotions[tone as keyof typeof emotions] || 'creative';
-  }
-
-  private generateOptimalHashtags(genre: string, platform: string): string {
-    const baseHashtags = ['#music', '#newmusic'];
-    const genreHashtags = {
-      electronic: ['#electronic', '#edm', '#dance'],
-      'hip-hop': ['#hiphop', '#rap', '#beats'],
-      pop: ['#pop', '#radio', '#charts'],
-      rock: ['#rock', '#guitar', '#live'],
-    };
-
-    const platformHashtags = {
-      instagram: ['#studio', '#musician', '#artist'],
-      twitter: ['#nowplaying', '#musictwitter'],
-      tiktok: ['#fyp', '#viral', '#trending'],
-      youtube: ['#newvideo', '#subscribe'],
-      facebook: ['#music', '#listen'],
-      linkedin: ['#creativity', '#artist'],
-    };
-
-    const selected = [
-      ...baseHashtags,
-      ...(
-        genreHashtags[genre?.toLowerCase() as keyof typeof genreHashtags] ||
-        genreHashtags.electronic
-      ).slice(0, 2),
-      ...(
-        platformHashtags[platform as keyof typeof platformHashtags] || platformHashtags.instagram
-      ).slice(0, 2),
-    ];
-
-    return selected.join(' ');
-  }
-
-  // Additional helper methods for content generation
-  private generateFeelingElement(tone: string, index: number): string {
-    const feelings = ['incredible', 'amazing', 'powerful', 'special'];
-    return feelings[index % feelings.length];
-  }
-
-  private generateIntensityElement(tone: string): string {
-    return tone === 'energetic' ? 'MAXIMUM' : 'HIGH';
-  }
-
-  private generateVibeElement(genre?: string, mood?: string): string {
-    return mood?.toLowerCase() || 'energy';
-  }
-
-  private generateArtisticDescriptor(tone: string): string {
-    const descriptors = {
-      professional: 'Precision',
-      casual: 'Flowing',
-      energetic: 'Electric',
-      creative: 'Pure creativity',
-      promotional: 'Innovation',
-    };
-    return descriptors[tone as keyof typeof descriptors] || 'Artistry';
-  }
-
-  private generateCreativeProcess(genre?: string): string {
-    const processes = {
-      electronic: 'digital alchemy',
-      'hip-hop': 'lyrical mastery',
-      pop: 'melodic perfection',
-      rock: 'raw expression',
-    };
-    return processes[genre?.toLowerCase() as keyof typeof processes] || 'musical magic';
-  }
-
-  private generateValueProposition(contentType: string, genre?: string): string {
-    if (contentType === 'ad') return 'Stream now for the ultimate music experience';
-    return 'Must-listen track that defines the sound of now';
-  }
-
-  private generateDetailedContext(tone: string, musicData?: unknown): string {
-    return `The creative process behind ${musicData?.title || 'this track'} represents a ${tone} approach to modern music production. Every element has been carefully crafted to deliver an unforgettable listening experience.`;
-  }
-
-  private generateCasualStory(musicData?: unknown): string {
-    return `Working on ${musicData?.title || 'this track'} has been such a journey. Those late night studio sessions really paid off.`;
-  }
-
-  private generatePersonalTouch(tone: string): string {
-    const touches = {
-      professional: 'This represents my artistic evolution.',
-      casual: "Can't wait for you to hear it!",
-      energetic: 'This one hits DIFFERENT!',
-      creative: 'Art speaking through sound.',
-      promotional: 'Available everywhere now!',
-    };
-    return touches[tone as keyof typeof touches] || 'Hope you love it as much as I do.';
-  }
-
-  private generateHighEnergyStory(musicData?: unknown): string {
-    return `The studio was ON FIRE when we created ${musicData?.title || 'this'}. Pure creative electricity flowing through every second.`;
-  }
-
-  private generateExcitement(index: number): string {
-    const excitements = [
-      "Can't contain this energy!",
-      'This is just the beginning!',
-      'Music that moves mountains!',
-    ];
-    return excitements[index % excitements.length];
-  }
-
-  private generateCreativeJourney(musicData?: unknown): string {
-    return `${musicData?.title || 'This track'} emerged from a place of pure artistic intention. Every sound, every silence, tells part of the story.`;
-  }
-
-  private generateInspiration(genre?: string): string {
-    const inspirations = {
-      electronic: 'digital consciousness',
-      'hip-hop': 'street poetry',
-      pop: 'universal emotion',
-      rock: 'rebellious spirit',
-    };
-    return inspirations[genre?.toLowerCase() as keyof typeof inspirations] || 'pure creativity';
-  }
-
-  private generateArtisticDetail(tone: string): string {
-    return tone === 'creative'
-      ? 'Form following feeling, sound following soul.'
-      : 'Crafted with intention and precision.';
-  }
-
-  private generateReleaseInfo(contentType: string): string {
-    return contentType === 'ad' ? 'Stream everywhere now' : 'Coming soon to all platforms';
   }
 
   // Advanced advertising calculation methods
@@ -936,19 +668,6 @@ export class AIService {
       highShelf: 1.2 + analysis.energy * 0.6,
       presence: 1.0 + analysis.valence * 0.5, // More presence for positive tracks
     };
-  }
-
-  private async getContentStructure(platform: string): Promise<any> {
-    try {
-      const redis = await this.getRedis();
-      if (!redis) return null;
-
-      const val = await redis.get(`${this.CONTENT_STRUCTURES_PREFIX}${platform}`);
-      return val ? JSON.parse(val) : null;
-    } catch (error: unknown) {
-      logger.error(`Failed to get content structure for ${platform}:`, error);
-      return null;
-    }
   }
 
   private async getGenreProfile(genre: string): Promise<any> {

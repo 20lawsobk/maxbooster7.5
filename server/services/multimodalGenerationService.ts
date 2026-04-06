@@ -5,6 +5,7 @@ import { sharpImageService } from './sharpImageService.js';
 import { db } from '../db.js';
 import { eq } from 'drizzle-orm';
 import { autopilotPreferences, userBrandVoices } from '@shared/schema';
+import { getPdimClient } from '../lib/pdimClient.js';
 import {
   type GenerationRequest,
   type GeneratedAsset,

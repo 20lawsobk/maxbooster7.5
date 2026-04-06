@@ -12,7 +12,6 @@
  */
 
 import { MaxCoreAIClient } from '../unifiedAIController.js';
-import { aiService } from '../aiService.js';
 import { logger } from '../../logger.js';
 import type { SupportedPlatform } from './platformFormatters.js';
 
@@ -126,16 +125,6 @@ async function callMaxCore(prompt: string, ctx: GeneratorContext): Promise<strin
   }
 }
 
-function fallbackText(template: string, ctx: GeneratorContext): string {
-  return template
-    .replace('{{artist}}', ctx.artistName)
-    .replace('{{genre}}', ctx.genre)
-    .replace('{{mood}}', ctx.mood)
-    .replace('{{track}}', ctx.trackTitle ?? 'this track')
-    .replace('{{platform}}', ctx.platform)
-    .replace('{{goal}}', ctx.campaignGoal);
-}
-
 // ─── Hook Generator ──────────────────────────────────────────────────────────
 
 export async function generateHooks(ctx: GeneratorContext): Promise<HookSet> {
@@ -151,27 +140,21 @@ Keep each hook under 15 words. Make the primary hook irresistible in the first 3
   if (raw) {
     const lines = raw.split('\n').filter(l => l.trim().length > 0);
     return {
-      primary: lines[0] ?? fallbackText('{{artist}} just dropped something you need to hear 🔥', ctx),
-      alternates: lines.slice(1, 4),
-      questionHook: lines[4] ?? `What happens when ${ctx.genre} meets raw emotion?`,
-      statementHook: lines[5] ?? `${ctx.artistName} is redefining ${ctx.genre}.`,
-      cliffhangerHook: lines[6] ?? `You won't believe what ${ctx.artistName} did next...`,
+      primary:         lines[0] ?? '',
+      alternates:      lines.slice(1, 4),
+      questionHook:    lines[4] ?? '',
+      statementHook:   lines[5] ?? '',
+      cliffhangerHook: lines[6] ?? '',
     };
   }
 
-  // In-house fallback
-  const hooks = [
-    `${ctx.artistName} just changed the game 🎵`,
-    `The ${ctx.genre} sound you've been waiting for`,
-    `${ctx.mood} energy × ${ctx.artistName} = this`,
-    `Drop everything. Listen to this.`,
-  ];
+  logger.warn('[ContentGenerators] MaxCore unavailable — 8TB dataset is the only source, returning empty hooks');
   return {
-    primary: hooks[0],
-    alternates: hooks.slice(1),
-    questionHook: `Ever wonder what real ${ctx.genre} feels like?`,
-    statementHook: `${ctx.artistName} is ${ctx.mood} and unapologetic.`,
-    cliffhangerHook: `This song almost wasn't released...`,
+    primary:         '',
+    alternates:      [],
+    questionHook:    '',
+    statementHook:   '',
+    cliffhangerHook: '',
   };
 }
 
@@ -193,19 +176,15 @@ Use ${ctx.brandVoice} tone. No filler. Every word earns its place.`;
   if (raw) {
     const sections = raw.split(/\n{2,}/);
     return {
-      short: sections[0]?.trim() ?? `${ctx.artistName} 🎵 ${ctx.mood} vibes only. 🔥`,
-      medium: sections[1]?.trim() ?? `${ctx.artistName} brings the ${ctx.mood} ${ctx.genre} energy. New music out now — tap in. 🎶`,
-      long: sections[2]?.trim() ?? `${ctx.artistName} poured everything into this one. The ${ctx.mood} feeling, the ${ctx.genre} sound, the raw truth — it's all here. Don't sleep on this. Listen now and let us know what you feel. 🎵`,
+      short:    sections[0]?.trim() ?? '',
+      medium:   sections[1]?.trim() ?? '',
+      long:     sections[2]?.trim() ?? '',
       platform: ctx.platform,
     };
   }
 
-  return {
-    short: `${ctx.artistName} 🔥 ${ctx.mood} ${ctx.genre} — out now.`,
-    medium: `${ctx.artistName} is bringing the ${ctx.mood} energy to ${ctx.genre}. New music is here and it hits different. 🎵 Tap the link.`,
-    long: `${ctx.artistName} has been working on something special. The ${ctx.mood} atmosphere, the ${ctx.genre} DNA, the honest lyricism — this is the sound you didn't know you needed. Stream it now, share it with someone who needs to feel something real.`,
-    platform: ctx.platform,
-  };
+  logger.warn('[ContentGenerators] MaxCore unavailable — 8TB dataset is the only source, returning empty captions');
+  return { short: '', medium: '', long: '', platform: ctx.platform };
 }
 
 // ─── Hashtag Generator ───────────────────────────────────────────────────────
@@ -273,42 +252,24 @@ Then write 2 A/B variants with different angles.`;
   if (raw) {
     const lines = raw.split('\n').filter(l => l.trim().length > 0);
     return {
-      headline: lines[0] ?? `Hear ${ctx.artistName} Now`,
-      subheadline: lines[1] ?? `${ctx.genre} at its finest`,
-      body: lines[2] ?? `${ctx.artistName} drops new ${ctx.mood} ${ctx.genre}. Don't miss it.`,
-      cta: lines[3] ?? 'Stream Now',
+      headline:    lines[0] ?? '',
+      subheadline: lines[1] ?? '',
+      body:        lines[2] ?? '',
+      cta:         lines[3] ?? '',
       variants: [
-        {
-          headline: lines[4] ?? `${ctx.artistName}: New Drop`,
-          body: lines[5] ?? `The ${ctx.mood} ${ctx.genre} track you've been waiting for.`,
-          cta: 'Listen Free',
-        },
-        {
-          headline: lines[6] ?? `Feel the ${ctx.mood}`,
-          body: lines[7] ?? `${ctx.artistName} × ${ctx.genre} × raw emotion.`,
-          cta: 'Play It Now',
-        },
+        { headline: lines[4] ?? '', body: lines[5] ?? '', cta: '' },
+        { headline: lines[6] ?? '', body: lines[7] ?? '', cta: '' },
       ],
     };
   }
 
+  logger.warn('[ContentGenerators] MaxCore unavailable — 8TB dataset is the only source, returning empty ad copy');
   return {
-    headline: `Stream ${ctx.artistName} Now`,
-    subheadline: `${ctx.mood} ${ctx.genre} that hits different`,
-    body: `New music from ${ctx.artistName}. ${ctx.mood} energy meets ${ctx.genre} DNA. Available everywhere.`,
-    cta: 'Stream Now',
-    variants: [
-      {
-        headline: `${ctx.artistName} — New Release`,
-        body: `The sound you didn't know you needed.`,
-        cta: 'Listen Free',
-      },
-      {
-        headline: `Feel Something Real`,
-        body: `${ctx.artistName} brings the ${ctx.mood} ${ctx.genre} heat.`,
-        cta: 'Play Now',
-      },
-    ],
+    headline:    '',
+    subheadline: '',
+    body:        '',
+    cta:         '',
+    variants:    [],
   };
 }
 
@@ -342,32 +303,25 @@ OVERLAY TEXTS (3 short text overlays for the video):`;
   if (raw) {
     const lines = raw.split('\n').filter(l => l.trim().length > 0);
     return {
-      hook: lines[0] ?? `${ctx.artistName} in the ${ctx.mood} zone`,
-      body: lines.slice(1, 4),
-      cta: lines[4] ?? `Follow ${ctx.artistName} and stream now`,
+      hook:         lines[0] ?? '',
+      body:         lines.slice(1, 4),
+      cta:          lines[4] ?? '',
       durationHint: `${durationSeconds}s`,
-      bRoll: defaultBRoll,
-      musicNote: `${ctx.mood} energy, ${ctx.genre} rhythm`,
-      overlayTexts: [
-        lines[5] ?? ctx.artistName,
-        lines[6] ?? ctx.trackTitle ?? 'New Music',
-        lines[7] ?? 'Out Now',
-      ],
+      bRoll:        defaultBRoll,
+      musicNote:    '',
+      overlayTexts: [lines[5] ?? '', lines[6] ?? '', lines[7] ?? ''],
     };
   }
 
+  logger.warn('[ContentGenerators] MaxCore unavailable — 8TB dataset is the only source, returning empty video script');
   return {
-    hook: `${ctx.artistName} drops the ${ctx.mood} ${ctx.genre} anthem you needed.`,
-    body: [
-      `Show the creative process — raw studio footage`,
-      `Highlight the emotion behind the track`,
-      `Connect with the audience — relatable moment`,
-    ],
-    cta: `Follow ${ctx.artistName} now. New music drops every week.`,
+    hook:         '',
+    body:         [],
+    cta:          '',
     durationHint: `${durationSeconds}s`,
-    bRoll: defaultBRoll,
-    musicNote: `Match ${ctx.mood} atmosphere — ${ctx.genre} tempo`,
-    overlayTexts: [ctx.artistName, ctx.trackTitle ?? 'New Drop', 'Stream Now 🎵'],
+    bRoll:        defaultBRoll,
+    musicNote:    '',
+    overlayTexts: [],
   };
 }
 

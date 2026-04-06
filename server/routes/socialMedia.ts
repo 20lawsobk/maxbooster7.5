@@ -1951,34 +1951,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
               scriptSource = scriptResult.source || 'AI';
             }
           } catch (scriptErr) {
-            logger.warn('[VideoGen] Advanced AI script generation failed, falling through to AdvancedSocialAI:', scriptErr);
+            logger.warn('[VideoGen] MaxCore script generation failed — 8TB dataset is the only source, video script will be empty:', scriptErr);
           }
 
-          // Fall through to AdvancedSocialAI only if MaxCore/PythonAI produced nothing
           if (!hook && !body) {
-            const { advancedSocialAIService: advAI } = await import('../services/advancedSocialAIService.js');
-            const objective = goal === 'sales' || goal === 'traffic'
-              ? 'conversions'
-              : goal === 'viral' ? 'viral' : 'engagement';
-            const aiResult = await advAI.generateAdvancedContent({
-              userId: userId || 'anonymous',
-              topic: resolvedTopic,
-              platforms: [platform || 'tiktok'],
-              objective,
-              tone: (tone || 'energetic') as any,
-              genre: genre || undefined,
-              artistName: artist_name || undefined,
-              contentType: objective === 'conversions' ? 'promotional'
-                : objective === 'viral' ? 'storytelling' : 'announcement',
-              includeHashtags: false,
-              includeEmojis: false,
-              variantCount: 1,
-              trendContext: genre ? [`genre:${genre}`] : undefined,
-            });
-            hook = aiResult.primary.headline.slice(0, 80);
-            body = aiResult.primary.body.split('\n')[0].slice(0, 120);
-            cta  = aiResult.primary.callToAction.slice(0, 60);
-            scriptSource = 'AdvancedSocialAI';
+            logger.warn('[VideoGen] MaxCore unavailable — returning empty video script fields');
           }
 
           logger.info(

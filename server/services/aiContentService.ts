@@ -317,14 +317,8 @@ export class AIContentService {
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         content = caption ? [caption] : (d.content || []);
       } else {
-        // Last-resort: template engine
-        const fallback = await aiService.generateSocialContent({
-          platform: platform as any,
-          contentType: 'post',
-          tone: tone as any,
-          customPrompt: prompt,
-        });
-        content = fallback.content;
+        logger.warn('[AIContentService] MaxCore unavailable — 8TB dataset is the only source, returning empty content');
+        content = [];
       }
 
       const inferenceId = await this.logInference(
@@ -1176,14 +1170,8 @@ export class AIContentService {
       const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
       content = caption ? [caption] : (d.content || []);
     } else {
-      // Last-resort: template engine
-      const fallback = await aiService.generateSocialContent({
-        platform: platform as any,
-        contentType: 'post',
-        tone: (tone || 'energetic') as any,
-        customPrompt: prompt,
-      });
-      content = fallback.content;
+      logger.warn('[AIContentService] MaxCore unavailable — 8TB dataset is the only source, returning empty content');
+      content = [];
     }
 
     return {

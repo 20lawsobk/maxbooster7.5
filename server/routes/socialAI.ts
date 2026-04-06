@@ -1025,7 +1025,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       platform: resolvedPlatform,
       contentType,
       content: data,
-      source: result.source === 'PythonAIModel' ? 'ai' : 'template',
+      source: result.source || 'MaxCoreAI',
       processingTimeMs: totalMs,
       hook,
       body,

@@ -20,6 +20,7 @@ import { logger } from '../logger.js';
 import { db } from '../db.js';
 import { userBrandVoices, autopilotPreferences, socialConnections } from '@shared/schema';
 import { eq } from 'drizzle-orm';
+import { MaxCoreAIClient } from './unifiedAIController.js';
 
 // ============================================================================
 // SEEDED PRNG HELPER
@@ -1075,7 +1076,6 @@ class AdvancedSocialAIService {
   }
 
   async generateAdvancedContent(request: AdvancedContentRequest): Promise<AdvancedGeneratedContent> {
-    // Check cache
     const cacheKey = AdvancedSocialAIService._cacheKey(request);
     const cached   = AdvancedSocialAIService._contentCache.get(cacheKey);
     if (cached && Date.now() - cached.ts < AdvancedSocialAIService._CACHE_TTL_MS) {
@@ -1090,24 +1090,38 @@ class AdvancedSocialAIService {
     const tone = TONE_PROFILES[request.tone || 'casual'] || TONE_PROFILES.casual;
     const audience = AUDIENCE_PROFILES[request.targetAudience?.toLowerCase().replace(/\s+/g, '_') || 'indie_artists'] || AUDIENCE_PROFILES.indie_artists;
 
-    const hook = this.generateHook(request, primaryPlatform, tone);
-    const body = this.generateBody(request, primaryPlatform, tone, audience);
-    const cta = this.generateCTA(request, primaryPlatform, tone);
-    const hashtags = this.generateHashtags(request, primaryPlatform);
-    const emojis = this.selectEmojis(request, primaryPlatform, tone);
+    // ── 8TB dataset via MaxCore is the ONLY text source ─────────────────────
+    const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+      platform:        request.platforms[0] || 'instagram',
+      topic:           request.topic || 'new music',
+      tone:            request.tone || 'energetic',
+      genre:           request.genre || userContext.genre,
+      artist_name:     request.artistName || userContext.artistName,
+      brand_voice:     userContext.brandVoice,
+      target_audience: request.targetAudience,
+    });
 
-    const fullContent = `${hook}\n\n${body}\n\n${cta}`;
+    if (!mc?.hook && !mc?.caption) {
+      throw new Error('[AdvancedSocialAI] MaxCore unavailable — 8TB dataset is the only content source, returning no content');
+    }
 
-    const platformVersions = this.generatePlatformVersions(request, hook, body, cta, hashtags);
-    const variants = this.generateVariants(request, hook, body, cta, hashtags, tone);
-    const scoring = this.scoreContent(fullContent, primaryPlatform, tone, audience, request);
-    const insights = this.generateInsights(fullContent, scoring, primaryPlatform, request);
-    const optimalTiming = this.calculateOptimalTiming(request.platforms, audience);
-    const mediaGuidance = this.generateMediaGuidance(request, primaryPlatform);
-    const viralPotential = this.analyzeViralPotential(fullContent, request);
+    const hook        = mc.hook || '';
+    const bodyText    = mc.body || '';
+    const cta         = mc.cta  || '';
+    const hashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
+    const emojis      = this.selectEmojis(request, primaryPlatform, tone);
+    const fullContent = mc.caption || [hook, bodyText, cta].filter(Boolean).join('\n\n');
+
+    const platformVersions = this.generatePlatformVersions(request, hook, bodyText, cta, hashtags);
+    const variants         = this.generateVariants(request, hook, bodyText, cta, hashtags, tone);
+    const scoring          = this.scoreContent(fullContent, primaryPlatform, tone, audience, request);
+    const insights         = this.generateInsights(fullContent, scoring, primaryPlatform, request);
+    const optimalTiming    = this.calculateOptimalTiming(request.platforms, audience);
+    const mediaGuidance    = this.generateMediaGuidance(request, primaryPlatform);
+    const viralPotential   = this.analyzeViralPotential(fullContent, request);
     const audienceResonance = this.analyzeAudienceResonance(fullContent, audience, request);
 
-    logger.info(`[AdvancedSocialAI] Generated content for user ${request.userId}: score=${scoring.overall.toFixed(1)}`);
+    logger.info(`[AdvancedSocialAI] MaxCore-sourced content for user ${request.userId}: score=${scoring.overall.toFixed(1)}`);
 
     const result: AdvancedGeneratedContent = {
       primary: {
@@ -1128,7 +1142,6 @@ class AdvancedSocialAIService {
       audienceResonance,
     };
 
-    // Store in cache (evict oldest entry if at capacity)
     if (AdvancedSocialAIService._contentCache.size >= AdvancedSocialAIService._CACHE_MAX) {
       const oldestKey = AdvancedSocialAIService._contentCache.keys().next().value;
       if (oldestKey) AdvancedSocialAIService._contentCache.delete(oldestKey);

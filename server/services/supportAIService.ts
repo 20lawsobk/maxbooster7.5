@@ -384,25 +384,7 @@ export class SupportAIService {
   }
 
   private async generateAIAnswer(question: string): Promise<string> {
-    try {
-      const prompt = `You are a helpful customer support assistant for Max Booster, a music distribution and production platform.
-
-User question: ${question}
-
-Provide a clear, concise, and helpful answer. If you're not certain about the answer, acknowledge that and suggest contacting support for more details.
-
-Answer:`;
-
-      const response = await aiService.generateSocialContent({
-        platform: 'twitter',
-        contentType: 'post',
-        customPrompt: prompt,
-      });
-
-      return response.content;
-    } catch (error: unknown) {
-      throw new Error('Failed to generate AI answer');
-    }
+    throw new Error('[SupportAI] MaxCore (8TB dataset) is the only content source — local answer generation removed');
   }
 
   async categorizeTicket(subject: string, description: string): Promise<string> {
