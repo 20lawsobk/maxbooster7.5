@@ -187,6 +187,14 @@ app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 
   }
 }));
 
+app.use('/uploads/images', express.static(path.join(process.cwd(), 'uploads', 'images'), {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.webp')) {
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+    }
+  }
+}));
+
 app.use('/uploads/videos', express.static(path.join(process.cwd(), 'uploads', 'videos'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.mp4')) {

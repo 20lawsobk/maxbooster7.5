@@ -1631,7 +1631,13 @@ const imageWorker = {
           req.platforms.map(p => [p, getRules(p).image])
         ),
       });
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
+      const allOutputs = Array.isArray(result.outputs) ? result.outputs : [];
+      // Only accept outputs whose URLs are absolute — relative paths from the
+      // remote server (e.g. /uploads/images/...) cannot be served by our server.
+      const outputs = allOutputs.filter((o: any) => {
+        const url = o.url || o.src || '';
+        return url.startsWith('http://') || url.startsWith('https://');
+      });
       if (outputs.length > 0) return mapOutputs(outputs);
     } catch (err) {
       logger.warn('[MultimodalGen] MaxCore /generate/image unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
