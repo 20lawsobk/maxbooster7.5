@@ -2,6 +2,9 @@ import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
 import { generateAudio as generateLocalAudio } from './audioGeneratorService.js';
 import { sharpImageService } from './sharpImageService.js';
+import { db } from '../db.js';
+import { eq } from 'drizzle-orm';
+import { autopilotPreferences, userBrandVoices } from '@shared/schema';
 import {
   type GenerationRequest,
   type GeneratedAsset,
@@ -49,6 +52,95 @@ async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Pro
     throw new Error(`MaxCore ${path} returned non-JSON (${ct || 'no content-type'}): ${text.slice(0, 200)}`);
   }
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// User context enrichment — pulls autopilot preferences from the database so
+// MaxCore gets real artist name, genre, brand voice, etc. instead of guessing.
+// ---------------------------------------------------------------------------
+interface UserContext {
+  artistName:        string | null;
+  artistBio:         string | null;
+  genre:             string | null;
+  subGenres:         string[] | null;
+  brandVoice:        string | null;
+  targetAudience:    string | null;
+  preferredHashtags: string[] | null;
+  avoidTopics:       string[] | null;
+  contentTone:       string | null;
+  callToActionStyle: string | null;
+  uniqueSellingPoints: string[] | null;
+  currentReleases:   Array<{ title: string; type: string; releaseDate: string; streamingLinks: Record<string, string>; promoUntil: string }> | null;
+}
+
+const _userContextCache = new Map<string, { data: UserContext; expiresAt: number }>();
+const USER_CTX_TTL_MS = 60_000;
+
+async function fetchUserContext(userId: string): Promise<UserContext> {
+  if (!userId) return {} as UserContext;
+  const cached = _userContextCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) return cached.data;
+
+  try {
+    const [[prefs], [voice]] = await Promise.all([
+      db.select().from(autopilotPreferences).where(eq(autopilotPreferences.userId, userId)).limit(1),
+      db.select({
+        tone:         userBrandVoices.tone,
+        writingStyle: userBrandVoices.writingStyle,
+        targetAudience: userBrandVoices.targetAudience,
+        personality:  userBrandVoices.personality,
+        brandValues:  userBrandVoices.brandValues,
+        avoidWords:   userBrandVoices.avoidWords,
+      }).from(userBrandVoices)
+        .where(eq(userBrandVoices.userId, userId))
+        .limit(1),
+    ]);
+
+    // Derive a brand-voice label: prefer autopilot setting, fall back to voice table tone
+    const resolvedBrandVoice = prefs?.brandVoice ?? voice?.tone ?? null;
+    // Derive target audience: prefer autopilot, fall back to brand-voice table
+    const resolvedTargetAudience = prefs?.targetAudience ?? voice?.targetAudience ?? null;
+
+    const data: UserContext = {
+      artistName:          prefs?.artistName          ?? null,
+      artistBio:           prefs?.artistBio           ?? null,
+      genre:               prefs?.genre               ?? null,
+      subGenres:           (prefs?.subGenres as string[] | null) ?? null,
+      brandVoice:          resolvedBrandVoice,
+      targetAudience:      resolvedTargetAudience,
+      preferredHashtags:   (prefs?.preferredHashtags as string[] | null) ?? null,
+      avoidTopics:         (prefs?.avoidTopics as string[] | null)       ?? null,
+      contentTone:         prefs?.contentTone         ?? voice?.writingStyle  ?? null,
+      callToActionStyle:   prefs?.callToActionStyle   ?? null,
+      uniqueSellingPoints: (prefs?.uniqueSellingPoints as string[] | null) ?? null,
+      currentReleases:     (prefs?.currentReleases as any[] | null)      ?? null,
+    };
+
+    _userContextCache.set(userId, { data, expiresAt: Date.now() + USER_CTX_TTL_MS });
+    return data;
+  } catch (err) {
+    logger.warn('[MultimodalGen] fetchUserContext DB error (non-fatal):', (err as Error)?.message ?? String(err));
+    return {} as UserContext;
+  }
+}
+
+/**
+ * Given a URL, check whether it matches any streaming link in the user's
+ * currentReleases preference list.  Returns the release record or undefined.
+ */
+function matchReleaseByUrl(url: string, releases: UserContext['currentReleases']): { title: string; type: string; releaseDate: string } | undefined {
+  if (!url || !releases?.length) return undefined;
+  try {
+    const needle = new URL(url).href.replace(/\/$/, '').toLowerCase();
+    for (const rel of releases) {
+      for (const link of Object.values(rel.streamingLinks ?? {})) {
+        try {
+          if (new URL(link).href.replace(/\/$/, '').toLowerCase() === needle) return rel;
+        } catch { /* skip malformed links */ }
+      }
+    }
+  } catch { /* skip malformed input */ }
+  return undefined;
 }
 
 function safeExtractJson(raw: string): any {
@@ -1415,46 +1507,83 @@ const textWorker = {
       const normalized = inputs?.normalized ?? {};
       const semantic: Record<string, string> = normalized.semantic ?? {};
 
+      // Fetch this user's stored artist profile / autopilot preferences from the DB.
+      // These fields take priority over whatever MaxCore's /analyze guessed, giving
+      // every generation call a grounding in the user's own identity and style.
+      const userCtx = await fetchUserContext(req.userId ?? '');
+
       // For URL inputs, build a human-readable topic from extracted metadata so
       // MaxCore generates content about the actual page, not a bare URL string.
       let topic: string;
       if (req.input?.modality === 'url') {
-        const meta = (normalized.metadata ?? {}) as Record<string, string>;
-        const urlTitle  = normalized.title       ?? meta.title       ?? '';
-        const urlAuthor = normalized.author      ?? meta.author      ?? '';
-        const urlSite   = normalized.siteName    ?? meta.siteName    ?? '';
-        const urlDesc   = normalized.description ?? meta.description ?? '';
-        if (urlTitle) {
-          const parts: string[] = [urlTitle];
-          if (urlAuthor) parts.push(`by ${urlAuthor}`);
-          if (urlSite)   parts.push(`on ${urlSite}`);
-          if (urlDesc)   parts.push(`— ${urlDesc.slice(0, 200)}`);
-          topic = parts.join(' ');
+        // First check: does this URL exactly match one of the user's current releases?
+        // If so, the release title + type + date is the most authoritative topic.
+        const matchedRelease = matchReleaseByUrl(req.input.payload ?? '', userCtx.currentReleases ?? null);
+        if (matchedRelease) {
+          const relParts = [`${matchedRelease.title} (${matchedRelease.type})`];
+          if (matchedRelease.releaseDate) relParts.push(`released ${matchedRelease.releaseDate}`);
+          if (userCtx.artistName) relParts.push(`by ${userCtx.artistName}`);
+          topic = relParts.join(' ');
+          logger.debug(`[MultimodalGen] URL matched user release: "${topic}"`);
         } else {
-          // No title from metadata — try to parse a readable slug from the URL path.
-          // e.g. "pitchfork.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
-          const slugTopic = (() => {
-            try {
-              const u = new URL(req.input.payload ?? '');
-              const segments = u.pathname.split('/').filter(Boolean);
-              // Skip common non-descriptive segments like 'reviews', 'albums', 'watch', 'track', 'e', 'p', 'reel', 'posts'
-              const skip = new Set(['reviews', 'albums', 'watch', 'track', 'tracks', 'e', 'p', 'reel', 'reels', 'posts', 'post', 'video', 'videos', 'playlist', 'article', 'articles', 'news', 'blog', 'read']);
-              const slug = segments.filter(s => !skip.has(s) && !/^\d{4,}$/.test(s)).pop() ?? '';
-              if (!slug) return '';
-              // Convert kebab/snake to title case: "frank-ocean-blonde" → "Frank Ocean Blonde"
-              const readable = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-              const site = urlSite || u.hostname.replace(/^www\./, '').split('.')[0];
-              return site ? `${readable} on ${site.charAt(0).toUpperCase() + site.slice(1)}` : readable;
-            } catch {
-              return '';
-            }
-          })();
-          topic = slugTopic || normalized.summary || normalized.payload_summary || semantic.core_message || req.input?.payload || '';
+          const meta = (normalized.metadata ?? {}) as Record<string, string>;
+          const urlTitle  = normalized.title       ?? meta.title       ?? '';
+          const urlAuthor = normalized.author      ?? meta.author      ?? '';
+          const urlSite   = normalized.siteName    ?? meta.siteName    ?? '';
+          const urlDesc   = normalized.description ?? meta.description ?? '';
+          if (urlTitle) {
+            const parts: string[] = [urlTitle];
+            if (urlAuthor) parts.push(`by ${urlAuthor}`);
+            if (urlSite)   parts.push(`on ${urlSite}`);
+            if (urlDesc)   parts.push(`— ${urlDesc.slice(0, 200)}`);
+            topic = parts.join(' ');
+          } else {
+            // No title from metadata — try to parse a readable slug from the URL path.
+            // e.g. "pitchfork.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
+            const slugTopic = (() => {
+              try {
+                const u = new URL(req.input.payload ?? '');
+                const segments = u.pathname.split('/').filter(Boolean);
+                // Skip common non-descriptive segments like 'reviews', 'albums', 'watch', 'track', 'e', 'p', 'reel', 'posts'
+                const skip = new Set(['reviews', 'albums', 'watch', 'track', 'tracks', 'e', 'p', 'reel', 'reels', 'posts', 'post', 'video', 'videos', 'playlist', 'article', 'articles', 'news', 'blog', 'read']);
+                const slug = segments.filter(s => !skip.has(s) && !/^\d{4,}$/.test(s)).pop() ?? '';
+                if (!slug) return '';
+                // Convert kebab/snake to title case: "frank-ocean-blonde" → "Frank Ocean Blonde"
+                const readable = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                const site = urlSite || u.hostname.replace(/^www\./, '').split('.')[0];
+                return site ? `${readable} on ${site.charAt(0).toUpperCase() + site.slice(1)}` : readable;
+              } catch {
+                return '';
+              }
+            })();
+            topic = slugTopic || normalized.summary || normalized.payload_summary || semantic.core_message || req.input?.payload || '';
+          }
         }
         logger.debug(`[MultimodalGen] URL topic built: "${topic.slice(0, 120)}"`);
       } else {
         topic = normalized.payload_summary ?? req.input?.payload ?? semantic.core_message ?? '';
       }
+
+      // Merge DB context into the MaxCore params.  DB values take priority because
+      // the user explicitly set them; fall back to whatever /analyze returned.
+      const resolvedArtistName     = userCtx.artistName     ?? normalized.artistName    ?? semantic.artist_name   ?? normalized.author ?? (normalized.metadata as any)?.author ?? undefined;
+      const resolvedGenre          = userCtx.genre           ?? normalized.genre         ?? semantic.genre         ?? undefined;
+      const resolvedBrandVoice     = userCtx.brandVoice      ?? normalized.brandVoice    ?? semantic.brand_voice   ?? undefined;
+      const resolvedTargetAudience = userCtx.targetAudience  ?? normalized.targetAudience ?? semantic.target_audience ?? undefined;
+      const resolvedTone           = userCtx.contentTone     ?? req.intent               ?? 'professional';
+      // Merge preferred hashtags: DB list first, then any from normalized (deduplicated)
+      const dbHashtags   = userCtx.preferredHashtags ?? [];
+      const normHashtags = (normalized.preferredHashtags as string[] | undefined) ?? [];
+      const resolvedHashtags = dbHashtags.length
+        ? [...new Set([...dbHashtags, ...normHashtags])]
+        : (normHashtags.length ? normHashtags : undefined);
+
+      // Build an artist_context string so MaxCore can use the bio + USPs for richer copy.
+      const artistContextParts: string[] = [];
+      if (userCtx.artistBio) artistContextParts.push(userCtx.artistBio.slice(0, 300));
+      if (userCtx.uniqueSellingPoints?.length) artistContextParts.push(`Key strengths: ${userCtx.uniqueSellingPoints.slice(0, 5).join(', ')}`);
+      if (userCtx.subGenres?.length) artistContextParts.push(`Sub-genres: ${userCtx.subGenres.slice(0, 4).join(', ')}`);
+      const artistContext = artistContextParts.join('. ') || undefined;
 
       const perSlotResults = await Promise.allSettled(
         rawSlots.map(async (slot: any) => {
@@ -1462,12 +1591,15 @@ const textWorker = {
           const mc = await maxcorePost('/generate/content', {
             platform,
             topic,
-            tone:             req.intent ?? 'professional',
-            genre:            normalized.genre ?? semantic.genre,
-            artist_name:      normalized.artistName ?? semantic.artist_name ?? normalized.author ?? (normalized.metadata as any)?.author,
-            brand_voice:      normalized.brandVoice ?? semantic.brand_voice,
-            target_audience:  normalized.targetAudience ?? semantic.target_audience,
-            preferred_hashtags: normalized.preferredHashtags ?? undefined,
+            tone:               resolvedTone,
+            genre:              resolvedGenre,
+            artist_name:        resolvedArtistName,
+            brand_voice:        resolvedBrandVoice,
+            target_audience:    resolvedTargetAudience,
+            preferred_hashtags: resolvedHashtags,
+            ...(artistContext ? { artist_context: artistContext } : {}),
+            ...(userCtx.callToActionStyle ? { cta_style: userCtx.callToActionStyle } : {}),
+            ...(userCtx.avoidTopics?.length ? { avoid_topics: userCtx.avoidTopics } : {}),
           }, 8_000);  // 8 s per slot — fail fast so the local fallback runs within the 30 s client window
 
           // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
