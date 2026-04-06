@@ -271,15 +271,26 @@ export class UnifiedAIController {
       const ctx = options.userContext;
 
       // MaxCore is the ONLY source — always succeeds via remote + local engine
-      // ── Build a focused topic string for MaxCore's template engine ──────────
-      // MaxCore uses `topic` as its content body signal, so keep it concise and
-      // punchy (artist + track + genre + mood + top keywords, max ~120 chars).
-      // Verbose context (stats, description, album details) goes into
-      // extra_context so MaxCore stores it, and we use it in post-processing.
-      const baseTopic = options.topic || options.genre || 'new music';
+      //
+      // ── Two-tier payload strategy ────────────────────────────────────────────
+      // TIER 1 — topic (short subject keyword, ≤300 chars)
+      //   Used by MaxCore for genre/platform/style matching.
+      //   Contains: artist, track, album, label, URL metadata.
+      //   Does NOT contain the user's instruction — that goes in extra_context.
+      //
+      // TIER 2 — extra_context (full creative directive, never truncated)
+      //   The user's verbatim instruction is placed FIRST so MaxCore's LLM
+      //   treats it as the primary generation directive. Supporting metadata
+      //   (stats, tracklist, body preview) follows as supplementary context.
+      //
+      // This separation is the difference between MaxCore generating generic
+      // music captions vs. actually following what the user asked for.
+
       const artist = ctx?.artistName || options.artistName;
+
+      // Build a clean topic from metadata — no user instruction text
+      const baseTopic = options.topic || options.genre || 'new music';
       const topicParts: string[] = [baseTopic];
-      // Only append artist/track if not already present in the base topic
       if (artist && !baseTopic.toLowerCase().includes(artist.toLowerCase())) {
         topicParts.push(`by ${artist}`);
       }
@@ -288,10 +299,14 @@ export class UnifiedAIController {
       }
       if (options.mood) topicParts.push(options.mood);
       if (options.keywords?.length) topicParts.push(options.keywords.slice(0, 4).join(', '));
-      const enrichedTopic = topicParts.join(' — ').slice(0, 120);
+      // 300-char limit is enough for full metadata context without polluting the topic signal
+      const enrichedTopic = topicParts.join(' — ').slice(0, 300);
 
-      // ── Build comprehensive extra_context for MaxCore and local enrichment ──
+      // ── Build extra_context — user instruction FIRST, then supporting detail ──
       const extraParts: string[] = [];
+      // User's verbatim instruction is the primary creative directive
+      if (options.extraContext) extraParts.push(options.extraContext);
+      // Supporting metadata follows
       if (options.album)       extraParts.push(`Album: ${options.album}`);
       if (options.releaseDate) extraParts.push(`Released: ${options.releaseDate}`);
       if (options.label)       extraParts.push(`Label: ${options.label}`);
@@ -311,7 +326,6 @@ export class UnifiedAIController {
         const clean = options.description.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 180);
         if (clean) extraParts.push(clean);
       }
-      if (options.extraContext) extraParts.push(options.extraContext.slice(0, 200));
       const combinedExtra = extraParts.length ? extraParts.join(' | ') : undefined;
 
       // /api/generate/content is the structured endpoint on the remote server.
@@ -328,6 +342,13 @@ export class UnifiedAIController {
         target_audience:       ctx?.targetAudience,
         preferred_hashtags:    ctx?.preferredHashtags,
       };
+      // If the caller supplied a verbatim user instruction, pass it as a
+      // dedicated `instruction` field AND prepend it in extra_context so MaxCore
+      // receives it through both channels regardless of API version.
+      if (options.extraContext) {
+        mcPayload.instruction  = options.extraContext;
+        mcPayload.prompt       = options.extraContext;
+      }
       // Artist bio / context
       if (ctx?.artistBio)              mcPayload.artist_context        = ctx.artistBio;
       // Content guidance
@@ -339,8 +360,11 @@ export class UnifiedAIController {
       if (options.releaseDate)         mcPayload.release_date          = options.releaseDate;
       if (options.label)               mcPayload.label                 = options.label;
       if (options.tracklist?.length)   mcPayload.tracklist             = options.tracklist;
-      // Extra descriptive context (stats, page preview, etc.)
+      // extra_context: user instruction FIRST (already placed first in extraParts),
+      // followed by supporting metadata. Never truncated — MaxCore needs the full text.
       if (combinedExtra)               mcPayload.extra_context         = combinedExtra;
+
+      logger.debug(`[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? '').slice(0, 80)}"`)
 
       const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', mcPayload);
 

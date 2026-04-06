@@ -872,66 +872,56 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       || (inlineUrlAnalysis?.genre && inlineUrlAnalysis.genre !== 'default' ? inlineUrlAnalysis.genre : null)
       || (isWebsitePromo ? 'pop' : detectGenre(String(topic)));
 
-    // Build a rich context descriptor from all available URL analysis fields
-    const contextParts: string[] = [];
-
-    // Core identity — use effective (merged) values so inline URL analysis contributes
-    if (effectiveTrackTitle) contextParts.push(`"${effectiveTrackTitle}"`);
-    if (effectiveArtistName) contextParts.push(`by ${effectiveArtistName}`);
-    if (effectiveAlbumName && !effectiveTrackTitle) contextParts.push(`from album "${effectiveAlbumName}"`);
-    if (effectiveLabel) contextParts.push(`on ${effectiveLabel}`);
-
-    // User's own prompt — strip the bare URL from display text so it doesn't repeat
+    // ── User instruction vs. metadata context ────────────────────────────────
+    // The user's raw text (topic field) is treated as a CREATIVE INSTRUCTION
+    // to MaxCore — e.g. "Write a hype caption announcing my new single 'Fire'..."
+    // It must reach MaxCore verbatim, not buried inside a truncated metadata blob.
+    //
+    // Separate concerns:
+    //   userInstruction → goes to MaxCore as extra_context (primary directive)
+    //   metadataTopic   → goes to MaxCore as topic (short subject keyword)
     const cleanTopic = embeddedUrl ? String(topic).replace(embeddedUrl, '').trim().replace(/\s+/g, ' ') : String(topic);
-    contextParts.push(cleanTopic || String(topic));
+    const userInstruction = cleanTopic.trim();
 
-    // Inline URL analysis: inject page title + category + body preview as context
+    // Build a metadata-only topic string (artist + track + URL context — NO user instruction).
+    // This is the concise subject signal MaxCore uses for genre/platform matching.
+    const metaParts: string[] = [];
+    if (effectiveTrackTitle) metaParts.push(`"${effectiveTrackTitle}"`);
+    if (effectiveArtistName) metaParts.push(`by ${effectiveArtistName}`);
+    if (effectiveAlbumName && !effectiveTrackTitle) metaParts.push(`album "${effectiveAlbumName}"`);
+    if (effectiveLabel) metaParts.push(effectiveLabel);
+    if (effectiveReleaseDate) metaParts.push(`released ${effectiveReleaseDate}`);
+
+    // Inline URL analysis: inject page title + category as metadata
     if (inlineUrlAnalysis) {
-      if (inlineTitle && inlineTitle !== cleanTopic) contextParts.push(`Page: "${inlineTitle}"`);
-      if (inlineContentCategory)                     contextParts.push(`Category: ${inlineContentCategory}`);
-      if (inlineBodyPreview)                         contextParts.push(String(inlineBodyPreview).slice(0, 200));
+      if (inlineTitle && inlineTitle !== userInstruction) metaParts.push(inlineTitle);
+      if (inlineContentCategory) metaParts.push(inlineContentCategory);
     }
+    if (effectiveUrlDescription && effectiveUrlDescription !== userInstruction) metaParts.push(effectiveUrlDescription.slice(0, 120));
 
-    // URL-derived description (only if it adds new info)
-    if (effectiveUrlDescription && effectiveUrlDescription !== String(topic)) contextParts.push(effectiveUrlDescription);
+    // Keywords as features
+    const allKeywords = [...(effectiveKeywords ?? []), ...(effectiveTags ?? [])].filter(Boolean);
+    const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
+    if (uniqueKeywords.length) metaParts.push(uniqueKeywords.join(', '));
 
-    // Music metadata
-    const musicMeta: string[] = [];
-    if (effectiveReleaseDate) musicMeta.push(`released ${effectiveReleaseDate}`);
-    if (effectiveDuration)    musicMeta.push(`${effectiveDuration}`);
-    if (musicMeta.length) contextParts.push(musicMeta.join(', '));
-
-    // Engagement signals — let AI reference real numbers when available
+    // Engagement signals
     const engagementParts: string[] = [];
-    if (viewCount && Number(viewCount) > 1000) {
-      engagementParts.push(`${Number(viewCount).toLocaleString()} views`);
-    }
-    if (likeCount && Number(likeCount) > 100) {
-      engagementParts.push(`${Number(likeCount).toLocaleString()} likes`);
-    }
-    if (playCount && Number(playCount) > 1000) {
-      engagementParts.push(`${Number(playCount).toLocaleString()} plays`);
-    }
-    if (engagementParts.length) contextParts.push(`[Stats: ${engagementParts.join(', ')}]`);
+    if (viewCount && Number(viewCount) > 1000) engagementParts.push(`${Number(viewCount).toLocaleString()} views`);
+    if (likeCount && Number(likeCount) > 100)  engagementParts.push(`${Number(likeCount).toLocaleString()} likes`);
+    if (playCount && Number(playCount) > 1000) engagementParts.push(`${Number(playCount).toLocaleString()} plays`);
+    if (engagementParts.length) metaParts.push(engagementParts.join(', '));
 
-    // Event context
+    // Event / product context
     const eventParts: string[] = [];
     if (eventDate) eventParts.push(eventDate);
     if (eventLocation) eventParts.push(`at ${eventLocation}`);
     if (performers?.length) eventParts.push(`featuring ${(performers as string[]).slice(0, 3).join(', ')}`);
-    if (eventParts.length) contextParts.push(eventParts.join(' '));
+    if (eventParts.length) metaParts.push(eventParts.join(' '));
+    if (brand && brand !== effectiveArtistName) metaParts.push(brand);
+    if (inlineBodyPreview) metaParts.push(String(inlineBodyPreview).slice(0, 150));
 
-    // Product/brand context
-    if (brand && brand !== effectiveArtistName) contextParts.push(`by ${brand}`);
-    if (effectivePrice) contextParts.push(`${effectivePrice}`);
-    if (rating) contextParts.push(`${rating} rating`);
-
-    // Keywords as features list — use effective (merged) keywords
-    const allKeywords = [...(effectiveKeywords ?? []), ...(effectiveTags ?? [])].filter(Boolean);
-    const uniqueKeywords = [...new Set(allKeywords)].slice(0, 8);
-    if (uniqueKeywords.length) contextParts.push(`[Features: ${uniqueKeywords.join(', ')}]`);
-
-    const enrichedTopic = contextParts.filter(Boolean).join(' — ');
+    // If no metadata context exists at all, fall back to the user instruction as the topic
+    const metadataTopic = metaParts.filter(Boolean).join(' — ') || userInstruction || 'new music';
 
     // ── Context awareness ────────────────────────────────────────────────────
     // Fetch the user's autopilot preferences (artist identity, brand voice,
@@ -965,23 +955,24 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
         .map(p => (p.content as string).slice(0, 120).trim());
     }
 
-    // Pass the clean enriched topic to MaxCore — user identity signals (brand
-    // voice, artist bio, themes, etc.) go as structured fields in userContext,
-    // not concatenated into the topic string. Mixing them into topic degrades
-    // the content relevance signal that MaxCore uses for generation.
-    const finalTopic = enrichedTopic || 'new music';
-
     const result = await unifiedAIController.generateContent({
       tone: resolvedTone,
       platform: resolvedPlatform as any,
-      topic: finalTopic,
+      topic: metadataTopic,
       genre: detectedGenre || userContext.genre,
       artistName: effectiveArtistName || userContext.artistName,
       trackTitle: effectiveTrackTitle || undefined,
+      album: effectiveAlbumName || undefined,
+      label: effectiveLabel || undefined,
+      releaseDate: effectiveReleaseDate || undefined,
+      keywords: uniqueKeywords.length ? uniqueKeywords : undefined,
       contentType: validContentTypes.includes(mappedContentType) ? mappedContentType as any : 'engagement',
       includeHashtags: true,
       includeEmojis: true,
       userContext,
+      // The user's full instruction goes here — MaxCore uses extra_context as
+      // the primary creative directive. It is never truncated.
+      extraContext: userInstruction || undefined,
     });
 
     if (!result.success) {
