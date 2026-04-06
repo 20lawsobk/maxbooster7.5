@@ -512,19 +512,33 @@ router.post('/ai-content/analyze-brand-voice', requireAuth, async (req: Authenti
 
 router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { content, targetLanguages, headline, hashtags, platform } = req.body;
-    if (!content || typeof content !== 'string') {
-      return res.status(400).json({ error: 'content is required' });
+    // Accept both field naming conventions:
+    // Frontend sends { prompt, language, culturalAdaptation }
+    // Spec also accepts { content, targetLanguages, headline, hashtags, platform }
+    const content: string = req.body.content || req.body.prompt || '';
+    const rawLangs = req.body.targetLanguages ?? (req.body.language ? [req.body.language] : null);
+    const targetLanguages: string[] = Array.isArray(rawLangs) ? rawLangs : [];
+    const { headline, hashtags, platform } = req.body;
+
+    if (!content) {
+      return res.status(400).json({ error: 'content (or prompt) is required' });
     }
-    if (!Array.isArray(targetLanguages) || targetLanguages.length === 0) {
-      return res.status(400).json({ error: 'targetLanguages must be a non-empty array' });
+    if (targetLanguages.length === 0) {
+      return res.status(400).json({ error: 'targetLanguages (or language) must be provided' });
     }
     const translations = await aiContentService.generateMultilingualContent(
       content,
       targetLanguages.map(String),
       { headline, hashtags, platform }
     );
-    res.json({ translations });
+    // Return in a shape that satisfies both callers:
+    // ContentGenerator expects { content } on the response; the full shape is { translations }
+    const first = translations[0];
+    res.json({
+      translations,
+      content: first?.content ?? '',
+      language: first?.language ?? targetLanguages[0],
+    });
   } catch (error) {
     logger.error('Multilingual content error:', error);
     res.status(500).json({ error: 'Failed to generate multilingual content' });

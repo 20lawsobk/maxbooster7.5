@@ -567,53 +567,68 @@ router.get('/hashtags/trending', requireAuth, async (req: AuthenticatedRequest, 
   try {
     const userId = req.user!.id;
     const user = await storage.getUser(userId);
-    const userPosts = await storage.getSocialPosts?.(userId) || [];
 
-    const musicHashtags = [
-      { hashtag: '#newmusic', baseVolume: 45200, category: 'general' },
-      { hashtag: '#musicproducer', baseVolume: 32100, category: 'production' },
-      { hashtag: '#beats', baseVolume: 28700, category: 'production' },
-      { hashtag: '#hiphop', baseVolume: 89300, category: 'hiphop' },
-      { hashtag: '#rnb', baseVolume: 67200, category: 'rnb' },
-      { hashtag: '#trapbeats', baseVolume: 15600, category: 'hiphop' },
-      { hashtag: '#studiolife', baseVolume: 12400, category: 'production' },
-      { hashtag: '#songwriting', baseVolume: 9800, category: 'general' },
-      { hashtag: '#indieartist', baseVolume: 18500, category: 'indie' },
-      { hashtag: '#newrelease', baseVolume: 38900, category: 'general' },
-      { hashtag: '#musicvideo', baseVolume: 52100, category: 'general' },
-      { hashtag: '#producer', baseVolume: 41800, category: 'production' },
-      { hashtag: '#rapper', baseVolume: 35400, category: 'hiphop' },
-      { hashtag: '#singer', baseVolume: 29600, category: 'general' },
-      { hashtag: '#beatmaker', baseVolume: 22300, category: 'production' },
-      { hashtag: '#freestyle', baseVolume: 19700, category: 'hiphop' },
-      { hashtag: '#musicislife', baseVolume: 56800, category: 'general' },
-      { hashtag: '#linkinbio', baseVolume: 71200, category: 'promotion' },
-      { hashtag: '#streamingmusic', baseVolume: 24500, category: 'promotion' },
-      { hashtag: '#spotifyplaylist', baseVolume: 31400, category: 'promotion' },
-    ];
+    const ai = await getUnifiedAI();
+    const mcResult = await ai.generateContent({
+      topic: 'trending music hashtags for social media marketing',
+      platform: 'instagram',
+      tone: 'energetic',
+      genre: (user as any)?.genre || 'music',
+      artist_name: (user as any)?.artistName || '',
+      includeHashtags: true,
+      extraContext: 'Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.',
+    });
+
+    const rawTags: string[] = mcResult?.hashtags ?? [];
+
+    function hashVolume(tag: string, base: number): number {
+      let h = 2166136261;
+      for (let i = 0; i < tag.length; i++) {
+        h ^= tag.charCodeAt(i);
+        h = Math.imul(h, 16777619) >>> 0;
+      }
+      return base + (h % base);
+    }
+
+    const categoryMap: Record<string, string> = {
+      production: 'production', producer: 'production', beatmaker: 'production',
+      studiolife: 'production', beats: 'production', beatmaking: 'production',
+      hiphop: 'hiphop', rap: 'hiphop', rapper: 'hiphop', trap: 'hiphop',
+      freestyle: 'hiphop', bars: 'hiphop',
+      rnb: 'rnb', soul: 'rnb',
+      indie: 'indie', indieartist: 'indie',
+      linkinbio: 'promotion', streaming: 'promotion', spotify: 'promotion',
+      newrelease: 'promotion', musicvideo: 'promotion',
+    };
+
+    function guessCategory(tag: string): string {
+      const t = tag.replace(/^#/, '').toLowerCase();
+      for (const [key, cat] of Object.entries(categoryMap)) {
+        if (t.includes(key)) return cat;
+      }
+      return 'general';
+    }
 
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000);
     const hourOfDay = new Date().getUTCHours();
 
-    const trending = musicHashtags.map((h, i) => {
+    const trending = rawTags.map((tag, i) => {
+      const base = hashVolume(tag, 15000);
       const timeFactor = Math.sin((dayOfYear + i) * 0.3 + hourOfDay * 0.1) * 0.15;
-      const volume = Math.round(h.baseVolume * (1 + timeFactor));
-      const trendVal = timeFactor;
+      const volume = Math.round(base * (1 + timeFactor));
       return {
-        hashtag: h.hashtag,
+        hashtag: tag.startsWith('#') ? tag : `#${tag}`,
         posts: volume,
-        trend: trendVal > 0.05 ? 'up' : trendVal < -0.05 ? 'down' : 'stable' as string,
-        category: h.category,
+        trend: timeFactor > 0.05 ? 'up' : timeFactor < -0.05 ? 'down' : 'stable' as string,
+        category: guessCategory(tag),
       };
     });
 
     trending.sort((a, b) => b.posts - a.posts);
-    const topTrending = trending.slice(0, 12);
-
-    res.json(topTrending);
+    res.json(trending.slice(0, 12));
   } catch (error) {
     logger.error('Failed to get trending hashtags:', error);
-    res.status(500).json({ error: 'Failed to get trending hashtags:' });
+    res.status(500).json({ error: 'Failed to get trending hashtags' });
   }
 });
 

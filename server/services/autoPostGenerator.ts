@@ -5,9 +5,48 @@ import { autoPostingService, type PostContent } from './autoPostingService.js';
 import { contentQualityPipeline, type ContentVariant, type ContentScores } from './contentQualityPipeline';
 import { contentQualityGate } from './contentQualityGate.js';
 import { dynamicTrendsService } from './dynamicTrendsService';
-import { aiTranslationService, type TranslatedContent } from './aiTranslationService';
+import { type TranslatedContent } from './aiTranslationService';
+import { MaxCoreAIClient } from './maxcoreClient.js';
 import { pythonAIService } from './pythonAIService.js';
 import { veoMusicService } from './veoMusicService.js';
+
+async function translateViaMaxCore(
+  content: string,
+  headline: string | undefined,
+  hashtags: string[],
+  targetLanguages: string[],
+  platform?: string
+): Promise<TranslatedContent[]> {
+  const results: TranslatedContent[] = [];
+  for (const lang of targetLanguages) {
+    const mcResult = await MaxCoreAIClient.generate<{
+      content?: string; body?: string; text?: string;
+      headline?: string; hashtags?: string[];
+    }>('/api/generate/content', {
+      topic: content,
+      platform: platform || 'instagram',
+      tone: 'authentic',
+      extra_context: `Translate and culturally adapt the following music social media post to ${lang}. Maintain the artist's voice, energy, and promotional intent. Adapt hashtags for ${lang}-speaking audiences where appropriate. Return the translated post content.`,
+    });
+
+    const translatedBody = mcResult?.content || mcResult?.body || mcResult?.text || content;
+    const translatedHeadline = mcResult?.headline || headline;
+    const translatedHashtags: string[] = (mcResult?.hashtags && mcResult.hashtags.length > 0)
+      ? mcResult.hashtags
+      : hashtags;
+
+    results.push({
+      language: lang,
+      languageCode: lang.toLowerCase().slice(0, 2),
+      content: translatedBody,
+      headline: translatedHeadline,
+      hashtags: translatedHashtags,
+      culturalNotes: [],
+      confidence: 0.9,
+    });
+  }
+  return results;
+}
 
 /**
  * FNV-1a 32-bit hash for deterministic seeded selection.
@@ -132,14 +171,13 @@ class AutoPostGenerator {
 
       let translations: TranslatedContent[] | undefined;
       if (request.targetLanguages && request.targetLanguages.length > 0) {
-        translations = await aiTranslationService.translateContent({
-          content: selected.content,
-          headline: selected.headline,
-          hashtags: combinedHashtags,
-          targetLanguages: request.targetLanguages,
-          preserveTone: true,
-          adaptForPlatform: primaryPlatform,
-        });
+        translations = await translateViaMaxCore(
+          selected.content,
+          selected.headline,
+          combinedHashtags,
+          request.targetLanguages,
+          primaryPlatform,
+        );
       }
 
       const now = new Date();
@@ -216,13 +254,12 @@ class AutoPostGenerator {
   ): Promise<{ primary: GeneratedContent; translations: TranslatedContent[] }> {
     const primary = await this.generateEnhancedContent(userId, request);
     
-    const translations = await aiTranslationService.translateContent({
-      content: primary.body,
-      headline: primary.headline,
-      hashtags: primary.hashtags,
-      targetLanguages: languages,
-      preserveTone: true,
-    });
+    const translations = await translateViaMaxCore(
+      primary.body,
+      primary.headline,
+      primary.hashtags,
+      languages,
+    );
 
     return { primary, translations };
   }

@@ -1596,63 +1596,6 @@ class AdvancedSocialAIService {
     return cta;
   }
 
-  private generateHashtags(request: AdvancedContentRequest, platform: PlatformProfile): string[] {
-    if (request.includeHashtags === false) return [];
-
-    const hashtags: string[] = [];
-    const targetCount = Math.floor((platform.hashtagRange.min + platform.hashtagRange.max) / 2);
-
-    const musicHashtags = ['#music', '#newmusic', '#musician', '#artist'];
-    const engagementHashtags = ['#fyp', '#viral', '#trending', '#explore'];
-    const genreHashtags: Record<string, string[]> = {
-      hiphop: ['#hiphop', '#rap', '#hiphopmusic', '#rapper'],
-      rnb: ['#rnb', '#rnbmusic', '#soul', '#rnbartist'],
-      pop: ['#pop', '#popmusic', '#popsong', '#popartist'],
-      electronic: ['#electronic', '#edm', '#dance', '#producer'],
-      rock: ['#rock', '#rockmusic', '#alternative', '#indie'],
-      trap: ['#trap', '#trapmusic', '#trapbeats', '#808s'],
-    };
-
-    hashtags.push(...musicHashtags.slice(0, 2));
-
-    if (platform.viralMultiplier > 0.7) {
-      hashtags.push(...engagementHashtags.slice(0, 2));
-    }
-
-    if (request.genre && genreHashtags[request.genre.toLowerCase()]) {
-      hashtags.push(...genreHashtags[request.genre.toLowerCase()].slice(0, 2));
-    }
-
-    if (request.topic) {
-      const topicTag = `#${request.topic.replace(/\s+/g, '').toLowerCase()}`;
-      if (!hashtags.includes(topicTag)) {
-        hashtags.push(topicTag);
-      }
-    }
-
-    const mbContext = detectMaxBoosterContext(request.topic);
-    if (mbContext.isMaxBoosterTopic && mbContext.relevantFeature) {
-      const featureHashtagMap: Record<string, string[]> = {
-        studio: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.studio,
-        distribution: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.distribution,
-        royalties: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#Royalties'],
-        marketplace: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.studio, '#BeatSales'],
-        socialMedia: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music,
-        analytics: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicAnalytics'],
-        videoGenerator: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicVideo'],
-        careerTools: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicBusiness'],
-        aiTechnology: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.ai,
-        advertisingAutopilot: [...MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.music, '#MusicMarketing'],
-        subscriptionPlans: MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.brand,
-      };
-      const featureTags = featureHashtagMap[mbContext.relevantFeature] || [];
-      hashtags.push(...featureTags.slice(0, 2));
-      hashtags.push(MAX_BOOSTER_PLATFORM_KNOWLEDGE.hashtags.brand[0]);
-    }
-
-    return [...new Set(hashtags)].slice(0, targetCount);
-  }
-
   private selectEmojis(
     request: AdvancedContentRequest,
     platform: PlatformProfile,
