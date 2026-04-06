@@ -363,7 +363,53 @@ async function scrapeHtml(url: string): Promise<PageMeta> {
   };
 }
 
+// ── MaxBooster own-app route metadata (no HTTP round-trip needed) ────────────
+// When a user pastes a URL from the Max Booster app itself, we know exactly
+// what each page is about without scraping.
+const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
+  '/':             { title: 'Max Booster - AI-Powered Music Career Platform', description: 'All-in-one platform for artists and producers: AI music production studio, global distribution to 97+ DSPs, beat marketplace, social media automation, streaming analytics, royalty management, and AI career coaching.', siteName: 'Max Booster' },
+  '/pricing':      { title: 'Max Booster Pricing - Affordable AI Music Career Plans', description: 'Choose the plan that fits your career. Free forever, Pro at $29/mo, or Business at $99/mo. Includes AI music production, global distribution to 97+ DSPs, social media automation, analytics, and career coaching. Start free — no credit card required.', siteName: 'Max Booster' },
+  '/distribution': { title: 'Music Distribution to 97+ DSPs - Max Booster', description: 'Distribute your music to Spotify, Apple Music, TikTok, Amazon Music, and 94+ more stores worldwide. Keep 100% of your royalties, get paid fast, and track your streams in real time with Max Booster Distribution.', siteName: 'Max Booster' },
+  '/social-media': { title: 'AI Social Media Manager for Music Artists - Max Booster', description: 'Auto-generate platform-specific posts and schedule content across Instagram, TikTok, Twitter, Facebook, and more — powered by MaxCore AI. Turn any URL, track, or idea into ready-to-post social content in seconds.', siteName: 'Max Booster' },
+  '/analytics':    { title: 'Music Analytics Dashboard - Max Booster', description: 'Track streams, royalties, audience demographics, and playlist placements across every DSP in one dashboard. AI-powered insights help you understand what\'s working and what to release next.', siteName: 'Max Booster' },
+  '/studio':       { title: 'AI Music Studio & Production Tools - Max Booster', description: 'Professional-grade DAW powered by AI. Compose, mix, and master tracks in your browser. MaxCore AI generates beats, hooks, and arrangement ideas tailored to your style and genre.', siteName: 'Max Booster' },
+  '/beat-store':   { title: 'Beat Marketplace - Max Booster', description: 'Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.', siteName: 'Max Booster' },
+  '/marketplace':  { title: 'Beat Marketplace - Max Booster', description: 'Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.', siteName: 'Max Booster' },
+  '/career':       { title: 'AI Music Career Coach - Max Booster', description: 'Get personalized career strategy powered by MaxCore AI. Identify growth opportunities, plan your next release, optimise your social presence, and build a sustainable music career.', siteName: 'Max Booster' },
+  '/dashboard':    { title: 'Your Music Career Dashboard - Max Booster', description: 'Everything in one place: streams, earnings, upcoming releases, social performance, and AI recommendations — your complete music career command centre.', siteName: 'Max Booster' },
+  '/login':        { title: 'Sign In - Max Booster', description: 'Sign in to Max Booster and manage your music career with AI.', siteName: 'Max Booster' },
+  '/register':     { title: 'Create Your Free Account - Max Booster', description: 'Join Max Booster for free. AI music production, global distribution, social media automation, and more — no credit card required.', siteName: 'Max Booster' },
+};
+
+const MAXBOOSTER_HOSTS = new Set([
+  'maxbooster.replit.app',
+  'maxbooster.app',
+  'localhost',
+  '127.0.0.1',
+]);
+
+function getMaxBoosterRouteMeta(url: string): PageMeta | null {
+  try {
+    const u = new URL(url);
+    const host = u.hostname.split(':')[0].toLowerCase();
+    if (!MAXBOOSTER_HOSTS.has(host) && !host.endsWith('.maxbooster.replit.app') && !host.endsWith('.maxbooster.app')) {
+      return null;
+    }
+    const cleanPath = u.pathname.replace(/\/$/, '') || '/';
+    // Exact match first, then first path segment (e.g. /pricing?plan=pro → /pricing)
+    return MAXBOOSTER_ROUTE_META[cleanPath]
+      ?? MAXBOOSTER_ROUTE_META[`/${cleanPath.split('/')[1]}`]
+      ?? null;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchUrlMetadata(url: string, ctx: UrlContext): Promise<PageMeta> {
+  // ── Max Booster own-app routes — no HTTP round-trip needed ─────
+  const ownMeta = getMaxBoosterRouteMeta(url);
+  if (ownMeta) return ownMeta;
+
   // ── Known oEmbed endpoints (no need to scrape HTML first) ──────
   if (url.includes('youtube.com') || url.includes('youtu.be')) {
     const r = await tryOEmbed(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);

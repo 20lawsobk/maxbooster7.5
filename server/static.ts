@@ -133,6 +133,71 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
         url: `${SITE_URL}/marketplace`,
       };
     }
+
+    // ── Static route metadata for main app pages ─────────────────────────────
+    if (!result) {
+      const STATIC_ROUTES: Record<string, { title: string; description: string }> = {
+        '/pricing': {
+          title: 'Max Booster Pricing - Affordable AI Music Career Plans',
+          description: 'Choose the plan that fits your career. Free forever, Pro at $29/mo, or Business at $99/mo. Includes AI music production, global distribution to 97+ DSPs, social media automation, analytics, and career coaching. Start free, no credit card required.',
+        },
+        '/distribution': {
+          title: 'Music Distribution to 97+ DSPs - Max Booster',
+          description: 'Distribute your music to Spotify, Apple Music, TikTok, Amazon Music, and 94+ more stores worldwide. Keep 100% of your royalties, get paid fast, and track your streams in real time with Max Booster Distribution.',
+        },
+        '/social-media': {
+          title: 'AI Social Media Manager for Music Artists - Max Booster',
+          description: 'Auto-generate platform-specific posts, schedule content across Instagram, TikTok, Twitter, Facebook, and more — all powered by MaxCore AI. Turn any URL, track, or idea into ready-to-post social content in seconds.',
+        },
+        '/analytics': {
+          title: 'Music Analytics Dashboard - Max Booster',
+          description: 'Track streams, royalties, audience demographics, and playlist placements across every DSP in one dashboard. AI-powered insights help you understand what\'s working and what to release next.',
+        },
+        '/studio': {
+          title: 'AI Music Studio & Production Tools - Max Booster',
+          description: 'Professional-grade DAW powered by AI. Compose, mix, and master tracks in your browser. MaxCore AI generates beats, hooks, and arrangement ideas tailored to your style and genre.',
+        },
+        '/beat-store': {
+          title: 'Beat Marketplace - Max Booster',
+          description: 'Browse and license beats from top producers. Find the perfect beat for your next hit with advanced AI-powered discovery, instant licensing, and secure payments.',
+        },
+        '/career': {
+          title: 'AI Music Career Coach - Max Booster',
+          description: 'Get personalized career strategy powered by MaxCore AI. Identify growth opportunities, plan your next release, optimise your social presence, and build a sustainable music career with AI-driven coaching.',
+        },
+        '/dashboard': {
+          title: 'Your Music Career Dashboard - Max Booster',
+          description: 'Everything in one place: streams, earnings, upcoming releases, social performance, and AI recommendations — your complete music career command centre.',
+        },
+        '/': {
+          title: 'Max Booster - AI-Powered Music Career Platform',
+          description: 'All-in-one platform for artists and producers: AI music production studio, global distribution to 97+ DSPs, beat marketplace, social media automation, streaming analytics, royalty management, and AI career coaching.',
+        },
+        '/login': {
+          title: 'Sign In - Max Booster',
+          description: 'Sign in to Max Booster and manage your music career with AI.',
+        },
+        '/register': {
+          title: 'Create Your Free Account - Max Booster',
+          description: 'Join Max Booster for free. AI music production, global distribution, social media automation, and more — no credit card required.',
+        },
+      };
+
+      // Also match sub-paths (e.g. /pricing?plan=pro, /distribution/new)
+      const cleanPath = reqPath.split('?')[0].replace(/\/$/, '') || '/';
+      const staticMeta = STATIC_ROUTES[cleanPath]
+        ?? STATIC_ROUTES[`/${cleanPath.split('/')[1]}`]
+        ?? null;
+
+      if (staticMeta) {
+        result = {
+          title: staticMeta.title,
+          description: staticMeta.description,
+          image: `${SITE_URL}/og-image.png`,
+          url: `${SITE_URL}${cleanPath}`,
+        };
+      }
+    }
   } catch (error) {
     // Metadata fetch failed - continue with default meta
   }
