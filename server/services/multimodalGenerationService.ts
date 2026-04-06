@@ -26,7 +26,7 @@ const _MAXCORE_BASE = (process.env.AI_SERVER_URL || 'https://secure-ai-forge.rep
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 
-async function maxcorePost(path: string, body: unknown): Promise<any> {
+async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<any> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: 'POST',
     headers: {
@@ -37,7 +37,7 @@ async function maxcorePost(path: string, body: unknown): Promise<any> {
       } : {}),
     },
     body: JSON.stringify(body),
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(timeoutMs),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -1043,7 +1043,7 @@ async function normalizeInput(req: GenerationRequest): Promise<any> {
         } : {}),
       },
       platformRules: platformRulesSubset,
-    });
+    }, 8_000);  // 8 s — fail fast to local fallback
   } catch (err) {
     logger.warn('[MultimodalGen] MaxCore /analyze unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
 
@@ -1104,61 +1104,11 @@ function buildStepParamsForPlatform(
   return base;
 }
 
-async function planTasks(normalized: any, req: GenerationRequest): Promise<TaskPlan> {
-  const packSpec = req.packId ? PACK_DEFINITIONS[req.packId] ?? null : null;
-
-  const platformRulesForPack = req.platforms.reduce<Record<string, PlatformRules>>((acc, p) => {
-    acc[p] = getRules(p);
-    return acc;
-  }, {});
-
-  try {
-    const raw = await maxcorePost('/generate/text', {
-      mode: 'planner',
-      system: `
-        You are a content orchestration planner for music artists.
-        You receive normalized content, target platforms, an optional packSpec, and per-platform rules.
-        Use the platformRules to set accurate constraints (character limits, aspect ratios, durations, tone, hashtag rules) in each step's params.
-        Output ONLY a JSON TaskPlan:
-        {
-          "steps": [
-            {
-              "id": "step_1",
-              "type": "generate",
-              "worker": "text",
-              "inputFrom": "normalizedInput",
-              "params": {
-                "platform": "<platform>",
-                "slotId": "<slotId>",
-                "maxLength": <n>,
-                "recommendedLength": <n>,
-                "tone": ["<tone>"],
-                "hashtagsAllowed": <bool>,
-                "maxHashtags": <n>,
-                "aspectRatio": "<ratio>",
-                "maxDurationSec": <n>,
-                "requiresHook": <bool>
-              }
-            }
-          ]
-        }
-        Group text assets into one step and image assets into one step.
-        For audio/video slots, create individual steps per slot.
-      `,
-      input: {
-        normalized,
-        request: req,
-        packSpec,
-        platformRules: platformRulesForPack,
-      },
-    });
-    const text = typeof raw === 'string' ? raw : (raw.text || raw.content || JSON.stringify(raw));
-    const planJson = safeExtractJson(text);
-    return validateTaskPlan(planJson, req.id);
-  } catch (err) {
-    logger.warn('[MultimodalGen] MaxCore planner failed, building default plan:', err);
-    return buildDefaultPlan(req);
-  }
+async function planTasks(_normalized: any, req: GenerationRequest): Promise<TaskPlan> {
+  // The remote planner (/generate/text with mode: 'planner') always produces
+  // garbled output that fails JSON parsing, causing a 30-second timeout on
+  // every request.  Use the deterministic local plan builder directly.
+  return buildDefaultPlan(req);
 }
 
 function buildDefaultPlan(req: GenerationRequest): TaskPlan {
@@ -1303,19 +1253,49 @@ function buildDefaultPlan(req: GenerationRequest): TaskPlan {
   return { requestId: req.id, steps };
 }
 
+/**
+ * Returns true when `text` is likely raw model token garbage (numbers, control
+ * tokens, repeated hashtags).  Used to skip bad /generate/text outputs and
+ * fall back to the local template builder.
+ */
+function isGarbledText(text: string): boolean {
+  if (!text || text.length === 0) return false;
+  const first80 = text.slice(0, 80);
+  // 3+ standalone numbers in the first 80 chars → garbage
+  const numberTokens = (first80.match(/\b\d+\b/g) ?? []).length;
+  if (numberTokens >= 3) return true;
+  // Any angle-bracket control token → garbage
+  if (/<[A-Z_]{3,}>/.test(text)) return true;
+  // Same hashtag repeated 3+ times → garbage
+  const htMatch = text.match(/#(\w+)/g) ?? [];
+  const htFreq = htMatch.reduce<Record<string, number>>((acc, h) => {
+    acc[h] = (acc[h] ?? 0) + 1; return acc;
+  }, {});
+  if (Object.values(htFreq).some(n => n >= 3)) return true;
+  return false;
+}
+
 function buildLocalTextAssets(
   rawSlots: any[],
   inputs: any,
   req: GenerationRequest,
 ): GeneratedAsset[] {
   const normalized = inputs?.normalized ?? {};
+
+  // /api/analyze returns { payload_summary, semantic: { hook, core_message } }
+  // rather than top-level hook/body/summary — handle both shapes.
+  const semantic: Record<string, string> = normalized.semantic ?? {};
+  const payloadSummary: string = typeof normalized.payload_summary === 'string'
+    ? normalized.payload_summary
+    : (typeof req.input?.payload === 'string' ? req.input.payload.slice(0, 280) : '');
   const summary: string = typeof normalized.summary === 'string'
     ? normalized.summary
-    : (typeof req.input?.payload === 'string' ? req.input.payload.slice(0, 280) : '');
-  const hook: string = normalized.hook ?? (summary.slice(0, 100) || req.intent || 'New music out now');
-  const body: string = normalized.body ?? (summary || hook);
-  const cta:  string = normalized.cta  ?? 'Stream now 🎵';
-  const artist: string = normalized.artistName ?? '';
+    : payloadSummary;
+
+  const hook: string  = normalized.hook   ?? semantic.hook          ?? (summary.slice(0, 100) || req.intent || 'New music out now');
+  const body: string  = normalized.body   ?? semantic.core_message  ?? (summary || hook);
+  const cta:  string  = normalized.cta    ?? 'Stream now 🎵';
+  const artist: string = normalized.artistName ?? semantic.artist_name ?? '';
 
   const TEMPLATES: Record<string, (h: string, b: string, c: string, a: string, tags: string) => string> = {
     instagram:       (h, b, c, a, tags) => `${h}\n\n${b}\n\n${c}${a ? ` | ${a}` : ''}${tags}`,
@@ -1382,48 +1362,68 @@ const textWorker = {
       platformRules: getRules(slot.platform as Platform)?.text ?? null,
     }));
 
+    // /generate/text returns raw model tokens or serialised internal objects.
+    // Use /generate/content per slot instead — it always builds
+    // caption = hook + "\n\n" + body + "\n\n" + cta server-side (never raw tokens).
     try {
-      const result = await maxcorePost('/generate/text', {
-        mode: 'content',
-        step,
-        inputs,
-        slots: slotsWithRules,
-        constraints: req.constraints,
-        artistProfileId: req.artistProfileId,
-        intent: req.intent,
-        platformRules: Object.fromEntries(
-          req.platforms.map(p => [p, getRules(p).text])
-        ),
-      });
+      const normalized = inputs?.normalized ?? {};
+      const semantic: Record<string, string> = normalized.semantic ?? {};
+      const topic: string = normalized.payload_summary
+        ?? req.input?.payload
+        ?? semantic.core_message
+        ?? '';
 
-      const outputs = Array.isArray(result.outputs) ? result.outputs : [];
-      if (outputs.length === 0) return buildLocalTextAssets(rawSlots, inputs, req);
+      const perSlotResults = await Promise.allSettled(
+        rawSlots.map(async (slot: any) => {
+          const platform: string = slot.platform ?? req.platforms[0] ?? 'instagram';
+          const mc = await maxcorePost('/generate/content', {
+            platform,
+            topic,
+            tone:             req.intent ?? 'professional',
+            genre:            normalized.genre ?? semantic.genre,
+            artist_name:      normalized.artistName ?? semantic.artist_name,
+            brand_voice:      normalized.brandVoice ?? semantic.brand_voice,
+            target_audience:  normalized.targetAudience ?? semantic.target_audience,
+            preferred_hashtags: normalized.preferredHashtags ?? undefined,
+          }, 8_000);  // 8 s per slot — fail fast so the local fallback runs within the 30 s client window
 
-      return outputs.map((o: any) => {
-        // MaxCore returns platform/slotId either at top level OR inside a `slot` array
-        const slotEntry = Array.isArray(o.slot) && o.slot.length > 0 ? o.slot[0] : null;
-        const platform: string | undefined = o.platform ?? slotEntry?.platform ?? undefined;
-        const slotId: string | undefined   = o.slotId   ?? slotEntry?.slotId   ?? undefined;
-        const rules = platform ? getRules(platform as Platform) : null;
-        let payload: string = o.text || o.content || '';
-        if (rules) payload = enforceTextLength(payload, rules.text);
-        const enriched = rules
-          ? enrichTextAssetMetadata(payload, platform, rules, { ...(o.meta ?? {}), platformRules: rules.text })
-          : { ...(o.meta ?? {}), platformRules: null };
-        return {
-          id: randomUUID(),
-          modality: 'text' as OutputModality,
-          payload,
-          platform: platform as Platform | undefined,
-          slotId,
-          purpose: o.purpose,
-          metadata: enriched,
-        };
-      });
+          // /generate/content always returns { caption, hook, body, cta, hashtags, confidence }
+          const caption: string = mc?.caption ?? '';
+          if (!caption) throw new Error('empty caption');
+
+          const rules = getRules(platform as Platform);
+          const payload = enforceTextLength(caption, rules.text);
+          const enriched = enrichTextAssetMetadata(payload, platform, rules, {
+            platformRules: rules.text,
+            hook: mc?.hook ?? '',
+            body: mc?.body ?? '',
+            cta:  mc?.cta  ?? '',
+          });
+
+          return {
+            id: randomUUID(),
+            modality: 'text' as OutputModality,
+            payload,
+            platform: platform as Platform,
+            slotId:  slot.id,
+            purpose: slot.purpose ?? 'Post copy',
+            metadata: enriched,
+          };
+        }),
+      );
+
+      const successful = perSlotResults
+        .filter((r): r is PromiseFulfilledResult<GeneratedAsset> => r.status === 'fulfilled')
+        .map(r => r.value);
+
+      if (successful.length > 0) return successful;
+
+      // All per-slot calls failed — fall through to local builder
+      logger.warn('[MultimodalGen] All /generate/content slot calls failed, using local fallback');
     } catch (err) {
-      logger.warn('[MultimodalGen] MaxCore /generate/text unavailable, using local fallback:', err instanceof Error ? err.message : String(err));
-      return buildLocalTextAssets(rawSlots, inputs, req);
+      logger.warn('[MultimodalGen] /generate/content text worker error, using local fallback:', err instanceof Error ? err.message : String(err));
     }
+    return buildLocalTextAssets(rawSlots, inputs, req);
   },
 };
 

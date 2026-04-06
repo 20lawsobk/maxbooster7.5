@@ -107,7 +107,7 @@ export async function runCalibration(): Promise<void> {
       logger.info('[ScoreCalibrator] No local engagement data yet — relying on MaxCore generation signals');
     }
 
-    // Always call MaxCore. POST /api/content/generate does not require local data.
+    // Always call MaxCore. POST /api/generate/content does not require local data.
     const calibration = await fetchMaxCoreCalibration(summary);
     if (calibration) {
       applyCalibration(calibration, summary ?? EMPTY_SUMMARY);
@@ -286,10 +286,10 @@ async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | nul
 
   for (const { topic, platform } of _CALIBRATION_TOPICS) {
     const res = await MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
-      '/api/content/generate',
+      '/api/generate/content',
       { topic, platform }
     );
-    if (res?.success) results.push(res);
+    if (res?.caption) results.push(res);
     // Brief pause — lets MaxCore flush its response before the next request.
     await new Promise<void>(r => setTimeout(r, SEQUENTIAL_GAP_MS));
   }
@@ -338,7 +338,7 @@ async function fetchModelStates(): Promise<Array<{ domain: string; state: MaxCor
 
 /**
  * Derives calibration from MaxCore's model-state endpoints AND
- * live POST /api/content/generate generation signals — all in parallel.
+ * live POST /api/generate/content generation signals — all in parallel.
  */
 async function fetchMaxCoreCalibration(
   summary: PerformanceSummary | null
