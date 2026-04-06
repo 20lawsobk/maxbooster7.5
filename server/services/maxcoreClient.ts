@@ -92,12 +92,9 @@ export class MaxCoreAIClient {
   private static readonly GENERATE_BACKOFF_MAX   = 8_000;  // ms
 
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
-    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
+    if (!MC_AI_URL || !MC_AI_KEY) return null;
 
-    // No remote configured, or endpoint in suppress window → return null (no local fallback)
-    if (!MC_AI_URL || !MC_AI_KEY || MaxCoreAIClient.isEndpointSuppressed(path)) {
-      return null;
-    }
+    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
     for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
       try {
@@ -112,24 +109,14 @@ export class MaxCoreAIClient {
           signal: AbortSignal.timeout(20_000),
         });
 
-        const isJson = MaxCoreAIClient.isJson(r);
-
-        // Permanent failure — do not retry
-        if (r.status === 404 || !isJson) {
-          MaxCoreAIClient.suppressEndpoint(path);
-          return null;
-        }
-
-        if (r.ok) {
+        if (r.ok && MaxCoreAIClient.isJson(r)) {
           const data = await r.json();
-          logger.debug(`[MaxCoreAI] generate ${path} → success`);
+          logger.debug(`[MaxCoreAI] generate ${path} → success (attempt ${attempt + 1})`);
           return data as T;
         }
 
-        // 5xx or other transient failure — retry
-        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → ${r.status}`);
+        logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
       } catch (e: any) {
-        // Network error / timeout — retry
         logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${e.message}`);
       }
 
@@ -142,7 +129,7 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} remote attempts failed — returning null (MaxCore is the only source)`);
+    logger.error(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed (transient network issue)`);
     return null;
   }
 
@@ -153,69 +140,51 @@ export class MaxCoreAIClient {
   private static readonly INFER_BACKOFF_BASE = 800; // ms
 
   /**
-   * Infer via MaxCore.
-   * Priority:
-   *   1. Remote training server (secure-ai-forge.replit.app) — when online
-   *      Up to INFER_MAX_RETRIES retries for transient failures (5xx, network)
-   *      before falling through to the local engine.
-   *   2. MaxCore Local Engine — always succeeds, zero-latency fallback
+   * Infer via MaxCore remote server.
+   * MaxCore is always running — no availability gate, no endpoint suppression.
+   * Up to INFER_MAX_RETRIES retries with exponential back-off for transient
+   * network hiccups (never an availability issue).
    */
   static async infer<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
-    // If the remote was previously marked unavailable, clear that after the TTL so
-    // transient startup failures (e.g. MaxCore waking up) don't permanently block calls.
-    if (MaxCoreAIClient._remoteAvailable === false &&
-        Date.now() - MaxCoreAIClient._lastCheck >= MaxCoreAIClient.CHECK_TTL) {
-      MaxCoreAIClient._remoteAvailable = null;
-    }
+    if (!MC_AI_URL || !MC_AI_KEY) return null;
 
-    if (MC_AI_URL && MC_AI_KEY && MaxCoreAIClient._remoteAvailable !== false) {
-      const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
-      if (!MaxCoreAIClient.isEndpointSuppressed(path)) {
-        for (let attempt = 0; attempt <= MaxCoreAIClient.INFER_MAX_RETRIES; attempt++) {
-          try {
-            const r = await fetch(`${MC_AI_URL}${path}`, {
-              method: 'POST',
-              headers: {
-                'Content-Type':  'application/json',
-                'X-API-Key':     MC_AI_KEY,
-                'Authorization': `Bearer ${MC_AI_KEY}`,
-              },
-              body: JSON.stringify(body),
-              signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
-            });
-            const isJson = MaxCoreAIClient.isJson(r);
+    const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-            // Permanent failure — suppress and fall to local engine immediately.
-            // 404 means the endpoint doesn't exist at all on this deployment;
-            // non-JSON means the server returned an HTML error page.
-            if (r.status === 404 || !isJson) {
-              MaxCoreAIClient.suppressEndpoint(path);
-              break; // exit retry loop → fall through to local engine
-            }
+    for (let attempt = 0; attempt <= MaxCoreAIClient.INFER_MAX_RETRIES; attempt++) {
+      try {
+        const r = await fetch(`${MC_AI_URL}${path}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'X-API-Key':     MC_AI_KEY,
+            'Authorization': `Bearer ${MC_AI_KEY}`,
+          },
+          body: JSON.stringify(body),
+          signal: AbortSignal.timeout(MaxCoreAIClient.INFER_TIMEOUT_MS),
+        });
 
-            if (r.ok) {
-              const data = await r.json();
-              logger.debug(`[MaxCoreAI] Remote ${path} → success (attempt ${attempt + 1})`);
-              return data as T;
-            }
-
-            // Transient server error (5xx, 429, etc.) — retry with back-off
-            logger.debug(`[MaxCoreAI] Remote ${path} attempt ${attempt + 1} → ${r.status} (transient)`);
-          } catch (e: any) {
-            // Network error or timeout — retry
-            logger.debug(`[MaxCoreAI] Remote ${path} attempt ${attempt + 1} failed: ${e.message}`);
-          }
-
-          // Back-off before next attempt (not after the last one)
-          if (attempt < MaxCoreAIClient.INFER_MAX_RETRIES) {
-            const delay = Math.random() * MaxCoreAIClient.INFER_BACKOFF_BASE * Math.pow(2, attempt);
-            await new Promise(res => setTimeout(res, delay));
-          }
+        if (r.ok && MaxCoreAIClient.isJson(r)) {
+          const data = await r.json();
+          logger.debug(`[MaxCoreAI] infer ${path} → success (attempt ${attempt + 1})`);
+          // Update remote available state on success
+          MaxCoreAIClient._remoteAvailable = true;
+          return data as T;
         }
-        logger.warn(`[MaxCoreAI] Remote ${path} all attempts exhausted — returning null (MaxCore is the only source)`);
+
+        // Non-success HTTP status — retry for 5xx, log for others
+        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
+      } catch (e: any) {
+        // Network error or timeout — retry
+        logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} failed: ${e.message}`);
+      }
+
+      if (attempt < MaxCoreAIClient.INFER_MAX_RETRIES) {
+        const delay = Math.random() * MaxCoreAIClient.INFER_BACKOFF_BASE * Math.pow(2, attempt);
+        await new Promise(res => setTimeout(res, delay));
       }
     }
 
+    logger.error(`[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed (transient network issue)`);
     return null;
   }
 }

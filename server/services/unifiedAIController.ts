@@ -317,17 +317,32 @@ export class UnifiedAIController {
       // /api/generate/content is the structured endpoint on the remote server.
       // It builds caption = hook + "\n\n" + body + "\n\n" + cta server-side,
       // so the caption field is always clean (never raw model token output).
-      // It also returns a real heuristic confidence score instead of a placeholder.
-      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
-        platform:           mappedPlatform,
-        topic:              enrichedTopic,
-        tone:               options.tone || 'energetic',
-        genre:              options.genre || ctx?.genre,
-        artist_name:        artist,
-        brand_voice:        ctx?.brandVoice,
-        target_audience:    ctx?.targetAudience,
-        preferred_hashtags: ctx?.preferredHashtags,
-      });
+      // Pass all available structured fields so MaxCore has full context.
+      const mcPayload: Record<string, unknown> = {
+        platform:              mappedPlatform,
+        topic:                 enrichedTopic,
+        tone:                  options.tone || 'energetic',
+        genre:                 options.genre || ctx?.genre,
+        artist_name:           artist,
+        brand_voice:           ctx?.brandVoice,
+        target_audience:       ctx?.targetAudience,
+        preferred_hashtags:    ctx?.preferredHashtags,
+      };
+      // Artist bio / context
+      if (ctx?.artistBio)              mcPayload.artist_context        = ctx.artistBio;
+      // Content guidance
+      if (ctx?.contentThemes?.length)  mcPayload.content_themes        = ctx.contentThemes;
+      if (ctx?.avoidTopics?.length)    mcPayload.avoid_topics          = ctx.avoidTopics;
+      if (ctx?.recentPostSnippets?.length) mcPayload.recent_post_snippets = ctx.recentPostSnippets;
+      // Release / project metadata
+      if (options.album)               mcPayload.album                 = options.album;
+      if (options.releaseDate)         mcPayload.release_date          = options.releaseDate;
+      if (options.label)               mcPayload.label                 = options.label;
+      if (options.tracklist?.length)   mcPayload.tracklist             = options.tracklist;
+      // Extra descriptive context (stats, page preview, etc.)
+      if (combinedExtra)               mcPayload.extra_context         = combinedExtra;
+
+      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', mcPayload);
 
       if (mc?.caption || mc?.hook) {
         const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
@@ -370,11 +385,11 @@ export class UnifiedAIController {
         };
       }
 
-      // MaxCore returned no caption — treat as unavailable.
-      logger.warn('[UnifiedAI] MaxCore infer returned empty — MaxCore is the only source, returning failure');
+      // MaxCore returned no content — transient issue.
+      logger.error('[UnifiedAI] MaxCore returned empty response (transient) — no content generated');
       return {
         success: false,
-        error: 'MaxCore server unavailable — no content generated',
+        error: 'MaxCore returned no content — please retry',
         processingTimeMs: Date.now() - startTime,
         source: 'MaxCoreAI',
       };
@@ -431,11 +446,11 @@ export class UnifiedAIController {
           confidence: mc.confidence || 0.95,
         };
       }
-      // MaxCore returned no content — MaxCore is the only source, return failure.
-      logger.warn('[UnifiedAI] MaxCore infer returned empty for generateSocialContent — returning failure');
+      // MaxCore returned no content — transient.
+      logger.error('[UnifiedAI] MaxCore returned empty response for generateSocialContent (transient)');
       return {
         success: false,
-        error: 'MaxCore server unavailable — no content generated',
+        error: 'MaxCore returned no content — please retry',
         processingTimeMs: Date.now() - startTime,
         source: 'MaxCoreAI',
       };

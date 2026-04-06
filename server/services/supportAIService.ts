@@ -384,7 +384,15 @@ export class SupportAIService {
   }
 
   private async generateAIAnswer(question: string): Promise<string> {
-    throw new Error('[SupportAI] MaxCore (8TB dataset) is the only content source — local answer generation removed');
+    const { MaxCoreAIClient } = await import('./maxcoreClient.js');
+    const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+      topic:    question,
+      platform: 'support',
+      tone:     'professional',
+    });
+    const answer = mc?.caption || mc?.body || mc?.hook || '';
+    if (!answer) throw new Error('[SupportAI] MaxCore returned no answer (transient)');
+    return answer;
   }
 
   async categorizeTicket(subject: string, description: string): Promise<string> {

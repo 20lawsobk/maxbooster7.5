@@ -106,17 +106,25 @@ async function callMaxCore(prompt: string, ctx: GeneratorContext): Promise<strin
   try {
     // /api/generate/content builds caption = hook + "\n\n" + body + "\n\n" + cta
     // server-side, so caption is always clean structured text (never raw model tokens).
+    const payload: Record<string, unknown> = {
+      topic:           prompt,
+      platform:        ctx.platform,
+      tone:            ctx.brandVoice,
+      genre:           ctx.genre,
+      artist_name:     ctx.artistName,
+      brand_voice:     ctx.brandVoice,
+      target_audience: ctx.targetAudience,
+    };
+    // Pass all available content-guidance signals as structured fields
+    if (ctx.keywords?.length)     payload.preferred_hashtags = ctx.keywords;
+    if (ctx.avoidTopics?.length)  payload.avoid_topics       = ctx.avoidTopics;
+    if (ctx.extraContext)         payload.extra_context       = ctx.extraContext;
+    if (ctx.trackTitle)           payload.track_title         = ctx.trackTitle;
+    if (ctx.releaseDate)          payload.release_date        = ctx.releaseDate;
+
     const result = await MaxCoreAIClient.infer<{ caption?: string; hook?: string; body?: string; cta?: string; content?: string; text?: string }>(
       '/api/generate/content',
-      {
-        topic:          prompt,
-        platform:       ctx.platform,
-        tone:           ctx.brandVoice,
-        genre:          ctx.genre,
-        artist_name:    ctx.artistName,
-        brand_voice:    ctx.brandVoice,
-        target_audience: ctx.targetAudience,
-      },
+      payload,
     );
     // Prefer the clean structured caption; fall back to individual fields if absent.
     return result?.caption ?? result?.hook ?? result?.content ?? result?.text ?? null;

@@ -951,16 +951,11 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
         .map(p => (p.content as string).slice(0, 120).trim());
     }
 
-    // Inject user context signals into the enriched topic descriptor so
-    // template-based and MaxCore inference both see the same identity cues.
-    const userContextParts: string[] = [];
-    if (userContext.artistName && !artistName) userContextParts.push(`Artist: ${userContext.artistName}`);
-    if (userContext.genre && !rawGenre)        userContextParts.push(`Genre: ${userContext.genre}`);
-    if (userContext.brandVoice)                userContextParts.push(`Voice: ${userContext.brandVoice}`);
-    if (userContext.targetAudience)            userContextParts.push(`Audience: ${userContext.targetAudience}`);
-    if (userContext.contentThemes?.length)     userContextParts.push(`Themes: ${userContext.contentThemes.slice(0, 3).join(', ')}`);
-
-    const finalTopic = [enrichedTopic || 'new music', ...userContextParts].filter(Boolean).join(' | ');
+    // Pass the clean enriched topic to MaxCore — user identity signals (brand
+    // voice, artist bio, themes, etc.) go as structured fields in userContext,
+    // not concatenated into the topic string. Mixing them into topic degrades
+    // the content relevance signal that MaxCore uses for generation.
+    const finalTopic = enrichedTopic || 'new music';
 
     const result = await unifiedAIController.generateContent({
       tone: resolvedTone,
