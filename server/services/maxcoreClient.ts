@@ -9,7 +9,6 @@
  */
 
 import { logger } from '../logger.js';
-import { maxcoreLocalInfer } from './maxcoreLocalEngine.js';
 
 const MC_AI_URL = process.env.AI_SERVER_URL || '';
 const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
@@ -32,7 +31,7 @@ export class MaxCoreAIClient {
 
   private static suppressEndpoint(path: string): void {
     MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
-    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min — local engine active`);
+    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min — calls will return null until un-suppressed`);
   }
 
   private static isJson(r: Response): boolean {
@@ -95,14 +94,9 @@ export class MaxCoreAIClient {
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
 
-    // No remote configured, or endpoint in suppress window → go straight to local engine
+    // No remote configured, or endpoint in suppress window → return null (no local fallback)
     if (!MC_AI_URL || !MC_AI_KEY || MaxCoreAIClient.isEndpointSuppressed(path)) {
-      try {
-        const localResult = await maxcoreLocalInfer(body as any);
-        return localResult as unknown as T;
-      } catch {
-        return null;
-      }
+      return null;
     }
 
     for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
@@ -148,15 +142,8 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} remote attempts failed — falling back to local engine`);
-    try {
-      const localResult = await maxcoreLocalInfer(body as any);
-      logger.debug(`[MaxCoreAI] generate local engine fallback (confidence=${localResult.confidence})`);
-      return localResult as unknown as T;
-    } catch (localErr: any) {
-      logger.error(`[MaxCoreAI] generate local engine fallback error: ${localErr.message}`);
-      return null;
-    }
+    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} remote attempts failed — returning null (MaxCore is the only source)`);
+    return null;
   }
 
   // Timeout for infer() remote attempts — set above the 12-15s cold-start
@@ -225,18 +212,11 @@ export class MaxCoreAIClient {
             await new Promise(res => setTimeout(res, delay));
           }
         }
-        logger.debug(`[MaxCoreAI] Remote ${path} all attempts exhausted — routing to local engine`);
+        logger.warn(`[MaxCoreAI] Remote ${path} all attempts exhausted — returning null (MaxCore is the only source)`);
       }
     }
 
-    try {
-      const localResult = await maxcoreLocalInfer(body as any);
-      logger.debug(`[MaxCoreAI] Local engine produced response (confidence=${localResult.confidence})`);
-      return localResult as unknown as T;
-    } catch (localErr: any) {
-      logger.error(`[MaxCoreAI] Local engine error: ${localErr.message}`);
-      return null;
-    }
+    return null;
   }
 }
 
@@ -279,7 +259,7 @@ export function startMaxCoreLLMWarmth(): void {
 }
 
 if (MC_AI_URL && MC_AI_KEY) {
-  logger.info(`[MaxCoreAI] Configured — remote: ${MC_AI_URL} | local engine: always active`);
+  logger.info(`[MaxCoreAI] Configured — remote: ${MC_AI_URL} | MaxCore is the only source (no local fallback)`);
 } else {
-  logger.info('[MaxCoreAI] No remote URL set — MaxCore Local Engine active as primary');
+  logger.warn('[MaxCoreAI] No remote URL/key configured — all generate/infer calls will return null');
 }

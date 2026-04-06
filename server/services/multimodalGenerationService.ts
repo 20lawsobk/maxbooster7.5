@@ -1418,12 +1418,12 @@ const textWorker = {
 
       if (successful.length > 0) return successful;
 
-      // All per-slot calls failed — fall through to local builder
-      logger.warn('[MultimodalGen] All /generate/content slot calls failed, using local fallback');
+      // All per-slot calls failed — MaxCore is the only source; return empty.
+      logger.warn('[MultimodalGen] All /generate/content slot calls failed — MaxCore unavailable, returning empty (no local fallback)');
     } catch (err) {
-      logger.warn('[MultimodalGen] /generate/content text worker error, using local fallback:', err instanceof Error ? err.message : String(err));
+      logger.warn('[MultimodalGen] /generate/content text worker error — MaxCore unavailable, returning empty (no local fallback):', err instanceof Error ? err.message : String(err));
     }
-    return buildLocalTextAssets(rawSlots, inputs, req);
+    return [];
   },
 };
 
