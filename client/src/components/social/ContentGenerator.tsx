@@ -450,11 +450,20 @@ export function ContentGenerator() {
     );
   };
 
+  const INSTRUCTION_EXAMPLES = [
+    { label: 'New single drop', text: 'Write a hype caption announcing my new single is out now. Build excitement, make fans feel the energy, and tell them to stream it via the link in bio.' },
+    { label: 'Studio BTS', text: 'Create a behind-the-scenes caption from a late-night studio session. Make fans feel included in my creative process — raw, personal, and authentic.' },
+    { label: 'Tour announcement', text: 'Write an exciting tour announcement post. Build FOMO, mention the limited tickets, and direct fans to grab theirs before they sell out.' },
+    { label: 'Milestone celebration', text: 'Craft a grateful milestone post celebrating a streaming achievement with my fans. Heartfelt, energetic, and makes the audience feel part of the journey.' },
+    { label: 'Collab tease', text: 'Write a teaser post hinting at an upcoming collab without revealing who. Build mystery and anticipation — let the fans speculate in the comments.' },
+    { label: 'Fan shoutout', text: 'Write a fan appreciation post that feels personal and genuine. Thank my community for their support and make them feel seen and valued.' },
+  ];
+
   const handleGenerateContent = () => {
     if (!contentPrompt.trim()) {
       toast({
-        title: 'Missing Prompt',
-        description: 'Please enter a content description',
+        title: 'Missing Instructions',
+        description: 'Tell MaxCore AI what to create — be specific for the best results',
         variant: 'destructive',
       });
       return;
@@ -1109,12 +1118,28 @@ export function ContentGenerator() {
             </div>
 
             <div className="space-y-2">
-              <Label>What's your content about?</Label>
+              <Label className="flex items-center gap-2">
+                <Wand2 className="w-4 h-4" />
+                Instructions
+                <span className="text-xs text-muted-foreground font-normal">— tell MaxCore exactly what to create</span>
+              </Label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {INSTRUCTION_EXAMPLES.map((ex) => (
+                  <button
+                    key={ex.label}
+                    type="button"
+                    onClick={() => setContentPrompt(ex.text)}
+                    className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/40 hover:bg-primary/10 hover:border-primary/50 hover:text-primary transition-colors"
+                  >
+                    {ex.label}
+                  </button>
+                ))}
+              </div>
               <Textarea
-                placeholder="e.g. new single release, behind the scenes studio session, tour announcement..."
+                placeholder={'Write a hype caption announcing my new single is out now. Build excitement, make fans feel the energy, and tell them to stream it via the link in bio.'}
                 value={contentPrompt}
                 onChange={(e) => setContentPrompt(e.target.value)}
-                className="min-h-[100px]"
+                className="min-h-[110px]"
               />
             </div>
 
@@ -1473,11 +1498,15 @@ export function ContentGenerator() {
               </div>
             </div>
 
-            {/* Prompt */}
+            {/* Instructions */}
             <div className="space-y-1">
-              <Label className="flex items-center gap-1"><FileText className="w-4 h-4" /> What to promote</Label>
+              <Label className="flex items-center gap-1">
+                <Wand2 className="w-4 h-4" />
+                Instructions
+                <span className="text-xs text-muted-foreground font-normal ml-1">— what should MaxCore create for this pack?</span>
+              </Label>
               <Textarea
-                placeholder="e.g. My new single 'Neon Lights' is out now on Spotify — upbeat pop with a summer vibe, featuring a saxophone riff…"
+                placeholder="e.g. Create cross-platform posts announcing my new single 'Neon Lights' — out now on all streaming platforms. Upbeat summer pop energy. Push fans to stream and share."
                 value={packInput}
                 onChange={(e) => setPackInput(e.target.value)}
                 rows={3}
