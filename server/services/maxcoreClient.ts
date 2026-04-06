@@ -32,7 +32,7 @@ export class MaxCoreAIClient {
 
   private static suppressEndpoint(path: string): void {
     MaxCoreAIClient._endpointSuppressed.set(path, Date.now() + MaxCoreAIClient.ENDPOINT_SUPPRESS_MS);
-    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 10 min — local engine active`);
+    logger.debug(`[MaxCoreAI] remote ${path} suppressed for 2 min — local engine active`);
   }
 
   private static isJson(r: Response): boolean {
@@ -82,20 +82,28 @@ export class MaxCoreAIClient {
   }
 
   /**
-   * Call MaxCore's generation endpoint — remote ONLY, with retry + back-off.
-   * Up to MAX_GENERATE_ATTEMPTS attempts. Permanent failures (404, non-JSON)
-   * suppress the endpoint for 10 min. Transient failures (network, 5xx) retry
+   * Call MaxCore's generation endpoint with retry + back-off.
+   * Up to MAX_GENERATE_ATTEMPTS remote attempts. Permanent failures (404, non-JSON)
+   * suppress the endpoint for 2 min. Transient failures (network, 5xx) retry
    * with exponential back-off + jitter so a single hiccup never kills a topic.
-   * Never falls back to the local engine.
+   * Falls back to the MaxCore Local Engine if remote is unavailable or exhausted.
    */
   private static readonly MAX_GENERATE_ATTEMPTS = 3;
   private static readonly GENERATE_BACKOFF_BASE  = 1_500;  // ms
   private static readonly GENERATE_BACKOFF_MAX   = 8_000;  // ms
 
   static async generate<T = any>(endpoint: string, body: Record<string, unknown>): Promise<T | null> {
-    if (!MC_AI_URL || !MC_AI_KEY) return null;
     const path = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint}`;
-    if (MaxCoreAIClient.isEndpointSuppressed(path)) return null;
+
+    // No remote configured, or endpoint in suppress window → go straight to local engine
+    if (!MC_AI_URL || !MC_AI_KEY || MaxCoreAIClient.isEndpointSuppressed(path)) {
+      try {
+        const localResult = await maxcoreLocalInfer(body as any);
+        return localResult as unknown as T;
+      } catch {
+        return null;
+      }
+    }
 
     for (let attempt = 0; attempt < MaxCoreAIClient.MAX_GENERATE_ATTEMPTS; attempt++) {
       try {

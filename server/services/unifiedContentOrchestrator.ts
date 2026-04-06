@@ -327,6 +327,22 @@ function storySequenceFallback(ctx: GeneratorContext): StorySequence {
   };
 }
 
+/**
+ * Unwrap a PromiseSettledResult. If the promise was rejected, logs a warning
+ * and returns the provided fallback value instead. This keeps `buildPlatformBundle`
+ * readable — one line per generator instead of an inline comma-expression.
+ */
+function unwrapSettled<T>(
+  result: PromiseSettledResult<T>,
+  name: string,
+  platform: SupportedPlatform,
+  fallback: T,
+): T {
+  if (result.status === 'fulfilled') return result.value;
+  logger.warn(`[UCO] ${name} rejected for ${platform}:`, (result as PromiseRejectedResult).reason);
+  return fallback;
+}
+
 async function buildPlatformBundle(
   platform: SupportedPlatform,
   genCtx: Omit<GeneratorContext, 'platform'>,
@@ -348,13 +364,16 @@ async function buildPlatformBundle(
     generateStorySequence(ctx),
   ]);
 
-  const hooks         = hooksResult.status         === 'fulfilled' ? hooksResult.value         : (logger.warn(`[UCO] generateHooks rejected for ${platform}:`,         (hooksResult as PromiseRejectedResult).reason), hooksFallback(ctx));
-  const captions      = captionsResult.status      === 'fulfilled' ? captionsResult.value      : (logger.warn(`[UCO] generateCaptions rejected for ${platform}:`,      (captionsResult as PromiseRejectedResult).reason), captionsFallback(ctx));
-  const hashtags      = hashtagsResult.status      === 'fulfilled' ? hashtagsResult.value      : (logger.warn(`[UCO] generateHashtags rejected for ${platform}:`,      (hashtagsResult as PromiseRejectedResult).reason), { niche: [], broad: [], trending: [], branded: [`#${ctx.artistName.replace(/\s+/g,'')}`], combined: [`#${ctx.artistName.replace(/\s+/g,'')}`, '#newmusic', '#music'] });
-  const adCopy        = adCopyResult.status        === 'fulfilled' ? adCopyResult.value        : (logger.warn(`[UCO] generateAdCopy rejected for ${platform}:`,        (adCopyResult as PromiseRejectedResult).reason), adCopyFallback(ctx));
-  const videoScript   = videoScriptResult.status   === 'fulfilled' ? videoScriptResult.value   : (logger.warn(`[UCO] generateVideoScript rejected for ${platform}:`,   (videoScriptResult as PromiseRejectedResult).reason), videoScriptFallback(ctx));
-  const visualPrompt  = visualPromptResult.status  === 'fulfilled' ? visualPromptResult.value  : (logger.warn(`[UCO] generateVisualPrompt rejected for ${platform}:`,  (visualPromptResult as PromiseRejectedResult).reason), visualPromptFallback(ctx));
-  const storySequence = storySequenceResult.status === 'fulfilled' ? storySequenceResult.value : (logger.warn(`[UCO] generateStorySequence rejected for ${platform}:`, (storySequenceResult as PromiseRejectedResult).reason), storySequenceFallback(ctx));
+  const hooks         = unwrapSettled(hooksResult,         'generateHooks',         platform, hooksFallback(ctx));
+  const captions      = unwrapSettled(captionsResult,      'generateCaptions',      platform, captionsFallback(ctx));
+  const hashtags      = unwrapSettled(hashtagsResult,      'generateHashtags',      platform, {
+    niche: [], broad: [], trending: [], branded: [`#${ctx.artistName.replace(/\s+/g, '')}`],
+    combined: [`#${ctx.artistName.replace(/\s+/g, '')}`, '#newmusic', '#music'],
+  });
+  const adCopy        = unwrapSettled(adCopyResult,        'generateAdCopy',        platform, adCopyFallback(ctx));
+  const videoScript   = unwrapSettled(videoScriptResult,   'generateVideoScript',   platform, videoScriptFallback(ctx));
+  const visualPrompt  = unwrapSettled(visualPromptResult,  'generateVisualPrompt',  platform, visualPromptFallback(ctx));
+  const storySequence = unwrapSettled(storySequenceResult, 'generateStorySequence', platform, storySequenceFallback(ctx));
 
   const spec = PLATFORM_SPECS[platform];
   const formattedPosts: FormattedPost[] = [];
