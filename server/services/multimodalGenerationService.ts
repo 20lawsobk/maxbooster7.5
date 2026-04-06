@@ -1368,10 +1368,47 @@ const textWorker = {
     try {
       const normalized = inputs?.normalized ?? {};
       const semantic: Record<string, string> = normalized.semantic ?? {};
-      const topic: string = normalized.payload_summary
-        ?? req.input?.payload
-        ?? semantic.core_message
-        ?? '';
+
+      // For URL inputs, build a human-readable topic from extracted metadata so
+      // MaxCore generates content about the actual page, not a bare URL string.
+      let topic: string;
+      if (req.input?.modality === 'url') {
+        const meta = (normalized.metadata ?? {}) as Record<string, string>;
+        const urlTitle  = normalized.title       ?? meta.title       ?? '';
+        const urlAuthor = normalized.author      ?? meta.author      ?? '';
+        const urlSite   = normalized.siteName    ?? meta.siteName    ?? '';
+        const urlDesc   = normalized.description ?? meta.description ?? '';
+        if (urlTitle) {
+          const parts: string[] = [urlTitle];
+          if (urlAuthor) parts.push(`by ${urlAuthor}`);
+          if (urlSite)   parts.push(`on ${urlSite}`);
+          if (urlDesc)   parts.push(`— ${urlDesc.slice(0, 200)}`);
+          topic = parts.join(' ');
+        } else {
+          // No title from metadata — try to parse a readable slug from the URL path.
+          // e.g. "pitchfork.com/reviews/albums/frank-ocean-blonde/" → "Frank Ocean Blonde"
+          const slugTopic = (() => {
+            try {
+              const u = new URL(req.input.payload ?? '');
+              const segments = u.pathname.split('/').filter(Boolean);
+              // Skip common non-descriptive segments like 'reviews', 'albums', 'watch', 'track', 'e', 'p', 'reel', 'posts'
+              const skip = new Set(['reviews', 'albums', 'watch', 'track', 'tracks', 'e', 'p', 'reel', 'reels', 'posts', 'post', 'video', 'videos', 'playlist', 'article', 'articles', 'news', 'blog', 'read']);
+              const slug = segments.filter(s => !skip.has(s) && !/^\d{4,}$/.test(s)).pop() ?? '';
+              if (!slug) return '';
+              // Convert kebab/snake to title case: "frank-ocean-blonde" → "Frank Ocean Blonde"
+              const readable = slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+              const site = urlSite || u.hostname.replace(/^www\./, '').split('.')[0];
+              return site ? `${readable} on ${site.charAt(0).toUpperCase() + site.slice(1)}` : readable;
+            } catch {
+              return '';
+            }
+          })();
+          topic = slugTopic || normalized.summary || normalized.payload_summary || semantic.core_message || req.input?.payload || '';
+        }
+        logger.debug(`[MultimodalGen] URL topic built: "${topic.slice(0, 120)}"`);
+      } else {
+        topic = normalized.payload_summary ?? req.input?.payload ?? semantic.core_message ?? '';
+      }
 
       const perSlotResults = await Promise.allSettled(
         rawSlots.map(async (slot: any) => {
@@ -1381,7 +1418,7 @@ const textWorker = {
             topic,
             tone:             req.intent ?? 'professional',
             genre:            normalized.genre ?? semantic.genre,
-            artist_name:      normalized.artistName ?? semantic.artist_name,
+            artist_name:      normalized.artistName ?? semantic.artist_name ?? normalized.author ?? (normalized.metadata as any)?.author,
             brand_voice:      normalized.brandVoice ?? semantic.brand_voice,
             target_audience:  normalized.targetAudience ?? semantic.target_audience,
             preferred_hashtags: normalized.preferredHashtags ?? undefined,
