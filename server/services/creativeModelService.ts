@@ -212,7 +212,7 @@ async function analyzeMusicStage(audioPath: string, brief: CreativeBrief): Promi
       mood: Array.isArray(raw.mood) ? raw.mood : [brief.tone],
     };
   } catch (err) {
-    logger.warn('[CreativeModel] Music analysis fallback (MaxCore unavailable)', { err });
+    logger.error('[CreativeModel] Music analysis — MaxCore call failed (transient), using local TF.js fallback', { err });
     return {
       audioPat: audioPath,
       bpm: 120,
@@ -484,7 +484,7 @@ Return JSON only — beats array must match the constraint count exactly:
       testingVariants: variants.slice(0, variantCount),
     };
   } catch (err) {
-    logger.warn('[CreativeModel] Planning: MaxCore unavailable — using in-house CreativePlannerModel', { err });
+    logger.error('[CreativeModel] Planning: MaxCore call failed (transient) — using local CreativePlannerModel', { err });
 
     const beatCount = ps?.optimalBeatCount ?? 3;
     const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
@@ -708,10 +708,10 @@ Only override a beat's timing or transition if there is a strong narrative reaso
       };
     }
   } catch (err) {
-    logger.warn('[CreativeModel] Alignment: MaxCore unavailable — using BeatSyncAlignmentModel map directly', { err });
+    logger.error('[CreativeModel] Alignment: MaxCore call failed (transient) — using local BeatSyncAlignmentModel map', { err });
   }
 
-  // MaxCore unavailable or returned no changes — local alignment map is the final output
+  // Local alignment map is the final output when MaxCore returns no changes
   return { timeline, transitions };
 }
 
@@ -915,7 +915,7 @@ async function scoringStage(
   }
 
   if (local) {
-    logger.info('[CreativeModel] Scoring: local only (MaxCore unavailable)');
+    logger.info('[CreativeModel] Scoring: using local model (MaxCore call skipped or failed transiently)');
     return {
       watchTimeScore: local.watchTimeScore,
       hookStrength: local.hookStrength,

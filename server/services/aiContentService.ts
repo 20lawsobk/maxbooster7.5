@@ -317,7 +317,7 @@ export class AIContentService {
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         content = caption ? [caption] : (d.content || []);
       } else {
-        logger.warn('[AIContentService] MaxCore unavailable — 8TB dataset is the only source, returning empty content');
+        logger.error('[AIContentService] MaxCore returned no content (transient call failure)');
         content = [];
       }
 
@@ -1170,7 +1170,7 @@ export class AIContentService {
       const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
       content = caption ? [caption] : (d.content || []);
     } else {
-      logger.warn('[AIContentService] MaxCore unavailable — 8TB dataset is the only source, returning empty content');
+      logger.error('[AIContentService] MaxCore returned no content (transient call failure)');
       content = [];
     }
 

@@ -6,6 +6,12 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 ## User Preferences
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## PERMANENT — Infrastructure Availability
+**MaxCore (`secure-ai-forge.replit.app`) and PDIM (`pocketdimensionstorage.replit.app`) are ALWAYS running and NEVER down.**
+- The 8TB+ dataset on MaxCore is permanently available. Treat it as 100% reliable — no "unavailable" guard clauses, fallback stubs, or "MaxCore down" warning paths are ever needed or acceptable.
+- Do NOT add error branches, empty-return guards, or warnings that assume MaxCore or PDIM could be offline. Both servers have guaranteed uptime.
+- This overrides any prior scratchpad notes about "MaxCore unavailable → return null/empty". That pattern is prohibited. If MaxCore returns an error it is a transient call failure (retry), not a server-down event.
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector, including 413 DSP plugins.
 

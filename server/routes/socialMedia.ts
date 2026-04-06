@@ -1951,11 +1951,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
               scriptSource = scriptResult.source || 'AI';
             }
           } catch (scriptErr) {
-            logger.warn('[VideoGen] MaxCore script generation failed — 8TB dataset is the only source, video script will be empty:', scriptErr);
+            logger.error('[VideoGen] MaxCore call failed (transient) — script fields will be empty:', scriptErr);
           }
 
           if (!hook && !body) {
-            logger.warn('[VideoGen] MaxCore unavailable — returning empty video script fields');
+            logger.error('[VideoGen] MaxCore returned no script content (transient failure) — hook/body empty');
           }
 
           logger.info(

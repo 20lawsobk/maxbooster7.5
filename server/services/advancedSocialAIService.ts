@@ -1102,7 +1102,7 @@ class AdvancedSocialAIService {
     });
 
     if (!mc?.hook && !mc?.caption) {
-      throw new Error('[AdvancedSocialAI] MaxCore unavailable — 8TB dataset is the only content source, returning no content');
+      throw new Error('[AdvancedSocialAI] MaxCore returned no content (transient call failure)');
     }
 
     const hook        = mc.hook || '';

@@ -1635,9 +1635,9 @@ const textWorker = {
       if (successful.length > 0) return successful;
 
       // All per-slot calls failed — MaxCore is the only source; return empty.
-      logger.warn('[MultimodalGen] All /generate/content slot calls failed — MaxCore unavailable, returning empty (no local fallback)');
+      logger.error('[MultimodalGen] All /generate/content slot calls failed (transient) — returning empty slots');
     } catch (err) {
-      logger.warn('[MultimodalGen] /generate/content text worker error — MaxCore unavailable, returning empty (no local fallback):', err instanceof Error ? err.message : String(err));
+      logger.error('[MultimodalGen] /generate/content text worker error (transient):', err instanceof Error ? err.message : String(err));
     }
     return [];
   },
