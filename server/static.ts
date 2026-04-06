@@ -138,12 +138,12 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
     if (!result) {
       const STATIC_ROUTES: Record<string, { title: string; description: string }> = {
         '/pricing': {
-          title: 'Max Booster Pricing - Affordable AI Music Career Plans',
-          description: 'Choose the plan that fits your career. Free forever, Pro at $29/mo, or Business at $99/mo. Includes AI music production, global distribution to 97+ DSPs, social media automation, analytics, and career coaching. Start free, no credit card required.',
+          title: 'Max Booster Pricing - Plans Starting at $39/mo',
+          description: 'Monthly at $49/mo, Yearly at $39/mo (billed annually, save $120/year), or Lifetime access for a one-time $699 payment. Every plan includes AI music studio, distribution to 150+ platforms, social media autopilot, beat marketplace, analytics, and custom storefront. No hidden fees.',
         },
         '/distribution': {
-          title: 'Music Distribution to 97+ DSPs - Max Booster',
-          description: 'Distribute your music to Spotify, Apple Music, TikTok, Amazon Music, and 94+ more stores worldwide. Keep 100% of your royalties, get paid fast, and track your streams in real time with Max Booster Distribution.',
+          title: 'Music Distribution to 150+ Platforms - Max Booster',
+          description: 'Distribute your music to Spotify, Apple Music, TikTok, Amazon Music, and 150+ stores worldwide. Included in every Max Booster plan — no per-release fees. Keep 100% of your royalties and track streams in real time.',
         },
         '/social-media': {
           title: 'AI Social Media Manager for Music Artists - Max Booster',
@@ -171,7 +171,7 @@ async function getMetaForPath(reqPath: string): Promise<{ title: string; descrip
         },
         '/': {
           title: 'Max Booster - AI-Powered Music Career Platform',
-          description: 'All-in-one platform for artists and producers: AI music production studio, global distribution to 97+ DSPs, beat marketplace, social media automation, streaming analytics, royalty management, and AI career coaching.',
+          description: 'All-in-one platform for artists and producers: AI music production studio, global distribution to 150+ platforms, beat marketplace, social media autopilot, streaming analytics, royalty management, and AI career coaching.',
         },
         '/login': {
           title: 'Sign In - Max Booster',
