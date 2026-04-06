@@ -105,22 +105,22 @@ export interface StoryFrame {
 
 async function callMaxCore(prompt: string, ctx: GeneratorContext): Promise<string | null> {
   try {
-    const result = await MaxCoreAIClient.infer<{ content?: string; text?: string; result?: string; caption?: string; hook?: string }>(
-      '/content/generate',
+    // /api/generate/content builds caption = hook + "\n\n" + body + "\n\n" + cta
+    // server-side, so caption is always clean structured text (never raw model tokens).
+    const result = await MaxCoreAIClient.infer<{ caption?: string; hook?: string; body?: string; cta?: string; content?: string; text?: string }>(
+      '/api/generate/content',
       {
-        topic: prompt,
-        platform: ctx.platform,
-        tone: ctx.brandVoice,
-        genre: ctx.genre,
-        mood: ctx.mood,
-        artist_name: ctx.artistName,
+        topic:          prompt,
+        platform:       ctx.platform,
+        tone:           ctx.brandVoice,
+        genre:          ctx.genre,
+        artist_name:    ctx.artistName,
+        brand_voice:    ctx.brandVoice,
         target_audience: ctx.targetAudience,
-        campaign_goal: ctx.campaignGoal,
-        keywords: ctx.keywords,
-        extra_context: ctx.extraContext ?? '',
       },
     );
-    return result?.content ?? result?.text ?? result?.result ?? result?.caption ?? result?.hook ?? null;
+    // Prefer the clean structured caption; fall back to individual fields if absent.
+    return result?.caption ?? result?.hook ?? result?.content ?? result?.text ?? null;
   } catch {
     return null;
   }

@@ -315,26 +315,19 @@ export class UnifiedAIController {
       if (options.extraContext) extraParts.push(options.extraContext.slice(0, 200));
       const combinedExtra = extraParts.length ? extraParts.join(' | ') : undefined;
 
-      const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
-        platform: mappedPlatform,
-        topic:    enrichedTopic,
-        tone:     options.tone || 'energetic',
-        genre:    options.genre || ctx?.genre,
-        mood:     options.mood,
-        userId:   options.userId,
-        contentType: options.contentType,
-        track_title:  options.trackTitle,
-        keywords:     options.keywords?.length ? options.keywords : undefined,
-        extra_context: combinedExtra?.slice(0, 500),
-        // User context — enables personalized output
-        artist_name:          artist,
-        artist_bio:           ctx?.artistBio,
-        brand_voice:          ctx?.brandVoice,
-        target_audience:      ctx?.targetAudience,
-        content_themes:       ctx?.contentThemes,
-        avoid_topics:         ctx?.avoidTopics,
-        preferred_hashtags:   ctx?.preferredHashtags,
-        recent_post_snippets: ctx?.recentPostSnippets,
+      // /api/generate/content is the structured endpoint on the remote server.
+      // It builds caption = hook + "\n\n" + body + "\n\n" + cta server-side,
+      // so the caption field is always clean (never raw model token output).
+      // It also returns a real heuristic confidence score instead of a placeholder.
+      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+        platform:           mappedPlatform,
+        topic:              enrichedTopic,
+        tone:               options.tone || 'energetic',
+        genre:              options.genre || ctx?.genre,
+        artist_name:        artist,
+        brand_voice:        ctx?.brandVoice,
+        target_audience:    ctx?.targetAudience,
+        preferred_hashtags: ctx?.preferredHashtags,
       });
 
       if (mc?.caption || mc?.hook) {
@@ -479,14 +472,12 @@ export class UnifiedAIController {
 
     try {
       // MaxCore is the ONLY source — always succeeds via remote + local engine
-      const mc = await MaxCoreAIClient.infer<any>('/content/generate', {
+      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
         platform,
         topic,
         tone,
         genre:       options.musicData?.genre,
-        mood:        options.musicData?.mood,
         artist_name: options.musicData?.artist,
-        contentType: options.contentType,
       });
       if (mc?.caption || mc?.hook) {
         const parts = mc.caption

@@ -258,7 +258,7 @@ export function startMaxCoreLLMWarmth(): void {
   const ping = () => {
     // Fire-and-forget — we do not await or process the response.
     // The sole purpose is to keep the LLM execution path hot.
-    fetch(`${MC_AI_URL}/api/content/generate`, {
+    fetch(`${MC_AI_URL}/api/generate/content`, {
       method:  'POST',
       headers: {
         'Content-Type':  'application/json',
