@@ -103,7 +103,7 @@ const LANGUAGES = [
 interface AIGenerateResult {
   success: boolean;
   platform: string;
-  source: 'ai' | 'template';
+  source: string;
   processingTimeMs: number;
   hook: string;
   body: string;
@@ -337,7 +337,7 @@ export function ContentGenerator() {
       setGeneratedContent(caption);
       toast({
         title: 'Content Generated',
-        description: `Created ${PLATFORMS.find(p => p.value === data.platform)?.label || data.platform} content via ${data.source === 'ai' ? 'AI Model' : 'Smart Templates'} in ${(data.processingTimeMs / 1000).toFixed(1)}s`,
+        description: `Created ${PLATFORMS.find(p => p.value === data.platform)?.label || data.platform} content via MaxCore AI in ${(data.processingTimeMs / 1000).toFixed(1)}s`,
       });
     },
     onError: (error: Error) => {
@@ -1267,12 +1267,8 @@ export function ContentGenerator() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Label>Generated Content</Label>
-                    <Badge variant={aiResult.source === 'ai' ? 'default' : 'secondary'} className="text-xs">
-                      {aiResult.source === 'ai' ? (
-                        <><Bot className="w-3 h-3 mr-1" /> AI Model</>
-                      ) : (
-                        <><FileText className="w-3 h-3 mr-1" /> Smart Template</>
-                      )}
+                    <Badge variant="default" className="text-xs">
+                      <Bot className="w-3 h-3 mr-1" /> MaxCore AI
                     </Badge>
                     <Badge variant="outline" className="text-xs">
                       <Clock className="w-3 h-3 mr-1" />

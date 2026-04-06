@@ -768,7 +768,7 @@ export function ServerVideoGenerator({
                 }`}
               >
                 <Layout className="h-3 w-3" />
-                {useTemplate ? 'Template: ON' : 'Use a template (optional)'}
+                {useTemplate ? 'Visual Style: ON' : 'Visual Style (optional)'}
               </button>
             </div>
 
