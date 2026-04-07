@@ -203,24 +203,8 @@ export async function generateHashtags(ctx: GeneratorContext): Promise<HashtagSe
     `#MaxBooster`,
   ];
 
-  const niche = [
-    `#${ctx.genre.replace(/\s+/g, '')}Music`,
-    `#${ctx.genre.replace(/\s+/g, '')}Artist`,
-    `#IndependentArtist`,
-    `#NewMusic`,
-    `#UnsignedArtist`,
-  ];
-
-  const broad = [
-    '#Music',
-    '#MusicProducer',
-    '#Artist',
-    '#MusicLife',
-    '#StreamingNow',
-    '#MusicMarketing',
-  ];
-
-  const trending: Record<SupportedPlatform, string[]> = {
+  // Platform-specific trending anchors (always included as a floor)
+  const trendingAnchor: Record<SupportedPlatform, string[]> = {
     tiktok: ['#FYP', '#MusicTikTok', '#NewMusicFriday', '#ViralSounds'],
     instagram: ['#Reels', '#MusicReels', '#ReelItFeelIt', '#InstaMusic'],
     youtube: ['#YouTubeMusic', '#NewRelease', '#MusicVideo'],
@@ -231,14 +215,54 @@ export async function generateHashtags(ctx: GeneratorContext): Promise<HashtagSe
     google_business: [],
   };
 
+  // Ask MaxCore for AI-powered hashtag intelligence
+  const prompt = `Generate 20 high-performing hashtags for a ${ctx.genre} artist named ${ctx.artistName} 
+on ${ctx.platform}. Mood: ${ctx.mood}. Goal: ${ctx.campaignGoal}. 
+${ctx.trackTitle ? `Track: "${ctx.trackTitle}".` : ''}
+${ctx.keywords?.length ? `Preferred topics: ${ctx.keywords.join(', ')}.` : ''}
+Return only hashtags, one per line, with # prefix. 
+Mix: 5 niche/genre-specific, 5 broad/discovery, 5 trending/platform-native, 5 emotional/mood-based.`;
+
+  const raw = await callMaxCore(prompt, ctx);
+
+  // Parse AI hashtags if returned, otherwise fall back to static sets
+  const aiTags: string[] = raw
+    ? raw.split('\n')
+        .map(l => l.trim())
+        .filter(l => l.startsWith('#') && l.length > 1)
+        .slice(0, 20)
+    : [];
+
+  const nicheStatic = [
+    `#${ctx.genre.replace(/\s+/g, '')}Music`,
+    `#${ctx.genre.replace(/\s+/g, '')}Artist`,
+    `#IndependentArtist`,
+    `#NewMusic`,
+    `#UnsignedArtist`,
+  ];
+
+  const broadStatic = [
+    '#Music',
+    '#MusicProducer',
+    '#Artist',
+    '#MusicLife',
+    '#StreamingNow',
+    '#MusicMarketing',
+  ];
+
+  const niche    = aiTags.length >= 5  ? aiTags.slice(0, 5)   : nicheStatic;
+  const broad    = aiTags.length >= 10 ? aiTags.slice(5, 10)  : broadStatic;
+  const trending = aiTags.length >= 15 ? aiTags.slice(10, 15) : trendingAnchor[ctx.platform] ?? [];
+
   const combined = [
     ...branded,
     ...niche.slice(0, 3),
     ...broad.slice(0, 3),
-    ...(trending[ctx.platform] ?? []),
+    ...trending,
+    ...(aiTags.length >= 20 ? aiTags.slice(15) : []),
   ].slice(0, 30);
 
-  return { niche, broad, trending: trending[ctx.platform] ?? [], branded, combined };
+  return { niche, broad, trending, branded, combined };
 }
 
 // ─── Ad Copy Generator ───────────────────────────────────────────────────────
@@ -358,38 +382,55 @@ Eye-catching, high contrast, legible at small sizes.`,
 // ─── Story Sequence Generator ─────────────────────────────────────────────────
 
 export async function generateStorySequence(ctx: GeneratorContext): Promise<StorySequence> {
+  // Ask MaxCore for the 5-frame story copy all at once
+  const prompt = `Write a 5-frame Instagram/Facebook Story sequence for ${ctx.artistName}, a ${ctx.genre} artist.
+Mood: ${ctx.mood}. Goal: ${ctx.campaignGoal}.${ctx.trackTitle ? ` Track: "${ctx.trackTitle}".` : ''}
+${ctx.extraContext ?? ''}
+Frame rules:
+Frame 1 (5s) — Hook: ultra-short stop-scroll text, max 8 words
+Frame 2 (7s) — Artist intro: name + track or brand moment, max 12 words
+Frame 3 (5s) — Emotion/vibe: lyric snippet or mood statement, max 10 words
+Frame 4 (8s) — Engagement: poll question or "this or that", max 12 words
+Frame 5 (5s) — CTA: clear action with link, max 8 words
+Return exactly 5 lines, one per frame.`;
+
+  const raw = await callMaxCore(prompt, ctx);
+  const aiLines = raw
+    ? raw.split('\n').map(l => l.replace(/^Frame\s*\d+[:\-–]?\s*/i, '').trim()).filter(Boolean)
+    : [];
+
   const frames: StoryFrame[] = [
     {
       frameNumber: 1,
       durationSeconds: 5,
-      text: `👀 You need to hear this`,
+      text: aiLines[0] ?? `👀 You need to hear this`,
       visualNote: `Hook frame — bold text on ${ctx.colorPalette[0] ?? 'dark'} background`,
       stickerSuggestion: 'music note gif sticker',
     },
     {
       frameNumber: 2,
       durationSeconds: 7,
-      text: `${ctx.artistName} — ${ctx.trackTitle ?? 'New Music'}`,
+      text: aiLines[1] ?? `${ctx.artistName} — ${ctx.trackTitle ?? 'New Music'}`,
       visualNote: `Artist photo/branding — ${ctx.mood} filter applied`,
       stickerSuggestion: 'countdown sticker if pre-release',
     },
     {
       frameNumber: 3,
       durationSeconds: 5,
-      text: `${ctx.mood.charAt(0).toUpperCase() + ctx.mood.slice(1)} ${ctx.genre} energy 🎵`,
+      text: aiLines[2] ?? `${ctx.mood.charAt(0).toUpperCase() + ctx.mood.slice(1)} ${ctx.genre} energy 🎵`,
       visualNote: `Lyric or waveform visual overlay`,
     },
     {
       frameNumber: 4,
       durationSeconds: 8,
-      text: `What do you feel when you listen?`,
+      text: aiLines[3] ?? `What do you feel when you listen?`,
       visualNote: `Poll or question interaction frame`,
-      pollQuestion: `Does this song hit? 🔥 vs 💯`,
+      pollQuestion: aiLines[3] ?? `Does this song hit? 🔥 vs 💯`,
     },
     {
       frameNumber: 5,
       durationSeconds: 5,
-      text: `Stream now — link in bio 🎶`,
+      text: aiLines[4] ?? `Stream now — link in bio 🎶`,
       visualNote: `CTA frame — swipe-up prompt, bright accent color`,
       stickerSuggestion: 'link sticker',
     },
