@@ -33,8 +33,16 @@ export interface MaxcoreJobMeta {
   aspect_ratio?:    string;
   platform?:        string;
   artistName?:      string;
-  bgColor?:         string;
-  accentColor?:     string;
+  bgColor?:             string;
+  accentColor?:         string;
+  /** AI-generated hashtags from /api/generate/content */
+  hashtags?:            string[];
+  /** MaxCore content confidence score (0–1) */
+  content_confidence?:  number | null;
+  /** MaxCore sentiment score (0–1) from /api/analyze/sentiment */
+  sentiment_score?:     number | null;
+  /** MaxCore sentiment label e.g. "positive" */
+  sentiment_label?:     string | null;
 }
 
 export interface RenderOptions {
@@ -816,6 +824,25 @@ function drawCtaScene(
       font: `600 ${afs}px 'Inter', system-ui, sans-serif`,
       color: p.textDim,
     });
+  }
+
+  // AI-generated hashtags from MaxCore /api/generate/content
+  const tags = meta.hashtags?.slice(0, 5) || [];
+  if (tags.length > 0) {
+    const tagAlpha = smoothstep(clamp((t - 0.45) * 3)) * 0.7;
+    const tfs      = Math.round(base * 0.42);
+    const tagLine  = tags.join('  ');
+    const tagY     = isVertical ? h * 0.83 : h * 0.81;
+    ctx.save();
+    ctx.globalAlpha = tagAlpha;
+    ctx.font = `500 ${tfs}px 'Inter', system-ui, sans-serif`;
+    ctx.fillStyle   = p.accent;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor  = p.accent;
+    ctx.shadowBlur   = 8;
+    ctx.fillText(tagLine, cx, tagY);
+    ctx.restore();
   }
 }
 

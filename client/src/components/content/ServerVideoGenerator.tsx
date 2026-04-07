@@ -237,17 +237,21 @@ export function ServerVideoGenerator({
   const applyVideoResult = (data: any) => {
     setVideoUrl(data.url);
     setVideoInfo({
-      hook: data.hook,
-      body: data.body,
-      cta: data.cta,
-      source: data.source,
-      width: data.width,
-      height: data.height,
-      processingTime: Math.round(data.processing_time_ms || 0),
-      renderTime: Math.round(data.render_time_ms || 0),
-      scenesRendered: data.scenes_rendered || 1,
-      templateName: data.template_name || data.template,
-      quality: data.quality,
+      hook:               data.hook,
+      body:               data.body,
+      cta:                data.cta,
+      source:             data.source,
+      width:              data.width,
+      height:             data.height,
+      processingTime:     Math.round(data.processing_time_ms || 0),
+      renderTime:         Math.round(data.render_time_ms || 0),
+      scenesRendered:     data.scenes_rendered || 1,
+      templateName:       data.template_name || data.template,
+      quality:            data.quality,
+      hashtags:           data.hashtags           || [],
+      contentConfidence:  data.content_confidence ?? null,
+      sentimentScore:     data.sentiment_score    ?? null,
+      sentimentLabel:     data.sentiment_label    ?? null,
     });
     onVideoGenerated(data.url);
   };
@@ -364,20 +368,24 @@ export function ServerVideoGenerator({
         }
 
         const meta: MaxcoreJobMeta = {
-          hook:         data.hook         || hook       || undefined,
-          body:         data.body         || body       || undefined,
-          cta:          data.cta          || cta        || undefined,
-          topic:        data.topic        || textTopic  || topicProp || undefined,
-          template:     data.template     || data.template_name || selectedTemplate || undefined,
-          template_name: data.template_name || undefined,
-          width:        data.width        || undefined,
-          height:       data.height       || undefined,
-          duration:     data.duration     || duration   || 10,
-          aspect_ratio: data.aspect_ratio || aspectRatio || undefined,
-          platform:     data.platform     || platform   || undefined,
-          artistName:   customArtistName  || undefined,
-          bgColor:      initialBgColor    || undefined,
-          accentColor:  initialAccentColor || undefined,
+          hook:                data.hook                || hook       || undefined,
+          body:                data.body                || body       || undefined,
+          cta:                 data.cta                 || cta        || undefined,
+          topic:               data.topic               || textTopic  || topicProp || undefined,
+          template:            data.template            || data.template_name || selectedTemplate || undefined,
+          template_name:       data.template_name       || undefined,
+          width:               data.width               || undefined,
+          height:              data.height              || undefined,
+          duration:            data.duration            || duration   || 10,
+          aspect_ratio:        data.aspect_ratio        || aspectRatio || undefined,
+          platform:            data.platform            || platform   || undefined,
+          artistName:          customArtistName         || undefined,
+          bgColor:             initialBgColor           || undefined,
+          accentColor:         initialAccentColor       || undefined,
+          hashtags:            data.hashtags            || undefined,
+          content_confidence:  data.content_confidence  ?? undefined,
+          sentiment_score:     data.sentiment_score     ?? undefined,
+          sentiment_label:     data.sentiment_label     ?? undefined,
         };
 
         const rendered = await renderMaxcoreVideo(meta, {
@@ -1226,6 +1234,35 @@ export function ServerVideoGenerator({
                   <div className="text-xs">
                     <span className="font-medium">Hook:</span>{' '}
                     <span className="text-muted-foreground">{videoInfo.hook.substring(0, 120)}</span>
+                  </div>
+                )}
+                {videoInfo.hashtags?.length > 0 && (
+                  <div className="text-xs">
+                    <span className="font-medium">Hashtags:</span>{' '}
+                    <span className="text-blue-500 dark:text-blue-400">
+                      {videoInfo.hashtags.slice(0, 5).join(' ')}
+                    </span>
+                  </div>
+                )}
+                {videoInfo.sentimentLabel && (
+                  <div className="text-xs flex items-center gap-1.5">
+                    <span className="font-medium">Sentiment:</span>
+                    <span className={
+                      videoInfo.sentimentLabel === 'positive'
+                        ? 'text-green-500 dark:text-green-400'
+                        : videoInfo.sentimentLabel === 'negative'
+                        ? 'text-red-500 dark:text-red-400'
+                        : 'text-muted-foreground'
+                    }>
+                      {videoInfo.sentimentLabel}
+                      {videoInfo.sentimentScore != null &&
+                        ` (${Math.round(videoInfo.sentimentScore * 100)}%)`}
+                    </span>
+                    {videoInfo.contentConfidence != null && (
+                      <span className="text-muted-foreground">
+                        · Confidence {Math.round(videoInfo.contentConfidence * 100)}%
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

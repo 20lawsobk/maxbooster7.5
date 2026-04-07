@@ -240,19 +240,92 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
   return null;
 }
 
+// ── MaxCore content types ─────────────────────────────────────────────────────
+
+interface MaxCoreContent {
+  caption:         string;
+  hook:            string;
+  body:            string;
+  cta:             string;
+  hashtags:        string[];
+  confidence:      number;
+  processing_time_ms: number;
+}
+
+interface MaxCoreSentiment {
+  sentiment:       number;   // 0–1
+  label:           string;
+  confidence:      number;
+  model_summary:   string;
+  source:          string;
+}
+
+// ── Step 1: generate content intelligence from MaxCore ────────────────────────
+
+async function generateContent(opts: VideoGenOptions): Promise<MaxCoreContent | null> {
+  const topic = [
+    opts.artist_name ? `${opts.artist_name}` : null,
+    opts.topic,
+    opts.genre ? `(${opts.genre})` : null,
+  ].filter(Boolean).join(' — ');
+
+  logger.info(`[AdvancedVideoRenderer] Calling /api/generate/content for topic: "${topic}"`);
+
+  return MaxCoreAIClient.generate<MaxCoreContent>('/generate/content', {
+    topic,
+    platform: opts.platform || 'tiktok',
+    tone:     opts.tone     || 'energetic',
+    goal:     opts.goal     || 'growth',
+    genre:    opts.genre    || undefined,
+    artist:   opts.artist_name || undefined,
+    title:    opts.topic    || undefined,
+  });
+}
+
+// ── Step 2: sentiment scoring on the hook ─────────────────────────────────────
+
+async function getSentiment(hook: string): Promise<MaxCoreSentiment | null> {
+  return MaxCoreAIClient.generate<MaxCoreSentiment>('/analyze/sentiment', {
+    text: hook,
+  });
+}
+
 /**
- * Render a video through MaxCore — the only rendering pipeline.
+ * Render a video through MaxCore — two-step intelligence pipeline:
+ *   1. /api/generate/content  → AI hook, body, CTA, hashtags
+ *   2. /api/generate-video    → job_id
+ *   Then poll /api/video-job/<id> until done.
  */
 export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult> {
   const startMs = Date.now();
-  logger.info('[AdvancedVideoRenderer] Submitting video job to MaxCore');
+  logger.info('[AdvancedVideoRenderer] Starting two-step MaxCore pipeline');
 
-  try {
-    const jobResp = await MaxCoreAIClient.infer<any>('/generate-video', {
-      hook:            opts.hook         || '',
-      body:            opts.body         || '',
-      cta:             opts.cta          || '',
-      topic:           opts.topic        || opts.hook || opts.body || 'music video',
+  // ── Step 1: generate content ──────────────────────────────────────────────
+  const contentResult = await generateContent(opts);
+
+  const hook = contentResult?.hook     || opts.hook || '';
+  const body = contentResult?.body     || opts.body || '';
+  const cta  = contentResult?.cta      || opts.cta  || '';
+  const hashtags = contentResult?.hashtags || [];
+  const contentConfidence = contentResult?.confidence ?? null;
+
+  if (contentResult) {
+    logger.info(
+      `[AdvancedVideoRenderer] Content generated — hook: "${hook.slice(0, 60)}..." ` +
+      `confidence: ${contentConfidence} hashtags: ${hashtags.length}`
+    );
+  } else {
+    logger.warn('[AdvancedVideoRenderer] /api/generate/content returned null — using opts fallbacks');
+  }
+
+  // ── Step 2: sentiment + video job (parallel) ──────────────────────────────
+  const [sentimentResult, jobResp] = await Promise.all([
+    hook ? getSentiment(hook) : Promise.resolve(null),
+    MaxCoreAIClient.infer<any>('/generate-video', {
+      hook,
+      body,
+      cta,
+      topic:           opts.topic        || hook || body || 'music video',
       platform:        opts.platform     || 'tiktok',
       aspect_ratio:    opts.aspect_ratio,
       template:        opts.template     || 'cinematic_promo',
@@ -264,67 +337,83 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
       quality:         opts.quality      || 'cinematic',
       user_audio_path: opts.user_audio_path || undefined,
       voiceover:       !!opts.voiceover,
-    });
+    }),
+  ]);
 
-    if (!jobResp) {
-      return {
-        success: false,
-        error:   'MaxCore did not respond to the video job submission',
-        source:  'MaxCoreAI',
-        processing_time_ms: Date.now() - startMs,
-      };
-    }
+  if (sentimentResult) {
+    logger.info(
+      `[AdvancedVideoRenderer] Sentiment: ${sentimentResult.label} ` +
+      `(score=${sentimentResult.sentiment.toFixed(2)}, confidence=${sentimentResult.confidence.toFixed(2)})`
+    );
+  }
 
-    // Synchronous response — MaxCore rendered immediately
-    if (jobResp.url) {
-      const servedUrl = await cacheVideoLocally(jobResp.url);
-      logger.info(`[AdvancedVideoRenderer] Synchronous render complete in ${Date.now() - startMs}ms`);
-      return {
-        success:         true,
-        url:             servedUrl,
-        filename:        jobResp.filename,
-        width:           jobResp.width,
-        height:          jobResp.height,
-        duration:        jobResp.duration,
-        hook:            jobResp.hook  || opts.hook,
-        body:            jobResp.body  || opts.body,
-        cta:             jobResp.cta   || opts.cta,
-        template:        jobResp.template,
-        template_name:   jobResp.template_name,
-        scenes_rendered: jobResp.scenes_rendered,
-        source:          'MaxCoreAI',
-        processing_time_ms: Date.now() - startMs,
-      };
-    }
+  // ── Intelligence metadata to enrich every result ──────────────────────────
+  const intelligence = {
+    hashtags,
+    content_confidence:   contentConfidence,
+    sentiment_score:      sentimentResult?.sentiment      ?? null,
+    sentiment_label:      sentimentResult?.label          ?? null,
+    sentiment_confidence: sentimentResult?.confidence     ?? null,
+  };
 
-    // Async response — poll for completion
-    if (jobResp.job_id) {
-      const result = await pollVideoJob(jobResp.job_id);
-      if (result) {
-        return { ...result, processing_time_ms: Date.now() - startMs };
-      }
-      return {
-        success: false,
-        error:   `MaxCore job ${jobResp.job_id} did not complete within the polling window`,
-        source:  'MaxCoreAI',
-        processing_time_ms: Date.now() - startMs,
-      };
-    }
-
-    logger.error('[AdvancedVideoRenderer] MaxCore response missing both url and job_id:', jobResp);
+  if (!jobResp) {
     return {
       success: false,
-      error:   'MaxCore returned an unexpected response format',
-      source:  'MaxCoreAI',
-      processing_time_ms: Date.now() - startMs,
-    };
-  } catch (err: any) {
-    logger.error('[AdvancedVideoRenderer] Unexpected error during render:', err.message);
-    return {
-      success: false,
-      error:   err.message || 'Unexpected error during MaxCore video render',
+      error:   'MaxCore did not respond to the video job submission',
       source:  'MaxCoreAI',
       processing_time_ms: Date.now() - startMs,
     };
   }
+
+  // Synchronous response — MaxCore rendered immediately
+  if (jobResp.url) {
+    const servedUrl = await cacheVideoLocally(jobResp.url);
+    logger.info(`[AdvancedVideoRenderer] Synchronous render complete in ${Date.now() - startMs}ms`);
+    return {
+      success:         true,
+      url:             servedUrl,
+      filename:        jobResp.filename,
+      width:           jobResp.width,
+      height:          jobResp.height,
+      duration:        jobResp.duration,
+      hook:            jobResp.hook  || hook,
+      body:            jobResp.body  || body,
+      cta:             jobResp.cta   || cta,
+      template:        jobResp.template,
+      template_name:   jobResp.template_name,
+      scenes_rendered: jobResp.scenes_rendered,
+      source:          'MaxCoreAI',
+      processing_time_ms: Date.now() - startMs,
+      ...intelligence,
+    } as any;
+  }
+
+  // Async response — poll for completion
+  if (jobResp.job_id) {
+    const result = await pollVideoJob(jobResp.job_id);
+    if (result) {
+      return {
+        ...result,
+        hook:  result.hook  || hook,
+        body:  result.body  || body,
+        cta:   result.cta   || cta,
+        processing_time_ms: Date.now() - startMs,
+        ...intelligence,
+      } as any;
+    }
+    return {
+      success: false,
+      error:   `MaxCore job ${jobResp.job_id} did not complete within the polling window`,
+      source:  'MaxCoreAI',
+      processing_time_ms: Date.now() - startMs,
+    };
+  }
+
+  logger.error('[AdvancedVideoRenderer] MaxCore response missing both url and job_id:', jobResp);
+  return {
+    success: false,
+    error:   'MaxCore returned an unexpected response format',
+    source:  'MaxCoreAI',
+    processing_time_ms: Date.now() - startMs,
+  };
 }
