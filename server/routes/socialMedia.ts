@@ -30,7 +30,6 @@ let _pythonAIService: typeof import('../services/pythonAIService.js').pythonAISe
 let _veoMusicService: typeof import('../services/veoMusicService.js').veoMusicService | null = null;
 let _renderAdvancedVideo: typeof import('../services/advancedVideoRendererService.js').renderVideo | null = null;
 let _maxcoreVideoUrlStore: typeof import('../services/advancedVideoRendererService.js').maxcoreVideoUrlStore | null = null;
-let _localVideoGenerator: typeof import('../services/videoGeneratorService.js').generateVideo | null = null;
 let _voiceSynthService: typeof import('../services/voiceSynthesisService.js') | null = null;
 let _beatSyncService: typeof import('../services/beatSyncService.js') | null = null;
 let _imageToVideoService: typeof import('../services/imageToVideoService.js') | null = null;
@@ -98,13 +97,6 @@ async function getMaxcoreVideoUrlStore() {
     _maxcoreVideoUrlStore = m.maxcoreVideoUrlStore;
   }
   return _maxcoreVideoUrlStore!;
-}
-async function getLocalVideoGenerator() {
-  if (!_localVideoGenerator) {
-    const m = await import('../services/videoGeneratorService.js');
-    _localVideoGenerator = m.generateVideo;
-  }
-  return _localVideoGenerator!;
 }
 
 const router = Router();
@@ -2055,30 +2047,12 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
           userId,
         };
 
-        // Stages 2–4 — Advanced Video Renderer (MaxCore primary → local FFmpeg fallback)
+        // Stages 2–4 — Advanced Video Renderer (MaxCore)
         logger.info(`[VideoGen] Routing job ${jobId} through Advanced Video Renderer`);
-        let result = await (await getRenderAdvancedVideo())({
+        const result = await (await getRenderAdvancedVideo())({
           ...videoParams,
           template: template || 'cinematic_promo',
         });
-
-        // If MaxCore succeeded but only returned a proxy URL (meaning local caching
-        // failed because MaxCore's video URL paths return its SPA HTML), fall back
-        // to the local FFmpeg renderer which writes a real video to /uploads/videos/.
-        if (result.success && result.url?.startsWith('/api/social/video-proxy/')) {
-          logger.warn(`[VideoGen] MaxCore video unreachable via proxy — falling back to local FFmpeg renderer`);
-          try {
-            result = await (await getLocalVideoGenerator())({
-              ...videoParams,
-              template: template || 'cinematic_promo',
-            });
-            if (result.success) {
-              logger.info(`[VideoGen] Job ${jobId} done via local FFmpeg — url=${result.url}`);
-            }
-          } catch (ffErr: any) {
-            logger.warn(`[VideoGen] Local FFmpeg fallback also failed: ${ffErr.message}`);
-          }
-        }
 
         if (result.success) {
           ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });

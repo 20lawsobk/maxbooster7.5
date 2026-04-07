@@ -12,6 +12,14 @@ I prefer iterative development, with clear communication before significant chan
 - Do NOT add error branches, empty-return guards, or warnings that assume MaxCore or PDIM could be offline. Both servers have guaranteed uptime.
 - This overrides any prior scratchpad notes about "MaxCore unavailable → return null/empty". That pattern is prohibited. If MaxCore returns an error it is a transient call failure (retry), not a server-down event.
 
+## PERMANENT — Video Generation: No Local Fallback Ever
+**Under no circumstances may a local FFmpeg/`videoGeneratorService` fallback ever be introduced for video generation.**
+- MaxCore is the sole video generation source. Period.
+- Do NOT add any code path that calls `videoGeneratorService.generateVideo` (or any local renderer) as a fallback when MaxCore's video proxy URL fails, when caching fails, or for any other reason.
+- Do NOT import or lazy-load `videoGeneratorService` in `socialMedia.ts` or any route handler for the purpose of video fallback.
+- If MaxCore returns a proxy URL that cannot be served, that is a MaxCore-side issue to debug — never route around it with local generation.
+- This rule has no exceptions. Any future code review that finds a local video fallback must treat it as a critical violation and remove it immediately.
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector, including 413 DSP plugins.
 
