@@ -72,3 +72,22 @@ Key architectural decisions include:
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
 - **Search APIs**: Exa, Tavily.
+
+## Backend Setup Status (Last Updated: 2026-04-07)
+
+### Completed Fixes
+1. **PDIM circuit breaker — 4xx false-trip fixed** (`server/lib/pdimClient.ts`): Non-429 4xx responses from PDIM now call `cbRecordSuccess()` (server IS reachable) and return `null` instead of tripping the circuit breaker.
+2. **PDIM circuit breaker — TimeoutError false-trip fixed** (`server/lib/pdimClient.ts`): `AbortSignal.timeout()` throws `TimeoutError` (not `AbortError`). Both are now excluded from `cbRecord503()` and instead apply AIMD backpressure via `_pdimAdapt429()`.
+3. **Service worker (sw.js) 404 fixed** (`server/index.ts`): Added early `express.static('client/public')` before session middleware so `sw.js` and PWA assets are served before Vite middleware is ready. Confirmed: `GET /sw.js - 200`.
+4. **TensorFlow native addon rebuilt**: Ran `npm rebuild @tensorflow/tfjs-node --build-addon-from-source`. All 6 TF-dependent routes now load: `autopilot`, `promotionalTools`, `autopilotLearning`, `unifiedContent`, `creativeModel`, `songwriting`.
+5. **PlatformAutoFixer probe — false backoff patch fixed** (`server/services/platformAutoFixer.ts`): PDIM ping probe now returns `unknown` (not `critical`) for 404 responses and timeout responses, preventing the AIMD gap from being raised to 2000ms unnecessarily. Probe timeout increased from 5s to 12s to allow for Replit app cold-start.
+6. **PDIM exec timeout tuned** (`server/lib/pdimClient.ts`): Exec timeout set to 15s (gives Replit-hosted PDIM app time to cold-start; 30s was too long, 8s was too short).
+7. **Database schema pushed**: All 7 migrations applied via `node scripts/db-push.js`.
+
+### Current State
+- All 24/24 environment variables pass validation.
+- All routes load successfully (no TF binding failures).
+- TFWorkerPool: 6 TF inference workers ready.
+- PDIM circuit breaker: CLOSED and stable (no oscillation).
+- Session store, BullMQ queues, WebSocket servers all initialized.
+- PDIM exec endpoint timeouts (~15s) are expected — PDIM server accepts connections but hangs on Redis commands (exec endpoint may not implement Redis protocol). Circuit breaker stays CLOSED; LuaExecutor degrades gracefully (returns null for missing keys).

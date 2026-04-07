@@ -177,6 +177,19 @@ app.use(
 );
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Serve client/public static files (sw.js, manifest.json, etc.) early — before
+// session/PDIM middleware so the service worker and PWA assets are always available.
+app.use(express.static(path.join(process.cwd(), 'client', 'public'), {
+  maxAge: 0,
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('sw.js')) {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    }
+  },
+}));
+
 // Serve generated audio content from root public folder
 app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 'generated-content'), {
   setHeaders: (res, filePath) => {

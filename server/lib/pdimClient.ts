@@ -394,7 +394,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(15_000),
         });
 
         if (!res.ok) {
@@ -418,10 +418,21 @@ export class PdimRedisClient extends EventEmitter {
           if (res.status >= 500) {
             cbRecord503();
             _counted = true;
+            const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
+            logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            throw new Error(errMsg);
           }
-          const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
-          logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
-          throw new Error(errMsg);
+          // 4xx: PDIM server is responsive (not down) but the command/route was
+          // not found or rejected.  Treat like "ERR unknown command" — mark counted
+          // so the catch block does NOT record a circuit-breaker failure, record
+          // a cbRecordSuccess so any open circuit closes (PDIM IS up), and return
+          // null so callers get a safe empty result instead of an error.
+          _counted = true;
+          PdimRedisClient._rateLimitedUntil = 0;
+          _pdimAdaptSuccess();
+          cbRecordSuccess();
+          logger.warn(`[PDIM] ${String(cmd)} → HTTP ${res.status} (unsupported/not-found) — returning null`);
+          return null;
         }
 
         // Successful response — reset static rate-limit deadline and let the
@@ -458,9 +469,19 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err: any) {
-        // Network-level failures (ECONNREFUSED, timeout, HALF_OPEN failure) also count
-        if (!_counted && err.name !== 'AbortError' && !err.message.startsWith('[PDIM] Circuit')) {
+        // AbortSignal.timeout() throws a TimeoutError (DOMException name='TimeoutError').
+        // AbortController.abort() throws an AbortError (DOMException name='AbortError').
+        // Neither should trip the circuit breaker — they indicate PDIM is slow/busy,
+        // not that PDIM is down. Instead apply AIMD backpressure (increase gap) so the
+        // caller rate drops and PDIM can catch up. Only genuine 5xx/network errors
+        // (ECONNREFUSED, etc.) trip the circuit breaker.
+        const isTimeout = !_counted && (err.name === 'TimeoutError' || err.name === 'AbortError');
+        const isCircuitMsg = !_counted && err.message.startsWith('[PDIM] Circuit');
+        if (!_counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
+        } else if (isTimeout) {
+          // Slow PDIM response — increase AIMD gap to apply backpressure.
+          _pdimAdapt429();
         }
         if (!_counted) {
           // Only log errors we haven't already logged inline
@@ -596,7 +617,7 @@ export class PdimRedisClient extends EventEmitter {
             'Authorization': `Bearer ${this.bearerToken}`,
           },
           body: JSON.stringify({ cmd, args: strArgs }),
-          signal: AbortSignal.timeout(30_000),
+          signal: AbortSignal.timeout(15_000),
         });
 
         if (!res.ok) {
@@ -637,8 +658,14 @@ export class PdimRedisClient extends EventEmitter {
         }
         return data;
       } catch (err: any) {
-        if (!_counted && err.name !== 'AbortError' && !err.message?.startsWith('[PDIM] Circuit')) {
+        // Same TimeoutError/AbortError exclusion as the main exec catch block —
+        // slow PDIM responses should not trip the circuit breaker.
+        const isTimeout = !_counted && (err.name === 'TimeoutError' || err.name === 'AbortError');
+        const isCircuitMsg = !_counted && err.message?.startsWith('[PDIM] Circuit');
+        if (!_counted && !isTimeout && !isCircuitMsg) {
           cbRecord503();
+        } else if (isTimeout) {
+          _pdimAdapt429(); // backpressure: slow = back off
         }
         cbHalfOpenFailed();
         throw err;

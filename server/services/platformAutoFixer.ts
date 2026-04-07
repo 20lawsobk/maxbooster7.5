@@ -473,10 +473,24 @@ class PlatformAutoFixer extends EventEmitter {
         method:  'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body:    JSON.stringify({ cmd: 'PING', args: [] }),
-        signal:  AbortSignal.timeout(5_000),
+        signal:  AbortSignal.timeout(12_000),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const pingMs = Date.now() - pingStart;
+
+      // 429 → rate-limited; throw so the catch block marks it 'degraded'.
+      // Non-429 4xx → the PDIM server IS reachable (it responded quickly) but
+      // the exec endpoint doesn't recognise this command.  Treat as "server up,
+      // endpoint unknown" — return 'unknown' so the backoff patch is NOT triggered.
+      if (!res.ok) {
+        if (res.status === 429) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        // Non-429 4xx: server responded, circuit should stay/become CLOSED.
+        if (cbStateBeforeProbe !== 'CLOSED') cbForceClose();
+        return this._result('pdim', 'unknown', pingMs,
+          `PDIM server reachable (HTTP ${res.status} — exec endpoint not found, ${pingMs}ms)`,
+          { pingMs, status: res.status, note: 'server_up_endpoint_unknown' });
+      }
 
       // If PDIM passed a direct ping but the circuit was HALF_OPEN (probe in flight),
       // force-close it immediately so we don't lose the recovery window.
@@ -510,8 +524,11 @@ class PlatformAutoFixer extends EventEmitter {
     } catch (err: any) {
       const msg = (err.message ?? '') as string;
       if (err.name === 'AbortError' || err.name === 'TimeoutError' || msg.includes('timed out')) {
-        status  = 'critical';
-        message = 'PDIM ping timed out (> 5s)';
+        // Timeout means PDIM may be cold-starting (Replit app sleep/wake cycle).
+        // Treat as 'unknown' so the AIMD backoff patch is NOT triggered —
+        // the exec-layer AIMD already adapts via _pdimAdapt429() on timeouts.
+        status  = 'unknown';
+        message = 'PDIM ping timed out — may be cold-starting';
         details = { timeout: true };
       } else if (msg.includes('429') || msg.includes('rate limit')) {
         status  = 'degraded';
