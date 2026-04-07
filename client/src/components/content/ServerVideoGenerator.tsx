@@ -349,6 +349,14 @@ export function ServerVideoGenerator({
         setGeneratingStage('Compositing video…');
         setRenderProgress(0);
 
+        // The 45s server timeout covered the initial fetch. Clear it now so it
+        // cannot fire mid-render, then give the render its own generous signal:
+        // video duration × 2 + 30s (accounts for the real-time paced frame loop).
+        clearTimeout(timeoutId);
+        const renderDurationSec = Math.max(10, (data.duration || duration || 10) * 2 + 30);
+        const renderController  = new AbortController();
+        const renderTimeoutId   = setTimeout(() => renderController.abort(), renderDurationSec * 1000);
+
         // Revoke any prior blob URL
         if (blobUrlRef.current) {
           URL.revokeObjectURL(blobUrlRef.current);
@@ -378,8 +386,8 @@ export function ServerVideoGenerator({
             setRenderProgress(pct);
             setGeneratingStage(`Compositing… ${pct}%`);
           },
-          signal: controller.signal,
-        });
+          signal: renderController.signal,
+        }).finally(() => clearTimeout(renderTimeoutId));
 
         blobUrlRef.current = rendered.blobUrl;
 

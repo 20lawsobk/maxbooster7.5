@@ -353,12 +353,19 @@ export async function renderMaxcoreVideo(
 
   recorder.start(100); // collect chunks every 100ms
 
-  // ── Render frames ──────────────────────────────────────────────────────
+  // ── Render frames at real-time pace ────────────────────────────────────
+  // MediaRecorder records in wall-clock time. If we draw frames faster than
+  // the video frame rate, the resulting video will be shorter than intended.
+  // We pace each frame to `1000/fps` ms so the output matches `duration`.
+  const frameDurationMs = 1000 / fps;
+
   for (let frame = 0; frame <= totalFrames; frame++) {
     if (signal?.aborted) {
       recorder.stop();
       throw new Error('Render aborted');
     }
+
+    const frameStart = performance.now();
 
     const t    = frame / totalFrames;           // normalised [0, 1]
     const time = frame / fps;                   // real seconds
@@ -367,10 +374,11 @@ export async function renderMaxcoreVideo(
 
     onProgress?.(Math.round(t * 95));
 
-    // Yield to browser every 5 frames to stay responsive
-    if (frame % 5 === 0) {
-      await new Promise<void>(r => setTimeout(r, 0));
-    }
+    // Wait out the remainder of this frame's budget before the next draw.
+    // This ensures the stream delivers frames at the correct tempo.
+    const elapsed = performance.now() - frameStart;
+    const wait    = Math.max(0, frameDurationMs - elapsed);
+    await new Promise<void>(r => setTimeout(r, wait));
   }
 
   recorder.stop();
