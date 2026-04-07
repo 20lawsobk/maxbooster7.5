@@ -40,6 +40,7 @@ interface ServerVideoGeneratorProps {
   goal?: string;
   artistName?: string;
   onVideoGenerated: (url: string) => void;
+  onImportToStudio?: (url: string) => void;
   className?: string;
   // Pre-population props (used when arriving from URL params / ContentGenerator redirect)
   initialHook?: string;
@@ -113,6 +114,7 @@ export function ServerVideoGenerator({
   goal = 'growth',
   artistName: artistNameProp = '',
   onVideoGenerated,
+  onImportToStudio,
   className = '',
   initialHook = '',
   initialBody = '',
@@ -667,14 +669,25 @@ export function ServerVideoGenerator({
                     </div>
                   </div>
                 )}
-                <a
-                  href={videoUrl}
-                  download={`maxbooster-video-${platform}.mp4`}
-                  className="inline-flex items-center justify-center w-full rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download MP4
-                </a>
+                <div className="flex gap-2">
+                  <a
+                    href={videoUrl}
+                    download={`maxbooster-video-${platform}.mp4`}
+                    className="inline-flex items-center justify-center flex-1 rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download MP4
+                  </a>
+                  {onImportToStudio && (
+                    <button
+                      onClick={() => onImportToStudio(videoUrl!)}
+                      className="inline-flex items-center justify-center flex-1 rounded-md text-sm font-medium h-9 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    >
+                      <Film className="h-4 w-4 mr-2" />
+                      Import to Studio
+                    </button>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -1146,14 +1159,25 @@ export function ServerVideoGenerator({
               </div>
             )}
 
-            <a
-              href={videoUrl}
-              download={`maxbooster-video-${platform}.mp4`}
-              className="inline-flex items-center justify-center w-full rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download MP4
-            </a>
+            <div className="flex gap-2">
+              <a
+                href={videoUrl}
+                download={`maxbooster-video-${platform}.mp4`}
+                className="inline-flex items-center justify-center flex-1 rounded-md text-sm font-medium h-9 px-4 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download MP4
+              </a>
+              {onImportToStudio && (
+                <button
+                  onClick={() => onImportToStudio(videoUrl!)}
+                  className="inline-flex items-center justify-center flex-1 rounded-md text-sm font-medium h-9 px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                >
+                  <Film className="h-4 w-4 mr-2" />
+                  Import to Studio
+                </button>
+              )}
+            </div>
           </div>
         )}
         </>

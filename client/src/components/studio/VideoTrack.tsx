@@ -85,6 +85,10 @@ interface VideoTrackProps {
   initialClips?: VideoClip[];
   isPlaying?: boolean;
   onPlayPause?: () => void;
+  /** When provided, automatically fetches this URL and imports it as a video clip */
+  pendingImportUrl?: string | null;
+  /** Called once the pending import URL has been consumed */
+  onPendingImportConsumed?: () => void;
 }
 
 const SUPPORTED_FORMATS = ['mp4', 'mov', 'webm', 'avi', 'mkv'];
@@ -109,6 +113,8 @@ export function VideoTrack({
   initialClips = [],
   isPlaying = false,
   onPlayPause,
+  pendingImportUrl,
+  onPendingImportConsumed,
 }: VideoTrackProps) {
   const { zoom, snapEnabled, snapResolution, currentTime, setCurrentTime } = useStudioStore();
 
@@ -139,6 +145,82 @@ export function VideoTrack({
     () => clips.find((c) => c.id === selectedClipId),
     [clips, selectedClipId]
   );
+
+  // ── URL-based import ────────────────────────────────────────────────────────
+  // When `pendingImportUrl` is set (e.g., a generated video from Social Media),
+  // fetch it as a Blob, create a synthetic File, and run the normal import
+  // pipeline so thumbnails (scenes) are generated identically to a local drag-drop.
+  useEffect(() => {
+    if (!pendingImportUrl) return;
+
+    let cancelled = false;
+    (async () => {
+      setIsImporting(true);
+      setImportProgress(5);
+      try {
+        const resp = await fetch(pendingImportUrl, { credentials: 'include' });
+        if (!resp.ok) throw new Error(`Failed to fetch video: ${resp.status}`);
+        const blob = await resp.blob();
+        if (cancelled) return;
+
+        const filename = pendingImportUrl.split('/').pop()?.split('?')[0] || 'generated-video.mp4';
+        const file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+
+        setImportProgress(20);
+
+        const video = document.createElement('video');
+        video.src = URL.createObjectURL(file);
+        await new Promise<void>((resolve, reject) => {
+          video.onloadedmetadata = () => resolve();
+          video.onerror = () => reject(new Error('Failed to load video metadata'));
+          setTimeout(() => reject(new Error('Metadata timeout')), 10_000);
+        });
+
+        if (cancelled) return;
+        setImportProgress(40);
+
+        const videoDuration = video.duration || 30;
+        const thumbnails = await generateThumbnails(file, videoDuration);
+
+        if (cancelled) return;
+        setImportProgress(85);
+
+        const newClip: VideoClip = {
+          id: `video-${Date.now()}`,
+          name: filename.replace(/\.[^/.]+$/, ''),
+          startTime: currentTime,
+          duration: Math.min(videoDuration, duration - currentTime),
+          filePath: URL.createObjectURL(file),
+          thumbnails,
+          format: (filename.split('.').pop()?.toLowerCase() as VideoClip['format']) || 'mp4',
+          width: video.videoWidth || 1080,
+          height: video.videoHeight || 1920,
+          frameRate: 30,
+          hasAudio: true,
+        };
+
+        setClips(prev => [...prev, newClip]);
+        setSelectedClipId(newClip.id);
+        setImportProgress(100);
+        onPendingImportConsumed?.();
+
+        setTimeout(() => {
+          setIsImporting(false);
+          setImportProgress(0);
+        }, 500);
+      } catch (err) {
+        if (!cancelled) {
+          logger.error('[VideoTrack] URL import failed:', err);
+          setIsImporting(false);
+          setImportProgress(0);
+        }
+      }
+    })();
+
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingImportUrl]);
+  // ── End URL-based import ────────────────────────────────────────────────────
 
   const timeToPixels = useCallback(
     (time: number): number => {

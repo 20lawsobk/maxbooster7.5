@@ -454,7 +454,7 @@ export default function SocialMedia() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { invalidateOnSocialChange } = useAnalyticsInvalidation();
-  const [location] = useLocation();
+  const [location, navigate] = useLocation();
   const { 
     trackSocialAccountConnected, 
     trackSocialAutopilotActivated,
@@ -1749,6 +1749,10 @@ return (
                           setGeneratedVideoUrl(url);
                           setMediaPreviewUrl(url);
                         }}
+                        onImportToStudio={(url: string) => {
+                          sessionStorage.setItem('mb-pending-import-video', url);
+                          navigate('/studio');
+                        }}
                       />
 
                       {generatedVideoUrl && (
@@ -2460,6 +2464,10 @@ return (
                                         title: 'Video Ready!',
                                         description: `Video generated for ${platform?.name || item.platform}.`,
                                       });
+                                    }}
+                                    onImportToStudio={(videoUrl: string) => {
+                                      sessionStorage.setItem('mb-pending-import-video', videoUrl);
+                                      navigate('/studio');
                                     }}
                                   />
                                 </div>

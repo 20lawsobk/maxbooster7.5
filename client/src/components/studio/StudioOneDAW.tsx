@@ -141,6 +141,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [surroundFormat, setSurroundFormat] = useState<'2.0' | '5.1' | '7.1' | '7.1.4' | 'atmos'>('2.0');
 
   const [showVideoTrack, setShowVideoTrack] = useState(false);
+  const [pendingImportVideoUrl, setPendingImportVideoUrl] = useState<string | null>(null);
   const [showLyrics, setShowLyrics] = useState(false);
   const [lyricsSections, setLyricsSections] = useState<LyricSection[]>(() => makeDefaultSections());
   const [lyricsActiveSectionId, setLyricsActiveSectionId] = useState<string>('');
@@ -164,6 +165,16 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [leftSidebarTab, setLeftSidebarTab] = useState<'tracks' | 'files' | 'plugins' | 'presets'>('tracks');
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
   const [inspectorOpen, setInspectorOpen] = useState(true);
+
+  // Pick up a video generated in Social Media and queued for import via sessionStorage.
+  useEffect(() => {
+    const pendingUrl = sessionStorage.getItem('mb-pending-import-video');
+    if (pendingUrl) {
+      sessionStorage.removeItem('mb-pending-import-video');
+      setPendingImportVideoUrl(pendingUrl);
+      setShowVideoTrack(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (projectId && projectId !== projectLoadedRef.current) {
@@ -2838,6 +2849,8 @@ function ArrangeView({
           <VideoTrack
             duration={300}
             isPlaying={isPlaying}
+            pendingImportUrl={pendingImportVideoUrl}
+            onPendingImportConsumed={() => setPendingImportVideoUrl(null)}
           />
         </div>
       )}

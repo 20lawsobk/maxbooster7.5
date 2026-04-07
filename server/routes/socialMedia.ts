@@ -30,6 +30,7 @@ let _pythonAIService: typeof import('../services/pythonAIService.js').pythonAISe
 let _veoMusicService: typeof import('../services/veoMusicService.js').veoMusicService | null = null;
 let _renderAdvancedVideo: typeof import('../services/advancedVideoRendererService.js').renderVideo | null = null;
 let _maxcoreVideoUrlStore: typeof import('../services/advancedVideoRendererService.js').maxcoreVideoUrlStore | null = null;
+let _localVideoGenerator: typeof import('../services/videoGeneratorService.js').generateVideo | null = null;
 let _voiceSynthService: typeof import('../services/voiceSynthesisService.js') | null = null;
 let _beatSyncService: typeof import('../services/beatSyncService.js') | null = null;
 let _imageToVideoService: typeof import('../services/imageToVideoService.js') | null = null;
@@ -97,6 +98,13 @@ async function getMaxcoreVideoUrlStore() {
     _maxcoreVideoUrlStore = m.maxcoreVideoUrlStore;
   }
   return _maxcoreVideoUrlStore!;
+}
+async function getLocalVideoGenerator() {
+  if (!_localVideoGenerator) {
+    const m = await import('../services/videoGeneratorService.js');
+    _localVideoGenerator = m.generateVideo;
+  }
+  return _localVideoGenerator!;
 }
 
 const router = Router();
@@ -2047,12 +2055,31 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
           userId,
         };
 
-        // Stages 2–4 — Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+        // Stages 2–4 — Advanced Video Renderer (MaxCore primary → local FFmpeg fallback)
         logger.info(`[VideoGen] Routing job ${jobId} through Advanced Video Renderer`);
-        const result = await (await getRenderAdvancedVideo())({
+        let result = await (await getRenderAdvancedVideo())({
           ...videoParams,
           template: template || 'cinematic_promo',
         });
+
+        // If MaxCore succeeded but only returned a proxy URL (meaning local caching
+        // failed because MaxCore's video URL paths return its SPA HTML), fall back
+        // to the local FFmpeg renderer which writes a real video to /uploads/videos/.
+        if (result.success && result.url?.startsWith('/api/social/video-proxy/')) {
+          logger.warn(`[VideoGen] MaxCore video unreachable via proxy — falling back to local FFmpeg renderer`);
+          try {
+            result = await (await getLocalVideoGenerator())({
+              ...videoParams,
+              template: template || 'cinematic_promo',
+            });
+            if (result.success) {
+              logger.info(`[VideoGen] Job ${jobId} done via local FFmpeg — url=${result.url}`);
+            }
+          } catch (ffErr: any) {
+            logger.warn(`[VideoGen] Local FFmpeg fallback also failed: ${ffErr.message}`);
+          }
+        }
+
         if (result.success) {
           ffmpegJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
           logger.info(`[VideoGen] Job ${jobId} done via ${result.source || 'renderer'} — url=${result.url}`);
@@ -2141,12 +2168,21 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
   const MC_AI_URL = (process.env.AI_SERVER_URL || '').replace(/\/+$/, '');
   const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
 
-  // 1. Check local cache first — if it was written to disk, serve it directly
+  // 1. Check local cache first — if it was written to disk AND is a real video, serve it directly.
+  //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
+  //    Anything smaller than 10 KB is a corrupted/HTML cache entry — skip and re-proxy.
   const localPath = path.join(process.cwd(), 'uploads', 'videos', filename);
   if (fs.existsSync(localPath)) {
-    res.setHeader('Content-Type', 'video/mp4');
-    res.setHeader('Cache-Control', 'public, max-age=86400');
-    return fs.createReadStream(localPath).pipe(res);
+    const stat = fs.statSync(localPath);
+    if (stat.size > 10_240) {
+      res.setHeader('Content-Type', 'video/mp4');
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Accept-Ranges', 'bytes');
+      return fs.createReadStream(localPath).pipe(res);
+    }
+    // Corrupted/HTML entry — delete it so we re-fetch from MaxCore
+    logger.warn(`[VideoProxy] Local cache entry ${filename} is too small (${stat.size} bytes) — deleting stale cache`);
+    fs.unlinkSync(localPath);
   }
 
   // 2. Try to fetch from MaxCore using stored URL or candidate paths
@@ -2182,10 +2218,23 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       });
       if (!upstream.ok) continue;
 
-      const ct = upstream.headers.get('content-type') ?? 'video/mp4';
+      const ct = upstream.headers.get('content-type') ?? '';
       const cl = upstream.headers.get('content-length');
 
-      res.setHeader('Content-Type', ct.includes('video') ? ct : 'video/mp4');
+      // Reject HTML/JSON responses — MaxCore's SPA returns its frontend HTML for
+      // any unrecognised path (200 OK, content-type: text/html).  We must skip
+      // those so we don't stream an HTML page as a "video/mp4" to the browser.
+      const isVideo = ct.includes('video') || ct.includes('octet-stream') ||
+                      ct.includes('binary') || ct.includes('mp4');
+      const clNum = cl ? parseInt(cl, 10) : null;
+      const tooSmall = clNum !== null && clNum < 10_240; // < 10 KB ⇒ definitely not a real video
+      if (!isVideo || tooSmall) {
+        logger.debug(`[VideoProxy] Candidate ${url} rejected — content-type="${ct}" size=${cl ?? '?'} bytes`);
+        continue;
+      }
+
+      const finalCt = ct.includes('video') ? ct : 'video/mp4';
+      res.setHeader('Content-Type', finalCt);
       if (cl) res.setHeader('Content-Length', cl);
       res.setHeader('Cache-Control', 'public, max-age=86400');
       res.setHeader('Accept-Ranges', 'bytes');
@@ -2198,23 +2247,25 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       res.writeHead(200);
       nodeStream.pipe(res);
 
-      // Pump the fetch ReadableStream into the Node.js PassThrough
+      // Pump the fetch ReadableStream into the Node.js PassThrough and cache to disk
       (async () => {
+        const chunks: Uint8Array[] = [];
         try {
           while (true) {
             const { done, value } = await reader.read();
             if (done) { nodeStream.end(); break; }
             nodeStream.write(value);
+            chunks.push(value);
           }
-          // Also cache to disk for future requests
-          if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'videos'))) {
-            fs.mkdirSync(path.join(process.cwd(), 'uploads', 'videos'), { recursive: true });
+          // Cache to disk — only after we know the full content is valid video data
+          const buf = Buffer.concat(chunks);
+          if (buf.length > 10_240) {
+            if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'videos'))) {
+              fs.mkdirSync(path.join(process.cwd(), 'uploads', 'videos'), { recursive: true });
+            }
+            fs.writeFileSync(localPath, buf);
+            logger.info(`[VideoProxy] Cached ${filename} to disk (${(buf.length / 1024).toFixed(0)} KB)`);
           }
-          // Re-fetch to write to disk (non-blocking, best-effort)
-          fetch(url, { headers: authHeaders, signal: AbortSignal.timeout(60_000) })
-            .then(r => r.arrayBuffer())
-            .then(buf => fs.writeFileSync(localPath, Buffer.from(buf)))
-            .catch(() => {});
         } catch { nodeStream.destroy(); }
       })();
 
