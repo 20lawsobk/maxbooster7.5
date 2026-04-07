@@ -60,57 +60,86 @@ export interface RenderResult {
   revoke:    () => void;
 }
 
-// ── Palette system ──────────────────────────────────────────────────────────
+// ── Photorealistic Palette system ───────────────────────────────────────────
 
 interface Palette {
   bg1: string; bg2: string; bg3: string;
+  bg2Light: string;           // secondary/rim light source color
   accent: string; accent2: string;
   text: string; textDim: string;
   grain: boolean;
+  grainAmount: number;        // 0–1 grain intensity multiplier
+  grainTemp: 'warm' | 'cool' | 'neutral';  // film stock temperature
+  shadowTint: string;         // hex color pushed into shadow region
+  highlightTint: string;      // hex color pushed into highlight region
+  vignetteStrength: number;   // 0–1 lens vignette strength
+  keyLightX: number;          // 0–1 horizontal key light position
+  keyLightY: number;          // 0–1 vertical key light position
 }
 
 const PALETTES: Record<string, Palette> = {
   cinematic_promo: {
-    bg1: '#050508', bg2: '#12091e', bg3: '#0a0510',
+    bg1: '#030206', bg2: '#180c2e', bg3: '#08040e',
+    bg2Light: '#3a1c6e',
     accent: '#c9a84c', accent2: '#e8c97a',
     text: '#f5f0e8', textDim: '#a09880',
-    grain: true,
+    grain: true, grainAmount: 0.07, grainTemp: 'warm',
+    shadowTint: '#0a0618', highlightTint: '#c9a84c',
+    vignetteStrength: 0.88, keyLightX: 0.55, keyLightY: 0.38,
   },
   lyric_video: {
-    bg1: '#020208', bg2: '#080218', bg3: '#020810',
+    bg1: '#010108', bg2: '#04021a', bg3: '#020610',
+    bg2Light: '#0a0a60',
     accent: '#00e5ff', accent2: '#7c4dff',
     text: '#ffffff', textDim: '#80d8ff',
-    grain: false,
+    grain: true, grainAmount: 0.035, grainTemp: 'cool',
+    shadowTint: '#020410', highlightTint: '#00e5ff',
+    vignetteStrength: 0.75, keyLightX: 0.5, keyLightY: 0.45,
   },
   music_visualizer: {
-    bg1: '#000510', bg2: '#001030', bg3: '#000820',
+    bg1: '#000408', bg2: '#000c28', bg3: '#000618',
+    bg2Light: '#002060',
     accent: '#00b0ff', accent2: '#18ffff',
     text: '#e3f2fd', textDim: '#4fc3f7',
-    grain: false,
+    grain: true, grainAmount: 0.028, grainTemp: 'cool',
+    shadowTint: '#000820', highlightTint: '#00b0ff',
+    vignetteStrength: 0.82, keyLightX: 0.5, keyLightY: 0.35,
   },
   album_promo: {
-    bg1: '#0d0600', bg2: '#1a0a00', bg3: '#100800',
+    bg1: '#0a0400', bg2: '#200a00', bg3: '#120600',
+    bg2Light: '#3a1800',
     accent: '#ff6d00', accent2: '#ffab40',
     text: '#fff8f0', textDim: '#bf8040',
-    grain: true,
+    grain: true, grainAmount: 0.065, grainTemp: 'warm',
+    shadowTint: '#100400', highlightTint: '#ff6d00',
+    vignetteStrength: 0.9, keyLightX: 0.62, keyLightY: 0.32,
   },
   artist_spotlight: {
-    bg1: '#050005', bg2: '#100010', bg3: '#080008',
+    bg1: '#030003', bg2: '#0c000e', bg3: '#060008',
+    bg2Light: '#280028',
     accent: '#e040fb', accent2: '#ea80fc',
     text: '#fce4ff', textDim: '#ce93d8',
-    grain: true,
+    grain: true, grainAmount: 0.06, grainTemp: 'warm',
+    shadowTint: '#080010', highlightTint: '#e040fb',
+    vignetteStrength: 0.92, keyLightX: 0.45, keyLightY: 0.30,
   },
   live_performance: {
-    bg1: '#000a00', bg2: '#001500', bg3: '#000800',
+    bg1: '#000600', bg2: '#001000', bg3: '#000600',
+    bg2Light: '#002800',
     accent: '#69ff47', accent2: '#b2ff59',
     text: '#f1f8e9', textDim: '#aed581',
-    grain: false,
+    grain: true, grainAmount: 0.05, grainTemp: 'neutral',
+    shadowTint: '#000800', highlightTint: '#69ff47',
+    vignetteStrength: 0.8, keyLightX: 0.5, keyLightY: 0.25,
   },
   default: {
-    bg1: '#06060f', bg2: '#0e0e24', bg3: '#06060f',
+    bg1: '#04040c', bg2: '#0c0c20', bg3: '#04040c',
+    bg2Light: '#180830',
     accent: '#7c3aed', accent2: '#a855f7',
     text: '#f8f8ff', textDim: '#9090c0',
-    grain: false,
+    grain: true, grainAmount: 0.04, grainTemp: 'cool',
+    shadowTint: '#04041a', highlightTint: '#7c3aed',
+    vignetteStrength: 0.78, keyLightX: 0.5, keyLightY: 0.4,
   },
 };
 
@@ -120,10 +149,11 @@ function getPalette(meta: MaxcoreJobMeta): Palette {
   if (meta.bgColor || meta.accentColor) {
     return {
       ...base,
-      bg1:    meta.bgColor || base.bg1,
-      bg2:    meta.bgColor || base.bg2,
-      bg3:    meta.bgColor || base.bg3,
-      accent: meta.accentColor || base.accent,
+      bg1:     meta.bgColor    || base.bg1,
+      bg2:     meta.bgColor    || base.bg2,
+      bg3:     meta.bgColor    || base.bg3,
+      bg2Light: meta.bgColor   || base.bg2Light,
+      accent:  meta.accentColor || base.accent,
       accent2: meta.accentColor || base.accent2,
     };
   }
@@ -205,44 +235,208 @@ function revealedText(text: string, reveal: number): string {
   return words.slice(0, count).join(' ');
 }
 
-// ── Noise / grain ───────────────────────────────────────────────────────────
+// ── Photorealistic Film Grain ────────────────────────────────────────────────
+// Pre-bakes N grain frames (256×256 Gaussian noise tiles) once at render start.
+// Each frame composites the appropriate tile with 'soft-light' blend — pixels
+// above 128 lighten, below 128 darken — matching real photochemical grain.
 
-function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, alpha: number, seed: number) {
-  if (alpha <= 0) return;
+function buildGrainFrames(
+  w: number,
+  h: number,
+  p: Palette,
+  count = 8,
+): HTMLCanvasElement[] {
+  const tileW = Math.min(w, 256);
+  const tileH = Math.min(h, 256);
+  const rBias = p.grainTemp === 'warm' ? 1.25 : p.grainTemp === 'cool' ? 0.80 : 1.0;
+  const bBias = p.grainTemp === 'warm' ? 0.80 : p.grainTemp === 'cool' ? 1.25 : 1.0;
+  const sigma = p.grainAmount * 72; // std-dev in luminance units
+
+  return Array.from({ length: count }, (_, fi) => {
+    const gc   = document.createElement('canvas');
+    gc.width   = tileW;
+    gc.height  = tileH;
+    const gctx = gc.getContext('2d')!;
+    const id   = gctx.createImageData(tileW, tileH);
+    const d    = id.data;
+
+    // LCG PRNG — deterministic per frame index, fast
+    let rng = (fi * 2654435761 + 1013904223) >>> 0;
+    const rand = (): number => {
+      rng = (Math.imul(rng, 1664525) + 1013904223) >>> 0;
+      return rng / 0xffffffff;
+    };
+
+    for (let i = 0; i < d.length; i += 4) {
+      // Box-Muller Gaussian: two uniform samples → one Gaussian sample
+      const u1  = Math.max(1e-10, rand());
+      const u2  = rand();
+      const g   = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+      const lum = 128 + g * sigma;  // centred at 128 (neutral in soft-light)
+      d[i]   = Math.max(0, Math.min(255, Math.round(lum * rBias)));
+      d[i+1] = Math.max(0, Math.min(255, Math.round(lum)));
+      d[i+2] = Math.max(0, Math.min(255, Math.round(lum * bBias)));
+      d[i+3] = 255;
+    }
+    gctx.putImageData(id, 0, 0);
+    return gc;
+  });
+}
+
+function compositeGrain(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  grainFrames: HTMLCanvasElement[],
+  frameIndex: number,
+  p: Palette,
+) {
+  if (!p.grain || grainFrames.length === 0) return;
+  const tile = grainFrames[frameIndex % grainFrames.length];
   ctx.save();
-  ctx.globalAlpha = alpha;
-  // 4×4 pixel grain blocks for performance
-  const bx = 4, by = 4;
-  for (let y = 0; y < h; y += by) {
-    for (let x = 0; x < w; x += bx) {
-      const n = Math.abs(Math.sin(x * 127.1 + y * 311.7 + seed * 74.3)) * 255;
-      if (n > 160) {
-        ctx.fillStyle = n > 200 ? '#ffffff' : '#888888';
-        ctx.fillRect(x, y, bx, by);
-      }
+  ctx.globalAlpha     = clamp(p.grainAmount, 0, 1);
+  ctx.globalCompositeOperation = 'soft-light';
+  // Tile the grain texture across the full canvas
+  for (let ty = 0; ty < h; ty += tile.height) {
+    for (let tx = 0; tx < w; tx += tile.width) {
+      ctx.drawImage(tile, tx, ty);
     }
   }
   ctx.restore();
 }
 
-// ── Background renderers ────────────────────────────────────────────────────
+// ── Photorealistic Background — multi-layer cinematic depth ─────────────────
+
+function drawCinematicBg(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  p: Palette,
+  time: number,
+) {
+  // Layer 1: base fill — the darkest shadow plane
+  ctx.fillStyle = p.bg1;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layer 2: atmospheric depth haze (distance falloff toward top)
+  const haze = ctx.createLinearGradient(0, h * 0.55, 0, 0);
+  haze.addColorStop(0, `${p.bg2}00`);
+  haze.addColorStop(1, `${p.bg2}70`);
+  ctx.fillStyle = haze;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layer 3: key light — main directional source, breathes gently
+  const kx = w * (p.keyLightX + Math.sin(time * 0.08) * 0.025);
+  const ky = h * (p.keyLightY + Math.cos(time * 0.06) * 0.018);
+  const kr  = Math.max(w, h) * 0.72;
+  const key = ctx.createRadialGradient(kx, ky, 0, kx, ky, kr);
+  key.addColorStop(0,   `${p.bg2}d0`);
+  key.addColorStop(0.3, `${p.bg3}80`);
+  key.addColorStop(0.7, `${p.bg1}30`);
+  key.addColorStop(1,   `${p.bg1}00`);
+  ctx.fillStyle = key;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layer 4: rim/fill light — secondary source from opposite quadrant
+  const rx = w * (1.0 - p.keyLightX + Math.cos(time * 0.07) * 0.02);
+  const ry = h * (1.0 - p.keyLightY + Math.sin(time * 0.09) * 0.02);
+  const rim = ctx.createRadialGradient(rx, ry, 0, rx, ry, Math.max(w, h) * 0.55);
+  rim.addColorStop(0,   `${p.bg2Light}50`);
+  rim.addColorStop(0.45, `${p.bg2Light}20`);
+  rim.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.fillStyle = rim;
+  ctx.fillRect(0, 0, w, h);
+
+  // Layer 5: specular micro-caustic (very subtle animated highlight shimmer)
+  const sx = w * (0.5 + Math.sin(time * 0.13) * 0.3);
+  const sy = h * (0.2 + Math.cos(time * 0.11) * 0.1);
+  const spec = ctx.createRadialGradient(sx, sy, 0, sx, sy, w * 0.18);
+  spec.addColorStop(0,  `${p.bg2Light}22`);
+  spec.addColorStop(1,  'rgba(0,0,0,0)');
+  ctx.fillStyle = spec;
+  ctx.fillRect(0, 0, w, h);
+}
+
+// ── Photographic Lens Vignette ───────────────────────────────────────────────
+// Non-linear falloff from centre — matches real lens optical characteristics.
+
+function drawVignette(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  strength: number,
+) {
+  if (strength <= 0) return;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r  = Math.sqrt(cx * cx + cy * cy);
+
+  // Inner clear zone at 28% radius; darkening accelerates toward edge
+  const vig = ctx.createRadialGradient(cx, cy, r * 0.28, cx, cy, r * 1.18);
+  vig.addColorStop(0,    'rgba(0,0,0,0)');
+  vig.addColorStop(0.45, `rgba(0,0,0,${(strength * 0.18).toFixed(3)})`);
+  vig.addColorStop(0.72, `rgba(0,0,0,${(strength * 0.48).toFixed(3)})`);
+  vig.addColorStop(1,    `rgba(0,0,0,${(strength * 0.82).toFixed(3)})`);
+
+  ctx.save();
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
+// ── Split-Tone Color Grade ───────────────────────────────────────────────────
+// Cinema-standard shadow/highlight split toning via GPU compositing modes.
+// multiply pushes color into shadows; screen lifts highlights.
+
+function applyColorGrade(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  p: Palette,
+  time: number,
+) {
+  ctx.save();
+
+  // Shadow tint — multiply a gradient from mid-frame down
+  const shadowGrd = ctx.createLinearGradient(0, h * 0.42, 0, h);
+  shadowGrd.addColorStop(0, `${p.shadowTint}00`);
+  shadowGrd.addColorStop(1, `${p.shadowTint}88`);
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = shadowGrd;
+  ctx.fillRect(0, 0, w, h);
+
+  // Highlight tint — screen a radial bloom near the key light position
+  const hkx = w * (p.keyLightX + Math.sin(time * 0.08) * 0.02);
+  const hky = h * (p.keyLightY + Math.cos(time * 0.06) * 0.02);
+  const hlGrd = ctx.createRadialGradient(hkx, hky, 0, hkx, hky, Math.max(w, h) * 0.55);
+  hlGrd.addColorStop(0,  `${p.highlightTint}28`);
+  hlGrd.addColorStop(0.5, `${p.highlightTint}10`);
+  hlGrd.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.globalCompositeOperation = 'screen';
+  ctx.fillStyle = hlGrd;
+  ctx.fillRect(0, 0, w, h);
+
+  // Micro-contrast lift — soft overlay to push S-curve depth
+  const contrastGrd = ctx.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, Math.max(w, h) * 0.6);
+  contrastGrd.addColorStop(0,  'rgba(255,255,255,0.03)');
+  contrastGrd.addColorStop(1,  'rgba(0,0,0,0.06)');
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.fillStyle = contrastGrd;
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.restore();
+}
+
+// ── Legacy linear bg (kept for scene variants that use it) ──────────────────
 
 function drawRadialBg(
   ctx: CanvasRenderingContext2D,
   w: number, h: number,
   p: Palette,
-  t: number,
+  time: number,
 ) {
-  ctx.fillStyle = p.bg1;
-  ctx.fillRect(0, 0, w, h);
-  const cx = w * (0.5 + Math.sin(t * 0.2) * 0.1);
-  const cy = h * (0.5 + Math.cos(t * 0.15) * 0.1);
-  const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(w, h) * 0.8);
-  grd.addColorStop(0, p.bg2);
-  grd.addColorStop(0.6, p.bg3);
-  grd.addColorStop(1, p.bg1);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
+  drawCinematicBg(ctx, w, h, p, time);
 }
 
 function drawLinearBg(
@@ -251,16 +445,7 @@ function drawLinearBg(
   p: Palette,
   t: number,
 ) {
-  const angle = (Math.sin(t * 0.1) * 0.3 + 0.5) * Math.PI;
-  const grd = ctx.createLinearGradient(
-    w * 0.5 + Math.cos(angle) * w, h * 0.5 + Math.sin(angle) * h,
-    w * 0.5 - Math.cos(angle) * w, h * 0.5 - Math.sin(angle) * h,
-  );
-  grd.addColorStop(0, p.bg1);
-  grd.addColorStop(0.5, p.bg2);
-  grd.addColorStop(1, p.bg3);
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, w, h);
+  drawCinematicBg(ctx, w, h, p, t);
 }
 
 // ── Platform overlay ────────────────────────────────────────────────────────
@@ -965,6 +1150,7 @@ function drawFrame(
   t: number,
   time: number,
   fps: number,
+  grainFrames?: HTMLCanvasElement[],
 ) {
   const template = meta.template || meta.template_name || 'default';
 
@@ -1005,9 +1191,16 @@ function drawFrame(
   // Platform chrome on top
   drawPlatformChrome(ctx, w, h, meta.platform || '', t, p.accent);
 
-  // Film grain for applicable templates
-  if (p.grain) {
-    drawGrain(ctx, w, h, 0.025, Math.floor(time * fps));
+  // ── Post-processing stack (always applied, order matters) ──────────────
+  // 1. Split-tone color grade (shadow tint + highlight tint + S-curve lift)
+  applyColorGrade(ctx, w, h, p, time);
+
+  // 2. Lens vignette — physically-based edge darkening
+  drawVignette(ctx, w, h, p.vignetteStrength);
+
+  // 3. Photorealistic film grain (pre-baked Gaussian, soft-light blend)
+  if (grainFrames) {
+    compositeGrain(ctx, w, h, grainFrames, Math.floor(time * fps), p);
   }
 
   // Global fade in / out
@@ -1070,12 +1263,18 @@ export async function renderMaxcoreVideo(
   canvas.height = H;
   const ctx = canvas.getContext('2d')!;
 
+  // Pre-bake 8 Gaussian film grain frames before render starts (one-time cost)
+  const grainFrames = p.grain ? buildGrainFrames(W, H, p) : [];
+
   const stream = canvas.captureStream(fps);
   const chunks: Blob[] = [];
 
+  // Bitrate: photorealistic quality requires higher data budget
+  // Target ~0.14 bits per pixel per frame — matches broadcast quality
+  const targetBps = Math.min(20_000_000, W * H * fps * 0.14);
   const recorder = new MediaRecorder(stream, {
     mimeType,
-    videoBitsPerSecond: Math.min(8_000_000, W * H * fps * 0.07),
+    videoBitsPerSecond: targetBps,
   });
 
   recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
@@ -1099,7 +1298,7 @@ export async function renderMaxcoreVideo(
     const t    = frame / totalFrames;
     const time = frame / fps;
 
-    drawFrame(ctx, W, H, meta, p, scenes, t, time, fps);
+    drawFrame(ctx, W, H, meta, p, scenes, t, time, fps, grainFrames);
     onProgress?.(Math.round(t * 95));
 
     const elapsed = performance.now() - frameStart;
