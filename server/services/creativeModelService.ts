@@ -27,11 +27,9 @@
  *     MaxCore /api/generate/text when available
  *
  *   Stage 6 — Video Assembly
- *     [Priority 1] PyTorch latent video diffusion API (video_diffusion/, port 8010)
- *       — music-conditioned: BPM, energy, style, beat position, emotional goal
- *       — two-stage cascade: base 256×256/16f → SR 512×512/32f
- *     [Priority 2] videoGeneratorService (FFmpeg + Python, 13 visual styles)
- *     [Priority 3] placeholder path
+ *     MaxCore /api/generate-video (sole source — async job, polled until done)
+ *       — music-conditioned fields forwarded: bpm, energy, style, platform, tone
+ *       — placeholder returned if MaxCore job times out or errors
  *
  *   Stage 7 — Engagement Scoring
  *     MaxCore AI /api/generate/text → VideoCreativeScorer (in-house TF.js)
@@ -86,6 +84,21 @@ async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Pro
     throw new Error(`MaxCore ${path} returned non-JSON: ${text.slice(0, 200)}`);
   }
 
+  return res.json();
+}
+
+async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<any> {
+  const res = await fetch(`${MAXCORE_URL}${path}`, {
+    method: 'GET',
+    headers: MAXCORE_KEY
+      ? { Authorization: `Bearer ${MAXCORE_KEY}`, 'X-API-Key': MAXCORE_KEY }
+      : {},
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`MaxCore GET ${path} → HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
   return res.json();
 }
 
@@ -726,95 +739,67 @@ async function assemblyStage(
   ctx: CreativeContext,
   plan: CreativePlan,
 ): Promise<string> {
-  logger.info('[CreativeModel] Stage 6: Video assembly');
+  logger.info('[CreativeModel] Stage 6: Video assembly via MaxCore');
 
-  // ── Priority 1: PyTorch latent video diffusion (music-conditioned) ──────────
+  // ── MaxCore /api/generate-video (sole source) ───────────────────────────────
   try {
-    const {
-      isPyTorchDiffusionReady,
-      generatePyTorchDiffusionVideo,
-    } = await import('./diffusionVideoService.js');
+    const firstBeatStyle  = ctx.styleMap.get(0);
+    const styleName       = firstBeatStyle?.primaryStyle ?? 'cinematic_promo';
+    const isDropSection   = musicMeta.sections.some(
+      s => s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop'),
+    );
 
-    const diffusionReady = await isPyTorchDiffusionReady();
-    if (diffusionReady) {
-      logger.info('[CreativeModel] Stage 6: Using PyTorch diffusion API (music-conditioned)');
+    const jobResp = await maxcorePost('/generate-video', {
+      hook:        plan.hooks?.[0] ?? `${brief.domain ?? 'music'} video`,
+      body:        plan.beats?.[0]?.visualDescription ?? brief.tone ?? 'cinematic music video',
+      cta:         plan.cta ?? 'Follow for more',
+      topic:       `${brief.domain ?? ''} music video`.trim(),
+      platform:    brief.platform ?? 'tiktok',
+      template:    styleName,
+      tone:        brief.tone ?? 'energetic',
+      goal:        brief.goal ?? 'growth',
+      quality:     'cinematic',
+      genre:       musicMeta.genre ?? undefined,
+      artist_name: brief.artistName ?? undefined,
+      bpm:         musicMeta.bpm,
+      energy:      ctx.energyMean,
+      is_drop:     isDropSection,
+    }, 60_000);
 
-      // Use the dominant style from the first beat's KeyframeStyleSelector output
-      const firstBeatStyle = ctx.styleMap.get(0);
-      const styleName: string  = firstBeatStyle?.primaryStyle ?? 'neon_tunnel';
-      const secondaryEntry     = firstBeatStyle?.topStyles?.[1];
-      const blendStyle: string | undefined = secondaryEntry?.style;
-      // Blend weight: proportional to confidence gap between top-2 styles
-      const topProb   = firstBeatStyle?.topStyles?.[0]?.probability ?? 1;
-      const secProb   = secondaryEntry?.probability ?? 0;
-      const blendWeight: number = Math.max(0, Math.min(0.5, 1 - (topProb - secProb)));
+    if (!jobResp) {
+      logger.warn('[CreativeModel] Stage 6: MaxCore returned no response — using placeholder');
+      return `creative_video_${randomUUID()}_placeholder`;
+    }
 
-      // Derive drop presence from musical sections
-      const isDropSection = musicMeta.sections.some(
-        s => (s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop')),
-      );
+    // Synchronous render — URL returned immediately
+    if (jobResp.url) {
+      logger.info(`[CreativeModel] Stage 6: MaxCore sync render → ${jobResp.url}`);
+      return jobResp.url;
+    }
 
-      // Use emotional goal from plan's first beat
-      const emotionalGoal: string = plan.beats?.[0]?.emotionalGoal ?? 'curiosity';
-
-      const result = await generatePyTorchDiffusionVideo({
-        prompt:          `${brief.domain ?? ''} music video, ${brief.tone ?? ''}`.trim(),
-        T:               16,
-        H:               512,
-        W:               512,
-        bpm:             musicMeta.bpm,
-        energy:          ctx.energyMean,
-        energy_peak:     ctx.energyPeak,
-        style_name:      styleName,
-        beat_index:      0,
-        total_beats:     plan.beats?.length ?? 4,
-        is_drop:         isDropSection,
-        emotional_goal:  emotionalGoal,
-        blend_style_name: blendStyle,
-        blend_weight:    blendWeight,
-        output_format:   'mp4_b64',
-        platform:        brief.platform,
-      });
-
-      if (result.status === 'ok' && result.mp4_b64) {
-        // Write the base64 MP4 to a temp file and return its path
-        const { writeFileSync, mkdirSync } = await import('fs');
-        const { tmpdir } = await import('os');
-        const { join } = await import('path');
-        const outDir = join(tmpdir(), 'maxbooster_diffusion');
-        mkdirSync(outDir, { recursive: true });
-        const outPath = join(outDir, `diffusion_${randomUUID()}.mp4`);
-        writeFileSync(outPath, Buffer.from(result.mp4_b64, 'base64'));
-        logger.info(
-          `[CreativeModel] Stage 6: PyTorch diffusion OK → ${outPath} ` +
-          `(${result.num_frames ?? '?'} frames, style=${result.style_used ?? styleName})`,
-        );
-        return outPath;
+    // Async render — poll until complete (3 min budget, 5s intervals)
+    if (jobResp.job_id) {
+      logger.info(`[CreativeModel] Stage 6: MaxCore async job ${jobResp.job_id} — polling`);
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 5_000));
+        const poll = await maxcoreGet(`/video-job/${jobResp.job_id}`);
+        if (poll?.status === 'done' && poll?.url) {
+          logger.info(`[CreativeModel] Stage 6: MaxCore job done → ${poll.url}`);
+          return poll.url;
+        }
+        if (poll?.status === 'failed') {
+          logger.warn(`[CreativeModel] Stage 6: MaxCore job ${jobResp.job_id} failed`);
+          break;
+        }
       }
     }
   } catch (err) {
-    logger.warn('[CreativeModel] PyTorch diffusion API unavailable, falling back', { err });
+    logger.error('[CreativeModel] Stage 6: MaxCore video generation error', { err });
   }
 
-  // ── Priority 2: videoGeneratorService (FFmpeg + Python frames) ─────────────
-  try {
-    const { videoGeneratorService } = await import('./videoGeneratorService.js');
-    if (videoGeneratorService && typeof videoGeneratorService.generateVideo === 'function') {
-      const videoPath = await videoGeneratorService.generateVideo({
-        keyframes: keyframePaths,
-        timeline: timing.timeline,
-        transitions: timing.transitions,
-        audioPath,
-        platform: brief.platform,
-        style: brief.style,
-      });
-      return videoPath;
-    }
-  } catch (err) {
-    logger.warn('[CreativeModel] videoGeneratorService unavailable, using placeholder', { err });
-  }
-
-  // ── Priority 3: placeholder ─────────────────────────────────────────────────
+  // ── Placeholder fallback (logged — MaxCore transient failure) ───────────────
+  logger.warn('[CreativeModel] Stage 6: MaxCore did not deliver a video URL — returning placeholder');
   return `creative_video_${randomUUID()}_placeholder`;
 }
 

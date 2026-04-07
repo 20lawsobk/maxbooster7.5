@@ -127,13 +127,9 @@ Key architectural decisions include:
 - MaxCore confirmed healthy: `model_loaded: true`, all three key endpoints (`generate/content`, `generate-video`, `generate/audio`) verified live with correct auth.
 - PDIM exec endpoint timeouts (~15s) are expected — PDIM server accepts connections but hangs on Redis commands (exec endpoint may not implement Redis protocol). Circuit breaker stays CLOSED; LuaExecutor degrades gracefully (returns null for missing keys).
 
-### In-House Video Diffusion Engine — ACTIVATED (2026-04-07)
-- **`server/services/diffusion/api_server_v4.py`** runs as a dedicated workflow (`Video Diffusion Engine`) on port 8008.
-- Model: UNetV4 LITE — 17.5M params, NumPy/CPU, 4 frames × 96×96, beat-sync conditioning (BPM, energy, beat_index, is_drop, emotional_goal), 11 scene styles (neon_tunnel, concert_stage, city_nights, deep_space, plasma_fractal, sunset_city, crystal_waters, liquid_metal, fire_embers, aurora_curtains, default).
-- Training data: MaxCore 8TB corpus (102,654 prompts across 54 scene categories) pulled via `maxcore_dataset_bridge.py`.
-- Self-training triggers on startup via `POST /train` with `quick` tier (300 samples × 10 epochs). Background `diffusionBackgroundTrainer.ts` runs `deep` sessions continuously.
-- **Priority routing**: `creativeModelService.ts` checks `isPyTorchDiffusionReady()` at `http://127.0.0.1:8008/ready` as Priority 1 for all video assembly; falls back to MaxCore remote API if the local server is not ready.
-- `diffusionVideoService.ts` → `PYTORCH_API_BASE` = `http://127.0.0.1:8008`.
-- Endpoints: `POST /generate` (mp4_b64), `POST /generate/keyframe` (frame_b64), `POST /generate/stream` (SSE), `GET /train/status`, `POST /train`, `GET /ready`, `GET /gpu/status`.
-- DigitalGPU post-processor: bloom, chromatic aberration, vignette, film grain, BPM flash — all on CPU (NumPy) since no GPU detected.
+### In-House Video Diffusion Engine — Background Training Mode (2026-04-07)
+- **`server/services/diffusion/api_server_v4.py`** runs as a dedicated workflow (`Video Diffusion Engine`) on port 8008 — for self-training only; NOT used as a generation source.
+- Model: UNetV4 LITE — 17.5M params, NumPy/CPU. Trains continuously from MaxCore's 8TB corpus (102,654 prompts, 54 scene categories) via `maxcore_dataset_bridge.py`.
+- **Generation routing**: `creativeModelService.ts` Stage 6 exclusively calls MaxCore `POST /api/generate-video` → polls `GET /api/video-job/{job_id}`. MaxCore is the sole video generation source.
+- `diffusionVideoService.ts` → `PYTORCH_API_BASE` = `http://127.0.0.1:8008` (available for inspection/status only, not wired into generation path).
 - Required Python packages (installed): `numpy`, `fastapi`, `uvicorn`, `pydantic`, `pillow`, `requests`, `scipy`.
