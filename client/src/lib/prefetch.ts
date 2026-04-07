@@ -5,6 +5,11 @@
  * navigate to next, improving perceived navigation speed.
  *
  * Strategies:
+ *   bootstrapUserData(qc)        — Call /api/bootstrap once after auth and
+ *                                  pre-populate the query cache so the Dashboard
+ *                                  renders instantly without individual API calls.
+ *   prefetchAllAuthChunks()      — Eagerly download JS chunks for every auth
+ *                                  route on idle so navigation is instant.
  *   prefetchRoute(importFn)      — Lazy-load a page JS chunk on idle
  *   prefetchRouteByPath(path)    — Load chunk + key API data for a path
  *   setupLinkPrefetching()       — Register pointer-over listener on links;
@@ -19,8 +24,11 @@
  * (call setAuthState(true) after successful login to enable them).
  */
 
+import type { QueryClient } from '@tanstack/react-query';
+
 const prefetchedRoutes = new Set<string>();
 const prefetchedData = new Set<string>();
+let _bootstrapped = false;
 
 let _isAuthenticated = false;
 
@@ -167,5 +175,88 @@ export function prefetchAdjacentRoutes(currentPath: string) {
         prefetchRouteByPath(route);
       }
     }, 1500);
+  }
+}
+
+/**
+ * Call /api/bootstrap once per session after the user authenticates and
+ * seed the query cache with their personal data.  Every page that calls
+ * useQuery for one of these keys will find fresh data already waiting —
+ * no loading state, no spinner.
+ */
+export async function bootstrapUserData(qc: QueryClient): Promise<void> {
+  if (_bootstrapped) return;
+  _bootstrapped = true;
+
+  try {
+    const res = await fetch('/api/bootstrap', { credentials: 'include' });
+    if (!res.ok) return;
+
+    const data: {
+      user?: unknown;
+      projects?: unknown[];
+      notifications?: unknown[];
+      releases?: unknown[];
+      _ts?: number;
+    } = await res.json();
+
+    const now   = Date.now();
+    const fresh = { updatedAt: now };
+
+    if (data.user) {
+      qc.setQueryData(['/api/auth/me'], data.user, fresh);
+    }
+    if (Array.isArray(data.projects)) {
+      qc.setQueryData(['/api/projects'], data.projects, fresh);
+      qc.setQueryData(['/api/projects', { limit: '5' }],  data.projects.slice(0, 5),  fresh);
+      qc.setQueryData(['/api/projects', { limit: '10' }], data.projects.slice(0, 10), fresh);
+      qc.setQueryData(['/api/projects', { limit: '12' }], data.projects.slice(0, 12), fresh);
+    }
+    if (Array.isArray(data.notifications)) {
+      qc.setQueryData(['/api/notifications'], data.notifications, fresh);
+      qc.setQueryData(['/api/notifications/unread'], data.notifications, fresh);
+    }
+    if (Array.isArray(data.releases)) {
+      qc.setQueryData(['/api/releases'], data.releases, fresh);
+    }
+  } catch {
+    // Silent — bootstrap is a best-effort optimisation; individual queries
+    // will still fire normally if this call fails.
+  }
+}
+
+const ALL_AUTH_CHUNKS: Array<() => Promise<unknown>> = [
+  () => import('@/pages/Dashboard'),
+  () => import('@/pages/SocialMedia'),
+  () => import('@/pages/Analytics'),
+  () => import('@/pages/Projects'),
+  () => import('@/pages/Distribution'),
+  () => import('@/pages/Settings'),
+  () => import('@/pages/Royalties'),
+  () => import('@/pages/Marketplace'),
+];
+
+/**
+ * Eagerly download JS for every high-traffic auth route during idle time.
+ * After this finishes, navigating between pages feels instant — no download
+ * delay, no Suspense skeleton, just an immediate render.
+ */
+export function prefetchAllAuthChunks(): void {
+  if (!shouldPrefetch()) return;
+
+  const load = () => {
+    for (const fn of ALL_AUTH_CHUNKS) {
+      const key = fn.toString();
+      if (!prefetchedRoutes.has(key)) {
+        prefetchedRoutes.add(key);
+        fn().catch(() => {});
+      }
+    }
+  };
+
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(load, { timeout: 5000 });
+  } else {
+    setTimeout(load, 2000);
   }
 }

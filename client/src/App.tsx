@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Switch, Route, useLocation } from 'wouter';
 import { Toaster } from '@/components/ui/toaster';
 import { InstantSkeleton } from '@/components/ui/instant-skeleton';
@@ -25,7 +26,7 @@ import { ShortcutGuide, QuickActionBar } from '@/components/shortcuts';
 import { useAuth } from '@/hooks/useAuth';
 import { useAutoUpdate } from '@/hooks/useAutoUpdate';
 import { useKeyboardShortcuts, announce } from '@/lib/accessibility';
-import { setupLinkPrefetching, prefetchAdjacentRoutes, setAuthState } from '@/lib/prefetch';
+import { setupLinkPrefetching, prefetchAdjacentRoutes, setAuthState, bootstrapUserData, prefetchAllAuthChunks } from '@/lib/prefetch';
 import Landing from '@/pages/Landing';
 const Login = lazy(() => import('@/pages/Login'));
 const Register = lazy(() => import('@/pages/Register'));
@@ -194,10 +195,15 @@ function AppWithKeyboardShortcuts() {
   const [showShortcutsDialog, setShowShortcutsDialog] = useState(false);
   const [location, setLocation] = useLocation();
   const { user, isLoading } = useAuth();
+  const qc = useQueryClient();
 
   useEffect(() => {
     setAuthState(!!user);
-  }, [user]);
+    if (user) {
+      bootstrapUserData(qc);
+      prefetchAllAuthChunks();
+    }
+  }, [user, qc]);
 
   useEffect(() => {
     if (isLoading) return;

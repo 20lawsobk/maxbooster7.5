@@ -95,6 +95,15 @@ Key architectural decisions include:
 - `GET /api/video-job/{job_id}` → poll video job status; returns `{status, url, filename, width, ...}`
 - Auth: `X-API-Key: {AI_SERVER_KEY}` + `Authorization: Bearer {AI_SERVER_KEY}` headers (env var: `AI_SERVER_KEY`)
 
+### Performance Optimization (Instant Subsequent Loads)
+- **React Query cache persistence**: `PersistQueryClientProvider` + sync localStorage persister (`mb-query-cache-v1`, buster `mb-v3`, 24hr maxAge). On repeat visits the full query cache is restored from localStorage instantly before any network request fires.
+- **Global `placeholderData: (prev) => prev`** in queryClient config — eliminates skeleton flash when navigating between routes (stale data shown immediately).
+- **Bootstrap endpoint** `GET /api/bootstrap` — single parallel DB query returning user profile, projects (12), notifications (20), releases (5). Registered in the 9-route in-memory API cache (30s TTL, user-scoped) and HTTP `Cache-Control: private, max-age=30, stale-while-revalidate=300`.
+- **`bootstrapUserData(qc)`** in `prefetch.ts` — called in `App.tsx` auth effect when user authenticates. Seeds query cache for `/api/auth/me`, `/api/projects`, `/api/notifications`, `/api/releases` from one network call.
+- **`prefetchAllAuthChunks()`** — eagerly downloads Dashboard, SocialMedia, Analytics, Projects, Distribution, Settings, Royalties, Marketplace JS chunks on `requestIdleCallback` immediately after login.
+- **Server SWR headers** — `stale-while-revalidate` `Cache-Control` directives added to 7 key GET API endpoints so browsers can serve stale responses immediately and refresh in background.
+- **Cache buster**: if DB schema changes make cached data incompatible, bump `mb-v3` in `main.tsx` to `mb-v4`.
+
 ### Current State
 - All 24/24 environment variables pass validation.
 - All routes load successfully (no TF binding failures).
@@ -103,3 +112,4 @@ Key architectural decisions include:
 - Session store, BullMQ queues, WebSocket servers all initialized.
 - MaxCore confirmed healthy: `model_loaded: true`, all three key endpoints (`generate/content`, `generate-video`, `generate/audio`) verified live with correct auth.
 - PDIM exec endpoint timeouts (~15s) are expected — PDIM server accepts connections but hangs on Redis commands (exec endpoint may not implement Redis protocol). Circuit breaker stays CLOSED; LuaExecutor degrades gracefully (returns null for missing keys).
+- API response cache: 9 routes cached (including `/api/bootstrap`).

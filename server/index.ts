@@ -571,14 +571,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult.value;
     app.use('/api', invalidateCacheOnMutation());
     const cachedRoutes: Record<string, number> = {
-      '/api/auth/me': 15,
-      '/api/projects': 20,
-      '/api/studio/projects': 20,
+      '/api/bootstrap':          30,
+      '/api/auth/me':            15,
+      '/api/projects':           20,
+      '/api/studio/projects':    20,
       '/api/analytics/dashboard': 60,
-      '/api/marketplace/beats': 30,
-      '/api/notifications': 10,
-      '/api/royalties/summary': 60,
-      '/api/achievements': 120,
+      '/api/marketplace/beats':  30,
+      '/api/notifications':      10,
+      '/api/royalties/summary':  60,
+      '/api/achievements':       120,
     };
     const routeCacheMiddleware = (req: any, res: any, next: any) => {
       if (req.method !== 'GET') return next();
@@ -588,6 +589,27 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       next();
     };
     app.use(routeCacheMiddleware);
+
+    // Add stale-while-revalidate headers so browsers can serve cached API
+    // responses immediately and refresh in background on repeat visits.
+    const SWR_ROUTES: Record<string, string> = {
+      '/api/bootstrap':           'private, max-age=30, stale-while-revalidate=300',
+      '/api/auth/me':             'private, max-age=15, stale-while-revalidate=120',
+      '/api/projects':            'private, max-age=20, stale-while-revalidate=180',
+      '/api/notifications':       'private, max-age=10, stale-while-revalidate=60',
+      '/api/royalties/summary':   'private, max-age=60, stale-while-revalidate=600',
+      '/api/analytics/dashboard': 'private, max-age=60, stale-while-revalidate=600',
+      '/api/achievements':        'private, max-age=120, stale-while-revalidate=900',
+    };
+    app.use('/api', (req: any, res: any, next: any) => {
+      if (req.method !== 'GET') return next();
+      const directive = SWR_ROUTES[req.path.replace(/\/$/, '') || req.path];
+      if (directive && !res.getHeader('Cache-Control')) {
+        res.setHeader('Cache-Control', directive);
+      }
+      next();
+    });
+
     logger.info(`✅ API response cache initialized (${Object.keys(cachedRoutes).length} cached routes)`);
   } else {
     logger.warn(`⚠️ API cache middleware: ${(apiCacheResult as any).reason?.message}`);

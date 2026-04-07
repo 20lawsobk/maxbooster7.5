@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { queryClient } from './lib/queryClient';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -22,19 +23,42 @@ if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
+const persister = createSyncStoragePersister({
+  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+  key: 'mb-query-cache-v1',
+  throttleTime: 1000,
+  serialize: JSON.stringify,
+  deserialize: JSON.parse,
+});
+
 const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
     <ErrorBoundary>
       <ThemeProvider>
-        <QueryClientProvider client={queryClient}>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{
+            persister,
+            maxAge: 24 * 60 * 60 * 1000,
+            buster: 'mb-v3',
+            dehydrateOptions: {
+              shouldDehydrateQuery: (query) =>
+                query.state.status === 'success' &&
+                !query.queryKey.some((k) =>
+                  typeof k === 'string' &&
+                  (k.includes('payment') || k.includes('stripe') || k.includes('billing'))
+                ),
+            },
+          }}
+        >
           <AuthProvider>
             <TooltipProvider>
               <App />
             </TooltipProvider>
           </AuthProvider>
-        </QueryClientProvider>
+        </PersistQueryClientProvider>
       </ThemeProvider>
     </ErrorBoundary>
   </React.StrictMode>

@@ -635,8 +635,13 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       refetchOnReconnect: false,
       staleTime: 5 * 60 * 1000,
-      gcTime: 10 * 60 * 1000,
+      // Keep data in memory for 1 hour — navigating back to a visited page
+      // is instant because the data is still alive in the cache.
+      gcTime: 60 * 60 * 1000,
       retry: false,
+      // Show previous page data while new data loads — eliminates the
+      // "blank/skeleton flash" when switching between routes.
+      placeholderData: (previousData: unknown) => previousData,
     },
     mutations: {
       retry: false,

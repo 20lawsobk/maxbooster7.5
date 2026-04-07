@@ -4040,6 +4040,8 @@ export async function registerRoutes(
 
   // Dynamically load and mount route modules (with error handling)
   const routeModules = [
+    // Bootstrap — single parallel query for all initial dashboard data
+    { path: "/api/bootstrap", name: "bootstrap", loader: () => import("./routes/bootstrap") },
     // Core Platform Routes
     { path: "/api/achievements", name: "achievements", loader: () => import("./routes/achievements") },
     { path: "/api/onboarding", name: "onboarding", loader: () => import("./routes/onboarding") },
