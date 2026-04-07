@@ -1469,6 +1469,32 @@ def train_v4(n_epochs: int = 5,
     step_count = 0
     memory = LongTermMemory()
 
+    # ── Advanced memory + time simulator ──────────────────────────────────────
+    try:
+        from diffusion.advanced_memory import get_memory as _get_adv_mem
+        adv_mem = _get_adv_mem()
+        print("[DiffusionTrainer v4] AdvancedMemoryLayer online — "
+              f"episodic={len(adv_mem.episodic._index)} frames", flush=True)
+    except Exception as _am_err:
+        adv_mem = None
+        print(f"[DiffusionTrainer v4] AdvancedMemoryLayer unavailable: {_am_err}", flush=True)
+
+    try:
+        from diffusion.time_simulator import RealisticTimeSimulator
+        sim = RealisticTimeSimulator(
+            burst_size=6,
+            interp_density=0.20,
+            lr_adapt_window=30,
+            plateau_patience=15,
+            curriculum=True,
+            temporal_pairs=True,
+        )
+        print("[DiffusionTrainer v4] RealisticTimeSimulator active — "
+              f"burst×{sim.burst_size}, interp={sim.interp_density:.0%}", flush=True)
+    except Exception as _sim_err:
+        sim = None
+        print(f"[DiffusionTrainer v4] TimeSimulator unavailable: {_sim_err}", flush=True)
+
     # LR warmup: ramp from lr/10 → lr over the first min(3, n_epochs//3) epochs,
     # then cosine decay from lr → lr*0.05 for the remaining epochs.
     _warmup_epochs = min(3, max(1, n_epochs // 3))
@@ -1480,11 +1506,22 @@ def train_v4(n_epochs: int = 5,
         cosine   = 0.5 * (1.0 + math.cos(math.pi * progress))
         return lr * (0.05 + 0.95 * cosine)  # decays to 5% of lr
 
+    _prev_loss = None   # for loss_delta tracking
+
     for epoch in range(n_epochs):
         epoch_losses = []
         epoch_start  = time.time()
         sample_pairs = flat_pairs[:n_samples]  # rotate each epoch
         flat_pairs   = flat_pairs[n_samples:] + flat_pairs[:n_samples]  # cycle
+
+        # ── Curriculum sort via time simulator ──────────────────────────────
+        if sim is not None:
+            scene_loss_map = sim.get_scene_loss_map()
+            # Convert scene×prompt pairs into (frame_placeholder, prompt, scene) tuples
+            # for curriculum sort, then extract back
+            sortable = [(None, p, s) for s, p in sample_pairs]
+            sorted_tuples = sim.curriculum_sort(sortable, scene_loss_map)
+            sample_pairs  = [(s, p) for (_, p, s) in sorted_tuples]
 
         # Apply per-epoch LR schedule
         opt.lr = _epoch_lr(epoch)
@@ -1499,54 +1536,148 @@ def train_v4(n_epochs: int = 5,
                 frame_seq = extractor.augment(frame_seq, seed=step_count)
                 # frame_seq: (T, H, W, 3) float32 in [-1, 1]
 
-                # Sample noise timestep
-                t_idx = rng.integers(1, 1000)
-                noise = np.random.randn(*frame_seq.shape).astype(np.float32)
-
-                # Add noise to ALL T frames (same t_idx for temporal coherence)
-                alpha = float(scheduler.alpha_bar[t_idx])
-                x_noisy = math.sqrt(alpha) * frame_seq + math.sqrt(1 - alpha) * noise
-
-                # Build 256-dim conditioning
-                cond = _build_cond_v4(time_enc, text_enc, t_idx, prompt)
-
-                # Forward pass: predict noise for all T frames
-                model.zero_grads()
-                pred_noise = model.forward(x_noisy, cond)
-                # pred_noise: (T, H, W, 3)
-
-                # Loss across all T frames
-                if use_perceptual:
-                    total_loss = 0.0
-                    total_dloss = np.zeros_like(pred_noise)
-                    for t_frame in range(T):
-                        fl, dfl = perceptual_loss(pred_noise[t_frame], noise[t_frame])
-                        total_loss += fl / T
-                        total_dloss[t_frame] = dfl / T
-
-                    # Temporal consistency loss: penalize frame-to-frame inconsistency.
-                    # Weight scales with T — more frames = stronger pressure on coherence.
-                    if T > 1:
-                        tc_weight = 0.05 + 0.02 * (T - 1)   # 0.05 at T=1..T=2, ~0.35 at T=16
-                        tc_weight = min(tc_weight, 0.20)     # cap at 0.20
-                        for tf in range(T - 1):
-                            diff = pred_noise[tf + 1] - pred_noise[tf]
-                            temporal_loss = np.mean(diff ** 2) * tc_weight
-                            total_loss += temporal_loss
-                            total_dloss[tf]     -= 2.0 * tc_weight * diff / diff.size
-                            total_dloss[tf + 1] += 2.0 * tc_weight * diff / diff.size
-                    loss  = total_loss
-                    dloss = total_dloss
+                # ── Augmentation burst via time simulator ──────────────────
+                # Each real frame is expanded into burst_size variants.
+                # Gradients are accumulated across the burst before a single
+                # weight update — higher effective batch diversity for free.
+                if sim is not None and T == 1:
+                    # Single-frame mode: burst over 2D frames
+                    burst_frames = sim.augment_burst(frame_seq[0])
+                    burst_seqs   = [f[np.newaxis] for f in burst_frames]
                 else:
-                    diff  = pred_noise - noise
-                    loss  = float(np.mean(diff ** 2))
-                    dloss = (2.0 / pred_noise.size) * diff
+                    burst_seqs = [frame_seq]
 
-                # Backward + update
+                accumulated_dloss = None
+                burst_loss_total  = 0.0
+
+                for b_seq in burst_seqs:
+                    # Sample noise timestep
+                    t_idx = rng.integers(1, 1000)
+                    noise = np.random.randn(*b_seq.shape).astype(np.float32)
+
+                    # Add noise to ALL T frames (same t_idx for temporal coherence)
+                    alpha   = float(scheduler.alpha_bar[t_idx])
+                    x_noisy = math.sqrt(alpha) * b_seq + math.sqrt(1 - alpha) * noise
+
+                    # Build 256-dim conditioning
+                    cond = _build_cond_v4(time_enc, text_enc, t_idx, prompt)
+
+                    # Forward pass: predict noise for all T frames
+                    model.zero_grads()
+                    pred_noise = model.forward(x_noisy, cond)
+
+                    # Loss across all T frames
+                    if use_perceptual:
+                        total_loss  = 0.0
+                        total_dloss = np.zeros_like(pred_noise)
+                        for t_frame in range(T):
+                            fl, dfl = perceptual_loss(pred_noise[t_frame], noise[t_frame])
+                            total_loss += fl / T
+                            total_dloss[t_frame] = dfl / T
+
+                        # Temporal consistency loss
+                        if T > 1:
+                            tc_weight = min(0.05 + 0.02 * (T - 1), 0.20)
+                            for tf in range(T - 1):
+                                diff = pred_noise[tf + 1] - pred_noise[tf]
+                                temporal_loss = np.mean(diff ** 2) * tc_weight
+                                total_loss += temporal_loss
+                                total_dloss[tf]     -= 2.0 * tc_weight * diff / diff.size
+                                total_dloss[tf + 1] += 2.0 * tc_weight * diff / diff.size
+                        b_loss  = total_loss
+                        b_dloss = total_dloss
+                    else:
+                        diff    = pred_noise - noise
+                        b_loss  = float(np.mean(diff ** 2))
+                        b_dloss = (2.0 / pred_noise.size) * diff
+
+                    burst_loss_total += b_loss
+                    accumulated_dloss = (
+                        b_dloss if accumulated_dloss is None
+                        else accumulated_dloss + b_dloss
+                    )
+
+                # Average gradient across burst, then single weight update
+                n_burst = len(burst_seqs)
+                loss    = burst_loss_total / n_burst
+                dloss   = accumulated_dloss / n_burst
+
+                # Compute grad norm before clipping (for memory layer)
+                raw_grad_sq = sum(
+                    float(np.sum(g ** 2))
+                    for _, grads in all_pairs
+                    for g in grads.values()
+                    if g is not None
+                )
+                grad_norm = math.sqrt(raw_grad_sq + 1e-8)
+
                 model.backward(dloss)
                 _clip_gradients(all_pairs, max_norm=1.0)
                 opt.step(all_pairs)
                 ema.update(all_pairs)
+
+                # ── Adaptive LR via time simulator ─────────────────────────
+                if sim is not None:
+                    loss_delta = (loss - _prev_loss) if _prev_loss is not None else 0.0
+                    adapted_lr = sim.adapt_lr(
+                        opt.lr, losses[-sim.lr_adapt_window:] if losses else [loss],
+                        lr_min=lr * 0.01, lr_max=lr * 3.0,
+                    )
+                    if adapted_lr != opt.lr:
+                        opt.lr = adapted_lr
+                    sim.record_scene_loss(scene, loss)
+                    _prev_loss = loss
+                else:
+                    loss_delta = 0.0
+
+                # ── Advanced memory record ─────────────────────────────────
+                if adv_mem is not None:
+                    try:
+                        adv_mem.record(
+                            scene=scene,
+                            prompt=prompt,
+                            frame_seq=frame_seq,
+                            loss=float(loss),
+                            grad_norm=float(grad_norm),
+                            epoch=epoch,
+                            step=step_count,
+                            loss_delta=float(loss_delta),
+                        )
+                    except Exception:
+                        pass
+
+                # ── Semantic interpolation injection (time simulator) ──────
+                # Every 8th step, generate a synthetic cross-scene blended
+                # example using the advanced memory's semantic index.
+                if (sim is not None and adv_mem is not None and
+                        step_count % 8 == 0 and len(adv_mem.episodic._index) > 20):
+                    try:
+                        partner = adv_mem.get_interpolation_partner(scene, prompt)
+                        if partner is not None:
+                            p_frame, p_prompt = partner
+                            # Use first frame if stored as sequence
+                            fa = frame_seq[0] if frame_seq.ndim == 4 else frame_seq
+                            fb = p_frame[0]   if p_frame.ndim == 4  else p_frame
+                            interp_pairs = sim.interpolate_pair(
+                                fa, fb, prompt, p_prompt, n_steps=2
+                            )
+                            for interp_frame, interp_prompt in interp_pairs:
+                                # Light training step on blended example (no burst)
+                                i_seq = interp_frame[np.newaxis]
+                                t_i   = rng.integers(1, 1000)
+                                n_i   = np.random.randn(*i_seq.shape).astype(np.float32)
+                                a_i   = float(scheduler.alpha_bar[t_i])
+                                xi    = math.sqrt(a_i) * i_seq + math.sqrt(1 - a_i) * n_i
+                                c_i   = _build_cond_v4(time_enc, text_enc, t_i, interp_prompt)
+                                model.zero_grads()
+                                pi    = model.forward(xi, c_i)
+                                _, di = perceptual_loss(pi[0], n_i[0])
+                                model.backward(di[np.newaxis] * 0.5)  # half weight
+                                _clip_gradients(all_pairs, max_norm=0.5)
+                                opt.step(all_pairs)
+                                ema.update(all_pairs)
+                    except Exception:
+                        pass
 
                 epoch_losses.append(float(loss))
                 losses.append(float(loss))
@@ -1554,8 +1685,16 @@ def train_v4(n_epochs: int = 5,
 
                 if i % 50 == 0:
                     avg = float(np.mean(epoch_losses[-50:]))
+                    sim_tag = ""
+                    if sim is not None:
+                        te = sim.estimate_simulated_time()
+                        sim_tag = (f"  [sim ×{te['compression_ratio']:.1f} "
+                                   f"≈{te['gpu_equivalent_time']} GPU]")
                     print(f"[v4] Ep {epoch+1}/{n_epochs}  step {i+1}/{n_samples}  "
-                          f"loss={avg:.4f}  scene={scene[:20]}", flush=True)
+                          f"loss={avg:.4f}  scene={scene[:20]}{sim_tag}", flush=True)
+
+                    if sim is not None:
+                        sim.log_phase(epoch + 1, step_count, avg, opt.lr)
 
             except Exception as e:
                 print(f"[DiffusionTrainer v4] Step error (skip): {e}", flush=True)
@@ -1564,8 +1703,12 @@ def train_v4(n_epochs: int = 5,
         epoch_time  = time.time() - epoch_start
         total_time += epoch_time
         mean_loss   = float(np.mean(epoch_losses)) if epoch_losses else 0.0
+
+        adv_tag = ""
+        if adv_mem is not None:
+            adv_tag = f"  mem={len(adv_mem.episodic._index)}frames"
         print(f"[DiffusionTrainer v4] Epoch {epoch+1} done: "
-              f"loss={mean_loss:.4f}  time={epoch_time:.0f}s", flush=True)
+              f"loss={mean_loss:.4f}  time={epoch_time:.0f}s{adv_tag}", flush=True)
 
         # EMA snapshot + save
         backup = ema.apply(all_pairs)
@@ -1601,6 +1744,25 @@ def train_v4(n_epochs: int = 5,
         json.dump(meta, f, indent=2)
 
     memory.complete_session(meta, total_time)
+
+    # ── Register in advanced memory and log simulator stats ───────────────────
+    sim_stats = None
+    if sim is not None:
+        sim_stats = sim.status()
+        te = sim.estimate_simulated_time()
+        print(f"[DiffusionTrainer v4] TimeSimulator summary: "
+              f"effective_steps={te['effective_steps']}  "
+              f"compression=×{te['compression_ratio']}  "
+              f"gpu_equiv={te['gpu_equivalent_time']}  "
+              f"lr_boosts={te['lr_boosts_applied']}  "
+              f"interp_frames={te['interp_frames_generated']}", flush=True)
+    if adv_mem is not None:
+        session_id = adv_mem.complete_session(meta, sim_stats)
+        print(f"[DiffusionTrainer v4] AdvancedMemoryLayer — session {session_id} registered  "
+              f"episodic={len(adv_mem.episodic._index)} frames  "
+              f"hot={len(adv_mem.hot)} entries  "
+              f"global_best={adv_mem.registry.global_best_loss():.5f}", flush=True)
+
     print(f"[DiffusionTrainer v4] Complete. Total time: {total_time:.0f}s  "
           f"Final loss: {losses[-1]:.4f}", flush=True)
     return meta

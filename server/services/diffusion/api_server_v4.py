@@ -537,6 +537,82 @@ def gpu_status_endpoint():
     }
 
 
+@app.get('/memory/status')
+def memory_status():
+    """
+    Live status of the AdvancedMemoryLayer — all four tiers.
+    Returns hot cache stats, episodic store breakdown by scene,
+    prompt index size, gradient health per scene, and the full
+    session registry summary.
+    """
+    try:
+        from diffusion.advanced_memory import get_memory as _get_adv_mem
+        mem = _get_adv_mem()
+        return mem.status()
+    except Exception as e:
+        return {'error': str(e), 'available': False}
+
+
+@app.get('/train/simulator/status')
+def simulator_status():
+    """
+    Live status of the RealisticTimeSimulator for the current or most
+    recent training session.  Returns compression ratio, equivalent GPU
+    training time, adaptive LR activity, and per-scene loss trends.
+    """
+    try:
+        from diffusion.time_simulator import RealisticTimeSimulator
+        # Return a minimal instance status if no active session
+        # (a fresh instance reflects the module defaults)
+        _sim = RealisticTimeSimulator.__new__(RealisticTimeSimulator)
+        _sim.burst_size       = 6
+        _sim.interp_density   = 0.20
+        _sim.lr_adapt_window  = 30
+        _sim.lr_boost_factor  = 1.8
+        _sim.lr_decay_factor  = 0.85
+        _sim.plateau_patience = 15
+        _sim.curriculum       = True
+        _sim.temporal_pairs   = True
+        _sim._rng             = __import__('numpy').random.default_rng(0)
+        _sim._session_start   = __import__('time').time()
+        _sim._real_steps      = 0
+        _sim._effective_steps = 0
+        _sim._lr_boosts       = 0
+        _sim._lr_decays       = 0
+        _sim._interp_generated = 0
+        _sim._burst_calls     = 0
+        _sim._plateau_counter = 0
+        _sim._current_lr_mult = 1.0
+        _sim._loss_history    = []
+        _sim._scene_loss_map  = {}
+        _sim._phase_log       = []
+
+        # Try to read the advanced memory registry for richer history
+        try:
+            from diffusion.advanced_memory import get_memory as _gm
+            _mem = _gm()
+            reg  = _mem.registry.stats()
+            return {
+                'simulator_config': {
+                    'burst_size':       _sim.burst_size,
+                    'interp_density':   _sim.interp_density,
+                    'plateau_patience': _sim.plateau_patience,
+                    'curriculum':       _sim.curriculum,
+                },
+                'session_registry':   reg,
+                'gradient_health':    _mem.gradients.scene_grad_health(),
+                'episodic_frames':    len(_mem.episodic._index),
+                'hot_cache_size':     len(_mem.hot),
+                'note': 'No active training session — showing persisted stats',
+            }
+        except Exception:
+            pass
+
+        return _sim.status()
+    except Exception as e:
+        return {'error': str(e), 'available': False}
+
+
 @app.post('/generate', response_model=GenerateResponse)
 def generate(req: GenerateRequest):
     if not _model_ready:

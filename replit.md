@@ -132,4 +132,7 @@ Key architectural decisions include:
 - Model: UNetV4 LITE — 17.5M params, NumPy/CPU. Trains continuously from MaxCore's 8TB corpus (102,654 prompts, 54 scene categories) via `maxcore_dataset_bridge.py`.
 - **Generation routing**: `creativeModelService.ts` Stage 6 exclusively calls MaxCore `POST /api/generate-video` → polls `GET /api/video-job/{job_id}`. MaxCore is the sole video generation source.
 - `diffusionVideoService.ts` → `PYTORCH_API_BASE` = `http://127.0.0.1:8008` (available for inspection/status only, not wired into generation path).
+- **`server/services/diffusion/advanced_memory.py`** — four-tier custom memory store: Tier 1 HotCache (RAM ring buffer), Tier 2 EpisodicStore (per-scene NPZ shards with priority scoring), Tier 3 GradientMemory (grad norm + loss delta per scene), Tier 4 SessionRegistry (append-only JSON log). TF-IDF PromptIndex for semantic nearest-neighbour retrieval and interpolation partner selection. Integrated into `train_v4()`.
+- **`server/services/diffusion/time_simulator.py`** — 5-technique training accelerator: augmentation burst (6× gradient accumulation), curriculum sort, adaptive LR surgeon, scene interpolation injection (every 8th step via `adv_mem.get_interpolation_partner()`), temporal consistency pairs. Integrated into `train_v4()`.
+- **New API endpoints** (port 8008): `GET /memory/status` (all 4 memory tiers), `GET /train/simulator/status` (simulator config + registry + gradient health).
 - Required Python packages (installed): `numpy`, `fastapi`, `uvicorn`, `pydantic`, `pillow`, `requests`, `scipy`.

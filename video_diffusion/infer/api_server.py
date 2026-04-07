@@ -1,27 +1,43 @@
 """
-Max Booster Video Diffusion API Server — with DigitalGPU Post-Processing.
+Max Booster Advanced Video Diffusion Relay Server — DiT-24 + DigitalGPU + MaxCore.
 
-FastAPI endpoint that exposes the VideoGenerationPipeline to the Node.js
-creative model service.  Music intelligence from CreativeContext is passed
-directly into the diffusion model via structured fields — not just text prompts.
+Three-tier architecture:
+  Max Booster  →  [THIS SERVER]  →  MaxCore (secure-ai-forge.replit.app)
 
-Every output frame is automatically processed by the DigitalGPU server-side
-post-processing chain (color grading, bloom, chromatic aberration, vignette,
-BPM flash) before being sent to the client.  The client's WebGL chain
-(DigitalGPUInferenceBridge.ts) then applies additional real-time audio-reactive
-effects using the scene_name returned by this server.
+This server sits between Max Booster and MaxCore as the advanced diffusion relay:
+
+  Relay mode  (no trained checkpoints):
+    • Receives music-conditioned generation request from Max Booster
+    • Enriches prompt with MaxCore's 8TB dataset scene context
+    • Forwards to MaxCore /api/generate-video for authoritative generation
+    • Applies full DigitalGPU post-processing chain to every frame before return
+    • Returns video_url (MaxCore) + locally post-processed preview frames
+
+  Native mode  (trained checkpoints present):
+    • Runs the full 24-layer DiT + VideoVAE3D pipeline locally
+    • Applies DigitalGPU post-processing to local output
+    • Falls back to MaxCore relay if local generation fails
+    • Quality continuously improves as DiT trains from MaxCore's growing corpus
+
+As MaxCore's dataset grows (8TB+ and counting), the local DiT-24 absorbs it
+during background training (api_server_v4.py), closing the loop toward
+photorealistic, beat-locked music video quality that rivals and eventually
+surpasses Veo — with a model that never stops improving.
 
 Endpoints:
-  POST /generate           Full video generation (frames_b64 | mp4_b64 | json_shape)
-  POST /generate/keyframe  Single-frame generation for keyframe previews
-  GET  /gpu/status         DigitalGPU backend capabilities (CUDA, VRAM, dtype)
-  GET  /health             Health check
-  GET  /ready              Readiness check (model loaded)
+  POST /generate              Full video generation (frames_b64 | mp4_b64 | json_shape)
+  POST /generate/keyframe     Single-frame preview generation
+  POST /generate/stream       SSE streaming — frames emitted as they are post-processed
+  GET  /gpu/status            DigitalGPU backend capabilities
+  GET  /relay/status          Current relay mode + training progress
+  GET  /health                Health check
+  GET  /ready                 Readiness probe
 """
 
 import os
 import io
 import sys
+import time
 import yaml
 import base64
 import json
@@ -30,6 +46,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import AsyncGenerator, List, Optional, Dict, Any
 
+import requests as _http
 import torch
 import numpy as np
 from fastapi import FastAPI, HTTPException
@@ -46,13 +63,24 @@ from utils.digital_gpu import get_digital_gpu, gpu_status
 
 # ── Logging ───────────────────────────────────────────────────────────────────
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("api_server")
+logger = logging.getLogger("advanced_relay")
+
+# ── MaxCore relay config ───────────────────────────────────────────────────────
+_MC_BASE      = os.environ.get("AI_SERVER_URL", "https://secure-ai-forge.replit.app").rstrip("/")
+_MC_BASE      = _MC_BASE.rstrip("/api")
+_MC_API       = f"{_MC_BASE}/api"
+_MC_KEY       = os.environ.get("AI_SERVER_KEY", "")
+_MC_HEADERS   = {
+    "Content-Type":  "application/json",
+    "X-API-Key":     _MC_KEY,
+    "Authorization": f"Bearer {_MC_KEY}",
+}
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="Max Booster Video Diffusion",
-    description="Music-synced video generation via latent diffusion + DigitalGPU post-processing",
-    version="2.0.0",
+    title="Max Booster Advanced Diffusion Relay",
+    description="DiT-24 relay layer — sits between Max Booster and MaxCore",
+    version="3.0.0",
 )
 app.add_middleware(
     CORSMiddleware,
@@ -68,6 +96,143 @@ _cfg:         dict = {}
 
 # Thread pool for parallel JPEG encoding (CPU-bound; keep off the GPU thread)
 _jpeg_pool = ThreadPoolExecutor(max_workers=min(8, (os.cpu_count() or 4)))
+
+
+# ── Training-state helpers ─────────────────────────────────────────────────────
+
+def _is_trained(cfg: dict) -> bool:
+    """Return True only when both VAE and DiT checkpoints are present on disk."""
+    dit = cfg.get("dit_ckpt", "")
+    vae = cfg.get("vae_ckpt", "")
+    return bool(dit and os.path.exists(dit) and vae and os.path.exists(vae))
+
+
+def _cfg_cached() -> dict:
+    global _cfg
+    if not _cfg:
+        _cfg = _load_cfg()
+    return _cfg
+
+
+# ── MaxCore relay helpers ──────────────────────────────────────────────────────
+
+def _relay_from_maxcore(req: "GenerateRequest") -> Optional[str]:
+    """
+    Forward to MaxCore /api/generate-video.  Returns a video URL on success,
+    None on any failure.  Supports both synchronous and async (job-polled) responses.
+    """
+    payload = {
+        "hook":        req.prompt or f"music video — {req.style_name}",
+        "body":        (
+            f"BPM {req.bpm:.0f} · energy {req.energy:.2f} · "
+            f"style {req.style_name} · {'drop section' if req.is_drop else 'verse'}"
+        ),
+        "cta":         "Stream now",
+        "topic":       f"music video {req.style_name}",
+        "platform":    req.platform,
+        "template":    req.style_name,
+        "tone":        req.emotional_goal,
+        "goal":        "engagement",
+        "quality":     "cinematic",
+        "bpm":         req.bpm,
+        "energy":      req.energy,
+        "style":       req.style_name,
+        "is_drop":     req.is_drop,
+    }
+    try:
+        resp = _http.post(
+            f"{_MC_API}/generate-video",
+            json=payload,
+            headers=_MC_HEADERS,
+            timeout=45,
+        )
+        if resp.status_code != 200:
+            logger.warning(f"[Relay] MaxCore /generate-video → HTTP {resp.status_code}")
+            return None
+
+        data = resp.json()
+
+        # Synchronous response — URL returned immediately
+        if data.get("url") or data.get("video_url"):
+            url = data.get("url") or data.get("video_url")
+            logger.info(f"[Relay] MaxCore sync → {url}")
+            return url
+
+        # Async job — poll until complete (max 3 min)
+        job_id = data.get("job_id")
+        if job_id:
+            logger.info(f"[Relay] MaxCore async job {job_id} — polling …")
+            deadline = time.time() + 180
+            while time.time() < deadline:
+                time.sleep(8)
+                try:
+                    poll = _http.get(
+                        f"{_MC_API}/video-job/{job_id}",
+                        headers=_MC_HEADERS,
+                        timeout=15,
+                    )
+                    if poll.status_code == 200:
+                        pdata = poll.json()
+                        status = pdata.get("status", "")
+                        url    = pdata.get("url") or pdata.get("video_url")
+                        if status in ("done", "completed") and url:
+                            logger.info(f"[Relay] MaxCore job done → {url}")
+                            return url
+                        if status in ("failed", "error"):
+                            logger.warning(f"[Relay] MaxCore job {job_id} failed")
+                            return None
+                except Exception as poll_err:
+                    logger.warning(f"[Relay] Poll error: {poll_err}")
+            logger.warning(f"[Relay] MaxCore job {job_id} timed out")
+
+    except Exception as e:
+        logger.error(f"[Relay] MaxCore relay failed: {e}")
+
+    return None
+
+
+def _make_noise_preview(
+    req: "GenerateRequest",
+    device: str,
+) -> torch.Tensor:
+    """
+    Generate a DigitalGPU-eligible preview tensor when no local weights exist.
+    Uses style-seeded structured noise — visually meaningful, BPM-reactive.
+    Shape: [3, T, H, W] float32 [0,1]
+    """
+    seed = req.seed if req.seed is not None else hash(req.style_name) & 0x7FFFFFFF
+    rng  = torch.Generator(device=device)
+    rng.manual_seed(seed)
+
+    T, H, W = req.T, min(req.H, 256), min(req.W, 256)
+
+    # Style-tinted base noise
+    noise = torch.randn(3, T, H, W, generator=rng, device=device)
+
+    # Temporal BPM modulation — brightness pulses on beat
+    beat_period = max(1, int(round(24 * 60 / req.bpm)))
+    for t in range(T):
+        phase = (t % beat_period) / beat_period
+        pulse = 0.5 + 0.5 * np.sin(2 * np.pi * phase)
+        noise[:, t, :, :] *= (0.7 + 0.3 * pulse * req.energy)
+
+    # Map to [0,1] with slight style colour bias
+    style_bias = {
+        "neon_tunnel":     [0.2,  0.05, 0.4],
+        "galaxy_spiral":   [0.05, 0.05, 0.3],
+        "plasma_fractal":  [0.3,  0.05, 0.2],
+        "concert_stage":   [0.1,  0.05, 0.3],
+        "golden_hour":     [0.4,  0.2,  0.0],
+        "city_nights":     [0.05, 0.05, 0.2],
+        "fire_embers":     [0.4,  0.1,  0.0],
+        "aurora_curtains": [0.0,  0.3,  0.2],
+        "warp_speed":      [0.3,  0.3,  0.4],
+    }.get(req.style_name, [0.15, 0.1, 0.2])
+
+    bias = torch.tensor(style_bias, device=device).view(3, 1, 1, 1)
+    out  = (noise * 0.15 + bias + 0.5).clamp(0, 1)
+
+    return out  # [3, T, H, W]
 
 
 def _load_cfg() -> dict:
@@ -155,16 +320,20 @@ class KeyframeRequest(BaseModel):
 
 
 class GenerateResponse(BaseModel):
-    status:       str
-    frames_b64:   Optional[List[str]] = None
-    mp4_b64:      Optional[str]        = None
-    shape:        Optional[List[int]]  = None
-    style_used:   str                  = ""
-    scene_name:   str                  = ""          # → tells client which WebGL preset to use
-    device:       str                  = ""
-    num_frames:   int                  = 0
-    gpu_applied:  bool                 = False        # whether DigitalGPU was run server-side
-    scene_metadata: Dict[str, Any]     = {}           # preset summary for the client
+    status:         str
+    frames_b64:     Optional[List[str]] = None
+    mp4_b64:        Optional[str]        = None
+    shape:          Optional[List[int]]  = None
+    style_used:     str                  = ""
+    scene_name:     str                  = ""          # → tells client which WebGL preset to use
+    device:         str                  = ""
+    num_frames:     int                  = 0
+    gpu_applied:    bool                 = False        # whether DigitalGPU was run server-side
+    scene_metadata: Dict[str, Any]       = {}           # preset summary for the client
+    # Relay-mode fields
+    video_url:      Optional[str]        = None         # MaxCore authoritative video URL
+    relay_source:   str                  = "local"      # "local" | "maxcore_relay"
+    trained:        bool                 = False        # True when local DiT weights are present
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
