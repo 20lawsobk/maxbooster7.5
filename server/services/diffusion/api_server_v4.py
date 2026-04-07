@@ -84,12 +84,13 @@ app.add_middleware(
 
 # ── Global model state ────────────────────────────────────────────────────────
 
-_model_lock  = threading.Lock()
-_model       = None
-_time_enc    = None
-_text_enc    = None
-_scheduler   = None
-_model_ready = False
+_model_lock    = threading.Lock()
+_model         = None
+_time_enc      = None
+_text_enc      = None
+_scheduler     = None
+_model_ready   = False
+_model_trained = False   # True only when weights_v4.npz was found on disk
 
 # Training state
 _train_lock   = threading.Lock()
@@ -134,7 +135,7 @@ _STYLE_PROMPTS: Dict[str, str] = {
 
 def _load_model() -> None:
     """Load (or initialise fresh) the UNetV4 LITE model. Thread-safe."""
-    global _model, _time_enc, _text_enc, _scheduler, _model_ready
+    global _model, _time_enc, _text_enc, _scheduler, _model_ready, _model_trained
 
     try:
         from diffusion.unet_v4   import UNetV4
@@ -157,8 +158,10 @@ def _load_model() -> None:
             loaded = _load_v4(_model, _time_enc, _text_enc)
             if loaded:
                 logger.info('[Model] weights_v4.npz loaded — model is trained')
+                _model_trained = True
             else:
-                logger.info('[Model] No weights — random init (noise outputs until trained)')
+                logger.info('[Model] No weights — random init (relaying to MaxCore until trained)')
+                _model_trained = False
 
             _model.set_training(False)
             _model_ready = True
@@ -482,6 +485,11 @@ def _train_worker(req: TrainRequest) -> None:
                 _model.set_training(False)
                 logger.info('[Train] Live model reloaded.')
 
+        # Mark model as trained so future generate calls use local inference
+        global _model_trained
+        _model_trained = True
+        logger.info('[Train] _model_trained → True — relay will use local inference')
+
         with _train_lock:
             _train_status.update({
                 'running':        False,
@@ -642,6 +650,99 @@ def simulator_status():
         return _sim.status()
     except Exception as e:
         return {'error': str(e), 'available': False}
+
+
+# ── MaxCore relay helper ───────────────────────────────────────────────────────
+
+def _relay_to_maxcore_video(body: dict) -> dict:
+    """Forward a video-gen request to MaxCore and return its response verbatim.
+
+    None/null values are stripped so MaxCore's strict Pydantic schema is satisfied
+    (mirrors the TypeScript side which omits undefined fields via JSON.stringify).
+    """
+    import urllib.request as _urlreq
+    import json as _json
+    base = os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    base = base.rstrip('/').removesuffix('/api')
+    api_url = f'{base}/api/generate-video'
+    key = os.environ.get('AI_SERVER_KEY', '')
+    hdrs: Dict[str, str] = {'Content-Type': 'application/json'}
+    if key:
+        hdrs['Authorization'] = f'Bearer {key}'
+        hdrs['X-API-Key']     = key
+    # Strip None values (Python dict → JSON null can break MaxCore's schema)
+    clean_body = {k: v for k, v in body.items() if v is not None}
+    clean_body['source'] = 'MaxCoreAI'
+    data = _json.dumps(clean_body).encode()
+    req = _urlreq.Request(api_url, data=data, headers=hdrs, method='POST')
+    with _urlreq.urlopen(req, timeout=60) as resp:
+        return _json.loads(resp.read())
+
+
+class VideoGenRequest(BaseModel):
+    """MaxCore-compatible /generate-video schema."""
+    hook:        str            = ''
+    body:        str            = ''
+    cta:         str            = 'Follow for more'
+    topic:       str            = ''
+    platform:    str            = 'tiktok'
+    template:    str            = 'neon_tunnel'
+    tone:        str            = 'energetic'
+    goal:        str            = 'growth'
+    quality:     str            = 'cinematic'
+    duration:    int            = 15         # seconds — required by MaxCore
+    genre:       Optional[str]  = None
+    artist_name: Optional[str]  = None
+    bpm:         float          = Field(120.0, ge=40.0, le=250.0)
+    energy:      float          = Field(0.65, ge=0.0, le=1.0)
+    is_drop:     bool           = False
+
+
+@app.post('/generate-video')
+def generate_video(req: VideoGenRequest):
+    """
+    Three-tier relay endpoint — MaxCore-compatible contract.
+
+      Tier 1 (this server, untrained) → transparent relay to MaxCore
+      Tier 1 (this server, trained)   → local DiT-24 inference
+    """
+    if not _model_trained:
+        logger.info('[generate-video] Untrained — relaying to MaxCore')
+        try:
+            result = _relay_to_maxcore_video(req.dict())
+            logger.info(f'[generate-video] MaxCore relay OK — keys={list(result.keys())}')
+            return result
+        except Exception as exc:
+            logger.error(f'[generate-video] MaxCore relay error: {exc}')
+            raise HTTPException(503, f'MaxCore relay failed: {exc}')
+
+    # ── Trained: local DiT-24 inference ──────────────────────────────────────
+    logger.info(
+        f'[generate-video] Local inference platform={req.platform} '
+        f'bpm={req.bpm:.0f} energy={req.energy:.2f} drop={req.is_drop}'
+    )
+    style = req.template if req.template in _STYLE_PROMPTS else 'default'
+    gen_req = GenerateRequest(
+        prompt=f'{req.hook} {req.body} {req.topic}'.strip() or req.topic,
+        T=16, H=96, W=96,
+        bpm=req.bpm, energy=req.energy,
+        style_name=style,
+        is_drop=req.is_drop,
+        emotional_goal=req.tone,
+        output_format='mp4_b64',
+        platform=req.platform,
+        ddim_steps=5,
+    )
+    gen_resp = generate(gen_req)
+    return {
+        'url':           '',
+        'mp4_b64':       gen_resp.mp4_b64 or '',
+        'frames':        gen_resp.num_frames,
+        'source':        'dit24-local',
+        'model_version': gen_resp.model_version,
+        'beat_sync':     gen_resp.beat_sync,
+        'scene':         gen_resp.scene_name,
+    }
 
 
 @app.post('/generate', response_model=GenerateResponse)

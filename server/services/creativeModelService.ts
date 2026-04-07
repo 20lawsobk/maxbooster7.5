@@ -60,6 +60,28 @@ const _MAXCORE_BASE = (
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 
+// ─── DiT-24 local relay (three-tier architecture: Max Booster → DiT-24 → MaxCore) ──
+
+const DIT24_RELAY_URL = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+
+async function dit24Post(path: string, body: unknown, timeoutMs = 90_000): Promise<any> {
+  const res = await fetch(`${DIT24_RELAY_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`DiT-24 relay ${path} → HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`DiT-24 relay ${path} returned non-JSON`);
+  }
+  return res.json();
+}
+
 async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<any> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: 'POST',
@@ -739,45 +761,86 @@ async function assemblyStage(
   ctx: CreativeContext,
   plan: CreativePlan,
 ): Promise<string> {
-  logger.info('[CreativeModel] Stage 6: Video assembly via MaxCore');
+  logger.info('[CreativeModel] Stage 6: Video assembly — DiT-24 relay → MaxCore');
 
-  // ── MaxCore /api/generate-video (sole source) ───────────────────────────────
+  const firstBeatStyle  = ctx.styleMap.get(0);
+  const styleName       = firstBeatStyle?.primaryStyle ?? 'cinematic_promo';
+  const isDropSection   = musicMeta.sections.some(
+    s => s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop'),
+  );
+
+  const videoPayload = {
+    hook:        plan.hooks?.[0] ?? `${brief.domain ?? 'music'} video`,
+    body:        plan.beats?.[0]?.visualDescription ?? brief.tone ?? 'cinematic music video',
+    cta:         plan.cta ?? 'Follow for more',
+    topic:       `${brief.domain ?? ''} music video`.trim(),
+    platform:    brief.platform ?? 'tiktok',
+    template:    styleName,
+    tone:        brief.tone ?? 'energetic',
+    goal:        brief.goal ?? 'growth',
+    quality:     'cinematic',
+    duration:    15,
+    genre:       musicMeta.genre ?? undefined,
+    artist_name: brief.artistName ?? undefined,
+    bpm:         musicMeta.bpm,
+    energy:      ctx.energyMean,
+    is_drop:     isDropSection,
+  };
+
+  // ── Tier 1: DiT-24 local relay (routes to MaxCore when untrained, local when trained) ──
   try {
-    const firstBeatStyle  = ctx.styleMap.get(0);
-    const styleName       = firstBeatStyle?.primaryStyle ?? 'cinematic_promo';
-    const isDropSection   = musicMeta.sections.some(
-      s => s.name.toLowerCase().includes('chorus') || s.name.toLowerCase().includes('drop'),
-    );
+    logger.info('[CreativeModel] Stage 6: Trying DiT-24 local relay');
+    const relayResp = await dit24Post('/generate-video', videoPayload, 90_000);
 
-    const jobResp = await maxcorePost('/generate-video', {
-      hook:        plan.hooks?.[0] ?? `${brief.domain ?? 'music'} video`,
-      body:        plan.beats?.[0]?.visualDescription ?? brief.tone ?? 'cinematic music video',
-      cta:         plan.cta ?? 'Follow for more',
-      topic:       `${brief.domain ?? ''} music video`.trim(),
-      platform:    brief.platform ?? 'tiktok',
-      template:    styleName,
-      tone:        brief.tone ?? 'energetic',
-      goal:        brief.goal ?? 'growth',
-      quality:     'cinematic',
-      genre:       musicMeta.genre ?? undefined,
-      artist_name: brief.artistName ?? undefined,
-      bpm:         musicMeta.bpm,
-      energy:      ctx.energyMean,
-      is_drop:     isDropSection,
-    }, 60_000);
+    if (relayResp?.url) {
+      logger.info(`[CreativeModel] Stage 6: DiT-24 relay → URL ${relayResp.url}`);
+      return relayResp.url;
+    }
+
+    // MaxCore async job forwarded through relay
+    if (relayResp?.job_id) {
+      logger.info(`[CreativeModel] Stage 6: DiT-24 relay → MaxCore job ${relayResp.job_id} — polling`);
+      const deadline = Date.now() + 180_000;
+      while (Date.now() < deadline) {
+        await new Promise(r => setTimeout(r, 5_000));
+        const poll = await maxcoreGet(`/video-job/${relayResp.job_id}`);
+        if (poll?.status === 'done' && poll?.url) {
+          logger.info(`[CreativeModel] Stage 6: MaxCore job done → ${poll.url}`);
+          return poll.url;
+        }
+        if (poll?.status === 'failed') {
+          logger.warn(`[CreativeModel] Stage 6: MaxCore job ${relayResp.job_id} failed`);
+          break;
+        }
+      }
+    }
+
+    // Local DiT-24 trained inference — returned as base64 MP4
+    if (relayResp?.mp4_b64) {
+      logger.info(`[CreativeModel] Stage 6: DiT-24 local video (${relayResp.frames ?? '?'} frames, source=${relayResp.source})`);
+      return `data:video/mp4;base64,${relayResp.mp4_b64}`;
+    }
+  } catch (relayErr: any) {
+    logger.warn('[CreativeModel] Stage 6: DiT-24 relay unavailable — falling back to MaxCore direct', {
+      err: relayErr?.message ?? String(relayErr),
+    });
+  }
+
+  // ── Tier 2: MaxCore direct (fallback when relay is unavailable) ──────────────
+  try {
+    logger.info('[CreativeModel] Stage 6: MaxCore direct fallback');
+    const jobResp = await maxcorePost('/generate-video', videoPayload, 60_000);
 
     if (!jobResp) {
       logger.warn('[CreativeModel] Stage 6: MaxCore returned no response — using placeholder');
       return `creative_video_${randomUUID()}_placeholder`;
     }
 
-    // Synchronous render — URL returned immediately
     if (jobResp.url) {
       logger.info(`[CreativeModel] Stage 6: MaxCore sync render → ${jobResp.url}`);
       return jobResp.url;
     }
 
-    // Async render — poll until complete (3 min budget, 5s intervals)
     if (jobResp.job_id) {
       logger.info(`[CreativeModel] Stage 6: MaxCore async job ${jobResp.job_id} — polling`);
       const deadline = Date.now() + 180_000;
@@ -795,11 +858,10 @@ async function assemblyStage(
       }
     }
   } catch (err) {
-    logger.error('[CreativeModel] Stage 6: MaxCore video generation error', { err });
+    logger.error('[CreativeModel] Stage 6: MaxCore direct video generation error', { err });
   }
 
-  // ── Placeholder fallback (logged — MaxCore transient failure) ───────────────
-  logger.warn('[CreativeModel] Stage 6: MaxCore did not deliver a video URL — returning placeholder');
+  logger.warn('[CreativeModel] Stage 6: All video sources exhausted — returning placeholder');
   return `creative_video_${randomUUID()}_placeholder`;
 }
 
