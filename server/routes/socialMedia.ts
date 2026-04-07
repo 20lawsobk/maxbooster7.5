@@ -2167,8 +2167,27 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
   const storedUrl = urlStore.get(filename);
   if (storedUrl) candidateUrls.push(storedUrl);
 
-  // Add every plausible path — /api/* routes bypass MaxCore's SPA catch-all
   if (MC_AI_URL) {
+    // Extract job UUID from filename pattern: video_<uuid>.mp4
+    const uuidMatch = filename.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+    const uuid = uuidMatch ? uuidMatch[1] : null;
+
+    // Job-ID-based download routes first (most likely to work if MaxCore has them)
+    if (uuid) {
+      candidateUrls.push(
+        `${MC_AI_URL}/api/video-job/${uuid}/download`,
+        `${MC_AI_URL}/api/video-job/${uuid}/file`,
+        `${MC_AI_URL}/api/video-job/${uuid}/video`,
+        `${MC_AI_URL}/api/download/${uuid}`,
+        `${MC_AI_URL}/api/video/${uuid}`,
+        `${MC_AI_URL}/api/video/${uuid}.mp4`,
+        `${MC_AI_URL}/api/videos/${uuid}`,
+        `${MC_AI_URL}/api/videos/${uuid}.mp4`,
+        `${MC_AI_URL}/api/render/${uuid}/download`,
+      );
+    }
+
+    // Filename-based /api/* routes (bypass SPA catch-all)
     candidateUrls.push(
       `${MC_AI_URL}/api/uploads/${filename}`,
       `${MC_AI_URL}/api/uploads/videos/${filename}`,
@@ -2183,6 +2202,7 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       `${MC_AI_URL}/api/stream/${filename}`,
       `${MC_AI_URL}/api/files/${filename}`,
       `${MC_AI_URL}/api/static/videos/${filename}`,
+      // Non-/api/ static paths
       `${MC_AI_URL}/uploads/${filename}`,
       `${MC_AI_URL}/uploads/videos/${filename}`,
       `${MC_AI_URL}/videos/${filename}`,
@@ -2205,7 +2225,10 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
         headers: authHeaders,
         signal:  AbortSignal.timeout(30_000),
       });
-      if (!upstream.ok) continue;
+      if (!upstream.ok) {
+        logger.info(`[VideoProxy] Candidate ${url} → HTTP ${upstream.status} ct="${upstream.headers.get('content-type') ?? ''}"`);
+        continue;
+      }
 
       // Peek at the first bytes to validate with magic-byte detection.
       // Content-type alone is unreliable — MaxCore's SPA returns text/html with
@@ -2238,7 +2261,7 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       const ct = upstream.headers.get('content-type') ?? '';
       if (!isRealVideo) {
         reader.cancel();
-        logger.debug(`[VideoProxy] Candidate ${url} rejected — magic bytes don't match video (ct="${ct}", peek="${peekText.slice(0, 40).replace(/\n/g, '\\n')}")`);
+        logger.info(`[VideoProxy] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", peek="${peekText.slice(0, 60).replace(/\n/g, '\\n')}")`);
         continue;
       }
 
@@ -2281,7 +2304,7 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       logger.info(`[VideoProxy] Streaming ${filename} from ${url}`);
       return;
     } catch (err: any) {
-      logger.debug(`[VideoProxy] Candidate ${url} failed: ${err.message}`);
+      logger.info(`[VideoProxy] Candidate ${url} fetch error: ${err.message}`);
     }
   }
 

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { renderMaxcoreVideo, type MaxcoreJobMeta } from '@/lib/video/maxcoreVideoRenderer';
 import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -171,6 +172,9 @@ export function ServerVideoGenerator({
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [videoInfo, setVideoInfo] = useState<any | null>(null);
 
+  const [renderProgress, setRenderProgress] = useState<number>(0);
+  const blobUrlRef = useRef<string | null>(null);  // tracks current blob URL so we can revoke on unmount
+
   const audioInputRef = useRef<HTMLInputElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -219,6 +223,16 @@ export function ServerVideoGenerator({
       if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
     };
   }, [imagePreviewUrl]);
+
+  // Revoke any blob URL when the component unmounts or a new video replaces it
+  useEffect(() => {
+    return () => {
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+    };
+  }, []);
 
   const applyVideoResult = (data: any) => {
     setVideoUrl(data.url);
@@ -329,10 +343,55 @@ export function ServerVideoGenerator({
         data = await pollJobUntilDone(data.job_id);
       }
       if (data.success && data.url) {
-        applyVideoResult(data);
+        // MaxCore returns job metadata but its /uploads/ URL is always 404
+        // (MaxCore does not persist video files). Use the client-side Canvas
+        // renderer to generate a real, playable video from the metadata.
+        setGeneratingStage('Compositing video…');
+        setRenderProgress(0);
+
+        // Revoke any prior blob URL
+        if (blobUrlRef.current) {
+          URL.revokeObjectURL(blobUrlRef.current);
+          blobUrlRef.current = null;
+        }
+
+        const meta: MaxcoreJobMeta = {
+          hook:         data.hook         || hook       || undefined,
+          body:         data.body         || body       || undefined,
+          cta:          data.cta          || cta        || undefined,
+          topic:        data.topic        || textTopic  || topicProp || undefined,
+          template:     data.template     || data.template_name || selectedTemplate || undefined,
+          template_name: data.template_name || undefined,
+          width:        data.width        || undefined,
+          height:       data.height       || undefined,
+          duration:     data.duration     || duration   || 10,
+          aspect_ratio: data.aspect_ratio || aspectRatio || undefined,
+          platform:     data.platform     || platform   || undefined,
+          artistName:   customArtistName  || undefined,
+          bgColor:      initialBgColor    || undefined,
+          accentColor:  initialAccentColor || undefined,
+        };
+
+        const rendered = await renderMaxcoreVideo(meta, {
+          fps:        30,
+          onProgress: (pct) => {
+            setRenderProgress(pct);
+            setGeneratingStage(`Compositing… ${pct}%`);
+          },
+          signal: controller.signal,
+        });
+
+        blobUrlRef.current = rendered.blobUrl;
+
+        applyVideoResult({
+          ...data,
+          url:    rendered.blobUrl,
+          width:  rendered.width,
+          height: rendered.height,
+        });
         toast({
-          title: 'Video Generated',
-          description: `${data.width}×${data.height} video ready (${data.scenes_rendered || 1} scene${data.scenes_rendered !== 1 ? 's' : ''})`,
+          title: 'Video Ready',
+          description: `${rendered.width}×${rendered.height} · ${rendered.duration}s promotional video`,
         });
       } else {
         throw new Error(data.error || 'Video generation failed');
@@ -567,12 +626,14 @@ export function ServerVideoGenerator({
         {isAutoMode && (isGenerating || videoUrl || autoStartPending) && (
           <div className="space-y-4">
             {(isGenerating || autoStartPending) && (() => {
-              // Progress estimate: asymptotically approaches 99% based on elapsed seconds.
-              // Average render ≈ 25s → reaches ~95% at 25s, then slows to a crawl.
+              const isCompositing = generatingStage.startsWith('Compositing');
+              // During compositing use exact render progress, otherwise use time-based estimate
               const EXPECTED_S = 25;
               const pct = autoStartPending
                 ? 0
-                : Math.min(99, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
+                : isCompositing
+                  ? renderProgress
+                  : Math.min(95, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
 
               // Stage label from elapsed
               const stageLabel = autoStartPending
@@ -1086,8 +1147,11 @@ export function ServerVideoGenerator({
 
         {/* Progress bar — manual mode */}
         {isGenerating && !isAutoMode && (() => {
+          const isCompositing = generatingStage.startsWith('Compositing');
           const EXPECTED_S = 25;
-          const pct = Math.min(99, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
+          const pct = isCompositing
+            ? renderProgress
+            : Math.min(95, Math.round(100 * (1 - Math.exp(-generatingElapsed / EXPECTED_S)) * 1.05));
           const stageLabel = generatingStage && generatingStage !== 'Starting…'
             ? generatingStage
             : generatingElapsed < 3

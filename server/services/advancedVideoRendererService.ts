@@ -58,16 +58,41 @@ function looksLikeRealVideo(buf: Buffer): boolean {
 }
 
 /**
+ * Extract the MaxCore job UUID from a filename like "video_<uuid>.mp4"
+ */
+function extractJobUuid(filename: string): string | null {
+  const m = filename.match(/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+  return m ? m[1] : null;
+}
+
+/**
  * Candidate URL paths to try when downloading a video from MaxCore.
- * Covers every plausible path that MaxCore's backend might serve files from,
- * prioritising /api/* routes which bypass MaxCore's SPA catch-all.
+ * Ordered: specific API download routes first (bypass SPA), then static paths.
  */
 function candidateUrls(rawUrl: string): string[] {
   const absolute = rawUrl.startsWith('http') ? rawUrl : `${MAXCORE_ORIGIN}${rawUrl}`;
   const filename = path.basename(rawUrl.split('?')[0]);
-  return [
-    absolute,
-    // /api/ routes — handled by MaxCore's backend before the SPA catch-all
+  const uuid = extractJobUuid(filename);
+
+  const urls: string[] = [];
+
+  // Job-ID-based download routes (most likely to work)
+  if (uuid) {
+    urls.push(
+      `${MAXCORE_ORIGIN}/api/video-job/${uuid}/download`,
+      `${MAXCORE_ORIGIN}/api/video-job/${uuid}/file`,
+      `${MAXCORE_ORIGIN}/api/video-job/${uuid}/video`,
+      `${MAXCORE_ORIGIN}/api/download/${uuid}`,
+      `${MAXCORE_ORIGIN}/api/video/${uuid}`,
+      `${MAXCORE_ORIGIN}/api/video/${uuid}.mp4`,
+      `${MAXCORE_ORIGIN}/api/videos/${uuid}`,
+      `${MAXCORE_ORIGIN}/api/videos/${uuid}.mp4`,
+      `${MAXCORE_ORIGIN}/api/render/${uuid}/download`,
+    );
+  }
+
+  // Filename-based /api/* routes (bypass SPA catch-all)
+  urls.push(
     `${MAXCORE_ORIGIN}/api/uploads/${filename}`,
     `${MAXCORE_ORIGIN}/api/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/api/videos/${filename}`,
@@ -81,7 +106,11 @@ function candidateUrls(rawUrl: string): string[] {
     `${MAXCORE_ORIGIN}/api/stream/${filename}`,
     `${MAXCORE_ORIGIN}/api/files/${filename}`,
     `${MAXCORE_ORIGIN}/api/static/videos/${filename}`,
-    // Non-/api/ static paths
+  );
+
+  // The raw URL from MaxCore + non-/api/ static paths (caught by SPA but worth trying)
+  urls.push(
+    absolute,
     `${MAXCORE_ORIGIN}/uploads/${filename}`,
     `${MAXCORE_ORIGIN}/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/videos/${filename}`,
@@ -90,7 +119,9 @@ function candidateUrls(rawUrl: string): string[] {
     `${MAXCORE_ORIGIN}/generated/${filename}`,
     `${MAXCORE_ORIGIN}/output/${filename}`,
     `${MAXCORE_ORIGIN}/media/${filename}`,
-  ];
+  );
+
+  return urls;
 }
 
 /**
@@ -119,14 +150,17 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
       fs.mkdirSync(LOCAL_VIDEO_DIR, { recursive: true });
     }
 
-    for (const url of candidateUrls(rawUrl)) {
+    const candidates = candidateUrls(rawUrl);
+    for (const url of candidates) {
       try {
         const response = await fetch(url, {
           headers: maxcoreAuthHeaders(),
           signal:  AbortSignal.timeout(60_000),
         });
+        const ct = response.headers.get('content-type') ?? 'unknown';
+        const cl = response.headers.get('content-length') ?? 'unknown';
         if (!response.ok) {
-          logger.debug(`[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status}`);
+          logger.info(`[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status} ct="${ct}"`);
           continue;
         }
 
@@ -134,10 +168,10 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         // Content-type alone is unreliable — MaxCore's SPA returns text/html for
         // any unrecognised path with 200 OK.  Magic-byte validation is definitive.
         const buffer = Buffer.from(await response.arrayBuffer());
-        const ct = response.headers.get('content-type') ?? 'unknown';
 
         if (!looksLikeRealVideo(buffer)) {
-          logger.debug(`[AdvancedVideoRenderer] Candidate ${url} → not a real video (ct="${ct}", size=${buffer.length} bytes, head="${buffer.slice(0, 40).toString('utf8').replace(/\n/g, '\\n')}")`);
+          const head = buffer.slice(0, 60).toString('utf8').replace(/[\r\n]/g, ' ');
+          logger.info(`[AdvancedVideoRenderer] Candidate ${url} → NOT video (HTTP 200, ct="${ct}", len=${cl}, head="${head}")`);
           continue;
         }
 
@@ -146,11 +180,11 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         maxcoreVideoUrlStore.set(filename, url);
         return `/uploads/videos/${filename}`;
       } catch (err: any) {
-        logger.debug(`[AdvancedVideoRenderer] Candidate ${url} fetch failed: ${err.message}`);
+        logger.info(`[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err.message}`);
       }
     }
 
-    logger.warn(`[AdvancedVideoRenderer] All ${candidateUrls(rawUrl).length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`);
+    logger.warn(`[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`);
   } catch (err: any) {
     logger.warn(`[AdvancedVideoRenderer] Local cache setup failed: ${err.message}`);
   }
