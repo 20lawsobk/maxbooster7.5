@@ -28,6 +28,7 @@ import re
 import urllib.request
 import urllib.parse
 import urllib.error
+import ssl
 from html.parser import HTMLParser
 from typing import Optional, Any
 
@@ -444,49 +445,91 @@ BROWSER_UA = (
     'Chrome/124.0.0.0 Safari/537.36'
 )
 
-def fetch_html(url: str, timeout: int = 12) -> tuple[str, str]:
-    """Fetch URL, return (html_text, final_url). Reads up to 400 KB."""
-    req = urllib.request.Request(
-        url,
-        headers={
-            'User-Agent':      BROWSER_UA,
-            'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Accept-Encoding': 'identity',
-            'DNT':             '1',
-            'Cache-Control':   'no-cache',
-        }
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        final_url = resp.url
-        raw = resp.read(400 * 1024)
-        ct = resp.headers.get('Content-Type', '')
-        charset = 'utf-8'
-        m = re.search(r'charset=([^\s;\"\']+)', ct, re.I)
-        if m:
-            charset = m.group(1).strip()
+def _make_ssl_context(verify: bool = True) -> ssl.SSLContext:
+    """Create an SSL context, optionally with certificate verification disabled."""
+    if verify:
+        ctx = ssl.create_default_context()
+    else:
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    return ctx
+
+
+def fetch_html(url: str, timeout: int = 20) -> tuple[str, str]:
+    """Fetch URL, return (html_text, final_url). Reads up to 400 KB.
+    Tries with SSL verification first; falls back to no verification if it fails.
+    Also retries with a simplified Accept-Encoding to handle sites that block identity encoding.
+    """
+    headers = {
+        'User-Agent':      BROWSER_UA,
+        'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept-Encoding': 'identity',
+        'DNT':             '1',
+        'Cache-Control':   'no-cache',
+        'Connection':      'keep-alive',
+    }
+
+    last_exc: Exception = Exception('Unknown fetch error')
+
+    for verify_ssl in (True, False):
+        ctx = _make_ssl_context(verify_ssl)
+        req = urllib.request.Request(url, headers=headers)
         try:
-            html = raw.decode(charset, errors='replace')
-        except (LookupError, UnicodeDecodeError):
-            html = raw.decode('utf-8', errors='replace')
-    return html, final_url
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+                final_url = resp.url
+                raw = resp.read(400 * 1024)
+                ct = resp.headers.get('Content-Type', '')
+                charset = 'utf-8'
+                m = re.search(r'charset=([^\s;\"\']+)', ct, re.I)
+                if m:
+                    charset = m.group(1).strip()
+                try:
+                    html = raw.decode(charset, errors='replace')
+                except (LookupError, UnicodeDecodeError):
+                    html = raw.decode('utf-8', errors='replace')
+            return html, final_url
+        except ssl.SSLError as e:
+            last_exc = e
+            if verify_ssl:
+                continue  # retry without SSL verification
+            raise
+        except urllib.error.HTTPError as e:
+            if e.code in (403, 401, 429):
+                raise Exception(f'HTTP {e.code}: site blocked request')
+            raise
+        except Exception as e:
+            last_exc = e
+            if verify_ssl:
+                continue  # retry without SSL verification
+            raise
+
+    raise last_exc
 
 
 def fetch_json(url: str, timeout: int = 8) -> Optional[dict]:
     """Fetch a JSON URL, return parsed dict or None on any failure."""
-    try:
-        req = urllib.request.Request(
-            url,
-            headers={
-                'User-Agent': BROWSER_UA,
-                'Accept':     'application/json, text/json, */*',
-            }
-        )
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            raw = resp.read(100 * 1024)
-            return json.loads(raw.decode('utf-8', errors='replace'))
-    except Exception:
-        return None
+    for verify_ssl in (True, False):
+        try:
+            ctx = _make_ssl_context(verify_ssl)
+            req = urllib.request.Request(
+                url,
+                headers={
+                    'User-Agent': BROWSER_UA,
+                    'Accept':     'application/json, text/json, */*',
+                }
+            )
+            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+                raw = resp.read(100 * 1024)
+                return json.loads(raw.decode('utf-8', errors='replace'))
+        except ssl.SSLError:
+            if verify_ssl:
+                continue
+            return None
+        except Exception:
+            return None
+    return None
 
 
 # ─────────────────────────────────────────────────────────────────────────────

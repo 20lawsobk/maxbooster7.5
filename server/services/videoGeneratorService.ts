@@ -810,7 +810,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
       '-an', '-t', String(dur),
       outPath,
-    ], { timeout: 90_000 });
+    ], { timeout: 300_000 });
   } else {
     // Animated background — pure FFmpeg geq at half-res, lanczos upscale, then vignette
     const iW    = Math.floor(width / 2);
@@ -831,7 +831,7 @@ async function renderScene(spec: SceneSpec): Promise<void> {
       '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
       '-an', '-t', String(dur),
       outPath,
-    ], { timeout: 90_000 });
+    ], { timeout: 300_000 });
   }
 }
 
@@ -873,7 +873,7 @@ async function combineScenes(
     outputPath,
   ];
 
-  await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 120_000 });
+  await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 300_000 });
 }
 
 // ── AUDIO + LOGO FINALIZER ────────────────────────────────────────────────────
@@ -1038,7 +1038,7 @@ async function applyAudioAndLogo(
   ];
 
   try {
-    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 90_000 });
+    await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 180_000 });
   } catch (ffmpegErr) {
     // Some FFmpeg builds don't support equalizer/extrastereo/dynaudnorm.
     // Retry with a safe filter chain (volume + afade only) so audio is always present.
@@ -1062,7 +1062,7 @@ async function applyAudioAndLogo(
         '-t', String(totalDur),
         outputPath,
       ];
-      await execFileAsync(FFMPEG, safeArgs, { timeout: 90_000 });
+      await execFileAsync(FFMPEG, safeArgs, { timeout: 180_000 });
     } else {
       throw ffmpegErr;
     }
@@ -1348,7 +1348,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
           '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
           '-an', '-t', String(totalDur), scenePath,
-        ], { timeout: 90_000 });
+        ], { timeout: 300_000 });
       } else {
         const iW    = Math.floor(width / 2);
         const iH    = Math.floor(height / 2);
@@ -1367,7 +1367,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
           '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '20',
           '-pix_fmt', 'yuv420p', '-movflags', '+faststart',
           '-an', '-t', String(totalDur), scenePath,
-        ], { timeout: 90_000 });
+        ], { timeout: 300_000 });
       }
 
       const filename = `video_${randomBytes(6).toString('hex')}.mp4`;

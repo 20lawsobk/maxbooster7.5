@@ -188,7 +188,7 @@ function runPython(script: string, arg: string, timeout = 20_000): Promise<unkno
 
 export async function analyzeUrl(url: string): Promise<UrlAnalysis> {
   const script = path.join(SERVICE_DIR, 'urlAnalyzer.py');
-  const result = await runPython(script, url, 30_000) as UrlAnalysis;
+  const result = await runPython(script, url, 60_000) as UrlAnalysis;
   return result;
 }
 

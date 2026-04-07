@@ -1476,8 +1476,42 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       return res.status(400).json({ error: 'URL is required' });
     }
 
-    // Use the rich Python URL analyzer for full metadata extraction
-    const analysis = await analyzeUrl(url.trim());
+    // Use the rich Python URL analyzer for full metadata extraction.
+    // If the analyzer fails (network error, SSL issue, bot-block) we fall back
+    // to a minimal stub so MaxCore can still generate relevant content from the URL.
+    let analysis: import('../services/mediaAnalyzerService.js').UrlAnalysis;
+    try {
+      analysis = await analyzeUrl(url.trim());
+    } catch (analyzeErr: any) {
+      logger.warn('[generate-from-url] URL analysis failed — using URL-derived stub:', analyzeErr?.message);
+      const parsedUrl = (() => { try { return new URL(url.trim()); } catch { return null; } })();
+      const domain = parsedUrl?.hostname.replace(/^www\./, '') || url;
+      const pathWords = (parsedUrl?.pathname || '').replace(/[-_/]/g, ' ').trim();
+      analysis = {
+        url, domain,
+        platform: 'web', platform_category: 'web', is_music: false,
+        title: pathWords || domain,
+        description: '',
+        author: '', published: '', modified: '',
+        og_image: '', thumbnail_url: '', canonical: '', language: '',
+        content_type: 'website', content_category: 'general',
+        genre: 'default', tone: 'default',
+        artist: '', track: '', album: '', duration: '',
+        release_date: '', label: '', isrc: '', bpm: '',
+        keywords: [], tags: [], headings: [],
+        body_preview: '', summary: domain,
+        view_count: null, like_count: null, comment_count: null,
+        play_count: null, share_count: null, subscriber_count: null,
+        embed_url: '', reading_time_minutes: null, word_count: null,
+        section: '', event_date: '', event_end_date: '',
+        event_location: '', performers: [], organizer: '',
+        price: '', currency: '', brand: '', rating: '', review_count: null,
+        final_url: url, youtube_id: '', spotify_type: '', spotify_id: '',
+        apple_music_type: '', apple_music_id: '',
+        data_sources: ['url_fallback'],
+        error: analyzeErr?.message,
+      } as any;
+    }
     const seed = urlToContentSeed(analysis);
 
     // Build a clean, structured topic for the AI model — no pollution from targetAudience or format
