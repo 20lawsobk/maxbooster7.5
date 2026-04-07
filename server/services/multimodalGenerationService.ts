@@ -205,6 +205,17 @@ function classifyUrl(url: string): UrlContext {
     const host  = u.hostname.replace(/^www\./, '').toLowerCase();
     const parts = u.pathname.split('/').filter(Boolean);
 
+    // ── Max Booster own-app URLs ─────────────────────────────────
+    // Detect any maxbooster domain and route to 'article' category so copy
+    // templates produce promotional content suited to feature/info pages
+    // ("Worth reading", "check this out") rather than generic "link in bio".
+    if (host === 'maxbooster.replit.app' || host.endsWith('.maxbooster.replit.app') ||
+        host === 'maxbooster.app'         || host.endsWith('.maxbooster.app') ||
+        host === 'localhost'              || host === '127.0.0.1') {
+      const firstPath = parts[0] ?? '';
+      return { category: 'article', platform: 'Max Booster', contentType: firstPath || 'page' };
+    }
+
     // ── Music streaming ─────────────────────────────────────────
     if (host.includes('spotify.com'))       return { category: 'music_stream', platform: 'Spotify',     contentType: parts[0] ?? 'track', id: parts[1] };
     if (host.includes('music.apple.com'))   return { category: 'music_stream', platform: 'Apple Music', contentType: 'album' };
