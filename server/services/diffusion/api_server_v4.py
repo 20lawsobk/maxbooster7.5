@@ -587,22 +587,28 @@ def simulator_status():
         _sim._scene_loss_map  = {}
         _sim._phase_log       = []
 
-        # Try to read the advanced memory registry for richer history
+        # Try to read the advanced memory for richer history + year clock
         try:
-            from diffusion.advanced_memory import get_memory as _gm
-            _mem = _gm()
-            reg  = _mem.registry.stats()
+            from diffusion.advanced_memory import get_memory as _gm, _fmt_years
+            _mem        = _gm()
+            reg         = _mem.registry.stats()
+            total_years = _mem.registry.total_simulated_years()
             return {
+                # ── Simulated experience clock — headline metric ──────────────
+                'simulated_years_total':     round(total_years, 4),
+                'total_simulated_experience': _fmt_years(total_years),
+                'simulated_years_per_minute': 1.0,
+                # ─────────────────────────────────────────────────────────────
                 'simulator_config': {
                     'burst_size':       _sim.burst_size,
                     'interp_density':   _sim.interp_density,
                     'plateau_patience': _sim.plateau_patience,
                     'curriculum':       _sim.curriculum,
                 },
-                'session_registry':   reg,
-                'gradient_health':    _mem.gradients.scene_grad_health(),
-                'episodic_frames':    len(_mem.episodic._index),
-                'hot_cache_size':     len(_mem.hot),
+                'session_registry':          reg,
+                'gradient_health':           _mem.gradients.scene_grad_health(),
+                'episodic_frames':           len(_mem.episodic._index),
+                'hot_cache_size':            len(_mem.hot),
                 'note': 'No active training session — showing persisted stats',
             }
         except Exception:

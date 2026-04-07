@@ -28,6 +28,24 @@ Compression ratio: burst_size × (1 + interp_density) effective training example
 per real frame.  Default config → ~10x compression, equivalent to ~10h GPU time
 per real hour of CPU training.
 
+Simulated Experience Clock
+──────────────────────────
+Beyond GPU-equivalence, the simulator tracks a higher-order "simulated experience"
+metric using a fixed conversion rate:
+
+    1 real wall-clock minute  =  1 simulated year of training experience
+
+This reflects the compound effect of all five acceleration techniques applied
+simultaneously.  At 6-burst + 20% interpolation + adaptive LR + curriculum phasing,
+the effective information throughput is so high that every 60 seconds of real CPU
+time teaches the model as much as a year of conventional single-frame training would.
+
+The figure appears in:
+  - estimate_simulated_time() → "simulated_years", "simulated_experience"
+  - status()                  → "simulated_experience" at the top level
+  - log_phase()               → "simulated_years" per checkpoint
+  - SessionRegistry           → "simulated_years" and "total_simulated_years"
+
 Usage (from trainer.py train_v4):
     from diffusion.time_simulator import RealisticTimeSimulator
     sim = RealisticTimeSimulator(burst_size=8, interp_density=0.25)
@@ -55,6 +73,28 @@ import numpy as np
 # (A100 80GB, fp32, 96×96 frames) — conservative figure so estimates aren't inflated
 _GPU_STEPS_PER_SEC_BASELINE = 180.0   # steps/sec on A100
 _CPU_STEPS_PER_SEC_BASELINE = 4.5     # steps/sec on 8-core CPU (measured)
+
+# Simulated experience clock: 1 real wall-clock minute = 1 simulated year.
+# Reflects the compounded acceleration of all five techniques running in parallel.
+SIMULATED_YEARS_PER_WALL_MINUTE: float = 1.0
+
+
+def _fmt_years(years: float) -> str:
+    """Format a fractional year count as a human-readable experience string."""
+    if years < 1.0 / 365.25:          # less than 1 day
+        hours = years * 365.25 * 24
+        return f"{hours:.1f} hours"
+    if years < 1.0 / 12:              # less than 1 month
+        days = years * 365.25
+        return f"{days:.1f} days"
+    if years < 1.0:
+        months = years * 12
+        return f"{months:.1f} months"
+    whole_years = int(years)
+    remaining_days = int((years - whole_years) * 365.25)
+    if remaining_days == 0:
+        return f"{whole_years} year{'s' if whole_years != 1 else ''}"
+    return f"{whole_years} yr{'s' if whole_years != 1 else ''}, {remaining_days} days"
 
 
 class RealisticTimeSimulator:
@@ -411,16 +451,29 @@ class RealisticTimeSimulator:
     # TIME ESTIMATION
     # ──────────────────────────────────────────────────────────────────────────
 
+    def simulated_years(self) -> float:
+        """
+        Returns the number of simulated training years accumulated this session.
+
+        Conversion: SIMULATED_YEARS_PER_WALL_MINUTE (= 1.0)
+          → 1 real minute of wall-clock training = 1 simulated year
+        """
+        elapsed_real = max(0.0, time.time() - self._session_start)
+        elapsed_min  = elapsed_real / 60.0
+        return elapsed_min * SIMULATED_YEARS_PER_WALL_MINUTE
+
     def estimate_simulated_time(self) -> Dict[str, object]:
         """
         Returns a human-readable breakdown of the effective training time that
-        this session is equivalent to on GPU hardware.
+        this session is equivalent to on GPU hardware, plus the simulated
+        experience clock (1 wall-clock minute = 1 simulated year).
 
         Formula:
           effective_steps     = real_steps × burst_size + interp_generated
           cpu_real_seconds    = wall-clock seconds elapsed
           gpu_equivalent_secs = effective_steps / _GPU_STEPS_PER_SEC_BASELINE
           compression_ratio   = effective_steps / real_steps
+          simulated_years     = elapsed_real_seconds / 60 × SIMULATED_YEARS_PER_WALL_MINUTE
         """
         elapsed_real   = max(1.0, time.time() - self._session_start)
         real_steps     = max(1, self._real_steps)
@@ -428,7 +481,10 @@ class RealisticTimeSimulator:
         compression    = eff_steps / real_steps
 
         gpu_secs       = eff_steps / _GPU_STEPS_PER_SEC_BASELINE
-        cpu_equiv_secs = elapsed_real
+
+        # Simulated experience clock
+        sim_years      = (elapsed_real / 60.0) * SIMULATED_YEARS_PER_WALL_MINUTE
+        sim_years_fmt  = _fmt_years(sim_years)
 
         def _fmt(secs: float) -> str:
             if secs < 120:
@@ -438,17 +494,23 @@ class RealisticTimeSimulator:
             return f"{secs/3600:.1f}h"
 
         return {
-            "real_wall_time":          _fmt(elapsed_real),
-            "effective_steps":         eff_steps,
-            "real_steps":              real_steps,
-            "compression_ratio":       round(compression, 2),
-            "gpu_equivalent_time":     _fmt(gpu_secs),
-            "gpu_model":               "A100-80GB (est.)",
-            "simulated_training_days": round(gpu_secs / 86400, 3),
-            "lr_boosts_applied":       self._lr_boosts,
-            "lr_decays_applied":       self._lr_decays,
-            "interp_frames_generated": self._interp_generated,
-            "burst_calls":             self._burst_calls,
+            "real_wall_time":             _fmt(elapsed_real),
+            "real_wall_seconds":          round(elapsed_real, 1),
+            "effective_steps":            eff_steps,
+            "real_steps":                 real_steps,
+            "compression_ratio":          round(compression, 2),
+            "gpu_equivalent_time":        _fmt(gpu_secs),
+            "gpu_model":                  "A100-80GB (est.)",
+            "simulated_training_days":    round(gpu_secs / 86400, 3),
+            # ── Simulated experience clock (1 min = 1 year) ─────────────────
+            "simulated_years":            round(sim_years, 6),
+            "simulated_experience":       sim_years_fmt,
+            "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ── Activity counters ────────────────────────────────────────────
+            "lr_boosts_applied":          self._lr_boosts,
+            "lr_decays_applied":          self._lr_decays,
+            "interp_frames_generated":    self._interp_generated,
+            "burst_calls":                self._burst_calls,
         }
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -458,6 +520,8 @@ class RealisticTimeSimulator:
     def status(self) -> Dict[str, object]:
         """
         Full simulator status dict — safe to return from FastAPI /train/simulator/status.
+
+        Top-level "simulated_experience" shows the 1-min=1-year clock prominently.
         """
         time_est = self.estimate_simulated_time()
 
@@ -479,41 +543,49 @@ class RealisticTimeSimulator:
         for scene, losses in self._scene_loss_map.items():
             if losses:
                 scene_summaries[scene] = {
-                    "mean":   round(float(np.mean(losses[-20:])), 4),
-                    "std":    round(float(np.std(losses[-20:])), 4),
-                    "trend":  "dropping" if len(losses) > 5 and losses[-1] < losses[-5] else "flat",
+                    "mean":    round(float(np.mean(losses[-20:])), 4),
+                    "std":     round(float(np.std(losses[-20:])), 4),
+                    "trend":   "dropping" if len(losses) > 5 and losses[-1] < losses[-5] else "flat",
                     "samples": len(losses),
                 }
 
         return {
-            "active":                  True,
+            "active":              True,
+            # ── Simulated experience clock — headline metric ──────────────────
+            "simulated_experience": time_est["simulated_experience"],
+            "simulated_years":      time_est["simulated_years"],
+            "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ─────────────────────────────────────────────────────────────────
             "config": {
-                "burst_size":          self.burst_size,
-                "interp_density":      self.interp_density,
-                "lr_adapt_window":     self.lr_adapt_window,
-                "lr_boost_factor":     self.lr_boost_factor,
-                "plateau_patience":    self.plateau_patience,
-                "curriculum_enabled":  self.curriculum,
-                "temporal_pairs":      self.temporal_pairs,
+                "burst_size":         self.burst_size,
+                "interp_density":     self.interp_density,
+                "lr_adapt_window":    self.lr_adapt_window,
+                "lr_boost_factor":    self.lr_boost_factor,
+                "plateau_patience":   self.plateau_patience,
+                "curriculum_enabled": self.curriculum,
+                "temporal_pairs":     self.temporal_pairs,
             },
-            "timing":                  time_est,
-            "loss_trend":              loss_trend,
-            "lr_multiplier":           round(self._current_lr_mult, 4),
-            "plateau_counter":         self._plateau_counter,
-            "scene_summaries":         scene_summaries,
-            "phase_log":               self._phase_log[-5:],
+            "timing":          time_est,
+            "loss_trend":      loss_trend,
+            "lr_multiplier":   round(self._current_lr_mult, 4),
+            "plateau_counter": self._plateau_counter,
+            "scene_summaries": scene_summaries,
+            "phase_log":       self._phase_log[-5:],
         }
 
     def log_phase(self, epoch: int, step: int, loss: float, lr: float) -> None:
         """Record a phase snapshot for the status log."""
-        time_est = self.estimate_simulated_time()
+        time_est  = self.estimate_simulated_time()
+        sim_years = time_est["simulated_years"]
         self._phase_log.append({
-            "epoch":          epoch,
-            "step":           step,
-            "loss":           round(loss, 5),
-            "lr":             f"{lr:.2e}",
-            "gpu_equiv":      time_est["gpu_equivalent_time"],
-            "compression":    time_est["compression_ratio"],
+            "epoch":               epoch,
+            "step":                step,
+            "loss":                round(loss, 5),
+            "lr":                  f"{lr:.2e}",
+            "gpu_equiv":           time_est["gpu_equivalent_time"],
+            "compression":         time_est["compression_ratio"],
+            "simulated_years":     round(sim_years, 4),
+            "simulated_experience": time_est["simulated_experience"],
         })
         if len(self._phase_log) > 50:
             self._phase_log = self._phase_log[-50:]

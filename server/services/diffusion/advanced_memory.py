@@ -95,6 +95,24 @@ MAX_GRAD_HISTORY     = 1_000      # gradient records kept in memory
 MAX_REGISTRY_ENTRIES = 200        # session log entries
 MAX_PROMPT_VOCAB     = 8_000      # TF-IDF vocabulary size
 
+# Simulated experience clock (mirrors time_simulator.SIMULATED_YEARS_PER_WALL_MINUTE)
+# 1 real wall-clock minute of training = 1 simulated year of experience.
+SIMULATED_YEARS_PER_WALL_MINUTE: float = 1.0
+
+
+def _fmt_years(years: float) -> str:
+    """Format a fractional year count as a human-readable experience string."""
+    if years < 1.0 / 365.25:
+        return f"{years * 365.25 * 24:.1f} hours"
+    if years < 1.0 / 12:
+        return f"{years * 365.25:.1f} days"
+    if years < 1.0:
+        return f"{years * 12:.1f} months"
+    wy = int(years)
+    rd = int((years - wy) * 365.25)
+    suffix = "yrs" if wy != 1 else "yr"
+    return f"{wy} {suffix}, {rd} days" if rd else f"{wy} year{'s' if wy != 1 else ''}"
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 #  TIER 1 — HOT CACHE
@@ -726,21 +744,38 @@ class SessionRegistry:
     def register(self, meta: dict, sim_stats: Optional[dict] = None) -> int:
         """Record a completed training session. Returns session number."""
         session_id = len(self._sessions) + 1
-        record     = {
-            "session_id":    session_id,
-            "ts":            int(time.time()),
-            "version":       meta.get("version", 4),
-            "epochs":        meta.get("epochs", 0),
-            "samples":       meta.get("samples_per_epoch", 0),
-            "final_loss":    meta.get("final_loss", 0.0),
-            "best_loss":     meta.get("best_loss",  0.0),
-            "total_seconds": meta.get("total_seconds", 0.0),
-            "resolution":    meta.get("resolution", 96),
-            "T":             meta.get("T", 4),
+
+        # Simulated years this session (from sim_stats if available,
+        # or compute from total_seconds using the 1-min=1-year clock)
+        sim_years_this: float = 0.0
+        if sim_stats and "simulated_years" in sim_stats:
+            sim_years_this = float(sim_stats["simulated_years"])
+        elif sim_stats and "timing" in sim_stats:
+            sim_years_this = float(sim_stats["timing"].get("simulated_years", 0.0))
+        else:
+            total_sec      = float(meta.get("total_seconds", 0.0))
+            sim_years_this = (total_sec / 60.0) * SIMULATED_YEARS_PER_WALL_MINUTE
+
+        record = {
+            "session_id":      session_id,
+            "ts":              int(time.time()),
+            "version":         meta.get("version", 4),
+            "epochs":          meta.get("epochs", 0),
+            "samples":         meta.get("samples_per_epoch", 0),
+            "final_loss":      meta.get("final_loss", 0.0),
+            "best_loss":       meta.get("best_loss",  0.0),
+            "total_seconds":   meta.get("total_seconds", 0.0),
+            "resolution":      meta.get("resolution", 96),
+            "T":               meta.get("T", 4),
             "scene_categories": meta.get("scene_categories", 0),
-            "total_prompts": meta.get("total_prompts", 0),
-            "loss_curve":    meta.get("losses", [])[-20:],  # last 20 epoch losses
-            "sim_stats":     sim_stats,
+            "total_prompts":   meta.get("total_prompts", 0),
+            "loss_curve":      meta.get("losses", [])[-20:],
+            # ── Simulated experience clock ──────────────────────────────────
+            "simulated_years": round(sim_years_this, 6),
+            "simulated_experience": _fmt_years(sim_years_this),
+            "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ──────────────────────────────────────────────────────────────
+            "sim_stats":       sim_stats,
         }
         self._sessions.append(record)
         self._save()
@@ -751,6 +786,10 @@ class SessionRegistry:
             return float("inf")
         return min((s.get("final_loss", float("inf")) for s in self._sessions),
                    default=float("inf"))
+
+    def total_simulated_years(self) -> float:
+        """Cumulative simulated training years across all sessions."""
+        return sum(s.get("simulated_years", 0.0) for s in self._sessions)
 
     def loss_trend(self) -> str:
         """Human-readable summary of how loss has changed across sessions."""
@@ -770,17 +809,24 @@ class SessionRegistry:
 
     def stats(self) -> Dict[str, Any]:
         if not self._sessions:
-            return {"total_sessions": 0}
-        last = self._sessions[-1]
+            return {"total_sessions": 0, "total_simulated_years": 0.0,
+                    "cumulative_experience": "0 hours"}
+        last        = self._sessions[-1]
+        total_years = self.total_simulated_years()
         return {
-            "total_sessions":    len(self._sessions),
-            "global_best_loss":  round(self.global_best_loss(), 5),
-            "last_final_loss":   last.get("final_loss"),
-            "last_session_id":   last.get("session_id"),
-            "total_training_h":  round(
+            "total_sessions":           len(self._sessions),
+            "global_best_loss":         round(self.global_best_loss(), 5),
+            "last_final_loss":          last.get("final_loss"),
+            "last_session_id":          last.get("session_id"),
+            "total_training_h":         round(
                 sum(s.get("total_seconds", 0) for s in self._sessions) / 3600, 2
             ),
-            "loss_trend":        self.loss_trend(),
+            "loss_trend":               self.loss_trend(),
+            # ── Simulated experience clock ──────────────────────────────────
+            "total_simulated_years":    round(total_years, 4),
+            "cumulative_experience":    _fmt_years(total_years),
+            "last_session_simulated_experience": last.get("simulated_experience", "0 hours"),
+            "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
         }
 
 
@@ -957,18 +1003,31 @@ class AdvancedMemoryLayer:
         self.episodic._save_index()
         self.prompt_idx._save()
         session_id = self.registry.register(train_meta, sim_stats)
+        total_years = self.registry.total_simulated_years()
         print(f"[AdvancedMemoryLayer] Session {session_id} registered — "
               f"episodic={len(self.episodic._index)} frames, "
-              f"hot={len(self.hot)} entries")
+              f"hot={len(self.hot)} entries, "
+              f"cumulative experience={_fmt_years(total_years)}")
         return session_id
 
     # ── Status (FastAPI endpoint compatible) ───────────────────────────────────
 
     def status(self) -> Dict[str, Any]:
-        elapsed = time.time() - self._session_start
+        elapsed      = time.time() - self._session_start
+        # Simulated years accumulated THIS session (live, ticking clock)
+        sim_years_session = (elapsed / 60.0) * SIMULATED_YEARS_PER_WALL_MINUTE
+        # Cumulative across all past sessions + current
+        total_years  = self.registry.total_simulated_years() + sim_years_session
         return {
             "session_steps":     self._step_count,
             "session_elapsed_s": round(elapsed, 1),
+            # ── Simulated experience clock ─────────────────────────────────
+            "simulated_years_this_session":  round(sim_years_session, 6),
+            "simulated_experience_session":  _fmt_years(sim_years_session),
+            "total_simulated_years":         round(total_years, 4),
+            "total_simulated_experience":    _fmt_years(total_years),
+            "simulated_years_per_minute":    SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ──────────────────────────────────────────────────────────────
             "hot_cache":         self.hot.stats(),
             "episodic_store":    self.episodic.stats(),
             "prompt_index":      self.prompt_idx.stats(),
