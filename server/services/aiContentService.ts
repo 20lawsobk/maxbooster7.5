@@ -42,7 +42,6 @@ import * as path from 'path';
 // Sharp-based image generation (production-ready, replaces Canvas)
 import { sharpImageService } from './sharpImageService.js';
 
-import { spawn } from 'child_process';
 import { synthesizeToWAV, parseTextToParameters, generateChordProgression, generateMelody } from './musicGenerationService.js';
 
 import { aiTranslationService } from './aiTranslationService';
@@ -1004,10 +1003,9 @@ export class AIContentService {
   }
 
   /**
-   * Video generation — routes through the Advanced Video Renderer:
-   * MaxCore renderer → Python AI renderer → FFmpeg renderer.
+   * Video generation — routes through MaxCore (the only renderer).
    * First generates the video script via the unified AI pipeline so the
-   * content going into the renderer is MaxCore-quality, not template-based.
+   * content going into MaxCore is already structured as hook/body/cta.
    */
   async generateVideoContent(
     prompt: string,
@@ -1037,7 +1035,7 @@ export class AIContentService {
       logger.warn('[ContentService] Video script generation failed, renderer will use topic as script:', scriptErr);
     }
 
-    // Step 2 — Render through Advanced Video Renderer (MaxCore → Python AI → FFmpeg)
+    // Step 2 — Render through MaxCore (the only renderer)
     const result = await renderAdvancedVideo({
       topic:    prompt || 'new music',
       platform: platform || 'tiktok',
@@ -1260,137 +1258,6 @@ export class AIContentService {
     ctx.textAlign = 'right';
     ctx.fillText('Max Booster', dimensions.width - 30, dimensions.height - 30);
     ctx.globalAlpha = 1;
-  }
-
-  // ============================================================================
-  // IN-HOUSE VIDEO GENERATION HELPERS
-  // ============================================================================
-
-  private getPlatformVideoDimensions(platform: string): { width: number; height: number } {
-    const dimensions: Record<string, { width: number; height: number }> = {
-      instagram: { width: 1080, height: 1920 },
-      facebook: { width: 1280, height: 720 },
-      twitter: { width: 1280, height: 720 },
-      tiktok: { width: 1080, height: 1920 },
-      youtube: { width: 1920, height: 1080 },
-      linkedin: { width: 1280, height: 720 },
-    };
-    return dimensions[platform] || dimensions.instagram;
-  }
-
-  private getPlatformVideoDuration(platform: string): number {
-    const durations: Record<string, number> = {
-      instagram: 15,
-      facebook: 30,
-      twitter: 15,
-      tiktok: 15,
-      youtube: 60,
-      linkedin: 30,
-    };
-    return durations[platform] || 15;
-  }
-
-  private async generateVideoFrame(
-    framesDir: string,
-    frameIndex: number,
-    dimensions: { width: number; height: number },
-    text: string,
-    tone: string,
-    progress: number
-  ): Promise<void> {
-    const sharp = (await import('sharp')).default;
-    const { width, height } = dimensions;
-
-    // Animated gradient with color shift using SVG
-    const hueShift = Math.floor(progress * 60);
-    const hue1 = 240 + hueShift;
-    const hue2 = 280 + hueShift;
-    const hue3 = 320 + hueShift;
-
-    // Generate animated particles SVG
-    const particles = [];
-    for (let i = 0; i < 20; i++) {
-      const x = ((Math.sin(progress * Math.PI * 2 + i) + 1) / 2) * width;
-      const y = ((Math.cos(progress * Math.PI * 2 + i * 0.5) + 1) / 2) * height;
-      const radius = Math.abs(Math.sin(progress * Math.PI * 4 + i)) * 30 + 10;
-      particles.push(`<circle cx="${x}" cy="${y}" r="${radius}" fill="white" opacity="0.3"/>`);
-    }
-
-    // Animated text opacity
-    const textOpacity = Math.min(progress * 3, 1);
-    const fontSize = Math.min(width * 0.05, 60);
-    const displayText = text.substring(0, 40);
-
-    const svg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:hsl(${hue1}, 70%, 40%);stop-opacity:1" />
-            <stop offset="50%" style="stop-color:hsl(${hue2}, 70%, 50%);stop-opacity:1" />
-            <stop offset="100%" style="stop-color:hsl(${hue3}, 70%, 40%);stop-opacity:1" />
-          </linearGradient>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grad)"/>
-        ${particles.join('')}
-        <text x="50%" y="50%" 
-              text-anchor="middle" 
-              dominant-baseline="middle"
-              font-family="Arial, sans-serif" 
-              font-size="${fontSize}px" 
-              font-weight="bold" 
-              fill="white"
-              opacity="${textOpacity}">
-          <tspan filter="drop-shadow(2px 2px 4px rgba(0,0,0,0.5))">${this.escapeXmlForFrame(displayText)}</tspan>
-        </text>
-      </svg>
-    `;
-
-    const buffer = await sharp(Buffer.from(svg))
-      .png()
-      .toBuffer();
-
-    const framePath = path.join(framesDir, `frame_${String(frameIndex).padStart(5, '0')}.png`);
-    await fs.writeFile(framePath, buffer);
-  }
-
-  private escapeXmlForFrame(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  }
-
-  private async compileFramesToVideo(
-    framesDir: string,
-    outputPath: string,
-    fps: number,
-    dimensions: { width: number; height: number }
-  ): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const ffmpegPath = process.env.FFMPEG_PATH || 'ffmpeg';
-      const args = [
-        '-y',
-        '-framerate', String(fps),
-        '-i', path.join(framesDir, 'frame_%05d.png'),
-        '-c:v', 'libx264',
-        '-pix_fmt', 'yuv420p',
-        '-preset', 'fast',
-        '-crf', '23',
-        '-s', `${dimensions.width}x${dimensions.height}`,
-        outputPath,
-      ];
-
-      const ffmpeg = spawn(ffmpegPath, args);
-
-      ffmpeg.on('close', (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`FFmpeg exited with code ${code}`));
-      });
-
-      ffmpeg.on('error', (err) => reject(err));
-    });
   }
 
   // ============================================================================

@@ -1944,7 +1944,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     pruneStaleFFmpegJobs();
     ffmpegJobs.set(jobId, { status: 'processing', createdAt: Date.now() });
 
-    // ── Background job: AI content → Python AI renderer → FFmpeg ─────────────
+    // ── Background job: MaxCore video render ──────────────────────────────────
     (async () => {
       try {
         // Stage 1 — Advanced Social AI generates hook / body / CTA.
