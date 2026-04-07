@@ -104,10 +104,16 @@ Key architectural decisions include:
 - **Server SWR headers** — `stale-while-revalidate` `Cache-Control` directives added to 7 key GET API endpoints so browsers can serve stale responses immediately and refresh in background.
 - **Cache buster**: if DB schema changes make cached data incompatible, bump `mb-v3` in `main.tsx` to `mb-v4`.
 
+### Bug Fixes (April 2026)
+- **URL content generation (text) always returned empty**: `buildLocalTextAssets()` was defined in `multimodalGenerationService.ts` but never called. When MaxCore's `/generate/content` timed out or returned empty captions, the text worker returned `[]` instead of using the local template builder. Fixed by wiring `buildLocalTextAssets` as the fallback in `textWorker.run` — all per-slot failures now fall back to local `perPlatformCopy` templates built from URL metadata. Exception paths also recover via the same fallback.
+- **Video import stuck / hung indefinitely**: `generateThumbnails` in `VideoTrack.tsx` set `video.currentTime = 0 * interval = 0` for the first thumbnail. Since the video element is already at `currentTime=0` on metadata load, no `onseeked` event fires — import hangs forever. Fixed by seeking to the midpoint of each slot: `(currentIndex + 0.5) * interval`, which is always > 0 and always triggers `onseeked`. Added a 30-second safety timer that resolves with whatever frames were captured.
+- **Video download opened in new tab instead of downloading**: `handleDownloadContent` had `a.target = '_blank'` combined with `a.download`. Chrome ignores the `download` attribute when `target='_blank'` is set, causing the video to open in a new tab rather than download. Removed `target='_blank'` from the media download path.
+- **Stale closure in `onVideoGenerated`**: The callback at `SocialMedia.tsx:2454` captured `urlGeneratedContent` at render time, so videos generated after a re-render could fail to update the correct item. Fixed by using functional state update `setUrlGeneratedContent(prev => ...)`.
+
 ### Current State
 - All 24/24 environment variables pass validation.
 - All routes load successfully (no TF binding failures).
-- TFWorkerPool: 1 TF inference worker ready (isolated event loop).
+- TFWorkerPool: 4 TF inference workers ready (isolated event loop).
 - PDIM circuit breaker: CLOSED and stable (no oscillation).
 - Session store, BullMQ queues, WebSocket servers all initialized.
 - MaxCore confirmed healthy: `model_loaded: true`, all three key endpoints (`generate/content`, `generate-video`, `generate/audio`) verified live with correct auth.

@@ -184,15 +184,26 @@ export function VideoTrack({
         const interval = clipDuration / thumbnailCount;
         let currentIndex = 0;
 
+        // Safety: resolve with whatever thumbnails we have after 30 s to avoid a hung import
+        const safetyTimer = setTimeout(() => {
+          URL.revokeObjectURL(video.src);
+          resolve(thumbnails);
+        }, 30_000);
+
         video.onloadedmetadata = () => {
           const captureFrame = () => {
             if (currentIndex >= thumbnailCount) {
+              clearTimeout(safetyTimer);
               URL.revokeObjectURL(video.src);
               resolve(thumbnails);
               return;
             }
 
-            video.currentTime = currentIndex * interval;
+            // Seek to the midpoint of each thumbnail slot so we never land
+            // exactly on currentTime=0 (which would not fire onseeked because
+            // the video is already positioned there on metadata load).
+            const targetTime = Math.min((currentIndex + 0.5) * interval, clipDuration - 0.001);
+            video.currentTime = targetTime;
           };
 
           video.onseeked = () => {
@@ -208,6 +219,7 @@ export function VideoTrack({
         };
 
         video.onerror = () => {
+          clearTimeout(safetyTimer);
           resolve([]);
         };
       });

@@ -1257,7 +1257,6 @@ export default function SocialMedia() {
       const extension =
         currentFormat === 'image' ? 'png' : currentFormat === 'audio' ? 'mp3' : 'mp4';
       a.download = `${platform}-${currentFormat}.${extension}`;
-      a.target = '_blank';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -2452,9 +2451,11 @@ return (
                                     initialAccentColor={item.accent_color || ''}
                                     autoStart={true}
                                     onVideoGenerated={(videoUrl: string) => {
-                                      const updated = [...urlGeneratedContent];
-                                      updated[index] = { ...updated[index], mediaUrl: videoUrl };
-                                      setUrlGeneratedContent(updated);
+                                      setUrlGeneratedContent(prev => {
+                                        const updated = [...prev];
+                                        updated[index] = { ...updated[index], mediaUrl: videoUrl };
+                                        return updated;
+                                      });
                                       toast({
                                         title: 'Video Ready!',
                                         description: `Video generated for ${platform?.name || item.platform}.`,

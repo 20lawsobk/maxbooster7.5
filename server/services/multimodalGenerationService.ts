@@ -1634,10 +1634,24 @@ const textWorker = {
 
       if (successful.length > 0) return successful;
 
-      // All per-slot calls failed — MaxCore is the only source; return empty.
-      logger.error('[MultimodalGen] All /generate/content slot calls failed (transient) — returning empty slots');
+      // All per-slot MaxCore calls failed — fall back to local template builder.
+      logger.warn('[MultimodalGen] All /generate/content slot calls failed — falling back to buildLocalTextAssets');
+      const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
+      if (localAssets.length > 0) return localAssets;
+
+      logger.error('[MultimodalGen] buildLocalTextAssets also returned empty — no text assets generated');
     } catch (err) {
-      logger.error('[MultimodalGen] /generate/content text worker error (transient):', err instanceof Error ? err.message : String(err));
+      logger.error('[MultimodalGen] /generate/content text worker error:', err instanceof Error ? err.message : String(err));
+      // Attempt local fallback even on unexpected errors
+      try {
+        const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
+        if (localAssets.length > 0) {
+          logger.info('[MultimodalGen] Recovered via local text fallback after exception');
+          return localAssets;
+        }
+      } catch (fallbackErr) {
+        logger.error('[MultimodalGen] Local text fallback also failed:', fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr));
+      }
     }
     return [];
   },
