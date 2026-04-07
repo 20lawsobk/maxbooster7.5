@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { Router, Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
@@ -27,6 +29,7 @@ let _competitorBenchmarkService: typeof import('../services/competitorBenchmarkS
 let _pythonAIService: typeof import('../services/pythonAIService.js').pythonAIService | null = null;
 let _veoMusicService: typeof import('../services/veoMusicService.js').veoMusicService | null = null;
 let _renderAdvancedVideo: typeof import('../services/advancedVideoRendererService.js').renderVideo | null = null;
+let _maxcoreVideoUrlStore: typeof import('../services/advancedVideoRendererService.js').maxcoreVideoUrlStore | null = null;
 let _voiceSynthService: typeof import('../services/voiceSynthesisService.js') | null = null;
 let _beatSyncService: typeof import('../services/beatSyncService.js') | null = null;
 let _imageToVideoService: typeof import('../services/imageToVideoService.js') | null = null;
@@ -83,8 +86,17 @@ async function getRenderAdvancedVideo() {
   if (!_renderAdvancedVideo) {
     const m = await import('../services/advancedVideoRendererService.js');
     _renderAdvancedVideo = m.renderVideo;
+    _maxcoreVideoUrlStore = m.maxcoreVideoUrlStore;
   }
   return _renderAdvancedVideo!;
+}
+async function getMaxcoreVideoUrlStore() {
+  if (!_maxcoreVideoUrlStore) {
+    const m = await import('../services/advancedVideoRendererService.js');
+    _renderAdvancedVideo  = m.renderVideo;
+    _maxcoreVideoUrlStore = m.maxcoreVideoUrlStore;
+  }
+  return _maxcoreVideoUrlStore!;
 }
 
 const router = Router();
@@ -2112,6 +2124,109 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
     logger.error('Failed to poll video job:', error);
     res.status(500).json({ success: false, status: 'error', message: 'Job status check failed' });
   }
+});
+
+/**
+ * GET /video-proxy/:filename
+ * Server-side proxy that streams a MaxCore-rendered video to the browser.
+ * The browser never touches MaxCore directly — our server adds the auth headers.
+ * Falls back through multiple URL path variants that MaxCore might use.
+ */
+router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
+  const { filename } = req.params;
+  if (!filename || !filename.match(/^[\w\-]+\.mp4$/i)) {
+    return res.status(400).json({ error: 'Invalid filename' });
+  }
+
+  const MC_AI_URL = (process.env.AI_SERVER_URL || '').replace(/\/+$/, '');
+  const MC_AI_KEY = process.env.AI_SERVER_KEY || '';
+
+  // 1. Check local cache first — if it was written to disk, serve it directly
+  const localPath = path.join(process.cwd(), 'uploads', 'videos', filename);
+  if (fs.existsSync(localPath)) {
+    res.setHeader('Content-Type', 'video/mp4');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return fs.createReadStream(localPath).pipe(res);
+  }
+
+  // 2. Try to fetch from MaxCore using stored URL or candidate paths
+  const urlStore = await getMaxcoreVideoUrlStore();
+  const candidateUrls: string[] = [];
+
+  // Add the stored URL first if we have it
+  const storedUrl = urlStore.get(filename);
+  if (storedUrl) candidateUrls.push(storedUrl);
+
+  // Add common path variants
+  if (MC_AI_URL) {
+    candidateUrls.push(
+      `${MC_AI_URL}/uploads/${filename}`,
+      `${MC_AI_URL}/api/uploads/${filename}`,
+      `${MC_AI_URL}/api/videos/${filename}`,
+      `${MC_AI_URL}/videos/${filename}`,
+      `${MC_AI_URL}/static/${filename}`,
+      `${MC_AI_URL}/generated/${filename}`,
+    );
+  }
+
+  const authHeaders: Record<string, string> = {
+    'X-API-Key':     MC_AI_KEY,
+    'Authorization': `Bearer ${MC_AI_KEY}`,
+  };
+
+  for (const url of candidateUrls) {
+    try {
+      const upstream = await fetch(url, {
+        headers: authHeaders,
+        signal:  AbortSignal.timeout(30_000),
+      });
+      if (!upstream.ok) continue;
+
+      const ct = upstream.headers.get('content-type') ?? 'video/mp4';
+      const cl = upstream.headers.get('content-length');
+
+      res.setHeader('Content-Type', ct.includes('video') ? ct : 'video/mp4');
+      if (cl) res.setHeader('Content-Length', cl);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Accept-Ranges', 'bytes');
+
+      // Stream the video body to the client
+      const reader = upstream.body?.getReader();
+      if (!reader) continue;
+
+      const nodeStream = new (await import('stream')).PassThrough();
+      res.writeHead(200);
+      nodeStream.pipe(res);
+
+      // Pump the fetch ReadableStream into the Node.js PassThrough
+      (async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) { nodeStream.end(); break; }
+            nodeStream.write(value);
+          }
+          // Also cache to disk for future requests
+          if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'videos'))) {
+            fs.mkdirSync(path.join(process.cwd(), 'uploads', 'videos'), { recursive: true });
+          }
+          // Re-fetch to write to disk (non-blocking, best-effort)
+          fetch(url, { headers: authHeaders, signal: AbortSignal.timeout(60_000) })
+            .then(r => r.arrayBuffer())
+            .then(buf => fs.writeFileSync(localPath, Buffer.from(buf)))
+            .catch(() => {});
+        } catch { nodeStream.destroy(); }
+      })();
+
+      logger.info(`[VideoProxy] Streaming ${filename} from ${url}`);
+      return;
+    } catch (err: any) {
+      logger.debug(`[VideoProxy] Candidate ${url} failed: ${err.message}`);
+    }
+  }
+
+  logger.error(`[VideoProxy] Could not retrieve ${filename} from any MaxCore path`);
+  return res.status(404).json({ error: 'Video not found — it may have expired on MaxCore. Please regenerate.' });
 });
 
 router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedRequest, res: Response) => {
