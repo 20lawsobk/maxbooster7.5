@@ -1363,7 +1363,7 @@ export default function Advertisement() {
                               </div>
                               <div className="text-right">
                                 <p className="text-xs text-muted-foreground">CPA</p>
-                                <p className="font-bold">${segment.cpa.toFixed(2)}</p>
+                                <p className="font-bold">${(segment.cpa ?? 0).toFixed(2)}</p>
                               </div>
                             </div>
                           </div>
