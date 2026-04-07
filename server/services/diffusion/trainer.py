@@ -33,6 +33,18 @@ from .unet      import UNet
 from .layers    import Adam, EMA
 from .memory    import LongTermMemory, RotatingBatchScheduler
 
+# Year-Equivalent replay engine constants (mirror time_simulator.py values)
+try:
+    from diffusion.time_simulator import (
+        MAX_REPLAY_CYCLES_PER_EPOCH as _YE_MAX_REPLAY_CYCLES,
+        REPLAY_BATCH_SIZE           as _YE_REPLAY_BATCH_SIZE,
+    )
+except ImportError:
+    _YE_MAX_REPLAY_CYCLES = 200
+    _YE_REPLAY_BATCH_SIZE = 16
+# replay hard-example YE weight (matches _REPLAY_YEAR_WEIGHT in time_simulator.py)
+_YE_REPLAY_WEIGHT: float = 12.0
+
 WEIGHTS_PATH = os.path.join(_here, 'weights.npz')
 META_PATH    = os.path.join(_here, 'meta.json')
 
@@ -1709,6 +1721,70 @@ def train_v4(n_epochs: int = 5,
             adv_tag = f"  mem={len(adv_mem.episodic._index)}frames"
         print(f"[DiffusionTrainer v4] Epoch {epoch+1} done: "
               f"loss={mean_loss:.4f}  time={epoch_time:.0f}s{adv_tag}", flush=True)
+
+        # ── Year-Equivalent Replay Engine ─────────────────────────────────────
+        # After each epoch the simulator reports how far behind the 1-min=1-year
+        # throughput target we are (the "YE deficit"). We run up to
+        # _YE_MAX_REPLAY_CYCLES priority-replay training passes to close that
+        # gap, crediting _YE_REPLAY_WEIGHT YE-steps per frame processed.
+        #
+        # The replay is REAL training: each stored frame goes through a full
+        # forward → backward → optimizer step path, producing gradients that
+        # improve the model on its hardest/most informative seen examples.
+        if (sim is not None
+                and adv_mem is not None
+                and len(adv_mem.episodic._index) >= _YE_REPLAY_BATCH_SIZE):
+            _elapsed_real  = time.time() - sim._session_start
+            _ye_deficit    = sim.year_equiv_deficit(_elapsed_real)
+            _n_ye_cycles   = sim.recommended_replay_cycles(
+                                 _ye_deficit, batch_size=_YE_REPLAY_BATCH_SIZE)
+
+            if _n_ye_cycles > 0:
+                print(f"[v4] YE-replay: {_n_ye_cycles} cycles  "
+                      f"deficit={_ye_deficit:,}  "
+                      f"ye_done={sim._year_equiv_steps:,}", flush=True)
+                _replay_losses: list = []
+
+                for _cyc in range(_n_ye_cycles):
+                    _entries = adv_mem.sample_priority(n=_YE_REPLAY_BATCH_SIZE)
+                    for _entry in _entries:
+                        _frame = adv_mem.retrieve_frame(_entry)
+                        if _frame is None:
+                            continue
+                        # Ensure (T, H, W, 3) shape
+                        _r_seq = (_frame
+                                  if _frame.ndim == 4
+                                  else _frame[np.newaxis])
+                        _t_r  = rng.integers(1, 1000)
+                        _n_r  = np.random.randn(*_r_seq.shape).astype(np.float32)
+                        _a_r  = float(scheduler.alpha_bar[_t_r])
+                        _x_r  = (math.sqrt(_a_r) * _r_seq
+                                 + math.sqrt(1 - _a_r) * _n_r)
+                        _rp   = _entry.get('prompt', '')
+                        _c_r  = _build_cond_v4(time_enc, text_enc, _t_r, _rp)
+                        model.zero_grads()
+                        _p_r  = model.forward(_x_r, _c_r)
+                        _d_r  = (2.0 / max(_p_r.size, 1)) * (_p_r - _n_r)
+                        model.backward(_d_r)
+                        _clip_gradients(all_pairs, max_norm=0.8)
+                        opt.step(all_pairs)
+                        ema.update(all_pairs)
+                        _l_r  = float(np.mean((_p_r - _n_r) ** 2))
+                        _replay_losses.append(_l_r)
+                        losses.append(_l_r)
+                        # Credit YE-steps for this replay frame
+                        sim.add_year_equiv_steps(int(_YE_REPLAY_WEIGHT))
+
+                if _replay_losses:
+                    _ye_now = sim.year_equiv_progress(
+                        time.time() - sim._session_start)
+                    print(
+                        f"[v4] YE-replay done: {len(_replay_losses)} steps  "
+                        f"avg_loss={float(np.mean(_replay_losses)):.4f}  "
+                        f"ye_done={_ye_now['ye_steps_done']:,}  "
+                        f"ye_pct={_ye_now['ye_progress_pct']:.4f}%",
+                        flush=True)
+        # ─────────────────────────────────────────────────────────────────────
 
         # EMA snapshot + save
         backup = ema.apply(all_pairs)

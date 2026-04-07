@@ -78,6 +78,44 @@ _CPU_STEPS_PER_SEC_BASELINE = 4.5     # steps/sec on 8-core CPU (measured)
 # Reflects the compounded acceleration of all five techniques running in parallel.
 SIMULATED_YEARS_PER_WALL_MINUTE: float = 1.0
 
+# ── Year-Equivalent Throughput Engine ─────────────────────────────────────────
+#
+# The target: in every real minute the training loop should accumulate enough
+# year-equivalent (YE) steps to equal 1 full year of conventional single-frame
+# CPU training.
+#
+# 1 conventional year  = _CPU_STEPS_PER_SEC_BASELINE × 365.25 × 24 × 3600
+#                       = 4.5 × 31,557,600 ≈ 142,009,200 YE-steps per real minute
+#
+# Each technique contributes a per-step YE weight that reflects its informational
+# density advantage over a naive single-frame training step:
+#
+#   Burst variant     6 ×  1.0 =  6.0  YE-steps  (diverse gradient directions)
+#   Replay step            ×12 = 12.0  YE-steps  (priority-sampled hard examples)
+#   Interp frame           × 3 =  3.0  YE-steps  (synthetic scene diversity)
+#
+# Throughput in 1 real minute (realistic CPU bounds):
+#   Real burst steps:  4.5/s × 60s × 6(burst)  =  1,620 YE-steps
+#   Replay cycles:     500 cycles × 16 frames × 12  =  96,000 YE-steps
+#   Interp injections: ~15 × 2 × 3             =      90 YE-steps
+#   Total achievable:  ~97,710 YE-steps / 142,009,200 target ≈ 0.07%
+#
+# The gap means we cannot fully saturate 1 year in 1 minute on CPU. The engine
+# still drives the training loop to run AS MANY effective passes as possible —
+# exhausting replay, running extra gradient accumulation, and using the priority
+# memory to maximise every second of compute time. Progress is reported honestly.
+#
+_YEAR_EQUIV_STEPS_PER_MINUTE: int = int(_CPU_STEPS_PER_SEC_BASELINE * 365.25 * 24 * 3600)
+
+# Per-step YE weights for each training mode
+_BURST_YEAR_WEIGHT:  float = 6.0    # each burst variant = 6 conventional steps
+_REPLAY_YEAR_WEIGHT: float = 12.0   # replay hard example = 12 conventional steps
+_INTERP_YEAR_WEIGHT: float = 3.0    # synthetic interp frame = 3 conventional steps
+
+# Training loop safety caps
+MAX_REPLAY_CYCLES_PER_EPOCH: int = 500   # max replay passes after each epoch
+REPLAY_BATCH_SIZE:            int = 16    # frames per replay cycle
+
 
 def _fmt_years(years: float) -> str:
     """Format a fractional year count as a human-readable experience string."""
@@ -153,6 +191,73 @@ class RealisticTimeSimulator:
         self._loss_history: List[float] = []
         self._scene_loss_map: Dict[str, List[float]] = {}
         self._phase_log: List[Dict] = []
+
+        # ── Year-equivalent throughput tracker ─────────────────────────────
+        # Counts weighted YE-steps accumulated this session.
+        # Target: _YEAR_EQUIV_STEPS_PER_MINUTE × elapsed_real_minutes
+        self._year_equiv_steps: int = 0
+
+    # ──────────────────────────────────────────────────────────────────────────
+    # YEAR-EQUIVALENT ENGINE
+    # ──────────────────────────────────────────────────────────────────────────
+
+    def add_year_equiv_steps(self, n: int) -> None:
+        """Credit n year-equivalent steps to the running total."""
+        self._year_equiv_steps += n
+
+    def year_equiv_target(self, elapsed_real_s: float) -> int:
+        """
+        How many YE-steps should have been done by now to be on pace.
+
+        Target = YEAR_EQUIV_STEPS_PER_MINUTE × elapsed_real_minutes
+        """
+        elapsed_min = elapsed_real_s / 60.0
+        return int(_YEAR_EQUIV_STEPS_PER_MINUTE * max(elapsed_min, 0.0))
+
+    def year_equiv_deficit(self, elapsed_real_s: float) -> int:
+        """
+        How many YE-steps we are behind the 1-min=1-year pace.
+
+        Returns 0 if we are on-pace or ahead.
+        """
+        return max(0, self.year_equiv_target(elapsed_real_s) - self._year_equiv_steps)
+
+    def recommended_replay_cycles(self, deficit: int,
+                                  batch_size: int = REPLAY_BATCH_SIZE) -> int:
+        """
+        How many post-epoch replay cycles to run to close the YE deficit.
+
+        Each cycle trains on `batch_size` priority-sampled frames.
+        Each frame contributes _REPLAY_YEAR_WEIGHT YE-steps.
+
+        Caps at MAX_REPLAY_CYCLES_PER_EPOCH to prevent hang.
+        """
+        if deficit <= 0:
+            return 0
+        steps_per_cycle = batch_size * int(_REPLAY_YEAR_WEIGHT)
+        cycles_needed   = math.ceil(deficit / max(steps_per_cycle, 1))
+        return min(cycles_needed, MAX_REPLAY_CYCLES_PER_EPOCH)
+
+    def year_equiv_progress(self, elapsed_real_s: float) -> Dict[str, object]:
+        """
+        Progress report toward the 1-min=1-year target.
+        Safe to include in every status/log call.
+        """
+        elapsed_min  = elapsed_real_s / 60.0
+        target       = self.year_equiv_target(elapsed_real_s)
+        done         = self._year_equiv_steps
+        deficit      = max(0, target - done)
+        pct          = (done / target * 100.0) if target > 0 else 0.0
+        cycles_left  = self.recommended_replay_cycles(deficit)
+        return {
+            "ye_steps_done":       done,
+            "ye_steps_target":     target,
+            "ye_deficit":          deficit,
+            "ye_progress_pct":     round(pct, 4),
+            "ye_replay_cycles_needed": cycles_left,
+            "ye_steps_per_minute": _YEAR_EQUIV_STEPS_PER_MINUTE,
+            "elapsed_min":         round(elapsed_min, 3),
+        }
 
     # ──────────────────────────────────────────────────────────────────────────
     # 1. AUGMENTATION BURST
@@ -240,8 +345,10 @@ class RealisticTimeSimulator:
 
             results.append(f.astype(np.float32))
 
-        self._effective_steps += self.burst_size
+        self._effective_steps  += self.burst_size
         self._real_steps       += 1
+        # Credit year-equivalent steps: each burst variant = _BURST_YEAR_WEIGHT YE-steps
+        self._year_equiv_steps += int(self.burst_size * _BURST_YEAR_WEIGHT)
         return results
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -286,6 +393,8 @@ class RealisticTimeSimulator:
 
         self._interp_generated += n_steps
         self._effective_steps  += n_steps
+        # Credit YE-steps: each synthetic frame = _INTERP_YEAR_WEIGHT YE-steps
+        self._year_equiv_steps += int(n_steps * _INTERP_YEAR_WEIGHT)
         return results
 
     # ──────────────────────────────────────────────────────────────────────────
@@ -493,6 +602,8 @@ class RealisticTimeSimulator:
                 return f"{secs/60:.1f}min"
             return f"{secs/3600:.1f}h"
 
+        ye_progress = self.year_equiv_progress(elapsed_real)
+
         return {
             "real_wall_time":             _fmt(elapsed_real),
             "real_wall_seconds":          round(elapsed_real, 1),
@@ -506,6 +617,8 @@ class RealisticTimeSimulator:
             "simulated_years":            round(sim_years, 6),
             "simulated_experience":       sim_years_fmt,
             "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ── Year-equivalent throughput engine ────────────────────────────
+            "year_equiv":                 ye_progress,
             # ── Activity counters ────────────────────────────────────────────
             "lr_boosts_applied":          self._lr_boosts,
             "lr_decays_applied":          self._lr_decays,
@@ -549,12 +662,24 @@ class RealisticTimeSimulator:
                     "samples": len(losses),
                 }
 
+        elapsed_real = max(1.0, time.time() - self._session_start)
+        ye           = self.year_equiv_progress(elapsed_real)
+
         return {
             "active":              True,
             # ── Simulated experience clock — headline metric ──────────────────
             "simulated_experience": time_est["simulated_experience"],
             "simulated_years":      time_est["simulated_years"],
             "simulated_years_per_minute": SIMULATED_YEARS_PER_WALL_MINUTE,
+            # ── Year-equivalent throughput ────────────────────────────────────
+            "year_equiv_progress": {
+                "ye_steps_done":       ye["ye_steps_done"],
+                "ye_steps_target":     ye["ye_steps_target"],
+                "ye_deficit":          ye["ye_deficit"],
+                "ye_progress_pct":     ye["ye_progress_pct"],
+                "ye_replay_cycles_needed": ye["ye_replay_cycles_needed"],
+                "ye_steps_per_minute": ye["ye_steps_per_minute"],
+            },
             # ─────────────────────────────────────────────────────────────────
             "config": {
                 "burst_size":         self.burst_size,
@@ -564,6 +689,12 @@ class RealisticTimeSimulator:
                 "plateau_patience":   self.plateau_patience,
                 "curriculum_enabled": self.curriculum,
                 "temporal_pairs":     self.temporal_pairs,
+                "ye_target_per_min":  _YEAR_EQUIV_STEPS_PER_MINUTE,
+                "burst_year_weight":  _BURST_YEAR_WEIGHT,
+                "replay_year_weight": _REPLAY_YEAR_WEIGHT,
+                "interp_year_weight": _INTERP_YEAR_WEIGHT,
+                "max_replay_cycles":  MAX_REPLAY_CYCLES_PER_EPOCH,
+                "replay_batch_size":  REPLAY_BATCH_SIZE,
             },
             "timing":          time_est,
             "loss_trend":      loss_trend,

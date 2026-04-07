@@ -586,18 +586,43 @@ def simulator_status():
         _sim._loss_history    = []
         _sim._scene_loss_map  = {}
         _sim._phase_log       = []
+        # Year-Equivalent throughput tracker (required by status() / year_equiv_progress())
+        _sim._year_equiv_steps = 0
 
         # Try to read the advanced memory for richer history + year clock
         try:
             from diffusion.advanced_memory import get_memory as _gm, _fmt_years
+            from diffusion.time_simulator import (
+                _YEAR_EQUIV_STEPS_PER_MINUTE as _YE_TGT,
+                _BURST_YEAR_WEIGHT  as _BYW,
+                _REPLAY_YEAR_WEIGHT as _RYW,
+                _INTERP_YEAR_WEIGHT as _IYW,
+                MAX_REPLAY_CYCLES_PER_EPOCH as _MRC,
+                REPLAY_BATCH_SIZE           as _RBS,
+            )
             _mem        = _gm()
             reg         = _mem.registry.stats()
             total_years = _mem.registry.total_simulated_years()
+            # Compute a YE-progress snapshot from the dummy instance
+            _ye = _sim.year_equiv_progress(1.0)  # 1s elapsed reference
             return {
                 # ── Simulated experience clock — headline metric ──────────────
-                'simulated_years_total':     round(total_years, 4),
+                'simulated_years_total':      round(total_years, 4),
                 'total_simulated_experience': _fmt_years(total_years),
                 'simulated_years_per_minute': 1.0,
+                # ── Year-Equivalent Throughput Engine ─────────────────────────
+                'year_equiv_engine': {
+                    'ye_steps_per_minute':  _YE_TGT,
+                    'burst_year_weight':    _BYW,
+                    'replay_year_weight':   _RYW,
+                    'interp_year_weight':   _IYW,
+                    'max_replay_cycles':    _MRC,
+                    'replay_batch_size':    _RBS,
+                    'description': (
+                        '1 real minute = 1 simulated year target. '
+                        'Deficit-driven replay cycles fill the gap each epoch.'
+                    ),
+                },
                 # ─────────────────────────────────────────────────────────────
                 'simulator_config': {
                     'burst_size':       _sim.burst_size,
@@ -605,10 +630,10 @@ def simulator_status():
                     'plateau_patience': _sim.plateau_patience,
                     'curriculum':       _sim.curriculum,
                 },
-                'session_registry':          reg,
-                'gradient_health':           _mem.gradients.scene_grad_health(),
-                'episodic_frames':           len(_mem.episodic._index),
-                'hot_cache_size':            len(_mem.hot),
+                'session_registry':   reg,
+                'gradient_health':    _mem.gradients.scene_grad_health(),
+                'episodic_frames':    len(_mem.episodic._index),
+                'hot_cache_size':     len(_mem.hot),
                 'note': 'No active training session — showing persisted stats',
             }
         except Exception:
