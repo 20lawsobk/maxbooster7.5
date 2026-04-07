@@ -95,12 +95,18 @@ _model_trained = False   # True only when weights_v4.npz was found on disk
 # Training state
 _train_lock   = threading.Lock()
 _train_status: Dict[str, Any] = {
-    'running': False,
-    'progress': 0.0,
-    'last_loss': None,
-    'last_session': None,
+    'running':        False,
+    'progress':       0.0,
+    'last_loss':      None,
+    'last_session':   None,
     'total_sessions': 0,
+    'mode':           'idle',   # 'continuous' | 'manual' | 'idle'
+    'session_label':  None,
 }
+
+# Continuous training control
+_training_enabled  = True   # set False to pause the loop
+_continuous_thread: Optional[threading.Thread] = None
 
 # Scene visual presets — mirrors gpu_postprocess.py SCENE_PRESETS
 _SCENE_META: Dict[str, Dict] = {
@@ -454,17 +460,151 @@ class TrainRequest(BaseModel):
     session_label: str   = 'api_triggered'
 
 
-# ── Background training ────────────────────────────────────────────────────────
+# ── Shared weight-reload helper ────────────────────────────────────────────────
+
+def _reload_live_model() -> None:
+    """Hot-swap trained weights into the serving model without restarting."""
+    global _model_trained
+    with _model_lock:
+        from diffusion.trainer import _load_v4
+        if _model and _time_enc and _text_enc:
+            ok = _load_v4(_model, _time_enc, _text_enc)
+            if ok:
+                _model.set_training(False)
+                _model_trained = True
+                logger.info('[WeightReload] Live model updated — _model_trained=True')
+
+
+# ── Continuous training loop ───────────────────────────────────────────────────
+
+def _continuous_training_loop() -> None:
+    """
+    Runs train_v4() in an infinite loop — never terminates.
+
+    Curriculum progression (all T=4 on CPU; increases sample count each phase):
+      Phase 1  sessions  1-10 : n_samples=100  (~16 min/session on CPU)
+      Phase 2  sessions 11-30 : n_samples=150  (~24 min/session on CPU)
+      Phase 3  sessions 31+   : n_samples=200  (~32 min/session on CPU)
+
+    On exception → exponential back-off (10 s → 20 → 40 → … → 120 s max).
+    On success   → reload weights into live model, sleep 5 s, repeat.
+    """
+    global _model_trained, _train_status, _training_enabled
+
+    # Wait for the model loader to complete before starting training
+    logger.info('[ContinuousTrainer] Waiting for model loader …')
+    for _ in range(40):            # up to 20 s
+        if _model_ready:
+            break
+        time.sleep(0.5)
+    logger.info('[ContinuousTrainer] Model ready — continuous loop starting')
+
+    session_num = 0
+    backoff     = 10  # seconds
+
+    while _training_enabled:
+        # ── Curriculum ────────────────────────────────────────────────────────
+        session_num += 1
+        if session_num <= 10:
+            n_samples, phase = 100, 1
+        elif session_num <= 30:
+            n_samples, phase = 150, 2
+        else:
+            n_samples, phase = 200, 3
+        label = f'continuous_{session_num:05d}_p{phase}'
+
+        # ── Skip if a manual /train call is already running ───────────────────
+        _should_wait = False
+        with _train_lock:
+            if _train_status.get('running') and _train_status.get('mode') == 'manual':
+                logger.info('[ContinuousTrainer] Manual session active — pausing 30 s')
+                _should_wait = True
+        if _should_wait:
+            time.sleep(30)
+            with _train_lock:
+                if _train_status.get('running'):
+                    continue  # still running — decrement session_num and retry
+
+        # ── Mark as running ───────────────────────────────────────────────────
+        with _train_lock:
+            _train_status.update({
+                'running':       True,
+                'progress':      0.0,
+                'last_loss':     None,
+                'mode':          'continuous',
+                'session_label': label,
+            })
+
+        logger.info(
+            f'[ContinuousTrainer] Session {session_num} '
+            f'(phase {phase}): T=4 samples={n_samples} label={label}'
+        )
+
+        # ── Train ─────────────────────────────────────────────────────────────
+        try:
+            from diffusion.trainer import train_v4
+            meta = train_v4(
+                n_epochs=1,
+                n_samples=n_samples,
+                T=4,
+                res=96,
+                lr=2e-4,
+                session_label=label,
+            )
+            final_loss = meta.get('final_loss', float('inf'))
+            logger.info(
+                f'[ContinuousTrainer] Session {session_num} done — '
+                f'loss={final_loss:.4f}'
+            )
+
+            # Hot-reload weights into live model
+            _reload_live_model()
+
+            with _train_lock:
+                _train_status.update({
+                    'running':        False,
+                    'progress':       1.0,
+                    'last_loss':      final_loss,
+                    'last_session':   meta,
+                    'total_sessions': _train_status['total_sessions'] + 1,
+                    'mode':           'idle',
+                })
+
+            backoff = 10  # reset on success
+            time.sleep(5) # brief pause between sessions
+
+        except Exception as exc:
+            logger.error(
+                f'[ContinuousTrainer] Session {session_num} error: {exc}',
+                exc_info=True,
+            )
+            with _train_lock:
+                _train_status.update({
+                    'running':    False,
+                    'last_error': str(exc),
+                    'mode':       'idle',
+                })
+            logger.warning(f'[ContinuousTrainer] Back-off {backoff} s before retry …')
+            time.sleep(backoff)
+            backoff = min(backoff * 2, 120)
+
+    logger.info('[ContinuousTrainer] Loop stopped (_training_enabled=False)')
+
+
+# ── Manual one-shot training (fires only if continuous loop is paused/idle) ────
 
 def _train_worker(req: TrainRequest) -> None:
     global _train_status
 
     with _train_lock:
-        _train_status.update({'running': True, 'progress': 0.0, 'last_loss': None})
+        _train_status.update({
+            'running': True, 'progress': 0.0, 'last_loss': None, 'mode': 'manual',
+        })
 
-    logger.info(f'[Train] Starting {req.session_label} '
-                f'T={req.T} res={req.res} epochs={req.n_epochs} '
-                f'samples={req.n_samples}')
+    logger.info(
+        f'[Train] Manual session: {req.session_label} '
+        f'T={req.T} res={req.res} epochs={req.n_epochs} samples={req.n_samples}'
+    )
     try:
         from diffusion.trainer import train_v4
         meta = train_v4(
@@ -475,20 +615,8 @@ def _train_worker(req: TrainRequest) -> None:
             lr=req.lr,
             session_label=req.session_label,
         )
-        logger.info(f'[Train] Done — loss={meta.get("final_loss", 0):.4f}')
-
-        # Reload weights into live model without restart
-        with _model_lock:
-            from diffusion.trainer import _load_v4
-            if _model and _time_enc and _text_enc:
-                _load_v4(_model, _time_enc, _text_enc)
-                _model.set_training(False)
-                logger.info('[Train] Live model reloaded.')
-
-        # Mark model as trained so future generate calls use local inference
-        global _model_trained
-        _model_trained = True
-        logger.info('[Train] _model_trained → True — relay will use local inference')
+        logger.info(f'[Train] Manual done — loss={meta.get("final_loss", 0):.4f}')
+        _reload_live_model()
 
         with _train_lock:
             _train_status.update({
@@ -497,19 +625,26 @@ def _train_worker(req: TrainRequest) -> None:
                 'last_loss':      meta.get('final_loss'),
                 'last_session':   meta,
                 'total_sessions': _train_status['total_sessions'] + 1,
+                'mode':           'idle',
             })
 
     except Exception as e:
-        logger.error(f'[Train] Error: {e}', exc_info=True)
+        logger.error(f'[Train] Manual error: {e}', exc_info=True)
         with _train_lock:
-            _train_status.update({'running': False, 'last_error': str(e)})
+            _train_status.update({'running': False, 'last_error': str(e), 'mode': 'idle'})
 
 
 # ── Startup ────────────────────────────────────────────────────────────────────
 
 @app.on_event('startup')
 def startup_event() -> None:
+    global _continuous_thread
     threading.Thread(target=_load_model, daemon=True).start()
+    _continuous_thread = threading.Thread(
+        target=_continuous_training_loop, daemon=True, name='ContinuousTrainer'
+    )
+    _continuous_thread.start()
+    logger.info('[Startup] Model loader + ContinuousTrainer threads launched')
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
@@ -890,19 +1025,66 @@ def generate_stream(req: GenerateRequest):
 
 @app.post('/train')
 def trigger_training(req: TrainRequest):
+    """
+    Trigger a one-shot manual training session.
+    If the continuous loop is currently running a session, returns 409.
+    The continuous loop resumes automatically after the manual session completes.
+    """
     with _train_lock:
         if _train_status['running']:
-            return JSONResponse(status_code=409,
-                                content={'error': 'Training already running'})
+            return JSONResponse(
+                status_code=409,
+                content={
+                    'error': 'Training session already active',
+                    'mode':  _train_status.get('mode', 'unknown'),
+                    'label': _train_status.get('session_label'),
+                },
+            )
     t = threading.Thread(target=_train_worker, args=(req,), daemon=True)
     t.start()
-    return {'status': 'started', 'session_label': req.session_label}
+    return {
+        'status':        'started',
+        'session_label': req.session_label,
+        'mode':          'manual',
+        'continuous_loop_enabled': _training_enabled,
+    }
 
 
 @app.get('/train/status')
 def training_status():
     with _train_lock:
-        return dict(_train_status)
+        status = dict(_train_status)
+    status['continuous_loop_enabled'] = _training_enabled
+    ct = _continuous_thread
+    status['continuous_thread_alive'] = ct is not None and ct.is_alive()
+    status['model_trained'] = _model_trained
+    return status
+
+
+@app.post('/train/pause')
+def pause_training():
+    """Pause the continuous training loop (finishes the current session first)."""
+    global _training_enabled
+    _training_enabled = False
+    logger.info('[ContinuousTrainer] Paused via /train/pause')
+    return {'status': 'paused', 'continuous_loop_enabled': False}
+
+
+@app.post('/train/resume')
+def resume_training():
+    """Resume the continuous training loop (or start it if not running)."""
+    global _training_enabled, _continuous_thread
+    _training_enabled = True
+    ct = _continuous_thread
+    if ct is None or not ct.is_alive():
+        _continuous_thread = threading.Thread(
+            target=_continuous_training_loop, daemon=True, name='ContinuousTrainer'
+        )
+        _continuous_thread.start()
+        logger.info('[ContinuousTrainer] Resumed — new thread spawned via /train/resume')
+    else:
+        logger.info('[ContinuousTrainer] Resumed — existing thread will continue')
+    return {'status': 'running', 'continuous_loop_enabled': True}
 
 
 @app.get('/dataset/status')
