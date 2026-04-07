@@ -84,10 +84,22 @@ Key architectural decisions include:
 6. **PDIM exec timeout tuned** (`server/lib/pdimClient.ts`): Exec timeout set to 15s (gives Replit-hosted PDIM app time to cold-start; 30s was too long, 8s was too short).
 7. **Database schema pushed**: All 7 migrations applied via `node scripts/db-push.js`.
 
+### Completed Fixes (continued)
+8. **MaxCore API schema verified and warmth pinger fixed** (`server/services/maxcoreClient.ts`): MaxCore `POST /api/generate/content` requires `platform`, `topic`, AND `tone` (all three). The LLM warmth pinger was missing `tone` — now sends `{ topic, platform, tone: 'energetic' }`. All service callers (`autoPostGenerator`, `advancedSocialAIService`, `contentTypeGenerators`) were already sending the correct schema. MaxCore `model_loaded: true` confirmed with `AI_SERVER_KEY`. Video endpoint `POST /api/generate-video` and audio endpoint `POST /api/generate/audio` both verified working. Video job polling via `GET /api/video-job/{jobId}` verified working.
+
+### MaxCore API Map (as of 2026-04-07)
+- `GET /api/health` → `{"status":"healthy","model_loaded":true,"uptime_seconds":..,"version":"1.0.0"}` (no auth required)
+- `POST /api/generate/content` → social content generation; required fields: `platform`, `topic`, `tone`; returns `{caption, hook, body, cta, hashtags, confidence, processing_time_ms}`
+- `POST /api/generate-video` → async video generation; required fields: `hook`, `body`, `cta`, `topic`, `platform`, `template`, `duration`, `tone`, `goal`, `quality`; returns `{job_id}`
+- `POST /api/generate/audio` → async audio generation; required fields: `platform`, `topic`, `tone`; returns `{job_id}`
+- `GET /api/video-job/{job_id}` → poll video job status; returns `{status, url, filename, width, ...}`
+- Auth: `X-API-Key: {AI_SERVER_KEY}` + `Authorization: Bearer {AI_SERVER_KEY}` headers (env var: `AI_SERVER_KEY`)
+
 ### Current State
 - All 24/24 environment variables pass validation.
 - All routes load successfully (no TF binding failures).
-- TFWorkerPool: 6 TF inference workers ready.
+- TFWorkerPool: 1 TF inference worker ready (isolated event loop).
 - PDIM circuit breaker: CLOSED and stable (no oscillation).
 - Session store, BullMQ queues, WebSocket servers all initialized.
+- MaxCore confirmed healthy: `model_loaded: true`, all three key endpoints (`generate/content`, `generate-video`, `generate/audio`) verified live with correct auth.
 - PDIM exec endpoint timeouts (~15s) are expected — PDIM server accepts connections but hangs on Redis commands (exec endpoint may not implement Redis protocol). Circuit breaker stays CLOSED; LuaExecutor degrades gracefully (returns null for missing keys).

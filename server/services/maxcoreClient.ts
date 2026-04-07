@@ -225,7 +225,7 @@ export function startMaxCoreLLMWarmth(): void {
         'X-API-Key':     MC_AI_KEY,
         'Authorization': `Bearer ${MC_AI_KEY}`,
       },
-      body:   JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram' }),
+      body:   JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram', tone: 'energetic' }),
       signal: AbortSignal.timeout(20_000),
     }).catch(() => {});
   };
