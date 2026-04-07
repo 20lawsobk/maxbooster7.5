@@ -2167,15 +2167,30 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
   const storedUrl = urlStore.get(filename);
   if (storedUrl) candidateUrls.push(storedUrl);
 
-  // Add common path variants
+  // Add every plausible path — /api/* routes bypass MaxCore's SPA catch-all
   if (MC_AI_URL) {
     candidateUrls.push(
-      `${MC_AI_URL}/uploads/${filename}`,
       `${MC_AI_URL}/api/uploads/${filename}`,
+      `${MC_AI_URL}/api/uploads/videos/${filename}`,
       `${MC_AI_URL}/api/videos/${filename}`,
+      `${MC_AI_URL}/api/video/${filename}`,
+      `${MC_AI_URL}/api/generated/${filename}`,
+      `${MC_AI_URL}/api/generated/videos/${filename}`,
+      `${MC_AI_URL}/api/render/${filename}`,
+      `${MC_AI_URL}/api/output/${filename}`,
+      `${MC_AI_URL}/api/media/${filename}`,
+      `${MC_AI_URL}/api/download/${filename}`,
+      `${MC_AI_URL}/api/stream/${filename}`,
+      `${MC_AI_URL}/api/files/${filename}`,
+      `${MC_AI_URL}/api/static/videos/${filename}`,
+      `${MC_AI_URL}/uploads/${filename}`,
+      `${MC_AI_URL}/uploads/videos/${filename}`,
       `${MC_AI_URL}/videos/${filename}`,
       `${MC_AI_URL}/static/${filename}`,
+      `${MC_AI_URL}/static/videos/${filename}`,
       `${MC_AI_URL}/generated/${filename}`,
+      `${MC_AI_URL}/output/${filename}`,
+      `${MC_AI_URL}/media/${filename}`,
     );
   }
 
@@ -2192,46 +2207,66 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
       });
       if (!upstream.ok) continue;
 
-      const ct = upstream.headers.get('content-type') ?? '';
-      const cl = upstream.headers.get('content-length');
-
-      // Reject HTML/JSON responses — MaxCore's SPA returns its frontend HTML for
-      // any unrecognised path (200 OK, content-type: text/html).  We must skip
-      // those so we don't stream an HTML page as a "video/mp4" to the browser.
-      const isVideo = ct.includes('video') || ct.includes('octet-stream') ||
-                      ct.includes('binary') || ct.includes('mp4');
-      const clNum = cl ? parseInt(cl, 10) : null;
-      const tooSmall = clNum !== null && clNum < 10_240; // < 10 KB ⇒ definitely not a real video
-      if (!isVideo || tooSmall) {
-        logger.debug(`[VideoProxy] Candidate ${url} rejected — content-type="${ct}" size=${cl ?? '?'} bytes`);
-        continue;
-      }
-
-      const finalCt = ct.includes('video') ? ct : 'video/mp4';
-      res.setHeader('Content-Type', finalCt);
-      if (cl) res.setHeader('Content-Length', cl);
-      res.setHeader('Cache-Control', 'public, max-age=86400');
-      res.setHeader('Accept-Ranges', 'bytes');
-
-      // Stream the video body to the client
+      // Peek at the first bytes to validate with magic-byte detection.
+      // Content-type alone is unreliable — MaxCore's SPA returns text/html with
+      // 200 OK for every unrecognised path.  We read a small peek chunk first;
+      // if it doesn't look like a real video we cancel and try the next candidate.
       const reader = upstream.body?.getReader();
       if (!reader) continue;
 
-      const nodeStream = new (await import('stream')).PassThrough();
-      res.writeHead(200);
-      nodeStream.pipe(res);
+      // Read up to 512 bytes to inspect magic bytes
+      const peekResult = await reader.read();
+      const peekChunk = peekResult.value;
+      const peekDone  = peekResult.done;
 
-      // Pump the fetch ReadableStream into the Node.js PassThrough and cache to disk
+      if (!peekChunk || peekChunk.length === 0) {
+        reader.cancel();
+        continue;
+      }
+
+      const peekBuf = Buffer.from(peekChunk);
+      const isMP4   = peekBuf.length >= 8 && peekBuf.slice(4, 8).toString('ascii') === 'ftyp';
+      const isWebM  = peekBuf.length >= 4 && peekBuf[0] === 0x1a && peekBuf[1] === 0x45 && peekBuf[2] === 0xdf && peekBuf[3] === 0xa3;
+      const isAVI   = peekBuf.length >= 4 && peekBuf.slice(0, 4).toString('ascii') === 'RIFF';
+
+      // Reject anything that starts with HTML markers
+      const peekText = peekBuf.slice(0, 100).toString('utf8').toLowerCase();
+      const looksHTML = peekText.includes('<!doctype') || peekText.includes('<html') || peekText.startsWith('<!');
+
+      const isRealVideo = (isMP4 || isWebM || isAVI) && !looksHTML;
+
+      const ct = upstream.headers.get('content-type') ?? '';
+      if (!isRealVideo) {
+        reader.cancel();
+        logger.debug(`[VideoProxy] Candidate ${url} rejected — magic bytes don't match video (ct="${ct}", peek="${peekText.slice(0, 40).replace(/\n/g, '\\n')}")`);
+        continue;
+      }
+
+      const cl = upstream.headers.get('content-length');
+      res.setHeader('Content-Type', 'video/mp4');
+      if (cl) res.setHeader('Content-Length', cl);
+      res.setHeader('Cache-Control', 'public, max-age=86400');
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.writeHead(200);
+
+      // Stream: write the peeked chunk first, then pipe the rest
+      const nodeStream = new (await import('stream')).PassThrough();
+      nodeStream.pipe(res);
+      nodeStream.write(peekChunk);
+
       (async () => {
-        const chunks: Uint8Array[] = [];
+        const chunks: Uint8Array[] = [peekChunk];
         try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) { nodeStream.end(); break; }
-            nodeStream.write(value);
-            chunks.push(value);
+          if (!peekDone) {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              nodeStream.write(value);
+              chunks.push(value);
+            }
           }
-          // Cache to disk — only after we know the full content is valid video data
+          nodeStream.end();
+          // Cache to disk after full stream
           const buf = Buffer.concat(chunks);
           if (buf.length > 10_240) {
             if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'videos'))) {

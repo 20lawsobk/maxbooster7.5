@@ -32,19 +32,64 @@ function maxcoreAuthHeaders(): Record<string, string> {
 }
 
 /**
+ * Returns true if the buffer starts with known video file magic bytes.
+ *   MP4 / MOV: bytes 4–7 are the ASCII string 'ftyp'
+ *   WebM:      first 4 bytes are 0x1A 0x45 0xDF 0xA3
+ *   AVI:       starts with 'RIFF'
+ *
+ * Also returns true for large binary buffers that don't look like HTML — a
+ * real video will always be many megabytes, never 683 bytes of index.html.
+ */
+function looksLikeRealVideo(buf: Buffer): boolean {
+  if (buf.length < 100) return false;
+
+  const isMP4  = buf.slice(4, 8).toString('ascii') === 'ftyp';
+  const isWebM = buf[0] === 0x1a && buf[1] === 0x45 && buf[2] === 0xdf && buf[3] === 0xa3;
+  const isAVI  = buf.slice(0, 4).toString('ascii') === 'RIFF';
+
+  if (isMP4 || isWebM || isAVI) return true;
+
+  // Reject anything that looks like HTML/text
+  const head = buf.slice(0, 200).toString('utf8').toLowerCase();
+  if (head.includes('<!doctype') || head.includes('<html') || head.startsWith('{') || head.startsWith('[')) return false;
+
+  // Accept anything large and binary that isn't HTML — real video files are always > 100 KB
+  return buf.length > 100_000;
+}
+
+/**
  * Candidate URL paths to try when downloading a video from MaxCore.
- * MaxCore may serve from any of these depending on its static server config.
+ * Covers every plausible path that MaxCore's backend might serve files from,
+ * prioritising /api/* routes which bypass MaxCore's SPA catch-all.
  */
 function candidateUrls(rawUrl: string): string[] {
   const absolute = rawUrl.startsWith('http') ? rawUrl : `${MAXCORE_ORIGIN}${rawUrl}`;
   const filename = path.basename(rawUrl.split('?')[0]);
   return [
     absolute,
+    // /api/ routes — handled by MaxCore's backend before the SPA catch-all
     `${MAXCORE_ORIGIN}/api/uploads/${filename}`,
+    `${MAXCORE_ORIGIN}/api/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/api/videos/${filename}`,
+    `${MAXCORE_ORIGIN}/api/video/${filename}`,
+    `${MAXCORE_ORIGIN}/api/generated/${filename}`,
+    `${MAXCORE_ORIGIN}/api/generated/videos/${filename}`,
+    `${MAXCORE_ORIGIN}/api/render/${filename}`,
+    `${MAXCORE_ORIGIN}/api/output/${filename}`,
+    `${MAXCORE_ORIGIN}/api/media/${filename}`,
+    `${MAXCORE_ORIGIN}/api/download/${filename}`,
+    `${MAXCORE_ORIGIN}/api/stream/${filename}`,
+    `${MAXCORE_ORIGIN}/api/files/${filename}`,
+    `${MAXCORE_ORIGIN}/api/static/videos/${filename}`,
+    // Non-/api/ static paths
+    `${MAXCORE_ORIGIN}/uploads/${filename}`,
+    `${MAXCORE_ORIGIN}/uploads/videos/${filename}`,
     `${MAXCORE_ORIGIN}/videos/${filename}`,
     `${MAXCORE_ORIGIN}/static/${filename}`,
+    `${MAXCORE_ORIGIN}/static/videos/${filename}`,
     `${MAXCORE_ORIGIN}/generated/${filename}`,
+    `${MAXCORE_ORIGIN}/output/${filename}`,
+    `${MAXCORE_ORIGIN}/media/${filename}`,
   ];
 }
 
@@ -62,6 +107,9 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   const filename = path.basename(rawUrl.split('?')[0]);
   const localPath = path.join(LOCAL_VIDEO_DIR, filename);
 
+  // Log the exact URL MaxCore returned so we can diagnose path issues
+  logger.info(`[AdvancedVideoRenderer] cacheVideoLocally — rawUrl from MaxCore: "${rawUrl}"`);
+
   // Register the raw MaxCore URL for the proxy route regardless of what happens below
   const absoluteForProxy = rawUrl.startsWith('http') ? rawUrl : `${MAXCORE_ORIGIN}${rawUrl}`;
   maxcoreVideoUrlStore.set(filename, absoluteForProxy);
@@ -78,26 +126,31 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
           signal:  AbortSignal.timeout(60_000),
         });
         if (!response.ok) {
-          logger.debug(`[AdvancedVideoRenderer] Candidate URL ${url} → HTTP ${response.status}`);
+          logger.debug(`[AdvancedVideoRenderer] Candidate ${url} → HTTP ${response.status}`);
           continue;
         }
-        const ct = response.headers.get('content-type') ?? '';
-        if (!ct.includes('video') && !ct.includes('octet-stream') && !ct.includes('binary') && !ct.includes('mp4')) {
-          logger.debug(`[AdvancedVideoRenderer] Candidate URL ${url} → unexpected content-type "${ct}"`);
-          continue;
-        }
+
+        // Buffer the full response so we can inspect it with magic bytes.
+        // Content-type alone is unreliable — MaxCore's SPA returns text/html for
+        // any unrecognised path with 200 OK.  Magic-byte validation is definitive.
         const buffer = Buffer.from(await response.arrayBuffer());
+        const ct = response.headers.get('content-type') ?? 'unknown';
+
+        if (!looksLikeRealVideo(buffer)) {
+          logger.debug(`[AdvancedVideoRenderer] Candidate ${url} → not a real video (ct="${ct}", size=${buffer.length} bytes, head="${buffer.slice(0, 40).toString('utf8').replace(/\n/g, '\\n')}")`);
+          continue;
+        }
+
         fs.writeFileSync(localPath, buffer);
-        logger.info(`[AdvancedVideoRenderer] Video cached locally from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
-        // Also store the working URL so the proxy uses the right one
+        logger.info(`[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
         maxcoreVideoUrlStore.set(filename, url);
         return `/uploads/videos/${filename}`;
       } catch (err: any) {
-        logger.debug(`[AdvancedVideoRenderer] Candidate URL ${url} failed: ${err.message}`);
+        logger.debug(`[AdvancedVideoRenderer] Candidate ${url} fetch failed: ${err.message}`);
       }
     }
 
-    logger.warn(`[AdvancedVideoRenderer] All download candidates failed — proxy will stream from MaxCore: ${absoluteForProxy}`);
+    logger.warn(`[AdvancedVideoRenderer] All ${candidateUrls(rawUrl).length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`);
   } catch (err: any) {
     logger.warn(`[AdvancedVideoRenderer] Local cache setup failed: ${err.message}`);
   }
