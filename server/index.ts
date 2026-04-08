@@ -319,9 +319,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     *{box-sizing:border-box;margin:0;padding:0}
     body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
          background:#0f0f1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
-    .logo{width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
-          display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:24px;
-          box-shadow:0 0 40px rgba(124,58,237,0.4)}
+    .logo{width:80px;height:80px;border-radius:20px;margin-bottom:24px;
+          box-shadow:0 0 40px rgba(124,58,237,0.4);display:block}
     h1{font-size:1.5rem;font-weight:700;margin-bottom:8px}
     p{color:#a0a0b8;font-size:.95rem;margin-bottom:32px}
     .bar{width:220px;height:4px;background:#1e1e35;border-radius:4px;overflow:hidden}
@@ -332,7 +331,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   </style>
 </head>
 <body>
-  <div class="logo">🎵</div>
+  <img class="logo" src="/logo.png" alt="Max Booster"/>
   <h1>Max Booster</h1>
   <p>Initializing AI systems…</p>
   <div class="bar"><div class="bar-fill"></div></div>
