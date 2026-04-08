@@ -93,7 +93,9 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
       // Console log for development and critical errors
       if (process.env.NODE_ENV === 'development' || isServerError) {
-        const logLevel = isServerError ? 'error' : isError ? 'warn' : 'info';
+        // 401/403 are expected auth flows (e.g. unauthenticated polling) — log at INFO.
+        const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
+        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus) ? 'warn' : 'info';
         const message = `${logData.method} ${logData.url} - ${logData.statusCode} in ${responseTime}ms`;
 
         if (logLevel === 'error') {

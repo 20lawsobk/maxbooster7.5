@@ -18,6 +18,10 @@ const isProductionEnv = (): boolean =>
 
 const isDevelopmentMode = (): boolean => !isProductionEnv();
 
+// Throttle: log "PDIM congested" at most once per 30 s across all rate-limiter instances.
+let _lastRateLimitCongestionWarnAt = 0;
+const RATE_LIMIT_CONGESTION_THROTTLE_MS = 30_000;
+
 const isLoadTestMode = (): boolean =>
   process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
 
@@ -88,7 +92,11 @@ export class DistributedRateLimiter {
       } catch (err) {
         // PDIM queue temporarily congested — pass request through uncounted rather
         // than fail it. PDIM is always reachable; this is transient backpressure.
-        logger.warn('[RateLimit] PDIM congested — passing request through uncounted:', (err as Error).message);
+        const now = Date.now();
+        if (now - _lastRateLimitCongestionWarnAt >= RATE_LIMIT_CONGESTION_THROTTLE_MS) {
+          _lastRateLimitCongestionWarnAt = now;
+          logger.warn('[RateLimit] PDIM congested — passing request through uncounted:', (err as Error).message);
+        }
         result = { limited: false, remaining: -1 };
       }
 

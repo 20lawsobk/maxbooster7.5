@@ -294,6 +294,14 @@ app.get('/api/boot-status', (_req: Request, res: Response) => {
   res.json({ ready: _spaHandlerReady });
 });
 
+// Early client-error collector — registered here so it is reachable immediately
+// after the server starts listening (before registerRoutes completes).  The full
+// route at routes.ts also registers this path; once that handler is active it
+// takes precedence because Express matches the first registered handler.
+app.post('/api/errors', (req: Request, res: Response) => {
+  res.json({ received: true });
+});
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Once the real SPA handler is wired, this middleware is a no-op.
   if (_spaHandlerReady) return next();

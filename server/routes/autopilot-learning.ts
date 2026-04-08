@@ -44,7 +44,7 @@ setTimeout(() => {
   // This uses the existing Caffeine Mode mechanism — no hardcoded intervals.
   // Remove / lower this once the deadline has passed.
   hyperLearningEngine.applyDeadlinePressure(2.0);
-  logger.warn('⚡ [SPRINT] Caffeine Mode CRITICAL engaged at startup — 75s learning cycles (3-day deadline)');
+  logger.info('⚡ [SPRINT] Caffeine Mode CRITICAL engaged at startup — 75s learning cycles (3-day deadline)');
   // ─────────────────────────────────────────────────────────────────────────
 }, 90_000);
 

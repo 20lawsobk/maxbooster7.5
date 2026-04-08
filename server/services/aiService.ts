@@ -5,6 +5,7 @@
 import { randomBytes } from 'crypto';
 import { getRedisClient, RedisClientType } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
+import { cbIsOpen } from '../lib/pdimCircuitBreaker.js';
 
 interface SocialContentOptions {
   platform?: 'twitter' | 'instagram' | 'youtube' | 'tiktok' | 'facebook' | 'linkedin';
@@ -120,6 +121,13 @@ export class AIService {
   }
 
   private async initializeAudioData(): Promise<void> {
+    // If the PDIM circuit is already OPEN at startup, seeding will fail for every
+    // key.  Skip the attempt and schedule a retry for when PDIM recovers.
+    if (cbIsOpen()) {
+      setTimeout(() => this.initializeAudioData(), 30_000);
+      return;
+    }
+
     try {
       const redis = await this.getRedis();
       if (!redis) {
@@ -135,7 +143,10 @@ export class AIService {
             logger.info(`[AIService] Seeded audio data for ${key}`);
           }
         } catch (e: any) {
-          logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
+          // Only log if the circuit is not already OPEN (circuit-OPEN failures are expected).
+          if (!cbIsOpen()) {
+            logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
+          }
         }
       };
 

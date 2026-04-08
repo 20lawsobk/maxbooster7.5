@@ -189,7 +189,9 @@ export function requestLoggingMiddleware(
 
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const level = res.statusCode >= 500 ? 'error' : res.statusCode >= 400 ? 'warn' : 'info';
+    // 401/403 are expected auth flows (unauthenticated clients, token expiry) — log at INFO.
+    const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
+    const level = res.statusCode >= 500 ? 'error' : (res.statusCode >= 400 && !isAuthStatus) ? 'warn' : 'info';
     
     logger[level](`[${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
   });

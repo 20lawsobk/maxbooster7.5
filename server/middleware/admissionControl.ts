@@ -18,6 +18,10 @@ import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
 const COUNTER_KEY = 'api:inflight';
+
+// Throttle "PDIM congested" to once per 30 s — it fires on every request during an outage.
+let _lastAdmissionCongestionWarnAt = 0;
+const ADMISSION_CONGESTION_THROTTLE_MS = 30_000;
 const MAX_CONCURRENT_REQUESTS = parseInt(process.env.MAX_CONCURRENT_REQUESTS ?? '50000', 10);
 const RETRY_AFTER_SECONDS = 5;
 
@@ -53,7 +57,11 @@ export async function admissionControl(
   } catch (err) {
     // PDIM queue temporarily congested — pass request through rather than fail it.
     // PDIM is always reachable; this is transient backpressure, not a server outage.
-    logger.warn('[AdmissionControl] PDIM congested — passing request through:', (err as Error).message);
+    const now = Date.now();
+    if (now - _lastAdmissionCongestionWarnAt >= ADMISSION_CONGESTION_THROTTLE_MS) {
+      _lastAdmissionCongestionWarnAt = now;
+      logger.warn('[AdmissionControl] PDIM congested — passing request through:', (err as Error).message);
+    }
     return next();
   }
 

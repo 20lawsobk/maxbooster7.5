@@ -454,7 +454,7 @@ export class PdimRedisClient extends EventEmitter {
             const newGap = _pdimAdapt429();
             PdimRedisClient._rateLimitedUntil = Date.now() + newGap;
             const errMsg = `PDIM HTTP 429: Too many requests (gap→${newGap}ms)`;
-            logger.error(`[PDIM] exec error [${cmd}]: PDIM HTTP 429: Too many requests`);
+            logger.warn(`[PDIM] exec error [${cmd}]: PDIM HTTP 429: Too many requests`);
             _counted = true;
             throw new Error(errMsg);
           }
@@ -470,14 +470,14 @@ export class PdimRedisClient extends EventEmitter {
             cbRecord503();
             _counted = true;
             const errMsg = `PDIM HTTP ${res.status}: service temporarily unreachable`;
-            logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
             throw new Error(errMsg);
           }
           if (res.status >= 500) {
             cbRecord503();
             _counted = true;
             const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
-            logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
             throw new Error(errMsg);
           }
           // 4xx: PDIM server is responsive (not down) but the command/route was
@@ -506,7 +506,7 @@ export class PdimRedisClient extends EventEmitter {
           cbRecord503();
           _counted = true;
           const errMsg = `PDIM returned non-JSON (${contentType.split(';')[0].trim() || 'unknown type'}): ${body.slice(0, 80)}`;
-          logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+          logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
           throw new Error(errMsg);
         }
 
@@ -542,8 +542,10 @@ export class PdimRedisClient extends EventEmitter {
           _pdimAdapt429();
         }
         if (!_counted) {
-          // Only log errors we haven't already logged inline
-          logger.error(`[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`);
+          // Only log errors we haven't already logged inline.
+          // These are connectivity failures (ECONNREFUSED, timeouts, network errors)
+          // — expected transient conditions, not bugs in our code.
+          logger.warn(`[PDIM] exec error [${cmd}]: ${err.message.slice(0, 200)}`);
         }
         cbHalfOpenFailed(); // release HALF_OPEN probe slot so next interval can retry
         throw err;

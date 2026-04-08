@@ -12,6 +12,7 @@ import { aiAnalyticsService } from './aiAnalyticsService';
 import type { SocialPost, AdCampaign, Release } from '@shared/schema';
 import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
+import { cbIsOpen } from '../lib/pdimCircuitBreaker.js';
 import sharp from 'sharp';
 import { distributedCache } from '../infrastructure/distributedCache.js';
 import {
@@ -25,6 +26,7 @@ const MAX_PROCESSING_QUEUE = 1000;
 const MAX_LEARNING_DATA = 500;
 const METRICS_CACHE_KEY = 'autonomous:metrics';
 let _lastPersistWarnAt  = 0; // rate-limits persist-failure log to once per 60 s
+let _lastLoadWarnAt     = 0; // rate-limits load-failure log to once per 60 s
 
 
 interface AutonomousConfig {
@@ -119,6 +121,12 @@ export class AutonomousService extends EventEmitter {
   }
 
   private async loadMetricsFromCache(): Promise<void> {
+    // If PDIM circuit is OPEN at startup, the load will fail for every attempt.
+    // Skip silently and schedule a retry — in-memory defaults are already in place.
+    if (cbIsOpen()) {
+      setTimeout(() => this.loadMetricsFromCache(), 30_000);
+      return;
+    }
     try {
       const cached = await distributedCache.get<AutonomousMetrics>(METRICS_CACHE_KEY);
       if (cached) {
@@ -126,7 +134,15 @@ export class AutonomousService extends EventEmitter {
         logger.info('[AUTONOMOUS] Metrics restored from shared cache');
       }
     } catch (err) {
-      logger.warn('[AUTONOMOUS] Could not load metrics from cache:', err);
+      // Only warn when PDIM is genuinely UP but the cache operation fails unexpectedly.
+      // Rate-limit to once per 60 s to prevent flooding on sustained outages.
+      if (!cbIsOpen()) {
+        const now = Date.now();
+        if (now - _lastLoadWarnAt >= 60_000) {
+          _lastLoadWarnAt = now;
+          logger.warn('[AUTONOMOUS] Could not load metrics from cache:', err);
+        }
+      }
     }
   }
 
