@@ -138,17 +138,59 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: [
+      // Core React
       "react",
       "react-dom",
       "react-dom/client",
       "react/jsx-runtime",
       "react/jsx-dev-runtime",
+      // Routing / data fetching
       "wouter",
       "@tanstack/react-query",
+      // UI primitives — pre-bundling avoids per-request transforms in dev
+      "lucide-react",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-select",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-tooltip",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-slider",
+      "@radix-ui/react-progress",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-label",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-accordion",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-alert-dialog",
+      // Animation
       "framer-motion",
+      // State / i18n
       "zustand",
       "i18next",
       "react-i18next",
+      // Forms
+      "react-hook-form",
+      "@hookform/resolvers",
+      // Utils — bundled once, not re-parsed per import
+      "zod",
+      "date-fns",
+      "clsx",
+      "class-variance-authority",
+      "tailwind-merge",
+      // Charts (heavy but frequently used)
+      "recharts",
+    ],
+    // Exclude server-only or native packages from browser pre-bundling
+    exclude: [
+      "@tensorflow/tfjs-node",
+      "sharp",
+      "bcrypt",
+      "pg",
+      "drizzle-orm",
     ],
   },
 });

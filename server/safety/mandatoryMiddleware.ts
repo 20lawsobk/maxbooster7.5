@@ -144,10 +144,18 @@ export function globalErrorHandler(
   }
 
   const isDev = process.env.NODE_ENV !== 'production';
-  
+
+  // Sanitize infrastructure-level error messages before surfacing to clients.
+  // PDIM / circuit-breaker errors are service-layer internals — they're not
+  // useful for debugging application logic and should never be shown verbatim.
+  const isPdimError = /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i.test(message);
+  const clientMessage = isPdimError
+    ? 'A temporary service issue occurred. Please try again in a moment.'
+    : (isDev ? message : (statusCode >= 500 ? 'Internal server error' : message));
+
   res.status(statusCode).json({
     success: false,
-    error: isDev ? message : (statusCode >= 500 ? 'Internal server error' : message),
+    error: clientMessage,
     requestId,
   });
 }

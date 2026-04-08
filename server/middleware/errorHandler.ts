@@ -136,7 +136,12 @@ export function globalErrorHandler(
   let code = normalized.code;
   let isOperational = normalized.isOperational;
 
-  if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+  // Sanitize PDIM / circuit-breaker errors — infrastructure internals that
+  // should never be shown verbatim to clients regardless of environment.
+  const isPdimError = /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i.test(message);
+  if (isPdimError) {
+    message = 'A temporary service issue occurred. Please try again in a moment.';
+  } else if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
     message = 'Internal server error';
   }
 

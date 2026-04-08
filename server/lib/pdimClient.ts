@@ -395,6 +395,11 @@ export class PdimRedisClient extends EventEmitter {
           },
           body: JSON.stringify({ cmd, args }),
           signal: AbortSignal.timeout(15_000),
+          // Do not follow redirects automatically — if PDIM's proxy returns 302
+          // (Replit redirecting to an error/login page when the service is down)
+          // we need to see the raw 302 status so our 3xx handler can trip the
+          // circuit breaker rather than silently following into an HTML page.
+          redirect: 'manual',
         });
 
         if (!res.ok) {
@@ -415,6 +420,18 @@ export class PdimRedisClient extends EventEmitter {
           // Only trip the circuit breaker on 5xx server errors or when PDIM is
           // completely unreachable.  4xx errors are client-side mistakes (bad
           // arguments, unsupported command, etc.) — they don't indicate an outage.
+          // 3xx redirects mean PDIM's HTTP exec endpoint is not reachable —
+          // Replit's proxy redirects to an error/login page when the service is
+          // down or restarting.  Treat exactly like a 5xx: trip the circuit
+          // breaker so callers fail-fast instead of following the redirect chain
+          // and surfacing confusing HTML "deployment could not be reached" errors.
+          if (res.status >= 300 && res.status < 400) {
+            cbRecord503();
+            _counted = true;
+            const errMsg = `PDIM HTTP ${res.status}: service temporarily unreachable`;
+            logger.error(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            throw new Error(errMsg);
+          }
           if (res.status >= 500) {
             cbRecord503();
             _counted = true;

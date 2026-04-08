@@ -65,8 +65,8 @@ import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
 }).catch(() => {});
 
 // VM Reserve: use compression level 6 — better ratio, extra CPU cores absorb the cost.
-// Threshold kept at 1 KB so small JSON responses are still uncompressed (low overhead).
-app.use(compression({ level: 6, threshold: 1024 }));
+// Threshold at 512 B so most JSON API responses get compressed (saves ~30-70% transfer).
+app.use(compression({ level: 6, threshold: 512 }));
 app.use(cookieParser());
 
 // Fast-path health endpoint: must be registered BEFORE session/PDIM middleware so
@@ -408,8 +408,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info('✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)');
   }
 
-  // Load optional modules first
-  await loadOptionalModules();
+  // Load optional modules in background — they're only used inside setImmediate
+  // blocks that fire after all sync setup completes, so awaiting here just adds
+  // latency without any ordering benefit.
+  const _optionalModulesReady = loadOptionalModules().catch((e: any) =>
+    logger.warn('[boot] Optional module load error (non-blocking):', e?.message)
+  );
 
   // Determine once whether this process is the designated background worker.
   // In cluster mode CLUSTER_WORKER_ID is injected by cluster.ts for each forked
@@ -513,6 +517,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   } catch (error: any) {
     logger.error('⚠️ Safety systems initialization error:', error.message);
   }
+
+  // Ensure optional modules finished loading (they ran concurrently with the
+  // PDIM + safety system init above, so this await is usually instant).
+  await _optionalModulesReady;
 
   // Initialize monitoring services
   try {
