@@ -1806,6 +1806,9 @@ export default function Marketplace() {
   };
 
   const handleBulkUpload = async () => {
+    let succeeded = 0;
+    let failed = 0;
+
     for (const item of bulkUploadItems) {
       if (item.status === 'pending') {
         setBulkUploadItems((prev) =>
@@ -1826,26 +1829,49 @@ export default function Marketplace() {
           if (item.tags) formData.append('tags', item.tags);
           if (item.coverArtFile) formData.append('coverArt', item.coverArtFile);
 
-          await apiRequest('POST', '/api/marketplace/upload', formData);
+          await uploadWithProgress('/api/marketplace/upload', formData, { timeout: 300000 });
 
           setBulkUploadItems((prev) =>
             prev.map((i) =>
               i.id === item.id ? { ...i, status: 'completed' as const, progress: 100 } : i
             )
           );
-        } catch {
+          succeeded++;
+        } catch (err) {
+          const errorMessage = err instanceof Error ? err.message : 'Upload failed';
           setBulkUploadItems((prev) =>
             prev.map((i) =>
               i.id === item.id
-                ? { ...i, status: 'failed' as const, error: 'Upload failed' }
+                ? { ...i, status: 'failed' as const, error: errorMessage }
                 : i
             )
           );
+          failed++;
         }
       }
     }
+
     queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
-    toast({ title: 'Bulk Upload Complete', description: 'Your beats have been uploaded.' });
+    queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+
+    if (failed === 0) {
+      toast({
+        title: 'Bulk Upload Complete',
+        description: `${succeeded} beat${succeeded !== 1 ? 's' : ''} uploaded successfully.`,
+      });
+    } else if (succeeded === 0) {
+      toast({
+        title: 'Upload Failed',
+        description: `All ${failed} upload${failed !== 1 ? 's' : ''} failed. Please try again.`,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Partial Upload',
+        description: `${succeeded} uploaded, ${failed} failed. Check failed items and retry.`,
+        variant: 'destructive',
+      });
+    }
   };
 
   if (authLoading) {

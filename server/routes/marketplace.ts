@@ -26,6 +26,7 @@ const ALLOWED_AUDIO_MIMES = new Set([
   'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/wave', 'audio/x-wav',
   'audio/flac', 'audio/x-flac', 'audio/aiff', 'audio/x-aiff',
   'audio/ogg', 'audio/aac', 'audio/mp4', 'audio/x-m4a',
+  'audio/webm', 'audio/x-ms-wma', 'audio/opus',
 ]);
 const ALLOWED_IMAGE_MIMES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',

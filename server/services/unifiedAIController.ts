@@ -25,6 +25,7 @@ import { AIService } from './aiService.js';
 import * as aiAnalyticsService from './aiAnalyticsService.js';
 import { pythonAIService } from './pythonAIService.js';
 import { ContentGenerator, type GenerationOptions, type CaptionResult } from '../../shared/ml/nlp/ContentGenerator.js';
+import { MaxCoreAIClient } from './maxcoreClient.js';
 export { MaxCoreAIClient } from './maxcoreClient.js';
 import { SentimentAnalyzer, type FullAnalysisResult, type SentimentResult } from '../../shared/ml/nlp/SentimentAnalyzer.js';
 import { RecommendationEngine, type RecommendationResult, type SimilarityResult, type TrackData, type ArtistData, type UserInteraction } from '../../shared/ml/models/RecommendationEngine.js';
