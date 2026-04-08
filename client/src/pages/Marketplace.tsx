@@ -578,6 +578,7 @@ export default function Marketplace() {
   const [hasStems, setHasStems] = useState(false);
   const howlRef = useRef<Howl | null>(null);
   const blobUrlRef = useRef<string | null>(null);
+  const isPickingFileRef = useRef(false);
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -586,6 +587,26 @@ export default function Marketplace() {
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const blockFakePopstate = (e: PopStateEvent) => {
+      if (isPickingFileRef.current) {
+        e.stopImmediatePropagation();
+        window.history.pushState(null, '', window.location.href);
+      }
+    };
+    const resetOnWindowFocus = () => {
+      if (isPickingFileRef.current) {
+        setTimeout(() => { isPickingFileRef.current = false; }, 300);
+      }
+    };
+    window.addEventListener('popstate', blockFakePopstate, { capture: true });
+    window.addEventListener('focus', resetOnWindowFocus);
+    return () => {
+      window.removeEventListener('popstate', blockFakePopstate, { capture: true });
+      window.removeEventListener('focus', resetOnWindowFocus);
+    };
   }, []);
 
   const [isLoadingAudio, setIsLoadingAudio] = useState(false);
@@ -607,7 +628,6 @@ export default function Marketplace() {
   const [isDraggingAudio, setIsDraggingAudio] = useState(false);
   const [fileValidationError, setFileValidationError] = useState<string | null>(null);
   const audioPreviewRef = useRef<HTMLAudioElement | null>(null);
-  const isPickingFileRef = useRef(false);
   const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<BeatMetadataSuggestion | null>(null);
 
@@ -3889,8 +3909,8 @@ return (
         </div>
       )}
 
-      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()}>
+      <Dialog open={showUploadModal} onOpenChange={(open) => { if (!open && isPickingFileRef.current) return; setShowUploadModal(open); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" onPointerDownOutside={(e) => e.preventDefault()} onInteractOutside={(e) => e.preventDefault()} onFocusOutside={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>Upload Your Beat</DialogTitle>
             <DialogDescription>Fill in the details below to upload your beat to the marketplace</DialogDescription>
@@ -4054,7 +4074,6 @@ return (
                     type="file"
                     accept="audio/*,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
                     onClick={() => { isPickingFileRef.current = true; }}
-                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
                     onChange={(e) => {
                       isPickingFileRef.current = false;
                       e.target.files?.[0] && handleAudioFileSelect(e.target.files[0]);
@@ -4153,7 +4172,6 @@ return (
                     type="file"
                     accept="image/jpeg,image/png,image/jpg"
                     onClick={() => { isPickingFileRef.current = true; }}
-                    onBlur={() => { setTimeout(() => { isPickingFileRef.current = false; }, 500); }}
                     onChange={(e) => {
                       isPickingFileRef.current = false;
                       e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
@@ -4258,7 +4276,9 @@ return (
                     multiple
                     accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
                     className="sr-only"
+                    onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
+                      isPickingFileRef.current = false;
                       if (e.target.files && e.target.files.length > 0) {
                         handleBulkFileSelect(e.target.files);
                       }
