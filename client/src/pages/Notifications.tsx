@@ -17,6 +17,11 @@ import {
   Settings,
   Trophy,
   ShieldAlert,
+  Heart,
+  Flame,
+  FileText,
+  BarChart2,
+  MapPin,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +41,11 @@ const categoryIcons: Record<NotificationCategory, React.ElementType> = {
   account_security: Shield,
   distribution: Music2,
   social_media: MessageSquare,
+  direct_interaction: Heart,
+  platform_generated: Flame,
+  content_based: FileText,
+  engagement_summary: BarChart2,
+  location_based: MapPin,
   marketplace: ShoppingBag,
   royalties: DollarSign,
   collaboration: Users,
@@ -71,6 +81,11 @@ export default function Notifications() {
       account_security: [],
       distribution: [],
       social_media: [],
+      direct_interaction: [],
+      platform_generated: [],
+      content_based: [],
+      engagement_summary: [],
+      location_based: [],
       marketplace: [],
       royalties: [],
       collaboration: [],
@@ -80,7 +95,11 @@ export default function Notifications() {
     };
     notifications.forEach((n) => {
       const category = (n.category || typeToCategory[n.type] || 'system') as NotificationCategory;
-      groups[category].push(n);
+      if (groups[category]) {
+        groups[category].push(n);
+      } else {
+        groups.system.push(n);
+      }
     });
     return groups;
   }, [notifications]);

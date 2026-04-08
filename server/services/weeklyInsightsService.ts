@@ -12,6 +12,7 @@ import {
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 import sgMail from '@sendgrid/mail';
 import { logger } from '../logger.js';
+import { notificationService } from './notificationService.js';
 
 interface WeeklyReport {
   userId: string;
@@ -263,6 +264,29 @@ class WeeklyInsightsService {
       });
 
       logger.info(`📧 Weekly insights email sent to ${report.userEmail}`);
+
+      const changeLabel = report.streamsChange >= 0
+        ? `+${report.streamsChangePercent}% vs last week`
+        : `${report.streamsChangePercent}% vs last week`;
+      const topTrackLine = report.topTrack
+        ? ` Top track: "${report.topTrack.title}" with ${report.topTrack.streams.toLocaleString()} streams.`
+        : '';
+
+      await notificationService.send({
+        userId: report.userId,
+        type: 'engagement_digest',
+        title: '📊 Your Weekly Music Report is Ready',
+        message: `This week: ${report.streamsThisWeek.toLocaleString()} streams (${changeLabel}), $${report.revenueEarned.toFixed(2)} revenue, +${report.newFollowers} followers.${topTrackLine}`,
+        link: '/analytics',
+        metadata: {
+          streamsThisWeek: report.streamsThisWeek,
+          streamsChangePercent: report.streamsChangePercent,
+          revenueEarned: report.revenueEarned,
+          newFollowers: report.newFollowers,
+          achievementsCount: report.achievementsUnlocked.length,
+        },
+      }).catch((err) => logger.warn('Failed to send weekly insights in-app notification:', err));
+
       return true;
     } catch (error) {
       logger.warn(`Failed to send weekly email to ${report.userEmail}:`, error);

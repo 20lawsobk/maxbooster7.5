@@ -9,6 +9,7 @@ import { contentVariantGeneratorService as contentVariantGenerator } from './con
 import { algorithmIntelligenceService as algorithmIntelligence } from './algorithmIntelligence';
 import { aiContentService } from './aiContentService';
 import { aiAnalyticsService } from './aiAnalyticsService';
+import { notificationService } from './notificationService.js';
 import type { SocialPost, AdCampaign, Release } from '@shared/schema';
 import { logger } from '../logger.js';
 import { EventEmitter } from 'events';
@@ -821,6 +822,18 @@ export class AutonomousService extends EventEmitter {
       logger.info(
         `[AUTONOMOUS] Campaign ${campaignId} optimized - CTR: ${metrics.ctr}, ROAS: ${metrics.roas}`
       );
+
+      if (campaign.userId) {
+        const roasLabel = metrics.roas >= 2 ? `ROAS ${metrics.roas.toFixed(1)}x` : `CTR ${(metrics.ctr * 100).toFixed(2)}%`;
+        notificationService.send({
+          userId: campaign.userId,
+          type: 'ad_campaign_optimized',
+          title: '🚀 Campaign Automatically Optimized',
+          message: `Your campaign "${campaign.name || campaignId}" was optimized by the AI. ${roasLabel}. Targeting, creative, and bidding updated.`,
+          link: `/campaigns/${campaignId}`,
+          metadata: { campaignId, ctr: metrics.ctr, roas: metrics.roas, conversionRate: metrics.conversionRate },
+        }).catch((err) => logger.warn('[AUTONOMOUS] Failed to send campaign notification:', err));
+      }
     } catch (error: unknown) {
       logger.warn(`[AUTONOMOUS] Error optimizing campaign ${campaignId}:`, error);
     }

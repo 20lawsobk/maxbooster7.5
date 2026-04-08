@@ -205,6 +205,28 @@ router.put('/mark-all-read', async (req: Request, res: Response) => {
   }
 });
 
+router.delete('/clear-all', async (req: Request, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+
+  try {
+    await db.delete(notifications).where(eq(notifications.userId, req.user.id));
+
+    return res.json({
+      success: true,
+      outcome: {
+        type: 'dismissed',
+        success: true,
+        message: 'All notifications cleared',
+      },
+    });
+  } catch (error) {
+    logger.warn('Clear all notifications error:', error);
+    return res.status(500).json({ error: 'Failed to clear notifications' });
+  }
+});
+
 router.delete('/:id', async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
@@ -234,28 +256,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
   } catch (error) {
     logger.warn('Delete notification error:', error);
     return res.status(500).json({ error: 'Failed to delete notification' });
-  }
-});
-
-router.delete('/clear-all', async (req: Request, res: Response) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
-  }
-
-  try {
-    await db.delete(notifications).where(eq(notifications.userId, req.user.id));
-
-    return res.json({
-      success: true,
-      outcome: {
-        type: 'dismissed',
-        success: true,
-        message: 'All notifications cleared',
-      },
-    });
-  } catch (error) {
-    logger.warn('Clear all notifications error:', error);
-    return res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
 

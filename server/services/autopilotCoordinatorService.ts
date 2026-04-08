@@ -1,6 +1,7 @@
 import { randomBytes } from 'crypto';
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
+import { notificationService } from './notificationService.js';
 
 
 const MINIMUM_GAP_HOURS = 2;
@@ -357,6 +358,18 @@ class AutopilotCoordinatorService extends EventEmitter {
     this.emit('insightsSynced', { userId, socialToAdvertising: socialInsights, advertisingToSocial: advertisingInsights });
     
     logger.info(`Insights synced for user ${userId}: ${socialInsights.length} social->ad, ${advertisingInsights.length} ad->social`);
+
+    if (socialInsights.length > 0 && advertisingInsights.length > 0) {
+      const totalInsights = socialInsights.length + advertisingInsights.length;
+      notificationService.send({
+        userId,
+        type: 'ad_campaign_milestone',
+        title: '⚡ Autopilot Synergy Detected',
+        message: `Your social and advertising autopilots are amplifying each other — ${totalInsights} cross-channel insights synced. Expect stronger reach and engagement across both channels.`,
+        link: '/campaigns?tab=autopilot',
+        metadata: { socialToAd: socialInsights.length, adToSocial: advertisingInsights.length },
+      }).catch((err) => logger.warn('Failed to send autopilot synergy notification:', err));
+    }
 
     return {
       socialToAdvertising: socialInsights,

@@ -14,6 +14,7 @@ import {
   type ForecastOptions,
 } from '../services/unifiedAIController.js';
 import { aiRateLimiter } from '../middleware/rateLimiter.js';
+import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
 
@@ -217,6 +218,22 @@ router.post('/social/predict', requireAuth, async (req: Request, res: Response) 
     
     if (!result.success) {
       return res.status(500).json({ error: result.error });
+    }
+
+    if (action === 'viral_potential' && result.data && req.user?.id) {
+      const score: number = (result.data as any).overallScore ?? 0;
+      if (score >= 0.75) {
+        const pct = Math.round(score * 100);
+        const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
+        notificationService.send({
+          userId: req.user.id,
+          type: 'platform_trending_topic',
+          title: `🔥 High Viral Potential Detected on ${platformLabel}`,
+          message: `Your content scored ${pct}% viral potential — above the 75% threshold. Post it soon to maximize reach while engagement conditions are favorable.`,
+          link: '/social?tab=compose',
+          metadata: { platform, viralScore: score, confidence: result.confidence },
+        }).catch((err) => logger.warn('Failed to send viral opportunity notification:', err));
+      }
     }
 
     res.json({

@@ -324,12 +324,31 @@ export class AnalyticsAnomalyService {
 
       const createdAnomaly = await storage.createAnalyticsAnomaly(anomalyRecord);
 
-      if (anomaly.severity === 'critical' || anomaly.severity === 'high') {
+      const shouldNotify =
+        anomaly.severity === 'critical' ||
+        anomaly.severity === 'high' ||
+        anomaly.severity === 'medium';
+
+      if (shouldNotify) {
+        const anomalyEmoji =
+          anomaly.anomalyType === 'spike' ? '📈' :
+          anomaly.anomalyType === 'drop' ? '📉' : '⚠️';
+        const metricLabel =
+          metricType === 'streams' ? 'Streams' :
+          metricType === 'revenue' ? 'Revenue' :
+          metricType === 'listeners' ? 'Listeners' : 'Engagement';
+        const typeLabel =
+          anomaly.anomalyType === 'spike' ? 'spike detected' :
+          anomaly.anomalyType === 'drop' ? 'drop detected' : 'unusual pattern';
+        const severityLabel =
+          anomaly.severity === 'critical' ? 'Critical' :
+          anomaly.severity === 'high' ? 'High' : 'Medium';
+
         await notificationService.send({
           userId,
-          type: 'system',
-          title: 'Analytics Anomaly Detected',
-          message: `${metricType} ${anomaly.anomalyType}: ${anomaly.deviationPercentage.toFixed(1)}% deviation from baseline`,
+          type: 'social_engagement_alert',
+          title: `${anomalyEmoji} ${severityLabel}: ${metricLabel} ${typeLabel}`,
+          message: `Your ${metricLabel.toLowerCase()} deviated ${anomaly.deviationPercentage.toFixed(1)}% from its baseline. Current: ${anomaly.actualValue.toFixed(0)}, Expected: ~${anomaly.baselineValue.toFixed(0)}.`,
           link: `/analytics?tab=anomalies&id=${createdAnomaly.id}`,
           metadata: {
             anomalyId: createdAnomaly.id,
@@ -338,12 +357,6 @@ export class AnalyticsAnomalyService {
             severity: anomaly.severity,
             deviationPercentage: anomaly.deviationPercentage,
           },
-        });
-
-        await storage.createAnalyticsAnomaly({
-          ...anomalyRecord,
-          id: createdAnomaly.id,
-          notificationSent: true,
         });
       }
 
