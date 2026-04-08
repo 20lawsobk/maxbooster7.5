@@ -598,7 +598,7 @@ export default function Marketplace() {
     };
     const resetOnWindowFocus = () => {
       if (isPickingFileRef.current) {
-        setTimeout(() => { isPickingFileRef.current = false; }, 300);
+        setTimeout(() => { isPickingFileRef.current = false; }, 1500);
       }
     };
     window.addEventListener('popstate', blockFakePopstate, { capture: true });
@@ -4075,7 +4075,7 @@ return (
                     accept="audio/*,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
                     onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
-                      isPickingFileRef.current = false;
+                      setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       e.target.files?.[0] && handleAudioFileSelect(e.target.files[0]);
                     }}
                     className="sr-only"
@@ -4173,7 +4173,7 @@ return (
                     accept="image/jpeg,image/png,image/jpg"
                     onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
-                      isPickingFileRef.current = false;
+                      setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
                     }}
                     className="sr-only"
@@ -4278,7 +4278,7 @@ return (
                     className="sr-only"
                     onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
-                      isPickingFileRef.current = false;
+                      setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       if (e.target.files && e.target.files.length > 0) {
                         handleBulkFileSelect(e.target.files);
                       }
