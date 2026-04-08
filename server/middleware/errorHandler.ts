@@ -274,13 +274,18 @@ export function handleUnhandledRejection(server?: Server) {
   process.on('unhandledRejection', (reason: unknown, _promise: Promise<any>) => {
     const info = extractReasonInfo(reason);
 
+    // Completely silent: circuit-open rejections are owned by the circuit breaker's
+    // own rate-limited logging — logging them here with a full stack just duplicates noise.
+    const isSilent = /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping|\[LuaExecutor\] PDIM circuit OPEN \(post-queue\)/i.test(info.message);
+    if (isSilent) return;
+
     // Non-fatal: stream/pipe errors, connection resets, fetch failures
     const isNonFatal = (
       info.code === 'EPIPE' || info.code === 'ECONNRESET' || info.code === 'ECONNABORTED' ||
-      /EPIPE|ECONNRESET|ECONNABORTED/i.test(info.message)
+      /EPIPE|ECONNRESET|ECONNABORTED|\[LuaExecutor\]|PDIM.*Circuit|Circuit.*OPEN|ERR PDIM|PDIM HTTP/i.test(info.message)
     );
     if (isNonFatal) {
-      logger.warn(`Non-fatal stream rejection (${info.code ?? 'unknown'}): ${info.message}`);
+      logger.warn(`Non-fatal stream rejection (${info.code ?? 'unknown'}): ${info.message.split('\n')[0]}`);
       return;
     }
 

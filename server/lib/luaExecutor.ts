@@ -297,14 +297,15 @@ export async function execLuaViaPdim(
   // The circuit breaker trips after 5 consecutive failures and backs off.
   // This prevents wasmoon WASM Workers from accumulating and causing a segfault.
   //
-  // IMPORTANT: BullMQ uses onlyEmitError:true for moveToActive, which means our
-  // rejection is swallowed and treated as "no job" — causing a tight poll loop
-  // because BullMQ's `this.drained` is never set and drainDelay never kicks in.
-  // We add an explicit backoff sleep here so each poll cycle waits before returning,
-  // regardless of what BullMQ does with the error.
+  // IMPORTANT: Return an empty array ([]) instead of rejecting — this makes
+  // BullMQ treat the call as "no job available" (jobData = null is falsy) and
+  // go back to polling after our backoff sleep.  Rejecting triggers
+  // EventEmitter.emit('error', ...) inside BullMQ's retryIfFailed/checkConnectionError,
+  // which escapes to stderr as raw Error: stack traces regardless of our
+  // process-level unhandledRejection handlers.
   if (cbIsOpen()) {
     await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
-    return Promise.reject(new Error('[LuaExecutor] PDIM circuit OPEN — skipping Worker spawn'));
+    return [];
   }
 
   // Acquire a Worker slot — queues the caller (up to MAX_WAIT_MS) rather than
@@ -320,7 +321,7 @@ export async function execLuaViaPdim(
     // the next waiter won't get the slot until this sleep expires.
     await new Promise<void>(r => setTimeout(r, CIRCUIT_OPEN_BACKOFF_MS));
     _releaseWorkerSlot();
-    return Promise.reject(new Error('[LuaExecutor] PDIM circuit OPEN (post-queue) — skipping Worker spawn'));
+    return [];
   }
 
   return new Promise((resolve, reject) => {
@@ -377,7 +378,14 @@ export async function execLuaViaPdim(
           status  = 1; // success
         } catch (e: any) {
           const short = (e.message as string).slice(0, 200);
-          logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
+          // 502 means PDIM itself is down — the circuit breaker already logs
+          // this at WARN/ERROR level; repeat per-command logs add no value and
+          // flood the console during extended outages.  Use debug for 5xx/down.
+          if (short.includes('502') || short.includes('Circuit OPEN')) {
+            logger.debug(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
+          } else {
+            logger.warn(`[LuaExecutor] redis.call(${msg.cmd}) → ${short}`);
+          }
           payload = `ERR ${short}`;
           status  = 2; // error — Lua will throw
         }

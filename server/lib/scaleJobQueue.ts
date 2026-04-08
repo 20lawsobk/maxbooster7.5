@@ -265,6 +265,13 @@ export function startRetentionWorker(): Worker {
     // PDIM HTTP 429 during post-restart stale-job flood is also transient
     // and self-healing — log at WARN so it doesn't pollute error dashboards.
     if (
+      // Circuit-open rejections are expected during PDIM outages — completely
+      // silent: the circuit breaker already logs the open/probe events.
+      msg.includes('PDIM circuit OPEN') ||
+      msg.includes('Circuit OPEN')
+    ) {
+      // intentionally silent
+    } else if (
       msg.includes('Missing lock for job') ||
       msg.includes('moveToFinished') ||
       msg.includes('PDIM HTTP 429') ||

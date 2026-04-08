@@ -19,10 +19,17 @@ import { logger } from '../logger.js';
 
 type CbState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
-// VM-reserved deployment: PDIM is always-on, restarts in seconds not minutes.
-// Keep backoff tight so a brief hiccup doesn't block logins for 15+ seconds.
+// Rate-limit repetitive probe/open logs during extended outages.
+// Each probe log is suppressed if one was emitted within the last 60 s.
+let _lastProbeLogAt = 0;
+
+// VM-reserved deployment: PDIM is always-on and normally restarts in seconds.
+// Initial backoff is kept short (1 s) so a brief hiccup recovers quickly.
+// The ceiling is raised to 120 s so a sustained outage (PDIM down for minutes)
+// only probes once every 2 minutes instead of every 10 s — this reduces log
+// noise by 12× during extended outages without slowing normal recovery.
 const INITIAL_BACKOFF_MS = 1_000;
-const MAX_BACKOFF_MS     = 10_000;
+const MAX_BACKOFF_MS     = 120_000;
 
 let _state: CbState   = 'CLOSED';
 let _failures         = 0;
@@ -40,7 +47,11 @@ export function cbRecordFailure(): void {
     _state          = 'OPEN';
     _halfOpenFlight = false;
     _openUntil      = Date.now() + _backoffMs;
-    logger.warn(`[PDIM] Circuit OPEN — backing off ${_backoffMs / 1000}s after ${_failures} failure(s)`);
+    // Only log the first few trips and then every 10th to avoid flooding
+    // the console during a sustained multi-minute PDIM outage.
+    if (_failures <= 10 || _failures % 10 === 0) {
+      logger.warn(`[PDIM] Circuit OPEN — backing off ${_backoffMs / 1000}s after ${_failures} failure(s)`);
+    }
     _backoffMs      = Math.min(_backoffMs * 2, MAX_BACKOFF_MS);
   }
 }
@@ -66,7 +77,12 @@ export function cbAllowRequest(): boolean {
   if (_state === 'OPEN') {
     if (Date.now() >= _openUntil) {
       _state = 'HALF_OPEN';
-      logger.info('[PDIM] Circuit HALF-OPEN — sending probe request');
+      // Only log the probe if we haven't logged one in the past 60 s.
+      const now = Date.now();
+      if (now - _lastProbeLogAt >= 60_000) {
+        _lastProbeLogAt = now;
+        logger.info('[PDIM] Circuit HALF-OPEN — sending probe request');
+      }
     } else {
       return false;
     }

@@ -41,6 +41,10 @@ const NON_FATAL_CODES = new Set(['EPIPE', 'ECONNRESET', 'ECONNABORTED']);
 // expected under load and handled automatically by the ChainFixer / circuit breaker.
 const NON_FATAL_MSG = /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|LuaExecutor.*timeout/i;
 
+// Completely silent patterns — circuit-open rejections already logged by the
+// circuit breaker itself; logging them again here just duplicates the stack.
+const SILENT_MSG = /\[LuaExecutor\] PDIM circuit OPEN|PDIM circuit OPEN.*skipping Worker|Circuit OPEN.*skipping/i;
+
 process.on('uncaughtException', (err) => {
   const code = (err as NodeJS.ErrnoException).code;
 
@@ -66,6 +70,11 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason: any) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const code = (reason as NodeJS.ErrnoException)?.code;
+
+  // Completely silent: circuit-open rejections are already owned by the
+  // circuit breaker's own rate-limited logging — duplicating them here
+  // with a full stack trace adds no signal, only noise.
+  if (SILENT_MSG.test(err.message)) return;
 
   // Non-fatal: expected transient errors from PDIM / LuaExecutor / BullMQ.
   if ((code && NON_FATAL_CODES.has(code)) || NON_FATAL_MSG.test(err.message)) {

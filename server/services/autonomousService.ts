@@ -24,6 +24,7 @@ import {
 const MAX_PROCESSING_QUEUE = 1000;
 const MAX_LEARNING_DATA = 500;
 const METRICS_CACHE_KEY = 'autonomous:metrics';
+let _lastPersistWarnAt  = 0; // rate-limits persist-failure log to once per 60 s
 
 
 interface AutonomousConfig {
@@ -133,7 +134,12 @@ export class AutonomousService extends EventEmitter {
     try {
       await distributedCache.set(METRICS_CACHE_KEY, this.metrics, 3600);
     } catch (err) {
-      logger.warn('[AUTONOMOUS] Could not persist metrics to cache:', err);
+      // Rate-limit to once per 60 s so a sustained PDIM outage doesn't flood logs.
+      const now = Date.now();
+      if (now - _lastPersistWarnAt >= 60_000) {
+        _lastPersistWarnAt = now;
+        logger.warn('[AUTONOMOUS] Could not persist metrics to cache:', err);
+      }
     }
   }
 
