@@ -59,6 +59,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from infer.pipeline import VideoGenerationPipeline
 from infer.gpu_postprocess import DigitalGPUPostProcessor, SCENE_PRESETS
 from infer.training_bridge import get_training_state, is_trained as _bridge_is_trained, simulated_years as _bridge_sim_years
+from infer.corpus_bridge import get_corpus_bridge
 from models.conditioning import STYLE_NAME_TO_ID
 from utils.digital_gpu import get_digital_gpu, gpu_status
 
@@ -94,6 +95,33 @@ app.add_middleware(
 _pipeline:    Optional[VideoGenerationPipeline] = None
 _postproc:    Optional[DigitalGPUPostProcessor] = None
 _cfg:         dict = {}
+_corpus_ready: bool = False
+
+
+@app.on_event("startup")
+async def _startup():
+    """Initialize the MaxCore 9TB corpus bridge in the background at startup."""
+    import asyncio
+
+    global _corpus_ready
+
+    def _init_corpus():
+        global _corpus_ready
+        try:
+            bridge = get_corpus_bridge()
+            _corpus_ready = True
+            status = bridge.status()
+            logger.info(
+                f"[CorpusBridge] 9TB corpus bridge ready — "
+                f"online={status['corpus_online']} "
+                f"scenes={status['scenes_loaded']} "
+                f"prompts={status['corpus_size']}"
+            )
+        except Exception as e:
+            logger.warning(f"[CorpusBridge] Startup init error (non-fatal): {e}")
+
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(None, _init_corpus)
 
 # Thread pool for parallel JPEG encoding (CPU-bound; keep off the GPU thread)
 _jpeg_pool = ThreadPoolExecutor(max_workers=min(8, (os.cpu_count() or 4)))
@@ -143,14 +171,29 @@ def _cfg_cached() -> dict:
 
 def _relay_from_maxcore(req: "GenerateRequest") -> Optional[str]:
     """
-    Forward to MaxCore /api/generate-video.  Returns a video URL on success,
-    None on any failure.  Supports both synchronous and async (job-polled) responses.
+    Forward to MaxCore /api/generate-video enriched with 9TB corpus context.
+    Returns a video URL on success, None on any failure.
+    Supports both synchronous and async (job-polled) responses.
     """
+    # ── Pull corpus-sourced scene context from the 9TB dataset ─────────────────
+    style_prefix    = _style_to_prompt_prefix(req.style_name)
+    corpus_ctx: str = ""
+    try:
+        corpus_ctx = get_corpus_bridge().enrich_prompt("", req.style_name) or ""
+    except Exception as ce:
+        logger.debug(f"[CorpusBridge] enrich_prompt skipped: {ce}")
+
+    # Build a richly-enriched prompt: corpus context + style prefix + user prompt
+    enriched_parts = [p for p in [corpus_ctx, style_prefix, req.prompt] if p]
+    enriched_prompt = " — ".join(enriched_parts)
+
     payload = {
-        "hook":        req.prompt or f"music video — {req.style_name}",
+        # Enriched prompt carries corpus-sourced scene descriptions
+        "hook":        enriched_prompt or f"music video — {req.style_name}",
         "body":        (
             f"BPM {req.bpm:.0f} · energy {req.energy:.2f} · "
-            f"style {req.style_name} · {'drop section' if req.is_drop else 'verse'}"
+            f"style {req.style_name} · {'drop section' if req.is_drop else 'verse'} · "
+            f"platform {req.platform}"
         ),
         "cta":         "Stream now",
         "topic":       f"music video {req.style_name}",
@@ -163,7 +206,15 @@ def _relay_from_maxcore(req: "GenerateRequest") -> Optional[str]:
         "energy":      req.energy,
         "style":       req.style_name,
         "is_drop":     req.is_drop,
+        # Corpus enrichment metadata for MaxCore's generation pipeline
+        "corpus_enriched":  bool(corpus_ctx),
+        "corpus_context":   corpus_ctx,
+        "scene_prefix":     style_prefix,
     }
+    logger.info(
+        f"[Relay→MaxCore] style={req.style_name} corpus_enriched={bool(corpus_ctx)} "
+        f"prompt_len={len(enriched_prompt)}"
+    )
     try:
         resp = _http.post(
             f"{_MC_API}/generate-video",
@@ -519,6 +570,13 @@ def relay_status():
 
     relay_mode = "native" if (trained and _pipeline is not None) else "relay"
 
+    # ── Corpus bridge status ──────────────────────────────────────────────────
+    corpus_status: dict = {}
+    try:
+        corpus_status = get_corpus_bridge().status()
+    except Exception:
+        pass
+
     return {
         "status":         "ok",
         "relay_mode":     relay_mode,
@@ -533,6 +591,12 @@ def relay_status():
         "avg_loss_final":             ts.get("avg_loss_final", None),
         "year_equiv_engine":          ts.get("year_equiv_engine", {}),
         "bridge_source":              ts.get("source", "default"),
+        # ── 9TB Corpus dataset ───────────────────────────────────────────────
+        "corpus_online":              corpus_status.get("corpus_online", False),
+        "corpus_size":                corpus_status.get("corpus_size", 0),
+        "corpus_scenes_loaded":       corpus_status.get("scenes_loaded", 0),
+        "corpus_models_ready":        corpus_status.get("models_ready", []),
+        "corpus_source":              corpus_status.get("source", ""),
         # ── System ──────────────────────────────────────────────────────────
         "maxcore_relay_url":          _MC_API,
         "digital_gpu_ready":          _postproc is not None,
