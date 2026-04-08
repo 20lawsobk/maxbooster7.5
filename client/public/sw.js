@@ -21,7 +21,6 @@
 
 const IS_DEV = self.location.hostname === 'localhost' ||
                self.location.hostname === '127.0.0.1' ||
-               self.location.port === '5000' ||
                self.location.hostname.endsWith('.replit.dev') ||
                self.location.hostname.endsWith('.picard.replit.dev');
 

@@ -161,7 +161,7 @@ export function FlowStateCollaboration({
   const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
   const [isVideoOn, setIsVideoOn] = useState(false);
   const [isAudioOn, setIsAudioOn] = useState(true);
-  const [shareLink, setShareLink] = useState(`https://maxbooster.app/collab/${projectId}`);
+  const [shareLink, setShareLink] = useState(`${window.location.origin}/collab/${projectId}`);
   const [linkCopied, setLinkCopied] = useState(false);
 
   const chatScrollRef = useRef<HTMLDivElement>(null);
