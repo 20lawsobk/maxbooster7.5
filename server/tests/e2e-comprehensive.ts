@@ -45,7 +45,7 @@ async function runTest(
       message: error.message,
       duration 
     });
-    logger.error(`  ❌ ${testName}: ${error.message}`);
+    logger.warn(`  ❌ ${testName}: ${error.message}`);
   }
 }
 
@@ -387,6 +387,6 @@ runAllTests()
     process.exit(0);
   })
   .catch(error => {
-    logger.error('Test suite failed:', error);
+    logger.warn('Test suite failed:', error);
     process.exit(1);
   });

@@ -198,7 +198,7 @@ class AnalyticsAlertService {
 
       return triggerCities;
     } catch (error) {
-      logger.error('Error detecting trigger cities:', error);
+      logger.warn('Error detecting trigger cities:', error);
       return [];
     }
   }
@@ -219,7 +219,7 @@ class AnalyticsAlertService {
       logger.info('No real playlist tracking integration available. Returning empty results.');
       return [];
     } catch (error) {
-      logger.error('Error tracking playlist changes:', error);
+      logger.warn('Error tracking playlist changes:', error);
       return [];
     }
   }
@@ -291,7 +291,7 @@ class AnalyticsAlertService {
 
       return milestones;
     } catch (error) {
-      logger.error('Error checking milestones:', error);
+      logger.warn('Error checking milestones:', error);
       return [];
     }
   }
@@ -329,7 +329,7 @@ class AnalyticsAlertService {
         }
       }
     } catch (error) {
-      logger.error('Error detecting growth anomalies:', error);
+      logger.warn('Error detecting growth anomalies:', error);
     }
   }
 
@@ -349,7 +349,7 @@ class AnalyticsAlertService {
         });
       }
     } catch (error) {
-      logger.error('Error detecting viral content:', error);
+      logger.warn('Error detecting viral content:', error);
     }
   }
 
@@ -405,7 +405,7 @@ class AnalyticsAlertService {
         recommendations,
       };
     } catch (error) {
-      logger.error('Error generating cross-platform comparison:', error);
+      logger.warn('Error generating cross-platform comparison:', error);
       throw error;
     }
   }

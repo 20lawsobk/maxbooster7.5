@@ -183,7 +183,7 @@ export async function seedAchievements() {
 
     logger.info("Achievement seeding complete!");
   } catch (error) {
-    logger.error("Error seeding achievements:", error);
+    logger.warn("Error seeding achievements:", error);
     throw error;
   }
 }

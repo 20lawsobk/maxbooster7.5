@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
 
     res.json(summary);
   } catch (error: unknown) {
-    logger.error('Error fetching status summary:', error);
+    logger.warn('Error fetching status summary:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch status';
     res.status(500).json({ error: message });
   }
@@ -56,7 +56,7 @@ router.get('/services', async (req, res) => {
 
     res.json({ services });
   } catch (error: unknown) {
-    logger.error('Error fetching services:', error);
+    logger.warn('Error fetching services:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch services';
     res.status(500).json({ error: message });
   }
@@ -73,7 +73,7 @@ router.get('/services/:slug', async (req, res) => {
 
     res.json(service);
   } catch (error: unknown) {
-    logger.error('Error fetching service:', error);
+    logger.warn('Error fetching service:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch service';
     res.status(500).json({ error: message });
   }
@@ -88,7 +88,7 @@ router.get('/services/:serviceId/uptime', async (req, res) => {
 
     res.json(uptime);
   } catch (error: unknown) {
-    logger.error('Error fetching uptime history:', error);
+    logger.warn('Error fetching uptime history:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch uptime history';
     res.status(500).json({ error: message });
   }
@@ -100,7 +100,7 @@ router.get('/incidents', async (req, res) => {
 
     res.json({ incidents: activeIncidents });
   } catch (error: unknown) {
-    logger.error('Error fetching incidents:', error);
+    logger.warn('Error fetching incidents:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch incidents';
     res.status(500).json({ error: message });
   }
@@ -117,7 +117,7 @@ router.get('/incidents/:incidentId', async (req, res) => {
 
     res.json(incident);
   } catch (error: unknown) {
-    logger.error('Error fetching incident:', error);
+    logger.warn('Error fetching incident:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch incident';
     res.status(500).json({ error: message });
   }
@@ -129,7 +129,7 @@ router.get('/maintenance', async (req, res) => {
 
     res.json({ maintenance: scheduled });
   } catch (error: unknown) {
-    logger.error('Error fetching scheduled maintenance:', error);
+    logger.warn('Error fetching scheduled maintenance:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch maintenance';
     res.status(500).json({ error: message });
   }
@@ -142,7 +142,7 @@ router.get('/history', async (req, res) => {
 
     res.json({ incidents: history });
   } catch (error: unknown) {
-    logger.error('Error fetching incident history:', error);
+    logger.warn('Error fetching incident history:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch history';
     res.status(500).json({ error: message });
   }
@@ -171,7 +171,7 @@ router.post('/subscribe', async (req, res) => {
         : 'Please check your email to verify your subscription.',
     });
   } catch (error: unknown) {
-    logger.error('Error subscribing to status updates:', error);
+    logger.warn('Error subscribing to status updates:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -200,7 +200,7 @@ router.get('/verify', async (req, res) => {
       message: 'Email verified. You will now receive status updates.',
     });
   } catch (error: unknown) {
-    logger.error('Error verifying subscription:', error);
+    logger.warn('Error verifying subscription:', error);
     const message = error instanceof Error ? error.message : 'Failed to verify subscription';
     res.status(500).json({ error: message });
   }
@@ -221,7 +221,7 @@ router.get('/unsubscribe', async (req, res) => {
       message: 'Successfully unsubscribed from status updates.',
     });
   } catch (error: unknown) {
-    logger.error('Error unsubscribing:', error);
+    logger.warn('Error unsubscribing:', error);
     const message = error instanceof Error ? error.message : 'Failed to unsubscribe';
     res.status(500).json({ error: message });
   }
@@ -242,7 +242,7 @@ router.post('/admin/services', async (req, res) => {
       message: 'Service created successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error creating service:', error);
+    logger.warn('Error creating service:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -271,7 +271,7 @@ router.put('/admin/services/:serviceId', async (req, res) => {
       message: 'Service updated successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error updating service:', error);
+    logger.warn('Error updating service:', error);
     const message = error instanceof Error ? error.message : 'Failed to update service';
     res.status(500).json({ error: message });
   }
@@ -308,12 +308,12 @@ router.put('/admin/services/:serviceId/status', async (req, res) => {
             statusLabel
           );
         } catch (err) {
-          logger.error('Health alert notification error:', err);
+          logger.warn('Health alert notification error:', err);
         }
       });
     }
   } catch (error: unknown) {
-    logger.error('Error updating service status:', error);
+    logger.warn('Error updating service status:', error);
     const message = error instanceof Error ? error.message : 'Failed to update service status';
     res.status(500).json({ error: message });
   }
@@ -338,7 +338,7 @@ router.post('/admin/incidents', async (req, res) => {
       message: 'Incident created successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error creating incident:', error);
+    logger.warn('Error creating incident:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -372,7 +372,7 @@ router.put('/admin/incidents/:incidentId', async (req, res) => {
       message: 'Incident updated successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error updating incident:', error);
+    logger.warn('Error updating incident:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -399,7 +399,7 @@ router.post('/admin/initialize', async (req, res) => {
       message: 'Default services initialized.',
     });
   } catch (error: unknown) {
-    logger.error('Error initializing services:', error);
+    logger.warn('Error initializing services:', error);
     const message = error instanceof Error ? error.message : 'Failed to initialize services';
     res.status(500).json({ error: message });
   }

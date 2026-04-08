@@ -129,7 +129,7 @@ class ReEngagementService {
 
             sent++;
           } catch (err) {
-            logger.error(`[ReEngagement] Failed to send to user ${user.userId}:`, err);
+            logger.warn(`[ReEngagement] Failed to send to user ${user.userId}:`, err);
           }
         }
 

@@ -158,7 +158,7 @@ class MaxBooster247System extends EventEmitter {
 
       this.emit('health-check', { ...this.metrics, gcAvailable });
     } catch (error: unknown) {
-      logger.error('❌ Health check failed:', error);
+      logger.warn('❌ Health check failed:', error);
       this.metrics.errorCount++;
     }
   }
@@ -278,7 +278,7 @@ class MaxBooster247System extends EventEmitter {
 
   trackError(error: string): void {
     this.metrics.errorCount++;
-    logger.error(`❌ Application error tracked: ${error}`);
+    logger.warn(`❌ Application error tracked: ${error}`);
   }
 
   trackConnection(delta: number): void {

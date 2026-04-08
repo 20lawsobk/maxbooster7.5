@@ -35,7 +35,7 @@ router.get('/pending', async (req: AuthenticatedRequest, res) => {
       posts: pendingPosts,
     });
   } catch (error: unknown) {
-    logger.error('Get pending approvals error:', error);
+    logger.warn('Get pending approvals error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -71,7 +71,7 @@ router.post('/:postId/submit', async (req: AuthenticatedRequest, res) => {
       message: 'Post submitted for review successfully',
     });
   } catch (error: unknown) {
-    logger.error('Submit for review error:', error);
+    logger.warn('Submit for review error:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -120,7 +120,7 @@ router.post('/:postId/approve', async (req: AuthenticatedRequest, res) => {
       message: 'Post approved successfully',
     });
   } catch (error: unknown) {
-    logger.error('Approve post error:', error);
+    logger.warn('Approve post error:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -170,7 +170,7 @@ router.post('/:postId/reject', async (req: AuthenticatedRequest, res) => {
       message: 'Post rejected successfully',
     });
   } catch (error: unknown) {
-    logger.error('Reject post error:', error);
+    logger.warn('Reject post error:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -225,7 +225,7 @@ router.post('/:postId/schedule', async (req: AuthenticatedRequest, res) => {
       message: 'Post scheduled successfully',
     });
   } catch (error: unknown) {
-    logger.error('Schedule post error:', error);
+    logger.warn('Schedule post error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -260,7 +260,7 @@ router.post('/:postId/publish', async (req: AuthenticatedRequest, res) => {
       message: 'Post published successfully',
     });
   } catch (error: unknown) {
-    logger.error('Publish post error:', error);
+    logger.warn('Publish post error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -281,7 +281,7 @@ router.get('/history/:postId', async (req: AuthenticatedRequest, res) => {
       history,
     });
   } catch (error: unknown) {
-    logger.error('Get approval history error:', error);
+    logger.warn('Get approval history error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -301,7 +301,7 @@ router.get('/my-posts', async (req: AuthenticatedRequest, res) => {
       posts,
     });
   } catch (error: unknown) {
-    logger.error('Get my posts error:', error);
+    logger.warn('Get my posts error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -335,7 +335,7 @@ router.get('/stats', async (req: AuthenticatedRequest, res) => {
       stats,
     });
   } catch (error: unknown) {
-    logger.error('Get stats error:', error);
+    logger.warn('Get stats error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -348,7 +348,7 @@ router.get('/history', async (req: AuthenticatedRequest, res) => {
     }
     res.json({ history: [], total: 0 });
   } catch (error: unknown) {
-    logger.error('Get approval history error:', error);
+    logger.warn('Get approval history error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

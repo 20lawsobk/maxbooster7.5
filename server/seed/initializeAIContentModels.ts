@@ -95,7 +95,7 @@ export async function initializeAIContentModels() {
 
     logger.info('✅ AI Content Models initialized');
   } catch (error: unknown) {
-    logger.error('❌ Failed to initialize AI Content Models:', error);
+    logger.warn('❌ Failed to initialize AI Content Models:', error);
     throw error;
   }
 }

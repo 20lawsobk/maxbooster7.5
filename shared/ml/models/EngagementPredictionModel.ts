@@ -44,24 +44,32 @@ export const MUSIC_CONTENT_MULTIPLIERS = {
   musicAudio: { multiplier: 1.4, platformBonus: { tiktok: 1.8, instagram: 1.5 } }
 } as const;
 
+// 2024-calibrated: matches SocialAutopilotEngine data for consistency
 export const PLATFORM_PEAK_HOURS: Record<string, number[]> = {
-  twitter: [9, 12, 17, 20],
-  instagram: [11, 14, 19, 21],
-  tiktok: [7, 10, 15, 19, 22],
-  youtube: [12, 16, 20],
-  facebook: [9, 13, 16, 19],
-  linkedin: [8, 10, 12, 17],
+  twitter:   [8, 9, 12, 15, 17, 18, 21],
+  instagram: [6, 7, 11, 12, 17, 19, 20, 21],
+  tiktok:    [6, 7, 11, 14, 15, 18, 19, 20, 22, 23],
+  youtube:   [12, 14, 17, 18, 20, 21, 22],
+  facebook:  [8, 9, 13, 14, 17, 20],
+  linkedin:  [7, 8, 10, 12, 17, 18],
 };
 
+// Music artists: weekends are strong for entertainment / streaming content
 export const WEEKLY_MULTIPLIERS: Record<string, number> = {
-  monday: 0.85, tuesday: 0.95, wednesday: 1.0, thursday: 0.98,
-  friday: 1.05, saturday: 0.75, sunday: 0.70
+  monday:    0.82,
+  tuesday:   0.95,
+  wednesday: 1.02,
+  thursday:  1.00,
+  friday:    1.12,   // new-release Friday bump
+  saturday:  0.98,   // high streaming, moderate posting engagement
+  sunday:    0.88,
 };
 
+// Music industry seasonal peaks: summer releases + holiday season
 export const SEASONAL_MULTIPLIERS: Record<string, number> = {
-  january: 0.85, february: 0.88, march: 0.92, april: 0.95,
-  may: 1.0, june: 1.05, july: 1.10, august: 1.08,
-  september: 0.95, october: 0.92, november: 0.98, december: 1.15
+  january:   0.83, february: 0.88, march:    0.93, april:    0.97,
+  may:       1.02, june:     1.07, july:     1.12, august:   1.10,
+  september: 0.98, october:  0.95, november: 1.00, december: 1.18,
 };
 
 export interface EngagementTargets {
@@ -128,8 +136,8 @@ export class EngagementPredictionModel extends BaseModel {
     });
 
     model.compile({
-      optimizer: tf.train.adam(0.001),
-      loss: 'meanSquaredError',
+      optimizer: tf.train.adam(0.0008, 0.9, 0.999, 1e-7),
+      loss: 'huberLoss',    // robust to engagement outliers (viral posts skew MSE badly)
       metrics: ['mae'],
     });
 

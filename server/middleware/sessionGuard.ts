@@ -39,7 +39,7 @@ export class SessionGuard {
 
       next();
     } catch (error: unknown) {
-      logger.error('Session guard error:', error);
+      logger.warn('Session guard error:', error);
       next(); // Fail open
     }
   }

@@ -49,7 +49,7 @@ router.post('/notice', async (req, res) => {
       message: 'DMCA notice submitted successfully. It will be reviewed within 24-48 hours.',
     });
   } catch (error: unknown) {
-    logger.error('Error submitting DMCA notice:', error);
+    logger.warn('Error submitting DMCA notice:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -78,7 +78,7 @@ router.post('/counter', async (req, res) => {
       message: 'Counter-notification submitted. The original claimant has 10-14 business days to respond.',
     });
   } catch (error: unknown) {
-    logger.error('Error submitting counter-notice:', error);
+    logger.warn('Error submitting counter-notice:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -106,7 +106,7 @@ router.get('/notices', async (req, res) => {
       strikes: strikeInfo,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching DMCA notices:', error);
+    logger.warn('Error fetching DMCA notices:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch DMCA notices';
     res.status(500).json({ error: message });
   }
@@ -127,7 +127,7 @@ router.get('/notices/:noticeId', async (req, res) => {
 
     res.json(notice);
   } catch (error: unknown) {
-    logger.error('Error fetching DMCA notice:', error);
+    logger.warn('Error fetching DMCA notice:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch DMCA notice';
     res.status(500).json({ error: message });
   }
@@ -143,7 +143,7 @@ router.get('/strikes', async (req, res) => {
 
     res.json(strikeInfo);
   } catch (error: unknown) {
-    logger.error('Error fetching strike info:', error);
+    logger.warn('Error fetching strike info:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch strike information';
     res.status(500).json({ error: message });
   }
@@ -159,7 +159,7 @@ router.get('/admin/pending', async (req, res) => {
 
     res.json({ notices: pending });
   } catch (error: unknown) {
-    logger.error('Error fetching pending notices:', error);
+    logger.warn('Error fetching pending notices:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch pending notices';
     res.status(500).json({ error: message });
   }
@@ -183,7 +183,7 @@ router.get('/admin/all', async (req, res) => {
 
     res.json(result);
   } catch (error: unknown) {
-    logger.error('Error fetching all notices:', error);
+    logger.warn('Error fetching all notices:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch notices';
     res.status(500).json({ error: message });
   }
@@ -210,7 +210,7 @@ router.post('/admin/process/:noticeId', async (req, res) => {
       message: `Notice ${action}d successfully`,
     });
   } catch (error: unknown) {
-    logger.error('Error processing notice:', error);
+    logger.warn('Error processing notice:', error);
     const message = error instanceof Error ? error.message : 'Failed to process notice';
     res.status(500).json({ error: message });
   }
@@ -237,7 +237,7 @@ router.post('/admin/strikes/:strikeId/revoke', async (req, res) => {
       message: 'Strike revoked successfully',
     });
   } catch (error: unknown) {
-    logger.error('Error revoking strike:', error);
+    logger.warn('Error revoking strike:', error);
     const message = error instanceof Error ? error.message : 'Failed to revoke strike';
     res.status(500).json({ error: message });
   }
@@ -254,7 +254,7 @@ router.get('/legal-holds', async (req, res) => {
 
     res.json({ holds });
   } catch (error: unknown) {
-    logger.error('Error fetching legal holds:', error);
+    logger.warn('Error fetching legal holds:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch legal holds';
     res.status(500).json({ error: message });
   }
@@ -275,7 +275,7 @@ router.post('/legal-holds/:holdId/release', async (req, res) => {
       message: 'Legal hold released successfully',
     });
   } catch (error: unknown) {
-    logger.error('Error releasing legal hold:', error);
+    logger.warn('Error releasing legal hold:', error);
     const message = error instanceof Error ? error.message : 'Failed to release legal hold';
     res.status(500).json({ error: message });
   }

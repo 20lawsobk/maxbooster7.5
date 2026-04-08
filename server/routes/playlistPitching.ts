@@ -48,7 +48,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(pitches);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to list pitches:', error);
+    logger.warn('[PlaylistPitching] Failed to list pitches:', error);
     res.status(500).json({ error: 'Failed to fetch playlist pitches' });
   }
 });
@@ -62,7 +62,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.status(201).json(newPitch);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to create pitch:', error);
+    logger.warn('[PlaylistPitching] Failed to create pitch:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -82,7 +82,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.json(updatedPitch);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to update pitch:', error);
+    logger.warn('[PlaylistPitching] Failed to update pitch:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -115,7 +115,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:playlistPitches', userId));
     res.json(updated);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to update status:', error);
+    logger.warn('[PlaylistPitching] Failed to update status:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -133,7 +133,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:playlistPitches', req.user!.id));
     res.json({ success: true });
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to delete pitch:', error);
+    logger.warn('[PlaylistPitching] Failed to delete pitch:', error);
     res.status(500).json({ error: 'Failed to delete playlist pitch' });
   }
 });
@@ -165,7 +165,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to fetch stats:', error);
+    logger.warn('[PlaylistPitching] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -179,7 +179,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Pitch not found' });
     res.json(item);
   } catch (error) {
-    logger.error('[PlaylistPitching] Failed to fetch pitch:', error);
+    logger.warn('[PlaylistPitching] Failed to fetch pitch:', error);
     res.status(500).json({ error: 'Failed to fetch playlist pitch' });
   }
 });

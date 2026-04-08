@@ -54,7 +54,7 @@ class EmailService {
         this.isInitialized = true;
         logger.info('✅ SendGrid EmailService initialized');
       } catch (error: unknown) {
-        logger.error('❌ Failed to initialize SendGrid EmailService:', error);
+        logger.warn('❌ Failed to initialize SendGrid EmailService:', error);
       }
     } else if (!process.env.SENDGRID_API_KEY) {
       logger.warn('⚠️  SendGrid API key not configured. Email features will be disabled.');

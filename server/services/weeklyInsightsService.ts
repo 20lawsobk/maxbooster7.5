@@ -43,7 +43,7 @@ class WeeklyInsightsService {
         this.isInitialized = true;
         logger.info('✅ Weekly Insights Service initialized');
       } catch (error) {
-        logger.error('❌ Failed to initialize Weekly Insights Service:', error);
+        logger.warn('❌ Failed to initialize Weekly Insights Service:', error);
       }
     }
   }
@@ -180,7 +180,7 @@ class WeeklyInsightsService {
         upcomingPosts,
       };
     } catch (error) {
-      logger.error(`Failed to generate weekly report for user ${userId}:`, error);
+      logger.warn(`Failed to generate weekly report for user ${userId}:`, error);
       return null;
     }
   }
@@ -215,7 +215,7 @@ class WeeklyInsightsService {
             }
           }
         } catch (error) {
-          logger.error(`Failed to send weekly insights to user ${userId}:`, error);
+          logger.warn(`Failed to send weekly insights to user ${userId}:`, error);
           failed++;
         }
       }
@@ -223,7 +223,7 @@ class WeeklyInsightsService {
       logger.info(`Weekly insights complete: ${sent} sent, ${failed} failed`);
       return { sent, failed };
     } catch (error) {
-      logger.error('Failed to process weekly insights batch:', error);
+      logger.warn('Failed to process weekly insights batch:', error);
       return { sent, failed };
     }
   }
@@ -265,7 +265,7 @@ class WeeklyInsightsService {
       logger.info(`📧 Weekly insights email sent to ${report.userEmail}`);
       return true;
     } catch (error) {
-      logger.error(`Failed to send weekly email to ${report.userEmail}:`, error);
+      logger.warn(`Failed to send weekly email to ${report.userEmail}:`, error);
       return false;
     }
   }
@@ -428,7 +428,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         );
       return true;
     } catch (error) {
-      logger.error(`Failed to track email open for ${emailId}:`, error);
+      logger.warn(`Failed to track email open for ${emailId}:`, error);
       return false;
     }
   }
@@ -443,7 +443,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         .where(eq(sentEmails.id, emailId));
       return true;
     } catch (error) {
-      logger.error(`Failed to track email click for ${emailId}:`, error);
+      logger.warn(`Failed to track email click for ${emailId}:`, error);
       return false;
     }
   }

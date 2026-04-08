@@ -36,7 +36,7 @@ async function callAIModel<T>(endpoint: string, body: any): Promise<AIModelRespo
 
     if (!response.ok) {
       const errorText = await response.text();
-      logger.error(`[PythonAI] ${endpoint} returned ${response.status}: ${errorText}`);
+      logger.warn(`[PythonAI] ${endpoint} returned ${response.status}: ${errorText}`);
       return { success: false, error: `AI Model returned ${response.status}` };
     }
 
@@ -44,10 +44,10 @@ async function callAIModel<T>(endpoint: string, body: any): Promise<AIModelRespo
     return { success: true, data };
   } catch (err) {
     if (err instanceof Error && err.name === 'AbortError') {
-      logger.error(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
+      logger.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
       return { success: false, error: 'AI Model request timed out' };
     }
-    logger.error(`[PythonAI] ${endpoint} failed:`, err);
+    logger.warn(`[PythonAI] ${endpoint} failed:`, err);
     return { success: false, error: 'AI Model service unavailable' };
   }
 }

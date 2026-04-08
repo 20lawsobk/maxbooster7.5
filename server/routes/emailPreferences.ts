@@ -13,7 +13,7 @@ router.get('/api/email-preferences', async (req: Request, res: Response) => {
     const preferences = await weeklyInsightsService.getEmailPreferences(req.user.id);
     return res.json(preferences);
   } catch (error) {
-    logger.error('Failed to get email preferences:', error);
+    logger.warn('Failed to get email preferences:', error);
     return res.status(500).json({ error: 'Failed to get email preferences' });
   }
 });
@@ -37,7 +37,7 @@ router.patch('/api/email-preferences', async (req: Request, res: Response) => {
     const updated = await weeklyInsightsService.updateEmailPreferences(req.user.id, updates);
     return res.json(updated);
   } catch (error) {
-    logger.error('Failed to update email preferences:', error);
+    logger.warn('Failed to update email preferences:', error);
     return res.status(500).json({ error: 'Failed to update email preferences' });
   }
 });
@@ -51,7 +51,7 @@ router.get('/api/email-preferences/unsubscribe', async (req: Request, res: Respo
     await weeklyInsightsService.unsubscribe(req.user.id);
     return res.redirect('/settings?message=Successfully%20unsubscribed%20from%20emails');
   } catch (error) {
-    logger.error('Failed to unsubscribe:', error);
+    logger.warn('Failed to unsubscribe:', error);
     return res.redirect('/settings?error=Failed%20to%20unsubscribe');
   }
 });
@@ -69,7 +69,7 @@ router.get('/api/email-preferences/preview', async (req: Request, res: Response)
 
     return res.json(preview);
   } catch (error) {
-    logger.error('Failed to get email preview:', error);
+    logger.warn('Failed to get email preview:', error);
     return res.status(500).json({ error: 'Failed to generate preview' });
   }
 });
@@ -90,7 +90,7 @@ router.get('/api/emails/track/:id/open', async (req: Request, res: Response) => 
     res.set('Expires', '0');
     return res.send(transparentPixel);
   } catch (error) {
-    logger.error('Failed to track email open:', error);
+    logger.warn('Failed to track email open:', error);
     const transparentPixel = Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
       'base64'
@@ -111,7 +111,7 @@ router.get('/api/emails/track/:id/click', async (req: Request, res: Response) =>
     
     return res.redirect(redirectUrl);
   } catch (error) {
-    logger.error('Failed to track email click:', error);
+    logger.warn('Failed to track email click:', error);
     return res.redirect('https://maxbooster.ai/dashboard');
   }
 });
@@ -128,7 +128,7 @@ router.post('/api/admin/emails/send-weekly-insights', async (req: Request, res: 
       ...result,
     });
   } catch (error) {
-    logger.error('Failed to send weekly insights batch:', error);
+    logger.warn('Failed to send weekly insights batch:', error);
     return res.status(500).json({ error: 'Failed to send weekly insights' });
   }
 });

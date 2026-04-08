@@ -251,7 +251,7 @@ class PromotionalToolsService {
       );
       generatedImageUrl = `/api/storage/file/${result.fileKey}`;
     } catch (error) {
-      logger.error('Failed to generate promo card image:', error);
+      logger.warn('Failed to generate promo card image:', error);
     }
 
     const [card] = await db.insert(promoCards).values({

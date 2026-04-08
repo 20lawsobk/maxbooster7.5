@@ -89,7 +89,7 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
     const data = await response.json();
     return processRelease(data);
   } catch (error) {
-    logger.error('Failed to fetch GitHub releases:', error);
+    logger.warn('Failed to fetch GitHub releases:', error);
     return null;
   }
 }
@@ -220,7 +220,7 @@ router.get('/latest', async (_req, res) => {
       mobile: mobileDownloads,
     });
   } catch (error) {
-    logger.error('Failed to get download info:', error);
+    logger.warn('Failed to get download info:', error);
     res.status(500).json({
       available: false,
       error: 'Failed to fetch release information',

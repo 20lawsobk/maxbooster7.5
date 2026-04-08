@@ -134,7 +134,7 @@ class OfflineModeService extends EventEmitter {
       logger.info('[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)');
       await this.loadCacheIndex();
     } catch (error) {
-      logger.error('[OfflineCache] Failed to open Pocket Dimension, cache unavailable:', error);
+      logger.warn('[OfflineCache] Failed to open Pocket Dimension, cache unavailable:', error);
     }
   }
 
@@ -176,7 +176,7 @@ class OfflineModeService extends EventEmitter {
       projects: Object.fromEntries(this.cachedProjects),
     };
     this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: any) =>
-      logger.error('[OfflineCache] Failed to save cache index:', err)
+      logger.warn('[OfflineCache] Failed to save cache index:', err)
     );
   }
 
@@ -347,7 +347,7 @@ class OfflineModeService extends EventEmitter {
 
       return offlineProject;
     } catch (error) {
-      logger.error('Failed to cache project:', error);
+      logger.warn('Failed to cache project:', error);
       throw error;
     }
   }

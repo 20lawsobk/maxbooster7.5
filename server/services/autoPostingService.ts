@@ -127,7 +127,7 @@ class AutoPostingService {
         const result = await this.postToPlatform(user, platform, content);
         results.push(result);
       } catch (error: any) {
-        logger.error(`Failed to post to ${platform}:`, error);
+        logger.warn(`Failed to post to ${platform}:`, error);
         results.push({
           platform,
           success: false,
@@ -238,7 +238,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('Facebook posting error:', error.response?.data || error.message);
+      logger.warn('Facebook posting error:', error.response?.data || error.message);
       throw new Error(`Facebook: ${error.response?.data?.error?.message || error.message}`);
     }
   }
@@ -285,7 +285,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('Instagram posting error:', error.response?.data || error.message);
+      logger.warn('Instagram posting error:', error.response?.data || error.message);
       throw new Error(`Instagram: ${error.response?.data?.error?.message || error.message}`);
     }
   }
@@ -324,7 +324,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('Twitter posting error:', error.response?.data || error.message);
+      logger.warn('Twitter posting error:', error.response?.data || error.message);
       throw new Error(`Twitter: ${error.response?.data?.detail || error.message}`);
     }
   }
@@ -363,7 +363,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('TikTok posting error:', error.response?.data || error.message);
+      logger.warn('TikTok posting error:', error.response?.data || error.message);
       throw new Error(`TikTok: ${error.response?.data?.message || error.message}`);
     }
   }
@@ -402,7 +402,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('YouTube posting error:', error.response?.data || error.message);
+      logger.warn('YouTube posting error:', error.response?.data || error.message);
       throw new Error(`YouTube: ${error.response?.data?.error?.message || error.message}`);
     }
   }
@@ -456,7 +456,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('LinkedIn posting error:', error.response?.data || error.message);
+      logger.warn('LinkedIn posting error:', error.response?.data || error.message);
       throw new Error(`LinkedIn: ${error.response?.data?.message || error.message}`);
     }
   }
@@ -489,7 +489,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('Threads posting error:', error.response?.data || error.message);
+      logger.warn('Threads posting error:', error.response?.data || error.message);
       throw new Error(`Threads: ${error.response?.data?.error?.message || error.message}`);
     }
   }
@@ -532,7 +532,7 @@ class AutoPostingService {
         postedAt: new Date(),
       };
     } catch (error: any) {
-      logger.error('Google Business posting error:', error.response?.data || error.message);
+      logger.warn('Google Business posting error:', error.response?.data || error.message);
       throw new Error(`Google Business: ${error.response?.data?.error?.message || error.message}`);
     }
   }
@@ -607,7 +607,7 @@ class AutoPostingService {
           const refreshed = await this.refreshToken(userId, platform, tokens.refreshToken);
           return refreshed.accessToken;
         } catch (error) {
-          logger.error(`Failed to refresh token for ${platform}:`, error);
+          logger.warn(`Failed to refresh token for ${platform}:`, error);
           return null;
         }
       }
@@ -633,7 +633,7 @@ class AutoPostingService {
         expiresIn: result.expiresIn,
       };
     } catch (error: any) {
-      logger.error(`Token refresh failed for ${platform}:`, error);
+      logger.warn(`Token refresh failed for ${platform}:`, error);
       throw new Error(`Failed to refresh ${platform} access token: ${error.message}`);
     }
   }
@@ -699,7 +699,7 @@ class AutoPostingService {
                 }
               }
             } catch (error: any) {
-              logger.error(`Failed scheduled post ${postId}:`, error);
+              logger.warn(`Failed scheduled post ${postId}:`, error);
               scheduledPost.status = 'failed';
               await storage.updateScheduledPostStatus(postId, 'failed');
             }
@@ -709,7 +709,7 @@ class AutoPostingService {
           }
         }
       } catch (error) {
-        logger.error('Queue processor error:', error);
+        logger.warn('Queue processor error:', error);
       } finally {
         this.isProcessing = false;
       }

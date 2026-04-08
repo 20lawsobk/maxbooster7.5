@@ -67,7 +67,7 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
         logger.info(`[Stripe] Order already exists for payment ${paymentRef}, skipping duplicate`);
       }
     } catch (orderError) {
-      logger.error('[Stripe] Failed to create order record:', orderError);
+      logger.warn('[Stripe] Failed to create order record:', orderError);
     }
   }
 
@@ -86,7 +86,7 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
         logger.info(`[Stripe] BOGO promotion ${promotionId} redemption count incremented`);
       }
     } catch (storefrontError) {
-      logger.error('[Stripe] Failed to update storefront orders:', storefrontError);
+      logger.warn('[Stripe] Failed to update storefront orders:', storefrontError);
     }
   }
 
@@ -121,7 +121,7 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
         logger.info(`[Stripe] Storefront membership already active for tier=${memberTierId}, customer=${memberCustomerId}, skipping`);
       }
     } catch (membershipError) {
-      logger.error('[Stripe] Failed to activate storefront membership:', membershipError);
+      logger.warn('[Stripe] Failed to activate storefront membership:', membershipError);
     }
   }
 
@@ -158,7 +158,7 @@ registerWebhookHandler('customer.subscription.created', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.created`);
     }
   } catch (err) {
-    logger.error('[Stripe] Failed to update user on subscription.created:', err);
+    logger.warn('[Stripe] Failed to update user on subscription.created:', err);
   }
 
   return { success: true, message: 'Subscription created' };
@@ -202,7 +202,7 @@ registerWebhookHandler('customer.subscription.updated', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`);
     }
   } catch (err) {
-    logger.error('[Stripe] Failed to update user on subscription.updated:', err);
+    logger.warn('[Stripe] Failed to update user on subscription.updated:', err);
   }
 
   return { success: true, message: 'Subscription updated' };
@@ -234,7 +234,7 @@ registerWebhookHandler('customer.subscription.deleted', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`);
     }
   } catch (err) {
-    logger.error('[Stripe] Failed to update user on subscription.deleted:', err);
+    logger.warn('[Stripe] Failed to update user on subscription.deleted:', err);
   }
 
   return { success: true, message: 'Subscription canceled' };
@@ -254,7 +254,7 @@ registerWebhookHandler('invoice.paid', async (event) => {
   try {
     await dunningService.resolveSequence(invoice.id, 'paid');
   } catch (err) {
-    logger.error('[Stripe] Failed to resolve dunning sequence:', err);
+    logger.warn('[Stripe] Failed to resolve dunning sequence:', err);
   }
   
   return { success: true, message: 'Invoice paid' };
@@ -285,12 +285,12 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
         try {
           await dunningService.startSequence(found[0].id, invoice.id);
         } catch (dunningErr) {
-          logger.error('[Stripe] Failed to start dunning sequence:', dunningErr);
+          logger.warn('[Stripe] Failed to start dunning sequence:', dunningErr);
         }
       }
     }
   } catch (err) {
-    logger.error('[Stripe] Failed to send payment failure notification:', err);
+    logger.warn('[Stripe] Failed to send payment failure notification:', err);
   }
   
   return { success: true, message: 'Payment failure recorded' };
@@ -326,7 +326,7 @@ registerWebhookHandler('payment_intent.succeeded', async (event) => {
       true
     );
   } catch (err) {
-    logger.error(`[Stripe] payment_intent.succeeded audit error: ${err}`);
+    logger.warn(`[Stripe] payment_intent.succeeded audit error: ${err}`);
   }
 
   return { success: true, message: 'Payment intent succeeded and audited' };
@@ -384,7 +384,7 @@ router.post('/', stripeWebhookMiddleware, async (req: Request, res: Response) =>
       res.status(500).json({ error: result.message });
     }
   } catch (error: any) {
-    logger.error('[Stripe Webhook] Handler error:', error);
+    logger.warn('[Stripe Webhook] Handler error:', error);
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });

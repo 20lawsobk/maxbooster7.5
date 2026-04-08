@@ -107,7 +107,7 @@ class PluginHostService {
       }
       logger.info(`Seeded ${allPlugins.length} plugins to catalog`);
     } catch (error) {
-      logger.error('Error seeding plugin catalog:', error);
+      logger.warn('Error seeding plugin catalog:', error);
     }
   }
 
@@ -524,7 +524,7 @@ class PluginHostService {
           sampleRate: inputBuffer.sampleRate,
         };
       } catch (error: unknown) {
-        logger.error(`Plugin ${instance.pluginId} processing error:`, error);
+        logger.warn(`Plugin ${instance.pluginId} processing error:`, error);
         return inputBuffer;
       }
     };

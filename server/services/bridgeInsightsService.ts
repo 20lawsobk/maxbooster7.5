@@ -127,7 +127,7 @@ class BridgeInsightsService {
 
       return insights;
     } catch (error) {
-      logger.error('Error generating social-to-organic insights', { userId, error });
+      logger.warn('Error generating social-to-organic insights', { userId, error });
       return null;
     }
   }
@@ -230,7 +230,7 @@ class BridgeInsightsService {
 
       return insights;
     } catch (error) {
-      logger.error('Error generating organic-to-social insights', { userId, error });
+      logger.warn('Error generating organic-to-social insights', { userId, error });
       return null;
     }
   }
@@ -267,7 +267,7 @@ class BridgeInsightsService {
       logger.info('Saved cross-insight', { userId, insightType, insightId: inserted.id });
       return inserted;
     } catch (error) {
-      logger.error('Error saving cross-insight', { userId, error });
+      logger.warn('Error saving cross-insight', { userId, error });
       return null;
     }
   }
@@ -288,7 +288,7 @@ class BridgeInsightsService {
 
       return insight ?? null;
     } catch (error) {
-      logger.error('Error fetching latest insights', { userId, type, error });
+      logger.warn('Error fetching latest insights', { userId, type, error });
       return null;
     }
   }
@@ -341,7 +341,7 @@ class BridgeInsightsService {
         biasedTopics: uniqueTopics,
       };
     } catch (error) {
-      logger.error('Error applying insights to organic', { userId, error });
+      logger.warn('Error applying insights to organic', { userId, error });
       return { biasedTypes: [], biasedTopics: [] };
     }
   }
@@ -406,7 +406,7 @@ class BridgeInsightsService {
         recommendedTones: uniqueTones,
       };
     } catch (error) {
-      logger.error('Error applying insights to social', { userId, error });
+      logger.warn('Error applying insights to social', { userId, error });
       return { recommendedFormats: [], recommendedTones: [] };
     }
   }
@@ -445,7 +445,7 @@ class BridgeInsightsService {
         organicToSocial: savedOrganicToSocial,
       };
     } catch (error) {
-      logger.error('Error syncing cross-insights', { userId, error });
+      logger.warn('Error syncing cross-insights', { userId, error });
       return {
         socialToOrganic: null,
         organicToSocial: null,
@@ -501,7 +501,7 @@ class BridgeInsightsService {
         insightCount: allInsights.length,
       };
     } catch (error) {
-      logger.error('Error fetching insights summary', { userId, error });
+      logger.warn('Error fetching insights summary', { userId, error });
       return {
         userId,
         socialToOrganic: null,

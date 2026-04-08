@@ -37,7 +37,7 @@ class ReadReplicaPool {
     });
 
     this.primaryPool.on('error', (err) => {
-      logger.error('Primary pool error:', err);
+      logger.warn('Primary pool error:', err);
     });
 
     for (let i = 0; i < config.replicas.length; i++) {
@@ -54,7 +54,7 @@ class ReadReplicaPool {
       });
 
       pool.on('error', (err) => {
-        logger.error(`Replica ${i} pool error:`, err);
+        logger.warn(`Replica ${i} pool error:`, err);
         this.healthyReplicas.delete(i);
       });
 

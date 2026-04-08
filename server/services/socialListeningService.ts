@@ -217,7 +217,7 @@ class SocialListeningService {
         hasMore: offset + limit < filtered.length,
       };
     } catch (error) {
-      logger.error('Error fetching social mentions:', error);
+      logger.warn('Error fetching social mentions:', error);
       return { mentions: [], total: 0, hasMore: false };
     }
   }
@@ -273,7 +273,7 @@ class SocialListeningService {
 
       return results;
     } catch (error) {
-      logger.error('Twitter mentions fetch error:', error);
+      logger.warn('Twitter mentions fetch error:', error);
       return [];
     }
   }
@@ -325,7 +325,7 @@ class SocialListeningService {
 
       return results;
     } catch (error) {
-      logger.error('Instagram mentions fetch error:', error);
+      logger.warn('Instagram mentions fetch error:', error);
       return [];
     }
   }
@@ -377,7 +377,7 @@ class SocialListeningService {
 
       return results;
     } catch (error) {
-      logger.error('Facebook mentions fetch error:', error);
+      logger.warn('Facebook mentions fetch error:', error);
       return [];
     }
   }

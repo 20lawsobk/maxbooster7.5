@@ -64,7 +64,7 @@ router.post('/generate', requireAuthOnly, async (req: Request, res: Response) =>
     const pkg = await handleGeneration(genRequest);
     return res.json(pkg);
   } catch (err: any) {
-    logger.error('[POST /multimodal/generate]', err);
+    logger.warn('[POST /multimodal/generate]', err);
     return res.status(500).json({ error: err.message || 'Generation failed' });
   }
 });

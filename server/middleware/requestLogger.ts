@@ -99,7 +99,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         const message = `${logData.method} ${logData.url} - ${logData.statusCode} in ${responseTime}ms`;
 
         if (logLevel === 'error') {
-          logger.error(`❌ ${message}`, { requestId: logData.requestId });
+          logger.warn(`❌ ${message}`, { requestId: logData.requestId });
         } else if (logLevel === 'warn') {
           logger.warn(`⚠️  ${message}`, { requestId: logData.requestId });
         } else {

@@ -188,7 +188,7 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
       generatedChords,
     };
   } catch (error) {
-    logger.error('[AI Audio] Text generation failed:', error);
+    logger.warn('[AI Audio] Text generation failed:', error);
     throw error;
   }
 }
@@ -227,7 +227,7 @@ export async function generateFromReference(request: AudioToAudioRequest): Promi
       sourceType: 'audio',
     };
   } catch (error) {
-    logger.error('[AI Audio] Reference generation failed:', error);
+    logger.warn('[AI Audio] Reference generation failed:', error);
     throw error;
   }
 }

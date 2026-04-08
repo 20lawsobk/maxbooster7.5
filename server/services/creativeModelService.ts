@@ -247,7 +247,7 @@ async function analyzeMusicStage(audioPath: string, brief: CreativeBrief): Promi
       mood: Array.isArray(raw.mood) ? raw.mood : [brief.tone],
     };
   } catch (err) {
-    logger.error('[CreativeModel] Music analysis — MaxCore call failed (transient), using local TF.js fallback', { err });
+    logger.warn('[CreativeModel] Music analysis — MaxCore call failed (transient), using local TF.js fallback', { err });
     return {
       audioPat: audioPath,
       bpm: 120,
@@ -519,7 +519,7 @@ Return JSON only — beats array must match the constraint count exactly:
       testingVariants: variants.slice(0, variantCount),
     };
   } catch (err) {
-    logger.error('[CreativeModel] Planning: MaxCore call failed (transient) — using local CreativePlannerModel', { err });
+    logger.warn('[CreativeModel] Planning: MaxCore call failed (transient) — using local CreativePlannerModel', { err });
 
     const beatCount = ps?.optimalBeatCount ?? 3;
     const beats = defaultBeats(brief).slice(0, Math.min(beatCount, 5));
@@ -743,7 +743,7 @@ Only override a beat's timing or transition if there is a strong narrative reaso
       };
     }
   } catch (err) {
-    logger.error('[CreativeModel] Alignment: MaxCore call failed (transient) — using local BeatSyncAlignmentModel map', { err });
+    logger.warn('[CreativeModel] Alignment: MaxCore call failed (transient) — using local BeatSyncAlignmentModel map', { err });
   }
 
   // Local alignment map is the final output when MaxCore returns no changes
@@ -858,7 +858,7 @@ async function assemblyStage(
       }
     }
   } catch (err) {
-    logger.error('[CreativeModel] Stage 6: MaxCore direct video generation error', { err });
+    logger.warn('[CreativeModel] Stage 6: MaxCore direct video generation error', { err });
   }
 
   logger.warn('[CreativeModel] Stage 6: All video sources exhausted — returning placeholder');

@@ -30,7 +30,7 @@ async function resolveJwtUser(req: AuthenticatedRequest): Promise<void> {
       }
     }
   } catch (err) {
-    logger.error('[Auth] JWT verification error:', err);
+    logger.warn('[Auth] JWT verification error:', err);
   }
 }
 

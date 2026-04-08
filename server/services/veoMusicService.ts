@@ -101,7 +101,7 @@ class VeoMusicService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error(`[VeoMusic] Campaign generation failed: ${response.status} - ${errorText}`);
+        logger.warn(`[VeoMusic] Campaign generation failed: ${response.status} - ${errorText}`);
         return { success: false, error: `Veo pipeline returned ${response.status}` };
       }
 
@@ -114,10 +114,10 @@ class VeoMusicService {
       return data;
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
-        logger.error(`[VeoMusic] Campaign generation timed out after ${VEO_TIMEOUT_MS}ms`);
+        logger.warn(`[VeoMusic] Campaign generation timed out after ${VEO_TIMEOUT_MS}ms`);
         return { success: false, error: 'Veo campaign generation timed out' };
       }
-      logger.error('[VeoMusic] Campaign generation failed:', err);
+      logger.warn('[VeoMusic] Campaign generation failed:', err);
       return { success: false, error: 'Veo Music service unavailable' };
     }
   }

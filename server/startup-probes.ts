@@ -97,7 +97,7 @@ class StartupProbeManager {
     }
     
     this.status.probes.database.status = 'failed';
-    logger.error('❌ Database probe exhausted all retries');
+    logger.warn('❌ Database probe exhausted all retries');
     return false;
   }
 
@@ -192,7 +192,7 @@ class StartupProbeManager {
       // Critical failure - database is required
       if (this.status.probes.database.status === 'failed') {
         this.status.phase = 'failed';
-        logger.error('❌ Startup failed: Database connection required');
+        logger.warn('❌ Startup failed: Database connection required');
         return false;
       }
     }

@@ -211,7 +211,7 @@ export function validateEnvironment(strictMode: boolean = true): ValidationResul
       if (req.required) {
         errors.push(`MISSING: ${req.name} - ${req.description}`);
         missing++;
-        logger.error(`   ✗ ${req.name} - MISSING (required)`);
+        logger.warn(`   ✗ ${req.name} - MISSING (required)`);
       } else {
         warnings.push(`Optional: ${req.name} not set - ${req.description}`);
         logger.warn(`   ⚠ ${req.name} - not set (optional)`);
@@ -223,7 +223,7 @@ export function validateEnvironment(strictMode: boolean = true): ValidationResul
       if (req.required) {
         errors.push(`INVALID: ${req.name} - ${req.description} (validation failed)`);
         invalid++;
-        logger.error(`   ✗ ${req.name} - INVALID format`);
+        logger.warn(`   ✗ ${req.name} - INVALID format`);
       } else {
         warnings.push(`Invalid format: ${req.name} - ${req.description}`);
         logger.warn(`   ⚠ ${req.name} - invalid format`);
@@ -243,10 +243,10 @@ export function validateEnvironment(strictMode: boolean = true): ValidationResul
   if (isValid) {
     logger.info('   ✅ Environment validation PASSED');
   } else {
-    logger.error('   ❌ Environment validation FAILED');
-    logger.error('');
-    logger.error('   Critical errors:');
-    errors.forEach(e => logger.error(`     - ${e}`));
+    logger.warn('   ❌ Environment validation FAILED');
+    logger.warn('');
+    logger.warn('   Critical errors:');
+    errors.forEach(e => logger.warn(`     - ${e}`));
   }
   
   logger.info('════════════════════════════════════════════════════════');

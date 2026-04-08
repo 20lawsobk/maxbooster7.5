@@ -114,7 +114,7 @@ class DunningService {
 
       await this.sendStep(userId, invoiceId, 0);
     } catch (err) {
-      logger.error('[Dunning] Failed to start sequence:', err);
+      logger.warn('[Dunning] Failed to start sequence:', err);
     }
   }
 
@@ -127,7 +127,7 @@ class DunningService {
 
       logger.info(`[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`);
     } catch (err) {
-      logger.error('[Dunning] Failed to resolve sequence:', err);
+      logger.warn('[Dunning] Failed to resolve sequence:', err);
     }
   }
 
@@ -136,7 +136,7 @@ class DunningService {
       // Keep existing entry point, call paged version
       await this.processPendingStepsPaged(50);
     } catch (err) {
-      logger.error('[Dunning] Failed to process pending steps:', err);
+      logger.warn('[Dunning] Failed to process pending steps:', err);
     }
   }
 
@@ -181,7 +181,7 @@ class DunningService {
       }
       return processed;
     } catch (err) {
-      logger.error('[Dunning] Failed to process pending steps paged:', err);
+      logger.warn('[Dunning] Failed to process pending steps paged:', err);
       return 0;
     }
   }

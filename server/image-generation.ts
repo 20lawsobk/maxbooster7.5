@@ -69,7 +69,7 @@ export class SocialMediaContentGenerator {
 
       return result;
     } catch (error: unknown) {
-      logger.error('Error generating social media content:', error);
+      logger.warn('Error generating social media content:', error);
       return {
         content: await this.generateAIContent(platform, musicData, targetAudience),
         image: this.getDefaultImage(platform),
@@ -116,7 +116,7 @@ export class SocialMediaContentGenerator {
         content: aiContent,
       };
     } catch (error: unknown) {
-      logger.error('Error generating content from URL:', error);
+      logger.warn('Error generating content from URL:', error);
       throw error;
     }
   }
@@ -149,7 +149,7 @@ export class SocialMediaContentGenerator {
       // Return public URL
       return `/generated-content/images/${filename}`;
     } catch (error: unknown) {
-      logger.error('Error generating social media image:', error);
+      logger.warn('Error generating social media image:', error);
       // Fallback to default image
       return this.getDefaultImage(platform);
     }
@@ -342,7 +342,7 @@ export class SocialMediaContentGenerator {
       logger.info(`✅ Generated animated social content: ${gifFilename} (${frameCount} frames) + WebP poster`);
       return `/generated-content/videos/${webpFilename}`;
     } catch (error: unknown) {
-      logger.error('Error generating social media video:', error);
+      logger.warn('Error generating social media video:', error);
       return this.getDefaultVideo(platform);
     }
   }
@@ -365,7 +365,7 @@ export class SocialMediaContentGenerator {
 
       return `/generated-content/audio/${filename}`;
     } catch (error: unknown) {
-      logger.error('Error generating social media audio:', error);
+      logger.warn('Error generating social media audio:', error);
       return this.getDefaultAudio(platform);
     }
   }
@@ -848,7 +848,7 @@ export class SocialMediaContentGenerator {
 
       return extractedData;
     } catch (error: unknown) {
-      logger.error('Error extracting content from URL:', error);
+      logger.warn('Error extracting content from URL:', error);
       throw error;
     }
   }

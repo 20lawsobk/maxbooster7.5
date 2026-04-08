@@ -121,7 +121,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.error(`[Presence] Failed to remove collaborator from Redis:`, error);
+      logger.warn(`[Presence] Failed to remove collaborator from Redis:`, error);
     }
 
     const projectPresence = this.localPresence.get(projectId);
@@ -225,12 +225,12 @@ export class PresenceManager {
               });
             }
           } catch (e) {
-            logger.error('[Presence] Failed to parse presence data:', e);
+            logger.warn('[Presence] Failed to parse presence data:', e);
           }
         }
       }
     } catch (error) {
-      logger.error('[Presence] Failed to get collaborators from Redis:', error);
+      logger.warn('[Presence] Failed to get collaborators from Redis:', error);
     }
 
     if (collaborators.length === 0) {
@@ -278,7 +278,7 @@ export class PresenceManager {
         await redis.expire(redisKey, 3600);
       }
     } catch (error) {
-      logger.error('[Presence] Failed to save presence to Redis:', error);
+      logger.warn('[Presence] Failed to save presence to Redis:', error);
     }
   }
 
@@ -304,7 +304,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.error('[Presence] Failed to get presence from Redis:', error);
+      logger.warn('[Presence] Failed to get presence from Redis:', error);
     }
 
     return null;
@@ -314,7 +314,7 @@ export class PresenceManager {
     const key = `${userId}:${connectionId}`;
     const interval = setInterval(() => {
       this.heartbeat(projectId, userId, connectionId).catch((err) => {
-        logger.error('[Presence] Heartbeat failed:', err);
+        logger.warn('[Presence] Heartbeat failed:', err);
       });
     }, HEARTBEAT_INTERVAL_MS);
 
@@ -369,7 +369,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.error('[Presence] Failed to cleanup stale presence:', error);
+      logger.warn('[Presence] Failed to cleanup stale presence:', error);
     }
 
     const projectPresence = this.localPresence.get(projectId);

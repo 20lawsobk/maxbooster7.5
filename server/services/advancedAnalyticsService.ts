@@ -162,7 +162,7 @@ class AdvancedAnalyticsService {
         metadata: row.metadata as Record<string, unknown>,
       }));
     } catch (error) {
-      logger.error('Error fetching multi-platform data:', error);
+      logger.warn('Error fetching multi-platform data:', error);
       return [];
     }
   }

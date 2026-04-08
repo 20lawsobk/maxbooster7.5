@@ -35,7 +35,7 @@ router.get('/tickets', requireAuth, async (req, res) => {
 
     res.json({ tickets, total: tickets.length });
   } catch (error) {
-    logger.error('Error fetching user tickets:', error);
+    logger.warn('Error fetching user tickets:', error);
     res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
@@ -89,7 +89,7 @@ router.get('/tickets/all', requireAdmin, async (req, res) => {
 
     res.json(tickets);
   } catch (error) {
-    logger.error('Error fetching tickets:', error);
+    logger.warn('Error fetching tickets:', error);
     res.status(500).json({ error: 'Failed to fetch tickets' });
   }
 });
@@ -125,7 +125,7 @@ router.get('/stats', requireAdmin, async (req, res) => {
       avgSatisfaction: parseFloat(avgSatisfactionResult[0]?.avg || '0'),
     });
   } catch (error) {
-    logger.error('Error fetching ticket stats:', error);
+    logger.warn('Error fetching ticket stats:', error);
     res.status(500).json({ error: 'Failed to fetch ticket stats' });
   }
 });
@@ -146,7 +146,7 @@ router.get('/tickets/:ticketId', requireAdmin, async (req, res) => {
 
     res.json(ticket[0]);
   } catch (error) {
-    logger.error('Error fetching ticket:', error);
+    logger.warn('Error fetching ticket:', error);
     res.status(500).json({ error: 'Failed to fetch ticket' });
   }
 });
@@ -185,7 +185,7 @@ router.patch('/tickets/:ticketId', requireAdmin, async (req, res) => {
 
     res.json({ success: true, message: 'Ticket updated' });
   } catch (error) {
-    logger.error('Error updating ticket:', error);
+    logger.warn('Error updating ticket:', error);
     res.status(500).json({ error: 'Failed to update ticket' });
   }
 });
@@ -233,11 +233,11 @@ router.post('/tickets', requireAuth, async (req, res) => {
           newTicket.id
         );
       } catch (err) {
-        logger.error('Support ticket admin notification error:', err);
+        logger.warn('Support ticket admin notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('Error creating ticket:', error);
+    logger.warn('Error creating ticket:', error);
     res.status(500).json({ error: 'Failed to create ticket' });
   }
 });

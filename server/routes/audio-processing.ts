@@ -236,7 +236,7 @@ router.post('/analyze', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error: unknown) {
-    logger.error('Audio analysis error:', error);
+    logger.warn('Audio analysis error:', error);
     res.status(500).json({ error: 'Audio analysis failed' });
   }
 });
@@ -304,7 +304,7 @@ router.post('/process', requireAuth, async (req: Request, res: Response) => {
       processingApplied: processingChain.map(p => p.type),
     });
   } catch (error: unknown) {
-    logger.error('Audio processing error:', error);
+    logger.warn('Audio processing error:', error);
     res.status(500).json({ error: 'Audio processing failed' });
   }
 });
@@ -429,7 +429,7 @@ router.get('/presets', requireAuth, async (req: Request, res: Response) => {
       presets,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching presets:', error);
+    logger.warn('Error fetching presets:', error);
     res.status(500).json({ error: 'Failed to fetch presets' });
   }
 });
@@ -463,7 +463,7 @@ router.get('/capabilities', requireAuth, async (req: Request, res: Response) => 
       },
     });
   } catch (error: any) {
-    logger.error('Error in audio capabilities:', error?.message);
+    logger.warn('Error in audio capabilities:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -491,7 +491,7 @@ router.post('/analyze-file', requireAuth, async (req: Request, res: Response) =>
     }
     return res.json({ success: true, ...result.data });
   } catch (error: any) {
-    logger.error('Audio file analysis error:', error?.message);
+    logger.warn('Audio file analysis error:', error?.message);
     res.status(500).json({ error: 'Audio analysis failed' });
   }
 });
@@ -533,7 +533,7 @@ router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
     }
     return res.json(result.data);
   } catch (error: any) {
-    logger.error('MIDI transcription error:', error?.message);
+    logger.warn('MIDI transcription error:', error?.message);
     res.status(500).json({ error: 'MIDI transcription failed' });
   }
 });

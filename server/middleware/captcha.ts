@@ -29,7 +29,7 @@ export async function getFailedAttempts(ip: string): Promise<number> {
     const count = await redis.get(key);
     return count ? parseInt(count, 10) : 0;
   } catch (error) {
-    logger.error('Error getting failed attempts:', error);
+    logger.warn('Error getting failed attempts:', error);
     return 0;
   }
 }
@@ -49,7 +49,7 @@ export async function incrementFailedAttempts(ip: string): Promise<number> {
     
     return newCount;
   } catch (error) {
-    logger.error('Error incrementing failed attempts:', error);
+    logger.warn('Error incrementing failed attempts:', error);
     return 0;
   }
 }
@@ -63,7 +63,7 @@ export async function resetFailedAttempts(ip: string): Promise<boolean> {
     await redis.del(key);
     return true;
   } catch (error) {
-    logger.error('Error resetting failed attempts:', error);
+    logger.warn('Error resetting failed attempts:', error);
     return false;
   }
 }
@@ -106,7 +106,7 @@ async function verifyCaptchaToken(token: string, secret: string): Promise<boolea
     logger.warn('Captcha verification failed:', { success: data.success, score: data.score });
     return false;
   } catch (error) {
-    logger.error('Captcha verification error:', error);
+    logger.warn('Captcha verification error:', error);
     return false;
   }
 }
@@ -132,7 +132,7 @@ async function verifyHCaptchaToken(token: string, secret: string): Promise<boole
     const data = await response.json() as { success: boolean };
     return data.success;
   } catch (error) {
-    logger.error('hCaptcha verification error:', error);
+    logger.warn('hCaptcha verification error:', error);
     return false;
   }
 }

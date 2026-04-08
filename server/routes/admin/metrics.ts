@@ -43,7 +43,7 @@ router.get('/metrics', async (req, res) => {
 
     res.json({ metrics });
   } catch (error: unknown) {
-    logger.error('Error fetching metrics:', error);
+    logger.warn('Error fetching metrics:', error);
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });
@@ -63,7 +63,7 @@ router.post('/metrics/test', async (req, res) => {
 
     res.json({ success: true, message: 'Test metric recorded' });
   } catch (error: unknown) {
-    logger.error('Error recording test metric:', error);
+    logger.warn('Error recording test metric:', error);
     res.status(500).json({ error: 'Failed to record metric' });
   }
 });
@@ -76,7 +76,7 @@ router.get('/alerts/incidents', async (req, res) => {
     const incidents = await metricsService.getActiveIncidents();
     res.json({ incidents });
   } catch (error: unknown) {
-    logger.error('Error fetching incidents:', error);
+    logger.warn('Error fetching incidents:', error);
     res.status(500).json({ error: 'Failed to fetch incidents' });
   }
 });
@@ -104,7 +104,7 @@ router.post('/alerts/rules', async (req, res) => {
 
     res.json({ success: true, message: 'Alert rule created' });
   } catch (error: unknown) {
-    logger.error('Error creating alert rule:', error);
+    logger.warn('Error creating alert rule:', error);
     res.status(500).json({ error: 'Failed to create alert rule' });
   }
 });
@@ -117,7 +117,7 @@ router.post('/alerts/evaluate', async (req, res) => {
     await metricsService.evaluateAlerts();
     res.json({ success: true, message: 'Alerts evaluated' });
   } catch (error: unknown) {
-    logger.error('Error evaluating alerts:', error);
+    logger.warn('Error evaluating alerts:', error);
     res.status(500).json({ error: 'Failed to evaluate alerts' });
   }
 });
@@ -136,7 +136,7 @@ router.get('/email/stats', async (req, res) => {
 
     res.json({ stats, recentBounces });
   } catch (error: unknown) {
-    logger.error('Error fetching email stats:', error);
+    logger.warn('Error fetching email stats:', error);
     res.status(500).json({ error: 'Failed to fetch email stats' });
   }
 });

@@ -141,7 +141,7 @@ router.get('/posts', requireAuth, async (req: AuthenticatedRequest, res: Respons
     const posts = await storage.getSocialPosts?.(userId) || [];
     res.json(posts);
   } catch (error) {
-    logger.error('Failed to get social posts:', error);
+    logger.warn('Failed to get social posts:', error);
     res.status(500).json({ error: 'Failed to get social posts:' });
   }
 });
@@ -173,12 +173,12 @@ router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res
         try {
           await notificationService.sendSocialPostScheduledNotification(userId, platform, content, scheduledDate);
         } catch (err) {
-          logger.error('Social post scheduled notification error:', err);
+          logger.warn('Social post scheduled notification error:', err);
         }
       });
     }
   } catch (error) {
-    logger.error('Failed to schedule post:', error);
+    logger.warn('Failed to schedule post:', error);
     res.status(500).json({ error: 'Failed to schedule post' });
   }
 });
@@ -206,11 +206,11 @@ router.post('/calendar/:postId/publish', requireAuth, async (req: AuthenticatedR
         const content = post.content || '';
         await notificationService.sendSocialPostPublishedNotification(userId, platform, content);
       } catch (err) {
-        logger.error('Social post published notification error:', err);
+        logger.warn('Social post published notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('Failed to publish post:', error);
+    logger.warn('Failed to publish post:', error);
     res.status(500).json({ error: 'Failed to publish post' });
   }
 });
@@ -233,7 +233,7 @@ router.get('/metrics', requireAuth, async (req: AuthenticatedRequest, res: Respo
     };
     res.json(metrics);
   } catch (error) {
-    logger.error('Failed to get social metrics:', error);
+    logger.warn('Failed to get social metrics:', error);
     res.json({
       totalFollowers: 0,
       totalEngagement: 0,
@@ -256,7 +256,7 @@ router.get('/calendar', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const events = await storage.getSocialCalendarEvents?.(userId) || [];
     res.json(events);
   } catch (error) {
-    logger.error('Failed to get social calendar:', error);
+    logger.warn('Failed to get social calendar:', error);
     res.status(500).json({ error: 'Failed to get social calendar:' });
   }
 });
@@ -273,7 +273,7 @@ router.get('/calendar/stats', requireAuth, async (req: AuthenticatedRequest, res
     };
     res.json(stats);
   } catch (error) {
-    logger.error('Failed to get calendar stats:', error);
+    logger.warn('Failed to get calendar stats:', error);
     res.json({
       totalScheduled: 0,
       pendingApproval: 0,
@@ -290,7 +290,7 @@ router.get('/activity', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const activity = await storage.getSocialActivity?.(userId) || [];
     res.json(activity);
   } catch (error) {
-    logger.error('Failed to get social activity:', error);
+    logger.warn('Failed to get social activity:', error);
     res.status(500).json({ error: 'Failed to get social activity:' });
   }
 });
@@ -302,7 +302,7 @@ router.get('/weekly-stats', requireAuth, async (req: AuthenticatedRequest, res: 
     const stats = await storage.getSocialWeeklyStats?.(userId) || [];
     res.json(stats);
   } catch (error) {
-    logger.error('Failed to get weekly stats:', error);
+    logger.warn('Failed to get weekly stats:', error);
     res.status(500).json({ error: 'Failed to get weekly stats:' });
   }
 });
@@ -314,7 +314,7 @@ router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: R
     const insights = await (storage.getSocialAIInsights?.(userId) ?? Promise.resolve([])).catch(() => []);
     res.json(insights);
   } catch (error) {
-    logger.error('Failed to get AI insights:', error);
+    logger.warn('Failed to get AI insights:', error);
     res.json([]);
   }
 });
@@ -499,7 +499,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     
     res.json(platformStatus);
   } catch (error) {
-    logger.error('Failed to get platform status:', error);
+    logger.warn('Failed to get platform status:', error);
     res.status(500).json({ error: 'Failed to get platform status:' });
   }
 });
@@ -550,11 +550,11 @@ router.post('/sync-all', requireAuth, async (req: AuthenticatedRequest, res: Res
           }
         }
       } catch (err) {
-        logger.error('Follower milestone notification error:', err);
+        logger.warn('Follower milestone notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('Failed to sync all platforms:', error);
+    logger.warn('Failed to sync all platforms:', error);
     res.status(500).json({ error: 'Failed to sync all platforms' });
   }
 });
@@ -570,7 +570,7 @@ router.get('/listening/keywords', requireAuth, async (req: AuthenticatedRequest,
     const keywords = await storage.getSocialListeningKeywords?.(userId) || [];
     res.json(keywords);
   } catch (error) {
-    logger.error('Failed to get social listening keywords:', error);
+    logger.warn('Failed to get social listening keywords:', error);
     res.status(500).json({ error: 'Failed to get social listening keywords:' });
   }
 });
@@ -639,7 +639,7 @@ router.get('/hashtags/trending', requireAuth, async (req: AuthenticatedRequest, 
     trending.sort((a, b) => b.posts - a.posts);
     res.json(trending.slice(0, 12));
   } catch (error) {
-    logger.error('Failed to get trending hashtags:', error);
+    logger.warn('Failed to get trending hashtags:', error);
     res.status(500).json({ error: 'Failed to get trending hashtags' });
   }
 });
@@ -651,7 +651,7 @@ router.get('/listening/trending', requireAuth, async (req: AuthenticatedRequest,
     const trending = await storage.getSocialListeningTrending?.(userId) || [];
     res.json(trending);
   } catch (error) {
-    logger.error('Failed to get social listening trending:', error);
+    logger.warn('Failed to get social listening trending:', error);
     res.status(500).json({ error: 'Failed to get social listening trending:' });
   }
 });
@@ -663,7 +663,7 @@ router.get('/listening/influencers', requireAuth, async (req: AuthenticatedReque
     const influencers = await storage.getSocialListeningInfluencers?.(userId) || [];
     res.json(influencers);
   } catch (error) {
-    logger.error('Failed to get social listening influencers:', error);
+    logger.warn('Failed to get social listening influencers:', error);
     res.status(500).json({ error: 'Failed to get social listening influencers:' });
   }
 });
@@ -675,7 +675,7 @@ router.get('/listening/alerts', requireAuth, async (req: AuthenticatedRequest, r
     const alerts = await storage.getSocialListeningAlerts?.(userId) || [];
     res.json(alerts);
   } catch (error) {
-    logger.error('Failed to get social listening alerts:', error);
+    logger.warn('Failed to get social listening alerts:', error);
     res.status(500).json({ error: 'Failed to get social listening alerts:' });
   }
 });
@@ -691,7 +691,7 @@ router.get('/competitors', requireAuth, async (req: AuthenticatedRequest, res: R
     const competitors = await (await getCompetitorBenchmark()).getCompetitors(userId);
     res.json(competitors);
   } catch (error) {
-    logger.error('Failed to get competitors:', error);
+    logger.warn('Failed to get competitors:', error);
     res.status(500).json({ error: 'Failed to get competitors:' });
   }
 });
@@ -714,7 +714,7 @@ router.post('/competitors', requireAuth, async (req: AuthenticatedRequest, res: 
 
     res.status(201).json(result.competitor);
   } catch (error) {
-    logger.error('Failed to add competitor:', error);
+    logger.warn('Failed to add competitor:', error);
     res.status(500).json({ error: 'Failed to add competitor' });
   }
 });
@@ -733,7 +733,7 @@ router.delete('/competitors/:id', requireAuth, async (req: AuthenticatedRequest,
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Failed to remove competitor:', error);
+    logger.warn('Failed to remove competitor:', error);
     res.status(500).json({ error: 'Failed to remove competitor' });
   }
 });
@@ -745,7 +745,7 @@ router.get('/your-stats', requireAuth, async (req: AuthenticatedRequest, res: Re
     const stats = await storage.getUserSocialStats?.(userId) || null;
     res.json(stats);
   } catch (error) {
-    logger.error('Failed to get your social stats:', error);
+    logger.warn('Failed to get your social stats:', error);
     res.json(null);
   }
 });
@@ -759,7 +759,7 @@ router.get('/benchmark/competitors', requireAuth, async (req: AuthenticatedReque
     const comparison = await (await getCompetitorBenchmark()).getBenchmarkComparison(userId);
     res.json({ competitors, yourBrand, comparison });
   } catch (error) {
-    logger.error('Failed to get benchmark competitors:', error);
+    logger.warn('Failed to get benchmark competitors:', error);
     res.json({ competitors: [], yourBrand: null, comparison: [] });
   }
 });
@@ -771,7 +771,7 @@ router.get('/benchmark/insights', requireAuth, async (req: AuthenticatedRequest,
     const insights = await (await getCompetitorBenchmark()).getInsights(userId);
     res.json(insights);
   } catch (error) {
-    logger.error('Failed to get benchmark insights:', error);
+    logger.warn('Failed to get benchmark insights:', error);
     res.status(500).json({ error: 'Failed to get benchmark insights:' });
   }
 });
@@ -783,7 +783,7 @@ router.get('/benchmark/share-of-voice', requireAuth, async (req: AuthenticatedRe
     const shareOfVoice = await (await getCompetitorBenchmark()).getShareOfVoice(userId);
     res.json(shareOfVoice);
   } catch (error) {
-    logger.error('Failed to get share of voice:', error);
+    logger.warn('Failed to get share of voice:', error);
     res.status(500).json({ error: 'Failed to get share of voice' });
   }
 });
@@ -845,7 +845,7 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Respons
       total: filteredMessages.length 
     });
   } catch (error) {
-    logger.error('Failed to get inbox messages:', error);
+    logger.warn('Failed to get inbox messages:', error);
     res.json({ messages: [], total: 0 });
   }
 });
@@ -876,7 +876,7 @@ router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res: R
     };
     res.json(stats);
   } catch (error) {
-    logger.error('Failed to get inbox stats:', error);
+    logger.warn('Failed to get inbox stats:', error);
     res.json({ total: 0, unread: 0, highPriority: 0, negative: 0, byPlatform: {} });
   }
 });
@@ -902,7 +902,7 @@ router.post('/inbox/:id/read', requireAuth, async (req: AuthenticatedRequest, re
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Failed to mark message as read:', error);
+    logger.warn('Failed to mark message as read:', error);
     res.status(500).json({ error: 'Failed to mark message as read' });
   }
 });
@@ -934,7 +934,7 @@ router.post('/inbox/bulk/read', requireAuth, async (req: AuthenticatedRequest, r
 
     res.json({ success: true, updated: messageIds.length });
   } catch (error) {
-    logger.error('Failed to mark messages as read:', error);
+    logger.warn('Failed to mark messages as read:', error);
     res.status(500).json({ error: 'Failed to mark messages as read' });
   }
 });
@@ -1006,7 +1006,7 @@ router.post('/inbox/:id/reply', requireAuth, async (req: AuthenticatedRequest, r
       }
     });
   } catch (error) {
-    logger.error('Failed to reply to message:', error);
+    logger.warn('Failed to reply to message:', error);
     res.status(500).json({ 
       error: 'Failed to reply to message',
       outcome: {
@@ -1048,7 +1048,7 @@ router.post('/inbox/:id/assign', requireAuth, async (req: AuthenticatedRequest, 
       }
     });
   } catch (error) {
-    logger.error('Failed to assign message:', error);
+    logger.warn('Failed to assign message:', error);
     res.status(500).json({ 
       error: 'Failed to assign message',
       outcome: {
@@ -1080,7 +1080,7 @@ router.post('/inbox/:id/archive', requireAuth, async (req: AuthenticatedRequest,
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Failed to archive message:', error);
+    logger.warn('Failed to archive message:', error);
     res.status(500).json({ error: 'Failed to archive message' });
   }
 });
@@ -1090,7 +1090,7 @@ router.get('/inbox/templates', requireAuth, async (req: AuthenticatedRequest, re
   try {
     res.status(500).json({ error: 'Internal server error' });
   } catch (error) {
-    logger.error('Failed to get reply templates:', error);
+    logger.warn('Failed to get reply templates:', error);
     res.status(500).json({ error: 'Failed to get reply templates:' });
   }
 });
@@ -1100,7 +1100,7 @@ router.get('/inbox/team', requireAuth, async (req: AuthenticatedRequest, res: Re
   try {
     res.status(500).json({ error: 'Internal server error' });
   } catch (error) {
-    logger.error('Failed to get team members:', error);
+    logger.warn('Failed to get team members:', error);
     res.status(500).json({ error: 'Failed to get team members:' });
   }
 });
@@ -1126,7 +1126,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
       metadata: c.metadata || {},
     })));
   } catch (error) {
-    logger.error('Failed to get connections:', error);
+    logger.warn('Failed to get connections:', error);
     res.status(500).json({ error: 'Failed to get connections:' });
   }
 });
@@ -1139,7 +1139,7 @@ router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequ
   try {
     res.json({ posts: [] });
   } catch (error) {
-    logger.error('Failed to get unified calendar posts:', error);
+    logger.warn('Failed to get unified calendar posts:', error);
     res.json({ posts: [] });
   }
 });
@@ -1148,7 +1148,7 @@ router.get('/unified-calendar/campaigns', requireAuth, async (req: Authenticated
   try {
     res.json({ campaigns: [] });
   } catch (error) {
-    logger.error('Failed to get unified calendar campaigns:', error);
+    logger.warn('Failed to get unified calendar campaigns:', error);
     res.json({ campaigns: [] });
   }
 });
@@ -1157,7 +1157,7 @@ router.get('/unified-calendar/holidays', requireAuth, async (req: AuthenticatedR
   try {
     res.json({ holidays: [] });
   } catch (error) {
-    logger.error('Failed to get unified calendar holidays:', error);
+    logger.warn('Failed to get unified calendar holidays:', error);
     res.json({ holidays: [] });
   }
 });
@@ -1166,7 +1166,7 @@ router.get('/unified-calendar/queue', requireAuth, async (req: AuthenticatedRequ
   try {
     res.json({ queue: [] });
   } catch (error) {
-    logger.error('Failed to get unified calendar queue:', error);
+    logger.warn('Failed to get unified calendar queue:', error);
     res.json({ queue: [] });
   }
 });
@@ -1290,7 +1290,7 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
       },
     });
   } catch (error) {
-    logger.error('Failed to generate social content:', error);
+    logger.warn('Failed to generate social content:', error);
     res.status(500).json({ 
       success: false,
       message: 'Failed to generate content',
@@ -1705,7 +1705,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       },
     });
   } catch (error) {
-    logger.error('Failed to generate content from URL:', error);
+    logger.warn('Failed to generate content from URL:', error);
     res.status(500).json({ error: 'Failed to generate content from URL' });
   }
 });
@@ -1717,7 +1717,7 @@ router.get('/scheduled', requireAuth, async (req: AuthenticatedRequest, res: Res
     const scheduledPosts = await storage.getScheduledPosts?.(userId) || [];
     res.json(scheduledPosts);
   } catch (error) {
-    logger.error('Failed to get scheduled posts:', error);
+    logger.warn('Failed to get scheduled posts:', error);
     res.status(500).json({ error: 'Failed to get scheduled posts:' });
   }
 });
@@ -1930,7 +1930,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
       connectedPlatforms: accounts.filter(a => a.isActive).length,
     });
   } catch (error) {
-    logger.error('Failed to get social analytics:', error);
+    logger.warn('Failed to get social analytics:', error);
     res.status(500).json({ error: 'Failed to get analytics' });
   }
 });
@@ -2012,11 +2012,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
               scriptSource = scriptResult.source || 'AI';
             }
           } catch (scriptErr) {
-            logger.error('[VideoGen] MaxCore call failed (transient) — script fields will be empty:', scriptErr);
+            logger.warn('[VideoGen] MaxCore call failed (transient) — script fields will be empty:', scriptErr);
           }
 
           if (!hook && !body) {
-            logger.error('[VideoGen] MaxCore returned no script content (transient failure) — hook/body empty');
+            logger.warn('[VideoGen] MaxCore returned no script content (transient failure) — hook/body empty');
           }
 
           logger.info(
@@ -2060,11 +2060,11 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
         } else {
           const errMsg = result.error || 'Video generation failed (no error message)';
           ffmpegJobs.set(jobId, { status: 'error', error: errMsg, createdAt: Date.now() });
-          logger.error(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
+          logger.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
         }
       } catch (err: any) {
         ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
-        logger.error(`[VideoGen] Background job ${jobId} threw:`, err);
+        logger.warn(`[VideoGen] Background job ${jobId} threw:`, err);
       }
     })();
 
@@ -2072,7 +2072,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     return res.json({ success: true, job_id: jobId, status: 'processing' });
 
   } catch (error) {
-    logger.error('Failed to start video generation:', error);
+    logger.warn('Failed to start video generation:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
   }
 });
@@ -2122,7 +2122,7 @@ router.get('/video-job/:jobId', requireAuthOnly, async (req: AuthenticatedReques
     }
     res.json(result.data);
   } catch (error) {
-    logger.error('Failed to poll video job:', error);
+    logger.warn('Failed to poll video job:', error);
     res.status(500).json({ success: false, status: 'error', message: 'Job status check failed' });
   }
 });
@@ -2308,7 +2308,7 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
     }
   }
 
-  logger.error(`[VideoProxy] Could not retrieve ${filename} from any MaxCore path`);
+  logger.warn(`[VideoProxy] Could not retrieve ${filename} from any MaxCore path`);
   return res.status(404).json({ error: 'Video not found — it may have expired on MaxCore. Please regenerate.' });
 });
 
@@ -2350,7 +2350,7 @@ router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedReques
       });
     }
   } catch (error) {
-    logger.error('Failed to get video templates:', error);
+    logger.warn('Failed to get video templates:', error);
     res.status(500).json({ success: false, message: 'Failed to get templates' });
   }
 });
@@ -2397,7 +2397,7 @@ router.post('/veo-campaign', requireAuth, async (req: AuthenticatedRequest, res:
 
     res.json(result);
   } catch (error) {
-    logger.error('Failed to generate Veo campaign:', error);
+    logger.warn('Failed to generate Veo campaign:', error);
     res.status(500).json({ success: false, message: 'Video campaign generation failed' });
   }
 });
@@ -2432,7 +2432,7 @@ router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedReques
 
     res.json({ success: true, asset });
   } catch (error) {
-    logger.error('Failed to generate single Veo video:', error);
+    logger.warn('Failed to generate single Veo video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
   }
 });
@@ -2448,7 +2448,7 @@ router.get('/veo-campaign/platforms', requireAuth, async (_req: AuthenticatedReq
     }
     res.json({ success: true, ...data });
   } catch (error) {
-    logger.error('Failed to get Veo platforms:', error);
+    logger.warn('Failed to get Veo platforms:', error);
     res.status(500).json({ success: false, message: 'Failed to get platforms' });
   }
 });
@@ -2464,7 +2464,7 @@ router.get('/veo-campaign/goals', requireAuth, async (_req: AuthenticatedRequest
     }
     res.json({ success: true, ...data });
   } catch (error) {
-    logger.error('Failed to get Veo goals:', error);
+    logger.warn('Failed to get Veo goals:', error);
     res.status(500).json({ success: false, message: 'Failed to get goals' });
   }
 });
@@ -2481,7 +2481,7 @@ router.get('/veo-campaign/recommend/:platform', requireAuth, async (req: Authent
     }
     res.json({ success: true, ...data });
   } catch (error) {
-    logger.error('Failed to get Veo recommendations:', error);
+    logger.warn('Failed to get Veo recommendations:', error);
     res.status(500).json({ success: false, message: 'Failed to get recommendations' });
   }
 });
@@ -2497,7 +2497,7 @@ router.get('/veo-campaign/status', requireAuth, async (_req: AuthenticatedReques
     }
     res.json({ success: true, ...status });
   } catch (error) {
-    logger.error('Failed to get Veo status:', error);
+    logger.warn('Failed to get Veo status:', error);
     res.status(500).json({ success: false, message: 'Failed to get status' });
   }
 });
@@ -2521,7 +2521,7 @@ router.post('/veo-url/metadata', requireAuth, async (req: AuthenticatedRequest, 
     }
     res.json(data);
   } catch (error) {
-    logger.error('Failed to extract URL metadata:', error);
+    logger.warn('Failed to extract URL metadata:', error);
     res.status(500).json({ success: false, message: 'Failed to extract metadata from URL' });
   }
 });
@@ -2545,7 +2545,7 @@ router.post('/veo-campaign/from-url', requireAuth, async (req: AuthenticatedRequ
     }
     res.json(result);
   } catch (error) {
-    logger.error('Failed to generate campaign from URL:', error);
+    logger.warn('Failed to generate campaign from URL:', error);
     res.status(500).json({ success: false, message: 'Campaign generation from URL failed' });
   }
 });
@@ -2634,7 +2634,7 @@ router.post('/veo-campaign/promote-storefront', requireAuth, async (req: Authent
       },
     });
   } catch (error) {
-    logger.error('Failed to promote storefront:', error);
+    logger.warn('Failed to promote storefront:', error);
     res.status(500).json({ success: false, message: 'Storefront promotion campaign failed' });
   }
 });
@@ -2712,7 +2712,7 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
       },
     });
   } catch (error) {
-    logger.error('Failed to promote listing:', error);
+    logger.warn('Failed to promote listing:', error);
     res.status(500).json({ success: false, message: 'Listing promotion campaign failed' });
   }
 });
@@ -2775,7 +2775,7 @@ router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest
 
     res.json({ success: true, visual_spec: specData, image_url: null, ...specData });
   } catch (error) {
-    logger.error('Failed to generate social image:', error);
+    logger.warn('Failed to generate social image:', error);
     res.status(500).json({ success: false, message: 'Image generation failed' });
   }
 });
@@ -2923,7 +2923,7 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
       image_prompt: imagePrompt,
     });
   } catch (error) {
-    logger.error('analyze-url failed:', error);
+    logger.warn('analyze-url failed:', error);
     res.status(500).json({ success: false, message: 'URL analysis failed' });
   }
 });
@@ -2982,7 +2982,7 @@ router.post(
         video_config: videoConfig,
       });
     } catch (error) {
-      logger.error('analyze-audio failed:', error);
+      logger.warn('analyze-audio failed:', error);
       res.status(500).json({ success: false, message: 'Audio analysis failed' });
     }
   },
@@ -3041,7 +3041,7 @@ router.post(
         palette:  analysis.palette.slice(0, 5),
       });
     } catch (error) {
-      logger.error('analyze-image failed:', error);
+      logger.warn('analyze-image failed:', error);
       res.status(500).json({ success: false, message: 'Image analysis failed' });
     }
   },
@@ -3060,7 +3060,7 @@ router.get('/voice-profiles', requireAuthOnly, async (_req: AuthenticatedRequest
     const svc = await getVoiceSynthService();
     res.json({ success: true, profiles: svc.listVoiceProfiles() });
   } catch (e: any) {
-    logger.error('[Route] voice-profiles:', e?.message);
+    logger.warn('[Route] voice-profiles:', e?.message);
     res.status(500).json({ success: false, error: 'Failed to load voice profiles' });
   }
 });
@@ -3147,7 +3147,7 @@ router.post(
         pdim: pdimMeta ? { key: pdimMeta.pdimKey, compressedSize: pdimMeta.compressedSize } : null,
       });
     } catch (e: any) {
-      logger.error('[Route] synthesize-voice:', e?.message);
+      logger.warn('[Route] synthesize-voice:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Voice synthesis failed' });
     }
   },
@@ -3174,7 +3174,7 @@ router.post(
       const characteristics = await svc.analyzeReferenceVoice(file.path);
       res.json({ success: true, characteristics });
     } catch (e: any) {
-      logger.error('[Route] analyze-reference-voice:', e?.message);
+      logger.warn('[Route] analyze-reference-voice:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Analysis failed' });
     }
   },
@@ -3227,7 +3227,7 @@ router.post(
 
       res.json({ success: true, analysis, cacheHit });
     } catch (e: any) {
-      logger.error('[Route] analyze-audio-beats:', e?.message);
+      logger.warn('[Route] analyze-audio-beats:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Beat analysis failed' });
     }
   },
@@ -3364,7 +3364,7 @@ router.post(
         musicVideoJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
         logger.info(`[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? 'skipped'}`);
       } catch (e: any) {
-        logger.error(`[MusicVideo] Job ${jobId} failed:`, e?.message);
+        logger.warn(`[MusicVideo] Job ${jobId} failed:`, e?.message);
         musicVideoJobs.set(jobId, { status: 'error', error: e?.message || 'Music video generation failed', createdAt: Date.now() });
       }
     })();

@@ -49,10 +49,10 @@ export function createAutonomousWorker(): Worker {
     logger.info(`✅ [AutonomousWorker] ${job.name} completed`),
   );
   w.on('failed', (job, err) =>
-    logger.error(`❌ [AutonomousWorker] ${job?.name} failed: ${err.message}`),
+    logger.warn(`❌ [AutonomousWorker] ${job?.name} failed: ${err.message}`),
   );
   w.on('error', (err) =>
-    logger.error(`❌ [AutonomousWorker] Error: ${err.message}`),
+    logger.warn(`❌ [AutonomousWorker] Error: ${err.message}`),
   );
 
   _worker = w;

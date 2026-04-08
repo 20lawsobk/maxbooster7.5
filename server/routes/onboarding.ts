@@ -18,7 +18,7 @@ router.get('/progress', requireAuth, async (req, res) => {
     const progress = await onboardingService.getOnboardingProgress(userId);
     res.json(progress);
   } catch (error) {
-    logger.error('Error fetching onboarding progress:', error);
+    logger.warn('Error fetching onboarding progress:', error);
     res.status(500).json({ error: 'Failed to fetch onboarding progress' });
   }
 });
@@ -38,7 +38,7 @@ router.post('/complete-step', requireAuth, async (req, res) => {
     const result = await onboardingService.completeStep(userId, stepId);
     res.json(result);
   } catch (error) {
-    logger.error('Error completing onboarding step:', error);
+    logger.warn('Error completing onboarding step:', error);
     res.status(500).json({ error: 'Failed to complete step' });
   }
 });
@@ -53,7 +53,7 @@ router.post('/skip', requireAuth, async (req, res) => {
     const result = await onboardingService.skipOnboarding(userId);
     res.json(result);
   } catch (error) {
-    logger.error('Error skipping onboarding:', error);
+    logger.warn('Error skipping onboarding:', error);
     res.status(500).json({ error: 'Failed to skip onboarding' });
   }
 });
@@ -68,7 +68,7 @@ router.get('/recommended-step', requireAuth, async (req, res) => {
     const step = await onboardingService.getRecommendedNextStep(userId);
     res.json({ recommendedStep: step });
   } catch (error) {
-    logger.error('Error getting recommended step:', error);
+    logger.warn('Error getting recommended step:', error);
     res.status(500).json({ error: 'Failed to get recommended step' });
   }
 });
@@ -78,7 +78,7 @@ router.get('/tasks', requireAuth, async (req, res) => {
     const tasks = await onboardingService.getTasks();
     res.json({ tasks });
   } catch (error) {
-    logger.error('Error fetching onboarding tasks:', error);
+    logger.warn('Error fetching onboarding tasks:', error);
     res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
@@ -91,7 +91,7 @@ router.post('/seed', requireAuth, async (req, res) => {
     await onboardingService.seedDefaultTasks();
     res.json({ success: true, message: 'Onboarding tasks seeded successfully' });
   } catch (error) {
-    logger.error('Error seeding onboarding tasks:', error);
+    logger.warn('Error seeding onboarding tasks:', error);
     res.status(500).json({ error: 'Failed to seed tasks' });
   }
 });
@@ -105,7 +105,7 @@ router.get('/status', async (req, res) => {
       version: '1.0.0',
     });
   } catch (error) {
-    logger.error('Error fetching onboarding status:', error);
+    logger.warn('Error fetching onboarding status:', error);
     res.status(500).json({ error: 'Failed to fetch status' });
   }
 });
@@ -142,7 +142,7 @@ router.post('/complete-welcome', requireAuth, async (req, res) => {
       message: 'Welcome flow completed successfully',
     });
   } catch (error) {
-    logger.error('Error completing welcome flow:', error);
+    logger.warn('Error completing welcome flow:', error);
     res.status(500).json({ error: 'Failed to complete welcome flow' });
   }
 });
@@ -199,7 +199,7 @@ router.post('/track-tutorial', requireAuth, async (req, res) => {
       progress: tutorialData,
     });
   } catch (error) {
-    logger.error('Error tracking tutorial progress:', error);
+    logger.warn('Error tracking tutorial progress:', error);
     res.status(500).json({ error: 'Failed to track tutorial progress' });
   }
 });
@@ -249,7 +249,7 @@ router.post('/skip-tutorial', requireAuth, async (req, res) => {
       showAgainLater,
     });
   } catch (error) {
-    logger.error('Error skipping tutorial:', error);
+    logger.warn('Error skipping tutorial:', error);
     res.status(500).json({ error: 'Failed to skip tutorial' });
   }
 });
@@ -273,7 +273,7 @@ router.get('/tutorials', requireAuth, async (req, res) => {
       tutorials: tutorialProgress,
     });
   } catch (error) {
-    logger.error('Error fetching tutorial progress:', error);
+    logger.warn('Error fetching tutorial progress:', error);
     res.status(500).json({ error: 'Failed to fetch tutorial progress' });
   }
 });
@@ -319,7 +319,7 @@ router.post('/mark-celebrated', requireAuth, async (req, res) => {
       actionType,
     });
   } catch (error) {
-    logger.error('Error marking celebration:', error);
+    logger.warn('Error marking celebration:', error);
     res.status(500).json({ error: 'Failed to mark celebration' });
   }
 });
@@ -353,7 +353,7 @@ router.get('/first-actions', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error fetching first actions:', error);
+    logger.warn('Error fetching first actions:', error);
     res.status(500).json({ error: 'Failed to fetch first actions' });
   }
 });
@@ -381,7 +381,7 @@ router.get('/check-first-login', requireAuth, async (req, res) => {
       showWelcomeWizard: isFirstLogin && !hasCompletedOnboarding,
     });
   } catch (error) {
-    logger.error('Error checking first login:', error);
+    logger.warn('Error checking first login:', error);
     res.status(500).json({ error: 'Failed to check first login' });
   }
 });
@@ -418,7 +418,7 @@ router.post('/dismiss-reminder', requireAuth, async (req, res) => {
       remindLater,
     });
   } catch (error) {
-    logger.error('Error dismissing reminder:', error);
+    logger.warn('Error dismissing reminder:', error);
     res.status(500).json({ error: 'Failed to dismiss reminder' });
   }
 });
@@ -596,7 +596,7 @@ router.get('/achievements', requireAuth, async (req, res) => {
       stats,
     });
   } catch (error) {
-    logger.error('Error fetching achievements:', error);
+    logger.warn('Error fetching achievements:', error);
     res.status(500).json({ error: 'Failed to fetch achievements' });
   }
 });
@@ -662,7 +662,7 @@ router.post('/unlock-achievement', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error unlocking achievement:', error);
+    logger.warn('Error unlocking achievement:', error);
     res.status(500).json({ error: 'Failed to unlock achievement' });
   }
 });
@@ -711,7 +711,7 @@ router.get('/profile/completion', requireAuth, async (req, res) => {
       totalPoints: completedSteps * 25,
     });
   } catch (error) {
-    logger.error('Error fetching profile completion:', error);
+    logger.warn('Error fetching profile completion:', error);
     res.status(500).json({ error: 'Failed to fetch profile completion' });
   }
 });

@@ -92,7 +92,7 @@ export async function initializeAIInsightsModels() {
 
     logger.info('✅ AI Insights Engine Models initialized');
   } catch (error: unknown) {
-    logger.error('❌ Failed to initialize AI Insights Models:', error);
+    logger.warn('❌ Failed to initialize AI Insights Models:', error);
     throw error;
   }
 }

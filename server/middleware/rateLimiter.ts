@@ -516,7 +516,7 @@ export async function getRateLimitStatus(
       total: count
     };
   } catch (error) {
-    logger.error('Error getting rate limit status:', error);
+    logger.warn('Error getting rate limit status:', error);
     return null;
   }
 }
@@ -558,7 +558,7 @@ export async function resetRateLimit(
     await redis.del(redisKey);
     return true;
   } catch (error) {
-    logger.error('Error resetting rate limit:', error);
+    logger.warn('Error resetting rate limit:', error);
     return false;
   }
 }

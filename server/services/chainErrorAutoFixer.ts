@@ -419,7 +419,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         } catch { /* non-fatal */ }
       },
       escalate: async (attempts) => {
-        logger.error(`[ChainFixer] pdim_exec_timeout: ${attempts} occurrences — PDIM is chronically unresponsive; check PDIM_HTTP_EXEC_URL health`);
+        logger.warn(`[ChainFixer] pdim_exec_timeout: ${attempts} occurrences — PDIM is chronically unresponsive; check PDIM_HTTP_EXEC_URL health`);
       },
     });
 
@@ -486,7 +486,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         } catch { /* non-fatal */ }
       },
       escalate: async () => {
-        logger.error('[ChainFixer] CRITICAL: Memory pressure unresolved after 5 fix attempts — consider increasing NODE_MAX_OLD_SPACE_SIZE or reducing concurrent workers');
+        logger.warn('[ChainFixer] CRITICAL: Memory pressure unresolved after 5 fix attempts — consider increasing NODE_MAX_OLD_SPACE_SIZE or reducing concurrent workers');
       },
     });
 
@@ -542,7 +542,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         }
       },
       escalate: async (attempts) => {
-        logger.error(`[ChainFixer] session_store_failure: ${attempts} occurrences — check DB pool and PDIM; users may be unable to authenticate`);
+        logger.warn(`[ChainFixer] session_store_failure: ${attempts} occurrences — check DB pool and PDIM; users may be unable to authenticate`);
       },
     });
 
@@ -565,7 +565,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         logger.warn('[ChainFixer] External API credential issue detected — check API key environment variables (OPENAI_API_KEY, STRIPE_SECRET_KEY, SENDGRID_API_KEY, etc.)');
       },
       escalate: async (attempts) => {
-        logger.error(`[ChainFixer] ESCALATION: External API credential expired or quota exceeded (${attempts} occurrences). Manual key rotation required.`);
+        logger.warn(`[ChainFixer] ESCALATION: External API credential expired or quota exceeded (${attempts} occurrences). Manual key rotation required.`);
       },
     });
 
@@ -595,7 +595,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         } catch { /* non-critical */ }
       },
       escalate: async (attempts) => {
-        logger.error(`[ChainFixer] CRITICAL filesystem errors (${attempts}x) — disk may be full or permissions corrupted. Manual intervention required.`);
+        logger.warn(`[ChainFixer] CRITICAL filesystem errors (${attempts}x) — disk may be full or permissions corrupted. Manual intervention required.`);
       },
     });
 
@@ -641,7 +641,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         logger.info('[ChainFixer] Worker thread crash — LuaExecutor semaphore reset; BullMQ will respawn the worker');
       },
       escalate: async (attempts) => {
-        logger.error(`[ChainFixer] Worker threads crashing repeatedly (${attempts}x) — possible OOM or code bug in job handler`);
+        logger.warn(`[ChainFixer] Worker threads crashing repeatedly (${attempts}x) — possible OOM or code bug in job handler`);
       },
     });
 
@@ -663,10 +663,10 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { distributedCache } = await import('./distributedCacheService.js');
           await (distributedCache as any)?.flush?.();
         } catch { /* non-critical */ }
-        logger.error('[ChainFixer] OOM detected — emergency GC + cache flush executed. Process may be unstable until it is recycled by the cluster.');
+        logger.warn('[ChainFixer] OOM detected — emergency GC + cache flush executed. Process may be unstable until it is recycled by the cluster.');
       },
       escalate: async () => {
-        logger.error('[ChainFixer] CRITICAL: OOM escalated — cluster will recycle this worker on the next health check');
+        logger.warn('[ChainFixer] CRITICAL: OOM escalated — cluster will recycle this worker on the next health check');
       },
     });
 

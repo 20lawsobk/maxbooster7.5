@@ -551,7 +551,7 @@ export async function analyzeAudioForGeneration(audioPath: string): Promise<Musi
       structure: 8,
     };
   } catch (error: unknown) {
-    logger.error('Audio analysis failed, using defaults:', error);
+    logger.warn('Audio analysis failed, using defaults:', error);
     return {
       key: 'C',
       scale: 'major',

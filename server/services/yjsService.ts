@@ -29,7 +29,7 @@ export class YjsCollaborationService {
 
   constructor() {
     if (this.YJS_PUBSUB_ENABLED) {
-      this.initPubSub().catch(err => logger.error('Failed to init YJS PubSub:', err));
+      this.initPubSub().catch(err => logger.warn('Failed to init YJS PubSub:', err));
     }
   }
 
@@ -51,7 +51,7 @@ export class YjsCollaborationService {
         });
       }
     } catch (error) {
-      logger.error('YJS PubSub init error:', error);
+      logger.warn('YJS PubSub init error:', error);
     }
   }
 
@@ -65,7 +65,7 @@ export class YjsCollaborationService {
         await this.subClient.subscribe(channel);
         logger.info(`Subscribed to YJS updates for project: ${projectId}`);
       } catch (error) {
-        logger.error(`Failed to subscribe to ${channel}:`, error);
+        logger.warn(`Failed to subscribe to ${channel}:`, error);
       }
     }
     this.pubSubCallbacks.get(projectId)?.add(callback);
@@ -101,7 +101,7 @@ export class YjsCollaborationService {
         const buffer = Buffer.from(cachedState, 'base64');
         Y.applyUpdate(doc, new Uint8Array(buffer));
       } catch (error: unknown) {
-        logger.error('Failed to load from Redis cache:', projectId, error);
+        logger.warn('Failed to load from Redis cache:', projectId, error);
         // Fall through to database load
       }
     }
@@ -125,7 +125,7 @@ export class YjsCollaborationService {
             // Redis cache update failed, but document is loaded from DB
           }
         } catch (error: unknown) {
-          logger.error('Failed to load snapshot for project:', projectId, error);
+          logger.warn('Failed to load snapshot for project:', projectId, error);
         }
       }
     }
@@ -180,7 +180,7 @@ export class YjsCollaborationService {
           // Clean up old snapshots (keep last 10)
           await storage.deleteOldCollabSnapshots(projectId, 10);
         } catch (error: unknown) {
-          logger.error('Failed to save collab snapshot:', error);
+          logger.warn('Failed to save collab snapshot:', error);
         }
       }, this.SAVE_DEBOUNCE_MS);
 
@@ -212,7 +212,7 @@ export class YjsCollaborationService {
         logger.warn('Redis cache update failed during force save:', projectId);
       }
     } catch (error: unknown) {
-      logger.error('Failed to force save document:', projectId, error);
+      logger.warn('Failed to force save document:', projectId, error);
       throw error;
     }
   }
@@ -231,7 +231,7 @@ export class YjsCollaborationService {
       try {
         await this.forceSave(projectId, doc);
       } catch (error: unknown) {
-        logger.error('Failed to force save during unload:', projectId, error);
+        logger.warn('Failed to force save during unload:', projectId, error);
       }
     }
 

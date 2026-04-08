@@ -35,7 +35,7 @@ export function stripeWebhookMiddleware(
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   
   if (!webhookSecret) {
-    logger.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured');
+    logger.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured');
     res.status(500).json({ 
       success: false, 
       error: 'Webhook secret not configured' 
@@ -88,7 +88,7 @@ export function stripeWebhookMiddleware(
     
     next();
   } catch (error: any) {
-    logger.error('[Stripe Webhook] Signature verification failed:', error.message);
+    logger.warn('[Stripe Webhook] Signature verification failed:', error.message);
     
     // Add failed attempt to audit log
     addWebhookAudit({
@@ -236,7 +236,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<{ success
     return result;
   } catch (error: any) {
     // SECURITY: Don't mark as processed on error - allow retry
-    logger.error(`[Stripe Webhook] Handler error for ${event.type} (${event.id}):`, error);
+    logger.warn(`[Stripe Webhook] Handler error for ${event.type} (${event.id}):`, error);
     return { success: false, message: error.message };
   }
 }

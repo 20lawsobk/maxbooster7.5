@@ -159,7 +159,7 @@ class DSPAnalyticsService {
       });
 
       if (!profileRes.ok) {
-        logger.error(`Spotify profile API error: ${profileRes.status} ${profileRes.statusText}`);
+        logger.warn(`Spotify profile API error: ${profileRes.status} ${profileRes.statusText}`);
         return null;
       }
 
@@ -182,7 +182,7 @@ class DSPAnalyticsService {
         topCities: [],
       };
     } catch (error) {
-      logger.error('Error fetching Spotify analytics:', error);
+      logger.warn('Error fetching Spotify analytics:', error);
       return null;
     }
   }
@@ -208,7 +208,7 @@ class DSPAnalyticsService {
       });
 
       if (!response.ok) {
-        logger.error(`Apple Music API error: ${response.status} ${response.statusText}`);
+        logger.warn(`Apple Music API error: ${response.status} ${response.statusText}`);
         return null;
       }
 
@@ -223,7 +223,7 @@ class DSPAnalyticsService {
         playlistAdds: 0,
       };
     } catch (error) {
-      logger.error('Error fetching Apple Music analytics:', error);
+      logger.warn('Error fetching Apple Music analytics:', error);
       return null;
     }
   }
@@ -253,7 +253,7 @@ class DSPAnalyticsService {
       );
 
       if (!response.ok) {
-        logger.error(`YouTube Analytics API error: ${response.status} ${response.statusText}`);
+        logger.warn(`YouTube Analytics API error: ${response.status} ${response.statusText}`);
         return null;
       }
 
@@ -269,7 +269,7 @@ class DSPAnalyticsService {
         averageViewDuration: row[5] || 0,
       };
     } catch (error) {
-      logger.error('Error fetching YouTube analytics:', error);
+      logger.warn('Error fetching YouTube analytics:', error);
       return null;
     }
   }
@@ -295,7 +295,7 @@ class DSPAnalyticsService {
       });
 
       if (!response.ok) {
-        logger.error(`Amazon Music API error: ${response.status} ${response.statusText}`);
+        logger.warn(`Amazon Music API error: ${response.status} ${response.statusText}`);
         return null;
       }
 
@@ -307,7 +307,7 @@ class DSPAnalyticsService {
         deviceBreakdown: data.deviceBreakdown || [],
       };
     } catch (error) {
-      logger.error('Error fetching Amazon Music analytics:', error);
+      logger.warn('Error fetching Amazon Music analytics:', error);
       return null;
     }
   }
@@ -340,7 +340,7 @@ class DSPAnalyticsService {
       });
 
       if (!response.ok) {
-        logger.error(`TikTok API error: ${response.status} ${response.statusText}`);
+        logger.warn(`TikTok API error: ${response.status} ${response.statusText}`);
         return null;
       }
 
@@ -359,7 +359,7 @@ class DSPAnalyticsService {
         virality: 0,
       };
     } catch (error) {
-      logger.error('Error fetching TikTok analytics:', error);
+      logger.warn('Error fetching TikTok analytics:', error);
       return null;
     }
   }
@@ -385,7 +385,7 @@ class DSPAnalyticsService {
       );
 
       if (!response.ok) {
-        logger.error(`Instagram API error: ${response.status} ${response.statusText}`);
+        logger.warn(`Instagram API error: ${response.status} ${response.statusText}`);
         return null;
       }
 
@@ -422,7 +422,7 @@ class DSPAnalyticsService {
         storiesViews: 0,
       };
     } catch (error) {
-      logger.error('Error fetching Instagram analytics:', error);
+      logger.warn('Error fetching Instagram analytics:', error);
       return null;
     }
   }
@@ -783,7 +783,7 @@ class DSPAnalyticsService {
 
       return normalizedData;
     } catch (error) {
-      logger.error(`Error syncing ${platform} data for user ${userId}:`, error);
+      logger.warn(`Error syncing ${platform} data for user ${userId}:`, error);
       
       await db
         .update(dspUserPlatformStatus)
@@ -839,7 +839,7 @@ class DSPAnalyticsService {
         };
       }
     } catch (error) {
-      logger.error(`Error querying existing data for ${platform}:`, error);
+      logger.warn(`Error querying existing data for ${platform}:`, error);
     }
 
     logger.info(`No existing data found for platform ${platform}, user ${userId}. Returning zeroed result.`);

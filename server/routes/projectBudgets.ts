@@ -18,7 +18,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(budgets);
   } catch (error) {
-    logger.error('[ProjectBudgets] Failed to list:', error);
+    logger.warn('[ProjectBudgets] Failed to list:', error);
     res.status(500).json({ error: 'Failed to fetch project budgets' });
   }
 });
@@ -31,7 +31,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!budget) return res.status(404).json({ error: 'Project budget not found' });
     res.json(budget);
   } catch (error) {
-    logger.error('[ProjectBudgets] Failed to fetch budget:', error);
+    logger.warn('[ProjectBudgets] Failed to fetch budget:', error);
     res.status(500).json({ error: 'Failed to fetch project budget' });
   }
 });
@@ -57,7 +57,7 @@ router.get('/:id/items', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(items);
   } catch (error) {
-    logger.error('[ProjectBudgets] Failed to fetch line items:', error);
+    logger.warn('[ProjectBudgets] Failed to fetch line items:', error);
     res.status(500).json({ error: 'Failed to fetch budget line items' });
   }
 });
@@ -68,7 +68,7 @@ router.post('/', requireAuth, async (req, res) => {
     const [item] = await db.insert(projectBudgets).values(data).returning();
     res.status(201).json(item);
   } catch (error: any) {
-    logger.error('[ProjectBudgets] Failed to create:', error);
+    logger.warn('[ProjectBudgets] Failed to create:', error);
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -96,7 +96,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       .returning();
     res.json(item);
   } catch (error: any) {
-    logger.error('[ProjectBudgets] Failed to update:', error);
+    logger.warn('[ProjectBudgets] Failed to update:', error);
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -122,7 +122,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
       .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)));
     res.json({ success: true });
   } catch (error) {
-    logger.error('[ProjectBudgets] Failed to delete:', error);
+    logger.warn('[ProjectBudgets] Failed to delete:', error);
     res.status(500).json({ error: 'Failed to delete project budget' });
   }
 });
@@ -144,7 +144,7 @@ router.post('/:id/items', requireAuth, async (req, res) => {
     const [item] = await db.insert(budgetLineItems).values(data).returning();
     res.status(201).json(item);
   } catch (error: any) {
-    logger.error('[ProjectBudgets] Failed to create line item:', error);
+    logger.warn('[ProjectBudgets] Failed to create line item:', error);
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -172,7 +172,7 @@ router.put('/items/:id', requireAuth, async (req, res) => {
       .returning();
     res.json(item);
   } catch (error: any) {
-    logger.error('[ProjectBudgets] Failed to update line item:', error);
+    logger.warn('[ProjectBudgets] Failed to update line item:', error);
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -197,7 +197,7 @@ router.delete('/items/:id', requireAuth, async (req, res) => {
       .where(and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)));
     res.json({ success: true });
   } catch (error) {
-    logger.error('[ProjectBudgets] Failed to delete line item:', error);
+    logger.warn('[ProjectBudgets] Failed to delete line item:', error);
     res.status(500).json({ error: 'Failed to delete budget line item' });
   }
 });

@@ -172,7 +172,7 @@ export async function storeVoiceFile(
 
     return voiceMeta;
   } catch (e: any) {
-    logger.error('[PDIM Media] storeVoiceFile failed:', e?.message);
+    logger.warn('[PDIM Media] storeVoiceFile failed:', e?.message);
     return null;
   }
 }
@@ -263,7 +263,7 @@ export async function storeMusicVideo(
 
     return videoMeta;
   } catch (e: any) {
-    logger.error('[PDIM Media] storeMusicVideo failed:', e?.message);
+    logger.warn('[PDIM Media] storeMusicVideo failed:', e?.message);
     return null;
   }
 }
@@ -294,7 +294,7 @@ export async function getUserMediaLibrary(userId: string): Promise<{
       totalCompressedBytes: analytics.totalCompressedBytes,
     };
   } catch (e: any) {
-    logger.error('[PDIM Media] getUserMediaLibrary failed:', e?.message);
+    logger.warn('[PDIM Media] getUserMediaLibrary failed:', e?.message);
     return { voices: [], videos: [], totalStorageBytes: 0, totalCompressedBytes: 0 };
   }
 }

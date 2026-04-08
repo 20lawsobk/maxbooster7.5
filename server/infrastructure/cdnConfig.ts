@@ -125,11 +125,11 @@ class CDNManager {
         logger.info(`CDN cache purged for ${paths.length} paths`);
         return true;
       } else {
-        logger.error('CDN purge failed:', await response.text());
+        logger.warn('CDN purge failed:', await response.text());
         return false;
       }
     } catch (error) {
-      logger.error('CDN purge error:', error);
+      logger.warn('CDN purge error:', error);
       return false;
     }
   }
@@ -155,11 +155,11 @@ class CDNManager {
         logger.info('CDN cache fully purged');
         return true;
       } else {
-        logger.error('CDN full purge failed:', await response.text());
+        logger.warn('CDN full purge failed:', await response.text());
         return false;
       }
     } catch (error) {
-      logger.error('CDN full purge error:', error);
+      logger.warn('CDN full purge error:', error);
       return false;
     }
   }

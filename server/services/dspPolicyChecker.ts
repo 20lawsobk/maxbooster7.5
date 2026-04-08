@@ -870,7 +870,7 @@ export class DSPPolicyChecker {
           };
         }
       } catch (error) {
-        logger.error('Error reading cover art metadata:', error);
+        logger.warn('Error reading cover art metadata:', error);
       }
     }
 

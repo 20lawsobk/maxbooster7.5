@@ -119,7 +119,7 @@ class IdentifierService {
       logger.info(`Generated UPC: ${upcCode} for user ${options.userId}`);
       return upcCode;
     } catch (error) {
-      logger.error('Error generating UPC:', error);
+      logger.warn('Error generating UPC:', error);
       throw new Error('Failed to generate UPC');
     }
   }
@@ -226,7 +226,7 @@ class IdentifierService {
       logger.info(`Generated ISRC: ${this.formatISRC(isrcCode)} for user ${options?.userId || 'system'}`);
       return isrcCode;
     } catch (error) {
-      logger.error('Error generating ISRC:', error);
+      logger.warn('Error generating ISRC:', error);
       throw new Error('Failed to generate ISRC');
     }
   }

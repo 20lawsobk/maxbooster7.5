@@ -166,7 +166,7 @@ class ReleaseWorkflowService {
         requestId: request.id
       };
     } catch (error) {
-      logger.error('Error transitioning release:', error);
+      logger.warn('Error transitioning release:', error);
       return {
         success: false,
         previousStatus: 'draft',
@@ -391,7 +391,7 @@ class ReleaseWorkflowService {
         version: latestVersion[0]?.version || 1
       };
     } catch (error) {
-      logger.error('Error updating release metadata:', error);
+      logger.warn('Error updating release metadata:', error);
       return {
         success: false,
         version: 0,

@@ -69,7 +69,7 @@ router.post('/refresh-token', requireAuth, async (req: AuthenticatedRequest, res
       outcome: 'token_refresh_successful'
     });
   } catch (error) {
-    logger.error('Token refresh error:', error);
+    logger.warn('Token refresh error:', error);
     res.status(500).json({
       success: false,
       error: 'refresh_failed',
@@ -133,7 +133,7 @@ router.post('/extend-session', requireAuth, async (req: AuthenticatedRequest, re
       outcome: 'session_extended'
     });
   } catch (error) {
-    logger.error('Session extension error:', error);
+    logger.warn('Session extension error:', error);
     res.status(500).json({
       success: false,
       error: 'extension_failed',
@@ -197,7 +197,7 @@ router.get('/sessions', requireAuth, async (req: AuthenticatedRequest, res: Resp
       currentSessionId
     });
   } catch (error) {
-    logger.error('Get sessions error:', error);
+    logger.warn('Get sessions error:', error);
     res.status(500).json({ error: 'Failed to fetch sessions' });
   }
 });
@@ -253,7 +253,7 @@ router.delete('/sessions/:sessionId', requireAuth, async (req: AuthenticatedRequ
       outcome: 'remote_session_terminated'
     });
   } catch (error) {
-    logger.error('Delete session error:', error);
+    logger.warn('Delete session error:', error);
     res.status(500).json({
       success: false,
       error: 'termination_failed',
@@ -304,7 +304,7 @@ router.delete('/sessions/other', requireAuth, async (req: AuthenticatedRequest, 
       outcome: 'all_other_sessions_logged_out'
     });
   } catch (error) {
-    logger.error('Delete other sessions error:', error);
+    logger.warn('Delete other sessions error:', error);
     res.status(500).json({
       success: false,
       error: 'bulk_termination_failed',
@@ -363,7 +363,7 @@ router.post('/devices/trust', requireAuth, async (req: AuthenticatedRequest, res
       outcome
     });
   } catch (error) {
-    logger.error('Trust device error:', error);
+    logger.warn('Trust device error:', error);
     res.status(500).json({
       success: false,
       error: 'trust_update_failed',
@@ -424,7 +424,7 @@ router.get('/session-status', requireAuth, async (req: AuthenticatedRequest, res
       outcome: isValid ? 'session_valid' : 'session_expired'
     });
   } catch (error) {
-    logger.error('Session status error:', error);
+    logger.warn('Session status error:', error);
     res.status(500).json({ error: 'Failed to check session status' });
   }
 });
@@ -487,7 +487,7 @@ router.get('/social-token-status', requireAuth, async (req: AuthenticatedRequest
       hasExpiringTokens: needsAttention.some(p => p.status === 'expiring_soon')
     });
   } catch (error) {
-    logger.error('Social token status error:', error);
+    logger.warn('Social token status error:', error);
     res.status(500).json({ error: 'Failed to fetch social token status' });
   }
 });
@@ -533,7 +533,7 @@ router.post('/social/:platform/refresh', requireAuth, async (req: AuthenticatedR
       outcome: 'token_refresh_initiated'
     });
   } catch (error) {
-    logger.error('Social token refresh error:', error);
+    logger.warn('Social token refresh error:', error);
     res.status(500).json({
       success: false,
       error: 'refresh_failed',
@@ -685,7 +685,7 @@ router.get('/security-alerts', requireAuth, async (req: AuthenticatedRequest, re
       }
     });
   } catch (error) {
-    logger.error('Error fetching user security alerts:', error);
+    logger.warn('Error fetching user security alerts:', error);
     res.status(500).json({ error: 'Failed to fetch security alerts' });
   }
 });
@@ -706,7 +706,7 @@ router.post('/security-alerts/:alertId/dismiss', requireAuth, async (req: Authen
 
     res.json({ success: true, message: 'Alert dismissed' });
   } catch (error) {
-    logger.error('Error dismissing alert:', error);
+    logger.warn('Error dismissing alert:', error);
     res.status(500).json({ error: 'Failed to dismiss alert' });
   }
 });
@@ -744,7 +744,7 @@ router.post('/send-verification-email', requireAuth, async (req: any, res) => {
 
     res.json({ success: true, message: 'Verification email sent' });
   } catch (error) {
-    logger.error('Error sending verification email:', error);
+    logger.warn('Error sending verification email:', error);
     res.status(500).json({ error: 'Failed to send verification email' });
   }
 });
@@ -775,7 +775,7 @@ router.get('/verify-email', async (req, res) => {
 
     res.json({ success: true, message: 'Email verified successfully' });
   } catch (error) {
-    logger.error('Error verifying email:', error);
+    logger.warn('Error verifying email:', error);
     res.status(500).json({ error: 'Failed to verify email' });
   }
 });
@@ -787,7 +787,7 @@ router.get('/email-verification-status', requireAuth, async (req: any, res) => {
       .limit(1);
     res.json({ emailVerified: user?.emailVerified ?? false });
   } catch (error) {
-    logger.error('Error checking email verification:', error);
+    logger.warn('Error checking email verification:', error);
     res.status(500).json({ error: 'Failed to check verification status' });
   }
 });

@@ -214,7 +214,7 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.error(`[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed`);
+    logger.warn(`[MaxCoreAI] infer ${path} — all ${MaxCoreAIClient.INFER_MAX_RETRIES + 1} attempts failed`);
     return null;
   }
 }

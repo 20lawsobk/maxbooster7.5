@@ -180,7 +180,7 @@ async function main() {
     // Return success/failure exit code
     process.exit(allPass ? 0 : 1);
   } catch (error: unknown) {
-    logger.error('❌ Simulation failed:', error);
+    logger.warn('❌ Simulation failed:', error);
     process.exit(1);
   }
 }

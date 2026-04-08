@@ -131,7 +131,7 @@ export class AudioFingerprintService {
       
       return fingerprint;
     } catch (error) {
-      logger.error('Error generating audio fingerprint:', error);
+      logger.warn('Error generating audio fingerprint:', error);
       throw new Error('Failed to generate audio fingerprint');
     }
   }
@@ -264,7 +264,7 @@ export class AudioFingerprintService {
         checkedAt: new Date()
       };
     } catch (error) {
-      logger.error('Error checking duplicates:', error);
+      logger.warn('Error checking duplicates:', error);
       throw new Error('Failed to check for duplicates');
     }
   }

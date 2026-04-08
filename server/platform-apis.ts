@@ -147,7 +147,7 @@ export const platformAPI = {
           error: errorMsg,
         });
 
-        logger.error(`❌ Failed to post to ${platform}:`, errorMsg);
+        logger.warn(`❌ Failed to post to ${platform}:`, errorMsg);
 
         // Check if token expired
         if (
@@ -237,7 +237,7 @@ export const platformAPI = {
           };
       }
     } catch (error: unknown) {
-      logger.error(`Failed to collect engagement data for ${platform}:`, error.message);
+      logger.warn(`Failed to collect engagement data for ${platform}:`, error.message);
 
       // Return zero metrics on error to prevent crashes
       return {

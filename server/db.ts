@@ -219,7 +219,7 @@ pool.on('connect', (client: any) => {
 // Pool-level error handler — prevents unhandled 'error' events from idle client
 // disconnects from becoming uncaughtExceptions and crashing the process.
 pool.on('error', (err: Error) => {
-  logger.error('[DB] Idle client error (pool):', err.message);
+  logger.warn('[DB] Idle client error (pool):', err.message);
 });
 
 export const db = drizzle(pool, { schema });
@@ -244,7 +244,7 @@ const replicaPool = replicaUrl
 // Prevent uncaughtException from replica pool idle client disconnects
 if (replicaPool) {
   replicaPool.on('error', (err: Error) => {
-    logger.error('[DB] Idle client error (replica pool):', err.message);
+    logger.warn('[DB] Idle client error (replica pool):', err.message);
   });
 }
 
@@ -270,9 +270,9 @@ export async function verifyReadReplica(): Promise<void> {
     await dbRead.execute(sql`SELECT 1`);
     logger.info('[db] ✅ Read replica verified — SELECTs route to Neon replica');
   } catch (err: any) {
-    logger.error('[db] ❌ Read replica health check FAILED — routing ALL queries to primary');
-    logger.error(`[db]    Replica error: ${err.message}`);
-    logger.error('[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down');
+    logger.warn('[db] ❌ Read replica health check FAILED — routing ALL queries to primary');
+    logger.warn(`[db]    Replica error: ${err.message}`);
+    logger.warn('[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down');
     dbRead = db;
   }
 }

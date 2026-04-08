@@ -92,7 +92,7 @@ class DatabaseResilience extends EventEmitter {
         avgResponseTime: this.pool.avgResponseTime,
       });
     } catch (error: unknown) {
-      logger.error('❌ Database health check failed:', error);
+      logger.warn('❌ Database health check failed:', error);
       this.handleConnectionFailure(error);
     }
   }
@@ -106,7 +106,7 @@ class DatabaseResilience extends EventEmitter {
       this.pool.circuitBreakerState = 'open';
       this.pool.lastError = new Date();
 
-      logger.error(`🚨 Database circuit breaker: OPEN (${this.connectionRetryCount} failures)`);
+      logger.warn(`🚨 Database circuit breaker: OPEN (${this.connectionRetryCount} failures)`);
       this.emit('circuit-breaker-open', {
         failures: this.connectionRetryCount,
         lastError: error.message,
@@ -220,7 +220,7 @@ class DatabaseResilience extends EventEmitter {
 
       // Enhanced timeout error handling
       if (error instanceof Error && error.message.includes('timed out')) {
-        logger.error(
+        logger.warn(
           `🔥 TIMEOUT: Database operation "${operationName}" exceeded ${timeoutMs}ms limit`
         );
         // Force circuit breaker to register this as a critical failure

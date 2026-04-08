@@ -63,7 +63,7 @@ router.put('/settings', async (req, res) => {
     );
     res.json({ success: true, message: 'Settings updated' });
   } catch (error) {
-    logger.error('Error updating admin settings:', error);
+    logger.warn('Error updating admin settings:', error);
     res.status(500).json({ error: 'Failed to update settings' });
   }
 });
@@ -137,7 +137,7 @@ router.get('/users', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Error fetching users:', error);
+    logger.warn('Error fetching users:', error);
     res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
@@ -170,7 +170,7 @@ router.get('/users/export', async (req, res) => {
       pagination: { total, limit: pageSize, offset, hasMore: offset + pageSize < total },
     });
   } catch (error) {
-    logger.error('Error exporting users:', error);
+    logger.warn('Error exporting users:', error);
     res.status(500).json({ error: 'Failed to export users' });
   }
 });
@@ -196,7 +196,7 @@ router.get('/users/:userId', async (req, res) => {
 
     res.json(user[0]);
   } catch (error) {
-    logger.error('Error fetching user:', error);
+    logger.warn('Error fetching user:', error);
     res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
@@ -247,12 +247,12 @@ router.put('/users/:userId', async (req, res) => {
             );
           }
         } catch (err) {
-          logger.error('User flagged notification error:', err);
+          logger.warn('User flagged notification error:', err);
         }
       });
     }
   } catch (error) {
-    logger.error('Error updating user:', error);
+    logger.warn('Error updating user:', error);
     res.status(500).json({ error: 'Failed to update user' });
   }
 });
@@ -288,11 +288,11 @@ router.post('/users/:userId/report', requireAdmin, async (req, res) => {
           reason
         );
       } catch (err) {
-        logger.error('User report notification error:', err);
+        logger.warn('User report notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('Error reporting user:', error);
+    logger.warn('Error reporting user:', error);
     res.status(500).json({ error: 'Failed to report user' });
   }
 });
@@ -308,7 +308,7 @@ router.delete('/users/:userId', async (req, res) => {
     await db.delete(users).where(eq(users.id, userId));
     res.json({ success: true, message: 'User deleted' });
   } catch (error) {
-    logger.error('Error deleting user:', error);
+    logger.warn('Error deleting user:', error);
     res.status(500).json({ error: 'Failed to delete user' });
   }
 });
@@ -339,7 +339,7 @@ router.post('/users/:userId/email', async (req, res) => {
       recipient: targetUser[0].email
     });
   } catch (error) {
-    logger.error('Error processing email request:', error);
+    logger.warn('Error processing email request:', error);
     res.status(500).json({ error: 'Failed to process email request' });
   }
 });
@@ -409,7 +409,7 @@ router.get('/analytics', async (req, res) => {
     );
     res.json(payload);
   } catch (error) {
-    logger.error('Error fetching analytics:', error);
+    logger.warn('Error fetching analytics:', error);
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
@@ -444,7 +444,7 @@ router.get('/settings', async (req, res) => {
 
     res.json(settingsMap);
   } catch (error) {
-    logger.error('Error fetching settings:', error);
+    logger.warn('Error fetching settings:', error);
     res.status(500).json({ error: 'Failed to fetch settings' });
   }
 });
@@ -468,7 +468,7 @@ router.post('/settings/notifications', async (req, res) => {
     await updateSetting('emailNotifications', enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.error('Error updating notifications setting:', error);
+    logger.warn('Error updating notifications setting:', error);
     res.status(500).json({ error: 'Failed to update setting' });
   }
 });
@@ -479,7 +479,7 @@ router.post('/settings/maintenance', async (req, res) => {
     await updateSetting('maintenanceMode', enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.error('Error updating maintenance setting:', error);
+    logger.warn('Error updating maintenance setting:', error);
     res.status(500).json({ error: 'Failed to update setting' });
   }
 });
@@ -490,7 +490,7 @@ router.post('/settings/registration', async (req, res) => {
     await updateSetting('userRegistrationEnabled', enabled);
     res.json({ success: true, enabled });
   } catch (error) {
-    logger.error('Error updating registration setting:', error);
+    logger.warn('Error updating registration setting:', error);
     res.status(500).json({ error: 'Failed to update setting' });
   }
 });
@@ -501,7 +501,7 @@ router.post('/settings/rate-limit', async (req, res) => {
     await updateSetting('apiRateLimit', limit);
     res.json({ success: true, limit });
   } catch (error) {
-    logger.error('Error updating rate limit:', error);
+    logger.warn('Error updating rate limit:', error);
     res.status(500).json({ error: 'Failed to update setting' });
   }
 });
@@ -512,7 +512,7 @@ router.post('/settings/webhook', async (req, res) => {
     await updateSetting('webhookEndpoint', endpoint);
     res.json({ success: true, endpoint });
   } catch (error) {
-    logger.error('Error updating webhook:', error);
+    logger.warn('Error updating webhook:', error);
     res.status(500).json({ error: 'Failed to update setting' });
   }
 });
@@ -565,7 +565,7 @@ router.get('/activity', async (req, res) => {
 
     res.json(activities);
   } catch (error) {
-    logger.error('Error fetching activity:', error);
+    logger.warn('Error fetching activity:', error);
     res.status(500).json({ error: 'Failed to fetch activity' });
   }
 });
@@ -615,7 +615,7 @@ router.get('/metrics', async (req, res) => {
       activeUsers: activeUsersResult[0]?.count || 0,
     });
   } catch (error) {
-    logger.error('Error fetching metrics:', error);
+    logger.warn('Error fetching metrics:', error);
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
 });

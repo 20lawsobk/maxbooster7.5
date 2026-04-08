@@ -690,7 +690,7 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
 
   } catch (err: any) {
     cleanup(...tempFiles);
-    logger.error('[ImageToVideo] Render failed:', err?.stderr || err?.message);
+    logger.warn('[ImageToVideo] Render failed:', err?.stderr || err?.message);
     return { success: false, error: `Music video render failed: ${err?.message || 'FFmpeg error'}` };
   }
 }

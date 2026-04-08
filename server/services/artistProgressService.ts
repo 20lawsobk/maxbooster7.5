@@ -123,7 +123,7 @@ class ArtistProgressService {
 
       logger.info(`Captured snapshot for user ${userId}: streams=${stats.totalStreams}, followers=${stats.totalFollowers}`);
     } catch (error) {
-      logger.error(`Error capturing snapshot for user ${userId}:`, error);
+      logger.warn(`Error capturing snapshot for user ${userId}:`, error);
       throw error;
     }
   }
@@ -158,7 +158,7 @@ class ArtistProgressService {
         growthRate: snapshot.growthRate,
       }));
     } catch (error) {
-      logger.error(`Error getting progress history for user ${userId}:`, error);
+      logger.warn(`Error getting progress history for user ${userId}:`, error);
       return [];
     }
   }
@@ -198,7 +198,7 @@ class ArtistProgressService {
 
       return { weekOverWeek, monthOverMonth, trend, velocity };
     } catch (error) {
-      logger.error(`Error calculating growth metrics for user ${userId}:`, error);
+      logger.warn(`Error calculating growth metrics for user ${userId}:`, error);
       return this.getDefaultGrowthMetrics();
     }
   }
@@ -234,7 +234,7 @@ class ArtistProgressService {
 
       return milestones.sort((a, b) => b.achievedAt.getTime() - a.achievedAt.getTime()).slice(0, 10);
     } catch (error) {
-      logger.error(`Error getting career milestones for user ${userId}:`, error);
+      logger.warn(`Error getting career milestones for user ${userId}:`, error);
       return this.getDefaultMilestones();
     }
   }
@@ -287,7 +287,7 @@ class ArtistProgressService {
         growthMetrics,
       };
     } catch (error) {
-      logger.error(`Error getting dashboard data for user ${userId}:`, error);
+      logger.warn(`Error getting dashboard data for user ${userId}:`, error);
       return this.getDefaultDashboardData();
     }
   }

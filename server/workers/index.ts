@@ -38,7 +38,7 @@ function checkMemoryUsage(workerName: string): void {
   const { heapUsed } = process.memoryUsage();
   const heapUsedMB = Math.round(heapUsed / 1024 / 1024);
   if (heapUsed > MEMORY_CRITICAL_THRESHOLD) {
-    logger.error(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
+    logger.warn(`🚨 ${workerName}: CRITICAL memory usage ${heapUsedMB}MB`);
     if (global.gc) { logger.info(`🧹 Forcing GC...`); global.gc(); }
   } else if (heapUsed > MEMORY_WARNING_THRESHOLD) {
     logger.warn(`⚠️  ${workerName}: High memory ${heapUsedMB}MB`);
@@ -74,7 +74,7 @@ function workerOpts(concurrency: number) {
 
 function startWorkerSafe(w: Worker, name: string): void {
   setImmediate(() => {
-    w.run().catch(err => logger.error(`[Worker] ${name} run loop failed:`, err));
+    w.run().catch(err => logger.warn(`[Worker] ${name} run loop failed:`, err));
   });
 }
 
@@ -103,7 +103,7 @@ function createAudioWorker(): Worker {
     workerOpts(config.queue.concurrency.audio),
   );
   w.on('completed', (job) => logger.info(`✅ Audio job ${job.id} completed`));
-  w.on('failed', (job, err) => logger.error(`❌ Audio job ${job?.id} failed: ${err.message}`));
+  w.on('failed', (job, err) => logger.warn(`❌ Audio job ${job?.id} failed: ${err.message}`));
   return w;
 }
 
@@ -118,7 +118,7 @@ function createCsvWorker(): Worker {
     workerOpts(config.queue.concurrency.csv),
   );
   w.on('completed', (job) => logger.info(`✅ CSV job ${job.id} completed`));
-  w.on('failed', (job, err) => logger.error(`❌ CSV job ${job?.id} failed: ${err.message}`));
+  w.on('failed', (job, err) => logger.warn(`❌ CSV job ${job?.id} failed: ${err.message}`));
   return w;
 }
 
@@ -138,7 +138,7 @@ function createAnalyticsWorker(): Worker {
     workerOpts(config.queue.concurrency.analytics),
   );
   w.on('completed', (job) => logger.info(`✅ Analytics job ${job.id} completed`));
-  w.on('failed', (job, err) => logger.error(`❌ Analytics job ${job?.id} failed: ${err.message}`));
+  w.on('failed', (job, err) => logger.warn(`❌ Analytics job ${job?.id} failed: ${err.message}`));
   return w;
 }
 
@@ -162,7 +162,7 @@ function createEmailWorker(): Worker {
     workerOpts(config.queue.concurrency.email),
   );
   w.on('completed', (job) => logger.info(`✅ Email job ${job.id} completed`));
-  w.on('failed', (job, err) => logger.error(`❌ Email job ${job?.id} failed: ${err.message}`));
+  w.on('failed', (job, err) => logger.warn(`❌ Email job ${job?.id} failed: ${err.message}`));
   return w;
 }
 
@@ -178,7 +178,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info('✅ All BullMQ workers closed');
     process.exit(0);
   } catch (error) {
-    logger.error('❌ Error during shutdown:', error);
+    logger.warn('❌ Error during shutdown:', error);
     process.exit(1);
   }
 }
@@ -190,7 +190,7 @@ process.on('uncaughtException', (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.error('❌ Uncaught exception:', error);
+  logger.warn('❌ Uncaught exception:', error);
   gracefulShutdown('uncaughtException');
 });
 
@@ -209,7 +209,7 @@ process.on('unhandledRejection', (reason: any) => {
     return;
   }
   // Log but do NOT shut down — BullMQ retries handle job-level failures.
-  logger.error('❌ Unhandled rejection (workers):', msg);
+  logger.warn('❌ Unhandled rejection (workers):', msg);
 });
 
 export async function initializeWorkers(): Promise<void> {

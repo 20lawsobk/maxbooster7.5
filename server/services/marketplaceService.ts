@@ -303,7 +303,7 @@ export class MarketplaceService {
         createdAt: createdListing.createdAt || new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Error creating listing:', error);
+      logger.warn('Error creating listing:', error);
       throw new Error('Failed to create beat listing');
     }
   }
@@ -316,7 +316,7 @@ export class MarketplaceService {
       const listing = await storage.getBeatListing(listingId);
       return listing;
     } catch (error: unknown) {
-      logger.error('Error fetching listing:', error);
+      logger.warn('Error fetching listing:', error);
       throw new Error('Failed to fetch listing');
     }
   }
@@ -340,7 +340,7 @@ export class MarketplaceService {
       const listings = await storage.getBeatListings(filters);
       return listings;
     } catch (error: unknown) {
-      logger.error('Error browsing listings:', error);
+      logger.warn('Error browsing listings:', error);
       throw new Error('Failed to browse listings');
     }
   }
@@ -383,7 +383,7 @@ export class MarketplaceService {
       // Convert database order to service order
       return toServiceOrder(createdOrder);
     } catch (error: unknown) {
-      logger.error('Error creating order:', error);
+      logger.warn('Error creating order:', error);
       throw new Error('Failed to create order');
     }
   }
@@ -464,7 +464,7 @@ export class MarketplaceService {
       // Convert database order to service order
       return toServiceOrder(updatedDBOrder);
     } catch (error: unknown) {
-      logger.error('Error processing payment:', error);
+      logger.warn('Error processing payment:', error);
       throw new Error('Failed to process payment');
     }
   }
@@ -486,7 +486,7 @@ export class MarketplaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Error distributing splits:', error);
+      logger.warn('Error distributing splits:', error);
       throw new Error('Failed to distribute royalty splits');
     }
   }
@@ -568,7 +568,7 @@ export class MarketplaceService {
 
       return { licenseUrl };
     } catch (error: unknown) {
-      logger.error('Error generating license:', error);
+      logger.warn('Error generating license:', error);
       throw new Error('Failed to generate license');
     }
   }
@@ -663,7 +663,7 @@ export class MarketplaceService {
         url: session.url!,
       };
     } catch (error: unknown) {
-      logger.error('Error creating checkout session:', error);
+      logger.warn('Error creating checkout session:', error);
       throw new Error('Failed to create checkout session');
     }
   }
@@ -676,7 +676,7 @@ export class MarketplaceService {
       const dbOrders = await storage.getUserOrders(userId);
       return dbOrders.map(toServiceOrder);
     } catch (error: unknown) {
-      logger.error('Error fetching user orders:', error);
+      logger.warn('Error fetching user orders:', error);
       throw new Error('Failed to fetch user orders');
     }
   }
@@ -690,7 +690,7 @@ export class MarketplaceService {
       const dbOrders = await storage.getSellerOrders(userId);
       return dbOrders.map(toServiceOrder);
     } catch (error: unknown) {
-      logger.error('Error fetching user sales:', error);
+      logger.warn('Error fetching user sales:', error);
       throw new Error('Failed to fetch user sales');
     }
   }
@@ -738,7 +738,7 @@ export class MarketplaceService {
 
       return { url: accountLink.url };
     } catch (error: unknown) {
-      logger.error('Error setting up Stripe Connect:', error);
+      logger.warn('Error setting up Stripe Connect:', error);
       throw new Error('Failed to setup Stripe Connect');
     }
   }
@@ -815,7 +815,7 @@ export class MarketplaceService {
         };
       });
     } catch (error: unknown) {
-      logger.error('Error fetching user listings:', error);
+      logger.warn('Error fetching user listings:', error);
       return [];
     }
   }
@@ -888,7 +888,7 @@ export class MarketplaceService {
         };
       });
     } catch (error: unknown) {
-      logger.error('Error fetching producer listings:', error);
+      logger.warn('Error fetching producer listings:', error);
       return [];
     }
   }
@@ -971,7 +971,7 @@ export class MarketplaceService {
         createdAt: updatedListing.createdAt || new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Error updating listing:', error);
+      logger.warn('Error updating listing:', error);
       throw error;
     }
   }
@@ -989,7 +989,7 @@ export class MarketplaceService {
       await storage.deleteListing(listingId);
       return true;
     } catch (error: unknown) {
-      logger.error('Error deleting listing:', error);
+      logger.warn('Error deleting listing:', error);
       throw error;
     }
   }
@@ -999,7 +999,7 @@ export class MarketplaceService {
       const orders = await storage.getUserOrders(userId);
       return orders || [];
     } catch (error: unknown) {
-      logger.error('Error fetching user purchases:', error);
+      logger.warn('Error fetching user purchases:', error);
       return [];
     }
   }
@@ -1017,7 +1017,7 @@ export class MarketplaceService {
         recentSales: sales.slice(0, 10),
       };
     } catch (error: unknown) {
-      logger.error('Error fetching sales analytics:', error);
+      logger.warn('Error fetching sales analytics:', error);
       return {
         totalRevenue: 0,
         totalSales: 0,
@@ -1101,7 +1101,7 @@ export class MarketplaceService {
 
       return { url: session.url };
     } catch (error: unknown) {
-      logger.error('Error initiating purchase:', error);
+      logger.warn('Error initiating purchase:', error);
       const msg = (error as Error).message;
       if (msg === 'Beat not found' || msg === 'Invalid license type' || msg === 'Invalid or inactive license type' || msg === 'Payment system not configured' || msg === 'Cannot purchase your own beat') {
         throw error;

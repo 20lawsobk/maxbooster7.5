@@ -1490,7 +1490,7 @@ export async function seedDistributionPlatforms() {
       `✅ Distribution platform seeding complete! ${DISTRIBUTION_PLATFORMS.length} platforms available.`
     );
   } catch (error: unknown) {
-    logger.error('❌ Error seeding distribution platforms:', error);
+    logger.warn('❌ Error seeding distribution platforms:', error);
     throw error;
   }
 }

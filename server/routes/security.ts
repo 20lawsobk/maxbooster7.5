@@ -125,7 +125,7 @@ router.get('/metrics', async (req: Request, res: Response) => {
 
     res.json(metrics);
   } catch (error) {
-    logger.error('Error fetching security metrics:', error);
+    logger.warn('Error fetching security metrics:', error);
     res.status(500).json({ error: 'Failed to fetch security metrics' });
   }
 });
@@ -200,7 +200,7 @@ router.get('/behavioral-alerts', async (req: Request, res: Response) => {
 
     res.json({ alerts });
   } catch (error) {
-    logger.error('Error fetching behavioral alerts:', error);
+    logger.warn('Error fetching behavioral alerts:', error);
     res.status(500).json({ error: 'Failed to fetch behavioral alerts' });
   }
 });
@@ -292,7 +292,7 @@ router.get('/anomaly-detection', async (req: Request, res: Response) => {
 
     res.json({ anomalies });
   } catch (error) {
-    logger.error('Error detecting anomalies:', error);
+    logger.warn('Error detecting anomalies:', error);
     res.status(500).json({ error: 'Failed to detect anomalies' });
   }
 });
@@ -389,7 +389,7 @@ router.get('/pentest-results', async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
-    logger.error('Error fetching pentest results:', error);
+    logger.warn('Error fetching pentest results:', error);
     res.status(500).json({ error: 'Failed to fetch pentest results' });
   }
 });
@@ -407,7 +407,7 @@ router.get('/threats', async (req: Request, res: Response) => {
 
     res.json({ threats });
   } catch (error) {
-    logger.error('Error fetching threats:', error);
+    logger.warn('Error fetching threats:', error);
     res.status(500).json({ error: 'Failed to fetch threats' });
   }
 });
@@ -560,7 +560,7 @@ userAlertsRouter.get('/alerts', async (req: Request, res: Response) => {
       }
     });
   } catch (error) {
-    logger.error('Error fetching user security alerts:', error);
+    logger.warn('Error fetching user security alerts:', error);
     res.status(500).json({ error: 'Failed to fetch security alerts' });
   }
 });
@@ -585,7 +585,7 @@ userAlertsRouter.post('/alerts/:alertId/dismiss', async (req: Request, res: Resp
 
     res.json({ success: true, message: 'Alert dismissed' });
   } catch (error) {
-    logger.error('Error dismissing alert:', error);
+    logger.warn('Error dismissing alert:', error);
     res.status(500).json({ error: 'Failed to dismiss alert' });
   }
 });

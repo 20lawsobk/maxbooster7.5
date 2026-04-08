@@ -19,7 +19,7 @@ async function getMaxBooster247() {
       importAttempted = true;
       return maxBooster247Cache;
     } catch (error: unknown) {
-      logger.error('⚠️ Reliability system import failed:', error?.message || error);
+      logger.warn('⚠️ Reliability system import failed:', error?.message || error);
       importAttempted = true;
       return null;
     }

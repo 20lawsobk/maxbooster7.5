@@ -136,7 +136,7 @@ export class AIContentService {
         .limit(1);
       return preferences || null;
     } catch (error) {
-      logger.error('Error fetching user autopilot preferences:', error);
+      logger.warn('Error fetching user autopilot preferences:', error);
       return null;
     }
   }
@@ -177,7 +177,7 @@ export class AIContentService {
         if (model.modelName === 'hashtag_optimizer_v1') this.modelIds.hashtagOptimizer = model.id;
       });
     } catch (error: unknown) {
-      logger.error('Failed to load AI models:', error);
+      logger.warn('Failed to load AI models:', error);
     }
   }
 
@@ -218,7 +218,7 @@ export class AIContentService {
 
       return inference.id;
     } catch (error: unknown) {
-      logger.error('Failed to log inference:', error);
+      logger.warn('Failed to log inference:', error);
       return null;
     }
   }
@@ -235,7 +235,7 @@ export class AIContentService {
         visualizationData: explanation.viz || {},
       });
     } catch (error: unknown) {
-      logger.error('Failed to log explanation:', error);
+      logger.warn('Failed to log explanation:', error);
     }
   }
 
@@ -263,7 +263,7 @@ export class AIContentService {
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         content = caption ? [caption] : (d.content || []);
       } else {
-        logger.error('[AIContentService] MaxCore returned no content (transient call failure)');
+        logger.warn('[AIContentService] MaxCore returned no content (transient call failure)');
         content = [];
       }
 
@@ -291,7 +291,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Error generating text:', error);
+      logger.warn('Error generating text:', error);
       throw new Error('Failed to generate text content');
     }
   }
@@ -446,7 +446,7 @@ export class AIContentService {
         });
       }
     } catch (error: unknown) {
-      logger.error('Failed to save brand voice:', error);
+      logger.warn('Failed to save brand voice:', error);
     }
 
     const executionTimeMs = Date.now() - startTime;
@@ -551,7 +551,7 @@ export class AIContentService {
 
       return content;
     } catch (error: unknown) {
-      logger.error('Error generating with brand voice:', error);
+      logger.warn('Error generating with brand voice:', error);
       throw new Error('Failed to generate content with brand voice');
     }
   }
@@ -591,7 +591,7 @@ export class AIContentService {
       return trends;
     } catch (error) {
       const msg = (error as Error)?.message ?? String(error);
-      logger.error(`[AIContent] Dynamic trends engine failed (${msg})`);
+      logger.warn(`[AIContent] Dynamic trends engine failed (${msg})`);
       throw error;
     }
   }
@@ -695,7 +695,7 @@ export class AIContentService {
         }
       }
     } catch (error: unknown) {
-      logger.error('Failed to save hashtag research:', error);
+      logger.warn('Failed to save hashtag research:', error);
     }
 
     const executionTimeMs = Date.now() - startTime;
@@ -790,7 +790,7 @@ export class AIContentService {
           });
         }
       } catch (error: unknown) {
-        logger.error('Failed to save posting time:', error);
+        logger.warn('Failed to save posting time:', error);
       }
     }
 
@@ -880,7 +880,7 @@ export class AIContentService {
             changes: [spec.desc, `Source: ${aiResult.source || 'AI'}`],
           } as ABVariant;
         } catch (err) {
-          logger.error(`[AIContentService] generateABVariants MaxCore call failed for tone=${spec.tone}:`, err);
+          logger.warn(`[AIContentService] generateABVariants MaxCore call failed for tone=${spec.tone}:`, err);
           throw err;
         }
       })
@@ -952,7 +952,7 @@ export class AIContentService {
       const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
       content = caption ? [caption] : (d.content || []);
     } else {
-      logger.error('[AIContentService] MaxCore returned no content (transient call failure)');
+      logger.warn('[AIContentService] MaxCore returned no content (transient call failure)');
       content = [];
     }
 
@@ -997,7 +997,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error: any) {
-      logger.error(`Image generation failed: ${error.message}`);
+      logger.warn(`Image generation failed: ${error.message}`);
       throw error;
     }
   }
@@ -1098,7 +1098,7 @@ export class AIContentService {
         await fs.access(generatedPath);
         await fs.copyFile(generatedPath, outputPath);
       } catch (accessError) {
-        logger.error(`Generated audio file not found: ${generatedPath}`);
+        logger.warn(`Generated audio file not found: ${generatedPath}`);
         throw new Error('Audio generation failed: output file not created');
       }
 
@@ -1118,7 +1118,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error: any) {
-      logger.error(`Audio generation failed: ${error.message}`);
+      logger.warn(`Audio generation failed: ${error.message}`);
       throw error;
     }
   }

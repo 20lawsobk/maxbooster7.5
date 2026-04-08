@@ -258,7 +258,7 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
     }
 
     if (status.status === 'error') {
-      logger.error(`[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status.error}`);
+      logger.warn(`[AdvancedVideoRenderer] MaxCore job ${jobId} errored: ${status.error}`);
       return null;
     }
 
@@ -267,7 +267,7 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
     }
   }
 
-  logger.error(`[AdvancedVideoRenderer] Job ${jobId} timed out after ${POLL_MAX_ATTEMPTS} poll attempts`);
+  logger.warn(`[AdvancedVideoRenderer] Job ${jobId} timed out after ${POLL_MAX_ATTEMPTS} poll attempts`);
   return null;
 }
 
@@ -568,7 +568,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
     };
   }
 
-  logger.error('[AdvancedVideoRenderer] MaxCore response missing both url and job_id:', jobResp);
+  logger.warn('[AdvancedVideoRenderer] MaxCore response missing both url and job_id:', jobResp);
   return {
     success: false,
     error:   'MaxCore returned an unexpected response format',

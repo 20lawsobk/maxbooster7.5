@@ -34,7 +34,7 @@ router.get('/balance', async (req, res) => {
     const balance = await instantPayoutService.calculateAvailableBalance(req.user.id);
     res.json(balance);
   } catch (error: unknown) {
-    logger.error('Error fetching payout balance:', error);
+    logger.warn('Error fetching payout balance:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch balance';
     res.status(500).json({ error: message });
   }
@@ -79,7 +79,7 @@ router.post('/instant', async (req, res) => {
       message: 'Payout initiated successfully. Funds will arrive within minutes.',
     });
   } catch (error: unknown) {
-    logger.error('Error requesting instant payout:', error);
+    logger.warn('Error requesting instant payout:', error);
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -116,7 +116,7 @@ router.get('/history', async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching payout history:', error);
+    logger.warn('Error fetching payout history:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch payout history';
     res.status(500).json({ error: message });
   }
@@ -143,7 +143,7 @@ router.get('/status/:payoutId', async (req, res) => {
 
     res.json(payout);
   } catch (error: unknown) {
-    logger.error('Error fetching payout status:', error);
+    logger.warn('Error fetching payout status:', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch payout status';
 
     if (message === 'Payout not found') {
@@ -178,7 +178,7 @@ router.post('/setup', async (req, res) => {
 
     res.json({ url: accountLinkUrl });
   } catch (error: unknown) {
-    logger.error('Error setting up payout account:', error);
+    logger.warn('Error setting up payout account:', error);
     const message = error instanceof Error ? error.message : 'Failed to setup payout account';
     res.status(500).json({ error: message });
   }
@@ -216,7 +216,7 @@ router.get('/verify', async (req, res) => {
     
     res.json(stripeVerification);
   } catch (error: unknown) {
-    logger.error('Error verifying payout account:', error);
+    logger.warn('Error verifying payout account:', error);
     const message = error instanceof Error ? error.message : 'Failed to verify account';
     res.status(500).json({ error: message });
   }
@@ -241,7 +241,7 @@ router.get('/preferences', async (req, res) => {
       preferredMethod: prefs.bankDetails ? 'bank_transfer' : prefs.paypalEmail ? 'paypal' : 'stripe'
     });
   } catch (error: unknown) {
-    logger.error('Error fetching preferences:', error);
+    logger.warn('Error fetching preferences:', error);
     res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });
@@ -278,7 +278,7 @@ router.post('/preferences/paypal', async (req, res) => {
     logger.info(`PayPal configured for user ${req.user.id}`);
     res.json({ success: true, method: 'paypal', email });
   } catch (error: unknown) {
-    logger.error('Error configuring PayPal:', error);
+    logger.warn('Error configuring PayPal:', error);
     res.status(500).json({ error: 'Failed to configure PayPal' });
   }
 });
@@ -333,7 +333,7 @@ router.post('/preferences/bank', async (req, res) => {
       accountNumber: bankDetailsData.accountNumber
     });
   } catch (error: unknown) {
-    logger.error('Error configuring bank:', error);
+    logger.warn('Error configuring bank:', error);
     res.status(500).json({ error: 'Failed to configure bank account' });
   }
 });
@@ -356,7 +356,7 @@ router.get('/dashboard', async (req, res) => {
 
     res.json({ url: result.url });
   } catch (error: unknown) {
-    logger.error('Error getting dashboard link:', error);
+    logger.warn('Error getting dashboard link:', error);
     const message = error instanceof Error ? error.message : 'Failed to get dashboard link';
     res.status(500).json({ error: message });
   }
@@ -375,7 +375,7 @@ router.get('/earnings', async (req, res) => {
     const earnings = await instantPayoutService.getEarningsSummary(req.user.id);
     res.json(earnings);
   } catch (error: unknown) {
-    logger.error('Error getting earnings summary:', error);
+    logger.warn('Error getting earnings summary:', error);
     const message = error instanceof Error ? error.message : 'Failed to get earnings summary';
     res.status(500).json({ error: message });
   }
@@ -414,7 +414,7 @@ router.post('/split', async (req, res) => {
       errors: result.errors,
     });
   } catch (error: unknown) {
-    logger.error('Error creating split payment:', error);
+    logger.warn('Error creating split payment:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to create split payment' });
   }
 });
@@ -453,7 +453,7 @@ router.post('/split-enhanced', async (req, res) => {
       errors: result.errors,
     });
   } catch (error: unknown) {
-    logger.error('Error creating enhanced split payment:', error);
+    logger.warn('Error creating enhanced split payment:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to create split payment' });
   }
 });
@@ -483,7 +483,7 @@ router.get('/report', async (req, res) => {
 
     res.json(report);
   } catch (error: unknown) {
-    logger.error('Error generating payout report:', error);
+    logger.warn('Error generating payout report:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to generate report' });
   }
 });
@@ -507,7 +507,7 @@ router.get('/risk-assessment', async (req, res) => {
 
     res.json(assessment);
   } catch (error: unknown) {
-    logger.error('Error assessing payout risk:', error);
+    logger.warn('Error assessing payout risk:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to assess risk' });
   }
 });
@@ -532,7 +532,7 @@ router.get('/ledger', async (req, res) => {
       pagination: { limit, offset, total: entries.length },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching ledger history:', error);
+    logger.warn('Error fetching ledger history:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to fetch ledger history' });
   }
 });
@@ -558,7 +558,7 @@ router.get('/tax-form/:year', async (req, res) => {
 
     res.json(formData);
   } catch (error: unknown) {
-    logger.error('Error generating tax form:', error);
+    logger.warn('Error generating tax form:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to generate tax form' });
   }
 });
@@ -582,7 +582,7 @@ router.get('/tax-forms', async (req, res) => {
 
     res.json({ forms });
   } catch (error: unknown) {
-    logger.error('Error fetching tax forms:', error);
+    logger.warn('Error fetching tax forms:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to fetch tax forms' });
   }
 });
@@ -633,7 +633,7 @@ router.post('/tax-form/submit', async (req, res) => {
       message: 'Tax form submitted for review. You will be notified once it is approved.',
     });
   } catch (error: unknown) {
-    logger.error('Error submitting tax form:', error);
+    logger.warn('Error submitting tax form:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to submit tax form' });
   }
 });
@@ -667,7 +667,7 @@ router.get('/statements', async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching statements:', error);
+    logger.warn('Error fetching statements:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to fetch statements' });
   }
 });
@@ -732,7 +732,7 @@ router.post('/statements/generate', async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.error('Error generating statement:', error);
+    logger.warn('Error generating statement:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to generate statement' });
   }
 });
@@ -765,7 +765,7 @@ router.get('/statements/:id/download', async (req, res) => {
       filename: `statement-${statement.label?.replace(/\s+/g, '-').toLowerCase()}.pdf`,
     });
   } catch (error: unknown) {
-    logger.error('Error downloading statement:', error);
+    logger.warn('Error downloading statement:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to download statement' });
   }
 });
@@ -831,7 +831,7 @@ router.get('/disputes', async (req, res) => {
 
     res.json({ disputes: disputesWithMessages });
   } catch (error: unknown) {
-    logger.error('Error fetching disputes:', error);
+    logger.warn('Error fetching disputes:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to fetch disputes' });
   }
 });
@@ -874,7 +874,7 @@ router.post('/disputes', async (req, res) => {
       message: 'Dispute filed successfully. We will review within 5 business days.',
     });
   } catch (error: unknown) {
-    logger.error('Error filing dispute:', error);
+    logger.warn('Error filing dispute:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to file dispute' });
   }
 });
@@ -929,7 +929,7 @@ router.post('/disputes/:id/evidence', async (req, res) => {
       message: 'Evidence submitted successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error submitting evidence:', error);
+    logger.warn('Error submitting evidence:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to submit evidence' });
   }
 });
@@ -980,7 +980,7 @@ router.post('/disputes/:id/message', async (req, res) => {
       messageId,
     });
   } catch (error: unknown) {
-    logger.error('Error sending message:', error);
+    logger.warn('Error sending message:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to send message' });
   }
 });
@@ -1009,7 +1009,7 @@ router.post('/retry/:payoutId', async (req, res) => {
       message: 'Payout retry initiated successfully.',
     });
   } catch (error: unknown) {
-    logger.error('Error retrying payout:', error);
+    logger.warn('Error retrying payout:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to retry payout' });
   }
 });
@@ -1040,7 +1040,7 @@ router.get('/instant-fee', async (req, res) => {
       netAmount: parseFloat(netAmount.toFixed(2)),
     });
   } catch (error: unknown) {
-    logger.error('Error calculating instant fee:', error);
+    logger.warn('Error calculating instant fee:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to calculate fee' });
   }
 });
@@ -1073,7 +1073,7 @@ router.get('/currencies', async (req, res) => {
       defaultCurrency: 'USD',
     });
   } catch (error: unknown) {
-    logger.error('Error fetching currencies:', error);
+    logger.warn('Error fetching currencies:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to fetch currencies' });
   }
 });

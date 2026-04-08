@@ -128,7 +128,7 @@ export class AudioService {
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       };
     } catch (error: unknown) {
-      logger.error('Error generating upload URL:', error);
+      logger.warn('Error generating upload URL:', error);
       throw error instanceof Error ? error : new Error('Failed to generate upload URL');
     }
   }
@@ -168,7 +168,7 @@ export class AudioService {
 
       return analysis;
     } catch (error: unknown) {
-      logger.error('Error processing audio file:', error);
+      logger.warn('Error processing audio file:', error);
       throw new Error('Failed to process audio file');
     }
   }
@@ -233,7 +233,7 @@ export class AudioService {
       
       return downsampledData;
     } catch (error: unknown) {
-      logger.error('Error generating waveform:', error);
+      logger.warn('Error generating waveform:', error);
       return this.generateFallbackWaveform();
     } finally {
       // Clean up temp file
@@ -439,7 +439,7 @@ export class AudioService {
         format: outputFormat
       };
     } catch (error: unknown) {
-      logger.error('Error converting audio format:', error);
+      logger.warn('Error converting audio format:', error);
       throw new Error('Failed to convert audio format');
     } finally {
       // Clean up temp file
@@ -504,7 +504,7 @@ export class AudioService {
         format: 'json'
       };
     } catch (error: unknown) {
-      logger.error('Error generating waveform:', error);
+      logger.warn('Error generating waveform:', error);
       throw new Error('Failed to generate waveform');
     }
   }
@@ -534,7 +534,7 @@ export class AudioService {
             resolve();
           })
           .on('error', (err: Error) => {
-            logger.error('FFmpeg preview error:', err);
+            logger.warn('FFmpeg preview error:', err);
             reject(err);
           })
           .run();
@@ -542,7 +542,7 @@ export class AudioService {
       
       return previewPath;
     } catch (error: unknown) {
-      logger.error('Error generating audio preview:', error);
+      logger.warn('Error generating audio preview:', error);
       throw new Error('Failed to generate audio preview');
     }
   }
@@ -568,7 +568,7 @@ export class AudioService {
       // Constrain to reasonable BPM range
       return Math.max(60, Math.min(200, bpm));
     } catch (error: unknown) {
-      logger.error('Error detecting BPM:', error);
+      logger.warn('Error detecting BPM:', error);
       return 120;
     }
   }
@@ -585,7 +585,7 @@ export class AudioService {
       
       return `${keys[keyIndex]} ${modes[modeIndex]}`;
     } catch (error: unknown) {
-      logger.error('Error detecting key:', error);
+      logger.warn('Error detecting key:', error);
       return 'C Major';
     }
   }
@@ -621,7 +621,7 @@ export class AudioService {
       
       return { bpm, confidence: 0.85 };
     } catch (error: unknown) {
-      logger.error('Error analyzing audio tempo:', error);
+      logger.warn('Error analyzing audio tempo:', error);
       return { bpm: 120, confidence: 0.5 };
     }
   }
@@ -667,7 +667,7 @@ export class AudioService {
       
       return { key: bestKey, scale: bestScale, confidence };
     } catch (error: unknown) {
-      logger.error('Error detecting audio key:', error);
+      logger.warn('Error detecting audio key:', error);
       return { key: 'C', scale: 'Major', confidence: 0.5 };
     }
   }
@@ -795,7 +795,7 @@ export class AudioService {
             resolve();
           })
           .on('error', (err: Error) => {
-            logger.error('FFmpeg effects error:', err);
+            logger.warn('FFmpeg effects error:', err);
             reject(err);
           })
           .run();
@@ -803,7 +803,7 @@ export class AudioService {
 
       return processedPath;
     } catch (error: unknown) {
-      logger.error('Error applying audio effects:', error);
+      logger.warn('Error applying audio effects:', error);
       throw new Error('Failed to apply audio effects');
     }
   }
@@ -943,7 +943,7 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger.error('Error mixing audio tracks:', error);
+      logger.warn('Error mixing audio tracks:', error);
       throw new Error('Failed to mix audio tracks');
     } finally {
       // Clean up temp mix file
@@ -1006,7 +1006,7 @@ export class AudioService {
             resolve();
           })
           .on('error', (err: Error) => {
-            logger.error('FFmpeg mastering error:', err);
+            logger.warn('FFmpeg mastering error:', err);
             reject(err);
           })
           .run();
@@ -1014,7 +1014,7 @@ export class AudioService {
 
       return masteredPath;
     } catch (error: unknown) {
-      logger.error('Error mastering audio:', error);
+      logger.warn('Error mastering audio:', error);
       throw new Error('Failed to master audio');
     }
   }
@@ -1057,7 +1057,7 @@ export class AudioService {
       
       return { stems };
     } catch (error: unknown) {
-      logger.error('Error exporting stems:', error);
+      logger.warn('Error exporting stems:', error);
       throw new Error('Failed to export stems');
     }
   }
@@ -1105,7 +1105,7 @@ export class AudioService {
         }
       }
     } catch (error: unknown) {
-      logger.error('Error exporting project audio:', error);
+      logger.warn('Error exporting project audio:', error);
       throw new Error('Failed to export project audio');
     }
   }

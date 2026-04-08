@@ -39,7 +39,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(works);
   } catch (error) {
-    logger.error('[Publishing] Failed to fetch registered works:', error);
+    logger.warn('[Publishing] Failed to fetch registered works:', error);
     res.status(500).json({ error: 'Failed to fetch registered works' });
   }
 });
@@ -64,7 +64,7 @@ router.post('/', requireAuth, async (req, res) => {
       .returning();
     res.json(work);
   } catch (error) {
-    logger.error('[Publishing] Failed to register work:', error);
+    logger.warn('[Publishing] Failed to register work:', error);
     res.status(500).json({ error: 'Failed to register work' });
   }
 });
@@ -87,7 +87,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Work not found' });
     res.json(updated);
   } catch (error) {
-    logger.error('[Publishing] Failed to update work:', error);
+    logger.warn('[Publishing] Failed to update work:', error);
     res.status(500).json({ error: 'Failed to update work' });
   }
 });
@@ -104,7 +104,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     if (!deleted) return res.status(404).json({ error: 'Work not found' });
     res.json({ success: true });
   } catch (error) {
-    logger.error('[Publishing] Failed to delete record:', error);
+    logger.warn('[Publishing] Failed to delete record:', error);
     res.status(500).json({ error: 'Failed to delete record' });
   }
 });
@@ -127,7 +127,7 @@ router.get('/stats', requireAuth, async (req, res) => {
       confirmedCount: Number(stats.confirmedCount),
     });
   } catch (error) {
-    logger.error('[Publishing] Failed to fetch publishing stats:', error);
+    logger.warn('[Publishing] Failed to fetch publishing stats:', error);
     res.status(500).json({ error: 'Failed to fetch publishing stats' });
   }
 });
@@ -143,7 +143,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!work) return res.status(404).json({ error: 'Work not found' });
     res.json(work);
   } catch (error) {
-    logger.error('[Publishing] Failed to fetch work:', error);
+    logger.warn('[Publishing] Failed to fetch work:', error);
     res.status(500).json({ error: 'Failed to fetch publishing record' });
   }
 });

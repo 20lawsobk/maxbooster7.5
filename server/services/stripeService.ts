@@ -26,12 +26,12 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 if (!actualStripeKey) {
-  logger.error('❌ STRIPE CONFIGURATION ERROR in stripeService.ts:');
-  logger.error('   Missing or invalid Stripe secret key.');
-  logger.error(
+  logger.warn('❌ STRIPE CONFIGURATION ERROR in stripeService.ts:');
+  logger.warn('   Missing or invalid Stripe secret key.');
+  logger.warn(
     '   Expected: STRIPE_SECRET_KEY (production) or TESTING_STRIPE_SECRET_KEY (development)'
   );
-  logger.error('   Format: sk_test_... or sk_live_...');
+  logger.warn('   Format: sk_test_... or sk_live_...');
   throw new Error('Invalid Stripe configuration - cannot initialize payment service');
 }
 
@@ -124,7 +124,7 @@ export class StripeService {
         };
       }
     } catch (error: unknown) {
-      logger.error('Subscription error:', error);
+      logger.warn('Subscription error:', error);
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class StripeService {
 
       return result.data;
     } catch (error: unknown) {
-      logger.error('Beat purchase intent error:', error);
+      logger.warn('Beat purchase intent error:', error);
       throw error;
     }
   }
@@ -203,7 +203,7 @@ export class StripeService {
           logger.info(`Unhandled webhook event type: ${event.type}`);
       }
     } catch (error: unknown) {
-      logger.error('Webhook error:', error);
+      logger.warn('Webhook error:', error);
       throw error;
     }
   }
@@ -424,7 +424,7 @@ export class StripeService {
         return { success: false, error: stripeError.message };
       }
     } catch (error: any) {
-      logger.error('Error creating refund:', error);
+      logger.warn('Error creating refund:', error);
       return { success: false, error: error.message || 'Failed to create refund' };
     }
   }
@@ -460,7 +460,7 @@ export class StripeService {
 
       logger.info('Refund status updated from webhook', { refundId, status: refund.status });
     } catch (error) {
-      logger.error('Error handling refund webhook:', error);
+      logger.warn('Error handling refund webhook:', error);
     }
   }
 
@@ -482,7 +482,7 @@ export class StripeService {
 
       return refund;
     } catch (error) {
-      logger.error('Error getting refund status:', error);
+      logger.warn('Error getting refund status:', error);
       throw error;
     }
   }
@@ -501,7 +501,7 @@ export class StripeService {
 
       return orderRefunds;
     } catch (error) {
-      logger.error('Error getting order refunds:', error);
+      logger.warn('Error getting order refunds:', error);
       throw error;
     }
   }
@@ -599,7 +599,7 @@ export class StripeService {
 
       return formData;
     } catch (error) {
-      logger.error('Error generating tax form data:', error);
+      logger.warn('Error generating tax form data:', error);
       throw error;
     }
   }

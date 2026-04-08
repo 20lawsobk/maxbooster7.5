@@ -101,7 +101,7 @@ class AutopilotPublisher {
 
       return results;
     } catch (error) {
-      logger.error('Error in autopilot publishing cycle:', error);
+      logger.warn('Error in autopilot publishing cycle:', error);
       return [];
     } finally {
       this.isRunning = false;
@@ -164,7 +164,7 @@ class AutopilotPublisher {
 
     } catch (error: any) {
       result.errors.push(`General: ${error.message}`);
-      logger.error(`Error processing user ${config.userId}:`, error);
+      logger.warn(`Error processing user ${config.userId}:`, error);
     }
 
     return result;
@@ -387,7 +387,7 @@ class AutopilotPublisher {
 
       return { posts: 1 };
     } catch (error: any) {
-      logger.error('Error in publishSocialContent:', error);
+      logger.warn('Error in publishSocialContent:', error);
       return { posts: 0, error: error.message };
     }
   }
@@ -495,7 +495,7 @@ class AutopilotPublisher {
       
       return { campaigns: 1 };
     } catch (error: any) {
-      logger.error('Error in publishAdvertisingCampaigns:', error);
+      logger.warn('Error in publishAdvertisingCampaigns:', error);
       return { campaigns: 0, error: error.message };
     }
   }

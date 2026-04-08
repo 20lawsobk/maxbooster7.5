@@ -94,7 +94,7 @@ router.get('/results', async (req, res) => {
       ]
     });
   } catch (error) {
-    logger.error('Error fetching audit results:', error);
+    logger.warn('Error fetching audit results:', error);
     res.status(500).json({ error: 'Failed to fetch audit results' });
   }
 });
@@ -104,7 +104,7 @@ router.post('/run', async (req, res) => {
     logger.info('Manual audit triggered by admin');
     res.json({ success: true, message: 'Audit started', estimatedTime: '2 minutes' });
   } catch (error) {
-    logger.error('Error running audit:', error);
+    logger.warn('Error running audit:', error);
     res.status(500).json({ error: 'Failed to start audit' });
   }
 });

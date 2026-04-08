@@ -100,7 +100,7 @@ router.get('/projects', requireAuth, async (req: Request, res: Response) => {
     });
     res.json(userProjects);
   } catch (error: unknown) {
-    logger.error('Error fetching projects:', error);
+    logger.warn('Error fetching projects:', error);
     res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
@@ -130,7 +130,7 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
     
     res.status(201).json(project);
   } catch (error: unknown) {
-    logger.error('Error creating project:', error);
+    logger.warn('Error creating project:', error);
     res.status(500).json({ error: 'Failed to create project' });
   }
 });
@@ -151,7 +151,7 @@ router.delete('/projects/:projectId', requireAuth, async (req: Request, res: Res
     
     res.json({ success: true, message: 'Project deleted' });
   } catch (error: unknown) {
-    logger.error('Error deleting project:', error);
+    logger.warn('Error deleting project:', error);
     res.status(500).json({ error: 'Failed to delete project' });
   }
 });
@@ -168,7 +168,7 @@ router.get('/recent-files', requireAuth, async (req: Request, res: Response) => 
       .limit(20);
     res.json({ files });
   } catch (error: unknown) {
-    logger.error('Error fetching recent files:', error);
+    logger.warn('Error fetching recent files:', error);
     res.status(500).json({ error: 'Failed to fetch recent files' });
   }
 });
@@ -310,7 +310,7 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ samples, categories: SAMPLE_CATEGORIES, total, limit: limitNum, offset: offsetNum, source: 'builtin' });
   } catch (error: unknown) {
-    logger.error('Error fetching samples:', error);
+    logger.warn('Error fetching samples:', error);
     res.status(500).json({ error: 'Failed to fetch samples' });
   }
 });
@@ -320,7 +320,7 @@ router.get('/samples/categories', requireAuth, async (_req: Request, res: Respon
   try {
     res.json({ categories: SAMPLE_CATEGORIES });
   } catch (error: unknown) {
-    logger.error('Error fetching sample categories:', error);
+    logger.warn('Error fetching sample categories:', error);
     res.status(500).json({ error: 'Failed to fetch sample categories' });
   }
 });
@@ -337,7 +337,7 @@ router.get('/samples/:sampleId', requireAuth, async (req: Request, res: Response
 
     res.json(sample);
   } catch (error: unknown) {
-    logger.error('Error fetching sample:', error);
+    logger.warn('Error fetching sample:', error);
     res.status(500).json({ error: 'Failed to fetch sample' });
   }
 });
@@ -378,7 +378,7 @@ router.post('/samples/search', requireAuth, async (req: Request, res: Response) 
 
     res.json({ samples, total: samples.length });
   } catch (error: unknown) {
-    logger.error('Error searching samples:', error);
+    logger.warn('Error searching samples:', error);
     res.status(500).json({ error: 'Failed to search samples' });
   }
 });
@@ -445,7 +445,7 @@ router.post(
         message: 'Recording uploaded successfully',
       });
     } catch (error: unknown) {
-      logger.error('Error uploading recording:', error);
+      logger.warn('Error uploading recording:', error);
       res.status(500).json({ error: 'Failed to upload recording' });
     }
   }
@@ -498,7 +498,7 @@ router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, 
 
     res.json(mixBusses);
   } catch (error: unknown) {
-    logger.error('Error fetching mix busses:', error);
+    logger.warn('Error fetching mix busses:', error);
     res.status(500).json({ error: 'Failed to fetch mix busses' });
   }
 });
@@ -518,7 +518,7 @@ router.get('/projects/:projectId', requireAuth, async (req: Request, res: Respon
 
     res.json(project);
   } catch (error: unknown) {
-    logger.error('Error getting project:', error);
+    logger.warn('Error getting project:', error);
     res.status(500).json({ error: 'Failed to get project' });
   }
 });
@@ -546,7 +546,7 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
 
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating project:', error);
+    logger.warn('Error updating project:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -595,7 +595,7 @@ router.post('/projects/:projectId/save-daw-state', requireAuth, async (req: Requ
     logger.info(`[Studio] DAW state saved for project ${projectId}`);
     res.json({ success: true, project: updated });
   } catch (error: unknown) {
-    logger.error('Error saving DAW state:', error);
+    logger.warn('Error saving DAW state:', error);
     res.status(500).json({ error: 'Failed to save DAW state' });
   }
 });
@@ -636,7 +636,7 @@ router.get('/projects/:projectId/daw-state', requireAuth, async (req: Request, r
       dawSavedAt,
     });
   } catch (error: unknown) {
-    logger.error('Error getting DAW state:', error);
+    logger.warn('Error getting DAW state:', error);
     res.status(500).json({ error: 'Failed to get DAW state' });
   }
 });
@@ -693,7 +693,7 @@ router.post('/projects/:projectId/sync', requireAuth, async (req: Request, res: 
 
     res.json({ success: true, project: updated });
   } catch (error: unknown) {
-    logger.error('Error syncing project:', error);
+    logger.warn('Error syncing project:', error);
     res.status(500).json({ error: 'Failed to sync project' });
   }
 });
@@ -859,7 +859,7 @@ router.post('/projects/:projectId/render', requireAuth, async (req: Request, res
 
     res.json(result);
   } catch (error: unknown) {
-    logger.error('Error rendering project:', error);
+    logger.warn('Error rendering project:', error);
     res.status(500).json({ error: 'Failed to render project' });
   }
 });
@@ -947,7 +947,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
 
     res.status(201).json({ ...track, parentFolderId: data.parentFolderId || null });
   } catch (error: unknown) {
-    logger.error('Error creating track:', error);
+    logger.warn('Error creating track:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -1034,7 +1034,7 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
 
     res.json({ tracks, clips: mappedClips });
   } catch (error: unknown) {
-    logger.error('Error getting tracks:', error);
+    logger.warn('Error getting tracks:', error);
     res.status(500).json({ error: 'Failed to get tracks' });
   }
 });
@@ -1145,7 +1145,7 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
 
     res.json({ ...updated, parentFolderId });
   } catch (error: unknown) {
-    logger.error('Error updating track:', error);
+    logger.warn('Error updating track:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -1175,7 +1175,7 @@ router.delete('/tracks/:trackId', requireAuth, async (req: Request, res: Respons
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting track:', error);
+    logger.warn('Error deleting track:', error);
     res.status(500).json({ error: 'Failed to delete track' });
   }
 });
@@ -1204,7 +1204,7 @@ router.get('/tracks/:trackId/audio-clips', requireAuth, async (req: Request, res
 
     res.json(clips);
   } catch (error: unknown) {
-    logger.error('Error getting audio clips:', error);
+    logger.warn('Error getting audio clips:', error);
     res.status(500).json({ error: 'Failed to get audio clips' });
   }
 });
@@ -1264,7 +1264,7 @@ router.post(
         clip,
       });
     } catch (error: unknown) {
-      logger.error('Error uploading audio clip:', error);
+      logger.warn('Error uploading audio clip:', error);
       res.status(500).json({ error: 'Failed to upload audio clip' });
     }
   }
@@ -1304,7 +1304,7 @@ router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) 
 
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating clip:', error);
+    logger.warn('Error updating clip:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -1337,7 +1337,7 @@ router.delete('/clips/:clipId', requireAuth, async (req: Request, res: Response)
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting clip:', error);
+    logger.warn('Error deleting clip:', error);
     res.status(500).json({ error: 'Failed to delete clip' });
   }
 });
@@ -1369,7 +1369,7 @@ router.get('/tracks/:trackId/automation', requireAuth, async (req: Request, res:
       res.json({ automation });
     }
   } catch (error: unknown) {
-    logger.error('Error getting automation:', error);
+    logger.warn('Error getting automation:', error);
     res.status(500).json({ error: 'Failed to get automation' });
   }
 });
@@ -1409,7 +1409,7 @@ router.put('/tracks/:trackId/automation', requireAuth, async (req: Request, res:
     logger.info('Automation saved', { trackId, parameter, pointCount: points.length });
     res.json({ success: true, points });
   } catch (error: unknown) {
-    logger.error('Error saving automation:', error);
+    logger.warn('Error saving automation:', error);
     res.status(500).json({ error: 'Failed to save automation' });
   }
 });
@@ -1461,7 +1461,7 @@ router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
 
     res.status(201).json(newBus);
   } catch (error: unknown) {
-    logger.error('Error creating mix bus:', error);
+    logger.warn('Error creating mix bus:', error);
     res.status(500).json({ error: 'Failed to create mix bus' });
   }
 });
@@ -1515,7 +1515,7 @@ router.patch('/mix-busses/:busId', requireAuth, async (req: Request, res: Respon
 
     res.json(updatedBus);
   } catch (error: unknown) {
-    logger.error('Error updating mix bus:', error);
+    logger.warn('Error updating mix bus:', error);
     res.status(500).json({ error: 'Failed to update mix bus' });
   }
 });
@@ -1557,7 +1557,7 @@ router.delete('/mix-busses/:busId', requireAuth, async (req: Request, res: Respo
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting mix bus:', error);
+    logger.warn('Error deleting mix bus:', error);
     res.status(500).json({ error: 'Failed to delete mix bus' });
   }
 });
@@ -1603,7 +1603,7 @@ router.post('/projects/:projectId/track-routing', requireAuth, async (req: Reque
 
     res.json({ success: true, trackId, outputBus: outputBus || 'master' });
   } catch (error: unknown) {
-    logger.error('Error updating track routing:', error);
+    logger.warn('Error updating track routing:', error);
     res.status(500).json({ error: 'Failed to update track routing' });
   }
 });
@@ -1612,7 +1612,7 @@ router.get('/conversions', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({ conversions: [] });
   } catch (error: unknown) {
-    logger.error('Error fetching conversions:', error);
+    logger.warn('Error fetching conversions:', error);
     res.status(500).json({ error: 'Failed to fetch conversions' });
   }
 });
@@ -1631,7 +1631,7 @@ router.post('/conversions', requireAuth, async (req: Request, res: Response) => 
       createdAt: new Date().toISOString(),
     });
   } catch (error: unknown) {
-    logger.error('Error creating conversion:', error);
+    logger.warn('Error creating conversion:', error);
     res.status(500).json({ error: 'Failed to create conversion' });
   }
 });
@@ -1641,7 +1641,7 @@ router.post('/conversions/:conversionId/cancel', requireAuth, async (req: Reques
     const { conversionId } = req.params;
     res.json({ success: true, message: 'Conversion cancelled', conversionId });
   } catch (error: unknown) {
-    logger.error('Error cancelling conversion:', error);
+    logger.warn('Error cancelling conversion:', error);
     res.status(500).json({ error: 'Failed to cancel conversion' });
   }
 });
@@ -1651,7 +1651,7 @@ router.get('/conversions/:conversionId/download', requireAuth, async (req: Reque
     const { conversionId } = req.params;
     res.status(404).json({ error: 'Conversion not found or not ready', conversionId });
   } catch (error: unknown) {
-    logger.error('Error downloading conversion:', error);
+    logger.warn('Error downloading conversion:', error);
     res.status(500).json({ error: 'Failed to download conversion' });
   }
 });
@@ -1680,7 +1680,7 @@ router.get('/lyrics', requireAuth, async (req: Request, res: Response) => {
       lastUpdated: meta.lyricsUpdatedAt ?? null,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching lyrics:', error);
+    logger.warn('Error fetching lyrics:', error);
     res.status(500).json({ error: 'Failed to fetch lyrics' });
   }
 });
@@ -1717,7 +1717,7 @@ router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
       lastUpdated: updatedMeta.lyricsUpdatedAt,
     });
   } catch (error: unknown) {
-    logger.error('Error saving lyrics:', error);
+    logger.warn('Error saving lyrics:', error);
     res.status(500).json({ error: 'Failed to save lyrics' });
   }
 });
@@ -1743,12 +1743,12 @@ router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Resp
           const trackName = proj?.name || projectId;
           await notificationService.sendAiProcessingCompleteNotification(userId, 'master', trackName);
         } catch (err) {
-          logger.error('AI master notification error:', err);
+          logger.warn('AI master notification error:', err);
         }
       });
     }
   } catch (error: unknown) {
-    logger.error('Error starting AI master:', error);
+    logger.warn('Error starting AI master:', error);
     res.status(500).json({ error: 'Failed to start AI mastering' });
   }
 });
@@ -1774,12 +1774,12 @@ router.post('/ai-mix/:projectId', requireAuth, async (req: Request, res: Respons
           const trackName = proj?.name || projectId;
           await notificationService.sendAiProcessingCompleteNotification(userId, 'mix', trackName);
         } catch (err) {
-          logger.error('AI mix notification error:', err);
+          logger.warn('AI mix notification error:', err);
         }
       });
     }
   } catch (error: unknown) {
-    logger.error('Error starting AI mix:', error);
+    logger.warn('Error starting AI mix:', error);
     res.status(500).json({ error: 'Failed to start AI mixing' });
   }
 });
@@ -1796,7 +1796,7 @@ router.get('/ai-music/suggestions', requireAuth, async (req: Request, res: Respo
       ],
     });
   } catch (error: unknown) {
-    logger.error('Error fetching AI suggestions:', error);
+    logger.warn('Error fetching AI suggestions:', error);
     res.status(500).json({ error: 'Failed to fetch AI suggestions' });
   }
 });
@@ -1813,7 +1813,7 @@ router.get('/ai-music/presets', requireAuth, async (req: Request, res: Response)
       ],
     });
   } catch (error: unknown) {
-    logger.error('Error fetching AI presets:', error);
+    logger.warn('Error fetching AI presets:', error);
     res.status(500).json({ error: 'Failed to fetch AI presets' });
   }
 });
@@ -1827,7 +1827,7 @@ router.post('/ai-music/apply-genre-preset', requireAuth, async (req: Request, re
       projectId,
     });
   } catch (error: unknown) {
-    logger.error('Error applying genre preset:', error);
+    logger.warn('Error applying genre preset:', error);
     res.status(500).json({ error: 'Failed to apply genre preset' });
   }
 });
@@ -1844,7 +1844,7 @@ router.post('/ai-music/analyze-loudness', requireAuth, async (req: Request, res:
       recommendations: ['Track is well balanced for streaming platforms'],
     });
   } catch (error: unknown) {
-    logger.error('Error analyzing loudness:', error);
+    logger.warn('Error analyzing loudness:', error);
     res.status(500).json({ error: 'Failed to analyze loudness' });
   }
 });
@@ -1861,7 +1861,7 @@ router.post('/ai-music/match-reference', requireAuth, async (req: Request, res: 
       ],
     });
   } catch (error: unknown) {
-    logger.error('Error matching reference:', error);
+    logger.warn('Error matching reference:', error);
     res.status(500).json({ error: 'Failed to match reference' });
   }
 });
@@ -1958,7 +1958,7 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
       clip,
     });
   } catch (error: unknown) {
-    logger.error('Error uploading file:', error);
+    logger.warn('Error uploading file:', error);
     res.status(500).json({ error: 'Failed to upload file' });
   }
 });
@@ -2005,7 +2005,7 @@ router.post('/export', requireAuth, async (req: Request, res: Response) => {
       status: record.status,
     });
   } catch (error: unknown) {
-    logger.error('Error starting export:', error);
+    logger.warn('Error starting export:', error);
     res.status(500).json({ error: 'Failed to start export' });
   }
 });
@@ -2038,7 +2038,7 @@ router.get('/export/:jobId/status', requireAuth, async (req: Request, res: Respo
       downloadUrl: record.outputUrl || (isComplete ? `/api/studio/export/${jobId}/download` : null),
     });
   } catch (error: unknown) {
-    logger.error('Error checking export status:', error);
+    logger.warn('Error checking export status:', error);
     res.status(500).json({ error: 'Failed to check export status' });
   }
 });
@@ -2048,7 +2048,7 @@ router.get('/export/:jobId/download', requireAuth, async (req: Request, res: Res
     const { jobId } = req.params;
     res.status(404).json({ error: 'Export not found or expired', jobId });
   } catch (error: unknown) {
-    logger.error('Error downloading export:', error);
+    logger.warn('Error downloading export:', error);
     res.status(500).json({ error: 'Failed to download export' });
   }
 });
@@ -2062,7 +2062,7 @@ router.post('/export/:jobId/upload', requireAuth, async (req: Request, res: Resp
       message: 'Export uploaded to distribution',
     });
   } catch (error: unknown) {
-    logger.error('Error uploading export:', error);
+    logger.warn('Error uploading export:', error);
     res.status(500).json({ error: 'Failed to upload export' });
   }
 });
@@ -2106,7 +2106,7 @@ router.post('/clips/audio', requireAuth, async (req: Request, res: Response) => 
 
     res.status(201).json(clip);
   } catch (error: unknown) {
-    logger.error('Error creating audio clip:', error);
+    logger.warn('Error creating audio clip:', error);
     res.status(500).json({ error: 'Failed to create audio clip' });
   }
 });
@@ -2118,7 +2118,7 @@ router.get('/projects/:projectId/markers', requireAuth, async (req: Request, res
     const { projectId } = req.params;
     res.json({ markers: [] });
   } catch (error: unknown) {
-    logger.error('Error fetching markers:', error);
+    logger.warn('Error fetching markers:', error);
     res.status(500).json({ error: 'Failed to fetch markers' });
   }
 });
@@ -2137,7 +2137,7 @@ router.post('/projects/:projectId/markers', requireAuth, async (req: Request, re
       createdAt: new Date().toISOString(),
     });
   } catch (error: unknown) {
-    logger.error('Error creating marker:', error);
+    logger.warn('Error creating marker:', error);
     res.status(500).json({ error: 'Failed to create marker' });
   }
 });
@@ -2152,7 +2152,7 @@ router.patch('/markers/:markerId', requireAuth, async (req: Request, res: Respon
       updatedAt: new Date().toISOString(),
     });
   } catch (error: unknown) {
-    logger.error('Error updating marker:', error);
+    logger.warn('Error updating marker:', error);
     res.status(500).json({ error: 'Failed to update marker' });
   }
 });
@@ -2162,7 +2162,7 @@ router.delete('/markers/:markerId', requireAuth, async (req: Request, res: Respo
     const { markerId } = req.params;
     res.json({ success: true, message: 'Marker deleted', markerId });
   } catch (error: unknown) {
-    logger.error('Error deleting marker:', error);
+    logger.warn('Error deleting marker:', error);
     res.status(500).json({ error: 'Failed to delete marker' });
   }
 });
@@ -2178,7 +2178,7 @@ router.post('/projects/:projectId/tracks/reorder', requireAuth, async (req: Requ
       trackOrder,
     });
   } catch (error: unknown) {
-    logger.error('Error reordering tracks:', error);
+    logger.warn('Error reordering tracks:', error);
     res.status(500).json({ error: 'Failed to reorder tracks' });
   }
 });
@@ -2243,7 +2243,7 @@ router.post('/folders', requireAuth, async (req: Request, res: Response) => {
 
     res.json(folder[0]);
   } catch (error: unknown) {
-    logger.error('Error creating folder:', error);
+    logger.warn('Error creating folder:', error);
     res.status(500).json({ error: 'Failed to create folder' });
   }
 });
@@ -2285,7 +2285,7 @@ router.get('/projects/:projectId/folders', requireAuth, async (req: Request, res
       unassignedTracks: childTracks.filter(t => !trackFolders[t.id]),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching folders:', error);
+    logger.warn('Error fetching folders:', error);
     res.status(500).json({ error: 'Failed to fetch folders' });
   }
 });
@@ -2340,7 +2340,7 @@ router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Respon
 
     res.json({ ...updated[0], collapsed });
   } catch (error: unknown) {
-    logger.error('Error updating folder:', error);
+    logger.warn('Error updating folder:', error);
     res.status(500).json({ error: 'Failed to update folder' });
   }
 });
@@ -2411,7 +2411,7 @@ router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request,
       position,
     });
   } catch (error: unknown) {
-    logger.error('Error moving track to folder:', error);
+    logger.warn('Error moving track to folder:', error);
     res.status(500).json({ error: 'Failed to move track to folder' });
   }
 });
@@ -2482,7 +2482,7 @@ router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Respo
       childrenDeleted: deleteChildren === 'true',
     });
   } catch (error: unknown) {
-    logger.error('Error deleting folder:', error);
+    logger.warn('Error deleting folder:', error);
     res.status(500).json({ error: 'Failed to delete folder' });
   }
 });
@@ -2564,7 +2564,7 @@ router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req:
       folderId: folderId || null,
     });
   } catch (error: unknown) {
-    logger.error('Error bulk moving tracks:', error);
+    logger.warn('Error bulk moving tracks:', error);
     res.status(500).json({ error: 'Failed to bulk move tracks' });
   }
 });
@@ -2585,7 +2585,7 @@ router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Re
       .limit(100);
     res.json({ exports, projectId });
   } catch (error: unknown) {
-    logger.error('Error fetching stem exports:', error);
+    logger.warn('Error fetching stem exports:', error);
     res.status(500).json({ error: 'Failed to fetch stem exports' });
   }
 });
@@ -2625,7 +2625,7 @@ router.post('/projects/:projectId/export-stems', requireAuth, async (req: Reques
       export: record,
     });
   } catch (error: unknown) {
-    logger.error('Error starting stem export:', error);
+    logger.warn('Error starting stem export:', error);
     res.status(500).json({ error: 'Failed to start stem export' });
   }
 });
@@ -2719,7 +2719,7 @@ router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reque
       },
     });
   } catch (error: unknown) {
-    logger.error('Error creating mix snapshot:', error);
+    logger.warn('Error creating mix snapshot:', error);
     res.status(500).json({ error: 'Failed to create mix snapshot' });
   }
 });
@@ -2758,7 +2758,7 @@ router.get('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reques
 
     res.json({ snapshots: summaries });
   } catch (error: unknown) {
-    logger.error('Error fetching mix snapshots:', error);
+    logger.warn('Error fetching mix snapshots:', error);
     res.status(500).json({ error: 'Failed to fetch mix snapshots' });
   }
 });
@@ -2792,7 +2792,7 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async 
 
     res.json({ snapshot });
   } catch (error: unknown) {
-    logger.error('Error fetching mix snapshot:', error);
+    logger.warn('Error fetching mix snapshot:', error);
     res.status(500).json({ error: 'Failed to fetch mix snapshot' });
   }
 });
@@ -2883,7 +2883,7 @@ router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth
       updatedTracks: updatedCount,
     });
   } catch (error: unknown) {
-    logger.error('Error recalling mix snapshot:', error);
+    logger.warn('Error recalling mix snapshot:', error);
     res.status(500).json({ error: 'Failed to recall mix snapshot' });
   }
 });
@@ -2944,7 +2944,7 @@ router.patch('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asyn
       },
     });
   } catch (error: unknown) {
-    logger.error('Error updating mix snapshot:', error);
+    logger.warn('Error updating mix snapshot:', error);
     res.status(500).json({ error: 'Failed to update mix snapshot' });
   }
 });
@@ -2994,7 +2994,7 @@ router.delete('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asy
       message: `Deleted mix snapshot "${deletedName}"`,
     });
   } catch (error: unknown) {
-    logger.error('Error deleting mix snapshot:', error);
+    logger.warn('Error deleting mix snapshot:', error);
     res.status(500).json({ error: 'Failed to delete mix snapshot' });
   }
 });
@@ -3090,7 +3090,7 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
       hasDifferences: differences.length > 0,
     });
   } catch (error: unknown) {
-    logger.error('Error comparing mix snapshots:', error);
+    logger.warn('Error comparing mix snapshots:', error);
     res.status(500).json({ error: 'Failed to compare mix snapshots' });
   }
 });
@@ -3208,7 +3208,7 @@ router.get('/projects/:projectId/statistics', requireAuth, async (req: Request, 
         : null,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching project statistics:', error);
+    logger.warn('Error fetching project statistics:', error);
     res.status(500).json({ error: 'Failed to fetch project statistics' });
   }
 });
@@ -3326,7 +3326,7 @@ router.get('/user-statistics', requireAuth, async (req: Request, res: Response) 
       },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching user statistics:', error);
+    logger.warn('Error fetching user statistics:', error);
     res.status(500).json({ error: 'Failed to fetch user statistics' });
   }
 });
@@ -3485,7 +3485,7 @@ router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response
       tips,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching start hub summary:', error);
+    logger.warn('Error fetching start hub summary:', error);
     res.status(500).json({ error: 'Failed to fetch start hub data' });
   }
 });
@@ -3505,7 +3505,7 @@ router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response)
     
     res.json({ projects: recentProjects });
   } catch (error: unknown) {
-    logger.error('Error fetching recent projects:', error);
+    logger.warn('Error fetching recent projects:', error);
     res.status(500).json({ error: 'Failed to fetch recent projects' });
   }
 });
@@ -3532,7 +3532,7 @@ router.patch('/projects/:projectId/favorite', requireAuth, async (req: Request, 
     
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating project favorite:', error);
+    logger.warn('Error updating project favorite:', error);
     res.status(500).json({ error: 'Failed to update favorite status' });
   }
 });
@@ -3555,7 +3555,7 @@ router.patch('/projects/:projectId/opened', requireAuth, async (req: Request, re
     
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating project opened time:', error);
+    logger.warn('Error updating project opened time:', error);
     res.status(500).json({ error: 'Failed to update project' });
   }
 });
@@ -3587,7 +3587,7 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
     
     res.json({ templates });
   } catch (error: unknown) {
-    logger.error('Error fetching templates:', error);
+    logger.warn('Error fetching templates:', error);
     res.status(500).json({ error: 'Failed to fetch templates' });
   }
 });
@@ -3642,7 +3642,7 @@ router.post('/templates', requireAuth, async (req: Request, res: Response) => {
       tags: tags || [],
     });
   } catch (error: unknown) {
-    logger.error('Error creating template:', error);
+    logger.warn('Error creating template:', error);
     res.status(500).json({ error: 'Failed to create template' });
   }
 });
@@ -3724,7 +3724,7 @@ router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Re
       hasMixBusConfig: !!metadata.mixBusConfig,
     });
   } catch (error: unknown) {
-    logger.error('Error saving project as template:', error);
+    logger.warn('Error saving project as template:', error);
     res.status(500).json({ error: 'Failed to save as template' });
   }
 });
@@ -3848,18 +3848,18 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
       });
     } catch (innerError) {
       // Cleanup on failure: remove partially created records
-      logger.error('Error during project creation, cleaning up:', innerError);
+      logger.warn('Error during project creation, cleaning up:', innerError);
       try {
         await db.delete(studioTracks).where(eq(studioTracks.projectId, projectId));
         await db.delete(studioProjects).where(eq(studioProjects.id, projectId));
         await db.delete(projects).where(eq(projects.id, projectId));
       } catch (cleanupError) {
-        logger.error('Error during cleanup:', cleanupError);
+        logger.warn('Error during cleanup:', cleanupError);
       }
       throw innerError;
     }
   } catch (error: unknown) {
-    logger.error('Error creating project from template:', error);
+    logger.warn('Error creating project from template:', error);
     res.status(500).json({ error: 'Failed to create project' });
   }
 });
@@ -3895,7 +3895,7 @@ router.get('/templates/:templateId', requireAuth, async (req: Request, res: Resp
       tags: templateData.tags || [],
     });
   } catch (error: unknown) {
-    logger.error('Error fetching template:', error);
+    logger.warn('Error fetching template:', error);
     res.status(500).json({ error: 'Failed to fetch template' });
   }
 });
@@ -3933,7 +3933,7 @@ router.get('/template-categories', requireAuth, async (req: Request, res: Respon
     
     res.json({ categories: categoriesWithCounts });
   } catch (error: unknown) {
-    logger.error('Error fetching template categories:', error);
+    logger.warn('Error fetching template categories:', error);
     res.status(500).json({ error: 'Failed to fetch template categories' });
   }
 });
@@ -3976,7 +3976,7 @@ router.patch('/templates/:templateId', requireAuth, async (req: Request, res: Re
     
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating template:', error);
+    logger.warn('Error updating template:', error);
     res.status(500).json({ error: 'Failed to update template' });
   }
 });
@@ -4004,7 +4004,7 @@ router.delete('/templates/:templateId', requireAuth, async (req: Request, res: R
     
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting template:', error);
+    logger.warn('Error deleting template:', error);
     res.status(500).json({ error: 'Failed to delete template' });
   }
 });
@@ -4025,7 +4025,7 @@ router.get('/pinned-folders', requireAuth, async (req: Request, res: Response) =
     
     res.json({ folders });
   } catch (error: unknown) {
-    logger.error('Error fetching pinned folders:', error);
+    logger.warn('Error fetching pinned folders:', error);
     res.status(500).json({ error: 'Failed to fetch pinned folders' });
   }
 });
@@ -4056,7 +4056,7 @@ router.post('/pinned-folders', requireAuth, async (req: Request, res: Response) 
     
     res.status(201).json(folder);
   } catch (error: unknown) {
-    logger.error('Error creating pinned folder:', error);
+    logger.warn('Error creating pinned folder:', error);
     res.status(500).json({ error: 'Failed to create pinned folder' });
   }
 });
@@ -4072,7 +4072,7 @@ router.delete('/pinned-folders/:folderId', requireAuth, async (req: Request, res
     
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting pinned folder:', error);
+    logger.warn('Error deleting pinned folder:', error);
     res.status(500).json({ error: 'Failed to delete pinned folder' });
   }
 });
@@ -4112,7 +4112,7 @@ router.get('/projects/:projectId/pool', requireAuth, async (req: Request, res: R
       projectId,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching project pool:', error);
+    logger.warn('Error fetching project pool:', error);
     res.status(500).json({ error: 'Failed to fetch project pool' });
   }
 });
@@ -4142,7 +4142,7 @@ router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: 
     
     res.status(201).json(recentFile);
   } catch (error: unknown) {
-    logger.error('Error adding file to pool:', error);
+    logger.warn('Error adding file to pool:', error);
     res.status(500).json({ error: 'Failed to add file to pool' });
   }
 });
@@ -4201,7 +4201,7 @@ router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Re
         }
       }
     } catch (err) {
-      logger.error('Error reading uploads directory:', err);
+      logger.warn('Error reading uploads directory:', err);
       return res.status(500).json({ error: 'Failed to access uploads directory' });
     }
     
@@ -4213,7 +4213,7 @@ router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Re
       message: `Cleaned ${cleaned} orphaned uploads, ${errors} errors encountered`,
     });
   } catch (error: unknown) {
-    logger.error('Error cleaning orphaned uploads:', error);
+    logger.warn('Error cleaning orphaned uploads:', error);
     res.status(500).json({ error: 'Failed to cleanup orphaned uploads' });
   }
 });
@@ -4277,7 +4277,7 @@ router.get('/maintenance/orphaned-uploads-stats', requireAuth, async (req: Reque
       orphanedSizeMB: Math.round(orphanedSize / (1024 * 1024) * 100) / 100,
     });
   } catch (error: unknown) {
-    logger.error('Error getting orphaned uploads stats:', error);
+    logger.warn('Error getting orphaned uploads stats:', error);
     res.status(500).json({ error: 'Failed to get orphaned uploads stats' });
   }
 });
@@ -4354,7 +4354,7 @@ router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: R
       },
     });
   } catch (error: unknown) {
-    logger.error('Error applying mix settings:', error);
+    logger.warn('Error applying mix settings:', error);
     res.status(500).json({ error: 'Failed to apply mix settings' });
   }
 });
@@ -4401,7 +4401,7 @@ router.post('/projects/:projectId/master', requireAuth, async (req: Request, res
       },
     });
   } catch (error: unknown) {
-    logger.error('Error applying master settings:', error);
+    logger.warn('Error applying master settings:', error);
     res.status(500).json({ error: 'Failed to apply master settings' });
   }
 });
@@ -4452,7 +4452,7 @@ router.post('/projects/:projectId/tracks/:trackId/duplicate', requireAuth, async
       },
     });
   } catch (error: unknown) {
-    logger.error('Error duplicating track:', error);
+    logger.warn('Error duplicating track:', error);
     res.status(500).json({ error: 'Failed to duplicate track' });
   }
 });
@@ -4499,7 +4499,7 @@ router.post('/projects/:projectId/tracks/:trackId/bounce', requireAuth, async (r
       },
     });
   } catch (error: unknown) {
-    logger.error('Error bouncing track:', error);
+    logger.warn('Error bouncing track:', error);
     res.status(500).json({ error: 'Failed to bounce track' });
   }
 });
@@ -4550,7 +4550,7 @@ router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Reques
       },
     });
   } catch (error: unknown) {
-    logger.error('Error loading plugin:', error);
+    logger.warn('Error loading plugin:', error);
     res.status(500).json({ error: 'Failed to load plugin' });
   }
 });
@@ -4580,7 +4580,7 @@ router.get('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async 
 
     res.json({ presets, pluginId });
   } catch (error: unknown) {
-    logger.error('Error fetching plugin presets:', error);
+    logger.warn('Error fetching plugin presets:', error);
     res.status(500).json({ error: 'Failed to fetch plugin presets' });
   }
 });
@@ -4628,7 +4628,7 @@ router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', re
       },
     });
   } catch (error: unknown) {
-    logger.error('Error applying preset:', error);
+    logger.warn('Error applying preset:', error);
     res.status(500).json({ error: 'Failed to apply preset' });
   }
 });
@@ -4677,7 +4677,7 @@ router.post('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async
       },
     });
   } catch (error: unknown) {
-    logger.error('Error saving preset:', error);
+    logger.warn('Error saving preset:', error);
     res.status(500).json({ error: 'Failed to save preset' });
   }
 });
@@ -4711,7 +4711,7 @@ router.post('/projects/:projectId/collaboration/save', requireAuth, async (req: 
       },
     });
   } catch (error: unknown) {
-    logger.error('Error saving collaboration session:', error);
+    logger.warn('Error saving collaboration session:', error);
     res.status(500).json({ error: 'Failed to save session' });
   }
 });
@@ -4748,7 +4748,7 @@ router.post('/projects/:projectId/collaboration/resolve-conflict', requireAuth, 
       },
     });
   } catch (error: unknown) {
-    logger.error('Error resolving conflict:', error);
+    logger.warn('Error resolving conflict:', error);
     res.status(500).json({ error: 'Failed to resolve conflict' });
   }
 });
@@ -4771,7 +4771,7 @@ router.get('/projects/:projectId/collaboration/sync-status', requireAuth, async 
       collaborators: [],
     });
   } catch (error: unknown) {
-    logger.error('Error getting sync status:', error);
+    logger.warn('Error getting sync status:', error);
     res.status(500).json({ error: 'Failed to get sync status' });
   }
 });
@@ -4794,7 +4794,7 @@ router.get('/projects/:projectId/history', requireAuth, async (req: Request, res
       canRedo: false,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching undo history:', error);
+    logger.warn('Error fetching undo history:', error);
     res.status(500).json({ error: 'Failed to fetch history' });
   }
 });
@@ -4819,7 +4819,7 @@ router.post('/projects/:projectId/history/undo', requireAuth, async (req: Reques
       },
     });
   } catch (error: unknown) {
-    logger.error('Error undoing action:', error);
+    logger.warn('Error undoing action:', error);
     res.status(500).json({ error: 'Failed to undo action' });
   }
 });
@@ -4844,7 +4844,7 @@ router.post('/projects/:projectId/history/redo', requireAuth, async (req: Reques
       },
     });
   } catch (error: unknown) {
-    logger.error('Error redoing action:', error);
+    logger.warn('Error redoing action:', error);
     res.status(500).json({ error: 'Failed to redo action' });
   }
 });
@@ -4891,7 +4891,7 @@ router.post('/generate', requireAuth, async (req: Request, res: Response) => {
       generation: result,
     });
   } catch (error: unknown) {
-    logger.error('Error in AI generation:', error);
+    logger.warn('Error in AI generation:', error);
     res.status(500).json({ error: 'Failed to generate content' });
   }
 });

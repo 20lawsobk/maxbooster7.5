@@ -188,7 +188,7 @@ class SmartDefaultsEngine {
 
       return defaults;
     } catch (error) {
-      logger.error('Error getting smart defaults:', error);
+      logger.warn('Error getting smart defaults:', error);
       return [];
     }
   }
@@ -325,7 +325,7 @@ class SmartDefaultsEngine {
 
       return suggestions.sort((a, b) => b.engagementScore - a.engagementScore).slice(0, 10);
     } catch (error) {
-      logger.error('Error getting scheduling suggestions:', error);
+      logger.warn('Error getting scheduling suggestions:', error);
       return [];
     }
   }
@@ -379,7 +379,7 @@ class SmartDefaultsEngine {
         })
         .slice(0, 8);
     } catch (error) {
-      logger.error('Error getting distribution recommendations:', error);
+      logger.warn('Error getting distribution recommendations:', error);
       return [];
     }
   }

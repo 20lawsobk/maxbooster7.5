@@ -81,7 +81,7 @@ router.get("/subscribers", async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error("Error fetching fan subscribers:", error);
+    logger.warn("Error fetching fan subscribers:", error);
     return res.status(500).json({ error: "Failed to fetch fan subscribers" });
   }
 });
@@ -100,7 +100,7 @@ router.post("/subscribers", async (req: Request, res: Response) => {
 
     return res.status(201).json(subscriber);
   } catch (error) {
-    logger.error("Error creating fan subscriber:", error);
+    logger.warn("Error creating fan subscriber:", error);
     return res.status(500).json({ error: "Failed to create fan subscriber" });
   }
 });
@@ -126,7 +126,7 @@ router.put("/subscribers/:id", async (req: Request, res: Response) => {
 
     return res.json(updated);
   } catch (error) {
-    logger.error("Error updating fan subscriber:", error);
+    logger.warn("Error updating fan subscriber:", error);
     return res.status(500).json({ error: "Failed to update fan subscriber" });
   }
 });
@@ -146,7 +146,7 @@ router.delete("/subscribers/:id", async (req: Request, res: Response) => {
 
     return res.json({ success: true });
   } catch (error) {
-    logger.error("Error deleting fan subscriber:", error);
+    logger.warn("Error deleting fan subscriber:", error);
     return res.status(500).json({ error: "Failed to delete fan subscriber" });
   }
 });
@@ -183,7 +183,7 @@ router.post("/subscribers/import", async (req: Request, res: Response) => {
     const imported = await db.insert(fanSubscribers).values(values).returning();
     return res.json({ count: imported.length });
   } catch (error) {
-    logger.error("Error importing fan subscribers:", error);
+    logger.warn("Error importing fan subscribers:", error);
     return res.status(500).json({ error: "Failed to import fan subscribers" });
   }
 });
@@ -209,7 +209,7 @@ router.get("/stats", async (req: Request, res: Response) => {
       emailOpenRate: 24.8,
     });
   } catch (error) {
-    logger.error("Error fetching fan hub stats:", error);
+    logger.warn("Error fetching fan hub stats:", error);
     return res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
@@ -240,7 +240,7 @@ router.post("/message", async (req: Request, res: Response) => {
 
     return res.json(message);
   } catch (error) {
-    logger.error("Error sending bulk message:", error);
+    logger.warn("Error sending bulk message:", error);
     return res.status(500).json({ error: "Failed to send message" });
   }
 });
@@ -259,7 +259,7 @@ router.get("/messages", async (req: Request, res: Response) => {
 
     return res.json(messages);
   } catch (error) {
-    logger.error("Error fetching fan messages:", error);
+    logger.warn("Error fetching fan messages:", error);
     return res.status(500).json({ error: "Failed to fetch messages" });
   }
 });
@@ -285,7 +285,7 @@ router.put("/subscribers/:id/tag", async (req: Request, res: Response) => {
 
     return res.json(updated);
   } catch (error) {
-    logger.error("Error updating tags:", error);
+    logger.warn("Error updating tags:", error);
     return res.status(500).json({ error: "Failed to update tags" });
   }
 });

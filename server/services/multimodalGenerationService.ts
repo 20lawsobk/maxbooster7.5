@@ -1650,9 +1650,9 @@ const textWorker = {
       const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
       if (localAssets.length > 0) return localAssets;
 
-      logger.error('[MultimodalGen] buildLocalTextAssets also returned empty — no text assets generated');
+      logger.warn('[MultimodalGen] buildLocalTextAssets also returned empty — no text assets generated');
     } catch (err) {
-      logger.error('[MultimodalGen] /generate/content text worker error:', err instanceof Error ? err.message : String(err));
+      logger.warn('[MultimodalGen] /generate/content text worker error:', err instanceof Error ? err.message : String(err));
       // Attempt local fallback even on unexpected errors
       try {
         const localAssets = buildLocalTextAssets(rawSlots, inputs, req);
@@ -1661,7 +1661,7 @@ const textWorker = {
           return localAssets;
         }
       } catch (fallbackErr) {
-        logger.error('[MultimodalGen] Local text fallback also failed:', fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr));
+        logger.warn('[MultimodalGen] Local text fallback also failed:', fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr));
       }
     }
     return [];

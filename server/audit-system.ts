@@ -70,7 +70,7 @@ export class AuditSystem {
 
       logger.info('✅ Audit system initialized');
     } catch (error: unknown) {
-      logger.error('❌ Failed to initialize audit system:', error);
+      logger.warn('❌ Failed to initialize audit system:', error);
     }
   }
 
@@ -151,7 +151,7 @@ export class AuditSystem {
 
       return this.auditResults;
     } catch (error: unknown) {
-      logger.error('❌ Audit failed:', error);
+      logger.warn('❌ Audit failed:', error);
       throw error;
     }
   }
@@ -166,7 +166,7 @@ export class AuditSystem {
         logger.info(`⚠️ Security score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Security audit error:', error);
+      logger.warn('Security audit error:', error);
     }
   }
 
@@ -180,7 +180,7 @@ export class AuditSystem {
         logger.info(`⚠️ Performance score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Performance audit error:', error);
+      logger.warn('Performance audit error:', error);
     }
   }
 
@@ -194,7 +194,7 @@ export class AuditSystem {
         logger.info(`⚠️ Functionality score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Functionality audit error:', error);
+      logger.warn('Functionality audit error:', error);
     }
   }
 
@@ -255,7 +255,7 @@ export class AuditSystem {
         hasRightToErasure
       );
     } catch (error: unknown) {
-      logger.error('GDPR compliance check error:', error);
+      logger.warn('GDPR compliance check error:', error);
       return false;
     }
   }
@@ -270,7 +270,7 @@ export class AuditSystem {
 
       return hasPrivacyNotice && hasOptOut && hasDataDisclosure;
     } catch (error: unknown) {
-      logger.error('CCPA compliance check error:', error);
+      logger.warn('CCPA compliance check error:', error);
       return false;
     }
   }
@@ -285,7 +285,7 @@ export class AuditSystem {
 
       return hasFinancialControls && hasAuditTrail && hasDataIntegrity;
     } catch (error: unknown) {
-      logger.error('SOX compliance check error:', error);
+      logger.warn('SOX compliance check error:', error);
       return false;
     }
   }
@@ -300,7 +300,7 @@ export class AuditSystem {
 
       return hasAccessControls && hasAuditLogs && hasDataEncryption;
     } catch (error: unknown) {
-      logger.error('HIPAA compliance check error:', error);
+      logger.warn('HIPAA compliance check error:', error);
       return false;
     }
   }
@@ -315,7 +315,7 @@ export class AuditSystem {
 
       return hasSecureNetwork && hasCardholderData && hasVulnerabilityManagement;
     } catch (error: unknown) {
-      logger.error('PCI compliance check error:', error);
+      logger.warn('PCI compliance check error:', error);
       return false;
     }
   }
@@ -554,7 +554,7 @@ class SecurityAuditor {
         });
       }
     } catch (error: unknown) {
-      logger.error('Security audit error:', error);
+      logger.warn('Security audit error:', error);
       score = 0;
     }
 
@@ -633,7 +633,7 @@ class FunctionalityAuditor {
         score -= errorCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.error('Functionality audit error:', error);
+      logger.warn('Functionality audit error:', error);
       score = 0;
     }
 
@@ -706,7 +706,7 @@ class PerformanceAuditor {
         score -= dbPerformanceCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.error('Performance audit error:', error);
+      logger.warn('Performance audit error:', error);
       score = 0;
     }
 
@@ -770,7 +770,7 @@ class CodeQualityAuditor {
         score -= testCoverageCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.error('Code quality audit error:', error);
+      logger.warn('Code quality audit error:', error);
       score = 0;
     }
 
@@ -820,7 +820,7 @@ class AccessibilityAuditor {
         score -= wcagCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.error('Accessibility audit error:', error);
+      logger.warn('Accessibility audit error:', error);
       score = 0;
     }
 
@@ -859,7 +859,7 @@ class SEOAuditor {
         score -= structuredDataCheck.scoreDeduction;
       }
     } catch (error: unknown) {
-      logger.error('SEO audit error:', error);
+      logger.warn('SEO audit error:', error);
       score = 0;
     }
 

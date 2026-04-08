@@ -62,7 +62,7 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
     const categories = [...new Set(allTemplates.map(t => t.category))];
     return res.json({ templates: allTemplates, categories });
   } catch (error: any) {
-    logger.error('Error fetching contract templates:', error);
+    logger.warn('Error fetching contract templates:', error);
     res.status(500).json({ error: 'Failed to fetch templates' });
   }
 });
@@ -78,7 +78,7 @@ router.get('/templates/:templateId', requireAuth, async (req: Request, res: Resp
 
     return res.json(template);
   } catch (error: any) {
-    logger.error('Error fetching template:', error);
+    logger.warn('Error fetching template:', error);
     res.status(500).json({ error: 'Failed to fetch template' });
   }
 });
@@ -104,7 +104,7 @@ router.post('/templates/custom', requireAuth, async (req: Request, res: Response
 
     return res.status(201).json(created);
   } catch (error: any) {
-    logger.error('Error creating custom contract template:', error);
+    logger.warn('Error creating custom contract template:', error);
     res.status(500).json({ error: 'Failed to create template' });
   }
 });
@@ -130,7 +130,7 @@ router.put('/templates/custom/:templateId', requireAuth, async (req: Request, re
 
     return res.json(updated);
   } catch (error: any) {
-    logger.error('Error updating custom contract template:', error);
+    logger.warn('Error updating custom contract template:', error);
     res.status(500).json({ error: 'Failed to update template' });
   }
 });
@@ -155,7 +155,7 @@ router.delete('/templates/custom/:templateId', requireAuth, async (req: Request,
 
     return res.json({ success: true });
   } catch (error: any) {
-    logger.error('Error deleting custom contract template:', error);
+    logger.warn('Error deleting custom contract template:', error);
     res.status(500).json({ error: 'Failed to delete template' });
   }
 });
@@ -180,7 +180,7 @@ router.post('/generate', async (req: Request, res: Response) => {
 
     return res.status(201).json(contract);
   } catch (error: any) {
-    logger.error('Error generating contract:', error);
+    logger.warn('Error generating contract:', error);
     res.status(500).json({ error: 'Failed to generate contract' });
   }
 });
@@ -194,7 +194,7 @@ router.get('/my-contracts', async (req: Request, res: Response) => {
     const contracts = contractTemplateService.getContractsByUser(req.user!.id);
     return res.json({ contracts });
   } catch (error: any) {
-    logger.error('Error fetching user contracts:', error);
+    logger.warn('Error fetching user contracts:', error);
     res.status(500).json({ error: 'Failed to fetch contracts' });
   }
 });
@@ -208,7 +208,7 @@ router.get('/my', async (req: Request, res: Response) => {
     const contracts = contractTemplateService.getContractsByUser(req.user!.id);
     return res.json({ contracts });
   } catch (error: any) {
-    logger.error('Error fetching user contracts:', error);
+    logger.warn('Error fetching user contracts:', error);
     res.status(500).json({ error: 'Failed to fetch contracts' });
   }
 });
@@ -224,7 +224,7 @@ router.get('/tax-rates', async (req: Request, res: Response) => {
     const rates = invoiceService.getTaxRates(country as string, state as string);
     return res.json({ rates });
   } catch (error: any) {
-    logger.error('Error fetching tax rates:', error);
+    logger.warn('Error fetching tax rates:', error);
     res.status(500).json({ error: 'Failed to fetch tax rates' });
   }
 });
@@ -265,7 +265,7 @@ router.get('/marketplace-disputes', async (req: Request, res: Response) => {
 
     return res.json({ disputes });
   } catch (error: any) {
-    logger.error('Error fetching marketplace disputes:', error);
+    logger.warn('Error fetching marketplace disputes:', error);
     res.status(500).json({ error: 'Failed to fetch disputes' });
   }
 });
@@ -285,7 +285,7 @@ router.get('/:contractId', async (req: Request, res: Response) => {
 
     return res.json(contract);
   } catch (error: any) {
-    logger.error('Error fetching contract:', error);
+    logger.warn('Error fetching contract:', error);
     res.status(500).json({ error: 'Failed to fetch contract' });
   }
 });
@@ -317,7 +317,7 @@ router.post('/:contractId/sign', async (req: Request, res: Response) => {
 
     return res.json(contract);
   } catch (error: any) {
-    logger.error('Error signing contract:', error);
+    logger.warn('Error signing contract:', error);
     res.status(500).json({ error: 'Failed to sign contract' });
   }
 });
@@ -335,7 +335,7 @@ router.get('/:contractId/pdf', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="contract-${contractId}.pdf"`);
     return res.send(pdfBuffer);
   } catch (error: any) {
-    logger.error('Error generating contract PDF:', error);
+    logger.warn('Error generating contract PDF:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
@@ -358,7 +358,7 @@ router.post('/validate', requireAuth, async (req: Request, res: Response) => {
       ...validation,
     });
   } catch (error: any) {
-    logger.error('Error validating contract:', error);
+    logger.warn('Error validating contract:', error);
     res.status(500).json({ error: 'Failed to validate contract' });
   }
 });
@@ -381,7 +381,7 @@ router.post('/preview', requireAuth, async (req: Request, res: Response) => {
       content,
     });
   } catch (error: any) {
-    logger.error('Error generating preview:', error);
+    logger.warn('Error generating preview:', error);
     res.status(500).json({ error: 'Failed to generate preview' });
   }
 });
@@ -398,7 +398,7 @@ router.patch('/:contractId/draft', requireAuth, async (req: Request, res: Respon
       contract,
     });
   } catch (error: any) {
-    logger.error('Error updating contract draft:', error);
+    logger.warn('Error updating contract draft:', error);
     res.status(500).json({ error: 'Failed to update contract draft' });
   }
 });
@@ -415,7 +415,7 @@ router.post('/:contractId/send-for-signature', requireAuth, async (req: Request,
       contract,
     });
   } catch (error: any) {
-    logger.error('Error sending for signature:', error);
+    logger.warn('Error sending for signature:', error);
     res.status(500).json({ error: 'Failed to send for signature' });
   }
 });
@@ -438,7 +438,7 @@ router.get('/:contractId/signature-status', requireAuth, async (req: Request, re
       ...status,
     });
   } catch (error: any) {
-    logger.error('Error getting signature status:', error);
+    logger.warn('Error getting signature status:', error);
     res.status(500).json({ error: 'Failed to get signature status' });
   }
 });
@@ -460,7 +460,7 @@ router.post('/:contractId/decline', requireAuth, async (req: Request, res: Respo
       contract,
     });
   } catch (error: any) {
-    logger.error('Error declining signature:', error);
+    logger.warn('Error declining signature:', error);
     res.status(500).json({ error: 'Failed to decline signature' });
   }
 });
@@ -477,7 +477,7 @@ router.post('/:contractId/void', requireAuth, async (req: Request, res: Response
       contract,
     });
   } catch (error: any) {
-    logger.error('Error voiding contract:', error);
+    logger.warn('Error voiding contract:', error);
     res.status(500).json({ error: 'Failed to void contract' });
   }
 });
@@ -493,7 +493,7 @@ router.get('/:contractId/timeline', requireAuth, async (req: Request, res: Respo
       timeline,
     });
   } catch (error: any) {
-    logger.error('Error getting contract timeline:', error);
+    logger.warn('Error getting contract timeline:', error);
     res.status(500).json({ error: 'Failed to get timeline' });
   }
 });
@@ -507,7 +507,7 @@ router.get('/stats/summary', requireAuth, async (req: Request, res: Response) =>
       stats,
     });
   } catch (error: any) {
-    logger.error('Error getting contract stats:', error);
+    logger.warn('Error getting contract stats:', error);
     res.status(500).json({ error: 'Failed to get contract stats' });
   }
 });
@@ -523,7 +523,7 @@ router.get('/invoices/list', async (req: Request, res: Response) => {
 
     return res.json({ invoices, summary });
   } catch (error: any) {
-    logger.error('Error fetching invoices:', error);
+    logger.warn('Error fetching invoices:', error);
     res.status(500).json({ error: 'Failed to fetch invoices' });
   }
 });
@@ -557,7 +557,7 @@ router.post('/invoices/create', async (req: Request, res: Response) => {
 
     return res.status(201).json(invoice);
   } catch (error: any) {
-    logger.error('Error creating invoice:', error);
+    logger.warn('Error creating invoice:', error);
     res.status(500).json({ error: 'Failed to create invoice' });
   }
 });
@@ -581,7 +581,7 @@ router.get('/invoices/:invoiceId', async (req: Request, res: Response) => {
 
     return res.json(invoice);
   } catch (error: any) {
-    logger.error('Error fetching invoice:', error);
+    logger.warn('Error fetching invoice:', error);
     res.status(500).json({ error: 'Failed to fetch invoice' });
   }
 });
@@ -611,7 +611,7 @@ router.patch('/invoices/:invoiceId/status', async (req: Request, res: Response) 
 
     return res.json(invoice);
   } catch (error: any) {
-    logger.error('Error updating invoice status:', error);
+    logger.warn('Error updating invoice status:', error);
     res.status(500).json({ error: 'Failed to update invoice status' });
   }
 });
@@ -633,7 +633,7 @@ router.get('/invoices/:invoiceId/pdf', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="invoice-${invoiceId}.pdf"`);
     return res.send(pdfBuffer);
   } catch (error: any) {
-    logger.error('Error generating invoice PDF:', error);
+    logger.warn('Error generating invoice PDF:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
@@ -647,7 +647,7 @@ router.get('/invoices/overdue/list', async (req: Request, res: Response) => {
     const overdueInvoices = invoiceService.getOverdueInvoices(req.user!.id);
     return res.json({ invoices: overdueInvoices });
   } catch (error: any) {
-    logger.error('Error fetching overdue invoices:', error);
+    logger.warn('Error fetching overdue invoices:', error);
     res.status(500).json({ error: 'Failed to fetch overdue invoices' });
   }
 });
@@ -657,7 +657,7 @@ router.get('/tax-forms/available', async (req: Request, res: Response) => {
     const availableForms = taxFormService.getAvailableForms();
     return res.json({ forms: availableForms });
   } catch (error: any) {
-    logger.error('Error fetching available tax forms:', error);
+    logger.warn('Error fetching available tax forms:', error);
     res.status(500).json({ error: 'Failed to fetch available forms' });
   }
 });
@@ -679,7 +679,7 @@ router.get('/tax-forms/list', async (req: Request, res: Response) => {
 
     return res.json({ forms });
   } catch (error: any) {
-    logger.error('Error fetching tax forms:', error);
+    logger.warn('Error fetching tax forms:', error);
     res.status(500).json({ error: 'Failed to fetch tax forms' });
   }
 });
@@ -747,7 +747,7 @@ router.post('/tax-forms/generate', async (req: Request, res: Response) => {
 
     return res.status(201).json(form);
   } catch (error: any) {
-    logger.error('Error generating tax form:', error);
+    logger.warn('Error generating tax form:', error);
     res.status(500).json({ error: 'Failed to generate tax form' });
   }
 });
@@ -767,7 +767,7 @@ router.get('/tax-forms/:formId', async (req: Request, res: Response) => {
 
     return res.json(form);
   } catch (error: any) {
-    logger.error('Error fetching tax form:', error);
+    logger.warn('Error fetching tax form:', error);
     res.status(500).json({ error: 'Failed to fetch tax form' });
   }
 });
@@ -789,7 +789,7 @@ router.post('/tax-forms/:formId/sign', async (req: Request, res: Response) => {
     const form = taxFormService.signTaxForm(formId, signatureHash);
     return res.json(form);
   } catch (error: any) {
-    logger.error('Error signing tax form:', error);
+    logger.warn('Error signing tax form:', error);
     res.status(500).json({ error: 'Failed to sign tax form' });
   }
 });
@@ -829,7 +829,7 @@ router.get('/tax-forms/:formId/pdf', async (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="${form.formType}-${formId}.pdf"`);
     return res.send(pdfBuffer);
   } catch (error: any) {
-    logger.error('Error generating tax form PDF:', error);
+    logger.warn('Error generating tax form PDF:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
@@ -853,7 +853,7 @@ router.post('/tax-forms/calculate-withholding', async (req: Request, res: Respon
 
     return res.json(calculation);
   } catch (error: any) {
-    logger.error('Error calculating withholding:', error);
+    logger.warn('Error calculating withholding:', error);
     res.status(500).json({ error: 'Failed to calculate withholding' });
   }
 });
@@ -886,7 +886,7 @@ router.get('/tax-forms/summary/:taxYear', async (req: Request, res: Response) =>
     const summary = taxFormService.generateTaxSummary(req.user!.id, parseInt(taxYear), earningsData);
     return res.json(summary);
   } catch (error: any) {
-    logger.error('Error generating tax summary:', error);
+    logger.warn('Error generating tax summary:', error);
     res.status(500).json({ error: 'Failed to generate tax summary' });
   }
 });
@@ -906,7 +906,7 @@ router.get('/tax-forms/summary/:taxYear/pdf', async (req: Request, res: Response
     res.setHeader('Content-Disposition', `attachment; filename="tax-summary-${taxYear}.pdf"`);
     return res.send(pdfBuffer);
   } catch (error: any) {
-    logger.error('Error generating tax summary PDF:', error);
+    logger.warn('Error generating tax summary PDF:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
@@ -932,7 +932,7 @@ router.get('/split-sheets/list', async (req: Request, res: Response) => {
 
     return res.json({ splitSheets: rows });
   } catch (error: any) {
-    logger.error('Error fetching split sheets:', error);
+    logger.warn('Error fetching split sheets:', error);
     res.status(500).json({ error: 'Failed to fetch split sheets' });
   }
 });
@@ -971,7 +971,7 @@ router.post('/split-sheets/create', async (req: Request, res: Response) => {
 
     return res.status(201).json(inserted);
   } catch (error: any) {
-    logger.error('Error creating split sheet:', error);
+    logger.warn('Error creating split sheet:', error);
     res.status(500).json({ error: 'Failed to create split sheet' });
   }
 });
@@ -995,7 +995,7 @@ router.get('/split-sheets/:contractId', async (req: Request, res: Response) => {
 
     return res.json(contract);
   } catch (error: any) {
-    logger.error('Error fetching split sheet:', error);
+    logger.warn('Error fetching split sheet:', error);
     res.status(500).json({ error: 'Failed to fetch split sheet' });
   }
 });
@@ -1053,7 +1053,7 @@ router.post('/split-sheets/:contractId/sign', async (req: Request, res: Response
 
     return res.json(updated);
   } catch (error: any) {
-    logger.error('Error signing split sheet:', error);
+    logger.warn('Error signing split sheet:', error);
     res.status(500).json({ error: 'Failed to sign split sheet' });
   }
 });
@@ -1108,7 +1108,7 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
 
     return res.json(updated);
   } catch (error: any) {
-    logger.error('Error adding participant:', error);
+    logger.warn('Error adding participant:', error);
     res.status(500).json({ error: 'Failed to add participant' });
   }
 });
@@ -1130,7 +1130,7 @@ router.post('/split-sheets/validate', async (req: Request, res: Response) => {
       message: isValid ? 'Splits are valid' : 'Splits must total exactly 100%',
     });
   } catch (error: any) {
-    logger.error('Error validating splits:', error);
+    logger.warn('Error validating splits:', error);
     res.status(500).json({ error: 'Failed to validate splits' });
   }
 });
@@ -1237,7 +1237,7 @@ router.post('/marketplace-disputes', async (req: Request, res: Response) => {
       message: 'Dispute created successfully. We will review your case shortly.',
     });
   } catch (error: any) {
-    logger.error('Error creating marketplace dispute:', error);
+    logger.warn('Error creating marketplace dispute:', error);
     res.status(500).json({ error: 'Failed to create dispute' });
   }
 });
@@ -1265,7 +1265,7 @@ router.get('/marketplace-disputes/:disputeId', async (req: Request, res: Respons
 
     return res.json({ dispute });
   } catch (error: any) {
-    logger.error('Error fetching dispute:', error);
+    logger.warn('Error fetching dispute:', error);
     res.status(500).json({ error: 'Failed to fetch dispute' });
   }
 });
@@ -1348,7 +1348,7 @@ router.post('/marketplace-disputes/:disputeId/message', async (req: Request, res
 
     return res.json({ dispute: updatedDispute, message: 'Message added successfully' });
   } catch (error: any) {
-    logger.error('Error adding message to dispute:', error);
+    logger.warn('Error adding message to dispute:', error);
     res.status(500).json({ error: 'Failed to add message' });
   }
 });
@@ -1419,7 +1419,7 @@ router.post('/marketplace-disputes/:disputeId/evidence', async (req: Request, re
 
     return res.json({ dispute: updatedDispute, message: 'Evidence added successfully' });
   } catch (error: any) {
-    logger.error('Error adding evidence:', error);
+    logger.warn('Error adding evidence:', error);
     res.status(500).json({ error: 'Failed to add evidence' });
   }
 });
@@ -1474,7 +1474,7 @@ router.post('/marketplace-disputes/:disputeId/escalate', async (req: Request, re
 
     return res.json({ dispute: updatedDispute, message: 'Dispute escalated successfully' });
   } catch (error: any) {
-    logger.error('Error escalating dispute:', error);
+    logger.warn('Error escalating dispute:', error);
     res.status(500).json({ error: 'Failed to escalate dispute' });
   }
 });
@@ -1554,7 +1554,7 @@ router.post('/marketplace-disputes/:disputeId/resolve', async (req: Request, res
 
     return res.json({ dispute: updatedDispute, message: 'Dispute resolved successfully' });
   } catch (error: any) {
-    logger.error('Error resolving dispute:', error);
+    logger.warn('Error resolving dispute:', error);
     res.status(500).json({ error: 'Failed to resolve dispute' });
   }
 });
@@ -1607,7 +1607,7 @@ router.post('/marketplace-disputes/:disputeId/withdraw', async (req: Request, re
 
     return res.json({ dispute: updatedDispute, message: 'Dispute withdrawn successfully' });
   } catch (error: any) {
-    logger.error('Error withdrawing dispute:', error);
+    logger.warn('Error withdrawing dispute:', error);
     res.status(500).json({ error: 'Failed to withdraw dispute' });
   }
 });
@@ -1653,7 +1653,7 @@ router.get('/marketplace-disputes/stats', async (req: Request, res: Response) =>
 
     return res.json({ stats });
   } catch (error: any) {
-    logger.error('Error fetching dispute stats:', error);
+    logger.warn('Error fetching dispute stats:', error);
     res.status(500).json({ error: 'Failed to fetch dispute stats' });
   }
 });

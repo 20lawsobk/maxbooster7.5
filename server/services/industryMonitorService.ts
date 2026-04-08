@@ -132,7 +132,7 @@ class IndustryMonitorService {
         all.push(...result.value);
       } else {
         failCount++;
-        logger.error('[IndustryMonitor] RSS feed failed:', result.reason?.message ?? result.reason);
+        logger.warn('[IndustryMonitor] RSS feed failed:', result.reason?.message ?? result.reason);
       }
     }
 
@@ -228,12 +228,12 @@ class IndustryMonitorService {
 
     for (const r of tavilyResults) {
       if (r.status === 'fulfilled') changes.push(...r.value);
-      else logger.error('[IndustryMonitor] Tavily query failed:', r.reason?.message ?? r.reason);
+      else logger.warn('[IndustryMonitor] Tavily query failed:', r.reason?.message ?? r.reason);
     }
 
     for (const r of exaResults) {
       if (r.status === 'fulfilled') changes.push(...r.value);
-      else logger.error('[IndustryMonitor] Exa query failed:', r.reason?.message ?? r.reason);
+      else logger.warn('[IndustryMonitor] Exa query failed:', r.reason?.message ?? r.reason);
     }
 
     return changes;

@@ -351,24 +351,38 @@ export class RecommendationEngine extends BaseModel {
     }
     const globalBias = count > 0 ? total / count : 0;
 
-    // SGD training
-    const learningRate = options.learningRate || 0.01;
-    const regularization = 0.02;
+    // SGD with Momentum + Learning-Rate Decay + Gradient Clipping
+    // Momentum β=0.9 dramatically speeds convergence on sparse interaction matrices.
+    // LR decay: lr_eff = lr / (1 + decay * epoch) keeps training stable in later epochs.
+    // Gradient clipping at ±CLIP prevents exploding updates on high-variance ratings.
+    const lr0 = options.learningRate || 0.01;
+    const momentum = 0.9;
+    const decay = 0.005;            // halves effective lr at epoch ~200
+    const regularization = 0.015;   // slightly relaxed for better generalisation
+    const CLIP = 1.0;               // max per-factor gradient magnitude
 
     let userFactorsData = await userFactors.array() as number[][];
     let itemFactorsData = await itemFactors.array() as number[][];
     let userBiasData = await userBias.array() as number[];
     let itemBiasData = await itemBias.array() as number[];
 
+    // Momentum velocity buffers (same shape as factor matrices)
+    const vUserF: number[][] = Array.from({ length: numUsers }, () => new Array(this.latentFactors).fill(0));
+    const vItemF: number[][] = Array.from({ length: numItems }, () => new Array(this.latentFactors).fill(0));
+    const vUserB: number[] = new Array(numUsers).fill(0);
+    const vItemB: number[] = new Array(numItems).fill(0);
+
     for (let epoch = 0; epoch < options.epochs; epoch++) {
+      const lrEff = lr0 / (1 + decay * epoch);
+
       for (const [userId, userRow] of this.userItemMatrix.entries()) {
         const uIdx = this.userIdToIndex.get(userId)!;
-        
+
         for (const [itemId, rating] of userRow.entries()) {
           const iIdx = this.itemIdToIndex.get(itemId);
           if (iIdx === undefined) continue;
 
-          // Calculate prediction
+          // Dot-product prediction
           let prediction = globalBias + userBiasData[uIdx] + itemBiasData[iIdx];
           for (let k = 0; k < this.latentFactors; k++) {
             prediction += userFactorsData[uIdx][k] * itemFactorsData[iIdx][k];
@@ -376,17 +390,27 @@ export class RecommendationEngine extends BaseModel {
 
           const error = rating - prediction;
 
-          // Update biases
-          userBiasData[uIdx] += learningRate * (error - regularization * userBiasData[uIdx]);
-          itemBiasData[iIdx] += learningRate * (error - regularization * itemBiasData[iIdx]);
+          // ── Bias updates with momentum ─────────────────────────────────────
+          const gUB = Math.max(-CLIP, Math.min(CLIP, error - regularization * userBiasData[uIdx]));
+          const gIB = Math.max(-CLIP, Math.min(CLIP, error - regularization * itemBiasData[iIdx]));
+          vUserB[uIdx] = momentum * vUserB[uIdx] + lrEff * gUB;
+          vItemB[iIdx] = momentum * vItemB[iIdx] + lrEff * gIB;
+          userBiasData[uIdx] += vUserB[uIdx];
+          itemBiasData[iIdx] += vItemB[iIdx];
 
-          // Update factors
+          // ── Factor updates with momentum ───────────────────────────────────
           for (let k = 0; k < this.latentFactors; k++) {
-            const uFactor = userFactorsData[uIdx][k];
-            const iFactor = itemFactorsData[iIdx][k];
-            
-            userFactorsData[uIdx][k] += learningRate * (error * iFactor - regularization * uFactor);
-            itemFactorsData[iIdx][k] += learningRate * (error * uFactor - regularization * iFactor);
+            const uF = userFactorsData[uIdx][k];
+            const iF = itemFactorsData[iIdx][k];
+
+            const gU = Math.max(-CLIP, Math.min(CLIP, error * iF - regularization * uF));
+            const gI = Math.max(-CLIP, Math.min(CLIP, error * uF - regularization * iF));
+
+            vUserF[uIdx][k] = momentum * vUserF[uIdx][k] + lrEff * gU;
+            vItemF[iIdx][k] = momentum * vItemF[iIdx][k] + lrEff * gI;
+
+            userFactorsData[uIdx][k] += vUserF[uIdx][k];
+            itemFactorsData[iIdx][k] += vItemF[iIdx][k];
           }
         }
       }
@@ -535,15 +559,36 @@ export class RecommendationEngine extends BaseModel {
   // HYBRID RECOMMENDATIONS
   // ============================================================================
 
+  /**
+   * Dynamic hybrid weight: automatically adapts based on how much interaction
+   * data exists for the user. Cold-start users get pure content-based recs;
+   * experienced users get mostly collaborative.
+   *
+   *   interactions ≤  5 → weight=0.05  (almost all content-based)
+   *   interactions ≤ 20 → weight=0.30
+   *   interactions ≤ 60 → weight=0.55
+   *   interactions > 60 → weight=0.80  (trust collaborative model)
+   */
+  private computeHybridWeight(interactionCount: number): number {
+    if (interactionCount <= 5)  return 0.05;
+    if (interactionCount <= 20) return 0.30;
+    if (interactionCount <= 60) return 0.55;
+    return 0.80;
+  }
+
   public async recommendTracks(
     userId: string,
     seedTrackIds: string[] = [],
     limit: number = 20,
-    hybridWeight: number = 0.5 // 0 = full content, 1 = full collaborative
+    hybridWeight?: number   // if omitted, computed automatically from interaction history
   ): Promise<RecommendationResult> {
     const userInteractions = this.userItemMatrix.get(userId);
     const excludeIds = new Set(userInteractions?.keys() || []);
-    
+
+    // Auto-compute hybrid weight from data density if not supplied
+    const effectiveWeight = hybridWeight ??
+      this.computeHybridWeight(userInteractions?.size ?? 0);
+
     // Get collaborative recommendations if we have a trained model
     let collaborativeRecs: SimilarityResult[] = [];
     if (this.mfModel && userInteractions && userInteractions.size > 0) {
@@ -565,7 +610,7 @@ export class RecommendationEngine extends BaseModel {
     const hybridScores: Map<string, SimilarityResult> = new Map();
 
     for (const rec of contentRecs) {
-      const contentScore = rec.score * (1 - hybridWeight);
+      const contentScore = rec.score * (1 - effectiveWeight);
       hybridScores.set(rec.id, {
         id: rec.id,
         score: contentScore,
@@ -575,8 +620,8 @@ export class RecommendationEngine extends BaseModel {
 
     for (const rec of collaborativeRecs) {
       const existing = hybridScores.get(rec.id);
-      const collabScore = rec.score * hybridWeight;
-      
+      const collabScore = rec.score * effectiveWeight;
+
       if (existing) {
         existing.score += collabScore;
         existing.reason = [...existing.reason, ...rec.reason];
@@ -593,8 +638,8 @@ export class RecommendationEngine extends BaseModel {
       .sort((a, b) => b.score - a.score)
       .slice(0, limit);
 
-    const method = hybridWeight === 0 ? 'content' : 
-                   hybridWeight === 1 ? 'collaborative' : 'hybrid';
+    const method = effectiveWeight < 0.1 ? 'content' :
+                   effectiveWeight > 0.9 ? 'collaborative' : 'hybrid';
 
     return {
       items,

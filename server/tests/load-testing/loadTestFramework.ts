@@ -256,7 +256,7 @@ export class ScalabilityTester {
         if (profile.name === maxScale) break;
         
       } catch (error: any) {
-        logger.error(`Test failed at ${profile.name} scale`, { error: error.message });
+        logger.warn(`Test failed at ${profile.name} scale`, { error: error.message });
         results.push({
           scale: profile.name,
           simulatedUsers: profile.multiplier,

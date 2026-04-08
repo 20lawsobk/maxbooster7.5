@@ -180,7 +180,7 @@ export class MLModelRegistry {
         storageDir: this.storageDir
       });
     } catch (error) {
-      logger.error('Failed to initialize ML Model Registry', error as Error);
+      logger.warn('Failed to initialize ML Model Registry', error as Error);
       throw error;
     }
   }
@@ -246,7 +246,7 @@ export class MLModelRegistry {
         abTests: this.abTests.size
       });
     } catch (error) {
-      logger.error('Error loading persisted registry data', error as Error);
+      logger.warn('Error loading persisted registry data', error as Error);
     }
   }
 
@@ -265,7 +265,7 @@ export class MLModelRegistry {
         'utf-8'
       );
     } catch (error) {
-      logger.error('Failed to persist registry data', error as Error);
+      logger.warn('Failed to persist registry data', error as Error);
       throw error;
     }
   }
@@ -338,7 +338,7 @@ export class MLModelRegistry {
       await this.persistData();
       logger.info('Model instance saved to disk', { modelId: model.id, path: modelPath });
     } catch (error) {
-      logger.error('Failed to save model instance', error as Error);
+      logger.warn('Failed to save model instance', error as Error);
     }
 
     return model;

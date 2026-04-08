@@ -610,7 +610,7 @@ export const queryClient = new QueryClient({
       if (mutation.options.onError) return;
       const apiError = error as ApiError & { userMessage?: string };
       const mutationKey = mutation.options.mutationKey;
-      console.error('[MutationCache] Unhandled mutation error:', {
+      console.warn('[MutationCache] Unhandled mutation error:', {
         status: apiError.status,
         code: apiError.code,
         message: error.message,

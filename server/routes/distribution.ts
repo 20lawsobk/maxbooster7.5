@@ -148,7 +148,7 @@ router.get('/releases', requireAuth, async (req: Request, res: Response) => {
     const distroRels = await storage.getDistroReleasesByArtist(userId);
     res.json(distroRels);
   } catch (error: unknown) {
-    logger.error('Error fetching releases:', error);
+    logger.warn('Error fetching releases:', error);
     res.status(500).json({ error: 'Failed to fetch releases' });
   }
 });
@@ -186,7 +186,7 @@ router.post('/releases', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error creating release:', error);
+    logger.warn('Error creating release:', error);
     res.status(500).json({ error: 'Failed to create release' });
   }
 });
@@ -204,7 +204,7 @@ router.get('/releases/:id', requireAuth, async (req: Request, res: Response) => 
 
     res.json(release);
   } catch (error: unknown) {
-    logger.error('Error fetching release:', error);
+    logger.warn('Error fetching release:', error);
     res.status(500).json({ error: 'Failed to fetch release' });
   }
 });
@@ -235,7 +235,7 @@ router.patch('/releases/:id', requireAuth, async (req: Request, res: Response) =
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error updating release:', error);
+    logger.warn('Error updating release:', error);
     res.status(500).json({ error: 'Failed to update release' });
   }
 });
@@ -258,7 +258,7 @@ router.delete('/releases/:id', requireAuth, async (req: Request, res: Response) 
         await labelGridService.takedownRelease(metadata.labelGridReleaseId);
         logger.info(`✅ LabelGrid takedown initiated for release ${metadata.labelGridReleaseId}`);
       } catch (error: unknown) {
-        logger.error('Error initiating LabelGrid takedown:', error);
+        logger.warn('Error initiating LabelGrid takedown:', error);
         // Continue with local deletion even if LabelGrid fails
       }
     }
@@ -267,7 +267,7 @@ router.delete('/releases/:id', requireAuth, async (req: Request, res: Response) 
     await storage.deleteDistroRelease(id);
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting release:', error);
+    logger.warn('Error deleting release:', error);
     res.status(500).json({ error: 'Failed to delete release' });
   }
 });
@@ -331,7 +331,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Validation error', details: error.errors });
       }
-      logger.error('Error uploading track:', error);
+      logger.warn('Error uploading track:', error);
       res.status(500).json({ error: 'Failed to upload track' });
     }
   }
@@ -362,7 +362,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Validation error', details: error.errors });
       }
-      logger.error('Error updating track:', error);
+      logger.warn('Error updating track:', error);
       res.status(500).json({ error: 'Failed to update track' });
     }
   }
@@ -388,7 +388,7 @@ router.delete(
       }
       res.json({ success: true });
     } catch (error: unknown) {
-      logger.error('Error deleting track:', error);
+      logger.warn('Error deleting track:', error);
       res.status(500).json({ error: 'Failed to delete track' });
     }
   }
@@ -440,7 +440,7 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error generating ISRC:', error);
+    logger.warn('Error generating ISRC:', error);
     res.status(500).json({ error: 'Failed to generate ISRC' });
   }
 });
@@ -488,7 +488,7 @@ router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error generating UPC:', error);
+    logger.warn('Error generating UPC:', error);
     res.status(500).json({ error: 'Failed to generate UPC' });
   }
 });
@@ -515,7 +515,7 @@ router.post('/codes/validate', requireAuth, async (req: Request, res: Response) 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating code:', error);
+    logger.warn('Error validating code:', error);
     res.status(500).json({ error: 'Failed to validate code' });
   }
 });
@@ -552,7 +552,7 @@ router.get('/platforms', requireAuth, async (_req: Request, res: Response) => {
       syncedAt: response.syncedAt,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching platforms:', error);
+    logger.warn('Error fetching platforms:', error);
     res.status(500).json({ error: 'Failed to fetch platforms' });
   }
 });
@@ -567,7 +567,7 @@ router.post('/platforms/verify', requireAuth, async (req: Request, res: Response
       message: `DSP catalog verified: ${result.total} platforms (${result.active} active)`,
     });
   } catch (error: unknown) {
-    logger.error('Error verifying platforms:', error);
+    logger.warn('Error verifying platforms:', error);
     res.status(500).json({ error: 'Failed to verify platforms' });
   }
 });
@@ -589,7 +589,7 @@ router.get('/platforms/status', requireAuth, async (_req: Request, res: Response
       architecture: 'LabelGrid API handles releases, distribution, and analytics. All DSP platforms are routed through LabelGrid.',
     });
   } catch (error: unknown) {
-    logger.error('Error checking platform status:', error);
+    logger.warn('Error checking platform status:', error);
     res.status(500).json({ error: 'Failed to check platform status' });
   }
 });
@@ -619,7 +619,7 @@ router.post('/releases/:id/schedule', requireAuth, async (req: Request, res: Res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error scheduling release:', error);
+    logger.warn('Error scheduling release:', error);
     res.status(500).json({ error: 'Failed to schedule release' });
   }
 });
@@ -763,7 +763,7 @@ router.post(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Validation error', details: error.errors });
       }
-      logger.error('Error creating HyperFollow campaign:', error);
+      logger.warn('Error creating HyperFollow campaign:', error);
       res.status(500).json({ error: 'Failed to create campaign' });
     }
   }
@@ -776,7 +776,7 @@ router.get('/hyperfollow', requireAuth, async (req: Request, res: Response) => {
     const campaigns = await storage.getHyperFollowPages(userId);
     res.json(campaigns);
   } catch (error: unknown) {
-    logger.error('Error fetching HyperFollow campaigns:', error);
+    logger.warn('Error fetching HyperFollow campaigns:', error);
     res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 });
@@ -807,7 +807,7 @@ router.get('/hyperfollow/analytics', requireAuth, async (req: Request, res: Resp
       topPlatforms: [],
     });
   } catch (error: unknown) {
-    logger.error('Error fetching hyperfollow analytics:', error);
+    logger.warn('Error fetching hyperfollow analytics:', error);
     res.status(500).json({ error: 'Failed to fetch hyperfollow analytics' });
   }
 });
@@ -824,7 +824,7 @@ router.get('/hyperfollow/:slug', async (req: Request, res: Response) => {
 
     res.json(campaign);
   } catch (error: unknown) {
-    logger.error('Error fetching HyperFollow campaign:', error);
+    logger.warn('Error fetching HyperFollow campaign:', error);
     res.status(500).json({ error: 'Failed to fetch campaign' });
   }
 });
@@ -889,7 +889,7 @@ router.patch(
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: 'Validation error', details: error.errors });
       }
-      logger.error('Error updating HyperFollow campaign:', error);
+      logger.warn('Error updating HyperFollow campaign:', error);
       res.status(500).json({ error: 'Failed to update campaign' });
     }
   }
@@ -909,7 +909,7 @@ router.delete('/hyperfollow/:id', requireAuth, async (req: Request, res: Respons
     await storage.deleteHyperFollowPage(id);
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting HyperFollow campaign:', error);
+    logger.warn('Error deleting HyperFollow campaign:', error);
     res.status(500).json({ error: 'Failed to delete campaign' });
   }
 });
@@ -969,7 +969,7 @@ router.post('/hyperfollow/:slug/track', async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error tracking HyperFollow event:', error);
+    logger.warn('Error tracking HyperFollow event:', error);
     res.status(500).json({ error: 'Failed to track event' });
   }
 });
@@ -1009,7 +1009,7 @@ router.get('/releases/:id/status', requireAuth, async (req: Request, res: Respon
           }
         }
       } catch (error: unknown) {
-        logger.error('Error fetching LabelGrid status:', error);
+        logger.warn('Error fetching LabelGrid status:', error);
         // Fall back to database status
       }
     }
@@ -1045,7 +1045,7 @@ router.get('/releases/:id/status', requireAuth, async (req: Request, res: Respon
         : null,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching release status:', error);
+    logger.warn('Error fetching release status:', error);
     res.status(500).json({ error: 'Failed to fetch release status' });
   }
 });
@@ -1098,7 +1098,7 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
       });
     }
   } catch (error: unknown) {
-    logger.error('Error refreshing release status:', error);
+    logger.warn('Error refreshing release status:', error);
     res.status(500).json({ error: 'Failed to refresh release status' });
   }
 });
@@ -1171,7 +1171,7 @@ router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res:
       validation,
     });
   } catch (error: unknown) {
-    logger.error('Error generating DDEX preview:', error);
+    logger.warn('Error generating DDEX preview:', error);
     res.status(500).json({ error: 'Failed to generate DDEX preview' });
   }
 });
@@ -1239,13 +1239,13 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
         outputPath
       );
     } catch (packageError) {
-      logger.error('Error generating DDEX package content:', packageError);
+      logger.warn('Error generating DDEX package content:', packageError);
       return res.status(500).json({ error: 'Failed to generate DDEX package. Some required track files may be missing.' });
     }
 
     res.download(outputPath, `${release.title || 'release'}_DDEX.zip`, (err) => {
       if (err && !res.headersSent) {
-        logger.error('Error downloading DDEX package:', err);
+        logger.warn('Error downloading DDEX package:', err);
       }
       try {
         fs.unlinkSync(outputPath);
@@ -1254,7 +1254,7 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
       }
     });
   } catch (error: unknown) {
-    logger.error('Error creating DDEX package:', error);
+    logger.warn('Error creating DDEX package:', error);
     if (!res.headersSent) {
       res.status(500).json({ error: 'Failed to create DDEX package' });
     }
@@ -1396,7 +1396,7 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       estimatedLiveDate: lgResult.estimatedLiveDate,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting release:', error);
+    logger.warn('Error submitting release:', error);
     res.status(500).json({ error: 'Failed to submit release' });
   }
 });
@@ -1466,7 +1466,7 @@ router.post('/releases/:id/takedown', requireAuth, async (req: Request, res: Res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error requesting takedown:', error);
+    logger.warn('Error requesting takedown:', error);
     res.status(500).json({ error: 'Failed to request takedown' });
   }
 });
@@ -1512,7 +1512,7 @@ router.get('/releases/:id/takedown-status', requireAuth, async (req: Request, re
       },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching takedown status:', error);
+    logger.warn('Error fetching takedown status:', error);
     res.status(500).json({ error: 'Failed to fetch takedown status' });
   }
 });
@@ -1552,7 +1552,7 @@ router.get('/releases/:id/analytics', requireAuth, async (req: Request, res: Res
 
         res.json(analytics);
       } catch (error: unknown) {
-        logger.error('Error fetching LabelGrid analytics:', error);
+        logger.warn('Error fetching LabelGrid analytics:', error);
         res.status(500).json({
           error: 'Failed to fetch analytics from LabelGrid',
           message: 'Please try again later or check your LabelGrid connection',
@@ -1570,7 +1570,7 @@ router.get('/releases/:id/analytics', requireAuth, async (req: Request, res: Res
       });
     }
   } catch (error: unknown) {
-    logger.error('Error fetching release analytics:', error);
+    logger.warn('Error fetching release analytics:', error);
     res.status(500).json({ error: 'Failed to fetch release analytics' });
   }
 });
@@ -1647,7 +1647,7 @@ router.get('/:id/streams-revenue', requireAuth, async (req: Request, res: Respon
       source: 'database',
     });
   } catch (error: unknown) {
-    logger.error('Error fetching release streams-revenue:', error);
+    logger.warn('Error fetching release streams-revenue:', error);
     res.status(500).json({ error: 'Failed to fetch streams and revenue' });
   }
 });
@@ -1854,7 +1854,7 @@ router.post('/validate', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating release:', error);
+    logger.warn('Error validating release:', error);
     res.status(500).json({ error: 'Failed to validate release' });
   }
 });
@@ -1899,7 +1899,7 @@ router.post('/generate-codes', requireAuth, async (req: Request, res: Response) 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error generating codes:', error);
+    logger.warn('Error generating codes:', error);
     res.status(500).json({ error: 'Failed to generate codes' });
   }
 });
@@ -1939,7 +1939,7 @@ router.post('/validate-code', requireAuth, async (req: Request, res: Response) =
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating code:', error);
+    logger.warn('Error validating code:', error);
     res.status(500).json({ error: 'Failed to validate code' });
   }
 });
@@ -2001,7 +2001,7 @@ router.post('/lint', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error linting release:', error);
+    logger.warn('Error linting release:', error);
     res.status(500).json({ error: 'Failed to lint release' });
   }
 });
@@ -2028,7 +2028,7 @@ router.get('/policies/:dsp', async (req: Request, res: Response) => {
       summary,
     });
   } catch (error: unknown) {
-    logger.error('Error fetching DSP policy:', error);
+    logger.warn('Error fetching DSP policy:', error);
     res.status(500).json({ error: 'Failed to fetch DSP policy' });
   }
 });
@@ -2049,7 +2049,7 @@ router.get('/policies', async (_req: Request, res: Response) => {
       })),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching DSP policies:', error);
+    logger.warn('Error fetching DSP policies:', error);
     res.status(500).json({ error: 'Failed to fetch DSP policies' });
   }
 });
@@ -2092,7 +2092,7 @@ router.post('/workflow/takedown', requireAuth, async (req: Request, res: Respons
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error requesting takedown:', error);
+    logger.warn('Error requesting takedown:', error);
     res.status(500).json({ error: 'Failed to request takedown' });
   }
 });
@@ -2129,7 +2129,7 @@ router.post('/workflow/update', requireAuth, async (req: Request, res: Response)
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error requesting update:', error);
+    logger.warn('Error requesting update:', error);
     res.status(500).json({ error: 'Failed to request update' });
   }
 });
@@ -2160,7 +2160,7 @@ router.get('/workflow/:releaseId/history', requireAuth, async (req: Request, res
       validTransitions: releaseWorkflowService.getValidTransitions(release.status as any),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching workflow history:', error);
+    logger.warn('Error fetching workflow history:', error);
     res.status(500).json({ error: 'Failed to fetch workflow history' });
   }
 });
@@ -2171,7 +2171,7 @@ router.get('/workflow/takedown-reasons', async (_req: Request, res: Response) =>
     const reasons = releaseWorkflowService.getAllTakedownReasons();
     res.json({ reasons });
   } catch (error: unknown) {
-    logger.error('Error fetching takedown reasons:', error);
+    logger.warn('Error fetching takedown reasons:', error);
     res.status(500).json({ error: 'Failed to fetch takedown reasons' });
   }
 });
@@ -2234,7 +2234,7 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error checking duplicates:', error);
+    logger.warn('Error checking duplicates:', error);
     res.status(500).json({ error: 'Failed to check for duplicates' });
   }
 });
@@ -2275,7 +2275,7 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
       },
     });
   } catch (error: unknown) {
-    logger.error('Error generating fingerprint:', error);
+    logger.warn('Error generating fingerprint:', error);
     res.status(500).json({ error: 'Failed to generate fingerprint' });
   }
 });
@@ -2299,7 +2299,7 @@ router.get('/fingerprint/:trackId/similar', requireAuth, async (req: Request, re
       results: similarTracks,
     });
   } catch (error: unknown) {
-    logger.error('Error finding similar tracks:', error);
+    logger.warn('Error finding similar tracks:', error);
     res.status(500).json({ error: 'Failed to find similar tracks' });
   }
 });
@@ -2310,7 +2310,7 @@ router.get('/fingerprint/stats', requireAuth, async (_req: Request, res: Respons
     const stats = audioFingerprintService.getStats();
     res.json(stats);
   } catch (error: unknown) {
-    logger.error('Error fetching fingerprint stats:', error);
+    logger.warn('Error fetching fingerprint stats:', error);
     res.status(500).json({ error: 'Failed to fetch fingerprint stats' });
   }
 });
@@ -2321,7 +2321,7 @@ router.get('/country-codes', async (_req: Request, res: Response) => {
     const countryCodes = musicCodesService.getValidCountryCodes();
     res.json({ countryCodes });
   } catch (error: unknown) {
-    logger.error('Error fetching country codes:', error);
+    logger.warn('Error fetching country codes:', error);
     res.status(500).json({ error: 'Failed to fetch country codes' });
   }
 });
@@ -2360,7 +2360,7 @@ router.post('/register-codes', requireAuth, async (req: Request, res: Response) 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error registering codes:', error);
+    logger.warn('Error registering codes:', error);
     res.status(500).json({ error: 'Failed to register codes' });
   }
 });
@@ -2450,7 +2450,7 @@ router.post('/catalog/import', requireAuth, catalogUpload.single('file'), async 
       ...result
     });
   } catch (error: unknown) {
-    logger.error('Error importing catalog:', error);
+    logger.warn('Error importing catalog:', error);
     res.status(500).json({ error: 'Failed to import catalog' });
   }
 });
@@ -2462,7 +2462,7 @@ router.get('/catalog/jobs', requireAuth, async (req: Request, res: Response) => 
     const jobs = await catalogImporter.getImportJobs(userId);
     res.json({ jobs });
   } catch (error: unknown) {
-    logger.error('Error fetching import jobs:', error);
+    logger.warn('Error fetching import jobs:', error);
     res.status(500).json({ error: 'Failed to fetch import jobs' });
   }
 });
@@ -2481,7 +2481,7 @@ router.get('/catalog/jobs/:jobId', requireAuth, async (req: Request, res: Respon
     
     res.json({ job, rows });
   } catch (error: unknown) {
-    logger.error('Error fetching import job:', error);
+    logger.warn('Error fetching import job:', error);
     res.status(500).json({ error: 'Failed to fetch import job' });
   }
 });
@@ -2494,7 +2494,7 @@ router.get('/catalog/template', async (_req: Request, res: Response) => {
     res.setHeader('Content-Disposition', 'attachment; filename=catalog-import-template.csv');
     res.send(template);
   } catch (error: unknown) {
-    logger.error('Error generating template:', error);
+    logger.warn('Error generating template:', error);
     res.status(500).json({ error: 'Failed to generate template' });
   }
 });
@@ -2505,7 +2505,7 @@ router.get('/catalog/formats', async (_req: Request, res: Response) => {
     const formats = catalogImporter.getSupportedFormats();
     res.json({ formats });
   } catch (error: unknown) {
-    logger.error('Error fetching formats:', error);
+    logger.warn('Error fetching formats:', error);
     res.status(500).json({ error: 'Failed to fetch formats' });
   }
 });
@@ -2542,7 +2542,7 @@ router.post('/schedule', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error scheduling release:', error);
+    logger.warn('Error scheduling release:', error);
     res.status(500).json({ error: 'Failed to schedule release' });
   }
 });
@@ -2555,7 +2555,7 @@ router.get('/schedule/upcoming', requireAuth, async (req: Request, res: Response
     const releases = await releaseScheduler.getUpcomingReleases(userId, limit);
     res.json({ releases });
   } catch (error: unknown) {
-    logger.error('Error fetching upcoming releases:', error);
+    logger.warn('Error fetching upcoming releases:', error);
     res.status(500).json({ error: 'Failed to fetch upcoming releases' });
   }
 });
@@ -2572,7 +2572,7 @@ router.get('/schedule/countdown/:releaseId', async (req: Request, res: Response)
 
     res.json(countdown);
   } catch (error: unknown) {
-    logger.error('Error fetching countdown:', error);
+    logger.warn('Error fetching countdown:', error);
     res.status(500).json({ error: 'Failed to fetch countdown' });
   }
 });
@@ -2583,7 +2583,7 @@ router.get('/schedule/platforms', async (_req: Request, res: Response) => {
     const windows = releaseScheduler.getPlatformWindows();
     res.json({ platforms: windows });
   } catch (error: unknown) {
-    logger.error('Error fetching platform windows:', error);
+    logger.warn('Error fetching platform windows:', error);
     res.status(500).json({ error: 'Failed to fetch platform windows' });
   }
 });
@@ -2595,7 +2595,7 @@ router.get('/schedule/optimal', async (req: Request, res: Response) => {
     const optimal = releaseScheduler.getOptimalReleaseTime(timezone);
     res.json(optimal);
   } catch (error: unknown) {
-    logger.error('Error fetching optimal time:', error);
+    logger.warn('Error fetching optimal time:', error);
     res.status(500).json({ error: 'Failed to fetch optimal time' });
   }
 });
@@ -2614,7 +2614,7 @@ router.post('/schedule/validate', async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating schedule:', error);
+    logger.warn('Error validating schedule:', error);
     res.status(500).json({ error: 'Failed to validate schedule' });
   }
 });
@@ -2626,7 +2626,7 @@ router.get('/schedule/lead-time', async (req: Request, res: Response) => {
     const recommendation = releaseScheduler.getRecommendedLeadTime(platforms);
     res.json(recommendation);
   } catch (error: unknown) {
-    logger.error('Error fetching lead time recommendation:', error);
+    logger.warn('Error fetching lead time recommendation:', error);
     res.status(500).json({ error: 'Failed to fetch lead time recommendation' });
   }
 });
@@ -2637,7 +2637,7 @@ router.get('/schedule/timezones', async (_req: Request, res: Response) => {
     const timezones = releaseScheduler.getSupportedTimezones();
     res.json({ timezones });
   } catch (error: unknown) {
-    logger.error('Error fetching timezones:', error);
+    logger.warn('Error fetching timezones:', error);
     res.status(500).json({ error: 'Failed to fetch timezones' });
   }
 });
@@ -2668,7 +2668,7 @@ router.post('/presave', requireAuth, async (req: Request, res: Response) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error creating pre-save campaign:', error);
+    logger.warn('Error creating pre-save campaign:', error);
     res.status(500).json({ error: 'Failed to create pre-save campaign' });
   }
 });
@@ -2688,7 +2688,7 @@ router.post('/identifiers/upc/generate', requireAuth, async (req: Request, res: 
     const upc = await identifierService.generateUPC({ userId, releaseId });
     res.json({ upc, valid: true });
   } catch (error: unknown) {
-    logger.error('Error generating UPC:', error);
+    logger.warn('Error generating UPC:', error);
     res.status(500).json({ error: 'Failed to generate UPC' });
   }
 });
@@ -2703,7 +2703,7 @@ router.post('/identifiers/upc/validate', async (req: Request, res: Response) => 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating UPC:', error);
+    logger.warn('Error validating UPC:', error);
     res.status(500).json({ error: 'Failed to validate UPC' });
   }
 });
@@ -2724,7 +2724,7 @@ router.post('/identifiers/isrc/generate', requireAuth, async (req: Request, res:
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error generating ISRC:', error);
+    logger.warn('Error generating ISRC:', error);
     res.status(500).json({ error: 'Failed to generate ISRC' });
   }
 });
@@ -2739,7 +2739,7 @@ router.post('/identifiers/isrc/validate', async (req: Request, res: Response) =>
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error validating ISRC:', error);
+    logger.warn('Error validating ISRC:', error);
     res.status(500).json({ error: 'Failed to validate ISRC' });
   }
 });
@@ -2760,7 +2760,7 @@ router.post('/identifiers/isrc/batch', requireAuth, async (req: Request, res: Re
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error reserving ISRC batch:', error);
+    logger.warn('Error reserving ISRC batch:', error);
     res.status(500).json({ error: 'Failed to reserve ISRC batch' });
   }
 });
@@ -2771,7 +2771,7 @@ router.get('/identifiers/country-codes', async (_req: Request, res: Response) =>
     const countryCodes = identifierService.getValidCountryCodes();
     res.json({ countryCodes });
   } catch (error: unknown) {
-    logger.error('Error fetching country codes:', error);
+    logger.warn('Error fetching country codes:', error);
     res.status(500).json({ error: 'Failed to fetch country codes' });
   }
 });
@@ -2782,7 +2782,7 @@ router.get('/identifiers/genres', async (_req: Request, res: Response) => {
     const genres = identifierService.getValidGenres();
     res.json({ genres });
   } catch (error: unknown) {
-    logger.error('Error fetching genres:', error);
+    logger.warn('Error fetching genres:', error);
     res.status(500).json({ error: 'Failed to fetch genres' });
   }
 });
@@ -2818,7 +2818,7 @@ router.post('/workflow/transition', requireAuth, async (req: Request, res: Respo
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
-    logger.error('Error transitioning release:', error);
+    logger.warn('Error transitioning release:', error);
     res.status(500).json({ error: 'Failed to transition release' });
   }
 });
@@ -2830,7 +2830,7 @@ router.get('/workflow/history/:releaseId', requireAuth, async (req: Request, res
     const history = await enhancedWorkflowService.getWorkflowHistory(releaseId);
     res.json({ history });
   } catch (error: unknown) {
-    logger.error('Error fetching workflow history:', error);
+    logger.warn('Error fetching workflow history:', error);
     res.status(500).json({ error: 'Failed to fetch workflow history' });
   }
 });
@@ -2842,7 +2842,7 @@ router.get('/workflow/versions/:releaseId', requireAuth, async (req: Request, re
     const versions = await enhancedWorkflowService.getVersionHistory(releaseId);
     res.json({ versions });
   } catch (error: unknown) {
-    logger.error('Error fetching version history:', error);
+    logger.warn('Error fetching version history:', error);
     res.status(500).json({ error: 'Failed to fetch version history' });
   }
 });
@@ -2859,7 +2859,7 @@ router.get('/workflow/transitions/:status', async (req: Request, res: Response) 
       color: enhancedWorkflowService.getStatusColor(status as any)
     });
   } catch (error: unknown) {
-    logger.error('Error fetching transitions:', error);
+    logger.warn('Error fetching transitions:', error);
     res.status(500).json({ error: 'Failed to fetch transitions' });
   }
 });
@@ -2954,7 +2954,7 @@ router.get('/analytics/growth', requireAuth, async (req: Request, res: Response)
     }
     res.json({ ...analyticsData, source: 'local' });
   } catch (error: unknown) {
-    logger.error('Error fetching analytics growth:', error);
+    logger.warn('Error fetching analytics growth:', error);
     res.status(500).json({ error: 'Failed to fetch analytics growth' });
   }
 });
@@ -2984,7 +2984,7 @@ router.get('/streaming-trends', requireAuth, async (req: Request, res: Response)
     const trends = await storage.getStreamingTrends(userId);
     res.json(trends);
   } catch (error: unknown) {
-    logger.error('Error fetching streaming trends:', error);
+    logger.warn('Error fetching streaming trends:', error);
     res.status(500).json({ error: 'Failed to fetch streaming trends' });
   }
 });
@@ -2996,7 +2996,7 @@ router.get('/geographic', requireAuth, async (req: Request, res: Response) => {
     const data = await storage.getGeographicData(userId);
     res.json(data);
   } catch (error: unknown) {
-    logger.error('Error fetching geographic data:', error);
+    logger.warn('Error fetching geographic data:', error);
     res.status(500).json({ error: 'Failed to fetch geographic data' });
   }
 });
@@ -3064,7 +3064,7 @@ router.get('/earnings/breakdown', requireAuth, async (req: Request, res: Respons
       source: 'local',
     });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings breakdown:', error);
+    logger.warn('Error fetching earnings breakdown:', error);
     res.status(500).json({ error: 'Failed to fetch earnings breakdown' });
   }
 });
@@ -3107,7 +3107,7 @@ router.get('/platform-earnings', requireAuth, async (req: Request, res: Response
       transactions: Number(r.transactions),
     })));
   } catch (error: unknown) {
-    logger.error('Error fetching platform earnings:', error);
+    logger.warn('Error fetching platform earnings:', error);
     res.status(500).json({ error: 'Failed to fetch platform earnings' });
   }
 });
@@ -3119,7 +3119,7 @@ router.get('/payout-history', requireAuth, async (req: Request, res: Response) =
     const payouts = await storage.getPayoutHistory(userId);
     res.json(payouts);
   } catch (error: unknown) {
-    logger.error('Error fetching payout history:', error);
+    logger.warn('Error fetching payout history:', error);
     res.status(500).json({ error: 'Failed to fetch payout history' });
   }
 });
@@ -3134,7 +3134,7 @@ router.get('/claims', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({ claims: [], total: 0 });
   } catch (error: unknown) {
-    logger.error('Error fetching claims:', error);
+    logger.warn('Error fetching claims:', error);
     res.status(500).json({ error: 'Failed to fetch claims' });
   }
 });
@@ -3144,7 +3144,7 @@ router.get('/disputes', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({ disputes: [], total: 0 });
   } catch (error: unknown) {
-    logger.error('Error fetching disputes:', error);
+    logger.warn('Error fetching disputes:', error);
     res.status(500).json({ error: 'Failed to fetch disputes' });
   }
 });
@@ -3154,7 +3154,7 @@ router.get('/qc', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({ pending: [], passed: [], failed: [] });
   } catch (error: unknown) {
-    logger.error('Error fetching QC status:', error);
+    logger.warn('Error fetching QC status:', error);
     res.status(500).json({ error: 'Failed to fetch QC status' });
   }
 });
@@ -3164,7 +3164,7 @@ router.get('/takedowns', requireAuth, async (req: Request, res: Response) => {
   try {
     res.json({ takedowns: [], total: 0 });
   } catch (error: unknown) {
-    logger.error('Error fetching takedowns:', error);
+    logger.warn('Error fetching takedowns:', error);
     res.status(500).json({ error: 'Failed to fetch takedowns' });
   }
 });
@@ -3174,7 +3174,7 @@ router.get('/reinstatements', requireAuth, async (req: Request, res: Response) =
   try {
     res.json({ reinstatements: [], total: 0 });
   } catch (error: unknown) {
-    logger.error('Error fetching reinstatements:', error);
+    logger.warn('Error fetching reinstatements:', error);
     res.status(500).json({ error: 'Failed to fetch reinstatements' });
   }
 });
@@ -3292,7 +3292,7 @@ router.post('/upload', requireAuth, releaseUpload.any(), async (req: Request, re
       message: 'Release uploaded successfully and is being processed for distribution.',
     });
   } catch (error: unknown) {
-    logger.error('Error uploading distribution release:', error);
+    logger.warn('Error uploading distribution release:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to upload release' });
   }
 });
@@ -3302,7 +3302,7 @@ router.post('/export-report', requireAuth, async (req: Request, res: Response) =
   try {
     res.json({ success: true, reportId: `report_${Date.now()}`, downloadUrl: null });
   } catch (error: unknown) {
-    logger.error('Error exporting report:', error);
+    logger.warn('Error exporting report:', error);
     res.status(500).json({ error: 'Failed to export report' });
   }
 });
@@ -3327,7 +3327,7 @@ router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
       remaining: Math.max(0, 1000 - isrcGenerated),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching code stats:', error);
+    logger.warn('Error fetching code stats:', error);
     res.status(500).json({ error: 'Failed to fetch code stats' });
   }
 });
@@ -3376,7 +3376,7 @@ router.get('/earnings/entries', requireAuth, async (req: Request, res: Response)
 
     res.json({ entries, total: Number(total), limit: pageLimit, offset: pageOffset });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings entries:', error);
+    logger.warn('Error fetching earnings entries:', error);
     res.status(500).json({ error: 'Failed to fetch earnings entries' });
   }
 });
@@ -3393,7 +3393,7 @@ router.get('/earnings/payouts', requireAuth, async (req: Request, res: Response)
       .limit(500);
     res.json({ payouts, total: payouts.length });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings payouts:', error);
+    logger.warn('Error fetching earnings payouts:', error);
     res.status(500).json({ error: 'Failed to fetch earnings payouts' });
   }
 });
@@ -3410,7 +3410,7 @@ router.get('/earnings/statements', requireAuth, async (req: Request, res: Respon
       .limit(500);
     res.json({ statements });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings statements:', error);
+    logger.warn('Error fetching earnings statements:', error);
     res.status(500).json({ error: 'Failed to fetch earnings statements' });
   }
 });
@@ -3469,7 +3469,7 @@ router.get('/earnings/summary', requireAuth, async (req: Request, res: Response)
       lastMonth: Number(agg.lastMonth),
     });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings summary:', error);
+    logger.warn('Error fetching earnings summary:', error);
     res.status(500).json({ error: 'Failed to fetch earnings summary' });
   }
 });
@@ -3497,7 +3497,7 @@ router.get('/earnings/territories', requireAuth, async (req: Request, res: Respo
       transactions: Number(r.transactions),
     })) });
   } catch (error: unknown) {
-    logger.error('Error fetching earnings territories:', error);
+    logger.warn('Error fetching earnings territories:', error);
     res.status(500).json({ error: 'Failed to fetch earnings territories' });
   }
 });
@@ -3526,7 +3526,7 @@ router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: R
       res.json({ rates: { USD: 1, EUR: 0.92, GBP: 0.79 }, baseCurrency: 'USD', lastUpdated: new Date().toISOString() });
     }
   } catch (error: unknown) {
-    logger.error('Error fetching currency rates:', error);
+    logger.warn('Error fetching currency rates:', error);
     res.status(500).json({ error: 'Failed to fetch currency rates' });
   }
 });
@@ -3543,7 +3543,7 @@ router.get('/royalties/discrepancies', requireAuth, async (req: Request, res: Re
       .limit(500);
     res.json({ discrepancies, total: discrepancies.length });
   } catch (error: unknown) {
-    logger.error('Error fetching royalty discrepancies:', error);
+    logger.warn('Error fetching royalty discrepancies:', error);
     res.status(500).json({ error: 'Failed to fetch royalty discrepancies' });
   }
 });
@@ -3573,7 +3573,7 @@ router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response
 
     res.json({ payouts, total: Number(total), limit: pageLimit, offset: pageOffset });
   } catch (error: unknown) {
-    logger.error('Error fetching royalty payouts:', error);
+    logger.warn('Error fetching royalty payouts:', error);
     res.status(500).json({ error: 'Failed to fetch royalty payouts' });
   }
 });
@@ -3617,7 +3617,7 @@ router.get('/royalties/platforms', requireAuth, async (req: Request, res: Respon
       transactions: Number(r.transactions),
     })) });
   } catch (error: unknown) {
-    logger.error('Error fetching royalties platforms:', error);
+    logger.warn('Error fetching royalties platforms:', error);
     res.status(500).json({ error: 'Failed to fetch royalties platforms' });
   }
 });
@@ -3643,7 +3643,7 @@ router.get('/royalties/splits', requireAuth, async (req: Request, res: Response)
 
     res.json({ splits });
   } catch (error: unknown) {
-    logger.error('Error fetching royalty splits:', error);
+    logger.warn('Error fetching royalty splits:', error);
     res.status(500).json({ error: 'Failed to fetch royalty splits' });
   }
 });
@@ -3660,7 +3660,7 @@ router.get('/royalties/tax-documents', requireAuth, async (req: Request, res: Re
       .limit(200);
     res.json({ documents });
   } catch (error: unknown) {
-    logger.error('Error fetching tax documents:', error);
+    logger.warn('Error fetching tax documents:', error);
     res.status(500).json({ error: 'Failed to fetch tax documents' });
   }
 });
@@ -3677,7 +3677,7 @@ router.get('/transfer/distributors', requireAuth, async (_req: Request, res: Res
     const distributors = distributionDataTransferService.getSupportedDistributors();
     res.json({ distributors });
   } catch (error: unknown) {
-    logger.error('Error fetching supported distributors:', error);
+    logger.warn('Error fetching supported distributors:', error);
     res.status(500).json({ error: 'Failed to fetch distributors' });
   }
 });
@@ -3688,7 +3688,7 @@ router.get('/transfer/platforms', requireAuth, async (_req: Request, res: Respon
     const platforms = distributionDataTransferService.getSupportedPlatforms();
     res.json({ platforms });
   } catch (error: unknown) {
-    logger.error('Error fetching supported platforms:', error);
+    logger.warn('Error fetching supported platforms:', error);
     res.status(500).json({ error: 'Failed to fetch platforms' });
   }
 });
@@ -3712,7 +3712,7 @@ router.post('/transfer/validate', requireAuth, upload.single('file'), async (req
 
     res.json(validation);
   } catch (error: unknown) {
-    logger.error('Error validating import data:', error);
+    logger.warn('Error validating import data:', error);
     res.status(500).json({ error: 'Failed to validate import data' });
   }
 });
@@ -3741,7 +3741,7 @@ router.post('/transfer/import', requireAuth, upload.single('file'), async (req: 
       message: `Import ${job.status}: ${job.successItems} releases imported, ${job.failedItems} failed`,
     });
   } catch (error: unknown) {
-    logger.error('Error importing from distributor:', error);
+    logger.warn('Error importing from distributor:', error);
     res.status(500).json({ error: 'Failed to import releases' });
   }
 });
@@ -3753,7 +3753,7 @@ router.get('/transfer/jobs', requireAuth, async (req: Request, res: Response) =>
     const jobs = await distributionDataTransferService.getUserTransferJobs(userId);
     res.json({ jobs });
   } catch (error: unknown) {
-    logger.error('Error fetching transfer jobs:', error);
+    logger.warn('Error fetching transfer jobs:', error);
     res.status(500).json({ error: 'Failed to fetch transfer jobs' });
   }
 });
@@ -3770,7 +3770,7 @@ router.get('/transfer/jobs/:id', requireAuth, async (req: Request, res: Response
     
     res.json({ job });
   } catch (error: unknown) {
-    logger.error('Error fetching transfer job:', error);
+    logger.warn('Error fetching transfer job:', error);
     res.status(500).json({ error: 'Failed to fetch transfer job' });
   }
 });
@@ -3798,7 +3798,7 @@ router.post('/profiles/link', requireAuth, async (req: Request, res: Response) =
       message: `Successfully linked ${platformId} profile`,
     });
   } catch (error: unknown) {
-    logger.error('Error linking streaming profile:', error);
+    logger.warn('Error linking streaming profile:', error);
     res.status(500).json({ error: 'Failed to link streaming profile' });
   }
 });
@@ -3810,7 +3810,7 @@ router.get('/profiles', requireAuth, async (req: Request, res: Response) => {
     const profiles = await distributionDataTransferService.getLinkedProfiles(userId);
     res.json({ profiles });
   } catch (error: unknown) {
-    logger.error('Error fetching linked profiles:', error);
+    logger.warn('Error fetching linked profiles:', error);
     res.status(500).json({ error: 'Failed to fetch linked profiles' });
   }
 });
@@ -3833,7 +3833,7 @@ router.post('/profiles/:platformId/sync', requireAuth, async (req: Request, res:
       message: `Successfully synced ${platformId} profile data`,
     });
   } catch (error: unknown) {
-    logger.error('Error syncing streaming profile:', error);
+    logger.warn('Error syncing streaming profile:', error);
     res.status(500).json({ error: 'Failed to sync streaming profile' });
   }
 });
@@ -3855,7 +3855,7 @@ router.delete('/profiles/:platformId', requireAuth, async (req: Request, res: Re
       message: `Successfully unlinked ${platformId} profile`,
     });
   } catch (error: unknown) {
-    logger.error('Error unlinking streaming profile:', error);
+    logger.warn('Error unlinking streaming profile:', error);
     res.status(500).json({ error: 'Failed to unlink streaming profile' });
   }
 });
@@ -3875,7 +3875,7 @@ router.post('/profiles/:platformId/scan-releases', requireAuth, async (req: Requ
     });
   } catch (error: unknown) {
     const msg = error instanceof Error ? error.message : 'Failed to scan releases';
-    logger.error('Error scanning releases from profile:', error);
+    logger.warn('Error scanning releases from profile:', error);
     res.status(msg === 'Profile not linked' ? 404 : 500).json({ error: msg });
   }
 });
@@ -3899,7 +3899,7 @@ router.post('/profiles/:platformId/import-catalog', requireAuth, async (req: Req
       message: `${job.successItems} releases imported from ${platformId} profile${job.failedItems > 0 ? `, ${job.failedItems} failed` : ''}`,
     });
   } catch (error: unknown) {
-    logger.error('Error importing profile catalog:', error);
+    logger.warn('Error importing profile catalog:', error);
     res.status(500).json({ error: 'Failed to import catalog' });
   }
 });
@@ -3915,7 +3915,7 @@ router.post('/profiles/sync-all', requireAuth, async (req: Request, res: Respons
       message: `Synced ${result.succeeded} of ${result.total} profiles`,
     });
   } catch (error: unknown) {
-    logger.error('Error syncing all profiles:', error);
+    logger.warn('Error syncing all profiles:', error);
     res.status(500).json({ error: 'Failed to sync all profiles' });
   }
 });
@@ -3933,7 +3933,7 @@ router.post('/profiles/auto-sync/start', requireAuth, async (req: Request, res: 
       message: `Auto-sync started (every ${intervalMinutes || 60} minutes)`,
     });
   } catch (error: unknown) {
-    logger.error('Error starting auto-sync:', error);
+    logger.warn('Error starting auto-sync:', error);
     res.status(500).json({ error: 'Failed to start auto-sync' });
   }
 });
@@ -3948,7 +3948,7 @@ router.post('/profiles/auto-sync/stop', requireAuth, async (req: Request, res: R
       message: 'Auto-sync stopped',
     });
   } catch (error: unknown) {
-    logger.error('Error stopping auto-sync:', error);
+    logger.warn('Error stopping auto-sync:', error);
     res.status(500).json({ error: 'Failed to stop auto-sync' });
   }
 });
@@ -3960,7 +3960,7 @@ router.get('/profiles/auto-sync/status', requireAuth, async (req: Request, res: 
     const status = distributionDataTransferService.getAutoSyncStatus(userId);
     res.json(status);
   } catch (error: unknown) {
-    logger.error('Error fetching auto-sync status:', error);
+    logger.warn('Error fetching auto-sync status:', error);
     res.status(500).json({ error: 'Failed to fetch auto-sync status' });
   }
 });
@@ -3972,7 +3972,7 @@ router.get('/profiles/sync-history', requireAuth, async (req: Request, res: Resp
     const history = distributionDataTransferService.getSyncHistory(userId);
     res.json({ history });
   } catch (error: unknown) {
-    logger.error('Error fetching sync history:', error);
+    logger.warn('Error fetching sync history:', error);
     res.status(500).json({ error: 'Failed to fetch sync history' });
   }
 });
@@ -3984,7 +3984,7 @@ router.get('/migration/report', requireAuth, async (req: Request, res: Response)
     const report = await distributionDataTransferService.generateMigrationReport(userId);
     res.json(report);
   } catch (error: unknown) {
-    logger.error('Error generating migration report:', error);
+    logger.warn('Error generating migration report:', error);
     res.status(500).json({ error: 'Failed to generate migration report' });
   }
 });
@@ -4052,7 +4052,7 @@ router.get('/releases/:id/submission-status', requireAuth, async (req: Request, 
       },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching submission status:', error);
+    logger.warn('Error fetching submission status:', error);
     res.status(500).json({ error: 'Failed to fetch submission status' });
   }
 });
@@ -4105,7 +4105,7 @@ router.post('/releases/:id/retry', requireAuth, async (req: Request, res: Respon
       retryCount,
     });
   } catch (error: unknown) {
-    logger.error('Error retrying submission:', error);
+    logger.warn('Error retrying submission:', error);
     res.status(500).json({ error: 'Failed to retry submission' });
   }
 });
@@ -4142,7 +4142,7 @@ router.get('/releases/:id/content-id', requireAuth, async (req: Request, res: Re
 
     res.json(registrations);
   } catch (error: unknown) {
-    logger.error('Error fetching content ID registrations:', error);
+    logger.warn('Error fetching content ID registrations:', error);
     res.status(500).json({ error: 'Failed to fetch content ID registrations' });
   }
 });
@@ -4173,7 +4173,7 @@ router.post('/content-id/generate', requireAuth, async (req: Request, res: Respo
       fingerprint,
     });
   } catch (error: unknown) {
-    logger.error('Error generating fingerprint:', error);
+    logger.warn('Error generating fingerprint:', error);
     res.status(500).json({ error: 'Failed to generate fingerprint' });
   }
 });
@@ -4206,7 +4206,7 @@ router.post('/content-id/generate-all', requireAuth, async (req: Request, res: R
       count,
     });
   } catch (error: unknown) {
-    logger.error('Error generating all fingerprints:', error);
+    logger.warn('Error generating all fingerprints:', error);
     res.status(500).json({ error: 'Failed to generate fingerprints' });
   }
 });
@@ -4235,7 +4235,7 @@ router.post('/content-id/register', requireAuth, async (req: Request, res: Respo
       message: 'Track registered for Content ID protection',
     });
   } catch (error: unknown) {
-    logger.error('Error registering for content ID:', error);
+    logger.warn('Error registering for content ID:', error);
     res.status(500).json({ error: 'Failed to register for content ID' });
   }
 });
@@ -4268,7 +4268,7 @@ router.post('/content-id/resolve', requireAuth, async (req: Request, res: Respon
       message: 'Conflict resolution submitted',
     });
   } catch (error: unknown) {
-    logger.error('Error resolving content ID conflict:', error);
+    logger.warn('Error resolving content ID conflict:', error);
     res.status(500).json({ error: 'Failed to resolve conflict' });
   }
 });
@@ -4455,7 +4455,7 @@ router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Resp
       },
     });
   } catch (error: unknown) {
-    logger.error('Error fetching distribution outcomes:', error);
+    logger.warn('Error fetching distribution outcomes:', error);
     res.status(500).json({ error: 'Failed to fetch distribution outcomes' });
   }
 });
@@ -4479,7 +4479,7 @@ router.post('/releases/:id/retry-outcome', requireAuth, async (req: Request, res
       message: `Retry initiated for ${type}`,
     });
   } catch (error: unknown) {
-    logger.error('Error retrying outcome:', error);
+    logger.warn('Error retrying outcome:', error);
     res.status(500).json({ error: 'Failed to retry outcome' });
   }
 });
@@ -4527,7 +4527,7 @@ router.post('/isrc/generate', requireAuth, async (req: Request, res: Response) =
       }),
     });
   } catch (error: unknown) {
-    logger.error('Error generating ISRC:', error);
+    logger.warn('Error generating ISRC:', error);
     res.status(500).json({ error: 'Failed to generate ISRC' });
   }
 });
@@ -4575,7 +4575,7 @@ router.post('/upc/generate', requireAuth, async (req: Request, res: Response) =>
       }),
     });
   } catch (error: unknown) {
-    logger.error('Error generating UPC:', error);
+    logger.warn('Error generating UPC:', error);
     res.status(500).json({ error: 'Failed to generate UPC' });
   }
 });
@@ -4667,7 +4667,7 @@ router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Requ
         : undefined,
     });
   } catch (error: unknown) {
-    logger.error('Error running QC analysis:', error);
+    logger.warn('Error running QC analysis:', error);
     res.status(500).json({ error: 'Failed to run QC analysis' });
   }
 });
@@ -4685,7 +4685,7 @@ router.post('/qc/fix', requireAuth, async (req: Request, res: Response) => {
       res.status(501).json({ error: 'Automatic QC fixes for audio checks require audio processing tools not yet configured on this server.' });
     }
   } catch (error: unknown) {
-    logger.error('Error applying QC fix:', error);
+    logger.warn('Error applying QC fix:', error);
     res.status(500).json({ error: 'Failed to apply QC fix' });
   }
 });
@@ -4703,7 +4703,7 @@ router.post('/earnings/import', requireAuth, upload.single('statement'), async (
     logger.info(`[Distribution] Earnings statement uploaded for user ${userId}: ${key}`);
     res.json({ success: true, message: 'Statement uploaded and queued for processing', statementKey: key, filename: file.originalname, size: file.size });
   } catch (error: unknown) {
-    logger.error('Error importing earnings statement:', error);
+    logger.warn('Error importing earnings statement:', error);
     res.status(500).json({ error: 'Failed to import earnings statement' });
   }
 });
@@ -4722,7 +4722,7 @@ router.post('/earnings/payout', requireAuth, async (req: Request, res: Response)
     res.json({ success: true, payoutId: result.id, amount: result.amount, method, status: result.status, requestedAt: result.requestedAt });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error('Error requesting earnings payout:', error);
+    logger.warn('Error requesting earnings payout:', error);
     if (message.includes('not configured') || message.includes('LABELGRID')) {
       return res.status(503).json({ error: 'Payout unavailable', details: message });
     }
@@ -4787,7 +4787,7 @@ router.post('/codes/generate', requireAuth, async (req: Request, res: Response) 
       });
     }
   } catch (error: unknown) {
-    logger.error('Error generating codes:', error);
+    logger.warn('Error generating codes:', error);
     res.status(500).json({ error: 'Failed to generate codes' });
   }
 });
@@ -4806,7 +4806,7 @@ router.post('/royalties/payout', requireAuth, async (req: Request, res: Response
     res.json({ success: true, payoutId: result.id, amount: result.amount, method, status: result.status, requestedAt: result.requestedAt });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error('Error requesting royalties payout:', error);
+    logger.warn('Error requesting royalties payout:', error);
     if (message.includes('not configured') || message.includes('LABELGRID')) {
       return res.status(503).json({ error: 'Payout unavailable', details: message });
     }
@@ -4825,7 +4825,7 @@ router.post('/royalties/tax-document', requireAuth, async (req: Request, res: Re
     logger.info(`[Distribution] Tax document ${type} ${year} generated for user ${userId}`);
     res.json({ success: true, docId, type, year, status: 'generated', downloadUrl: `/api/distribution/royalties/tax-documents/${docId}`, message: `${type} for ${year} is ready for download` });
   } catch (error: unknown) {
-    logger.error('Error generating tax document:', error);
+    logger.warn('Error generating tax document:', error);
     res.status(500).json({ error: 'Failed to generate tax document' });
   }
 });
@@ -4853,7 +4853,7 @@ router.post('/artwork/upload', requireAuth, upload.single('artwork'), async (req
     logger.info(`[Distribution] Artwork uploaded for user ${userId}: ${key}`);
     res.json({ success: true, artworkUrl, key, size: file.size, mimeType: file.mimetype });
   } catch (error: unknown) {
-    logger.error('Error uploading artwork:', error);
+    logger.warn('Error uploading artwork:', error);
     res.status(500).json({ error: 'Failed to upload artwork' });
   }
 });
@@ -4876,7 +4876,7 @@ router.get('/packages/:projectId', requireAuth, async (req: Request, res: Respon
     if (err?.message?.includes('not found') || err?.message?.includes('404')) {
       return res.status(404).json({ error: 'No distribution package found for this project' });
     }
-    logger.error('Error fetching distribution package:', error);
+    logger.warn('Error fetching distribution package:', error);
     res.status(500).json({ error: 'Failed to fetch distribution package' });
   }
 });
@@ -4909,7 +4909,7 @@ router.post('/packages', requireAuth, async (req: Request, res: Response) => {
     logger.info(`[Distribution] Package created for project ${projectId} by user ${userId}`);
     res.status(201).json(pkg);
   } catch (error: unknown) {
-    logger.error('Error creating distribution package:', error);
+    logger.warn('Error creating distribution package:', error);
     res.status(500).json({ error: 'Failed to create distribution package' });
   }
 });
@@ -4947,7 +4947,7 @@ router.put('/packages/:id', requireAuth, async (req: Request, res: Response) => 
     logger.info(`[Distribution] Package ${id} updated by user ${userId}`);
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error updating distribution package:', error);
+    logger.warn('Error updating distribution package:', error);
     res.status(500).json({ error: 'Failed to update distribution package' });
   }
 });
@@ -4967,7 +4967,7 @@ router.get('/packages/:id/tracks', requireAuth, async (req: Request, res: Respon
   } catch (error: unknown) {
     const err = error as { message?: string };
     res.status(500).json({ error: 'Internal server error' });
-    logger.error('Error fetching package tracks:', error);
+    logger.warn('Error fetching package tracks:', error);
     res.status(500).json({ error: 'Failed to fetch package tracks' });
   }
 });
@@ -5004,7 +5004,7 @@ router.post('/packages/:id/tracks', requireAuth, async (req: Request, res: Respo
     logger.info(`[Distribution] Track "${title}" added to package ${id} by user ${userId}`);
     res.status(201).json(track);
   } catch (error: unknown) {
-    logger.error('Error adding track to package:', error);
+    logger.warn('Error adding track to package:', error);
     res.status(500).json({ error: 'Failed to add track to package' });
   }
 });
@@ -5030,7 +5030,7 @@ router.get('/packages/:id/export', requireAuth, async (req: Request, res: Respon
     res.setHeader('Content-Disposition', `attachment; filename="distribution_${id}_export.json"`);
     res.json(exportData);
   } catch (error: unknown) {
-    logger.error('Error exporting distribution package:', error);
+    logger.warn('Error exporting distribution package:', error);
     res.status(500).json({ error: 'Failed to export distribution package' });
   }
 });
@@ -5102,7 +5102,7 @@ router.post('/platform/spotify', requireAuth, async (req: Request, res: Response
       platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Spotify via LabelGrid:', error);
+    logger.warn('Error submitting to Spotify via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Spotify' });
   }
 });
@@ -5142,7 +5142,7 @@ router.post('/platform/apple', requireAuth, async (req: Request, res: Response) 
       platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to Apple Music via LabelGrid:', error);
+    logger.warn('Error submitting to Apple Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to Apple Music' });
   }
 });
@@ -5182,7 +5182,7 @@ router.post('/platform/youtube', requireAuth, async (req: Request, res: Response
       platforms: result.platforms,
     });
   } catch (error: unknown) {
-    logger.error('Error submitting to YouTube Music via LabelGrid:', error);
+    logger.warn('Error submitting to YouTube Music via LabelGrid:', error);
     res.status(500).json({ error: 'Failed to submit to YouTube Music' });
   }
 });
@@ -5201,7 +5201,7 @@ router.post('/catalog-export', requireAuth, async (req: Request, res: Response) 
     const payload = await buildMigrationPayload(artistName.trim(), user?.id);
     res.json(payload);
   } catch (error: unknown) {
-    logger.error('[Distribution] Catalog export failed:', error);
+    logger.warn('[Distribution] Catalog export failed:', error);
     res.status(500).json({ error: 'Catalog export failed' });
   }
 });

@@ -106,7 +106,7 @@ export async function flushFeatureEvents(): Promise<number> {
       String(FLUSH_BATCH_SIZE), String(PROCESSING_TTL_SECONDS)
     )) as string[];
   } catch (err) {
-    logger.error('[FeatureEventBuffer] Fetch Lua script failed:', err);
+    logger.warn('[FeatureEventBuffer] Fetch Lua script failed:', err);
     return 0;
   }
 
@@ -136,7 +136,7 @@ export async function flushFeatureEvents(): Promise<number> {
     return payloads.length;
 
   } catch (insertErr) {
-    logger.error(`[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`, insertErr);
+    logger.warn(`[FeatureEventBuffer] Insert failed for batch ${batchId}, restoring to buffer:`, insertErr);
     // Restore items to the front of the buffer (reverse order to preserve sequence)
     let restored = 0;
     for (let i = payloads.length - 1; i >= 0; i--) {
@@ -144,7 +144,7 @@ export async function flushFeatureEvents(): Promise<number> {
         await redis.lpush(BUFFER_KEY, JSON.stringify(payloads[i]));
         restored++;
       } catch (restoreErr) {
-        logger.error(`[FeatureEventBuffer] Lost event during restore (index ${i}):`, restoreErr);
+        logger.warn(`[FeatureEventBuffer] Lost event during restore (index ${i}):`, restoreErr);
       }
     }
     await redis.del(processingKey).catch(() => {});

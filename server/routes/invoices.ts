@@ -37,7 +37,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
     const userInvoices = await query;
     res.json({ invoices: userInvoices, pagination: { limit, offset } });
   } catch (error) {
-    logger.error('[Invoices] Failed to get invoices:', error);
+    logger.warn('[Invoices] Failed to get invoices:', error);
     res.status(500).json({ error: 'Failed to get invoices' });
   }
 });
@@ -62,7 +62,7 @@ router.get('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     
     res.json(invoice);
   } catch (error) {
-    logger.error('[Invoices] Failed to get invoice:', error);
+    logger.warn('[Invoices] Failed to get invoice:', error);
     res.status(500).json({ error: 'Failed to get invoice' });
   }
 });
@@ -107,7 +107,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
     logger.info('[Invoices] Invoice created:', { invoiceId: invoice.id, invoiceNumber });
     res.status(201).json(invoice);
   } catch (error) {
-    logger.error('[Invoices] Failed to create invoice:', error);
+    logger.warn('[Invoices] Failed to create invoice:', error);
     res.status(500).json({ error: 'Failed to create invoice' });
   }
 });
@@ -162,7 +162,7 @@ router.put('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     
     res.json(updated);
   } catch (error) {
-    logger.error('[Invoices] Failed to update invoice:', error);
+    logger.warn('[Invoices] Failed to update invoice:', error);
     res.status(500).json({ error: 'Failed to update invoice' });
   }
 });
@@ -190,7 +190,7 @@ router.post('/:invoiceId/send', requireAuth, async (req: AuthenticatedRequest, r
     logger.info('[Invoices] Invoice sent:', { invoiceId, invoiceNumber: invoice.invoiceNumber });
     res.json({ success: true, message: 'Invoice sent successfully' });
   } catch (error) {
-    logger.error('[Invoices] Failed to send invoice:', error);
+    logger.warn('[Invoices] Failed to send invoice:', error);
     res.status(500).json({ error: 'Failed to send invoice' });
   }
 });
@@ -224,7 +224,7 @@ router.post('/:invoiceId/mark-paid', requireAuth, async (req: AuthenticatedReque
     logger.info('[Invoices] Invoice marked paid:', { invoiceId, invoiceNumber: invoice.invoiceNumber });
     res.json({ success: true, message: 'Invoice marked as paid' });
   } catch (error) {
-    logger.error('[Invoices] Failed to mark invoice paid:', error);
+    logger.warn('[Invoices] Failed to mark invoice paid:', error);
     res.status(500).json({ error: 'Failed to mark invoice as paid' });
   }
 });
@@ -287,7 +287,7 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
     res.setHeader('Content-Disposition', `attachment; filename="${invoice.invoiceNumber}.pdf"`);
     res.send(Buffer.from(pdfData, 'base64'));
   } catch (error) {
-    logger.error('[Invoices] Failed to generate PDF:', error);
+    logger.warn('[Invoices] Failed to generate PDF:', error);
     res.status(500).json({ error: 'Failed to generate PDF' });
   }
 });
@@ -332,7 +332,7 @@ router.post('/generate-from-order/:orderId', requireAuth, async (req: Authentica
     logger.info('[Invoices] Invoice generated from order:', { invoiceId: invoice.id, orderId });
     res.status(201).json(invoice);
   } catch (error) {
-    logger.error('[Invoices] Failed to generate invoice from order:', error);
+    logger.warn('[Invoices] Failed to generate invoice from order:', error);
     res.status(500).json({ error: 'Failed to generate invoice' });
   }
 });
@@ -401,7 +401,7 @@ router.post('/bulk-generate', requireAuth, async (req: AuthenticatedRequest, res
       invoiceIds: generatedInvoices,
     });
   } catch (error) {
-    logger.error('[Invoices] Failed to bulk generate invoices:', error);
+    logger.warn('[Invoices] Failed to bulk generate invoices:', error);
     res.status(500).json({ error: 'Failed to bulk generate invoices' });
   }
 });
@@ -435,7 +435,7 @@ router.get('/summary/stats', requireAuth, async (req: AuthenticatedRequest, res:
       totalPending: Number(stats.total_pending_cents) / 100 || 0,
     });
   } catch (error) {
-    logger.error('[Invoices] Failed to get invoice stats:', error);
+    logger.warn('[Invoices] Failed to get invoice stats:', error);
     res.status(500).json({ error: 'Failed to get invoice statistics' });
   }
 });

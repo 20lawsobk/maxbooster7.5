@@ -99,7 +99,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(preferences);
   } catch (error) {
-    logger.error('Error fetching autopilot preferences:', error);
+    logger.warn('Error fetching autopilot preferences:', error);
     res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });
@@ -136,7 +136,7 @@ router.post('/', async (req: Request, res: Response) => {
     logger.info(`Autopilot preferences saved for user ${req.user.id}`);
     res.json(result);
   } catch (error: any) {
-    logger.error({ err: error, message: error?.message, code: error?.code }, 'Error saving autopilot preferences');
+    logger.warn({ err: error, message: error?.message, code: error?.code }, 'Error saving autopilot preferences');
     res.status(500).json({ error: 'Failed to save preferences', detail: error?.message });
   }
 });
@@ -172,7 +172,7 @@ router.patch('/', async (req: Request, res: Response) => {
     logger.info(`Autopilot preferences updated for user ${req.user.id}`);
     res.json(result);
   } catch (error: any) {
-    logger.error({ err: error, message: error?.message, code: error?.code }, 'Error updating autopilot preferences');
+    logger.warn({ err: error, message: error?.message, code: error?.code }, 'Error updating autopilot preferences');
     res.status(500).json({ error: 'Failed to update preferences', detail: error?.message });
   }
 });

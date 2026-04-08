@@ -189,7 +189,7 @@ class UserPreferencesService {
 
       return preferences;
     } catch (error) {
-      logger.error('Error getting user preferences:', error);
+      logger.warn('Error getting user preferences:', error);
       return this.getDefaultPreferences('solo', 'emerging');
     }
   }
@@ -210,7 +210,7 @@ class UserPreferencesService {
 
       return updated;
     } catch (error) {
-      logger.error('Error updating user preferences:', error);
+      logger.warn('Error updating user preferences:', error);
       throw error;
     }
   }
@@ -269,7 +269,7 @@ class UserPreferencesService {
       await redis.lTrim(key, 0, 99);
       await redis.expire(key, 86400 * 30);
     } catch (error) {
-      logger.error('Error recording behavior event:', error);
+      logger.warn('Error recording behavior event:', error);
     }
   }
 
@@ -331,7 +331,7 @@ class UserPreferencesService {
 
       return recommendations;
     } catch (error) {
-      logger.error('Error learning from behavior:', error);
+      logger.warn('Error learning from behavior:', error);
       return [];
     }
   }

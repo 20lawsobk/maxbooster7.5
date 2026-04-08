@@ -52,8 +52,8 @@ async function runQuickSimulation() {
 
 async function runPeriodSimulation(periodName: string) {
   if (!SIMULATION_PERIODS[periodName as keyof typeof SIMULATION_PERIODS]) {
-    logger.error(`Invalid period: ${periodName}`);
-    logger.error(`Valid periods: ${Object.keys(SIMULATION_PERIODS).join(', ')}`);
+    logger.warn(`Invalid period: ${periodName}`);
+    logger.warn(`Valid periods: ${Object.keys(SIMULATION_PERIODS).join(', ')}`);
     process.exit(1);
   }
 
@@ -367,8 +367,8 @@ async function main() {
       case 'period':
         const period = args[1];
         if (!period) {
-          logger.error('Please specify a period. Example: npm run simulate:period 1_year');
-          logger.error(`Available periods: ${Object.keys(SIMULATION_PERIODS).join(', ')}`);
+          logger.warn('Please specify a period. Example: npm run simulate:period 1_year');
+          logger.warn(`Available periods: ${Object.keys(SIMULATION_PERIODS).join(', ')}`);
           process.exit(1);
         }
         success = await runPeriodSimulation(period);
@@ -378,16 +378,16 @@ async function main() {
         if (SIMULATION_PERIODS[command as keyof typeof SIMULATION_PERIODS]) {
           success = await runPeriodSimulation(command);
         } else {
-          logger.error(`Unknown command: ${command}`);
-          logger.error('Usage:');
-          logger.error('  quick     - Run 1-month simulation');
-          logger.error('  full      - Run full 50-year lifecycle');
-          logger.error('  period X  - Run specific period (1_month, 1_year, etc.)');
+          logger.warn(`Unknown command: ${command}`);
+          logger.warn('Usage:');
+          logger.warn('  quick     - Run 1-month simulation');
+          logger.warn('  full      - Run full 50-year lifecycle');
+          logger.warn('  period X  - Run specific period (1_month, 1_year, etc.)');
           process.exit(1);
         }
     }
   } catch (error: any) {
-    logger.error('Simulation failed:', error);
+    logger.warn('Simulation failed:', error);
     process.exit(1);
   }
 

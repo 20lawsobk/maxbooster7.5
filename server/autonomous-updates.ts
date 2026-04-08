@@ -354,7 +354,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
           result[`${module.name}Error`] = e?.message || `${module.name} failed`;
           // Only log errors if not in silent mode
           if (!this.config.silentMode) {
-            logger.error(`${module.name} error:`, e);
+            logger.warn(`${module.name} error:`, e);
           }
         }
       }

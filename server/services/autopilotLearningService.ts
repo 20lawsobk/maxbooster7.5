@@ -118,7 +118,7 @@ class AutopilotLearningService {
 
       return record.id;
     } catch (error) {
-      logger.error('Failed to record performance:', error);
+      logger.warn('Failed to record performance:', error);
       throw error;
     }
   }
@@ -170,7 +170,7 @@ class AutopilotLearningService {
           avgEngagement: parseFloat(String(r.avgEngagement)) || 0,
         }));
     } catch (error) {
-      logger.error('Failed to get optimal posting times:', error);
+      logger.warn('Failed to get optimal posting times:', error);
       return [];
     }
   }
@@ -211,7 +211,7 @@ class AutopilotLearningService {
           count: Number(r.count),
         }));
     } catch (error) {
-      logger.error('Failed to get top performing content types:', error);
+      logger.warn('Failed to get top performing content types:', error);
       return [];
     }
   }
@@ -264,7 +264,7 @@ class AutopilotLearningService {
 
       return weights;
     } catch (error) {
-      logger.error('Failed to get content pattern weights:', error);
+      logger.warn('Failed to get content pattern weights:', error);
       return {};
     }
   }
@@ -341,7 +341,7 @@ class AutopilotLearningService {
 
       return recommendations.sort((a, b) => a.priority - b.priority);
     } catch (error) {
-      logger.error('Failed to get recommendations:', error);
+      logger.warn('Failed to get recommendations:', error);
       return [];
     }
   }
@@ -441,7 +441,7 @@ class AutopilotLearningService {
 
       return patterns;
     } catch (error) {
-      logger.error('Failed to detect patterns:', error);
+      logger.warn('Failed to detect patterns:', error);
       return [];
     }
   }
@@ -476,7 +476,7 @@ class AutopilotLearningService {
         total: Number(countResult[0]?.count || 0),
       };
     } catch (error) {
-      logger.error('Failed to get performance history:', error);
+      logger.warn('Failed to get performance history:', error);
       return { data: [], total: 0 };
     }
   }
@@ -496,7 +496,7 @@ class AutopilotLearningService {
         .orderBy(desc(autopilotInsights.priority), desc(autopilotInsights.confidence))
         .limit(50);
     } catch (error) {
-      logger.error('Failed to get active insights:', error);
+      logger.warn('Failed to get active insights:', error);
       return [];
     }
   }
@@ -556,7 +556,7 @@ class AutopilotLearningService {
 
       return insights;
     } catch (error) {
-      logger.error('Failed to get learning insights:', error);
+      logger.warn('Failed to get learning insights:', error);
       return [];
     }
   }
@@ -593,7 +593,7 @@ class AutopilotLearningService {
         postCount: Number(r.postCount),
       }));
     } catch (error) {
-      logger.error('Failed to get platform statistics:', error);
+      logger.warn('Failed to get platform statistics:', error);
       return [];
     }
   }
@@ -629,7 +629,7 @@ class AutopilotLearningService {
         );
       }
     } catch (error) {
-      logger.error('Failed to check insights update:', error);
+      logger.warn('Failed to check insights update:', error);
     }
   }
 
@@ -750,7 +750,7 @@ class AutopilotLearningService {
         logger.info(`Generated ${insightsToInsert.length} insights for user ${userId}`);
       }
     } catch (error) {
-      logger.error('Failed to generate insights:', error);
+      logger.warn('Failed to generate insights:', error);
     }
   }
 

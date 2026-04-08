@@ -60,7 +60,7 @@ export async function submitToProvider(
       status: 'processing',
       logs: `${dispatch.logs}\nProcessing started at ${new Date().toISOString()}`,
     }).catch((err) => {
-      logger.error(`Failed to update dispatch ${dispatch.id} status:`, err);
+      logger.warn(`Failed to update dispatch ${dispatch.id} status:`, err);
     });
   }, 1000);
 

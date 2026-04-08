@@ -114,7 +114,7 @@ export class LabelGridService {
       this.authToken = response.data.token;
       logger.info('[LABELGRID] Authentication successful via API key/secret');
     } catch (error: any) {
-      logger.error('[LABELGRID] Authentication failed:', error.response?.data || error.message);
+      logger.warn('[LABELGRID] Authentication failed:', error.response?.data || error.message);
       throw new Error('Failed to authenticate with LabelGrid');
     }
   }
@@ -182,7 +182,7 @@ export class LabelGridService {
       logger.info(`[LABELGRID] Release ${release.title} submitted with ID: ${labelGridId}`);
       return labelGridId;
     } catch (error: unknown) {
-      logger.error('[LABELGRID] Failed to create release:', error.response?.data || error.message);
+      logger.warn('[LABELGRID] Failed to create release:', error.response?.data || error.message);
       throw new Error(`Distribution failed: ${error.response?.data?.message || error.message}`);
     }
   }
@@ -246,7 +246,7 @@ export class LabelGridService {
 
       return statuses;
     } catch (error: unknown) {
-      logger.error('[LABELGRID] Failed to get status:', error.response?.data || error.message);
+      logger.warn('[LABELGRID] Failed to get status:', error.response?.data || error.message);
       throw new Error('Failed to retrieve distribution status');
     }
   }
@@ -266,7 +266,7 @@ export class LabelGridService {
 
       logger.info(`[LABELGRID] Release ${labelGridId} updated successfully`);
     } catch (error: unknown) {
-      logger.error('[LABELGRID] Failed to update release:', error.response?.data || error.message);
+      logger.warn('[LABELGRID] Failed to update release:', error.response?.data || error.message);
       throw new Error('Failed to update release');
     }
   }
@@ -289,7 +289,7 @@ export class LabelGridService {
 
       logger.info(`[LABELGRID] Takedown requested for release ${labelGridId}`);
     } catch (error: unknown) {
-      logger.error(
+      logger.warn(
         '[LABELGRID] Failed to request takedown:',
         error.response?.data || error.message
       );
@@ -316,7 +316,7 @@ export class LabelGridService {
 
       return response.data;
     } catch (error: unknown) {
-      logger.error('[LABELGRID] Failed to get earnings:', error.response?.data || error.message);
+      logger.warn('[LABELGRID] Failed to get earnings:', error.response?.data || error.message);
       throw new Error('Failed to retrieve earnings report');
     }
   }
@@ -447,7 +447,7 @@ export class LabelGridService {
         break;
 
       case 'release.failed':
-        logger.error(`[LABELGRID] Release ${releaseId} failed on ${data.platform}: ${data.error}`);
+        logger.warn(`[LABELGRID] Release ${releaseId} failed on ${data.platform}: ${data.error}`);
         await this.updateReleaseStatus(releaseId, data.platform, 'failed', data.error);
         break;
 

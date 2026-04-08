@@ -252,7 +252,7 @@ export async function createSessionStore(): Promise<session.Store> {
     return new PdimSessionStore(redisStore);
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Failed to create PDIM session store:', errMsg);
+    logger.warn('❌ Failed to create PDIM session store:', errMsg);
     throw new Error(`Session store initialization failed: ${errMsg}. Sessions cannot be stored safely.`);
   }
 }

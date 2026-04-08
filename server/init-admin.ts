@@ -134,7 +134,7 @@ export async function initializeAdmin() {
     
     return admin;
   } catch (error: unknown) {
-    logger.error('Error during admin initialization:', error);
+    logger.warn('Error during admin initialization:', error);
     throw error;
   }
 }
@@ -491,7 +491,7 @@ async function initializeAdminResources(adminId: string, adminEmail: string, isN
 
     logger.info('✅ Admin resources verified/initialized');
   } catch (error) {
-    logger.error('Error initializing admin resources:', error);
+    logger.warn('Error initializing admin resources:', error);
     // Don't throw - admin account is still functional without these
   }
 }
@@ -1466,7 +1466,7 @@ export async function seedDSPProviders() {
     
     logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
   } catch (error: any) {
-    logger.error('Failed to seed DSP providers:', error.message);
+    logger.warn('Failed to seed DSP providers:', error.message);
   }
 }
 

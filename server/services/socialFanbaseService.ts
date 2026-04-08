@@ -131,7 +131,7 @@ class SocialFanbaseService {
 
       return contents;
     } catch (error) {
-      logger.error('Error fetching contents', { userId, date, error });
+      logger.warn('Error fetching contents', { userId, date, error });
       return [];
     }
   }
@@ -160,7 +160,7 @@ class SocialFanbaseService {
       logger.info('Saved music impact metric', { userId, contentId, totalScore: impactData.totalScore });
       return inserted;
     } catch (error) {
-      logger.error('Error saving music impact', { userId, contentId, error });
+      logger.warn('Error saving music impact', { userId, contentId, error });
       return null;
     }
   }
@@ -247,7 +247,7 @@ class SocialFanbaseService {
         return inserted;
       }
     } catch (error) {
-      logger.error('Error saving pattern aggregate', { userId, pattern, error });
+      logger.warn('Error saving pattern aggregate', { userId, pattern, error });
       return null;
     }
   }
@@ -259,7 +259,7 @@ class SocialFanbaseService {
       }
       logger.info('Updated fan segments', { userId, segmentCount: events.length });
     } catch (error) {
-      logger.error('Error updating fan segments', { userId, error });
+      logger.warn('Error updating fan segments', { userId, error });
     }
   }
 
@@ -293,7 +293,7 @@ class SocialFanbaseService {
 
       return topPatterns;
     } catch (error) {
-      logger.error('Error deriving patterns', { userId, error });
+      logger.warn('Error deriving patterns', { userId, error });
       return [];
     }
   }
@@ -328,7 +328,7 @@ class SocialFanbaseService {
 
       return candidates;
     } catch (error) {
-      logger.error('Error generating content candidates', { userId, error });
+      logger.warn('Error generating content candidates', { userId, error });
       return [];
     }
   }
@@ -385,7 +385,7 @@ class SocialFanbaseService {
 
       return 0;
     } catch (error) {
-      logger.error('Error predicting expected impact', { userId, candidateId: candidate.id, error });
+      logger.warn('Error predicting expected impact', { userId, candidateId: candidate.id, error });
       return candidate.patternSource?.avgImpact || 0;
     }
   }
@@ -448,7 +448,7 @@ class SocialFanbaseService {
 
       return schedule;
     } catch (error) {
-      logger.error('Error building daily schedule', { userId, error });
+      logger.warn('Error building daily schedule', { userId, error });
       return {
         userId,
         date: new Date(),
@@ -537,7 +537,7 @@ class SocialFanbaseService {
 
       return schedule;
     } catch (error) {
-      logger.error('Error in daily social loop', { userId, date, error });
+      logger.warn('Error in daily social loop', { userId, date, error });
       return {
         userId,
         date,
@@ -583,7 +583,7 @@ class SocialFanbaseService {
 
       logger.info('Compressed old content to long-term memory', { userId, contentCount: oldContents.length });
     } catch (error) {
-      logger.error('Error compressing to long-term memory', { userId, error });
+      logger.warn('Error compressing to long-term memory', { userId, error });
     }
   }
 
@@ -613,7 +613,7 @@ class SocialFanbaseService {
 
       logger.info('Applied time decay to patterns', { userId, patternCount: patterns.length });
     } catch (error) {
-      logger.error('Error applying time decay', { userId, error });
+      logger.warn('Error applying time decay', { userId, error });
     }
   }
 
@@ -638,7 +638,7 @@ class SocialFanbaseService {
       logger.info('Created fan segment', { userId, segmentId: inserted.id, name });
       return inserted;
     } catch (error) {
-      logger.error('Error creating fan segment', { userId, name, error });
+      logger.warn('Error creating fan segment', { userId, name, error });
       return null;
     }
   }
@@ -671,7 +671,7 @@ class SocialFanbaseService {
       logger.info('Updated segment behavior', { segmentId });
       return updated;
     } catch (error) {
-      logger.error('Error updating segment behavior', { segmentId, error });
+      logger.warn('Error updating segment behavior', { segmentId, error });
       return null;
     }
   }
@@ -711,7 +711,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger.error('Error getting preferred patterns', { segmentId, error });
+      logger.warn('Error getting preferred patterns', { segmentId, error });
       return [];
     }
   }
@@ -726,7 +726,7 @@ class SocialFanbaseService {
 
       return segments;
     } catch (error) {
-      logger.error('Error fetching fan segments', { userId, error });
+      logger.warn('Error fetching fan segments', { userId, error });
       return [];
     }
   }
@@ -741,7 +741,7 @@ class SocialFanbaseService {
 
       return patterns;
     } catch (error) {
-      logger.error('Error fetching pattern aggregates', { userId, error });
+      logger.warn('Error fetching pattern aggregates', { userId, error });
       return [];
     }
   }
@@ -757,7 +757,7 @@ class SocialFanbaseService {
 
       return metrics;
     } catch (error) {
-      logger.error('Error fetching music impact metrics', { userId, error });
+      logger.warn('Error fetching music impact metrics', { userId, error });
       return [];
     }
   }
@@ -797,7 +797,7 @@ class SocialFanbaseService {
       logger.info('Created social autopilot content', { userId, contentId: inserted.id });
       return inserted;
     } catch (error) {
-      logger.error('Error creating content', { userId, error });
+      logger.warn('Error creating content', { userId, error });
       return null;
     }
   }
@@ -819,7 +819,7 @@ class SocialFanbaseService {
       logger.info('Updated content performance', { contentId });
       return updated;
     } catch (error) {
-      logger.error('Error updating content performance', { contentId, error });
+      logger.warn('Error updating content performance', { contentId, error });
       return null;
     }
   }
@@ -830,7 +830,7 @@ class SocialFanbaseService {
       logger.info('Deleted fan segment', { segmentId });
       return true;
     } catch (error) {
-      logger.error('Error deleting segment', { segmentId, error });
+      logger.warn('Error deleting segment', { segmentId, error });
       return false;
     }
   }
@@ -854,7 +854,7 @@ class SocialFanbaseService {
 
       return sorted.map((s) => s.content);
     } catch (error) {
-      logger.error('Error fetching top performing content', { userId, error });
+      logger.warn('Error fetching top performing content', { userId, error });
       return [];
     }
   }

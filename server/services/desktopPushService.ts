@@ -112,7 +112,7 @@ class DesktopPushService {
       this.initialized = true;
       logger.info('🖥️ Desktop Push Service initialized (VAPID / Web Push)');
     } catch (error) {
-      logger.error('🖥️ Desktop Push Service: VAPID init error:', error);
+      logger.warn('🖥️ Desktop Push Service: VAPID init error:', error);
     }
   }
 
@@ -184,7 +184,7 @@ class DesktopPushService {
             .where(eq(pushSubscriptions.endpoint, sub.endpoint))
             .catch(() => {});
         } else {
-          logger.error(`🖥️ Desktop push failed for sub ${sub.id}:`, error.statusCode || error.message);
+          logger.warn(`🖥️ Desktop push failed for sub ${sub.id}:`, error.statusCode || error.message);
         }
       }
     }

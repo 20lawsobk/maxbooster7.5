@@ -212,7 +212,7 @@ class AutoPostGenerator {
         translations,
       };
     } catch (error) {
-      logger.error('Enhanced content generation failed, falling back:', error);
+      logger.warn('Enhanced content generation failed, falling back:', error);
       return this.generateSocialContent(userId, request);
     }
   }

@@ -342,7 +342,7 @@ export class AutopilotEngine extends EventEmitter {
       job.status = 'completed';
       this.emit('jobCompleted', job);
     } catch (error: unknown) {
-      logger.error(`Job ${job.id} failed:`, error);
+      logger.warn(`Job ${job.id} failed:`, error);
 
       if (job.retries < job.maxRetries) {
         job.retries++;

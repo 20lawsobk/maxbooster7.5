@@ -454,7 +454,7 @@ export class DMCAService {
       
       return uniqueNotices;
     } catch (error) {
-      logger.error('Error fetching notices by user:', error);
+      logger.warn('Error fetching notices by user:', error);
       return [];
     }
   }
@@ -504,7 +504,7 @@ export class DMCAService {
         }
       }
     } catch (error) {
-      logger.error('Error finding content owner:', error);
+      logger.warn('Error finding content owner:', error);
     }
     return null;
   }
@@ -540,7 +540,7 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger.error('Error notifying content owner:', error);
+      logger.warn('Error notifying content owner:', error);
     }
   }
 
@@ -562,7 +562,7 @@ export class DMCAService {
         `,
       });
     } catch (error) {
-      logger.error('Error notifying original claimant:', error);
+      logger.warn('Error notifying original claimant:', error);
     }
   }
 
@@ -594,7 +594,7 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger.error('Error sending final warning:', error);
+      logger.warn('Error sending final warning:', error);
     }
   }
 
@@ -620,7 +620,7 @@ export class DMCAService {
         });
       }
     } catch (error) {
-      logger.error('Error notifying repeat infringer:', error);
+      logger.warn('Error notifying repeat infringer:', error);
     }
   }
 }

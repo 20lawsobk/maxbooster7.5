@@ -43,7 +43,7 @@ class WebPushService {
       this.initialized = true;
       logger.info('Web Push service initialized with VAPID keys');
     } catch (error) {
-      logger.error('Failed to initialize Web Push:', error);
+      logger.warn('Failed to initialize Web Push:', error);
     }
   }
 
@@ -90,7 +90,7 @@ class WebPushService {
         logger.info(`Push subscription saved for user ${userId}`);
       }
     } catch (error) {
-      logger.error('Failed to save push subscription:', error);
+      logger.warn('Failed to save push subscription:', error);
       throw error;
     }
   }
@@ -102,7 +102,7 @@ class WebPushService {
         .where(eq(pushSubscriptions.endpoint, endpoint));
       logger.info('Push subscription removed');
     } catch (error) {
-      logger.error('Failed to remove push subscription:', error);
+      logger.warn('Failed to remove push subscription:', error);
       throw error;
     }
   }
@@ -114,7 +114,7 @@ class WebPushService {
         .where(eq(pushSubscriptions.userId, userId));
       logger.info(`All push subscriptions removed for user ${userId}`);
     } catch (error) {
-      logger.error('Failed to remove user push subscriptions:', error);
+      logger.warn('Failed to remove user push subscriptions:', error);
       throw error;
     }
   }
@@ -126,7 +126,7 @@ class WebPushService {
         .from(pushSubscriptions)
         .where(eq(pushSubscriptions.userId, userId));
     } catch (error) {
-      logger.error('Failed to get user push subscriptions:', error);
+      logger.warn('Failed to get user push subscriptions:', error);
       return [];
     }
   }
@@ -157,7 +157,7 @@ class WebPushService {
           logger.info(`Removing expired push subscription: ${sub.endpoint.substring(0, 50)}...`);
           await this.removeSubscription(sub.endpoint).catch(() => {});
         } else {
-          logger.error(`Push notification failed for subscription ${sub.id}:`, error.statusCode || error.message);
+          logger.warn(`Push notification failed for subscription ${sub.id}:`, error.statusCode || error.message);
         }
       }
     }

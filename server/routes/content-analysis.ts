@@ -78,7 +78,7 @@ const requirePremium = async (req: any, res: any, next: any) => {
       upgradeUrl: '/pricing',
     });
   } catch (error) {
-    logger.error('Premium check error:', error);
+    logger.warn('Premium check error:', error);
     res.status(500).json({ error: 'Failed to verify subscription' });
   }
 };
@@ -116,7 +116,7 @@ router.post('/image', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Image analysis error:', error);
+    logger.warn('Image analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to analyze image',
@@ -156,7 +156,7 @@ router.post('/video', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Video analysis error:', error);
+    logger.warn('Video analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to analyze video',
@@ -196,7 +196,7 @@ router.post('/audio', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Audio analysis error:', error);
+    logger.warn('Audio analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to analyze audio',
@@ -226,7 +226,7 @@ router.post('/text', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Text analysis error:', error);
+    logger.warn('Text analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to analyze text',
@@ -267,7 +267,7 @@ router.post('/website', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Website analysis error:', error);
+    logger.warn('Website analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to analyze website',
@@ -318,7 +318,7 @@ router.post('/batch', async (req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Batch analysis error:', error);
+    logger.warn('Batch analysis error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to perform batch analysis',
@@ -395,7 +395,7 @@ router.get('/:type/:id', requireAuth, async (req, res) => {
       });
     }
   } catch (error) {
-    logger.error('Content analysis retrieval error:', error);
+    logger.warn('Content analysis retrieval error:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to retrieve content analysis',

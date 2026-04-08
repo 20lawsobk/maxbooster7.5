@@ -665,7 +665,7 @@ class CareerCoachService {
       logger.info(`Generated ${inserted.length} recommendations for user ${userId}`);
       return inserted;
     } catch (error) {
-      logger.error(`Error generating recommendations for user ${userId}:`, error);
+      logger.warn(`Error generating recommendations for user ${userId}:`, error);
       throw error;
     }
   }
@@ -718,7 +718,7 @@ class CareerCoachService {
       logger.info(`Created SMART goal for user ${userId}: ${goal.title}`);
       return goal;
     } catch (error) {
-      logger.error(`Error creating SMART goal for user ${userId}:`, error);
+      logger.warn(`Error creating SMART goal for user ${userId}:`, error);
       throw error;
     }
   }
@@ -738,7 +738,7 @@ class CareerCoachService {
 
       return !!updated;
     } catch (error) {
-      logger.error(`Error dismissing recommendation ${recommendationId}:`, error);
+      logger.warn(`Error dismissing recommendation ${recommendationId}:`, error);
       throw error;
     }
   }
@@ -758,7 +758,7 @@ class CareerCoachService {
 
       return !!updated;
     } catch (error) {
-      logger.error(`Error completing recommendation ${recommendationId}:`, error);
+      logger.warn(`Error completing recommendation ${recommendationId}:`, error);
       throw error;
     }
   }

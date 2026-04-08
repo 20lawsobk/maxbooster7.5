@@ -109,7 +109,7 @@ router.post('/validate', requireAuth, async (req, res) => {
       warnings,
     });
   } catch (error: unknown) {
-    logger.error('Bulk validation error:', error);
+    logger.warn('Bulk validation error:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
@@ -261,7 +261,7 @@ router.post('/schedule', requireAuth, async (req, res) => {
       message: 'Batch scheduled successfully',
     });
   } catch (error: unknown) {
-    logger.error('Bulk schedule error:', error);
+    logger.warn('Bulk schedule error:', error);
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
@@ -328,7 +328,7 @@ router.get('/status/:batchId', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.error('Batch status error:', error);
+    logger.warn('Batch status error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -350,7 +350,7 @@ router.delete('/:batchId', requireAuth, async (req, res) => {
 
     return res.json({ success: true, message: 'Batch cancelled successfully' });
   } catch (error: unknown) {
-    logger.error('Cancel batch error:', error);
+    logger.warn('Cancel batch error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -384,7 +384,7 @@ router.get('/batches', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.error('Get batches error:', error);
+    logger.warn('Get batches error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -398,7 +398,7 @@ router.get('/status', requireAuth, async (req, res) => {
       processingPosts: queueStats?.active ?? 0,
     });
   } catch (error: unknown) {
-    logger.error('Get bulk status error:', error);
+    logger.warn('Get bulk status error:', error);
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -240,7 +240,7 @@ export function globalErrorHandler(
   });
 
   if (statusCode >= 500 && !isOperational) {
-    logger.error('CRITICAL ERROR:', {
+    logger.warn('CRITICAL ERROR:', {
       timestamp: new Date().toISOString(),
       method: req.method,
       url: req.originalUrl,
@@ -253,7 +253,7 @@ export function globalErrorHandler(
   }
 
   if (res.headersSent) {
-    logger.error('[errorHandler] Headers already sent, cannot send error response', {
+    logger.warn('[errorHandler] Headers already sent, cannot send error response', {
       method: req.method,
       url: req.originalUrl,
       statusCode,
@@ -299,7 +299,7 @@ export function handleUnhandledRejection(server?: Server) {
       return;
     }
 
-    logger.error('UNHANDLED PROMISE REJECTION:', {
+    logger.warn('UNHANDLED PROMISE REJECTION:', {
       reason: info.message,
       stack: info.stack,
       timestamp: new Date().toISOString(),
@@ -335,7 +335,7 @@ export function handleUncaughtException(server?: Server) {
       logger.warn(`Non-fatal stream error (${code}): ${error.message}`);
       return;
     }
-    logger.error('UNCAUGHT EXCEPTION:', {
+    logger.warn('UNCAUGHT EXCEPTION:', {
       error: error.message,
       stack: error.stack,
       timestamp: new Date().toISOString(),
@@ -366,7 +366,7 @@ function gracefulShutdown(server: Server | undefined, reason: string) {
   if (server && typeof server.close === 'function') {
     server.close((err?: Error) => {
       if (err) {
-        logger.error('Error during server shutdown:', { error: err.message });
+        logger.warn('Error during server shutdown:', { error: err.message });
       } else {
         logger.info('HTTP server closed');
       }

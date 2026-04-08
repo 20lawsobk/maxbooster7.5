@@ -15,7 +15,7 @@ router.get('/templates', async (_req: Request, res: Response) => {
   try {
     res.json({ templates: WORKFLOW_TEMPLATES });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error fetching templates:', err);
+    logger.warn('[MusicWorkflow] Error fetching templates:', err);
     res.status(500).json({ error: 'Failed to fetch templates' });
   }
 });
@@ -38,7 +38,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ automations: combined });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error fetching user automations:', err);
+    logger.warn('[MusicWorkflow] Error fetching user automations:', err);
     res.status(500).json({ error: 'Failed to fetch automations' });
   }
 });
@@ -58,7 +58,7 @@ router.post('/:templateId/enable', requireAuth, async (req: Request, res: Respon
     await musicWorkflowAutomationService.enableAutomation(userId, templateId, config);
     res.json({ success: true, templateId, enabled: true });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error enabling automation:', err);
+    logger.warn('[MusicWorkflow] Error enabling automation:', err);
     res.status(500).json({ error: 'Failed to enable automation' });
   }
 });
@@ -77,7 +77,7 @@ router.post('/:templateId/disable', requireAuth, async (req: Request, res: Respo
     await musicWorkflowAutomationService.disableAutomation(userId, templateId);
     res.json({ success: true, templateId, enabled: false });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error disabling automation:', err);
+    logger.warn('[MusicWorkflow] Error disabling automation:', err);
     res.status(500).json({ error: 'Failed to disable automation' });
   }
 });
@@ -101,7 +101,7 @@ router.put('/:templateId/config', requireAuth, async (req: Request, res: Respons
     await musicWorkflowAutomationService.updateConfig(userId, templateId, config);
     res.json({ success: true, templateId, config });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error updating config:', err);
+    logger.warn('[MusicWorkflow] Error updating config:', err);
     res.status(500).json({ error: 'Failed to update config' });
   }
 });
@@ -124,7 +124,7 @@ router.post('/trigger', requireAuth, async (req: Request, res: Response) => {
     await musicWorkflowAutomationService.triggerEvent(eventType, { userId, ...data });
     res.json({ success: true, eventType, message: 'Event triggered. Check your logs for execution status.' });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error triggering event:', err);
+    logger.warn('[MusicWorkflow] Error triggering event:', err);
     res.status(500).json({ error: 'Failed to trigger event' });
   }
 });
@@ -136,7 +136,7 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
     const stats = await musicWorkflowAutomationService.getStats(userId);
     res.json(stats);
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error fetching stats:', err);
+    logger.warn('[MusicWorkflow] Error fetching stats:', err);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -151,7 +151,7 @@ router.get('/logs', requireAuth, async (req: Request, res: Response) => {
     const logs = await musicWorkflowAutomationService.getExecutionLogs(userId, templateId, limit);
     res.json({ logs });
   } catch (err: any) {
-    logger.error('[MusicWorkflow] Error fetching logs:', err);
+    logger.warn('[MusicWorkflow] Error fetching logs:', err);
     res.status(500).json({ error: 'Failed to fetch logs' });
   }
 });

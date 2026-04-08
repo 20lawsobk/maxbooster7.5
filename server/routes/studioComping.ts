@@ -114,7 +114,7 @@ router.post('/projects/:projectId/comping/groups', requireAuth, async (req, res)
 
     res.status(201).json(takeGroup);
   } catch (error: unknown) {
-    logger.error('Error creating take group:', error);
+    logger.warn('Error creating take group:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -134,7 +134,7 @@ router.get('/projects/:projectId/comping/groups', requireAuth, async (req, res) 
     const takeGroups = await compingService.getProjectTakeGroups(projectId);
     res.json({ takeGroups });
   } catch (error: unknown) {
-    logger.error('Error fetching take groups:', error);
+    logger.warn('Error fetching take groups:', error);
     res.status(500).json({ error: 'Failed to fetch take groups' });
   }
 });
@@ -155,7 +155,7 @@ router.get('/projects/:projectId/comping/groups/:groupId', requireAuth, async (r
 
     res.json(takeGroup);
   } catch (error: unknown) {
-    logger.error('Error fetching take group:', error);
+    logger.warn('Error fetching take group:', error);
     res.status(500).json({ error: 'Failed to fetch take group' });
   }
 });
@@ -174,7 +174,7 @@ router.put('/projects/:projectId/comping/groups/:groupId', requireAuth, async (r
 
     res.json(takeGroup);
   } catch (error: unknown) {
-    logger.error('Error updating take group:', error);
+    logger.warn('Error updating take group:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -194,7 +194,7 @@ router.delete('/projects/:projectId/comping/groups/:groupId', requireAuth, async
     await compingService.deleteTakeGroup(groupId);
     res.status(204).send();
   } catch (error: unknown) {
-    logger.error('Error deleting take group:', error);
+    logger.warn('Error deleting take group:', error);
     res.status(500).json({ error: 'Failed to delete take group' });
   }
 });
@@ -211,7 +211,7 @@ router.post('/projects/:projectId/comping/groups/:groupId/duplicate', requireAut
     const newGroup = await compingService.duplicateTakeGroup(groupId);
     res.status(201).json(newGroup);
   } catch (error: unknown) {
-    logger.error('Error duplicating take group:', error);
+    logger.warn('Error duplicating take group:', error);
     res.status(500).json({ error: 'Failed to duplicate take group' });
   }
 });
@@ -230,7 +230,7 @@ router.post('/projects/:projectId/comping/lanes', requireAuth, async (req, res) 
 
     res.status(201).json(takeLane);
   } catch (error: unknown) {
-    logger.error('Error creating take lane:', error);
+    logger.warn('Error creating take lane:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -250,7 +250,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/lanes', requireAuth, as
     const lanes = await compingService.getGroupLanes(groupId);
     res.json({ lanes });
   } catch (error: unknown) {
-    logger.error('Error fetching take lanes:', error);
+    logger.warn('Error fetching take lanes:', error);
     res.status(500).json({ error: 'Failed to fetch take lanes' });
   }
 });
@@ -269,7 +269,7 @@ router.put('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (req
 
     res.json(lane);
   } catch (error: unknown) {
-    logger.error('Error updating take lane:', error);
+    logger.warn('Error updating take lane:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -289,7 +289,7 @@ router.delete('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (
     await compingService.deleteTakeLane(laneId);
     res.status(204).send();
   } catch (error: unknown) {
-    logger.error('Error deleting take lane:', error);
+    logger.warn('Error deleting take lane:', error);
     res.status(500).json({ error: 'Failed to delete take lane' });
   }
 });
@@ -308,7 +308,7 @@ router.put('/projects/:projectId/comping/groups/:groupId/lanes/reorder', require
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error reordering lanes:', error);
+    logger.warn('Error reordering lanes:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -330,7 +330,7 @@ router.post('/projects/:projectId/comping/segments', requireAuth, async (req, re
 
     res.status(201).json(segment);
   } catch (error: unknown) {
-    logger.error('Error creating take segment:', error);
+    logger.warn('Error creating take segment:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -350,7 +350,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/segments', requireAuth,
     const segments = await compingService.getGroupSegments(groupId);
     res.json({ segments });
   } catch (error: unknown) {
-    logger.error('Error fetching take segments:', error);
+    logger.warn('Error fetching take segments:', error);
     res.status(500).json({ error: 'Failed to fetch take segments' });
   }
 });
@@ -369,7 +369,7 @@ router.put('/projects/:projectId/comping/segments/:segmentId', requireAuth, asyn
 
     res.json(segment);
   } catch (error: unknown) {
-    logger.error('Error updating take segment:', error);
+    logger.warn('Error updating take segment:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -389,7 +389,7 @@ router.delete('/projects/:projectId/comping/segments/:segmentId', requireAuth, a
     await compingService.deleteTakeSegment(segmentId);
     res.status(204).send();
   } catch (error: unknown) {
-    logger.error('Error deleting take segment:', error);
+    logger.warn('Error deleting take segment:', error);
     res.status(500).json({ error: 'Failed to delete take segment' });
   }
 });
@@ -411,7 +411,7 @@ router.post('/projects/:projectId/comping/groups/:groupId/versions', requireAuth
 
     res.status(201).json(version);
   } catch (error: unknown) {
-    logger.error('Error creating comp version:', error);
+    logger.warn('Error creating comp version:', error);
     if ((error as any).name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
     }
@@ -431,7 +431,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/versions', requireAuth,
     const history = await compingService.getCompHistory(groupId);
     res.json(history);
   } catch (error: unknown) {
-    logger.error('Error fetching comp versions:', error);
+    logger.warn('Error fetching comp versions:', error);
     res.status(500).json({ error: 'Failed to fetch comp versions' });
   }
 });
@@ -448,7 +448,7 @@ router.put('/projects/:projectId/comping/groups/:groupId/versions/:versionId/act
     await compingService.setActiveCompVersion(groupId, versionId);
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error activating comp version:', error);
+    logger.warn('Error activating comp version:', error);
     res.status(500).json({ error: 'Failed to activate comp version' });
   }
 });
@@ -465,7 +465,7 @@ router.delete('/projects/:projectId/comping/versions/:versionId', requireAuth, a
     await compingService.deleteCompVersion(versionId);
     res.status(204).send();
   } catch (error: unknown) {
-    logger.error('Error deleting comp version:', error);
+    logger.warn('Error deleting comp version:', error);
     if ((error as any).message === 'Cannot delete active comp version') {
       return res.status(400).json({ error: 'Cannot delete active comp version' });
     }
@@ -490,7 +490,7 @@ router.post('/projects/:projectId/comping/render', requireAuth, async (req, res)
     const result = await compingService.renderComp(groupId, userId);
     res.status(201).json(result);
   } catch (error: unknown) {
-    logger.error('Error rendering comp:', error);
+    logger.warn('Error rendering comp:', error);
     if ((error as any).message === 'No segments selected for rendering') {
       return res.status(400).json({ error: 'No segments selected for rendering' });
     }

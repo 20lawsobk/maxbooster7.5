@@ -61,7 +61,7 @@ class GoDaddyProvider implements DnsProvider {
 
     if (!resp.ok) {
       const text = await resp.text();
-      logger.error('GoDaddy listRecords error', { status: resp.status, body: text });
+      logger.warn('GoDaddy listRecords error', { status: resp.status, body: text });
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
 
@@ -106,7 +106,7 @@ class GoDaddyProvider implements DnsProvider {
 
     if (!resp.ok) {
       const text = await resp.text();
-      logger.error('GoDaddy addRecord error', { status: resp.status, body: text });
+      logger.warn('GoDaddy addRecord error', { status: resp.status, body: text });
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -116,7 +116,7 @@ class GoDaddyProvider implements DnsProvider {
     const rootDomain = extractRootDomain(domain);
     if (originalName !== record.name || originalType !== record.type) {
       await this.deleteRecord(domain, originalType, originalName, credentials).catch((err: Error) => {
-        logger.error(`[DNS] Failed to delete old record (${originalType} ${originalName}) during update — stale record may remain:`, err.message);
+        logger.warn(`[DNS] Failed to delete old record (${originalType} ${originalName}) during update — stale record may remain:`, err.message);
       });
       return this.addRecord(domain, record, credentials);
     }
@@ -141,7 +141,7 @@ class GoDaddyProvider implements DnsProvider {
 
     if (!resp.ok) {
       const text = await resp.text();
-      logger.error('GoDaddy updateRecord error', { status: resp.status, body: text });
+      logger.warn('GoDaddy updateRecord error', { status: resp.status, body: text });
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -160,7 +160,7 @@ class GoDaddyProvider implements DnsProvider {
 
     if (!resp.ok) {
       const text = await resp.text();
-      logger.error('GoDaddy deleteRecord error', { status: resp.status, body: text });
+      logger.warn('GoDaddy deleteRecord error', { status: resp.status, body: text });
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;
@@ -196,7 +196,7 @@ class GoDaddyProvider implements DnsProvider {
 
     if (!resp.ok) {
       const text = await resp.text();
-      logger.error('GoDaddy batchUpsert error', { status: resp.status, body: text });
+      logger.warn('GoDaddy batchUpsert error', { status: resp.status, body: text });
       throw new Error(`GoDaddy API error: ${resp.status}`);
     }
     return true;

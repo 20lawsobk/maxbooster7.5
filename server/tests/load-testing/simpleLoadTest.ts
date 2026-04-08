@@ -284,7 +284,7 @@ async function main() {
         }
         
       } catch (error: any) {
-        logger.error(`Load test failed`, { endpoint: ep.path, concurrency, error: error.message });
+        logger.warn(`Load test failed`, { endpoint: ep.path, concurrency, error: error.message });
         allIssues.push(`${ep.name} at ${concurrency}: ${error.message}`);
       }
     }
@@ -360,4 +360,4 @@ async function main() {
   });
 }
 
-main().catch((err) => logger.error('Load test failed', { error: err }));
+main().catch((err) => logger.warn('Load test failed', { error: err }));

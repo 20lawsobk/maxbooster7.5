@@ -73,7 +73,7 @@ router.post('/generate', async (req: Request, res: Response) => {
     const pkg = await generateCreativePackage({ brief, audioPath, userId, assetId });
     res.json({ success: true, data: pkg });
   } catch (err: any) {
-    logger.error('[CreativeModel] /generate error', { err });
+    logger.warn('[CreativeModel] /generate error', { err });
     res.status(500).json({ error: 'Creative generation failed', detail: err?.message });
   }
 });
@@ -95,7 +95,7 @@ router.post('/plan', async (req: Request, res: Response) => {
     const result = await planCreative(brief, audioPath);
     res.json({ success: true, data: result });
   } catch (err: any) {
-    logger.error('[CreativeModel] /plan error', { err });
+    logger.warn('[CreativeModel] /plan error', { err });
     res.status(500).json({ error: 'Planning failed', detail: err?.message });
   }
 });
@@ -122,7 +122,7 @@ router.post('/score', async (req: Request, res: Response) => {
     const scores = await scoreCreative(brief, plan, script);
     res.json({ success: true, data: scores });
   } catch (err: any) {
-    logger.error('[CreativeModel] /score error', { err });
+    logger.warn('[CreativeModel] /score error', { err });
     res.status(500).json({ error: 'Scoring failed', detail: err?.message });
   }
 });
@@ -154,7 +154,7 @@ router.post('/feedback', async (req: Request, res: Response) => {
     await submitFeedback(assetId, userId, brief, scores, metrics ?? {});
     res.json({ success: true });
   } catch (err: any) {
-    logger.error('[CreativeModel] /feedback error', { err });
+    logger.warn('[CreativeModel] /feedback error', { err });
     res.status(500).json({ error: 'Feedback submission failed', detail: err?.message });
   }
 });

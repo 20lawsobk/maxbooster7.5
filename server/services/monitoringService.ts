@@ -59,7 +59,7 @@ export class MonitoringService {
         services: healthChecks,
       };
     } catch (error: unknown) {
-      logger.error('Error running health checks:', error);
+      logger.warn('Error running health checks:', error);
       throw new Error('Failed to run health checks');
     }
   }
@@ -71,7 +71,7 @@ export class MonitoringService {
     try {
       return await securityService.checkHealth(service);
     } catch (error: unknown) {
-      logger.error(`Error checking ${service} health:`, error);
+      logger.warn(`Error checking ${service} health:`, error);
       throw new Error(`Failed to check ${service} health`);
     }
   }
@@ -109,7 +109,7 @@ export class MonitoringService {
       // Check threshold
       await this.checkThreshold(name, value);
     } catch (error: unknown) {
-      logger.error('Error tracking metric:', error);
+      logger.warn('Error tracking metric:', error);
     }
   }
 
@@ -128,7 +128,7 @@ export class MonitoringService {
 
       return metrics;
     } catch (error: unknown) {
-      logger.error('Error fetching metrics:', error);
+      logger.warn('Error fetching metrics:', error);
       throw new Error('Failed to fetch metrics');
     }
   }
@@ -252,7 +252,7 @@ export class MonitoringService {
         },
       };
     } catch (error: unknown) {
-      logger.error('Error fetching performance summary:', error);
+      logger.warn('Error fetching performance summary:', error);
       throw new Error('Failed to fetch performance summary');
     }
   }
@@ -273,7 +273,7 @@ export class MonitoringService {
       // In production, this would aggregate from middleware logs
       return [];
     } catch (error: unknown) {
-      logger.error('Error fetching endpoint stats:', error);
+      logger.warn('Error fetching endpoint stats:', error);
       throw new Error('Failed to fetch endpoint stats');
     }
   }
@@ -293,7 +293,7 @@ export class MonitoringService {
         const health = await this.runHealthChecks();
         await this.trackMetric('health_status', health.overall === 'healthy' ? 1 : 0);
       } catch (error: unknown) {
-        logger.error('Error in monitoring loop:', error);
+        logger.warn('Error in monitoring loop:', error);
       }
     }, intervalMs);
   }

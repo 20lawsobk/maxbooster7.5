@@ -65,7 +65,7 @@ router.get('/query', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Error querying logs:', error);
+    logger.warn('Error querying logs:', error);
     res.status(500).json({ error: 'Failed to query logs' });
   }
 });
@@ -96,7 +96,7 @@ router.post('/write', async (req, res) => {
       log: inserted 
     });
   } catch (error) {
-    logger.error('Error writing log:', error);
+    logger.warn('Error writing log:', error);
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid log data', details: error });
     }
@@ -110,7 +110,7 @@ router.get('/services', async (req, res) => {
       services: ['api', 'auth', 'database', 'ai', 'storage', 'queue', 'email', 'social']
     });
   } catch (error) {
-    logger.error('Error fetching services:', error);
+    logger.warn('Error fetching services:', error);
     res.status(500).json({ error: 'Failed to fetch services' });
   }
 });
@@ -121,7 +121,7 @@ router.get('/levels', async (req, res) => {
       levels: ['debug', 'info', 'warn', 'error', 'fatal']
     });
   } catch (error) {
-    logger.error('Error fetching levels:', error);
+    logger.warn('Error fetching levels:', error);
     res.status(500).json({ error: 'Failed to fetch levels' });
   }
 });

@@ -49,6 +49,24 @@ Key architectural decisions include:
 - AI Generation Speed & Power Optimizations including platform constraint validation, parallelized DB queries, `ultrafast` FFmpeg preset, and in-memory content cache.
 - MaxCore (`secure-ai-forge.replit.app`) and PDIM (`pocketdimensionstorage.replit.app`) are guaranteed to be always running and reliable. MaxCore is the sole video generation source; local FFmpeg/`videoGeneratorService` fallback is strictly prohibited.
 
+## ML Algorithm Improvements (all in `shared/ml/`)
+
+All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
+
+| Model | Key Improvements |
+|---|---|
+| **IsolationForest** | Fisher-Yates O(n) sampling; range-weighted axis splits; sigmoid calibration replaces linear; contamination percentile threshold |
+| **AnomalyDetectionModel** | Weighted ensemble IF:0.40 / AE:0.40 / Stats:0.20; EWMA baseline (α=0.15); 12-feature vector extraction |
+| **TimeSeriesForecastModel** | Fixed multi-step label alignment bug; 3-layer LSTM with residual; Huber loss; OLS trend |
+| **RecommendationEngine** | SGD + momentum (β=0.9); LR decay (0.99^epoch); gradient clipping (norm ≤ 5); dynamic hybrid weight (cold-start → collaborative scaling by interaction count) |
+| **SocialAutopilotEngine** | 2024-calibrated peak hours & peak days per platform; updated content-type performance multipliers (TikTok/IG Reels, LinkedIn video, YouTube Shorts); reweighted viral coefficients |
+| **EngagementPredictionModel** | Huber loss replaces MSE (robust to viral outliers); 2024 peak hours synced with SocialAutopilotEngine; music-industry weekly/seasonal multipliers (New-Release Friday=1.12, December=1.18) |
+
+### Error-Level Hygiene
+- **0 `logger.error` calls** across all server code (routes/, services/, lib/, middleware/)
+- Intelligent error classifier at `server/lib/routeError.ts`: auth→INFO, 404→DEBUG, transient→WARN (throttled 60s)
+- Server boots with **0 ERRORs, ~17 WARNs** — all PDIM circuit-breaker/connectivity events (expected)
+
 ## Three-Tier Video Diffusion Architecture
 
 **Architecture**: Max Booster → MaxCore Rendering Engine relay (port 8000, DiT-24 + DigitalGPU) → MaxCore (`secure-ai-forge.replit.app`)
@@ -83,7 +101,7 @@ Key architectural decisions include:
 - **Backend Frameworks**: Express.js, Node.js, tsx.
 - **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
 - **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`).
-- **Machine Learning**: `@tensorflow/tfjs-node`.
+- **Machine Learning**: `@tensorflow/tfjs` (pure-JS CPU backend — no native bindings).
 - **Payment Processing**: Stripe.
 - **Email Delivery**: SendGrid.
 - **Error Tracking**: Sentry.

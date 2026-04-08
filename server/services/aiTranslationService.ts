@@ -271,7 +271,7 @@ class AITranslationService {
         results.push(translated);
       } catch (error) {
         const msg = (error as Error)?.message ?? String(error);
-        logger.error(`[Translation] Failed to translate to ${targetLang}: ${msg}`);
+        logger.warn(`[Translation] Failed to translate to ${targetLang}: ${msg}`);
         throw error;
       }
     }

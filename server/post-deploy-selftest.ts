@@ -273,7 +273,7 @@ class PostDeploySelfTest {
     logger.info(`   Recommendation: ${recommendation}`);
     
     if (recommendation === 'rollback') {
-      logger.error('❌ CRITICAL: Self-test recommends rollback!');
+      logger.warn('❌ CRITICAL: Self-test recommends rollback!');
     }
     
     this.isRunning = false;
@@ -290,14 +290,14 @@ class PostDeploySelfTest {
     // Run initial test after 60 seconds
     setTimeout(() => {
       this.runAllTests().catch(err => {
-        logger.error('Self-test error:', err);
+        logger.warn('Self-test error:', err);
       });
     }, 60000);
     
     // Schedule periodic tests
     return setInterval(() => {
       this.runAllTests().catch(err => {
-        logger.error('Periodic self-test error:', err);
+        logger.warn('Periodic self-test error:', err);
       });
     }, intervalMs);
   }

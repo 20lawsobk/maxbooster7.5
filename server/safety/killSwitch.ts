@@ -129,7 +129,7 @@ class KillSwitchManager extends EventEmitter {
           success: true,
         });
       } catch (error) {
-        logger.error(`   ✗ Failed to kill: ${systemName}`, error);
+        logger.warn(`   ✗ Failed to kill: ${systemName}`, error);
         allSuccess = false;
         
         this.addAuditEntry({
@@ -187,7 +187,7 @@ class KillSwitchManager extends EventEmitter {
           success: true,
         });
       } catch (error) {
-        logger.error(`   ✗ Failed to resume: ${systemName}`, error);
+        logger.warn(`   ✗ Failed to resume: ${systemName}`, error);
         allSuccess = false;
         
         this.addAuditEntry({
@@ -243,7 +243,7 @@ class KillSwitchManager extends EventEmitter {
       this.emit('systemKilled', { systemName, reason, triggeredBy });
       return true;
     } catch (error) {
-      logger.error(`Failed to kill system: ${systemName}`, error);
+      logger.warn(`Failed to kill system: ${systemName}`, error);
       
       this.addAuditEntry({
         timestamp: new Date(),
@@ -291,7 +291,7 @@ class KillSwitchManager extends EventEmitter {
       this.emit('systemResumed', { systemName, reason, triggeredBy });
       return true;
     } catch (error) {
-      logger.error(`Failed to resume system: ${systemName}`, error);
+      logger.warn(`Failed to resume system: ${systemName}`, error);
       
       this.addAuditEntry({
         timestamp: new Date(),

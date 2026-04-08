@@ -181,7 +181,7 @@ export class RoyaltiesCSVImportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.error('Error processing CSV import:', error);
+      logger.warn('Error processing CSV import:', error);
       throw error;
     } finally {
       // Clean up CSV file from storage

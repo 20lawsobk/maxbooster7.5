@@ -277,7 +277,7 @@ class StemExportService {
             totalFileSize += stemFile.fileSize;
           }
         } catch (error: unknown) {
-          logger.error(`Error rendering track ${track.name}:`, error);
+          logger.warn(`Error rendering track ${track.name}:`, error);
         }
       }
 
@@ -303,7 +303,7 @@ class StemExportService {
             totalFileSize += masterFile.fileSize;
           }
         } catch (error: unknown) {
-          logger.error('Error rendering master bus:', error);
+          logger.warn('Error rendering master bus:', error);
         }
       }
 
@@ -332,7 +332,7 @@ class StemExportService {
       logger.info(`✅ Stem export ${exportId} completed: ${individualFiles.length} files`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      logger.error(`Stem export ${exportId} failed:`, error);
+      logger.warn(`Stem export ${exportId} failed:`, error);
 
       await db
         .update(stemExports)
@@ -402,7 +402,7 @@ class StemExportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.error(`Failed to render stem for track ${track.name}:`, error);
+      logger.warn(`Failed to render stem for track ${track.name}:`, error);
       return null;
     }
   }

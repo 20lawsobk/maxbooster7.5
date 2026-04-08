@@ -62,7 +62,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       data: countdownsWithProgress,
     });
   } catch (error: any) {
-    logger.error('Error in get countdowns:', error?.message);
+    logger.warn('Error in get countdowns:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -85,7 +85,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error in create countdown:', error?.message);
+    logger.warn('Error in create countdown:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -121,7 +121,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error in get countdown by id:', error?.message);
+    logger.warn('Error in get countdown by id:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -140,7 +140,7 @@ router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
       data: countdown,
     });
   } catch (error: any) {
-    logger.error('Error in update countdown:', error?.message);
+    logger.warn('Error in update countdown:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -162,7 +162,7 @@ router.post("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
       data: task,
     });
   } catch (error: any) {
-    logger.error('Error in add task:', error?.message);
+    logger.warn('Error in add task:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -187,7 +187,7 @@ router.get("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error in get tasks:', error?.message);
+    logger.warn('Error in get tasks:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -219,7 +219,7 @@ router.patch("/:id/tasks/:taskId", requireAuth, asyncHandler(async (req, res) =>
       data: task,
     });
   } catch (error: any) {
-    logger.error('Error in update task:', error?.message);
+    logger.warn('Error in update task:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -240,7 +240,7 @@ router.get("/:id/analytics", requireAuth, asyncHandler(async (req, res) => {
       data: analytics,
     });
   } catch (error: any) {
-    logger.error('Error in get analytics:', error?.message);
+    logger.warn('Error in get analytics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -266,7 +266,7 @@ router.post("/:id/analytics/track", requireAuth, asyncHandler(async (req, res) =
       data: analytics,
     });
   } catch (error: any) {
-    logger.error('Error in track analytics:', error?.message);
+    logger.warn('Error in track analytics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -289,7 +289,7 @@ router.post("/:id/generate-checklist", requireAuth, asyncHandler(async (req, res
       data: addedTasks,
     });
   } catch (error: any) {
-    logger.error('Error in generate checklist:', error?.message);
+    logger.warn('Error in generate checklist:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));

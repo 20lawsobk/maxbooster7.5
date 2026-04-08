@@ -145,7 +145,7 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.error('Create role error:', error);
+      logger.warn('Create role error:', error);
       return { success: false, error: 'Failed to create role' };
     }
   }
@@ -159,7 +159,7 @@ export class RBACService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.error('Get role error:', error);
+      logger.warn('Get role error:', error);
       return null;
     }
   }
@@ -176,7 +176,7 @@ export class RBACService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.error('Get role by name error:', error);
+      logger.warn('Get role by name error:', error);
       return null;
     }
   }
@@ -191,7 +191,7 @@ export class RBACService {
 
       return roles;
     } catch (error: unknown) {
-      logger.error('Get workspace roles error:', error);
+      logger.warn('Get workspace roles error:', error);
       return [];
     }
   }
@@ -226,7 +226,7 @@ export class RBACService {
 
       return { success: true, role };
     } catch (error: unknown) {
-      logger.error('Update role error:', error);
+      logger.warn('Update role error:', error);
       return { success: false, error: 'Failed to update role' };
     }
   }
@@ -256,7 +256,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Delete role error:', error);
+      logger.warn('Delete role error:', error);
       return { success: false, error: 'Failed to delete role' };
     }
   }
@@ -301,7 +301,7 @@ export class RBACService {
 
       return permissions;
     } catch (error: unknown) {
-      logger.error('Get user permissions error:', error);
+      logger.warn('Get user permissions error:', error);
       return [];
     }
   }
@@ -323,7 +323,7 @@ export class RBACService {
 
       return false;
     } catch (error: unknown) {
-      logger.error('Check permission error:', error);
+      logger.warn('Check permission error:', error);
       return false;
     }
   }
@@ -346,7 +346,7 @@ export class RBACService {
 
       return results;
     } catch (error: unknown) {
-      logger.error('Check multiple permissions error:', error);
+      logger.warn('Check multiple permissions error:', error);
       return {};
     }
   }
@@ -369,7 +369,7 @@ export class RBACService {
 
       return workspace?.ownerId === userId;
     } catch (error: unknown) {
-      logger.error('Check workspace owner error:', error);
+      logger.warn('Check workspace owner error:', error);
       return false;
     }
   }
@@ -387,7 +387,7 @@ export class RBACService {
 
       return member?.role === 'owner' || member?.role === 'admin';
     } catch (error: unknown) {
-      logger.error('Check admin error:', error);
+      logger.warn('Check admin error:', error);
       return false;
     }
   }
@@ -466,7 +466,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Grant permission error:', error);
+      logger.warn('Grant permission error:', error);
       return { success: false, error: 'Failed to grant permission' };
     }
   }
@@ -509,7 +509,7 @@ export class RBACService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Revoke permission error:', error);
+      logger.warn('Revoke permission error:', error);
       return { success: false, error: 'Failed to revoke permission' };
     }
   }

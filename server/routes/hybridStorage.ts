@@ -47,7 +47,7 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
       ...result,
     });
   } catch (error) {
-    logger.error('[HybridStorage] Upload error:', error);
+    logger.warn('[HybridStorage] Upload error:', error);
     res.status(500).json({ error: 'Upload failed' });
   }
 });
@@ -80,7 +80,7 @@ router.get('/file/:fileKey', requireAuth, async (req: Request, res: Response) =>
     
     res.send(data);
   } catch (error) {
-    logger.error('[HybridStorage] Download error:', error);
+    logger.warn('[HybridStorage] Download error:', error);
     res.status(500).json({ error: 'Download failed' });
   }
 });
@@ -111,7 +111,7 @@ router.delete('/file/:fileKey', requireAuth, async (req: Request, res: Response)
       res.status(500).json({ error: 'Delete failed' });
     }
   } catch (error) {
-    logger.error('[HybridStorage] Delete error:', error);
+    logger.warn('[HybridStorage] Delete error:', error);
     res.status(500).json({ error: 'Delete failed' });
   }
 });
@@ -133,7 +133,7 @@ router.get('/files', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ files });
   } catch (error) {
-    logger.error('[HybridStorage] List error:', error);
+    logger.warn('[HybridStorage] List error:', error);
     res.status(500).json({ error: 'Failed to list files' });
   }
 });
@@ -158,7 +158,7 @@ router.get('/metadata/:fileKey', requireAuth, async (req: Request, res: Response
 
     res.json({ metadata });
   } catch (error) {
-    logger.error('[HybridStorage] Metadata error:', error);
+    logger.warn('[HybridStorage] Metadata error:', error);
     res.status(500).json({ error: 'Failed to get metadata' });
   }
 });
@@ -199,7 +199,7 @@ router.post('/migrate', requireAuth, async (req: Request, res: Response) => {
       res.status(500).json({ error: 'Migration failed' });
     }
   } catch (error) {
-    logger.error('[HybridStorage] Migration error:', error);
+    logger.warn('[HybridStorage] Migration error:', error);
     res.status(500).json({ error: 'Migration failed' });
   }
 });
@@ -215,7 +215,7 @@ router.get('/analytics', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ analytics });
   } catch (error) {
-    logger.error('[HybridStorage] Analytics error:', error);
+    logger.warn('[HybridStorage] Analytics error:', error);
     res.status(500).json({ error: 'Failed to get analytics' });
   }
 });
@@ -231,7 +231,7 @@ router.post('/optimize', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ success: true, ...result });
   } catch (error) {
-    logger.error('[HybridStorage] Optimize error:', error);
+    logger.warn('[HybridStorage] Optimize error:', error);
     res.status(500).json({ error: 'Optimization failed' });
   }
 });
@@ -251,7 +251,7 @@ router.post('/cleanup', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ success: true, ...result });
   } catch (error) {
-    logger.error('[HybridStorage] Cleanup error:', error);
+    logger.warn('[HybridStorage] Cleanup error:', error);
     res.status(500).json({ error: 'Cleanup failed' });
   }
 });
@@ -278,7 +278,7 @@ router.get('/download-url/:fileKey', requireAuth, async (req: Request, res: Resp
 
     res.json({ url });
   } catch (error) {
-    logger.error('[HybridStorage] Get URL error:', error);
+    logger.warn('[HybridStorage] Get URL error:', error);
     res.status(500).json({ error: 'Failed to get download URL' });
   }
 });

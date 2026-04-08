@@ -229,7 +229,7 @@ export class UnifiedAIController {
       const duration = Date.now() - startTime;
       logger.info(`✅ Unified AI Controller initialized in ${duration}ms`);
     } catch (error) {
-      logger.error('Failed to initialize Unified AI Controller:', error);
+      logger.warn('Failed to initialize Unified AI Controller:', error);
       throw error;
     }
   }
@@ -411,7 +411,7 @@ export class UnifiedAIController {
       }
 
       // MaxCore returned no content — transient issue.
-      logger.error('[UnifiedAI] MaxCore returned empty response (transient) — no content generated');
+      logger.warn('[UnifiedAI] MaxCore returned empty response (transient) — no content generated');
       return {
         success: false,
         error: 'MaxCore returned no content — please retry',
@@ -419,7 +419,7 @@ export class UnifiedAIController {
         source: 'MaxCoreAI',
       };
     } catch (error) {
-      logger.error('[UnifiedAI] generateContent error:', error);
+      logger.warn('[UnifiedAI] generateContent error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Content generation failed',
@@ -472,7 +472,7 @@ export class UnifiedAIController {
         };
       }
       // MaxCore returned no content — transient.
-      logger.error('[UnifiedAI] MaxCore returned empty response for generateSocialContent (transient)');
+      logger.warn('[UnifiedAI] MaxCore returned empty response for generateSocialContent (transient)');
       return {
         success: false,
         error: 'MaxCore returned no content — please retry',
@@ -480,7 +480,7 @@ export class UnifiedAIController {
         source: 'MaxCoreAI',
       };
     } catch (error) {
-      logger.error('[UnifiedAI] generateSocialContent error:', error);
+      logger.warn('[UnifiedAI] generateSocialContent error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Social content generation failed',
@@ -546,7 +546,7 @@ export class UnifiedAIController {
         confidence,
       };
     } catch (error) {
-      logger.error('Sentiment analysis failed:', error);
+      logger.warn('Sentiment analysis failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Sentiment analysis failed',
@@ -616,7 +616,7 @@ export class UnifiedAIController {
         confidence,
       };
     } catch (error) {
-      logger.error('Recommendation failed:', error);
+      logger.warn('Recommendation failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Recommendation failed',
@@ -716,7 +716,7 @@ export class UnifiedAIController {
         confidence,
       };
     } catch (error) {
-      logger.error('Ad optimization failed:', error);
+      logger.warn('Ad optimization failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Ad optimization failed',
@@ -818,7 +818,7 @@ export class UnifiedAIController {
         confidence,
       };
     } catch (error) {
-      logger.error('Engagement prediction failed:', error);
+      logger.warn('Engagement prediction failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Engagement prediction failed',
@@ -886,7 +886,7 @@ export class UnifiedAIController {
         confidence: 1 - (result.accuracy.mape / 100),
       };
     } catch (error) {
-      logger.error('Metric forecasting failed:', error);
+      logger.warn('Metric forecasting failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Metric forecasting failed',
@@ -1106,7 +1106,7 @@ export class UnifiedAIController {
         source: 'AdOptimizationEngine.optimizePersonalAdNetwork',
       };
     } catch (error) {
-      logger.error('Organic growth optimization error:', error);
+      logger.warn('Organic growth optimization error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Organic optimization failed',
@@ -1127,7 +1127,7 @@ export class UnifiedAIController {
         source: 'AdOptimizationEngine.calculateOrganicROI',
       };
     } catch (error) {
-      logger.error('Organic ROI calculation error:', error);
+      logger.warn('Organic ROI calculation error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Organic ROI calculation failed',
@@ -1156,7 +1156,7 @@ export class UnifiedAIController {
         source: 'AdOptimizationEngine.generateOrganicSchedule',
       };
     } catch (error) {
-      logger.error('Organic schedule generation error:', error);
+      logger.warn('Organic schedule generation error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Schedule generation failed',
@@ -1211,7 +1211,7 @@ export class UnifiedAIController {
         source: 'AdOptimizationEngine.analyzePersonalAdNetwork',
       };
     } catch (error) {
-      logger.error('Personal Ad Network analysis error:', error);
+      logger.warn('Personal Ad Network analysis error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Network analysis failed',

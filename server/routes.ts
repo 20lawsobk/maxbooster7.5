@@ -67,14 +67,14 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
     }
 
     // Module doesn't export anything usable — this is a programming error, not a runtime condition
-    logger.error(`[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`);
+    logger.warn(`[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`);
     log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: 'skip', value: null };
   } catch (error: any) {
     const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
     if (criticalRoutes.includes(name)) {
       log(`ERROR: Critical route '${name}' failed to load - ${error.message}`);
-      logger.error(`[routes] CRITICAL route loading failure for '${name}':`, error.stack || error.message);
+      logger.warn(`[routes] CRITICAL route loading failure for '${name}':`, error.stack || error.message);
     } else {
       log(`Warning: Could not load ${name} - ${error.message}`);
     }
@@ -108,7 +108,7 @@ async function attachUser(req: Request, res: Response, next: NextFunction) {
         logger.info(`[Session] User not found for userId: ${req.session.userId}, path: ${req.path}`);
       }
     } catch (error) {
-      logger.error("Error fetching user for request:", error);
+      logger.warn("Error fetching user for request:", error);
     }
   } else if (isProduction && isApiRoute && req.path !== '/api/auth/me' && req.path !== '/api/csrf-token' && req.path !== '/api/health' && req.path !== '/api/version') {
     const sessionCookie = req.cookies?.sessionId || req.headers.cookie?.includes('sessionId');
@@ -277,7 +277,7 @@ export async function registerRoutes(
         req.session.userId = user.id;
         await sessionSave(req);
       } catch (sessionErr) {
-        logger.error('[Register] Session operation failed after retries:', sessionErr);
+        logger.warn('[Register] Session operation failed after retries:', sessionErr);
         return res.status(500).json({ message: 'Registration failed - session error' });
       }
 
@@ -307,7 +307,7 @@ export async function registerRoutes(
 
       return res.json(safeUser);
     } catch (error) {
-      logger.error("Registration error:", error);
+      logger.warn("Registration error:", error);
       return res.status(500).json({ message: "Registration failed" });
     }
   });
@@ -388,11 +388,11 @@ export async function registerRoutes(
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
         return res.json(safeUser);
       } catch (sessionErr) {
-        logger.error('[Login] Session operation failed after retries:', sessionErr);
+        logger.warn('[Login] Session operation failed after retries:', sessionErr);
         return res.status(500).json({ message: "Login failed - session error" });
       }
     } catch (error) {
-      logger.error("Login error:", error);
+      logger.warn("Login error:", error);
       return res.status(500).json({ message: "Login failed" });
     }
   });
@@ -454,7 +454,7 @@ export async function registerRoutes(
         message: 'Session refreshed',
       });
     } catch (error) {
-      logger.error('[Auth] refresh-token error:', error);
+      logger.warn('[Auth] refresh-token error:', error);
       return res.status(500).json({ success: false, message: 'Refresh failed' });
     }
   });
@@ -499,7 +499,7 @@ export async function registerRoutes(
       await storage.updateUser(req.user.id, updateData);
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Update onboarding error:", error);
+      logger.warn("Update onboarding error:", error);
       return res.status(500).json({ message: "Failed to update onboarding" });
     }
   });
@@ -532,7 +532,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Update profile error:", error);
+      logger.warn("Update profile error:", error);
       return res.status(500).json({ message: "Failed to update profile" });
     }
   });
@@ -583,7 +583,7 @@ export async function registerRoutes(
       await storage.updateUser(req.user.id, { notificationSettings: updatedSettings });
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Update notification settings error:", error);
+      logger.warn("Update notification settings error:", error);
       return res.status(500).json({ message: "Failed to update notification settings" });
     }
   });
@@ -634,7 +634,7 @@ export async function registerRoutes(
       await storage.updateUser(req.user.id, { preferences: updatedPreferences });
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Update preferences error:", error);
+      logger.warn("Update preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -672,7 +672,7 @@ export async function registerRoutes(
 
       return res.json(formattedSessions);
     } catch (error) {
-      logger.error("Get sessions error:", error);
+      logger.warn("Get sessions error:", error);
       // Fallback to current session only
       return res.json([
         {
@@ -730,7 +730,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Session terminated successfully" });
     } catch (error) {
-      logger.error("Session termination error:", error);
+      logger.warn("Session termination error:", error);
       return res.status(500).json({ message: "Failed to terminate session" });
     }
   });
@@ -766,7 +766,7 @@ export async function registerRoutes(
       logger.info(`[Security] Terminated ${terminatedCount} sessions for user ${req.user.id}`);
       return res.json({ success: true, message: `${terminatedCount} session(s) terminated` });
     } catch (error) {
-      logger.error("Terminate all sessions error:", error);
+      logger.warn("Terminate all sessions error:", error);
       return res.status(500).json({ message: "Failed to terminate sessions" });
     }
   });
@@ -800,7 +800,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: `${terminatedCount} session(s) terminated` });
     } catch (error) {
-      logger.error("Delete other sessions error:", error);
+      logger.warn("Delete other sessions error:", error);
       return res.status(500).json({ message: "Failed to terminate other sessions" });
     }
   });
@@ -870,7 +870,7 @@ export async function registerRoutes(
 
       return res.json(allEvents);
     } catch (error) {
-      logger.error("Get login history error:", error);
+      logger.warn("Get login history error:", error);
       return res.status(500).json({ message: "Failed to fetch login history" });
     }
   });
@@ -894,7 +894,7 @@ export async function registerRoutes(
       };
       return res.json(settings);
     } catch (error) {
-      logger.error("Get privacy settings error:", error);
+      logger.warn("Get privacy settings error:", error);
       return res.status(500).json({ message: "Failed to get privacy settings" });
     }
   });
@@ -923,7 +923,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Privacy settings updated" });
     } catch (error) {
-      logger.error("Update privacy settings error:", error);
+      logger.warn("Update privacy settings error:", error);
       return res.status(500).json({ message: "Failed to update privacy settings" });
     }
   });
@@ -949,7 +949,7 @@ export async function registerRoutes(
             dataExportExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
           });
         } catch (e) {
-          logger.error("Failed to update export status:", e);
+          logger.warn("Failed to update export status:", e);
         }
       }, 5000);
 
@@ -958,7 +958,7 @@ export async function registerRoutes(
         message: "Data export requested. You will receive an email when it's ready."
       });
     } catch (error) {
-      logger.error("Request data export error:", error);
+      logger.warn("Request data export error:", error);
       return res.status(500).json({ message: "Failed to request data export" });
     }
   });
@@ -976,7 +976,7 @@ export async function registerRoutes(
       };
       return res.json(status);
     } catch (error) {
-      logger.error("Get data export status error:", error);
+      logger.warn("Get data export status error:", error);
       return res.status(500).json({ message: "Failed to get export status" });
     }
   });
@@ -1025,7 +1025,7 @@ export async function registerRoutes(
         }
         logger.info(`[Security] Invalidated ${userSessions.length - 1} sessions after password change for user ${req.user.id}`);
       } catch (sessionError) {
-        logger.error('[Security] Could not invalidate other sessions:', sessionError);
+        logger.warn('[Security] Could not invalidate other sessions:', sessionError);
         // Continue - password was changed successfully
       }
       
@@ -1033,7 +1033,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Password changed. Other sessions have been logged out." });
     } catch (error) {
-      logger.error("Change password error:", error);
+      logger.warn("Change password error:", error);
       return res.status(500).json({ message: "Failed to change password" });
     }
   });
@@ -1056,7 +1056,7 @@ export async function registerRoutes(
       req.session.destroy(() => { });
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Delete account error:", error);
+      logger.warn("Delete account error:", error);
       return res.status(500).json({ message: "Failed to delete account" });
     }
   });
@@ -1074,7 +1074,7 @@ export async function registerRoutes(
       // Handle multipart upload
       avatarUpload.single('avatar')(req, res, async (err: any) => {
         if (err) {
-          logger.error("Avatar upload error:", err);
+          logger.warn("Avatar upload error:", err);
           return res.status(400).json({ message: err.message || "Failed to upload avatar" });
         }
 
@@ -1101,7 +1101,7 @@ export async function registerRoutes(
 
           const updatedUser = await storage.updateUser(req.user!.id, { avatarUrl, profileImageUrl: avatarUrl });
           if (!updatedUser) {
-            logger.error(`[Avatar] updateUser returned null for userId=${req.user!.id}. DB update may have failed.`);
+            logger.warn(`[Avatar] updateUser returned null for userId=${req.user!.id}. DB update may have failed.`);
           } else {
             logger.info(`[Avatar] DB updated for userId=${req.user!.id}`);
           }
@@ -1112,12 +1112,12 @@ export async function registerRoutes(
             avatarUrl,
           });
         } catch (storeError: any) {
-          logger.error("Avatar storage error:", storeError);
+          logger.warn("Avatar storage error:", storeError);
           return res.status(500).json({ message: storeError.message || "Failed to store avatar" });
         }
       });
     } catch (importError) {
-      logger.error("Avatar upload import error:", importError);
+      logger.warn("Avatar upload import error:", importError);
       return res.status(500).json({ message: "Avatar upload service unavailable" });
     }
   });
@@ -1155,7 +1155,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Avatar deleted successfully" });
     } catch (error) {
-      logger.error("Delete avatar error:", error);
+      logger.warn("Delete avatar error:", error);
       return res.status(500).json({ message: "Failed to delete avatar" });
     }
   });
@@ -1217,7 +1217,7 @@ export async function registerRoutes(
       
       return res.send(fileBuffer);
     } catch (error) {
-      logger.error("Storage file serve error:", error);
+      logger.warn("Storage file serve error:", error);
       return res.status(500).json({ message: "Failed to serve file" });
     }
   });
@@ -1234,7 +1234,7 @@ export async function registerRoutes(
         exportedAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.error("Export data error:", error);
+      logger.warn("Export data error:", error);
       return res.status(500).json({ message: "Failed to export data" });
     }
   });
@@ -1268,7 +1268,7 @@ export async function registerRoutes(
         otpauthUrl,
       });
     } catch (error) {
-      logger.error("2FA setup error:", error);
+      logger.warn("2FA setup error:", error);
       return res.status(500).json({ message: "Failed to setup 2FA" });
     }
   });
@@ -1308,7 +1308,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "2FA enabled successfully" });
     } catch (error) {
-      logger.error("2FA verify error:", error);
+      logger.warn("2FA verify error:", error);
       return res.status(500).json({ message: "Failed to verify 2FA code" });
     }
   });
@@ -1355,7 +1355,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "2FA disabled successfully" });
     } catch (error) {
-      logger.error("2FA disable error:", error);
+      logger.warn("2FA disable error:", error);
       return res.status(500).json({ message: "Failed to disable 2FA" });
     }
   });
@@ -1407,11 +1407,11 @@ export async function registerRoutes(
         const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as any;
         return res.json({ ...safeUser, isDemo: true });
       } catch (sessionErr) {
-        logger.error('[Demo] Session operation failed after retries:', sessionErr);
+        logger.warn('[Demo] Session operation failed after retries:', sessionErr);
         return res.status(500).json({ message: "Demo login failed - session error" });
       }
     } catch (error) {
-      logger.error("Demo login error:", error);
+      logger.warn("Demo login error:", error);
       return res.status(500).json({ message: "Demo login failed" });
     }
   });
@@ -1452,7 +1452,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "If the email exists, a reset link has been sent." });
     } catch (error) {
-      logger.error("Forgot password error:", error);
+      logger.warn("Forgot password error:", error);
       return res.json({ success: true, message: "If the email exists, a reset link has been sent." });
     }
   });
@@ -1491,7 +1491,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Password reset successfully" });
     } catch (error) {
-      logger.error("Reset password error:", error);
+      logger.warn("Reset password error:", error);
       return res.status(500).json({ message: "Failed to reset password" });
     }
   });
@@ -1591,7 +1591,7 @@ export async function registerRoutes(
       const tokens = await tokenResponse.json();
 
       if (!tokenResponse.ok || tokens.error) {
-        logger.error('[Google OAuth] Token exchange failed:', tokens);
+        logger.warn('[Google OAuth] Token exchange failed:', tokens);
         return res.redirect('/login?error=token_exchange_failed');
       }
 
@@ -1629,11 +1629,11 @@ export async function registerRoutes(
         logger.info(`[Google OAuth] User logged in: ${user.email}`);
         return res.redirect('/dashboard');
       } catch (sessionErr) {
-        logger.error('[Google OAuth] Session operation failed after retries:', sessionErr);
+        logger.warn('[Google OAuth] Session operation failed after retries:', sessionErr);
         return res.redirect('/login?error=login_failed');
       }
     } catch (err) {
-      logger.error('[Google OAuth] Error:', err);
+      logger.warn('[Google OAuth] Error:', err);
       return res.redirect('/login?error=oauth_error');
     }
   });
@@ -1664,7 +1664,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Google connection removed successfully" });
     } catch (error) {
-      logger.error("Delete Google connection error:", error);
+      logger.warn("Delete Google connection error:", error);
       return res.status(500).json({ message: "Failed to remove Google connection" });
     }
   });
@@ -1712,7 +1712,7 @@ export async function registerRoutes(
 
       return res.redirect('/settings?tab=connected-accounts&connected=' + provider);
     } catch (error) {
-      logger.error(`Error connecting ${provider}:`, error);
+      logger.warn(`Error connecting ${provider}:`, error);
       return res.status(500).json({ error: `Failed to connect ${provider}` });
     }
   });
@@ -1779,7 +1779,7 @@ export async function registerRoutes(
         notifications: (recentNotifications || []).slice(0, 5).map(n => ({ ...n, read: n.isRead, link: n.actionUrl })),
       });
     } catch (error) {
-      logger.error("Dashboard error:", error);
+      logger.warn("Dashboard error:", error);
       return res.status(500).json({ message: "Failed to fetch dashboard data" });
     }
   });
@@ -1820,7 +1820,7 @@ export async function registerRoutes(
       }
       return res.json({ action: 'view_analytics', title: 'Review Your Analytics', description: 'Check your streaming performance and audience insights.', priority: 'low', estimatedTime: '5 minutes' });
     } catch (error) {
-      logger.error("Next action error:", error);
+      logger.warn("Next action error:", error);
       return res.status(500).json({ error: 'Failed to determine next action' });
     }
   });
@@ -1840,7 +1840,7 @@ export async function registerRoutes(
       }));
       return res.json(mappedNotifications);
     } catch (error) {
-      logger.error("Get notifications error:", error);
+      logger.warn("Get notifications error:", error);
       return res.status(500).json({ message: "Failed to fetch notifications" });
     }
   });
@@ -1862,7 +1862,7 @@ export async function registerRoutes(
       await storage.markNotificationRead(id);
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Mark notification read error:", error);
+      logger.warn("Mark notification read error:", error);
       return res.status(500).json({ message: "Failed to mark notification as read" });
     }
   });
@@ -1876,7 +1876,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Mark all read error:", error);
+      logger.warn("Mark all read error:", error);
       return res.status(500).json({ message: "Failed to mark all as read" });
     }
   });
@@ -1890,7 +1890,7 @@ export async function registerRoutes(
       await storage.deleteAllNotifications(req.user.id);
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Clear all notifications error:", error);
+      logger.warn("Clear all notifications error:", error);
       return res.status(500).json({ message: "Failed to clear all notifications" });
     }
   });
@@ -1911,7 +1911,7 @@ export async function registerRoutes(
         outcome: { type: 'channel_toggled', success: true, message: token ? 'Mobile device unregistered' : 'All mobile devices unregistered' },
       });
     } catch (error) {
-      logger.error('Mobile token remove error:', error);
+      logger.warn('Mobile token remove error:', error);
       return res.status(500).json({ error: 'Failed to remove mobile device token' });
     }
   });
@@ -1933,7 +1933,7 @@ export async function registerRoutes(
       await storage.deleteNotification(id);
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Delete notification error:", error);
+      logger.warn("Delete notification error:", error);
       return res.status(500).json({ message: "Failed to delete notification" });
     }
   });
@@ -1960,7 +1960,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Notification marked as read" });
     } catch (error) {
-      logger.error("Mark notification read error:", error);
+      logger.warn("Mark notification read error:", error);
       return res.status(500).json({ message: "Failed to mark notification as read" });
     }
   });
@@ -1974,7 +1974,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.error("Mark all notifications read error:", error);
+      logger.warn("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -1988,7 +1988,7 @@ export async function registerRoutes(
       await storage.markAllNotificationsRead(req.user.id);
       return res.json({ success: true, message: "All notifications marked as read" });
     } catch (error) {
-      logger.error("Mark all notifications read error:", error);
+      logger.warn("Mark all notifications read error:", error);
       return res.status(500).json({ message: "Failed to mark all notifications as read" });
     }
   });
@@ -2019,7 +2019,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Test notification sent", notification });
     } catch (error) {
-      logger.error("Test notification error:", error);
+      logger.warn("Test notification error:", error);
       return res.status(500).json({ message: "Failed to send test notification" });
     }
   });
@@ -2043,7 +2043,7 @@ export async function registerRoutes(
       const prefs = user?.notificationSettings || defaultPrefs;
       return res.json(prefs);
     } catch (error) {
-      logger.error("Get notification preferences error:", error);
+      logger.warn("Get notification preferences error:", error);
       return res.status(500).json({ error: 'Failed to get notification preferences' });
     }
   });
@@ -2059,7 +2059,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true });
     } catch (error) {
-      logger.error("Update notification preferences error:", error);
+      logger.warn("Update notification preferences error:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2113,7 +2113,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Push subscription saved" });
     } catch (error) {
-      logger.error("Save push subscription error:", error);
+      logger.warn("Save push subscription error:", error);
       return res.status(500).json({ message: "Failed to save push subscription" });
     }
   });
@@ -2139,7 +2139,7 @@ export async function registerRoutes(
       }
       return res.json({ success: true, message: "Push subscription removed" });
     } catch (error) {
-      logger.error("Remove push subscription error:", error);
+      logger.warn("Remove push subscription error:", error);
       return res.status(500).json({ message: "Failed to remove push subscription" });
     }
   });
@@ -2164,7 +2164,7 @@ export async function registerRoutes(
         })),
       });
     } catch (error) {
-      logger.error("Get push subscription status error:", error);
+      logger.warn("Get push subscription status error:", error);
       return res.status(500).json({ message: "Failed to get subscription status" });
     }
   });
@@ -2185,7 +2185,7 @@ export async function registerRoutes(
           : 'No push subscriptions registered',
       });
     } catch (error) {
-      logger.error("Test push notification error:", error);
+      logger.warn("Test push notification error:", error);
       return res.status(500).json({ message: "Failed to send test push notification" });
     }
   });
@@ -2204,7 +2204,7 @@ export async function registerRoutes(
       ]);
       return res.json({ services: serviceStatus, subscriptions: { web: breakdown, mobile: mobileStatus } });
     } catch (error) {
-      logger.error("Push status error:", error);
+      logger.warn("Push status error:", error);
       return res.status(500).json({ error: 'Failed to get push status' });
     }
   });
@@ -2229,7 +2229,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.error('Mobile token register error:', error);
+      logger.warn('Mobile token register error:', error);
       return res.status(500).json({ error: 'Failed to register mobile device token' });
     }
   });
@@ -2242,7 +2242,7 @@ export async function registerRoutes(
       const status = await mobilePushService.getUserTokenStatus(req.user.id);
       return res.json(status);
     } catch (error) {
-      logger.error('Mobile tokens list error:', error);
+      logger.warn('Mobile tokens list error:', error);
       return res.status(500).json({ error: 'Failed to list mobile device tokens' });
     }
   });
@@ -2257,7 +2257,7 @@ export async function registerRoutes(
       const result = await notificationDispatcher.dispatchSilent(req.user.id, reason);
       return res.json({ success: true, ...result });
     } catch (error) {
-      logger.error('Silent push error:', error);
+      logger.warn('Silent push error:', error);
       return res.status(500).json({ error: 'Failed to send silent push' });
     }
   });
@@ -2278,7 +2278,7 @@ export async function registerRoutes(
       const count = result[0]?.count || 0;
       return res.json({ count });
     } catch (error) {
-      logger.error("Get unread count error:", error);
+      logger.warn("Get unread count error:", error);
       return res.json({ count: 0 });
     }
   });
@@ -2292,7 +2292,7 @@ export async function registerRoutes(
       const projects = await storage.getProjectsByUserId(req.user.id);
       return res.json({ data: projects || [] });
     } catch (error) {
-      logger.error("Projects error:", error);
+      logger.warn("Projects error:", error);
       return res.status(500).json({ message: "Failed to fetch projects" });
     }
   });
@@ -2302,7 +2302,7 @@ export async function registerRoutes(
   app.post("/api/projects", (req: Request, res: Response, next) => {
     upload.single('audio')(req, res, (err: any) => {
       if (err) {
-        logger.error("Project upload error:", err);
+        logger.warn("Project upload error:", err);
         if (err.code === 'LIMIT_FILE_SIZE') {
           return res.status(413).json({ message: "File too large. Maximum size is 500MB." });
         }
@@ -2348,7 +2348,7 @@ export async function registerRoutes(
       });
       return res.json(project);
     } catch (error) {
-      logger.error("Create project error:", error);
+      logger.warn("Create project error:", error);
       return res.status(500).json({ message: "Failed to create project" });
     }
   });
@@ -2630,7 +2630,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.error("Analytics dashboard error:", error);
+      logger.warn("Analytics dashboard error:", error);
       return res.status(500).json({ message: "Failed to fetch analytics" });
     }
   });
@@ -2689,7 +2689,7 @@ export async function registerRoutes(
         data: analyticsData,
       });
     } catch (error) {
-      logger.error("Analytics export error:", error);
+      logger.warn("Analytics export error:", error);
       return res.status(500).json({ message: "Failed to export analytics" });
     }
   });
@@ -2712,7 +2712,7 @@ export async function registerRoutes(
         byMetric: {},
       });
     } catch (error) {
-      logger.error("Anomalies summary error:", error);
+      logger.warn("Anomalies summary error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies summary" });
     }
   });
@@ -2788,7 +2788,7 @@ export async function registerRoutes(
 
       return res.json({ data: filteredAnomalies });
     } catch (error) {
-      logger.error("Anomalies list error:", error);
+      logger.warn("Anomalies list error:", error);
       return res.status(500).json({ message: "Failed to fetch anomalies" });
     }
   });
@@ -2803,7 +2803,7 @@ export async function registerRoutes(
       // In production, this would update a database record
       return res.json({ success: true, message: `Anomaly ${id} acknowledged` });
     } catch (error) {
-      logger.error("Acknowledge anomaly error:", error);
+      logger.warn("Acknowledge anomaly error:", error);
       return res.status(500).json({ message: "Failed to acknowledge anomaly" });
     }
   });
@@ -2825,7 +2825,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, message: "Event tracked" });
     } catch (error) {
-      logger.error("Track event error:", error);
+      logger.warn("Track event error:", error);
       return res.status(500).json({ message: "Failed to track event" });
     }
   });
@@ -2874,7 +2874,7 @@ export async function registerRoutes(
         opportunities: [],
       });
     } catch (error) {
-      logger.error("AI insights error:", error);
+      logger.warn("AI insights error:", error);
       return res.status(500).json({ message: "Failed to fetch AI insights" });
     }
   });
@@ -2896,7 +2896,7 @@ export async function registerRoutes(
     try {
       return res.json(req.user.preferences || {});
     } catch (error) {
-      logger.error("Error fetching user preferences:", error);
+      logger.warn("Error fetching user preferences:", error);
       return res.status(500).json({ message: "Failed to fetch preferences" });
     }
   });
@@ -2910,7 +2910,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
-      logger.error("Error updating user preferences:", error);
+      logger.warn("Error updating user preferences:", error);
       return res.status(500).json({ message: "Failed to update preferences" });
     }
   });
@@ -2923,7 +2923,7 @@ export async function registerRoutes(
       const prefs = req.user.preferences as any;
       return res.json(prefs?.studio || {});
     } catch (error) {
-      logger.error("Error fetching studio preferences:", error);
+      logger.warn("Error fetching studio preferences:", error);
       return res.status(500).json({ message: "Failed to fetch studio preferences" });
     }
   });
@@ -2938,7 +2938,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
-      logger.error("Error updating studio preferences:", error);
+      logger.warn("Error updating studio preferences:", error);
       return res.status(500).json({ message: "Failed to update studio preferences" });
     }
   });
@@ -2955,7 +2955,7 @@ export async function registerRoutes(
         summary: { total: 0, analyzed: 0 },
       });
     } catch (error) {
-      logger.error("Analysis error:", error);
+      logger.warn("Analysis error:", error);
       return res.status(500).json({ message: "Failed to fetch analysis" });
     }
   });
@@ -2974,7 +2974,7 @@ export async function registerRoutes(
         createdAt: new Date().toISOString(),
       });
     } catch (error) {
-      logger.error("Analysis error:", error);
+      logger.warn("Analysis error:", error);
       return res.status(500).json({ message: "Failed to start analysis" });
     }
   });
@@ -2992,7 +2992,7 @@ export async function registerRoutes(
         total: 0,
       });
     } catch (error) {
-      logger.error("Assets fetch error:", error);
+      logger.warn("Assets fetch error:", error);
       return res.status(500).json({ message: "Failed to fetch assets" });
     }
   });
@@ -3031,12 +3031,12 @@ export async function registerRoutes(
             message: 'Asset uploaded successfully',
           });
         } catch (uploadError) {
-          logger.error("Asset storage error:", uploadError);
+          logger.warn("Asset storage error:", uploadError);
           return res.status(500).json({ message: "Failed to store asset" });
         }
       });
     } catch (error) {
-      logger.error("Asset upload error:", error);
+      logger.warn("Asset upload error:", error);
       return res.status(500).json({ message: "Failed to upload asset" });
     }
   });
@@ -3052,7 +3052,7 @@ export async function registerRoutes(
       });
       return res.json(pockets);
     } catch (error) {
-      logger.error("Pocket list error:", error);
+      logger.warn("Pocket list error:", error);
       return res.status(500).json({ message: "Failed to fetch pockets" });
     }
   });
@@ -3072,7 +3072,7 @@ export async function registerRoutes(
       }).returning();
       return res.json(pocket);
     } catch (error) {
-      logger.error("Pocket create error:", error);
+      logger.warn("Pocket create error:", error);
       return res.status(500).json({ message: "Failed to create pocket" });
     }
   });
@@ -3086,7 +3086,7 @@ export async function registerRoutes(
         files: [],
       });
     } catch (error) {
-      logger.error("Pocket demo error:", error);
+      logger.warn("Pocket demo error:", error);
       return res.status(500).json({ message: "Failed to fetch demo pocket" });
     }
   });
@@ -3110,7 +3110,7 @@ export async function registerRoutes(
         lastUpdated: pocket?.lastAccessedAt || new Date(),
       });
     } catch (error) {
-      logger.error("Pocket stats error:", error);
+      logger.warn("Pocket stats error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket stats" });
     }
   });
@@ -3132,7 +3132,7 @@ export async function registerRoutes(
       });
       return res.json(files);
     } catch (error) {
-      logger.error("Pocket files error:", error);
+      logger.warn("Pocket files error:", error);
       return res.status(500).json({ message: "Failed to fetch pocket files" });
     }
   });
@@ -3178,7 +3178,7 @@ export async function registerRoutes(
         message: 'File written successfully',
       });
     } catch (error) {
-      logger.error("Pocket write error:", error);
+      logger.warn("Pocket write error:", error);
       return res.status(500).json({ message: "Failed to write to pocket" });
     }
   });
@@ -3195,7 +3195,7 @@ export async function registerRoutes(
         summary: { passed: 0, failed: 0, warnings: 0 },
       });
     } catch (error) {
-      logger.error("Audit results error:", error);
+      logger.warn("Audit results error:", error);
       return res.status(500).json({ message: "Failed to fetch audit results" });
     }
   });
@@ -3211,7 +3211,7 @@ export async function registerRoutes(
         coverage: { statements: 0, branches: 0, functions: 0, lines: 0 },
       });
     } catch (error) {
-      logger.error("Testing results error:", error);
+      logger.warn("Testing results error:", error);
       return res.status(500).json({ message: "Failed to fetch testing results" });
     }
   });
@@ -3232,7 +3232,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, message: 'Onboarding completed' });
     } catch (error) {
-      logger.error("Complete onboarding error:", error);
+      logger.warn("Complete onboarding error:", error);
       return res.status(500).json({ message: "Failed to complete onboarding" });
     }
   });
@@ -3246,7 +3246,7 @@ export async function registerRoutes(
       const seenFeatures = req.user.onboardingData?.seenFeatures || [];
       return res.json({ seenFeatures });
     } catch (error) {
-      logger.error("Get seen features error:", error);
+      logger.warn("Get seen features error:", error);
       return res.status(500).json({ message: "Failed to get seen features" });
     }
   });
@@ -3274,7 +3274,7 @@ export async function registerRoutes(
       });
       return res.json({ success: true, seenFeatures });
     } catch (error) {
-      logger.error("Mark feature seen error:", error);
+      logger.warn("Mark feature seen error:", error);
       return res.status(500).json({ message: "Failed to mark feature as seen" });
     }
   });
@@ -3292,7 +3292,7 @@ export async function registerRoutes(
         expiresAt: new Date(Date.now() + 3600000).toISOString(),
       });
     } catch (error) {
-      logger.error("Download statement error:", error);
+      logger.warn("Download statement error:", error);
       return res.status(500).json({ message: "Failed to generate statement download" });
     }
   });
@@ -3360,7 +3360,7 @@ export async function registerRoutes(
         pagination: { total: Number(agg?.totalRows || 0), page: pageParam, limit: limitParam },
       });
     } catch (error) {
-      logger.error("Royalties error:", error);
+      logger.warn("Royalties error:", error);
       return res.status(500).json({ message: "Failed to fetch royalties" });
     }
   });
@@ -3394,7 +3394,7 @@ export async function registerRoutes(
         transactions: Number(r.transactionCount) || 0,
       })));
     } catch (error) {
-      logger.error("Platform breakdown error:", error);
+      logger.warn("Platform breakdown error:", error);
       return res.status(500).json({ message: "Failed to fetch platform breakdown" });
     }
   });
@@ -3435,7 +3435,7 @@ export async function registerRoutes(
         streams: Number(r.totalStreams) || 0,
       })));
     } catch (error) {
-      logger.error("Top tracks error:", error);
+      logger.warn("Top tracks error:", error);
       return res.status(500).json({ message: "Failed to fetch top tracks" });
     }
   });
@@ -3459,7 +3459,7 @@ export async function registerRoutes(
       }
       return res.json(methods);
     } catch (error) {
-      logger.error("Payment methods error:", error);
+      logger.warn("Payment methods error:", error);
       return res.status(500).json({ message: "Failed to fetch payment methods" });
     }
   });
@@ -3481,7 +3481,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payment method added' });
     } catch (error) {
-      logger.error("Add payment method error:", error);
+      logger.warn("Add payment method error:", error);
       return res.status(500).json({ message: "Failed to add payment method" });
     }
   });
@@ -3501,7 +3501,7 @@ export async function registerRoutes(
         paypalEmail: user.preferences?.payout?.paypalEmail ?? null,
       });
     } catch (error) {
-      logger.error("Payout settings error:", error);
+      logger.warn("Payout settings error:", error);
       return res.status(500).json({ message: "Failed to fetch payout settings" });
     }
   });
@@ -3526,7 +3526,7 @@ export async function registerRoutes(
       await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payout settings updated' });
     } catch (error) {
-      logger.error("Update payout settings error:", error);
+      logger.warn("Update payout settings error:", error);
       return res.status(500).json({ message: "Failed to update payout settings" });
     }
   });
@@ -3560,7 +3560,7 @@ export async function registerRoutes(
       }
       return res.json({ success: true, message: 'Tax info updated' });
     } catch (error) {
-      logger.error("Update tax info error:", error);
+      logger.warn("Update tax info error:", error);
       return res.status(500).json({ message: "Failed to update tax info" });
     }
   });
@@ -3576,7 +3576,7 @@ export async function registerRoutes(
         .limit(500);
       return res.json(rows);
     } catch (error) {
-      logger.error("Royalty splits error:", error);
+      logger.warn("Royalty splits error:", error);
       return res.status(500).json({ message: "Failed to fetch royalty splits" });
     }
   });
@@ -3606,7 +3606,7 @@ export async function registerRoutes(
 
       return res.json(split);
     } catch (error) {
-      logger.error("Create split error:", error);
+      logger.warn("Create split error:", error);
       return res.status(500).json({ message: "Failed to create royalty split" });
     }
   });
@@ -3626,7 +3626,7 @@ export async function registerRoutes(
       await db.delete(royaltySplits).where(eq(royaltySplits.id, splitId));
       return res.json({ success: true, message: 'Royalty split deleted' });
     } catch (error) {
-      logger.error("Delete split error:", error);
+      logger.warn("Delete split error:", error);
       return res.status(500).json({ message: "Failed to delete royalty split" });
     }
   });
@@ -3658,7 +3658,7 @@ export async function registerRoutes(
 
       return res.json({ success: true, data: rows });
     } catch (error) {
-      logger.error("Export royalties error:", error);
+      logger.warn("Export royalties error:", error);
       return res.status(500).json({ message: "Failed to export royalties" });
     }
   });
@@ -3676,7 +3676,7 @@ export async function registerRoutes(
       const result = await instantPayoutService.requestInstantPayout(req.user.id, { amount: balance });
       return res.json({ success: true, payoutId: result?.id || `payout_${Date.now()}`, message: 'Payout request submitted', amount: balance });
     } catch (error) {
-      logger.error("Request payout error:", error);
+      logger.warn("Request payout error:", error);
       return res.status(500).json({ message: "Failed to request payout. Please ensure your payment method is configured." });
     }
   });
@@ -3693,7 +3693,7 @@ export async function registerRoutes(
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
     } catch (error) {
-      logger.error("Connect Stripe error:", error);
+      logger.warn("Connect Stripe error:", error);
       return res.status(500).json({ message: "Failed to connect bank account. Please try again." });
     }
   });
@@ -3771,7 +3771,7 @@ export async function registerRoutes(
       const pi = invoice?.payment_intent as Stripe.PaymentIntent | null;
 
       if (!pi?.client_secret) {
-        logger.error('[create-subscription] No client_secret in subscription invoice PI', { subscriptionId: subscription.id });
+        logger.warn('[create-subscription] No client_secret in subscription invoice PI', { subscriptionId: subscription.id });
         return res.status(500).json({ message: "Failed to initialize payment — please try again" });
       }
 
@@ -3781,7 +3781,7 @@ export async function registerRoutes(
         type: 'subscription',
       });
     } catch (error) {
-      logger.error("Create subscription error:", error);
+      logger.warn("Create subscription error:", error);
       return res.status(500).json({ message: "Failed to create subscription" });
     }
   });
@@ -3827,7 +3827,7 @@ export async function registerRoutes(
         await fsPromises.writeFile(chunkPath, req.file.buffer);
         return res.json({ received: Number(chunkIndex), uploadId });
       } catch (err: any) {
-        logger.error("[ChunkUpload] Failed to store chunk:", err);
+        logger.warn("[ChunkUpload] Failed to store chunk:", err);
         return res.status(500).json({ message: "Failed to store chunk" });
       }
     }
@@ -3879,7 +3879,7 @@ export async function registerRoutes(
 
       return res.json({ url, key: finalKey, size: assembled.length });
     } catch (err: any) {
-      logger.error("[ChunkUpload] Assembly failed:", err);
+      logger.warn("[ChunkUpload] Assembly failed:", err);
       return res.status(500).json({ message: "Failed to assemble upload" });
     }
   });
@@ -3923,7 +3923,7 @@ export async function registerRoutes(
         message: 'Audio file uploaded successfully',
       });
     } catch (error) {
-      logger.error("Audio upload error:", error);
+      logger.warn("Audio upload error:", error);
       return res.status(500).json({ message: "Failed to upload audio" });
     }
   });
@@ -4015,7 +4015,7 @@ export async function registerRoutes(
         message: 'Your content has been optimized for maximum reach and engagement.',
       });
     } catch (error) {
-      logger.error("AI optimize content error:", error);
+      logger.warn("AI optimize content error:", error);
       return res.status(500).json({ message: "Failed to optimize content" });
     }
   });
@@ -4428,7 +4428,7 @@ export async function registerRoutes(
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      logger.error('Error creating checkout session:', error);
+      logger.warn('Error creating checkout session:', error);
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
     }
   });
@@ -4486,7 +4486,7 @@ export async function registerRoutes(
           const { password: _, ...userWithoutPassword } = existingUser;
           return res.json({ user: userWithoutPassword, message: 'Account already exists. Logged in.' });
         } catch (sessionErr) {
-          logger.error('[PostPayment] Session operation failed after retries:', sessionErr);
+          logger.warn('[PostPayment] Session operation failed after retries:', sessionErr);
           return res.status(500).json({ error: 'Login failed - session error' });
         }
       }
@@ -4525,11 +4525,11 @@ export async function registerRoutes(
         await sessionSave(req);
         return res.json({ user: userWithoutPassword, message: 'Account created successfully' });
       } catch (sessionErr) {
-        logger.error('[PostPayment] Session operation failed after retries:', sessionErr);
+        logger.warn('[PostPayment] Session operation failed after retries:', sessionErr);
         return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
       }
     } catch (error: any) {
-      logger.error('Error completing registration after payment:', error);
+      logger.warn('Error completing registration after payment:', error);
 
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ error: 'Invalid payment session. Please try again.' });
@@ -4709,7 +4709,7 @@ export async function registerRoutes(
       log('Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)');
     }
   } catch (error: any) {
-    logger.error(`[routes] FATAL: Silent deployment service failed to initialize - ${error.message}`, error.stack || error.message);
+    logger.warn(`[routes] FATAL: Silent deployment service failed to initialize - ${error.message}`, error.stack || error.message);
     if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
       throw new Error(`Silent deployment init failed (ENABLE_SELF_EVOLUTION=true): ${error.message}`);
     }

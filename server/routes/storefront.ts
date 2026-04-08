@@ -63,7 +63,7 @@ router.get('/templates', async (req, res) => {
     const templates = await storefrontService.getTemplates();
     res.json(templates);
   } catch (error: unknown) {
-    logger.error('Error fetching templates:', error);
+    logger.warn('Error fetching templates:', error);
     res.status(500).json({ error: getErrorMessage(error) || 'Failed to fetch templates' });
   }
 });
@@ -81,7 +81,7 @@ router.get('/my', async (req, res) => {
     const storefronts = await storefrontService.getUserStorefronts(req.user!.id);
     res.json(storefronts);
   } catch (error: unknown) {
-    logger.error('Error fetching user storefronts:', error);
+    logger.warn('Error fetching user storefronts:', error);
     res.status(500).json({ error: getErrorMessage(error) || 'Failed to fetch storefronts' });
   }
 });
@@ -104,7 +104,7 @@ router.get('/public/:slug', async (req, res) => {
 
     res.json(storefront);
   } catch (error: unknown) {
-    logger.error('Error fetching public storefront:', error);
+    logger.warn('Error fetching public storefront:', error);
 
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
     if (errorMessage === 'Storefront not found') {
@@ -141,7 +141,7 @@ router.get('/suggest-url', async (req, res) => {
       domainAvailable: existingDomain.length === 0,
     });
   } catch (error: unknown) {
-    logger.error('Error suggesting URL:', error);
+    logger.warn('Error suggesting URL:', error);
     res.status(500).json({ error: 'Failed to suggest URL' });
   }
 });
@@ -170,7 +170,7 @@ router.get('/check-domain', async (req, res) => {
 
     res.json({ available: existing.length === 0, valid: true, domain: result.normalized });
   } catch (error: unknown) {
-    logger.error('Error checking custom domain:', error);
+    logger.warn('Error checking custom domain:', error);
     res.status(500).json({ error: 'Failed to check domain' });
   }
 });
@@ -186,7 +186,7 @@ router.get('/:slug', async (req, res) => {
     const storefront = await storefrontService.getStorefrontBySlug(slug);
     res.json(storefront);
   } catch (error: unknown) {
-    logger.error('Error fetching storefront:', error);
+    logger.warn('Error fetching storefront:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -229,7 +229,7 @@ router.post('/create', async (req, res) => {
 
     res.status(201).json(storefront);
   } catch (error: unknown) {
-    logger.error('Error creating storefront:', error);
+    logger.warn('Error creating storefront:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg.includes('Slug already taken')) {
@@ -276,7 +276,7 @@ router.put('/:id/customize', async (req, res) => {
 
     res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger.error('Error updating storefront:', error);
+    logger.warn('Error updating storefront:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -341,7 +341,7 @@ router.patch('/:id/publish', async (req, res) => {
 
     res.json(updated);
   } catch (error: unknown) {
-    logger.error('Error toggling storefront publish status:', error);
+    logger.warn('Error toggling storefront publish status:', error);
     res.status(500).json({ error: getErrorMessage(error) || 'Failed to update publish status' });
   }
 });
@@ -362,7 +362,7 @@ router.delete('/:id', async (req, res) => {
 
     res.json({ success: true, message: 'Storefront deleted successfully' });
   } catch (error: unknown) {
-    logger.error('Error deleting storefront:', error);
+    logger.warn('Error deleting storefront:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -391,7 +391,7 @@ router.get('/:storefrontId/membership-tiers', async (req, res) => {
     const tiers = await storefrontService.getMembershipTiers(storefrontId);
     res.json(tiers);
   } catch (error: unknown) {
-    logger.error('Error fetching membership tiers:', error);
+    logger.warn('Error fetching membership tiers:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch membership tiers';
     res.status(500).json({ error: errorMessage });
   }
@@ -427,7 +427,7 @@ router.post('/:storefrontId/membership-tiers', async (req, res) => {
 
     res.status(201).json(tier);
   } catch (error: unknown) {
-    logger.error('Error creating membership tier:', error);
+    logger.warn('Error creating membership tier:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Storefront not found') {
@@ -459,7 +459,7 @@ router.put('/membership-tiers/:tierId', async (req, res) => {
 
     res.json(tier);
   } catch (error: unknown) {
-    logger.error('Error updating membership tier:', error);
+    logger.warn('Error updating membership tier:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Membership tier not found') {
@@ -494,7 +494,7 @@ router.delete('/membership-tiers/:tierId', async (req, res) => {
 
     res.json({ success: true, message: 'Membership tier deleted successfully' });
   } catch (error: unknown) {
-    logger.error('Error deleting membership tier:', error);
+    logger.warn('Error deleting membership tier:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Membership tier not found') {
@@ -616,7 +616,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
 
     res.json({ checkoutUrl: session.url });
   } catch (error: unknown) {
-    logger.error('Error creating membership checkout session:', error);
+    logger.warn('Error creating membership checkout session:', error);
     const errMsg = getErrorMessage(error);
     res.status(500).json({ error: errMsg || 'Failed to initiate subscription' });
   }
@@ -638,7 +638,7 @@ router.post('/memberships/:membershipId/cancel', async (req, res) => {
 
     res.json(membership);
   } catch (error: unknown) {
-    logger.error('Error canceling membership:', error);
+    logger.warn('Error canceling membership:', error);
     const errMsg = getErrorMessage(error);
 
     if (errMsg === 'Membership not found') {
@@ -672,7 +672,7 @@ router.get('/memberships/my', async (req, res) => {
     const memberships = await storefrontService.getCustomerMemberships(req.user!.id);
     res.json(memberships);
   } catch (error: unknown) {
-    logger.error('Error fetching customer memberships:', error);
+    logger.warn('Error fetching customer memberships:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch memberships';
     res.status(500).json({ error: errorMessage });
   }
@@ -697,7 +697,7 @@ router.post('/generate-slug', async (req, res) => {
     const slug = await storefrontService.generateSlug(name);
     res.json({ slug });
   } catch (error: unknown) {
-    logger.error('Error generating slug:', error);
+    logger.warn('Error generating slug:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate slug';
     res.status(500).json({ error: errorMessage });
   }
@@ -716,7 +716,7 @@ router.get('/:storefrontId/membership-tiers/public', async (req, res) => {
     
     res.json(publicTiers);
   } catch (error: unknown) {
-    logger.error('Error fetching public membership tiers:', error);
+    logger.warn('Error fetching public membership tiers:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch membership tiers';
     res.status(500).json({ error: errorMessage });
   }
@@ -734,7 +734,7 @@ router.get('/:storefrontId/listings', async (req, res) => {
     
     res.json(listings);
   } catch (error: unknown) {
-    logger.error('Error fetching storefront listings:', error);
+    logger.warn('Error fetching storefront listings:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch listings';
     res.status(500).json({ error: errorMessage });
   }
@@ -759,7 +759,7 @@ router.post('/generate-subdomain', async (req, res) => {
     const subdomain = await storefrontService.generateSubdomain(name);
     res.json({ subdomain });
   } catch (error: unknown) {
-    logger.error('Error generating subdomain:', error);
+    logger.warn('Error generating subdomain:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate subdomain';
     res.status(500).json({ error: errorMessage });
   }
@@ -796,7 +796,7 @@ router.get('/check-subdomain/:subdomain', async (req, res) => {
       reason: isAvailable ? null : 'Subdomain is already taken'
     });
   } catch (error: unknown) {
-    logger.error('Error checking subdomain:', error);
+    logger.warn('Error checking subdomain:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to check subdomain';
     res.status(500).json({ error: errorMessage });
   }
@@ -820,7 +820,7 @@ router.get('/subdomain/:subdomain', async (req, res) => {
 
     res.json(storefront);
   } catch (error: unknown) {
-    logger.error('Error fetching storefront by subdomain:', error);
+    logger.warn('Error fetching storefront by subdomain:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch storefront';
     res.status(500).json({ error: errorMessage });
   }
@@ -860,7 +860,7 @@ router.put('/:storefrontId/subdomain', async (req, res) => {
 
     res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger.error('Error updating subdomain:', error);
+    logger.warn('Error updating subdomain:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update subdomain';
     if (errorMessage === 'Unauthorized') {
       return res.status(403).json({ error: errorMessage });
@@ -910,7 +910,7 @@ router.put('/:storefrontId/custom-domain', async (req, res) => {
     });
     res.json(updatedStorefront);
   } catch (error: unknown) {
-    logger.error('Error updating custom domain:', error);
+    logger.warn('Error updating custom domain:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update custom domain';
     if (errorMessage === 'Unauthorized') {
       return res.status(403).json({ error: errorMessage });
@@ -990,7 +990,7 @@ router.post('/:storefrontId/verify-domain', async (req, res) => {
 
     res.json(result);
   } catch (error: unknown) {
-    logger.error('Error verifying custom domain:', error);
+    logger.warn('Error verifying custom domain:', error);
     res.status(500).json({ error: 'Failed to verify domain' });
   }
 });
@@ -1025,7 +1025,7 @@ router.post('/upload-asset', upload.single('file'), async (req, res) => {
       assetType,
     });
   } catch (error: unknown) {
-    logger.error('Error uploading storefront asset:', error);
+    logger.warn('Error uploading storefront asset:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to upload asset';
     res.status(500).json({ error: errorMessage });
   }
@@ -1070,7 +1070,7 @@ router.get('/:id/social', async (req, res) => {
       userRating,
     });
   } catch (error) {
-    logger.error('Error fetching social data:', error);
+    logger.warn('Error fetching social data:', error);
     res.status(500).json({ error: 'Failed to fetch social data' });
   }
 });
@@ -1090,7 +1090,7 @@ router.post('/:id/like', async (req, res) => {
       res.json({ liked: true });
     }
   } catch (error) {
-    logger.error('Error toggling like:', error);
+    logger.warn('Error toggling like:', error);
     res.status(500).json({ error: 'Failed to toggle like' });
   }
 });
@@ -1110,7 +1110,7 @@ router.post('/:id/follow', async (req, res) => {
       res.json({ following: true });
     }
   } catch (error) {
-    logger.error('Error toggling follow:', error);
+    logger.warn('Error toggling follow:', error);
     res.status(500).json({ error: 'Failed to toggle follow' });
   }
 });
@@ -1140,7 +1140,7 @@ router.post('/:id/rate', async (req, res) => {
       avgRating: ratingsResult?.avg ? parseFloat(String(ratingsResult.avg)) : 0,
     });
   } catch (error) {
-    logger.error('Error submitting rating:', error);
+    logger.warn('Error submitting rating:', error);
     res.status(500).json({ error: 'Failed to submit rating' });
   }
 });
@@ -1166,7 +1166,7 @@ router.post('/:id/checkout', async (req, res) => {
 
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
-      logger.error('Stripe secret key is not configured');
+      logger.warn('Stripe secret key is not configured');
       return res.status(503).json({ error: 'Payment processing is not available. Please contact support.' });
     }
     const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
@@ -1303,7 +1303,7 @@ router.post('/:id/checkout', async (req, res) => {
 
     res.json({ checkoutUrl: session.url });
   } catch (error) {
-    logger.error('Error creating storefront checkout:', error);
+    logger.warn('Error creating storefront checkout:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
@@ -1326,7 +1326,7 @@ router.get('/:id/orders', async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    logger.error('Error fetching storefront orders:', error);
+    logger.warn('Error fetching storefront orders:', error);
     res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
@@ -1359,7 +1359,7 @@ router.put('/:storefrontId/listings/:listingId/discount', async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    logger.error('Error setting discount:', error);
+    logger.warn('Error setting discount:', error);
     res.status(500).json({ error: 'Failed to set discount' });
   }
 });
@@ -1382,7 +1382,7 @@ router.delete('/:storefrontId/listings/:listingId/discount', async (req, res) =>
 
     res.json(updated);
   } catch (error) {
-    logger.error('Error removing discount:', error);
+    logger.warn('Error removing discount:', error);
     res.status(500).json({ error: 'Failed to remove discount' });
   }
 });
@@ -1400,7 +1400,7 @@ router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
       .limit(20);
     res.json(tiers);
   } catch (error) {
-    logger.error('Error fetching license tiers:', error);
+    logger.warn('Error fetching license tiers:', error);
     res.status(500).json({ error: 'Failed to fetch license tiers' });
   }
 });
@@ -1468,7 +1468,7 @@ router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     res.json(insertedTiers);
   } catch (error) {
-    logger.error('Error saving license tiers:', error);
+    logger.warn('Error saving license tiers:', error);
     res.status(500).json({ error: 'Failed to save license tiers' });
   }
 });
@@ -1492,7 +1492,7 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Error removing license tiers:', error);
+    logger.warn('Error removing license tiers:', error);
     res.status(500).json({ error: 'Failed to remove license tiers' });
   }
 });
@@ -1536,7 +1536,7 @@ router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.sin
 
     res.json({ url: audioUrl, format: format || ext.replace('.', ''), filename: req.file.originalname });
   } catch (error) {
-    logger.error('Error uploading tier audio:', error);
+    logger.warn('Error uploading tier audio:', error);
     res.status(500).json({ error: 'Failed to upload tier audio file' });
   }
 });
@@ -1596,7 +1596,7 @@ router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     res.json({ success: true, tiers: savedTiers });
   } catch (error) {
-    logger.error('Error saving license tiers:', error);
+    logger.warn('Error saving license tiers:', error);
     res.status(500).json({ error: 'Failed to save license tiers' });
   }
 });
@@ -1626,7 +1626,7 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting license tiers:', error);
+    logger.warn('Error deleting license tiers:', error);
     res.status(500).json({ error: 'Failed to delete license tiers' });
   }
 });
@@ -1640,7 +1640,7 @@ router.get('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
       .limit(20);
     res.json(tiers);
   } catch (error) {
-    logger.error('Error fetching license tiers:', error);
+    logger.warn('Error fetching license tiers:', error);
     res.status(500).json({ error: 'Failed to fetch license tiers' });
   }
 });
@@ -1766,7 +1766,7 @@ router.get('/:storefrontId/bogo-promotions', async (req, res) => {
       .limit(100);
     res.json(promos);
   } catch (error) {
-    logger.error('Error fetching BOGO promotions:', error);
+    logger.warn('Error fetching BOGO promotions:', error);
     res.status(500).json({ error: 'Failed to fetch promotions' });
   }
 });
@@ -1785,7 +1785,7 @@ router.get('/:storefrontId/bogo-promotions/all', async (req, res) => {
       .limit(100);
     res.json(promos);
   } catch (error) {
-    logger.error('Error fetching all BOGO promotions:', error);
+    logger.warn('Error fetching all BOGO promotions:', error);
     res.status(500).json({ error: 'Failed to fetch promotions' });
   }
 });
@@ -1838,7 +1838,7 @@ router.post('/:storefrontId/bogo-promotions', async (req, res) => {
 
     res.json(promo);
   } catch (error) {
-    logger.error('Error creating BOGO promotion:', error);
+    logger.warn('Error creating BOGO promotion:', error);
     res.status(500).json({ error: 'Failed to create promotion' });
   }
 });
@@ -1884,7 +1884,7 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
     if (!promo) return res.status(404).json({ error: 'Promotion not found' });
     res.json(promo);
   } catch (error) {
-    logger.error('Error updating BOGO promotion:', error);
+    logger.warn('Error updating BOGO promotion:', error);
     res.status(500).json({ error: 'Failed to update promotion' });
   }
 });
@@ -1902,7 +1902,7 @@ router.delete('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
       .where(and(eq(bogoPromotions.id, promoId), eq(bogoPromotions.storefrontId, storefrontId)));
     res.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting BOGO promotion:', error);
+    logger.warn('Error deleting BOGO promotion:', error);
     res.status(500).json({ error: 'Failed to delete promotion' });
   }
 });
@@ -1977,7 +1977,7 @@ router.post('/:id/checkout/preview', async (req, res) => {
       } : null,
     });
   } catch (error) {
-    logger.error('Error previewing checkout:', error);
+    logger.warn('Error previewing checkout:', error);
     res.status(500).json({ error: 'Failed to preview checkout' });
   }
 });

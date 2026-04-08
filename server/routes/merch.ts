@@ -47,7 +47,7 @@ router.get('/', requireAuth, async (req: Request, res: Response) => {
 
     res.json(items);
   } catch (error) {
-    logger.error('Error fetching merch items:', error);
+    logger.warn('Error fetching merch items:', error);
     res.status(500).json({ error: 'Failed to fetch merch items' });
   }
 });
@@ -80,7 +80,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
 
     res.status(201).json(item);
   } catch (error) {
-    logger.error('Error creating merch item:', error);
+    logger.warn('Error creating merch item:', error);
     res.status(500).json({ error: 'Failed to create merch item' });
   }
 });
@@ -129,7 +129,7 @@ router.put('/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json(updated);
   } catch (error) {
-    logger.error('Error updating merch item:', error);
+    logger.warn('Error updating merch item:', error);
     res.status(500).json({ error: 'Failed to update merch item' });
   }
 });
@@ -151,7 +151,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Error deleting merch item:', error);
+    logger.warn('Error deleting merch item:', error);
     res.status(500).json({ error: 'Failed to delete merch item' });
   }
 });
@@ -169,7 +169,7 @@ router.get('/orders', requireAuth, async (req: Request, res: Response) => {
 
     res.json(orders);
   } catch (error) {
-    logger.error('Error fetching merch orders:', error);
+    logger.warn('Error fetching merch orders:', error);
     res.status(500).json({ error: 'Failed to fetch merch orders' });
   }
 });
@@ -203,7 +203,7 @@ router.put('/orders/:id', requireAuth, async (req: Request, res: Response) => {
 
     res.json(updated);
   } catch (error) {
-    logger.error('Error updating merch order:', error);
+    logger.warn('Error updating merch order:', error);
     res.status(500).json({ error: 'Failed to update merch order' });
   }
 });
@@ -257,7 +257,7 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
       lowInventoryItems,
     });
   } catch (error) {
-    logger.error('Error fetching merch stats:', error);
+    logger.warn('Error fetching merch stats:', error);
     res.status(500).json({ error: 'Failed to fetch merch stats' });
   }
 });
@@ -271,7 +271,7 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
     if (!item) return res.status(404).json({ error: 'Merch item not found' });
     res.json(item);
   } catch (error) {
-    logger.error('Error fetching merch item:', error);
+    logger.warn('Error fetching merch item:', error);
     res.status(500).json({ error: 'Failed to fetch merch item' });
   }
 });

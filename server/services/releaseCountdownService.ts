@@ -61,7 +61,7 @@ class ReleaseCountdownService {
       logger.info(`Created countdown ${countdown.id} for user ${userId}`);
       return countdown;
     } catch (error) {
-      logger.error("Error creating countdown:", error);
+      logger.warn("Error creating countdown:", error);
       throw new Error("Failed to create countdown");
     }
   }
@@ -75,7 +75,7 @@ class ReleaseCountdownService {
         .limit(1);
       return countdown;
     } catch (error) {
-      logger.error("Error fetching countdown:", error);
+      logger.warn("Error fetching countdown:", error);
       throw new Error("Failed to fetch countdown");
     }
   }
@@ -89,7 +89,7 @@ class ReleaseCountdownService {
         .orderBy(releaseCountdowns.releaseDate);
       return countdowns;
     } catch (error) {
-      logger.error("Error fetching active countdowns:", error);
+      logger.warn("Error fetching active countdowns:", error);
       throw new Error("Failed to fetch active countdowns");
     }
   }
@@ -103,7 +103,7 @@ class ReleaseCountdownService {
         .orderBy(desc(releaseCountdowns.createdAt));
       return countdowns;
     } catch (error) {
-      logger.error("Error fetching countdowns:", error);
+      logger.warn("Error fetching countdowns:", error);
       throw new Error("Failed to fetch countdowns");
     }
   }
@@ -121,7 +121,7 @@ class ReleaseCountdownService {
         .returning();
       return updated;
     } catch (error) {
-      logger.error("Error updating countdown:", error);
+      logger.warn("Error updating countdown:", error);
       throw new Error("Failed to update countdown");
     }
   }
@@ -143,7 +143,7 @@ class ReleaseCountdownService {
       logger.info(`Added task ${task.id} to countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.error("Error adding task:", error);
+      logger.warn("Error adding task:", error);
       throw new Error("Failed to add task");
     }
   }
@@ -166,7 +166,7 @@ class ReleaseCountdownService {
       logger.info(`Added ${insertedTasks.length} tasks to countdown ${countdownId}`);
       return insertedTasks;
     } catch (error) {
-      logger.error("Error bulk adding tasks:", error);
+      logger.warn("Error bulk adding tasks:", error);
       throw new Error("Failed to add tasks");
     }
   }
@@ -180,7 +180,7 @@ class ReleaseCountdownService {
         .orderBy(countdownTasks.order);
       return tasks;
     } catch (error) {
-      logger.error("Error fetching tasks:", error);
+      logger.warn("Error fetching tasks:", error);
       throw new Error("Failed to fetch tasks");
     }
   }
@@ -201,7 +201,7 @@ class ReleaseCountdownService {
       }
       return map;
     } catch (error) {
-      logger.error("Error batch-fetching tasks:", error);
+      logger.warn("Error batch-fetching tasks:", error);
       throw new Error("Failed to batch-fetch tasks");
     }
   }
@@ -217,7 +217,7 @@ class ReleaseCountdownService {
       logger.info(`Completed task ${taskId} for countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.error("Error completing task:", error);
+      logger.warn("Error completing task:", error);
       throw new Error("Failed to complete task");
     }
   }
@@ -233,7 +233,7 @@ class ReleaseCountdownService {
       logger.info(`Uncompleted task ${taskId} for countdown ${countdownId}`);
       return task;
     } catch (error) {
-      logger.error("Error uncompleting task:", error);
+      logger.warn("Error uncompleting task:", error);
       throw new Error("Failed to uncomplete task");
     }
   }
@@ -247,7 +247,7 @@ class ReleaseCountdownService {
         .orderBy(desc(countdownAnalytics.date));
       return analytics;
     } catch (error) {
-      logger.error("Error fetching analytics:", error);
+      logger.warn("Error fetching analytics:", error);
       throw new Error("Failed to fetch analytics");
     }
   }
@@ -290,7 +290,7 @@ class ReleaseCountdownService {
 
       return newRecord;
     } catch (error) {
-      logger.error("Error recording analytics:", error);
+      logger.warn("Error recording analytics:", error);
       throw new Error("Failed to record analytics");
     }
   }
@@ -318,7 +318,7 @@ class ReleaseCountdownService {
         dailyData: analytics,
       };
     } catch (error) {
-      logger.error("Error getting analytics summary:", error);
+      logger.warn("Error getting analytics summary:", error);
       throw new Error("Failed to get analytics summary");
     }
   }
@@ -401,7 +401,7 @@ class ReleaseCountdownService {
       const tasks = await this.getTasks(countdownId);
       return { countdown, tasks };
     } catch (error) {
-      logger.error("Error fetching countdown with tasks:", error);
+      logger.warn("Error fetching countdown with tasks:", error);
       throw new Error("Failed to fetch countdown with tasks");
     }
   }

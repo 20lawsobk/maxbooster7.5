@@ -22,7 +22,7 @@ router.get('/campaigns', requireAuth, async (req: AuthenticatedRequest, res: Res
     const campaigns = await storage.getAdvertisingCampaigns(userId);
     res.json(campaigns);
   } catch (error) {
-    logger.error('Failed to get campaigns:', error);
+    logger.warn('Failed to get campaigns:', error);
     res.status(500).json({ error: 'Failed to get campaigns' });
   }
 });
@@ -33,7 +33,7 @@ router.get('/ai-insights', requireAuth, async (req: AuthenticatedRequest, res: R
     const insights = await storage.getAdvertisingInsights(userId);
     res.json(insights);
   } catch (error) {
-    logger.error('Failed to get AI insights:', error);
+    logger.warn('Failed to get AI insights:', error);
     res.status(500).json({ error: 'Failed to get AI insights' });
   }
 });
@@ -44,7 +44,7 @@ router.get('/audience-segments', requireAuth, async (req: AuthenticatedRequest, 
     const segments = await storage.getAudienceSegments(userId);
     res.json({ segments });
   } catch (error) {
-    logger.error('Failed to get audience segments:', error);
+    logger.warn('Failed to get audience segments:', error);
     res.status(500).json({ error: 'Failed to get audience segments' });
   }
 });
@@ -55,7 +55,7 @@ router.get('/creative-fatigue', requireAuth, async (req: AuthenticatedRequest, r
     const creatives = await storage.getCreativeFatigue(userId);
     res.json({ creatives });
   } catch (error) {
-    logger.error('Failed to get creative fatigue:', error);
+    logger.warn('Failed to get creative fatigue:', error);
     res.status(500).json({ error: 'Failed to get creative fatigue' });
   }
 });
@@ -66,7 +66,7 @@ router.get('/bidding-strategies', requireAuth, async (req: AuthenticatedRequest,
     const strategies = await storage.getBiddingStrategies(userId);
     res.json({ strategies });
   } catch (error) {
-    logger.error('Failed to get bidding strategies:', error);
+    logger.warn('Failed to get bidding strategies:', error);
     res.status(500).json({ error: 'Failed to get bidding strategies' });
   }
 });
@@ -77,7 +77,7 @@ router.get('/lookalike-audiences', requireAuth, async (req: AuthenticatedRequest
     const audiences = await storage.getLookalikeAudiences(userId);
     res.json({ audiences });
   } catch (error) {
-    logger.error('Failed to get lookalike audiences:', error);
+    logger.warn('Failed to get lookalike audiences:', error);
     res.status(500).json({ error: 'Failed to get lookalike audiences' });
   }
 });
@@ -88,7 +88,7 @@ router.get('/forecasts', requireAuth, async (req: AuthenticatedRequest, res: Res
     const forecasts = await storage.getAdvertisingForecasts(userId);
     res.json({ forecasts: forecasts ? [forecasts] : [] });
   } catch (error) {
-    logger.error('Failed to get forecasts:', error);
+    logger.warn('Failed to get forecasts:', error);
     res.status(500).json({ error: 'Failed to get forecasts' });
   }
 });
@@ -99,7 +99,7 @@ router.get('/competitor-insights', requireAuth, async (req: AuthenticatedRequest
     const insights = await storage.getCompetitorInsights(userId);
     res.json({ insights });
   } catch (error) {
-    logger.error('Failed to get competitor insights:', error);
+    logger.warn('Failed to get competitor insights:', error);
     res.status(500).json({ error: 'Failed to get competitor insights' });
   }
 });
@@ -128,7 +128,7 @@ router.get('/ab-tests', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     res.json({ tests });
   } catch (error) {
-    logger.error('Failed to get A/B tests:', error);
+    logger.warn('Failed to get A/B tests:', error);
     res.status(500).json({ error: 'Failed to get A/B tests' });
   }
 });
@@ -170,13 +170,13 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
       try {
         await notificationService.sendAdCampaignCreatedNotification(userId, name);
       } catch (err) {
-        logger.error('Ad campaign created notification error:', err);
+        logger.warn('Ad campaign created notification error:', err);
       }
     });
 
     res.status(201).json({ success: true, campaign });
   } catch (error) {
-    logger.error('Failed to create campaign:', error);
+    logger.warn('Failed to create campaign:', error);
     res.status(500).json({ error: 'Failed to create campaign' });
   }
 });
@@ -217,7 +217,7 @@ router.get('/status', requireAuth, async (req: AuthenticatedRequest, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get advertising status:', error);
+    logger.warn('Failed to get advertising status:', error);
     res.status(500).json({ error: 'Failed to get status' });
   }
 });
@@ -232,7 +232,7 @@ router.post('/start', requireAuth, async (req: AuthenticatedRequest, res) => {
     logger.info(`✅ Advertising autopilot started for user ${userId}`);
     res.json({ success: true, message: 'Advertising autopilot activated', config });
   } catch (error) {
-    logger.error('Failed to start advertising autopilot:', error);
+    logger.warn('Failed to start advertising autopilot:', error);
     res.status(500).json({ error: 'Failed to start advertising autopilot' });
   }
 });
@@ -247,7 +247,7 @@ router.post('/stop', requireAuth, async (req: AuthenticatedRequest, res) => {
     logger.info(`⏸️ Advertising autopilot paused for user ${userId}`);
     res.json({ success: true, message: 'Advertising autopilot paused' });
   } catch (error) {
-    logger.error('Failed to stop advertising autopilot:', error);
+    logger.warn('Failed to stop advertising autopilot:', error);
     res.status(500).json({ error: 'Failed to stop advertising autopilot' });
   }
 });
@@ -262,7 +262,7 @@ router.post('/configure', requireAuth, async (req: AuthenticatedRequest, res) =>
     logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
     res.json({ success: true, message: 'Advertising autopilot configuration updated', config });
   } catch (error) {
-    logger.error('Failed to configure advertising autopilot:', error);
+    logger.warn('Failed to configure advertising autopilot:', error);
     res.status(500).json({ error: 'Failed to configure advertising autopilot' });
   }
 });
@@ -291,7 +291,7 @@ router.get('/variants', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     res.json({ variants });
   } catch (error) {
-    logger.error('Failed to get variants:', error);
+    logger.warn('Failed to get variants:', error);
     res.status(500).json({ error: 'Failed to get variants' });
   }
 });
@@ -328,7 +328,7 @@ router.get('/attribution/channels', requireAuth, async (req: AuthenticatedReques
 
     res.json({ channels });
   } catch (error) {
-    logger.error('Failed to get attribution channels:', error);
+    logger.warn('Failed to get attribution channels:', error);
     res.status(500).json({ error: 'Failed to get attribution channels' });
   }
 });
@@ -352,7 +352,7 @@ router.get('/attribution/paths', requireAuth, async (req: AuthenticatedRequest, 
 
     res.json({ paths });
   } catch (error) {
-    logger.error('Failed to get attribution paths:', error);
+    logger.warn('Failed to get attribution paths:', error);
     res.status(500).json({ error: 'Failed to get attribution paths' });
   }
 });
@@ -383,7 +383,7 @@ router.get('/dashboard/attribution', requireAuth, async (req: AuthenticatedReque
 
     res.json({ attribution: { channels, total } });
   } catch (error) {
-    logger.error('Failed to get dashboard attribution:', error);
+    logger.warn('Failed to get dashboard attribution:', error);
     res.status(500).json({ error: 'Failed to get dashboard attribution' });
   }
 });
@@ -407,7 +407,7 @@ router.get('/dashboard/paths', requireAuth, async (req: AuthenticatedRequest, re
 
     res.json({ paths });
   } catch (error) {
-    logger.error('Failed to get dashboard paths:', error);
+    logger.warn('Failed to get dashboard paths:', error);
     res.status(500).json({ error: 'Failed to get dashboard paths' });
   }
 });
@@ -437,7 +437,7 @@ router.get('/roas/audience-segments', requireAuth, async (req: AuthenticatedRequ
 
     res.json({ segments });
   } catch (error) {
-    logger.error('Failed to get ROAS audience segments:', error);
+    logger.warn('Failed to get ROAS audience segments:', error);
     res.status(500).json({ error: 'Failed to get ROAS audience segments' });
   }
 });
@@ -453,7 +453,7 @@ router.get('/roas/campaigns', requireAuth, async (req: AuthenticatedRequest, res
       .limit(100);
     res.json({ campaigns });
   } catch (error) {
-    logger.error('Failed to get ROAS campaigns:', error);
+    logger.warn('Failed to get ROAS campaigns:', error);
     res.status(500).json({ error: 'Failed to get ROAS campaigns' });
   }
 });
@@ -500,7 +500,7 @@ router.get('/roas/creative-fatigue-analysis', requireAuth, async (req: Authentic
 
     res.json({ analysis: { fatigued, healthy } });
   } catch (error) {
-    logger.error('Failed to get ROAS creative fatigue analysis:', error);
+    logger.warn('Failed to get ROAS creative fatigue analysis:', error);
     res.status(500).json({ error: 'Failed to get ROAS creative fatigue analysis' });
   }
 });
@@ -541,7 +541,7 @@ router.get('/roas/forecast', requireAuth, async (req: AuthenticatedRequest, res)
 
     res.json({ forecast: { daily, weekly, monthly, activeCampaigns: campaigns.length, dailyBudget: totalDailyBudget } });
   } catch (error) {
-    logger.error('Failed to get ROAS forecast:', error);
+    logger.warn('Failed to get ROAS forecast:', error);
     res.status(500).json({ error: 'Failed to get ROAS forecast' });
   }
 });
@@ -621,12 +621,12 @@ router.post('/optimize-campaign', requireAuth, async (req, res) => {
           const topRec = (result.data?.recommendations as string[] | undefined)?.[0] || 'Review your targeting and creatives for better performance.';
           await notificationService.sendAdCampaignOptimizedNotification(userId, campaignName, topRec);
         } catch (err) {
-          logger.error('Ad campaign optimized notification error:', err);
+          logger.warn('Ad campaign optimized notification error:', err);
         }
       });
     }
   } catch (error) {
-    logger.error('Failed to optimize campaign:', error);
+    logger.warn('Failed to optimize campaign:', error);
     res.status(500).json({ error: 'Failed to optimize campaign' });
   }
 });
@@ -664,7 +664,7 @@ router.post('/generate-content', requireAuthOnly, async (req, res) => {
       content: result.data,
     });
   } catch (error) {
-    logger.error('Failed to generate ad content:', error);
+    logger.warn('Failed to generate ad content:', error);
     res.status(500).json({ error: 'Failed to generate content' });
   }
 });
@@ -696,7 +696,7 @@ router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest
     logger.info(`[AdVideoGen] Video ready via ${result.source || 'renderer'}`);
     res.json(result);
   } catch (error) {
-    logger.error('Failed to generate ad video:', error);
+    logger.warn('Failed to generate ad video:', error);
     res.status(500).json({ success: false, message: 'Video generation failed' });
   }
 });
@@ -740,7 +740,7 @@ router.post('/generate-image', requireAuthOnly, async (req: AuthenticatedRequest
 
     res.json({ success: true, ...result.data });
   } catch (error) {
-    logger.error('Failed to generate ad image:', error);
+    logger.warn('Failed to generate ad image:', error);
     res.status(500).json({ success: false, message: 'Image generation failed' });
   }
 });
@@ -763,7 +763,7 @@ router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedReques
       });
     }
   } catch (error) {
-    logger.error('Failed to get ad video templates:', error);
+    logger.warn('Failed to get ad video templates:', error);
     res.status(500).json({ success: false, message: 'Failed to get templates' });
   }
 });

@@ -288,7 +288,7 @@ export async function storeUploadedFile(
           category: uploadCategory,
         });
       } catch (processingError) {
-        logger.error('Image processing failed, using original', {
+        logger.warn('Image processing failed, using original', {
           error: processingError,
           filename: file.originalname,
           userId,
@@ -313,7 +313,7 @@ export async function storeUploadedFile(
 
     return { key, url, processed: wasProcessed };
   } catch (error: unknown) {
-    logger.error('Error storing uploaded file:', error);
+    logger.warn('Error storing uploaded file:', error);
     throw error instanceof Error ? error : new Error('Failed to store uploaded file');
   }
 }
@@ -416,7 +416,7 @@ export async function generateUploadUrl(
 
     return { uploadUrl, key };
   } catch (error: unknown) {
-    logger.error('Error generating upload URL:', error);
+    logger.warn('Error generating upload URL:', error);
     throw error instanceof Error ? error : new Error('Failed to generate upload URL');
   }
 }

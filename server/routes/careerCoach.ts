@@ -41,7 +41,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error fetching career coach recommendations:', error?.message);
+    logger.warn('Error fetching career coach recommendations:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -67,7 +67,7 @@ router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
       message: 'Recommendation dismissed',
     });
   } catch (error: any) {
-    logger.error('Error dismissing recommendation:', error?.message);
+    logger.warn('Error dismissing recommendation:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -93,7 +93,7 @@ router.post('/complete/:id', requireAuth, asyncHandler(async (req, res) => {
       message: 'Recommendation marked as completed',
     });
   } catch (error: any) {
-    logger.error('Error completing recommendation:', error?.message);
+    logger.warn('Error completing recommendation:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -121,7 +121,7 @@ router.get('/goals', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error fetching career goals:', error?.message);
+    logger.warn('Error fetching career goals:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -153,7 +153,7 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
       data: goal,
     });
   } catch (error: any) {
-    logger.error('Error creating career goal:', error?.message);
+    logger.warn('Error creating career goal:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -169,7 +169,7 @@ router.delete('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
     }
     res.json({ success: true, message: 'Goal deleted' });
   } catch (error: any) {
-    logger.error('Error deleting career goal:', error?.message);
+    logger.warn('Error deleting career goal:', error?.message);
     res.status(500).json({ error: 'Failed to delete goal' });
   }
 }));
@@ -195,7 +195,7 @@ router.put('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
     }
     res.json({ success: true, data: goal });
   } catch (error: any) {
-    logger.error('Error updating career goal:', error?.message);
+    logger.warn('Error updating career goal:', error?.message);
     res.status(500).json({ error: 'Failed to update goal' });
   }
 }));
@@ -224,7 +224,7 @@ router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
       data: goal,
     });
   } catch (error: any) {
-    logger.error('Error creating SMART goal:', error?.message);
+    logger.warn('Error creating SMART goal:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -258,7 +258,7 @@ router.patch('/goals/:id/progress', requireAuth, asyncHandler(async (req, res) =
       data: goal,
     });
   } catch (error: any) {
-    logger.error('Error updating goal progress:', error?.message);
+    logger.warn('Error updating goal progress:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -279,7 +279,7 @@ router.get('/analyze', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error analyzing career gaps:', error?.message);
+    logger.warn('Error analyzing career gaps:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -289,7 +289,7 @@ router.get('/patterns', requireAuth, asyncHandler(async (req, res) => {
     const patterns = careerCoachService.getPatternLibrary();
     res.json({ success: true, data: { patterns, total: patterns.length } });
   } catch (error: any) {
-    logger.error('Error fetching pattern library:', error?.message);
+    logger.warn('Error fetching pattern library:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -386,7 +386,7 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
       }
     });
   } catch (error: any) {
-    logger.error('Error fetching career insights:', error?.message);
+    logger.warn('Error fetching career insights:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));

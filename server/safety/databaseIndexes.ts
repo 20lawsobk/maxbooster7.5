@@ -460,7 +460,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
         logger.warn(`   ⚠️ ${index.name} - ${error.message}`);
       } else {
         failed.push({ name: index.name, error: error.message });
-        logger.error(`   ✗ ${index.name} - ${error.message}`);
+        logger.warn(`   ✗ ${index.name} - ${error.message}`);
       }
     }
   }

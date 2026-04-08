@@ -137,7 +137,7 @@ class MobilePushService {
           logger.info('📱 Mobile Push Service: FCM v1 API ready (raw key + email)');
           return;
         } catch (err) {
-          logger.error('📱 Mobile Push Service: Failed to reconstruct service account from raw key', err);
+          logger.warn('📱 Mobile Push Service: Failed to reconstruct service account from raw key', err);
         }
       } else {
         logger.warn('📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode');
@@ -204,7 +204,7 @@ class MobilePushService {
         logger.info(`📱 Mobile token registered for user ${userId} (${platform})`);
       }
     } catch (error) {
-      logger.error('Failed to register mobile device token:', error);
+      logger.warn('Failed to register mobile device token:', error);
       throw error;
     }
   }
@@ -216,7 +216,7 @@ class MobilePushService {
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(mobileDeviceTokens.token, token));
     } catch (error) {
-      logger.error('Failed to deactivate mobile device token:', error);
+      logger.warn('Failed to deactivate mobile device token:', error);
     }
   }
 
@@ -227,7 +227,7 @@ class MobilePushService {
         .where(eq(mobileDeviceTokens.userId, userId));
       logger.info(`📱 All mobile tokens removed for user ${userId}`);
     } catch (error) {
-      logger.error('Failed to remove user mobile tokens:', error);
+      logger.warn('Failed to remove user mobile tokens:', error);
     }
   }
 
@@ -243,7 +243,7 @@ class MobilePushService {
           )
         ) as DeviceTokenRecord[];
     } catch (error) {
-      logger.error('Failed to get user mobile tokens:', error);
+      logger.warn('Failed to get user mobile tokens:', error);
       return [];
     }
   }
@@ -297,7 +297,7 @@ class MobilePushService {
       });
 
       if (!response.ok) {
-        logger.error('Failed to get FCM access token:', await response.text());
+        logger.warn('Failed to get FCM access token:', await response.text());
         return null;
       }
 
@@ -306,7 +306,7 @@ class MobilePushService {
       this.accessTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       return this.accessToken;
     } catch (error) {
-      logger.error('FCM access token error:', error);
+      logger.warn('FCM access token error:', error);
       return null;
     }
   }
@@ -384,12 +384,12 @@ class MobilePushService {
         if (response.status === 404 || errText.includes('UNREGISTERED')) {
           await this.deactivateToken(token);
         }
-        logger.error(`FCM v1 send failed (${response.status}):`, errText.substring(0, 200));
+        logger.warn(`FCM v1 send failed (${response.status}):`, errText.substring(0, 200));
         return false;
       }
       return true;
     } catch (error) {
-      logger.error('FCM v1 network error:', error);
+      logger.warn('FCM v1 network error:', error);
       return false;
     }
   }
@@ -433,7 +433,7 @@ class MobilePushService {
       });
 
       if (!response.ok) {
-        logger.error(`FCM legacy send failed (${response.status})`);
+        logger.warn(`FCM legacy send failed (${response.status})`);
         return false;
       }
 
@@ -447,7 +447,7 @@ class MobilePushService {
       }
       return (result.success ?? 0) > 0;
     } catch (error) {
-      logger.error('FCM legacy network error:', error);
+      logger.warn('FCM legacy network error:', error);
       return false;
     }
   }

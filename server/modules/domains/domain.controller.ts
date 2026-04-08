@@ -26,7 +26,7 @@ export async function checkManaged(req: Request, res: Response) {
 
     return res.json({ ok: true, available: existing.length === 0, domain: fqdn });
   } catch (err: any) {
-    logger.error({ err }, "[domains] checkManaged error");
+    logger.warn({ err }, "[domains] checkManaged error");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -76,7 +76,7 @@ export async function reserveManaged(req: Request, res: Response) {
     logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId}`);
     return res.status(201).json({ ok: true, domain: record.domain, id: record.id });
   } catch (err) {
-    logger.error("[domains] reserveManaged error:", err);
+    logger.warn("[domains] reserveManaged error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -142,7 +142,7 @@ export async function requestCustomDomain(req: Request, res: Response) {
       },
     });
   } catch (err) {
-    logger.error("[domains] requestCustomDomain error:", err);
+    logger.warn("[domains] requestCustomDomain error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -198,7 +198,7 @@ export async function verifyCustomDomain(req: Request, res: Response) {
     logger.info(`[domains] Custom domain verified and activated: ${domain}`);
     return res.json({ ok: true, verified: true, domain });
   } catch (err) {
-    logger.error("[domains] verifyCustomDomain error:", err);
+    logger.warn("[domains] verifyCustomDomain error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -227,7 +227,7 @@ export async function listDomains(req: Request, res: Response) {
 
     return res.json({ ok: true, domains });
   } catch (err) {
-    logger.error("[domains] listDomains error:", err);
+    logger.warn("[domains] listDomains error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }
@@ -258,7 +258,7 @@ export async function deleteDomain(req: Request, res: Response) {
 
     return res.json({ ok: true });
   } catch (err) {
-    logger.error("[domains] deleteDomain error:", err);
+    logger.warn("[domains] deleteDomain error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 }

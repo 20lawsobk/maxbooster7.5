@@ -60,7 +60,7 @@ process.on('uncaughtException', (err) => {
   // (HTTP server close → DB pool drain → process.exit).  Calling exit here
   // would race against that cleanup and terminate the process before in-flight
   // requests/queries have had a chance to complete.
-  logger.error({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
+  logger.warn({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
   if (isProduction) Sentry.captureException(err);
   // Flush Sentry in background — index.ts gives the process 10 s to shut down,
   // which is sufficient time for an 8-second Sentry flush.
@@ -82,7 +82,7 @@ process.on('unhandledRejection', (reason: any) => {
     return;
   }
 
-  logger.error({ err, type: 'unhandledRejection' }, `unhandledRejection: ${err.message}`);
+  logger.warn({ err, type: 'unhandledRejection' }, `unhandledRejection: ${err.message}`);
   if (isProduction) Sentry.captureException(err);
 });
 

@@ -73,7 +73,7 @@ export class SecurityService {
 
       return log;
     } catch (error: unknown) {
-      logger.error('Error creating audit log:', error);
+      logger.warn('Error creating audit log:', error);
       throw new Error('Failed to create audit log');
     }
   }
@@ -121,7 +121,7 @@ export class SecurityService {
 
       return logs;
     } catch (error: unknown) {
-      logger.error('Error fetching audit logs:', error);
+      logger.warn('Error fetching audit logs:', error);
       throw new Error('Failed to fetch audit logs');
     }
   }
@@ -196,7 +196,7 @@ export class SecurityService {
 
       return healthCheck;
     } catch (error: unknown) {
-      logger.error(`Error checking health for ${service}:`, error);
+      logger.warn(`Error checking health for ${service}:`, error);
       throw new Error(`Failed to check health for ${service}`);
     }
   }
@@ -233,7 +233,7 @@ export class SecurityService {
 
       return incident;
     } catch (error: unknown) {
-      logger.error('Error creating incident:', error);
+      logger.warn('Error creating incident:', error);
       throw new Error('Failed to create incident');
     }
   }
@@ -256,7 +256,7 @@ export class SecurityService {
 
       return incident;
     } catch (error: unknown) {
-      logger.error('Error resolving incident:', error);
+      logger.warn('Error resolving incident:', error);
       throw new Error('Failed to resolve incident');
     }
   }
@@ -289,7 +289,7 @@ export class SecurityService {
 
       return incidents;
     } catch (error: unknown) {
-      logger.error('Error fetching incidents:', error);
+      logger.warn('Error fetching incidents:', error);
       throw new Error('Failed to fetch incidents');
     }
   }
@@ -344,7 +344,7 @@ export class SecurityService {
       logger.info(`RBAC denied: User ${userId} (role: ${userRole}, tier: ${userTier}) lacks permission: ${permission}`);
       return false;
     } catch (error: unknown) {
-      logger.error('Error checking RBAC:', error);
+      logger.warn('Error checking RBAC:', error);
       throw new Error('Failed to check permissions');
     }
   }
@@ -378,7 +378,7 @@ export class SecurityService {
         },
       };
     } catch (error: unknown) {
-      logger.error('Error fetching system metrics:', error);
+      logger.warn('Error fetching system metrics:', error);
       throw new Error('Failed to fetch system metrics');
     }
   }

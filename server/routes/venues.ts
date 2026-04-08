@@ -20,7 +20,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(items);
   } catch (error) {
-    logger.error('[Venues] Failed to list:', error);
+    logger.warn('[Venues] Failed to list:', error);
     res.status(500).json({ error: 'Failed to fetch venue contacts' });
   }
 });
@@ -54,7 +54,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    logger.error('[Venues] Failed to fetch stats:', error);
+    logger.warn('[Venues] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -67,7 +67,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Venue contact not found' });
     res.json(item);
   } catch (error) {
-    logger.error('[Venues] Failed to fetch venue contact:', error);
+    logger.warn('[Venues] Failed to fetch venue contact:', error);
     res.status(500).json({ error: 'Failed to fetch venue contact' });
   }
 });
@@ -79,7 +79,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:venues', req.user!.id));
     res.status(201).json(item);
   } catch (error: unknown) {
-    logger.error('[Venues] Failed to create:', error);
+    logger.warn('[Venues] Failed to create:', error);
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -108,7 +108,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:venues', userId));
     res.json(item);
   } catch (error: unknown) {
-    logger.error('[Venues] Failed to update:', error);
+    logger.warn('[Venues] Failed to update:', error);
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -134,7 +134,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:venues', userId));
     res.json({ success: true });
   } catch (error) {
-    logger.error('[Venues] Failed to delete:', error);
+    logger.warn('[Venues] Failed to delete:', error);
     res.status(500).json({ error: 'Failed to delete venue contact' });
   }
 });

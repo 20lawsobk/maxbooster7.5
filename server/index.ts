@@ -130,8 +130,8 @@ try {
   applyMandatoryMiddleware(app);
   logger.info('✅ Mandatory safety middleware applied');
 } catch (error: any) {
-  logger.error('❌ CRITICAL: Failed to apply mandatory safety middleware');
-  logger.error(`   └─ Error: ${error.message}`);
+  logger.warn('❌ CRITICAL: Failed to apply mandatory safety middleware');
+  logger.warn(`   └─ Error: ${error.message}`);
   process.exit(1);
 }
 
@@ -474,12 +474,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   if (isProduction) {
     const sessionSecret = process.env.SESSION_SECRET;
     if (!sessionSecret) {
-      logger.error('❌ CRITICAL: SESSION_SECRET environment variable is required in production');
-      logger.error('❌ Cannot start server without secure session configuration');
+      logger.warn('❌ CRITICAL: SESSION_SECRET environment variable is required in production');
+      logger.warn('❌ Cannot start server without secure session configuration');
       process.exit(1);
     }
     if (sessionSecret.length < 32) {
-      logger.error('❌ CRITICAL: SESSION_SECRET must be at least 32 characters');
+      logger.warn('❌ CRITICAL: SESSION_SECRET must be at least 32 characters');
       process.exit(1);
     }
   }
@@ -511,7 +511,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   try {
     await verifyReadReplica();
   } catch (e: any) {
-    logger.error(`[db] Failed to run replica verification: ${e.message}`);
+    logger.warn(`[db] Failed to run replica verification: ${e.message}`);
   }
 
   // ========================================
@@ -523,7 +523,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       logger.warn(`⚠️ Safety systems initialized with warnings: ${safetyResult.errors.join(', ')}`);
     }
   } catch (error: any) {
-    logger.error('⚠️ Safety systems initialization error:', error.message);
+    logger.warn('⚠️ Safety systems initialization error:', error.message);
   }
 
   // Ensure optional modules finished loading (they ran concurrently with the
@@ -803,7 +803,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       }
       return next();
     } catch (err) {
-      logger.error('[/s/:label] lookup error:', err);
+      logger.warn('[/s/:label] lookup error:', err);
       return next();
     }
   });
@@ -856,7 +856,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           logger.info('✅ Stripe products and prices initialized');
           logger.info(`   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`);
         } catch (e: any) {
-          logger.error(`❌ Failed to initialize Stripe prices: ${e.message}`);
+          logger.warn(`❌ Failed to initialize Stripe prices: ${e.message}`);
         }
 
         // 0b. Admin account seeding — idempotent, safe to run after listen
@@ -865,7 +865,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           await initializeAdmin();
           logger.info('✅ Admin account initialized');
         } catch (e: any) {
-          logger.error(`❌ Failed to initialize admin: ${e.message}`);
+          logger.warn(`❌ Failed to initialize admin: ${e.message}`);
         }
 
         // 0c. Onboarding task seeding
@@ -1102,7 +1102,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       });
 })().catch((error) => {
   console.error('FATAL: Server startup failed:', error);
-  logger.error({ err: error }, 'FATAL: Server startup failed');
+  logger.warn({ err: error }, 'FATAL: Server startup failed');
   process.exit(1);
 });
 
@@ -1119,7 +1119,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
 
   // Hard deadline: autoscale sends SIGKILL at ~30 s, so we must complete within 25 s.
   const hardExit = setTimeout(() => {
-    logger.error('[Shutdown] Hard timeout reached — forcing exit');
+    logger.warn('[Shutdown] Hard timeout reached — forcing exit');
     process.exit(exitCode);
   }, 25_000);
   hardExit.unref(); // do not keep the event loop alive just for this timer
@@ -1129,7 +1129,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     logger.info('[Shutdown] HTTP server closed');
   } catch (err) {
-    logger.error('[Shutdown] Error closing HTTP server:', err);
+    logger.warn('[Shutdown] Error closing HTTP server:', err);
   }
 
   try {
@@ -1164,7 +1164,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     await pool.end();
     logger.info('[Shutdown] Database pool closed');
   } catch (err) {
-    logger.error('[Shutdown] Error closing DB pool:', err);
+    logger.warn('[Shutdown] Error closing DB pool:', err);
   }
 
   clearTimeout(hardExit);
@@ -1178,7 +1178,7 @@ process.on('uncaughtException', (error: Error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.error('[Process] Uncaught exception — shutting down:', error);
+  logger.warn('[Process] Uncaught exception — shutting down:', error);
   gracefulShutdown('uncaughtException', 1);
 });
 
@@ -1191,5 +1191,5 @@ process.on('unhandledRejection', (reason: unknown) => {
     /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded/i.test(err.message)
   );
   if (isNonFatal) return; // instrument.ts already logs as warn
-  logger.error('[Process] Unhandled promise rejection (non-fatal):', reason);
+  logger.warn('[Process] Unhandled promise rejection (non-fatal):', reason);
 });

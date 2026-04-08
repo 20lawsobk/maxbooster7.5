@@ -164,7 +164,7 @@ class MemoryManager extends EventEmitter {
 
     // Check thresholds
     if (current.heapUsed > this.thresholds.critical) {
-      logger.error(`🚨 CRITICAL: Memory usage ${heapUsedMB}MB exceeds critical threshold`);
+      logger.warn(`🚨 CRITICAL: Memory usage ${heapUsedMB}MB exceeds critical threshold`);
       this.emit('memory-critical', {
         heapUsedMB,
         rssMB,

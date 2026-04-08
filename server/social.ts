@@ -77,7 +77,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Facebook API error:', error);
+      logger.warn('Facebook API error:', error);
       return null;
     }
   }
@@ -104,7 +104,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Instagram API error:', error);
+      logger.warn('Instagram API error:', error);
       return null;
     }
   }
@@ -132,7 +132,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Twitter API error:', error);
+      logger.warn('Twitter API error:', error);
       return null;
     }
   }
@@ -186,7 +186,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('TikTok API error:', error);
+      logger.warn('TikTok API error:', error);
       return null;
     }
   }
@@ -245,7 +245,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('LinkedIn API error:', error);
+      logger.warn('LinkedIn API error:', error);
       return null;
     }
   }
@@ -268,7 +268,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Google My Business API error:', error);
+      logger.warn('Google My Business API error:', error);
       return null;
     }
   }
@@ -313,7 +313,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Threads API error:', error);
+      logger.warn('Threads API error:', error);
       return null;
     }
   }
@@ -340,7 +340,7 @@ export class SocialMediaService {
         channelId,
       };
     } catch (error: unknown) {
-      logger.error('YouTube API error:', error);
+      logger.warn('YouTube API error:', error);
       return null;
     }
   }
@@ -386,7 +386,7 @@ export class SocialMediaService {
           }
         : null;
     } catch (error: unknown) {
-      logger.error('YouTube upload error:', error);
+      logger.warn('YouTube upload error:', error);
       return null;
     }
   }
@@ -488,7 +488,7 @@ export class SocialMediaService {
 
       return metrics;
     } catch (error: unknown) {
-      logger.error('Error fetching social media metrics:', error);
+      logger.warn('Error fetching social media metrics:', error);
       return [];
     }
   }
@@ -510,7 +510,7 @@ export class SocialMediaService {
         channelId: '',
       };
     } catch (error: unknown) {
-      logger.error('YouTube API error:', error);
+      logger.warn('YouTube API error:', error);
       return null;
     }
   }

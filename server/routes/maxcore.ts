@@ -84,7 +84,7 @@ async function pdimRpc(
     // No response within timeout — command was queued but not yet acknowledged
     return { ok: true, status: 202, data: { queued: true, action, reqId, detail: "Command queued — MaxCore will process it on next cycle" } };
   } catch (err: any) {
-    logger.error(`[MaxCore] PDIM RPC error for ${action}: ${err.message}`);
+    logger.warn(`[MaxCore] PDIM RPC error for ${action}: ${err.message}`);
     return { ok: false, status: 503, data: { error: String(err.message) } };
   }
 }
@@ -215,7 +215,7 @@ router.post("/train/trigger-session", async (_req, res) => {
     logger.info("[MaxCore] trigger-session pushed directly to main PDIM");
     return res.json({ ok: true, detail: "Session pushed directly to PDIM", keys: ["mbs:training:session", "mbs:downloads"] });
   } catch (err: any) {
-    logger.error(`[MaxCore] trigger-session PDIM push failed: ${err.message}`);
+    logger.warn(`[MaxCore] trigger-session PDIM push failed: ${err.message}`);
     return res.status(500).json({ ok: false, error: err.message });
   }
 });
@@ -347,7 +347,7 @@ router.post("/downloader/start", async (_req, res) => {
     logger.info("[MaxCore] downloader:start pushed directly to main PDIM (mbs:downloads, mbs:training:session)");
     res.json({ ok: true, detail: "Download job pushed directly to PDIM", keys: ["mbs:downloads", "mbs:training:session"] });
   } catch (err: any) {
-    logger.error(`[MaxCore] Failed to push to main PDIM: ${err.message}`);
+    logger.warn(`[MaxCore] Failed to push to main PDIM: ${err.message}`);
     res.status(500).json({ ok: false, error: err.message });
   }
 });
@@ -461,7 +461,7 @@ router.post("/ai-jobs/push-all", async (_req, res) => {
     } catch (err: any) {
       results.push({ key: k, ok: false, error: err.message });
       failed++;
-      logger.error(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err.message}`);
+      logger.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err.message}`);
     }
   }
 

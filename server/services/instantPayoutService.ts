@@ -78,7 +78,7 @@ export class InstantPayoutService {
       
       return entry.id;
     } catch (error: unknown) {
-      logger.error('Error recording ledger entry:', error);
+      logger.warn('Error recording ledger entry:', error);
       throw new Error('Failed to record ledger entry');
     }
   }
@@ -97,7 +97,7 @@ export class InstantPayoutService {
         .offset(offset);
       return entries;
     } catch (error: unknown) {
-      logger.error('Error fetching ledger history:', error);
+      logger.warn('Error fetching ledger history:', error);
       throw new Error('Failed to fetch ledger history');
     }
   }
@@ -202,7 +202,7 @@ export class InstantPayoutService {
 
       return { score, flags, approved, reason };
     } catch (error: unknown) {
-      logger.error('Error assessing payout risk:', error);
+      logger.warn('Error assessing payout risk:', error);
       return { score: 0, flags: ['ASSESSMENT_ERROR'], approved: true };
     }
   }
@@ -248,7 +248,7 @@ export class InstantPayoutService {
       };
     } catch (error: unknown) {
       // Log the full error for observability
-      logger.error('Error calculating available balance:', {
+      logger.warn('Error calculating available balance:', {
         userId,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined,
@@ -325,7 +325,7 @@ export class InstantPayoutService {
         requiresOnboarding: false,
       };
     } catch (error: unknown) {
-      logger.error('Error verifying Stripe account:', error);
+      logger.warn('Error verifying Stripe account:', error);
       return {
         verified: false,
         error: error.message || 'Failed to verify Stripe account',
@@ -398,7 +398,7 @@ export class InstantPayoutService {
 
       return accountLink.url;
     } catch (error: unknown) {
-      logger.error('Error creating account link:', error);
+      logger.warn('Error creating account link:', error);
       throw new Error(error.message || 'Failed to create account link');
     }
   }
@@ -525,7 +525,7 @@ export class InstantPayoutService {
         const errorMessage = stripeError instanceof Error ? stripeError.message : String(stripeError);
         
         // Log failure reason for audit (not stored in DB - column doesn't exist)
-        logger.error('Payout transfer failed', { payoutId: payoutRecord.id, orderId, failureReason: errorMessage });
+        logger.warn('Payout transfer failed', { payoutId: payoutRecord.id, orderId, failureReason: errorMessage });
         
         // Update payout record as failed
         await db
@@ -554,7 +554,7 @@ export class InstantPayoutService {
         };
       }
     } catch (error: unknown) {
-      logger.error('Error creating instant transfer:', error);
+      logger.warn('Error creating instant transfer:', error);
       return {
         success: false,
         error: error.message || 'Failed to create transfer',
@@ -717,7 +717,7 @@ export class InstantPayoutService {
         };
       }
     } catch (error: unknown) {
-      logger.error('Error requesting instant payout:', error);
+      logger.warn('Error requesting instant payout:', error);
       return {
         success: false,
         error: (error as Error).message || 'Failed to request payout',
@@ -839,7 +839,7 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.error('Error creating enhanced split payment:', error);
+      logger.warn('Error creating enhanced split payment:', error);
       return { success: false, errors: [(error as Error).message || 'Failed to create split payment'] };
     }
   }
@@ -916,7 +916,7 @@ export class InstantPayoutService {
         summary: { byStatus, byMonth },
       };
     } catch (error: unknown) {
-      logger.error('Error generating payout report:', error);
+      logger.warn('Error generating payout report:', error);
       throw new Error('Failed to generate payout report');
     }
   }
@@ -948,7 +948,7 @@ export class InstantPayoutService {
 
       return payouts;
     } catch (error: unknown) {
-      logger.error('Error fetching payout history:', error);
+      logger.warn('Error fetching payout history:', error);
       throw new Error('Failed to fetch payout history');
     }
   }
@@ -986,7 +986,7 @@ export class InstantPayoutService {
             if (stripePayout.status !== payout.status) {
               // Log failure reason for audit (not stored in DB - column doesn't exist)
               if (stripePayout.failure_message) {
-                logger.error('Payout failure from Stripe', { payoutId, failureReason: stripePayout.failure_message });
+                logger.warn('Payout failure from Stripe', { payoutId, failureReason: stripePayout.failure_message });
               }
               
               await db
@@ -1004,13 +1004,13 @@ export class InstantPayoutService {
             }
           }
         } catch (stripeError: unknown) {
-          logger.error('Error checking Stripe payout status:', stripeError);
+          logger.warn('Error checking Stripe payout status:', stripeError);
         }
       }
 
       return payout;
     } catch (error: unknown) {
-      logger.error('Error fetching payout status:', error);
+      logger.warn('Error fetching payout status:', error);
       throw new Error('Failed to fetch payout status');
     }
   }
@@ -1118,7 +1118,7 @@ export class InstantPayoutService {
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.error('Transfer webhook failure', { payoutId: payoutRecord.id, transferId: transfer.id, failureReason });
+        logger.warn('Transfer webhook failure', { payoutId: payoutRecord.id, transferId: transfer.id, failureReason });
       }
       
       // Update payout record
@@ -1130,7 +1130,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.error('Error handling transfer webhook:', error);
+      logger.warn('Error handling transfer webhook:', error);
       throw error;
     }
   }
@@ -1209,7 +1209,7 @@ export class InstantPayoutService {
           break;
       }
     } catch (error: unknown) {
-      logger.error('Error handling account webhook:', error);
+      logger.warn('Error handling account webhook:', error);
       throw error;
     }
   }
@@ -1299,7 +1299,7 @@ export class InstantPayoutService {
 
       // Log failure reason for audit (not stored in DB - column doesn't exist)
       if (failureReason) {
-        logger.error('Payout webhook failure', { payoutId: payoutRecord.id, stripePayoutId: payout.id, failureReason });
+        logger.warn('Payout webhook failure', { payoutId: payoutRecord.id, stripePayoutId: payout.id, failureReason });
       }
       
       // Update payout record
@@ -1311,7 +1311,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.error('Error handling payout webhook:', error);
+      logger.warn('Error handling payout webhook:', error);
       throw error;
     }
   }
@@ -1360,7 +1360,7 @@ export class InstantPayoutService {
         paymentIntentId: paymentIntent.id,
       };
     } catch (error: unknown) {
-      logger.error('Error creating destination charge:', error);
+      logger.warn('Error creating destination charge:', error);
       return { success: false, error: error.message || 'Failed to create destination charge' };
     }
   }
@@ -1424,7 +1424,7 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.error('Error creating split payment:', error);
+      logger.warn('Error creating split payment:', error);
       return { success: false, errors: [error.message || 'Failed to create split payment'] };
     }
   }
@@ -1447,7 +1447,7 @@ export class InstantPayoutService {
       
       return { url: loginLink.url };
     } catch (error: unknown) {
-      logger.error('Error creating dashboard link:', error);
+      logger.warn('Error creating dashboard link:', error);
       return { error: error.message || 'Failed to create dashboard link' };
     }
   }
@@ -1494,7 +1494,7 @@ export class InstantPayoutService {
         averageOrderValue: totalSales > 0 ? balance.totalEarnings / totalSales : 0,
       };
     } catch (error: unknown) {
-      logger.error('Error getting earnings summary:', error);
+      logger.warn('Error getting earnings summary:', error);
       throw new Error('Failed to get earnings summary');
     }
   }

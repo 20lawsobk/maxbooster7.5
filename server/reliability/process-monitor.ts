@@ -238,7 +238,7 @@ class ProcessMonitor extends EventEmitter {
 
     // Log critical alerts immediately
     if (alert.severity === 'critical') {
-      logger.error(`🚨 CRITICAL ALERT [${alert.type}]: ${alert.message}`);
+      logger.warn(`🚨 CRITICAL ALERT [${alert.type}]: ${alert.message}`);
     }
   }
 

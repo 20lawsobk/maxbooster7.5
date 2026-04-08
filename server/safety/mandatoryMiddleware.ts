@@ -80,7 +80,7 @@ export function prototypePollutionMiddleware(
     }
     next();
   } catch (error) {
-    logger.error('Prototype pollution protection error:', error);
+    logger.warn('Prototype pollution protection error:', error);
     next();
   }
 }
@@ -123,7 +123,7 @@ export function globalErrorHandler(
   }
 
   if (statusCode >= 500) {
-    logger.error({
+    logger.warn({
       requestId,
       error: err.message,
       stack: err.stack,
@@ -218,7 +218,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Request ID middleware');
   } catch (error) {
     failedMiddleware.push('requestId');
-    logger.error('   ✗ Request ID middleware FAILED', error);
+    logger.warn('   ✗ Request ID middleware FAILED', error);
     throw new Error('Failed to load mandatory requestId middleware');
   }
 
@@ -229,7 +229,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Request logging middleware');
   } catch (error) {
     failedMiddleware.push('requestLogging');
-    logger.error('   ✗ Request logging middleware FAILED', error);
+    logger.warn('   ✗ Request logging middleware FAILED', error);
     throw new Error('Failed to load mandatory requestLogging middleware');
   }
 
@@ -255,7 +255,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Helmet security headers (CSP: enabled)');
   } catch (error) {
     failedMiddleware.push('helmet');
-    logger.error('   ✗ Helmet middleware FAILED', error);
+    logger.warn('   ✗ Helmet middleware FAILED', error);
     throw new Error('Failed to load mandatory helmet middleware');
   }
 
@@ -323,7 +323,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ CORS middleware (production allowlist enforced)');
   } catch (error) {
     failedMiddleware.push('cors');
-    logger.error('   ✗ CORS middleware FAILED', error);
+    logger.warn('   ✗ CORS middleware FAILED', error);
     throw new Error('Failed to load mandatory CORS middleware');
   }
 
@@ -334,7 +334,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Prototype pollution protection');
   } catch (error) {
     failedMiddleware.push('prototypePollution');
-    logger.error('   ✗ Prototype pollution protection FAILED', error);
+    logger.warn('   ✗ Prototype pollution protection FAILED', error);
     throw new Error('Failed to load mandatory prototype pollution middleware');
   }
 
@@ -372,7 +372,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info(`   ✓ Rate limiting middleware (max: ${maxRequests}/15min, backend: ${backend}, skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {
     failedMiddleware.push('rateLimit');
-    logger.error('   ✗ Rate limiting middleware FAILED', error);
+    logger.warn('   ✗ Rate limiting middleware FAILED', error);
     throw new Error('Failed to load mandatory rate limiting middleware');
   }
 
@@ -413,7 +413,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info(`   ✓ Strict rate limiting for auth endpoints (skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {
     failedMiddleware.push('strictRateLimit');
-    logger.error('   ✗ Strict rate limiting FAILED', error);
+    logger.warn('   ✗ Strict rate limiting FAILED', error);
     throw new Error('Failed to load mandatory strict rate limiting middleware');
   }
 
@@ -424,7 +424,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Self-Healing Security Engine (10x healing speed)');
   } catch (error) {
     failedMiddleware.push('selfHealingSecurity');
-    logger.error('   ✗ Self-Healing Security Engine FAILED', error);
+    logger.warn('   ✗ Self-Healing Security Engine FAILED', error);
     // Non-critical - log but don't throw
     logger.warn('   ⚠️ Self-healing security running in degraded mode');
   }

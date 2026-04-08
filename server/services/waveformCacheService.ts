@@ -55,7 +55,7 @@ class WaveformCacheService {
       try {
         buffer = await storageService.downloadFile(audioKey);
       } catch (error) {
-        logger.error('Failed to download audio for waveform generation', { audioKey, error });
+        logger.warn('Failed to download audio for waveform generation', { audioKey, error });
         throw new Error('Failed to retrieve audio file for waveform generation');
       }
     }
@@ -123,7 +123,7 @@ class WaveformCacheService {
         resolution,
       };
     } catch (error) {
-      logger.error('Error generating waveform from WAV', { error });
+      logger.warn('Error generating waveform from WAV', { error });
       return this.generateFallbackWaveform(resolution);
     }
   }

@@ -67,7 +67,7 @@ export class DistributionService {
       const release = await storage.createRelease(data);
       return release;
     } catch (error: unknown) {
-      logger.error("Error creating release:", error);
+      logger.warn("Error creating release:", error);
       throw new Error("Failed to create release");
     }
   }
@@ -79,7 +79,7 @@ export class DistributionService {
     try {
       return await storage.getUserReleases(userId);
     } catch (error: unknown) {
-      logger.error("Error fetching releases:", error);
+      logger.warn("Error fetching releases:", error);
       throw new Error("Failed to fetch releases");
     }
   }
@@ -92,7 +92,7 @@ export class DistributionService {
       const releases = await storage.getUserReleases(userId);
       return releases.find(r => r.id === releaseId);
     } catch (error: unknown) {
-      logger.error("Error fetching release:", error);
+      logger.warn("Error fetching release:", error);
       throw new Error("Failed to fetch release");
     }
   }
@@ -139,7 +139,7 @@ export class DistributionService {
             estimatedLiveDate: result.estimatedLiveDate ? new Date(result.estimatedLiveDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           };
         } catch (error: unknown) {
-          logger.error("LabelGrid distribution failed:", error);
+          logger.warn("LabelGrid distribution failed:", error);
           throw error;
         }
       } else {
@@ -169,7 +169,7 @@ export class DistributionService {
         };
       }
     } catch (error: unknown) {
-      logger.error("Error submitting to provider:", error);
+      logger.warn("Error submitting to provider:", error);
       throw new Error("Failed to submit to provider");
     }
   }
@@ -194,7 +194,7 @@ export class DistributionService {
         errorMessage: p.errorMessage,
       }));
     } catch (error: unknown) {
-      logger.error("Error tracking dispatch status:", error);
+      logger.warn("Error tracking dispatch status:", error);
       throw new Error("Failed to track dispatch status");
     }
   }
@@ -304,7 +304,7 @@ export class DistributionService {
 
       logger.info("DSP Webhook processed successfully", { releaseId, provider, internalStatus });
     } catch (error: unknown) {
-      logger.error("Error handling DSP webhook:", error);
+      logger.warn("Error handling DSP webhook:", error);
       throw new Error("Failed to handle DSP webhook");
     }
   }
@@ -358,7 +358,7 @@ export class DistributionService {
         platforms: distributionResults
       };
     } catch (error: unknown) {
-      logger.error("Distribution error:", error);
+      logger.warn("Distribution error:", error);
       throw new Error("Failed to distribute release");
     }
   }
@@ -416,7 +416,7 @@ export class DistributionService {
         })),
       };
     } catch (error: unknown) {
-      logger.error("Analytics error:", error);
+      logger.warn("Analytics error:", error);
       throw new Error("Failed to fetch analytics");
     }
   }
@@ -447,7 +447,7 @@ export class DistributionService {
 
       return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {
-      logger.error("Royalty split error:", error);
+      logger.warn("Royalty split error:", error);
       throw new Error("Failed to setup royalty split");
     }
   }
@@ -498,7 +498,7 @@ export class DistributionService {
       // For now, we'll accept the file
       return { valid: true };
     } catch (error: unknown) {
-      logger.error("Artwork validation error:", error);
+      logger.warn("Artwork validation error:", error);
       return { valid: false, error: "Failed to validate artwork" };
     }
   }
@@ -516,7 +516,7 @@ export class DistributionService {
       const pkg = await storage.createDistributionPackage(data);
       return pkg;
     } catch (error: unknown) {
-      logger.error("Error creating distribution package:", error);
+      logger.warn("Error creating distribution package:", error);
       throw new Error("Failed to create distribution package");
     }
   }
@@ -583,7 +583,7 @@ export class DistributionService {
 
       return metadata;
     } catch (error: unknown) {
-      logger.error("Error generating metadata JSON:", error);
+      logger.warn("Error generating metadata JSON:", error);
       throw new Error("Failed to generate metadata JSON");
     }
   }
@@ -622,7 +622,7 @@ export class DistributionService {
 
       return csvContent;
     } catch (error: unknown) {
-      logger.error("Error generating CSV:", error);
+      logger.warn("Error generating CSV:", error);
       throw new Error("Failed to generate CSV");
     }
   }
@@ -712,7 +712,7 @@ Generated: ${new Date().toISOString()}
       
       return zipKey;
     } catch (error: unknown) {
-      logger.error("Error packaging ZIP:", error);
+      logger.warn("Error packaging ZIP:", error);
       throw new Error("Failed to package distribution files");
     } finally {
       // Clean up temp file
@@ -731,7 +731,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getDistributionPackage(projectId);
     } catch (error: unknown) {
-      logger.error("Error getting distribution package:", error);
+      logger.warn("Error getting distribution package:", error);
       throw new Error("Failed to get distribution package");
     }
   }
@@ -748,7 +748,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage.updateDistributionPackage(packageId, updates);
     } catch (error: unknown) {
-      logger.error("Error updating distribution package:", error);
+      logger.warn("Error updating distribution package:", error);
       throw new Error("Failed to update distribution package");
     }
   }
@@ -765,7 +765,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage.createDistributionTrack(track);
     } catch (error: unknown) {
-      logger.error("Error adding package track:", error);
+      logger.warn("Error adding package track:", error);
       throw new Error("Failed to add track to package");
     }
   }
@@ -777,7 +777,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getPackageTracks(packageId);
     } catch (error: unknown) {
-      logger.error("Error getting package tracks:", error);
+      logger.warn("Error getting package tracks:", error);
       throw new Error("Failed to get package tracks");
     }
   }
@@ -809,7 +809,7 @@ Generated: ${new Date().toISOString()}
             lastChecked: new Date(),
           };
         } catch (error: unknown) {
-          logger.error("Error fetching status from LabelGrid:", error);
+          logger.warn("Error fetching status from LabelGrid:", error);
         }
       }
 
@@ -824,7 +824,7 @@ Generated: ${new Date().toISOString()}
         lastChecked: new Date(),
       };
     } catch (error: unknown) {
-      logger.error("Error refreshing release status:", error);
+      logger.warn("Error refreshing release status:", error);
       throw new Error("Failed to refresh release status");
     }
   }
@@ -854,7 +854,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ SLA metric created for ${platform}: target ${DEFAULT_SLA_TARGET_HOURS}h delivery`);
       return metric;
     } catch (error: unknown) {
-      logger.error("Error creating SLA metric:", error);
+      logger.warn("Error creating SLA metric:", error);
       throw new Error("Failed to create SLA metric");
     }
   }
@@ -885,7 +885,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Delivery confirmed: ${deliveryHours.toFixed(1)}h (SLA ${metSLA ? 'MET' : 'MISSED'})`);
       return updated;
     } catch (error: unknown) {
-      logger.error("Error marking delivery:", error);
+      logger.warn("Error marking delivery:", error);
       throw new Error("Failed to mark delivery");
     }
   }
@@ -897,7 +897,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getDistributionSLAMetricsByRelease(releaseId);
     } catch (error: unknown) {
-      logger.error("Error fetching SLA metrics:", error);
+      logger.warn("Error fetching SLA metrics:", error);
       throw new Error("Failed to fetch SLA metrics");
     }
   }
@@ -945,7 +945,7 @@ Generated: ${new Date().toISOString()}
         byPlatform,
       };
     } catch (error: unknown) {
-      logger.error("Error generating SLA report:", error);
+      logger.warn("Error generating SLA report:", error);
       throw new Error("Failed to generate SLA report");
     }
   }
@@ -971,7 +971,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`🔄 Retry initiated for ${metric.platform} (attempt ${updated.retryCount})`);
       return updated;
     } catch (error: unknown) {
-      logger.error("Error retrying delivery:", error);
+      logger.warn("Error retrying delivery:", error);
       throw new Error("Failed to retry delivery");
     }
   }
@@ -1016,7 +1016,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Content ID registration submitted for ISRC: ${data.isrc}`);
       return registration;
     } catch (error: unknown) {
-      logger.error("Error registering Content ID:", error);
+      logger.warn("Error registering Content ID:", error);
       throw new Error("Failed to register Content ID");
     }
   }
@@ -1028,7 +1028,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getContentIdRegistrationsByRelease(releaseId);
     } catch (error: unknown) {
-      logger.error("Error fetching Content ID registrations:", error);
+      logger.warn("Error fetching Content ID registrations:", error);
       throw new Error("Failed to fetch Content ID registrations");
     }
   }
@@ -1046,7 +1046,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.updateContentIdRegistration(registrationId, data);
     } catch (error: unknown) {
-      logger.error("Error updating Content ID status:", error);
+      logger.warn("Error updating Content ID status:", error);
       throw new Error("Failed to update Content ID status");
     }
   }
@@ -1075,7 +1075,7 @@ Generated: ${new Date().toISOString()}
         byTrack,
       };
     } catch (error: unknown) {
-      logger.error("Error fetching Content ID revenue:", error);
+      logger.warn("Error fetching Content ID revenue:", error);
       throw new Error("Failed to fetch Content ID revenue");
     }
   }
@@ -1093,7 +1093,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Sync license created for release: ${data.releaseId}`);
       return license;
     } catch (error: unknown) {
-      logger.error("Error creating sync license:", error);
+      logger.warn("Error creating sync license:", error);
       throw new Error("Failed to create sync license");
     }
   }
@@ -1105,7 +1105,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getSyncLicense(releaseId, trackId);
     } catch (error: unknown) {
-      logger.error("Error fetching sync license:", error);
+      logger.warn("Error fetching sync license:", error);
       throw new Error("Failed to fetch sync license");
     }
   }
@@ -1117,7 +1117,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.updateSyncLicense(licenseId, updates);
     } catch (error: unknown) {
-      logger.error("Error updating sync license:", error);
+      logger.warn("Error updating sync license:", error);
       throw new Error("Failed to update sync license");
     }
   }
@@ -1135,7 +1135,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`📩 Sync inquiry received from ${data.inquirerEmail}`);
       return inquiry;
     } catch (error: unknown) {
-      logger.error("Error submitting sync inquiry:", error);
+      logger.warn("Error submitting sync inquiry:", error);
       throw new Error("Failed to submit sync inquiry");
     }
   }
@@ -1147,7 +1147,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getSyncInquiriesByUser(userId);
     } catch (error: unknown) {
-      logger.error("Error fetching sync inquiries:", error);
+      logger.warn("Error fetching sync inquiries:", error);
       throw new Error("Failed to fetch sync inquiries");
     }
   }
@@ -1166,7 +1166,7 @@ Generated: ${new Date().toISOString()}
         respondedAt: new Date(),
       });
     } catch (error: unknown) {
-      logger.error("Error responding to sync inquiry:", error);
+      logger.warn("Error responding to sync inquiry:", error);
       throw new Error("Failed to respond to sync inquiry");
     }
   }
@@ -1197,7 +1197,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Royalty split created: ${data.collaboratorName} (${data.percentage}%)`);
       return split;
     } catch (error: unknown) {
-      logger.error("Error creating royalty split:", error);
+      logger.warn("Error creating royalty split:", error);
       throw new Error(error instanceof Error ? error.message : "Failed to create royalty split");
     }
   }
@@ -1209,7 +1209,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getRoyaltySplitsByRelease(releaseId, trackId);
     } catch (error: unknown) {
-      logger.error("Error fetching royalty splits:", error);
+      logger.warn("Error fetching royalty splits:", error);
       throw new Error("Failed to fetch royalty splits");
     }
   }
@@ -1235,7 +1235,7 @@ Generated: ${new Date().toISOString()}
 
       return await storage.updateRoyaltySplit(splitId, updates);
     } catch (error: unknown) {
-      logger.error("Error updating royalty split:", error);
+      logger.warn("Error updating royalty split:", error);
       throw new Error(error instanceof Error ? error.message : "Failed to update royalty split");
     }
   }
@@ -1260,7 +1260,7 @@ Generated: ${new Date().toISOString()}
         bankDetails: payoutDetails.bankDetails,
       });
     } catch (error: unknown) {
-      logger.error("Error accepting royalty split:", error);
+      logger.warn("Error accepting royalty split:", error);
       throw new Error("Failed to accept royalty split");
     }
   }
@@ -1273,7 +1273,7 @@ Generated: ${new Date().toISOString()}
       await storage.deleteRoyaltySplit(splitId);
       logger.info(`🗑️ Royalty split removed: ${splitId}`);
     } catch (error: unknown) {
-      logger.error("Error removing royalty split:", error);
+      logger.warn("Error removing royalty split:", error);
       throw new Error("Failed to remove royalty split");
     }
   }
@@ -1299,7 +1299,7 @@ Generated: ${new Date().toISOString()}
 
       return { distributions, totalDistributed };
     } catch (error: unknown) {
-      logger.error("Error calculating royalty distribution:", error);
+      logger.warn("Error calculating royalty distribution:", error);
       throw new Error("Failed to calculate royalty distribution");
     }
   }
@@ -1322,7 +1322,7 @@ Generated: ${new Date().toISOString()}
 
       return transaction;
     } catch (error: unknown) {
-      logger.error("Error recording royalty transaction:", error);
+      logger.warn("Error recording royalty transaction:", error);
       throw new Error("Failed to record royalty transaction");
     }
   }
@@ -1334,7 +1334,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getRoyaltyTransactionsBySplit(splitId);
     } catch (error: unknown) {
-      logger.error("Error fetching royalty transactions:", error);
+      logger.warn("Error fetching royalty transactions:", error);
       throw new Error("Failed to fetch royalty transactions");
     }
   }
@@ -1364,7 +1364,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Pre-save campaign created: ${campaign.name}`);
       return campaign;
     } catch (error: unknown) {
-      logger.error("Error creating pre-save campaign:", error);
+      logger.warn("Error creating pre-save campaign:", error);
       throw new Error("Failed to create pre-save campaign");
     }
   }
@@ -1376,7 +1376,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getPreSaveCampaignBySlug(slug);
     } catch (error: unknown) {
-      logger.error("Error fetching pre-save campaign:", error);
+      logger.warn("Error fetching pre-save campaign:", error);
       throw new Error("Failed to fetch pre-save campaign");
     }
   }
@@ -1388,7 +1388,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getPreSaveCampaignsByUser(userId);
     } catch (error: unknown) {
-      logger.error("Error fetching pre-save campaigns:", error);
+      logger.warn("Error fetching pre-save campaigns:", error);
       throw new Error("Failed to fetch pre-save campaigns");
     }
   }
@@ -1430,7 +1430,7 @@ Generated: ${new Date().toISOString()}
       logger.info(`✅ Pre-save recorded: ${data.platform}`);
       return entry;
     } catch (error: unknown) {
-      logger.error("Error recording pre-save:", error);
+      logger.warn("Error recording pre-save:", error);
       throw new Error("Failed to record pre-save");
     }
   }
@@ -1442,7 +1442,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.getPreSaveEntriesByCampaign(campaignId);
     } catch (error: unknown) {
-      logger.error("Error fetching pre-save entries:", error);
+      logger.warn("Error fetching pre-save entries:", error);
       throw new Error("Failed to fetch pre-save entries");
     }
   }
@@ -1502,7 +1502,7 @@ Generated: ${new Date().toISOString()}
         timeline,
       };
     } catch (error: unknown) {
-      logger.error("Error fetching campaign analytics:", error);
+      logger.warn("Error fetching campaign analytics:", error);
       throw new Error("Failed to fetch campaign analytics");
     }
   }
@@ -1514,7 +1514,7 @@ Generated: ${new Date().toISOString()}
     try {
       return await storage.updatePreSaveCampaign(campaignId, updates);
     } catch (error: unknown) {
-      logger.error("Error updating pre-save campaign:", error);
+      logger.warn("Error updating pre-save campaign:", error);
       throw new Error("Failed to update pre-save campaign");
     }
   }
@@ -1529,7 +1529,7 @@ Generated: ${new Date().toISOString()}
         endDate: new Date(),
       });
     } catch (error: unknown) {
-      logger.error("Error ending pre-save campaign:", error);
+      logger.warn("Error ending pre-save campaign:", error);
       throw new Error("Failed to end pre-save campaign");
     }
   }

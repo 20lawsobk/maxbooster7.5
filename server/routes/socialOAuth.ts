@@ -261,7 +261,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     
     res.json(enrichedConnections);
   } catch (error) {
-    logger.error('Failed to get social connections:', error);
+    logger.warn('Failed to get social connections:', error);
     res.status(500).json({ error: 'Failed to get social connections:' });
   }
 });
@@ -331,7 +331,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
     logger.info(`[OAuth] Generated auth URL for ${platform}`, { userId, platform, redirectUri });
     res.json({ authUrl });
   } catch (error) {
-    logger.error('Failed to initiate OAuth:', error);
+    logger.warn('Failed to initiate OAuth:', error);
     res.status(500).json({ error: 'Failed to connect platform' });
   }
 });
@@ -342,7 +342,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     const { code, state, error, error_description } = req.query;
     
     if (error) {
-      logger.error(`OAuth error for ${platform}:`, { error, error_description });
+      logger.warn(`OAuth error for ${platform}:`, { error, error_description });
       return res.redirect(`/social-media?error=oauth_denied&platform=${platform}`);
     }
     
@@ -421,7 +421,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           };
           logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
         } catch (twitterErr: any) {
-          logger.error(`[OAuth] Twitter token exchange ERROR:`, { 
+          logger.warn(`[OAuth] Twitter token exchange ERROR:`, { 
             error: twitterErr?.message || twitterErr,
             data: twitterErr?.data,
           });
@@ -460,7 +460,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           });
           responseText = await tokenResponse.text();
         } catch (fetchErr: any) {
-          logger.error(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
+          logger.warn(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
           return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
         }
         
@@ -471,11 +471,11 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           tokenData = Object.fromEntries(parsed.entries());
         }
         
-        logger.error(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
+        logger.warn(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
       }
 
       if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {
-        logger.error(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
+        logger.warn(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
@@ -498,7 +498,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       }
     } catch (err) {
-      logger.error(`Token exchange error for ${platform}:`, err);
+      logger.warn(`Token exchange error for ${platform}:`, err);
       return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}`);
     }
     
@@ -728,10 +728,10 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     logger.info(`[OAuth] Redirecting to success URL`, { successUrl, platform: redirectPlatform });
     res.redirect(successUrl);
   } catch (error) {
-    logger.error('OAuth callback error:', error);
+    logger.warn('OAuth callback error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const errorUrl = `/social-media?error=callback_failed&message=${encodeURIComponent(errorMessage)}`;
-    logger.error(`[OAuth] Redirecting to error URL`, { errorUrl });
+    logger.warn(`[OAuth] Redirecting to error URL`, { errorUrl });
     res.redirect(errorUrl);
   }
 });
@@ -766,7 +766,7 @@ router.post('/disconnect/:platform', requireAuth, async (req: AuthenticatedReque
       }
     });
   } catch (error) {
-    logger.error('Failed to disconnect platform:', error);
+    logger.warn('Failed to disconnect platform:', error);
     res.status(500).json({ 
       message: 'Failed to disconnect platform',
       outcome: {
@@ -788,7 +788,7 @@ router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, re
 
     res.json({ success: true, results });
   } catch (error) {
-    logger.error('Failed to sync platform stats:', error);
+    logger.warn('Failed to sync platform stats:', error);
     res.status(500).json({ error: 'Failed to sync platform stats' });
   }
 });
@@ -844,7 +844,7 @@ router.post('/refresh/:platform', requireAuth, async (req: AuthenticatedRequest,
       }
     });
   } catch (error) {
-    logger.error('Failed to refresh token:', error);
+    logger.warn('Failed to refresh token:', error);
     res.status(500).json({ 
       message: 'Failed to refresh token',
       outcome: {

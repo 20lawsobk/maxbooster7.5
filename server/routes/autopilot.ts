@@ -115,7 +115,7 @@ router.get('/status', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get autopilot status:', error);
+    logger.warn('Failed to get autopilot status:', error);
     res.status(500).json({ error: 'Failed to get autopilot status' });
   }
 });
@@ -175,7 +175,7 @@ router.post('/start', requireAuth, async (req, res) => {
       config,
     });
   } catch (error) {
-    logger.error('Failed to start autopilot:', error);
+    logger.warn('Failed to start autopilot:', error);
     res.status(500).json({ error: 'Failed to start autopilot' });
   }
 });
@@ -208,7 +208,7 @@ router.post('/stop', requireAuth, async (req, res) => {
       message: 'Autopilot paused',
     });
   } catch (error) {
-    logger.error('Failed to stop autopilot:', error);
+    logger.warn('Failed to stop autopilot:', error);
     res.status(500).json({ error: 'Failed to stop autopilot' });
   }
 });
@@ -251,7 +251,7 @@ router.post('/configure', requireAuth, async (req, res) => {
       res.status(400).json({ error: 'Invalid configuration', details: error.errors });
       return;
     }
-    logger.error('Failed to configure autopilot:', error);
+    logger.warn('Failed to configure autopilot:', error);
     res.status(500).json({ error: 'Failed to update configuration' });
   }
 });
@@ -283,7 +283,7 @@ router.post('/recommend', requireAuth, async (req, res) => {
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger.error('Failed to generate recommendations:', error);
+    logger.warn('Failed to generate recommendations:', error);
     res.status(500).json({ error: 'Failed to generate recommendations' });
   }
 });
@@ -319,7 +319,7 @@ router.post('/predict-engagement', requireAuth, async (req, res) => {
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger.error('Failed to predict engagement:', error);
+    logger.warn('Failed to predict engagement:', error);
     res.status(500).json({ error: 'Failed to predict engagement' });
   }
 });
@@ -377,7 +377,7 @@ router.post('/save-features', requireAuth, async (req, res) => {
       featureId,
     });
   } catch (error) {
-    logger.error('Failed to save features:', error);
+    logger.warn('Failed to save features:', error);
     res.status(500).json({ error: 'Failed to save features for training' });
   }
 });
@@ -415,7 +415,7 @@ router.post('/train', requireAuth, async (req, res) => {
         logger.warn(`⚠️ Not enough posts for social training (${enrichedPosts.length}/50)`);
       }
     } catch (error: any) {
-      logger.error('Social model training failed:', error);
+      logger.warn('Social model training failed:', error);
     }
     
     try {
@@ -426,7 +426,7 @@ router.post('/train', requireAuth, async (req, res) => {
         logger.warn(`⚠️ Not enough campaigns for advertising training (${enrichedCampaigns.length}/30)`);
       }
     } catch (error: any) {
-      logger.error('Advertising model training failed:', error);
+      logger.warn('Advertising model training failed:', error);
     }
     
     res.json({
@@ -445,7 +445,7 @@ router.post('/train', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to train autopilot:', error);
+    logger.warn('Failed to train autopilot:', error);
     res.status(500).json({ error: 'Failed to train autopilot AI' });
   }
 });

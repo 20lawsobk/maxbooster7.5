@@ -94,7 +94,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, workflow };
     } catch (error: unknown) {
-      logger.error('Create workflow error:', error);
+      logger.warn('Create workflow error:', error);
       return { success: false, error: 'Failed to create workflow' };
     }
   }
@@ -108,7 +108,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return workflow || null;
     } catch (error: unknown) {
-      logger.error('Get workflow error:', error);
+      logger.warn('Get workflow error:', error);
       return null;
     }
   }
@@ -124,7 +124,7 @@ export class ApprovalWorkflowService {
 
       return workflows;
     } catch (error: unknown) {
-      logger.error('Get workspace workflows error:', error);
+      logger.warn('Get workspace workflows error:', error);
       return [];
     }
   }
@@ -142,7 +142,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return workflow || null;
     } catch (error: unknown) {
-      logger.error('Get workflow by trigger error:', error);
+      logger.warn('Get workflow by trigger error:', error);
       return null;
     }
   }
@@ -179,7 +179,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, workflow };
     } catch (error: unknown) {
-      logger.error('Update workflow error:', error);
+      logger.warn('Update workflow error:', error);
       return { success: false, error: 'Failed to update workflow' };
     }
   }
@@ -218,7 +218,7 @@ export class ApprovalWorkflowService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Delete workflow error:', error);
+      logger.warn('Delete workflow error:', error);
       return { success: false, error: 'Failed to delete workflow' };
     }
   }
@@ -281,7 +281,7 @@ export class ApprovalWorkflowService {
 
       return { success: true, request };
     } catch (error: unknown) {
-      logger.error('Submit for approval error:', error);
+      logger.warn('Submit for approval error:', error);
       return { success: false, error: 'Failed to submit for approval' };
     }
   }
@@ -399,7 +399,7 @@ export class ApprovalWorkflowService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Process approval decision error:', error);
+      logger.warn('Process approval decision error:', error);
       return { success: false, error: 'Failed to process approval decision' };
     }
   }
@@ -413,7 +413,7 @@ export class ApprovalWorkflowService {
         .limit(1);
       return request || null;
     } catch (error: unknown) {
-      logger.error('Get approval request error:', error);
+      logger.warn('Get approval request error:', error);
       return null;
     }
   }
@@ -431,7 +431,7 @@ export class ApprovalWorkflowService {
 
       return { request, steps };
     } catch (error: unknown) {
-      logger.error('Get approval request with steps error:', error);
+      logger.warn('Get approval request with steps error:', error);
       return null;
     }
   }
@@ -468,7 +468,7 @@ export class ApprovalWorkflowService {
 
       return pendingRequests;
     } catch (error: unknown) {
-      logger.error('Get pending approvals error:', error);
+      logger.warn('Get pending approvals error:', error);
       return [];
     }
   }
@@ -498,7 +498,7 @@ export class ApprovalWorkflowService {
 
       return pendingSteps;
     } catch (error: unknown) {
-      logger.error('Get user pending approvals error:', error);
+      logger.warn('Get user pending approvals error:', error);
       return [];
     }
   }
@@ -533,7 +533,7 @@ export class ApprovalWorkflowService {
 
       return history;
     } catch (error: unknown) {
-      logger.error('Get approval history error:', error);
+      logger.warn('Get approval history error:', error);
       return [];
     }
   }
@@ -563,7 +563,7 @@ export class ApprovalWorkflowService {
         }
       }
     } catch (error: unknown) {
-      logger.error('Check escalations error:', error);
+      logger.warn('Check escalations error:', error);
     }
   }
 
@@ -589,7 +589,7 @@ export class ApprovalWorkflowService {
         });
       }
     } catch (error: unknown) {
-      logger.error('Escalate request error:', error);
+      logger.warn('Escalate request error:', error);
     }
   }
 
@@ -625,7 +625,7 @@ export class ApprovalWorkflowService {
         });
       }
     } catch (error: unknown) {
-      logger.error('Notify approvers error:', error);
+      logger.warn('Notify approvers error:', error);
     }
   }
 
@@ -640,7 +640,7 @@ export class ApprovalWorkflowService {
         metadata: { requestId: request.id, decision, resourceType: request.resourceType, resourceId: request.resourceId },
       });
     } catch (error: unknown) {
-      logger.error('Notify requester error:', error);
+      logger.warn('Notify requester error:', error);
     }
   }
 
@@ -661,7 +661,7 @@ export class ApprovalWorkflowService {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger.error('Log audit event error:', error);
+      logger.warn('Log audit event error:', error);
     }
   }
 }

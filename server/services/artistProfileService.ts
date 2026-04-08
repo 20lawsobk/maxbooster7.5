@@ -459,7 +459,7 @@ class ArtistProfileService {
       this.spotifyTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       return this.spotifyToken;
     } catch (err) {
-      logger.error('[ArtistProfile] Spotify token error:', err);
+      logger.warn('[ArtistProfile] Spotify token error:', err);
       return null;
     }
   }
@@ -489,7 +489,7 @@ class ArtistProfileService {
         externalUrl: a.external_urls?.spotify ?? '',
       }));
     } catch (err) {
-      logger.error('[ArtistProfile] Spotify search error:', err);
+      logger.warn('[ArtistProfile] Spotify search error:', err);
       return [];
     }
   }
@@ -518,7 +518,7 @@ class ArtistProfileService {
         externalUrl: a.external_urls?.spotify ?? '',
       };
     } catch (err) {
-      logger.error('[ArtistProfile] Spotify verify error:', err);
+      logger.warn('[ArtistProfile] Spotify verify error:', err);
       return null;
     }
   }
@@ -545,7 +545,7 @@ class ArtistProfileService {
           url: a.artistLinkUrl ?? `https://music.apple.com/us/artist/${a.artistId}`,
         }));
     } catch (err) {
-      logger.error('[ArtistProfile] Apple search error:', err);
+      logger.warn('[ArtistProfile] Apple search error:', err);
       return [];
     }
   }
@@ -571,7 +571,7 @@ class ArtistProfileService {
           link: a.link ?? `https://www.deezer.com/artist/${a.id}`,
         }));
     } catch (err) {
-      logger.error('[ArtistProfile] Deezer search error:', err);
+      logger.warn('[ArtistProfile] Deezer search error:', err);
       return [];
     }
   }
@@ -2299,7 +2299,7 @@ class ArtistProfileService {
 
     // Trigger immediate processing in the background
     this._processDistributorImport(importRecord.id, profileId, userId, cleanIsrcs, cleanUpcs).catch(err => {
-      logger.error(`[ArtistProfile] Import processing failed: ${err.message}`);
+      logger.warn(`[ArtistProfile] Import processing failed: ${err.message}`);
     });
 
     return {

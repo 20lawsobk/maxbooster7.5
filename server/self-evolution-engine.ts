@@ -1140,7 +1140,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
-      logger.error(`❌ Manual evolution cycle ${cycleId} failed:`, error);
+      logger.warn(`❌ Manual evolution cycle ${cycleId} failed:`, error);
       throw error;
     }
   }
@@ -1172,10 +1172,10 @@ export class SelfEvolutionEngine extends EventEmitter {
     logger.info('🚀 Self-Evolution Engine ACTIVATED');
     logger.info('   Max Booster will now autonomously upgrade itself to stay ahead of competition');
 
-    this.runEvolutionCycle().catch((e) => logger.error('Initial evolution cycle error:', e));
+    this.runEvolutionCycle().catch((e) => logger.warn('Initial evolution cycle error:', e));
 
     this.monitoringInterval = setInterval(() => {
-      this.runEvolutionCycle().catch((e) => logger.error('Scheduled evolution cycle error:', e));
+      this.runEvolutionCycle().catch((e) => logger.warn('Scheduled evolution cycle error:', e));
     }, this.MONITORING_INTERVAL_MS);
 
     this.emit('started');
@@ -1253,7 +1253,7 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     } catch (error) {
       this.lastCycleError = (error as Error).message || String(error);
-      logger.error(`❌ Evolution cycle ${cycleId} failed:`, error);
+      logger.warn(`❌ Evolution cycle ${cycleId} failed:`, error);
       this.emit('cycleFailed', { cycleId, error });
     } finally {
       this.lastCycleAt = new Date();
@@ -1470,7 +1470,7 @@ export class SelfEvolutionEngine extends EventEmitter {
       }));
       logger.info(`[SelfEvolution] Live industry monitor: ${liveChanges.length} real changes fetched`);
     } catch (error) {
-      logger.error('[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:', (error as Error).message);
+      logger.warn('[SelfEvolution] Live industry monitor failed — no simulated fallback, skipping cycle phase 1:', (error as Error).message);
     }
 
     const newChanges = liveChanges.filter(c => !this.seenChangeIds.has(c.id));
@@ -1843,7 +1843,7 @@ export const ${this.camelCase(techName)}Adoption = {
       return { ok: true };
     } catch (err: any) {
       const msg = err?.message ?? String(err);
-      logger.error(`[SelfEvolution] Compile gate FAILED for ${filePath}: ${msg}`);
+      logger.warn(`[SelfEvolution] Compile gate FAILED for ${filePath}: ${msg}`);
       return { ok: false, error: msg };
     }
   }
@@ -1900,7 +1900,7 @@ describe('${upgrade.id}', () => {
           const compileResult = await this.compileGate(code, filePath);
           if (!compileResult.ok) {
             upgrade.status = 'failed';
-            logger.error(`   ❌ Compile gate blocked deployment of ${filePath}: ${compileResult.error}`);
+            logger.warn(`   ❌ Compile gate blocked deployment of ${filePath}: ${compileResult.error}`);
             break;
           }
 
@@ -1925,7 +1925,7 @@ describe('${upgrade.id}', () => {
 
       } catch (error) {
         upgrade.status = 'failed';
-        logger.error(`   ❌ Failed to deploy ${upgrade.id}:`, error);
+        logger.warn(`   ❌ Failed to deploy ${upgrade.id}:`, error);
       }
     }
 
@@ -1991,7 +1991,7 @@ describe('${upgrade.id}', () => {
     const needsRollback = metrics.errorRate > 0.05 || metrics.responseTime > 3000;
 
     if (needsRollback) {
-      logger.error(`🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics.responseTime}ms)`);
+      logger.warn(`🔙 CRITICAL: Initiating automatic rollback (errorRate=${metrics.errorRate.toFixed(3)}, responseTime=${metrics.responseTime}ms)`);
       await this.performRollback();
     }
   }
@@ -2017,7 +2017,7 @@ describe('${upgrade.id}', () => {
           restoredCount++;
           logger.info(`   ↩️ Restored: ${originalPath}`);
         } catch (e) {
-          logger.error(`   ❌ Failed to restore ${originalPath}:`, e);
+          logger.warn(`   ❌ Failed to restore ${originalPath}:`, e);
         }
       }
     }

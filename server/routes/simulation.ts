@@ -74,7 +74,7 @@ router.get('/periods', (req: Request, res: Response) => {
       realSecondsPerDay: REAL_SECONDS_PER_DAY,
     });
   } catch (error: any) {
-    logger.error('Error fetching simulation periods:', error);
+    logger.warn('Error fetching simulation periods:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation periods' });
   }
 });
@@ -87,7 +87,7 @@ router.get('/benchmarks', (req: Request, res: Response) => {
       benchmarks: INDUSTRY_BENCHMARKS,
     });
   } catch (error: any) {
-    logger.error('Error fetching benchmarks:', error);
+    logger.warn('Error fetching benchmarks:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch benchmarks' });
   }
 });
@@ -152,7 +152,7 @@ router.post('/start', async (req: Request, res: Response) => {
     });
 
     simulation.runSimulation().catch((error) => {
-      logger.error(`[SIM ${simulationId}] Failed:`, error);
+      logger.warn(`[SIM ${simulationId}] Failed:`, error);
       simulationResults.set(simulationId, { error: error.message });
       activeSimulations.delete(simulationId);
     });
@@ -175,7 +175,7 @@ router.post('/start', async (req: Request, res: Response) => {
     });
 
   } catch (error: any) {
-    logger.error('Failed to start simulation:', error);
+    logger.warn('Failed to start simulation:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -199,12 +199,12 @@ router.post('/start-full', async (req: Request, res: Response) => {
         logger.info(`Full lifecycle simulation complete: ${simulationId}`);
       })
       .catch((error) => {
-        logger.error(`Full lifecycle simulation failed:`, error);
+        logger.warn(`Full lifecycle simulation failed:`, error);
         simulationResults.set(simulationId, { error: error.message });
       });
 
   } catch (error: any) {
-    logger.error('Failed to start full simulation:', error);
+    logger.warn('Failed to start full simulation:', error);
     res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
@@ -240,7 +240,7 @@ router.get('/status/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation status:', error);
+    logger.warn('Error fetching simulation status:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation status' });
   }
 });
@@ -274,7 +274,7 @@ router.get('/metrics/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation metrics:', error);
+    logger.warn('Error fetching simulation metrics:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation metrics' });
   }
 });
@@ -304,7 +304,7 @@ router.get('/snapshots/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation snapshots not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation snapshots:', error);
+    logger.warn('Error fetching simulation snapshots:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation snapshots' });
   }
 });
@@ -348,7 +348,7 @@ router.get('/events/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation events not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation events:', error);
+    logger.warn('Error fetching simulation events:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation events' });
   }
 });
@@ -366,7 +366,7 @@ router.post('/pause/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation not found or not running' });
   } catch (error: any) {
-    logger.error('Error pausing simulation:', error);
+    logger.warn('Error pausing simulation:', error);
     res.status(500).json({ success: false, error: 'Failed to pause simulation' });
   }
 });
@@ -384,7 +384,7 @@ router.post('/resume/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation not found or not running' });
   } catch (error: any) {
-    logger.error('Error resuming simulation:', error);
+    logger.warn('Error resuming simulation:', error);
     res.status(500).json({ success: false, error: 'Failed to resume simulation' });
   }
 });
@@ -403,7 +403,7 @@ router.post('/stop/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation not found or not running' });
   } catch (error: any) {
-    logger.error('Error stopping simulation:', error);
+    logger.warn('Error stopping simulation:', error);
     res.status(500).json({ success: false, error: 'Failed to stop simulation' });
   }
 });
@@ -437,7 +437,7 @@ router.get('/results/:id', (req: Request, res: Response) => {
 
     res.status(404).json({ success: false, error: 'Simulation results not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation results:', error);
+    logger.warn('Error fetching simulation results:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation results' });
   }
 });
@@ -460,7 +460,7 @@ router.get('/report/:id', (req: Request, res: Response) => {
     res.setHeader('Content-Disposition', `attachment; filename="simulation_report_${id}.md"`);
     res.send(report);
   } catch (error: any) {
-    logger.error('Error generating simulation report:', error);
+    logger.warn('Error generating simulation report:', error);
     res.status(500).json({ success: false, error: 'Failed to generate simulation report' });
   }
 });
@@ -603,7 +603,7 @@ router.get('/list', (req: Request, res: Response) => {
       total: running.length + completed.length,
     });
   } catch (error: any) {
-    logger.error('Error listing simulations:', error);
+    logger.warn('Error listing simulations:', error);
     res.status(500).json({ success: false, error: 'Failed to list simulations' });
   }
 });
@@ -642,7 +642,7 @@ router.post('/generate-event', (req: Request, res: Response) => {
 
     res.json({ success: true, event });
   } catch (error: any) {
-    logger.error('Error generating simulation event:', error);
+    logger.warn('Error generating simulation event:', error);
     res.status(500).json({ success: false, error: 'Failed to generate event' });
   }
 });
@@ -676,7 +676,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
     return res.status(404).json({ success: false, error: 'Simulation not found' });
   } catch (error: any) {
-    logger.error('Error fetching simulation:', error);
+    logger.warn('Error fetching simulation:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch simulation' });
   }
 });
@@ -696,7 +696,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Simulation deleted' });
   } catch (error: any) {
-    logger.error('Error deleting simulation:', error);
+    logger.warn('Error deleting simulation:', error);
     res.status(500).json({ success: false, error: 'Failed to delete simulation' });
   }
 });

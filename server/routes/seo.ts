@@ -90,7 +90,7 @@ ${storefrontUrls}
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     res.send(xml);
   } catch (error) {
-    logger.error('Sitemap generation failed entirely:', error);
+    logger.warn('Sitemap generation failed entirely:', error);
     res.status(500).send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
 });

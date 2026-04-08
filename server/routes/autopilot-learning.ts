@@ -117,7 +117,7 @@ router.get('/status', requireAuth, async (req, res) => {
       ],
     });
   } catch (error) {
-    logger.error('Failed to get autopilot learning status:', error);
+    logger.warn('Failed to get autopilot learning status:', error);
     res.status(500).json({ error: 'Failed to get autopilot learning status' });
   }
 });
@@ -155,7 +155,7 @@ router.get('/insights', requireAuth, async (req, res) => {
       generatedAt: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error('Failed to get learning insights:', error);
+    logger.warn('Failed to get learning insights:', error);
     res.status(500).json({ error: 'Failed to get learning insights' });
   }
 });
@@ -171,7 +171,7 @@ router.get('/recommendations', requireAuth, async (req, res) => {
       count: recommendations.length,
     });
   } catch (error) {
-    logger.error('Failed to get recommendations:', error);
+    logger.warn('Failed to get recommendations:', error);
     res.status(500).json({ error: 'Failed to get recommendations' });
   }
 });
@@ -200,7 +200,7 @@ router.get('/performance', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get performance history:', error);
+    logger.warn('Failed to get performance history:', error);
     res.status(500).json({ error: 'Failed to get performance history' });
   }
 });
@@ -238,7 +238,7 @@ router.post('/record', requireAuth, async (req, res) => {
       res.status(400).json({ error: 'Invalid data', details: error.errors });
       return;
     }
-    logger.error('Failed to record performance:', error);
+    logger.warn('Failed to record performance:', error);
     res.status(500).json({ error: 'Failed to record performance data' });
   }
 });
@@ -256,7 +256,7 @@ router.get('/optimal-times/:platform', requireAuth, async (req, res) => {
       optimalTimes,
     });
   } catch (error) {
-    logger.error('Failed to get optimal posting times:', error);
+    logger.warn('Failed to get optimal posting times:', error);
     res.status(500).json({ error: 'Failed to get optimal posting times' });
   }
 });
@@ -276,7 +276,7 @@ router.get('/top-content', requireAuth, async (req, res) => {
       contentTypes: topContentTypes,
     });
   } catch (error) {
-    logger.error('Failed to get top performing content types:', error);
+    logger.warn('Failed to get top performing content types:', error);
     res.status(500).json({ error: 'Failed to get top performing content types' });
   }
 });
@@ -291,7 +291,7 @@ router.get('/patterns', requireAuth, async (req, res) => {
       patterns,
     });
   } catch (error) {
-    logger.error('Failed to detect patterns:', error);
+    logger.warn('Failed to detect patterns:', error);
     res.status(500).json({ error: 'Failed to detect patterns' });
   }
 });
@@ -306,7 +306,7 @@ router.get('/platform-stats', requireAuth, async (req, res) => {
       platforms: stats,
     });
   } catch (error) {
-    logger.error('Failed to get platform statistics:', error);
+    logger.warn('Failed to get platform statistics:', error);
     res.status(500).json({ error: 'Failed to get platform statistics' });
   }
 });
@@ -324,7 +324,7 @@ router.post('/generate-insights', requireAuth, async (req, res) => {
       insights,
     });
   } catch (error) {
-    logger.error('Failed to generate insights:', error);
+    logger.warn('Failed to generate insights:', error);
     res.status(500).json({ error: 'Failed to generate insights' });
   }
 });
@@ -343,7 +343,7 @@ router.get('/hyper/status', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get hyper learning status:', error);
+    logger.warn('Failed to get hyper learning status:', error);
     res.status(500).json({ error: 'Failed to get hyper learning status' });
   }
 });
@@ -373,7 +373,7 @@ router.get('/hyper/insights', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get hyper insights:', error);
+    logger.warn('Failed to get hyper insights:', error);
     res.status(500).json({ error: 'Failed to get hyper insights' });
   }
 });
@@ -400,7 +400,7 @@ router.get('/hyper/predict/:platform', requireAuth, async (req, res) => {
       microPatternRecommendations: prediction.microPatternRecommendations,
     });
   } catch (error) {
-    logger.error('Failed to predict optimal content:', error);
+    logger.warn('Failed to predict optimal content:', error);
     res.status(500).json({ error: 'Failed to predict optimal content' });
   }
 });
@@ -434,7 +434,7 @@ router.get('/hyper/metrics', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to get hyper metrics:', error);
+    logger.warn('Failed to get hyper metrics:', error);
     res.status(500).json({ error: 'Failed to get hyper metrics' });
   }
 });
@@ -450,7 +450,7 @@ router.post('/hyper/start', requireAuth, async (req, res) => {
       status,
     });
   } catch (error) {
-    logger.error('Failed to start hyper learning:', error);
+    logger.warn('Failed to start hyper learning:', error);
     res.status(500).json({ error: 'Failed to start hyper learning' });
   }
 });
@@ -464,7 +464,7 @@ router.post('/hyper/stop', requireAuth, async (req, res) => {
       message: 'HyperLearning Engine stopped',
     });
   } catch (error) {
-    logger.error('Failed to stop hyper learning:', error);
+    logger.warn('Failed to stop hyper learning:', error);
     res.status(500).json({ error: 'Failed to stop hyper learning' });
   }
 });

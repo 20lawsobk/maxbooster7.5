@@ -66,7 +66,7 @@ async function authenticateFromSession(request: IncomingMessage): Promise<string
       });
     });
   } catch (error) {
-    logger.error('WebSocket session auth error:', error);
+    logger.warn('WebSocket session auth error:', error);
     return null;
   }
 }
@@ -77,7 +77,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.
   notificationWss.on('error', (err: Error) => {
-    logger.error('[WS] Notification server error:', err.message);
+    logger.warn('[WS] Notification server error:', err.message);
   });
 
   httpServer.on('upgrade', async (request, socket, head) => {

@@ -91,7 +91,7 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
       ...result,
     });
   } catch (error: any) {
-    logger.error('Error starting stem export:', error);
+    logger.warn('Error starting stem export:', error);
     if (error.name === 'ZodError') {
       return res.status(400).json({ 
         error: 'Invalid export options', 
@@ -118,7 +118,7 @@ router.get('/projects/:projectId/stems/status/:exportId', requireAuth, async (re
       ...status,
     });
   } catch (error: any) {
-    logger.error('Error fetching export status:', error);
+    logger.warn('Error fetching export status:', error);
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
     }
@@ -148,7 +148,7 @@ router.get('/projects/:projectId/stems/download/:exportId', requireAuth, async (
       fileSize: download.fileSize,
     });
   } catch (error: any) {
-    logger.error('Error getting export download:', error);
+    logger.warn('Error getting export download:', error);
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
     }
@@ -183,7 +183,7 @@ router.get('/projects/:projectId/stems/list', requireAuth, async (req, res) => {
       offset: queryParams.offset,
     });
   } catch (error: any) {
-    logger.error('Error listing exports:', error);
+    logger.warn('Error listing exports:', error);
     if (error.name === 'ZodError') {
       return res.status(400).json({ 
         error: 'Invalid query parameters', 
@@ -210,7 +210,7 @@ router.delete('/projects/:projectId/stems/:exportId', requireAuth, async (req, r
       message: 'Export deleted successfully',
     });
   } catch (error: any) {
-    logger.error('Error deleting export:', error);
+    logger.warn('Error deleting export:', error);
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
     }
@@ -234,7 +234,7 @@ router.post('/projects/:projectId/stems/:exportId/cancel', requireAuth, async (r
       message: 'Export cancelled',
     });
   } catch (error: any) {
-    logger.error('Error cancelling export:', error);
+    logger.warn('Error cancelling export:', error);
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
     }
@@ -334,7 +334,7 @@ router.get('/projects/:projectId/stems/formats', requireAuth, async (req, res) =
       ],
     });
   } catch (error: any) {
-    logger.error('Error fetching export formats:', error);
+    logger.warn('Error fetching export formats:', error);
     res.status(500).json({ error: 'Failed to fetch export formats' });
   }
 });

@@ -269,7 +269,7 @@ export class PayoutService {
       payout.status = 'failed';
       payout.failureReason = error instanceof Error ? error.message : 'Unknown error';
       this.payoutRequests.set(payoutId, payout);
-      logger.error(`Failed payout ${payoutId}: ${payout.failureReason}`);
+      logger.warn(`Failed payout ${payoutId}: ${payout.failureReason}`);
     }
 
     return payout;
@@ -440,7 +440,7 @@ export class PayoutService {
         processed++;
 
       } catch (error) {
-        logger.error(`Failed scheduled payout for user ${prefs.userId}:`, error);
+        logger.warn(`Failed scheduled payout for user ${prefs.userId}:`, error);
         failed++;
       }
     }

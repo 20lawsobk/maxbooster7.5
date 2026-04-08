@@ -4,7 +4,7 @@ import { logger } from '../logger.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.TESTING_STRIPE_SECRET_KEY;
 
 if (!stripeKey || !stripeKey.startsWith('sk_')) {
-  logger.error('⚠️  Stripe setup skipped - invalid API key');
+  logger.warn('⚠️  Stripe setup skipped - invalid API key');
 } else {
   logger.info('✅ Initializing Stripe product and price setup...');
 }
@@ -29,7 +29,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
   }
 
   if (!stripe) {
-    logger.error('⚠️  Stripe not configured - using fallback price IDs');
+    logger.warn('⚠️  Stripe not configured - using fallback price IDs');
     // Return fallback IDs that will fail at payment time (graceful degradation)
     cachedPriceIds = {
       monthly: 'price_monthly_placeholder',
@@ -119,7 +119,7 @@ export async function ensureStripeProductsAndPrices(): Promise<StripePriceIds> {
     return cachedPriceIds;
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
-    logger.error('❌ Error setting up Stripe products/prices:', message);
+    logger.warn('❌ Error setting up Stripe products/prices:', message);
     // Do NOT cache placeholder IDs here — Stripe is configured but had a transient
     // error. Leaving cachedPriceIds as null forces a retry on the next call and
     // ensures billing routes surface a clear 500 rather than silently using stale IDs.

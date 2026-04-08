@@ -206,7 +206,7 @@ export function startRetentionWorker(): Worker {
             logger.warn(`[Worker] Unknown job name: ${jobName}`);
         }
       } catch (err) {
-        logger.error(`[Worker] Job ${jobName} failed:`, err);
+        logger.warn(`[Worker] Job ${jobName} failed:`, err);
         throw err;
       }
     },
@@ -234,7 +234,7 @@ export function startRetentionWorker(): Worker {
 
   setImmediate(() => {
     worker.run().catch(err => {
-      logger.error('[Worker] Failed to start run loop:', err);
+      logger.warn('[Worker] Failed to start run loop:', err);
     });
   });
 
@@ -252,7 +252,7 @@ export function startRetentionWorker(): Worker {
     if (msg.includes('PDIM HTTP 429') || msg.includes('ERR PDIM')) {
       logger.warn(`[Worker] ⚠️ ${job?.id} (${job?.name ?? 'stale'}) PDIM rate-limit — self-healing: ${msg}`);
     } else {
-      logger.error(`[Worker] ❌ ${job?.id} (${job?.name}) failed: ${msg}`);
+      logger.warn(`[Worker] ❌ ${job?.id} (${job?.name}) failed: ${msg}`);
     }
   });
 
@@ -279,7 +279,7 @@ export function startRetentionWorker(): Worker {
     ) {
       logger.warn(`[Worker] Recoverable (self-healing): ${msg}`);
     } else {
-      logger.error('[Worker] Worker error:', msg);
+      logger.warn('[Worker] Worker error:', msg);
     }
   });
 

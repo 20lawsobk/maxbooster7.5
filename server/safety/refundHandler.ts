@@ -103,7 +103,7 @@ export async function processRefund(params: {
 
     return { success: true, refundId: refund.id };
   } catch (error: any) {
-    logger.error(`[Refund] Failed to process refund for ${params.chargeId}:`, error);
+    logger.warn(`[Refund] Failed to process refund for ${params.chargeId}:`, error);
     return { success: false, error: error.message };
   }
 }
@@ -160,7 +160,7 @@ async function handleChargebackActions(record: ChargebackRecord, dispute: Stripe
       WHERE stripe_customer_id = ${dispute.metadata?.customerId}
     `);
   } catch (error) {
-    logger.error('[Chargeback] Failed to update user account:', error);
+    logger.warn('[Chargeback] Failed to update user account:', error);
   }
 
   // 2. Submit evidence if we have it
@@ -183,7 +183,7 @@ async function handleChargebackActions(record: ChargebackRecord, dispute: Stripe
       await stripe.disputes.update(dispute.id, { evidence });
       logger.info(`[Chargeback] Evidence submitted for dispute ${dispute.id}`);
     } catch (error) {
-      logger.error('[Chargeback] Failed to submit evidence:', error);
+      logger.warn('[Chargeback] Failed to submit evidence:', error);
     }
   }
 
@@ -204,7 +204,7 @@ async function handlePostRefundActions(userId: string, refund: Stripe.Refund): P
       WHERE id = ${userId}
     `);
   } catch (error) {
-    logger.error('[Refund] Failed to update user record:', error);
+    logger.warn('[Refund] Failed to update user record:', error);
   }
 }
 

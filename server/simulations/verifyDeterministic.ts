@@ -141,6 +141,6 @@ verifyDeterministicBehavior()
     process.exit(success ? 0 : 1);
   })
   .catch((error) => {
-    logger.error('\n❌ ERROR:', error);
+    logger.warn('\n❌ ERROR:', error);
     process.exit(1);
   });

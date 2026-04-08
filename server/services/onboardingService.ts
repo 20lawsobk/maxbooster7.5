@@ -102,7 +102,7 @@ class OnboardingService {
         recommendedNextStep,
       };
     } catch (error) {
-      logger.error('Error getting onboarding progress:', error);
+      logger.warn('Error getting onboarding progress:', error);
       throw new Error('Failed to get onboarding progress');
     }
   }
@@ -219,7 +219,7 @@ class OnboardingService {
           : `Task completed! +${pointsAwarded} points`,
       };
     } catch (error) {
-      logger.error('Error completing onboarding step:', error);
+      logger.warn('Error completing onboarding step:', error);
       throw new Error('Failed to complete step');
     }
   }
@@ -263,7 +263,7 @@ class OnboardingService {
         message: 'Onboarding skipped. You can always complete tasks later!',
       };
     } catch (error) {
-      logger.error('Error skipping onboarding:', error);
+      logger.warn('Error skipping onboarding:', error);
       throw new Error('Failed to skip onboarding');
     }
   }
@@ -331,7 +331,7 @@ class OnboardingService {
 
       return sortedByPriorityAndPoints[0] || null;
     } catch (error) {
-      logger.error('Error getting recommended next step:', error);
+      logger.warn('Error getting recommended next step:', error);
       return null;
     }
   }
@@ -356,7 +356,7 @@ class OnboardingService {
         completed: false,
       }));
     } catch (error) {
-      logger.error('Error getting onboarding tasks:', error);
+      logger.warn('Error getting onboarding tasks:', error);
       throw new Error('Failed to get tasks');
     }
   }
@@ -475,7 +475,7 @@ class OnboardingService {
       await db.insert(onboardingTasks).values(defaultTasks);
       logger.info(`Seeded ${defaultTasks.length} default onboarding tasks`);
     } catch (error) {
-      logger.error('Error seeding onboarding tasks:', error);
+      logger.warn('Error seeding onboarding tasks:', error);
       throw new Error('Failed to seed onboarding tasks');
     }
   }
@@ -525,7 +525,7 @@ class OnboardingService {
         logger.info(`Added ${tasksToInsert.length} AI-related onboarding tasks`);
       }
     } catch (error) {
-      logger.error('Error ensuring AI tasks exist:', error);
+      logger.warn('Error ensuring AI tasks exist:', error);
     }
   }
 }

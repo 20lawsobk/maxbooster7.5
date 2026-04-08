@@ -430,7 +430,7 @@ export class DDEXPackageService {
       const fileBuffer = await readFile(filePath);
       return createHash('md5').update(fileBuffer).digest('hex');
     } catch (error: unknown) {
-      logger.error(`Error calculating MD5 for ${filePath}:`, error);
+      logger.warn(`Error calculating MD5 for ${filePath}:`, error);
       return '';
     }
   }

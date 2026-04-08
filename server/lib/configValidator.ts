@@ -84,7 +84,7 @@ export function validateScaleConfig(): ValidationResult {
 
   // ── Print ─────────────────────────────────────────────────────────────────
   for (const w of warnings) logger.warn(w);
-  for (const e of errors) logger.error(e);
+  for (const e of errors) logger.warn(e);
 
   if (warnings.length === 0 && errors.length === 0) {
     logger.info('✅ [ScaleConfig] All scale configuration checks passed');

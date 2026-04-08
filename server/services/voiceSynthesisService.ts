@@ -411,7 +411,7 @@ export async function synthesizeVoice(
     };
   } catch (err: any) {
     const errMsg = err?.stderr?.slice(-500) || err?.message || String(err);
-    logger.error('[VoiceSynth] Synthesis failed:', errMsg);
+    logger.warn('[VoiceSynth] Synthesis failed:', errMsg);
     return { success: false, error: `Voice synthesis failed: ${errMsg}` };
   }
 }

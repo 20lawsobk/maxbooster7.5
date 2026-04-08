@@ -186,7 +186,7 @@ export class SSOService {
 
       return { success: true, config };
     } catch (error: unknown) {
-      logger.error('Configure SSO error:', error);
+      logger.warn('Configure SSO error:', error);
       return { success: false, error: 'Failed to configure SSO' };
     }
   }
@@ -200,7 +200,7 @@ export class SSOService {
         .limit(1);
       return config || null;
     } catch (error: unknown) {
-      logger.error('Get SSO config error:', error);
+      logger.warn('Get SSO config error:', error);
       return null;
     }
   }
@@ -227,7 +227,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Enable SSO error:', error);
+      logger.warn('Enable SSO error:', error);
       return { success: false, error: 'Failed to enable SSO' };
     }
   }
@@ -254,7 +254,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Disable SSO error:', error);
+      logger.warn('Disable SSO error:', error);
       return { success: false, error: 'Failed to disable SSO' };
     }
   }
@@ -289,7 +289,7 @@ export class SSOService {
 
       return { success: true, token, endpoint };
     } catch (error: unknown) {
-      logger.error('Enable SCIM error:', error);
+      logger.warn('Enable SCIM error:', error);
       return { success: false, error: 'Failed to enable SCIM' };
     }
   }
@@ -320,7 +320,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Disable SCIM error:', error);
+      logger.warn('Disable SCIM error:', error);
       return { success: false, error: 'Failed to disable SCIM' };
     }
   }
@@ -352,7 +352,7 @@ export class SSOService {
 
       return { success: true, token: newToken };
     } catch (error: unknown) {
-      logger.error('Rotate SCIM token error:', error);
+      logger.warn('Rotate SCIM token error:', error);
       return { success: false, error: 'Failed to rotate SCIM token' };
     }
   }
@@ -362,7 +362,7 @@ export class SSOService {
       const config = await this.getSSOConfig(workspaceId);
       return config?.scimEnabled === true && config?.scimToken === token;
     } catch (error: unknown) {
-      logger.error('Validate SCIM token error:', error);
+      logger.warn('Validate SCIM token error:', error);
       return false;
     }
   }
@@ -452,7 +452,7 @@ export class SSOService {
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger.error('Handle SAML response error:', error);
+      logger.warn('Handle SAML response error:', error);
       return { success: false, error: 'Failed to process SAML response' };
     }
   }
@@ -543,7 +543,7 @@ export class SSOService {
 
       return { success: true, userId, isNewUser };
     } catch (error: unknown) {
-      logger.error('Handle OIDC callback error:', error);
+      logger.warn('Handle OIDC callback error:', error);
       return { success: false, error: 'Failed to process OIDC callback' };
     }
   }
@@ -619,7 +619,7 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger.error('Create SCIM user error:', error);
+      logger.warn('Create SCIM user error:', error);
       await this.updateSyncStatus(workspaceId, 'error', String(error));
       return { success: false, error: 'Failed to create user' };
     }
@@ -703,7 +703,7 @@ export class SSOService {
         },
       };
     } catch (error: unknown) {
-      logger.error('Update SCIM user error:', error);
+      logger.warn('Update SCIM user error:', error);
       await this.updateSyncStatus(workspaceId, 'error', String(error));
       return { success: false, error: 'Failed to update user' };
     }
@@ -738,7 +738,7 @@ export class SSOService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Delete SCIM user error:', error);
+      logger.warn('Delete SCIM user error:', error);
       await this.updateSyncStatus(workspaceId, 'error', String(error));
       return { success: false, error: 'Failed to delete user' };
     }
@@ -790,7 +790,7 @@ export class SSOService {
         Resources: resources,
       };
     } catch (error: unknown) {
-      logger.error('Get SCIM users error:', error);
+      logger.warn('Get SCIM users error:', error);
       return { totalResults: 0, itemsPerPage: count, startIndex, Resources: [] };
     }
   }
@@ -807,7 +807,7 @@ export class SSOService {
         })
         .where(eq(ssoConfigs.workspaceId, workspaceId));
     } catch (err: unknown) {
-      logger.error('Update sync status error:', err);
+      logger.warn('Update sync status error:', err);
     }
   }
 
@@ -815,7 +815,7 @@ export class SSOService {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger.error('Log audit event error:', error);
+      logger.warn('Log audit event error:', error);
     }
   }
 
@@ -828,7 +828,7 @@ export class SSOService {
 
       return { success: true, metadata: config.metadata };
     } catch (error: unknown) {
-      logger.error('Get IdP metadata error:', error);
+      logger.warn('Get IdP metadata error:', error);
       return { success: false, error: 'Failed to get IdP metadata' };
     }
   }
@@ -854,7 +854,7 @@ export class SSOService {
 
       return { success: true, message: 'SSO configuration is valid' };
     } catch (error: unknown) {
-      logger.error('Test SSO connection error:', error);
+      logger.warn('Test SSO connection error:', error);
       return { success: false, error: 'Failed to test SSO connection' };
     }
   }

@@ -39,7 +39,7 @@ router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
 
     res.json({ markers: projectMarkers });
   } catch (error: unknown) {
-    logger.error('Error fetching markers:', error);
+    logger.warn('Error fetching markers:', error);
     res.status(500).json({ error: 'Failed to fetch markers' });
   }
 });
@@ -72,7 +72,7 @@ router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
 
     res.status(201).json(newMarker);
   } catch (error: unknown) {
-    logger.error('Error creating marker:', error);
+    logger.warn('Error creating marker:', error);
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
     }
@@ -115,7 +115,7 @@ router.patch('/markers/:markerId', requireAuth, async (req, res) => {
 
     res.json(updatedMarker);
   } catch (error: unknown) {
-    logger.error('Error updating marker:', error);
+    logger.warn('Error updating marker:', error);
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
     }
@@ -151,7 +151,7 @@ router.delete('/markers/:markerId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.error('Error deleting marker:', error);
+    logger.warn('Error deleting marker:', error);
     res.status(500).json({ error: 'Failed to delete marker' });
   }
 });

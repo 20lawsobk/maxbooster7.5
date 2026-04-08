@@ -59,7 +59,7 @@ export async function multiTenantRouter(
     logger.debug(`[multiTenant] Resolved ${host} → storefront ${domainRow.storefront.id}`);
     next();
   } catch (err) {
-    logger.error("[multiTenant] Error resolving storefront:", err);
+    logger.warn("[multiTenant] Error resolving storefront:", err);
     next();
   }
 }

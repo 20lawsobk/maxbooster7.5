@@ -270,7 +270,7 @@ class AIModelManager {
       });
       logger.info(`💾 Persisted Social AI model for user ${userId} (with metadata)`);
     } catch (error) {
-      logger.error(`Failed to persist Social AI model for user ${userId}:`, error);
+      logger.warn(`Failed to persist Social AI model for user ${userId}:`, error);
     }
   }
 
@@ -292,7 +292,7 @@ class AIModelManager {
       });
       logger.info(`💾 Persisted Advertising AI model for user ${userId} (with metadata)`);
     } catch (error) {
-      logger.error(`Failed to persist Advertising AI model for user ${userId}:`, error);
+      logger.warn(`Failed to persist Advertising AI model for user ${userId}:`, error);
     }
   }
 

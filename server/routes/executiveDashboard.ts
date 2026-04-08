@@ -102,7 +102,7 @@ router.get(
         dashboard: executiveDashboard,
       });
     } catch (error: any) {
-      logger.error('Error fetching executive dashboard:', error?.message);
+      logger.warn('Error fetching executive dashboard:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
   })
@@ -128,7 +128,7 @@ router.get(
         timestamp: new Date(),
       });
     } catch (error: any) {
-      logger.error('Error fetching health summary:', error?.message);
+      logger.warn('Error fetching health summary:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
   })

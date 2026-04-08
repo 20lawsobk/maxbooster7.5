@@ -290,7 +290,7 @@ export class ContentAnalysisService {
       this.ready = true;
       logger.info('[ContentAnalysis] Custom models initialized successfully');
     } catch (error) {
-      logger.error('[ContentAnalysis] Model initialization error:', error);
+      logger.warn('[ContentAnalysis] Model initialization error:', error);
       this.modelsInitialized = true;
       this.ready = true;
     }
@@ -456,7 +456,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger.error('Image analysis error:', error);
+      logger.warn('Image analysis error:', error);
       return this.getFallbackImageAnalysis();
     }
   }
@@ -534,7 +534,7 @@ export class ContentAnalysisService {
         mood,
       };
     } catch (error) {
-      logger.error('Color extraction error:', error);
+      logger.warn('Color extraction error:', error);
       return {
         dominant: ['#4A90E2', '#F5A623', '#50E3C2'],
         palette: ['#4A90E2', '#F5A623', '#50E3C2', '#E24A4A', '#9B59B6'],
@@ -683,7 +683,7 @@ export class ContentAnalysisService {
 
       return { layout, visualWeight, complexity };
     } catch (error) {
-      logger.error('Composition analysis error:', error);
+      logger.warn('Composition analysis error:', error);
       return {
         layout: 'centered',
         visualWeight: 'balanced',
@@ -730,7 +730,7 @@ export class ContentAnalysisService {
 
       return { hasFaces, count };
     } catch (error) {
-      logger.error('[ContentAnalysis] Face detection error:', error);
+      logger.warn('[ContentAnalysis] Face detection error:', error);
       return { hasFaces: false, count: 0 };
     }
   }
@@ -775,7 +775,7 @@ export class ContentAnalysisService {
 
       return { hasText, amount };
     } catch (error) {
-      logger.error('Text detection error:', error);
+      logger.warn('Text detection error:', error);
       return { hasText: false, amount: 'none' };
     }
   }
@@ -816,7 +816,7 @@ export class ContentAnalysisService {
         professionalQuality,
       };
     } catch (error) {
-      logger.error('Visual feature extraction error:', error);
+      logger.warn('Visual feature extraction error:', error);
       return {
         mainSubject: 'content',
         objects: [],
@@ -946,7 +946,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger.error('Video analysis error:', error);
+      logger.warn('Video analysis error:', error);
       throw error;
     }
   }
@@ -991,7 +991,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger.error('Audio analysis error:', error);
+      logger.warn('Audio analysis error:', error);
       throw error;
     }
   }
@@ -1014,7 +1014,7 @@ export class ContentAnalysisService {
       const html = response.data.toString();
       return this.analyzeHTMLCustom(html);
     } catch (error) {
-      logger.error('Website analysis error:', error);
+      logger.warn('Website analysis error:', error);
       return this.getFallbackWebsiteAnalysis('');
     }
   }
@@ -1187,7 +1187,7 @@ export class ContentAnalysisService {
 
       return result;
     } catch (error) {
-      logger.error('Text analysis error:', error);
+      logger.warn('Text analysis error:', error);
       throw error;
     }
   }

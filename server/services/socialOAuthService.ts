@@ -35,7 +35,7 @@ export class SocialOAuthService {
     this.startTokenRefreshMonitor();
     // Load stable encryption key asynchronously — does not block route serving
     this.initializeEncryptionKey().catch(e =>
-      logger.error('[SocialOAuth] Failed to initialize encryption key:', (e as Error).message)
+      logger.warn('[SocialOAuth] Failed to initialize encryption key:', (e as Error).message)
     );
   }
 
@@ -73,7 +73,7 @@ export class SocialOAuthService {
       this._encryptionKey = newKey;
       logger.warn('[SocialOAuth] Generated and persisted new TOKEN_ENCRYPTION_KEY to DB. Set TOKEN_ENCRYPTION_KEY env var for explicit control.');
     } catch (e) {
-      logger.error('[SocialOAuth] DB key load failed, using session-scoped fallback:', (e as Error).message);
+      logger.warn('[SocialOAuth] DB key load failed, using session-scoped fallback:', (e as Error).message);
       if (!this._encryptionKey) {
         this._encryptionKey = crypto.randomBytes(32).toString('hex');
       }
@@ -128,7 +128,7 @@ export class SocialOAuthService {
       
       return decrypted;
     } catch (error) {
-      logger.error('Token decryption failed:', error);
+      logger.warn('Token decryption failed:', error);
       return null;
     }
   }
@@ -197,7 +197,7 @@ export class SocialOAuthService {
         }
       }
     } catch (error) {
-      logger.error('Error in token refresh monitor:', error);
+      logger.warn('Error in token refresh monitor:', error);
     }
   }
 
@@ -255,7 +255,7 @@ export class SocialOAuthService {
 
       logger.info(`Platform ${platform} disconnected for user ${userId} due to token revocation`);
     } catch (error) {
-      logger.error(`Failed to handle revoked token for ${userId}:${platform}:`, error);
+      logger.warn(`Failed to handle revoked token for ${userId}:${platform}:`, error);
     }
 
     // Clear from cache after 5 minutes
@@ -500,7 +500,7 @@ export class SocialOAuthService {
         expiresIn: expires_in,
       };
     } catch (error: unknown) {
-      logger.error(
+      logger.warn(
         `OAuth token exchange failed for ${platform}:`,
         error.response?.data || error.message
       );
@@ -573,7 +573,7 @@ export class SocialOAuthService {
         expiresIn: expires_in,
       };
     } catch (error: unknown) {
-      logger.error(`Token refresh failed for ${platform}:`, error.response?.data || error.message);
+      logger.warn(`Token refresh failed for ${platform}:`, error.response?.data || error.message);
       throw new Error(`Failed to refresh ${platform} access token`);
     }
   }
@@ -615,7 +615,7 @@ export class SocialOAuthService {
       await storage.updateUserSocialToken(userId, platform, '');
       logger.info(`Platform ${platform} disconnected for user ${userId}`);
     } catch (error: unknown) {
-      logger.error(`Failed to disconnect ${platform}:`, error);
+      logger.warn(`Failed to disconnect ${platform}:`, error);
       throw error;
     }
   }

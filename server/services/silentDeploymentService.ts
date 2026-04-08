@@ -156,7 +156,7 @@ class SilentDeploymentService extends EventEmitter {
       record.completedAt = new Date();
 
       if (!postHealth.ok) {
-        logger.error(`[SilentDeploy] Post-deploy health failed (${postHealth.responseTimeMs}ms) — initiating rollback`);
+        logger.warn(`[SilentDeploy] Post-deploy health failed (${postHealth.responseTimeMs}ms) — initiating rollback`);
         record.rolledBack = true;
         record.rollbackReason = `Health check failed: ${postHealth.responseTimeMs}ms response time`;
         await selfEvolution.triggerRollback();
@@ -170,7 +170,7 @@ class SilentDeploymentService extends EventEmitter {
     } catch (error) {
       record.completedAt = new Date();
       record.healthCheckPassed = false;
-      logger.error('[SilentDeploy] Deployment error:', error);
+      logger.warn('[SilentDeploy] Deployment error:', error);
       await this.auditRecord(record, `error: ${(error as Error).message}`);
     } finally {
       this.isDeploying = false;

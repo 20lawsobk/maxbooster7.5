@@ -111,7 +111,7 @@ export class CompetitorBenchmarkService {
         competitor: this.mapToCompetitorMetrics(competitor),
       };
     } catch (error) {
-      logger.error('Add competitor error:', error);
+      logger.warn('Add competitor error:', error);
       return { success: false, error: 'Failed to add competitor' };
     }
   }
@@ -132,7 +132,7 @@ export class CompetitorBenchmarkService {
 
       return { success: true };
     } catch (error) {
-      logger.error('Remove competitor error:', error);
+      logger.warn('Remove competitor error:', error);
       return { success: false, error: 'Failed to remove competitor' };
     }
   }
@@ -152,7 +152,7 @@ export class CompetitorBenchmarkService {
 
       return competitors.map(this.mapToCompetitorMetrics);
     } catch (error) {
-      logger.error('Get competitors error:', error);
+      logger.warn('Get competitors error:', error);
       return [];
     }
   }
@@ -211,7 +211,7 @@ export class CompetitorBenchmarkService {
 
       return comparisons;
     } catch (error) {
-      logger.error('Get benchmark comparison error:', error);
+      logger.warn('Get benchmark comparison error:', error);
       return [];
     }
   }
@@ -247,7 +247,7 @@ export class CompetitorBenchmarkService {
         industryTotal: 0,
       };
     } catch (error) {
-      logger.error('Get share of voice error:', error);
+      logger.warn('Get share of voice error:', error);
       return {
         yourBrand: { mentions: 0, percentage: 0, reach: 0, sentiment: 0 },
         competitors: [],
@@ -316,7 +316,7 @@ export class CompetitorBenchmarkService {
 
       return insights;
     } catch (error) {
-      logger.error('Get insights error:', error);
+      logger.warn('Get insights error:', error);
       return [];
     }
   }
@@ -376,7 +376,7 @@ export class CompetitorBenchmarkService {
         totalPosts,
       };
     } catch (error) {
-      logger.error('Get your stats error:', error);
+      logger.warn('Get your stats error:', error);
       return {
         totalFollowers: 0,
         followersGrowth: 0,

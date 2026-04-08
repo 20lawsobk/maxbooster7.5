@@ -783,7 +783,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
       await storage.createComplianceAudit(audit);
       logger.info(`✅ Compliance audit saved: ${audit.auditId}`);
     } catch (error: unknown) {
-      logger.error('❌ Failed to save compliance audit:', error);
+      logger.warn('❌ Failed to save compliance audit:', error);
     }
   }
 

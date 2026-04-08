@@ -50,7 +50,7 @@ export class CapacityMonitor {
         );
       }
     } catch (error: unknown) {
-      logger.error('Capacity monitoring error:', error);
+      logger.warn('Capacity monitoring error:', error);
     }
   }
 }

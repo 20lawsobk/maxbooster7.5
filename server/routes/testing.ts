@@ -135,7 +135,7 @@ router.get('/results', async (req, res) => {
       }
     });
   } catch (error) {
-    logger.error('Error fetching test results:', error);
+    logger.warn('Error fetching test results:', error);
     res.status(500).json({ error: 'Failed to fetch test results' });
   }
 });
@@ -146,7 +146,7 @@ router.post('/run', async (req, res) => {
     logger.info(`Test suite triggered: ${suite || 'all'}`);
     res.json({ success: true, message: 'Tests started', estimatedTime: '5 minutes' });
   } catch (error) {
-    logger.error('Error running tests:', error);
+    logger.warn('Error running tests:', error);
     res.status(500).json({ error: 'Failed to start tests' });
   }
 });

@@ -147,7 +147,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(rows);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error fetching:', error);
+    logger.warn('[CustomWorkflow] Error fetching:', error);
     res.status(500).json({ error: 'Failed to fetch custom workflows' });
   }
 });
@@ -160,7 +160,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error fetching workflow:', error);
+    logger.warn('[CustomWorkflow] Error fetching workflow:', error);
     res.status(500).json({ error: 'Failed to fetch workflow' });
   }
 });
@@ -184,7 +184,7 @@ router.post('/', requireAuth, async (req, res) => {
     }).returning();
     res.status(201).json(row);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error creating:', error);
+    logger.warn('[CustomWorkflow] Error creating:', error);
     res.status(500).json({ error: 'Failed to create custom workflow' });
   }
 });
@@ -213,7 +213,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error updating:', error);
+    logger.warn('[CustomWorkflow] Error updating:', error);
     res.status(500).json({ error: 'Failed to update custom workflow' });
   }
 });
@@ -226,7 +226,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     if (!deleted) return res.status(404).json({ error: 'Workflow not found' });
     res.json({ success: true });
   } catch (error) {
-    logger.error('[CustomWorkflow] Error deleting:', error);
+    logger.warn('[CustomWorkflow] Error deleting:', error);
     res.status(500).json({ error: 'Failed to delete custom workflow' });
   }
 });
@@ -241,7 +241,7 @@ router.post('/:id/enable', requireAuth, async (req, res) => {
     if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error enabling:', error);
+    logger.warn('[CustomWorkflow] Error enabling:', error);
     res.status(500).json({ error: 'Failed to enable workflow' });
   }
 });
@@ -256,7 +256,7 @@ router.post('/:id/disable', requireAuth, async (req, res) => {
     if (!row) return res.status(404).json({ error: 'Workflow not found' });
     res.json(row);
   } catch (error) {
-    logger.error('[CustomWorkflow] Error disabling:', error);
+    logger.warn('[CustomWorkflow] Error disabling:', error);
     res.status(500).json({ error: 'Failed to disable workflow' });
   }
 });
@@ -346,7 +346,7 @@ router.post('/:id/test', requireAuth, async (req, res) => {
 
     res.json({ success: true, actionsRun });
   } catch (error) {
-    logger.error('[CustomWorkflow] Error testing:', error);
+    logger.warn('[CustomWorkflow] Error testing:', error);
     res.status(500).json({ error: 'Failed to test workflow' });
   }
 });

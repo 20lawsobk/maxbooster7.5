@@ -83,7 +83,7 @@ class OptimizedConnectionPool {
 
     this.pool.on('error', (err) => {
       this.errorCount++;
-      logger.error('Pool error:', err.message);
+      logger.warn('Pool error:', err.message);
     });
 
     this.pool.on('remove', () => {

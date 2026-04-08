@@ -31,7 +31,7 @@ router.get("/resolve/:label", async (req, res) => {
     if (!row) return res.status(404).json({ ok: false, error: "Not found." });
     return res.json({ ok: true, slug: row.slug, label });
   } catch (err) {
-    logger.error("[domains] resolve error:", err);
+    logger.warn("[domains] resolve error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
@@ -51,7 +51,7 @@ router.post("/storefront/:storefrontId/publish", async (req, res) => {
     await publishStorefront(req.params.storefrontId, (req.user as any).id);
     return res.json({ ok: true, status: "live" });
   } catch (err: any) {
-    logger.error("[storefrontDomains] publish error:", err);
+    logger.warn("[storefrontDomains] publish error:", err);
     const status = err.message === "Unauthorized." ? 403 : err.message === "Storefront not found." ? 404 : 500;
     return res.status(status).json({ ok: false, error: err.message || "Internal error." });
   }
@@ -63,7 +63,7 @@ router.post("/storefront/:storefrontId/unpublish", async (req, res) => {
     await unpublishStorefront(req.params.storefrontId, (req.user as any).id);
     return res.json({ ok: true, status: "draft" });
   } catch (err: any) {
-    logger.error("[storefrontDomains] unpublish error:", err);
+    logger.warn("[storefrontDomains] unpublish error:", err);
     const status = err.message === "Unauthorized." ? 403 : err.message === "Storefront not found." ? 404 : 500;
     return res.status(status).json({ ok: false, error: err.message || "Internal error." });
   }

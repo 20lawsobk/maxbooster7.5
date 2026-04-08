@@ -289,7 +289,7 @@ class CustomerHealthScoreService {
           },
         });
     } catch (err) {
-      logger.error('[HealthScore] Failed to store health score:', err);
+      logger.warn('[HealthScore] Failed to store health score:', err);
     }
   }
 
@@ -310,7 +310,7 @@ class CustomerHealthScoreService {
       const failed = results.filter((r) => r.status === 'rejected').length;
       logger.info(`[HealthScore] Batch complete: ${allUsers.length - failed} updated, ${failed} failed`);
     } catch (err) {
-      logger.error('[HealthScore] Batch compute failed:', err);
+      logger.warn('[HealthScore] Batch compute failed:', err);
     }
   }
 
@@ -330,7 +330,7 @@ class CustomerHealthScoreService {
 
       return batch[batch.length - 1].id;
     } catch (err) {
-      logger.error('[HealthScore] Batch compute paged failed:', err);
+      logger.warn('[HealthScore] Batch compute paged failed:', err);
       throw err;
     }
   }
@@ -360,7 +360,7 @@ class CustomerHealthScoreService {
         riskLevel: r.riskLevel as RiskLevel,
       }));
     } catch (err) {
-      logger.error('[HealthScore] Failed to get at-risk users:', err);
+      logger.warn('[HealthScore] Failed to get at-risk users:', err);
       return [];
     }
   }

@@ -63,7 +63,7 @@ export class AutomationSystem extends EventEmitter {
 
       logger.info('🤖 Automation system initialized');
     } catch (error: unknown) {
-      logger.error('❌ Failed to initialize automation system:', error);
+      logger.warn('❌ Failed to initialize automation system:', error);
     }
   }
 
@@ -413,7 +413,7 @@ export class AutomationSystem extends EventEmitter {
             break;
           }
         } catch (error: unknown) {
-          logger.error(`Trigger error for workflow ${workflow.id}:`, error);
+          logger.warn(`Trigger error for workflow ${workflow.id}:`, error);
         }
       }
     }
@@ -437,7 +437,7 @@ export class AutomationSystem extends EventEmitter {
     const action = this.actions.get(actionConfig.type);
 
     if (!action) {
-      logger.error(`Action not found: ${actionConfig.type}`);
+      logger.warn(`Action not found: ${actionConfig.type}`);
       workflow.status = 'failed';
       return;
     }
@@ -486,7 +486,7 @@ export class AutomationSystem extends EventEmitter {
         this.emit('workflow:completed', workflow);
       }
     } catch (error: unknown) {
-      logger.error(`Action execution failed: ${actionConfig.type}`, error);
+      logger.warn(`Action execution failed: ${actionConfig.type}`, error);
       workflow.status = 'failed';
       workflow.endTime = Date.now();
       workflow.error = error.message;
@@ -595,7 +595,7 @@ export class AutomationSystem extends EventEmitter {
       // Implement workflow loading from database
       logger.info('📂 Loading workflows from storage...');
     } catch (error: unknown) {
-      logger.error('Error loading workflows:', error);
+      logger.warn('Error loading workflows:', error);
     }
   }
 

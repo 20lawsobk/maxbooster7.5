@@ -50,7 +50,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(sessions);
   } catch (error) {
-    logger.error('[Songwriting] Failed to list sessions:', error);
+    logger.warn('[Songwriting] Failed to list sessions:', error);
     res.status(500).json({ error: 'Failed to fetch songwriting sessions' });
   }
 });
@@ -94,7 +94,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    logger.error('[Songwriting] Failed to fetch stats:', error);
+    logger.warn('[Songwriting] Failed to fetch stats:', error);
     res.status(500).json({ error: 'Failed to fetch songwriting stats' });
   }
 });
@@ -107,7 +107,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Session not found' });
     res.json(item);
   } catch (error) {
-    logger.error('[Songwriting] Failed to fetch session:', error);
+    logger.warn('[Songwriting] Failed to fetch session:', error);
     res.status(500).json({ error: 'Failed to fetch songwriting session' });
   }
 });
@@ -119,7 +119,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:songwriting', req.user!.id));
     res.status(201).json(session);
   } catch (error: unknown) {
-    logger.error('[Songwriting] Failed to create session:', error);
+    logger.warn('[Songwriting] Failed to create session:', error);
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -148,7 +148,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:songwriting', userId));
     res.json(session);
   } catch (error: unknown) {
-    logger.error('[Songwriting] Failed to update session:', error);
+    logger.warn('[Songwriting] Failed to update session:', error);
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -174,7 +174,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:songwriting', userId));
     res.json({ success: true });
   } catch (error) {
-    logger.error('[Songwriting] Failed to delete session:', error);
+    logger.warn('[Songwriting] Failed to delete session:', error);
     res.status(500).json({ error: 'Failed to delete songwriting session' });
   }
 });
@@ -188,7 +188,7 @@ router.get('/rhyme/:word', requireAuth, async (req, res) => {
     const rhymes = getRhymes(word);
     res.json({ word, rhymes, count: rhymes.length });
   } catch (error) {
-    logger.error('[Songwriting] Rhyme lookup error:', error);
+    logger.warn('[Songwriting] Rhyme lookup error:', error);
     res.status(500).json({ error: 'Failed to look up rhymes' });
   }
 });
@@ -265,7 +265,7 @@ router.post('/ai-assist', requireAuth, async (req, res) => {
       structures: getSongStructures(),
     });
   } catch (error) {
-    logger.error('[Songwriting] AI assist error:', error);
+    logger.warn('[Songwriting] AI assist error:', error);
     res.status(500).json({ error: 'Failed to generate suggestions' });
   }
 });

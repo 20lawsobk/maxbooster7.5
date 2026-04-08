@@ -52,7 +52,7 @@ export class MetricsService {
           },
         });
     } catch (error: unknown) {
-      logger.error('Failed to record metric:', error);
+      logger.warn('Failed to record metric:', error);
     }
   }
 
@@ -94,7 +94,7 @@ export class MetricsService {
         maxValue: parseFloat(r.maxValue || '0'),
       }));
     } catch (error: unknown) {
-      logger.error('Failed to get metrics:', error);
+      logger.warn('Failed to get metrics:', error);
       return [];
     }
   }
@@ -106,7 +106,7 @@ export class MetricsService {
     try {
       await db.insert(alertRules).values(data);
     } catch (error: unknown) {
-      logger.error('Failed to create alert rule:', error);
+      logger.warn('Failed to create alert rule:', error);
       throw error;
     }
   }
@@ -179,7 +179,7 @@ export class MetricsService {
         }
       }
     } catch (error: unknown) {
-      logger.error('Failed to evaluate alerts:', error);
+      logger.warn('Failed to evaluate alerts:', error);
     }
   }
 
@@ -200,7 +200,7 @@ export class MetricsService {
 
       return incidents;
     } catch (error: unknown) {
-      logger.error('Failed to get active incidents:', error);
+      logger.warn('Failed to get active incidents:', error);
       return [];
     }
   }

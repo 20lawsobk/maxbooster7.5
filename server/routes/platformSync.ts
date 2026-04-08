@@ -31,7 +31,7 @@ router.get('/devices', requireAuth, async (req, res) => {
     const devices = listDevices(userId);
     res.json({ devices });
   } catch (error) {
-    logger.error('Failed to list devices', error);
+    logger.warn('Failed to list devices', error);
     res.status(500).json({ error: 'Failed to list devices' });
   }
 });
@@ -59,7 +59,7 @@ router.post('/devices/register', requireAuth, async (req, res) => {
 
     res.json({ success: true, device });
   } catch (error) {
-    logger.error('Failed to register device', error);
+    logger.warn('Failed to register device', error);
     res.status(500).json({ error: 'Failed to register device' });
   }
 });
@@ -80,7 +80,7 @@ router.post('/devices/heartbeat', requireAuth, async (req, res) => {
 
     res.json({ success: true, device });
   } catch (error) {
-    logger.error('Failed to process heartbeat', error);
+    logger.warn('Failed to process heartbeat', error);
     res.status(500).json({ error: 'Failed to process heartbeat' });
   }
 });
@@ -97,7 +97,7 @@ router.delete('/devices/:deviceId', requireAuth, async (req, res) => {
 
     res.json({ success: true, message: 'Device unregistered' });
   } catch (error) {
-    logger.error('Failed to unregister device', error);
+    logger.warn('Failed to unregister device', error);
     res.status(500).json({ error: 'Failed to unregister device' });
   }
 });
@@ -118,7 +118,7 @@ router.get('/version/check', requireAuth, async (req, res) => {
     const versionInfo = checkForUpdate(platform, currentVersion);
     res.json(versionInfo);
   } catch (error) {
-    logger.error('Failed to check version', error);
+    logger.warn('Failed to check version', error);
     res.status(500).json({ error: 'Failed to check version' });
   }
 });
@@ -128,7 +128,7 @@ router.get('/version/latest', requireAuth, async (_req, res) => {
     const versions = getLatestVersions();
     res.json({ versions });
   } catch (error) {
-    logger.error('Failed to get latest versions', error);
+    logger.warn('Failed to get latest versions', error);
     res.status(500).json({ error: 'Failed to get latest versions' });
   }
 });
@@ -158,7 +158,7 @@ router.post('/version/notify', requireAuth, async (req, res) => {
 
     res.json({ success: true, notification });
   } catch (error) {
-    logger.error('Failed to push update notification', error);
+    logger.warn('Failed to push update notification', error);
     res.status(500).json({ error: 'Failed to push update notification' });
   }
 });
@@ -175,7 +175,7 @@ router.get('/sync/pull', requireAuth, async (req, res) => {
     const result = pullSyncState(userId, deviceId);
     res.json(result);
   } catch (error) {
-    logger.error('Failed to pull sync state', error);
+    logger.warn('Failed to pull sync state', error);
     res.status(500).json({ error: 'Failed to pull sync state' });
   }
 });
@@ -192,7 +192,7 @@ router.post('/sync/push', requireAuth, async (req, res) => {
     const state = pushSyncState(userId, deviceId, changes);
     res.json({ success: true, state });
   } catch (error) {
-    logger.error('Failed to push sync state', error);
+    logger.warn('Failed to push sync state', error);
     res.status(500).json({ error: 'Failed to push sync state' });
   }
 });
@@ -203,7 +203,7 @@ router.get('/sync/status', requireAuth, async (req, res) => {
     const statuses = getSyncStatus(userId);
     res.json({ statuses });
   } catch (error) {
-    logger.error('Failed to get sync status', error);
+    logger.warn('Failed to get sync status', error);
     res.status(500).json({ error: 'Failed to get sync status' });
   }
 });
@@ -244,7 +244,7 @@ router.post('/remote-update/trigger', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Failed to trigger remote update', error);
+    logger.warn('Failed to trigger remote update', error);
     res.status(500).json({ error: 'Failed to trigger remote update' });
   }
 });
@@ -258,7 +258,7 @@ router.get('/remote-update/status', requireAuth, async (req, res) => {
     const rollouts = getUpdateRolloutStatus();
     res.json({ rollouts });
   } catch (error) {
-    logger.error('Failed to get update rollout status', error);
+    logger.warn('Failed to get update rollout status', error);
     res.status(500).json({ error: 'Failed to get update rollout status' });
   }
 });

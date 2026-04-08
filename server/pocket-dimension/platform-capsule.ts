@@ -576,7 +576,7 @@ class PlatformCapsuleLoader {
       await fs.rm(capsulePath, { recursive: true, force: true });
       logger.info(`Capsule ${capsuleId} deleted successfully`);
     } catch (error) {
-      logger.error(`Failed to delete capsule ${capsuleId}:`, error);
+      logger.warn(`Failed to delete capsule ${capsuleId}:`, error);
       throw error;
     }
   }

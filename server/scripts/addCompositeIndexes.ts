@@ -174,7 +174,7 @@ async function addCompositeIndexes(): Promise<void> {
         logger.info(`  - ${idx.name} (already exists)`);
         skipped++;
       } else {
-        logger.error(`  ✗ ${idx.name}: ${msg}`);
+        logger.warn(`  ✗ ${idx.name}: ${msg}`);
         failed++;
       }
     }
@@ -188,6 +188,6 @@ async function addCompositeIndexes(): Promise<void> {
 }
 
 addCompositeIndexes().catch((err) => {
-  logger.error('[IndexMigration] Fatal:', err);
+  logger.warn('[IndexMigration] Fatal:', err);
   process.exit(1);
 });

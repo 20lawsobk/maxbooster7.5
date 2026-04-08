@@ -119,7 +119,7 @@ class AudioMetadataService {
         coverArt,
       };
     } catch (error) {
-      logger.error('Error extracting audio metadata:', error);
+      logger.warn('Error extracting audio metadata:', error);
       throw new Error('Failed to extract audio metadata');
     }
   }
@@ -158,7 +158,7 @@ class AudioMetadataService {
         hasCoverArt: !!(common.picture && common.picture.length > 0),
       };
     } catch (error) {
-      logger.error('Error extracting audio metadata from stream:', error);
+      logger.warn('Error extracting audio metadata from stream:', error);
       throw new Error('Failed to extract audio metadata');
     }
   }

@@ -83,7 +83,7 @@ async function runAllLoadTests(): Promise<void> {
     authCookie = await getAuthCookie();
     logger.info('Authentication successful');
   } catch (error) {
-    logger.error('Failed to authenticate', { error });
+    logger.warn('Failed to authenticate', { error });
     return;
   }
 
@@ -117,7 +117,7 @@ async function runAllLoadTests(): Promise<void> {
       }
 
     } catch (error: any) {
-      logger.error(`${suite.name} test failed`, { error: error.message });
+      logger.warn(`${suite.name} test failed`, { error: error.message });
       issues.push(`${suite.name}: Test execution failed - ${error.message}`);
     }
   }
@@ -187,4 +187,4 @@ function formatNumber(num: number): string {
   return num.toString();
 }
 
-runAllLoadTests().catch((err) => logger.error('Load test suite failed', { error: err }));
+runAllLoadTests().catch((err) => logger.warn('Load test suite failed', { error: err }));

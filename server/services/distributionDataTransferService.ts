@@ -693,7 +693,7 @@ class DistributionDataTransferService {
             item: release.title,
             error: err.message || 'Unknown error',
           });
-          logger.error(`[DataTransfer] Failed to import release ${release.title}:`, err);
+          logger.warn(`[DataTransfer] Failed to import release ${release.title}:`, err);
         }
         
         job.processedItems = imported + failed;
@@ -713,7 +713,7 @@ class DistributionDataTransferService {
     } catch (error: any) {
       job.status = 'failed';
       job.errors.push({ item: 'CSV parsing', error: error.message });
-      logger.error(`[DataTransfer] Import job ${job.id} failed:`, error);
+      logger.warn(`[DataTransfer] Import job ${job.id} failed:`, error);
     }
     
     return job;
@@ -876,7 +876,7 @@ class DistributionDataTransferService {
         preferences: { ...existingPrefs, streamingProfiles },
       } as any);
     } catch (error) {
-      logger.error(`[DataTransfer] Failed to save profile to storage:`, error);
+      logger.warn(`[DataTransfer] Failed to save profile to storage:`, error);
     }
   }
 
@@ -952,7 +952,7 @@ class DistributionDataTransferService {
           } as any);
         }
       } catch (error) {
-        logger.error(`[DataTransfer] Failed to remove profile from storage:`, error);
+        logger.warn(`[DataTransfer] Failed to remove profile from storage:`, error);
       }
       
       logger.info(`[DataTransfer] Unlinked ${platformId} profile for user ${userId}`);
@@ -1078,7 +1078,7 @@ class DistributionDataTransferService {
     const intervalMs = intervalMinutes * 60 * 1000;
     const interval = setInterval(() => {
       this.syncAllProfiles(userId).catch(err => {
-        logger.error(`[DataTransfer] Auto-sync failed for ${userId}:`, err);
+        logger.warn(`[DataTransfer] Auto-sync failed for ${userId}:`, err);
       });
     }, intervalMs);
 
@@ -1098,7 +1098,7 @@ class DistributionDataTransferService {
     logger.info(`[DataTransfer] Auto-sync started for ${userId} every ${intervalMinutes} minutes`);
 
     this.syncAllProfiles(userId).catch(err => {
-      logger.error(`[DataTransfer] Initial auto-sync failed for ${userId}:`, err);
+      logger.warn(`[DataTransfer] Initial auto-sync failed for ${userId}:`, err);
     });
   }
 
@@ -1262,7 +1262,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Spotify fetch failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Spotify fetch failed for ${artistId}:`, err);
       return null;
     }
   }
@@ -1306,7 +1306,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Apple Music fetch failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Apple Music fetch failed for ${artistId}:`, err);
       return null;
     }
   }
@@ -1342,7 +1342,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] YouTube API fetch failed for ${channelId}:`, err);
+      logger.warn(`[DataTransfer] YouTube API fetch failed for ${channelId}:`, err);
       return this.fetchYouTubeMusicFallback(channelId);
     }
   }
@@ -1384,7 +1384,7 @@ class DistributionDataTransferService {
         verified: true,
       } as Partial<StreamingProfileData>;
     } catch (err: any) {
-      logger.error(`[DataTransfer] YouTube fallback scrape failed for ${channelId}:`, err);
+      logger.warn(`[DataTransfer] YouTube fallback scrape failed for ${channelId}:`, err);
       return null;
     }
   }
@@ -1434,7 +1434,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Deezer fetch failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Deezer fetch failed for ${artistId}:`, err);
       return null;
     }
   }
@@ -1530,7 +1530,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] SoundCloud fetch failed for ${permalink}:`, err);
+      logger.warn(`[DataTransfer] SoundCloud fetch failed for ${permalink}:`, err);
       return null;
     }
   }
@@ -1584,7 +1584,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Tidal fetch failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Tidal fetch failed for ${artistId}:`, err);
       return null;
     }
   }
@@ -1615,7 +1615,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Bandcamp fetch failed for ${slug}:`, err);
+      logger.warn(`[DataTransfer] Bandcamp fetch failed for ${slug}:`, err);
       return null;
     }
   }
@@ -1644,7 +1644,7 @@ class DistributionDataTransferService {
       return breaker.execute(fetcher, () => null);
     }
     try { return await fetcher(); } catch (err: any) {
-      logger.error(`[DataTransfer] Audiomack fetch failed for ${slug}:`, err);
+      logger.warn(`[DataTransfer] Audiomack fetch failed for ${slug}:`, err);
       return null;
     }
   }
@@ -1687,7 +1687,7 @@ class DistributionDataTransferService {
           return null;
       }
     } catch (err: any) {
-      logger.error(`[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`, err);
+      logger.warn(`[DataTransfer] Platform fetch failed for ${platformId}/${artistId}:`, err);
       return null;
     }
   }
@@ -1962,7 +1962,7 @@ class DistributionDataTransferService {
       logger.info(`[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid})`);
       return results;
     } catch (err: any) {
-      logger.error(`[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`, err?.message);
+      logger.warn(`[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`, err?.message);
       return [];
     }
   }
@@ -1990,7 +1990,7 @@ class DistributionDataTransferService {
         genre: item.primaryGenreName,
       }));
     } catch (err: any) {
-      logger.error(`[DataTransfer] Apple Music album scan failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Apple Music album scan failed for ${artistId}:`, err);
       return [];
     }
   }
@@ -2015,7 +2015,7 @@ class DistributionDataTransferService {
         platformUrl: item.link,
       }));
     } catch (err: any) {
-      logger.error(`[DataTransfer] Deezer album scan failed for ${artistId}:`, err);
+      logger.warn(`[DataTransfer] Deezer album scan failed for ${artistId}:`, err);
       return [];
     }
   }
@@ -2132,7 +2132,7 @@ class DistributionDataTransferService {
 
       return results;
     } catch (err: any) {
-      logger.error(`[DataTransfer] SoundCloud album scan failed for ${permalink}:`, err);
+      logger.warn(`[DataTransfer] SoundCloud album scan failed for ${permalink}:`, err);
       return [];
     }
   }
@@ -2184,7 +2184,7 @@ class DistributionDataTransferService {
 
       return results;
     } catch (err: any) {
-      logger.error(`[DataTransfer] Bandcamp album scan failed for ${slug}:`, err);
+      logger.warn(`[DataTransfer] Bandcamp album scan failed for ${slug}:`, err);
       return [];
     }
   }
@@ -2209,7 +2209,7 @@ class DistributionDataTransferService {
         platformUrl: item.url || `https://audiomack.com/${slug}/${item.slug}`,
       }));
     } catch (err: any) {
-      logger.error(`[DataTransfer] Audiomack album scan failed for ${slug}:`, err);
+      logger.warn(`[DataTransfer] Audiomack album scan failed for ${slug}:`, err);
       return [];
     }
   }
@@ -2347,7 +2347,7 @@ class DistributionDataTransferService {
         failed++;
         job.failedItems = failed;
         job.errors.push({ item: release.title, error: err.message || 'Unknown error' });
-        logger.error(`[DataTransfer] Failed to import profile release ${release.title}:`, err);
+        logger.warn(`[DataTransfer] Failed to import profile release ${release.title}:`, err);
       }
 
       job.processedItems = imported + failed;

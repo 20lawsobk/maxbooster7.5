@@ -24,7 +24,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
       data: dashboardData,
     });
   } catch (error: any) {
-    logger.error('Error fetching artist progress dashboard:', error?.message);
+    logger.warn('Error fetching artist progress dashboard:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -50,7 +50,7 @@ router.get('/history', requireAuth, asyncHandler(async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.error('Error fetching progress history:', error?.message);
+    logger.warn('Error fetching progress history:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -68,7 +68,7 @@ router.get('/milestones', requireAuth, asyncHandler(async (req, res) => {
       data: milestones,
     });
   } catch (error: any) {
-    logger.error('Error fetching career milestones:', error?.message);
+    logger.warn('Error fetching career milestones:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -86,7 +86,7 @@ router.get('/growth-metrics', requireAuth, asyncHandler(async (req, res) => {
       data: growthMetrics,
     });
   } catch (error: any) {
-    logger.error('Error fetching growth metrics:', error?.message);
+    logger.warn('Error fetching growth metrics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));
@@ -104,7 +104,7 @@ router.post('/capture-snapshot', requireAuth, asyncHandler(async (req, res) => {
       message: 'Snapshot captured successfully',
     });
   } catch (error: any) {
-    logger.error('Error capturing snapshot:', error?.message);
+    logger.warn('Error capturing snapshot:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
 }));

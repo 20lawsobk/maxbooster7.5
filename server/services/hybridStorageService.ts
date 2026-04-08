@@ -160,7 +160,7 @@ export class HybridStorageService {
 
       logger.info('[HybridStorage] Storage service initialized — PDIM-only mode (Pocket Dimension)');
     } catch (error) {
-      logger.error('[HybridStorage] Failed to initialize:', error);
+      logger.warn('[HybridStorage] Failed to initialize:', error);
       throw error;
     }
   }
@@ -197,7 +197,7 @@ export class HybridStorageService {
         updatedAt: new Date().toISOString(),
       }));
     } catch (error) {
-      logger.error('[HybridStorage] Failed to save index to PDIM:', error);
+      logger.warn('[HybridStorage] Failed to save index to PDIM:', error);
     }
   }
 
@@ -530,7 +530,7 @@ export class HybridStorageService {
       logger.info(`[HybridStorage] Tier-down confirmed for: ${key} (already in PDIM)`);
       return true;
     } catch (error) {
-      logger.error(`[HybridStorage] Failed to tier down ${key}:`, error);
+      logger.warn(`[HybridStorage] Failed to tier down ${key}:`, error);
       return false;
     }
   }
@@ -846,7 +846,7 @@ export class HybridStorageService {
       logger.info(`[HybridStorage] Migrated ${key} → pocket-dimension/cold (PDIM-only)`);
       return true;
     } catch (error) {
-      logger.error(`[HybridStorage] Failed to migrate ${key}:`, error);
+      logger.warn(`[HybridStorage] Failed to migrate ${key}:`, error);
       return false;
     }
   }

@@ -110,11 +110,11 @@ router.get('/', async (req: Request, res: Response) => {
           }
         }
       } catch (err) {
-        logger.error('Social token expiring notification error:', err);
+        logger.warn('Social token expiring notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('Error fetching connected accounts:', error);
+    logger.warn('Error fetching connected accounts:', error);
     res.status(500).json({ error: 'Failed to fetch connected accounts' });
   }
 });
@@ -136,7 +136,7 @@ router.delete('/:accountId', async (req: Request, res: Response) => {
     
     res.json({ error: 'Account disconnected successfully' });
   } catch (error) {
-    logger.error('Error disconnecting account:', error);
+    logger.warn('Error disconnecting account:', error);
     res.status(500).json({ error: 'Failed to disconnect account' });
   }
 });
@@ -166,7 +166,7 @@ router.post('/:accountId/refresh', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('Error refreshing account connection:', error);
+    logger.warn('Error refreshing account connection:', error);
     res.status(500).json({ error: 'Failed to refresh account connection' });
   }
 });
@@ -232,7 +232,7 @@ router.post('/manual-token', async (req: Request, res: Response) => {
       res.json({ error: `${platform} connected successfully`, id: newAccount.id });
     }
   } catch (error) {
-    logger.error('Error saving manual token:', error);
+    logger.warn('Error saving manual token:', error);
     res.status(500).json({ error: 'Failed to save access token' });
   }
 });
@@ -268,7 +268,7 @@ router.put('/:accountId/permissions', async (req: Request, res: Response) => {
       permissions,
     });
   } catch (error) {
-    logger.error('Error updating account permissions:', error);
+    logger.warn('Error updating account permissions:', error);
     res.status(500).json({ error: 'Failed to update account permissions' });
   }
 });

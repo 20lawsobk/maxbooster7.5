@@ -65,7 +65,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error) {
-    logger.error('Error fetching API keys:', error);
+    logger.warn('Error fetching API keys:', error);
     res.status(500).json({ error: 'Failed to fetch API keys' });
   }
 });
@@ -125,7 +125,7 @@ router.post('/', keyCreateLimiter, async (req: Request, res: Response) => {
       scopes: inserted.scopes ?? ['read'],
     });
   } catch (error) {
-    logger.error('Error creating API key:', error);
+    logger.warn('Error creating API key:', error);
     res.status(500).json({ error: 'Failed to create API key' });
   }
 });
@@ -147,7 +147,7 @@ router.delete('/:keyId', async (req: Request, res: Response) => {
 
     res.json({ error: 'API key revoked successfully' });
   } catch (error) {
-    logger.error('Error revoking API key:', error);
+    logger.warn('Error revoking API key:', error);
     res.status(500).json({ error: 'Failed to revoke API key' });
   }
 });
@@ -192,7 +192,7 @@ router.post('/:keyId/regenerate', keyCreateLimiter, async (req: Request, res: Re
       scopes: updated.scopes ?? ['read'],
     });
   } catch (error) {
-    logger.error('Error regenerating API key:', error);
+    logger.warn('Error regenerating API key:', error);
     res.status(500).json({ error: 'Failed to regenerate API key' });
   }
 });

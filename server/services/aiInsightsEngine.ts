@@ -186,7 +186,7 @@ export class CustomAIEngine {
         success: true,
       });
     } catch (error: unknown) {
-      logger.error('Failed to log AI inference:', error);
+      logger.warn('Failed to log AI inference:', error);
     }
   }
 

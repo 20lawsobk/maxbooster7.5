@@ -132,7 +132,7 @@ export class LoggingService {
 
         logs.forEach((log) => callback(log));
       } catch (error: unknown) {
-        logger.error('Error streaming logs:', error);
+        logger.warn('Error streaming logs:', error);
       }
     }, 2000);
 

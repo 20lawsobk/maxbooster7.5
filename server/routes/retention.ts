@@ -75,7 +75,7 @@ router.post('/nps', requireAuth, async (req: any, res) => {
 
     return res.json({ success: true, category });
   } catch (err) {
-    logger.error('[Retention] NPS submission failed:', err);
+    logger.warn('[Retention] NPS submission failed:', err);
     return res.status(500).json({ error: 'Failed to save NPS response' });
   }
 });
@@ -97,7 +97,7 @@ router.post('/cancellation-feedback', requireAuth, async (req: any, res) => {
     logger.info(`[Retention] Cancellation feedback: user=${userId} reason=${parsed.data.reason}`);
     return res.json({ success: true });
   } catch (err) {
-    logger.error('[Retention] Cancellation feedback failed:', err);
+    logger.warn('[Retention] Cancellation feedback failed:', err);
     return res.status(500).json({ error: 'Failed to save cancellation feedback' });
   }
 });
@@ -120,7 +120,7 @@ router.post('/feature-event', requireAuth, async (req: any, res) => {
 
     return res.json({ success: true });
   } catch (err) {
-    logger.error('[Retention] Feature event tracking failed:', err);
+    logger.warn('[Retention] Feature event tracking failed:', err);
     return res.status(500).json({ error: 'Failed to track feature event' });
   }
 });
@@ -148,7 +148,7 @@ router.get('/health-score', requireAuth, async (req: any, res) => {
 
     return res.json(existing);
   } catch (err) {
-    logger.error('[Retention] Health score retrieval failed:', err);
+    logger.warn('[Retention] Health score retrieval failed:', err);
     return res.status(500).json({ error: 'Failed to get health score' });
   }
 });
@@ -173,7 +173,7 @@ router.get('/admin/at-risk', requireAuth, async (req: any, res) => {
 
     return res.json({ atRisk, churning });
   } catch (err) {
-    logger.error('[Retention] Admin at-risk query failed:', err);
+    logger.warn('[Retention] Admin at-risk query failed:', err);
     return res.status(500).json({ error: 'Failed to get at-risk users' });
   }
 });

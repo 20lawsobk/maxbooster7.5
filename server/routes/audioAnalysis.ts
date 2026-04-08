@@ -43,7 +43,7 @@ router.post('/analyze-metadata', requireAuth, audioUpload.single('audio'), async
       hasCoverArt: metadata.hasCoverArt,
     });
   } catch (error) {
-    logger.error('Error analyzing audio metadata:', error);
+    logger.warn('Error analyzing audio metadata:', error);
     res.status(500).json({
       error: 'Failed to analyze audio metadata',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -107,7 +107,7 @@ router.post('/analyze-loudness', requireAuth, audioUpload.single('audio'), async
       },
     });
   } catch (error) {
-    logger.error('Error analyzing loudness:', error);
+    logger.warn('Error analyzing loudness:', error);
     res.status(500).json({
       error: 'Failed to analyze loudness',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -158,7 +158,7 @@ router.post('/generate-waveform', requireAuth, audioUpload.single('audio'), asyn
       contentHash,
     });
   } catch (error) {
-    logger.error('Error generating waveform:', error);
+    logger.warn('Error generating waveform:', error);
     res.status(500).json({
       error: 'Failed to generate waveform',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -209,7 +209,7 @@ router.post('/validate-distribution', requireAuth, audioUpload.single('audio'), 
       },
     });
   } catch (error) {
-    logger.error('Error validating for distribution:', error);
+    logger.warn('Error validating for distribution:', error);
     res.status(500).json({
       error: 'Failed to validate audio for distribution',
       message: error instanceof Error ? error.message : 'Unknown error',

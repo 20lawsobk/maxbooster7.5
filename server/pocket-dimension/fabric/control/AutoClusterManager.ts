@@ -102,7 +102,7 @@ export class AutoClusterManager {
     if (this.running) return;
     this.running = true;
     this.intervalId = setInterval(
-      () => this.evaluate().catch(e => logger.error('[AutoCluster] Evaluation error:', e)),
+      () => this.evaluate().catch(e => logger.warn('[AutoCluster] Evaluation error:', e)),
       this.rules.checkIntervalMs,
     );
     logger.info(

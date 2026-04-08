@@ -305,7 +305,7 @@ export class StorefrontService {
       logger.info(`Created storefront ${storefront.id} for user ${input.userId} at ${autoSubdomain}.maxbooster.app`);
       return storefront;
     } catch (error: unknown) {
-      logger.error('Error creating storefront:', error);
+      logger.warn('Error creating storefront:', error);
       throw error;
     }
   }
@@ -366,7 +366,7 @@ export class StorefrontService {
         template,
       };
     } catch (error: unknown) {
-      logger.error('Error fetching storefront:', error);
+      logger.warn('Error fetching storefront:', error);
       throw error;
     }
   }
@@ -386,7 +386,7 @@ export class StorefrontService {
 
       return userStorefronts;
     } catch (error: unknown) {
-      logger.error('Error fetching user storefronts:', error);
+      logger.warn('Error fetching user storefronts:', error);
       throw error;
     }
   }
@@ -477,7 +477,7 @@ export class StorefrontService {
       logger.info(`Updated storefront ${storefrontId}`);
       return updatedStorefront;
     } catch (error: unknown) {
-      logger.error('Error updating storefront:', error);
+      logger.warn('Error updating storefront:', error);
       throw error;
     }
   }
@@ -503,7 +503,7 @@ export class StorefrontService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Error deleting storefront:', error);
+      logger.warn('Error deleting storefront:', error);
       throw error;
     }
   }
@@ -521,7 +521,7 @@ export class StorefrontService {
 
       return templates;
     } catch (error: unknown) {
-      logger.error('Error fetching templates:', error);
+      logger.warn('Error fetching templates:', error);
       throw error;
     }
   }
@@ -561,7 +561,7 @@ export class StorefrontService {
 
           stripePriceId = price.id;
         } catch (stripeError: unknown) {
-          logger.error('Error creating Stripe price:', stripeError);
+          logger.warn('Error creating Stripe price:', stripeError);
         }
       }
 
@@ -589,7 +589,7 @@ export class StorefrontService {
 
       return tier;
     } catch (error: unknown) {
-      logger.error('Error creating membership tier:', error);
+      logger.warn('Error creating membership tier:', error);
       throw error;
     }
   }
@@ -632,7 +632,7 @@ export class StorefrontService {
 
       return updatedTier;
     } catch (error: unknown) {
-      logger.error('Error updating membership tier:', error);
+      logger.warn('Error updating membership tier:', error);
       throw error;
     }
   }
@@ -675,7 +675,7 @@ export class StorefrontService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.error('Error deleting membership tier:', error);
+      logger.warn('Error deleting membership tier:', error);
       throw error;
     }
   }
@@ -792,7 +792,7 @@ export class StorefrontService {
         subscription,
       };
     } catch (error: unknown) {
-      logger.error('Error subscribing to membership tier:', error);
+      logger.warn('Error subscribing to membership tier:', error);
       throw error;
     }
   }
@@ -836,7 +836,7 @@ export class StorefrontService {
 
       return updatedMembership;
     } catch (error: unknown) {
-      logger.error('Error canceling membership:', error);
+      logger.warn('Error canceling membership:', error);
       throw error;
     }
   }
@@ -891,7 +891,7 @@ export class StorefrontService {
         } : null,
       }));
     } catch (error: unknown) {
-      logger.error('Error fetching customer memberships:', error);
+      logger.warn('Error fetching customer memberships:', error);
       throw error;
     }
   }
@@ -1006,7 +1006,7 @@ export class StorefrontService {
     try {
       logger.info(`Recording view for storefront ${storefrontId}`);
     } catch (error: unknown) {
-      logger.error('Error incrementing storefront views:', error);
+      logger.warn('Error incrementing storefront views:', error);
     }
   }
 
@@ -1022,7 +1022,7 @@ export class StorefrontService {
 
       return tiers;
     } catch (error: unknown) {
-      logger.error('Error fetching membership tiers:', error);
+      logger.warn('Error fetching membership tiers:', error);
       throw error;
     }
   }
@@ -1068,7 +1068,7 @@ export class StorefrontService {
         };
       });
     } catch (error: unknown) {
-      logger.error('Error fetching storefront listings:', error);
+      logger.warn('Error fetching storefront listings:', error);
       throw error;
     }
   }
@@ -1209,7 +1209,7 @@ export class StorefrontService {
         template,
       };
     } catch (error: unknown) {
-      logger.error('Error fetching storefront by subdomain:', error);
+      logger.warn('Error fetching storefront by subdomain:', error);
       throw error;
     }
   }

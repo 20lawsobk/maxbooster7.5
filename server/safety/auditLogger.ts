@@ -119,7 +119,7 @@ async function writeToWAL(entry: AuditEntry): Promise<void> {
     const walFile = path.join(WAL_PATH, `${entry.id}.json`);
     fs.writeFileSync(walFile, JSON.stringify(entry), 'utf8');
   } catch (error) {
-    logger.error('[Audit] Failed to write to WAL:', error);
+    logger.warn('[Audit] Failed to write to WAL:', error);
   }
 }
 
@@ -154,13 +154,13 @@ async function flushWAL(): Promise<void> {
       } catch (dbError) {
         // Put back in buffer for retry
         walBuffer.push(entry);
-        logger.error('[Audit] Failed to persist audit entry:', dbError);
+        logger.warn('[Audit] Failed to persist audit entry:', dbError);
       }
     }
   } catch (error) {
     // Put all entries back in buffer
     walBuffer.push(...entries);
-    logger.error('[Audit] Failed to flush WAL:', error);
+    logger.warn('[Audit] Failed to flush WAL:', error);
   }
 }
 
@@ -198,7 +198,7 @@ async function recoverWAL(): Promise<void> {
         const entry = JSON.parse(content) as AuditEntry;
         walBuffer.push(entry);
       } catch (error) {
-        logger.error(`[Audit] Failed to recover WAL entry ${file}:`, error);
+        logger.warn(`[Audit] Failed to recover WAL entry ${file}:`, error);
       }
     }
 
@@ -207,7 +207,7 @@ async function recoverWAL(): Promise<void> {
       await flushWAL();
     }
   } catch (error) {
-    logger.error('[Audit] WAL recovery failed:', error);
+    logger.warn('[Audit] WAL recovery failed:', error);
   }
 }
 
@@ -400,7 +400,7 @@ export async function getAuditLog(params: {
 
     return result.rows as unknown as AuditEntry[];
   } catch (error) {
-    logger.error('[Audit] Failed to query audit log:', error);
+    logger.warn('[Audit] Failed to query audit log:', error);
     return [];
   }
 }
@@ -427,7 +427,7 @@ export async function cleanupAuditLog(retentionDays: number = 90): Promise<numbe
     
     return deleted;
   } catch (error) {
-    logger.error('[Audit] Failed to cleanup audit log:', error);
+    logger.warn('[Audit] Failed to cleanup audit log:', error);
     return 0;
   }
 }

@@ -1011,7 +1011,7 @@ class MusicWorkflowAutomationService {
 
       const config = { ...template.defaultConfig, ...userConfig.config };
       this.executeTemplate(template, userId, data, config, eventType).catch((err) => {
-        logger.error(`[MusicWorkflow] Error executing ${template.id}:`, err);
+        logger.warn(`[MusicWorkflow] Error executing ${template.id}:`, err);
       });
     }
   }
@@ -1049,7 +1049,7 @@ class MusicWorkflowAutomationService {
     } catch (err: any) {
       status = 'failed';
       error = err?.message ?? 'Unknown error';
-      logger.error(`[MusicWorkflow] Failed "${template.name}" for user ${userId}:`, err);
+      logger.warn(`[MusicWorkflow] Failed "${template.name}" for user ${userId}:`, err);
     }
 
     await db.insert(musicWorkflowExecutionLogs).values({
@@ -1780,7 +1780,7 @@ class MusicWorkflowAutomationService {
       try {
         await this.runScheduledWorkflow('schedule:weekly', 'weekly-performance-digest');
       } catch (err) {
-        logger.error('[MusicWorkflow] Weekly digest cron failed:', err);
+        logger.warn('[MusicWorkflow] Weekly digest cron failed:', err);
       }
     });
     this.scheduledTasks.set('weekly', weeklyTask);
@@ -1790,7 +1790,7 @@ class MusicWorkflowAutomationService {
       try {
         await this.runScheduledWorkflow('schedule:monthly', 'royalty-collection-reminder');
       } catch (err) {
-        logger.error('[MusicWorkflow] Monthly royalty cron failed:', err);
+        logger.warn('[MusicWorkflow] Monthly royalty cron failed:', err);
       }
     });
     this.scheduledTasks.set('monthly', monthlyTask);

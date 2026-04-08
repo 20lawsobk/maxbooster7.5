@@ -101,7 +101,7 @@ export class DatabaseStorage implements IStorage {
           await new Promise(r => setTimeout(r, 150 * attempt));
           continue;
         }
-        logger.error(`[Storage] ${label} final DB error after ${attempt} attempts:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none', '| causeDetail:', JSON.stringify(err?.cause ?? null));
+        logger.warn(`[Storage] ${label} final DB error after ${attempt} attempts:`, msg, '| cause:', causeMsg || 'none', '| code:', causeCode || 'none', '| causeDetail:', JSON.stringify(err?.cause ?? null));
         throw err;
       }
     }
@@ -151,7 +151,7 @@ export class DatabaseStorage implements IStorage {
       const { userPocketService } = await import('./services/userPocketDimensionService.js');
       await userPocketService.initializeUserStorage(user.id, user.email);
     } catch (error) {
-      logger.error(`[Storage] Failed to initialize pocket dimension for user ${user.id}:`, error);
+      logger.warn(`[Storage] Failed to initialize pocket dimension for user ${user.id}:`, error);
       // Don't fail user creation if storage init fails
     }
     
@@ -1138,7 +1138,7 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      logger.error('Error getting producers:', error);
+      logger.warn('Error getting producers:', error);
       return [];
     }
   }
@@ -1215,7 +1215,7 @@ export class DatabaseStorage implements IStorage {
         .returning({ id: distroTracks.id });
       return deleted.length > 0;
     } catch (error) {
-      logger.error('Error deleting distro track:', error);
+      logger.warn('Error deleting distro track:', error);
       return false;
     }
   }
@@ -1226,7 +1226,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(distroReleases).where(eq(distroReleases.id, id));
       return true;
     } catch (error) {
-      logger.error('Error deleting distro release:', error);
+      logger.warn('Error deleting distro release:', error);
       return false;
     }
   }
@@ -1240,7 +1240,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return provider || null;
     } catch (error) {
-      logger.error('Error fetching DSP provider by slug:', error);
+      logger.warn('Error fetching DSP provider by slug:', error);
       return null;
     }
   }
@@ -1250,7 +1250,7 @@ export class DatabaseStorage implements IStorage {
       const providers = await dbRead.select().from(dspProviders).limit(100);
       return providers;
     } catch (error) {
-      logger.error('Error fetching all DSP providers:', error);
+      logger.warn('Error fetching all DSP providers:', error);
       return [];
     }
   }
@@ -1278,7 +1278,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider;
     } catch (error) {
-      logger.error('Error creating DSP provider:', error);
+      logger.warn('Error creating DSP provider:', error);
       throw error;
     }
   }
@@ -1299,7 +1299,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return provider || null;
     } catch (error) {
-      logger.error('Error updating DSP provider:', error);
+      logger.warn('Error updating DSP provider:', error);
       return null;
     }
   }
@@ -1309,7 +1309,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(hyperFollowPages).where(eq(hyperFollowPages.id, id));
       return true;
     } catch (error) {
-      logger.error('Error deleting hyperfollow page:', error);
+      logger.warn('Error deleting hyperfollow page:', error);
       return false;
     }
   }
@@ -1400,7 +1400,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return entry;
     } catch (error) {
-      logger.error('Failed to persist audit log entry:', error);
+      logger.warn('Failed to persist audit log entry:', error);
       return { id: `audit_${Date.now()}`, ...data, createdAt: new Date() };
     }
   }
@@ -1516,7 +1516,7 @@ export class DatabaseStorage implements IStorage {
       
       return payouts || [];
     } catch (error) {
-      logger.error('Error fetching payout history:', error);
+      logger.warn('Error fetching payout history:', error);
       return [];
     }
   }
@@ -1531,7 +1531,7 @@ export class DatabaseStorage implements IStorage {
         .limit(50);
       return pages || [];
     } catch (error) {
-      logger.error('Error fetching hyperfollow pages:', error);
+      logger.warn('Error fetching hyperfollow pages:', error);
       return [];
     }
   }
@@ -1545,7 +1545,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger.error('Error fetching hyperfollow page:', error);
+      logger.warn('Error fetching hyperfollow page:', error);
       return null;
     }
   }
@@ -1559,7 +1559,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return pages[0] || null;
     } catch (error) {
-      logger.error('Error fetching hyperfollow page by slug:', error);
+      logger.warn('Error fetching hyperfollow page by slug:', error);
       return null;
     }
   }
@@ -1573,7 +1573,7 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return providers || [];
     } catch (error) {
-      logger.error('Error fetching DSP providers:', error);
+      logger.warn('Error fetching DSP providers:', error);
       return [];
     }
   }
@@ -1592,7 +1592,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page;
     } catch (error) {
-      logger.error('Error creating hyperfollow page:', error);
+      logger.warn('Error creating hyperfollow page:', error);
       return null;
     }
   }
@@ -1606,7 +1606,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return page || null;
     } catch (error) {
-      logger.error('Error updating hyperfollow page:', error);
+      logger.warn('Error updating hyperfollow page:', error);
       return null;
     }
   }
@@ -1642,7 +1642,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return listing;
     } catch (error) {
-      logger.error('Error creating listing:', error);
+      logger.warn('Error creating listing:', error);
       throw error;
     }
   }
@@ -1788,7 +1788,7 @@ export class DatabaseStorage implements IStorage {
         };
       });
     } catch (error) {
-      logger.error('Error fetching beat listings:', error);
+      logger.warn('Error fetching beat listings:', error);
       return [];
     }
   }
@@ -1830,7 +1830,7 @@ export class DatabaseStorage implements IStorage {
         })(),
       };
     } catch (error) {
-      logger.error('Error fetching beat listing:', error);
+      logger.warn('Error fetching beat listing:', error);
       return null;
     }
   }
@@ -1861,7 +1861,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: listing.createdAt,
       };
     } catch (error) {
-      logger.error('Error updating listing:', error);
+      logger.warn('Error updating listing:', error);
       throw error;
     }
   }
@@ -1871,7 +1871,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(listings).where(eq(listings.id, id));
       return true;
     } catch (error) {
-      logger.error('Error deleting listing:', error);
+      logger.warn('Error deleting listing:', error);
       throw error;
     }
   }
@@ -1886,7 +1886,7 @@ export class DatabaseStorage implements IStorage {
         .limit(100);
       return results;
     } catch (error) {
-      logger.error('Error fetching contract templates:', error);
+      logger.warn('Error fetching contract templates:', error);
       return [];
     }
   }
@@ -1900,7 +1900,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      logger.error('Error fetching contract template:', error);
+      logger.warn('Error fetching contract template:', error);
       return null;
     }
   }
@@ -1914,7 +1914,7 @@ export class DatabaseStorage implements IStorage {
         .limit(1);
       return template || null;
     } catch (error) {
-      logger.error('Error fetching contract template by user:', error);
+      logger.warn('Error fetching contract template by user:', error);
       return null;
     }
   }
@@ -1942,7 +1942,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template;
     } catch (error) {
-      logger.error('Error creating contract template:', error);
+      logger.warn('Error creating contract template:', error);
       throw error;
     }
   }
@@ -1956,7 +1956,7 @@ export class DatabaseStorage implements IStorage {
         .returning();
       return template || null;
     } catch (error) {
-      logger.error('Error updating contract template:', error);
+      logger.warn('Error updating contract template:', error);
       throw error;
     }
   }
@@ -1966,7 +1966,7 @@ export class DatabaseStorage implements IStorage {
       await db.delete(contractTemplates).where(eq(contractTemplates.id, id));
       return true;
     } catch (error) {
-      logger.error('Error deleting contract template:', error);
+      logger.warn('Error deleting contract template:', error);
       throw error;
     }
   }
@@ -2001,7 +2001,7 @@ export class DatabaseStorage implements IStorage {
         .orderBy(desc(orders.createdAt));
       return results;
     } catch (error) {
-      logger.error('Error fetching user orders:', error);
+      logger.warn('Error fetching user orders:', error);
       return [];
     }
   }
@@ -2016,7 +2016,7 @@ export class DatabaseStorage implements IStorage {
         .limit(200);
       return results;
     } catch (error) {
-      logger.error('Error fetching seller orders:', error);
+      logger.warn('Error fetching seller orders:', error);
       return [];
     }
   }

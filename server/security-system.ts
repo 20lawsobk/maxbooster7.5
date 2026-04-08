@@ -195,7 +195,7 @@ export class SelfHealingSecuritySystem {
         }
       }
     } catch (error: unknown) {
-      logger.error('Error initializing AI models:', error);
+      logger.warn('Error initializing AI models:', error);
     }
   }
 
@@ -338,7 +338,7 @@ export class SelfHealingSecuritySystem {
       // Update security score
       this.calculateSecurityScore();
     } catch (error: unknown) {
-      logger.error('Security scan error:', error);
+      logger.warn('Security scan error:', error);
       this.handleSecurityError(error);
     }
   }
@@ -358,7 +358,7 @@ export class SelfHealingSecuritySystem {
       // Update threat database
       await this.updateThreatDatabase();
     } catch (error: unknown) {
-      logger.error('Deep security scan error:', error);
+      logger.warn('Deep security scan error:', error);
     }
   }
 
@@ -405,7 +405,7 @@ export class SelfHealingSecuritySystem {
         this.securityMetrics.suspiciousActivities += vulnerabilities.length;
       }
     } catch (error: unknown) {
-      logger.error('Error in vulnerability assessment:', error);
+      logger.warn('Error in vulnerability assessment:', error);
     }
   }
 
@@ -463,7 +463,7 @@ export class SelfHealingSecuritySystem {
         logger.warn(`Penetration test: ${failedTests.length} tests failed`, { failedTests });
       }
     } catch (error: unknown) {
-      logger.error('Error in penetration test simulation:', error);
+      logger.warn('Error in penetration test simulation:', error);
     }
   }
 
@@ -518,7 +518,7 @@ export class SelfHealingSecuritySystem {
         warnings: auditFindings.filter(f => f.status === 'warning').length,
       });
     } catch (error: unknown) {
-      logger.error('Error in security configuration audit:', error);
+      logger.warn('Error in security configuration audit:', error);
     }
   }
 
@@ -560,7 +560,7 @@ export class SelfHealingSecuritySystem {
         highFrequencyThreats: highFrequencyThreats.length,
       });
     } catch (error: unknown) {
-      logger.error('Error updating threat database:', error);
+      logger.warn('Error updating threat database:', error);
     }
   }
 
@@ -769,7 +769,7 @@ export class SelfHealingSecuritySystem {
         `✅ THREAT HEALED: ${threatInfo.type} in ${healingProcess.endTime - healingProcess.startTime}ms`
       );
     } catch (error: unknown) {
-      logger.error(`❌ HEALING FAILED: ${threatInfo.type}`, error);
+      logger.warn(`❌ HEALING FAILED: ${threatInfo.type}`, error);
       const healingProcess = this.healingProcesses.get(threatId);
       if (healingProcess) {
         healingProcess.status = 'failed';
@@ -1072,7 +1072,7 @@ export class SelfHealingSecuritySystem {
         );
       }
     } catch (error: unknown) {
-      logger.error('Error adding IP to blacklist:', error);
+      logger.warn('Error adding IP to blacklist:', error);
     }
   }
 
@@ -1116,7 +1116,7 @@ export class SelfHealingSecuritySystem {
 
       logger.info(`📊 Threat tracked in database (${healingDuration}ms)`);
     } catch (error: unknown) {
-      logger.error('Error tracking threat in database:', error);
+      logger.warn('Error tracking threat in database:', error);
     }
   }
 
@@ -1148,7 +1148,7 @@ export class SelfHealingSecuritySystem {
 
       logger.info(`📧 Admin notifications sent for ${threat.threatType}`);
     } catch (error: unknown) {
-      logger.error('Error sending admin notification:', error);
+      logger.warn('Error sending admin notification:', error);
     }
   }
 
@@ -1185,7 +1185,7 @@ export class SelfHealingSecuritySystem {
 
       return blocked.length > 0;
     } catch (error: unknown) {
-      logger.error('Error checking IP blacklist:', error);
+      logger.warn('Error checking IP blacklist:', error);
       return false;
     }
   }
@@ -1258,7 +1258,7 @@ export class SelfHealingSecuritySystem {
 
   // Handle security error
   private handleSecurityError(error: unknown): void {
-    logger.error('🔴 SECURITY ERROR:', error);
+    logger.warn('🔴 SECURITY ERROR:', error);
     // Implement error handling and recovery
   }
 
@@ -1428,7 +1428,7 @@ export class SelfHealingSecuritySystem {
         profile: profile || {},
       };
     } catch (error: unknown) {
-      logger.error('Error analyzing user behavior:', error);
+      logger.warn('Error analyzing user behavior:', error);
       return {
         riskScore: 0,
         riskLevel: 'low',
@@ -1554,7 +1554,7 @@ export class SelfHealingSecuritySystem {
         autoBlocked,
       };
     } catch (error: unknown) {
-      logger.error('Error detecting anomalies:', error);
+      logger.warn('Error detecting anomalies:', error);
       return {
         isAnomaly: false,
         anomalyScore: 0,
@@ -1688,7 +1688,7 @@ export class SelfHealingSecuritySystem {
         shouldBlock,
       };
     } catch (error: unknown) {
-      logger.error('Error predicting zero-day threat:', error);
+      logger.warn('Error predicting zero-day threat:', error);
       return {
         threatLevel: 'none',
         signatures: [],
@@ -1832,7 +1832,7 @@ export class SelfHealingSecuritySystem {
         results,
       };
     } catch (error: unknown) {
-      logger.error('Error running pen test:', error);
+      logger.warn('Error running pen test:', error);
       return {
         testId,
         vulnerabilitiesFound: 0,
@@ -1965,7 +1965,7 @@ export class SelfHealingSecuritySystem {
         recommendations,
       };
     } catch (error: unknown) {
-      logger.error('Error generating compliance report:', error);
+      logger.warn('Error generating compliance report:', error);
       return {
         reportId,
         complianceScore: 0,
@@ -2108,7 +2108,7 @@ export class SelfHealingSecuritySystem {
         securityScore: this.securityMetrics.securityScore,
       };
     } catch (error: unknown) {
-      logger.error('Error getting security dashboard:', error);
+      logger.warn('Error getting security dashboard:', error);
       return {
         activeThreats: 0,
         anomaliesDetected: 0,

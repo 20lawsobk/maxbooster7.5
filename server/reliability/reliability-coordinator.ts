@@ -216,7 +216,7 @@ class ReliabilityCoordinator extends EventEmitter {
         this.logSystemStatus();
       }
     } catch (error: unknown) {
-      logger.error('❌ System health check failed:', error);
+      logger.warn('❌ System health check failed:', error);
       this.handleCriticalAlert('health-check', { error: (error as Error).message });
     }
   }
@@ -292,7 +292,7 @@ class ReliabilityCoordinator extends EventEmitter {
       this.systemHealth.alerts = this.systemHealth.alerts.slice(0, 100);
     }
 
-    logger.error(`🚨 CRITICAL SYSTEM ALERT [${component}]: ${alert.message}`);
+    logger.warn(`🚨 CRITICAL SYSTEM ALERT [${component}]: ${alert.message}`);
 
     this.emit('critical-alert', alert);
 
@@ -339,7 +339,7 @@ class ReliabilityCoordinator extends EventEmitter {
 
       logger.info(`✅ Auto-recovery initiated for ${component}`);
     } catch (error: unknown) {
-      logger.error(`❌ Auto-recovery failed for ${component}:`, error);
+      logger.warn(`❌ Auto-recovery failed for ${component}:`, error);
     }
   }
 

@@ -116,7 +116,7 @@ class TensorFlowWorkerPool {
         });
 
         worker.on('error', (err) => {
-          logger.error(`[TFWorkerPool] Worker ${index} error: ${err.message}`);
+          logger.warn(`[TFWorkerPool] Worker ${index} error: ${err.message}`);
           clearTimeout(timeout);
           reject(err);
           for (const [id, req] of this.pendingRequests) {

@@ -33,7 +33,7 @@ router.get('/alerts', async (req: AuthenticatedRequest, res: Response) => {
 
     return res.json({ success: true, data: alerts });
   } catch (error) {
-    logger.error('Error fetching alerts:', error);
+    logger.warn('Error fetching alerts:', error);
     return res.status(500).json({ error: 'Failed to fetch alerts' });
   }
 });
@@ -48,7 +48,7 @@ router.get('/alerts/summary', async (req: AuthenticatedRequest, res: Response) =
     const summary = await analyticsAlertService.getAlertSummary(userId);
     return res.json({ success: true, data: summary });
   } catch (error) {
-    logger.error('Error fetching alert summary:', error);
+    logger.warn('Error fetching alert summary:', error);
     return res.status(500).json({ error: 'Failed to fetch alert summary' });
   }
 });
@@ -63,7 +63,7 @@ router.get('/alerts/unread-count', async (req: AuthenticatedRequest, res: Respon
     const count = await analyticsAlertService.getUnreadCount(userId);
     return res.json({ success: true, data: { count } });
   } catch (error) {
-    logger.error('Error fetching unread count:', error);
+    logger.warn('Error fetching unread count:', error);
     return res.status(500).json({ error: 'Failed to fetch unread count' });
   }
 });
@@ -80,7 +80,7 @@ router.post('/alerts/:alertId/read', async (req: AuthenticatedRequest, res: Resp
 
     return res.json({ success, message: success ? 'Alert marked as read' : 'Alert not found' });
   } catch (error) {
-    logger.error('Error marking alert as read:', error);
+    logger.warn('Error marking alert as read:', error);
     return res.status(500).json({ error: 'Failed to mark alert as read' });
   }
 });
@@ -97,7 +97,7 @@ router.post('/alerts/:alertId/dismiss', async (req: AuthenticatedRequest, res: R
 
     return res.json({ success, message: success ? 'Alert dismissed' : 'Alert not found' });
   } catch (error) {
-    logger.error('Error dismissing alert:', error);
+    logger.warn('Error dismissing alert:', error);
     return res.status(500).json({ error: 'Failed to dismiss alert' });
   }
 });
@@ -116,7 +116,7 @@ router.get('/trigger-cities', async (req: AuthenticatedRequest, res: Response) =
     const triggerCities = await analyticsAlertService.detectTriggerCities(userId, { start, end });
     return res.json({ success: true, data: triggerCities });
   } catch (error) {
-    logger.error('Error detecting trigger cities:', error);
+    logger.warn('Error detecting trigger cities:', error);
     return res.status(500).json({ error: 'Failed to detect trigger cities' });
   }
 });
@@ -131,7 +131,7 @@ router.get('/trigger-cities/cached', async (req: AuthenticatedRequest, res: Resp
     const triggerCities = await analyticsAlertService.getTriggerCities(userId);
     return res.json({ success: true, data: triggerCities });
   } catch (error) {
-    logger.error('Error fetching cached trigger cities:', error);
+    logger.warn('Error fetching cached trigger cities:', error);
     return res.status(500).json({ error: 'Failed to fetch trigger cities' });
   }
 });
@@ -146,7 +146,7 @@ router.post('/playlist-changes/track', async (req: AuthenticatedRequest, res: Re
     const changes = await analyticsAlertService.trackPlaylistChanges(userId);
     return res.json({ success: true, data: changes });
   } catch (error) {
-    logger.error('Error tracking playlist changes:', error);
+    logger.warn('Error tracking playlist changes:', error);
     return res.status(500).json({ error: 'Failed to track playlist changes' });
   }
 });
@@ -166,7 +166,7 @@ router.post('/milestones/check', async (req: AuthenticatedRequest, res: Response
     const milestones = await analyticsAlertService.checkMilestones(userId, platform, metrics);
     return res.json({ success: true, data: milestones });
   } catch (error) {
-    logger.error('Error checking milestones:', error);
+    logger.warn('Error checking milestones:', error);
     return res.status(500).json({ error: 'Failed to check milestones' });
   }
 });
@@ -181,7 +181,7 @@ router.get('/cross-platform-comparison', async (req: AuthenticatedRequest, res: 
     const comparison = await analyticsAlertService.getCrossPlatformComparison(userId);
     return res.json({ success: true, data: comparison });
   } catch (error) {
-    logger.error('Error getting cross-platform comparison:', error);
+    logger.warn('Error getting cross-platform comparison:', error);
     return res.status(500).json({ error: 'Failed to get cross-platform comparison' });
   }
 });
@@ -201,7 +201,7 @@ router.post('/growth-anomalies/detect', async (req: AuthenticatedRequest, res: R
     await analyticsAlertService.detectGrowthAnomalies(userId, platform, currentMetrics, previousMetrics);
     return res.json({ success: true, message: 'Growth anomalies analyzed' });
   } catch (error) {
-    logger.error('Error detecting growth anomalies:', error);
+    logger.warn('Error detecting growth anomalies:', error);
     return res.status(500).json({ error: 'Failed to detect growth anomalies' });
   }
 });
@@ -221,7 +221,7 @@ router.post('/viral-content/detect', async (req: AuthenticatedRequest, res: Resp
     await analyticsAlertService.detectViralContent(userId, platform, metrics);
     return res.json({ success: true, message: 'Viral content analysis complete' });
   } catch (error) {
-    logger.error('Error detecting viral content:', error);
+    logger.warn('Error detecting viral content:', error);
     return res.status(500).json({ error: 'Failed to detect viral content' });
   }
 });

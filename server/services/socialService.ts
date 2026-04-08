@@ -45,7 +45,7 @@ export class SocialService {
       const campaign = await storage.createAdCampaign(data);
       return campaign;
     } catch (error: unknown) {
-      logger.error('Error creating campaign:', error);
+      logger.warn('Error creating campaign:', error);
       throw new Error('Failed to create campaign');
     }
   }
@@ -57,7 +57,7 @@ export class SocialService {
     try {
       return await storage.getUserAdCampaigns(userId);
     } catch (error: unknown) {
-      logger.error('Error fetching campaigns:', error);
+      logger.warn('Error fetching campaigns:', error);
       throw new Error('Failed to fetch campaigns');
     }
   }
@@ -75,7 +75,7 @@ export class SocialService {
 
       return campaign;
     } catch (error: unknown) {
-      logger.error('Error fetching campaign:', error);
+      logger.warn('Error fetching campaign:', error);
       throw new Error('Failed to fetch campaign');
     }
   }
@@ -115,7 +115,7 @@ export class SocialService {
 
       return { variants };
     } catch (error: unknown) {
-      logger.error('Error generating variants:', error);
+      logger.warn('Error generating variants:', error);
       throw new Error('Failed to generate variants');
     }
   }
@@ -144,7 +144,7 @@ export class SocialService {
         scheduled: schedule.length,
       };
     } catch (error: unknown) {
-      logger.error('Error scheduling posts:', error);
+      logger.warn('Error scheduling posts:', error);
       throw new Error('Failed to schedule posts');
     }
   }
@@ -168,7 +168,7 @@ export class SocialService {
         publishedAt: new Date(),
       };
     } catch (error: unknown) {
-      logger.error('Post publishing error:', error);
+      logger.warn('Post publishing error:', error);
       throw new Error('Failed to publish post');
     }
   }
@@ -193,7 +193,7 @@ export class SocialService {
         engagement: 0,
       };
     } catch (error: unknown) {
-      logger.error('Error tracking metrics:', error);
+      logger.warn('Error tracking metrics:', error);
       throw new Error('Failed to track metrics');
     }
   }
@@ -228,7 +228,7 @@ export class SocialService {
         },
       };
     } catch (error: unknown) {
-      logger.error('Error optimizing variant:', error);
+      logger.warn('Error optimizing variant:', error);
       throw new Error('Failed to optimize variant');
     }
   }
@@ -269,7 +269,7 @@ export class SocialService {
 
       return { success: true, accountId: `${platform}_${userId}` };
     } catch (error: unknown) {
-      logger.error('Platform connection error:', error);
+      logger.warn('Platform connection error:', error);
       throw new Error('Failed to connect platform');
     }
   }
@@ -292,7 +292,7 @@ export class SocialService {
         topPosts: [],
       };
     } catch (error: unknown) {
-      logger.error('Social analytics error:', error);
+      logger.warn('Social analytics error:', error);
       throw new Error('Failed to fetch social analytics');
     }
   }
@@ -323,7 +323,7 @@ export class SocialService {
         projectedEngagementIncrease: 28,
       };
     } catch (error: unknown) {
-      logger.error('Post amplification error:', error);
+      logger.warn('Post amplification error:', error);
       throw new Error('Failed to amplify post');
     }
   }
@@ -354,7 +354,7 @@ export class SocialService {
         timeline: [],
       };
     } catch (error: unknown) {
-      logger.error('Error fetching campaign metrics:', error);
+      logger.warn('Error fetching campaign metrics:', error);
       throw new Error('Failed to fetch campaign metrics');
     }
   }

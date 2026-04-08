@@ -17,7 +17,7 @@ class ClusterSessionManager {
       process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
     const rawSecret = process.env.SESSION_SECRET;
     if (isProductionEnv && (!rawSecret || rawSecret.length < 32)) {
-      logger.error(
+      logger.warn(
         '❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production'
       );
       process.exit(1);

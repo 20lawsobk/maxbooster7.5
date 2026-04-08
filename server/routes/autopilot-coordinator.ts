@@ -62,7 +62,7 @@ router.get('/status', requireAuth, async (req, res) => {
       data: status,
     });
   } catch (error) {
-    logger.error('Error getting coordinator status:', error);
+    logger.warn('Error getting coordinator status:', error);
     res.status(500).json({ success: false, error: 'Failed to get coordinator status' });
   }
 });
@@ -92,7 +92,7 @@ router.get('/schedule', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.error('Error getting coordinated schedule:', error);
+    logger.warn('Error getting coordinated schedule:', error);
     res.status(500).json({ success: false, error: 'Failed to get coordinated schedule' });
   }
 });
@@ -111,7 +111,7 @@ router.post('/sync', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error syncing insights:', error);
+    logger.warn('Error syncing insights:', error);
     res.status(500).json({ success: false, error: 'Failed to sync insights' });
   }
 });
@@ -144,7 +144,7 @@ router.post('/register', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.error('Error registering post:', error);
+    logger.warn('Error registering post:', error);
     res.status(500).json({ success: false, error: 'Failed to register post' });
   }
 });
@@ -175,7 +175,7 @@ router.put('/posts/:postId', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.error('Error updating post:', error);
+    logger.warn('Error updating post:', error);
     res.status(500).json({ success: false, error: 'Failed to update post' });
   }
 });
@@ -196,7 +196,7 @@ router.delete('/posts/:postId', requireAuth, async (req, res) => {
       message: 'Post cancelled successfully',
     });
   } catch (error) {
-    logger.error('Error cancelling post:', error);
+    logger.warn('Error cancelling post:', error);
     res.status(500).json({ success: false, error: 'Failed to cancel post' });
   }
 });
@@ -222,7 +222,7 @@ router.get('/next-slot', requireAuth, async (req, res) => {
       data: slot,
     });
   } catch (error) {
-    logger.error('Error getting next slot:', error);
+    logger.warn('Error getting next slot:', error);
     res.status(500).json({ success: false, error: 'Failed to get next available slot' });
   }
 });
@@ -247,7 +247,7 @@ router.post('/insights', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.error('Error sharing insight:', error);
+    logger.warn('Error sharing insight:', error);
     res.status(500).json({ success: false, error: 'Failed to share insight' });
   }
 });
@@ -274,7 +274,7 @@ router.get('/insights', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.error('Error getting insights:', error);
+    logger.warn('Error getting insights:', error);
     res.status(500).json({ success: false, error: 'Failed to get insights' });
   }
 });
@@ -294,7 +294,7 @@ router.get('/optimal-times/:platform', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error getting optimal times:', error);
+    logger.warn('Error getting optimal times:', error);
     res.status(500).json({ success: false, error: 'Failed to get optimal posting times' });
   }
 });
@@ -315,7 +315,7 @@ router.get('/conflicts', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.error('Error getting conflicts:', error);
+    logger.warn('Error getting conflicts:', error);
     res.status(500).json({ success: false, error: 'Failed to get posting conflicts' });
   }
 });
@@ -330,7 +330,7 @@ router.get('/performance', requireAuth, async (req, res) => {
       data: summary,
     });
   } catch (error) {
-    logger.error('Error getting performance summary:', error);
+    logger.warn('Error getting performance summary:', error);
     res.status(500).json({ success: false, error: 'Failed to get performance summary' });
   }
 });
@@ -351,7 +351,7 @@ router.post('/connect', requireAuth, async (req, res) => {
       message: `${autopilotType} autopilot connected to coordinator`,
     });
   } catch (error) {
-    logger.error('Error connecting autopilot:', error);
+    logger.warn('Error connecting autopilot:', error);
     res.status(500).json({ success: false, error: 'Failed to connect autopilot' });
   }
 });
@@ -372,7 +372,7 @@ router.post('/disconnect', requireAuth, async (req, res) => {
       message: `${autopilotType} autopilot disconnected from coordinator`,
     });
   } catch (error) {
-    logger.error('Error disconnecting autopilot:', error);
+    logger.warn('Error disconnecting autopilot:', error);
     res.status(500).json({ success: false, error: 'Failed to disconnect autopilot' });
   }
 });

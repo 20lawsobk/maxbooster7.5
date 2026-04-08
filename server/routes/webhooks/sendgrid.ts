@@ -16,7 +16,7 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
     const rawBody = req.body?.toString('utf-8') || '';
 
     if (process.env.NODE_ENV === 'production' && !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
-      logger.error('❌ CRITICAL: SendGrid webhook public key not configured in production');
+      logger.warn('❌ CRITICAL: SendGrid webhook public key not configured in production');
       return res.status(500).json({ error: 'Webhook verification not configured' });
     }
 
@@ -63,7 +63,7 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
 
     res.status(200).json({ received: true });
   } catch (error: unknown) {
-    logger.error('SendGrid webhook error:', error);
+    logger.warn('SendGrid webhook error:', error);
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });

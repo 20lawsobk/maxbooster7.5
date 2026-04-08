@@ -667,8 +667,8 @@ async function renderWithPython(
       else {
         const ffErrSnip = ffErr.slice(-1000);
         const pyErrSnip = pyErr.slice(-200).trim();
-        logger.error(`[VideoGen] FFmpeg stderr tail: ${ffErrSnip}`);
-        if (pyErrSnip) logger.error(`[VideoGen] Python stderr tail: ${pyErrSnip}`);
+        logger.warn(`[VideoGen] FFmpeg stderr tail: ${ffErrSnip}`);
+        if (pyErrSnip) logger.warn(`[VideoGen] Python stderr tail: ${pyErrSnip}`);
         doReject(new Error(`FFmpeg exited ${code}: ${ffErrSnip}`));
       }
     });
@@ -1403,7 +1403,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
 
   } catch (err: any) {
     cleanup(...tempFiles);
-    logger.error('[VideoGen] Render failed:', err?.stderr || err?.message);
+    logger.warn('[VideoGen] Render failed:', err?.stderr || err?.message);
     return { success: false, error: `Video render failed: ${err?.message || 'FFmpeg error'}` };
   }
 }

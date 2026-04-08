@@ -60,7 +60,7 @@ router.post('/content/generate', requireAuth, async (req: Request, res: Response
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Content generation route error:', error);
+    logger.warn('Content generation route error:', error);
     res.status(500).json({ error: 'Failed to generate content' });
   }
 });
@@ -94,7 +94,7 @@ router.post('/sentiment/analyze', requireAuth, async (req: Request, res: Respons
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Sentiment analysis route error:', error);
+    logger.warn('Sentiment analysis route error:', error);
     res.status(500).json({ error: 'Failed to analyze sentiment' });
   }
 });
@@ -128,7 +128,7 @@ router.post('/recommendations/get', requireAuth, async (req: Request, res: Respo
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Recommendations route error:', error);
+    logger.warn('Recommendations route error:', error);
     res.status(500).json({ error: 'Failed to get recommendations' });
   }
 });
@@ -182,7 +182,7 @@ router.post('/ads/optimize', requireAuth, async (req: Request, res: Response) =>
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Ad optimization route error:', error);
+    logger.warn('Ad optimization route error:', error);
     res.status(500).json({ error: 'Failed to optimize ads' });
   }
 });
@@ -226,7 +226,7 @@ router.post('/social/predict', requireAuth, async (req: Request, res: Response) 
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Social prediction route error:', error);
+    logger.warn('Social prediction route error:', error);
     res.status(500).json({ error: 'Failed to predict social engagement' });
   }
 });
@@ -267,7 +267,7 @@ router.post('/forecast', requireAuth, async (req: Request, res: Response) => {
       confidence: result.confidence,
     });
   } catch (error) {
-    logger.error('Forecast route error:', error);
+    logger.warn('Forecast route error:', error);
     res.status(500).json({ error: 'Failed to generate forecast' });
   }
 });
@@ -284,7 +284,7 @@ router.get('/health', requireAuth, async (req: Request, res: Response) => {
       data: health,
     });
   } catch (error) {
-    logger.error('AI health check route error:', error);
+    logger.warn('AI health check route error:', error);
     res.status(500).json({ 
       success: false,
       error: 'Failed to get AI health status',
@@ -315,7 +315,7 @@ router.post('/hashtags/generate', requireAuth, async (req: Request, res: Respons
       data: { hashtags },
     });
   } catch (error) {
-    logger.error('Hashtag generation route error:', error);
+    logger.warn('Hashtag generation route error:', error);
     res.status(500).json({ error: 'Failed to generate hashtags' });
   }
 });
@@ -335,7 +335,7 @@ router.post('/toxicity/analyze', requireAuth, async (req: Request, res: Response
       data: result,
     });
   } catch (error) {
-    logger.error('Toxicity analysis route error:', error);
+    logger.warn('Toxicity analysis route error:', error);
     res.status(500).json({ error: 'Failed to analyze toxicity' });
   }
 });
@@ -355,7 +355,7 @@ router.post('/emotions/detect', requireAuth, async (req: Request, res: Response)
       data: result,
     });
   } catch (error) {
-    logger.error('Emotion detection route error:', error);
+    logger.warn('Emotion detection route error:', error);
     res.status(500).json({ error: 'Failed to detect emotions' });
   }
 });
@@ -373,7 +373,7 @@ router.get('/trends', requireAuth, async (req: Request, res: Response) => {
       data: trends,
     });
   } catch (error) {
-    logger.error('Trends detection route error:', error);
+    logger.warn('Trends detection route error:', error);
     res.status(500).json({ error: 'Failed to detect trends' });
   }
 });
@@ -397,7 +397,7 @@ router.post('/content/adapt', requireAuth, async (req: Request, res: Response) =
       data: adaptedContent,
     });
   } catch (error) {
-    logger.error('Content adaptation route error:', error);
+    logger.warn('Content adaptation route error:', error);
     res.status(500).json({ error: 'Failed to adapt content' });
   }
 });
@@ -427,7 +427,7 @@ router.get('/models', requireAuth, async (req: Request, res: Response) => {
       data: models,
     });
   } catch (error) {
-    logger.error('Get models route error:', error);
+    logger.warn('Get models route error:', error);
     res.status(500).json({ error: 'Failed to get registered models' });
   }
 });
@@ -448,7 +448,7 @@ router.get('/models/:modelId/performance', requireAuth, async (req: Request, res
       },
     });
   } catch (error) {
-    logger.error('Get model performance route error:', error);
+    logger.warn('Get model performance route error:', error);
     res.status(500).json({ error: 'Failed to get model performance' });
   }
 });
@@ -462,7 +462,7 @@ router.get('/stats', requireAuth, async (req: Request, res: Response) => {
       data: stats,
     });
   } catch (error) {
-    logger.error('Get AI stats route error:', error);
+    logger.warn('Get AI stats route error:', error);
     res.status(500).json({ error: 'Failed to get AI stats' });
   }
 });
@@ -486,7 +486,7 @@ router.post('/analytics/predict', requireAuth, async (req: Request, res: Respons
       data: prediction,
     });
   } catch (error) {
-    logger.error('Analytics prediction route error:', error);
+    logger.warn('Analytics prediction route error:', error);
     res.status(500).json({ error: 'Failed to predict analytics metric' });
   }
 });
@@ -500,7 +500,7 @@ router.get('/insights', requireAuth, async (req: Request, res: Response) => {
       data: insights,
     });
   } catch (error) {
-    logger.error('Generate insights route error:', error);
+    logger.warn('Generate insights route error:', error);
     res.status(500).json({ error: 'Failed to generate insights' });
   }
 });
@@ -514,7 +514,7 @@ router.get('/anomalies', requireAuth, async (req: Request, res: Response) => {
       data: anomalies,
     });
   } catch (error) {
-    logger.error('Detect anomalies route error:', error);
+    logger.warn('Detect anomalies route error:', error);
     res.status(500).json({ error: 'Failed to detect anomalies' });
   }
 });
@@ -528,7 +528,7 @@ router.post('/churn/predict', requireAuth, async (req: Request, res: Response) =
       data: prediction,
     });
   } catch (error) {
-    logger.error('Churn prediction route error:', error);
+    logger.warn('Churn prediction route error:', error);
     res.status(500).json({ error: 'Failed to predict churn' });
   }
 });
@@ -544,7 +544,7 @@ router.post('/revenue/forecast', requireAuth, async (req: Request, res: Response
       data: forecast,
     });
   } catch (error) {
-    logger.error('Revenue forecast route error:', error);
+    logger.warn('Revenue forecast route error:', error);
     res.status(500).json({ error: 'Failed to forecast revenue' });
   }
 });
@@ -578,7 +578,7 @@ router.post('/organic/optimize', requireAuth, async (req: Request, res: Response
       message: 'Personal Ad Network optimization complete',
     });
   } catch (error) {
-    logger.error('Organic optimization route error:', error);
+    logger.warn('Organic optimization route error:', error);
     res.status(500).json({ error: 'Failed to optimize organic growth' });
   }
 });
@@ -605,7 +605,7 @@ router.post('/organic/roi', requireAuth, async (req: Request, res: Response) => 
       message: 'Organic ROI calculated - see equivalent ad spend savings',
     });
   } catch (error) {
-    logger.error('Organic ROI route error:', error);
+    logger.warn('Organic ROI route error:', error);
     res.status(500).json({ error: 'Failed to calculate organic ROI' });
   }
 });
@@ -634,7 +634,7 @@ router.post('/organic/schedule', requireAuth, async (req: Request, res: Response
       message: 'Optimal organic posting schedule generated',
     });
   } catch (error) {
-    logger.error('Organic schedule route error:', error);
+    logger.warn('Organic schedule route error:', error);
     res.status(500).json({ error: 'Failed to generate organic schedule' });
   }
 });
@@ -649,7 +649,7 @@ router.get('/organic/network-analysis', requireAuth, async (req: Request, res: R
       message: 'Personal Ad Network analysis complete',
     });
   } catch (error) {
-    logger.error('Network analysis route error:', error);
+    logger.warn('Network analysis route error:', error);
     res.status(500).json({ error: 'Failed to analyze personal ad network' });
   }
 });

@@ -184,7 +184,7 @@ class SocialQueueService {
 
       return { backoffMs, shouldRetry };
     } catch (error) {
-      logger.error('Error handling 429 response:', error);
+      logger.warn('Error handling 429 response:', error);
       return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
     }
   }
@@ -211,7 +211,7 @@ class SocialQueueService {
 
       return { inBackoff: false };
     } catch (error) {
-      logger.error('Error checking backoff state:', error);
+      logger.warn('Error checking backoff state:', error);
       return { inBackoff: false };
     }
   }
@@ -224,7 +224,7 @@ class SocialQueueService {
       await client.del(backoffKey);
       logger.info(`✅ Cleared backoff for ${platform}/${accountId}`);
     } catch (error) {
-      logger.error('Error clearing backoff:', error);
+      logger.warn('Error clearing backoff:', error);
     }
   }
 

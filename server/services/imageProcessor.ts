@@ -112,7 +112,7 @@ export async function validateImageFormat(buffer: Buffer): Promise<{
       height: metadata.height,
     };
   } catch (error) {
-    logger.error('Image format validation failed', { error });
+    logger.warn('Image format validation failed', { error });
     return { valid: false, error: 'Invalid or corrupted image file' };
   }
 }
@@ -246,7 +246,7 @@ export async function stripImageMetadata(buffer: Buffer): Promise<Buffer> {
 
     return result;
   } catch (error) {
-    logger.error('Failed to strip image metadata', { error });
+    logger.warn('Failed to strip image metadata', { error });
     throw new Error('Failed to process image metadata');
   }
 }
@@ -289,7 +289,7 @@ export async function convertToSafeFormat(
       mimeType: mimeTypes[targetFormat],
     };
   } catch (error) {
-    logger.error('Failed to convert image format', { error, targetFormat });
+    logger.warn('Failed to convert image format', { error, targetFormat });
     throw new Error(`Failed to convert image to ${targetFormat}`);
   }
 }
@@ -313,7 +313,7 @@ export async function resizeImage(
       })
       .toBuffer();
   } catch (error) {
-    logger.error('Failed to resize image', { error, maxWidth, maxHeight });
+    logger.warn('Failed to resize image', { error, maxWidth, maxHeight });
     throw new Error('Failed to resize image');
   }
 }
@@ -331,7 +331,7 @@ export async function getImageDimensions(buffer: Buffer): Promise<{ width: numbe
     }
     return { width: metadata.width, height: metadata.height };
   } catch (error) {
-    logger.error('Failed to get image dimensions', { error });
+    logger.warn('Failed to get image dimensions', { error });
     throw new Error('Failed to get image dimensions');
   }
 }

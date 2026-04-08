@@ -965,7 +965,7 @@ class PlatformAutoFixer extends EventEmitter {
         triggeredBy: result.message,
         runtimeEffect: 'Admin notified; idle connections pruned',
         action: async () => {
-          logger.error(`[PlatformAutoFixer] DB POOL CRITICAL: ${result.message} — admin action may be required`);
+          logger.warn(`[PlatformAutoFixer] DB POOL CRITICAL: ${result.message} — admin action may be required`);
           this.openIncident('DB pool exhausted', 'critical', ['database'], result.message);
         },
       });

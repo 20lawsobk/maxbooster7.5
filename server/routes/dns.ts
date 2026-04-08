@@ -122,7 +122,7 @@ router.post('/:storefrontId/credentials', async (req, res) => {
 
     res.json({ success: true, provider: providerName, domain, verified: true });
   } catch (error: unknown) {
-    logger.error('Error saving DNS credentials', { error });
+    logger.warn('Error saving DNS credentials', { error });
     res.status(500).json({ error: 'Failed to save credentials' });
   }
 });
@@ -150,7 +150,7 @@ router.get('/:storefrontId/credentials', async (req, res) => {
 
     res.json({ credentials: creds });
   } catch (error: unknown) {
-    logger.error('Error fetching DNS credentials', { error });
+    logger.warn('Error fetching DNS credentials', { error });
     res.status(500).json({ error: 'Failed to fetch credentials' });
   }
 });
@@ -174,7 +174,7 @@ router.delete('/:storefrontId/credentials/:credentialId', async (req, res) => {
     await db.delete(dnsProviderCredentials).where(eq(dnsProviderCredentials.id, credentialId));
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting DNS credential', { error });
+    logger.warn('Error deleting DNS credential', { error });
     res.status(500).json({ error: 'Failed to delete credential' });
   }
 });
@@ -246,7 +246,7 @@ router.get('/:storefrontId/records', async (req, res) => {
       res.json({ records, source: 'cache', syncedAt: lastSync?.toISOString() ?? null });
     }
   } catch (error: unknown) {
-    logger.error('Error fetching DNS records', { error });
+    logger.warn('Error fetching DNS records', { error });
     res.status(500).json({ error: 'Failed to fetch DNS records' });
   }
 });
@@ -293,7 +293,7 @@ router.post('/:storefrontId/records', async (req, res) => {
 
     res.json({ success: true, record });
   } catch (error: unknown) {
-    logger.error('Error adding DNS record', { error });
+    logger.warn('Error adding DNS record', { error });
     res.status(500).json({ error: 'Failed to add DNS record' });
   }
 });
@@ -350,7 +350,7 @@ router.put('/:storefrontId/records', async (req, res) => {
 
     res.json({ success: true, record });
   } catch (error: unknown) {
-    logger.error('Error updating DNS record', { error });
+    logger.warn('Error updating DNS record', { error });
     res.status(500).json({ error: 'Failed to update DNS record' });
   }
 });
@@ -388,7 +388,7 @@ router.delete('/:storefrontId/records', async (req, res) => {
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting DNS record', { error });
+    logger.warn('Error deleting DNS record', { error });
     res.status(500).json({ error: 'Failed to delete DNS record' });
   }
 });
@@ -448,7 +448,7 @@ router.post('/:storefrontId/records/batch', async (req, res) => {
 
     res.json({ success: true, count: records.length });
   } catch (error: unknown) {
-    logger.error('Error in batch DNS operation', { error });
+    logger.warn('Error in batch DNS operation', { error });
     res.status(500).json({ error: 'Batch operation failed' });
   }
 });
@@ -466,7 +466,7 @@ router.get('/:storefrontId/templates', async (req, res) => {
 
     res.json({ templates });
   } catch (error: unknown) {
-    logger.error('Error fetching DNS templates', { error });
+    logger.warn('Error fetching DNS templates', { error });
     res.status(500).json({ error: 'Failed to fetch templates' });
   }
 });
@@ -490,7 +490,7 @@ router.post('/:storefrontId/templates', async (req, res) => {
 
     res.json({ success: true, template });
   } catch (error: unknown) {
-    logger.error('Error creating DNS template', { error });
+    logger.warn('Error creating DNS template', { error });
     res.status(500).json({ error: 'Failed to create template' });
   }
 });
@@ -511,7 +511,7 @@ router.delete('/:storefrontId/templates/:templateId', async (req, res) => {
     await db.delete(dnsTemplates).where(eq(dnsTemplates.id, templateId));
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.error('Error deleting DNS template', { error });
+    logger.warn('Error deleting DNS template', { error });
     res.status(500).json({ error: 'Failed to delete template' });
   }
 });
@@ -563,7 +563,7 @@ router.post('/:storefrontId/templates/:templateId/apply', async (req, res) => {
 
     res.json({ success: true, recordsApplied: templateRecords.length });
   } catch (error: unknown) {
-    logger.error('Error applying DNS template', { error });
+    logger.warn('Error applying DNS template', { error });
     res.status(500).json({ error: 'Failed to apply template' });
   }
 });

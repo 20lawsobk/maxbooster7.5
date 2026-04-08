@@ -177,7 +177,7 @@ class NotificationDispatcher {
             totalSent += result.totalSent;
           }
         } catch (err) {
-          logger.error(`[Dispatcher] Error dispatching to ${userId}:`, err);
+          logger.warn(`[Dispatcher] Error dispatching to ${userId}:`, err);
         }
       })
     );

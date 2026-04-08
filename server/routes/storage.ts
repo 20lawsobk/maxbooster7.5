@@ -57,7 +57,7 @@ async function cleanupOldDeletedFiles() {
         await db.delete(userStorageFiles).where(eq(userStorageFiles.id, file.id));
         logger.info(`[SoftDelete] Permanently deleted expired file: ${file.fileKey}`);
       } catch (err) {
-        logger.error(`[SoftDelete] Failed to permanently delete file ${file.fileKey}:`, err);
+        logger.warn(`[SoftDelete] Failed to permanently delete file ${file.fileKey}:`, err);
       }
     }
     
@@ -65,7 +65,7 @@ async function cleanupOldDeletedFiles() {
       logger.info(`[SoftDelete] Cleanup completed: ${oldDeletedFiles.length} files permanently deleted`);
     }
   } catch (error) {
-    logger.error('[SoftDelete] Cleanup job failed:', error);
+    logger.warn('[SoftDelete] Cleanup job failed:', error);
   }
 }
 
@@ -217,11 +217,11 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
           await notificationService.sendAdminStorageCriticalNotification(usedPercent, usedGB, PLATFORM_QUOTA_GB);
         }
       } catch (err) {
-        logger.error('Post-upload notification error:', err);
+        logger.warn('Post-upload notification error:', err);
       }
     });
   } catch (error) {
-    logger.error('File upload failed:', error);
+    logger.warn('File upload failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Upload failed' 
     });
@@ -325,7 +325,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
             await notificationService.sendAdminStorageCriticalNotification(usedPercent, usedGB, PLATFORM_QUOTA_GB);
           }
         } catch (err) {
-          logger.error('Post-chunked-upload notification error:', err);
+          logger.warn('Post-chunked-upload notification error:', err);
         }
       });
 
@@ -339,7 +339,7 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
       total: totalChunksNum,
     });
   } catch (error) {
-    logger.error('Chunk upload failed:', error);
+    logger.warn('Chunk upload failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Chunk upload failed' 
     });
@@ -362,7 +362,7 @@ router.delete('/upload/chunk/:fileId', requireAuth, async (req: Request, res: Re
 
     res.json({ success: true });
   } catch (error) {
-    logger.error('Chunk cleanup failed:', error);
+    logger.warn('Chunk cleanup failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Cleanup failed' 
     });
@@ -432,7 +432,7 @@ router.get('/file/*key', requireAuth, async (req: Request, res: Response) => {
       res.send(buffer);
     }
   } catch (error) {
-    logger.error('File download failed:', error);
+    logger.warn('File download failed:', error);
     res.status(404).json({ error: 'File not found' });
   }
 });
@@ -465,7 +465,7 @@ router.get('/public/*key', async (req: Request, res: Response) => {
     res.setHeader('Content-Length', buffer.length);
     res.send(buffer);
   } catch (error) {
-    logger.error('Public file download failed:', error);
+    logger.warn('Public file download failed:', error);
     res.status(404).json({ error: 'File not found' });
   }
 });
@@ -515,7 +515,7 @@ router.delete('/file/*key', requireAuth, async (req: Request, res: Response) => 
       });
     }
   } catch (error) {
-    logger.error('File deletion failed:', error);
+    logger.warn('File deletion failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Deletion failed' 
     });
@@ -571,7 +571,7 @@ router.post('/restore/*key', requireAuth, async (req: Request, res: Response) =>
       },
     });
   } catch (error) {
-    logger.error('File restoration failed:', error);
+    logger.warn('File restoration failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Restoration failed' 
     });
@@ -609,7 +609,7 @@ router.get('/quota', requireAuth, async (req: Request, res: Response) => {
       categories,
     });
   } catch (error) {
-    logger.error('Failed to get storage quota:', error);
+    logger.warn('Failed to get storage quota:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to get quota' 
     });
@@ -635,7 +635,7 @@ router.post('/rename', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('File rename failed:', error);
+    logger.warn('File rename failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Rename failed' 
     });
@@ -661,7 +661,7 @@ router.post('/move', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('File move failed:', error);
+    logger.warn('File move failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Move failed' 
     });
@@ -689,7 +689,7 @@ router.post('/duplicate', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('File duplicate failed:', error);
+    logger.warn('File duplicate failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Duplicate failed' 
     });
@@ -747,7 +747,7 @@ router.post('/validate', async (req: Request, res: Response) => {
       details,
     });
   } catch (error) {
-    logger.error('File validation failed:', error);
+    logger.warn('File validation failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Validation failed' 
     });
@@ -770,7 +770,7 @@ router.post('/scan', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.error('File scan failed:', error);
+    logger.warn('File scan failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Scan failed' 
     });
@@ -823,7 +823,7 @@ router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Re
       },
     });
   } catch (error) {
-    logger.error('[HybridStorage] Upload failed:', error);
+    logger.warn('[HybridStorage] Upload failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Upload failed' 
     });
@@ -856,7 +856,7 @@ router.get('/hybrid/file/*key', requireAuth, async (req: Request, res: Response)
     res.setHeader('X-Storage-Tier', metadata?.tier || 'unknown');
     res.send(buffer);
   } catch (error) {
-    logger.error('[HybridStorage] Download failed:', error);
+    logger.warn('[HybridStorage] Download failed:', error);
     res.status(404).json({ error: 'File not found' });
   }
 });
@@ -875,7 +875,7 @@ router.delete('/hybrid/file/*key', requireAuth, async (req: Request, res: Respon
       res.status(404).json({ error: 'File not found' });
     }
   } catch (error) {
-    logger.error('[HybridStorage] Delete failed:', error);
+    logger.warn('[HybridStorage] Delete failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Delete failed' 
     });
@@ -910,7 +910,7 @@ router.get('/hybrid/list', requireAuth, async (req: Request, res: Response) => {
       })),
     });
   } catch (error) {
-    logger.error('[HybridStorage] List failed:', error);
+    logger.warn('[HybridStorage] List failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'List failed' 
     });
@@ -924,7 +924,7 @@ router.get('/hybrid/analytics', requireAuth, async (req: Request, res: Response)
 
     res.json(analytics);
   } catch (error) {
-    logger.error('[HybridStorage] Analytics failed:', error);
+    logger.warn('[HybridStorage] Analytics failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Analytics failed' 
     });
@@ -938,7 +938,7 @@ router.get('/hybrid/tier-breakdown', requireAuth, async (req: Request, res: Resp
 
     res.json(breakdown);
   } catch (error) {
-    logger.error('[HybridStorage] Tier breakdown failed:', error);
+    logger.warn('[HybridStorage] Tier breakdown failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to get tier breakdown' 
     });
@@ -952,7 +952,7 @@ router.get('/hybrid/deduplication', requireAuth, async (req: Request, res: Respo
 
     res.json(stats);
   } catch (error) {
-    logger.error('[HybridStorage] Deduplication stats failed:', error);
+    logger.warn('[HybridStorage] Deduplication stats failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to get deduplication stats' 
     });
@@ -978,7 +978,7 @@ router.post('/hybrid/tier-down/*key', requireAuth, async (req: Request, res: Res
       res.status(400).json({ error: 'Unable to tier down file' });
     }
   } catch (error) {
-    logger.error('[HybridStorage] Tier down failed:', error);
+    logger.warn('[HybridStorage] Tier down failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Tier down failed' 
     });
@@ -998,7 +998,7 @@ router.post('/hybrid/auto-tier', requireAuth, async (req: Request, res: Response
       message: `Moved ${result.tieredDown} files to cold storage, ${result.tieredUp} files to hot storage`,
     });
   } catch (error) {
-    logger.error('[HybridStorage] Auto-tier failed:', error);
+    logger.warn('[HybridStorage] Auto-tier failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Auto-tiering failed' 
     });
@@ -1035,7 +1035,7 @@ router.get('/hybrid/metadata/*key', requireAuth, async (req: Request, res: Respo
       compressionRatio: metadata.sizeBytes / metadata.compressedSize,
     });
   } catch (error) {
-    logger.error('[HybridStorage] Metadata fetch failed:', error);
+    logger.warn('[HybridStorage] Metadata fetch failed:', error);
     res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to get metadata' 
     });

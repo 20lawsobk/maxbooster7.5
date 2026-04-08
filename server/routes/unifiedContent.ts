@@ -123,7 +123,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
       bulkSchedulePayload: pkg.bulkSchedulePayload,
     });
   } catch (err) {
-    logger.error(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, { stack: (err as Error).stack });
+    logger.warn(`[UnifiedContent] Pipeline error: ${(err as Error).message}`, { stack: (err as Error).stack });
     res.status(500).json({ error: 'Content generation pipeline failed', detail: (err as Error).message });
   }
 });
@@ -141,7 +141,7 @@ router.post('/artist-only', requireAuth, async (req: Request, res: Response) => 
     const content = await unifiedContentOrchestrator.generateArtistContentOnly(input);
     res.json({ success: true, count: content.length, artistContent: content });
   } catch (err) {
-    logger.error(`[UnifiedContent/artist-only] ${(err as Error).message}`);
+    logger.warn(`[UnifiedContent/artist-only] ${(err as Error).message}`);
     res.status(500).json({ error: 'Artist content generation failed', detail: (err as Error).message });
   }
 });
@@ -159,7 +159,7 @@ router.post('/maxbooster-only', requireAuth, async (req: Request, res: Response)
     const content = await unifiedContentOrchestrator.generateMaxBoosterContentOnly(input);
     res.json({ success: true, count: content.length, maxBoosterContent: content });
   } catch (err) {
-    logger.error(`[UnifiedContent/maxbooster-only] ${(err as Error).message}`);
+    logger.warn(`[UnifiedContent/maxbooster-only] ${(err as Error).message}`);
     res.status(500).json({ error: 'Max Booster content generation failed', detail: (err as Error).message });
   }
 });
@@ -187,7 +187,7 @@ router.post('/platform/:platform', requireAuth, async (req: Request, res: Respon
     const bundle = await unifiedContentOrchestrator.generateForPlatform(input, platform);
     res.json({ success: true, platform, bundle });
   } catch (err) {
-    logger.error(`[UnifiedContent/platform/${platform}] ${(err as Error).message}`);
+    logger.warn(`[UnifiedContent/platform/${platform}] ${(err as Error).message}`);
     res.status(500).json({ error: `Platform bundle generation failed for ${platform}`, detail: (err as Error).message });
   }
 });

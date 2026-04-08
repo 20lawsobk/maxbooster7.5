@@ -99,7 +99,7 @@ export class DiscoveryAlgorithmService {
 
       return newProfile;
     } catch (error) {
-      logger.error('Error getting/creating taste profile:', error);
+      logger.warn('Error getting/creating taste profile:', error);
       throw error;
     }
   }
@@ -133,7 +133,7 @@ export class DiscoveryAlgorithmService {
 
       return { success: true };
     } catch (error) {
-      logger.error('Error recording interaction:', error);
+      logger.warn('Error recording interaction:', error);
       throw error;
     }
   }
@@ -219,7 +219,7 @@ export class DiscoveryAlgorithmService {
         .where(eq(userTasteProfiles.userId, userId));
 
     } catch (error) {
-      logger.error('Error updating taste profile:', error);
+      logger.warn('Error updating taste profile:', error);
     }
   }
 
@@ -427,7 +427,7 @@ export class DiscoveryAlgorithmService {
         };
       });
     } catch (error) {
-      logger.error('Error getting personalized feed:', error);
+      logger.warn('Error getting personalized feed:', error);
       throw error;
     }
   }
@@ -475,7 +475,7 @@ export class DiscoveryAlgorithmService {
       await this.syncStorefrontFollow(userId, producerId, true);
       return { success: true, following: true };
     } catch (error) {
-      logger.error('Error following producer:', error);
+      logger.warn('Error following producer:', error);
       throw error;
     }
   }
@@ -492,7 +492,7 @@ export class DiscoveryAlgorithmService {
       await this.syncStorefrontFollow(userId, producerId, false);
       return { success: true, following: false };
     } catch (error) {
-      logger.error('Error unfollowing producer:', error);
+      logger.warn('Error unfollowing producer:', error);
       throw error;
     }
   }
@@ -527,7 +527,7 @@ export class DiscoveryAlgorithmService {
           ));
       }
     } catch (error) {
-      logger.error('Error syncing storefront follow:', error);
+      logger.warn('Error syncing storefront follow:', error);
     }
   }
 
@@ -539,7 +539,7 @@ export class DiscoveryAlgorithmService {
       );
       return (result.rows || []).map((row: any) => row.user_id as string);
     } catch (error) {
-      logger.error('Error getting producer followers:', error);
+      logger.warn('Error getting producer followers:', error);
       return [];
     }
   }
@@ -582,7 +582,7 @@ export class DiscoveryAlgorithmService {
         profileMaturity: Math.min(100, Math.round((profile.totalInteractions || 0) / 0.5)),
       };
     } catch (error) {
-      logger.error('Error getting taste insights:', error);
+      logger.warn('Error getting taste insights:', error);
       throw error;
     }
   }

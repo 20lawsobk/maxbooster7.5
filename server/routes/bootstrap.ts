@@ -106,7 +106,7 @@ router.get('/', requireAuthOnly, async (req: AuthenticatedRequest, res: Response
       _ts:           Date.now(),
     });
   } catch (err) {
-    logger.error('[Bootstrap] Failed to load initial data:', err);
+    logger.warn('[Bootstrap] Failed to load initial data:', err);
     res.status(500).json({ error: 'bootstrap_failed' });
   }
 });

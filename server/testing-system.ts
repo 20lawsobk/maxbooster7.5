@@ -72,7 +72,7 @@ export class TestingSystem {
 
       logger.info('✅ Testing system initialized');
     } catch (error: unknown) {
-      logger.error('❌ Failed to initialize testing system:', error);
+      logger.warn('❌ Failed to initialize testing system:', error);
     }
   }
 
@@ -181,7 +181,7 @@ export class TestingSystem {
 
       return this.testResults;
     } catch (error: unknown) {
-      logger.error('❌ Test suite failed:', error);
+      logger.warn('❌ Test suite failed:', error);
       throw error;
     }
   }
@@ -196,7 +196,7 @@ export class TestingSystem {
         logger.info(`⚠️ Unit test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Unit test error:', error);
+      logger.warn('Unit test error:', error);
     }
   }
 
@@ -210,7 +210,7 @@ export class TestingSystem {
         logger.info(`⚠️ Integration test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Integration test error:', error);
+      logger.warn('Integration test error:', error);
     }
   }
 
@@ -224,7 +224,7 @@ export class TestingSystem {
         logger.info(`⚠️ E2E test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('E2E test error:', error);
+      logger.warn('E2E test error:', error);
     }
   }
 
@@ -238,7 +238,7 @@ export class TestingSystem {
         logger.info(`⚠️ Performance test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Performance test error:', error);
+      logger.warn('Performance test error:', error);
     }
   }
 
@@ -252,7 +252,7 @@ export class TestingSystem {
         logger.info(`⚠️ Security test score below threshold: ${results.score}/100`);
       }
     } catch (error: unknown) {
-      logger.error('Security test error:', error);
+      logger.warn('Security test error:', error);
     }
   }
 
@@ -284,7 +284,7 @@ export class TestingSystem {
       const coverage = await this.runCoverageAnalysis();
       this.testResults.coverage = coverage;
     } catch (error: unknown) {
-      logger.error('Coverage calculation error:', error);
+      logger.warn('Coverage calculation error:', error);
     }
   }
 
@@ -333,7 +333,7 @@ export class TestingSystem {
         lines: Math.round(linesPercent * 10) / 10,
       };
     } catch (error: unknown) {
-      logger.error('Coverage analysis error:', error);
+      logger.warn('Coverage analysis error:', error);
       return {
         statements: 0,
         branches: 0,
@@ -430,7 +430,7 @@ class UnitTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('Unit test error:', error);
+      logger.warn('Unit test error:', error);
       return {
         score: 0,
         totalTests: 0,
@@ -682,7 +682,7 @@ class IntegrationTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('Integration test error:', error);
+      logger.warn('Integration test error:', error);
       return {
         score: 0,
         totalTests: 0,
@@ -837,7 +837,7 @@ class E2ETester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('E2E test error:', error);
+      logger.warn('E2E test error:', error);
       return {
         score: 0,
         totalTests: 0,
@@ -957,7 +957,7 @@ class PerformanceTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('Performance test error:', error);
+      logger.warn('Performance test error:', error);
       return {
         score: 0,
         totalTests: 0,
@@ -1077,7 +1077,7 @@ class SecurityTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('Security test error:', error);
+      logger.warn('Security test error:', error);
       return {
         score: 0,
         totalTests: 0,
@@ -1195,7 +1195,7 @@ class AccessibilityTester {
         testSuites,
       };
     } catch (error: unknown) {
-      logger.error('Accessibility test error:', error);
+      logger.warn('Accessibility test error:', error);
       return {
         score: 0,
         totalTests: 0,

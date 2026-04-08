@@ -121,7 +121,7 @@ export async function initializeSafetySystems(): Promise<{
     }
   } catch (error: any) {
     errors.push(`Environment validation failed: ${error.message}`);
-    logger.error('[Safety] Environment validation error:', error);
+    logger.warn('[Safety] Environment validation error:', error);
   }
 
   // 2. Initialize audit logger
@@ -131,7 +131,7 @@ export async function initializeSafetySystems(): Promise<{
     logger.info('   ✓ Audit logger initialized');
   } catch (error: any) {
     errors.push(`Audit logger failed: ${error.message}`);
-    logger.error('[Safety] Audit logger error:', error);
+    logger.warn('[Safety] Audit logger error:', error);
   }
 
   // 3. Create database indexes
@@ -155,7 +155,7 @@ export async function initializeSafetySystems(): Promise<{
     logger.info('   ✓ Refund webhook handlers registered');
   } catch (error: any) {
     errors.push(`Refund handlers failed: ${error.message}`);
-    logger.error('[Safety] Refund handler error:', error);
+    logger.warn('[Safety] Refund handler error:', error);
   }
 
   // 5. Initialize kill switch (always succeeds)
@@ -165,7 +165,7 @@ export async function initializeSafetySystems(): Promise<{
     logger.info(`   ✓ Kill switch ready (global killed: ${state.globalKilled})`);
   } catch (error: any) {
     errors.push(`Kill switch failed: ${error.message}`);
-    logger.error('[Safety] Kill switch error:', error);
+    logger.warn('[Safety] Kill switch error:', error);
   }
 
   const success = errors.length === 0;

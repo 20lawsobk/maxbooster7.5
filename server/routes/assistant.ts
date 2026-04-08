@@ -125,7 +125,7 @@ router.get('/history', async (req: Request, res: Response) => {
 
     return res.json({ messages, hasMore, total, conversationId: convId });
   } catch (error: any) {
-    logger.error('[assistant] Error fetching history:', error.message);
+    logger.warn('[assistant] Error fetching history:', error.message);
     return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
   }
 });
@@ -202,7 +202,7 @@ router.post('/chat', chatLimiter, async (req: Request, res: Response) => {
       assistantMessageId,
     });
   } catch (error: any) {
-    logger.error('[assistant] Error processing chat:', error.message);
+    logger.warn('[assistant] Error processing chat:', error.message);
     return res.status(500).json({ error: 'Failed to process your message. Please try again.' });
   }
 });
@@ -235,7 +235,7 @@ router.delete('/history', async (req: Request, res: Response) => {
 
     return res.json({ success: true });
   } catch (error: any) {
-    logger.error('[assistant] Error clearing history:', error.message);
+    logger.warn('[assistant] Error clearing history:', error.message);
     return res.status(500).json({ error: 'Failed to clear history' });
   }
 });
