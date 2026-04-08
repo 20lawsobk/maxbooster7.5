@@ -61,7 +61,7 @@ const purchaseSchema = z.object({
 
 const licenseTemplateSchema = z.object({
   name: z.string().min(1).max(100),
-  type: z.enum(['basic', 'premium', 'unlimited', 'exclusive']).optional(),
+  type: z.enum(['basic', 'premium', 'unlimited', 'exclusive', 'non-exclusive', 'custom']).optional(),
   priceCents: z.number().int().min(0).optional(),
   streams: z.union([z.string(), z.number()]).optional(),
   copies: z.union([z.string(), z.number()]).optional(),
