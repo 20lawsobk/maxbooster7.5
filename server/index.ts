@@ -304,7 +304,57 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     res.setHeader('X-Boot-Fallback', '1');
     return res.sendFile(_spaFallbackIndexPath);
   }
-  next();
+  // In dev mode (no built index.html) serve a minimal loading page so mobile
+  // browsers see something instead of a white screen during the boot window.
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('X-Boot-Fallback', '1');
+  res.status(200).send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Max Booster — Starting Up…</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100dvh;
+         background:#0f0f1a;color:#fff;font-family:system-ui,-apple-system,sans-serif;text-align:center;padding:24px}
+    .logo{width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);
+          display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:24px;
+          box-shadow:0 0 40px rgba(124,58,237,0.4)}
+    h1{font-size:1.5rem;font-weight:700;margin-bottom:8px}
+    p{color:#a0a0b8;font-size:.95rem;margin-bottom:32px}
+    .bar{width:220px;height:4px;background:#1e1e35;border-radius:4px;overflow:hidden}
+    .bar-fill{height:100%;background:linear-gradient(90deg,#7c3aed,#4f46e5);border-radius:4px;
+              animation:slide 1.6s ease-in-out infinite}
+    @keyframes slide{0%{width:0%;margin-left:0}50%{width:70%;margin-left:0}100%{width:0%;margin-left:100%}}
+    .note{margin-top:24px;font-size:.75rem;color:#555}
+  </style>
+</head>
+<body>
+  <div class="logo">🎵</div>
+  <h1>Max Booster</h1>
+  <p>Initializing AI systems…</p>
+  <div class="bar"><div class="bar-fill"></div></div>
+  <p class="note">First start takes ~1 minute. This page will reload automatically.</p>
+  <script>
+    (function(){
+      function tryReload(){
+        fetch('/').then(function(r){
+          // When the real app is ready, the response will NOT have X-Boot-Fallback.
+          // If it does have that header (or is the loading page), keep polling.
+          if(r.ok && r.headers.get('x-boot-fallback') !== '1'){
+            location.reload();
+          } else {
+            setTimeout(tryReload,3000);
+          }
+        }).catch(function(){ setTimeout(tryReload,3000); });
+      }
+      setTimeout(tryReload, 3000);
+    })();
+  </script>
+</body>
+</html>`);
 });
 
 (async () => {
