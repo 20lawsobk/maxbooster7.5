@@ -708,6 +708,32 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`⚠️ SEO routes not available: ${e.message}`);
   }
 
+  // Storefront short-link: /s/:label → /storefront/:slug
+  // Handles direct browser access to path-based storefront URLs
+  app.get('/s/:label', async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { db: sDb } = await import('./db.js');
+      const { storefrontDomains: sDomains, storefronts: sStorefronts } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const BASE = process.env.BASE_DOMAIN || 'maxboostermusic.com';
+      const label = req.params.label.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const fqdn = `${label}.${BASE}`;
+      const [row] = await sDb
+        .select({ slug: sStorefronts.slug })
+        .from(sDomains)
+        .innerJoin(sStorefronts, eq(sDomains.storefrontId, sStorefronts.id))
+        .where(and(eq(sDomains.domain, fqdn), eq(sDomains.type, 'managed_subdomain')))
+        .limit(1);
+      if (row?.slug) {
+        return res.redirect(302, `/storefront/${row.slug}`);
+      }
+      return next();
+    } catch (err) {
+      logger.error('[/s/:label] lookup error:', err);
+      return next();
+    }
+  });
+
   // MANDATORY global error handler (from safety module) - must be LAST middleware
   app.use(safetyErrorHandler);
 
@@ -955,6 +981,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 AUTONOMOUS SYSTEMS READY');
+
+        // Built-in authoritative DNS server for *.maxboostermusic.com
+        import('./services/dnsServer.js').then(({ startDNSServer }) => {
+          startDNSServer().catch((e: any) => logger.warn('[DNS] Start error:', e?.message));
+        }).catch(() => {});
+
         import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
           runBaseModelTraining().catch((e) => { logger.warn('[BaseTrainer] Background training error:', e instanceof Error ? e.message : String(e)); });
         }).catch(() => {});
@@ -1040,7 +1072,13 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   }
 
   try {
-    // 3. Stop the platform auto-fixer probe loop.
+    // 3. Stop the built-in DNS server.
+    const { stopDNSServer } = await import('./services/dnsServer.js');
+    await stopDNSServer();
+  } catch { /* non-critical */ }
+
+  try {
+    // 4. Stop the platform auto-fixer probe loop.
     const { platformAutoFixer } = await import('./services/platformAutoFixer.js');
     (platformAutoFixer as any)?.stop?.();
     logger.info('[Shutdown] PlatformAutoFixer stopped');

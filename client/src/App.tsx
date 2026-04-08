@@ -87,6 +87,24 @@ const Notifications = lazy(() => import('@/pages/Notifications'));
 const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
 const VideoGeneratorPage = lazy(() => import('@/pages/VideoGeneratorPage'));
 
+// Inline component: resolves /s/:label → /storefront/:slug
+function StorefrontShortLink({ params }: { params?: { label?: string } }) {
+  const [, setLocation] = useLocation();
+  useEffect(() => {
+    const label = params?.label;
+    if (!label) { setLocation('/marketplace'); return; }
+    fetch(`/api/storefront-domains/resolve/${encodeURIComponent(label)}`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok && d.slug) setLocation(`/storefront/${d.slug}`);
+        else setLocation('/marketplace');
+      })
+      .catch(() => setLocation('/marketplace'));
+  }, [params?.label]);
+  return null;
+}
+
+
 function Router() {
   return (
     <Switch>
@@ -139,6 +157,7 @@ function Router() {
       <Route path="/storefront" component={Storefront} />
       <Route path="/storefront/:slug" component={Storefront} />
       <Route path="/store/:slug" component={Storefront} />
+      <Route path="/s/:label" component={StorefrontShortLink} />
       <Route path="/admin/autonomy" component={AdminAutonomy} />
       <Route path="/verification" component={Verification} />
       <Route path="/contracts" component={Contracts} />

@@ -943,9 +943,23 @@ export default function StorefrontBuilder() {
                         <Label>Storefront ID</Label>
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
                         {subdomainForm.subdomain && subdomainForm.isSubdomainActive ? (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Your storefront URL: <span className="font-medium text-primary">{subdomainForm.subdomain}.maxboostermusic.com</span>
-                          </p>
+                          <div className="mt-1 space-y-0.5">
+                            <p className="text-xs text-muted-foreground">
+                              Short link (works now):{' '}
+                              <a
+                                href={`/s/${subdomainForm.subdomain}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="font-medium text-primary underline"
+                              >
+                                maxboostermusic.com/s/{subdomainForm.subdomain}
+                              </a>
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Subdomain (after NS records):{' '}
+                              <span className="font-medium text-primary">{subdomainForm.subdomain}.maxboostermusic.com</span>
+                            </p>
+                          </div>
                         ) : (
                           <p className="text-xs text-muted-foreground mt-1">
                             Reserve a custom URL below to get <span className="font-medium">yourname.maxboostermusic.com</span>
@@ -1661,6 +1675,42 @@ export default function StorefrontBuilder() {
                   </TabsContent>
 
                   <TabsContent value="dns" className="space-y-4 mt-4">
+
+                    {/* Nameserver setup instructions — one-time admin action */}
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
+                      <div className="flex items-start gap-2">
+                        <div className="text-amber-600 mt-0.5">⚠️</div>
+                        <div>
+                          <p className="font-semibold text-amber-800 text-sm">One-Time Nameserver Setup Required</p>
+                          <p className="text-xs text-amber-700 mt-0.5">
+                            To activate <span className="font-mono font-semibold">*.maxboostermusic.com</span> subdomains,
+                            update these records at your domain registrar (Namecheap, GoDaddy, etc.) — this is a one-time step.
+                            Short links (<span className="font-mono">/s/label</span>) work immediately without this.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="border rounded overflow-hidden font-mono text-xs">
+                        <div className="grid grid-cols-3 gap-px bg-border">
+                          <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Type</div>
+                          <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Host / Name</div>
+                          <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Value</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-px bg-border">
+                          <div className="bg-background px-2 py-2 text-purple-700 font-bold">A</div>
+                          <div className="bg-background px-2 py-2 text-green-700">ns1.maxboostermusic.com</div>
+                          <div className="bg-background px-2 py-2 text-muted-foreground">34.68.76.67</div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-px bg-border">
+                          <div className="bg-background px-2 py-2 text-blue-600 font-bold">NS</div>
+                          <div className="bg-background px-2 py-2 text-green-700">maxboostermusic.com</div>
+                          <div className="bg-background px-2 py-2 text-muted-foreground">ns1.maxboostermusic.com</div>
+                        </div>
+                      </div>
+                      <p className="text-[11px] text-amber-700">
+                        After saving, DNS propagation takes 10–60 minutes. All reserved subdomains will resolve automatically — no further steps needed per subdomain.
+                      </p>
+                    </div>
+
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="font-semibold">Active Domains</h3>

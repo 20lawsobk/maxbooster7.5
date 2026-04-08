@@ -38,6 +38,7 @@ Key architectural decisions include:
 - `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` for system health and runtime patching.
 - Profile Claiming System v2 for artist profile management.
 - Per-Artist Storefront Deployment System for dynamic domain management and multi-tenant routing.
+- Built-in Authoritative DNS Server (`server/services/dnsServer.ts`) using `dns2` — serves as the authoritative nameserver for `maxboostermusic.com`, automatically resolving all `*.maxboostermusic.com` subdomains to the platform IP (`34.68.76.67`) with no 3rd-party DNS APIs. On the production VM, port 53 (UDP+TCP) is available; in dev it starts in graceful-skip mode. One-time registrar NS setup: `NS maxboostermusic.com → ns1.maxboostermusic.com` + `A ns1.maxboostermusic.com → 34.68.76.67`. Status API: `GET /api/storefront-domains/dns/status`.
 - Advanced AI Routing through `unifiedAIController.generateContent()` to MaxCore.
 - Seeded, deterministic outcomes for content generation, aesthetic elements, and AI decision-making, including UCB1 Multi-Armed Bandit for topic selection.
 - Parallelization of database operations using `Promise.allSettled`.
