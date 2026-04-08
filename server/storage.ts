@@ -1075,7 +1075,7 @@ export class DatabaseStorage implements IStorage {
 
   async getProducers(): Promise<any[]> {
     try {
-      const rows = await dbRead.execute(sql`
+      const result = await dbRead.execute(sql`
         SELECT
           u.id,
           u.first_name,
@@ -1113,7 +1113,10 @@ export class DatabaseStorage implements IStorage {
         LIMIT 50
       `);
 
-      return (rows as any[]).map((u: any) => {
+      const rows = (result as any).rows ?? result;
+      if (!Array.isArray(rows)) return [];
+
+      return rows.map((u: any) => {
         const displayName = u.username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Producer';
         return {
           id: u.id,
