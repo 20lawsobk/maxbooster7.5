@@ -287,18 +287,24 @@ app.use((req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 let _spaHandlerReady = false;
 const _spaFallbackIndexPath = path.resolve(process.cwd(), 'dist', 'public', 'index.html');
+const _devBootHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Max Booster</title><style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0f172a;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:Inter,system-ui,sans-serif;color:#e2e8f0}.wrap{text-align:center}.spin{width:52px;height:52px;margin:0 auto 20px}circle.track{stroke:#1e3a5f}circle.arc{stroke:#4a9eff;stroke-dasharray:35 104}#bar-track{width:200px;height:3px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin:20px auto 0}#bar-fill{height:100%;width:40%;background:linear-gradient(90deg,#3b82f6,#4a9eff);border-radius:999px;animation:grow 3s ease-in-out infinite}@keyframes grow{0%{width:20%}50%{width:80%}100%{width:20%}}p{color:#94a3b8;font-size:13px;margin-top:14px}</style></head><body><div class="wrap"><svg class="spin" viewBox="0 0 52 52" fill="none"><circle class="track" cx="26" cy="26" r="22" stroke-width="4"/><circle class="arc" cx="26" cy="26" r="22" stroke-width="4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" from="0 26 26" to="360 26 26" dur=".85s" repeatCount="indefinite"/></circle></svg><div id="bar-track"><div id="bar-fill"></div></div><p id="msg">Starting up…</p></div><script>var t=0;var msgs=['Starting up\u2026','Loading services\u2026','Almost ready\u2026'];function tick(){t++;document.getElementById('msg').textContent=msgs[Math.min(t,msgs.length-1)];if(t<10)setTimeout(tick,2000);}setTimeout(tick,2000);setTimeout(function(){location.reload();},12000);</script></body></html>`;
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Once the real SPA handler is wired, this middleware is a no-op.
   if (_spaHandlerReady) return next();
-  // API routes must never receive an HTML shell — let them fall through to
-  // the registered handler (or the /api 404 guard that comes later).
+  // API routes must never receive an HTML shell.
   if (req.originalUrl.startsWith('/api/') || req.method !== 'GET') return next();
-  // Static assets (JS chunks, CSS, images, fonts) must not receive an HTML
-  // shell during the boot window — they must reach the express.static handler.
+  // Static assets (JS chunks, CSS, images, fonts) must not receive an HTML shell.
   const assetExt = /\.(js|css|png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot|map|json)$/i;
   if (req.path.startsWith('/assets/') || assetExt.test(req.path)) return next();
-  // Serve the pre-built SPA shell if it exists.  In development this is the
-  // last production build; in production it is the freshly built dist/.
+  // In development, serve a minimal inline loading page that auto-refreshes.
+  // Never serve the stale production dist/index.html in dev mode — its hashed
+  // asset filenames (e.g. index-dLJOXgCg.js) don't exist on the Vite dev server.
+  if (process.env.NODE_ENV !== 'production') {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Boot-Fallback', 'dev');
+    return res.status(200).set('Content-Type', 'text/html').end(_devBootHtml);
+  }
+  // Production: serve the pre-built SPA shell if it exists.
   if (fs.existsSync(_spaFallbackIndexPath)) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('X-Boot-Fallback', '1');
