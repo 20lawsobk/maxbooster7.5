@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'wouter';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -148,8 +148,107 @@ const plans = [
 ];
 
 function AnimatedCounter({ target, suffix = '' }: { target: string; suffix?: string }) {
-  return <span>{target}{suffix}</span>;
+  const [display, setDisplay] = useState('0');
+  const ref = useRef<HTMLSpanElement>(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting || started.current) return;
+        started.current = true;
+        observer.disconnect();
+
+        const numMatch = target.match(/[\d.]+/);
+        if (!numMatch) { setDisplay(target); return; }
+        const num = parseFloat(numMatch[0]);
+        const prefix = target.slice(0, numMatch.index ?? 0);
+        const postfix = target.slice((numMatch.index ?? 0) + numMatch[0].length);
+        const duration = 1400;
+        const start = performance.now();
+
+        const frame = (now: number) => {
+          const t = Math.min((now - start) / duration, 1);
+          const ease = 1 - Math.pow(1 - t, 3);
+          const cur = Number.isInteger(num) ? Math.round(ease * num) : +(ease * num).toFixed(1);
+          setDisplay(`${prefix}${cur}${postfix}`);
+          if (t < 1) requestAnimationFrame(frame);
+        };
+        requestAnimationFrame(frame);
+      },
+      { threshold: 0.4 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target]);
+
+  return <span ref={ref} className="counter-pop">{display}{suffix}</span>;
 }
+
+function useScrollReveal() {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+    );
+    const els = document.querySelectorAll('.reveal');
+    els.forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+}
+
+const testimonials = [
+  {
+    quote: "Max Booster is the only tool I need. My streams jumped 340% in 3 months. The AI social autopilot posts better content than my old social media manager.",
+    name: "Marcus J.",
+    role: "Independent Hip-Hop Artist",
+    avatar: "MJ",
+    gradient: "from-amber-500 to-orange-600",
+  },
+  {
+    quote: "I replaced 7 separate subscriptions with Max Booster. The analytics alone are worth the price — I finally understand which content actually drives sales.",
+    name: "Priya K.",
+    role: "Singer-Songwriter",
+    avatar: "PK",
+    gradient: "from-violet-500 to-purple-600",
+  },
+  {
+    quote: "The beat marketplace generated $8,400 in my first month. Zero platform fees means I keep every dollar. This platform is a game-changer for producers.",
+    name: "DJ Sable",
+    role: "Producer & Beat Maker",
+    avatar: "DS",
+    gradient: "from-cyan-500 to-blue-600",
+  },
+  {
+    quote: "As someone who hates social media, having AI create and schedule everything automatically felt like a superpower. My fanbase grew 5x without me touching it.",
+    name: "Elena V.",
+    role: "EDM Producer",
+    avatar: "EV",
+    gradient: "from-emerald-500 to-teal-600",
+  },
+  {
+    quote: "The AI mastering is legitimately pro-level. My mixes sound better than before I was paying $500/track at a studio. It's unreal what this thing can do.",
+    name: "Tone Ray",
+    role: "R&B Artist",
+    avatar: "TR",
+    gradient: "from-pink-500 to-rose-600",
+  },
+  {
+    quote: "Signed my first sync licensing deal through Max Booster's pitch tools. The revenue intelligence showed me exactly which playlist editors to target.",
+    name: "Zoe M.",
+    role: "Indie Pop Artist",
+    avatar: "ZM",
+    gradient: "from-indigo-500 to-blue-600",
+  },
+];
 
 function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -230,14 +329,25 @@ export default function Landing() {
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
+  useScrollReveal();
+
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', onScroll);
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  const nextSlide = () => setCurrentSlide((prev) => (prev + 1) % demoSlides.length);
-  const prevSlide = () => setCurrentSlide((prev) => (prev - 1 + demoSlides.length) % demoSlides.length);
+  // Auto-advance demo carousel every 5 seconds when modal is open
+  useEffect(() => {
+    if (!isVideoOpen) return;
+    const id = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % demoSlides.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [isVideoOpen]);
+
+  const nextSlide = useCallback(() => setCurrentSlide((prev) => (prev + 1) % demoSlides.length), []);
+  const prevSlide = useCallback(() => setCurrentSlide((prev) => (prev - 1 + demoSlides.length) % demoSlides.length), []);
 
   const startDemo = async () => {
     setIsDemoLoading(true);
@@ -262,7 +372,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen landing-dark-bg text-white overflow-x-hidden">
+    <div className="min-h-screen landing-dark-bg text-white overflow-x-hidden page-enter">
 
       {/* Navigation */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled ? 'landing-nav-scrolled' : 'bg-transparent'}`}>
@@ -365,15 +475,15 @@ export default function Landing() {
 
           {/* Main heading */}
           <h1 className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tight mb-6 leading-none">
-            <span className="block text-white">Music Career</span>
-            <span className="block landing-hero-gradient">Management</span>
-            <span className="block text-white/90 text-4xl sm:text-5xl lg:text-6xl font-bold mt-2">
+            <span className="block text-white hero-text-animate hero-text-animate-1">Music Career</span>
+            <span className="block landing-hero-gradient hero-text-animate hero-text-animate-2">Management</span>
+            <span className="block text-white/90 text-4xl sm:text-5xl lg:text-6xl font-bold mt-2 hero-text-animate hero-text-animate-3">
               Powered by{' '}
               <span className="landing-ai-text">AI</span>
             </span>
           </h1>
 
-          <p className="text-lg sm:text-xl text-white/60 mb-10 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-lg sm:text-xl text-white/70 mb-10 max-w-3xl mx-auto leading-relaxed hero-text-animate hero-text-animate-4">
             The most advanced music career platform ever built — AI Studio, Social Media Autopilot,
             Beat Marketplace, Analytics, and Distribution all in one place.
           </p>
@@ -432,7 +542,7 @@ export default function Landing() {
       <section className="py-24 relative overflow-hidden landing-section-divider">
         <div className="absolute inset-0 landing-features-bg pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 reveal">
             <Badge className="landing-section-badge mb-4">
               <Cpu className="h-3.5 w-3.5 mr-1.5" />
               Cutting-Edge Technology
@@ -441,21 +551,62 @@ export default function Landing() {
               Everything You Need to{' '}
               <span className="landing-hero-gradient">Succeed</span>
             </h2>
-            <p className="text-xl text-white/50 max-w-2xl mx-auto">
+            <p className="text-xl text-white/60 max-w-2xl mx-auto">
               From creation to monetization — Max Booster is the unfair advantage every independent artist deserves.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature, index) => (
-              <div key={index} className="landing-feature-card group">
+              <div key={index} className={`landing-feature-card group reveal reveal-delay-${(index % 3) + 1}`}>
                 <div className="landing-feature-glow" style={{ '--glow-color': feature.glow } as React.CSSProperties} />
                 <div className={`landing-feature-icon bg-gradient-to-br ${feature.color}`}>
                   <feature.icon className="h-6 w-6 text-white" />
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2 group-hover:text-amber-300 transition-colors">{feature.title}</h3>
-                <p className="text-white/50 text-sm leading-relaxed">{feature.description}</p>
+                <p className="text-white/60 text-sm leading-relaxed">{feature.description}</p>
                 <div className="landing-feature-border" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof / Testimonials Section */}
+      <section className="py-24 relative overflow-hidden landing-section-divider">
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 70% 50% at 50% 50%, rgba(245,158,11,0.05) 0%, transparent 70%)' }} />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center mb-14 reveal">
+            <Badge className="landing-section-badge mb-4">
+              <Star className="h-3.5 w-3.5 mr-1.5" />
+              Artist Success Stories
+            </Badge>
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+              Artists Love{' '}
+              <span className="landing-hero-gradient">Max Booster</span>
+            </h2>
+            <p className="text-xl text-white/60 max-w-2xl mx-auto">
+              Join thousands of independent artists who are building unstoppable careers with AI.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {testimonials.map((t, index) => (
+              <div key={index} className={`landing-testimonial-card reveal reveal-delay-${(index % 3) + 1}`}>
+                <div className="flex items-center gap-1 mb-4">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  ))}
+                </div>
+                <p className="text-white/75 text-sm leading-relaxed mb-6 italic">"{t.quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${t.gradient} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                    {t.avatar}
+                  </div>
+                  <div>
+                    <p className="text-white text-sm font-semibold">{t.name}</p>
+                    <p className="text-white/40 text-xs">{t.role}</p>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -466,23 +617,25 @@ export default function Landing() {
       <section className="py-24 relative overflow-hidden">
         <div className="absolute inset-0 landing-pricing-bg pointer-events-none" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-          <Badge className="landing-section-badge mb-4">
-            <Crown className="h-3.5 w-3.5 mr-1.5" />
-            Simple Pricing
-          </Badge>
-          <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
-            Choose Your{' '}
-            <span className="landing-hero-gradient">Level</span>
-          </h2>
-          <p className="text-xl text-white/50 mb-16 max-w-2xl mx-auto">
-            All plans include every AI feature. No hidden fees, no paywalled tools.
-          </p>
+          <div className="reveal">
+            <Badge className="landing-section-badge mb-4">
+              <Crown className="h-3.5 w-3.5 mr-1.5" />
+              Simple Pricing
+            </Badge>
+            <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
+              Choose Your{' '}
+              <span className="landing-hero-gradient">Level</span>
+            </h2>
+            <p className="text-xl text-white/60 mb-16 max-w-2xl mx-auto">
+              All plans include every AI feature. No hidden fees, no paywalled tools.
+            </p>
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {plans.map((plan, index) => (
               <div
                 key={index}
-                className={`landing-pricing-card ${plan.popular ? 'landing-pricing-popular' : ''}`}
+                className={`landing-pricing-card reveal reveal-delay-${index + 1} ${plan.popular ? 'landing-pricing-popular' : ''}`}
               >
                 {plan.popular && (
                   <div className="landing-popular-badge">
@@ -534,11 +687,11 @@ export default function Landing() {
       {/* What's Included */}
       <section className="py-24 landing-section-divider">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 reveal">
             <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
               What's <span className="landing-hero-gradient">Included</span>
             </h2>
-            <p className="text-xl text-white/50">Everything to create, promote, and monetize your music</p>
+            <p className="text-xl text-white/60">Everything to create, promote, and monetize your music</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -562,7 +715,7 @@ export default function Landing() {
                 color: 'from-amber-500 to-orange-600',
               },
             ].map((item, index) => (
-              <div key={index} className="landing-include-card">
+              <div key={index} className={`landing-include-card reveal reveal-delay-${index + 1}`}>
                 <div className={`landing-include-icon bg-gradient-to-br ${item.color}`}>
                   <item.icon className="h-7 w-7 text-white" />
                 </div>
@@ -577,7 +730,7 @@ export default function Landing() {
       {/* CTA Section */}
       <section className="py-24 relative overflow-hidden">
         <div className="landing-cta-bg" />
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10 reveal">
           <div className="flex justify-center mb-6">
             <span className="landing-status-badge">
               <Shield className="h-4 w-4 text-emerald-400" />
@@ -587,7 +740,7 @@ export default function Landing() {
           <h2 className="text-4xl sm:text-5xl font-black text-white mb-4">
             Ready to <span className="landing-hero-gradient">Dominate</span>?
           </h2>
-          <p className="text-xl text-white/60 mb-10">
+          <p className="text-xl text-white/65 mb-10">
             Join thousands of independent artists using Max Booster to build unstoppable music careers.
             Protected by our 90-day money-back guarantee.
           </p>

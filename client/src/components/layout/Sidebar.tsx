@@ -35,29 +35,41 @@ interface NavItem {
   path: string;
   icon: React.ComponentType<{ className?: string }>;
   adminOnly?: boolean;
+  section?: string;
 }
 
 const navItems: NavItem[] = [
-  { labelKey: 'navigation.dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { labelKey: 'navigation.projects', path: '/projects', icon: Music },
+  // ── Overview ──────────────────────────────────────────────────────────
+  { labelKey: 'navigation.dashboard', path: '/dashboard', icon: LayoutDashboard, section: 'Overview' },
+
+  // ── Creator ───────────────────────────────────────────────────────────
+  { labelKey: 'navigation.projects', path: '/projects', icon: Music, section: 'Creator' },
+  { labelKey: 'navigation.studio', path: '/studio', icon: Disc },
   { labelKey: 'navigation.desktopApp', path: '/desktop-app', icon: Monitor },
-  { labelKey: 'navigation.analytics', path: '/analytics', icon: BarChart3 },
+
+  // ── Growth ────────────────────────────────────────────────────────────
+  { labelKey: 'navigation.analytics', path: '/analytics', icon: BarChart3, section: 'Growth' },
   { labelKey: 'analytics.aiInsights', path: '/analytics/ai', icon: Brain },
   { labelKey: 'navigation.social', path: '/social-media', icon: Share2 },
   { labelKey: 'navigation.advertising', path: '/advertising', icon: Megaphone },
-  { labelKey: 'navigation.marketplace', path: '/marketplace', icon: ShoppingBag },
+
+  // ── Business ──────────────────────────────────────────────────────────
+  { labelKey: 'navigation.marketplace', path: '/marketplace', icon: ShoppingBag, section: 'Business' },
   { labelKey: 'distribution.royalties', path: '/royalties', icon: DollarSign },
-  { labelKey: 'navigation.studio', path: '/studio', icon: Disc },
   { labelKey: 'navigation.distribution', path: '/distribution', icon: Radio },
-  { labelKey: 'navigation.contracts', path: '/contracts', icon: FileText },
+  { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
+
+  // ── Management ────────────────────────────────────────────────────────
+  { labelKey: 'navigation.contracts', path: '/contracts', icon: FileText, section: 'Manage' },
   { labelKey: 'navigation.collaborations', path: '/collaborations', icon: Users },
   { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
   { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },
   { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
   { labelKey: 'navigation.workflowAutomations', path: '/workflow-automations', icon: Zap },
-  { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
-  { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true },
+
+  // ── Admin ─────────────────────────────────────────────────────────────
+  { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true, section: 'Admin' },
   { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: Shield, adminOnly: true },
 ];
 
@@ -183,35 +195,39 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
             const isActive = location === item.path || location.startsWith(item.path + '/');
 
             return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out group relative',
-                  isActive
-                    ? 'sidebar-nav-active'
-                    : 'sidebar-nav-item'
+              <div key={item.path}>
+                {item.section && (
+                  <div className="sidebar-section-label">{item.section}</div>
                 )}
-                onClick={() => {
-                  if (onMobileClose) onMobileClose();
-                }}
-                data-testid={`nav-${item.path.replace('/', '')}`}
-              >
-                {isActive && <div className="sidebar-active-indicator" />}
-                <Icon
+                <Link
+                  href={item.path}
                   className={cn(
-                    'w-4 h-4 flex-shrink-0 transition-all duration-200',
-                    isActive ? 'text-amber-400' : 'text-white/40 group-hover:text-white/70'
+                    'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 ease-out group relative',
+                    isActive
+                      ? 'sidebar-nav-active'
+                      : 'sidebar-nav-item'
                   )}
-                />
-                <span className={cn(
-                  'text-sm font-medium transition-colors',
-                  isActive ? 'text-white' : 'text-white/50 group-hover:text-white/80'
-                )}>{t(item.labelKey)}</span>
-                {isActive && (
-                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
-                )}
-              </Link>
+                  onClick={() => {
+                    if (onMobileClose) onMobileClose();
+                  }}
+                  data-testid={`nav-${item.path.replace('/', '')}`}
+                >
+                  {isActive && <div className="sidebar-active-indicator" />}
+                  <Icon
+                    className={cn(
+                      'w-4 h-4 flex-shrink-0 transition-all duration-200',
+                      isActive ? 'text-amber-400' : 'text-white/40 group-hover:text-white/70'
+                    )}
+                  />
+                  <span className={cn(
+                    'text-sm font-medium transition-colors',
+                    isActive ? 'text-white' : 'text-white/50 group-hover:text-white/80'
+                  )}>{t(item.labelKey)}</span>
+                  {isActive && (
+                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]" />
+                  )}
+                </Link>
+              </div>
             );
           })}
         </nav>

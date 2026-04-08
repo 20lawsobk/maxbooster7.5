@@ -86,7 +86,7 @@ export function AppLayout({ title, subtitle, children, noPadding = false }: AppL
           <TopBar title={title} subtitle={subtitle} onMenuClick={() => setIsMobileMenuOpen(true)} />
 
           <main
-            className={`flex-1 ${noPadding ? 'overflow-hidden' : `overflow-y-auto ${getPadding()} pb-safe-bottom`}`}
+            className={`flex-1 page-enter ${noPadding ? 'overflow-hidden' : `overflow-y-auto ${getPadding()} pb-safe-bottom`}`}
             style={isMobile && !noPadding ? { paddingBottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px) + 0.5rem)' } : undefined}
           >
             {noPadding ? (

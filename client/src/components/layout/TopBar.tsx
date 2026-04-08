@@ -23,7 +23,7 @@ export function TopBar({ title, subtitle, onMenuClick }: TopBarProps = {}) {
     try {
       await logout();
     } catch (error: unknown) {
-      logger.error('Failed to sign out:', error);
+      logger.warn('Failed to sign out:', error);
     } finally {
       setSigningOut(false);
       navigate('/login');
