@@ -13,8 +13,16 @@ import { logger } from '../logger.js';
  *
  * Sizing: 5 000 entries × ~2 KB average session ≈ 10 MB max — negligible.
  */
-const L1_TTL_MS   = 60_000; // 1 minute
-const L1_MAX_SIZE = 5_000;
+const L1_TTL_MS       = 60_000; // 1 minute — normal session TTL
+const L1_ERR_TTL_MS   = 5_000;  // 5 seconds — short TTL when caching a PDIM error null,
+                                 // so we stop hammering PDIM while it's down but recover
+                                 // within 5 s once it comes back.
+const L1_MAX_SIZE     = 5_000;
+
+// Rate-limit the WARN log to once per 30 s — PDIM can be down for minutes and
+// logging on every request creates thousands of lines of useless noise.
+let _lastFetchWarnAt  = 0;
+const WARN_THROTTLE_MS = 30_000;
 
 interface L1Entry { data: session.SessionData | null; expiresAt: number; }
 
@@ -31,12 +39,12 @@ class SessionL1Cache {
     return entry.data;
   }
 
-  set(sid: string, data: session.SessionData | null): void {
+  set(sid: string, data: session.SessionData | null, ttlMs = L1_TTL_MS): void {
     if (this.map.size >= L1_MAX_SIZE) {
       const oldest = this.map.keys().next().value;
       if (oldest) this.map.delete(oldest);
     }
-    this.map.set(sid, { data, expiresAt: Date.now() + L1_TTL_MS });
+    this.map.set(sid, { data, expiresAt: Date.now() + ttlMs });
   }
 
   invalidate(sid: string): void {
@@ -138,9 +146,20 @@ class PdimSessionStore extends session.Store {
         // PDIM unavailable — treat as "no session" instead of propagating the error.
         // Propagating causes Express to return 500 to the user, which is wrong: the
         // correct behaviour during a PDIM outage is to serve a session-less (logged-out)
-        // response so the app remains accessible.  The L1 cache will prime on the next
-        // successful PDIM read once connectivity is restored.
-        logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response:', (err as Error).message);
+        // response so the app remains accessible.
+        //
+        // Cache null with a SHORT TTL (L1_ERR_TTL_MS = 5 s) so:
+        //   1. We don't hammer PDIM with a fresh HTTP call on every request while it's down.
+        //   2. We automatically retry (and recover) within 5 s once PDIM comes back up.
+        //
+        // Rate-limit the WARN to once per 30 s — PDIM can be down for minutes and
+        // logging on every request produces thousands of lines of useless noise.
+        this.l1.set(sid, null, L1_ERR_TTL_MS);
+        const now = Date.now();
+        if (now - _lastFetchWarnAt >= WARN_THROTTLE_MS) {
+          _lastFetchWarnAt = now;
+          logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response:', (err as Error).message);
+        }
         return cb(null, null);
       }
       const result = data ?? null;

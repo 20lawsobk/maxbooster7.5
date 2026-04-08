@@ -308,6 +308,47 @@ function _serializedZpopmin(fn: () => Promise<unknown>): Promise<unknown> {
   return next;
 }
 
+// ── L1 in-process read-through cache ─────────────────────────────────────────
+// Serves GET / HGET results from memory when PDIM is unavailable.
+// This keeps sessions alive and rate-limit state readable through brief PDIM
+// outages, eliminating the per-request [SessionStore] WARN flood.
+//
+// Eviction: insertion-order LRU, capped at L1_MAX_ENTRIES.
+// TTL:      hard per-entry cap of L1_TTL_MS (5 min) — stale data is never served
+//           beyond this window regardless of PDIM outage duration.
+// Writes:   SET / SETEX / SETNX update L1 on success so subsequent reads are
+//           served without a PDIM round-trip while PDIM is up.
+// Deletes:  DEL evicts the key on success so logouts are reflected immediately.
+// HGET:     cached under a compound key (redisKey + NUL + field).
+const L1_MAX_ENTRIES = 2_000;
+const L1_TTL_MS      = 5 * 60 * 1_000; // 5 minutes
+
+interface _L1Entry { value: string | null; expiresAt: number }
+const _l1: Map<string, _L1Entry> = new Map();
+
+function _l1Read(key: string): string | null | undefined {
+  const e = _l1.get(key);
+  if (!e) return undefined;
+  if (Date.now() > e.expiresAt) { _l1.delete(key); return undefined; }
+  // LRU promotion — move to tail so the oldest entries are at the front.
+  _l1.delete(key);
+  _l1.set(key, e);
+  return e.value; // may legitimately be null ("key exists but empty")
+}
+
+function _l1Write(key: string, value: string | null): void {
+  if (_l1.size >= L1_MAX_ENTRIES && !_l1.has(key)) {
+    // Evict the oldest (insertion-order head) entry.
+    const oldest = _l1.keys().next().value;
+    if (oldest !== undefined) _l1.delete(oldest);
+  }
+  _l1.set(key, { value, expiresAt: Date.now() + L1_TTL_MS });
+}
+
+function _l1Evict(...keys: string[]): void {
+  for (const k of keys) _l1.delete(k);
+}
+
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
   private execUrl: string;
@@ -691,11 +732,39 @@ export class PdimRedisClient extends EventEmitter {
   }
 
   // ── String commands ───────────────────────────────────────────────────────
-  async get(key: string): Promise<string | null> { return this.exec(['GET', key]); }
-  async set(key: string, value: string, ...args: any[]): Promise<'OK'> { return this.exec(['SET', key, value, ...args]); }
-  async setex(key: string, secs: number, value: string): Promise<'OK'> { return this.exec(['SETEX', key, secs, value]); }
-  async setnx(key: string, value: string): Promise<0 | 1> { return this.exec(['SETNX', key, value]); }
-  async getset(key: string, value: string): Promise<string | null> { return this.exec(['GETSET', key, value]); }
+  async get(key: string): Promise<string | null> {
+    const stale = _l1Read(key);
+    try {
+      const fresh = await this.exec(['GET', key]);
+      _l1Write(key, fresh);
+      return fresh;
+    } catch (err) {
+      // PDIM unavailable — serve the L1 value (even if null/"key not found")
+      // so callers (session store, rate limiter) keep working through the outage.
+      if (stale !== undefined) return stale;
+      throw err;
+    }
+  }
+  async set(key: string, value: string, ...args: any[]): Promise<'OK'> {
+    const result = await this.exec(['SET', key, value, ...args]);
+    _l1Write(key, value);
+    return result;
+  }
+  async setex(key: string, secs: number, value: string): Promise<'OK'> {
+    const result = await this.exec(['SETEX', key, secs, value]);
+    _l1Write(key, value);
+    return result;
+  }
+  async setnx(key: string, value: string): Promise<0 | 1> {
+    const result = await this.exec(['SETNX', key, value]);
+    if (result === 1) _l1Write(key, value);
+    return result;
+  }
+  async getset(key: string, value: string): Promise<string | null> {
+    const result = await this.exec(['GETSET', key, value]);
+    _l1Write(key, value);
+    return result;
+  }
   async mget(...keys: string[]): Promise<(string | null)[]> { return this.exec(['MGET', ...keys]); }
   async mset(...args: string[]): Promise<'OK'> { return this.exec(['MSET', ...args]); }
   async append(key: string, value: string): Promise<number> { return this.exec(['APPEND', key, value]); }
@@ -706,7 +775,11 @@ export class PdimRedisClient extends EventEmitter {
   async incrbyfloat(key: string, n: number): Promise<string> { return this.exec(['INCRBYFLOAT', key, n]); }
 
   // ── Key commands ──────────────────────────────────────────────────────────
-  async del(...keys: string[]): Promise<number> { return this.exec(['DEL', ...keys]); }
+  async del(...keys: string[]): Promise<number> {
+    const result = await this.exec(['DEL', ...keys]);
+    _l1Evict(...keys);
+    return result;
+  }
   async exists(...keys: string[]): Promise<number> { return this.exec(['EXISTS', ...keys]); }
   async expire(key: string, secs: number): Promise<0 | 1> { return this.exec(['EXPIRE', key, secs]); }
   async pexpire(key: string, ms: number): Promise<0 | 1> { return this.exec(['PEXPIRE', key, ms]); }
@@ -722,7 +795,18 @@ export class PdimRedisClient extends EventEmitter {
   async randomkey(): Promise<string | null> { return this.exec(['RANDOMKEY']); }
 
   // ── Hash commands ─────────────────────────────────────────────────────────
-  async hget(key: string, field: string): Promise<string | null> { return this.exec(['HGET', key, field]); }
+  async hget(key: string, field: string): Promise<string | null> {
+    const l1Key = `${key}\x00${field}`;
+    const stale = _l1Read(l1Key);
+    try {
+      const fresh = await this.exec(['HGET', key, field]);
+      _l1Write(l1Key, fresh);
+      return fresh;
+    } catch (err) {
+      if (stale !== undefined) return stale;
+      throw err;
+    }
+  }
   async hset(key: string, ...args: any[]): Promise<number> { return this.exec(['HSET', key, ...args]); }
   async hsetnx(key: string, field: string, value: string): Promise<0 | 1> { return this.exec(['HSETNX', key, field, value]); }
   async hdel(key: string, ...fields: string[]): Promise<number> { return this.exec(['HDEL', key, ...fields]); }
