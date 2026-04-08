@@ -555,6 +555,16 @@ function ProducerFollowButton({ producerId, followMutation, unfollowMutation }: 
   );
 }
 
+// Stable blob URL cache — returns the same URL for the same File object
+// across re-renders, preventing image reload flicker.
+const _blobUrlCache = new WeakMap<File, string>();
+function getStableBlobUrl(file: File): string {
+  if (!_blobUrlCache.has(file)) {
+    _blobUrlCache.set(file, URL.createObjectURL(file));
+  }
+  return _blobUrlCache.get(file)!;
+}
+
 export default function Marketplace() {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -623,6 +633,7 @@ export default function Marketplace() {
   });
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
+  const [coverArtPreviewUrl, setCoverArtPreviewUrl] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [isDraggingAudio, setIsDraggingAudio] = useState(false);
@@ -706,7 +717,9 @@ export default function Marketplace() {
       toast({ title: 'Invalid File', description: error, variant: 'destructive' });
       return;
     }
+    if (coverArtPreviewUrl) URL.revokeObjectURL(coverArtPreviewUrl);
     setCoverArtFile(file);
+    setCoverArtPreviewUrl(URL.createObjectURL(file));
   };
 
   const handleAudioDragOver = (e: React.DragEvent) => {
@@ -742,6 +755,10 @@ export default function Marketplace() {
     });
     setAudioFile(null);
     setCoverArtFile(null);
+    if (coverArtPreviewUrl) {
+      URL.revokeObjectURL(coverArtPreviewUrl);
+      setCoverArtPreviewUrl(null);
+    }
     setUploadProgress(0);
     setFileValidationError(null);
     if (audioPreviewUrl) {
@@ -2637,7 +2654,7 @@ return (
                         <Label className="text-xs">Cover Art</Label>
                         {bulkEditUploadedValues.coverArtFile ? (
                           <div className="relative w-16 h-16 mt-1">
-                            <img src={URL.createObjectURL(bulkEditUploadedValues.coverArtFile)} alt="" className="w-16 h-16 rounded object-cover" />
+                            <img src={getStableBlobUrl(bulkEditUploadedValues.coverArtFile)} alt="" className="w-16 h-16 rounded object-cover" />
                             <button className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs" onClick={() => setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: null }))}>
                               <X className="w-2.5 h-2.5" />
                             </button>
@@ -4135,7 +4152,7 @@ return (
                   <div className="flex items-center gap-4">
                     <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
                       <img
-                        src={URL.createObjectURL(coverArtFile)}
+                        src={coverArtPreviewUrl ?? ''}
                         alt="Cover art preview"
                         className="w-full h-full object-cover"
                       />
@@ -4320,7 +4337,7 @@ return (
                           <Label className="text-xs">Cover Art</Label>
                           {bulkEditValues.coverArtFile ? (
                             <div className="relative w-20 h-20 mt-1">
-                              <img src={URL.createObjectURL(bulkEditValues.coverArtFile)} alt="" className="w-20 h-20 rounded object-cover" />
+                              <img src={getStableBlobUrl(bulkEditValues.coverArtFile)} alt="" className="w-20 h-20 rounded object-cover" />
                               <button
                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                                 onClick={() => setBulkEditValues(prev => ({ ...prev, coverArtFile: null }))}
@@ -4421,7 +4438,7 @@ return (
                           >
                             {item.coverArtFile ? (
                               <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-                                <img src={URL.createObjectURL(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                                <img src={getStableBlobUrl(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
                               </div>
                             ) : (
                               <FileAudio className="w-10 h-10 text-blue-500 flex-shrink-0 p-1" />
@@ -4521,7 +4538,7 @@ return (
                                 {item.coverArtFile ? (
                                   <div className="flex items-center gap-3 mt-1">
                                     <div className="w-16 h-16 rounded overflow-hidden">
-                                      <img src={URL.createObjectURL(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                                      <img src={getStableBlobUrl(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
                                     </div>
                                     <div>
                                       <p className="text-xs text-muted-foreground">{item.coverArtFile.name}</p>
@@ -4805,7 +4822,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                 <Label className="text-xs">Cover Art</Label>
                 {editForm.coverArtFile ? (
                   <div className="relative w-24 h-24 mt-1">
-                    <img src={URL.createObjectURL(editForm.coverArtFile)} alt="" className="w-24 h-24 rounded-lg object-cover" />
+                    <img src={getStableBlobUrl(editForm.coverArtFile)} alt="" className="w-24 h-24 rounded-lg object-cover" />
                     <button
                       className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
                       onClick={() => setEditForm({ ...editForm, coverArtFile: null })}
