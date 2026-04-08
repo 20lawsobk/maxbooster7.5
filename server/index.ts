@@ -287,6 +287,13 @@ app.use((req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 let _spaHandlerReady = false;
 const _spaFallbackIndexPath = path.resolve(process.cwd(), 'dist', 'public', 'index.html');
+
+// Lightweight boot-status endpoint — always available, no proxy/header issues.
+// The boot loading page polls this instead of sniffing response headers.
+app.get('/api/boot-status', (_req: Request, res: Response) => {
+  res.json({ ready: _spaHandlerReady });
+});
+
 app.use((req: Request, res: Response, next: NextFunction) => {
   // Once the real SPA handler is wired, this middleware is a no-op.
   if (_spaHandlerReady) return next();
@@ -339,17 +346,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   <script>
     (function(){
       function tryReload(){
-        fetch('/').then(function(r){
-          // When the real app is ready, the response will NOT have X-Boot-Fallback.
-          // If it does have that header (or is the loading page), keep polling.
-          if(r.ok && r.headers.get('x-boot-fallback') !== '1'){
+        fetch('/api/boot-status').then(function(r){
+          return r.json();
+        }).then(function(data){
+          if(data.ready){
             location.reload();
           } else {
-            setTimeout(tryReload,3000);
+            setTimeout(tryReload, 2000);
           }
-        }).catch(function(){ setTimeout(tryReload,3000); });
+        }).catch(function(){ setTimeout(tryReload, 2000); });
       }
-      setTimeout(tryReload, 3000);
+      setTimeout(tryReload, 2000);
     })();
   </script>
 </body>
@@ -692,7 +699,9 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.info('[Retention] Re-engagement cron started');
 
     const { recoverStaleProcessingBatches } = await import('./services/featureEventBuffer.js');
-    await recoverStaleProcessingBatches();
+    recoverStaleProcessingBatches().catch((e: any) =>
+      logger.warn('[Retention] Stale batch recovery failed (non-blocking):', e?.message)
+    );
 
     const { getRetentionQueue, startRetentionWorker } = await import('./lib/scaleJobQueue.js');
     const retentionQueue = getRetentionQueue();
