@@ -9,7 +9,7 @@ import { and, eq } from 'drizzle-orm';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SITE_URL = 'https://maxbooster.replit.app';
+const SITE_URL = process.env.SITE_URL || 'https://maxboostermusic.com';
 
 interface CacheEntry<T> { value: T; expiresAt: number; }
 function makeCache<T>(ttlMs: number) {
@@ -32,6 +32,7 @@ const customDomainCache = makeCache<string | null>(60_000);
 const metaCache = makeCache<{ title: string; description: string; image: string; url: string } | null>(120_000);
 
 const BASE_DOMAINS = [
+  'maxboostermusic.com',
   'maxbooster.replit.app',
   'maxbooster.app',
 ];
@@ -384,6 +385,18 @@ export function serveStatic(app: Express) {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+
+    // If multiTenantRouter already resolved a storefront via storefrontDomains table,
+    // inject its slug and serve the SPA so the React app auto-loads the right storefront.
+    const resolvedStorefront = (req as any).storefront as { slug?: string } | undefined;
+    if (resolvedStorefront?.slug) {
+      const safeSlug = resolvedStorefront.slug.replace(/[^a-z0-9-]/gi, '');
+      const html = baseHtml.replace(
+        '</head>',
+        `<script>window.__MAXBOOSTER_SUBDOMAIN__=${JSON.stringify(safeSlug)}</script></head>`
+      );
+      return res.send(html);
+    }
 
     const subdomain = extractSubdomain(req.hostname);
     if (subdomain) {
