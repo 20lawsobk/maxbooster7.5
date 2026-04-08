@@ -240,6 +240,7 @@ interface Beat {
   previewUrl?: string;
   fullUrl?: string;
   coverArt: string;
+  artworkUrl?: string;
   tags: string[];
   description: string;
   isExclusive: boolean;
@@ -2348,8 +2349,8 @@ return (
                     <CardContent className="p-0">
                       <div className="relative">
                         <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
-                          {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover rounded-t-lg" />
+                          {(beat.coverArt || beat.artworkUrl) ? (
+                            <img src={beat.coverArt || beat.artworkUrl} alt={beat.title} className="w-full h-full object-cover rounded-t-lg" />
                           ) : (
                             <Music className="w-16 h-16 text-white opacity-50" />
                           )}
@@ -2796,8 +2797,8 @@ return (
                               onClick={(e) => e.stopPropagation()}
                             />
                           </div>
-                          {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
+                          {(beat.coverArt || beat.artworkUrl) ? (
+                            <img src={beat.coverArt || beat.artworkUrl} alt={beat.title} className="w-full h-full object-cover" />
                           ) : (
                             <div className="flex items-center justify-center h-full">
                               <Music className="w-16 h-16 text-white opacity-50" />

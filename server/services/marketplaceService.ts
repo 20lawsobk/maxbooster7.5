@@ -338,7 +338,10 @@ export class MarketplaceService {
   }): Promise<BeatListing[]> {
     try {
       const listings = await storage.getBeatListings(filters);
-      return listings;
+      return listings.map((l: any) => ({
+        ...l,
+        coverArt: l.artworkUrl || l.coverArt || undefined,
+      }));
     } catch (error: unknown) {
       logger.error('Error browsing listings:', error);
       throw new Error('Failed to browse listings');
@@ -965,6 +968,7 @@ export class MarketplaceService {
         price: updatedListing.priceCents / 100,
         audioUrl: updatedListing.audioUrl || updatedListing.previewUrl || '',
         artworkUrl: updatedListing.artworkUrl || undefined,
+        coverArt: updatedListing.artworkUrl || undefined,
         tags: metadata.tags || [],
         licenses: metadata.licenses || [],
         status: updatedListing.isPublished ? 'active' : 'inactive',
