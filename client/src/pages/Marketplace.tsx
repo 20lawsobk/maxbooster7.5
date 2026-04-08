@@ -579,6 +579,7 @@ export default function Marketplace() {
   const howlRef = useRef<Howl | null>(null);
   const blobUrlRef = useRef<string | null>(null);
   const isPickingFileRef = useRef(false);
+  const savedPickerUrlRef = useRef('');
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (searchRef.current && !searchRef.current.contains(e.target as Node)) {
@@ -590,10 +591,30 @@ export default function Marketplace() {
   }, []);
 
   useEffect(() => {
+    // Restore upload form state saved before a file picker opened (mobile iOS reset recovery)
+    const saved = sessionStorage.getItem('mb_upload_restore');
+    if (saved) {
+      try {
+        const state = JSON.parse(saved);
+        if (typeof state === 'object' && state !== null && Date.now() - (state.savedAt || 0) < 120000) {
+          setUploadForm(state.uploadForm);
+          setShowUploadModal(true);
+        }
+      } catch { /* ignore corrupt storage */ }
+      sessionStorage.removeItem('mb_upload_restore');
+    }
+  }, []);
+
+  useEffect(() => {
     const blockFakePopstate = (e: PopStateEvent) => {
-      if (isPickingFileRef.current) {
-        e.stopImmediatePropagation();
-        window.history.pushState(null, '', window.location.href);
+      if (!isPickingFileRef.current) return;
+      // Stop Wouter's bubble-phase popstate listener from firing
+      e.stopImmediatePropagation();
+      // Silently restore the correct URL using the PROTOTYPE replaceState so
+      // Wouter's monkey-patched version is bypassed (avoids triggering a navigate)
+      if (savedPickerUrlRef.current) {
+        const protoReplace = Object.getPrototypeOf(window.history).replaceState as typeof history.replaceState;
+        protoReplace.call(window.history, null, '', savedPickerUrlRef.current);
       }
     };
     const resetOnWindowFocus = () => {
@@ -727,6 +748,7 @@ export default function Marketplace() {
   };
 
   const resetUploadForm = () => {
+    sessionStorage.removeItem('mb_upload_restore');
     setAiSuggestion(null);
     setIsAnalyzingAudio(false);
     setUploadForm({
@@ -4073,7 +4095,11 @@ return (
                     id="audio-upload"
                     type="file"
                     accept="audio/*,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
-                    onClick={() => { isPickingFileRef.current = true; }}
+                    onClick={() => {
+                      isPickingFileRef.current = true;
+                      savedPickerUrlRef.current = window.location.href;
+                      sessionStorage.setItem('mb_upload_restore', JSON.stringify({ uploadForm, savedAt: Date.now() }));
+                    }}
                     onChange={(e) => {
                       setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       e.target.files?.[0] && handleAudioFileSelect(e.target.files[0]);
@@ -4171,7 +4197,11 @@ return (
                     id="cover-art-upload"
                     type="file"
                     accept="image/jpeg,image/png,image/jpg"
-                    onClick={() => { isPickingFileRef.current = true; }}
+                    onClick={() => {
+                      isPickingFileRef.current = true;
+                      savedPickerUrlRef.current = window.location.href;
+                      sessionStorage.setItem('mb_upload_restore', JSON.stringify({ uploadForm, savedAt: Date.now() }));
+                    }}
                     onChange={(e) => {
                       setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
@@ -4276,7 +4306,10 @@ return (
                     multiple
                     accept="audio/mpeg,audio/wav,audio/flac,audio/aac,audio/ogg,audio/mp4,audio/x-m4a,audio/aiff,audio/webm,.mp3,.wav,.flac,.aac,.ogg,.m4a,.aiff,.aif,.webm"
                     className="sr-only"
-                    onClick={() => { isPickingFileRef.current = true; }}
+                    onClick={() => {
+                      isPickingFileRef.current = true;
+                      savedPickerUrlRef.current = window.location.href;
+                    }}
                     onChange={(e) => {
                       setTimeout(() => { isPickingFileRef.current = false; }, 1500);
                       if (e.target.files && e.target.files.length > 0) {
