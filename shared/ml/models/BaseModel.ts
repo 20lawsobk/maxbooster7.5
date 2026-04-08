@@ -3,7 +3,7 @@
  * Provides common functionality for training, prediction, and persistence
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import type { ModelMetadata, TrainingOptions, PredictionResult, EvaluationMetrics } from '../types.js';
 
 export abstract class BaseModel {

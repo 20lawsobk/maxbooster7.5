@@ -20,7 +20,7 @@
  * 100% custom implementation - no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import { 
   advertisingRuleEngine, 

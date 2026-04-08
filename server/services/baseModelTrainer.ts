@@ -685,10 +685,10 @@ export async function runPublicDatasetFineTuning(): Promise<boolean> {
 
 export async function runBaseModelTraining(): Promise<void> {
   try {
-    await import('@tensorflow/tfjs-node');
-    logger.info('[BaseTrainer] TF.js Node.js native backend loaded (10-50x faster)');
+    await import('@tensorflow/tfjs');
+    logger.info('[BaseTrainer] TF.js CPU backend active');
   } catch {
-    logger.info('[BaseTrainer] Using default TF.js backend (install @tensorflow/tfjs-node for faster training)');
+    logger.info('[BaseTrainer] TF.js backend unavailable — training skipped');
   }
 
   logger.info('[BaseTrainer] ═══════════════════════════════════════════════════');

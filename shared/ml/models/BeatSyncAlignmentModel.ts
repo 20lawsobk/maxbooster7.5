@@ -15,7 +15,7 @@
  *                       transition_type (0=cut_on_beat, 0.5=crossfade, 1=dissolve)
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 
 export interface BeatAlignmentInput {

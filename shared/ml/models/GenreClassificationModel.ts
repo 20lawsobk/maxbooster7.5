@@ -4,7 +4,7 @@
  * Based on industry research: 40 MFCC coefficients → CNN → Genre predictions
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import type { GenreClassificationResult, AudioFeatures } from '../types.js';
 

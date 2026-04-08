@@ -4,7 +4,7 @@
  * Based on RFM (Recency, Frequency, Monetary) + behavioral features
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import type { PredictionResult } from '../types.js';
 

@@ -15,7 +15,7 @@
  * Output  (3 values):   watch_time_score, hook_strength, conversion_score
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import { PLATFORM_IDX, GOAL_IDX, TONE_IDX } from './CreativePlannerModel.js';
 

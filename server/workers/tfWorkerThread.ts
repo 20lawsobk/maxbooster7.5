@@ -2,11 +2,11 @@ import { workerData, parentPort } from 'worker_threads';
 
 if (!parentPort) throw new Error('Must run as worker thread');
 
-let tf: typeof import('@tensorflow/tfjs-node') | null = null;
+let tf: typeof import('@tensorflow/tfjs') | null = null;
 
 async function loadTF() {
   if (!tf) {
-    tf = await import('@tensorflow/tfjs-node');
+    tf = await import('@tensorflow/tfjs');
   }
   return tf;
 }

@@ -3,7 +3,7 @@
  * Custom tensor operations and helpers
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 
 /**
  * Normalize data to 0-1 range

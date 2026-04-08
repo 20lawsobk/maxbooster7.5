@@ -12,7 +12,7 @@
  * 100% in-house implementation, no external APIs
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 
 // ============================================================================
 // SEMANTIC EMBEDDINGS - Deep Word Understanding

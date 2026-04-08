@@ -3,7 +3,7 @@
  * Hybrid approach: Isolation Forest + Autoencoder neural network + Statistical baseline
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import { calculateStatistics, detectOutliersIQR, detectOutliersZScore } from '../statistics/core.js';
 import { IsolationForest } from '../algorithms/IsolationForest.js';

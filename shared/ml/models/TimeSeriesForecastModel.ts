@@ -3,7 +3,7 @@
  * Predicts future values for streams, engagement, revenue
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import { createSequences, standardize } from '../utils/tensor.js';
 import type { TimeSeriesData } from '../types.js';

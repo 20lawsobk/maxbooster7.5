@@ -4,7 +4,7 @@
  * Based on content features + temporal patterns + user history
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 import type { EngagementPrediction } from '../types.js';
 

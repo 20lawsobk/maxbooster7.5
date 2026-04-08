@@ -4,7 +4,7 @@
  * and automatic feature engineering
  */
 
-import * as tf from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs';
 import { BaseModel } from './BaseModel.js';
 
 export type MetricType = 'streams' | 'revenue' | 'followers' | 'engagement';
