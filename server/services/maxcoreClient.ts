@@ -157,7 +157,7 @@ export class MaxCoreAIClient {
       }
     }
 
-    logger.error(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed`);
+    logger.warn(`[MaxCoreAI] generate ${path} — all ${MaxCoreAIClient.MAX_GENERATE_ATTEMPTS} attempts failed (returning null)`);
     return null;
   }
 

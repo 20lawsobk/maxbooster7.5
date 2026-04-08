@@ -134,7 +134,15 @@ class PdimSessionStore extends session.Store {
     if (cached !== undefined) return cb(null, cached);
 
     this.inner.get(sid, (err, data) => {
-      if (err) return cb(err);
+      if (err) {
+        // PDIM unavailable — treat as "no session" instead of propagating the error.
+        // Propagating causes Express to return 500 to the user, which is wrong: the
+        // correct behaviour during a PDIM outage is to serve a session-less (logged-out)
+        // response so the app remains accessible.  The L1 cache will prime on the next
+        // successful PDIM read once connectivity is restored.
+        logger.warn('[SessionStore] PDIM session fetch failed — serving session-less response:', (err as Error).message);
+        return cb(null, null);
+      }
       const result = data ?? null;
       this.l1.set(sid, result);
       cb(null, result);
@@ -143,12 +151,26 @@ class PdimSessionStore extends session.Store {
 
   set(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
     this.l1.set(sid, sess);
-    this.inner.set(sid, sess, cb);
+    // Write through to PDIM; swallow errors because L1 cache already holds the
+    // authoritative copy — the session is functional even if PDIM is temporarily down.
+    this.inner.set(sid, sess, (err?: any) => {
+      if (err) {
+        logger.warn('[SessionStore] PDIM session write failed (session held in L1 cache):', (err as Error).message);
+      }
+      cb?.();
+    });
   }
 
   destroy(sid: string, cb?: (err?: any) => void): void {
     this.l1.invalidate(sid);
-    this.inner.destroy(sid, cb);
+    // Best-effort delete from PDIM; L1 is already invalidated so the session
+    // will not be served from cache regardless of whether PDIM succeeds.
+    this.inner.destroy(sid, (err?: any) => {
+      if (err) {
+        logger.warn('[SessionStore] PDIM session destroy failed (L1 already invalidated):', (err as Error).message);
+      }
+      cb?.();
+    });
   }
 
   touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {

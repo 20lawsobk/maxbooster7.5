@@ -195,7 +195,8 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
             await redis.del(key);
           }
         } catch (err) {
-          logger.error(`[FeatureEventBuffer] Failed to recover stale batch ${key}:`, err);
+          const msg = err instanceof Error ? err.message : String(err);
+          logger.warn(`[FeatureEventBuffer] Failed to recover stale batch ${key}: ${msg}`);
         }
       }
     } while (cursor !== '0');
@@ -204,7 +205,10 @@ export async function recoverStaleProcessingBatches(): Promise<void> {
       logger.warn(`[FeatureEventBuffer] Crash recovery: restored ${recovered} events to buffer`);
     }
   } catch (err) {
-    logger.error('[FeatureEventBuffer] Crash recovery scan failed:', err);
+    // PDIM outages cause scan failures at startup — expected and self-healing.
+    // Log at WARN (not ERROR) so it doesn't pollute error dashboards.
+    const msg = err instanceof Error ? err.message : String(err);
+    logger.warn(`[FeatureEventBuffer] Crash recovery scan skipped (PDIM unavailable): ${msg}`);
   }
 }
 

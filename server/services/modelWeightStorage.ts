@@ -77,7 +77,8 @@ class ModelWeightStorage {
         await this.pocket.write(this.pocketPath(name), buf);
         logger.info(`[WeightStorage] ${name} stored in Pocket Dimension (${Math.round(buf.length / 1024)} KB uncompressed)`);
       } catch (err) {
-        logger.warn(`[WeightStorage] Pocket Dimension write failed for ${name}:`, err instanceof Error ? err.message : String(err));
+        const msg = err instanceof Error ? err.message : String(err);
+        logger.warn(`[WeightStorage] Pocket Dimension write failed for ${name}: ${msg}`);
       }
     }
   }

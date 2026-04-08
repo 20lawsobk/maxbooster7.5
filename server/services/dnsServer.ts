@@ -169,8 +169,7 @@ export async function startDNSServer(): Promise<void> {
   // Pre-check: can we bind this port at all?
   const portAvailable = await checkPortAvailable(DNS_PORT);
   if (!portAvailable) {
-    logger.warn(`[DNS] ⚠️  Port ${DNS_PORT} unavailable (EACCES or already in use). DNS server not started.`);
-    logger.warn(`[DNS]     In dev: set DNS_PORT=5353. On production VM, ensure no other process owns port 53.`);
+    logger.info(`[DNS] Port ${DNS_PORT} unavailable (EACCES or already in use) — DNS server not started. In dev: set DNS_PORT=5353.`);
     return;
   }
 
@@ -189,7 +188,8 @@ export async function startDNSServer(): Promise<void> {
         // Remove all error listeners to prevent unhandled-event crashes
         server.removeAllListeners('error');
         if (!ok) {
-          if (msg) logger.warn(msg);
+          // DNS not starting is expected in Replit (no CAP_NET_BIND_SERVICE) — log at INFO.
+          if (msg) logger.info(msg.replace('⚠️  ', ''));
           dnsServer = null;
           running = false;
         }

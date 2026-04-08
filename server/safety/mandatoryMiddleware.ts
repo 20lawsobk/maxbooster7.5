@@ -123,13 +123,14 @@ export function globalErrorHandler(
   }
 
   if (statusCode >= 500) {
-    logger.error(`[${requestId}] Unhandled error:`, {
+    logger.error({
+      requestId,
       error: err.message,
       stack: err.stack,
       path: req.path,
       method: req.method,
       userId: (req.user as any)?.id,
-    });
+    }, `[${requestId}] Unhandled error: ${err.message}`);
     try {
       Sentry.withScope((scope) => {
         scope.setTag('requestId', requestId);

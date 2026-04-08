@@ -43,6 +43,7 @@ import os
 import sys
 import threading
 import time
+from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
 import numpy as np
@@ -70,10 +71,24 @@ logger = logging.getLogger('api_server_v4')
 
 # ── FastAPI app ────────────────────────────────────────────────────────────────
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Start background model loader and continuous training on app startup."""
+    global _continuous_thread
+    threading.Thread(target=_load_model, daemon=True).start()
+    _continuous_thread = threading.Thread(
+        target=_continuous_training_loop, daemon=True, name='ContinuousTrainer'
+    )
+    _continuous_thread.start()
+    logger.info('[Startup] Model loader + ContinuousTrainer threads launched')
+    yield  # app runs here; no explicit shutdown needed (daemon threads auto-stop)
+
+
 app = FastAPI(
     title='MaxCore Diffusion v4 — NumPy LITE',
     description='Music-specialized video generation — UNetV4 LITE, pure NumPy, CPU-native',
     version='4.0.0',
+    lifespan=lifespan,
 )
 app.add_middleware(
     CORSMiddleware,
@@ -632,19 +647,6 @@ def _train_worker(req: TrainRequest) -> None:
         logger.error(f'[Train] Manual error: {e}', exc_info=True)
         with _train_lock:
             _train_status.update({'running': False, 'last_error': str(e), 'mode': 'idle'})
-
-
-# ── Startup ────────────────────────────────────────────────────────────────────
-
-@app.on_event('startup')
-def startup_event() -> None:
-    global _continuous_thread
-    threading.Thread(target=_load_model, daemon=True).start()
-    _continuous_thread = threading.Thread(
-        target=_continuous_training_loop, daemon=True, name='ContinuousTrainer'
-    )
-    _continuous_thread.start()
-    logger.info('[Startup] Model loader + ContinuousTrainer threads launched')
 
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
