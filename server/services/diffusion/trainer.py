@@ -1839,6 +1839,43 @@ def train_v4(n_epochs: int = 5,
               f"hot={len(adv_mem.hot)} entries  "
               f"global_best={adv_mem.registry.global_best_loss():.5f}", flush=True)
 
+        # ── Persist training state to shared bridge file ───────────────────
+        # The MaxCore Rendering Engine (port 8010) reads this file to determine
+        # whether the DiT-24 model has reached 'trained' status (>= 100 yrs).
+        try:
+            total_years = adv_mem.registry.total_simulated_years()
+            from diffusion.time_simulator import _fmt_years
+            _state_paths = [
+                os.path.join(os.path.dirname(__file__), 'training_state.json'),
+            ]
+            _state_update = {
+                'total_simulated_years':      round(total_years, 4),
+                'total_simulated_experience': _fmt_years(total_years),
+                'trained':                    total_years >= 100.0,
+                'training_phase':             'production' if total_years >= 100.0 else 'warmup',
+                'total_sessions':             adv_mem.registry.stats().get('total_sessions', 0),
+                'avg_loss_final':             round(losses[-1], 5) if losses else None,
+            }
+            for _sp in _state_paths:
+                try:
+                    _existing: dict = {}
+                    if os.path.exists(_sp):
+                        with open(_sp) as _sf:
+                            _existing = json.load(_sf)
+                    _existing.update(_state_update)
+                    import time as _time
+                    _existing['last_updated'] = _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime())
+                    with open(_sp, 'w') as _sf:
+                        json.dump(_existing, _sf, indent=2)
+                    print(f"[DiffusionTrainer v4] training_state.json updated — "
+                          f"trained={_state_update['trained']} "
+                          f"years={total_years:.2f}", flush=True)
+                    break
+                except Exception as _we:
+                    print(f"[DiffusionTrainer v4] training_state.json write failed ({_sp}): {_we}", flush=True)
+        except Exception as _be:
+            print(f"[DiffusionTrainer v4] bridge state update skipped: {_be}", flush=True)
+
     print(f"[DiffusionTrainer v4] Complete. Total time: {total_time:.0f}s  "
           f"Final loss: {losses[-1]:.4f}", flush=True)
     return meta

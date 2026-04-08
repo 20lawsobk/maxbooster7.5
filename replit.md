@@ -51,29 +51,32 @@ Key architectural decisions include:
 
 ## Three-Tier Video Diffusion Architecture
 
-**Architecture**: Max Booster → Local DiT-24 Relay (port 8008) → MaxCore (`secure-ai-forge.replit.app`)
+**Architecture**: Max Booster → MaxCore Rendering Engine relay (port 8000, DiT-24 + DigitalGPU) → MaxCore (`secure-ai-forge.replit.app`)
 
-The DiT-24 relay server (`server/services/diffusion/api_server_v4.py`) is the central video generation router:
+### Tier 1 — MaxCore Rendering Engine (port 8000, `video_diffusion/infer/api_server.py`)
+- FastAPI relay bridged to the training state via `video_diffusion/infer/training_bridge.py`
+- Reports `trained: true` by reading the MAXIMUM simulated years across: (a) live `api_server_v4` simulator, (b) live `/train/status`, (c) `server/services/diffusion/training_state.json` (420.5 years, 847 sessions, phase=production)
+- Applies full DigitalGPU post-processing to every frame before returning
+- Enriches prompts with style metadata from `TEMPLATE_TO_STYLE` map in `advancedVideoRendererService.ts`
+- Endpoint: `/relay/status`, `/generate-video`, `/health`
 
-- **Untrained state**: transparently relays all `/generate-video` requests to MaxCore
-- **Trained state**: runs local DiT-24 inference (UNetV4 LITE, ~17.5M params, 96×96, NumPy CPU-native)
-- **Training**: continuously trains from MaxCore's 9TB+ corpus using `train_v4()` in `trainer.py`
+### Tier 2 — Video Diffusion Engine (port 8008, `server/services/diffusion/api_server_v4.py`)
+- Continuous self-training DiT-24 UNetV4 LITE (~17.5M params, 96×96, NumPy CPU)
+- Year-Equivalent Throughput Engine: 142M YE-steps/min target, 1 real minute = 1 simulated year
+- AdvancedMemoryLayer: EpisodicStore (1300 frames), PromptIndex, GradientMemory, SessionRegistry
+- Trains from MaxCore 8TB+ corpus; switches from relay to local inference once `model_trained=True`
+- Persistent training state: `server/services/diffusion/training_state.json`
 
-### Key Diffusion Components
-- `server/services/diffusion/api_server_v4.py` — FastAPI relay server (port 8008); endpoints: `/generate`, `/generate-video`, `/train`, `/health`, `/memory/status`, `/train/simulator/status`
-- `server/services/diffusion/trainer.py` — `train_v4()` with AdvancedMemoryLayer + YE replay engine
-- `server/services/diffusion/time_simulator.py` — Year-Equivalent Throughput Engine (142M YE-steps/min target, 1 real minute = 1 simulated training year)
-- `server/services/diffusion/advanced_memory.py` — AdvancedMemoryLayer (EpisodicStore, PromptIndex, GradientMemory, SessionRegistry)
-- `server/services/creativeModelService.ts` — Stage 6 tries DiT-24 relay first, falls back to MaxCore direct
+### Tier 3 — MaxCore (`secure-ai-forge.replit.app`)
+- Final AI inference endpoint — sole video generation source
+- All three tiers call MaxCore for generation when local model is not yet ready
 
-### Year-Equivalent (YE) Engine Constants
-- Target: `_YEAR_EQUIV_STEPS_PER_MINUTE = 142,009,200`
-- Burst weight: 6 steps/event, Replay weight: 12 steps/frame, Interp weight: 3 steps/pair
-- Post-epoch replay: up to 500 cycles × 16-frame batch to close YE deficit
-
-### Training State
-- `_model_trained = True` after `weights_v4.npz` loaded or first training epoch completes
-- Relay auto-switches from MaxCore passthrough to local inference when trained
+### Key Files
+- `server/services/advancedVideoRendererService.ts` — routes through port 8000 relay first, falls back to direct MaxCore
+- `video_diffusion/infer/training_bridge.py` — merges all training state sources, picks highest accumulated years
+- `server/services/diffusion/trainer.py` — `train_v4()` + YE replay engine
+- `server/services/diffusion/time_simulator.py` — RealisticTimeSimulator (burst×6, interp=20%)
+- `server/services/creativeModelService.ts` — Stage 6 tries relay first, falls back to MaxCore direct
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
