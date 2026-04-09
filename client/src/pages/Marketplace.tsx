@@ -3128,6 +3128,8 @@ return (
                 </CardContent>
               </Card>
             </div>
+
+            <PayoutDashboard />
           </TabsContent>
 
           <TabsContent value="escrow" className="space-y-6">

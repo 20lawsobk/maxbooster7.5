@@ -51,6 +51,8 @@ import {
   Video,
   Megaphone,
   Shuffle,
+  Copy,
+  Link,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 
@@ -774,12 +776,7 @@ export default function StorefrontBuilder() {
                       className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const sf = storefront as any;
-                        if (sf.subdomain && sf.isSubdomainActive) {
-                          window.open(`https://${sf.subdomain}.maxboostermusic.com`, '_blank');
-                        } else {
-                          window.open(`/storefront/${storefront.slug}`, '_blank');
-                        }
+                        window.open(`${window.location.origin}/storefront/${storefront.slug}`, '_blank');
                       }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
@@ -900,12 +897,7 @@ export default function StorefrontBuilder() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          const sf = selectedStorefront as any;
-                          if (sf.subdomain && sf.isSubdomainActive) {
-                            window.open(`https://${sf.subdomain}.maxboostermusic.com`, '_blank');
-                          } else {
-                            window.open(`/storefront/${selectedStorefront.slug}`, '_blank');
-                          }
+                          window.open(`${window.location.origin}/storefront/${selectedStorefront.slug}`, '_blank');
                         }}
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
@@ -942,29 +934,47 @@ export default function StorefrontBuilder() {
                       <div>
                         <Label>Storefront ID</Label>
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
-                        {subdomainForm.subdomain && subdomainForm.isSubdomainActive ? (
-                          <div className="mt-1 space-y-0.5">
-                            <p className="text-xs text-muted-foreground">
-                              Short link (works now):{' '}
+                        <div className="mt-2 space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs text-muted-foreground flex-1 truncate">
+                              <span className="font-medium">Your store link: </span>
+                              <a
+                                href={`${window.location.origin}/storefront/${selectedStorefront.slug}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-primary underline"
+                              >
+                                {window.location.origin}/storefront/{selectedStorefront.slug}
+                              </a>
+                            </p>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-6 w-6 flex-shrink-0"
+                              title="Copy store link"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/storefront/${selectedStorefront.slug}`);
+                                toast({ title: 'Link copied!', description: 'Your store link is in the clipboard.' });
+                              }}
+                            >
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                          </div>
+                          {subdomainForm.subdomain && subdomainForm.isSubdomainActive && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Link className="w-3 h-3 flex-shrink-0" />
+                              Short link:{' '}
                               <a
                                 href={`/s/${subdomainForm.subdomain}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="font-medium text-primary underline"
                               >
-                                maxboostermusic.com/s/{subdomainForm.subdomain}
+                                {window.location.origin}/s/{subdomainForm.subdomain}
                               </a>
                             </p>
-                            <p className="text-xs text-muted-foreground">
-                              Subdomain (after NS records):{' '}
-                              <span className="font-medium text-primary">{subdomainForm.subdomain}.maxboostermusic.com</span>
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Reserve a custom URL below to get <span className="font-medium">yourname.maxboostermusic.com</span>
-                          </p>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -1043,6 +1053,10 @@ export default function StorefrontBuilder() {
                         <Save className="w-4 h-4 mr-2" />
                         {reserveManagedMutation.isPending ? 'Reserving...' : 'Reserve Subdomain'}
                       </Button>
+                      <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 space-y-1">
+                        <p className="font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" /> DNS required for subdomain to work externally</p>
+                        <p>Reserving a subdomain saves your name in the platform. For <span className="font-mono font-medium">yourname.maxboostermusic.com</span> to resolve publicly, the <span className="font-mono">maxboostermusic.com</span> domain must have a wildcard DNS record pointing to this server. Until then, use your store link above — it works right now from any browser.</p>
+                      </div>
                     </div>
 
                     <div className="border rounded-lg p-4 space-y-4">
