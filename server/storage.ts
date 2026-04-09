@@ -664,7 +664,22 @@ export class DatabaseStorage implements IStorage {
     return campaigns.map(c => {
       const meta = c.metadata as Record<string, any> | null;
       const perf = c.performance as Record<string, any> | null;
-      return { id: c.id, campaignId: c.id, campaignName: c.name, platform: c.platform, strategy: meta?.biddingStrategy || 'manual_cpc', budget: c.budget || 0, dailyBudget: c.dailyBudget || 0, roas: perf?.roas || 0, cpa: perf?.cpa || 0, status: c.status };
+      const rawStrategy = meta?.biddingStrategy || 'manual';
+      const validTypes = ['maximize_conversions', 'target_roas', 'target_cpa', 'maximize_clicks', 'manual'];
+      const type = validTypes.includes(rawStrategy) ? rawStrategy : 'manual';
+      const clicks = perf?.clicks || 0;
+      const impressions = perf?.impressions || 1;
+      const ctr = clicks / impressions;
+      const currentPerformance = Math.min(100, Math.round(ctr * 10000 + (perf?.roas || 0) * 10));
+      return {
+        id: c.id,
+        name: c.name || 'Unnamed Campaign',
+        type,
+        currentPerformance,
+        recommendedAction: currentPerformance < 60 ? 'Switch to maximize_conversions for better ROI' : currentPerformance < 80 ? 'Optimise bid cap to improve CPA' : 'Maintain current strategy',
+        potentialImprovement: Math.max(0, Math.min(50, 90 - currentPerformance)),
+        confidence: Math.min(95, 60 + Math.round((clicks / 10))),
+      };
     });
   }
 

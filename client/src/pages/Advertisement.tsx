@@ -1465,7 +1465,7 @@ export default function Advertisement() {
                             <div>
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-medium">{strategy.name}</h4>
-                                <Badge variant="outline" className="capitalize">{strategy.type.replace(/_/g, ' ')}</Badge>
+                                <Badge variant="outline" className="capitalize">{(strategy.type ?? '').replace(/_/g, ' ')}</Badge>
                               </div>
                               <p className="text-sm text-muted-foreground">Current strategy performance</p>
                             </div>
