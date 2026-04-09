@@ -765,6 +765,110 @@ router.post('/push/silent', async (req: Request, res: Response) => {
   }
 });
 
+// ── Canonical push routes (called by usePushNotifications hook) ──────────────
+
+// Returns VAPID public key so the browser can create a push subscription
+router.get('/push-key', (req: Request, res: Response) => {
+  const publicKey = webPushService.getPublicKey();
+  if (!publicKey) {
+    return res.status(503).json({ error: 'Push notifications not configured' });
+  }
+  return res.json({ publicKey });
+});
+
+// Save a new push subscription (writes to pushSubscriptions DB table)
+router.post('/push-subscriptions', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const { endpoint, keys } = req.body;
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ error: 'Invalid push subscription data' });
+    }
+
+    const ua = req.headers['user-agent'] || undefined;
+    await webPushService.saveSubscription(req.user.id, { endpoint, keys }, ua);
+
+    return res.json({ success: true, message: 'Push subscription registered' });
+  } catch (error) {
+    logger.warn('Push subscribe error:', error);
+    return res.status(500).json({ error: 'Failed to save push subscription' });
+  }
+});
+
+// Remove a push subscription from the DB
+router.delete('/push-subscriptions', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const { endpoint } = req.body;
+    if (endpoint) {
+      await webPushService.removeSubscription(endpoint);
+    } else {
+      await webPushService.removeUserSubscriptions(req.user.id);
+    }
+    return res.json({ success: true, message: 'Push subscription removed' });
+  } catch (error) {
+    logger.warn('Push unsubscribe error:', error);
+    return res.status(500).json({ error: 'Failed to remove push subscription' });
+  }
+});
+
+// Returns subscription status in the format expected by the hook
+router.get('/push-subscriptions/status', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    const subs = await webPushService.getUserSubscriptions(req.user.id);
+    return res.json({
+      hasSubscriptions: subs.length > 0,
+      count: subs.length,
+      devices: subs.map((s: any) => ({
+        id: s.id,
+        userAgent: s.userAgent || 'Unknown device',
+        createdAt: s.createdAt,
+      })),
+    });
+  } catch (error) {
+    logger.warn('Push subscription status error:', error);
+    return res.json({ hasSubscriptions: false, count: 0, devices: [] });
+  }
+});
+
+// Send a real Web Push test notification to all of the user's subscribed devices
+router.post('/push-test', async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ error: 'Not authenticated' });
+
+  try {
+    if (!webPushService.isReady()) {
+      return res.status(503).json({ error: 'Push service not configured' });
+    }
+
+    const result = await webPushService.sendToUser(req.user.id, {
+      title: '🔔 Max Booster Push Test',
+      body: 'Push notifications are working! You\'ll receive alerts for royalties, campaigns, and more.',
+      url: '/notifications',
+      tag: 'push-test',
+      requireInteraction: false,
+      data: { category: 'system' },
+    });
+
+    return res.json({
+      success: true,
+      sent: result.sent,
+      failed: result.failed,
+      message: result.sent > 0
+        ? `Test delivered to ${result.sent} device(s)`
+        : 'No push subscriptions registered on this account',
+    });
+  } catch (error) {
+    logger.warn('Push test error:', error);
+    return res.status(500).json({ error: 'Failed to send push test' });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 router.get('/unread-count', requireAuth, async (req: Request, res: Response) => {
   const userId = (req as any).user?.id;
   if (!userId) {
