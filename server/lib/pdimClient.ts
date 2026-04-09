@@ -395,6 +395,47 @@ function _l1Evict(...keys: string[]): void {
   for (const k of keys) _l1.delete(k);
 }
 
+/**
+ * Normalize wasmoon Lua table results to proper JavaScript values.
+ *
+ * Problem: BullMQ Lua scripts return Lua tables (e.g. a list of stalled job IDs).
+ * wasmoon translates Lua arrays to JS objects with 1-indexed numeric keys:
+ *   Lua: {"id1", "id2"}  →  JS: { 1: "id1", 2: "id2" }
+ *
+ * This breaks callers like BullMQ that expect a proper JS array and call .forEach()
+ * on the result (TypeError: stalled.forEach is not a function).
+ *
+ * Normalization rules:
+ *   • null / undefined / primitives / real JS arrays → returned as-is
+ *   • Empty plain object {} → converted to [] (Lua empty table ≡ empty array)
+ *   • Object with all-numeric consecutive keys starting at 1 → converted to JS array
+ *     (recursively normalizing each element)
+ *   • Everything else (mixed/string-keyed objects) → object with recursively
+ *     normalized values (preserves hashes / maps returned by Lua scripts)
+ */
+function _normalizeLuaResult(val: any): any {
+  if (val === null || val === undefined) return val;
+  if (Array.isArray(val)) return val.map(_normalizeLuaResult);
+  if (typeof val !== 'object') return val;
+
+  const keys = Object.keys(val);
+  if (keys.length === 0) return [];
+
+  const numKeys = keys.map(k => parseInt(k, 10));
+  const allNumeric = numKeys.every(n => !isNaN(n) && n > 0);
+  if (allNumeric) {
+    const sorted = [...numKeys].sort((a, b) => a - b);
+    const isConsecutive = sorted[0] === 1 && sorted[sorted.length - 1] === sorted.length;
+    if (isConsecutive) {
+      return sorted.map(k => _normalizeLuaResult(val[k] ?? val[String(k)]));
+    }
+  }
+
+  const out: Record<string, any> = {};
+  for (const k of keys) out[k] = _normalizeLuaResult(val[k]);
+  return out;
+}
+
 export class PdimRedisClient extends EventEmitter {
   public status: string = 'ready';
   private execUrl: string;
@@ -671,12 +712,13 @@ export class PdimRedisClient extends EventEmitter {
         flatArgs = Array.from(arguments);
       }
 
-      return execLuaViaPdim(
+      const result = await execLuaViaPdim(
         (args: string[]) => self.scriptExec(args),
         lua,
         numKeys,
         flatArgs,
       );
+      return _normalizeLuaResult(result);
     };
   }
 
