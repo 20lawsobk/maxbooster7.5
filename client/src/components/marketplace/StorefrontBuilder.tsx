@@ -128,6 +128,8 @@ interface MembershipTier {
   currentSubscribers: number;
 }
 
+const STOREFRONT_BASE = 'https://maxbooster.replit.app';
+
 export default function StorefrontBuilder() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -330,7 +332,7 @@ export default function StorefrontBuilder() {
     onSuccess: (data) => {
       toast({
         title: 'Storefront Created!',
-        description: `Your storefront "${data.name}" has been created! Set up a custom URL in the settings to get yourname.maxboostermusic.com`,
+        description: `Your storefront "${data.name}" is live at ${STOREFRONT_BASE}/storefront/${data.slug}`,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       setShowCreateDialog(false);
@@ -939,12 +941,12 @@ export default function StorefrontBuilder() {
                             <p className="text-xs text-muted-foreground flex-1 truncate">
                               <span className="font-medium">Your store link: </span>
                               <a
-                                href={`${window.location.origin}/storefront/${selectedStorefront.slug}`}
+                                href={`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary underline"
                               >
-                                {window.location.origin}/storefront/{selectedStorefront.slug}
+                                {STOREFRONT_BASE}/storefront/{selectedStorefront.slug}
                               </a>
                             </p>
                             <Button
@@ -953,7 +955,7 @@ export default function StorefrontBuilder() {
                               className="h-6 w-6 flex-shrink-0"
                               title="Copy store link"
                               onClick={() => {
-                                navigator.clipboard.writeText(`${window.location.origin}/storefront/${selectedStorefront.slug}`);
+                                navigator.clipboard.writeText(`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`);
                                 toast({ title: 'Link copied!', description: 'Your store link is in the clipboard.' });
                               }}
                             >
@@ -1017,7 +1019,7 @@ export default function StorefrontBuilder() {
                         >
                           <Shuffle className="w-4 h-4" />
                         </Button>
-                        <span className="text-sm text-muted-foreground whitespace-nowrap">.maxboostermusic.com</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">.maxbooster.replit.app</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1054,8 +1056,8 @@ export default function StorefrontBuilder() {
                         {reserveManagedMutation.isPending ? 'Reserving...' : 'Reserve Subdomain'}
                       </Button>
                       <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 space-y-1">
-                        <p className="font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" /> DNS required for subdomain to work externally</p>
-                        <p>Reserving a subdomain saves your name in the platform. For <span className="font-mono font-medium">yourname.maxboostermusic.com</span> to resolve publicly, the <span className="font-mono">maxboostermusic.com</span> domain must have a wildcard DNS record pointing to this server. Until then, use your store link above — it works right now from any browser.</p>
+                        <p className="font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Subdomain reserved for future use</p>
+                        <p>Reserving a subdomain saves your name in the platform for when custom domains go live. In the meantime, your store link at <span className="font-mono font-medium">{STOREFRONT_BASE}/storefront/{selectedStorefront?.slug}</span> works from any browser right now.</p>
                       </div>
                     </div>
 
@@ -1696,8 +1698,7 @@ export default function StorefrontBuilder() {
                       <div>
                         <p className="font-semibold text-green-800 text-sm">Subdomain System Active</p>
                         <p className="text-xs text-green-700 mt-0.5">
-                          Reserved subdomains on <span className="font-mono font-semibold">maxboostermusic.com</span> are automatically configured — no setup required on your end.
-                          Once you reserve a label below, your subdomain goes live within minutes.
+                          Your storefront is live at <span className="font-mono font-semibold">maxbooster.replit.app</span>. Reserve a subdomain label now to lock in your name for future custom domain support.
                         </p>
                       </div>
                     </div>
@@ -1895,12 +1896,7 @@ export default function StorefrontBuilder() {
                     <Button 
                       className="flex-1"
                       onClick={() => {
-                        const sf = selectedStorefront as any;
-                        if (sf.subdomain && sf.isSubdomainActive) {
-                          window.open(`https://${sf.subdomain}.maxboostermusic.com`, '_blank');
-                        } else {
-                          window.open(`/storefront/${selectedStorefront.slug}`, '_blank');
-                        }
+                        window.open(`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`, '_blank');
                       }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
@@ -2005,7 +2001,7 @@ export default function StorefrontBuilder() {
               </div>
               <p className="text-xs text-muted-foreground mt-1">
                 {createForm.slug
-                  ? <>Your storefront will be at: <span className="font-medium text-primary">/{createForm.slug}</span></>
+                  ? <>Your storefront will be at: <span className="font-medium text-primary">{STOREFRONT_BASE}/storefront/{createForm.slug}</span></>
                   : 'Type a name above or hit shuffle for a memorable random URL'}
               </p>
             </div>
