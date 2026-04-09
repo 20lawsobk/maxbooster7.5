@@ -127,7 +127,7 @@ export function StudioOneLayout({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: String(cssVariables) }} />
+      <style dangerouslySetInnerHTML={{ __html: (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables)))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables)))) }} />
       <div
         ref={containerRef}
         className="relative flex flex-col w-full h-full overflow-hidden"

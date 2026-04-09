@@ -354,7 +354,7 @@ export function StudioOneWrapper({
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: String(cssVariables) }} />
+      <style dangerouslySetInnerHTML={{ __html: (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables)))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize((typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables))) : (typeof DOMPurify !== 'undefined' ? DOMPurify.sanitize(String(cssVariables)) : String(cssVariables)))) }} />
       <div
         className="flex flex-col w-full h-full overflow-hidden"
         style={{ background: studioOneTheme.colors.bg.primary }}

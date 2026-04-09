@@ -443,7 +443,7 @@ MUSIC INTELLIGENCE CONSTRAINTS (computed from audio — treat as ground truth):
   const styleHintsBlock = ctx.styleMap.size > 0 ? `
 PER-BEAT STYLE GUIDANCE (pre-selected from audio energy + genre):
 ${Array.from(ctx.styleMap.entries()).map(([i, s]) =>
-  `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round(s.topStyles[0]?.probability * 100 ?? 0)}%), alt=${s.topStyles[1]?.style ?? 'n/a'} (${Math.round(s.topStyles[1]?.probability * 100 ?? 0)}%)`
+  `  Beat ${i + 1}: primary=${s.primaryStyle} (${Math.round((s.topStyles[0]?.probability ?? 0) * 100)}%), alt=${s.topStyles[1]?.style ?? 'n/a'} (${Math.round((s.topStyles[1]?.probability ?? 0) * 100)}%)`
 ).join('\n')}
 `.trim() : '';
 
