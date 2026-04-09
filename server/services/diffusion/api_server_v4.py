@@ -2,7 +2,7 @@
 MaxCore Diffusion API Server — NumPy UNetV4 LITE Edition
 =========================================================
 Serves the in-house NumPy UNetV4 LITE model (~6M params, 96×96, T=32) via
-FastAPI at port 8010.  Provides the same endpoint contract as the PyTorch
+FastAPI at port 8008.  Provides the same endpoint contract as the PyTorch
 video_diffusion/infer/api_server.py so the TypeScript service can call either
 without modification.
 
@@ -1109,7 +1109,7 @@ def dataset_status():
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
-    port = int(os.environ.get('VIDEO_DIFFUSION_PORT', 8010))
+    port = int(os.environ.get('VIDEO_DIFFUSION_PORT', 8008))
     host = os.environ.get('VIDEO_DIFFUSION_HOST', '0.0.0.0')
     logger.info(f'MaxCore Diffusion v4 LITE on {host}:{port}')
     uvicorn.run('api_server_v4:app', host=host, port=port, reload=False)

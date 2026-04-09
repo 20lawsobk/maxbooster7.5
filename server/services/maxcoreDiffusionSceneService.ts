@@ -5,7 +5,7 @@
  *
  * For each scene in a music video, this service attempts to produce a real
  * AI-synthesized video clip via the local PyTorch diffusion API
- * (VIDEO_DIFFUSION_URL, default http://127.0.0.1:8010) before falling back to
+ * (VIDEO_DIFFUSION_URL, default http://127.0.0.1:8008) before falling back to
  * the Ken Burns FFmpeg renderer.
  *
  * Integration pattern inside imageToVideoService.ts:

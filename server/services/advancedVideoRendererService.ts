@@ -324,7 +324,7 @@ async function getSentiment(hook: string): Promise<MaxCoreSentiment | null> {
 // ── Relay-tier renderer (Three-tier architecture) ─────────────────────────────
 
 /**
- * Try to render via the MaxCore Rendering Engine relay (port 8010).
+ * Try to render via the MaxCore Rendering Engine relay (port 8008).
  *
  * The relay server:
  *   1. Enriches the prompt with music-context metadata
@@ -439,7 +439,7 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
 /**
  * Render a video through MaxCore — three-tier pipeline:
  *   Tier 1 (this service): content + sentiment intelligence
- *   Tier 2 (relay, port 8010): prompt enrichment + DigitalGPU post-processing
+ *   Tier 2 (relay, port 8008): prompt enrichment + DigitalGPU post-processing
  *   Tier 3 (MaxCore): authoritative video generation
  *
  * Falls back to direct MaxCore if the relay tier is unavailable.
@@ -482,7 +482,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
     sentiment_confidence: sentimentResult?.confidence     ?? null,
   };
 
-  // ── Step 2: Try Tier-2 relay (MaxCore Rendering Engine, port 8010) ─────────
+  // ── Step 2: Try Tier-2 relay (MaxCore Rendering Engine, port 8008) ─────────
   // The relay adds DigitalGPU post-processing (bloom, chroma ab, vignette,
   // temporal smoothing) to every frame before delivering to Max Booster.
   const relayResult = await renderVideoViaRelay(opts, { hook, body, cta, ...intelligence });

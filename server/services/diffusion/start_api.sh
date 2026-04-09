@@ -1,23 +1,32 @@
 #!/bin/bash
 # MaxCore Diffusion v4 LITE API Server Startup Script
-# Starts the NumPy UNetV4 LITE model server at port 8010
+# Starts the NumPy UNetV4 LITE model server at port 8008
 # Runs from workspace root; adjusts sys.path via the Python script.
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SVC_DIR="$(dirname "$SCRIPT_DIR")"
+WORKSPACE_ROOT="$(dirname "$(dirname "$SVC_DIR")")"
 
 export MAXCORE_LITE=1
 export PYTHONPATH="$SVC_DIR:$PYTHONPATH"
-export VIDEO_DIFFUSION_PORT="${VIDEO_DIFFUSION_PORT:-8010}"
+export VIDEO_DIFFUSION_PORT="${VIDEO_DIFFUSION_PORT:-8008}"
 export VIDEO_DIFFUSION_HOST="${VIDEO_DIFFUSION_HOST:-0.0.0.0}"
+
+# Use the project .venv python if available (has fastapi/uvicorn/numpy),
+# otherwise fall back to system python3.
+PYTHON="$WORKSPACE_ROOT/.venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+  PYTHON="python3"
+fi
 
 echo "=== MaxCore Diffusion v4 LITE ==="
 echo "  Model:   UNetV4 LITE (~6M params, NumPy, CPU)"
 echo "  Port:    $VIDEO_DIFFUSION_PORT"
+echo "  Python:  $PYTHON"
 echo "  PYTHONPATH: $PYTHONPATH"
 echo "  Working dir: $SCRIPT_DIR"
 echo "=================================="
 
-exec python3 "$SCRIPT_DIR/api_server_v4.py"
+exec "$PYTHON" "$SCRIPT_DIR/api_server_v4.py"

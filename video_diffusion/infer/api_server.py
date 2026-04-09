@@ -827,6 +827,6 @@ def generate_stream(req: GenerateRequest):
 
 if __name__ == "__main__":
     import uvicorn
-    port = int(os.environ.get("VIDEO_DIFFUSION_PORT", 8010))
+    port = int(os.environ.get("VIDEO_DIFFUSION_PORT", 8008))
     host = os.environ.get("VIDEO_DIFFUSION_HOST", "0.0.0.0")
     uvicorn.run("api_server:app", host=host, port=port, reload=False)
