@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Allow: /marketplace
+Allow: /storefront/
+Allow: /share/
+
+Disallow: /api/
+Disallow: /ws/
+Disallow: /dashboard
+Disallow: /studio
+Disallow: /settings
+Disallow: /admin
+Disallow: /billing
+
+Sitemap: https://maxbooster.replit.app/sitemap.xml
