@@ -98,8 +98,6 @@ interface ChannelData {
   dataDriven: number;
   conversions: number;
   revenue: number;
-  spend: number;
-  roas: number;
   assists: number;
   avgTouchpoints: number;
 }
@@ -187,9 +185,7 @@ export function CrossChannelAttribution() {
 
   const totalConversions = channelData.reduce((acc, c) => acc + c.conversions, 0);
   const totalRevenue = channelData.reduce((acc, c) => acc + c.revenue, 0);
-  const totalSpend = channelData.reduce((acc, c) => acc + c.spend, 0);
   const totalAssists = channelData.reduce((acc, c) => acc + c.assists, 0);
-  const overallROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0;
 
   const chartData = channelData.map((channel, index) => ({
     name: channel.channel,
@@ -209,8 +205,6 @@ export function CrossChannelAttribution() {
     comparison: { label: 'Comparison', color: '#94a3b8' },
     conversions: { label: 'Conversions', color: '#22c55e' },
     revenue: { label: 'Revenue', color: '#8b5cf6' },
-    roas: { label: 'ROAS', color: '#f59e0b' },
-    spend: { label: 'Spend', color: '#ef4444' },
   };
 
   const modelDescriptions: Record<AttributionModel, string> = {
@@ -301,20 +295,6 @@ export function CrossChannelAttribution() {
               </div>
               <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                 <DollarSign className="w-5 h-5 text-green-500" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Overall ROAS</p>
-                <p className="text-2xl font-bold text-green-500">{overallROAS.toFixed(2)}x</p>
-              </div>
-              <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-purple-500" />
               </div>
             </div>
           </CardContent>
@@ -477,8 +457,6 @@ export function CrossChannelAttribution() {
                       <th className="text-center py-3 px-4">Attribution %</th>
                       <th className="text-center py-3 px-4">Conversions</th>
                       <th className="text-center py-3 px-4">Revenue</th>
-                      <th className="text-center py-3 px-4">Spend</th>
-                      <th className="text-center py-3 px-4">ROAS</th>
                       <th className="text-center py-3 px-4">Assists</th>
                       <th className="text-center py-3 px-4">Avg. Touches</th>
                     </tr>
@@ -503,24 +481,6 @@ export function CrossChannelAttribution() {
                         </td>
                         <td className="text-center py-3 px-4 font-medium">{channel.conversions.toLocaleString()}</td>
                         <td className="text-center py-3 px-4 text-green-500">${channel.revenue.toLocaleString()}</td>
-                        <td className="text-center py-3 px-4 text-red-500">
-                          {channel.spend > 0 ? `$${channel.spend.toLocaleString()}` : '-'}
-                        </td>
-                        <td className="text-center py-3 px-4">
-                          <Badge
-                            className={
-                              channel.roas === Infinity
-                                ? 'bg-green-500/10 text-green-500'
-                                : channel.roas >= 3
-                                  ? 'bg-green-500/10 text-green-500'
-                                  : channel.roas >= 2
-                                    ? 'bg-yellow-500/10 text-yellow-500'
-                                    : 'bg-red-500/10 text-red-500'
-                            }
-                          >
-                            {channel.roas === Infinity ? '∞' : `${channel.roas.toFixed(2)}x`}
-                          </Badge>
-                        </td>
                         <td className="text-center py-3 px-4 text-muted-foreground">{channel.assists}</td>
                         <td className="text-center py-3 px-4">{channel.avgTouchpoints.toFixed(1)}</td>
                       </tr>
@@ -531,29 +491,7 @@ export function CrossChannelAttribution() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-green-500" />
-                  ROAS by Channel
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ChartContainer config={chartConfig} className="h-[300px]">
-                  <ComposedChart data={roasComparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="channel" className="text-xs" />
-                    <YAxis yAxisId="left" className="text-xs" />
-                    <YAxis yAxisId="right" orientation="right" className="text-xs" />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar yAxisId="left" dataKey="roas" fill="#22c55e" radius={[4, 4, 0, 0]} />
-                    <Line yAxisId="right" type="monotone" dataKey="spend" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} />
-                  </ComposedChart>
-                </ChartContainer>
-              </CardContent>
-            </Card>
-
+          <div className="grid grid-cols-1 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -944,7 +882,7 @@ export function CrossChannelAttribution() {
                       <div>
                         <p className="font-medium text-green-600 dark:text-green-400">High-Value Discovery</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Email marketing shows 10.67x ROAS, significantly outperforming paid channels. Consider increasing email frequency for engaged segments.
+                          Email marketing shows the highest conversion rate across all channels, significantly outperforming other channels. Consider increasing email frequency for engaged segments.
                         </p>
                       </div>
                     </div>
@@ -956,7 +894,7 @@ export function CrossChannelAttribution() {
                       <div>
                         <p className="font-medium text-yellow-600 dark:text-yellow-400">Attribution Gap Detected</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Display ads receive only 5% last-touch credit but contribute to 567 assisted conversions. Consider using position-based attribution for budget decisions.
+                          Display ads receive only 5% last-touch credit but contribute to 567 assisted conversions. Consider using position-based attribution for more accurate channel credit.
                         </p>
                       </div>
                     </div>
@@ -980,7 +918,7 @@ export function CrossChannelAttribution() {
                       <div>
                         <p className="font-medium text-purple-600 dark:text-purple-400">Optimization Opportunity</p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Shifting 15% of Display budget to Paid Social could increase overall ROAS by 0.4x based on historical performance data.
+                          Prioritizing Paid Social → Email paths could increase overall conversion rates by an estimated 0.4x based on historical performance data.
                         </p>
                       </div>
                     </div>
@@ -996,7 +934,7 @@ export function CrossChannelAttribution() {
                   Recommended Actions
                 </CardTitle>
                 <CardDescription>
-                  Data-driven recommendations for budget optimization
+                  Data-driven recommendations for campaign optimization
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1005,12 +943,12 @@ export function CrossChannelAttribution() {
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <ArrowUpRight className="w-4 h-4 text-green-500" />
-                        <span className="font-medium">Increase Email Budget</span>
+                        <span className="font-medium">Amplify Email Marketing</span>
                       </div>
                       <Badge className="bg-green-500/10 text-green-500">High Impact</Badge>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Recommend +25% budget allocation to email marketing based on superior ROAS performance.
+                      AI recommends increasing email marketing frequency based on superior conversion performance across all channels.
                     </p>
                     <div className="mt-3 flex items-center gap-2">
                       <Button size="sm">Apply Change</Button>

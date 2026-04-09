@@ -44,7 +44,6 @@ import {
 } from '@/components/advertising';
 import {
   Target,
-  DollarSign,
   TrendingUp,
   TrendingDown,
   Users,
@@ -103,7 +102,6 @@ interface AdCampaign {
   id: string;
   name: string;
   objective: string;
-  spent: number;
   impressions: number;
   clicks: number;
   conversions: number;
@@ -207,8 +205,6 @@ interface AudienceSegment {
   name: string;
   size: number;
   overlapPercentage: number;
-  cpa: number;
-  roas: number;
 }
 
 interface CreativeFatigueData {
@@ -222,17 +218,6 @@ interface CreativeFatigueData {
   recommendation: string;
 }
 
-interface BiddingStrategy {
-  id: string;
-  name: string;
-  type: 'maximize_conversions' | 'target_roas' | 'target_cpa' | 'maximize_clicks' | 'manual';
-  currentPerformance: number;
-  recommendedAction: string;
-  potentialImprovement: number;
-  confidence: number;
-}
-
-
 interface LookalikeAudience {
   id: string;
   name: string;
@@ -240,20 +225,14 @@ interface LookalikeAudience {
   similarityScore: number;
   estimatedSize: number;
   expansionLevel: 1 | 2 | 3 | 4 | 5;
-  predictedCPA: number;
-  predictedROAS: number;
   status: 'active' | 'paused' | 'pending';
 }
 
 interface ForecastData {
   id: string;
   campaignName: string;
-  currentSpend: number;
-  projectedSpend: number;
   currentConversions: number;
   projectedConversions: number;
-  currentROAS: number;
-  projectedROAS: number;
   confidence: number;
   trend: 'up' | 'down' | 'stable';
   recommendations: string[];
@@ -262,7 +241,6 @@ interface ForecastData {
 interface CompetitorInsight {
   id: string;
   competitorName: string;
-  estimatedSpend: string;
   topCreativeFormats: string[];
   targetingFocus: string[];
   adFrequency: string;
@@ -291,10 +269,6 @@ export default function Advertisement() {
   });
   const { data: creativeFatigueData } = useQuery<{ creatives: CreativeFatigueData[] }>({
     queryKey: ['/api/advertising/creative-fatigue'],
-    enabled: !!user,
-  });
-  const { data: biddingStrategiesData } = useQuery<{ strategies: BiddingStrategy[] }>({
-    queryKey: ['/api/advertising/bidding-strategies'],
     enabled: !!user,
   });
   const { data: lookalikeAudiencesData } = useQuery<{ audiences: LookalikeAudience[] }>({
@@ -329,7 +303,6 @@ export default function Advertisement() {
   
   const audienceSegments: AudienceSegment[] = Array.isArray(audienceSegmentsData) ? audienceSegmentsData : audienceSegmentsData?.segments || [];
   const creativeFatigue: CreativeFatigueData[] = Array.isArray(creativeFatigueData) ? creativeFatigueData : creativeFatigueData?.creatives || [];
-  const biddingStrategies: BiddingStrategy[] = Array.isArray(biddingStrategiesData) ? biddingStrategiesData : biddingStrategiesData?.strategies || [];
   const lookalikeAudiences: LookalikeAudience[] = Array.isArray(lookalikeAudiencesData) ? lookalikeAudiencesData : lookalikeAudiencesData?.audiences || [];
   const forecasts: ForecastData[] = Array.isArray(forecastsData) ? forecastsData : forecastsData?.forecasts || [];
   const competitorInsights: CompetitorInsight[] = Array.isArray(competitorInsightsData) ? competitorInsightsData : competitorInsightsData?.insights || [];
@@ -668,10 +641,6 @@ export default function Advertisement() {
                 <div className="text-center p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg">
                   <div className="text-xl font-bold text-purple-600">AI</div>
                   <div className="text-xs">Creative Automation</div>
-                </div>
-                <div className="text-center p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg">
-                  <div className="text-xl font-bold text-blue-600">ML</div>
-                  <div className="text-xs">ROAS Prediction</div>
                 </div>
                 <div className="text-center p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg">
                   <div className="text-xl font-bold text-green-600">MTA</div>
@@ -1028,10 +997,6 @@ export default function Advertisement() {
                     <p className="text-sm text-muted-foreground">Avg. Similarity</p>
                     <p className="text-2xl font-bold text-purple-600">{lookalikeAudiences.length > 0 ? (lookalikeAudiences.reduce((acc, a) => acc + a.similarityScore, 0) / lookalikeAudiences.length).toFixed(0) : 0}%</p>
                   </div>
-                  <div className="p-4 rounded-lg bg-white/50 dark:bg-gray-900/50 text-center">
-                    <p className="text-sm text-muted-foreground">Predicted ROAS</p>
-                    <p className="text-2xl font-bold text-orange-600">{lookalikeAudiences.length > 0 ? (lookalikeAudiences.reduce((acc, a) => acc + a.predictedROAS, 0) / lookalikeAudiences.length).toFixed(1) : 0}x</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1059,7 +1024,7 @@ export default function Advertisement() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="text-center p-2 rounded bg-blue-50 dark:bg-blue-950/20">
                         <p className="text-xs text-muted-foreground">Similarity</p>
                         <p className="font-bold text-blue-600">{audience.similarityScore}%</p>
@@ -1067,10 +1032,6 @@ export default function Advertisement() {
                       <div className="text-center p-2 rounded bg-green-50 dark:bg-green-950/20">
                         <p className="text-xs text-muted-foreground">Est. Size</p>
                         <p className="font-bold text-green-600">{(audience.estimatedSize / 1000).toFixed(0)}K</p>
-                      </div>
-                      <div className="text-center p-2 rounded bg-purple-50 dark:bg-purple-950/20">
-                        <p className="text-xs text-muted-foreground">Pred. ROAS</p>
-                        <p className="font-bold text-purple-600">{audience.predictedROAS}x</p>
                       </div>
                     </div>
 
@@ -1100,7 +1061,6 @@ export default function Advertisement() {
                           <span className="text-sm font-medium">AI Optimization</span>
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Predicted CPA: <span className="font-medium text-green-600">${audience.predictedCPA}</span> • 
                           Similar to {audience.similarityScore}% of your {audience.sourceAudience}
                         </p>
                       </div>
@@ -1126,7 +1086,7 @@ export default function Advertisement() {
                         <SelectValue placeholder="Select source..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="top-spenders">Top 10% Spenders</SelectItem>
+                        <SelectItem value="top-engaged">Top 10% Most Engaged Fans</SelectItem>
                         <SelectItem value="engaged-users">Highly Engaged Users</SelectItem>
                         <SelectItem value="converters">Recent Converters</SelectItem>
                         <SelectItem value="subscribers">Email Subscribers</SelectItem>
@@ -1319,33 +1279,19 @@ export default function Advertisement() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Bid Optimizations</p>
-                      <p className="text-2xl font-bold text-green-500">{biddingStrategies.filter(s => s.potentialImprovement > 20).length}</p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-green-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
 
             <Tabs defaultValue="audience-overlap" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="audience-overlap">Audience Overlap</TabsTrigger>
                 <TabsTrigger value="creative-fatigue">Creative Fatigue</TabsTrigger>
-                <TabsTrigger value="bidding">Bidding Strategies</TabsTrigger>
               </TabsList>
 
               <TabsContent value="audience-overlap" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2"><PieChart className="w-5 h-5 text-blue-500" />Audience Overlap Analysis</CardTitle>
-                    <CardDescription>Identify audience segment overlaps to optimize targeting and reduce wasted spend</CardDescription>
+                    <CardDescription>Identify audience segment overlaps to maximize reach and optimize targeting precision</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -1355,16 +1301,6 @@ export default function Advertisement() {
                             <div className="flex items-center gap-3">
                               <h4 className="font-medium">{segment.name}</h4>
                               <Badge variant="outline">{(segment.size / 1000).toFixed(0)}K users</Badge>
-                            </div>
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">ROAS</p>
-                                <p className={`font-bold ${segment.roas >= 5 ? 'text-green-500' : segment.roas >= 3 ? 'text-yellow-500' : 'text-red-500'}`}>{segment.roas}x</p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-xs text-muted-foreground">CPA</p>
-                                <p className="font-bold">${(segment.cpa ?? 0).toFixed(2)}</p>
-                              </div>
                             </div>
                           </div>
                           <div className="space-y-2">
@@ -1380,10 +1316,10 @@ export default function Advertisement() {
                               High overlap detected. Consider excluding from similar campaigns.
                             </div>
                           )}
-                          {segment.roas >= 5 && segment.overlapPercentage < 25 && (
+                          {segment.overlapPercentage < 25 && (
                             <div className="mt-3 p-2 rounded bg-green-500/10 text-green-600 text-sm flex items-center gap-2">
                               <Sparkles className="w-4 h-4" />
-                              High-value segment with low overlap. AI has prioritized this segment for maximum reach.
+                              Low overlap detected. AI has prioritized this segment for maximum reach.
                             </div>
                           )}
                         </div>
@@ -1451,55 +1387,6 @@ export default function Advertisement() {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="bidding" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Zap className="w-5 h-5 text-yellow-500" />Automated Bidding Recommendations</CardTitle>
-                    <CardDescription>AI-powered bidding strategy optimization based on campaign performance</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {biddingStrategies.map((strategy) => (
-                        <div key={strategy.id} className="p-4 rounded-lg border">
-                          <div className="flex items-start justify-between mb-3">
-                            <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-medium">{strategy.name}</h4>
-                                <Badge variant="outline" className="capitalize">{(strategy.type ?? '').replace(/_/g, ' ')}</Badge>
-                              </div>
-                              <p className="text-sm text-muted-foreground">Current strategy performance</p>
-                            </div>
-                            <div className="text-right">
-                              <p className="text-xs text-muted-foreground">Performance Score</p>
-                              <p className={`text-2xl font-bold ${strategy.currentPerformance >= 80 ? 'text-green-500' : strategy.currentPerformance >= 60 ? 'text-yellow-500' : 'text-red-500'}`}>{strategy.currentPerformance}%</p>
-                            </div>
-                          </div>
-                          <div className="space-y-2 mb-3">
-                            <Progress value={strategy.currentPerformance} />
-                          </div>
-                          <div className="p-3 rounded-lg bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 border border-blue-200 dark:border-blue-800 mb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Brain className="w-4 h-4 text-purple-500" />
-                                <span className="text-sm font-medium">AI Recommendation</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Badge className="bg-green-500/10 text-green-600">+{strategy.potentialImprovement}% potential</Badge>
-                                <Badge variant="outline">{strategy.confidence}% confidence</Badge>
-                              </div>
-                            </div>
-                            <p className="text-sm mt-2">{strategy.recommendedAction}</p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"><Zap className="w-3 h-3 mr-1" />Apply Recommendation</Button>
-                            <Button size="sm" variant="outline">View Details</Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
             </Tabs>
           </TabsContent>
 
