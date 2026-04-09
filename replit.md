@@ -96,6 +96,16 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - `server/services/diffusion/time_simulator.py` — RealisticTimeSimulator (burst×6, interp=20%)
 - `server/services/creativeModelService.ts` — Stage 6 tries relay first, falls back to MaxCore direct
 
+## Recent Fixes (Session Log)
+
+| Fix | File(s) Changed | Details |
+|---|---|---|
+| `stalled.forEach` TypeError | `server/lib/pdimClient.ts` | Added `_normalizeLuaResult()` — converts wasmoon 1-indexed Lua table objects `{1:"x",2:"y"}` to JS arrays before returning to BullMQ callers. |
+| `favicon.ico` 404 | `client/public/` + `client/index.html` | Copied `favicon.svg` → `favicon.ico` + `favicon.png`; added all three `<link rel="icon">` tags. |
+| Vite scan failure for `@icons-pack/react-simple-icons` | `vite.config.ts` | Added to `optimizeDeps.include` for eager pre-bundling. |
+| Vite dep 504 race on cold/config-changed start | `vite.config.ts` | Added `server.warmup.clientFiles` — pre-transforms `main.tsx`, `App.tsx`, `dialog.tsx`, `toast.tsx`, etc. at startup so dep optimizer finishes before first browser requests arrive. |
+| Stale-job cleanup logged as WARN (noise) | `server/lib/scaleJobQueue.ts` | Downgraded `logger.warn → logger.info` for expected BullMQ stale-job removal messages. |
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.

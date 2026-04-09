@@ -132,6 +132,20 @@ export default defineConfig({
       allow: [__dirname],
       deny: ["**/.*"],
     },
+    // Pre-transform critical source files at startup so the dep optimizer
+    // finishes before the browser's first requests arrive, eliminating the
+    // brief 504-storm that occurs when the optimizer is still running and the
+    // browser hits a dep that isn't cached yet (e.g. after vite.config changes).
+    warmup: {
+      clientFiles: [
+        "./src/main.tsx",
+        "./src/App.tsx",
+        "./src/components/ui/dialog.tsx",
+        "./src/components/ui/toast.tsx",
+        "./src/components/ui/toaster.tsx",
+        "./src/components/auth/AuthProvider.tsx",
+      ],
+    },
   },
   esbuild: {
     charset: "utf8",

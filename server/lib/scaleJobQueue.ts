@@ -152,7 +152,7 @@ export function startRetentionWorker(): Worker {
     async (job: Job) => {
       const jobName = job.name ?? (job.data?.type as string | undefined);
       if (!jobName) {
-        logger.warn(`[Worker] Removing stale/unnamed job id=${job.id} — leftover from prior session`);
+        logger.info(`[Worker] Removing stale/unnamed job id=${job.id} — leftover from prior session`);
         // Remove the job outright so BullMQ never tries moveToFinished on it.
         // A bare `return` would still call moveToFinished, which fails when the
         // LuaExecutor lock has expired and produces a noisy "Missing lock" error.
