@@ -241,23 +241,26 @@ interface MaxCoreModelState {
 }
 
 interface MaxCoreGenerateResponse {
-  success:             boolean;
+  success?:            boolean;
   platform:            string;
+  caption?:            string;
   hook?:               string;
   body?:               string;
   cta?:                string;
   hashtags?:           string[];
+  confidence?:         number;
   processing_time_ms?: number;
 }
 
 // Music topics for calibration — spread across genres and platforms so
 // MaxCore's growing corpus is sampled broadly.
-const _CALIBRATION_TOPICS: Array<{ topic: string; platform: string }> = [
-  { topic: 'new music release hip-hop artist',    platform: 'instagram' },
-  { topic: 'viral music video drop announcement', platform: 'tiktok'    },
-  { topic: 'album launch streaming premiere',     platform: 'youtube'   },
-  { topic: 'music artist brand collaboration',    platform: 'instagram' },
-  { topic: 'concert tour announcement live show', platform: 'tiktok'    },
+// `tone` is required by the MaxCore API (HTTP 422 without it).
+const _CALIBRATION_TOPICS: Array<{ topic: string; platform: string; tone: string }> = [
+  { topic: 'new music release hip-hop artist',    platform: 'instagram', tone: 'energetic'    },
+  { topic: 'viral music video drop announcement', platform: 'tiktok',    tone: 'hype'         },
+  { topic: 'album launch streaming premiere',     platform: 'youtube',   tone: 'professional' },
+  { topic: 'music artist brand collaboration',    platform: 'instagram', tone: 'authentic'    },
+  { topic: 'concert tour announcement live show', platform: 'tiktok',    tone: 'exciting'     },
 ];
 
 // Pause between sequential generate calls (ms).
@@ -284,12 +287,12 @@ const SEQUENTIAL_GAP_MS = 200;
 async function fetchMaxCoreContentSignals(): Promise<Partial<ScoreWeights> | null> {
   const results: MaxCoreGenerateResponse[] = [];
 
-  for (const { topic, platform } of _CALIBRATION_TOPICS) {
+  for (const { topic, platform, tone } of _CALIBRATION_TOPICS) {
     const res = await MaxCoreAIClient.generate<MaxCoreGenerateResponse>(
       '/api/generate/content',
-      { topic, platform }
+      { topic, platform, tone }
     );
-    if (res?.caption) results.push(res);
+    if (res?.caption || res?.hook) results.push(res);
     // Brief pause — lets MaxCore flush its response before the next request.
     await new Promise<void>(r => setTimeout(r, SEQUENTIAL_GAP_MS));
   }

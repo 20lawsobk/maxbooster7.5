@@ -139,7 +139,8 @@ export class MaxCoreAIClient {
           method:  'POST',
           headers: { 'Content-Type': 'application/json', ...MaxCoreAIClient.authHeaders() },
           body:    JSON.stringify(body),
-          signal:  AbortSignal.timeout(20_000),
+          // 35 s covers MaxCore cold-start latency (~16 s warm, up to ~30 s cold).
+          signal:  AbortSignal.timeout(35_000),
         });
 
         if (r.ok && MaxCoreAIClient.isJson(r)) {
@@ -237,11 +238,17 @@ export function startMaxCoreLLMWarmth(): void {
         'Authorization': `Bearer ${MC_AI_KEY}`,
       },
       body:   JSON.stringify({ topic: 'music artist brand new release', platform: 'instagram', tone: 'energetic' }),
-      signal: AbortSignal.timeout(20_000),
+      // Match the generate() timeout so warmth pings survive cold-start latency.
+      signal: AbortSignal.timeout(35_000),
     }).catch(() => {});
   };
 
-  ping();
+  // Delay the first ping by 120 s — the ScoreCalibrator fires 5 sequential
+  // generate calls at t=+15 s (each ~16 s) and finishes around t=+100 s.
+  // Delaying keeps the warmth ping from piling onto those in-flight requests
+  // and causing cold-start timeouts on the single-threaded MaxCore LLM.
+  const firstPing = setTimeout(ping, 120_000);
+  if (firstPing.unref) firstPing.unref();
   const t = setInterval(ping, WARMTH_INTERVAL_MS);
   if (t.unref) t.unref();
   logger.info('[MaxCoreAI] LLM warmth pinger started — pinging every 90s to prevent cold-start latency');
