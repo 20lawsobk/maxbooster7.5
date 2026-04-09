@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { storage } from '../storage';
-import { db } from '../db';
+import { db, dbRead } from '../db';
 import { eq, and, desc, sql, isNotNull } from 'drizzle-orm';
 import { notifications } from '../../shared/schema';
 import { requireAuth } from '../middleware/auth';
@@ -127,7 +127,8 @@ router.get('/', async (req: Request, res: Response) => {
       );
     }
 
-    const userNotifications = await db
+    const reader = dbRead ?? db;
+    const userNotifications = await reader
       .select()
       .from(notifications)
       .where(and(...conditions))
@@ -888,7 +889,8 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
   }
 
   try {
-    const result = await db
+    const reader = dbRead ?? db;
+    const result = await reader
       .select({ count: sql<number>`count(*)` })
       .from(notifications)
       .where(and(

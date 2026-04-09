@@ -1,5 +1,49 @@
 import { Request, Response, NextFunction } from 'express';
 
+/**
+ * Quickly decode the JWT payload to extract a user ID for cache-key purposes.
+ * This does NOT verify the signature — that is still done by requireAuth.
+ * We just need a stable, per-user discriminator for the cache key.
+ */
+function extractUserIdFromRequest(req: Request): string {
+  // 1. req.user already populated (auth ran before cache)
+  const user = (req as any).user;
+  if (user?.id) return user.id;
+
+  // 2. Session-stored userId (Passport/express-session flows)
+  const sessionUid = (req.session as any)?.userId || (req.session as any)?.passport?.user;
+  if (sessionUid) return String(sessionUid);
+
+  // 3. Decode JWT bearer token payload (no crypto – just base64)
+  const auth = req.headers.authorization;
+  if (auth?.startsWith('Bearer ')) {
+    try {
+      const parts = auth.slice(7).split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        if (payload?.userId) return String(payload.userId);
+        if (payload?.sub)    return String(payload.sub);
+      }
+    } catch { /* ignore malformed tokens */ }
+  }
+
+  // 4. Check cookies for a JWT (common pattern: token stored in httpOnly cookie)
+  const cookieHeader = req.headers.cookie || '';
+  const tokenCookieMatch = cookieHeader.match(/(?:^|;\s*)(?:token|access_token|jwt)=([^;]+)/);
+  if (tokenCookieMatch) {
+    try {
+      const parts = tokenCookieMatch[1].split('.');
+      if (parts.length === 3) {
+        const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+        if (payload?.userId) return String(payload.userId);
+        if (payload?.sub)    return String(payload.sub);
+      }
+    } catch { /* ignore */ }
+  }
+
+  return 'anon';
+}
+
 interface CacheEntry {
   body: any;
   headers: Record<string, string>;
@@ -92,7 +136,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
       return next();
     }
 
-    const userId = varyByUser ? ((req.session as any)?.userId || 'anon') : 'shared';
+    const userId = varyByUser ? extractUserIdFromRequest(req) : 'shared';
     const queryStr = varyByQuery ? JSON.stringify(req.query) : '';
     const cacheKey = `u:${userId}:${req.path}:${queryStr}`;
 
@@ -148,8 +192,8 @@ export function cacheMiddleware(options: CacheOptions = {}) {
 export function invalidateCacheOnMutation() {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
-      const userId = (req.session as any)?.userId;
-      if (userId) {
+      const userId = extractUserIdFromRequest(req);
+      if (userId && userId !== 'anon') {
         apiCache.invalidateForUser(userId);
       }
       

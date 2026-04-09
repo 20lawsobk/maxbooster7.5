@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
+import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { queryClient } from './lib/queryClient';
 import { AuthProvider } from '@/components/auth/AuthProvider';
 import { ThemeProvider } from '@/contexts/ThemeContext';
@@ -10,6 +10,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import App from './App';
 import './index.css';
 import './i18n/config';
+import { idbStorage, IDB_CACHE_KEY } from './lib/idbPersister';
 
 const rootElement = document.getElementById('root');
 
@@ -17,10 +18,10 @@ if (!rootElement) {
   throw new Error('Failed to find the root element');
 }
 
-const persister = createSyncStoragePersister({
-  storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-  key: 'mb-query-cache-v1',
-  throttleTime: 1000,
+const persister = createAsyncStoragePersister({
+  storage: idbStorage,
+  key: IDB_CACHE_KEY,
+  throttleTime: 2000,
   serialize: JSON.stringify,
   deserialize: JSON.parse,
 });

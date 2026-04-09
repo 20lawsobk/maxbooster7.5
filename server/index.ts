@@ -203,7 +203,7 @@ app.use('/generated-content', express.static(path.join(process.cwd(), 'public', 
 app.use('/uploads/images', express.static(path.join(process.cwd(), 'uploads', 'images'), {
   setHeaders: (res, filePath) => {
     if (filePath.endsWith('.png') || filePath.endsWith('.jpg') || filePath.endsWith('.jpeg') || filePath.endsWith('.webp')) {
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
     }
   }
 }));
@@ -213,7 +213,7 @@ app.use('/uploads/videos', express.static(path.join(process.cwd(), 'uploads', 'v
     if (filePath.endsWith('.mp4')) {
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
     }
   }
 }));
@@ -223,11 +223,11 @@ app.use('/uploads/audio', express.static(path.join(process.cwd(), 'uploads', 'au
     if (filePath.endsWith('.mp3')) {
       res.setHeader('Content-Type', 'audio/mpeg');
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
     } else if (filePath.endsWith('.wav')) {
       res.setHeader('Content-Type', 'audio/wav');
       res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=2592000, stale-while-revalidate=86400');
     }
   }
 }));
@@ -643,15 +643,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { invalidateCacheOnMutation, cacheMiddleware } = apiCacheResult.value;
     app.use('/api', invalidateCacheOnMutation());
     const cachedRoutes: Record<string, number> = {
-      '/api/bootstrap':          30,
-      '/api/auth/me':            15,
-      '/api/projects':           20,
-      '/api/studio/projects':    20,
-      '/api/analytics/dashboard': 60,
-      '/api/marketplace/beats':  30,
-      '/api/notifications':      10,
-      '/api/royalties/summary':  60,
-      '/api/achievements':       120,
+      '/api/bootstrap':                   30,
+      '/api/auth/me':                     15,
+      '/api/projects':                    20,
+      '/api/studio/projects':             20,
+      '/api/analytics/dashboard':         60,
+      '/api/marketplace/beats':           30,
+      '/api/notifications':               10,
+      '/api/notifications/unread-count':  10,
+      '/api/royalties/summary':           60,
+      '/api/achievements':               120,
     };
     const routeCacheMiddleware = (req: any, res: any, next: any) => {
       if (req.method !== 'GET') return next();
@@ -665,13 +666,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     // Add stale-while-revalidate headers so browsers can serve cached API
     // responses immediately and refresh in background on repeat visits.
     const SWR_ROUTES: Record<string, string> = {
-      '/api/bootstrap':           'private, max-age=30, stale-while-revalidate=300',
-      '/api/auth/me':             'private, max-age=15, stale-while-revalidate=120',
-      '/api/projects':            'private, max-age=20, stale-while-revalidate=180',
-      '/api/notifications':       'private, max-age=10, stale-while-revalidate=60',
-      '/api/royalties/summary':   'private, max-age=60, stale-while-revalidate=600',
-      '/api/analytics/dashboard': 'private, max-age=60, stale-while-revalidate=600',
-      '/api/achievements':        'private, max-age=120, stale-while-revalidate=900',
+      '/api/bootstrap':                   'private, max-age=30, stale-while-revalidate=300',
+      '/api/auth/me':                     'private, max-age=15, stale-while-revalidate=120',
+      '/api/projects':                    'private, max-age=20, stale-while-revalidate=180',
+      '/api/notifications':               'private, max-age=10, stale-while-revalidate=60',
+      '/api/notifications/unread-count':  'private, max-age=10, stale-while-revalidate=60',
+      '/api/royalties/summary':           'private, max-age=60, stale-while-revalidate=600',
+      '/api/analytics/dashboard':         'private, max-age=60, stale-while-revalidate=600',
+      '/api/achievements':                'private, max-age=120, stale-while-revalidate=900',
     };
     app.use('/api', (req: any, res: any, next: any) => {
       if (req.method !== 'GET') return next();

@@ -28,7 +28,7 @@ Key architectural decisions include:
 - Read replica routing for PostgreSQL for analytical reads.
 - Silent deployment system with rolling restarts and auto-rollback.
 - Security hardening includes IDOR prevention, session cookie security, AI route rate limiting, Zod-validated input, authentication consistency, and SSRF protection.
-- Performance hardening features like pagination, Redis query caching, composite DB indexes, Neon PostgreSQL, and request correlation IDs.
+- Performance hardening features: pagination, composite DB indexes, Neon PostgreSQL, request correlation IDs, server-side in-memory API cache (10 routes, per-user via JWT `sub` extraction), 30-day browser cache for all uploaded media, i18n lazy-loading (only English bundled at startup), and IndexedDB async query-cache persister (client hydration 4855ms → 1406ms, 71% faster).
 - Reliability fixes with background service safeguards and fallbacks.
 - Gamified onboarding with RPG-style persona selector, XP system, and achievements.
 - Python Audio Analysis Engine using `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch`.

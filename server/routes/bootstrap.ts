@@ -11,7 +11,7 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { db } from '../db.js';
+import { db, dbRead } from '../db.js';
 import {
   users,
   projects,
@@ -32,9 +32,12 @@ router.get('/', requireAuthOnly, async (req: AuthenticatedRequest, res: Response
   const userId = req.user!.id;
 
   try {
+    // All bootstrap queries are read-only — route to the read replica for speed
+    const reader = dbRead ?? db;
+
     const [userResult, projectsResult, notificationsResult, releasesResult] =
       await Promise.allSettled([
-        db
+        reader
           .select({
             id: users.id,
             email: users.email,
@@ -65,14 +68,14 @@ router.get('/', requireAuthOnly, async (req: AuthenticatedRequest, res: Response
           .where(eq(users.id, userId))
           .limit(1),
 
-        db
+        reader
           .select()
           .from(projects)
           .where(eq(projects.userId, userId))
           .orderBy(desc(projects.updatedAt))
           .limit(12),
 
-        db
+        reader
           .select()
           .from(notifications)
           .where(
@@ -84,7 +87,7 @@ router.get('/', requireAuthOnly, async (req: AuthenticatedRequest, res: Response
           .orderBy(desc(notifications.createdAt))
           .limit(20),
 
-        db
+        reader
           .select()
           .from(releases)
           .where(eq(releases.userId, userId))
