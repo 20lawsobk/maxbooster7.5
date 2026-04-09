@@ -56,13 +56,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
     <!--
-      ASYNC FONT LOADING — display=swap means Google Fonts never blocks rendering.
-      Loaded as a standard stylesheet; the font-display swap in the CSS handles FOUT.
+      NON-BLOCKING FONT LOADING — preload as="style" fetches the CSS at high priority
+      without blocking render. A tiny inline script swaps rel to "stylesheet" once the
+      file is ready, so text paints immediately with system fonts (no FOIT, no shift).
+      The inline script avoids the onload attribute which is blocked by CSP script-src-attr.
     -->
     <link
-      rel="stylesheet"
+      id="gfonts-preload"
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+      />
+    </noscript>
 
     <script type="application/ld+json">
     {
@@ -219,6 +229,14 @@
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.add('light');
+        }
+      })();
+    </script>
+    <script>
+      (function() {
+        var l = document.getElementById('gfonts-preload');
+        if (l) {
+          l.onload = function() { l.rel = 'stylesheet'; l.onload = null; };
         }
       })();
     </script>

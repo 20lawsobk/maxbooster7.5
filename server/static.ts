@@ -309,10 +309,13 @@ function precompressedMiddleware(distPath: string) {
 
         if (ext === '.html') {
           res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-        } else if (/\/assets\/.*-[A-Za-z0-9_-]{6,12}\.(js|css)$/.test(urlPath)) {
+        } else if (/\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(urlPath)) {
+          // All Vite content-hashed assets — safe to cache forever
           res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         } else if (ext === '.js' || ext === '.css') {
           res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        } else if (ext === '.woff2' || ext === '.woff' || ext === '.ttf') {
+          res.setHeader('Cache-Control', 'public, max-age=604800');
         } else {
           res.setHeader('Cache-Control', 'public, max-age=86400');
         }
@@ -341,12 +344,11 @@ function staticFileMiddlewareOptions() {
     setHeaders: (res: any, filePath: string) => {
       if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      } else if (/\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(filePath)) {
+        // All Vite content-hashed assets — safe to cache forever
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       } else if (filePath.match(/\.(js|css)$/)) {
-        if (filePath.match(/assets\/.*-[a-f0-9]{8}\.(js|css)$/)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        } else {
-          res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
-        }
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
       } else if (filePath.match(/\.(woff2?|ttf|eot)$/)) {
         res.setHeader('Cache-Control', 'public, max-age=604800');
       } else if (filePath.match(/\.(png|jpg|jpeg|gif|webp|svg|ico)$/)) {
