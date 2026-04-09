@@ -155,6 +155,12 @@ class PlatformAutoFixer extends EventEmitter {
   private _dbConsecutiveFailures = 0;
   private _dbNextAllowedProbeAt  = 0;
 
+  // ─── PDIM consecutive probe successes — prevent false-positive force-close ──
+  // A single bypass probe catching PDIM briefly alive during a crash-restart
+  // window must not force-close the circuit (which resets the accumulated backoff).
+  // Require 2 consecutive successful direct pings before force-closing.
+  private _pdimConsecutiveProbeSuccesses = 0;
+
   // ─── Rolling trend window ───────────────────────────────────────────────────
   private trendWindow: TrendSnapshot[] = [];
 
@@ -483,21 +489,30 @@ class PlatformAutoFixer extends EventEmitter {
       // endpoint unknown" — return 'unknown' so the backoff patch is NOT triggered.
       if (!res.ok) {
         if (res.status === 429) {
+          this._pdimConsecutiveProbeSuccesses = 0;
           throw new Error(`HTTP ${res.status}`);
         }
-        // Non-429 4xx: server responded, circuit should stay/become CLOSED.
-        if (cbStateBeforeProbe !== 'CLOSED') cbForceClose();
+        if (res.status >= 500 || (res.status >= 300 && res.status < 400)) {
+          // 5xx / 3xx: PDIM is down or proxied away — reset success streak.
+          this._pdimConsecutiveProbeSuccesses = 0;
+          throw new Error(`HTTP ${res.status}`);
+        }
+        // Non-429 4xx: server responded — count as a probe success.
+        this._pdimConsecutiveProbeSuccesses++;
+        if (this._pdimConsecutiveProbeSuccesses >= 2 && cbStateBeforeProbe !== 'CLOSED') {
+          cbForceClose();
+        }
         return this._result('pdim', 'unknown', pingMs,
           `PDIM server reachable (HTTP ${res.status} — exec endpoint not found, ${pingMs}ms)`,
           { pingMs, status: res.status, note: 'server_up_endpoint_unknown' });
       }
 
-      // If PDIM passed a direct ping but the circuit was HALF_OPEN (probe in flight),
-      // force-close it immediately so we don't lose the recovery window.
-      // The normal cbRecordSuccess() path inside exec() only fires on real requests —
-      // this health-probe bypass won't reach it.  Force-close ensures the circuit
-      // recovers promptly when the health check confirms PDIM is reachable again.
-      if (cbStateBeforeProbe !== 'CLOSED') {
+      // Successful PING response — increment consecutive success streak.
+      // Only force-close the circuit after 2 consecutive probe successes so that
+      // a single bypass ping catching PDIM briefly alive during a crash-restart
+      // cycle does not reset the accumulated circuit-breaker backoff.
+      this._pdimConsecutiveProbeSuccesses++;
+      if (this._pdimConsecutiveProbeSuccesses >= 2 && cbStateBeforeProbe !== 'CLOSED') {
         cbForceClose();
       }
 
@@ -522,6 +537,9 @@ class PlatformAutoFixer extends EventEmitter {
         message = `ping ${pingMs}ms, gap ${gapMs}ms, queue depth ${queueDepth}`;
       }
     } catch (err: any) {
+      // Any probe failure resets the consecutive-success streak so a
+      // subsequent success starts counting from 1, not from a stale value.
+      this._pdimConsecutiveProbeSuccesses = 0;
       const msg = (err.message ?? '') as string;
       if (err.name === 'AbortError' || err.name === 'TimeoutError' || msg.includes('timed out')) {
         // Timeout means PDIM may be cold-starting (Replit app sleep/wake cycle).

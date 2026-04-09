@@ -275,6 +275,52 @@ function _enqueueScriptExec(fn: () => Promise<unknown>): Promise<unknown> {
   return next;
 }
 
+// ── Exec error log deduplication ─────────────────────────────────────────────
+// When PDIM is completely down (e.g. 502 on every call), each exec() logs a
+// WARN before the circuit opens.  With 5 failures required before the circuit
+// opens and multiple BullMQ workers polling, this produces a burst of identical
+// WARNs every time the circuit is force-closed and resets.
+//
+// Deduplication rules:
+//   • First occurrence of a status code: always logged.
+//   • Same status code as last logged: suppressed if within DEDUP_WINDOW_MS.
+//   • Different status code: always logged (indicates a new condition).
+//   • After DEDUP_WINDOW_MS silence, the next occurrence is logged again.
+//
+// 429 rate-limit errors are NOT deduplicated — each one adjusts the AIMD gap
+// and the gap value in the message changes, so every log is meaningful.
+const _EXEC_DEDUP_WINDOW_MS = 30_000; // 30 s
+let _lastExecErrorStatus  = -1;
+let _lastExecErrorLoggedAt = 0;
+let _suppressedExecErrors  = 0;
+
+function _logExecError(cmd: unknown, status: number, msg: string): void {
+  const now = Date.now();
+  const withinWindow = (now - _lastExecErrorLoggedAt) < _EXEC_DEDUP_WINDOW_MS;
+  if (withinWindow && status === _lastExecErrorStatus) {
+    // Suppress — same error within window.  Periodically emit a summary.
+    _suppressedExecErrors++;
+    if (_suppressedExecErrors % 20 === 0) {
+      logger.warn(
+        `[PDIM] exec error [${String(cmd)}]: HTTP ${status} suppressed ×${_suppressedExecErrors} ` +
+        `(same error within ${_EXEC_DEDUP_WINDOW_MS / 1000}s window)`,
+      );
+    }
+    return;
+  }
+  if (_suppressedExecErrors > 0) {
+    logger.warn(
+      `[PDIM] exec error [${String(cmd)}]: ${msg} ` +
+      `(+ ${_suppressedExecErrors} suppressed identical errors)`,
+    );
+    _suppressedExecErrors = 0;
+  } else {
+    logger.warn(`[PDIM] exec error [${String(cmd)}]: ${msg}`);
+  }
+  _lastExecErrorStatus   = status;
+  _lastExecErrorLoggedAt = now;
+}
+
 // ── Module-level ZPOPMIN serializer ───────────────────────────────────────────
 // Secondary layer specifically for BZPOPMIN polling: ensures at most 1 ZPOPMIN
 // is queued into the global AIMD chain at a time, with a minimal per-worker jitter gap
@@ -470,14 +516,14 @@ export class PdimRedisClient extends EventEmitter {
             cbRecord503();
             _counted = true;
             const errMsg = `PDIM HTTP ${res.status}: service temporarily unreachable`;
-            logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            _logExecError(cmd, res.status, errMsg);
             throw new Error(errMsg);
           }
           if (res.status >= 500) {
             cbRecord503();
             _counted = true;
             const errMsg = `PDIM HTTP ${res.status}: ${text.slice(0, 120)}`;
-            logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+            _logExecError(cmd, res.status, errMsg);
             throw new Error(errMsg);
           }
           // 4xx: PDIM server is responsive (not down) but the command/route was
@@ -506,7 +552,7 @@ export class PdimRedisClient extends EventEmitter {
           cbRecord503();
           _counted = true;
           const errMsg = `PDIM returned non-JSON (${contentType.split(';')[0].trim() || 'unknown type'}): ${body.slice(0, 80)}`;
-          logger.warn(`[PDIM] exec error [${cmd}]: ${errMsg}`);
+          _logExecError(cmd, 200, errMsg);
           throw new Error(errMsg);
         }
 
