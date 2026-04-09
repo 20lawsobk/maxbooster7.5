@@ -1289,6 +1289,19 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
         fallbackAvailable: failedPlatforms.length > 0,
       },
     });
+
+    if (generatedContent.length > 0 && req.user?.id) {
+      setImmediate(async () => {
+        try {
+          const firstPiece = generatedContent[0];
+          const platformLabel = firstPiece.platform.charAt(0).toUpperCase() + firstPiece.platform.slice(1);
+          const snippet = (firstPiece.caption || firstPiece.content || '').slice(0, 100);
+          await notificationService.sendSocialContentGeneratedNotification(req.user!.id, platformLabel, snippet);
+        } catch (err) {
+          logger.warn('[SocialMedia] content generated notification error:', err);
+        }
+      });
+    }
   } catch (error) {
     logger.warn('Failed to generate social content:', error);
     res.status(500).json({ 

@@ -129,6 +129,14 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
     }).returning();
     
     res.status(201).json(project);
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendProjectCreatedNotification(userId, project.title || 'Untitled Project', project.genre);
+      } catch (err) {
+        logger.warn('[Studio] project created notification error:', err);
+      }
+    });
   } catch (error: unknown) {
     logger.warn('Error creating project:', error);
     res.status(500).json({ error: 'Failed to create project' });
@@ -858,6 +866,19 @@ router.post('/projects/:projectId/render', requireAuth, async (req: Request, res
     }
 
     res.json(result);
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendProjectRenderCompleteNotification(
+          userId,
+          project.title || 'Untitled Project',
+          format,
+          result.downloadUrl
+        );
+      } catch (err) {
+        logger.warn('[Studio] render complete notification error:', err);
+      }
+    });
   } catch (error: unknown) {
     logger.warn('Error rendering project:', error);
     res.status(500).json({ error: 'Failed to render project' });

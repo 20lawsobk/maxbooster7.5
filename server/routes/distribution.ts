@@ -17,6 +17,7 @@ import { dspPolicyChecker, DSP_POLICIES, type ComplianceResult } from '../servic
 import { releaseWorkflowService, type TakedownReason } from '../services/releaseWorkflow';
 import { audioFingerprintService, type DuplicateCheckResult } from '../services/audioFingerprint';
 import { logger } from '../logger';
+import { notificationService } from '../services/notificationService.js';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -610,11 +611,24 @@ router.post('/releases/:id/schedule', requireAuth, async (req: Request, res: Res
       return res.status(404).json({ error: 'Release not found' });
     }
 
+    const scheduledDate = new Date(releaseDate);
     const updatedRelease = await storage.updateDistroRelease(id, {
-      releaseDate: new Date(releaseDate),
+      releaseDate: scheduledDate,
     });
 
     res.json(updatedRelease);
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendReleaseScheduledNotification(
+          userId,
+          release.title || 'Untitled Release',
+          scheduledDate
+        );
+      } catch (err) {
+        logger.warn('[Distribution] schedule notification error:', err);
+      }
+    });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
@@ -1083,6 +1097,24 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
         lastChecked: statusResult.lastChecked,
         message: 'Status refreshed successfully',
       });
+
+      // Fire "release live" notification when the release transitions to live status
+      if (statusResult.status === 'live' && currentStatus !== 'live') {
+        setImmediate(async () => {
+          try {
+            const livePlatformCount = Array.isArray(statusResult.platforms)
+              ? statusResult.platforms.filter((p: any) => p.status === 'live' || p.status === 'delivered').length || statusResult.platforms.length
+              : 1;
+            await notificationService.sendReleaseLiveNotification(
+              userId,
+              release.title || 'Untitled Release',
+              livePlatformCount
+            );
+          } catch (err) {
+            logger.warn('[Distribution] release live notification error:', err);
+          }
+        });
+      }
     } catch (refreshError) {
       logger.warn('Status refresh failed, returning current status:', refreshError);
       const currentPlatforms = (release.metadata as any)?.platforms || [];
@@ -1395,6 +1427,19 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       labelGridReleaseId: lgResult.releaseId,
       estimatedLiveDate: lgResult.estimatedLiveDate,
     });
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendReleaseSubmittedNotification(
+          userId,
+          release.title || 'Untitled Release',
+          selectedPlatforms.length,
+          lgResult.estimatedLiveDate
+        );
+      } catch (err) {
+        logger.warn('[Distribution] submit notification error:', err);
+      }
+    });
   } catch (error: unknown) {
     logger.warn('Error submitting release:', error);
     res.status(500).json({ error: 'Failed to submit release' });
@@ -1461,6 +1506,18 @@ router.post('/releases/:id/takedown', requireAuth, async (req: Request, res: Res
       success: true,
       message: 'Takedown request submitted',
       estimatedCompletionDays: 14,
+    });
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendReleaseTakedownNotification(
+          userId,
+          release.title || 'Untitled Release',
+          platformsToTakedown.length
+        );
+      } catch (err) {
+        logger.warn('[Distribution] takedown notification error:', err);
+      }
     });
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {

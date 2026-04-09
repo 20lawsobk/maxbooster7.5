@@ -748,6 +748,20 @@ router.post('/purchase', async (req: Request, res: Response) => {
     });
 
     res.json(result);
+
+    setImmediate(async () => {
+      try {
+        const beatTitle = (result as any).beatTitle || 'your beat';
+        const amount = (result as any).amount || 0;
+        const sellerId = (result as any).sellerId;
+        await notificationService.sendBeatPurchasedNotification(req.user!.id, beatTitle, licenseType);
+        if (sellerId && sellerId !== req.user!.id) {
+          await notificationService.sendBeatSoldNotification(sellerId, beatTitle, licenseType, amount);
+        }
+      } catch (err) {
+        logger.warn('[Marketplace] purchase notification error:', err);
+      }
+    });
   } catch (error: any) {
     logger.warn('Error initiating purchase:', error);
     const msg = error.message || 'Failed to initiate purchase';
@@ -1266,6 +1280,18 @@ router.post('/upload', upload.fields([
     })();
 
     res.status(201).json(listing);
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendBeatListingLiveNotification(
+          req.user!.id,
+          title,
+          parseFloat(price) || 50
+        );
+      } catch (err) {
+        logger.warn('[Marketplace] beat listing notification error:', err);
+      }
+    });
   } catch (error: any) {
     logger.warn('Error uploading beat:', error);
     res.status(500).json({ error: 'Failed to upload beat' });
@@ -1988,6 +2014,14 @@ router.post('/stems/:stemId/purchase', async (req: Request, res: Response) => {
       purchaseId: `purchase_${Date.now()}`,
       stemId,
       downloadUrl: `/api/marketplace/stems/${stemId}/download`,
+    });
+
+    setImmediate(async () => {
+      try {
+        await notificationService.sendStemsPurchasedNotification(req.user!.id, stemId);
+      } catch (err) {
+        logger.warn('[Marketplace] stems purchase notification error:', err);
+      }
     });
   } catch (error: any) {
     logger.warn('Error purchasing stem:', error);

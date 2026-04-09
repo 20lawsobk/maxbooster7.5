@@ -7,6 +7,7 @@ import axios from 'axios';
 import type { User } from '../../shared/schema.js';
 import { autopilotLearningService } from './autopilotLearningService.js';
 import { detectHookPattern } from './postingUtils.js';
+import { notificationService } from './notificationService.js';
 
 /**
  * Auto-Posting Service V2 — BoosterQueue-backed persistent posting.
@@ -138,6 +139,17 @@ class AutoPostingServiceV2 {
             createdBy: post.createdBy,
             results,
           });
+
+          // Fire auto-post published notification for autopilot-generated posts
+          const successfulPlatforms = results.filter(r => r.success).map(r => r.platform);
+          if (successfulPlatforms.length > 0 && post.createdBy === 'social_autopilot') {
+            const platformLabel = successfulPlatforms[0].charAt(0).toUpperCase() + successfulPlatforms[0].slice(1);
+            notificationService.sendAutoPostPublishedNotification(
+              post.userId,
+              platformLabel,
+              (post.content.text || '').slice(0, 100)
+            ).catch(err => logger.warn('[AutoPost] notification error (non-fatal):', err?.message));
+          }
         } catch (error: any) {
           logger.warn(`Failed to process auto-post ${post.id}:`, error);
           await storage.updateScheduledPost(post.id, { status: 'failed' });

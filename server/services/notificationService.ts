@@ -836,6 +836,220 @@ Manage your notification preferences: ${link || 'https://maxbooster.ai/settings'
       metadata: { campaignName, suggestion },
     });
   }
+
+  // ── Distribution notifications ───────────────────────────────────────────────
+
+  async sendReleaseSubmittedNotification(
+    userId: string,
+    releaseTitle: string,
+    platformCount: number,
+    estimatedLiveDate?: string
+  ): Promise<void> {
+    const eta = estimatedLiveDate
+      ? ` Estimated live: ${new Date(estimatedLiveDate).toLocaleDateString('en-US', { dateStyle: 'medium' })}.`
+      : '';
+    await this.send({
+      userId,
+      type: 'release_submitted',
+      title: '🎵 Release Submitted for Distribution',
+      message: `"${releaseTitle}" has been submitted to ${platformCount} platform${platformCount !== 1 ? 's' : ''}.${eta} We'll notify you when it goes live.`,
+      link: '/distribution',
+      metadata: { releaseTitle, platformCount, estimatedLiveDate },
+    });
+  }
+
+  async sendReleaseScheduledNotification(
+    userId: string,
+    releaseTitle: string,
+    releaseDate: Date
+  ): Promise<void> {
+    const dateStr = releaseDate.toLocaleDateString('en-US', { dateStyle: 'full' });
+    await this.send({
+      userId,
+      type: 'release_scheduled',
+      title: '📅 Release Date Confirmed',
+      message: `"${releaseTitle}" is locked in for ${dateStr}. Start your pre-save campaign to build momentum!`,
+      link: '/distribution',
+      metadata: { releaseTitle, releaseDate: releaseDate.toISOString() },
+    });
+  }
+
+  async sendReleaseLiveNotification(
+    userId: string,
+    releaseTitle: string,
+    platformCount: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'release_live',
+      title: '🎉 Your Release is LIVE!',
+      message: `"${releaseTitle}" is now live across ${platformCount} platform${platformCount !== 1 ? 's' : ''}. Share it with the world!`,
+      link: '/distribution',
+      metadata: { releaseTitle, platformCount },
+    });
+  }
+
+  async sendReleaseTakedownNotification(
+    userId: string,
+    releaseTitle: string,
+    platformCount: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'release_takedown',
+      title: '🔴 Takedown Request Submitted',
+      message: `Takedown for "${releaseTitle}" has been requested across ${platformCount} platform${platformCount !== 1 ? 's' : ''}. Processing takes up to 14 business days.`,
+      link: '/distribution',
+      metadata: { releaseTitle, platformCount },
+    });
+  }
+
+  // ── Marketplace notifications ────────────────────────────────────────────────
+
+  async sendBeatListingLiveNotification(
+    userId: string,
+    beatTitle: string,
+    price: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'beat_listing_live',
+      title: '🎹 Beat Now Live on Marketplace',
+      message: `"${beatTitle}" is live and ready to sell at $${price.toFixed(2)}. Share it to maximize your reach!`,
+      link: '/marketplace',
+      metadata: { beatTitle, price },
+    });
+  }
+
+  async sendBeatSoldNotification(
+    userId: string,
+    beatTitle: string,
+    licenseType: string,
+    amount: number
+  ): Promise<void> {
+    const licenseLabel = licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
+    await this.send({
+      userId,
+      type: 'beat_sold',
+      title: '💰 Beat Sold!',
+      message: `Your beat "${beatTitle}" just sold a ${licenseLabel} license for $${amount.toFixed(2)}. Payout is on its way!`,
+      link: '/marketplace',
+      metadata: { beatTitle, licenseType, amount },
+    });
+  }
+
+  async sendBeatPurchasedNotification(
+    userId: string,
+    beatTitle: string,
+    licenseType: string
+  ): Promise<void> {
+    const licenseLabel = licenseType.charAt(0).toUpperCase() + licenseType.slice(1);
+    await this.send({
+      userId,
+      type: 'beat_purchased',
+      title: '✅ Beat Purchase Confirmed',
+      message: `You've licensed "${beatTitle}" with a ${licenseLabel} license. Access your files in your downloads.`,
+      link: '/marketplace',
+      metadata: { beatTitle, licenseType },
+    });
+  }
+
+  async sendStemsPurchasedNotification(
+    userId: string,
+    stemId: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'stems_purchased',
+      title: '🎚️ Stem Pack Unlocked',
+      message: `Your stem pack purchase is confirmed. Download your individual stems from the marketplace to start building.`,
+      link: '/marketplace',
+      metadata: { stemId },
+    });
+  }
+
+  // ── Studio / Music creation notifications ────────────────────────────────────
+
+  async sendProjectCreatedNotification(
+    userId: string,
+    projectTitle: string,
+    genre?: string | null
+  ): Promise<void> {
+    const genreStr = genre ? ` (${genre})` : '';
+    await this.send({
+      userId,
+      type: 'studio_project_created',
+      title: '🎛️ Project Created',
+      message: `"${projectTitle}"${genreStr} is ready. Add tracks and start making something great!`,
+      link: '/studio',
+      metadata: { projectTitle, genre },
+    });
+  }
+
+  async sendProjectRenderCompleteNotification(
+    userId: string,
+    projectTitle: string,
+    format: string,
+    downloadUrl: string
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'studio_render_complete',
+      title: '✅ Render Complete',
+      message: `"${projectTitle}" finished rendering as a ${format.toUpperCase()} file and is ready to download.`,
+      link: downloadUrl,
+      metadata: { projectTitle, format, downloadUrl },
+    });
+  }
+
+  async sendStemExportStartedNotification(
+    userId: string,
+    projectTitle: string,
+    trackCount: number
+  ): Promise<void> {
+    await this.send({
+      userId,
+      type: 'studio_stem_export',
+      title: '🎚️ Stem Export Started',
+      message: `Exporting ${trackCount} stem${trackCount !== 1 ? 's' : ''} from "${projectTitle}". We'll notify you when it's ready.`,
+      link: '/studio',
+      metadata: { projectTitle, trackCount },
+    });
+  }
+
+  // ── Social media management notifications ────────────────────────────────────
+
+  async sendSocialContentGeneratedNotification(
+    userId: string,
+    platform: string,
+    contentSnippet: string
+  ): Promise<void> {
+    const preview = contentSnippet.length > 80 ? contentSnippet.slice(0, 77) + '...' : contentSnippet;
+    await this.send({
+      userId,
+      type: 'social_content_generated',
+      title: `✨ AI Content Ready for ${platform}`,
+      message: `New post ready: "${preview}" — Review and schedule it now.`,
+      link: '/social-media',
+      metadata: { platform, contentSnippet },
+    });
+  }
+
+  async sendAutoPostPublishedNotification(
+    userId: string,
+    platform: string,
+    contentSnippet: string
+  ): Promise<void> {
+    const preview = contentSnippet.length > 80 ? contentSnippet.slice(0, 77) + '...' : contentSnippet;
+    await this.send({
+      userId,
+      type: 'social_auto_published',
+      title: `🤖 Autopilot Published on ${platform}`,
+      message: `Your autopilot posted: "${preview}"`,
+      link: '/social-media',
+      metadata: { platform, contentSnippet },
+    });
+  }
 }
 
 export const notificationService = new NotificationService();

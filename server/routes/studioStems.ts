@@ -14,6 +14,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 import { stemExportService } from '../services/stemExportService.js';
+import { notificationService } from '../services/notificationService.js';
 import { db } from '../db.js';
 import { projects } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
@@ -89,6 +90,21 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
       success: true,
       message: 'Stem export started',
       ...result,
+    });
+
+    setImmediate(async () => {
+      try {
+        const [proj] = await db.select({ title: projects.title })
+          .from(projects).where(eq(projects.id, projectId)).limit(1);
+        const trackCount = data.trackIds?.length || 0;
+        await notificationService.sendStemExportStartedNotification(
+          userId,
+          proj?.title || 'Untitled Project',
+          trackCount
+        );
+      } catch (err) {
+        logger.warn('[Studio] stem export notification error:', err);
+      }
     });
   } catch (error: any) {
     logger.warn('Error starting stem export:', error);

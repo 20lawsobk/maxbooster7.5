@@ -661,14 +661,18 @@ function getCategory(type: string): string {
     release_live: 'distribution',
     release_rejected: 'distribution',
     release_submitted: 'distribution',
+    release_scheduled: 'distribution',
+    release_takedown: 'distribution',
     release_processing: 'distribution',
     platform_update: 'distribution',
     upload_complete: 'distribution',
     stream_milestone: 'distribution',
     ai_processing_complete: 'distribution',
-    // Social media (scheduling/publishing)
+    // Social media (scheduling/publishing/autopilot)
     social_post_scheduled: 'social_media',
     social_post_published: 'social_media',
+    social_content_generated: 'social_media',
+    social_auto_published: 'social_media',
     social_token_expiring: 'account_security',
     // Direct Interaction (likes, comments, follows, etc.)
     social_like: 'direct_interaction',
@@ -703,6 +707,14 @@ function getCategory(type: string): string {
     marketplace_review: 'marketplace',
     marketplace_offer: 'marketplace',
     beat_play_milestone: 'marketplace',
+    beat_listing_live: 'marketplace',
+    beat_sold: 'marketplace',
+    beat_purchased: 'marketplace',
+    stems_purchased: 'marketplace',
+    // Studio / Music creation
+    studio_project_created: 'content_based',
+    studio_render_complete: 'content_based',
+    studio_stem_export: 'content_based',
     // System
     system_announcement: 'system',
     system_maintenance: 'system',
