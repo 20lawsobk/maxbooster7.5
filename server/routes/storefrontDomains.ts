@@ -13,7 +13,7 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { storefrontDomains, storefronts } from "@shared/schema";
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxboostermusic.com";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
 
 const router = Router();
 

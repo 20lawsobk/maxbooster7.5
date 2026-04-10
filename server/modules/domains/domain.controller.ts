@@ -7,7 +7,7 @@ import { storefrontDomains, storefronts } from "@shared/schema";
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxboostermusic.com";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
 
 // ─── Managed subdomains ────────────────────────────────────────────────────
 

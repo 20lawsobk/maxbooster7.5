@@ -501,7 +501,7 @@ export default function StorefrontBuilder() {
     },
     onSuccess: (data) => {
       if (data.ok) {
-        toast({ title: 'Subdomain Reserved', description: `Your storefront is now live at ${data.domain}` });
+        toast({ title: 'Subdomain Reserved', description: `Subdomain label reserved. Your store is live at ${STOREFRONT_BASE}/storefront/${selectedStorefront?.slug}` });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains', selectedStorefront?.id] });
       } else {

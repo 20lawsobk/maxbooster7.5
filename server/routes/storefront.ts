@@ -126,7 +126,7 @@ router.get('/suggest-url', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const slug = await storefrontService.generateRandomSlug();
-    const baseDomain = process.env.BASE_DOMAIN || 'maxboostermusic.com';
+    const baseDomain = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
     const suggestedDomain = `${slug}.${baseDomain}`;
 
     const existingDomain = await db
