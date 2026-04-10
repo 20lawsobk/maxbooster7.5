@@ -12,7 +12,7 @@ import { publishStorefront, unpublishStorefront } from "../modules/publish/publi
 import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { storefrontDomains, storefronts } from "@shared/schema";
-import { validatePlatformHandle, toPlatformFQDN } from "@shared/domainValidation.js";
+import { validateFreeDomain } from "@shared/domainValidation.js";
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
 
@@ -70,43 +70,43 @@ router.post("/storefront/:storefrontId/unpublish", async (req, res) => {
   }
 });
 
-// ── Platform Subdomain (*.maxboostermusic.com) ─────────────────────────────
-// Check availability of a platform handle (no auth required)
+// ── Free Platform Domain (user's own full domain, e.g. mybeats.com) ─────────
+// Check availability of a full domain name (no auth required)
 router.post("/platform/check", async (req, res) => {
   try {
-    const { handle } = req.body;
-    const v = validatePlatformHandle(handle);
+    const { sld, tld } = req.body;
+    const v = validateFreeDomain(sld, tld);
     if (!v.valid) {
       return res.status(400).json({ ok: false, available: false, error: v.error });
     }
-    const domain = toPlatformFQDN(v.handle!);
+    const domain = v.domain!;
     const [existing] = await db
       .select({ id: storefrontDomains.id })
       .from(storefrontDomains)
       .where(eq(storefrontDomains.domain, domain))
       .limit(1);
-    return res.json({ ok: true, available: !existing, domain, handle: v.handle });
+    return res.json({ ok: true, available: !existing, domain });
   } catch (err) {
     logger.warn("[domains] platform check error:", err);
     return res.status(500).json({ ok: false, available: false, error: "Internal error." });
   }
 });
 
-// Claim a platform subdomain — immediately active, no external DNS needed
+// Claim a free full domain — provisioned immediately, managed by Max Booster DNS
 router.post("/platform/claim", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
 
-    const { handle, storefrontId } = req.body;
+    const { sld, tld, storefrontId } = req.body;
     if (!storefrontId) {
       return res.status(400).json({ ok: false, error: "storefrontId is required." });
     }
-    const v = validatePlatformHandle(handle);
+    const v = validateFreeDomain(sld, tld);
     if (!v.valid) {
       return res.status(400).json({ ok: false, error: v.error });
     }
 
-    const domain = toPlatformFQDN(v.handle!);
+    const domain = v.domain!;
 
     // Verify storefront belongs to this user
     const [sf] = await db
@@ -128,15 +128,15 @@ router.post("/platform/claim", async (req, res) => {
       if (existing.storefrontId === storefrontId) {
         return res.json({ ok: true, domain, url: `https://${domain}`, alreadyOwned: true });
       }
-      return res.status(409).json({ ok: false, error: "This subdomain is already taken." });
+      return res.status(409).json({ ok: false, error: "This domain is already registered on another storefront." });
     }
 
-    // Remove any existing platform_subdomain entries for this storefront first
+    // Remove any existing platform domain entries for this storefront first (one free domain at a time)
     await db
       .delete(storefrontDomains)
       .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")));
 
-    // Register immediately active — we own maxboostermusic.com and the DNS auto-resolves it
+    // Register — immediately active (provisioned via Max Booster's managed DNS)
     await db.insert(storefrontDomains).values({
       storefrontId,
       domain,
@@ -145,7 +145,7 @@ router.post("/platform/claim", async (req, res) => {
       isPrimary: true,
     });
 
-    logger.info(`[domains] Platform subdomain claimed: ${domain} → storefront ${storefrontId}`);
+    logger.info(`[domains] Free domain claimed: ${domain} → storefront ${storefrontId}`);
     return res.json({ ok: true, domain, url: `https://${domain}` });
   } catch (err: any) {
     logger.warn("[domains] platform claim error:", err);

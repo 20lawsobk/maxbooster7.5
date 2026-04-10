@@ -56,7 +56,7 @@ import {
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 import { StorefrontDnsZoneManager } from './StorefrontDnsZoneManager';
-import { validatePlatformHandle } from '@shared/domainValidation';
+import { validateFreeDomain, SUPPORTED_TLDS } from '@shared/domainValidation';
 
 interface StorefrontTemplate {
   id: string;
@@ -178,11 +178,12 @@ export default function StorefrontBuilder() {
   const [newDnsZoneDomain, setNewDnsZoneDomain] = useState('');
   const [addedDnsZone, setAddedDnsZone] = useState<{ id: string; domain: string; nameserver1: string; nameserver2: string } | null>(null);
 
-  // Platform subdomain (.maxboostermusic.com) — free with subscription
-  const [platformHandle, setPlatformHandle] = useState('');
-  const [platformHandleError, setPlatformHandleError] = useState<string | null>(null);
-  const [platformHandleAvailable, setPlatformHandleAvailable] = useState<boolean | null>(null);
-  const [checkingPlatformHandle, setCheckingPlatformHandle] = useState(false);
+  // Free domain — user picks any full domain (e.g. mybeats.com), included with subscription
+  const [freeDomainSld, setFreeDomainSld] = useState('');
+  const [freeDomainTld, setFreeDomainTld] = useState('.com');
+  const [freeDomainError, setFreeDomainError] = useState<string | null>(null);
+  const [freeDomainAvailable, setFreeDomainAvailable] = useState<boolean | null>(null);
+  const [checkingFreeDomain, setCheckingFreeDomain] = useState(false);
   const [claimedPlatformDomain, setClaimedPlatformDomain] = useState<string | null>(null);
 
   const [customization, setCustomization] = useState<Storefront['customization']>({
@@ -562,19 +563,17 @@ export default function StorefrontBuilder() {
   useEffect(() => {
     if (existingPlatformData?.domain) {
       setClaimedPlatformDomain(existingPlatformData.domain);
-      const handle = existingPlatformData.domain.replace('.maxboostermusic.com', '');
-      setPlatformHandle(handle);
     }
   }, [existingPlatformData]);
 
   const claimPlatformDomainMutation = useMutation({
-    mutationFn: (data: { handle: string; storefrontId: string }) =>
+    mutationFn: (data: { sld: string; tld: string; storefrontId: string }) =>
       apiRequest('POST', '/api/storefront-domains/platform/claim', data).then(r => r.json()),
     onSuccess: (data) => {
       if (data.ok) {
         setClaimedPlatformDomain(data.domain);
         toast({
-          title: '🎉 Your Domain is Live!',
+          title: 'Your Domain is Live!',
           description: `${data.domain} is now active and pointing to your store.`,
         });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains/platform', selectedStorefront?.id] });
@@ -587,20 +586,23 @@ export default function StorefrontBuilder() {
     },
   });
 
-  const checkPlatformHandleAvailability = async (handle: string) => {
-    if (!handle || handle.length < 2) {
-      setPlatformHandleAvailable(null);
+  const checkFreeDomainAvailability = async (sld: string, tld: string) => {
+    const v = validateFreeDomain(sld, tld);
+    if (!v.valid) {
+      setFreeDomainError(v.error ?? null);
+      setFreeDomainAvailable(null);
       return;
     }
-    setCheckingPlatformHandle(true);
+    setCheckingFreeDomain(true);
     try {
-      const response = await apiRequest('POST', '/api/storefront-domains/platform/check', { handle });
+      const response = await apiRequest('POST', '/api/storefront-domains/platform/check', { sld, tld });
       const data = await response.json();
-      setPlatformHandleAvailable(data.available ?? false);
+      setFreeDomainAvailable(data.available ?? false);
+      if (!data.available) setFreeDomainError('This domain is already taken.');
     } catch {
-      setPlatformHandleAvailable(null);
+      setFreeDomainAvailable(null);
     } finally {
-      setCheckingPlatformHandle(false);
+      setCheckingFreeDomain(false);
     }
   };
 
@@ -1077,7 +1079,7 @@ export default function StorefrontBuilder() {
                             <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide">Included</span>
                           </div>
                           <p className="text-sm text-muted-foreground">
-                            Claim <span className="font-mono font-semibold">yourname.maxboostermusic.com</span> — no external DNS setup needed, works immediately
+                            Choose any domain name and extension — fully yours, managed by Max Booster DNS
                           </p>
                         </div>
                         {claimedPlatformDomain && (
@@ -1104,47 +1106,73 @@ export default function StorefrontBuilder() {
                             </button>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Your store is live at <a href={`https://${claimedPlatformDomain}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 underline font-medium">https://{claimedPlatformDomain}</a>. Powered by Max Booster's built-in DNS — no registrar visit needed.
+                            Your store is live at{' '}
+                            <a href={`https://${claimedPlatformDomain}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 underline font-medium">
+                              https://{claimedPlatformDomain}
+                            </a>
                           </p>
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => {
                               setClaimedPlatformDomain(null);
-                              setPlatformHandle('');
-                              setPlatformHandleAvailable(null);
+                              setFreeDomainSld('');
+                              setFreeDomainAvailable(null);
+                              setFreeDomainError(null);
                             }}
                           >
-                            Change domain name
+                            Change domain
                           </Button>
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <div className="flex items-center gap-0 rounded-lg border border-input overflow-hidden focus-within:ring-1 focus-within:ring-purple-500">
+                          {/* Domain name + TLD selector */}
+                          <div className="flex items-stretch rounded-lg border border-input overflow-hidden focus-within:ring-1 focus-within:ring-purple-500">
                             <input
                               type="text"
-                              value={platformHandle}
+                              value={freeDomainSld}
                               onChange={(e) => {
                                 const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-                                setPlatformHandle(raw);
-                                setPlatformHandleAvailable(null);
+                                setFreeDomainSld(raw);
+                                setFreeDomainAvailable(null);
                                 if (!raw) {
-                                  setPlatformHandleError(null);
+                                  setFreeDomainError(null);
                                 } else {
-                                  const v = validatePlatformHandle(raw);
-                                  setPlatformHandleError(v.valid ? null : (v.error ?? null));
+                                  const v = validateFreeDomain(raw, freeDomainTld);
+                                  setFreeDomainError(v.valid ? null : (v.error ?? null));
                                 }
                               }}
-                              placeholder="yourname"
-                              className="flex-1 px-3 py-2 text-sm bg-transparent outline-none"
+                              placeholder="mybeats"
+                              className="flex-1 px-3 py-2 text-sm bg-transparent outline-none min-w-0"
                               maxLength={63}
                             />
-                            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-l border-input font-mono whitespace-nowrap">.maxboostermusic.com</span>
+                            <select
+                              value={freeDomainTld}
+                              onChange={(e) => {
+                                setFreeDomainTld(e.target.value);
+                                setFreeDomainAvailable(null);
+                                if (freeDomainSld) {
+                                  const v = validateFreeDomain(freeDomainSld, e.target.value);
+                                  setFreeDomainError(v.valid ? null : (v.error ?? null));
+                                }
+                              }}
+                              className="border-l border-input bg-muted px-2 py-2 text-sm font-mono text-muted-foreground outline-none cursor-pointer"
+                            >
+                              {SUPPORTED_TLDS.map(tld => (
+                                <option key={tld} value={tld}>{tld}</option>
+                              ))}
+                            </select>
                           </div>
 
-                          {platformHandleError && (
+                          {freeDomainSld && !freeDomainError && (
+                            <p className="text-xs text-muted-foreground font-mono">
+                              {freeDomainSld}{freeDomainTld}
+                            </p>
+                          )}
+
+                          {freeDomainError && (
                             <p className="text-xs text-red-600 flex items-center gap-1">
-                              <AlertCircle className="w-3 h-3 flex-shrink-0" /> {platformHandleError}
+                              <AlertCircle className="w-3 h-3 flex-shrink-0" /> {freeDomainError}
                             </p>
                           )}
 
@@ -1152,34 +1180,36 @@ export default function StorefrontBuilder() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => checkPlatformHandleAvailability(platformHandle)}
-                              disabled={!platformHandle || !!platformHandleError || checkingPlatformHandle}
+                              onClick={() => checkFreeDomainAvailability(freeDomainSld, freeDomainTld)}
+                              disabled={!freeDomainSld || !!freeDomainError || checkingFreeDomain}
                             >
-                              {checkingPlatformHandle ? 'Checking...' : 'Check Availability'}
+                              {checkingFreeDomain ? 'Checking...' : 'Check Availability'}
                             </Button>
-                            {!platformHandleError && platformHandleAvailable !== null && (
-                              <span className={`text-sm font-medium flex items-center gap-1 ${platformHandleAvailable ? 'text-green-600' : 'text-red-600'}`}>
-                                {platformHandleAvailable
-                                  ? <><CheckCircle className="w-4 h-4" /> Available — claim it!</>
+                            {!freeDomainError && freeDomainAvailable !== null && (
+                              <span className={`text-sm font-medium flex items-center gap-1 ${freeDomainAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                                {freeDomainAvailable
+                                  ? <><CheckCircle className="w-4 h-4" /> Available!</>
                                   : <><AlertCircle className="w-4 h-4" /> Already taken</>
                                 }
                               </span>
                             )}
                           </div>
 
-                          {platformHandleAvailable && (
+                          {freeDomainAvailable && (
                             <Button
                               size="sm"
                               className="bg-purple-600 hover:bg-purple-700 text-white w-full"
                               onClick={() => {
-                                if (selectedStorefront && platformHandle) {
-                                  claimPlatformDomainMutation.mutate({ handle: platformHandle, storefrontId: selectedStorefront.id });
+                                if (selectedStorefront && freeDomainSld) {
+                                  claimPlatformDomainMutation.mutate({ sld: freeDomainSld, tld: freeDomainTld, storefrontId: selectedStorefront.id });
                                 }
                               }}
                               disabled={claimPlatformDomainMutation.isPending}
                             >
                               <Globe className="w-4 h-4 mr-2" />
-                              {claimPlatformDomainMutation.isPending ? 'Activating...' : `Claim ${platformHandle}.maxboostermusic.com`}
+                              {claimPlatformDomainMutation.isPending
+                                ? 'Activating...'
+                                : `Claim ${freeDomainSld}${freeDomainTld}`}
                             </Button>
                           )}
                         </div>
