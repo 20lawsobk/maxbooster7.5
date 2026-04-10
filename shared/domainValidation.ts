@@ -1,103 +1,134 @@
 /**
- * Full-domain validation — RFC 1035 + RFC 1123 + professional registrar rules
+ * Domain validation — RFC 1035 + RFC 1123 + professional provider rules
  *
- * Used by both server (storefrontDomains route) and client (StorefrontBuilder).
- * Rules match GoDaddy / Namecheap / Cloudflare Registrar behaviour for
- * second-level domain names (e.g. "mybeats.com", "johnsmith.music").
+ * Two validators:
+ *  • validatePlatformHandle — for the free automatic subdomain (*.maxboostermusic.com)
+ *  • validateCustomDomain   — for user-owned domains connected via "Bring Your Own Domain"
  */
 
-// ─── Supported TLDs offered to users ────────────────────────────────────────
-export const SUPPORTED_TLDS = [
-  ".com", ".net", ".org", ".io", ".co", ".me",
-  ".music", ".studio", ".band", ".audio", ".fm",
-  ".live", ".pro", ".media", ".tv", ".art", ".store",
-  ".online", ".site", ".info", ".biz",
-] as const;
+export const PLATFORM_DOMAIN = "maxboostermusic.com";
+export const PLATFORM_NS1    = "ns1.maxboostermusic.com";
+export const PLATFORM_NS2    = "ns2.maxboostermusic.com";
 
-export type SupportedTLD = typeof SUPPORTED_TLDS[number];
-
-// ─── Reserved SLD names ──────────────────────────────────────────────────────
-// Blocked at the second-level regardless of TLD — mirrors major registrar policy.
-const RESERVED_SLDS = new Set([
-  // IANA / RFC reserved
-  "localhost", "example", "test", "invalid", "local",
-  // Infrastructure abuse
-  "ns", "ns1", "ns2", "ns3", "ns4", "dns", "mx", "mail",
-  "ftp", "smtp", "pop", "pop3", "imap", "webmail",
-  // Admin / brand squatting
-  "admin", "administrator", "root", "cpanel", "whm",
-  "hostmaster", "postmaster", "abuse", "noc", "security",
-  // Platform / app names (cannot impersonate major brands)
-  "google", "youtube", "facebook", "instagram", "twitter",
-  "tiktok", "linkedin", "spotify", "apple", "microsoft",
-  "amazon", "netflix", "soundcloud", "beatstars", "airbit",
-  // Max Booster reserved
-  "maxbooster", "maxboostermusic", "blawz", "blawzmusic",
-]);
-
-// ─── Types ───────────────────────────────────────────────────────────────────
-export interface DomainValidationResult {
-  valid: boolean;
-  error?: string;
-  /** Normalised SLD (lowercase, trimmed) when valid. */
-  sld?: string;
-  /** Full domain (sld + tld) when valid. */
-  domain?: string;
-}
-
-// ─── Label-level rules (RFC 1123) ────────────────────────────────────────────
+// ─── Shared label-level rules (RFC 1123) ─────────────────────────────────────
 function validateLabel(label: string): string | null {
-  if (label.length === 0) return "Domain parts cannot be empty.";
-  if (label.length > 63) return `Each part of the domain cannot exceed 63 characters (DNS limit).`;
-  if (!/^[a-z0-9-]+$/.test(label)) return "Only letters (a–z), digits (0–9), and hyphens are allowed.";
-  if (label.startsWith("-") || label.endsWith("-")) return "Domain parts cannot start or end with a hyphen.";
-  if (label.includes("--")) return 'Consecutive hyphens ("--") are not allowed.';
-  if (/^\d+$/.test(label)) return "Domain parts cannot be all digits.";
+  if (!label)                         return "Cannot be empty.";
+  if (label.length > 63)              return "Cannot exceed 63 characters (DNS label limit).";
+  if (!/^[a-z0-9-]+$/.test(label))   return "Only letters (a–z), digits (0–9), and hyphens are allowed.";
+  if (label.startsWith("-") || label.endsWith("-"))
+                                      return "Cannot start or end with a hyphen.";
+  if (label.includes("--"))           return 'Consecutive hyphens ("--") are not allowed.';
+  if (/^\d+$/.test(label))            return "Cannot be all digits.";
   return null;
 }
 
-// ─── Main export ─────────────────────────────────────────────────────────────
+// ─── Reserved platform handles ───────────────────────────────────────────────
+const RESERVED_HANDLES = new Set([
+  "ns", "ns1", "ns2", "ns3", "ns4", "ns5", "ns6", "dns", "mx", "mx1", "mx2",
+  "www", "ftp", "smtp", "pop", "pop3", "imap", "mail", "email", "webmail",
+  "admin", "administrator", "root", "system", "server", "cpanel", "whm",
+  "host", "hostmaster", "postmaster", "abuse", "noc",
+  "api", "app", "auth", "login", "signin", "signup", "register", "account",
+  "dashboard", "portal", "panel", "control", "manage",
+  "support", "help", "docs", "status", "health",
+  "blog", "news", "press", "media", "assets", "cdn", "static",
+  "dev", "staging", "test", "beta", "alpha", "demo", "sandbox", "localhost",
+  "maxbooster", "maxboostermusic", "max", "booster",
+  "store", "shop", "market", "marketplace",
+]);
+
+// ─── Reserved SLDs for custom/BYOD domains ───────────────────────────────────
+const RESERVED_SLDS = new Set([
+  "localhost", "example", "test", "invalid", "local",
+  "ns", "ns1", "ns2", "dns", "mx", "mail", "ftp", "smtp", "pop", "imap",
+  "admin", "administrator", "root", "cpanel", "hostmaster", "postmaster", "abuse",
+  "google", "youtube", "facebook", "instagram", "twitter", "tiktok",
+  "linkedin", "spotify", "apple", "microsoft", "amazon", "netflix",
+  "soundcloud", "beatstars", "airbit",
+  "maxbooster", "maxboostermusic", "blawz", "blawzmusic",
+]);
+
+// ─── Shared result type ───────────────────────────────────────────────────────
+export interface DomainValidationResult {
+  valid: boolean;
+  error?: string;
+  /** Normalised value (handle or SLD) when valid. */
+  value?: string;
+  /** Full domain string when valid. */
+  domain?: string;
+}
+
+// ─── 1. Platform handle (automatic, *.maxboostermusic.com) ───────────────────
 /**
- * Validate a full domain name the user wants to register as their free domain.
- * Accepts the SLD (name part) and TLD (e.g. ".com") separately, which maps
- * naturally to the split input in the UI.
- *
- * @example
- * validateFreeDomain("mybeats", ".com")   // { valid: true, domain: "mybeats.com" }
- * validateFreeDomain("-bad", ".io")        // { valid: false, error: "..." }
+ * Validates the subdomain handle for the free automatic domain.
+ * E.g. "b-lawzmusic" → b-lawzmusic.maxboostermusic.com (live immediately).
  */
-export function validateFreeDomain(rawSld: string, tld: string): DomainValidationResult {
-  if (!rawSld || typeof rawSld !== "string") {
+export function validatePlatformHandle(raw: string): DomainValidationResult {
+  if (!raw || typeof raw !== "string") {
+    return { valid: false, error: "A name is required." };
+  }
+  const handle = raw.toLowerCase().trim();
+
+  if (handle.length < 3)  return { valid: false, error: "Must be at least 3 characters." };
+
+  const err = validateLabel(handle);
+  if (err)                return { valid: false, error: err };
+
+  if (RESERVED_HANDLES.has(handle)) {
+    return { valid: false, error: `"${handle}" is reserved and cannot be used.` };
+  }
+
+  return { valid: true, value: handle, domain: `${handle}.${PLATFORM_DOMAIN}` };
+}
+
+/** Full FQDN for a validated platform handle. */
+export function toPlatformFQDN(handle: string): string {
+  return `${handle}.${PLATFORM_DOMAIN}`;
+}
+
+// ─── 2. Custom / BYOD domain (requires user-side DNS config) ─────────────────
+/**
+ * Validates a user-owned full domain (e.g. "mybeats.com") for the
+ * "Bring Your Own Domain" feature. The user must point their domain's
+ * NS records to PLATFORM_NS1 / PLATFORM_NS2 themselves.
+ */
+export function validateCustomDomain(raw: string): DomainValidationResult {
+  if (!raw || typeof raw !== "string") {
     return { valid: false, error: "A domain name is required." };
   }
 
-  const sld = rawSld.toLowerCase().trim();
+  const domain = raw.toLowerCase().trim().replace(/\.$/, "");
+  const parts  = domain.split(".");
 
-  // SLD length: registrars typically enforce 2–63 characters
-  if (sld.length < 2) {
-    return { valid: false, error: "Must be at least 2 characters." };
+  if (parts.length < 2) {
+    return { valid: false, error: "Must include a name and an extension (e.g. mybeats.com)." };
   }
 
-  // Label-level RFC validation
-  const labelError = validateLabel(sld);
-  if (labelError) return { valid: false, error: labelError };
+  const tld = parts[parts.length - 1];
+  const sld = parts[parts.length - 2];
 
-  // TLD must be one of the supported options
-  const normalTld = (tld || "").toLowerCase().trim();
-  if (!SUPPORTED_TLDS.includes(normalTld as SupportedTLD)) {
-    return { valid: false, error: "Please select a valid domain extension." };
+  // Validate every label
+  for (const part of parts) {
+    const err = validateLabel(part);
+    if (err) return { valid: false, error: err };
   }
 
-  // Reserved name check
+  // TLD must be letters only (e.g. "com", "music") — no all-digit TLDs
+  if (/^\d+$/.test(tld)) {
+    return { valid: false, error: "The domain extension cannot be all digits." };
+  }
+
+  if (tld.length < 2) {
+    return { valid: false, error: "The domain extension must be at least 2 characters." };
+  }
+
   if (RESERVED_SLDS.has(sld)) {
-    return { valid: false, error: `"${sld}" is a reserved name and cannot be registered.` };
+    return { valid: false, error: `"${sld}" is a reserved name and cannot be used.` };
   }
 
-  // Total FQDN length (RFC 1035 §2.3.4: ≤253 octets, including the trailing dot)
-  const domain = `${sld}${normalTld}`;
   if (domain.length > 253) {
-    return { valid: false, error: "The full domain name cannot exceed 253 characters." };
+    return { valid: false, error: "The full domain cannot exceed 253 characters." };
   }
 
-  return { valid: true, sld, domain };
+  return { valid: true, value: sld, domain };
 }

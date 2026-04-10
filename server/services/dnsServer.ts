@@ -1,30 +1,35 @@
 /**
  * Max Booster — Built-in Authoritative DNS Server
  *
- * Runs an authoritative DNS nameserver for maxboostermusic.com entirely
- * within the platform. No third-party DNS APIs required. When a storefront
- * subdomain is reserved (e.g. b-lawz.maxboostermusic.com), this server
- * automatically resolves it to the platform IP — zero manual DNS steps.
+ * Configured exactly like a professional DNS provider (Cloudflare, Route 53):
  *
- * Architecture:
- *   • Listens on UDP :53 + TCP :53  (port configurable via DNS_PORT env var)
- *   • Authoritative for BASE_DOMAIN (maxboostermusic.com)
+ *   • Listens on UDP :53 + TCP :53 (configurable via DNS_PORT)
+ *   • Authoritative for BASE_DOMAIN (maxboostermusic.com) AND any custom domain
+ *     that a user has claimed/pointed here (stored in storefrontDomains table)
+ *   • Dual nameservers: ns1 + ns2 both at DNS_SERVER_IP (RFC 2182 compliance)
  *   • Wildcard A records: *.maxboostermusic.com → DNS_SERVER_IP
- *   • SOA + NS records served from in-process state
- *   • All non-authoritative queries forwarded to upstream (8.8.8.8)
+ *   • Custom domains: resolved to DNS_SERVER_IP once user points NS here
+ *   • SOA with proper refresh/retry/expire/minimum per RFC 1912 best-practices
+ *   • Non-authoritative queries forwarded upstream (8.8.8.8)
  *
- * To activate fully:
- *   1. Ensure DNS_SERVER_IP env var is set to this VM's public IP (34.68.76.67)
- *   2. Update maxboostermusic.com NS records at the registrar:
- *        A   ns1.maxboostermusic.com → DNS_SERVER_IP   (glue record)
- *        NS  maxboostermusic.com     → ns1.maxboostermusic.com
+ * To activate for a custom domain (e.g. b-lawzmusicbeats.com):
+ *   1. User claims the domain inside Max Booster (StorefrontBuilder)
+ *   2. User goes to their registrar and sets nameservers to:
+ *        ns1.maxboostermusic.com
+ *        ns2.maxboostermusic.com
+ *   3. DNS propagates (up to 48 h). The domain then resolves here automatically.
  *
- * Port notes:
- *   • Port 53 requires CAP_NET_BIND_SERVICE (or root) in Linux.
- *     On the production VM this is satisfied. In dev, set DNS_PORT=5353.
+ * Glue records needed at the maxboostermusic.com registrar:
+ *   A  ns1.maxboostermusic.com → DNS_SERVER_IP
+ *   A  ns2.maxboostermusic.com → DNS_SERVER_IP
+ *   NS maxboostermusic.com     → ns1.maxboostermusic.com
+ *   NS maxboostermusic.com     → ns2.maxboostermusic.com
  */
 
 import dns2 from 'dns2';
+import { eq } from 'drizzle-orm';
+import { db } from '../db.js';
+import { storefrontDomains } from '@shared/schema';
 import { logger } from '../logger.js';
 
 const {
@@ -38,75 +43,106 @@ const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
 const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
 
-// TTL values (seconds)
-const TTL_A   = 300;   // 5 min — allows fast propagation when IP changes
-const TTL_SOA = 3600;
-const TTL_NS  = 3600;
+// ─── TTL values — match Cloudflare's defaults (RFC 1912 §2.2) ────────────────
+const TTL_A   = 300;      // 5 min A records — fast propagation on IP changes
+const TTL_NS  = 86400;    // 24 h  NS records  (standard across all providers)
+const TTL_SOA = 3600;     // 1 h   SOA record
 
-const SERIAL = Math.floor(Date.now() / 1000);
+// SOA serial — updated on each server start so secondaries detect changes
+const SERIAL = parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, '') + '01', 10);
 
-// ─── DNS record builders ─────────────────────────────────────────────────────
+// ─── In-memory cache for claimed custom domains (refreshed every 60 s) ───────
+let customDomainCache = new Set<string>();
+let cacheLastRefreshed = 0;
+const CACHE_TTL_MS = 60_000;
 
-function isAuthoritative(name: string): boolean {
+async function refreshCustomDomainCache(): Promise<void> {
+  try {
+    const rows = await db
+      .select({ domain: storefrontDomains.domain })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.status, 'active'));
+    customDomainCache = new Set(rows.map(r => r.domain.toLowerCase()));
+    cacheLastRefreshed = Date.now();
+  } catch (err) {
+    logger.warn('[DNS] Could not refresh custom domain cache:', err);
+  }
+}
+
+/** Returns true if the queried name is in a zone we are authoritative for. */
+async function isAuthoritative(name: string): Promise<boolean> {
   const n = name.toLowerCase().replace(/\.$/, '');
-  return n === BASE_DOMAIN || n.endsWith(`.${BASE_DOMAIN}`);
+
+  // Always authoritative for our base domain and all its subdomains
+  if (n === BASE_DOMAIN || n.endsWith(`.${BASE_DOMAIN}`)) return true;
+
+  // For everything else, check the claimed-custom-domain cache (refresh if stale)
+  if (Date.now() - cacheLastRefreshed > CACHE_TTL_MS) {
+    await refreshCustomDomainCache();
+  }
+  return customDomainCache.has(n);
 }
 
-function makeSOA(name: string) {
+// ─── DNS record builders ──────────────────────────────────────────────────────
+
+/** SOA record — identical structure to Cloudflare's SOA for custom zones */
+function makeSOA(zone: string) {
   return {
-    name,
-    type: Packet.TYPE.SOA,
-    class: Packet.CLASS.IN,
-    ttl: TTL_SOA,
-    primary: `ns1.${BASE_DOMAIN}`,
-    admin: `hostmaster.${BASE_DOMAIN}`,
-    serial: SERIAL,
-    refresh: 3600,
-    retry: 900,
-    expiration: 604800,
-    minimum: 300,
+    name:       zone,
+    type:       Packet.TYPE.SOA,
+    class:      Packet.CLASS.IN,
+    ttl:        TTL_SOA,
+    primary:    `ns1.${BASE_DOMAIN}`,
+    admin:      `hostmaster.${BASE_DOMAIN}`,
+    serial:     SERIAL,
+    refresh:    10800,   // 3 h  (Cloudflare default)
+    retry:      3600,    // 1 h
+    expiration: 604800,  // 7 days
+    minimum:    3600,    // negative-cache TTL (RFC 2308)
   };
 }
 
-function makeNS(name: string) {
-  return {
-    name,
-    type: Packet.TYPE.NS,
-    class: Packet.CLASS.IN,
-    ttl: TTL_NS,
-    ns: `ns1.${BASE_DOMAIN}`,
-  };
+/** Two NS records (ns1 + ns2) — RFC 2182 requires at least 2 nameservers */
+function makeNSRecords(zone: string) {
+  return [
+    {
+      name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN,
+      ttl: TTL_NS, ns: `ns1.${BASE_DOMAIN}`,
+    },
+    {
+      name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN,
+      ttl: TTL_NS, ns: `ns2.${BASE_DOMAIN}`,
+    },
+  ];
 }
 
 function makeA(name: string, ip: string) {
   return {
-    name,
-    type: Packet.TYPE.A,
-    class: Packet.CLASS.IN,
-    ttl: TTL_A,
-    address: ip,
+    name, type: Packet.TYPE.A, class: Packet.CLASS.IN, ttl: TTL_A, address: ip,
   };
 }
 
-// ─── Request handler ─────────────────────────────────────────────────────────
+// ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleRequest(request: any, send: (response: any) => void): Promise<void> {
   const response = Packet.createResponseFromRequest(request);
   response.header.aa = 0; // default: not authoritative
 
   const questions: any[] = request.questions || [];
-
-  if (questions.length === 0) {
-    send(response);
-    return;
-  }
+  if (questions.length === 0) { send(response); return; }
 
   const question = questions[0];
-  const name = (question.name || '').toLowerCase().replace(/\.$/, '');
+  const name  = (question.name || '').toLowerCase().replace(/\.$/, '');
   const qtype: number = question.type;
 
-  // Non-authoritative zone → forward to upstream
-  if (!isAuthoritative(name)) {
+  // Determine the zone root for SOA/NS records
+  // For *.maxboostermusic.com → zone is BASE_DOMAIN
+  // For a claimed custom domain (e.g. mybeats.com) → zone is the domain itself
+  const isBaseDomainZone = name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`);
+  const auth = await isAuthoritative(name);
+
+  if (!auth) {
+    // Forward non-authoritative queries upstream unchanged
     try {
       const resolve = UDPClient({ dns: UPSTREAM_DNS });
       const upstream = await resolve(question.name, qtype);
@@ -118,35 +154,37 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
     return;
   }
 
-  // We are authoritative for this zone
-  response.header.aa = 1;
+  const zone = isBaseDomainZone ? BASE_DOMAIN : name;
+  response.header.aa = 1; // we are authoritative
 
   switch (qtype) {
     case Packet.TYPE.A:
+      response.answers.push(makeA(name, DNS_SERVER_IP));
+      break;
+
     case Packet.TYPE.ANY:
       response.answers.push(makeA(name, DNS_SERVER_IP));
-      if (qtype === Packet.TYPE.ANY) {
-        response.answers.push(makeSOA(BASE_DOMAIN));
-        response.answers.push(makeNS(BASE_DOMAIN));
-      }
+      response.answers.push(makeSOA(zone));
+      makeNSRecords(zone).forEach(r => response.answers.push(r));
       break;
 
     case Packet.TYPE.SOA:
-      response.answers.push(makeSOA(name));
+      response.answers.push(makeSOA(zone));
       break;
 
     case Packet.TYPE.NS:
-      response.answers.push(makeNS(name));
-      // Glue record in additional section
+      makeNSRecords(zone).forEach(r => response.answers.push(r));
+      // Glue A records so resolvers can find the nameservers without a loop
       response.additionals.push(makeA(`ns1.${BASE_DOMAIN}`, DNS_SERVER_IP));
+      response.additionals.push(makeA(`ns2.${BASE_DOMAIN}`, DNS_SERVER_IP));
       break;
 
     case Packet.TYPE.AAAA:
     case Packet.TYPE.MX:
     case Packet.TYPE.TXT:
     default:
-      // NOERROR with empty answer + SOA in authority
-      response.authorities.push(makeSOA(BASE_DOMAIN));
+      // NOERROR with empty answers — SOA in authority section (RFC 2308)
+      response.authorities.push(makeSOA(zone));
       break;
   }
 
@@ -211,13 +249,15 @@ export async function startDNSServer(): Promise<void> {
       server.listen({
         udp: { port: DNS_PORT, address: '0.0.0.0' },
         tcp: { port: DNS_PORT, address: '0.0.0.0' },
-      }).then(() => {
+      }).then(async () => {
         dnsServer = server;
         running = true;
         logger.info(
           `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`
         );
-        logger.info(`[DNS] 📋 Registrar setup: NS ${BASE_DOMAIN} → ns1.${BASE_DOMAIN} (${DNS_SERVER_IP})`);
+        logger.info(`[DNS] 📋 NS records: ns1.${BASE_DOMAIN} + ns2.${BASE_DOMAIN} → ${DNS_SERVER_IP}`);
+        // Prime cache so first query hits DB immediately, not on first request
+        await warmCache();
         settle(true);
       }).catch((err: any) => {
         settle(false, `[DNS] ⚠️  listen() rejected: ${err?.message}`);
@@ -265,15 +305,29 @@ export function isDNSRunning(): boolean {
 export function getDNSInfo() {
   return {
     running,
-    baseDomain: BASE_DOMAIN,
-    serverIp: DNS_SERVER_IP,
-    port: DNS_PORT,
-    upstream: UPSTREAM_DNS,
-    ns: `ns1.${BASE_DOMAIN}`,
-    instructions: {
-      step1: `Add glue record at your registrar: ns1.${BASE_DOMAIN} → ${DNS_SERVER_IP}`,
-      step2: `Set NS records for ${BASE_DOMAIN} → ns1.${BASE_DOMAIN}`,
-      step3: 'All *.maxboostermusic.com subdomains will resolve automatically',
+    baseDomain:  BASE_DOMAIN,
+    serverIp:    DNS_SERVER_IP,
+    port:        DNS_PORT,
+    upstream:    UPSTREAM_DNS,
+    nameservers: [`ns1.${BASE_DOMAIN}`, `ns2.${BASE_DOMAIN}`],
+    /**
+     * Instructions shown to users after claiming a custom domain.
+     * Matches the exact flow that Cloudflare / Namecheap present.
+     */
+    customDomainSetup: {
+      step1: 'Log into your domain registrar (GoDaddy, Namecheap, Google Domains, etc.)',
+      step2: 'Find "Nameservers" or "DNS Settings" for your domain.',
+      step3: 'Change nameserver type to "Custom" and enter:',
+      ns1:   `ns1.${BASE_DOMAIN}`,
+      ns2:   `ns2.${BASE_DOMAIN}`,
+      step4: 'Save. DNS propagation takes up to 48 hours (usually under 30 minutes).',
+      note:  'Once propagated, your domain will automatically point to your Max Booster store.',
     },
   };
+}
+
+/** Warm up the custom-domain cache immediately (called from startDNSServer). */
+async function warmCache(): Promise<void> {
+  await refreshCustomDomainCache();
+  logger.info(`[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`);
 }

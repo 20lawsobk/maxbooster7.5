@@ -1100,27 +1100,51 @@ export default function StorefrontBuilder() {
                       </div>
 
                       {claimedPlatformDomain ? (
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 rounded-lg px-3 py-2">
-                            <Globe className="w-4 h-4 text-green-600 flex-shrink-0" />
+                        <div className="space-y-3">
+                          {/* Domain row */}
+                          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-purple-300 dark:border-purple-700 rounded-lg px-3 py-2">
+                            <Globe className="w-4 h-4 text-purple-600 flex-shrink-0" />
                             <span className="font-mono font-semibold text-sm flex-1">{claimedPlatformDomain}</span>
                             <button
                               className="text-muted-foreground hover:text-foreground"
                               title="Copy domain"
                               onClick={() => {
-                                navigator.clipboard.writeText(`https://${claimedPlatformDomain}`);
-                                toast({ title: 'Copied!', description: `https://${claimedPlatformDomain} is in your clipboard.` });
+                                navigator.clipboard.writeText(claimedPlatformDomain);
+                                toast({ title: 'Copied!', description: `${claimedPlatformDomain} is in your clipboard.` });
                               }}
                             >
                               <Copy className="w-4 h-4" />
                             </button>
                           </div>
-                          <p className="text-xs text-muted-foreground">
-                            Your store is live at{' '}
-                            <a href={`https://${claimedPlatformDomain}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 underline font-medium">
-                              https://{claimedPlatformDomain}
-                            </a>
-                          </p>
+
+                          {/* Nameserver setup — identical flow to Cloudflare / Namecheap */}
+                          <div className="rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-50/60 dark:bg-amber-950/20 p-3 space-y-2">
+                            <p className="text-xs font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> Action required — update your nameservers
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Go to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.), find <strong>Nameservers</strong>, change to <strong>Custom</strong>, and enter:
+                            </p>
+                            {(['ns1.maxboostermusic.com', 'ns2.maxboostermusic.com'] as const).map((ns) => (
+                              <div key={ns} className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-input rounded px-2 py-1">
+                                <span className="font-mono text-xs flex-1 select-all">{ns}</span>
+                                <button
+                                  className="text-muted-foreground hover:text-foreground flex-shrink-0"
+                                  title={`Copy ${ns}`}
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(ns);
+                                    toast({ title: 'Copied!', description: `${ns} is in your clipboard.` });
+                                  }}
+                                >
+                                  <Copy className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                            <p className="text-xs text-muted-foreground">
+                              DNS changes propagate globally in <strong>up to 48 hours</strong> (usually under 30 minutes). Once live, {claimedPlatformDomain} will point to your store automatically.
+                            </p>
+                          </div>
+
                           <Button
                             size="sm"
                             variant="outline"
