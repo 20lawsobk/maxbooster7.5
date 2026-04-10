@@ -100,6 +100,7 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 
 | Fix | File(s) Changed | Details |
 |---|---|---|
+| DAW audio waveform + playback sync | `UltimateDAW.tsx`, `unifiedStoreAdapter.ts`, `hooks/useDAWAudioPlayback.ts` | Replaced plain clip boxes with `WaveformClip` component rendering actual decoded waveforms grid-aligned to bars/beats. Created `useDAWAudioPlayback` hook that schedules `AudioBufferSourceNode` objects via Web Audio API when transport plays. Added drag-and-drop audio file upload onto tracks (falls back to `URL.createObjectURL` if server upload fails). Fixed `addTrack`/`addAudioClip` call signatures and exposed `addAudioClip`/`updateAudioClip`/`removeAudioClip` in the unified store adapter. |
 | `stalled.forEach` TypeError | `server/lib/pdimClient.ts` | Added `_normalizeLuaResult()` — converts wasmoon 1-indexed Lua table objects `{1:"x",2:"y"}` to JS arrays before returning to BullMQ callers. |
 | `favicon.ico` 404 | `client/public/` + `client/index.html` | Copied `favicon.svg` → `favicon.ico` + `favicon.png`; added all three `<link rel="icon">` tags. |
 | Vite scan failure for `@icons-pack/react-simple-icons` | `vite.config.ts` | Added to `optimizeDeps.include` for eager pre-bundling. |

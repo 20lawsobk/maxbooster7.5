@@ -70,6 +70,10 @@ export interface UnifiedStoreState {
   updateTrack: (trackId: string, updates: Partial<Track>) => void;
   duplicateTrack: (trackId: string) => string;
   reorderTracks: (fromIndex: number, toIndex: number) => void;
+
+  addAudioClip: (trackId: string, clip: Omit<AudioClip, 'id'>) => string;
+  updateAudioClip: (trackId: string, clipId: string, updates: Partial<AudioClip>) => void;
+  removeAudioClip: (trackId: string, clipId: string) => void;
   
   setTrackVolume: (trackId: string, volume: number) => void;
   setTrackPan: (trackId: string, pan: number) => void;
@@ -273,6 +277,10 @@ export function useUnifiedStore(): UnifiedStoreState {
     updateTrack: newStore.updateTrack,
     duplicateTrack: newStore.duplicateTrack,
     reorderTracks: newStore.reorderTracks,
+
+    addAudioClip: newStore.addAudioClip,
+    updateAudioClip: newStore.updateAudioClip,
+    removeAudioClip: newStore.removeAudioClip,
     
     setTrackVolume: newStore.setTrackVolume,
     setTrackPan: newStore.setTrackPan,

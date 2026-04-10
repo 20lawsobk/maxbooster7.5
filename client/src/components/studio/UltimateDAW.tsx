@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef, DragEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Play, Pause, Square, Circle, SkipBack, SkipForward, Repeat,
@@ -31,10 +31,12 @@ import { PluginBrowser } from './PluginBrowser';
 import { AIMusicGenerator } from './AIMusicGenerator';
 import { LyricDisplay, type LyricLine } from './LyricDisplay';
 import { ProjectSelector } from './ProjectSelector';
+import { WaveformClip } from './WaveformClip';
 import type { FlowStateMode } from '@/hooks/useFlowStateAdapter';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectSync } from '@/hooks/useProjectSync';
+import { useDAWAudioPlayback } from '@/hooks/useDAWAudioPlayback';
 import './FlowStateTheme.css';
 
 type WorkspaceView = 'arrange' | 'mixer' | 'edit' | 'spatial' | 'launcher';
@@ -99,6 +101,10 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const [isAIMastering, setIsAIMastering] = useState(false);
   const [musicalKey, setMusicalKey] = useState('C');
   const [scale, setScale] = useState('minor');
+  const [dragOverTrackId, setDragOverTrackId] = useState<string | null>(null);
+  const [uploadingTrackId, setUploadingTrackId] = useState<string | null>(null);
+
+  useDAWAudioPlayback({ tracks, transport });
   const [lyrics, setLyrics] = useState<LyricLine[]>([
     { id: 'intro-1', text: 'Click Edit to add your lyrics...', startTime: 0, endTime: 4, type: 'intro' },
   ]);
@@ -266,7 +272,89 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       ],
     };
   }, [transport.tempo, transport.timeSignature]);
-  
+
+  const handleAudioFileDrop = useCallback(async (trackId: string, file: File, dropXPx: number) => {
+    if (!file.type.startsWith('audio/')) {
+      toast({ title: 'Unsupported file', description: 'Please drop an audio file.', variant: 'destructive' });
+      return;
+    }
+    setUploadingTrackId(trackId);
+    try {
+      const formData = new FormData();
+      formData.append('audio', file);
+      if (projectId) formData.append('projectId', projectId);
+      let sourceUrl: string;
+      try {
+        const res = await fetch('/api/studio/record/upload', { method: 'POST', body: formData });
+        if (res.ok) {
+          const json = await res.json();
+          sourceUrl = json.url || json.audioUrl || '';
+        } else {
+          sourceUrl = '';
+        }
+      } catch {
+        sourceUrl = '';
+      }
+      if (!sourceUrl) {
+        sourceUrl = URL.createObjectURL(file);
+      }
+      const pixelsPerSecond = 50 * zoom;
+      const startTime = Math.max(0, dropXPx / pixelsPerSecond);
+
+      let duration = 30;
+      try {
+        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const tempCtx = new AudioCtx();
+        const arrayBuf = await file.arrayBuffer();
+        const decoded = await tempCtx.decodeAudioData(arrayBuf);
+        duration = decoded.duration;
+        tempCtx.close();
+      } catch {
+      }
+
+      store.addAudioClip(trackId, {
+        trackId,
+        name: file.name.replace(/\.[^.]+$/, ''),
+        startTime,
+        duration,
+        sourceUrl,
+        offset: 0,
+        gain: 1,
+        fadeIn: 0,
+        fadeOut: 0,
+        color: tracks.find(t => t.id === trackId)?.color || '#4ade80',
+        muted: false,
+        locked: false,
+      });
+      toast({ title: 'Audio added', description: `"${file.name}" placed on track.` });
+    } catch (err: any) {
+      toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setUploadingTrackId(null);
+    }
+  }, [projectId, zoom, tracks, store, toast]);
+
+  const handleTrackDragOver = useCallback((e: DragEvent<HTMLDivElement>, trackId: string) => {
+    if (e.dataTransfer.types.includes('Files')) {
+      e.preventDefault();
+      setDragOverTrackId(trackId);
+    }
+  }, []);
+
+  const handleTrackDragLeave = useCallback(() => {
+    setDragOverTrackId(null);
+  }, []);
+
+  const handleTrackDrop = useCallback((e: DragEvent<HTMLDivElement>, trackId: string, trackRect: DOMRect) => {
+    e.preventDefault();
+    setDragOverTrackId(null);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const dropX = e.clientX - trackRect.left;
+      handleAudioFileDrop(trackId, file, dropX);
+    }
+  }, [handleAudioFileDrop]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -654,17 +742,21 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               <AIMusicGenerator
                 projectId={projectId}
                 onTrackGenerated={(track) => {
-                  const newTrack = store.addTrack({
-                    name: track.name || 'Generated Track',
-                    type: track.type || 'audio',
-                    color: track.color || '#8B5CF6',
-                  });
-                  if (track.audioUrl && newTrack) {
-                    store.addAudioClip(newTrack.id, {
+                  const newTrackId = store.addTrack(track.type || 'audio', track.name || 'Generated Track');
+                  if (track.audioUrl && newTrackId) {
+                    store.addAudioClip(newTrackId, {
+                      trackId: newTrackId,
                       startTime: 0,
                       duration: track.duration || 30,
-                      audioUrl: track.audioUrl,
+                      sourceUrl: track.audioUrl,
                       name: track.name || 'AI Generated',
+                      offset: 0,
+                      gain: 1,
+                      fadeIn: 0,
+                      fadeOut: 0,
+                      color: track.color || '#8B5CF6',
+                      muted: false,
+                      locked: false,
                     });
                   }
                   toast({ title: 'Track Added', description: `"${track.name || 'Generated Track'}" added to project.` });
@@ -764,18 +856,55 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                             </button>
                           </div>
                         </div>
-                        <div className="flex-1 relative bg-zinc-900/30">
+                        <div
+                          className={cn(
+                            'flex-1 relative bg-zinc-900/30 transition-colors',
+                            dragOverTrackId === track.id && 'bg-zinc-700/40 ring-2 ring-inset ring-emerald-500/50',
+                          )}
+                          onDragOver={(e) => handleTrackDragOver(e, track.id)}
+                          onDragLeave={handleTrackDragLeave}
+                          onDrop={(e) => handleTrackDrop(e, track.id, e.currentTarget.getBoundingClientRect())}
+                        >
+                          {dragOverTrackId === track.id && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                              <span className="text-xs text-emerald-400 bg-zinc-900/80 px-2 py-1 rounded">
+                                Drop audio here
+                              </span>
+                            </div>
+                          )}
+                          {uploadingTrackId === track.id && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                              <span className="text-xs text-zinc-400 bg-zinc-900/80 px-2 py-1 rounded animate-pulse">
+                                Loading…
+                              </span>
+                            </div>
+                          )}
                           {track.audioClips.map(clip => (
                             <div
                               key={clip.id}
-                              className="absolute top-2 bottom-2 rounded bg-opacity-80"
+                              className="absolute top-1 bottom-1"
                               style={{
                                 left: `${clip.startTime * 50 * zoom}px`,
-                                width: `${clip.duration * 50 * zoom}px`,
-                                backgroundColor: clip.color || track.color,
+                                width: `${Math.max(clip.duration * 50 * zoom, 20)}px`,
                               }}
                             >
-                              <div className="px-2 py-1 text-xs truncate">{clip.name}</div>
+                              <WaveformClip
+                                audioUrl={clip.sourceUrl}
+                                duration={clip.duration}
+                                startTime={clip.startTime}
+                                width={Math.max(clip.duration * 50 * zoom, 20)}
+                                height={64}
+                                color={clip.color || track.color}
+                                selected={false}
+                                muted={clip.muted || track.muted}
+                                clipName={clip.name}
+                                zoom={zoom}
+                                bpm={transport.tempo}
+                                timeSignature={transport.timeSignature}
+                                showGridLines={true}
+                                pixelsPerSecond={50}
+                                consolidatedWaveform={true}
+                              />
                             </div>
                           ))}
                         </div>
