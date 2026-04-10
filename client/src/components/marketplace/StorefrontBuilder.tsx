@@ -594,13 +594,23 @@ export default function StorefrontBuilder() {
       return;
     }
     setCheckingFreeDomain(true);
+    setFreeDomainError(null);
     try {
       const response = await apiRequest('POST', '/api/storefront-domains/platform/check', { sld, tld });
       const data = await response.json();
-      setFreeDomainAvailable(data.available ?? false);
-      if (!data.available) setFreeDomainError('This domain is already taken.');
+      if (data.available) {
+        setFreeDomainAvailable(true);
+      } else {
+        setFreeDomainAvailable(false);
+        if (data.reason === 'registered_externally') {
+          setFreeDomainError('This domain is already registered globally — it belongs to someone else.');
+        } else {
+          setFreeDomainError('This domain has already been claimed on Max Booster.');
+        }
+      }
     } catch {
       setFreeDomainAvailable(null);
+      setFreeDomainError('Could not check availability — please try again.');
     } finally {
       setCheckingFreeDomain(false);
     }

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { eq, and } from "drizzle-orm";
+import dns from "dns";
 import {
   checkManaged,
   reserveManaged,
@@ -13,6 +14,32 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { storefrontDomains, storefronts } from "@shared/schema";
 import { validateFreeDomain } from "@shared/domainValidation.js";
+
+const dnsResolve = dns.promises.resolve;
+
+/**
+ * Returns true if the domain already has real-world DNS records (NS or A/AAAA),
+ * meaning it is already registered by someone externally.
+ * A timeout prevents slow lookups from blocking the request.
+ */
+async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
+  const timeout = <T>(ms: number, promise: Promise<T>): Promise<T> =>
+    Promise.race([
+      promise,
+      new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+    ]);
+
+  // Check NS records first — set by registrars even for parked domains
+  for (const type of ["NS", "A", "AAAA"] as const) {
+    try {
+      const records = await timeout(3000, dnsResolve(domain, type));
+      if (records && records.length > 0) return true;
+    } catch {
+      // ENOTFOUND / ENODATA / timeout — keep checking next type
+    }
+  }
+  return false;
+}
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
 
@@ -71,7 +98,10 @@ router.post("/storefront/:storefrontId/unpublish", async (req, res) => {
 });
 
 // ── Free Platform Domain (user's own full domain, e.g. mybeats.com) ─────────
-// Check availability of a full domain name (no auth required)
+// Check availability of a full domain name (no auth required).
+// Performs two checks in parallel:
+//   1. Internal DB — is the domain already claimed on Max Booster?
+//   2. Real-world DNS — is the domain already registered globally?
 router.post("/platform/check", async (req, res) => {
   try {
     const { sld, tld } = req.body;
@@ -80,15 +110,60 @@ router.post("/platform/check", async (req, res) => {
       return res.status(400).json({ ok: false, available: false, error: v.error });
     }
     const domain = v.domain!;
-    const [existing] = await db
-      .select({ id: storefrontDomains.id })
-      .from(storefrontDomains)
-      .where(eq(storefrontDomains.domain, domain))
-      .limit(1);
-    return res.json({ ok: true, available: !existing, domain });
+
+    // Run DB lookup and external DNS check in parallel for speed
+    const [dbResult, externallyRegistered] = await Promise.all([
+      db.select({ id: storefrontDomains.id })
+        .from(storefrontDomains)
+        .where(eq(storefrontDomains.domain, domain))
+        .limit(1),
+      isDomainRegisteredExternally(domain),
+    ]);
+
+    if (dbResult.length > 0) {
+      return res.json({ ok: true, available: false, domain, reason: "claimed" });
+    }
+    if (externallyRegistered) {
+      return res.json({ ok: true, available: false, domain, reason: "registered_externally" });
+    }
+    return res.json({ ok: true, available: true, domain });
   } catch (err) {
     logger.warn("[domains] platform check error:", err);
     return res.status(500).json({ ok: false, available: false, error: "Internal error." });
+  }
+});
+
+// Public registry lookup — lets any external party verify if a domain is claimed on Max Booster.
+// GET /api/storefront-domains/registry/:domain
+router.get("/registry/:domain", async (req, res) => {
+  try {
+    const domain = req.params.domain?.toLowerCase().trim();
+    if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
+      return res.status(400).json({ ok: false, error: "Invalid domain." });
+    }
+    const [row] = await db
+      .select({
+        domain: storefrontDomains.domain,
+        status: storefrontDomains.status,
+        claimedAt: storefrontDomains.createdAt,
+      })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.domain, domain))
+      .limit(1);
+    if (!row) {
+      return res.json({ ok: true, claimed: false, domain });
+    }
+    return res.json({
+      ok: true,
+      claimed: true,
+      domain: row.domain,
+      status: row.status,
+      claimedAt: row.claimedAt,
+      managedBy: "Max Booster DNS (maxboostermusic.com)",
+    });
+  } catch (err) {
+    logger.warn("[domains] registry lookup error:", err);
+    return res.status(500).json({ ok: false, error: "Internal error." });
   }
 });
 
