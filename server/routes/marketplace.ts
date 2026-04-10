@@ -1301,7 +1301,7 @@ router.post('/upload', upload.fields([
 router.get('/audio/*path', async (req: Request, res: Response) => {
   try {
     let fileKey = Array.isArray(req.params.path) ? req.params.path.join('/') : req.params.path;
-    
+
     if (typeof fileKey !== 'string') {
       return res.status(400).json({ error: 'Invalid audio path' });
     }
@@ -1309,15 +1309,9 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
     if (fileKey.includes('..') || fileKey.includes('\0') || fileKey.startsWith('/')) {
       return res.status(400).json({ error: 'Invalid audio path' });
     }
-    
+
     if (fileKey.startsWith('uploads/')) {
       fileKey = fileKey.substring('uploads/'.length);
-    }
-    
-    const exists = await storageService.fileExists(fileKey);
-    if (!exists) {
-      logger.warn(`Audio file not found: ${fileKey}`);
-      return res.status(404).json({ error: 'Audio file not found' });
     }
 
     const ext = path.extname(fileKey).toLowerCase();
@@ -1330,21 +1324,60 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
       '.ogg': 'audio/ogg',
       '.aac': 'audio/aac',
     };
-
-    const fileBuffer = await storageService.downloadFile(fileKey);
     const contentType = mimeTypes[ext] || 'audio/mpeg';
-    const fileSize = fileBuffer.length;
 
-    // CORS headers for audio playback - override Helmet restrictions
+    // CORS headers for audio playback
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Range, Content-Type');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Range, Accept-Ranges');
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Cross-Origin-Opener-Policy', 'unsafe-none');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
-    // Handle Range requests for audio seeking
+    // Fast path: stream directly from local disk (avoids PDIM round-trip for large files)
+    const LOCAL_STORAGE_DIR = path.resolve('./uploads/files');
+    const localPath = path.join(LOCAL_STORAGE_DIR, fileKey.replace(/\//g, path.sep));
+
+    if (fs.existsSync(localPath)) {
+      const stat = fs.statSync(localPath);
+      const fileSize = stat.size;
+      const range = req.headers.range;
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Accept-Ranges', 'bytes');
+
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunkSize = end - start + 1;
+
+        res.status(206);
+        res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
+        res.setHeader('Content-Length', chunkSize);
+        fs.createReadStream(localPath, { start, end }).pipe(res);
+      } else {
+        res.setHeader('Content-Length', fileSize);
+        fs.createReadStream(localPath).pipe(res);
+      }
+      return;
+    }
+
+    // Fallback: load from PDIM into buffer (for files not yet written to disk)
+    const exists = await storageService.fileExists(fileKey);
+    if (!exists) {
+      logger.warn(`Audio file not found: ${fileKey}`);
+      return res.status(404).json({ error: 'Audio file not found' });
+    }
+
+    const fileBuffer = await storageService.downloadFile(fileKey);
+    const fileSize = fileBuffer.length;
     const range = req.headers.range;
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
+
     if (range) {
       const parts = range.replace(/bytes=/, '').split('-');
       const start = parseInt(parts[0], 10);
@@ -1354,15 +1387,9 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
       res.status(206);
       res.setHeader('Content-Range', `bytes ${start}-${end}/${fileSize}`);
       res.setHeader('Content-Length', chunkSize);
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.send(fileBuffer.subarray(start, end + 1));
     } else {
-      res.setHeader('Content-Type', contentType);
       res.setHeader('Content-Length', fileSize);
-      res.setHeader('Accept-Ranges', 'bytes');
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.send(fileBuffer);
     }
   } catch (error: any) {
