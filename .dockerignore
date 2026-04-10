@@ -14,9 +14,17 @@ node_modules/.cache
 .pythonlibs
 .venv
 __pycache__
-.local/
 .config/
 .replit
+
+# Agent / Replit platform state — .local/state alone can exceed 15 GB.
+# Listed with multiple patterns for belt-and-suspenders compatibility across
+# Docker versions and Replit's own repl-layer packaging tool.
+.local
+.local/
+.local/**
+.local/state
+.local/state/**
 
 # All npm packages — excluded entirely to keep the deployment layer small.
 # The build command installs only production dependencies fresh in the
@@ -144,3 +152,12 @@ cookies.txt
 .capsule-temp/
 storybook-static/
 *.backup
+
+# Build-time generated directories (created fresh by build.sh every deploy)
+# Excluding prevents stale workspace copies from polluting the repl layer.
+python_runtime/
+python_runtime/**
+services/
+services/**
+.node_bin/
+.node_bin/**
