@@ -86,6 +86,48 @@ export function toPlatformFQDN(handle: string): string {
   return `${handle}.${PLATFORM_DOMAIN}`;
 }
 
+// ─── Supported TLDs for the free domain feature ───────────────────────────────
+export const SUPPORTED_TLDS = [
+  ".com", ".net", ".org", ".info", ".biz", ".co",
+  ".music", ".band", ".studio", ".productions", ".beats",
+  ".app", ".io", ".me", ".online", ".site", ".store",
+];
+
+/**
+ * Validates a free domain consisting of a user-supplied SLD and a TLD from
+ * the SUPPORTED_TLDS list (e.g. "mybeats" + ".com" → mybeats.com).
+ */
+export function validateFreeDomain(sld: string, tld: string): DomainValidationResult {
+  if (!sld || typeof sld !== "string") {
+    return { valid: false, error: "A domain name is required." };
+  }
+
+  const normalised = sld.toLowerCase().trim();
+
+  if (normalised.length < 2) {
+    return { valid: false, error: "Must be at least 2 characters." };
+  }
+
+  const err = validateLabel(normalised);
+  if (err) return { valid: false, error: err };
+
+  if (RESERVED_SLDS.has(normalised)) {
+    return { valid: false, error: `"${normalised}" is a reserved name and cannot be used.` };
+  }
+
+  const normalisedTld = (tld || ".com").toLowerCase().trim();
+  if (!SUPPORTED_TLDS.includes(normalisedTld)) {
+    return { valid: false, error: `"${normalisedTld}" is not a supported domain extension.` };
+  }
+
+  const domain = `${normalised}${normalisedTld}`;
+  if (domain.length > 253) {
+    return { valid: false, error: "The full domain cannot exceed 253 characters." };
+  }
+
+  return { valid: true, value: normalised, domain };
+}
+
 // ─── 2. Custom / BYOD domain (requires user-side DNS config) ─────────────────
 /**
  * Validates a user-owned full domain (e.g. "mybeats.com") for the
