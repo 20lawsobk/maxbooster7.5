@@ -56,6 +56,7 @@ import {
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
 import { StorefrontDnsZoneManager } from './StorefrontDnsZoneManager';
+import { validatePlatformHandle } from '@shared/domainValidation';
 
 interface StorefrontTemplate {
   id: string;
@@ -176,6 +177,13 @@ export default function StorefrontBuilder() {
   const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
   const [newDnsZoneDomain, setNewDnsZoneDomain] = useState('');
   const [addedDnsZone, setAddedDnsZone] = useState<{ id: string; domain: string; nameserver1: string; nameserver2: string } | null>(null);
+
+  // Platform subdomain (.maxboostermusic.com) — free with subscription
+  const [platformHandle, setPlatformHandle] = useState('');
+  const [platformHandleError, setPlatformHandleError] = useState<string | null>(null);
+  const [platformHandleAvailable, setPlatformHandleAvailable] = useState<boolean | null>(null);
+  const [checkingPlatformHandle, setCheckingPlatformHandle] = useState(false);
+  const [claimedPlatformDomain, setClaimedPlatformDomain] = useState<string | null>(null);
 
   const [customization, setCustomization] = useState<Storefront['customization']>({
     colors: {
@@ -540,6 +548,61 @@ export default function StorefrontBuilder() {
       toast({ title: 'Error', description: msg, variant: 'destructive' });
     },
   });
+
+  // Fetch existing platform subdomain when storefront changes
+  const { data: existingPlatformData } = useQuery<{ ok: boolean; domain: string | null; status: string | null }>({
+    queryKey: ['/api/storefront-domains/platform', selectedStorefront?.id],
+    queryFn: () => selectedStorefront
+      ? apiRequest('GET', `/api/storefront-domains/platform/${selectedStorefront.id}`).then(r => r.json())
+      : Promise.resolve({ ok: true, domain: null, status: null }),
+    enabled: !!selectedStorefront,
+  });
+
+  // Sync claimed domain into state when query resolves
+  useEffect(() => {
+    if (existingPlatformData?.domain) {
+      setClaimedPlatformDomain(existingPlatformData.domain);
+      const handle = existingPlatformData.domain.replace('.maxboostermusic.com', '');
+      setPlatformHandle(handle);
+    }
+  }, [existingPlatformData]);
+
+  const claimPlatformDomainMutation = useMutation({
+    mutationFn: (data: { handle: string; storefrontId: string }) =>
+      apiRequest('POST', '/api/storefront-domains/platform/claim', data).then(r => r.json()),
+    onSuccess: (data) => {
+      if (data.ok) {
+        setClaimedPlatformDomain(data.domain);
+        toast({
+          title: '🎉 Your Domain is Live!',
+          description: `${data.domain} is now active and pointing to your store.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains/platform', selectedStorefront?.id] });
+      } else {
+        toast({ title: 'Failed', description: data.error || 'Could not claim domain', variant: 'destructive' });
+      }
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to claim domain', variant: 'destructive' });
+    },
+  });
+
+  const checkPlatformHandleAvailability = async (handle: string) => {
+    if (!handle || handle.length < 2) {
+      setPlatformHandleAvailable(null);
+      return;
+    }
+    setCheckingPlatformHandle(true);
+    try {
+      const response = await apiRequest('POST', '/api/storefront-domains/platform/check', { handle });
+      const data = await response.json();
+      setPlatformHandleAvailable(data.available ?? false);
+    } catch {
+      setPlatformHandleAvailable(null);
+    } finally {
+      setCheckingPlatformHandle(false);
+    }
+  };
 
   const checkSubdomainAvailability = async (subdomain: string) => {
     if (!subdomain || subdomain.length < 3) {
@@ -1004,12 +1067,132 @@ export default function StorefrontBuilder() {
                       </div>
                     </div>
 
+                    {/* ── FREE PLATFORM DOMAIN (included with subscription) ── */}
+                    <div className="border-2 border-purple-500/60 rounded-lg p-4 space-y-3 bg-purple-50/40 dark:bg-purple-950/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <Globe className="w-4 h-4 text-purple-600" />
+                            <Label className="text-base font-semibold text-purple-900 dark:text-purple-100">Your Free Domain</Label>
+                            <span className="text-[10px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-semibold uppercase tracking-wide">Included</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Claim <span className="font-mono font-semibold">yourname.maxboostermusic.com</span> — no external DNS setup needed, works immediately
+                          </p>
+                        </div>
+                        {claimedPlatformDomain && (
+                          <span className="flex items-center gap-1 text-green-700 dark:text-green-400 text-xs font-semibold bg-green-100 dark:bg-green-900/40 px-2 py-1 rounded-full">
+                            <CheckCircle className="w-3 h-3" /> Active
+                          </span>
+                        )}
+                      </div>
+
+                      {claimedPlatformDomain ? (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-green-300 dark:border-green-700 rounded-lg px-3 py-2">
+                            <Globe className="w-4 h-4 text-green-600 flex-shrink-0" />
+                            <span className="font-mono font-semibold text-sm flex-1">{claimedPlatformDomain}</span>
+                            <button
+                              className="text-muted-foreground hover:text-foreground"
+                              title="Copy domain"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`https://${claimedPlatformDomain}`);
+                                toast({ title: 'Copied!', description: `https://${claimedPlatformDomain} is in your clipboard.` });
+                              }}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Your store is live at <a href={`https://${claimedPlatformDomain}`} target="_blank" rel="noopener noreferrer" className="text-purple-600 underline font-medium">https://{claimedPlatformDomain}</a>. Powered by Max Booster's built-in DNS — no registrar visit needed.
+                          </p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setClaimedPlatformDomain(null);
+                              setPlatformHandle('');
+                              setPlatformHandleAvailable(null);
+                            }}
+                          >
+                            Change domain name
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-0 rounded-lg border border-input overflow-hidden focus-within:ring-1 focus-within:ring-purple-500">
+                            <input
+                              type="text"
+                              value={platformHandle}
+                              onChange={(e) => {
+                                const raw = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+                                setPlatformHandle(raw);
+                                setPlatformHandleAvailable(null);
+                                if (!raw) {
+                                  setPlatformHandleError(null);
+                                } else {
+                                  const v = validatePlatformHandle(raw);
+                                  setPlatformHandleError(v.valid ? null : (v.error ?? null));
+                                }
+                              }}
+                              placeholder="yourname"
+                              className="flex-1 px-3 py-2 text-sm bg-transparent outline-none"
+                              maxLength={63}
+                            />
+                            <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-l border-input font-mono whitespace-nowrap">.maxboostermusic.com</span>
+                          </div>
+
+                          {platformHandleError && (
+                            <p className="text-xs text-red-600 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3 flex-shrink-0" /> {platformHandleError}
+                            </p>
+                          )}
+
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => checkPlatformHandleAvailability(platformHandle)}
+                              disabled={!platformHandle || !!platformHandleError || checkingPlatformHandle}
+                            >
+                              {checkingPlatformHandle ? 'Checking...' : 'Check Availability'}
+                            </Button>
+                            {!platformHandleError && platformHandleAvailable !== null && (
+                              <span className={`text-sm font-medium flex items-center gap-1 ${platformHandleAvailable ? 'text-green-600' : 'text-red-600'}`}>
+                                {platformHandleAvailable
+                                  ? <><CheckCircle className="w-4 h-4" /> Available — claim it!</>
+                                  : <><AlertCircle className="w-4 h-4" /> Already taken</>
+                                }
+                              </span>
+                            )}
+                          </div>
+
+                          {platformHandleAvailable && (
+                            <Button
+                              size="sm"
+                              className="bg-purple-600 hover:bg-purple-700 text-white w-full"
+                              onClick={() => {
+                                if (selectedStorefront && platformHandle) {
+                                  claimPlatformDomainMutation.mutate({ handle: platformHandle, storefrontId: selectedStorefront.id });
+                                }
+                              }}
+                              disabled={claimPlatformDomainMutation.isPending}
+                            >
+                              <Globe className="w-4 h-4 mr-2" />
+                              {claimPlatformDomainMutation.isPending ? 'Activating...' : `Claim ${platformHandle}.maxboostermusic.com`}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* ── PATH-BASED CUSTOM URL ── */}
                     <div className="border rounded-lg p-4 space-y-3">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="text-base font-semibold">Custom URL</Label>
+                          <Label className="text-base font-semibold">Short Link</Label>
                           <p className="text-sm text-muted-foreground">
-                            Get a personalized storefront link
+                            Also accessible via a short path link
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1088,8 +1271,8 @@ export default function StorefrontBuilder() {
                     <div className="border rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <Label className="text-base font-semibold">Custom Domain</Label>
-                          <p className="text-sm text-muted-foreground">Use your own domain (e.g. mybeats.com) — powered by the built-in DNS manager</p>
+                          <Label className="text-base font-semibold">Bring Your Own Domain</Label>
+                          <p className="text-sm text-muted-foreground">Already own a domain like <span className="font-mono">mybeats.com</span>? Point it to Max Booster's nameservers and manage DNS records here.</p>
                         </div>
                         {dnsZones.some(z => z.isVerified) && (
                           <Badge className="bg-green-600 text-white">Active</Badge>

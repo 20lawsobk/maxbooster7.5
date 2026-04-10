@@ -2350,7 +2350,8 @@ return (
                             <img
                               src={beat.coverArt}
                               alt={beat.title}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
+                              onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           )}
@@ -2804,7 +2805,8 @@ return (
                             <img
                               src={beat.coverArt}
                               alt={beat.title}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
+                              onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                             />
                           )}
