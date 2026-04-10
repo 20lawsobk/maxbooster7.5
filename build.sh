@@ -55,6 +55,19 @@ fi
 #   Final image: ~1.2–1.5 GB (still correct after all the other fixes).
 # ─────────────────────────────────────────────────────────────────────────────
 
+# ─── Copy Python diffusion server (must happen before server/ is deleted) ────
+# The source tree (server/) is deleted in both FAST and SLOW paths below.
+# We preserve the diffusion server files in services/diffusion/ so the
+# portable Python runtime can launch them in the run container.
+echo "==> Preserving Python diffusion server files in services/diffusion/..."
+mkdir -p services/diffusion
+if [ -d "server/services/diffusion" ]; then
+  cp -r server/services/diffusion/. services/diffusion/
+  echo "   Copied $(ls services/diffusion | wc -l | tr -d ' ') files → services/diffusion/"
+else
+  echo "   WARNING: server/services/diffusion/ not found — Python server unavailable in production"
+fi
+
 PREBUILT_FRONTEND="dist/public/index.html"
 PREBUILT_SERVER="dist/index.cjs"
 PREBUILT_CLUSTER="dist/cluster.cjs"
@@ -306,11 +319,15 @@ if curl -sL --max-time 120 "${_PYURL}" \
   if [ -x "${_PYRUNTIME}/bin/python3" ] && "${_PYRUNTIME}/bin/python3" --version >/dev/null 2>&1; then
     _PY_VER_STR=$("${_PYRUNTIME}/bin/python3" --version 2>&1)
     echo "   Portable Python installed: ${_PY_VER_STR}"
-    echo "   Installing numpy + pillow ..."
-    "${_PYRUNTIME}/bin/pip3" install --no-cache-dir numpy pillow --quiet 2>&1 || \
-      "${_PYRUNTIME}/bin/python3" -m pip install --no-cache-dir numpy pillow --quiet 2>&1 || true
-    if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL" 2>/dev/null; then
-      echo "   ✅ Python runtime ready: ${_PY_VER_STR} with numpy + Pillow → ./${_PYRUNTIME}/"
+    echo "   Installing numpy, pillow, fastapi, uvicorn, pydantic ..."
+    "${_PYRUNTIME}/bin/pip3" install --no-cache-dir \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
+      --quiet 2>&1 || \
+      "${_PYRUNTIME}/bin/python3" -m pip install --no-cache-dir \
+      numpy pillow "fastapi>=0.100.0" "uvicorn[standard]>=0.20.0" "pydantic>=2.0.0" \
+      --quiet 2>&1 || true
+    if "${_PYRUNTIME}/bin/python3" -c "import numpy, PIL, fastapi, uvicorn, pydantic" 2>/dev/null; then
+      echo "   ✅ Python runtime ready: ${_PY_VER_STR} with numpy, Pillow, FastAPI, uvicorn, pydantic → ./${_PYRUNTIME}/"
       _PYENV_OK=1
     else
       echo "   WARNING: numpy/Pillow import failed — Python runtime incomplete"
