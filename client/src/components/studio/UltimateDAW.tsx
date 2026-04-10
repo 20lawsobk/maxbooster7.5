@@ -104,7 +104,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
   const [dragOverTrackId, setDragOverTrackId] = useState<string | null>(null);
   const [uploadingTrackId, setUploadingTrackId] = useState<string | null>(null);
 
-  useDAWAudioPlayback({ tracks, transport });
+  const { unlockAudio } = useDAWAudioPlayback({ tracks, transport });
   const [lyrics, setLyrics] = useState<LyricLine[]>([
     { id: 'intro-1', text: 'Click Edit to add your lyrics...', startTime: 0, endTime: 4, type: 'intro' },
   ]);
@@ -310,6 +310,20 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
         duration = decoded.duration;
         tempCtx.close();
       } catch {
+        try {
+          const blobUrl = URL.createObjectURL(file);
+          duration = await new Promise<number>((resolve) => {
+            const audio = new Audio(blobUrl);
+            audio.addEventListener('loadedmetadata', () => {
+              URL.revokeObjectURL(blobUrl);
+              resolve(isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 30);
+            }, { once: true });
+            audio.addEventListener('error', () => { URL.revokeObjectURL(blobUrl); resolve(30); }, { once: true });
+            setTimeout(() => resolve(30), 8000);
+          });
+        } catch {
+          duration = 30;
+        }
       }
 
       store.addAudioClip(trackId, {
@@ -362,6 +376,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       switch (e.code) {
         case 'Space':
           e.preventDefault();
+          unlockAudio();
           transport.isPlaying ? store.pause() : store.play();
           break;
         case 'KeyR':
@@ -600,7 +615,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               </Button>
               <Button
                 size="icon"
-                onClick={() => transport.isPlaying ? store.pause() : store.play()}
+                onClick={() => { unlockAudio(); transport.isPlaying ? store.pause() : store.play(); }}
                 className={cn(
                   'h-10 w-10 rounded-full',
                   transport.isPlaying 
@@ -1124,7 +1139,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
           </Button>
           <Button
             size="sm"
-            onClick={() => transport.isPlaying ? store.pause() : store.play()}
+            onClick={() => { unlockAudio(); transport.isPlaying ? store.pause() : store.play(); }}
             className={transport.isPlaying ? 'bg-green-600' : 'bg-zinc-700'}
           >
             {transport.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}

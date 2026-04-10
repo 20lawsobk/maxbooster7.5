@@ -165,5 +165,12 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
     };
   }, []);
 
-  return { decodeAudio };
+  const unlockAudio = useCallback(() => {
+    const ctx = getOrCreateContext();
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+  }, [getOrCreateContext]);
+
+  return { decodeAudio, unlockAudio };
 }

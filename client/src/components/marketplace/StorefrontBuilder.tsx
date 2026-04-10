@@ -501,7 +501,7 @@ export default function StorefrontBuilder() {
     },
     onSuccess: (data) => {
       if (data.ok) {
-        toast({ title: 'Subdomain Reserved', description: `Subdomain label reserved. Your store is live at ${STOREFRONT_BASE}/storefront/${selectedStorefront?.slug}` });
+        toast({ title: 'Subdomain Reserved', description: `Your store is now at https://${data.subdomain || subdomainForm.subdomain}.maxbooster.replit.app` });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains', selectedStorefront?.id] });
       } else {
@@ -937,45 +937,56 @@ export default function StorefrontBuilder() {
                         <Label>Storefront ID</Label>
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
                         <div className="mt-2 space-y-1.5">
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-muted-foreground flex-1 truncate">
-                              <span className="font-medium">Your store link: </span>
-                              <a
-                                href={`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-primary underline"
-                              >
-                                {STOREFRONT_BASE}/storefront/{selectedStorefront.slug}
-                              </a>
-                            </p>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-6 w-6 flex-shrink-0"
-                              title="Copy store link"
-                              onClick={() => {
-                                navigator.clipboard.writeText(`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`);
-                                toast({ title: 'Link copied!', description: 'Your store link is in the clipboard.' });
-                              }}
-                            >
-                              <Copy className="w-3 h-3" />
-                            </Button>
-                          </div>
-                          {subdomainForm.subdomain && subdomainForm.isSubdomainActive && (
-                            <p className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Link className="w-3 h-3 flex-shrink-0" />
-                              Short link:{' '}
-                              <a
-                                href={`/s/${subdomainForm.subdomain}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="font-medium text-primary underline"
-                              >
-                                {window.location.origin}/s/{subdomainForm.subdomain}
-                              </a>
-                            </p>
-                          )}
+                          {(() => {
+                            const activeSubdomain = subdomainForm.subdomain && subdomainForm.isSubdomainActive ? subdomainForm.subdomain : null;
+                            const primaryUrl = activeSubdomain
+                              ? `https://${activeSubdomain}.maxbooster.replit.app`
+                              : `${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`;
+                            const pathUrl = `${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`;
+                            return (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <p className="text-xs text-muted-foreground flex-1 truncate">
+                                    <span className="font-medium">Your store link: </span>
+                                    <a
+                                      href={primaryUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary underline"
+                                    >
+                                      {primaryUrl}
+                                    </a>
+                                  </p>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    className="h-6 w-6 flex-shrink-0"
+                                    title="Copy store link"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(primaryUrl);
+                                      toast({ title: 'Link copied!', description: 'Your store link is in the clipboard.' });
+                                    }}
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                                {activeSubdomain && (
+                                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                    <Link className="w-3 h-3 flex-shrink-0" />
+                                    Also works at:{' '}
+                                    <a
+                                      href={pathUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="font-medium text-primary underline"
+                                    >
+                                      {pathUrl}
+                                    </a>
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -1055,9 +1066,9 @@ export default function StorefrontBuilder() {
                         <Save className="w-4 h-4 mr-2" />
                         {reserveManagedMutation.isPending ? 'Reserving...' : 'Reserve Subdomain'}
                       </Button>
-                      <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 space-y-1">
-                        <p className="font-semibold flex items-center gap-1"><AlertCircle className="w-3 h-3" /> Subdomain reserved for future use</p>
-                        <p>Reserving a subdomain saves your name in the platform for when custom domains go live. In the meantime, your store link at <span className="font-mono font-medium">{STOREFRONT_BASE}/storefront/{selectedStorefront?.slug}</span> works from any browser right now.</p>
+                      <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800 space-y-1">
+                        <p className="font-semibold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Subdomain URL format</p>
+                        <p>Once reserved and active, your store is accessible at <span className="font-mono font-medium">{subdomainForm.subdomain ? `https://${subdomainForm.subdomain}.maxbooster.replit.app` : `{your-name}.maxbooster.replit.app`}</span>. The path URL <span className="font-mono font-medium">{STOREFRONT_BASE}/storefront/{selectedStorefront?.slug}</span> also always works.</p>
                       </div>
                     </div>
 
@@ -1698,7 +1709,7 @@ export default function StorefrontBuilder() {
                       <div>
                         <p className="font-semibold text-green-800 text-sm">Subdomain System Active</p>
                         <p className="text-xs text-green-700 mt-0.5">
-                          Your storefront is live at <span className="font-mono font-semibold">maxbooster.replit.app</span>. Reserve a subdomain label now to lock in your name for future custom domain support.
+                          Your storefront URL format: <span className="font-mono font-semibold">{subdomainForm.subdomain && subdomainForm.isSubdomainActive ? `${subdomainForm.subdomain}.maxbooster.replit.app` : `maxbooster.replit.app/storefront/${selectedStorefront?.slug}`}</span>. Reserve a subdomain below to use the <span className="font-mono">{'{name}'}.maxbooster.replit.app</span> format.
                         </p>
                       </div>
                     </div>
