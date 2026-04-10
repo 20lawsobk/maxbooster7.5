@@ -179,29 +179,34 @@ export function WaveformClip({
 
     ctx.clearRect(0, 0, renderWidth, height);
 
-    if (showGridLines && barWidth > 0) {
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+    if (showGridLines && barWidth > 0 && secondsPerBar > 0) {
+      const barPhaseOffset = (startTime % secondsPerBar) * pixelsPerSecond * zoom;
+      const firstBarX = (barWidth - barPhaseOffset) % barWidth;
+
+      if (beatWidth > 0 && secondsPerBeat > 0) {
+        const beatPhaseOffset = (startTime % secondsPerBeat) * pixelsPerSecond * zoom;
+        const firstBeatX = (beatWidth - beatPhaseOffset) % beatWidth;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
+        let bx = firstBeatX;
+        while (bx <= renderWidth) {
+          ctx.beginPath();
+          ctx.moveTo(bx, 0);
+          ctx.lineTo(bx, height);
+          ctx.stroke();
+          bx += beatWidth;
+        }
+      }
+
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
       ctx.lineWidth = 1;
-      const numBars = Math.ceil(renderWidth / barWidth);
-      for (let i = 0; i <= numBars; i++) {
-        const x = i * barWidth;
+      let x = firstBarX;
+      while (x <= renderWidth) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
         ctx.lineTo(x, height);
         ctx.stroke();
-      }
-
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
-      const numBeats = Math.ceil(renderWidth / beatWidth);
-      const bpb = beatsPerBar || 4;
-      for (let i = 0; i <= numBeats; i++) {
-        if (i % bpb !== 0) {
-          const x = i * beatWidth;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, height);
-          ctx.stroke();
-        }
+        x += barWidth;
       }
     }
 

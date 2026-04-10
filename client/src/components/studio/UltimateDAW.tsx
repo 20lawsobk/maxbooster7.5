@@ -72,6 +72,78 @@ const EDIT_TOOLS = [
   { id: 'erase', icon: Eraser, label: 'Erase (E)' },
 ];
 
+function ArrangeBarRuler({
+  zoom,
+  tempo,
+  timeSignature,
+  currentTime,
+  isPlaying,
+}: {
+  zoom: number;
+  tempo: number;
+  timeSignature: string;
+  currentTime: number;
+  isPlaying: boolean;
+}) {
+  const beatsPerBar = parseInt(timeSignature.split('/')[0]) || 4;
+  const secondsPerBeat = 60 / tempo;
+  const secondsPerBar = secondsPerBeat * beatsPerBar;
+  const pixelsPerSecond = 50 * zoom;
+  const totalBars = 64;
+  const totalWidth = totalBars * secondsPerBar * pixelsPerSecond;
+
+  const gridLines = useMemo(() => {
+    const lines: { position: number; label?: string; type: 'bar' | 'beat' }[] = [];
+    for (let bar = 0; bar < totalBars; bar++) {
+      const barTime = bar * secondsPerBar;
+      lines.push({ position: barTime * pixelsPerSecond, label: String(bar + 1), type: 'bar' });
+      if (zoom >= 0.5) {
+        for (let beat = 1; beat < beatsPerBar; beat++) {
+          lines.push({
+            position: (barTime + beat * secondsPerBeat) * pixelsPerSecond,
+            type: 'beat',
+          });
+        }
+      }
+    }
+    return lines;
+  }, [zoom, tempo, timeSignature, beatsPerBar, secondsPerBar, secondsPerBeat, pixelsPerSecond, totalBars]);
+
+  const playheadX = currentTime * pixelsPerSecond;
+
+  return (
+    <div className="sticky top-0 z-20 flex h-6 bg-zinc-900/95 border-b border-zinc-700/60 select-none backdrop-blur-sm" style={{ minWidth: 'max-content' }}>
+      <div className="w-48 flex-shrink-0 border-r border-zinc-700/60 bg-zinc-900/95 flex items-center px-2">
+        <span className="text-[9px] text-zinc-500 tracking-widest font-semibold uppercase">Bars</span>
+      </div>
+      <div className="relative flex-shrink-0" style={{ width: totalWidth, height: 24 }}>
+        {gridLines.map((line, i) => (
+          <div
+            key={i}
+            className={cn(
+              'absolute top-0 bottom-0',
+              line.type === 'bar' ? 'border-l border-zinc-600/60' : 'border-l border-zinc-700/40'
+            )}
+            style={{ left: line.position }}
+          >
+            {line.label && (
+              <span className="absolute top-0.5 left-1 text-[10px] text-zinc-400 font-medium leading-none">
+                {line.label}
+              </span>
+            )}
+          </div>
+        ))}
+        <motion.div
+          className="absolute top-0 bottom-0 w-px bg-rose-500 z-10 pointer-events-none"
+          style={{ left: playheadX }}
+          animate={isPlaying ? { opacity: [1, 0.6, 1] } : { opacity: 1 }}
+          transition={{ duration: 0.5, repeat: Infinity }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExport }: UltimateDAWProps) {
   const store = useUnifiedStore();
   const { tracks, masterTrack, transport, view, project, canUndo, canRedo } = store;
@@ -815,6 +887,14 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               </div>
               
               <div className="flex-1 overflow-auto bg-zinc-950/50">
+                {/* Sticky bar/beat ruler that scrolls with tracks */}
+                <ArrangeBarRuler
+                  zoom={zoom}
+                  tempo={transport.tempo}
+                  timeSignature={transport.timeSignature}
+                  currentTime={transport.position}
+                  isPlaying={transport.isPlaying}
+                />
                 {tracks.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center space-y-4">
