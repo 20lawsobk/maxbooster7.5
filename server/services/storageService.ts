@@ -91,8 +91,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
   async fileExists(key: string): Promise<boolean> {
     await this.ensure();
     try {
-      const entry = this.pocket.entries?.get(`files/${key}`);
-      return !!entry;
+      return this.pocket.exists(`files/${key}`);
     } catch {
       return false;
     }

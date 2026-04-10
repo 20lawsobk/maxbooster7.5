@@ -1186,12 +1186,12 @@ export async function registerRoutes(
       }
 
       if (!fileBuffer) {
-        const exists = await storageService.fileExists(key);
-        if (!exists) {
+        try {
+          fileBuffer = await storageService.downloadFile(key);
+          storageTier = 'replit-direct';
+        } catch {
           return res.status(404).json({ message: "File not found" });
         }
-        fileBuffer = await storageService.downloadFile(key);
-        storageTier = 'replit-direct';
       }
       
       const ext = key.split('.').pop()?.toLowerCase() || '';

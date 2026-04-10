@@ -2342,11 +2342,13 @@ return (
                   <Card key={beat.id} className="group hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
                     <CardContent className="p-0">
                       <div className="relative">
-                        <div className="w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg flex items-center justify-center">
+                        <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
                           {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover rounded-t-lg" />
+                            <img src={beat.coverArt} alt={beat.title} className="absolute inset-0 w-full h-full object-cover" />
                           ) : (
-                            <Music className="w-16 h-16 text-white opacity-50" />
+                            <div className="flex items-center justify-center h-full">
+                              <Music className="w-16 h-16 text-white opacity-50" />
+                            </div>
                           )}
                         </div>
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-t-lg flex items-center justify-center">
@@ -3865,11 +3867,13 @@ return (
       {showPreviewPlayer && currentBeat && (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-lg p-4 z-50">
           <div className="max-w-7xl mx-auto flex items-center space-x-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg overflow-hidden flex-shrink-0">
               {currentBeat.coverArt ? (
-                <img src={currentBeat.coverArt} alt={currentBeat.title} className="w-full h-full object-cover rounded-lg" />
+                <img src={currentBeat.coverArt} alt={currentBeat.title} className="absolute inset-0 w-full h-full object-cover" />
               ) : (
-                <Music className="w-8 h-8 text-white" />
+                <div className="flex items-center justify-center h-full">
+                  <Music className="w-8 h-8 text-white" />
+                </div>
               )}
             </div>
             <div className="flex-shrink-0 w-48">

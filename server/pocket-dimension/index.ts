@@ -307,7 +307,9 @@ export class PocketDimension extends EventEmitter {
     
     this.entries.set(entryPath, entry);
     this.updateMetadata(originalSize, compressedSize);
-    
+
+    await this.persistMetadata();
+
     this.emit('written', { path: entryPath, size: originalSize, compressedSize });
     
     return entry;
