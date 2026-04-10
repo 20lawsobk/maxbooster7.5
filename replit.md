@@ -32,6 +32,7 @@ Key architectural decisions include:
 - Reliability fixes with background service safeguards and fallbacks.
 - Gamified onboarding with RPG-style persona selector, XP system, and achievements.
 - Python Audio Analysis Engine using `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch`.
+- Beat Audio Separator (`server/services/audioSeparator.py` + `server/services/audioSeparatorService.ts`): after a WAV beat is uploaded, automatically generates MP3 320kbps (all tiers) and frequency-band stems — drums, bass, melody, other — (unlimited/exclusive tiers) using ffmpeg. Runs fully asynchronously via `setImmediate` so the upload response is instant. Results are stored in hybrid storage, `listings.previewUrl` is updated to the MP3 URL, stems are inserted into the `listing_stems` table, and `listing_license_tiers.audioUrls` is updated for any existing tier rows.
 - Offline mode for app-wide context and background sync.
 - Autopilot Learning Feedback Loop for recording performance patterns.
 - Dedicated admin UI for financial configuration.

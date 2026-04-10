@@ -17,6 +17,7 @@ import { orders, listings, users, licenseTemplates, systemSettings, collaboratio
 import { eq, and, gte, sql, desc, asc, or, inArray, avg } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
+import { processUploadedBeat } from '../services/audioSeparatorService.js';
 import { distributedCache } from '../infrastructure/distributedCache.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 
@@ -1162,14 +1163,15 @@ router.post('/upload', upload.fields([
 
     let audioUrl = '';
     let artworkUrl = '';
+    let uploadedAudioKey = '';
 
     if (files?.audioFile?.[0]) {
       const audioFile = files.audioFile[0];
       const ext = path.extname(audioFile.originalname) || '.mp3';
       const filename = `${Date.now()}-${crypto.randomBytes(8).toString('hex')}${ext}`;
-      const audioKey = await storageService.uploadFile(audioFile.buffer, 'beats', filename, audioFile.mimetype);
-      audioUrl = `/api/marketplace/audio/${audioKey}`;
-      logger.info(`Audio file saved: ${audioKey}`);
+      uploadedAudioKey = await storageService.uploadFile(audioFile.buffer, 'beats', filename, audioFile.mimetype);
+      audioUrl = `/api/marketplace/audio/${uploadedAudioKey}`;
+      logger.info(`Audio file saved: ${uploadedAudioKey}`);
     }
 
     if (files?.coverArt?.[0]) {
@@ -1280,6 +1282,26 @@ router.post('/upload', upload.fields([
     })();
 
     res.status(201).json(listing);
+
+    // Async audio separation: generate MP3 (all tiers) + stems (unlimited/exclusive)
+    if (uploadedAudioKey) {
+      setImmediate(async () => {
+        try {
+          const sepResult = await processUploadedBeat(
+            listing.id,
+            req.user!.id,
+            uploadedAudioKey,
+            licenseType,
+          );
+          logger.info(
+            `[AudioSeparator] Beat ${listing.id} processed — ` +
+            `mp3=${!!sepResult.mp3Url} stems=${sepResult.stemsAvailable}`,
+          );
+        } catch (sepErr) {
+          logger.warn('[AudioSeparator] Processing failed:', sepErr);
+        }
+      });
+    }
 
     setImmediate(async () => {
       try {
