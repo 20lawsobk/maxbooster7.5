@@ -10,6 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Music,
   Play,
   Pause,
@@ -27,6 +33,10 @@ import {
   ShoppingCart,
   Headphones,
   RefreshCw,
+  Loader2,
+  FileText,
+  Infinity,
+  Lock,
 } from 'lucide-react';
 import { useState, useRef } from 'react';
 import { useLocation } from 'wouter';
@@ -53,13 +63,24 @@ interface Beat {
   id: string;
   title: string;
   bpm: number;
+  tempo?: number;
   key: string;
   genre: string;
   price: number;
   coverArt?: string;
   audioPreview?: string;
+  audioUrl?: string;
+  previewUrl?: string;
   plays?: number;
+  licenseOptions?: Array<{ licenseType: string; priceCents: number; fileFormats: string[] }>;
 }
+
+const DEFAULT_LICENSES = [
+  { licenseType: 'basic', label: 'Basic License', description: 'MP3 download, up to 100k streams', fileFormats: ['mp3'], multiplier: 1, icon: 'file' },
+  { licenseType: 'premium', label: 'Premium License', description: 'WAV + MP3, up to 500k streams', fileFormats: ['mp3', 'wav'], multiplier: 1.5, icon: 'star' },
+  { licenseType: 'unlimited', label: 'Unlimited License', description: 'WAV + MP3 + Stems, unlimited streams', fileFormats: ['mp3', 'wav', 'stems'], multiplier: 2, icon: 'infinity' },
+  { licenseType: 'exclusive', label: 'Exclusive Rights', description: 'Full ownership transfer, beat removed from store', fileFormats: ['mp3', 'wav', 'stems'], multiplier: 5, icon: 'lock' },
+];
 
 export default function ProducerProfilePage() {
   const { user, isLoading: authLoading } = useRequireAuth();
@@ -70,6 +91,28 @@ export default function ProducerProfilePage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const [purchaseBeat, setPurchaseBeat] = useState<Beat | null>(null);
+  const [selectedLicense, setSelectedLicense] = useState<string>('basic');
+
+  const purchaseMutation = useMutation({
+    mutationFn: async ({ beatId, licenseType }: { beatId: string; licenseType: string }) => {
+      const res = await apiRequest('POST', '/api/marketplace/purchase', { beatId, licenseType });
+      return res.json();
+    },
+    onSuccess: (data: { url?: string }) => {
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        toast({ title: 'Purchase Successful!', description: `You've successfully purchased "${purchaseBeat?.title}". Check your purchases for the download link.` });
+        setPurchaseBeat(null);
+        queryClient.invalidateQueries({ queryKey: ['/api/marketplace/purchases'] });
+      }
+    },
+    onError: (err: any) => {
+      toast({ title: 'Purchase Failed', description: err?.message || 'Something went wrong. Please try again.', variant: 'destructive' });
+    },
+  });
 
   const { data: followStatus } = useQuery<{ isFollowing: boolean }>({
     queryKey: ['producer-follow-status', producerId],
@@ -143,13 +186,24 @@ export default function ProducerProfilePage() {
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      if (beat.audioPreview) {
-        audioRef.current = new Audio(beat.audioPreview);
-        audioRef.current.play();
+      const src = beat.audioPreview || beat.audioUrl || beat.previewUrl;
+      if (src) {
+        const fullSrc = src.startsWith('http') ? src : `${window.location.origin}${src.startsWith('/') ? src : '/' + src}`;
+        audioRef.current = new Audio(fullSrc);
+        audioRef.current.play().catch(() => {});
         setPlayingBeatId(beat.id);
         audioRef.current.onended = () => setPlayingBeatId(null);
+      } else {
+        toast({ title: 'Preview unavailable', description: 'No audio preview for this beat.', variant: 'destructive' });
       }
     }
+  };
+
+  const getLicensePrice = (beat: Beat, licenseType: string) => {
+    const opt = beat.licenseOptions?.find((o) => o.licenseType === licenseType);
+    if (opt) return opt.priceCents / 100;
+    const def = DEFAULT_LICENSES.find((l) => l.licenseType === licenseType);
+    return beat.price * (def?.multiplier || 1);
   };
 
   if (authLoading || producerLoading) {
@@ -359,7 +413,11 @@ if (!producer) {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-lg font-bold text-green-600">${beat.price}</span>
-                          <Button size="sm" className="bg-gradient-to-r from-blue-600 to-purple-600">
+                          <Button
+                            size="sm"
+                            className="bg-gradient-to-r from-blue-600 to-purple-600"
+                            onClick={() => { setSelectedLicense('basic'); setPurchaseBeat(beat); }}
+                          >
                             <ShoppingCart className="w-4 h-4 mr-1" />
                             Buy
                           </Button>
@@ -478,6 +536,85 @@ if (!producer) {
           </div>
         )}
       </div>
+
+      {/* Purchase / License Selection Dialog */}
+      <Dialog open={!!purchaseBeat} onOpenChange={(open) => { if (!open) setPurchaseBeat(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ShoppingCart className="w-5 h-5" />
+              Purchase License
+            </DialogTitle>
+          </DialogHeader>
+
+          {purchaseBeat && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
+                {purchaseBeat.coverArt ? (
+                  <img src={purchaseBeat.coverArt} alt={purchaseBeat.title} className="w-14 h-14 rounded object-cover flex-shrink-0" />
+                ) : (
+                  <div className="w-14 h-14 rounded bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0">
+                    <Music className="w-7 h-7 text-white opacity-70" />
+                  </div>
+                )}
+                <div>
+                  <p className="font-semibold">{purchaseBeat.title}</p>
+                  <p className="text-sm text-muted-foreground">{purchaseBeat.genre} • {purchaseBeat.bpm || purchaseBeat.tempo} BPM • {purchaseBeat.key}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Select License</p>
+                {DEFAULT_LICENSES.map((license) => {
+                  const price = getLicensePrice(purchaseBeat, license.licenseType);
+                  const isSelected = selectedLicense === license.licenseType;
+                  return (
+                    <button
+                      key={license.licenseType}
+                      onClick={() => setSelectedLicense(license.licenseType)}
+                      className={`w-full flex items-center gap-3 p-3 rounded-lg border-2 text-left transition-all ${
+                        isSelected
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/30'
+                          : 'border-border hover:border-blue-300 hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-blue-500 text-white' : 'bg-muted'}`}>
+                        {license.icon === 'file' && <FileText className="w-4 h-4" />}
+                        {license.icon === 'star' && <Star className="w-4 h-4" />}
+                        {license.icon === 'infinity' && <Infinity className="w-4 h-4" />}
+                        {license.icon === 'lock' && <Lock className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">{license.label}</p>
+                        <p className="text-xs text-muted-foreground">{license.description}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{license.fileFormats.join(', ').toUpperCase()}</p>
+                      </div>
+                      <span className="font-bold text-green-600 flex-shrink-0">${price.toFixed(2)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="outline" className="flex-1" onClick={() => setPurchaseBeat(null)} disabled={purchaseMutation.isPending}>
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600"
+                  disabled={purchaseMutation.isPending}
+                  onClick={() => purchaseMutation.mutate({ beatId: purchaseBeat.id, licenseType: selectedLicense })}
+                >
+                  {purchaseMutation.isPending ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing...</>
+                  ) : (
+                    <><ShoppingCart className="w-4 h-4 mr-2" /> Purchase for ${getLicensePrice(purchaseBeat, selectedLicense).toFixed(2)}</>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
