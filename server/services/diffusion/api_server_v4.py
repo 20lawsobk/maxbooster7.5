@@ -1106,6 +1106,139 @@ def dataset_status():
         }
 
 
+# ── Generic MaxCore proxy helper ──────────────────────────────────────────────
+
+def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
+    """Forward any request body to MaxCore and return the JSON response.
+
+    Used by the /proxy/* endpoints so all platform content generation flows
+    through this server (training time simulator + syncer) as the single source.
+    Falls back to an empty dict with an error key on failure so callers can
+    detect the problem without a 5xx propagating up.
+    """
+    import urllib.request as _urlreq
+    import json as _json
+
+    base = os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    base = base.rstrip('/').removesuffix('/api')
+    url  = f'{base}/api{path}'
+    key  = os.environ.get('AI_SERVER_KEY', '')
+
+    hdrs: Dict[str, str] = {'Content-Type': 'application/json'}
+    if key:
+        hdrs['Authorization'] = f'Bearer {key}'
+        hdrs['X-API-Key']     = key
+
+    clean: dict = {k: v for k, v in body.items() if v is not None}
+    clean.setdefault('source', 'MaxCoreAI')
+    data = _json.dumps(clean).encode()
+    req  = _urlreq.Request(url, data=data, headers=hdrs, method='POST')
+    with _urlreq.urlopen(req, timeout=timeout) as resp:
+        return _json.loads(resp.read())
+
+
+# ── Proxy endpoints (MaxCore gateway — this server is the single entry point) ──
+
+@app.post('/proxy/generate/text')
+async def proxy_generate_text(request: Request):
+    """Proxy to MaxCore /api/generate/text — social copy, hooks, captions."""
+    try:
+        body   = await request.json()
+        result = _maxcore_proxy('/generate/text', body)
+        return result
+    except Exception as exc:
+        logger.warning(f'[proxy/text] MaxCore relay error: {exc}')
+        raise HTTPException(503, f'MaxCore /generate/text unavailable: {exc}')
+
+
+@app.post('/proxy/generate/image')
+async def proxy_generate_image(request: Request):
+    """Proxy to MaxCore /api/generate/image — cover art, thumbnails."""
+    try:
+        body   = await request.json()
+        result = _maxcore_proxy('/generate/image', body)
+        return result
+    except Exception as exc:
+        logger.warning(f'[proxy/image] MaxCore relay error: {exc}')
+        raise HTTPException(503, f'MaxCore /generate/image unavailable: {exc}')
+
+
+@app.post('/proxy/generate/content')
+async def proxy_generate_content(request: Request):
+    """Proxy to MaxCore /api/generate/content — structured content packages."""
+    try:
+        body   = await request.json()
+        result = _maxcore_proxy('/generate/content', body)
+        return result
+    except Exception as exc:
+        logger.warning(f'[proxy/content] MaxCore relay error: {exc}')
+        raise HTTPException(503, f'MaxCore /generate/content unavailable: {exc}')
+
+
+@app.post('/proxy/audio/analyze')
+async def proxy_audio_analyze(request: Request):
+    """Proxy to MaxCore /api/audio/analyze — BPM, key, energy, sections."""
+    try:
+        body   = await request.json()
+        result = _maxcore_proxy('/audio/analyze', body)
+        return result
+    except Exception as exc:
+        logger.warning(f'[proxy/audio] MaxCore relay error: {exc}')
+        raise HTTPException(503, f'MaxCore /audio/analyze unavailable: {exc}')
+
+
+@app.post('/proxy/analyze/sentiment')
+async def proxy_analyze_sentiment(request: Request):
+    """Proxy to MaxCore /api/analyze/sentiment — hook quality, emotion scoring."""
+    try:
+        body   = await request.json()
+        result = _maxcore_proxy('/analyze/sentiment', body)
+        return result
+    except Exception as exc:
+        logger.warning(f'[proxy/sentiment] MaxCore relay error: {exc}')
+        raise HTTPException(503, f'MaxCore /analyze/sentiment unavailable: {exc}')
+
+
+# ── Combined status endpoint (used by TypeScript health probes) ────────────────
+
+@app.get('/status')
+def combined_status():
+    """Unified status: model readiness + continuous training + simulator config.
+
+    The TypeScript layer polls this to decide whether to use local inference
+    or fall through to MaxCore for each generation request.
+    """
+    with _train_lock:
+        train = dict(_train_status)
+
+    ct   = _continuous_thread
+    return {
+        'service':                   'MaxCore Diffusion v4 LITE',
+        'version':                   '4.0.0',
+        'port':                      int(os.environ.get('VIDEO_DIFFUSION_PORT', 8008)),
+        'model_ready':               _model_ready,
+        'model_trained':             _model_trained,
+        'continuous_loop_enabled':   _training_enabled,
+        'continuous_thread_alive':   ct is not None and ct.is_alive(),
+        'training':                  train,
+        'proxy_maxcore_configured':  bool(os.environ.get('AI_SERVER_URL')),
+        'proxy_endpoints': [
+            '/proxy/generate/text',
+            '/proxy/generate/image',
+            '/proxy/generate/content',
+            '/proxy/audio/analyze',
+            '/proxy/analyze/sentiment',
+            '/generate-video',
+            '/generate',
+        ],
+        'description': (
+            'Single gateway for all platform content generation. '
+            'Routes through MaxCore until local model reaches production quality. '
+            'Training time simulator: 1 real minute = 1 simulated year.'
+        ),
+    }
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':

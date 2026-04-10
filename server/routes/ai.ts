@@ -671,4 +671,52 @@ router.get('/organic/network-analysis', requireAuth, async (req: Request, res: R
   }
 });
 
+// ── MaxCore Diffusion / Training Time Simulator status endpoints ──────────────
+// Port 8008 (api_server_v4.py) is the primary content generation gateway.
+// These routes expose its training state and simulator progress to the frontend.
+
+const DIT24_BASE = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+
+router.get('/diffusion/status', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const ctrl = await fetch(`${DIT24_BASE}/status`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!ctrl.ok) {
+      return res.status(502).json({ error: 'Diffusion gateway unavailable', port: 8008 });
+    }
+    const data = await ctrl.json();
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(503).json({ error: 'Diffusion gateway not running', port: 8008, detail: String(err) });
+  }
+});
+
+router.get('/simulator/status', requireAuth, async (_req: Request, res: Response) => {
+  try {
+    const ctrl = await fetch(`${DIT24_BASE}/train/simulator/status`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!ctrl.ok) {
+      return res.status(502).json({ error: 'Simulator endpoint unavailable', port: 8008 });
+    }
+    const data = await ctrl.json();
+    res.json({ success: true, data });
+  } catch (err) {
+    res.status(503).json({ error: 'Diffusion gateway not running', port: 8008, detail: String(err) });
+  }
+});
+
+router.get('/diffusion/ready', async (_req: Request, res: Response) => {
+  try {
+    const ctrl = await fetch(`${DIT24_BASE}/ready`, {
+      signal: AbortSignal.timeout(3_000),
+    });
+    const data = ctrl.ok ? await ctrl.json() : { ready: false };
+    res.json({ success: true, data });
+  } catch {
+    res.json({ success: true, data: { ready: false, reason: 'gateway_offline' } });
+  }
+});
+
 export default router;

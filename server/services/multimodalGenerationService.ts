@@ -30,7 +30,53 @@ const _MAXCORE_BASE = (process.env.AI_SERVER_URL || 'https://secure-ai-forge.rep
 const MAXCORE_URL = `${_MAXCORE_BASE}/api`;
 const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 
+// ── Port 8008 gateway (MaxCore Diffusion + training time simulator) ──────────
+// This is the primary gateway for ALL content generation on the platform.
+// Proxies to MaxCore when local model is untrained; gradually switches to
+// local inference as the model accumulates simulated training years.
+const DIT24_GATEWAY = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
+const DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
+
+async function dit24GatewayPost(proxyPath: string, body: unknown): Promise<any> {
+  const res = await fetch(`${DIT24_GATEWAY}${proxyPath}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(DIT24_PROXY_TIMEOUT_MS),
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Port-8008 gateway ${proxyPath} → HTTP ${res.status}: ${text.slice(0, 200)}`);
+  }
+  const ct = res.headers.get('content-type') ?? '';
+  if (!ct.includes('application/json')) {
+    throw new Error(`Port-8008 gateway ${proxyPath} returned non-JSON`);
+  }
+  return res.json();
+}
+
+// Paths proxied through port 8008 → /proxy<path> on the gateway
+const DIT24_PROXY_PATHS = new Set([
+  '/generate/text',
+  '/generate/image',
+  '/generate/content',
+  '/audio/analyze',
+  '/analyze/sentiment',
+]);
+
 async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<any> {
+  // Route through the port-8008 training gateway when the path is supported.
+  // The gateway server proxies to MaxCore internally (and will eventually
+  // serve locally once the local model is trained). This makes port 8008
+  // the single source of truth for all content generation.
+  if (DIT24_PROXY_PATHS.has(path)) {
+    try {
+      return await dit24GatewayPost(`/proxy${path}`, body);
+    } catch {
+      // Port 8008 not ready — fall through to direct MaxCore call
+    }
+  }
+
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: 'POST',
     headers: {

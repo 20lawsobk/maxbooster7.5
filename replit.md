@@ -80,12 +80,27 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - Enriches prompts with style metadata from `TEMPLATE_TO_STYLE` map in `advancedVideoRendererService.ts`
 - Endpoint: `/relay/status`, `/generate-video`, `/health`
 
-### Tier 2 — Video Diffusion Engine (port 8008, `server/services/diffusion/api_server_v4.py`)
+### Tier 2 — MaxCore AI Content Gateway (port 8008, `server/services/diffusion/api_server_v4.py`) ← PRIMARY SOURCE
+- **Primary and only source for ALL platform content generation** (text, image, audio, video)
 - Continuous self-training DiT-24 UNetV4 LITE (~17.5M params, 96×96, NumPy CPU)
 - Year-Equivalent Throughput Engine: 142M YE-steps/min target, 1 real minute = 1 simulated year
 - AdvancedMemoryLayer: EpisodicStore (1300 frames), PromptIndex, GradientMemory, SessionRegistry
 - Trains from MaxCore 8TB+ corpus; switches from relay to local inference once `model_trained=True`
 - Persistent training state: `server/services/diffusion/training_state.json`
+- **Auto-starts with `npm run dev`** (background Python process, logs → `/tmp/diffusion-8008.log`)
+- **Proxy endpoints** (all content generation routes through these before reaching MaxCore directly):
+  - `POST /proxy/generate/text` → MaxCore `/api/generate/text`
+  - `POST /proxy/generate/image` → MaxCore `/api/generate/image`
+  - `POST /proxy/generate/content` → MaxCore `/api/generate/content`
+  - `POST /proxy/audio/analyze` → MaxCore `/api/audio/analyze`
+  - `POST /proxy/analyze/sentiment` → MaxCore `/api/analyze/sentiment`
+  - `POST /generate-video` → local DiT-24 or MaxCore relay
+  - `GET /status` — combined gateway status (model, training, simulator)
+  - `GET /train/simulator/status` — RealisticTimeSimulator stats
+- **Node.js API routes** (no auth for ready, auth required for status/simulator):
+  - `GET /api/ai/diffusion/ready` — quick readiness probe
+  - `GET /api/ai/diffusion/status` — full combined status
+  - `GET /api/ai/simulator/status` — training time simulator details
 
 ### Tier 3 — MaxCore (`secure-ai-forge.replit.app`)
 - Final AI inference endpoint — sole video generation source
@@ -102,6 +117,10 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 
 | Fix | File(s) Changed | Details |
 |---|---|---|
+| Port 8008 as primary content generation gateway | `api_server_v4.py`, `multimodalGenerationService.ts`, `server/routes/ai.ts`, `package.json` | Added proxy endpoints (`/proxy/generate/text`, `/proxy/generate/image`, `/proxy/generate/content`, `/proxy/audio/analyze`, `/proxy/analyze/sentiment`, `/status`) to the port 8008 Python server. Updated `multimodalGenerationService.ts` `maxcorePost()` to route all supported content paths through port 8008 first (with 8s timeout fallback to MaxCore direct). Added 3 new Node.js API routes: `GET /api/ai/diffusion/ready`, `GET /api/ai/diffusion/status`, `GET /api/ai/simulator/status`. Port 8008 now auto-starts with `npm run dev`. |
+| `tsconfig.json` NodeNext → bundler | `tsconfig.json` | Changed `module: NodeNext` + `moduleResolution: NodeNext` → `module: ESNext` + `moduleResolution: bundler` + `jsx: react-jsx` — eliminates thousands of TS2307/TS2835 false errors from Vite's path-alias resolution incompatibility with NodeNext. |
+| `shared/domainValidation.ts` missing exports | `shared/domainValidation.ts` | Added `validateFreeDomain()` + `SUPPORTED_TLDS` exports imported by `StorefrontBuilder.tsx`. |
+| Python dependencies for port 8008 | system | Installed `fastapi`, `uvicorn[standard]`, `numpy`, `Pillow`, `scipy` via `python3 -m pip install`. |
 | DAW audio waveform + playback sync | `UltimateDAW.tsx`, `unifiedStoreAdapter.ts`, `hooks/useDAWAudioPlayback.ts` | Replaced plain clip boxes with `WaveformClip` component rendering actual decoded waveforms grid-aligned to bars/beats. Created `useDAWAudioPlayback` hook that schedules `AudioBufferSourceNode` objects via Web Audio API when transport plays. Added drag-and-drop audio file upload onto tracks (falls back to `URL.createObjectURL` if server upload fails). Fixed `addTrack`/`addAudioClip` call signatures and exposed `addAudioClip`/`updateAudioClip`/`removeAudioClip` in the unified store adapter. |
 | `stalled.forEach` TypeError | `server/lib/pdimClient.ts` | Added `_normalizeLuaResult()` — converts wasmoon 1-indexed Lua table objects `{1:"x",2:"y"}` to JS arrays before returning to BullMQ callers. |
 | `favicon.ico` 404 | `client/public/` + `client/index.html` | Copied `favicon.svg` → `favicon.ico` + `favicon.png`; added all three `<link rel="icon">` tags. |
