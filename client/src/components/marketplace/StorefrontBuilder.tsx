@@ -55,6 +55,7 @@ import {
   Link,
 } from 'lucide-react';
 import { BogoPromotionsManager } from './BogoPromotionsManager';
+import { StorefrontDnsZoneManager } from './StorefrontDnsZoneManager';
 
 interface StorefrontTemplate {
   id: string;
@@ -1687,77 +1688,7 @@ export default function StorefrontBuilder() {
                   </TabsContent>
 
                   <TabsContent value="dns" className="space-y-4 mt-4">
-
-                    {/* Subdomain system status */}
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-                      <div className="w-2 h-2 rounded-full bg-green-500 flex-shrink-0 mt-1.5" />
-                      <div>
-                        <p className="font-semibold text-green-800 text-sm">Subdomain System Active</p>
-                        <p className="text-xs text-green-700 mt-0.5">
-                          Your storefront URL: <span className="font-mono font-semibold">{subdomainForm.subdomain && subdomainForm.isSubdomainActive ? `maxbooster.replit.app/s/${subdomainForm.subdomain}` : `maxbooster.replit.app/storefront/${selectedStorefront?.slug}`}</span>. Reserve a short URL below to use the <span className="font-mono">maxbooster.replit.app/s/{'{name}'}</span> format.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">Active Domains</h3>
-                        <p className="text-sm text-muted-foreground">All domains connected to this storefront</p>
-                      </div>
-                      <Button variant="outline" size="sm" onClick={() => refetchDomains()}>
-                        Refresh
-                      </Button>
-                    </div>
-                    {storefrontDomainsList.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Globe className="w-8 h-8 mx-auto mb-2 opacity-40" />
-                        <p className="text-sm">No domains connected yet.</p>
-                        <p className="text-xs mt-1">Reserve a managed subdomain or add a custom domain in the Settings tab above.</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {storefrontDomainsList.map((d) => (
-                          <div key={d.id} className="flex items-center justify-between p-3 border rounded-lg">
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${d.status === 'active' ? 'bg-green-500' : d.status === 'pending' ? 'bg-amber-400' : 'bg-red-400'}`} />
-                              <div className="min-w-0">
-                                <p className="font-mono text-sm truncate">{d.domain}</p>
-                                <div className="flex items-center gap-2 mt-0.5">
-                                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 capitalize">
-                                    {d.type === 'managed_subdomain' ? 'Managed' : 'Custom'}
-                                  </Badge>
-                                  <Badge variant={d.status === 'active' ? 'default' : 'secondary'} className={`text-[10px] px-1.5 py-0 capitalize ${d.status === 'active' ? 'bg-green-600' : ''}`}>
-                                    {d.status.replace('_', ' ')}
-                                  </Badge>
-                                  {d.isPrimary && <Badge variant="outline" className="text-[10px] px-1.5 py-0">Primary</Badge>}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              {d.status === 'active' && (
-                                <a href={`https://${d.domain}`} target="_blank" rel="noopener noreferrer">
-                                  <Button variant="outline" size="sm" className="h-7 text-xs">
-                                    <ExternalLink className="w-3 h-3 mr-1" /> Visit
-                                  </Button>
-                                </a>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-xs text-red-600 hover:text-red-700"
-                                onClick={async () => {
-                                  if (!confirm(`Remove ${d.domain}?`)) return;
-                                  await apiRequest('DELETE', `/api/storefront-domains/${d.id}`);
-                                  refetchDomains();
-                                }}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                    <StorefrontDnsZoneManager />
                   </TabsContent>
                 </Tabs>
               </CardContent>
