@@ -441,6 +441,61 @@ export const insertDnsProviderCredentialsSchema = createInsertSchema(dnsProvider
 export type InsertDnsProviderCredentials = z.infer<typeof insertDnsProviderCredentialsSchema>;
 
 // ============================================================================
+// DNS ZONES — Built-in DNS provider (users point their domain NS here)
+// ============================================================================
+export const dnsZones = pgTable("dns_zones", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  domain: text("domain").notNull().unique(),
+  status: text("status").notNull().default("pending"), // 'pending' | 'active' | 'suspended'
+  verificationToken: text("verification_token").default(sql`gen_random_uuid()`),
+  isVerified: boolean("is_verified").default(false),
+  nameserver1: text("nameserver1").default("ns1.maxboostermusic.com"),
+  nameserver2: text("nameserver2").default("ns2.maxboostermusic.com"),
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDnsZoneSchema = createInsertSchema(dnsZones).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDnsZone = z.infer<typeof insertDnsZoneSchema>;
+export type DnsZone = typeof dnsZones.$inferSelect;
+
+// ============================================================================
+// DNS ZONE RECORDS — Per-domain records served by the built-in nameserver
+// ============================================================================
+export const dnsZoneRecords = pgTable("dns_zone_records", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  zoneId: varchar("zone_id").notNull(),
+  userId: varchar("user_id").notNull(),
+  domain: text("domain").notNull(),
+  type: text("type").notNull(), // A, AAAA, CNAME, MX, TXT, NS, SRV, CAA
+  name: text("name").notNull(), // '@' for root, 'www', 'mail', etc.
+  value: text("value").notNull(),
+  ttl: integer("ttl").default(3600),
+  priority: integer("priority"),
+  weight: integer("weight"),
+  port: integer("port"),
+  tag: text("tag"), // for CAA records
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertDnsZoneRecordSchema = createInsertSchema(dnsZoneRecords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertDnsZoneRecord = z.infer<typeof insertDnsZoneRecordSchema>;
+export type DnsZoneRecord = typeof dnsZoneRecords.$inferSelect;
+
+// ============================================================================
 // MEMBERSHIP TIERS
 // ============================================================================
 export const membershipTiers = pgTable("membership_tiers", {
