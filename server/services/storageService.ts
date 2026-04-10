@@ -1,13 +1,15 @@
 /**
- * Storage Service — PDIM-backed Pocket Dimension only.
+ * Storage Service — PDIM-backed Pocket Dimension with filesystem write-through.
  *
  * All file I/O is routed through the Pocket Dimension engine which
- * persists chunks via the PDIM HTTP server. No disk, no S3, no
- * Replit Object Storage is used.
+ * persists chunks via the PDIM HTTP server. A local filesystem write-through
+ * cache in uploads/files/ ensures files survive PDIM eviction.
  */
 
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
+import fs from 'fs';
+import path from 'path';
 
 export interface StorageProvider {
   uploadFile(file: Buffer, key: string, contentType?: string): Promise<string>;
@@ -18,6 +20,19 @@ export interface StorageProvider {
   fileExists(key: string): Promise<boolean>;
 }
 
+const LOCAL_STORAGE_DIR = path.resolve('./uploads/files');
+
+function localFilePath(key: string): string {
+  return path.join(LOCAL_STORAGE_DIR, key.replace(/\//g, path.sep));
+}
+
+function ensureLocalDir(filePath: string): void {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+}
+
 /**
  * Pocket Dimension Storage Provider
  *
@@ -26,6 +41,7 @@ export interface StorageProvider {
  *   - SHA-256 content-addressed deduplication
  *   - 4 MB chunk size for efficient large-file handling
  *   - Chunks persisted to PDIM HTTP server (zero local disk)
+ * Additionally writes a copy to the local filesystem for durability.
  */
 class PocketDimensionStorageProvider implements StorageProvider {
   private pocket: any = null;
@@ -57,23 +73,58 @@ class PocketDimensionStorageProvider implements StorageProvider {
   }
 
   async uploadFile(file: Buffer, key: string, contentType?: string): Promise<string> {
-    await this.ensure();
-    await this.pocket.write(`files/${key}`, file);
+    // Write to local filesystem first (durable)
+    try {
+      const localPath = localFilePath(key);
+      ensureLocalDir(localPath);
+      fs.writeFileSync(localPath, file);
+    } catch (fsErr) {
+      logger.warn(`[Storage] Local filesystem write failed for key=${key}:`, fsErr);
+    }
+
+    // Also write to PDIM
+    try {
+      await this.ensure();
+      await this.pocket.write(`files/${key}`, file);
+    } catch (pdimErr) {
+      logger.warn(`[Storage] PDIM write failed for key=${key}, file is on disk only:`, pdimErr);
+    }
+
     return key;
   }
 
   async downloadFile(key: string): Promise<Buffer> {
-    await this.ensure();
+    // Try PDIM first
     try {
+      await this.ensure();
       return await this.pocket.read(`files/${key}`);
     } catch {
-      throw new Error(`File not found: ${key}`);
+      // Fall through to local filesystem
     }
+
+    // Fall back to local filesystem
+    const localPath = localFilePath(key);
+    if (fs.existsSync(localPath)) {
+      return fs.readFileSync(localPath);
+    }
+
+    throw new Error(`File not found: ${key}`);
   }
 
   async deleteFile(key: string): Promise<void> {
-    await this.ensure();
+    // Delete from local filesystem
     try {
+      const localPath = localFilePath(key);
+      if (fs.existsSync(localPath)) {
+        fs.unlinkSync(localPath);
+      }
+    } catch (fsErr) {
+      logger.warn(`[StorageService] local deleteFile failed for key=${key}:`, fsErr);
+    }
+
+    // Delete from PDIM
+    try {
+      await this.ensure();
       await this.pocket.delete(`files/${key}`);
     } catch (err: any) {
       logger.warn(`[StorageService] deleteFile failed for key=${key}: ${err?.message}`);
@@ -89,8 +140,13 @@ class PocketDimensionStorageProvider implements StorageProvider {
   }
 
   async fileExists(key: string): Promise<boolean> {
-    await this.ensure();
+    // Check local filesystem first (fast)
+    const localPath = localFilePath(key);
+    if (fs.existsSync(localPath)) return true;
+
+    // Check PDIM
     try {
+      await this.ensure();
       return this.pocket.exists(`files/${key}`);
     } catch {
       return false;

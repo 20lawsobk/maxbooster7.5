@@ -111,7 +111,7 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.
 - **Database**: PostgreSQL (via Neon serverless), Drizzle ORM.
-- **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`).
+- **Storage / Queuing / Cache (unified)**: PDIM — Pocket Dimension (`pocketdimensionstorage.replit.app`). The `storageService.ts` adds a local filesystem write-through cache at `uploads/files/` so uploaded files persist even if PDIM evicts them. All image renders (beat cover art, storefront banner/avatar/logo) have `onError` fallbacks.
 - **Machine Learning**: `@tensorflow/tfjs` (pure-JS CPU backend — no native bindings).
 - **Payment Processing**: Stripe.
 - **Email Delivery**: SendGrid.

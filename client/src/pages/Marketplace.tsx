@@ -2343,12 +2343,16 @@ return (
                     <CardContent className="p-0">
                       <div className="relative">
                         <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
-                          {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="absolute inset-0 w-full h-full object-cover" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <Music className="w-16 h-16 text-white opacity-50" />
-                            </div>
+                          <div className="flex items-center justify-center h-full">
+                            <Music className="w-16 h-16 text-white opacity-50" />
+                          </div>
+                          {beat.coverArt && (
+                            <img
+                              src={beat.coverArt}
+                              alt={beat.title}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
                           )}
                         </div>
                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-t-lg flex items-center justify-center">
@@ -2793,12 +2797,16 @@ return (
                               onClick={(e) => e.stopPropagation()}
                             />
                           </div>
-                          {beat.coverArt ? (
-                            <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="flex items-center justify-center h-full">
-                              <Music className="w-16 h-16 text-white opacity-50" />
-                            </div>
+                          <div className="flex items-center justify-center h-full">
+                            <Music className="w-16 h-16 text-white opacity-50" />
+                          </div>
+                          {beat.coverArt && (
+                            <img
+                              src={beat.coverArt}
+                              alt={beat.title}
+                              className="absolute inset-0 w-full h-full object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            />
                           )}
                         </div>
                         <div className="p-4">
@@ -3868,12 +3876,16 @@ return (
         <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-lg p-4 z-50">
           <div className="max-w-7xl mx-auto flex items-center space-x-4">
             <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg overflow-hidden flex-shrink-0">
-              {currentBeat.coverArt ? (
-                <img src={currentBeat.coverArt} alt={currentBeat.title} className="absolute inset-0 w-full h-full object-cover" />
-              ) : (
-                <div className="flex items-center justify-center h-full">
-                  <Music className="w-8 h-8 text-white" />
-                </div>
+              <div className="flex items-center justify-center h-full">
+                <Music className="w-8 h-8 text-white" />
+              </div>
+              {currentBeat.coverArt && (
+                <img
+                  src={currentBeat.coverArt}
+                  alt={currentBeat.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
               )}
             </div>
             <div className="flex-shrink-0 w-48">

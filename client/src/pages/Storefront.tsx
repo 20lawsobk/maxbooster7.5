@@ -127,6 +127,44 @@ interface MarketplaceListing {
   createdAt: string;
 }
 
+function BannerImage({ url }: { url: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) return null;
+  return (
+    <div
+      className="w-full h-64 md:h-96 bg-cover bg-center relative"
+      style={{ backgroundImage: `url(${url})` }}
+    >
+      <img
+        src={url}
+        alt=""
+        className="hidden"
+        onError={() => setFailed(true)}
+      />
+      <div className="absolute inset-0 bg-black/30"></div>
+    </div>
+  );
+}
+
+function AvatarImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  if (failed) {
+    return (
+      <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center border-4 border-white shadow-lg">
+        <Music className="w-16 h-16 text-white" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg"
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 export default function Storefront() {
   const { slug } = useParams<{ slug: string }>();
   const { toast } = useToast();
@@ -475,12 +513,7 @@ if (!storefront || !storefront.isActive || !storefront.isPublic) {
   return (
     <div className="min-h-screen" style={customStyles}>
       {customization.banner && (
-        <div
-          className="w-full h-64 md:h-96 bg-cover bg-center relative"
-          style={{ backgroundImage: `url(${customization.banner})` }}
-        >
-          <div className="absolute inset-0 bg-black/30"></div>
-        </div>
+        <BannerImage url={customization.banner} />
       )}
 
       <div className="container mx-auto px-4 py-8">
@@ -488,11 +521,7 @@ if (!storefront || !storefront.isActive || !storefront.isPublic) {
           <div className="flex flex-col md:flex-row gap-8 items-start mb-12">
             <div className="flex-shrink-0">
               {customization.avatar ? (
-                <img
-                  src={customization.avatar}
-                  alt={storefront.name}
-                  className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-white shadow-lg"
-                />
+                <AvatarImage src={customization.avatar} alt={storefront.name} />
               ) : (
                 <div className="w-32 h-32 md:w-40 md:h-40 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center border-4 border-white shadow-lg">
                   <Music className="w-16 h-16 text-white" />
@@ -859,16 +888,16 @@ if (!storefront || !storefront.isActive || !storefront.isPublic) {
                     style={{ backgroundColor: bgColor, color: textColor }}
                   >
                     <div className="relative">
-                      {listing.coverArtUrl ? (
+                      <div className="w-full h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
+                        <Music className="w-16 h-16 text-white" />
+                      </div>
+                      {listing.coverArtUrl && (
                         <img
                           src={listing.coverArtUrl}
                           alt={listing.title}
-                          className="w-full h-48 object-cover"
+                          className="absolute inset-0 w-full h-48 object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                         />
-                      ) : (
-                        <div className="w-full h-48 bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-                          <Music className="w-16 h-16 text-white" />
-                        </div>
                       )}
                       <div className="absolute top-2 right-2">
                         <Badge variant={listing.isExclusive ? 'default' : 'secondary'}>
