@@ -174,6 +174,8 @@ export default function StorefrontBuilder() {
   const [requestingCustomDomain, setRequestingCustomDomain] = useState(false);
   const [verifyingDomain, setVerifyingDomain] = useState(false);
   const [domainVerified, setDomainVerified] = useState<boolean | null>(null);
+  const [newDnsZoneDomain, setNewDnsZoneDomain] = useState('');
+  const [addedDnsZone, setAddedDnsZone] = useState<{ id: string; domain: string; nameserver1: string; nameserver2: string } | null>(null);
 
   const [customization, setCustomization] = useState<Storefront['customization']>({
     colors: {
@@ -511,6 +513,31 @@ export default function StorefrontBuilder() {
     },
     onError: (error: any) => {
       toast({ title: 'Reserve Failed', description: error.message || 'Failed to reserve subdomain', variant: 'destructive' });
+    },
+  });
+
+  const { data: dnsZonesData, refetch: refetchDnsZones } = useQuery<{ zones: Array<{ id: string; domain: string; status: string; isVerified: boolean; nameserver1: string; nameserver2: string; verificationToken: string }> }>({
+    queryKey: ['/api/dns-manager/zones'],
+    queryFn: () => apiRequest('GET', '/api/dns-manager/zones').then(r => r.json()),
+  });
+  const dnsZones = dnsZonesData?.zones ?? [];
+
+  const addDnsZoneMutation = useMutation({
+    mutationFn: (domain: string) => apiRequest('POST', '/api/dns-manager/zones', { domain }).then(r => r.json()),
+    onSuccess: (data) => {
+      if (data.zone) {
+        setAddedDnsZone(data.zone);
+        setNewDnsZoneDomain('');
+        refetchDnsZones();
+        toast({ title: 'Domain Added', description: 'Update your nameservers to point to Max Booster.' });
+      } else {
+        toast({ title: 'Failed', description: data.error || 'Could not add domain', variant: 'destructive' });
+      }
+    },
+    onError: async (err: any) => {
+      let msg = 'Failed to add domain';
+      try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
     },
   });
 
@@ -1062,98 +1089,84 @@ export default function StorefrontBuilder() {
                       <div className="flex items-center justify-between">
                         <div>
                           <Label className="text-base font-semibold">Custom Domain</Label>
-                          <p className="text-sm text-muted-foreground">Use your own domain (e.g. www.mybeats.com)</p>
+                          <p className="text-sm text-muted-foreground">Use your own domain (e.g. mybeats.com) — powered by the built-in DNS manager</p>
                         </div>
-                        {customDomainForm.isCustomDomainActive && (
+                        {dnsZones.some(z => z.isVerified) && (
                           <Badge className="bg-green-600 text-white">Active</Badge>
                         )}
                       </div>
 
+                      {dnsZones.length > 0 && (
+                        <div className="space-y-2">
+                          {dnsZones.map(zone => (
+                            <div key={zone.id} className="flex items-center justify-between bg-muted rounded px-3 py-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-muted-foreground" />
+                                <span className="font-mono font-medium">{zone.domain}</span>
+                              </div>
+                              <Badge variant={zone.isVerified ? 'default' : 'outline'} className={zone.isVerified ? 'bg-green-600 text-white' : ''}>
+                                {zone.isVerified ? 'Active' : zone.status}
+                              </Badge>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="flex gap-2 items-center">
                         <Input
-                          value={customDomainForm.customDomain}
+                          value={newDnsZoneDomain}
                           onChange={(e) => {
                             const val = e.target.value.toLowerCase().trim();
-                            setCustomDomainForm({ ...customDomainForm, customDomain: val });
-                            setCustomDomainInstructions(null);
-                            setDomainVerified(null);
+                            setNewDnsZoneDomain(val);
+                            setAddedDnsZone(null);
                           }}
-                          placeholder="www.mybeats.com"
+                          placeholder="mybeats.com"
                           className="flex-1"
                         />
                         <Button
                           size="sm"
-                          onClick={requestCustomDomainFn}
-                          disabled={!customDomainForm.customDomain || customDomainForm.customDomain.length < 4 || requestingCustomDomain || !selectedStorefront}
+                          onClick={() => {
+                            if (newDnsZoneDomain && newDnsZoneDomain.length >= 4) {
+                              addDnsZoneMutation.mutate(newDnsZoneDomain);
+                            }
+                          }}
+                          disabled={!newDnsZoneDomain || newDnsZoneDomain.length < 4 || addDnsZoneMutation.isPending}
                         >
-                          {requestingCustomDomain ? 'Adding...' : 'Add Domain'}
+                          {addDnsZoneMutation.isPending ? 'Adding...' : 'Add Domain'}
                         </Button>
                       </div>
 
-                      {customDomainInstructions && (
+                      {addedDnsZone && (
                         <div className="space-y-3">
-                          <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs space-y-1">
-                            <p className="font-semibold text-blue-800">Step 1 — Add these DNS records at your registrar:</p>
-                            <p className="text-blue-700 text-[11px]">Log in to your domain registrar (GoDaddy, Cloudflare, Namecheap, etc.) and add both records below.</p>
+                          <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs space-y-2">
+                            <p className="font-semibold text-blue-800">Domain added — point your nameservers to Max Booster:</p>
+                            <p className="text-blue-700 text-[11px]">Log in to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.) and change the nameservers to:</p>
+                            <div className="flex flex-col gap-1 font-mono">
+                              <div className="flex items-center gap-2 bg-white rounded px-2 py-1 border">
+                                <span className="text-muted-foreground text-[11px]">NS1</span>
+                                <span className="text-blue-800 font-medium">{addedDnsZone.nameserver1}</span>
+                              </div>
+                              <div className="flex items-center gap-2 bg-white rounded px-2 py-1 border">
+                                <span className="text-muted-foreground text-[11px]">NS2</span>
+                                <span className="text-blue-800 font-medium">{addedDnsZone.nameserver2}</span>
+                              </div>
+                            </div>
+                            <p className="text-blue-600 text-[11px]">DNS propagation can take 1–48 hours. Once done, your domain will show as Active in the DNS tab.</p>
                           </div>
-                          <div className="border rounded overflow-hidden font-mono text-xs">
-                            <div className="grid grid-cols-3 gap-px bg-border">
-                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Type</div>
-                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Name / Host</div>
-                              <div className="bg-muted px-2 py-1 font-semibold text-muted-foreground">Value</div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-px bg-border">
-                              <div className="bg-background px-2 py-2 text-purple-700 font-bold">TXT</div>
-                              <div className="bg-background px-2 py-2 text-green-700 break-all">{customDomainInstructions.instructions.txt.name}</div>
-                              <div className="bg-background px-2 py-2 text-muted-foreground break-all">{customDomainInstructions.instructions.txt.value}</div>
-                            </div>
-                            <div className="grid grid-cols-3 gap-px bg-border">
-                              <div className="bg-background px-2 py-2 text-blue-600 font-bold">CNAME</div>
-                              <div className="bg-background px-2 py-2 text-green-700 break-all">{customDomainInstructions.instructions.cname.name}</div>
-                              <div className="bg-background px-2 py-2 text-muted-foreground break-all">{customDomainInstructions.instructions.cname.value}</div>
-                            </div>
-                          </div>
-                          <p className="text-xs text-muted-foreground">DNS changes can take up to 48 hours to propagate. Once added, click Verify below.</p>
                         </div>
                       )}
 
-                      {domainVerified === true && (
-                        <div className="text-sm text-green-700 bg-green-50 border border-green-200 rounded p-2 flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 flex-shrink-0" />
-                          Domain verified and active at <a href={`https://${customDomainInstructions?.domain || customDomainForm.customDomain}`} target="_blank" rel="noopener noreferrer" className="font-medium underline">{customDomainInstructions?.domain || customDomainForm.customDomain}</a>
-                        </div>
-                      )}
-                      {domainVerified === false && (
-                        <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded p-2 flex items-center gap-2">
-                          <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                          TXT record not found yet. DNS changes can take up to 48 hours — try again soon.
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-3 flex-wrap">
-                        {customDomainInstructions && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={verifyCustomDomain}
-                            disabled={verifyingDomain}
-                          >
-                            {verifyingDomain ? 'Verifying...' : 'Verify & Activate'}
-                          </Button>
-                        )}
-                        {customDomainForm.customDomain && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => {
-                              setCustomDomainForm({ customDomain: '', isCustomDomainActive: false });
-                              setCustomDomainInstructions(null);
-                              setDomainVerified(null);
-                            }}
-                          >
-                            Clear
-                          </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setActiveTab('dns')}
+                        >
+                          <Globe className="w-3 h-3 mr-1" />
+                          Manage DNS Records
+                        </Button>
+                        {dnsZones.length === 0 && !addedDnsZone && (
+                          <p className="text-xs text-muted-foreground">Add your domain above, then manage DNS records in the DNS tab.</p>
                         )}
                       </div>
                     </div>

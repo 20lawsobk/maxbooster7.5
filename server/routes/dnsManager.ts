@@ -1,9 +1,7 @@
 import { Router } from 'express';
-import { db } from '../db';
-import { eq, and } from 'drizzle-orm';
+import { pool } from '../db';
 import { z } from 'zod';
 import { logger } from '../logger.js';
-import { dnsZones, dnsZoneRecords } from '@shared/schema';
 
 const router = Router();
 
@@ -65,13 +63,39 @@ function normalizeDomain(d: string): string {
   return d.toLowerCase().trim().replace(/\.$/, '');
 }
 
-async function getZoneForUser(zoneId: string, userId: string) {
-  const [zone] = await db
-    .select()
-    .from(dnsZones)
-    .where(and(eq(dnsZones.id, zoneId), eq(dnsZones.userId, userId)))
-    .limit(1);
-  return zone;
+function mapZone(row: any) {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    domain: row.domain,
+    status: row.status,
+    isVerified: row.is_verified,
+    verificationToken: row.verification_token,
+    nameserver1: row.nameserver1,
+    nameserver2: row.nameserver2,
+    notes: row.notes,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapRecord(row: any) {
+  return {
+    id: row.id,
+    zoneId: row.zone_id,
+    userId: row.user_id,
+    domain: row.domain,
+    type: row.type,
+    name: row.name,
+    value: row.value,
+    ttl: row.ttl,
+    priority: row.priority,
+    weight: row.weight,
+    port: row.port,
+    tag: row.tag,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
 router.get('/info', (req, res) => {
@@ -97,14 +121,14 @@ router.get('/zones', async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
 
-    const zones = await db
-      .select()
-      .from(dnsZones)
-      .where(eq(dnsZones.userId, userId));
+    const result = await pool.query(
+      'SELECT * FROM dns_zones WHERE user_id = $1 ORDER BY created_at DESC',
+      [userId]
+    );
 
-    res.json({ zones });
+    res.json({ zones: result.rows.map(mapZone) });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error listing zones', { err });
+    logger.warn('[DNS Manager] Error listing zones: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to list zones' });
   }
 });
@@ -120,25 +144,31 @@ router.post('/zones', async (req, res) => {
 
     const domain = normalizeDomain(parsed.data.domain);
 
-    const existing = await db.select().from(dnsZones).where(eq(dnsZones.domain, domain)).limit(1);
-    if (existing.length > 0) return res.status(409).json({ error: 'Domain already registered in the system' });
+    const existing = await pool.query(
+      'SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1',
+      [domain]
+    );
+    if (existing.rows.length > 0) return res.status(409).json({ error: 'Domain already registered in the system' });
 
-    const [zone] = await db.insert(dnsZones).values({
-      userId,
-      domain,
-      status: 'pending',
-      notes: parsed.data.notes ?? null,
-    }).returning();
+    const insertZone = await pool.query(
+      `INSERT INTO dns_zones (user_id, domain, status, notes)
+       VALUES ($1, $2, 'pending', $3)
+       RETURNING *`,
+      [userId, domain, parsed.data.notes ?? null]
+    );
+    const zone = mapZone(insertZone.rows[0]);
 
-    await db.insert(dnsZoneRecords).values([
-      { zoneId: zone.id, userId, domain, type: 'NS', name: '@', value: NS1, ttl: 3600 },
-      { zoneId: zone.id, userId, domain, type: 'NS', name: '@', value: NS2, ttl: 3600 },
-      { zoneId: zone.id, userId, domain, type: 'SOA', name: '@', value: `${NS1} hostmaster.${BASE_DOMAIN} 1 3600 900 604800 300`, ttl: 3600 },
-    ]);
+    await pool.query(
+      `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
+       ($1, $2, $3, 'NS',  '@', $4, 3600),
+       ($1, $2, $3, 'NS',  '@', $5, 3600),
+       ($1, $2, $3, 'SOA', '@', $6, 3600)`,
+      [zone.id, userId, domain, NS1, NS2, `${NS1} hostmaster.${BASE_DOMAIN} 1 3600 900 604800 300`]
+    );
 
     res.json({ success: true, zone });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error creating zone', { err });
+    logger.warn('[DNS Manager] Error creating zone: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to create zone' });
   }
 });
@@ -147,8 +177,13 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
 
     let resolved = false;
     try {
@@ -163,7 +198,10 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
     }
 
     if (resolved) {
-      await db.update(dnsZones).set({ isVerified: true, status: 'active', updatedAt: new Date() }).where(eq(dnsZones.id, zone.id));
+      await pool.query(
+        'UPDATE dns_zones SET is_verified = true, status = $1, updated_at = NOW() WHERE id = $2',
+        ['active', zone.id]
+      );
       return res.json({ verified: true, status: 'active' });
     }
 
@@ -172,7 +210,7 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
       message: `Add a TXT record at your registrar: maxbooster-verify=${zone.verificationToken}`,
     });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Verify error', { err });
+    logger.warn('[DNS Manager] Verify error: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Verification check failed' });
   }
 });
@@ -181,15 +219,20 @@ router.delete('/zones/:zoneId', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
 
-    await db.delete(dnsZoneRecords).where(eq(dnsZoneRecords.zoneId, zone.id));
-    await db.delete(dnsZones).where(eq(dnsZones.id, zone.id));
+    const zoneResult = await pool.query(
+      'SELECT id FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zoneId = zoneResult.rows[0].id;
+
+    await pool.query('DELETE FROM dns_zone_records WHERE zone_id = $1', [zoneId]);
+    await pool.query('DELETE FROM dns_zones WHERE id = $1', [zoneId]);
 
     res.json({ success: true });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error deleting zone', { err });
+    logger.warn('[DNS Manager] Error deleting zone: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to delete zone' });
   }
 });
@@ -198,17 +241,22 @@ router.get('/zones/:zoneId/records', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
 
-    const records = await db
-      .select()
-      .from(dnsZoneRecords)
-      .where(eq(dnsZoneRecords.zoneId, zone.id));
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
 
-    res.json({ records, zone });
+    const records = await pool.query(
+      'SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name',
+      [zone.id]
+    );
+
+    res.json({ records: records.rows.map(mapRecord), zone });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error fetching records', { err });
+    logger.warn('[DNS Manager] Error fetching records: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to fetch records' });
   }
 });
@@ -217,32 +265,32 @@ router.post('/zones/:zoneId/records', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
 
     const parsed = recordSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid record', details: parsed.error.issues });
 
-    const err = validateRecord(parsed.data);
-    if (err) return res.status(400).json({ error: err });
+    const validErr = validateRecord(parsed.data);
+    if (validErr) return res.status(400).json({ error: validErr });
 
-    const [record] = await db.insert(dnsZoneRecords).values({
-      zoneId: zone.id,
-      userId,
-      domain: zone.domain,
-      type: parsed.data.type,
-      name: parsed.data.name,
-      value: parsed.data.value,
-      ttl: parsed.data.ttl,
-      priority: parsed.data.priority ?? null,
-      weight: parsed.data.weight ?? null,
-      port: parsed.data.port ?? null,
-      tag: parsed.data.tag ?? null,
-    }).returning();
+    const result = await pool.query(
+      `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl, priority, weight, port, tag)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING *`,
+      [zone.id, userId, zone.domain, parsed.data.type, parsed.data.name, parsed.data.value,
+       parsed.data.ttl, parsed.data.priority ?? null, parsed.data.weight ?? null,
+       parsed.data.port ?? null, parsed.data.tag ?? null]
+    );
 
-    res.json({ success: true, record });
+    res.json({ success: true, record: mapRecord(result.rows[0]) });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error adding record', { err });
+    logger.warn('[DNS Manager] Error adding record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to add record' });
   }
 });
@@ -251,35 +299,34 @@ router.put('/zones/:zoneId/records/:recordId', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
 
     const parsed = recordSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid record', details: parsed.error.issues });
 
-    const err = validateRecord(parsed.data);
-    if (err) return res.status(400).json({ error: err });
+    const validErr = validateRecord(parsed.data);
+    if (validErr) return res.status(400).json({ error: validErr });
 
-    const [updated] = await db
-      .update(dnsZoneRecords)
-      .set({
-        type: parsed.data.type,
-        name: parsed.data.name,
-        value: parsed.data.value,
-        ttl: parsed.data.ttl,
-        priority: parsed.data.priority ?? null,
-        weight: parsed.data.weight ?? null,
-        port: parsed.data.port ?? null,
-        tag: parsed.data.tag ?? null,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(dnsZoneRecords.id, req.params.recordId), eq(dnsZoneRecords.userId, userId)))
-      .returning();
+    const result = await pool.query(
+      `UPDATE dns_zone_records
+       SET type=$1, name=$2, value=$3, ttl=$4, priority=$5, weight=$6, port=$7, tag=$8, updated_at=NOW()
+       WHERE id=$9 AND user_id=$10
+       RETURNING *`,
+      [parsed.data.type, parsed.data.name, parsed.data.value, parsed.data.ttl,
+       parsed.data.priority ?? null, parsed.data.weight ?? null,
+       parsed.data.port ?? null, parsed.data.tag ?? null,
+       req.params.recordId, userId]
+    );
 
-    if (!updated) return res.status(404).json({ error: 'Record not found' });
-    res.json({ success: true, record: updated });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record not found' });
+    res.json({ success: true, record: mapRecord(result.rows[0]) });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error updating record', { err });
+    logger.warn('[DNS Manager] Error updating record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to update record' });
   }
 });
@@ -288,16 +335,21 @@ router.delete('/zones/:zoneId/records/:recordId', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
 
-    await db
-      .delete(dnsZoneRecords)
-      .where(and(eq(dnsZoneRecords.id, req.params.recordId), eq(dnsZoneRecords.userId, userId)));
+    const zoneResult = await pool.query(
+      'SELECT id FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+
+    await pool.query(
+      'DELETE FROM dns_zone_records WHERE id = $1 AND user_id = $2',
+      [req.params.recordId, userId]
+    );
 
     res.json({ success: true });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error deleting record', { err });
+    logger.warn('[DNS Manager] Error deleting record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to delete record' });
   }
 });
@@ -306,41 +358,39 @@ router.post('/zones/:zoneId/records/batch', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
     const userId = req.user!.id;
-    const zone = await getZoneForUser(req.params.zoneId, userId);
-    if (!zone) return res.status(404).json({ error: 'Zone not found' });
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
 
     const { records } = req.body;
     if (!Array.isArray(records) || records.length === 0) return res.status(400).json({ error: 'Records array required' });
     if (records.length > 100) return res.status(400).json({ error: 'Max 100 records per batch' });
 
-    const validated = [];
+    const validated: z.infer<typeof recordSchema>[] = [];
     for (const r of records) {
       const parsed = recordSchema.safeParse(r);
       if (!parsed.success) return res.status(400).json({ error: 'Invalid record in batch', details: parsed.error.issues });
-      const err = validateRecord(parsed.data);
-      if (err) return res.status(400).json({ error: err });
+      const validErr = validateRecord(parsed.data);
+      if (validErr) return res.status(400).json({ error: validErr });
       validated.push(parsed.data);
     }
 
-    await db.insert(dnsZoneRecords).values(
-      validated.map(r => ({
-        zoneId: zone.id,
-        userId,
-        domain: zone.domain,
-        type: r.type,
-        name: r.name,
-        value: r.value,
-        ttl: r.ttl,
-        priority: r.priority ?? null,
-        weight: r.weight ?? null,
-        port: r.port ?? null,
-        tag: r.tag ?? null,
-      }))
-    );
+    for (const r of validated) {
+      await pool.query(
+        `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl, priority, weight, port, tag)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        [zone.id, userId, zone.domain, r.type, r.name, r.value, r.ttl,
+         r.priority ?? null, r.weight ?? null, r.port ?? null, r.tag ?? null]
+      );
+    }
 
     res.json({ success: true, count: validated.length });
   } catch (err: any) {
-    logger.warn('[DNS Manager] Error batch adding records', { err });
+    logger.warn('[DNS Manager] Error batch adding records: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to batch add records' });
   }
 });
