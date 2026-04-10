@@ -785,7 +785,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // Storefront short-link: /s/:label → /storefront/:slug
-  // Handles direct browser access to path-based storefront URLs
+  // First checks managed subdomain registry, then falls back to direct slug lookup
   app.get('/s/:label', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { db: sDb } = await import('./db.js');
@@ -793,16 +793,29 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const { eq, and } = await import('drizzle-orm');
       const BASE = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
       const label = req.params.label.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+      // 1. Check managed subdomain registry (e.g. b-lawz-music reserved via UI)
       const fqdn = `${label}.${BASE}`;
-      const [row] = await sDb
+      const [domRow] = await sDb
         .select({ slug: sStorefronts.slug })
         .from(sDomains)
         .innerJoin(sStorefronts, eq(sDomains.storefrontId, sStorefronts.id))
         .where(and(eq(sDomains.domain, fqdn), eq(sDomains.type, 'managed_subdomain')))
         .limit(1);
-      if (row?.slug) {
-        return res.redirect(302, `/storefront/${row.slug}`);
+      if (domRow?.slug) {
+        return res.redirect(302, `/storefront/${domRow.slug}`);
       }
+
+      // 2. Fall back to direct slug match (label == storefront slug)
+      const [slugRow] = await sDb
+        .select({ slug: sStorefronts.slug })
+        .from(sStorefronts)
+        .where(eq(sStorefronts.slug, label))
+        .limit(1);
+      if (slugRow?.slug) {
+        return res.redirect(302, `/storefront/${slugRow.slug}`);
+      }
+
       return next();
     } catch (err) {
       logger.warn('[/s/:label] lookup error:', err);

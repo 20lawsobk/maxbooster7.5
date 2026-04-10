@@ -78,18 +78,19 @@ function ArrangeBarRuler({
   timeSignature,
   currentTime,
   isPlaying,
+  totalBars,
 }: {
   zoom: number;
   tempo: number;
   timeSignature: string;
   currentTime: number;
   isPlaying: boolean;
+  totalBars: number;
 }) {
   const beatsPerBar = parseInt(timeSignature.split('/')[0]) || 4;
   const secondsPerBeat = 60 / tempo;
   const secondsPerBar = secondsPerBeat * beatsPerBar;
   const pixelsPerSecond = 50 * zoom;
-  const totalBars = 64;
   const totalWidth = totalBars * secondsPerBar * pixelsPerSecond;
 
   const gridLines = useMemo(() => {
@@ -894,6 +895,17 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                   timeSignature={transport.timeSignature}
                   currentTime={transport.position}
                   isPlaying={transport.isPlaying}
+                  totalBars={(() => {
+                    const bpb = parseInt(transport.timeSignature.split('/')[0]) || 4;
+                    const spb = (60 / transport.tempo) * bpb;
+                    let maxSec = 120;
+                    for (const t of (tracks || [])) {
+                      for (const c of (t.audioClips || [])) {
+                        maxSec = Math.max(maxSec, c.startTime + c.duration);
+                      }
+                    }
+                    return Math.max(64, Math.ceil(maxSec / spb) + 8);
+                  })()}
                 />
                 {tracks.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
