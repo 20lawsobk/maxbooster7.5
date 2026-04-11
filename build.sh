@@ -361,8 +361,11 @@ _pdim_prune_nm() {
   \) -prune -exec rm -rf {} \; 2>/dev/null || true
 
   # Documentation, examples, benchmarks
+  # NOTE: 'doc' (singular) is intentionally excluded — some packages (e.g. exceljs)
+  # use 'doc' as a code namespace for runtime modules, not documentation.
+  # 'docs' (plural) is safe to remove and is the conventional documentation dir name.
   find node_modules -type d \( \
-    -name 'docs' -o -name 'doc' -o -name 'documentation' \
+    -name 'docs' -o -name 'documentation' \
     -o -name 'examples' -o -name 'example' \
     -o -name 'benchmark' -o -name 'benchmarks' \
     -o -name 'man' -o -name '.github' \
