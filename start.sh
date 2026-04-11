@@ -89,7 +89,18 @@ fi
 export PATH="$(dirname "$_NODE_BIN"):$PATH"
 echo "[start.sh] node: $_NODE_BIN ($("$_NODE_BIN" --version))"
 
-# ── 2. Activate Python virtual environment ────────────────────────────────────
+# ── 2. PDIM restore (Extract & Boot) ─────────────────────────────────────────
+# Extracts node_modules.pdim and python_runtime.pdim on first startup.
+# No-op on subsequent restarts (directories already present).
+# Reads compression format from *.manifest.json — handles xz and gzip capsules.
+if [ -f "dist/pdim-restore.mjs" ]; then
+  echo "[start.sh] Running PDIM capsule restore..."
+  "$_NODE_BIN" dist/pdim-restore.mjs
+else
+  echo "[start.sh] dist/pdim-restore.mjs not found — skipping PDIM restore"
+fi
+
+# ── 3. Activate Python virtual environment ────────────────────────────────────
 # Check ./python_runtime/ first (build artifact created by build.sh, not in
 # .dockerignore), then fall back to .venv/ (dev environment).
 # NEVER use bare 'python3' — the Replit python-wrapper (a Go binary) panics
