@@ -474,38 +474,6 @@ except Exception as ex:
     print(f'   Warning: cleanup scan failed: {ex}', file=sys.stderr)
 PYEOF
 
-# ─── npm shim for deployment container ──────────────────────────────────────
-# The deployment run command in .replit is  run = ["sh", "-c", "npm run start"]
-# The deployment container does NOT source the Nix profile, so 'npm' is missing
-# from PATH even though /nix/store has it.  We create a lightweight shim at
-# /home/runner/.local/bin/npm (which IS in deployment PATH as a standard user
-# bin directory) that intercepts 'npm run start' and delegates directly to
-# start.sh — no real npm needed.
-echo "==> Creating npm deployment shim → /home/runner/.local/bin/npm..."
-mkdir -p /home/runner/.local/bin
-_REAL_NPM="$(command -v npm 2>/dev/null || true)"
-_WS_DIR="$(pwd)"
-cat > /home/runner/.local/bin/npm << NPMSHIM
-#!/usr/bin/env bash
-# Deployment npm shim — created by build.sh
-# Intercepts 'npm run start' → bash start.sh (no real npm required).
-# Falls back to the real npm binary for all other npm commands.
-if [ "\$1" = "run" ] && [ "\$2" = "start" ]; then
-  exec bash "${_WS_DIR}/start.sh"
-fi
-# For all other npm commands, delegate to the real npm binary
-for _np in "${_REAL_NPM}" /home/runner/.nix-profile/bin/npm /nix/var/nix/profiles/default/bin/npm; do
-  [ -z "\$_np" ] && continue
-  if [ -f "\$_np" ] && "\$_np" --version >/dev/null 2>&1; then
-    exec "\$_np" "\$@"
-  fi
-done
-echo "npm: not found (shim exhausted all candidates)" >&2
-exit 127
-NPMSHIM
-chmod +x /home/runner/.local/bin/npm
-echo "   ✅ npm shim ready (npm run start → bash ${_WS_DIR}/start.sh)"
-
 # ─── Final summary ────────────────────────────────────────────────────────────
 echo ""
 echo "==> Build image size summary:"
