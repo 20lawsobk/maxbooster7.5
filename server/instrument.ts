@@ -9,9 +9,14 @@
  * Graceful shutdown (HTTP server close + DB pool drain) is the exclusive
  * responsibility of server/index.ts. Calling exit here would race against
  * that cleanup and leave connections open / requests half-answered.
+ *
+ * RESILIENCE: @sentry/node is loaded via a dynamic try/catch require so that a
+ * missing package (e.g. incomplete node_modules after PDIM capsule restore) never
+ * crashes the entire server process.  If Sentry is unavailable, all error events
+ * fall through to the structured JSON logger — no silent swallowing of errors.
  */
 
-import * as Sentry from '@sentry/node';
+import { createRequire } from 'module';
 import { logger } from './logger.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -22,16 +27,31 @@ const dsn = process.env.SENTRY_DSN;
 // MaxListeners warning that would otherwise fire at > 10 listeners.
 process.setMaxListeners(50);
 
-Sentry.init({
-  dsn: isProduction ? dsn : undefined,
-  tracesSampleRate: isProduction ? 0.2 : 0,
-  profilesSampleRate: isProduction ? 0.05 : 0,
-  environment: process.env.NODE_ENV || 'development',
-  beforeSend(event) {
-    if (!isProduction) return null;
-    return event;
-  },
-});
+// ── Dynamic Sentry load — safe even when @sentry/node is absent ──────────────
+// Using createRequire() inside a try/catch works in both ESM (development, tsx)
+// and CJS (production bundle — esbuild converts import.meta.url to __filename).
+// A missing module is caught gracefully instead of crashing the worker.
+const _moduleRequire = createRequire(import.meta.url);
+type SentryModule = typeof import('@sentry/node');
+let Sentry: SentryModule | null = null;
+
+try {
+  Sentry = _moduleRequire('@sentry/node') as SentryModule;
+  Sentry.init({
+    dsn: isProduction ? dsn : undefined,
+    tracesSampleRate: isProduction ? 0.2 : 0,
+    profilesSampleRate: isProduction ? 0.05 : 0,
+    environment: process.env.NODE_ENV || 'development',
+    beforeSend(event) {
+      if (!isProduction) return null;
+      return event;
+    },
+  });
+} catch (loadErr) {
+  // @sentry/node not available — observability degraded to structured local logs.
+  // This is non-fatal: the server continues running; all errors are still logged.
+  logger.warn({ err: loadErr }, '[Observability] @sentry/node unavailable — Sentry disabled, local logging active');
+}
 
 // Non-fatal error codes — pipe/stream/network disconnects that occur during
 // normal operation and must never trigger a shutdown or Sentry alert.
@@ -61,10 +81,10 @@ process.on('uncaughtException', (err) => {
   // would race against that cleanup and terminate the process before in-flight
   // requests/queries have had a chance to complete.
   logger.warn({ err, type: 'uncaughtException' }, `FATAL uncaughtException: ${err.message}`);
-  if (isProduction) Sentry.captureException(err);
+  if (isProduction && Sentry) Sentry.captureException(err);
   // Flush Sentry in background — index.ts gives the process 10 s to shut down,
   // which is sufficient time for an 8-second Sentry flush.
-  Sentry.flush(8000).catch(() => { /* best-effort, must not throw */ });
+  if (Sentry) Sentry.flush(8000).catch(() => { /* best-effort, must not throw */ });
 });
 
 process.on('unhandledRejection', (reason: any) => {
@@ -83,11 +103,15 @@ process.on('unhandledRejection', (reason: any) => {
   }
 
   logger.warn({ err, type: 'unhandledRejection' }, `unhandledRejection: ${err.message}`);
-  if (isProduction) Sentry.captureException(err);
+  if (isProduction && Sentry) Sentry.captureException(err);
 });
 
 if (isProduction) {
-  logger.info('✅ [Observability] Sentry active — errors will be captured and reported');
+  if (Sentry) {
+    logger.info('✅ [Observability] Sentry active — errors will be captured and reported');
+  } else {
+    logger.warn('⚠️  [Observability] Sentry unavailable — structured JSON logging only (check @sentry/node installation)');
+  }
 } else {
   logger.info('✅ [Observability] Structured error logging active (Sentry disabled in dev)');
 }

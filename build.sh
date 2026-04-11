@@ -117,6 +117,18 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   echo "==> Installing production dependencies (npm ci --omit=dev)..."
   npm ci --omit=dev
 
+  # ── Verify critical runtime packages were installed ───────────────────────
+  # Fail the build immediately if a package that the pre-built bundle requires
+  # at runtime is missing — better a clear build failure than a crash loop.
+  for _req_pkg in "@sentry/node" "exceljs"; do
+    if [ ! -d "node_modules/${_req_pkg}" ]; then
+      echo "ERROR: ${_req_pkg} missing after npm ci --omit=dev — aborting build"
+      echo "       Check package.json (must be in dependencies, not devDependencies)"
+      exit 1
+    fi
+  done
+  echo "   ✅ Critical runtime packages verified: @sentry/node, exceljs"
+
   # ── Security fix on freshly-installed node_modules ────────────────────────
   echo "==> Applying security patches to production node_modules..."
   if [ -f "script/security-fix.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
@@ -430,6 +442,13 @@ MANIFEST_EOF
 
 # Pre-prune node_modules, then pack all capsules
 _pdim_prune_nm
+
+# Write PDIM sentinel file into node_modules BEFORE packing.
+# dist/pdim-restore.mjs checks for this file to distinguish a properly-restored
+# node_modules from a stale directory left over by a prior deployment.
+touch node_modules/.pdim-restored
+echo "   Sentinel written: node_modules/.pdim-restored"
+
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
 

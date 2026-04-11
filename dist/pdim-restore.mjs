@@ -10,14 +10,20 @@
  *
  * Behaviour:
  *   - No .pdim files found  → silent no-op (development environment)
- *   - Directory already present → skip (already restored on a prior boot)
+ *   - Directory present WITH sentinel (.pdim-restored) → already healthy, skip
+ *   - Directory present WITHOUT sentinel → stale/incomplete → re-extract
  *   - Capsule found, directory absent → verify checksum, extract, report timing
  *   - Extraction failure → exit(1) so the container never starts in a broken state
+ *
+ * Sentinel file: node_modules/.pdim-restored (written into capsule during build)
+ * This detects a stale node_modules from a prior deployment where the PDIM
+ * restore was skipped or interrupted, preventing MODULE_NOT_FOUND crashes.
  */
 
 import { execSync }        from 'child_process';
-import { existsSync, readFileSync, statSync } from 'fs';
+import { existsSync, readFileSync, statSync, rmSync } from 'fs';
 import { createHash }      from 'crypto';
+import { join }            from 'path';
 
 // ── Capsule registry ─────────────────────────────────────────────────────────
 // Matches the directories packed by build.sh.
@@ -31,18 +37,21 @@ const CAPSULES = [
     dir:         'node_modules',
     label:       'Production node_modules',
     autoRestore: true,
+    sentinel:    'node_modules/.pdim-restored',
   },
   {
     capsule:     'python_runtime.pdim',
     dir:         'python_runtime',
     label:       'Portable Python 3.12 runtime',
     autoRestore: true,
+    sentinel:    null,   // no sentinel needed — python_runtime is self-contained
   },
   {
     capsule:     'source.pdim',
     dir:         null,            // multi-dir capsule — no single target dir
     label:       'Application source tree',
     autoRestore: false,           // not needed at runtime (server runs from dist/)
+    sentinel:    null,
     note:        'Restore manually — check source.manifest.json for compression format (xz: tar -xJf source.pdim | gzip: tar -xzf source.pdim)',
   },
 ];
@@ -87,7 +96,7 @@ function verifyCapsule(capsulePath, manifestPath) {
 // ── Restore loop ─────────────────────────────────────────────────────────────
 let anyRestored = false;
 
-for (const { capsule, dir, label, autoRestore, note } of CAPSULES) {
+for (const { capsule, dir, label, autoRestore, sentinel, note } of CAPSULES) {
   if (!existsSync(capsule)) continue; // no capsule → dev environment or already extracted
 
   // Skip capsules that should not be auto-restored at startup
@@ -99,10 +108,25 @@ for (const { capsule, dir, label, autoRestore, note } of CAPSULES) {
     continue;
   }
 
-  // Skip if the target directory already exists (prior boot already restored it)
+  // ── Sentinel-aware directory check ──────────────────────────────────────────
+  // If the target directory already exists, check for a sentinel file that proves
+  // it was extracted by PDIM (not left over from a broken prior deployment).
+  // A directory without a sentinel is stale — delete it and re-extract.
   if (dir && existsSync(dir)) {
-    process.stdout.write(`[PDIM] ${label}: already restored — skipping\n`);
-    continue;
+    if (sentinel && existsSync(sentinel)) {
+      process.stdout.write(`[PDIM] ${label}: already restored — skipping\n`);
+      continue;
+    }
+    // Stale directory: prior deployment left an incomplete node_modules or the
+    // pdim-restore.mjs was missing and the capsule was never extracted.
+    process.stdout.write(
+      `[PDIM] ${label}: stale directory detected (missing sentinel ${sentinel}) — re-extracting...\n`
+    );
+    try {
+      rmSync(dir, { recursive: true, force: true });
+    } catch (rmErr) {
+      process.stderr.write(`[PDIM] ⚠️  Could not remove stale ${dir}: ${rmErr.message} — attempting extraction anyway\n`);
+    }
   }
 
   const manifestPath = capsule.replace(/\.pdim$/, '.manifest.json');

@@ -69,6 +69,14 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - Intelligent error classifier at `server/lib/routeError.ts`: auth→INFO, 404→DEBUG, transient→WARN (throttled 60s)
 - Server boots with **0 ERRORs, ~17 WARNs** — all PDIM circuit-breaker/connectivity events (expected)
 
+### Deployment Crash-Loop Fixes (Production Hardening)
+- **Node.js binary**: `.node_bin/node` (v22.22.0) bundled — deployment container has no system Node
+- **exceljs fix**: `doc` (singular) excluded from PDIM prune list — exceljs stores runtime code in `lib/doc/workbook.js`
+- **`@sentry/node` resilience**: `server/instrument.ts` uses `createRequire(import.meta.url)('@sentry/node')` inside try/catch instead of top-level `import`. Missing module is caught gracefully (server doesn't crash, logging falls back to structured JSON). `mandatoryMiddleware.ts` imports `Sentry` from `instrument.ts` (nullable) not directly from `@sentry/node`.
+- **PDIM sentinel pattern**: `dist/pdim-restore.mjs` checks for `node_modules/.pdim-restored` sentinel file. If `node_modules/` exists but the sentinel is absent (stale directory from a prior deployment), the directory is deleted and re-extracted from `node_modules.pdim`. `build.sh` writes the sentinel before packing the capsule.
+- **Build-time assertions**: `build.sh` verifies `@sentry/node` and `exceljs` are present after `npm ci --omit=dev` — fails the build immediately instead of shipping a broken capsule.
+- **`advanced_memory/`**: `.npz` training shards are runtime-generated artifacts, excluded from git and deployment via `.gitignore` and `build.sh` excludes.
+
 ## Three-Tier Video Diffusion Architecture
 
 **Architecture**: Max Booster → MaxCore Rendering Engine relay (port 8000, DiT-24 + DigitalGPU) → MaxCore (`secure-ai-forge.replit.app`)

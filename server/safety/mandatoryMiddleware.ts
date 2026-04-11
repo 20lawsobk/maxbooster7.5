@@ -12,7 +12,7 @@ import cors from 'cors';
 import { logger } from '../logger.js';
 import { randomUUID } from 'crypto';
 import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddleware.js';
-import * as Sentry from '@sentry/node';
+import { Sentry } from '../instrument.js';
 import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
 import { getRedisClient } from '../lib/redisClient.js';
 
@@ -132,13 +132,15 @@ export function globalErrorHandler(
       userId: (req.user as any)?.id,
     }, `[${requestId}] Unhandled error: ${err.message}`);
     try {
-      Sentry.withScope((scope) => {
-        scope.setTag('requestId', requestId);
-        scope.setTag('path', req.path);
-        scope.setTag('method', req.method);
-        scope.setUser({ id: (req.user as any)?.id });
-        Sentry.captureException(err);
-      });
+      if (Sentry) {
+        Sentry.withScope((scope) => {
+          scope.setTag('requestId', requestId);
+          scope.setTag('path', req.path);
+          scope.setTag('method', req.method);
+          scope.setUser({ id: (req.user as any)?.id });
+          Sentry!.captureException(err);
+        });
+      }
     } catch {
       // Intentionally silent — Sentry unavailable; must not cause recursive error-handler failure
     }
