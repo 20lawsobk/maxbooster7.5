@@ -382,6 +382,12 @@ export const storefrontDomains = pgTable("storefront_domains", {
   status: text("status").notNull().default("pending"), // 'pending' | 'active' | 'verification_failed' | 'disabled'
   isPrimary: boolean("is_primary").default(false),
   verificationToken: text("verification_token"),
+  // FK to the built-in DNS zone (set when Max Booster becomes authoritative for this domain)
+  dnsZoneId: varchar("dns_zone_id"),
+  // Tracks how many consecutive verification failures have occurred
+  verificationFailures: integer("verification_failures").default(0),
+  // When the domain was last successfully verified
+  verifiedAt: timestamp("verified_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -394,6 +400,31 @@ export const insertStorefrontDomainSchema = createInsertSchema(storefrontDomains
 
 export type InsertStorefrontDomain = z.infer<typeof insertStorefrontDomainSchema>;
 export type StorefrontDomain = typeof storefrontDomains.$inferSelect;
+
+// ============================================================================
+// STOREFRONT HOSTS — Host-based routing projection table
+// ============================================================================
+// One row per hostname that should route to a storefront.
+// Populated when a domain becomes 'active' in storefront_domains.
+// The router (Express vhost / Nginx / edge middleware) reads this table.
+export const storefrontHosts = pgTable("storefront_hosts", {
+  host: text("host").primaryKey(),            // 'artist.com', 'shop.artist.com', 'slug.maxbooster.app'
+  storefrontId: varchar("storefront_id").notNull(),
+  // SSL certificate lifecycle: 'pending' | 'issued' | 'failed' | 'renewing'
+  certStatus: text("cert_status").notNull().default("pending"),
+  certIssuedAt: timestamp("cert_issued_at"),
+  certExpiresAt: timestamp("cert_expires_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertStorefrontHostSchema = createInsertSchema(storefrontHosts).omit({
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertStorefrontHost = z.infer<typeof insertStorefrontHostSchema>;
+export type StorefrontHost = typeof storefrontHosts.$inferSelect;
 
 // ============================================================================
 // DNS TEMPLATES (Reusable DNS record configurations)

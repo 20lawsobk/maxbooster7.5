@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dns-authoritative
+  namespace: dns-os
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: dns-authoritative
+  template:
+    metadata:
+      labels:
+        app: dns-authoritative
+    spec:
+      containers:
+        - name: dns-authoritative
+          image: ghcr.io/maxbooster/dns-authoritative:latest
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: dns-os-db
+                  key: url
+            - name: DNS_PORT
+              value: "1053"    # Non-privileged; LB fronts port 53 → 1053
+            - name: ZONE_REFRESH_INTERVAL
+              value: "5s"
+          ports:
+            - name: dns-udp
+              containerPort: 1053
+              protocol: UDP
+            - name: dns-tcp
+              containerPort: 1053
+              protocol: TCP
+          readinessProbe:
+            exec:
+              command: [/bin/sh, -c, "echo status | nc -u -w1 127.0.0.1 1053 || exit 0"]
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+# External LoadBalancer so the cluster's public IP handles port 53 for both UDP+TCP
+apiVersion: v1
+kind: Service
+metadata:
+  name: dns-authoritative
+  namespace: dns-os
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: nlb
+spec:
+  type: LoadBalancer
+  selector:
+    app: dns-authoritative
+  ports:
+    - name: dns-udp
+      protocol: UDP
+      port: 53
+      targetPort: 1053
+    - name: dns-tcp
+      protocol: TCP
+      port: 53
+      targetPort: 1053

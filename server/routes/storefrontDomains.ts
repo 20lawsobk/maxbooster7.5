@@ -259,4 +259,104 @@ router.get("/dns/status", async (req, res) => {
   }
 });
 
+// ── Marketplace DNS provider endpoints ───────────────────────────────────────
+
+/**
+ * POST /api/storefront-domains/storefront/:storefrontId/attach-domain
+ *
+ * Attach a custom domain to a storefront.  Creates a DNS zone, adds default
+ * records (NS, TXT verification, A, www CNAME), and returns nameserver info
+ * so the artist can point their registrar.
+ */
+router.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { storefrontId } = req.params;
+    const { domain } = req.body;
+
+    if (!domain || typeof domain !== "string") {
+      return res.status(400).json({ ok: false, error: "domain is required." });
+    }
+
+    const [sf] = await db
+      .select({ id: storefronts.id, userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, storefrontId))
+      .limit(1);
+
+    if (!sf || sf.userId !== (req.user as any).id) {
+      return res.status(403).json({ ok: false, error: "Storefront not found or access denied." });
+    }
+
+    const { attachDomainToStorefront } = await import("../services/storefrontDnsService.js");
+    const result = await attachDomainToStorefront(storefrontId, (req.user as any).id, domain);
+
+    logger.info({ storefrontId, domain }, "[storefrontDomains] domain attached via DNS provider");
+    return res.status(201).json({ ok: true, ...result });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] attach-domain error");
+    const status = err.message?.includes("already active") ? 409 : 500;
+    return res.status(status).json({ ok: false, error: err.message || "Internal error." });
+  }
+});
+
+/**
+ * POST /api/storefront-domains/custom/verify-status/:domainId
+ *
+ * Trigger an on-demand verification check for one pending domain.
+ * The background worker also runs this automatically every 60 s.
+ */
+router.post("/custom/verify-status/:domainId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { domainId } = req.params;
+    const { verifyStorefrontDomain } = await import("../services/storefrontDnsService.js");
+    const result = await verifyStorefrontDomain(domainId);
+    return res.json({ ok: true, result });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] verify-status error");
+    return res.status(500).json({ ok: false, error: err.message || "Internal error." });
+  }
+});
+
+/**
+ * DELETE /api/storefront-domains/custom/detach/:domainId
+ *
+ * Remove a custom domain from a storefront, deleting its DNS zone and
+ * host routing entry.
+ */
+router.delete("/custom/detach/:domainId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { domainId } = req.params;
+    const { detachDomainFromStorefront } = await import("../services/storefrontDnsService.js");
+    await detachDomainFromStorefront(domainId);
+    return res.json({ ok: true });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] detach error");
+    return res.status(500).json({ ok: false, error: err.message || "Internal error." });
+  }
+});
+
+/**
+ * GET /api/storefront-domains/hosts/:host
+ *
+ * Internal host-based routing lookup.  Returns the storefront ID for the
+ * given hostname (used by edge middleware to route requests).
+ */
+router.get("/hosts/:host", async (req, res) => {
+  try {
+    const { lookupStorefrontByHost } = await import("../services/storefrontDnsService.js");
+    const storefrontId = await lookupStorefrontByHost(req.params.host);
+    if (!storefrontId) return res.status(404).json({ ok: false, error: "host_not_found" });
+    return res.json({ ok: true, storefrontId });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] host lookup error");
+    return res.status(500).json({ ok: false, error: "Internal error." });
+  }
+});
+
 export default router;

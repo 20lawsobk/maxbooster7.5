@@ -589,6 +589,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn('Workers not available');
   }
 
+  // Domain verification worker — polls storefront_domains for pending custom domains
+  // and checks TXT propagation. Runs on every process (lightweight interval, not BullMQ).
+  try {
+    const { startDomainVerificationWorker } = await import('./workers/domainVerificationWorker.js');
+    startDomainVerificationWorker();
+    logger.info('Domain verification worker started');
+  } catch (e: any) {
+    logger.warn(`Domain verification worker unavailable: ${e.message}`);
+  }
+
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
   try {
     const { tfWorkerPool } = await import('./lib/tensorflowWorkerPool.js');

@@ -6,6 +6,63 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 ## User Preferences
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## DNS-OS: Marketplace Storefront DNS Provider System
+
+A standalone `dns-os/` monorepo lives at the project root, providing a fully self-hosted DNS provider for Max Booster artist storefronts.
+
+### dns-os/ Monorepo Layout
+```
+dns-os/
+  db/migrations/           — 001_init.sql (tenants/zones/records + triggers)
+                             002_audit.sql (audit log + bump_zone_serial() fn)
+  services/
+    dns-api/               — TypeScript/Fastify control-plane API (Node.js)
+      src/index.ts         — Fastify app, /health, tenants + zones + records routes
+      src/routes/tenants.ts, zones.ts, records.ts — full CRUD with TX serial bumps
+      src/db/pool.ts       — pg Pool (DATABASE_URL)
+      Dockerfile           — multi-stage Node 22 builder
+      package.json / tsconfig.json
+    dns-authoritative/     — Go 1.25 authoritative DNS server (miekg/dns + pgx/v5)
+      main.go              — UDP+TCP :53, graceful shutdown via SIGTERM
+      zonestore.go         — in-memory zone cache refreshed every 5s from Postgres
+      dnsserver.go         — RFC-1034 best-match zone lookup, NXDOMAIN/NODATA/SOA
+      go.mod               — module github.com/maxbooster/dns-authoritative
+      Dockerfile           — scratch container (static binary)
+  infra/
+    docker-compose.yml     — postgres:16, dns-api:8080, dns-authoritative:5353
+    k8s/                   — StatefulSet (postgres), Deployment (api+dns), NLB Service
+```
+
+### Max Booster Integration (Phase 3+)
+
+**Schema additions** (`shared/schema.ts` + pushed to Neon):
+- `storefront_domains`: added `dns_zone_id` (FK to dns_zones), `verification_failures`, `verified_at`
+- `storefront_hosts` (new table): host-based routing projection — one row per active hostname, with `cert_status`, `cert_issued_at`, `cert_expires_at`
+
+**Service layer** (`server/services/storefrontDnsService.ts`):
+- `attachDomainToStorefront(storefrontId, userId, domain)` — creates dns_zone + default records (NS×2, TXT verify, A, www CNAME), links to storefront_domains, returns nameserver instructions
+- `verifyStorefrontDomain(id)` — checks TXT propagation via public DNS; on success calls `activateStorefrontDomain` which writes `storefront_hosts` row and bumps zone to 'active'
+- `detachDomainFromStorefront(id)` — removes domain + zone + host routing row
+- `lookupStorefrontByHost(host)` — host→storefront_id lookup for the router middleware
+- `provisionCertificateForHost(host)` — ACME placeholder (DNS-01 ready since Max Booster controls the zone)
+
+**Background worker** (`server/workers/domainVerificationWorker.ts`):
+- Interval-based (default 60 s) polling loop — queries `storefront_domains WHERE status='pending'` in batches of 20
+- Calls `verifyStorefrontDomain()` for each; marks 'verification_failed' after 7 days (10,080 failures)
+- Started at boot in `server/index.ts` (independent of BullMQ cluster logic — runs on every worker)
+
+**New HTTP endpoints** (all under `/api/storefront-domains/`):
+- `POST /storefront/:storefrontId/attach-domain` — attach custom domain, returns NS info
+- `POST /custom/verify-status/:domainId` — on-demand verification trigger
+- `DELETE /custom/detach/:domainId` — detach + tear down zone
+- `GET /hosts/:host` — router lookup (storefront_id by hostname)
+
+**UX flow (Mode A — Max Booster is authoritative)**:
+1. Artist enters `artist.com` in storefront settings → calls `attach-domain`
+2. Backend creates zone + TXT record; returns: point your registrar's NS to `ns1.maxboostermusic.com` / `ns2.maxboostermusic.com`
+3. Background worker checks TXT every 60 s; on match → activates domain + writes `storefront_hosts` + triggers cert provisioning
+4. Router reads `storefront_hosts` to map Host header → storefront_id
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector, including 413 DSP plugins.
 
