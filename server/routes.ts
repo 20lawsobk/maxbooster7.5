@@ -4050,6 +4050,7 @@ export async function registerRoutes(
     { path: "/api/storefront-domains", name: "storefrontDomains", loader: () => import("./routes/storefrontDomains") },
     { path: "/api/dns", name: "dns", loader: () => import("./routes/dns") },
     { path: "/api/dns-manager", name: "dnsManager", loader: () => import("./routes/dnsManager") },
+    { path: "/api/domain-registrar", name: "domainRegistrar", loader: () => import("./routes/domainRegistrar") },
     { path: "/api/analytics", name: "analytics", loader: () => import("./routes/analytics-internal") },
     { path: "/api/status", name: "status", loader: () => import("./routes/status") },
     { path: "/api/monitoring", name: "monitoring", loader: () => import("./routes/monitoring") },

@@ -1948,7 +1948,7 @@ export default function StorefrontBuilder() {
                   </TabsContent>
 
                   <TabsContent value="dns" className="space-y-4 mt-4">
-                    <StorefrontDnsZoneManager />
+                    <StorefrontDnsZoneManager storefrontId={selectedStorefront.id} />
                   </TabsContent>
                 </Tabs>
               </CardContent>

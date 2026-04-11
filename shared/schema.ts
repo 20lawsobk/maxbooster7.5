@@ -5500,3 +5500,36 @@ export const mobileDeviceTokens = pgTable("mobile_device_tokens", {
 export const insertMobileDeviceTokenSchema = createInsertSchema(mobileDeviceTokens).omit({ id: true, createdAt: true, updatedAt: true, lastSeenAt: true });
 export type MobileDeviceToken = typeof mobileDeviceTokens.$inferSelect;
 export type InsertMobileDeviceToken = z.infer<typeof insertMobileDeviceTokenSchema>;
+
+// ============================================================================
+// CLAIMED DOMAINS — Domains registered through Max Booster's registrar system
+// ============================================================================
+export const claimedDomains = pgTable("claimed_domains", {
+  id:                varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId:            varchar("user_id").notNull().references(() => users.id),
+  storefrontId:      varchar("storefront_id").references(() => storefronts.id),
+  domain:            varchar("domain", { length: 253 }).notNull().unique(),
+  sld:               varchar("sld", { length: 63 }).notNull(),
+  tld:               varchar("tld", { length: 63 }).notNull(),
+  status:            varchar("status", { length: 32 }).notNull().default("pending"),
+  // 'pending' | 'active' | 'expired' | 'transferring' | 'platform_managed'
+  registrarOrderId:  varchar("registrar_order_id", { length: 256 }),
+  registrarName:     varchar("registrar_name", { length: 64 }).default("namecheap"),
+  nameserver1:       varchar("nameserver1", { length: 253 }).default("ns1.maxboostermusic.com"),
+  nameserver2:       varchar("nameserver2", { length: 253 }).default("ns2.maxboostermusic.com"),
+  expiresAt:         timestamp("expires_at"),
+  yearsRegistered:   integer("years_registered").default(1),
+  autoRenew:         boolean("auto_renew").notNull().default(true),
+  privacyEnabled:    boolean("privacy_enabled").notNull().default(true),
+  pricePaidCents:    integer("price_paid_cents"),
+  stripePaymentId:   varchar("stripe_payment_id", { length: 256 }),
+  registrationData:  jsonb("registration_data"),
+  createdAt:         timestamp("created_at").defaultNow(),
+  updatedAt:         timestamp("updated_at").defaultNow(),
+});
+
+export const insertClaimedDomainSchema = createInsertSchema(claimedDomains).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type ClaimedDomain = typeof claimedDomains.$inferSelect;
+export type InsertClaimedDomain = z.infer<typeof insertClaimedDomainSchema>;

@@ -249,6 +249,84 @@ router.get("/platform/:storefrontId", async (req, res) => {
   }
 });
 
+// ── Domain availability search ────────────────────────────────────────────────
+// GET /api/storefront-domains/search?name=mybeats
+// Returns availability of the platform subdomain + popular external TLDs.
+// Designed for first-time domain holders discovering what's available.
+router.get("/search", async (req, res) => {
+  try {
+    const raw = ((req.query.name as string) || "").toLowerCase().trim().replace(/[^a-z0-9-]/g, "");
+    if (!raw || raw.length < 2 || raw.length > 63) {
+      return res.status(400).json({ ok: false, error: "name must be 2–63 alphanumeric characters." });
+    }
+
+    const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
+      Promise.race([p, new Promise<T>((_, r) => setTimeout(() => r(new Error("timeout")), ms))]);
+
+    async function externalAvailable(domain: string): Promise<boolean> {
+      for (const type of ["NS", "A"] as const) {
+        try {
+          const records = await timeout(2500, dnsResolve(domain, type));
+          if (records && records.length > 0) return false;
+        } catch { /* ENOTFOUND = not registered */ }
+      }
+      return true;
+    }
+
+    const PLATFORM_DOMAIN_NAME = "maxboostermusic.com";
+    const platformFqdn = `${raw}.${PLATFORM_DOMAIN_NAME}`;
+
+    // Check platform subdomain availability in DB
+    const [dbRow] = await db
+      .select({ id: storefrontDomains.id })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.domain, platformFqdn))
+      .limit(1);
+
+    const platformAvailable = !dbRow;
+
+    // Check external TLDs in parallel (popular music/creator domain extensions)
+    const externalTlds = [".com", ".net", ".io", ".music", ".band", ".studio", ".co", ".org"];
+    const externalChecks = await Promise.allSettled(
+      externalTlds.map(async (tld) => {
+        const domain = `${raw}${tld}`;
+        const available = await externalAvailable(domain);
+        return { domain, tld, available };
+      })
+    );
+
+    const results = [
+      {
+        domain: platformFqdn,
+        type: "platform",
+        tld: `.${PLATFORM_DOMAIN_NAME}`,
+        available: platformAvailable,
+        isFree: true,
+        label: "Free — Instant, no setup required",
+        registrar: null,
+      },
+      ...externalChecks
+        .filter((r): r is PromiseFulfilledResult<{ domain: string; tld: string; available: boolean }> => r.status === "fulfilled")
+        .map((r) => ({
+          domain: r.value.domain,
+          type: "external",
+          tld: r.value.tld,
+          available: r.value.available,
+          isFree: false,
+          label: r.value.available ? "Available — purchase from a registrar" : "Already registered",
+          registrar: r.value.available
+            ? `https://www.namecheap.com/domains/registration/results/?domain=${r.value.domain}`
+            : null,
+        })),
+    ];
+
+    return res.json({ ok: true, name: raw, results });
+  } catch (err) {
+    logger.warn({ err }, "[domains] search error");
+    return res.status(500).json({ ok: false, error: "Search unavailable." });
+  }
+});
+
 // DNS server status & configuration info
 router.get("/dns/status", async (req, res) => {
   try {
