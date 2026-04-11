@@ -19,7 +19,7 @@
     "build:prod": "npx tsx script/build.ts && npm run prune:deploy",
     "prune:deploy": "npm prune --omit=dev --no-audit --no-fund",
     "deploy": "npx tsx scripts/deploy.ts",
-    "start": "bash -c 'pgrep -x boosterstate > /dev/null || ([ -f ./boosterstate/target/release/boosterstate ] && BOOSTERSTATE_PORT=${BOOSTERSTATE_SIDECAR_PORT:-9877} ./boosterstate/target/release/boosterstate & sleep 2); ([ -x ./python_runtime/bin/python3 ] && [ -f ./services/diffusion/api_server_v4.py ] && MAXCORE_LITE=1 VIDEO_DIFFUSION_PORT=8008 VIDEO_DIFFUSION_HOST=0.0.0.0 ./python_runtime/bin/python3 ./services/diffusion/api_server_v4.py >> /tmp/diffusion-8008.log 2>&1 &); sleep 1 && UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE:-4096} dist/cluster.cjs'",
+    "start": "node dist/pdim-restore.mjs && bash -c 'pgrep -x boosterstate > /dev/null || ([ -f ./boosterstate/target/release/boosterstate ] && BOOSTERSTATE_PORT=${BOOSTERSTATE_SIDECAR_PORT:-9877} ./boosterstate/target/release/boosterstate & sleep 2); ([ -x ./python_runtime/bin/python3 ] && [ -f ./services/diffusion/api_server_v4.py ] && MAXCORE_LITE=1 VIDEO_DIFFUSION_PORT=8008 VIDEO_DIFFUSION_HOST=0.0.0.0 ./python_runtime/bin/python3 ./services/diffusion/api_server_v4.py >> /tmp/diffusion-8008.log 2>&1 &); sleep 1 && UV_THREADPOOL_SIZE=8 TF_NUM_INTEROP_THREADS=2 TF_NUM_INTRAOP_THREADS=2 NODE_ENV=production node --max-old-space-size=${NODE_MAX_OLD_SPACE_SIZE:-4096} dist/cluster.cjs'",
     "postinstall": "node scripts/postinstall.mjs",
     "check": "tsc",
     "db:push": "node scripts/db-push.js",

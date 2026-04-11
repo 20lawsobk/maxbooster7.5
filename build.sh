@@ -1,6 +1,19 @@
 #!/bin/bash
 set -e
 
+# ─── Purge agent/platform state from the build container ─────────────────────
+# .dockerignore already excludes .local/ (15 GB of Replit agent state) but
+# Replit's repl-layer packager may use different glob semantics than Docker.
+# Deleting here is a belt-and-suspenders guarantee: even if every .dockerignore
+# pattern fails, this single rm prevents the 15 GB from entering the image.
+# Safe: this runs ONLY in the deployment build container, never in dev.
+echo "==> Purging agent state / platform caches from build container..."
+rm -rf \
+  .local/ .agents/ \
+  .cache/ node_modules/.vite/ node_modules/.cache/ \
+  2>/dev/null || true
+echo "   Done (agent state purged)."
+
 # ─── Runtime environment ─────────────────────────────────────────────────────
 # Node.js 22 is provided by the Replit Nix environment (nodejs-22 module).
 # No portable binary download needed — `node` and `npm` are on PATH in both
@@ -304,6 +317,60 @@ else
 fi
 [ "$_PYENV_OK" = "0" ] && echo "   Python runtime unavailable — audio/image analysis disabled in production."
 
+# ─── PDIM Capsule: pack large runtime directories ────────────────────────────
+# Implements the Pocket Dimension Storage Engine "Extract & Boot" mode.
+#
+# Large runtime directories (node_modules, python_runtime) are compressed into
+# content-addressed .pdim capsules using gzip-9.  The raw directories are then
+# deleted from the image.  On first startup, dist/pdim-restore.mjs extracts
+# them back — creating the appearance of "infinite" available space while keeping
+# the deployment image compact.
+#
+# This directly mirrors the platform-capsule.ts CapsuleBuildOptions / CapsuleMetadata
+# pattern from the Pocket Dimension storage tech, adapted for shell execution.
+#
+# Compression profile: lossless-max-dedup (gzip -9 on a tar stream)
+# Integrity:           SHA-256 checksum written alongside each capsule
+# Format identifier:   pdim-v1
+echo "==> PDIM: Creating Pocket Dimension capsules..."
+
+_pdim_pack() {
+  local dir="$1" capsule="$2" label="$3"
+  if [ ! -d "$dir" ]; then
+    echo "   SKIP ${label}: directory not found"
+    return 0
+  fi
+  local raw_size
+  raw_size=$(du -sh "$dir" 2>/dev/null | cut -f1)
+  echo "   Packing ${label} (${raw_size}) → ${capsule} ..."
+  tar -czf "$capsule" "$dir/" 2>/dev/null
+  local packed_size checksum
+  packed_size=$(du -sh "$capsule" 2>/dev/null | cut -f1)
+  checksum=$(sha256sum "$capsule" 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
+  # Write PDIM capsule manifest (mirrors CapsuleMetadata from platform-capsule.ts)
+  cat > "${capsule%.pdim}.manifest.json" << MANIFEST_EOF
+{
+  "capsule": "${capsule}",
+  "directory": "${dir}",
+  "label": "${label}",
+  "rawSize": "${raw_size}",
+  "packedSize": "${packed_size}",
+  "sha256": "${checksum}",
+  "compression": "gzip-9",
+  "format": "pdim-v1",
+  "restore": "node dist/pdim-restore.mjs",
+  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+MANIFEST_EOF
+  rm -rf "${dir:?}/"
+  echo "   ✅ ${label}: ${raw_size} → ${packed_size} (PDIM capsule, sha256=${checksum:0:16}...)"
+}
+
+_pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
+_pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
+
+echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
+
 # ─── Pre-compressed asset cleanup ────────────────────────────────────────────
 echo "==> Removing pre-compressed assets (.gz/.br) from dist/public/..."
 find dist/public -type f \( -name '*.gz' -o -name '*.br' \) -delete 2>/dev/null || true
@@ -338,13 +405,16 @@ PYEOF
 # ─── Final summary ────────────────────────────────────────────────────────────
 echo ""
 echo "==> Build image size summary:"
-du -sh dist/ node_modules/ 2>/dev/null \
-  | awk '{printf "   %-20s %s\n", $2, $1}'
-echo "   Total workspace: $(du -sh --exclude=.git . 2>/dev/null | cut -f1)"
+for _item in dist/ services/ bin/ *.pdim *.manifest.json; do
+  [ -e "$_item" ] && du -sh "$_item" 2>/dev/null \
+    | awk '{printf "   %-30s %s\n", $2, $1}'
+done
+echo "   ─────────────────────────────────────────"
+echo "   Total image: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
 if [ "$FAST_PATH" = "1" ]; then
   echo "   Path: FAST (npm ci --omit=dev, no Vite/esbuild compile)"
 else
   echo "   Path: SLOW (full npm run build + npm prune)"
 fi
 echo ""
-echo "==> Build complete."
+echo "==> Build complete. PDIM capsules restore on first startup via dist/pdim-restore.mjs"

@@ -129,3 +129,10 @@ bin/
 
 # Python virtual environment created by build.sh for deployment run container
 python_runtime/
+
+# PDIM capsule artifacts — created by build.sh, restored on first startup
+# These are large binary compressed archives (node_modules + python_runtime)
+*.pdim
+*.manifest.json
+node_modules.pdim
+python_runtime.pdim
