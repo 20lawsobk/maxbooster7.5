@@ -120,14 +120,14 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   # ── Verify critical runtime packages were installed ───────────────────────
   # Fail the build immediately if a package that the pre-built bundle requires
   # at runtime is missing — better a clear build failure than a crash loop.
-  for _req_pkg in "@sentry/node" "exceljs"; do
+  for _req_pkg in "@sentry/node" "exceljs" "pino" "express" "drizzle-orm"; do
     if [ ! -d "node_modules/${_req_pkg}" ]; then
       echo "ERROR: ${_req_pkg} missing after npm ci --omit=dev — aborting build"
       echo "       Check package.json (must be in dependencies, not devDependencies)"
       exit 1
     fi
   done
-  echo "   ✅ Critical runtime packages verified: @sentry/node, exceljs"
+  echo "   ✅ Critical runtime packages verified: @sentry/node, exceljs, pino, express, drizzle-orm"
 
   # ── Security fix on freshly-installed node_modules ────────────────────────
   echo "==> Applying security patches to production node_modules..."

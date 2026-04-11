@@ -10,20 +10,20 @@
  *
  * Behaviour:
  *   - No .pdim files found  → silent no-op (development environment)
- *   - Directory present WITH sentinel (.pdim-restored) → already healthy, skip
+ *   - Directory present WITH sentinel matching capsule SHA256 → already healthy, skip
+ *   - Directory present WITH sentinel but SHA256 mismatch → capsule changed, re-extract
  *   - Directory present WITHOUT sentinel → stale/incomplete → re-extract
  *   - Capsule found, directory absent → verify checksum, extract, report timing
  *   - Extraction failure → exit(1) so the container never starts in a broken state
  *
- * Sentinel file: node_modules/.pdim-restored (written into capsule during build)
- * This detects a stale node_modules from a prior deployment where the PDIM
- * restore was skipped or interrupted, preventing MODULE_NOT_FOUND crashes.
+ * Sentinel file: node_modules/.pdim-restored (written into capsule during build,
+ *   then overwritten after extraction with the capsule's manifest SHA256 so that
+ *   stale node_modules from a prior deployment are detected and re-extracted).
  */
 
 import { execSync }        from 'child_process';
-import { existsSync, readFileSync, statSync, rmSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync, statSync, rmSync } from 'fs';
 import { createHash }      from 'crypto';
-import { join }            from 'path';
 
 // ── Capsule registry ─────────────────────────────────────────────────────────
 // Matches the directories packed by build.sh.
@@ -71,18 +71,30 @@ function tarExtractCmd(capsule, manifestPath) {
   return `tar -xzf ${capsule}`;
 }
 
+// ── Read manifest SHA256 ──────────────────────────────────────────────────────
+// Returns the expected SHA256 from the capsule's .manifest.json, or null if
+// the manifest is missing or has no checksum.
+function manifestSha256(manifestPath) {
+  if (!existsSync(manifestPath)) return null;
+  try {
+    const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    return m.sha256 || null;
+  } catch {
+    return null;
+  }
+}
+
 // ── Integrity check ──────────────────────────────────────────────────────────
 function verifyCapsule(capsulePath, manifestPath) {
-  if (!existsSync(manifestPath)) return true; // manifest optional
+  const expected = manifestSha256(manifestPath);
+  if (!expected) return true; // manifest optional
   try {
-    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
-    if (!manifest.sha256) return true;
     const data = readFileSync(capsulePath);
     const actual = createHash('sha256').update(data).digest('hex');
-    if (actual !== manifest.sha256) {
+    if (actual !== expected) {
       process.stderr.write(
         `[PDIM] ⚠️  Checksum mismatch for ${capsulePath}\n` +
-        `       expected: ${manifest.sha256}\n` +
+        `       expected: ${expected}\n` +
         `       actual:   ${actual}\n`
       );
       return false;
@@ -111,21 +123,49 @@ for (const { capsule, dir, label, autoRestore, sentinel, note } of CAPSULES) {
   // ── Sentinel-aware directory check ──────────────────────────────────────────
   // If the target directory already exists, check for a sentinel file that proves
   // it was extracted by PDIM (not left over from a broken prior deployment).
-  // A directory without a sentinel is stale — delete it and re-extract.
+  //
+  // The sentinel stores the manifest SHA256 of the capsule that was extracted.
+  // If the sentinel SHA256 matches the CURRENT capsule's manifest SHA256, the
+  // directory is up-to-date and extraction is skipped.  A mismatch means the
+  // capsule changed (new deployment with updated packages) — delete and re-extract.
   if (dir && existsSync(dir)) {
     if (sentinel && existsSync(sentinel)) {
-      process.stdout.write(`[PDIM] ${label}: already restored — skipping\n`);
-      continue;
-    }
-    // Stale directory: prior deployment left an incomplete node_modules or the
-    // pdim-restore.mjs was missing and the capsule was never extracted.
-    process.stdout.write(
-      `[PDIM] ${label}: stale directory detected (missing sentinel ${sentinel}) — re-extracting...\n`
-    );
-    try {
-      rmSync(dir, { recursive: true, force: true });
-    } catch (rmErr) {
-      process.stderr.write(`[PDIM] ⚠️  Could not remove stale ${dir}: ${rmErr.message} — attempting extraction anyway\n`);
+      const manifestPath = capsule.replace(/\.pdim$/, '.manifest.json');
+      const currentSha = manifestSha256(manifestPath);
+      let sentinelSha = null;
+      try {
+        sentinelSha = readFileSync(sentinel, 'utf8').trim() || null;
+      } catch { /* sentinel unreadable — treat as mismatch */ }
+
+      if (currentSha && sentinelSha && currentSha === sentinelSha) {
+        process.stdout.write(`[PDIM] ${label}: already restored (sha256 verified) — skipping\n`);
+        continue;
+      } else if (!currentSha) {
+        // No manifest SHA — fall back to trusting the sentinel presence
+        process.stdout.write(`[PDIM] ${label}: already restored (no manifest, trusting sentinel) — skipping\n`);
+        continue;
+      } else {
+        // SHA mismatch: capsule was updated (new deployment) — must re-extract
+        process.stdout.write(
+          `[PDIM] ${label}: capsule updated (sha256 changed) — re-extracting for fresh deployment...\n`
+        );
+        try {
+          rmSync(dir, { recursive: true, force: true });
+        } catch (rmErr) {
+          process.stderr.write(`[PDIM] ⚠️  Could not remove stale ${dir}: ${rmErr.message} — attempting extraction anyway\n`);
+        }
+      }
+    } else {
+      // Stale directory: prior deployment left an incomplete node_modules or the
+      // pdim-restore.mjs was missing and the capsule was never extracted.
+      process.stdout.write(
+        `[PDIM] ${label}: stale directory detected (missing sentinel ${sentinel}) — re-extracting...\n`
+      );
+      try {
+        rmSync(dir, { recursive: true, force: true });
+      } catch (rmErr) {
+        process.stderr.write(`[PDIM] ⚠️  Could not remove stale ${dir}: ${rmErr.message} — attempting extraction anyway\n`);
+      }
     }
   }
 
@@ -146,6 +186,19 @@ for (const { capsule, dir, label, autoRestore, sentinel, note } of CAPSULES) {
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     process.stdout.write(`[PDIM] ✅ ${dir}/ restored in ${elapsed}s\n`);
     anyRestored = true;
+
+    // Overwrite the sentinel with the capsule's manifest SHA256 so that
+    // future startups can detect when the capsule has changed (new deployment)
+    // and re-extract instead of reusing a stale node_modules.
+    if (sentinel) {
+      const sha = manifestSha256(manifestPath) || 'no-manifest';
+      try {
+        writeFileSync(sentinel, sha, 'utf8');
+        process.stdout.write(`[PDIM] Sentinel updated: ${sentinel} = ${sha.slice(0, 16)}...\n`);
+      } catch (writeErr) {
+        process.stderr.write(`[PDIM] ⚠️  Could not update sentinel ${sentinel}: ${writeErr.message}\n`);
+      }
+    }
   } catch (err) {
     process.stderr.write(`[PDIM] ❌ Failed to restore ${capsule} (cmd: ${cmd}): ${err.message}\n`);
     process.exit(1);
