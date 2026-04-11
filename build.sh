@@ -76,7 +76,16 @@ echo "==> Preserving Python diffusion server files in services/diffusion/..."
 mkdir -p services/diffusion
 if [ -d "server/services/diffusion" ]; then
   cp -r server/services/diffusion/. services/diffusion/
-  echo "   Copied $(ls services/diffusion | wc -l | tr -d ' ') files → services/diffusion/"
+  # advanced_memory/ contains runtime-generated model shards (.npz) produced by the
+  # diffusion API during training sessions.  These are NOT source code — they belong
+  # in the PDIM storage layer (HybridStorage), not as loose deployment artifacts.
+  # The Python API regenerates them at runtime.  Excluding saves ~158 MB from the
+  # deployment image and eliminates a double-count (they would otherwise also land
+  # inside source.pdim via the server/ tree pack below).
+  rm -rf services/diffusion/advanced_memory/ services/diffusion/__pycache__/ 2>/dev/null || true
+  # Mirror the exclusion in the source tree so source.pdim doesn't double-pack them.
+  rm -rf server/services/diffusion/advanced_memory/ server/services/diffusion/__pycache__/ 2>/dev/null || true
+  echo "   Copied $(ls services/diffusion | wc -l | tr -d ' ') source files → services/diffusion/ (shards excluded)"
 else
   echo "   WARNING: server/services/diffusion/ not found — Python server unavailable in production"
 fi
