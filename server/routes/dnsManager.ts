@@ -7,8 +7,8 @@ const router = Router();
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || 'maxboostermusic.com';
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
-const NS1 = `ns1.${BASE_DOMAIN}`;
-const NS2 = `ns2.${BASE_DOMAIN}`;
+const NS1 = process.env.NS1 || 'maxbooster.replit.app';
+const NS2 = process.env.NS2 || 'maxbooster.replit.app';
 
 const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'] as const;
 

@@ -7,8 +7,8 @@
  */
 
 export const PLATFORM_DOMAIN = "maxboostermusic.com";
-export const PLATFORM_NS1    = "ns1.maxboostermusic.com";
-export const PLATFORM_NS2    = "ns2.maxboostermusic.com";
+export const PLATFORM_NS1    = "maxbooster.replit.app";
+export const PLATFORM_NS2    = "maxbooster.replit.app";
 
 // ─── Shared label-level rules (RFC 1123) ─────────────────────────────────────
 function validateLabel(label: string): string | null {

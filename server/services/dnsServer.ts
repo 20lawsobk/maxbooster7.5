@@ -6,24 +6,20 @@
  *   • Listens on UDP :53 + TCP :53 (configurable via DNS_PORT)
  *   • Authoritative for BASE_DOMAIN (maxboostermusic.com) AND any custom domain
  *     that a user has claimed/pointed here (stored in storefrontDomains table)
- *   • Dual nameservers: ns1 + ns2 both at DNS_SERVER_IP (RFC 2182 compliance)
+ *   • Single unified nameserver: maxbooster.replit.app (the platform itself)
  *   • Wildcard A records: *.maxboostermusic.com → DNS_SERVER_IP
  *   • Custom domains: resolved to DNS_SERVER_IP once user points NS here
  *   • SOA with proper refresh/retry/expire/minimum per RFC 1912 best-practices
  *   • Non-authoritative queries forwarded upstream (8.8.8.8)
  *
- * To activate for a custom domain (e.g. b-lawzmusicbeats.com):
- *   1. User claims the domain inside Max Booster (StorefrontBuilder)
- *   2. User goes to their registrar and sets nameservers to:
- *        ns1.maxboostermusic.com
- *        ns2.maxboostermusic.com
+ * To activate for a custom domain (e.g. mybeats.com):
+ *   1. User claims the domain inside Max Booster (Domain Hub → Find Domain)
+ *   2. User goes to their registrar and sets the nameserver to:
+ *        maxbooster.replit.app
  *   3. DNS propagates (up to 48 h). The domain then resolves here automatically.
  *
- * Glue records needed at the maxboostermusic.com registrar:
- *   A  ns1.maxboostermusic.com → DNS_SERVER_IP
- *   A  ns2.maxboostermusic.com → DNS_SERVER_IP
- *   NS maxboostermusic.com     → ns1.maxboostermusic.com
- *   NS maxboostermusic.com     → ns2.maxboostermusic.com
+ * No glue records or external registrar API required — the built-in DNS is
+ * the sole authoritative server for all claimed domains.
  */
 
 import dns2 from 'dns2';

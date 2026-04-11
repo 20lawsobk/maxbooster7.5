@@ -1125,7 +1125,7 @@ export default function StorefrontBuilder() {
                             <p className="text-xs text-muted-foreground">
                               Go to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.), find <strong>Nameservers</strong>, change to <strong>Custom</strong>, and enter:
                             </p>
-                            {(['ns1.maxboostermusic.com', 'ns2.maxboostermusic.com'] as const).map((ns) => (
+                            {(['maxbooster.replit.app'] as const).map((ns) => (
                               <div key={ns} className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-input rounded px-2 py-1">
                                 <span className="font-mono text-xs flex-1 select-all">{ns}</span>
                                 <button
@@ -1386,16 +1386,12 @@ export default function StorefrontBuilder() {
                       {addedDnsZone && (
                         <div className="space-y-3">
                           <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs space-y-2">
-                            <p className="font-semibold text-blue-800">Domain added — point your nameservers to Max Booster:</p>
-                            <p className="text-blue-700 text-[11px]">Log in to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.) and change the nameservers to:</p>
+                            <p className="font-semibold text-blue-800">Domain added — point your nameserver to Max Booster:</p>
+                            <p className="text-blue-700 text-[11px]">Log in to your domain registrar and set the nameserver to:</p>
                             <div className="flex flex-col gap-1 font-mono">
                               <div className="flex items-center gap-2 bg-white rounded px-2 py-1 border">
-                                <span className="text-muted-foreground text-[11px]">NS1</span>
-                                <span className="text-blue-800 font-medium">{addedDnsZone.nameserver1}</span>
-                              </div>
-                              <div className="flex items-center gap-2 bg-white rounded px-2 py-1 border">
-                                <span className="text-muted-foreground text-[11px]">NS2</span>
-                                <span className="text-blue-800 font-medium">{addedDnsZone.nameserver2}</span>
+                                <span className="text-muted-foreground text-[11px]">NS</span>
+                                <span className="text-blue-800 font-medium">maxbooster.replit.app</span>
                               </div>
                             </div>
                             <p className="text-blue-600 text-[11px]">DNS propagation can take 1–48 hours. Once done, your domain will show as Active in the DNS tab.</p>

@@ -116,8 +116,9 @@ interface DnsRecord {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const NS1 = 'ns1.maxboostermusic.com';
-const NS2 = 'ns2.maxboostermusic.com';
+const NS  = 'maxbooster.replit.app';
+const NS1 = NS;
+const NS2 = NS;
 const PLATFORM_DOMAIN = 'maxboostermusic.com';
 
 const FEATURED_TLDS = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
@@ -450,17 +451,15 @@ function DnsZoneEditor({ zone, onBack }: { zone: DnsZone; onBack: () => void }) 
               <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</div>
               <p className="font-semibold text-sm">Point your nameservers to Max Booster</p>
             </div>
-            <p className="text-xs text-muted-foreground">Log into your domain registrar and update the nameservers:</p>
+            <p className="text-xs text-muted-foreground">Log into your domain registrar and set the nameserver to:</p>
             <div className="space-y-2">
-              {[NS1, NS2].map((ns, i) => (
-                <div key={ns} className="flex items-center gap-2 bg-muted/60 rounded px-3 py-2 font-mono text-xs">
-                  <span className="text-muted-foreground w-8">NS{i + 1}</span>
-                  <span className="flex-1">{ns}</span>
-                  <button onClick={() => copy(ns, `NS${i + 1}`)} className="text-muted-foreground hover:text-foreground">
-                    <Copy className="w-3 h-3" />
-                  </button>
-                </div>
-              ))}
+              <div className="flex items-center gap-2 bg-muted/60 rounded px-3 py-2 font-mono text-xs">
+                <span className="text-muted-foreground w-8">NS</span>
+                <span className="flex-1">{NS}</span>
+                <button onClick={() => copy(NS, 'nameserver')} className="text-muted-foreground hover:text-foreground">
+                  <Copy className="w-3 h-3" />
+                </button>
+              </div>
             </div>
             <p className="text-[11px] text-muted-foreground flex items-start gap-1">
               <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
@@ -715,15 +714,13 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
                 All registered domains are automatically configured. Own a domain elsewhere? Point it here.
               </p>
               <div className="flex flex-wrap gap-2">
-                {[NS1, NS2].map((ns, i) => (
-                  <div key={ns} className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-md px-3 py-1.5 font-mono text-xs border border-blue-200 dark:border-blue-800">
-                    <span className="text-blue-400">NS{i + 1}</span>
-                    <span className="text-blue-800 dark:text-blue-300">{ns}</span>
-                    <button onClick={() => copy(ns, `NS${i + 1}`)} className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors">
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                ))}
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-md px-3 py-1.5 font-mono text-xs border border-blue-200 dark:border-blue-800">
+                  <span className="text-blue-400">NS</span>
+                  <span className="text-blue-800 dark:text-blue-300">{NS}</span>
+                  <button onClick={() => copy(NS, 'nameserver')} className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex-shrink-0 hidden sm:flex flex-col items-end gap-1">
@@ -907,8 +904,8 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
             <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-xs text-amber-700 dark:text-amber-400">
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
               <span>
-                Some domains are managed externally. Log into your registrar and set nameservers to{' '}
-                <strong>{NS1}</strong> and <strong>{NS2}</strong> to activate Max Booster DNS.
+                Some domains are managed externally. Log into your registrar and set the nameserver to{' '}
+                <strong>{NS}</strong> to activate Max Booster DNS.
               </span>
             </div>
           )}

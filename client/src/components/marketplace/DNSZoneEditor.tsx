@@ -83,7 +83,7 @@ const RECORD_TYPE_INFO: Record<string, { description: string; placeholder: strin
   SRV: { description: 'Service location record', placeholder: 'sip.example.com', fields: ['value', 'priority', 'weight', 'port'] },
 };
 
-const MAXBOOSTER_NAMESERVERS = ['ns1.maxbooster.app', 'ns2.maxbooster.app'];
+const MAXBOOSTER_NAMESERVERS = ['maxbooster.replit.app'];
 
 function formatTTL(seconds: number): string {
   if (seconds <= 1) return 'Auto';
@@ -436,7 +436,7 @@ export function DNSZoneEditor({ storefrontId, domain }: DNSZoneEditorProps) {
               ))}
             </div>
             <p className="text-xs text-muted-foreground pt-1">
-              Log into your domain registrar (GoDaddy, Namecheap, etc.) and replace the existing nameservers with the two above. Changes propagate within 24-48 hours.
+              Log into your domain registrar and set the nameserver to the value above. Changes propagate within 1-48 hours.
             </p>
           </div>
         </CardContent>

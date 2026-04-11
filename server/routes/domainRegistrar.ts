@@ -1,49 +1,50 @@
 /**
- * Domain Registrar API — Max Booster first-person DNS provider
+ * Domain Registrar API — Max Booster Built-In DNS
+ *
+ * Domains are claimed and managed entirely by Max Booster's internal DNS
+ * system.  No external registrar API is required or called.
  *
  * Endpoints:
- *   GET  /api/domain-registrar/search?name=mybeats     — availability + pricing
- *   POST /api/domain-registrar/claim                   — register a real domain
- *   GET  /api/domain-registrar/my-domains              — list user's domains
- *   POST /api/domain-registrar/set-nameservers         — point domain to Max Booster NS
- *   GET  /api/domain-registrar/config                  — registrar configuration status
+ *   GET  /api/domain-registrar/search?name=mybeats   — availability check
+ *   POST /api/domain-registrar/claim                  — claim a domain
+ *   GET  /api/domain-registrar/my-domains             — list user's domains
+ *   DELETE /api/domain-registrar/my-domains/:id       — remove a domain record
+ *   GET  /api/domain-registrar/config                 — nameserver info
  */
 
 import { Router } from 'express';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '../db.js';
-import { claimedDomains, storefronts, users } from '@shared/schema';
+import { claimedDomains, users } from '@shared/schema';
 import { logger } from '../logger.js';
 import {
-  isConfigured,
   checkDomainAvailability,
-  registerDomain,
-  setMaxBoosterNameservers,
+  logClaim,
   SEARCH_TLDS,
   DOMAIN_PRICES,
+  NS,
   NS1,
   NS2,
+  PLATFORM_DOMAIN,
 } from '../services/domainRegistrarService.js';
-import dns from 'dns';
-
-const dnsResolve = dns.promises.resolve;
 
 const router = Router();
 
-// ── Registrar config status (no auth) ────────────────────────────────────────
+// ── Config / nameserver info (public) ────────────────────────────────────────
 
 router.get('/config', (_req, res) => {
   return res.json({
     ok: true,
-    configured: isConfigured(),
+    ns: NS,
     ns1: NS1,
     ns2: NS2,
+    platformDomain: PLATFORM_DOMAIN,
     supportedTlds: SEARCH_TLDS,
-    prices: DOMAIN_PRICES,
+    builtIn: true,
   });
 });
 
-// ── Domain search + availability ─────────────────────────────────────────────
+// ── Domain availability search ────────────────────────────────────────────────
 
 router.get('/search', async (req, res) => {
   try {
@@ -52,61 +53,32 @@ router.get('/search', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'name must be 2–63 characters.' });
     }
 
-    let results: any[];
+    const results = await checkDomainAvailability(raw, SEARCH_TLDS);
 
-    if (isConfigured()) {
-      // Live Namecheap availability check
-      results = await checkDomainAvailability(raw, SEARCH_TLDS);
-    } else {
-      // Fallback: DNS-based availability check (no registrar credentials needed)
-      const timeout = <T>(ms: number, p: Promise<T>): Promise<T> =>
-        Promise.race([p, new Promise<T>((_, r) => setTimeout(() => r(new Error('timeout')), ms))]);
-
-      async function dnsAvailable(domain: string): Promise<boolean> {
-        for (const type of ['NS', 'A'] as const) {
-          try {
-            const records = await timeout(2500, dnsResolve(domain, type));
-            if (records && records.length > 0) return false;
-          } catch { /* ENOTFOUND = not registered */ }
-        }
-        return true;
-      }
-
-      const checks = await Promise.allSettled(
-        SEARCH_TLDS.map(async (tld) => {
-          const domain    = `${raw}${tld}`;
-          const available = await dnsAvailable(domain);
-          const price     = DOMAIN_PRICES[tld];
-          return { domain, tld, available, isPremium: false, priceCents: price?.registrationCents ?? null, renewalCents: price?.renewalCents ?? null };
-        })
-      );
-
-      results = checks
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-        .map(r => r.value);
-    }
-
-    // Sort: available first, then by price asc
+    // Sort: available first, then by TLD popularity
+    const tldOrder = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
     results.sort((a, b) => {
       if (a.available !== b.available) return a.available ? -1 : 1;
-      return (a.priceCents ?? 99999) - (b.priceCents ?? 99999);
+      const ai = tldOrder.indexOf(a.tld);
+      const bi = tldOrder.indexOf(b.tld);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
 
-    return res.json({ ok: true, name: raw, results, registrarConfigured: isConfigured() });
+    return res.json({ ok: true, name: raw, results, ns: NS });
   } catch (err: any) {
     logger.warn({ err }, '[domainRegistrar] search error');
     return res.status(500).json({ ok: false, error: 'Search temporarily unavailable.' });
   }
 });
 
-// ── Register / claim a domain ─────────────────────────────────────────────────
+// ── Claim a domain (register with built-in DNS) ───────────────────────────────
 
 router.post('/claim', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
 
     const userId = (req.user as any).id;
-    const { domain, storefrontId, years = 1, contact } = req.body;
+    const { domain, storefrontId } = req.body;
 
     if (!domain || typeof domain !== 'string') {
       return res.status(400).json({ ok: false, error: 'domain is required.' });
@@ -114,12 +86,11 @@ router.post('/claim', async (req, res) => {
 
     const domainLower = domain.toLowerCase().trim();
 
-    // Validate the domain format
     if (!/^[a-z0-9][a-z0-9-]*\.[a-z.]+$/.test(domainLower)) {
       return res.status(400).json({ ok: false, error: 'Invalid domain format.' });
     }
 
-    // Check if already claimed in our system
+    // Check if already claimed
     const [existing] = await db
       .select({ id: claimedDomains.id, userId: claimedDomains.userId })
       .from(claimedDomains)
@@ -133,74 +104,48 @@ router.post('/claim', async (req, res) => {
       return res.status(409).json({ ok: false, error: 'This domain is already registered by another user.' });
     }
 
-    const tld   = '.' + domainLower.split('.').slice(1).join('.');
-    const sld   = domainLower.split('.')[0];
-    const price = DOMAIN_PRICES[tld];
+    const tld = '.' + domainLower.split('.').slice(1).join('.');
+    const sld = domainLower.split('.')[0];
 
-    if (isConfigured() && contact) {
-      // Actual registration via Namecheap
-      const result = await registerDomain(domainLower, years, contact);
+    // Determine if platform subdomain (*.maxboostermusic.com) or external domain
+    const isPlatformSubdomain = domainLower.endsWith(`.${PLATFORM_DOMAIN}`);
+    const status = isPlatformSubdomain ? 'active' : 'platform_managed';
 
-      const expiresAt = result.expiresAt;
+    const expiresAt = new Date();
+    expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-      const [record] = await db
-        .insert(claimedDomains)
-        .values({
-          userId,
-          storefrontId: storefrontId || null,
-          domain: domainLower,
-          sld,
-          tld,
-          status: result.registered ? 'active' : 'pending',
-          registrarOrderId: result.orderId,
-          registrarName: 'namecheap',
-          nameserver1: NS1,
-          nameserver2: NS2,
-          expiresAt,
-          yearsRegistered: years,
-          pricePaidCents: price?.registrationCents ?? null,
-          registrationData: { contact: { ...contact, phone: '***' } },
-        })
-        .returning();
+    const [record] = await db
+      .insert(claimedDomains)
+      .values({
+        userId,
+        storefrontId: storefrontId || null,
+        domain: domainLower,
+        sld,
+        tld,
+        status,
+        registrarName:  'maxbooster',
+        nameserver1:    NS,
+        nameserver2:    NS,
+        expiresAt,
+        yearsRegistered: 1,
+        pricePaidCents:  0,
+      })
+      .returning();
 
-      logger.info({ domain: domainLower, userId, orderId: result.orderId }, '[domainRegistrar] domain registered');
-      return res.status(201).json({
-        ok: true,
-        domain: record.domain,
-        status: record.status,
-        expiresAt: record.expiresAt,
-        nameservers: { ns1: NS1, ns2: NS2 },
-        message: 'Domain registered! DNS is already configured — your site will be live within minutes.',
-      });
-    } else {
-      // No registrar configured or no contact info — save as platform_managed
-      // (user buys domain externally, we manage DNS)
-      const [record] = await db
-        .insert(claimedDomains)
-        .values({
-          userId,
-          storefrontId: storefrontId || null,
-          domain: domainLower,
-          sld,
-          tld,
-          status: 'platform_managed',
-          registrarName: 'external',
-          nameserver1: NS1,
-          nameserver2: NS2,
-          yearsRegistered: years,
-          pricePaidCents: 0,
-        })
-        .returning();
+    logClaim(domainLower, userId);
 
-      logger.info({ domain: domainLower, userId }, '[domainRegistrar] domain claimed (platform managed)');
-      return res.status(201).json({
-        ok: true,
-        domain: record.domain,
-        status: 'platform_managed',
-        nameservers: { ns1: NS1, ns2: NS2 },
-        message: 'Domain reserved on Max Booster. Purchase it from any registrar, then point nameservers to Max Booster.',
-      });
-    }
+    const message = isPlatformSubdomain
+      ? 'Your Max Booster subdomain is active and ready to use.'
+      : `Domain reserved. Point your nameserver to ${NS} to activate Max Booster DNS.`;
+
+    return res.status(201).json({
+      ok: true,
+      domain: record.domain,
+      status: record.status,
+      expiresAt: record.expiresAt,
+      ns: NS,
+      message,
+    });
   } catch (err: any) {
     logger.warn({ err }, '[domainRegistrar] claim error');
     const status = err.message?.includes('already') ? 409 : 500;
@@ -228,34 +173,7 @@ router.get('/my-domains', async (req, res) => {
   }
 });
 
-// ── Point an externally-purchased domain to Max Booster NS ───────────────────
-
-router.post('/set-nameservers', async (req, res) => {
-  try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
-    const { domain } = req.body;
-    if (!domain) return res.status(400).json({ ok: false, error: 'domain is required.' });
-
-    if (isConfigured()) {
-      await setMaxBoosterNameservers(domain.toLowerCase().trim());
-    }
-
-    return res.json({
-      ok: true,
-      ns1: NS1,
-      ns2: NS2,
-      message: isConfigured()
-        ? 'Nameservers updated. DNS will propagate within 1–48 hours.'
-        : 'Log into your registrar and set these nameservers manually.',
-    });
-  } catch (err: any) {
-    logger.warn({ err }, '[domainRegistrar] set-nameservers error');
-    return res.status(500).json({ ok: false, error: err.message || 'Internal error.' });
-  }
-});
-
-// ── Remove / release a domain record ─────────────────────────────────────────
+// ── Remove a claimed domain ───────────────────────────────────────────────────
 
 router.delete('/my-domains/:id', async (req, res) => {
   try {
