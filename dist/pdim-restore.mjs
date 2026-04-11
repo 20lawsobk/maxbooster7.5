@@ -43,9 +43,24 @@ const CAPSULES = [
     dir:         null,            // multi-dir capsule — no single target dir
     label:       'Application source tree',
     autoRestore: false,           // not needed at runtime (server runs from dist/)
-    note:        'Restore manually: tar -xzf source.pdim',
+    note:        'Restore manually — check source.manifest.json for compression format (xz: tar -xJf source.pdim | gzip: tar -xzf source.pdim)',
   },
 ];
+
+// ── Format-aware decompressor ─────────────────────────────────────────────────
+// Reads the compression field written by build.sh into the .manifest.json.
+// Supports: xz-* → tar -xJf | gzip-* / default → tar -xzf
+function tarExtractCmd(capsule, manifestPath) {
+  let compression = 'gzip-9';
+  if (existsSync(manifestPath)) {
+    try {
+      const m = JSON.parse(readFileSync(manifestPath, 'utf8'));
+      if (m.compression) compression = m.compression;
+    } catch { /* use default */ }
+  }
+  if (compression.startsWith('xz')) return `tar -xJf ${capsule}`;
+  return `tar -xzf ${capsule}`;
+}
 
 // ── Integrity check ──────────────────────────────────────────────────────────
 function verifyCapsule(capsulePath, manifestPath) {
@@ -100,14 +115,15 @@ for (const { capsule, dir, label, autoRestore, note } of CAPSULES) {
     process.exit(1);
   }
 
+  const cmd = tarExtractCmd(capsule, manifestPath);
   const t0 = Date.now();
   try {
-    execSync(`tar -xzf ${capsule}`, { stdio: 'inherit' });
+    execSync(cmd, { stdio: 'inherit' });
     const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
     process.stdout.write(`[PDIM] ✅ ${dir}/ restored in ${elapsed}s\n`);
     anyRestored = true;
   } catch (err) {
-    process.stderr.write(`[PDIM] ❌ Failed to restore ${capsule}: ${err.message}\n`);
+    process.stderr.write(`[PDIM] ❌ Failed to restore ${capsule} (cmd: ${cmd}): ${err.message}\n`);
     process.exit(1);
   }
 }
