@@ -176,11 +176,14 @@ else
   FAST_PATH=0
 fi
 
-# ─── TF native binaries (always remove) ──────────────────────────────────────
-echo "==> Removing TF native libraries downloaded by tfjs-node postinstall..."
-rm -rf node_modules/@tensorflow/tfjs-node/deps/ 2>/dev/null || true
-rm -rf node_modules/@tensorflow/tfjs-node/binding/ 2>/dev/null || true
-echo "   TF native binaries removed."
+# ─── TF native binaries (preserved for production LD_LIBRARY_PATH) ───────────
+echo "==> Keeping TF native libraries from tfjs-node postinstall..."
+# NOTE: node_modules/@tensorflow/tfjs-node/deps/ is intentionally KEPT.
+# It contains libtensorflow.so.2.9.1 (~242 MB) which start.sh adds to LD_LIBRARY_PATH.
+# Removing it causes the "[start.sh] WARNING: @tensorflow/tfjs-node deps/lib not found"
+# warning and degrades native TF acceleration for all ML inference in production.
+# The binding/ C++ source is also kept — it is harmless and may be needed for native builds.
+echo "   TF native libraries preserved (libtensorflow.so will be available in production)."
 
 # ─── Rust sidecar ────────────────────────────────────────────────────────────
 echo "==> Rust sidecar: compiling release binary..."
