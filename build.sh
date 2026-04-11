@@ -224,8 +224,11 @@ rm -rf \
   2>/dev/null || true
 echo "   Removed: electron / app-builder / 7zip-bin"
 
-rm -rf node_modules/@tensorflow/tfjs-backend-webgl 2>/dev/null || true
-echo "   Removed: @tensorflow/tfjs-backend-webgl"
+# NOTE: @tensorflow/tfjs-backend-webgl is intentionally KEPT.
+# @tensorflow/tfjs/dist/tf.node.js has an unconditional require('@tensorflow/tfjs-backend-webgl')
+# at line 25. Deleting it causes a hard MODULE_NOT_FOUND crash for every route that imports
+# any shared/ml model. The WebGL backend gracefully fails to initialise in a headless Node.js
+# environment and TF.js falls back to the CPU backend automatically — no user impact.
 
 rm -rf node_modules/@tensorflow/tfjs-node/dist/kernels 2>/dev/null || true
 echo "   Removed: @tensorflow/tfjs-node/dist/kernels (redundant ESM kernels)"

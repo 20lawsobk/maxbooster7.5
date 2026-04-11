@@ -73,6 +73,7 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - Server boots with **0 ERRORs, 0 WARNs** in startup (517 lines of clean INFO logs). All PDIM circuit-breaker events handled gracefully.
 
 ### Deployment Crash-Loop Fixes (Production Hardening)
+- **`@tensorflow/tfjs-backend-webgl` preserved**: `build.sh` previously deleted this package from the deployment capsule. `@tensorflow/tfjs/dist/tf.node.js` has an unconditional `require('@tensorflow/tfjs-backend-webgl')` at line 25 — deleting it caused a hard `MODULE_NOT_FOUND` crash for every route importing any `shared/ml` model (e.g. monitoring). The package is now kept; it gracefully fails to initialise WebGL in a headless Node.js environment and TF.js auto-falls-back to the CPU backend.
 - **Node.js binary**: `.node_bin/node` (v22.22.0) bundled — deployment container has no system Node
 - **exceljs fix**: `doc` (singular) excluded from PDIM prune list — exceljs stores runtime code in `lib/doc/workbook.js`
 - **`@sentry/node` resilience**: `server/instrument.ts` uses `createRequire(import.meta.url)('@sentry/node')` inside try/catch instead of top-level `import`. Missing module is caught gracefully (server doesn't crash, logging falls back to structured JSON). `mandatoryMiddleware.ts` imports `Sentry` from `instrument.ts` (nullable) not directly from `@sentry/node`.
