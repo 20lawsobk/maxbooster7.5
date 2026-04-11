@@ -136,10 +136,10 @@ class PluginHostService {
     const [instance] = await db.insert(pluginInstances).values({
       projectId,
       trackId: trackId || null,
-      catalogId: catalogEntry?.id || pluginId,
-      index: chainPosition,
-      params,
-      bypassed: false,
+      pluginId,
+      position: chainPosition,
+      parameters: params,
+      isBypassed: false,
     }).returning();
 
     const pluginInstance: PluginInstance = {
@@ -151,7 +151,7 @@ class PluginHostService {
       parameters: params,
       bypassed: false,
       createdAt: instance.createdAt || new Date(),
-      updatedAt: instance.updatedAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     };
 
     this.instanceCache.set(instance.id, pluginInstance);
@@ -173,20 +173,16 @@ class PluginHostService {
       return undefined;
     }
 
-    const catalog = await db.query.pluginCatalog.findFirst({
-      where: eq(pluginCatalog.id, instance.catalogId),
-    });
-
     const pluginInstance: PluginInstance = {
       id: instance.id,
-      pluginId: catalog?.slug || instance.catalogId,
+      pluginId: instance.pluginId,
       projectId: instance.projectId,
       trackId: instance.trackId || undefined,
-      chainPosition: instance.index,
-      parameters: (instance.params as Record<string, number | boolean | string>) || {},
-      bypassed: instance.bypassed || false,
+      chainPosition: instance.position || 0,
+      parameters: (instance.parameters as Record<string, number | boolean | string>) || {},
+      bypassed: instance.isBypassed || false,
       createdAt: instance.createdAt || new Date(),
-      updatedAt: instance.updatedAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
     };
 
     this.instanceCache.set(instanceId, pluginInstance);
@@ -206,8 +202,7 @@ class PluginHostService {
     
     await db.update(pluginInstances)
       .set({ 
-        params: updatedParams, 
-        updatedAt: new Date() 
+        parameters: updatedParams,
       })
       .where(eq(pluginInstances.id, instanceId));
 
@@ -220,7 +215,7 @@ class PluginHostService {
 
   async setInstanceBypassed(instanceId: string, bypassed: boolean): Promise<void> {
     await db.update(pluginInstances)
-      .set({ bypassed, updatedAt: new Date() })
+      .set({ isBypassed: bypassed })
       .where(eq(pluginInstances.id, instanceId));
 
     const cached = this.instanceCache.get(instanceId);
@@ -242,26 +237,17 @@ class PluginHostService {
       where: eq(pluginInstances.projectId, projectId),
     });
 
-    const result: PluginInstance[] = [];
-    for (const instance of instances) {
-      const catalog = await db.query.pluginCatalog.findFirst({
-        where: eq(pluginCatalog.id, instance.catalogId),
-      });
-
-      result.push({
-        id: instance.id,
-        pluginId: catalog?.slug || instance.catalogId,
-        projectId: instance.projectId,
-        trackId: instance.trackId || undefined,
-        chainPosition: instance.index,
-        parameters: (instance.params as Record<string, number | boolean | string>) || {},
-        bypassed: instance.bypassed || false,
-        createdAt: instance.createdAt || new Date(),
-        updatedAt: instance.updatedAt || new Date(),
-      });
-    }
-
-    return result;
+    return instances.map(instance => ({
+      id: instance.id,
+      pluginId: instance.pluginId,
+      projectId: instance.projectId,
+      trackId: instance.trackId || undefined,
+      chainPosition: instance.position || 0,
+      parameters: (instance.parameters as Record<string, number | boolean | string>) || {},
+      bypassed: instance.isBypassed || false,
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
+    }));
   }
 
   async getTrackInstances(trackId: string): Promise<PluginInstance[]> {
@@ -269,24 +255,17 @@ class PluginHostService {
       where: eq(pluginInstances.trackId, trackId),
     });
 
-    const result: PluginInstance[] = [];
-    for (const instance of instances) {
-      const catalog = await db.query.pluginCatalog.findFirst({
-        where: eq(pluginCatalog.id, instance.catalogId),
-      });
-
-      result.push({
-        id: instance.id,
-        pluginId: catalog?.slug || instance.catalogId,
-        projectId: instance.projectId,
-        trackId: instance.trackId || undefined,
-        chainPosition: instance.index,
-        parameters: (instance.params as Record<string, number | boolean | string>) || {},
-        bypassed: instance.bypassed || false,
-        createdAt: instance.createdAt || new Date(),
-        updatedAt: instance.updatedAt || new Date(),
-      });
-    }
+    const result: PluginInstance[] = instances.map(instance => ({
+      id: instance.id,
+      pluginId: instance.pluginId,
+      projectId: instance.projectId,
+      trackId: instance.trackId || undefined,
+      chainPosition: instance.position || 0,
+      parameters: (instance.parameters as Record<string, number | boolean | string>) || {},
+      bypassed: instance.isBypassed || false,
+      createdAt: instance.createdAt || new Date(),
+      updatedAt: instance.createdAt || new Date(),
+    }));
 
     return result.sort((a, b) => a.chainPosition - b.chainPosition);
   }
@@ -1045,24 +1024,22 @@ class PluginHostService {
 
     const [preset] = await db.insert(pluginPresets).values({
       userId,
-      presetName: name,
-      pluginType: plugin.type,
       pluginId: plugin.id,
+      name,
       parameters,
-      category: options.category || null,
-      isDefault: false,
-      isPublic: options.isPublic || false,
+      isFactory: false,
+      metadata: options.category ? { category: options.category, isPublic: options.isPublic || false } : null,
     }).returning();
 
     return {
       id: preset.id,
-      userId: preset.userId,
+      userId: preset.userId || userId,
       pluginId: preset.pluginId || plugin.id,
-      name: preset.presetName,
-      category: preset.category || undefined,
+      name: preset.name,
+      category: (preset.metadata as any)?.category || undefined,
       parameters: preset.parameters as Record<string, number | boolean | string>,
-      isDefault: preset.isDefault || false,
-      isPublic: preset.isPublic || false,
+      isDefault: preset.isFactory || false,
+      isPublic: (preset.metadata as any)?.isPublic || false,
       createdAt: preset.createdAt,
     };
   }
@@ -1077,37 +1054,23 @@ class PluginHostService {
       throw new Error(`Plugin not found: ${pluginId}`);
     }
 
-    const conditions = [eq(pluginPresets.pluginType, plugin.type)];
-    
-    if (options.includePublic) {
-      conditions.push(
-        and(
-          eq(pluginPresets.userId, userId),
-          eq(pluginPresets.isPublic, true)
-        ) as any
-      );
-    } else {
-      conditions.push(eq(pluginPresets.userId, userId));
-    }
-
-    if (options.category) {
-      conditions.push(eq(pluginPresets.category, options.category));
-    }
-
     const presets = await db.query.pluginPresets.findMany({
-      where: and(...conditions),
+      where: and(
+        eq(pluginPresets.pluginId, plugin.id),
+        eq(pluginPresets.userId, userId)
+      ),
       orderBy: [desc(pluginPresets.createdAt)],
     });
 
     return presets.map(p => ({
       id: p.id,
-      userId: p.userId,
+      userId: p.userId || userId,
       pluginId: p.pluginId || pluginId,
-      name: p.presetName,
-      category: p.category || undefined,
+      name: p.name,
+      category: (p.metadata as any)?.category || undefined,
       parameters: p.parameters as Record<string, number | boolean | string>,
-      isDefault: p.isDefault || false,
-      isPublic: p.isPublic || false,
+      isDefault: p.isFactory || false,
+      isPublic: (p.metadata as any)?.isPublic || false,
       createdAt: p.createdAt,
     }));
   }
@@ -1123,13 +1086,13 @@ class PluginHostService {
 
     return {
       id: preset.id,
-      userId: preset.userId,
+      userId: preset.userId || '',
       pluginId: preset.pluginId || '',
-      name: preset.presetName,
-      category: preset.category || undefined,
+      name: preset.name,
+      category: (preset.metadata as any)?.category || undefined,
       parameters: preset.parameters as Record<string, number | boolean | string>,
-      isDefault: preset.isDefault || false,
-      isPublic: preset.isPublic || false,
+      isDefault: preset.isFactory || false,
+      isPublic: (preset.metadata as any)?.isPublic || false,
       createdAt: preset.createdAt,
     };
   }
