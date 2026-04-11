@@ -207,6 +207,12 @@ const REQUIRED_INDEXES: IndexDefinition[] = [
     columns: ['user_id', 'platform'],
     description: 'Composite index for HyperLearning cycle queries filtering by user and platform',
   },
+  {
+    name: 'idx_autopilot_learning_data_engagement_rate',
+    table: 'autopilot_learning_data',
+    columns: ['engagement_rate'],
+    description: 'HyperLearning micro_all_90d ORDER BY engagement_rate DESC — avoids full sort on large tables',
+  },
   // social_accounts — queried every minute by token refresh monitor
   {
     name: 'idx_social_accounts_user_id',

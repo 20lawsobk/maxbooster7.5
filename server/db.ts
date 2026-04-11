@@ -232,7 +232,7 @@ const replicaUrl = isProduction
   ? (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0]
   : undefined;
 
-const replicaPool = replicaUrl
+export const replicaPool = replicaUrl
   ? new InstrumentedPool({
       connectionString: replicaUrl,
       max: config.database.poolSize,

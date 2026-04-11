@@ -162,7 +162,7 @@ export const config: AppConfig = {
         ? Math.max(2, Math.ceil(15 / (parseInt(process.env.PDIM_CLUSTER_WORKERS || '1', 10) || 1)))
         : 20),
     maxConnections: parseEnvInt('DB_MAX_CONNECTIONS', 200),
-    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 10000),
+    idleTimeout: parseEnvInt('DB_IDLE_TIMEOUT', 60000),
     connectionTimeout: parseEnvInt('DB_CONNECTION_TIMEOUT', 20000),
   },
 

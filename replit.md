@@ -76,6 +76,7 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 - **PDIM sentinel pattern**: `dist/pdim-restore.mjs` checks for `node_modules/.pdim-restored` sentinel file. If `node_modules/` exists but the sentinel is absent (stale directory from a prior deployment), the directory is deleted and re-extracted from `node_modules.pdim`. `build.sh` writes the sentinel before packing the capsule.
 - **Build-time assertions**: `build.sh` verifies `@sentry/node` and `exceljs` are present after `npm ci --omit=dev` — fails the build immediately instead of shipping a broken capsule.
 - **`advanced_memory/`**: `.npz` training shards are runtime-generated artifacts, excluded from git and deployment via `.gitignore` and `build.sh` excludes.
+- **Neon cold-start fix**: `idleTimeoutMillis` raised from 10s → 60s (`DB_IDLE_TIMEOUT` default in `config/defaults.ts`). Keepalive interval reduced from 30s → 25s and now pings BOTH primary and replica pools (previously only primary). This closes the 20-second dead window where connections died between pings, eliminating the 5160ms slow-query spike observed at T=313s in production. `replicaPool` exported from `server/db.ts` to enable replica keepalive. Added `idx_autopilot_learning_data_engagement_rate` index on `autopilot_learning_data(engagement_rate)` to cover the `ORDER BY engagement_rate DESC` in HyperLearning `micro_all_90d` queries.
 
 ## Three-Tier Video Diffusion Architecture
 
