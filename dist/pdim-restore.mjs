@@ -20,17 +20,30 @@ import { existsSync, readFileSync, statSync } from 'fs';
 import { createHash }      from 'crypto';
 
 // ── Capsule registry ─────────────────────────────────────────────────────────
-// Matches the directories packed by the _pdim_pack() function in build.sh.
+// Matches the directories packed by build.sh.
+//
+// autoRestore: true  — extracted on every startup before the server boots
+// autoRestore: false — preserved in capsule form; restore manually when needed
+//                      (e.g. for source inspection or triggering a SLOW PATH rebuild)
 const CAPSULES = [
   {
-    capsule:  'node_modules.pdim',
-    dir:      'node_modules',
-    label:    'Production node_modules',
+    capsule:     'node_modules.pdim',
+    dir:         'node_modules',
+    label:       'Production node_modules',
+    autoRestore: true,
   },
   {
-    capsule:  'python_runtime.pdim',
-    dir:      'python_runtime',
-    label:    'Portable Python 3.12 runtime',
+    capsule:     'python_runtime.pdim',
+    dir:         'python_runtime',
+    label:       'Portable Python 3.12 runtime',
+    autoRestore: true,
+  },
+  {
+    capsule:     'source.pdim',
+    dir:         null,            // multi-dir capsule — no single target dir
+    label:       'Application source tree',
+    autoRestore: false,           // not needed at runtime (server runs from dist/)
+    note:        'Restore manually: tar -xzf source.pdim',
   },
 ];
 
@@ -59,23 +72,31 @@ function verifyCapsule(capsulePath, manifestPath) {
 // ── Restore loop ─────────────────────────────────────────────────────────────
 let anyRestored = false;
 
-for (const { capsule, dir, label } of CAPSULES) {
-  if (!existsSync(capsule)) continue; // no capsule → dev environment
+for (const { capsule, dir, label, autoRestore, note } of CAPSULES) {
+  if (!existsSync(capsule)) continue; // no capsule → dev environment or already extracted
 
-  if (existsSync(dir)) {
-    process.stdout.write(`[PDIM] ${label}: already present — skipping\n`);
+  // Skip capsules that should not be auto-restored at startup
+  if (!autoRestore) {
+    process.stdout.write(
+      `[PDIM] ${label}: preserved as capsule (${(statSync(capsule).size / 1024 / 1024).toFixed(1)} MB)` +
+      (note ? ` — ${note}` : '') + '\n'
+    );
+    continue;
+  }
+
+  // Skip if the target directory already exists (prior boot already restored it)
+  if (dir && existsSync(dir)) {
+    process.stdout.write(`[PDIM] ${label}: already restored — skipping\n`);
     continue;
   }
 
   const manifestPath = capsule.replace(/\.pdim$/, '.manifest.json');
   const sizeMB = (statSync(capsule).size / 1024 / 1024).toFixed(1);
 
-  process.stdout.write(
-    `[PDIM] Restoring ${label} from capsule (${sizeMB} MB)...\n`
-  );
+  process.stdout.write(`[PDIM] Restoring ${label} (${sizeMB} MB)...\n`);
 
   if (!verifyCapsule(capsule, manifestPath)) {
-    process.stderr.write(`[PDIM] ❌ Integrity check failed — aborting startup\n`);
+    process.stderr.write(`[PDIM] ❌ Integrity check failed for ${capsule} — aborting startup\n`);
     process.exit(1);
   }
 
@@ -86,9 +107,7 @@ for (const { capsule, dir, label } of CAPSULES) {
     process.stdout.write(`[PDIM] ✅ ${dir}/ restored in ${elapsed}s\n`);
     anyRestored = true;
   } catch (err) {
-    process.stderr.write(
-      `[PDIM] ❌ Failed to restore ${capsule}: ${err.message}\n`
-    );
+    process.stderr.write(`[PDIM] ❌ Failed to restore ${capsule}: ${err.message}\n`);
     process.exit(1);
   }
 }

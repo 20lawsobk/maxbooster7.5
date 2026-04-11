@@ -62,17 +62,7 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   echo "==> FAST PATH: all pre-built artifacts present"
   echo "   dist/public/, dist/index.cjs, dist/cluster.cjs ready."
 
-  # Save postinstall.mjs and security-fix.ts BEFORE deleting scripts/.
-  # postinstall patches BullMQ after npm ci.
-  # security-fix patches vulnerable packages in the freshly-installed node_modules.
-  cp scripts/postinstall.mjs /tmp/postinstall.mjs 2>/dev/null || true
-  cp script/security-fix.ts  /tmp/security-fix.ts 2>/dev/null || true
-
   # ── Binary assets ──────────────────────────────────────────────────────────
-  # PWA icons (dist/public/icons/) are pre-generated from logo.png and committed
-  # to the repl layer — no copy needed.  Logo, og-image, and apple-touch-icon
-  # are produced by Vite and already live in dist/public/.
-  # Copy favicon.svg from client/ while it is still available (safe to fail).
   echo "==> Verifying binary assets in dist/public/..."
   mkdir -p dist/public/icons dist/public/screenshots 2>/dev/null || true
   cp client/public/favicon.svg  dist/public/favicon.svg  2>/dev/null || true
@@ -83,39 +73,21 @@ if [ -f "$PREBUILT_FRONTEND" ] && [ -f "$PREBUILT_SERVER" ] && [ -f "$PREBUILT_C
   ICON_COUNT=$(ls dist/public/icons/ 2>/dev/null | wc -l || echo 0)
   echo "   favicon=$([ -f dist/public/favicon.svg ] && echo yes || echo no), icons=${ICON_COUNT}"
 
-  # ── Delete source tree (before npm ci to save peak disk) ──────────────────
-  echo "==> Deleting source tree (Vite/esbuild not needed)..."
-  rm -rf \
-    client/ server/ shared/ script/ scripts/ electron/ \
-    attached_assets/ docs/ .cache/ \
-    node_modules/.vite/ node_modules/.cache/ \
-    capacitor.config.ts vite.config.ts tailwind.config.ts \
-    postcss.config.js drizzle.config.ts tsconfig.json \
-    tsconfig.app.json tsconfig.node.json components.json \
-    electron-builder.yml \
-    2>/dev/null || true
-  echo "   Source tree removed ($(du -sh dist/ 2>/dev/null | cut -f1) in dist/)."
+  # ── Clear build caches only (source kept — PDIM will compress it below) ───
+  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
 
   # ── Install production dependencies ───────────────────────────────────────
+  # Source tree is still present so postinstall.mjs runs normally.
   echo "==> Installing production dependencies (npm ci --omit=dev)..."
-  # --ignore-scripts: postinstall.mjs was just deleted; we run the saved copy below.
-  npm ci --omit=dev --ignore-scripts
-
-  echo "==> Running postinstall patches (BullMQ guards)..."
-  node /tmp/postinstall.mjs || echo "   postinstall.mjs warning (non-fatal)"
+  npm ci --omit=dev
 
   # ── Security fix on freshly-installed node_modules ────────────────────────
-  # Patch any vulnerable transitive packages that npm ci just installed.
-  # Uses the tsx binary from node_modules (installed as a prod dep via tsx).
   echo "==> Applying security patches to production node_modules..."
-  if [ -f "/tmp/security-fix.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
-    node_modules/.bin/tsx /tmp/security-fix.ts 2>&1 \
+  if [ -f "script/security-fix.ts" ] && [ -x "node_modules/.bin/tsx" ]; then
+    node_modules/.bin/tsx script/security-fix.ts 2>&1 \
       || echo "   WARNING: security-fix.ts exited non-zero (non-fatal)"
-  elif [ -f "/tmp/security-fix.ts" ]; then
-    echo "   INFO: tsx not available in prod deps — skipping runtime security patch"
-    echo "   (Patches were already applied to dist/ at build time via npm run build)"
   else
-    echo "   INFO: security-fix.ts not saved — skipping (already baked into pre-built dist/)"
+    echo "   INFO: security-fix.ts not available — patches already baked into pre-built dist/"
   fi
 
   FAST_PATH=1
@@ -146,17 +118,9 @@ else
   echo "==> Building application (security-fix + Vite frontend + esbuild server bundle)..."
   npm run build
 
-  echo "==> Removing source directories post-build..."
-  rm -rf \
-    client/ server/ shared/ script/ scripts/ electron/ \
-    attached_assets/ docs/ .cache/ \
-    node_modules/.vite/ node_modules/.cache/ \
-    capacitor.config.ts vite.config.ts tailwind.config.ts \
-    postcss.config.js drizzle.config.ts tsconfig.json \
-    tsconfig.app.json tsconfig.node.json components.json \
-    electron-builder.yml \
-    2>/dev/null || true
-  echo "   Source dirs + caches removed. dist/: $(du -sh dist/ 2>/dev/null | cut -f1)"
+  # Source tree is kept — PDIM will compress it below.
+  rm -rf .cache/ node_modules/.vite/ node_modules/.cache/ 2>/dev/null || true
+  echo "   Build complete. dist/: $(du -sh dist/ 2>/dev/null | cut -f1)"
 
   echo "==> Pruning dev dependencies..."
   npm prune --omit=dev
@@ -368,6 +332,54 @@ MANIFEST_EOF
 
 _pdim_pack "node_modules"   "node_modules.pdim"   "Production node_modules"
 _pdim_pack "python_runtime" "python_runtime.pdim" "Portable Python 3.12 runtime"
+
+# ── Source tree capsule ───────────────────────────────────────────────────────
+# Instead of deleting source files, compress the entire source tree into a
+# single capsule.  Nothing is lost — it can be restored for inspection,
+# debugging, or a SLOW PATH rebuild.  Not auto-restored on startup since
+# the server runs from pre-compiled dist/ artifacts.
+echo "   Packing source tree → source.pdim ..."
+_SOURCE_DIRS=""
+for _d in client server shared script scripts electron attached_assets docs migrations boosterstate; do
+  [ -d "$_d" ] && _SOURCE_DIRS="$_SOURCE_DIRS $_d"
+done
+_SOURCE_CONFIGS=""
+for _f in capacitor.config.ts vite.config.ts tailwind.config.ts postcss.config.js \
+          drizzle.config.ts tsconfig.json tsconfig.app.json tsconfig.node.json \
+          components.json electron-builder.yml design_guidelines.md; do
+  [ -f "$_f" ] && _SOURCE_CONFIGS="$_SOURCE_CONFIGS $_f"
+done
+if [ -n "$_SOURCE_DIRS" ] || [ -n "$_SOURCE_CONFIGS" ]; then
+  _SRC_RAW=$(du -sh --exclude=.git ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null | tail -1 | cut -f1 || echo "?")
+  # shellcheck disable=SC2086
+  tar -czf source.pdim ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null || true
+  if [ -f source.pdim ]; then
+    _SRC_PACKED=$(du -sh source.pdim 2>/dev/null | cut -f1)
+    _SRC_CKSUM=$(sha256sum source.pdim 2>/dev/null | cut -d' ' -f1 || echo "unavailable")
+    cat > source.manifest.json << MANIFEST_EOF
+{
+  "capsule": "source.pdim",
+  "label": "Application source tree",
+  "rawSize": "${_SRC_RAW}",
+  "packedSize": "${_SRC_PACKED}",
+  "sha256": "${_SRC_CKSUM}",
+  "compression": "gzip-9",
+  "format": "pdim-v1",
+  "autoRestore": false,
+  "note": "Not needed at runtime — restore manually for debugging or a full rebuild",
+  "createdAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+MANIFEST_EOF
+    # Remove raw source AFTER it is safely packed
+    # shellcheck disable=SC2086
+    rm -rf ${_SOURCE_DIRS} ${_SOURCE_CONFIGS} 2>/dev/null || true
+    echo "   ✅ Source tree: packed → ${_SRC_PACKED} (sha256=${_SRC_CKSUM:0:16}...)"
+  else
+    echo "   WARNING: source.pdim not created — source tree left uncompressed"
+  fi
+else
+  echo "   INFO: No source directories found — skipping source capsule"
+fi
 
 echo "   PDIM image footprint: $(du -sh --exclude=.git --exclude=.local . 2>/dev/null | cut -f1)"
 
