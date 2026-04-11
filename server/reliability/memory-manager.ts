@@ -259,7 +259,7 @@ class MemoryManager extends EventEmitter {
       try {
         task();
       } catch (error: unknown) {
-        logger.warn(`⚠️  Cleanup task ${index} failed:`, error);
+        logger.warn({ err: error }, `⚠️  Cleanup task ${index} failed:`);
       }
     });
 

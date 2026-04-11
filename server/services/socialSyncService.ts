@@ -45,7 +45,7 @@ async function refreshOAuth2Token(
       refreshToken: data.refresh_token || refreshToken,
     };
   } catch (err) {
-    logger.warn(`[TokenRefresh] Failed to refresh token from ${tokenUrl}:`, err);
+    logger.warn({ err: err }, `[TokenRefresh] Failed to refresh token from ${tokenUrl}:`);
     return null;
   }
 }
@@ -111,7 +111,7 @@ async function getValidAccessToken(
         logger.warn(`[TokenRefresh] Twitter: ${JSON.stringify(data)}`);
       }
     } catch (err) {
-      logger.warn(`[TokenRefresh] Twitter refresh failed:`, err);
+      logger.warn({ err: err }, `[TokenRefresh] Twitter refresh failed:`);
     }
   } else if (p === 'tiktok' || p === 'tiktok_sandbox') {
     refreshed = await refreshOAuth2Token(
@@ -143,7 +143,7 @@ async function getValidAccessToken(
         logger.warn(`[TokenRefresh] Threads: ${JSON.stringify(data)}`);
       }
     } catch (err) {
-      logger.warn(`[TokenRefresh] Threads refresh failed:`, err);
+      logger.warn({ err: err }, `[TokenRefresh] Threads refresh failed:`);
     }
   } else if (p === 'facebook' || p === 'instagram') {
     // Facebook long-lived token exchange
@@ -163,7 +163,7 @@ async function getValidAccessToken(
         logger.warn(`[TokenRefresh] Facebook: ${JSON.stringify(data)}`);
       }
     } catch (err) {
-      logger.warn(`[TokenRefresh] Facebook refresh failed:`, err);
+      logger.warn({ err: err }, `[TokenRefresh] Facebook refresh failed:`);
     }
   }
 

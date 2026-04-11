@@ -429,7 +429,7 @@ class SocialChatbotService {
         templateUsed,
       };
     } catch (error) {
-      logger.warn('Error generating chatbot response:', error);
+      logger.warn({ err: error }, 'Error generating chatbot response:');
       return {
         id: randomBytes(8).toString('hex'),
         content: "Thanks for your message! A team member will get back to you shortly.",

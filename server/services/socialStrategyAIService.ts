@@ -315,7 +315,7 @@ class SocialStrategyAIService {
         if (caption) return caption;
       }
     } catch (err) {
-      logger.warn('[SocialStrategy] Advanced AI failed for suggested content:', err);
+      logger.warn({ err: err }, '[SocialStrategy] Advanced AI failed for suggested content:');
     }
     // Last-resort: static template
     return this.generateSuggestedContent(title, platform);

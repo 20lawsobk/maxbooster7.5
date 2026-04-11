@@ -270,7 +270,7 @@ export class SupportAIService {
         shouldEscalate: false,
       };
     } catch (error: unknown) {
-      logger.warn('AI generation failed:', error);
+      logger.warn({ err: error }, 'AI generation failed:');
       return {
         answer:
           "I apologize, but I'm having trouble understanding your question. Our support team can help! Would you like to create a support ticket or try rephrasing your question?",

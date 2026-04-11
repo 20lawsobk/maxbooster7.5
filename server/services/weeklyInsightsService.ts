@@ -44,7 +44,7 @@ class WeeklyInsightsService {
         this.isInitialized = true;
         logger.info('✅ Weekly Insights Service initialized');
       } catch (error) {
-        logger.warn('❌ Failed to initialize Weekly Insights Service:', error);
+        logger.warn({ err: error }, '❌ Failed to initialize Weekly Insights Service:');
       }
     }
   }
@@ -181,7 +181,7 @@ class WeeklyInsightsService {
         upcomingPosts,
       };
     } catch (error) {
-      logger.warn(`Failed to generate weekly report for user ${userId}:`, error);
+      logger.warn({ err: error }, `Failed to generate weekly report for user ${userId}:`);
       return null;
     }
   }
@@ -216,7 +216,7 @@ class WeeklyInsightsService {
             }
           }
         } catch (error) {
-          logger.warn(`Failed to send weekly insights to user ${userId}:`, error);
+          logger.warn({ err: error }, `Failed to send weekly insights to user ${userId}:`);
           failed++;
         }
       }
@@ -224,7 +224,7 @@ class WeeklyInsightsService {
       logger.info(`Weekly insights complete: ${sent} sent, ${failed} failed`);
       return { sent, failed };
     } catch (error) {
-      logger.warn('Failed to process weekly insights batch:', error);
+      logger.warn({ err: error }, 'Failed to process weekly insights batch:');
       return { sent, failed };
     }
   }
@@ -285,11 +285,11 @@ class WeeklyInsightsService {
           newFollowers: report.newFollowers,
           achievementsCount: report.achievementsUnlocked.length,
         },
-      }).catch((err) => logger.warn('Failed to send weekly insights in-app notification:', err));
+      }).catch((err) => logger.warn({ err: err }, 'Failed to send weekly insights in-app notification:'));
 
       return true;
     } catch (error) {
-      logger.warn(`Failed to send weekly email to ${report.userEmail}:`, error);
+      logger.warn({ err: error }, `Failed to send weekly email to ${report.userEmail}:`);
       return false;
     }
   }
@@ -452,7 +452,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         );
       return true;
     } catch (error) {
-      logger.warn(`Failed to track email open for ${emailId}:`, error);
+      logger.warn({ err: error }, `Failed to track email open for ${emailId}:`);
       return false;
     }
   }
@@ -467,7 +467,7 @@ Unsubscribe: https://maxbooster.ai/api/email-preferences/unsubscribe
         .where(eq(sentEmails.id, emailId));
       return true;
     } catch (error) {
-      logger.warn(`Failed to track email click for ${emailId}:`, error);
+      logger.warn({ err: error }, `Failed to track email click for ${emailId}:`);
       return false;
     }
   }

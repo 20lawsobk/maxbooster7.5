@@ -1,8 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db.ts';
-import { storage } from '../storage.ts';
+import { db } from '../db.js';
+import { storage } from '../storage.js';
 import { eq, ilike, or, and, desc, sql, count, gte, lte, asc, sum, inArray } from 'drizzle-orm';
-import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns, searchHistory, filterPresets } from '../../shared/schema.ts';
+import { users, projects, beats, releases, studioProjects, storefronts, analytics, socialCampaigns, searchHistory, filterPresets } from '../../shared/schema.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -357,7 +357,7 @@ router.get('/unified', async (req: Request, res: Response) => {
         searchBeats(q, filters, numLimit, numOffset)
           .then(r => { results.beats = r; })
           .catch(error => {
-            logger.warn('Error searching beats:', error);
+            logger.warn({ err: error }, 'Error searching beats:');
             results.beats = { items: [], total: 0 };
           })
       );
@@ -368,7 +368,7 @@ router.get('/unified', async (req: Request, res: Response) => {
         searchUsers(q, numLimit, numOffset)
           .then(r => { results.users = r; })
           .catch(error => {
-            logger.warn('Error searching users:', error);
+            logger.warn({ err: error }, 'Error searching users:');
             results.users = { items: [], total: 0 };
           })
       );
@@ -379,7 +379,7 @@ router.get('/unified', async (req: Request, res: Response) => {
         searchProjects(q, userId, numLimit, numOffset)
           .then(r => { results.projects = r; })
           .catch(error => {
-            logger.warn('Error searching projects:', error);
+            logger.warn({ err: error }, 'Error searching projects:');
             results.projects = { items: [], total: 0 };
           })
       );
@@ -390,7 +390,7 @@ router.get('/unified', async (req: Request, res: Response) => {
         searchReleases(q, numLimit, numOffset)
           .then(r => { results.releases = r; })
           .catch(error => {
-            logger.warn('Error searching releases:', error);
+            logger.warn({ err: error }, 'Error searching releases:');
             results.releases = { items: [], total: 0 };
           })
       );
@@ -414,7 +414,7 @@ router.get('/unified', async (req: Request, res: Response) => {
     
     if (userId && q) {
       await db.insert(searchHistory).values({ userId, query: q, resultCount: totalCount })
-        .catch((err: unknown) => logger.warn('Search history insert failed (non-critical):', err));
+        .catch((err: unknown) => logger.warn({ err: err }, 'Search history insert failed (non-critical):'));
     }
     
     res.json({
@@ -436,7 +436,7 @@ router.get('/unified', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.warn('Unified search error:', error);
+    logger.warn({ err: error }, 'Unified search error:');
     res.status(500).json({ error: 'Search failed' });
   }
 });
@@ -491,7 +491,7 @@ router.get('/autocomplete', async (req: Request, res: Response) => {
     
     res.json({ suggestions });
   } catch (error: any) {
-    logger.warn('Autocomplete error:', error);
+    logger.warn({ err: error }, 'Autocomplete error:');
     res.status(500).json({ error: 'Autocomplete failed' });
   }
 });
@@ -536,7 +536,7 @@ router.get('/trending', async (req: Request, res: Response) => {
       genres: trendingGenres.map(g => g.genre).filter(Boolean),
     });
   } catch (error: any) {
-    logger.warn('Trending search error:', error);
+    logger.warn({ err: error }, 'Trending search error:');
     res.status(500).json({ error: 'Failed to get trending data' });
   }
 });
@@ -555,7 +555,7 @@ router.get('/history', async (req: Request, res: Response) => {
 
     res.json({ history: rows.slice(0, 20), totalCount: rows.length });
   } catch (error: any) {
-    logger.warn('Search history error:', error);
+    logger.warn({ err: error }, 'Search history error:');
     res.status(500).json({ error: 'Failed to get search history' });
   }
 });
@@ -569,7 +569,7 @@ router.delete('/history', async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Search history cleared' });
   } catch (error: any) {
-    logger.warn('Clear search history error:', error);
+    logger.warn({ err: error }, 'Clear search history error:');
     res.status(500).json({ error: 'Failed to clear search history' });
   }
 });
@@ -586,7 +586,7 @@ router.delete('/history/:query', async (req: Request, res: Response) => {
 
     res.json({ success: true, message: 'Search item removed' });
   } catch (error: any) {
-    logger.warn('Remove search history item error:', error);
+    logger.warn({ err: error }, 'Remove search history item error:');
     res.status(500).json({ error: 'Failed to remove search item' });
   }
 });
@@ -679,7 +679,7 @@ router.get('/discover', async (req: Request, res: Response) => {
       featuredGenres: genres,
     });
   } catch (error: any) {
-    logger.warn('Discovery feed error:', error);
+    logger.warn({ err: error }, 'Discovery feed error:');
     res.status(500).json({ error: 'Failed to get discovery feed' });
   }
 });
@@ -731,7 +731,7 @@ router.get('/similar/:beatId', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.warn('Similar beats error:', error);
+    logger.warn({ err: error }, 'Similar beats error:');
     res.status(500).json({ error: 'Failed to find similar beats' });
   }
 });
@@ -751,7 +751,7 @@ router.post('/filter-presets', async (req: Request, res: Response) => {
 
     res.json({ success: true, preset: inserted });
   } catch (error: any) {
-    logger.warn('Save filter preset error:', error);
+    logger.warn({ err: error }, 'Save filter preset error:');
     res.status(500).json({ error: 'Failed to save filter preset' });
   }
 });
@@ -805,7 +805,7 @@ router.get('/filter-presets', async (req: Request, res: Response) => {
 
     res.json({ presets: [...contextPresets, ...userPresets] });
   } catch (error: any) {
-    logger.warn('Get filter presets error:', error);
+    logger.warn({ err: error }, 'Get filter presets error:');
     res.status(500).json({ error: 'Failed to get filter presets' });
   }
 });
@@ -828,7 +828,7 @@ router.put('/filter-presets', async (req: Request, res: Response) => {
 
     res.json({ success: true, preset: updated });
   } catch (error: any) {
-    logger.warn('Update filter preset error:', error);
+    logger.warn({ err: error }, 'Update filter preset error:');
     res.status(500).json({ error: 'Failed to update filter preset' });
   }
 });
@@ -845,7 +845,7 @@ router.delete('/filter-presets/:presetId', async (req: Request, res: Response) =
 
     res.json({ success: true });
   } catch (error: any) {
-    logger.warn('Delete filter preset error:', error);
+    logger.warn({ err: error }, 'Delete filter preset error:');
     res.status(500).json({ error: 'Failed to delete filter preset' });
   }
 });
@@ -876,7 +876,7 @@ router.post('/filter-presets/:presetId/default', async (req: Request, res: Respo
 
     res.json({ success: true });
   } catch (error: any) {
-    logger.warn('Set default preset error:', error);
+    logger.warn({ err: error }, 'Set default preset error:');
     res.status(500).json({ error: 'Failed to set default preset' });
   }
 });
@@ -947,7 +947,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
     
     res.json({ suggestions: suggestions.slice(0, Number(limit)) });
   } catch (error: any) {
-    logger.warn('Suggestions error:', error);
+    logger.warn({ err: error }, 'Suggestions error:');
     res.status(500).json({ error: 'Failed to get suggestions' });
   }
 });
@@ -1013,7 +1013,7 @@ router.get('/distribution', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.warn('Distribution search error:', error);
+    logger.warn({ err: error }, 'Distribution search error:');
     res.status(500).json({ error: 'Distribution search failed' });
   }
 });
@@ -1143,7 +1143,7 @@ router.get('/analytics/search', async (req: Request, res: Response) => {
       availableMetrics: ['streams', 'downloads', 'revenue', 'listeners', 'saves', 'shares'],
     });
   } catch (error: any) {
-    logger.warn('Analytics search error:', error);
+    logger.warn({ err: error }, 'Analytics search error:');
     res.status(500).json({ error: 'Analytics search failed' });
   }
 });
@@ -1235,7 +1235,7 @@ router.get('/social/search', async (req: Request, res: Response) => {
       statuses: ['draft', 'scheduled', 'published', 'failed'],
     });
   } catch (error: any) {
-    logger.warn('Social search error:', error);
+    logger.warn({ err: error }, 'Social search error:');
     res.status(500).json({ error: 'Social search failed' });
   }
 });
@@ -1299,7 +1299,7 @@ router.get('/marketplace/producers', async (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.warn('Producer search error:', error);
+    logger.warn({ err: error }, 'Producer search error:');
     res.status(500).json({ error: 'Producer search failed' });
   }
 });

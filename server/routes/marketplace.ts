@@ -168,7 +168,7 @@ router.get('/beats', async (req: Request, res: Response) => {
 
     res.json(beats);
   } catch (error: any) {
-    logger.warn('Error fetching beats:', error);
+    logger.warn({ err: error }, 'Error fetching beats:');
     res.status(500).json({ error: 'Failed to fetch beats' });
   }
 });
@@ -276,7 +276,7 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error fetching producer analytics:', error);
+    logger.warn({ err: error }, 'Error fetching producer analytics:');
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
 });
@@ -382,7 +382,7 @@ router.get('/license-templates', async (req: Request, res: Response) => {
 
     res.json(mapped);
   } catch (error: any) {
-    logger.warn('Error fetching license templates:', error);
+    logger.warn({ err: error }, 'Error fetching license templates:');
     res.status(500).json({ error: 'Failed to fetch license templates' });
   }
 });
@@ -411,7 +411,7 @@ router.post('/license-templates', requireAuth, async (req: Request, res: Respons
     }).returning();
     res.status(201).json(template);
   } catch (error: any) {
-    logger.warn('Error creating license template:', error);
+    logger.warn({ err: error }, 'Error creating license template:');
     res.status(500).json({ error: 'Failed to create license template' });
   }
 });
@@ -444,7 +444,7 @@ router.put('/license-templates/:id', requireAuth, async (req: Request, res: Resp
       .returning();
     res.json(updated);
   } catch (error: any) {
-    logger.warn('Error updating license template:', error);
+    logger.warn({ err: error }, 'Error updating license template:');
     res.status(500).json({ error: 'Failed to update license template' });
   }
 });
@@ -462,7 +462,7 @@ router.delete('/license-templates/:id', requireAuth, async (req: Request, res: R
       .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)));
     res.json({ success: true });
   } catch (error: any) {
-    logger.warn('Error deleting license template:', error);
+    logger.warn({ err: error }, 'Error deleting license template:');
     res.status(500).json({ error: 'Failed to delete license template' });
   }
 });
@@ -476,7 +476,7 @@ router.get('/my-beats', async (req: Request, res: Response) => {
     const userListings = await marketplaceService.getUserListings(req.user!.id);
     res.json(userListings);
   } catch (error: any) {
-    logger.warn('Error fetching user beats:', error);
+    logger.warn({ err: error }, 'Error fetching user beats:');
     res.status(500).json({ error: 'Failed to fetch your beats' });
   }
 });
@@ -486,7 +486,7 @@ router.get('/producers', async (req: Request, res: Response) => {
     const producers = await storage.getProducers();
     res.json({ producers: producers || [] });
   } catch (error: any) {
-    logger.warn('Error fetching producers:', error);
+    logger.warn({ err: error }, 'Error fetching producers:');
     res.status(500).json({ error: 'Failed to fetch producers' });
   }
 });
@@ -500,7 +500,7 @@ router.get('/purchases', async (req: Request, res: Response) => {
     const purchases = await marketplaceService.getUserPurchases(req.user!.id);
     res.json(purchases);
   } catch (error: any) {
-    logger.warn('Error fetching purchases:', error);
+    logger.warn({ err: error }, 'Error fetching purchases:');
     res.status(500).json({ error: 'Failed to fetch purchases' });
   }
 });
@@ -514,7 +514,7 @@ router.get('/sales-analytics', async (req: Request, res: Response) => {
     const analytics = await marketplaceService.getSalesAnalytics(req.user!.id);
     res.json(analytics);
   } catch (error: any) {
-    logger.warn('Error fetching sales analytics:', error);
+    logger.warn({ err: error }, 'Error fetching sales analytics:');
     res.status(500).json({ error: 'Failed to fetch sales analytics' });
   }
 });
@@ -560,12 +560,12 @@ router.post('/interaction', async (req: Request, res: Response) => {
             }
           }
         } catch (err) {
-          logger.warn('Beat play milestone notification error:', err);
+          logger.warn({ err: err }, 'Beat play milestone notification error:');
         }
       });
     }
   } catch (error: any) {
-    logger.warn('Error recording interaction:', error);
+    logger.warn({ err: error }, 'Error recording interaction:');
     res.status(500).json({ error: 'Failed to record interaction' });
   }
 });
@@ -644,7 +644,7 @@ router.get('/for-you', async (req: Request, res: Response) => {
       allBeats: personalizedBeats,
     });
   } catch (error: any) {
-    logger.warn('Error fetching For You feed:', error);
+    logger.warn({ err: error }, 'Error fetching For You feed:');
     res.status(500).json({ error: 'Failed to fetch personalized feed' });
   }
 });
@@ -670,7 +670,7 @@ router.get('/ai-recommendations', async (req: Request, res: Response) => {
 
     res.json(recommendations);
   } catch (error: any) {
-    logger.warn('Error fetching AI recommendations:', error);
+    logger.warn({ err: error }, 'Error fetching AI recommendations:');
     res.status(500).json({ error: 'Failed to fetch recommendations' });
   }
 });
@@ -684,7 +684,7 @@ router.get('/taste-profile', async (req: Request, res: Response) => {
     const insights = await discoveryAlgorithmService.getTasteInsights(req.user!.id);
     res.json(insights);
   } catch (error: any) {
-    logger.warn('Error fetching taste profile:', error);
+    logger.warn({ err: error }, 'Error fetching taste profile:');
     res.status(500).json({ error: 'Failed to fetch taste profile' });
   }
 });
@@ -703,7 +703,7 @@ router.post('/follow-producer', async (req: Request, res: Response) => {
     const result = await discoveryAlgorithmService.followProducer(req.user!.id, producerId);
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error following producer:', error);
+    logger.warn({ err: error }, 'Error following producer:');
     res.status(500).json({ error: 'Failed to follow producer' });
   }
 });
@@ -722,7 +722,7 @@ router.post('/unfollow-producer', async (req: Request, res: Response) => {
     const result = await discoveryAlgorithmService.unfollowProducer(req.user!.id, producerId);
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error unfollowing producer:', error);
+    logger.warn({ err: error }, 'Error unfollowing producer:');
     res.status(500).json({ error: 'Failed to unfollow producer' });
   }
 });
@@ -760,11 +760,11 @@ router.post('/purchase', async (req: Request, res: Response) => {
           await notificationService.sendBeatSoldNotification(sellerId, beatTitle, licenseType, amount);
         }
       } catch (err) {
-        logger.warn('[Marketplace] purchase notification error:', err);
+        logger.warn({ err: err }, '[Marketplace] purchase notification error:');
       }
     });
   } catch (error: any) {
-    logger.warn('Error initiating purchase:', error);
+    logger.warn({ err: error }, 'Error initiating purchase:');
     const msg = error.message || 'Failed to initiate purchase';
     if (msg.includes('not found') || msg.includes('Not found')) {
       return res.status(404).json({ error: msg });
@@ -928,7 +928,7 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
       template,
     });
   } catch (error: any) {
-    logger.warn('Error generating license agreement:', error);
+    logger.warn({ err: error }, 'Error generating license agreement:');
     res.status(500).json({ error: 'Failed to generate license agreement' });
   }
 });
@@ -966,7 +966,7 @@ router.get('/escrow', async (req: Request, res: Response) => {
 
     res.json(formatted);
   } catch (error: any) {
-    logger.warn('Error fetching escrow transactions:', error);
+    logger.warn({ err: error }, 'Error fetching escrow transactions:');
     res.status(500).json({ error: 'Failed to fetch escrow transactions' });
   }
 });
@@ -988,7 +988,7 @@ router.get('/affiliates', async (req: Request, res: Response) => {
     const affiliates = row ? (row.value as any[]) || [] : [];
     res.json(affiliates);
   } catch (error: any) {
-    logger.warn('Error fetching affiliates:', error);
+    logger.warn({ err: error }, 'Error fetching affiliates:');
     res.status(500).json({ error: 'Failed to fetch affiliates' });
   }
 });
@@ -1003,7 +1003,7 @@ router.get('/contracts', async (req: Request, res: Response) => {
     const contracts = await storage.getContractTemplates(userId);
     res.json(contracts);
   } catch (error: any) {
-    logger.warn('Error fetching contracts:', error);
+    logger.warn({ err: error }, 'Error fetching contracts:');
     res.status(500).json({ error: 'Failed to fetch contracts' });
   }
 });
@@ -1024,7 +1024,7 @@ router.get('/contracts/:id', async (req: Request, res: Response) => {
     
     res.json(contract);
   } catch (error: any) {
-    logger.warn('Error fetching contract:', error);
+    logger.warn({ err: error }, 'Error fetching contract:');
     res.status(500).json({ error: 'Failed to fetch contract' });
   }
 });
@@ -1052,7 +1052,7 @@ router.patch('/contracts/:id', async (req: Request, res: Response) => {
 
     res.json(updatedContract);
   } catch (error: any) {
-    logger.warn('Error updating contract:', error);
+    logger.warn({ err: error }, 'Error updating contract:');
     res.status(500).json({ error: 'Failed to update contract' });
   }
 });
@@ -1074,7 +1074,7 @@ router.delete('/contracts/:id', async (req: Request, res: Response) => {
     await storage.deleteContractTemplate(id);
     res.json({ success: true });
   } catch (error: any) {
-    logger.warn('Error deleting contract:', error);
+    logger.warn({ err: error }, 'Error deleting contract:');
     res.status(500).json({ error: 'Failed to delete contract' });
   }
 });
@@ -1140,7 +1140,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
 
     res.json(collaborations);
   } catch (error: any) {
-    logger.warn('Error fetching collaborations:', error);
+    logger.warn({ err: error }, 'Error fetching collaborations:');
     res.status(500).json({ error: 'Failed to fetch collaborations' });
   }
 });
@@ -1239,7 +1239,7 @@ router.post('/upload', upload.fields([
           (req.user as any)?.email || 'unknown'
         );
       } catch (err) {
-        logger.warn('Marketplace review admin notification error:', err);
+        logger.warn({ err: err }, 'Marketplace review admin notification error:');
       }
     });
 
@@ -1270,7 +1270,7 @@ router.post('/upload', upload.fields([
                   beatTitle: title,
                   genre,
                 },
-              }).catch(err => logger.warn(`Failed to notify follower ${followerId}:`, err))
+              }).catch(err => logger.warn({ err: err }, `Failed to notify follower ${followerId}:`))
             ));
           }
           
@@ -1311,11 +1311,11 @@ router.post('/upload', upload.fields([
           parseFloat(price) || 50
         );
       } catch (err) {
-        logger.warn('[Marketplace] beat listing notification error:', err);
+        logger.warn({ err: err }, '[Marketplace] beat listing notification error:');
       }
     });
   } catch (error: any) {
-    logger.warn('Error uploading beat:', error);
+    logger.warn({ err: error }, 'Error uploading beat:');
     res.status(500).json({ error: 'Failed to upload beat' });
   }
 });
@@ -1415,7 +1415,7 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
       res.send(fileBuffer);
     }
   } catch (error: any) {
-    logger.warn('Error serving audio file:', error);
+    logger.warn({ err: error }, 'Error serving audio file:');
     res.status(500).json({ error: 'Failed to load audio file' });
   }
 });
@@ -1459,7 +1459,7 @@ router.get('/cover/*path', async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(fileBuffer);
   } catch (error: any) {
-    logger.warn('Error serving cover image:', error);
+    logger.warn({ err: error }, 'Error serving cover image:');
     res.status(500).json({ error: 'Failed to load cover image' });
   }
 });
@@ -1510,7 +1510,7 @@ router.put('/listings/:id', upload.fields([
 
     res.json(updatedListing);
   } catch (error: any) {
-    logger.warn('Error updating listing:', error);
+    logger.warn({ err: error }, 'Error updating listing:');
     if (error.message === 'Not authorized to update this listing') {
       return res.status(403).json({ error: error.message });
     }
@@ -1528,7 +1528,7 @@ router.delete('/listings/:id', async (req: Request, res: Response) => {
     await marketplaceService.deleteListing(id, req.user!.id);
     res.json({ success: true, message: 'Beat deleted successfully' });
   } catch (error: any) {
-    logger.warn('Error deleting listing:', error);
+    logger.warn({ err: error }, 'Error deleting listing:');
     if (error.message === 'Not authorized to delete this listing') {
       return res.status(403).json({ error: error.message });
     }
@@ -1558,7 +1558,7 @@ router.post('/connect-stripe', async (req: Request, res: Response) => {
 
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error connecting Stripe:', error);
+    logger.warn({ err: error }, 'Error connecting Stripe:');
     res.status(500).json({ error: 'Failed to connect Stripe account' });
   }
 });
@@ -1577,7 +1577,7 @@ router.post('/follow/:producerId', async (req: Request, res: Response) => {
     const result = await discoveryAlgorithmService.followProducer(req.user!.id, producerId);
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error following producer:', error);
+    logger.warn({ err: error }, 'Error following producer:');
     res.status(500).json({ error: 'Failed to follow producer' });
   }
 });
@@ -1591,7 +1591,7 @@ router.post('/escrow/:transactionId/release', async (req: Request, res: Response
     const { transactionId } = req.params;
     res.json({ success: true, message: 'Escrow released successfully', transactionId });
   } catch (error: any) {
-    logger.warn('Error releasing escrow:', error);
+    logger.warn({ err: error }, 'Error releasing escrow:');
     res.status(500).json({ error: 'Failed to release escrow' });
   }
 });
@@ -1642,7 +1642,7 @@ router.post('/affiliates', async (req: Request, res: Response) => {
 
     res.status(201).json(affiliate);
   } catch (error: any) {
-    logger.warn('Error creating affiliate:', error);
+    logger.warn({ err: error }, 'Error creating affiliate:');
     res.status(500).json({ error: 'Failed to create affiliate' });
   }
 });
@@ -1671,7 +1671,7 @@ router.post('/contracts', async (req: Request, res: Response) => {
 
     res.status(201).json(contract);
   } catch (error: any) {
-    logger.warn('Error creating contract:', error);
+    logger.warn({ err: error }, 'Error creating contract:');
     res.status(500).json({ error: 'Failed to create contract' });
   }
 });
@@ -1731,7 +1731,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
 
     res.status(201).json(collaboration);
   } catch (error: any) {
-    logger.warn('Error creating collaboration:', error);
+    logger.warn({ err: error }, 'Error creating collaboration:');
     res.status(500).json({ error: 'Failed to create collaboration' });
   }
 });
@@ -1815,7 +1815,7 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       featuredBeats,
     });
   } catch (error: any) {
-    logger.warn('Error fetching producer:', error);
+    logger.warn({ err: error }, 'Error fetching producer:');
     res.status(500).json({ error: 'Failed to fetch producer' });
   }
 });
@@ -1832,7 +1832,7 @@ router.get('/producers/:producerId/follow-status', async (req: Request, res: Res
     const isFollowing = followedProducers.includes(producerId);
     res.json({ isFollowing });
   } catch (error: any) {
-    logger.warn('Error fetching follow status:', error);
+    logger.warn({ err: error }, 'Error fetching follow status:');
     res.status(500).json({ error: 'Failed to fetch follow status' });
   }
 });
@@ -1847,7 +1847,7 @@ router.post('/unfollow/:producerId', async (req: Request, res: Response) => {
     const result = await discoveryAlgorithmService.unfollowProducer(req.user!.id, producerId);
     res.json(result);
   } catch (error: any) {
-    logger.warn('Error unfollowing producer:', error);
+    logger.warn({ err: error }, 'Error unfollowing producer:');
     res.status(500).json({ error: 'Failed to unfollow producer' });
   }
 });
@@ -1918,7 +1918,7 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
       }
     }
   } catch (error: any) {
-    logger.warn('Error liking beat:', error);
+    logger.warn({ err: error }, 'Error liking beat:');
     res.status(500).json({ error: 'Failed to like beat' });
   }
 });
@@ -1946,7 +1946,7 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
     
     res.json({ isLiked: likes.length > 0 });
   } catch (error: any) {
-    logger.warn('Error checking like status:', error);
+    logger.warn({ err: error }, 'Error checking like status:');
     res.status(500).json({ error: 'Failed to check like status' });
   }
 });
@@ -2004,7 +2004,7 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
       res.status(404).json({ error: 'Beat not found' });
     }
   } catch (error: any) {
-    logger.warn('Error rating beat:', error);
+    logger.warn({ err: error }, 'Error rating beat:');
     res.status(500).json({ error: 'Failed to rate beat' });
   }
 });
@@ -2029,7 +2029,7 @@ router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
       userRating,
     });
   } catch (error: any) {
-    logger.warn('Error fetching beat rating:', error);
+    logger.warn({ err: error }, 'Error fetching beat rating:');
     res.status(500).json({ error: 'Failed to fetch rating' });
   }
 });
@@ -2047,7 +2047,7 @@ router.get('/stems/:stemId', requireAuth, async (req: Request, res: Response) =>
       downloadUrl: null,
     });
   } catch (error: any) {
-    logger.warn('Error fetching stem:', error);
+    logger.warn({ err: error }, 'Error fetching stem:');
     res.status(500).json({ error: 'Failed to fetch stem' });
   }
 });
@@ -2069,11 +2069,11 @@ router.post('/stems/:stemId/purchase', async (req: Request, res: Response) => {
       try {
         await notificationService.sendStemsPurchasedNotification(req.user!.id, stemId);
       } catch (err) {
-        logger.warn('[Marketplace] stems purchase notification error:', err);
+        logger.warn({ err: err }, '[Marketplace] stems purchase notification error:');
       }
     });
   } catch (error: any) {
-    logger.warn('Error purchasing stem:', error);
+    logger.warn({ err: error }, 'Error purchasing stem:');
     res.status(500).json({ error: 'Failed to purchase stem' });
   }
 });
@@ -2090,7 +2090,7 @@ router.get('/stems/:stemId/download/:trackId', async (req: Request, res: Respons
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
     });
   } catch (error: any) {
-    logger.warn('Error generating stem download:', error);
+    logger.warn({ err: error }, 'Error generating stem download:');
     res.status(500).json({ error: 'Failed to generate download link' });
   }
 });
@@ -2109,7 +2109,7 @@ router.get('/my-stems', async (req: Request, res: Response) => {
       .limit(100);
     res.json(stems);
   } catch (error: any) {
-    logger.warn('Error fetching user stems:', error);
+    logger.warn({ err: error }, 'Error fetching user stems:');
     res.status(500).json({ error: 'Failed to fetch your stems' });
   }
 });
@@ -2125,7 +2125,7 @@ router.get('/listings/:listingId/stems', async (req: Request, res: Response) => 
       .limit(50);
     res.json(stems);
   } catch (error: any) {
-    logger.warn('Error fetching listing stems:', error);
+    logger.warn({ err: error }, 'Error fetching listing stems:');
     res.status(500).json({ error: 'Failed to fetch listing stems' });
   }
 });
@@ -2155,7 +2155,7 @@ router.post('/listings/:listingId/stems', requireAuth, async (req: Request, res:
 
     res.status(201).json(stem);
   } catch (error: any) {
-    logger.warn('Error creating stem:', error);
+    logger.warn({ err: error }, 'Error creating stem:');
     res.status(500).json({ error: 'Failed to create stem' });
   }
 });
@@ -2176,7 +2176,7 @@ router.delete('/stems/:stemId', requireAuth, async (req: Request, res: Response)
 
     res.json({ success: true });
   } catch (error: any) {
-    logger.warn('Error deleting stem:', error);
+    logger.warn({ err: error }, 'Error deleting stem:');
     res.status(500).json({ error: 'Failed to delete stem' });
   }
 });

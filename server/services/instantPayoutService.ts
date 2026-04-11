@@ -78,7 +78,7 @@ export class InstantPayoutService {
       
       return entry.id;
     } catch (error: unknown) {
-      logger.warn('Error recording ledger entry:', error);
+      logger.warn({ err: error }, 'Error recording ledger entry:');
       throw new Error('Failed to record ledger entry');
     }
   }
@@ -97,7 +97,7 @@ export class InstantPayoutService {
         .offset(offset);
       return entries;
     } catch (error: unknown) {
-      logger.warn('Error fetching ledger history:', error);
+      logger.warn({ err: error }, 'Error fetching ledger history:');
       throw new Error('Failed to fetch ledger history');
     }
   }
@@ -202,7 +202,7 @@ export class InstantPayoutService {
 
       return { score, flags, approved, reason };
     } catch (error: unknown) {
-      logger.warn('Error assessing payout risk:', error);
+      logger.warn({ err: error }, 'Error assessing payout risk:');
       return { score: 0, flags: ['ASSESSMENT_ERROR'], approved: true };
     }
   }
@@ -325,7 +325,7 @@ export class InstantPayoutService {
         requiresOnboarding: false,
       };
     } catch (error: unknown) {
-      logger.warn('Error verifying Stripe account:', error);
+      logger.warn({ err: error }, 'Error verifying Stripe account:');
       return {
         verified: false,
         error: error.message || 'Failed to verify Stripe account',
@@ -398,7 +398,7 @@ export class InstantPayoutService {
 
       return accountLink.url;
     } catch (error: unknown) {
-      logger.warn('Error creating account link:', error);
+      logger.warn({ err: error }, 'Error creating account link:');
       throw new Error(error.message || 'Failed to create account link');
     }
   }
@@ -554,7 +554,7 @@ export class InstantPayoutService {
         };
       }
     } catch (error: unknown) {
-      logger.warn('Error creating instant transfer:', error);
+      logger.warn({ err: error }, 'Error creating instant transfer:');
       return {
         success: false,
         error: error.message || 'Failed to create transfer',
@@ -717,7 +717,7 @@ export class InstantPayoutService {
         };
       }
     } catch (error: unknown) {
-      logger.warn('Error requesting instant payout:', error);
+      logger.warn({ err: error }, 'Error requesting instant payout:');
       return {
         success: false,
         error: (error as Error).message || 'Failed to request payout',
@@ -839,7 +839,7 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.warn('Error creating enhanced split payment:', error);
+      logger.warn({ err: error }, 'Error creating enhanced split payment:');
       return { success: false, errors: [(error as Error).message || 'Failed to create split payment'] };
     }
   }
@@ -916,7 +916,7 @@ export class InstantPayoutService {
         summary: { byStatus, byMonth },
       };
     } catch (error: unknown) {
-      logger.warn('Error generating payout report:', error);
+      logger.warn({ err: error }, 'Error generating payout report:');
       throw new Error('Failed to generate payout report');
     }
   }
@@ -948,7 +948,7 @@ export class InstantPayoutService {
 
       return payouts;
     } catch (error: unknown) {
-      logger.warn('Error fetching payout history:', error);
+      logger.warn({ err: error }, 'Error fetching payout history:');
       throw new Error('Failed to fetch payout history');
     }
   }
@@ -1010,7 +1010,7 @@ export class InstantPayoutService {
 
       return payout;
     } catch (error: unknown) {
-      logger.warn('Error fetching payout status:', error);
+      logger.warn({ err: error }, 'Error fetching payout status:');
       throw new Error('Failed to fetch payout status');
     }
   }
@@ -1130,7 +1130,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.warn('Error handling transfer webhook:', error);
+      logger.warn({ err: error }, 'Error handling transfer webhook:');
       throw error;
     }
   }
@@ -1209,7 +1209,7 @@ export class InstantPayoutService {
           break;
       }
     } catch (error: unknown) {
-      logger.warn('Error handling account webhook:', error);
+      logger.warn({ err: error }, 'Error handling account webhook:');
       throw error;
     }
   }
@@ -1311,7 +1311,7 @@ export class InstantPayoutService {
         })
         .where(eq(instantPayouts.id, payoutRecord.id));
     } catch (error: unknown) {
-      logger.warn('Error handling payout webhook:', error);
+      logger.warn({ err: error }, 'Error handling payout webhook:');
       throw error;
     }
   }
@@ -1360,7 +1360,7 @@ export class InstantPayoutService {
         paymentIntentId: paymentIntent.id,
       };
     } catch (error: unknown) {
-      logger.warn('Error creating destination charge:', error);
+      logger.warn({ err: error }, 'Error creating destination charge:');
       return { success: false, error: error.message || 'Failed to create destination charge' };
     }
   }
@@ -1424,7 +1424,7 @@ export class InstantPayoutService {
         errors: errors.length > 0 ? errors : undefined,
       };
     } catch (error: unknown) {
-      logger.warn('Error creating split payment:', error);
+      logger.warn({ err: error }, 'Error creating split payment:');
       return { success: false, errors: [error.message || 'Failed to create split payment'] };
     }
   }
@@ -1447,7 +1447,7 @@ export class InstantPayoutService {
       
       return { url: loginLink.url };
     } catch (error: unknown) {
-      logger.warn('Error creating dashboard link:', error);
+      logger.warn({ err: error }, 'Error creating dashboard link:');
       return { error: error.message || 'Failed to create dashboard link' };
     }
   }
@@ -1494,7 +1494,7 @@ export class InstantPayoutService {
         averageOrderValue: totalSales > 0 ? balance.totalEarnings / totalSales : 0,
       };
     } catch (error: unknown) {
-      logger.warn('Error getting earnings summary:', error);
+      logger.warn({ err: error }, 'Error getting earnings summary:');
       throw new Error('Failed to get earnings summary');
     }
   }

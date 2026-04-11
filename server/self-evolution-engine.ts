@@ -1043,7 +1043,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         'application/json',
       );
     } catch (e) {
-      logger.warn('Failed to persist evolution state:', e);
+      logger.warn({ err: e }, 'Failed to persist evolution state:');
     }
   }
 
@@ -1140,7 +1140,7 @@ export class SelfEvolutionEngine extends EventEmitter {
         upgradesDeployed: status.upgradesDeployed,
       };
     } catch (error) {
-      logger.warn(`❌ Manual evolution cycle ${cycleId} failed:`, error);
+      logger.warn({ err: error }, `❌ Manual evolution cycle ${cycleId} failed:`);
       throw error;
     }
   }
@@ -1172,10 +1172,10 @@ export class SelfEvolutionEngine extends EventEmitter {
     logger.info('🚀 Self-Evolution Engine ACTIVATED');
     logger.info('   Max Booster will now autonomously upgrade itself to stay ahead of competition');
 
-    this.runEvolutionCycle().catch((e) => logger.warn('Initial evolution cycle error:', e));
+    this.runEvolutionCycle().catch((e) => logger.warn({ err: e }, 'Initial evolution cycle error:'));
 
     this.monitoringInterval = setInterval(() => {
-      this.runEvolutionCycle().catch((e) => logger.warn('Scheduled evolution cycle error:', e));
+      this.runEvolutionCycle().catch((e) => logger.warn({ err: e }, 'Scheduled evolution cycle error:'));
     }, this.MONITORING_INTERVAL_MS);
 
     this.emit('started');
@@ -1253,13 +1253,13 @@ export class SelfEvolutionEngine extends EventEmitter {
 
     } catch (error) {
       this.lastCycleError = (error as Error).message || String(error);
-      logger.warn(`❌ Evolution cycle ${cycleId} failed:`, error);
+      logger.warn({ err: error }, `❌ Evolution cycle ${cycleId} failed:`);
       this.emit('cycleFailed', { cycleId, error });
     } finally {
       this.lastCycleAt = new Date();
       this.totalCyclesRun++;
       this.pruneSeenIds();
-      this.saveStateToDisk().catch(e => logger.warn('Could not save state:', e));
+      this.saveStateToDisk().catch(e => logger.warn({ err: e }, 'Could not save state:'));
       this.isCycleRunning = false;
     }
   }
@@ -1925,7 +1925,7 @@ describe('${upgrade.id}', () => {
 
       } catch (error) {
         upgrade.status = 'failed';
-        logger.warn(`   ❌ Failed to deploy ${upgrade.id}:`, error);
+        logger.warn({ err: error }, `   ❌ Failed to deploy ${upgrade.id}:`);
       }
     }
 
@@ -1951,7 +1951,7 @@ describe('${upgrade.id}', () => {
         completedAt: new Date(),
       });
     } catch (error) {
-      logger.warn('Failed to record deployment:', error);
+      logger.warn({ err: error }, 'Failed to record deployment:');
     }
   }
 
@@ -2017,7 +2017,7 @@ describe('${upgrade.id}', () => {
           restoredCount++;
           logger.info(`   ↩️ Restored: ${originalPath}`);
         } catch (e) {
-          logger.warn(`   ❌ Failed to restore ${originalPath}:`, e);
+          logger.warn({ err: e }, `   ❌ Failed to restore ${originalPath}:`);
         }
       }
     }

@@ -128,7 +128,7 @@ export class SocialOAuthService {
       
       return decrypted;
     } catch (error) {
-      logger.warn('Token decryption failed:', error);
+      logger.warn({ err: error }, 'Token decryption failed:');
       return null;
     }
   }
@@ -193,11 +193,11 @@ export class SocialOAuthService {
             }
           }
         } catch (error) {
-          logger.warn(`Failed to check/refresh token for ${account.userId}:${account.platform}:`, error);
+          logger.warn({ err: error }, `Failed to check/refresh token for ${account.userId}:${account.platform}:`);
         }
       }
     } catch (error) {
-      logger.warn('Error in token refresh monitor:', error);
+      logger.warn({ err: error }, 'Error in token refresh monitor:');
     }
   }
 
@@ -255,7 +255,7 @@ export class SocialOAuthService {
 
       logger.info(`Platform ${platform} disconnected for user ${userId} due to token revocation`);
     } catch (error) {
-      logger.warn(`Failed to handle revoked token for ${userId}:${platform}:`, error);
+      logger.warn({ err: error }, `Failed to handle revoked token for ${userId}:${platform}:`);
     }
 
     // Clear from cache after 5 minutes
@@ -615,7 +615,7 @@ export class SocialOAuthService {
       await storage.updateUserSocialToken(userId, platform, '');
       logger.info(`Platform ${platform} disconnected for user ${userId}`);
     } catch (error: unknown) {
-      logger.warn(`Failed to disconnect ${platform}:`, error);
+      logger.warn({ err: error }, `Failed to disconnect ${platform}:`);
       throw error;
     }
   }

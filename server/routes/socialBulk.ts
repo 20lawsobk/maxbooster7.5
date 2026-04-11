@@ -109,7 +109,7 @@ router.post('/validate', requireAuth, async (req, res) => {
       warnings,
     });
   } catch (error: unknown) {
-    logger.warn('Bulk validation error:', error);
+    logger.warn({ err: error }, 'Bulk validation error:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
@@ -261,7 +261,7 @@ router.post('/schedule', requireAuth, async (req, res) => {
       message: 'Batch scheduled successfully',
     });
   } catch (error: unknown) {
-    logger.warn('Bulk schedule error:', error);
+    logger.warn({ err: error }, 'Bulk schedule error:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
@@ -328,7 +328,7 @@ router.get('/status/:batchId', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn('Batch status error:', error);
+    logger.warn({ err: error }, 'Batch status error:');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -350,7 +350,7 @@ router.delete('/:batchId', requireAuth, async (req, res) => {
 
     return res.json({ success: true, message: 'Batch cancelled successfully' });
   } catch (error: unknown) {
-    logger.warn('Cancel batch error:', error);
+    logger.warn({ err: error }, 'Cancel batch error:');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -384,7 +384,7 @@ router.get('/batches', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn('Get batches error:', error);
+    logger.warn({ err: error }, 'Get batches error:');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -398,7 +398,7 @@ router.get('/status', requireAuth, async (req, res) => {
       processingPosts: queueStats?.active ?? 0,
     });
   } catch (error: unknown) {
-    logger.warn('Get bulk status error:', error);
+    logger.warn({ err: error }, 'Get bulk status error:');
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

@@ -154,7 +154,7 @@ router.post('/generate', requireAuth, async (req, res) => {
       type,
     });
   } catch (error: unknown) {
-    logger.warn('Error generating MIDI:', error);
+    logger.warn({ err: error }, 'Error generating MIDI:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -212,7 +212,7 @@ router.post('/transform', requireAuth, async (req, res) => {
       transform: data.transform,
     });
   } catch (error: unknown) {
-    logger.warn('Error transforming MIDI:', error);
+    logger.warn({ err: error }, 'Error transforming MIDI:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -243,7 +243,7 @@ router.post('/arpeggiate', requireAuth, async (req, res) => {
       notes: result,
     });
   } catch (error: unknown) {
-    logger.warn('Error creating arpeggio:', error);
+    logger.warn({ err: error }, 'Error creating arpeggio:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -269,7 +269,7 @@ router.post('/chords', requireAuth, async (req, res) => {
       notes: result.notes,
     });
   } catch (error: unknown) {
-    logger.warn('Error generating chord progression:', error);
+    logger.warn({ err: error }, 'Error generating chord progression:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -293,7 +293,7 @@ router.post('/ornament', requireAuth, async (req, res) => {
       notes: result,
     });
   } catch (error: unknown) {
-    logger.warn('Error adding ornament:', error);
+    logger.warn({ err: error }, 'Error adding ornament:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -317,7 +317,7 @@ router.post('/strum', requireAuth, async (req, res) => {
       notes: result,
     });
   } catch (error: unknown) {
-    logger.warn('Error applying strum pattern:', error);
+    logger.warn({ err: error }, 'Error applying strum pattern:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -336,7 +336,7 @@ router.post('/fit-to-scale', requireAuth, async (req, res) => {
       notes: result,
     });
   } catch (error: unknown) {
-    logger.warn('Error fitting to scale:', error);
+    logger.warn({ err: error }, 'Error fitting to scale:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -369,7 +369,7 @@ router.get('/scales', requireAuth, async (req, res) => {
       generators,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching scales:', error);
+    logger.warn({ err: error }, 'Error fetching scales:');
     res.status(500).json({ error: 'Failed to fetch scales' });
   }
 });
@@ -396,7 +396,7 @@ router.get('/scales/:id', requireAuth, async (req, res) => {
       frequencies,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching scale:', error);
+    logger.warn({ err: error }, 'Error fetching scale:');
     res.status(500).json({ error: 'Failed to fetch scale' });
   }
 });
@@ -415,7 +415,7 @@ router.get('/tunings/:id', requireAuth, async (req, res) => {
       tuning,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching tuning:', error);
+    logger.warn({ err: error }, 'Error fetching tuning:');
     res.status(500).json({ error: 'Failed to fetch tuning' });
   }
 });
@@ -437,7 +437,7 @@ router.post('/scale-sync', requireAuth, async (req, res) => {
       message: 'Scale sync configured',
     });
   } catch (error: unknown) {
-    logger.warn('Error setting scale sync:', error);
+    logger.warn({ err: error }, 'Error setting scale sync:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -456,7 +456,7 @@ router.get('/scale-sync/:projectId', requireAuth, async (req, res) => {
       config: config || null,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching scale sync:', error);
+    logger.warn({ err: error }, 'Error fetching scale sync:');
     res.status(500).json({ error: 'Failed to fetch scale sync' });
   }
 });
@@ -469,7 +469,7 @@ router.delete('/scale-sync/:projectId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error removing scale sync:', error);
+    logger.warn({ err: error }, 'Error removing scale sync:');
     res.status(500).json({ error: 'Failed to remove scale sync' });
   }
 });
@@ -489,7 +489,7 @@ router.post('/note-info', requireAuth, async (req, res) => {
       ...info,
     });
   } catch (error: unknown) {
-    logger.warn('Error getting note info:', error);
+    logger.warn({ err: error }, 'Error getting note info:');
     res.status(500).json({ error: 'Failed to get note info' });
   }
 });
@@ -514,7 +514,7 @@ router.post('/frequency', requireAuth, async (req, res) => {
       frequency,
     });
   } catch (error: unknown) {
-    logger.warn('Error calculating frequency:', error);
+    logger.warn({ err: error }, 'Error calculating frequency:');
     res.status(500).json({ error: 'Failed to calculate frequency' });
   }
 });

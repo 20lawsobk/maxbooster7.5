@@ -31,7 +31,7 @@ try {
     });
   }
 } catch (error: unknown) {
-  logger.warn('Twitter API initialization failed:', error);
+  logger.warn({ err: error }, 'Twitter API initialization failed:');
 }
 
 export interface SocialMediaMetrics {
@@ -77,7 +77,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Facebook API error:', error);
+      logger.warn({ err: error }, 'Facebook API error:');
       return null;
     }
   }
@@ -104,7 +104,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Instagram API error:', error);
+      logger.warn({ err: error }, 'Instagram API error:');
       return null;
     }
   }
@@ -132,7 +132,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Twitter API error:', error);
+      logger.warn({ err: error }, 'Twitter API error:');
       return null;
     }
   }
@@ -186,7 +186,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('TikTok API error:', error);
+      logger.warn({ err: error }, 'TikTok API error:');
       return null;
     }
   }
@@ -245,7 +245,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('LinkedIn API error:', error);
+      logger.warn({ err: error }, 'LinkedIn API error:');
       return null;
     }
   }
@@ -268,7 +268,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Google My Business API error:', error);
+      logger.warn({ err: error }, 'Google My Business API error:');
       return null;
     }
   }
@@ -313,7 +313,7 @@ export class SocialMediaService {
         lastUpdated: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Threads API error:', error);
+      logger.warn({ err: error }, 'Threads API error:');
       return null;
     }
   }
@@ -340,7 +340,7 @@ export class SocialMediaService {
         channelId,
       };
     } catch (error: unknown) {
-      logger.warn('YouTube API error:', error);
+      logger.warn({ err: error }, 'YouTube API error:');
       return null;
     }
   }
@@ -386,7 +386,7 @@ export class SocialMediaService {
           }
         : null;
     } catch (error: unknown) {
-      logger.warn('YouTube upload error:', error);
+      logger.warn({ err: error }, 'YouTube upload error:');
       return null;
     }
   }
@@ -488,7 +488,7 @@ export class SocialMediaService {
 
       return metrics;
     } catch (error: unknown) {
-      logger.warn('Error fetching social media metrics:', error);
+      logger.warn({ err: error }, 'Error fetching social media metrics:');
       return [];
     }
   }
@@ -510,7 +510,7 @@ export class SocialMediaService {
         channelId: '',
       };
     } catch (error: unknown) {
-      logger.warn('YouTube API error:', error);
+      logger.warn({ err: error }, 'YouTube API error:');
       return null;
     }
   }

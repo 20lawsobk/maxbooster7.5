@@ -358,7 +358,7 @@ class HyperLearningEngine extends EventEmitter {
       });
 
     } catch (error) {
-      logger.warn(`❌ HyperLearning cycle ${cycleId} failed:`, error);
+      logger.warn({ err: error }, `❌ HyperLearning cycle ${cycleId} failed:`);
       this.emit('cycleFailed', { cycleId, error });
     }
   }
@@ -433,7 +433,7 @@ class HyperLearningEngine extends EventEmitter {
       return significantPatterns;
 
     } catch (error) {
-      logger.warn('Micro-pattern detection failed:', error);
+      logger.warn({ err: error }, 'Micro-pattern detection failed:');
       return [];
     }
   }
@@ -1338,7 +1338,7 @@ class HyperLearningEngine extends EventEmitter {
       return { synthesisCount: universalPatterns.length, model: synthesis };
 
     } catch (error) {
-      logger.warn('Cross-platform synthesis failed:', error);
+      logger.warn({ err: error }, 'Cross-platform synthesis failed:');
       return { synthesisCount: 0, model: null };
     }
   }
@@ -1454,7 +1454,7 @@ class HyperLearningEngine extends EventEmitter {
       };
 
     } catch (error) {
-      logger.warn('Failed to build audience behavior model:', error);
+      logger.warn({ err: error }, 'Failed to build audience behavior model:');
       return {
         peakActivityWindows: [{ start: 9, end: 12, intensity: 1.3 }, { start: 17, end: 21, intensity: 1.5 }],
         contentFatigueCycles: [4, 8, 24],
@@ -1481,7 +1481,7 @@ class HyperLearningEngine extends EventEmitter {
       return models;
 
     } catch (error) {
-      logger.warn('Predictive modeling failed:', error);
+      logger.warn({ err: error }, 'Predictive modeling failed:');
       return [];
     }
   }
@@ -1643,7 +1643,7 @@ class HyperLearningEngine extends EventEmitter {
       return { patternsFound: engagementVelocity.length };
 
     } catch (error) {
-      logger.warn('Behavioral analysis failed:', error);
+      logger.warn({ err: error }, 'Behavioral analysis failed:');
       return { patternsFound: 0 };
     }
   }
@@ -1704,7 +1704,7 @@ class HyperLearningEngine extends EventEmitter {
       return emergent;
 
     } catch (error) {
-      logger.warn('Emergent pattern detection failed:', error);
+      logger.warn({ err: error }, 'Emergent pattern detection failed:');
       return [];
     }
   }
@@ -1740,7 +1740,7 @@ class HyperLearningEngine extends EventEmitter {
           this.abTestQueue.delete(id);
 
           this.dispatchDiffusionTrainingSignal(test, winner).catch(err =>
-            logger.warn('[HyperLearning] DiffusionTrainer dispatch failed:', err)
+            logger.warn({ err: err }, '[HyperLearning] DiffusionTrainer dispatch failed:')
           );
         }
       }
@@ -1824,7 +1824,7 @@ class HyperLearningEngine extends EventEmitter {
       return { adaptationsApplied: adaptations };
 
     } catch (error) {
-      logger.warn('Real-time adaptation failed:', error);
+      logger.warn({ err: error }, 'Real-time adaptation failed:');
       return { adaptationsApplied: 0 };
     }
   }

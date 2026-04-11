@@ -40,7 +40,7 @@ router.get('/streams{/:artistId}', async (req: AuthenticatedRequest, res: Respon
       period: { start, end },
     });
   } catch (error) {
-    logger.warn('Error fetching streams:', error);
+    logger.warn({ err: error }, 'Error fetching streams:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch streams data' });
   }
 });
@@ -72,7 +72,7 @@ router.get('/playlists{/:trackId}', async (req: AuthenticatedRequest, res: Respo
       },
     });
   } catch (error) {
-    logger.warn('Error fetching playlist attributions:', error);
+    logger.warn({ err: error }, 'Error fetching playlist attributions:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch playlist data' });
   }
 });
@@ -98,7 +98,7 @@ router.get('/playlists/revenue{/:artistId}', async (req: AuthenticatedRequest, r
       data: revenueAttribution,
     });
   } catch (error) {
-    logger.warn('Error fetching playlist revenue:', error);
+    logger.warn({ err: error }, 'Error fetching playlist revenue:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch revenue attribution' });
   }
 });
@@ -117,7 +117,7 @@ router.get('/playlists/editorial{/:artistId}', async (req: AuthenticatedRequest,
       data: metrics,
     });
   } catch (error) {
-    logger.warn('Error fetching editorial metrics:', error);
+    logger.warn({ err: error }, 'Error fetching editorial metrics:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch editorial metrics' });
   }
 });
@@ -155,7 +155,7 @@ router.get('/cohorts{/:artistId}', async (req: AuthenticatedRequest, res: Respon
       data: report,
     });
   } catch (error) {
-    logger.warn('Error fetching cohorts:', error);
+    logger.warn({ err: error }, 'Error fetching cohorts:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch cohort data' });
   }
 });
@@ -179,7 +179,7 @@ router.get('/cohorts/retention{/:artistId}', async (req: AuthenticatedRequest, r
       data: curves,
     });
   } catch (error) {
-    logger.warn('Error fetching retention curves:', error);
+    logger.warn({ err: error }, 'Error fetching retention curves:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch retention data' });
   }
 });
@@ -198,7 +198,7 @@ router.get('/cohorts/churn{/:artistId}', async (req: AuthenticatedRequest, res: 
       data: churnData,
     });
   } catch (error) {
-    logger.warn('Error predicting churn:', error);
+    logger.warn({ err: error }, 'Error predicting churn:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to predict churn' });
   }
 });
@@ -221,7 +221,7 @@ router.get('/cohorts/loyalty{/:artistId}', async (req: AuthenticatedRequest, res
       data: loyaltyTiers,
     });
   } catch (error) {
-    logger.warn('Error fetching loyalty tiers:', error);
+    logger.warn({ err: error }, 'Error fetching loyalty tiers:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch loyalty data' });
   }
 });
@@ -253,7 +253,7 @@ router.get('/forecast{/:artistId}', async (req: AuthenticatedRequest, res: Respo
       },
     });
   } catch (error) {
-    logger.warn('Error generating forecast:', error);
+    logger.warn({ err: error }, 'Error generating forecast:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to generate forecast' });
   }
 });
@@ -279,7 +279,7 @@ router.get('/forecast/breakdown{/:artistId}', async (req: AuthenticatedRequest, 
       data: breakdown,
     });
   } catch (error) {
-    logger.warn('Error fetching revenue breakdown:', error);
+    logger.warn({ err: error }, 'Error fetching revenue breakdown:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch breakdown' });
   }
 });
@@ -298,7 +298,7 @@ router.get('/forecast/seasonality{/:artistId}', async (req: AuthenticatedRequest
       data: seasonality,
     });
   } catch (error) {
-    logger.warn('Error fetching seasonality:', error);
+    logger.warn({ err: error }, 'Error fetching seasonality:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch seasonality data' });
   }
 });
@@ -330,7 +330,7 @@ router.post('/forecast/release-impact', async (req: AuthenticatedRequest, res: R
       data: projection,
     });
   } catch (error) {
-    logger.warn('Error projecting release impact:', error);
+    logger.warn({ err: error }, 'Error projecting release impact:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to project release impact' });
   }
 });
@@ -349,7 +349,7 @@ router.get('/demographics{/:artistId}', async (req: AuthenticatedRequest, res: R
       data: demographics,
     });
   } catch (error) {
-    logger.warn('Error fetching demographics:', error);
+    logger.warn({ err: error }, 'Error fetching demographics:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch demographics' });
   }
 });
@@ -385,7 +385,7 @@ router.post('/sync/:platform', async (req: AuthenticatedRequest, res: Response) 
       message: result ? `Successfully synced ${platform} data` : `Failed to sync ${platform} data`,
     });
   } catch (error) {
-    logger.warn('Error syncing platform:', error);
+    logger.warn({ err: error }, 'Error syncing platform:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to sync platform data' });
   }
 });
@@ -416,7 +416,7 @@ router.post('/sync-all', async (req: AuthenticatedRequest, res: Response) => {
       message: `Synced ${result.success.length} platforms, ${result.failed.length} failed`,
     });
   } catch (error) {
-    logger.warn('Error syncing all platforms:', error);
+    logger.warn({ err: error }, 'Error syncing all platforms:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to sync platforms' });
   }
 });
@@ -436,7 +436,7 @@ router.get('/sync-status', async (req: AuthenticatedRequest, res: Response) => {
       data: status,
     });
   } catch (error) {
-    logger.warn('Error fetching sync status:', error);
+    logger.warn({ err: error }, 'Error fetching sync status:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch sync status' });
   }
 });
@@ -470,7 +470,7 @@ router.get('/overview{/:artistId}', async (req: AuthenticatedRequest, res: Respo
       },
     });
   } catch (error) {
-    logger.warn('Error fetching overview:', error);
+    logger.warn({ err: error }, 'Error fetching overview:');
     return res.status(500).json({ error: 'Internal Server Error', message: 'Failed to fetch overview' });
   }
 });

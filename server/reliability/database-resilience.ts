@@ -92,7 +92,7 @@ class DatabaseResilience extends EventEmitter {
         avgResponseTime: this.pool.avgResponseTime,
       });
     } catch (error: unknown) {
-      logger.warn('❌ Database health check failed:', error);
+      logger.warn({ err: error }, '❌ Database health check failed:');
       this.handleConnectionFailure(error);
     }
   }

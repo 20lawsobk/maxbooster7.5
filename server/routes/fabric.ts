@@ -23,7 +23,7 @@ router.post('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Resp
     const pocket = await fabricStorage.createPocket(req.user!.id, name, policy || {});
     res.status(201).json(pocket);
   } catch (err: any) {
-    logger.warn('[FabricRoute] createPocket:', err);
+    logger.warn({ err: err }, '[FabricRoute] createPocket:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -33,7 +33,7 @@ router.get('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Respo
     const pockets = await fabricStorage.listPockets(req.user!.id);
     res.json(pockets);
   } catch (err: any) {
-    logger.warn('[FabricRoute] listPockets:', err);
+    logger.warn({ err: err }, '[FabricRoute] listPockets:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -45,7 +45,7 @@ router.get('/pockets/:pocketId', requireAuth, async (req: AuthenticatedRequest, 
     if (pocket.ownerId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
     res.json(pocket);
   } catch (err: any) {
-    logger.warn('[FabricRoute] getPocket:', err);
+    logger.warn({ err: err }, '[FabricRoute] getPocket:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -60,7 +60,7 @@ router.post('/pockets/:pocketId/volumes', requireAuth, async (req: Authenticated
     const volume = await fabricStorage.createVolume(req.params.pocketId, name, type || 'objects');
     res.status(201).json(volume);
   } catch (err: any) {
-    logger.warn('[FabricRoute] createVolume:', err);
+    logger.warn({ err: err }, '[FabricRoute] createVolume:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -73,7 +73,7 @@ router.get('/pockets/:pocketId/volumes', requireAuth, async (req: AuthenticatedR
     const volumes = await fabricStorage.listVolumes(req.params.pocketId);
     res.json(volumes);
   } catch (err: any) {
-    logger.warn('[FabricRoute] listVolumes:', err);
+    logger.warn({ err: err }, '[FabricRoute] listVolumes:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -100,7 +100,7 @@ router.put('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
     );
     res.status(201).json({ objectId });
   } catch (err: any) {
-    logger.warn('[FabricRoute] putObject:', err);
+    logger.warn({ err: err }, '[FabricRoute] putObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -113,7 +113,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
     const objects = await fabricStorage.listObjects(req.params.volumeId);
     res.json(objects);
   } catch (err: any) {
-    logger.warn('[FabricRoute] listObjects:', err);
+    logger.warn({ err: err }, '[FabricRoute] listObjects:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -132,7 +132,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireAuth
     res.setHeader('X-Original-Name', result.object.originalName);
     res.send(result.data);
   } catch (err: any) {
-    logger.warn('[FabricRoute] getObject:', err);
+    logger.warn({ err: err }, '[FabricRoute] getObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -145,7 +145,7 @@ router.delete('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireA
     await fabricStorage.deleteObject(req.params.objectId);
     res.status(204).end();
   } catch (err: any) {
-    logger.warn('[FabricRoute] deleteObject:', err);
+    logger.warn({ err: err }, '[FabricRoute] deleteObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -165,7 +165,7 @@ router.post('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respon
     });
     res.status(201).json(node);
   } catch (err: any) {
-    logger.warn('[FabricRoute] registerNode:', err);
+    logger.warn({ err: err }, '[FabricRoute] registerNode:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -176,7 +176,7 @@ router.get('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respons
     const nodes = await fabricNodeRegistry.listAllNodes();
     res.json(nodes);
   } catch (err: any) {
-    logger.warn('[FabricRoute] listNodes:', err);
+    logger.warn({ err: err }, '[FabricRoute] listNodes:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -186,7 +186,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res: Respons
     const stats = await fabricStorage.getStats();
     res.json(stats);
   } catch (err: any) {
-    logger.warn('[FabricRoute] getStats:', err);
+    logger.warn({ err: err }, '[FabricRoute] getStats:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -217,7 +217,7 @@ router.get('/cluster/status', requireAuth, async (req: AuthenticatedRequest, res
       autoScaler: status,
     });
   } catch (err: any) {
-    logger.warn('[FabricRoute] cluster/status:', err);
+    logger.warn({ err: err }, '[FabricRoute] cluster/status:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });
@@ -229,7 +229,7 @@ router.post('/cluster/evaluate', requireAuth, async (req: AuthenticatedRequest, 
     const result = await autoClusterManager.evaluate();
     res.json({ triggered: true, ...result });
   } catch (err: any) {
-    logger.warn('[FabricRoute] cluster/evaluate:', err);
+    logger.warn({ err: err }, '[FabricRoute] cluster/evaluate:');
     res.status(500).json({ error: sanitizeError(err) });
   }
 });

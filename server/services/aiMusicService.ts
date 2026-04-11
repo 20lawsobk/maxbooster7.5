@@ -30,7 +30,7 @@ async function initializeFfmpeg() {
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn('FFmpeg not available - audio processing features will be limited:', error);
+    logger.warn({ err: error }, 'FFmpeg not available - audio processing features will be limited:');
     return false;
   }
 }
@@ -323,7 +323,7 @@ export class AIMusicService {
 
       return result;
     } catch (error: unknown) {
-      logger.warn('Stem separation error:', error);
+      logger.warn({ err: error }, 'Stem separation error:');
       throw new Error('Failed to separate stems');
     }
   }
@@ -430,7 +430,7 @@ export class AIMusicService {
 
       return { success: true, appliedSettings, suggestions, outputFilePath };
     } catch (error: unknown) {
-      logger.warn('Genre preset application error:', error);
+      logger.warn({ err: error }, 'Genre preset application error:');
       throw error;
     }
   }
@@ -491,7 +491,7 @@ export class AIMusicService {
         .audioFilters(filters.length > 0 ? filters : ['anull'])
         .toFormat('wav')
         .on('error', (err) => {
-          logger.warn('FFmpeg processing error:', err);
+          logger.warn({ err: err }, 'FFmpeg processing error:');
           reject(err);
         })
         .on('end', () => {
@@ -674,7 +674,7 @@ export class AIMusicService {
             stderrOutput += line + '\n';
           })
           .on('error', (err) => {
-            logger.warn('FFmpeg loudness measurement error:', err);
+            logger.warn({ err: err }, 'FFmpeg loudness measurement error:');
             reject(err);
           })
           .on('end', () => {
@@ -729,7 +729,7 @@ export class AIMusicService {
 
       return metrics;
     } catch (error: unknown) {
-      logger.warn('Loudness measurement error, falling back to simplified calculation:', error);
+      logger.warn({ err: error }, 'Loudness measurement error, falling back to simplified calculation:');
 
       const audioData = this.bufferToFloat32Array(audioBuffer);
       const sampleRate = 48000;
@@ -843,7 +843,7 @@ export class AIMusicService {
         outputFilePath,
       };
     } catch (error: unknown) {
-      logger.warn('Normalization error:', error);
+      logger.warn({ err: error }, 'Normalization error:');
       throw error;
     }
   }
@@ -865,7 +865,7 @@ export class AIMusicService {
         ])
         .toFormat('wav')
         .on('error', (err) => {
-          logger.warn('FFmpeg normalization error:', err);
+          logger.warn({ err: err }, 'FFmpeg normalization error:');
           reject(err);
         })
         .on('end', () => {
@@ -2045,7 +2045,7 @@ export class AIMusicService {
         return audioBuffer;
       }
     } catch (error: unknown) {
-      logger.warn(`Error loading track audio for ${trackId}:`, error);
+      logger.warn({ err: error }, `Error loading track audio for ${trackId}:`);
       return this.generateSimulatedAudioBuffer(30, 2);
     }
   }
@@ -2066,7 +2066,7 @@ export class AIMusicService {
         .audioChannels(2)
         .audioFrequency(48000)
         .on('error', (err) => {
-          logger.warn('FFmpeg conversion error:', err);
+          logger.warn({ err: err }, 'FFmpeg conversion error:');
           reject(err);
         })
         .on('end', async () => {
@@ -2330,7 +2330,7 @@ export class AIMusicService {
 
       return null;
     } catch (error: unknown) {
-      logger.warn(`Error getting track ${trackId}:`, error);
+      logger.warn({ err: error }, `Error getting track ${trackId}:`);
       return null;
     }
   }
@@ -2410,7 +2410,7 @@ export class AIMusicService {
         visualizationData: { type: inferenceType, data: outputData },
       });
     } catch (error: unknown) {
-      logger.warn('Failed to log inference:', error);
+      logger.warn({ err: error }, 'Failed to log inference:');
     }
   }
 

@@ -299,7 +299,7 @@ export class SocialAmplificationService {
       try {
         await storageExt.saveOrganicMetrics(parseInt(campaign.adCampaignId), organicPosts);
       } catch (error: unknown) {
-        logger.warn('Failed to save organic metrics to database:', error);
+        logger.warn({ err: error }, 'Failed to save organic metrics to database:');
       }
 
       const projectedMetrics = await this.calculateProjectedBoost(
@@ -314,7 +314,7 @@ export class SocialAmplificationService {
         costSavings: `$${projectedMetrics.costSavings.toFixed(2)} saved vs paid advertising`,
       };
     } catch (error: unknown) {
-      logger.warn('Organic amplification failed:', error);
+      logger.warn({ err: error }, 'Organic amplification failed:');
       return {
         success: false,
         organicPosts: [],
@@ -516,7 +516,7 @@ export class SocialAmplificationService {
 
       return postResult;
     } catch (error: unknown) {
-      logger.warn(`Failed to post organically to ${platform}:`, error);
+      logger.warn({ err: error }, `Failed to post organically to ${platform}:`);
       return null;
     }
   }
@@ -655,7 +655,7 @@ export class SocialAmplificationService {
           await this.setPerformanceCache(campaignId, organicPosts);
         }
       } catch (error: unknown) {
-        logger.warn('Failed to load organic metrics from database:', error);
+        logger.warn({ err: error }, 'Failed to load organic metrics from database:');
         organicPosts = [];
       }
     }
@@ -720,7 +720,7 @@ export class SocialAmplificationService {
           await this.setPerformanceCache(campaignId, posts);
         }
       } catch (error: unknown) {
-        logger.warn('Failed to load organic metrics from database:', error);
+        logger.warn({ err: error }, 'Failed to load organic metrics from database:');
         posts = [];
       }
     }
@@ -733,7 +733,7 @@ export class SocialAmplificationService {
       const val = await redisClient.get(`${this.PERFORMANCE_CACHE_PREFIX}${campaignId}`);
       return val ? JSON.parse(val) : null;
     } catch (error: unknown) {
-      logger.warn(`Failed to get performance cache for campaign ${campaignId}:`, error);
+      logger.warn({ err: error }, `Failed to get performance cache for campaign ${campaignId}:`);
       return null;
     }
   }
@@ -749,7 +749,7 @@ export class SocialAmplificationService {
         JSON.stringify(posts)
       );
     } catch (error: unknown) {
-      logger.warn(`Failed to set performance cache for campaign ${campaignId}:`, error);
+      logger.warn({ err: error }, `Failed to set performance cache for campaign ${campaignId}:`);
     }
   }
 
@@ -875,7 +875,7 @@ export class SocialAmplificationService {
         collaborationSuggestions,
       };
     } catch (error: unknown) {
-      logger.warn('Influencer scoring failed:', error);
+      logger.warn({ err: error }, 'Influencer scoring failed:');
       throw error;
     }
   }
@@ -946,7 +946,7 @@ export class SocialAmplificationService {
         currentPhase,
       };
     } catch (error: unknown) {
-      logger.warn('Viral coefficient calculation failed:', error);
+      logger.warn({ err: error }, 'Viral coefficient calculation failed:');
       throw error;
     }
   }
@@ -1029,7 +1029,7 @@ export class SocialAmplificationService {
         visualizationData,
       };
     } catch (error: unknown) {
-      logger.warn('Cascade prediction failed:', error);
+      logger.warn({ err: error }, 'Cascade prediction failed:');
       throw error;
     }
   }
@@ -1134,7 +1134,7 @@ export class SocialAmplificationService {
         },
       };
     } catch (error: unknown) {
-      logger.warn('Network effect modeling failed:', error);
+      logger.warn({ err: error }, 'Network effect modeling failed:');
       throw error;
     }
   }
@@ -1176,7 +1176,7 @@ export class SocialAmplificationService {
         successMetrics,
       };
     } catch (error: unknown) {
-      logger.warn('Outreach suggestion failed:', error);
+      logger.warn({ err: error }, 'Outreach suggestion failed:');
       throw error;
     }
   }
@@ -1199,7 +1199,7 @@ export class SocialAmplificationService {
         });
       }
     } catch (error: unknown) {
-      logger.warn(`Failed to ensure AI model ${modelName}:`, error);
+      logger.warn({ err: error }, `Failed to ensure AI model ${modelName}:`);
     }
   }
 
@@ -1224,7 +1224,7 @@ export class SocialAmplificationService {
         success: true,
       });
     } catch (error: unknown) {
-      logger.warn('Failed to log inference:', error);
+      logger.warn({ err: error }, 'Failed to log inference:');
     }
   }
 

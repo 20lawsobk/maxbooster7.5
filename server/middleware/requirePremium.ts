@@ -76,7 +76,7 @@ export const requirePremium = async (req: Request, res: Response, next: NextFunc
       trialExpired: trialEndDate ? trialEndDate < now : false,
     });
   } catch (error: unknown) {
-    logger.warn('Premium check error:', error);
+    logger.warn({ err: error }, 'Premium check error:');
     return res.status(500).json({
       error: 'Subscription verification failed',
       message: 'Unable to verify your subscription status',

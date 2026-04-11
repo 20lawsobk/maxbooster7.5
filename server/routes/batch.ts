@@ -1049,7 +1049,7 @@ router.get('/templates', async (req: Request, res: Response) => {
 
     res.json({ templates: rows });
   } catch (error) {
-    logger.warn('Get templates error:', error);
+    logger.warn({ err: error }, 'Get templates error:');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -1081,7 +1081,7 @@ router.post('/templates', async (req: Request, res: Response) => {
 
     res.json(inserted);
   } catch (error) {
-    logger.warn('Create template error:', error);
+    logger.warn({ err: error }, 'Create template error:');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -1126,7 +1126,7 @@ router.put('/templates/:id', async (req: Request, res: Response) => {
 
     res.json(updated);
   } catch (error) {
-    logger.warn('Update template error:', error);
+    logger.warn({ err: error }, 'Update template error:');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -1151,7 +1151,7 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
 
     res.json({ error: 'Template deleted' });
   } catch (error) {
-    logger.warn('Delete template error:', error);
+    logger.warn({ err: error }, 'Delete template error:');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });
@@ -1197,7 +1197,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
 
     res.json({ error: 'Template shared successfully', sharedTemplate: sharedCopy });
   } catch (error) {
-    logger.warn('Share template error:', error);
+    logger.warn({ err: error }, 'Share template error:');
     res.status(500).json({ error: 'Failed to process request' });
   }
 });

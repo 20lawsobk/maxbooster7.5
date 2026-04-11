@@ -79,7 +79,7 @@ router.get('/user', async (req: Request, res: Response) => {
 
     return res.json(preferences);
   } catch (error) {
-    logger.warn('Error fetching user shortcuts:', error);
+    logger.warn({ err: error }, 'Error fetching user shortcuts:');
     return res.status(500).json({ error: 'Failed to fetch shortcuts' });
   }
 });
@@ -120,7 +120,7 @@ router.put('/user', async (req: Request, res: Response) => {
 
     return res.json(preferences);
   } catch (error) {
-    logger.warn('Error saving user shortcuts:', error);
+    logger.warn({ err: error }, 'Error saving user shortcuts:');
     return res.status(500).json({ error: 'Failed to save shortcuts' });
   }
 });
@@ -146,7 +146,7 @@ router.delete('/user', async (req: Request, res: Response) => {
 
     return res.json({ error: 'Shortcuts reset successfully' });
   } catch (error) {
-    logger.warn('Error resetting shortcuts:', error);
+    logger.warn({ err: error }, 'Error resetting shortcuts:');
     return res.status(500).json({ error: 'Failed to reset shortcuts' });
   }
 });
@@ -158,7 +158,7 @@ router.get('/defaults', async (_req: Request, res: Response) => {
       version: '1.0.0',
     });
   } catch (error) {
-    logger.warn('Error fetching default shortcuts:', error);
+    logger.warn({ err: error }, 'Error fetching default shortcuts:');
     return res.status(500).json({ error: 'Failed to fetch defaults' });
   }
 });
@@ -184,7 +184,7 @@ router.get('/conflicts', async (req: Request, res: Response) => {
 
     return res.json({ conflicts });
   } catch (error) {
-    logger.warn('Error checking conflicts:', error);
+    logger.warn({ err: error }, 'Error checking conflicts:');
     return res.status(500).json({ error: 'Failed to check conflicts' });
   }
 });

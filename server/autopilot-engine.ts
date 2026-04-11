@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { randomUUID } from 'crypto';
-import { platformAPI } from './platform-apis.ts';
-import { customAI } from './custom-ai-engine.ts';
+import { platformAPI } from './platform-apis.js';
+import { customAI } from './custom-ai-engine.js';
 import { logger } from './logger.js';
 import { advancedSocialAIService } from './services/advancedSocialAIService.js';
 
@@ -342,7 +342,7 @@ export class AutopilotEngine extends EventEmitter {
       job.status = 'completed';
       this.emit('jobCompleted', job);
     } catch (error: unknown) {
-      logger.warn(`Job ${job.id} failed:`, error);
+      logger.warn({ err: error }, `Job ${job.id} failed:`);
 
       if (job.retries < job.maxRetries) {
         job.retries++;
@@ -491,7 +491,7 @@ export class AutopilotEngine extends EventEmitter {
       };
     } catch (error) {
       // Fallback to legacy custom AI if Advanced AI fails
-      logger.warn('[Autopilot] Advanced AI failed, falling back to legacy:', error);
+      logger.warn({ err: error }, '[Autopilot] Advanced AI failed, falling back to legacy:');
       
       const generatedContent = await customAI.generateContent({
         topic: params.topic,

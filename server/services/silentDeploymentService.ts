@@ -170,7 +170,7 @@ class SilentDeploymentService extends EventEmitter {
     } catch (error) {
       record.completedAt = new Date();
       record.healthCheckPassed = false;
-      logger.warn('[SilentDeploy] Deployment error:', error);
+      logger.warn({ err: error }, '[SilentDeploy] Deployment error:');
       await this.auditRecord(record, `error: ${(error as Error).message}`);
     } finally {
       this.isDeploying = false;
@@ -257,7 +257,7 @@ class SilentDeploymentService extends EventEmitter {
         completedAt: record.completedAt ?? new Date(),
       });
     } catch (e) {
-      logger.warn('[SilentDeploy] Failed to write audit record:', e);
+      logger.warn({ err: e }, '[SilentDeploy] Failed to write audit record:');
     }
   }
 

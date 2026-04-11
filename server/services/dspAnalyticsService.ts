@@ -182,7 +182,7 @@ class DSPAnalyticsService {
         topCities: [],
       };
     } catch (error) {
-      logger.warn('Error fetching Spotify analytics:', error);
+      logger.warn({ err: error }, 'Error fetching Spotify analytics:');
       return null;
     }
   }
@@ -223,7 +223,7 @@ class DSPAnalyticsService {
         playlistAdds: 0,
       };
     } catch (error) {
-      logger.warn('Error fetching Apple Music analytics:', error);
+      logger.warn({ err: error }, 'Error fetching Apple Music analytics:');
       return null;
     }
   }
@@ -269,7 +269,7 @@ class DSPAnalyticsService {
         averageViewDuration: row[5] || 0,
       };
     } catch (error) {
-      logger.warn('Error fetching YouTube analytics:', error);
+      logger.warn({ err: error }, 'Error fetching YouTube analytics:');
       return null;
     }
   }
@@ -307,7 +307,7 @@ class DSPAnalyticsService {
         deviceBreakdown: data.deviceBreakdown || [],
       };
     } catch (error) {
-      logger.warn('Error fetching Amazon Music analytics:', error);
+      logger.warn({ err: error }, 'Error fetching Amazon Music analytics:');
       return null;
     }
   }
@@ -359,7 +359,7 @@ class DSPAnalyticsService {
         virality: 0,
       };
     } catch (error) {
-      logger.warn('Error fetching TikTok analytics:', error);
+      logger.warn({ err: error }, 'Error fetching TikTok analytics:');
       return null;
     }
   }
@@ -422,7 +422,7 @@ class DSPAnalyticsService {
         storiesViews: 0,
       };
     } catch (error) {
-      logger.warn('Error fetching Instagram analytics:', error);
+      logger.warn({ err: error }, 'Error fetching Instagram analytics:');
       return null;
     }
   }
@@ -783,7 +783,7 @@ class DSPAnalyticsService {
 
       return normalizedData;
     } catch (error) {
-      logger.warn(`Error syncing ${platform} data for user ${userId}:`, error);
+      logger.warn({ err: error }, `Error syncing ${platform} data for user ${userId}:`);
       
       await db
         .update(dspUserPlatformStatus)
@@ -839,7 +839,7 @@ class DSPAnalyticsService {
         };
       }
     } catch (error) {
-      logger.warn(`Error querying existing data for ${platform}:`, error);
+      logger.warn({ err: error }, `Error querying existing data for ${platform}:`);
     }
 
     logger.info(`No existing data found for platform ${platform}, user ${userId}. Returning zeroed result.`);

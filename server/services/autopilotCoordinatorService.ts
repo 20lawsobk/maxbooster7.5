@@ -368,7 +368,7 @@ class AutopilotCoordinatorService extends EventEmitter {
         message: `Your social and advertising autopilots are amplifying each other — ${totalInsights} cross-channel insights synced. Expect stronger reach and engagement across both channels.`,
         link: '/campaigns?tab=autopilot',
         metadata: { socialToAd: socialInsights.length, adToSocial: advertisingInsights.length },
-      }).catch((err) => logger.warn('Failed to send autopilot synergy notification:', err));
+      }).catch((err) => logger.warn({ err: err }, 'Failed to send autopilot synergy notification:'));
     }
 
     return {

@@ -66,7 +66,7 @@ export async function generateApiKey(
       apiKey, // Return plaintext key for user to save (not stored in DB)
     };
   } catch (error: unknown) {
-    logger.warn('Error generating API key:', error);
+    logger.warn({ err: error }, 'Error generating API key:');
     throw new Error('Failed to generate API key');
   }
 }
@@ -135,11 +135,11 @@ export async function validateApiKey(req: ApiKeyRequest, res: Response, next: Ne
       .set({ lastUsedAt: new Date() })
       .where(eq(apiKeys.id, keyRecord.id))
       .execute()
-      .catch((err) => logger.warn('Error updating API key last used:', err));
+      .catch((err) => logger.warn({ err: err }, 'Error updating API key last used:'));
 
     next();
   } catch (error: unknown) {
-    logger.warn('Error validating API key:', error);
+    logger.warn({ err: error }, 'Error validating API key:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to validate API key',
@@ -223,7 +223,7 @@ export async function rateLimitApiKey(req: ApiKeyRequest, res: Response, next: N
       });
     }
   } catch (error: unknown) {
-    logger.warn('Error in rate limiting middleware:', error);
+    logger.warn({ err: error }, 'Error in rate limiting middleware:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to enforce rate limiting',
@@ -255,7 +255,7 @@ export async function trackApiUsage(req: ApiKeyRequest, res: Response, next: Nex
           ip: req.ip,
           queryParams: Object.keys(req.query).length > 0 ? req.query : undefined,
         },
-      }).catch((err) => logger.warn('Error tracking API usage:', err));
+      }).catch((err) => logger.warn({ err: err }, 'Error tracking API usage:'));
     }
 
     return originalSend.call(this, data);
@@ -286,7 +286,7 @@ async function trackUsageRecord(usage: {
       metadata: usage.metadata,
     });
   } catch (error: unknown) {
-    logger.warn('Failed to track API usage:', error);
+    logger.warn({ err: error }, 'Failed to track API usage:');
   }
 }
 
@@ -299,7 +299,7 @@ export async function getApiKeyById(keyId: string) {
 
     return key;
   } catch (error: unknown) {
-    logger.warn('Error fetching API key:', error);
+    logger.warn({ err: error }, 'Error fetching API key:');
     throw new Error('Failed to fetch API key');
   }
 }
@@ -328,7 +328,7 @@ export async function listApiKeys(userId: string) {
 
     return keys;
   } catch (error: unknown) {
-    logger.warn('Error listing API keys:', error);
+    logger.warn({ err: error }, 'Error listing API keys:');
     throw new Error('Failed to list API keys');
   }
 }
@@ -351,7 +351,7 @@ export async function revokeApiKey(keyId: string, userId: string) {
     logger.info(`🔒 Revoked API key ${keyId} for user ${userId}`);
     return updated;
   } catch (error: unknown) {
-    logger.warn('Error revoking API key:', error);
+    logger.warn({ err: error }, 'Error revoking API key:');
     throw new Error('Failed to revoke API key');
   }
 }
@@ -414,7 +414,7 @@ export async function getApiKeyUsageStats(apiKeyId: string, days: number = 30) {
       byStatusCode,
     };
   } catch (error: unknown) {
-    logger.warn('Error fetching API usage stats:', error);
+    logger.warn({ err: error }, 'Error fetching API usage stats:');
     throw new Error('Failed to fetch API usage statistics');
   }
 }
@@ -442,7 +442,7 @@ export async function getUserApiUsageStats(userId: string, days: number = 30) {
 
     return usageStats;
   } catch (error: unknown) {
-    logger.warn('Error fetching user API usage stats:', error);
+    logger.warn({ err: error }, 'Error fetching user API usage stats:');
     throw new Error('Failed to fetch user API usage statistics');
   }
 }

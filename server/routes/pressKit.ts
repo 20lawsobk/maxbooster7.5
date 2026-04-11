@@ -18,7 +18,7 @@ router.get('/', requireAuth, async (req, res) => {
     const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.userId, req.user!.id)).limit(1);
     res.json(pressKit ?? null);
   } catch (error) {
-    logger.warn('[PressKit] Failed to fetch press kit:', error);
+    logger.warn({ err: error }, '[PressKit] Failed to fetch press kit:');
     res.status(500).json({ error: 'Failed to fetch press kit' });
   }
 });
@@ -42,7 +42,7 @@ router.put('/', requireAuth, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    logger.warn('[PressKit] Failed to update press kit:', error);
+    logger.warn({ err: error }, '[PressKit] Failed to update press kit:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
     }
@@ -79,7 +79,7 @@ router.delete('/photo/:index', requireAuth, async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    logger.warn('[PressKit] Failed to delete photo:', error);
+    logger.warn({ err: error }, '[PressKit] Failed to delete photo:');
     res.status(500).json({ error: 'Failed to delete photo' });
   }
 });
@@ -94,7 +94,7 @@ router.get('/public/:slug', async (req, res) => {
 
     res.json(pressKit);
   } catch (error) {
-    logger.warn('[PressKit] Failed to fetch public press kit:', error);
+    logger.warn({ err: error }, '[PressKit] Failed to fetch public press kit:');
     res.status(500).json({ error: 'Failed to fetch public press kit' });
   }
 });
@@ -120,7 +120,7 @@ router.post('/publish', requireAuth, async (req, res) => {
 
     res.json(updated);
   } catch (error) {
-    logger.warn('[PressKit] Failed to publish press kit:', error);
+    logger.warn({ err: error }, '[PressKit] Failed to publish press kit:');
     res.status(500).json({ error: 'Failed to publish press kit' });
   }
 });

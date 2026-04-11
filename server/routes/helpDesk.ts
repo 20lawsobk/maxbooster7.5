@@ -33,7 +33,7 @@ router.get('/welcome', (req: Request, res: Response) => {
       ...response,
     });
   } catch (error) {
-    logger.warn('Help desk welcome error:', error);
+    logger.warn({ err: error }, 'Help desk welcome error:');
     res.status(500).json({ success: false, error: 'Failed to load help desk' });
   }
 });
@@ -62,7 +62,7 @@ router.post('/chat', async (req: Request, res: Response) => {
       ...response,
     });
   } catch (error) {
-    logger.warn('Help desk chat error:', error);
+    logger.warn({ err: error }, 'Help desk chat error:');
     res.status(500).json({
       success: false,
       error: 'Failed to process message',
@@ -89,7 +89,7 @@ router.post('/escalate', async (req: Request, res: Response) => {
       ...result,
     });
   } catch (error) {
-    logger.warn('Escalation error:', error);
+    logger.warn({ err: error }, 'Escalation error:');
     res.status(500).json({
       success: false,
       error: 'Failed to escalate',
@@ -114,7 +114,7 @@ router.post('/end', (req: Request, res: Response) => {
       message: 'Session ended. Thank you for using Max Booster support!',
     });
   } catch (error) {
-    logger.warn('Help desk end session error:', error);
+    logger.warn({ err: error }, 'Help desk end session error:');
     res.status(500).json({ success: false, error: 'Failed to end session' });
   }
 });
@@ -132,7 +132,7 @@ router.get('/info', (req: Request, res: Response) => {
       branding: BUSINESS_CONFIG.branding,
     });
   } catch (error) {
-    logger.warn('Help desk info error:', error);
+    logger.warn({ err: error }, 'Help desk info error:');
     res.status(500).json({ success: false, error: 'Failed to load help desk info' });
   }
 });

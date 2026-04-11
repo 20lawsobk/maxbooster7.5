@@ -34,7 +34,7 @@ export class BeatService {
         price,
       };
     } catch (error: unknown) {
-      logger.warn('Beat purchase error:', error);
+      logger.warn({ err: error }, 'Beat purchase error:');
       throw error;
     }
   }
@@ -72,7 +72,7 @@ export class BeatService {
         licenseAgreement,
       };
     } catch (error: unknown) {
-      logger.warn('Beat purchase completion error:', error);
+      logger.warn({ err: error }, 'Beat purchase completion error:');
       throw error;
     }
   }
@@ -106,7 +106,7 @@ export class BeatService {
       const analytics = await storage.getBeatAnalytics(beatId, userId);
       return analytics;
     } catch (error: unknown) {
-      logger.warn('Beat analytics error:', error);
+      logger.warn({ err: error }, 'Beat analytics error:');
       throw new Error('Failed to fetch beat analytics');
     }
   }

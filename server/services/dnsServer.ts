@@ -65,7 +65,7 @@ async function refreshCustomDomainCache(): Promise<void> {
     customDomainCache = new Set(rows.map(r => r.domain.toLowerCase()));
     cacheLastRefreshed = Date.now();
   } catch (err) {
-    logger.warn('[DNS] Could not refresh custom domain cache:', err);
+    logger.warn({ err: err }, '[DNS] Could not refresh custom domain cache:');
   }
 }
 

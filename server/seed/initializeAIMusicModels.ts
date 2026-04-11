@@ -122,7 +122,7 @@ export async function initializeAIMusicModels() {
 
     logger.info('✅ AI Music Intelligence Models initialized');
   } catch (error: unknown) {
-    logger.warn('❌ Failed to initialize AI Music Models:', error);
+    logger.warn({ err: error }, '❌ Failed to initialize AI Music Models:');
     throw error;
   }
 }

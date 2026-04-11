@@ -172,7 +172,7 @@ export class ReleaseWorkflowService {
 
       return { success: true, newState: targetState };
     } catch (error) {
-      logger.warn('Error transitioning release state:', error);
+      logger.warn({ err: error }, 'Error transitioning release state:');
       return { success: false, error: 'Failed to transition release state' };
     }
   }
@@ -281,7 +281,7 @@ export class ReleaseWorkflowService {
 
       return { success: true, requestId };
     } catch (error) {
-      logger.warn('Error creating takedown request:', error);
+      logger.warn({ err: error }, 'Error creating takedown request:');
       return { success: false, error: 'Failed to create takedown request' };
     }
   }
@@ -382,7 +382,7 @@ export class ReleaseWorkflowService {
 
       return { success: true, requestId };
     } catch (error) {
-      logger.warn('Error creating update request:', error);
+      logger.warn({ err: error }, 'Error creating update request:');
       return { success: false, error: 'Failed to create update request' };
     }
   }
@@ -607,7 +607,7 @@ export class ReleaseWorkflowService {
     try {
       return await storage.getDistroRelease(releaseId);
     } catch (error) {
-      logger.warn('Error fetching release:', error);
+      logger.warn({ err: error }, 'Error fetching release:');
       return null;
     }
   }

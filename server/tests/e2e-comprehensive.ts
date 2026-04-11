@@ -387,6 +387,6 @@ runAllTests()
     process.exit(0);
   })
   .catch(error => {
-    logger.warn('Test suite failed:', error);
+    logger.warn({ err: error }, 'Test suite failed:');
     process.exit(1);
   });

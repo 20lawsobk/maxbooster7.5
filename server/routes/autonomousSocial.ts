@@ -42,7 +42,7 @@ router.get('/status', requireAuth, async (req, res) => {
     
     res.json(state);
   } catch (error) {
-    logger.warn('Failed to get autonomous social status:', error);
+    logger.warn({ err: error }, 'Failed to get autonomous social status:');
     res.status(500).json({ error: 'Failed to get autonomous social status' });
   }
 });
@@ -63,7 +63,7 @@ router.post('/start', requireAuth, async (req, res) => {
       ...state,
     });
   } catch (error) {
-    logger.warn('Failed to start autonomous social:', error);
+    logger.warn({ err: error }, 'Failed to start autonomous social:');
     res.status(500).json({ error: 'Failed to start autonomous social mode' });
   }
 });
@@ -84,7 +84,7 @@ router.post('/stop', requireAuth, async (req, res) => {
       ...state,
     });
   } catch (error) {
-    logger.warn('Failed to stop autonomous social:', error);
+    logger.warn({ err: error }, 'Failed to stop autonomous social:');
     res.status(500).json({ error: 'Failed to stop autonomous social mode' });
   }
 });

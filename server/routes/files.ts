@@ -211,7 +211,7 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     });
 
   } catch (error) {
-    logger.warn('Upload error:', error);
+    logger.warn({ err: error }, 'Upload error:');
     return res.status(500).json({
       success: false,
       error: 'Upload failed due to server error',
@@ -251,7 +251,7 @@ router.post('/upload/chunk', upload.single('chunk'), async (req: Request, res: R
     });
 
   } catch (error) {
-    logger.warn('Chunk upload error:', error);
+    logger.warn({ err: error }, 'Chunk upload error:');
     return res.status(500).json({
       success: false,
       error: 'Chunk upload failed',
@@ -299,7 +299,7 @@ router.get('/trash', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Trash list error:', error);
+    logger.warn({ err: error }, 'Trash list error:');
     return res.status(500).json({ error: 'Failed to list trash' });
   }
 });
@@ -367,7 +367,7 @@ router.post('/bulk-restore', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Bulk restore error:', error);
+    logger.warn({ err: error }, 'Bulk restore error:');
     return res.status(500).json({ error: 'Bulk restore failed' });
   }
 });
@@ -442,7 +442,7 @@ router.get('/storage-usage', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Storage usage error:', error);
+    logger.warn({ err: error }, 'Storage usage error:');
     return res.status(500).json({ error: 'Failed to get storage usage' });
   }
 });
@@ -489,7 +489,7 @@ router.get('/list', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('List files error:', error);
+    logger.warn({ err: error }, 'List files error:');
     return res.status(500).json({ error: 'Failed to list files' });
   }
 });
@@ -563,7 +563,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
     }
 
   } catch (error) {
-    logger.warn('Delete file error:', error);
+    logger.warn({ err: error }, 'Delete file error:');
     return res.status(500).json({
       success: false,
       error: 'Failed to delete file',
@@ -640,7 +640,7 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Bulk delete error:', error);
+    logger.warn({ err: error }, 'Bulk delete error:');
     return res.status(500).json({ error: 'Bulk delete failed' });
   }
 });
@@ -686,7 +686,7 @@ router.get('/:id/download', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Download error:', error);
+    logger.warn({ err: error }, 'Download error:');
     return res.status(500).json({
       success: false,
       error: 'Failed to generate download link',
@@ -844,7 +844,7 @@ router.post('/validate', upload.single('file'), async (req: Request, res: Respon
     });
 
   } catch (error) {
-    logger.warn('Validation error:', error);
+    logger.warn({ err: error }, 'Validation error:');
     return res.status(500).json({
       success: false,
       error: 'Validation failed',
@@ -908,7 +908,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Restore error:', error);
+    logger.warn({ err: error }, 'Restore error:');
     return res.status(500).json({
       success: false,
       error: 'Failed to restore file',
@@ -967,7 +967,7 @@ router.post('/:id/transcode', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Transcode error:', error);
+    logger.warn({ err: error }, 'Transcode error:');
     return res.status(500).json({
       success: false,
       error: 'Transcoding failed to start',
@@ -1017,7 +1017,7 @@ router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Transcode status error:', error);
+    logger.warn({ err: error }, 'Transcode status error:');
     return res.status(500).json({ error: 'Failed to get transcode status' });
   }
 });
@@ -1061,7 +1061,7 @@ router.post('/:id/preview', async (req: Request, res: Response) => {
     });
 
   } catch (error) {
-    logger.warn('Preview generation error:', error);
+    logger.warn({ err: error }, 'Preview generation error:');
     return res.status(500).json({
       success: false,
       error: 'Failed to generate preview',

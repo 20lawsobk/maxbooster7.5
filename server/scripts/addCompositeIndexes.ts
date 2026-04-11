@@ -188,6 +188,6 @@ async function addCompositeIndexes(): Promise<void> {
 }
 
 addCompositeIndexes().catch((err) => {
-  logger.warn('[IndexMigration] Fatal:', err);
+  logger.warn({ err: err }, '[IndexMigration] Fatal:');
   process.exit(1);
 });

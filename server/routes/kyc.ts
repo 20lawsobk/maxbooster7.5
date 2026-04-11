@@ -108,7 +108,7 @@ router.post('/start', async (req, res) => {
       message: 'Verification process started. Please provide your information and documents.',
     });
   } catch (error: unknown) {
-    logger.warn('Error starting KYC verification:', error);
+    logger.warn({ err: error }, 'Error starting KYC verification:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -141,7 +141,7 @@ router.get('/status', async (req, res) => {
 
     res.json(status);
   } catch (error: unknown) {
-    logger.warn('Error fetching KYC status:', error);
+    logger.warn({ err: error }, 'Error fetching KYC status:');
     const message = error instanceof Error ? error.message : 'Failed to fetch verification status';
     res.status(500).json({ error: message });
   }
@@ -217,7 +217,7 @@ router.put('/individual', async (req, res) => {
       message: 'Individual information updated successfully.',
     });
   } catch (error: unknown) {
-    logger.warn('Error updating individual info:', error);
+    logger.warn({ err: error }, 'Error updating individual info:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -252,7 +252,7 @@ router.put('/business', async (req, res) => {
       message: 'Business information updated successfully.',
     });
   } catch (error: unknown) {
-    logger.warn('Error updating business info:', error);
+    logger.warn({ err: error }, 'Error updating business info:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -285,7 +285,7 @@ router.post('/documents', async (req, res) => {
       message: 'Document uploaded successfully. It will be reviewed shortly.',
     });
   } catch (error: unknown) {
-    logger.warn('Error uploading document:', error);
+    logger.warn({ err: error }, 'Error uploading document:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -318,7 +318,7 @@ router.post('/tax-form', async (req, res) => {
       message: `${validated.formType} form submitted successfully.`,
     });
   } catch (error: unknown) {
-    logger.warn('Error submitting tax form:', error);
+    logger.warn({ err: error }, 'Error submitting tax form:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -348,7 +348,7 @@ router.get('/documents', async (req, res) => {
 
     res.json({ documents });
   } catch (error: unknown) {
-    logger.warn('Error fetching documents:', error);
+    logger.warn({ err: error }, 'Error fetching documents:');
     const message = error instanceof Error ? error.message : 'Failed to fetch documents';
     res.status(500).json({ error: message });
   }
@@ -419,7 +419,7 @@ router.post('/documents/upload', upload.single('file'), async (req, res) => {
       estimatedReviewTime: '1-2 business days',
     });
   } catch (error: unknown) {
-    logger.warn('Error uploading document:', error);
+    logger.warn({ err: error }, 'Error uploading document:');
     const message = error instanceof Error ? error.message : 'Failed to upload document';
     res.status(500).json({ 
       error: message,
@@ -485,7 +485,7 @@ router.post('/documents/resubmit', upload.single('file'), async (req, res) => {
       isResubmission: true,
     });
   } catch (error: unknown) {
-    logger.warn('Error resubmitting document:', error);
+    logger.warn({ err: error }, 'Error resubmitting document:');
     const message = error instanceof Error ? error.message : 'Failed to resubmit document';
     res.status(500).json({ error: message });
   }
@@ -513,7 +513,7 @@ router.post('/submit', async (req, res) => {
       message: 'Verification submitted for review. This typically takes 1-2 business days.',
     });
   } catch (error: unknown) {
-    logger.warn('Error submitting verification:', error);
+    logger.warn({ err: error }, 'Error submitting verification:');
     const message = error instanceof Error ? error.message : 'Failed to submit verification';
     res.status(500).json({ error: message });
   }
@@ -530,7 +530,7 @@ router.get('/payout-eligibility', async (req, res) => {
 
     res.json(eligibility);
   } catch (error: unknown) {
-    logger.warn('Error checking payout eligibility:', error);
+    logger.warn({ err: error }, 'Error checking payout eligibility:');
     const message = error instanceof Error ? error.message : 'Failed to check eligibility';
     res.status(500).json({ error: message });
   }
@@ -556,7 +556,7 @@ router.post('/upgrade', async (req, res) => {
       message: `Verification upgraded to ${newLevel}. Please submit additional required documents.`,
     });
   } catch (error: unknown) {
-    logger.warn('Error upgrading verification:', error);
+    logger.warn({ err: error }, 'Error upgrading verification:');
     const message = error instanceof Error ? error.message : 'Failed to upgrade verification';
     res.status(500).json({ error: message });
   }
@@ -573,7 +573,7 @@ router.get('/admin/pending', async (req, res) => {
 
     res.json({ verifications });
   } catch (error: unknown) {
-    logger.warn('Error fetching pending verifications:', error);
+    logger.warn({ err: error }, 'Error fetching pending verifications:');
     const message = error instanceof Error ? error.message : 'Failed to fetch pending verifications';
     res.status(500).json({ error: message });
   }
@@ -607,7 +607,7 @@ router.get('/admin/documents/:documentId/view', async (req, res) => {
     res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     res.send(file);
   } catch (error: unknown) {
-    logger.warn('Error viewing document:', error);
+    logger.warn({ err: error }, 'Error viewing document:');
     const message = error instanceof Error ? error.message : 'Failed to view document';
     res.status(500).json({ error: message });
   }
@@ -642,7 +642,7 @@ router.post('/admin/review/:verificationId', async (req, res) => {
       message: `Verification ${action}d successfully`,
     });
   } catch (error: unknown) {
-    logger.warn('Error reviewing verification:', error);
+    logger.warn({ err: error }, 'Error reviewing verification:');
     const message = error instanceof Error ? error.message : 'Failed to review verification';
     res.status(500).json({ error: message });
   }
@@ -673,7 +673,7 @@ router.post('/admin/documents/:documentId/review', async (req, res) => {
       message: `Document ${approved ? 'approved' : 'rejected'} successfully`,
     });
   } catch (error: unknown) {
-    logger.warn('Error reviewing document:', error);
+    logger.warn({ err: error }, 'Error reviewing document:');
     const message = error instanceof Error ? error.message : 'Failed to review document';
     res.status(500).json({ error: message });
   }

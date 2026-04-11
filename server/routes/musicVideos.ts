@@ -25,7 +25,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(items);
   } catch (error) {
-    logger.warn('[MusicVideos] Failed to list:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to list:');
     res.status(500).json({ error: 'Failed to fetch music video productions' });
   }
 });
@@ -57,7 +57,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    logger.warn('[MusicVideos] Failed to fetch stats:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to fetch stats:');
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -73,7 +73,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:musicVideos', req.user!.id));
     res.status(201).json(item);
   } catch (error: unknown) {
-    logger.warn('[MusicVideos] Failed to create:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to create:');
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -105,7 +105,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:musicVideos', userId));
     res.json(item);
   } catch (error: unknown) {
-    logger.warn('[MusicVideos] Failed to update:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to update:');
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -131,7 +131,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:musicVideos', userId));
     res.json({ success: true });
   } catch (error) {
-    logger.warn('[MusicVideos] Failed to delete:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to delete:');
     res.status(500).json({ error: 'Failed to delete music video production' });
   }
 });
@@ -145,7 +145,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Music video production not found' });
     res.json(item);
   } catch (error) {
-    logger.warn('[MusicVideos] Failed to fetch production:', error);
+    logger.warn({ err: error }, '[MusicVideos] Failed to fetch production:');
     res.status(500).json({ error: 'Failed to fetch music video production' });
   }
 });
@@ -162,7 +162,7 @@ router.get('/diffusion/status', requireAuth, async (_req, res) => {
         : 'Model not trained. POST /diffusion/train to train from scratch.',
     });
   } catch (err) {
-    logger.warn('[Diffusion] Status error:', err);
+    logger.warn({ err: err }, '[Diffusion] Status error:');
     res.status(500).json({ error: 'Failed to get diffusion model status' });
   }
 });
@@ -213,7 +213,7 @@ router.post('/diffusion/train', requireAuth, async (req, res) => {
   }).then((status) => {
     logger.info(`[Diffusion] Training complete. loss=${status.finalLoss?.toFixed(4)}`);
   }).catch((err) => {
-    logger.warn('[Diffusion] Training failed:', err);
+    logger.warn({ err: err }, '[Diffusion] Training failed:');
   });
 });
 
@@ -250,7 +250,7 @@ router.post('/diffusion/generate', requireAuth, async (req, res) => {
       message:    `Generated ${result.frameCount} frames in ${(result.elapsedMs / 1000).toFixed(1)}s`,
     });
   } catch (err) {
-    logger.warn('[Diffusion] Generate error:', err);
+    logger.warn({ err: err }, '[Diffusion] Generate error:');
     res.status(500).json({ error: 'Diffusion generation failed', details: String(err) });
   }
 });

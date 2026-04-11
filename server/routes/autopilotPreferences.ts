@@ -99,7 +99,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     res.json(preferences);
   } catch (error) {
-    logger.warn('Error fetching autopilot preferences:', error);
+    logger.warn({ err: error }, 'Error fetching autopilot preferences:');
     res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });

@@ -150,7 +150,7 @@ router.post('/resolve-conflict', requireAuth, async (req: AuthenticatedRequest, 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Resolve conflict error:', error);
+    logger.warn({ err: error }, 'Resolve conflict error:');
     res.status(500).json({ error: 'Failed to resolve conflict' });
   }
 });
@@ -212,7 +212,7 @@ router.get('/presence/:sessionId', requireAuth, async (req: AuthenticatedRequest
       presence: Array.from(sessionPresence.values()),
     });
   } catch (error) {
-    logger.warn('Get presence error:', error);
+    logger.warn({ err: error }, 'Get presence error:');
     res.status(500).json({ error: 'Failed to get presence' });
   }
 });
@@ -302,7 +302,7 @@ router.put('/presence/:sessionId', requireAuth, async (req: AuthenticatedRequest
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Update presence error:', error);
+    logger.warn({ err: error }, 'Update presence error:');
     res.status(500).json({ error: 'Failed to update presence' });
   }
 });
@@ -333,7 +333,7 @@ router.delete('/presence/:sessionId', requireAuth, async (req: AuthenticatedRequ
       res.json({ success: true });
     }
   } catch (error) {
-    logger.warn('Leave session error:', error);
+    logger.warn({ err: error }, 'Leave session error:');
     res.status(500).json({ error: 'Failed to leave session' });
   }
 });
@@ -396,7 +396,7 @@ router.post('/version', requireAuth, async (req: AuthenticatedRequest, res: Resp
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Create version error:', error);
+    logger.warn({ err: error }, 'Create version error:');
     res.status(500).json({ error: 'Failed to create version' });
   }
 });
@@ -419,7 +419,7 @@ router.get('/versions/:projectId', requireAuth, async (req: AuthenticatedRequest
       outcome: { type: 'version_history_displayed', message: `${rows.length} versions found` },
     });
   } catch (error) {
-    logger.warn('Get versions error:', error);
+    logger.warn({ err: error }, 'Get versions error:');
     res.status(500).json({ error: 'Failed to get versions' });
   }
 });
@@ -458,7 +458,7 @@ router.put('/versions/:projectId/:versionId/restore', requireAuth, async (req: A
       outcome: { type: 'version_restored', message: `Restored to ${restored.name}`, versionId: restored.id },
     });
   } catch (error) {
-    logger.warn('Restore version error:', error);
+    logger.warn({ err: error }, 'Restore version error:');
     res.status(500).json({ error: 'Failed to restore version' });
   }
 });
@@ -489,7 +489,7 @@ router.post('/versions/:projectId/compare', requireAuth, async (req: Authenticat
       outcome: { type: 'version_compared', message: `Comparing ${versionA.name} with ${versionB.name}` },
     });
   } catch (error) {
-    logger.warn('Compare versions error:', error);
+    logger.warn({ err: error }, 'Compare versions error:');
     res.status(500).json({ error: 'Failed to compare versions' });
   }
 });
@@ -524,7 +524,7 @@ router.delete('/versions/:projectId/:versionId', requireAuth, async (req: Authen
       outcome: { type: 'version_deleted', message: `${target.name} has been deleted`, versionId },
     });
   } catch (error) {
-    logger.warn('Delete version error:', error);
+    logger.warn({ err: error }, 'Delete version error:');
     res.status(500).json({ error: 'Failed to delete version' });
   }
 });
@@ -567,7 +567,7 @@ router.post('/access/request', requireAuth, async (req: AuthenticatedRequest, re
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Submit access request error:', error);
+    logger.warn({ err: error }, 'Submit access request error:');
     res.status(500).json({ error: 'Failed to submit access request' });
   }
 });
@@ -586,7 +586,7 @@ router.get('/access/requests/:projectId', requireAuth, async (req: Authenticated
 
     res.json({ requests: rows });
   } catch (error) {
-    logger.warn('Get access requests error:', error);
+    logger.warn({ err: error }, 'Get access requests error:');
     res.status(500).json({ error: 'Failed to get access requests' });
   }
 });
@@ -664,7 +664,7 @@ router.put('/access/:userId', requireAuth, async (req: AuthenticatedRequest, res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Update access error:', error);
+    logger.warn({ err: error }, 'Update access error:');
     res.status(500).json({ error: 'Failed to update access' });
   }
 });
@@ -733,7 +733,7 @@ router.post('/comments', requireAuth, async (req: AuthenticatedRequest, res: Res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Add comment error:', error);
+    logger.warn({ err: error }, 'Add comment error:');
     res.status(500).json({ error: 'Failed to add comment' });
   }
 });
@@ -750,7 +750,7 @@ router.get('/comments/:projectId', requireAuth, async (req: AuthenticatedRequest
 
     res.json({ comments: rows });
   } catch (error) {
-    logger.warn('Get comments error:', error);
+    logger.warn({ err: error }, 'Get comments error:');
     res.status(500).json({ error: 'Failed to get comments' });
   }
 });
@@ -775,7 +775,7 @@ router.put('/comments/:commentId/resolve', requireAuth, async (req: Authenticate
       outcome: { type: 'comment_resolved', message: 'Comment marked as resolved', commentId },
     });
   } catch (error) {
-    logger.warn('Resolve comment error:', error);
+    logger.warn({ err: error }, 'Resolve comment error:');
     res.status(500).json({ error: 'Failed to resolve comment' });
   }
 });
@@ -793,7 +793,7 @@ router.put('/comments/:commentId/mention-resolved', requireAuth, async (req: Aut
       },
     });
   } catch (error) {
-    logger.warn('Resolve mention error:', error);
+    logger.warn({ err: error }, 'Resolve mention error:');
     res.status(500).json({ error: 'Failed to resolve mention' });
   }
 });
@@ -820,7 +820,7 @@ router.get('/conflicts/:projectId', requireAuth, async (req: AuthenticatedReques
           },
     });
   } catch (error) {
-    logger.warn('Get conflicts error:', error);
+    logger.warn({ err: error }, 'Get conflicts error:');
     res.status(500).json({ error: 'Failed to get conflicts' });
   }
 });
@@ -851,7 +851,7 @@ router.post('/detect-conflict', requireAuth, async (req: AuthenticatedRequest, r
       });
     }
   } catch (error) {
-    logger.warn('Detect conflict error:', error);
+    logger.warn({ err: error }, 'Detect conflict error:');
     res.status(500).json({ error: 'Failed to detect conflict' });
   }
 });

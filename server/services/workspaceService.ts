@@ -121,7 +121,7 @@ export class WorkspaceService {
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger.warn('Create workspace error:', error);
+      logger.warn({ err: error }, 'Create workspace error:');
       return { success: false, error: 'Failed to create workspace' };
     }
   }
@@ -135,7 +135,7 @@ export class WorkspaceService {
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger.warn('Get workspace error:', error);
+      logger.warn({ err: error }, 'Get workspace error:');
       return null;
     }
   }
@@ -149,7 +149,7 @@ export class WorkspaceService {
         .limit(1);
       return workspace || null;
     } catch (error: unknown) {
-      logger.warn('Get workspace by slug error:', error);
+      logger.warn({ err: error }, 'Get workspace by slug error:');
       return null;
     }
   }
@@ -170,7 +170,7 @@ export class WorkspaceService {
 
       return memberships.map(m => m.workspace);
     } catch (error: unknown) {
-      logger.warn('Get user workspaces error:', error);
+      logger.warn({ err: error }, 'Get user workspaces error:');
       return [];
     }
   }
@@ -207,7 +207,7 @@ export class WorkspaceService {
 
       return { success: true, workspace };
     } catch (error: unknown) {
-      logger.warn('Update workspace error:', error);
+      logger.warn({ err: error }, 'Update workspace error:');
       return { success: false, error: 'Failed to update workspace' };
     }
   }
@@ -227,7 +227,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Delete workspace error:', error);
+      logger.warn({ err: error }, 'Delete workspace error:');
       return { success: false, error: 'Failed to delete workspace' };
     }
   }
@@ -330,7 +330,7 @@ export class WorkspaceService {
         .limit(1);
       return role || null;
     } catch (error: unknown) {
-      logger.warn('Get role by name error:', error);
+      logger.warn({ err: error }, 'Get role by name error:');
       return null;
     }
   }
@@ -364,7 +364,7 @@ export class WorkspaceService {
 
       return { success: true, member };
     } catch (error: unknown) {
-      logger.warn('Add member error:', error);
+      logger.warn({ err: error }, 'Add member error:');
       return { success: false, error: 'Failed to add member' };
     }
   }
@@ -381,7 +381,7 @@ export class WorkspaceService {
         .limit(1);
       return member || null;
     } catch (error: unknown) {
-      logger.warn('Get member error:', error);
+      logger.warn({ err: error }, 'Get member error:');
       return null;
     }
   }
@@ -409,7 +409,7 @@ export class WorkspaceService {
 
       return members;
     } catch (error: unknown) {
-      logger.warn('Get members error:', error);
+      logger.warn({ err: error }, 'Get members error:');
       return [];
     }
   }
@@ -460,7 +460,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Update member role error:', error);
+      logger.warn({ err: error }, 'Update member role error:');
       return { success: false, error: 'Failed to update member role' };
     }
   }
@@ -503,7 +503,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Remove member error:', error);
+      logger.warn({ err: error }, 'Remove member error:');
       return { success: false, error: 'Failed to remove member' };
     }
   }
@@ -566,7 +566,7 @@ export class WorkspaceService {
 
       return { success: true, invitation };
     } catch (error: unknown) {
-      logger.warn('Invite member error:', error);
+      logger.warn({ err: error }, 'Invite member error:');
       return { success: false, error: 'Failed to send invitation' };
     }
   }
@@ -626,7 +626,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Accept invitation error:', error);
+      logger.warn({ err: error }, 'Accept invitation error:');
       return { success: false, error: 'Failed to accept invitation' };
     }
   }
@@ -644,7 +644,7 @@ export class WorkspaceService {
 
       return invitations;
     } catch (error: unknown) {
-      logger.warn('Get pending invitations error:', error);
+      logger.warn({ err: error }, 'Get pending invitations error:');
       return [];
     }
   }
@@ -679,7 +679,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Cancel invitation error:', error);
+      logger.warn({ err: error }, 'Cancel invitation error:');
       return { success: false, error: 'Failed to cancel invitation' };
     }
   }
@@ -706,7 +706,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Add to catalog error:', error);
+      logger.warn({ err: error }, 'Add to catalog error:');
       return { success: false, error: 'Failed to add to catalog' };
     }
   }
@@ -734,7 +734,7 @@ export class WorkspaceService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Remove from catalog error:', error);
+      logger.warn({ err: error }, 'Remove from catalog error:');
       return { success: false, error: 'Failed to remove from catalog' };
     }
   }
@@ -749,7 +749,7 @@ export class WorkspaceService {
 
       return catalog;
     } catch (error: unknown) {
-      logger.warn('Get catalog error:', error);
+      logger.warn({ err: error }, 'Get catalog error:');
       return [];
     }
   }
@@ -758,7 +758,7 @@ export class WorkspaceService {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
-      logger.warn('Log audit event error:', error);
+      logger.warn({ err: error }, 'Log audit event error:');
     }
   }
 
@@ -787,7 +787,7 @@ export class WorkspaceService {
 
       return logs;
     } catch (error: unknown) {
-      logger.warn('Get audit log error:', error);
+      logger.warn({ err: error }, 'Get audit log error:');
       return [];
     }
   }
@@ -803,7 +803,7 @@ export class WorkspaceService {
         ));
       return result?.count || 0;
     } catch (error: unknown) {
-      logger.warn('Get member count error:', error);
+      logger.warn({ err: error }, 'Get member count error:');
       return 0;
     }
   }
@@ -851,7 +851,7 @@ export class WorkspaceService {
       
       return { success: true, shares };
     } catch (error: unknown) {
-      logger.warn('Share project error:', error);
+      logger.warn({ err: error }, 'Share project error:');
       return { success: false, error: 'Failed to share project' };
     }
   }
@@ -860,7 +860,7 @@ export class WorkspaceService {
     try {
       return [];
     } catch (error: unknown) {
-      logger.warn('Get project shares error:', error);
+      logger.warn({ err: error }, 'Get project shares error:');
       return [];
     }
   }
@@ -873,7 +873,7 @@ export class WorkspaceService {
     try {
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Update share permission error:', error);
+      logger.warn({ err: error }, 'Update share permission error:');
       return { success: false, error: 'Failed to update share permission' };
     }
   }
@@ -885,7 +885,7 @@ export class WorkspaceService {
     try {
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Revoke share error:', error);
+      logger.warn({ err: error }, 'Revoke share error:');
       return { success: false, error: 'Failed to revoke share' };
     }
   }
@@ -936,7 +936,7 @@ export class WorkspaceService {
       
       return { success: true, link };
     } catch (error: unknown) {
-      logger.warn('Create share link error:', error);
+      logger.warn({ err: error }, 'Create share link error:');
       return { success: false, error: 'Failed to create share link' };
     }
   }
@@ -945,7 +945,7 @@ export class WorkspaceService {
     try {
       return [];
     } catch (error: unknown) {
-      logger.warn('Get share links error:', error);
+      logger.warn({ err: error }, 'Get share links error:');
       return [];
     }
   }
@@ -957,7 +957,7 @@ export class WorkspaceService {
     try {
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Revoke share link error:', error);
+      logger.warn({ err: error }, 'Revoke share link error:');
       return { success: false, error: 'Failed to revoke share link' };
     }
   }
@@ -978,7 +978,7 @@ export class WorkspaceService {
         selection: null,
       }));
     } catch (error: unknown) {
-      logger.warn('Get workspace presence error:', error);
+      logger.warn({ err: error }, 'Get workspace presence error:');
       return [];
     }
   }

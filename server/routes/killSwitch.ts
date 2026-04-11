@@ -45,7 +45,7 @@ router.get('/status', requireAdmin, (req: Request, res: Response) => {
       },
     });
   } catch (error: any) {
-    logger.warn('[KillSwitch] Failed to get status:', error);
+    logger.warn({ err: error }, '[KillSwitch] Failed to get status:');
     res.status(500).json({ success: false, error: 'Failed to get kill switch status' });
   }
 });
@@ -76,7 +76,7 @@ router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
       state: killSwitch.getState(),
     });
   } catch (error: any) {
-    logger.warn('[KillSwitch] Failed to kill all:', error);
+    logger.warn({ err: error }, '[KillSwitch] Failed to kill all:');
     res.status(500).json({ success: false, error: 'Failed to activate kill switch' });
   }
 });
@@ -107,7 +107,7 @@ router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
       state: killSwitch.getState(),
     });
   } catch (error: any) {
-    logger.warn('[KillSwitch] Failed to resume all:', error);
+    logger.warn({ err: error }, '[KillSwitch] Failed to resume all:');
     res.status(500).json({ success: false, error: 'Failed to resume systems' });
   }
 });
@@ -139,7 +139,7 @@ router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
       state: killSwitch.getState(),
     });
   } catch (error: any) {
-    logger.warn(`[KillSwitch] Failed to kill system ${req.params.system}:`, error);
+    logger.warn({ err: error }, `[KillSwitch] Failed to kill system ${req.params.system}:`);
     res.status(500).json({ success: false, error: 'Failed to stop system' });
   }
 });
@@ -171,7 +171,7 @@ router.post('/resume/:system', requireAdmin, (req: Request, res: Response) => {
       state: killSwitch.getState(),
     });
   } catch (error: any) {
-    logger.warn(`[KillSwitch] Failed to resume system ${req.params.system}:`, error);
+    logger.warn({ err: error }, `[KillSwitch] Failed to resume system ${req.params.system}:`);
     res.status(500).json({ success: false, error: 'Failed to resume system' });
   }
 });
@@ -191,7 +191,7 @@ router.get('/audit-log', requireAdmin, (req: Request, res: Response) => {
       total: auditLog.length,
     });
   } catch (error: any) {
-    logger.warn('[KillSwitch] Failed to get audit log:', error);
+    logger.warn({ err: error }, '[KillSwitch] Failed to get audit log:');
     res.status(500).json({ success: false, error: 'Failed to get audit log' });
   }
 });

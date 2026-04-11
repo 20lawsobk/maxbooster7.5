@@ -1,15 +1,15 @@
 // Import console error filter FIRST to suppress non-critical localhost Redis errors
-import "./lib/consoleErrorFilter.ts";
+import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
-import "./instrument.ts";
+import "./instrument.js";
 
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import compression from "compression";
-import { logger } from "./logger.ts";
-import { setupStartupEndpoints } from "./startup-probes.ts";
-import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.ts";
+import { logger } from "./logger.js";
+import { setupStartupEndpoints } from "./startup-probes.js";
+import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.js";
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
@@ -22,7 +22,7 @@ import {
   sanitizationMiddleware,
   killSwitch,
   stripeRawBodyParser,
-} from "./safety/index.ts";
+} from "./safety/index.js";
 
 import { securityMiddleware } from './middleware/security.js';
 import helmet from "helmet";
@@ -818,7 +818,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
       return next();
     } catch (err) {
-      logger.warn('[/s/:label] lookup error:', err);
+      logger.warn({ err: err }, '[/s/:label] lookup error:');
       return next();
     }
   });
@@ -1146,7 +1146,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
     logger.info('[Shutdown] HTTP server closed');
   } catch (err) {
-    logger.warn('[Shutdown] Error closing HTTP server:', err);
+    logger.warn({ err: err }, '[Shutdown] Error closing HTTP server:');
   }
 
   try {
@@ -1181,7 +1181,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
     await pool.end();
     logger.info('[Shutdown] Database pool closed');
   } catch (err) {
-    logger.warn('[Shutdown] Error closing DB pool:', err);
+    logger.warn({ err: err }, '[Shutdown] Error closing DB pool:');
   }
 
   clearTimeout(hardExit);
@@ -1195,7 +1195,7 @@ process.on('uncaughtException', (error: Error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.warn('[Process] Uncaught exception — shutting down:', error);
+  logger.warn({ err: error }, '[Process] Uncaught exception — shutting down:');
   gracefulShutdown('uncaughtException', 1);
 });
 

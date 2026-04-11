@@ -69,7 +69,7 @@ export class Rebalancer {
         break;
       }
     } catch (err) {
-      logger.warn('[FabricRebalancer] Rebalance error:', err);
+      logger.warn({ err: err }, '[FabricRebalancer] Rebalance error:');
       errors++;
     }
 

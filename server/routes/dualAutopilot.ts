@@ -134,7 +134,7 @@ router.post('/fanbase/daily-loop', requireAuth, requirePremium, async (req, res)
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error in daily social loop:', error);
+    logger.warn({ err: error }, 'Error in daily social loop:');
     res.status(500).json({ success: false, error: 'Failed to run daily social loop' });
   }
 });
@@ -151,7 +151,7 @@ router.get('/fanbase/music-impact', requireAuth, async (req, res) => {
       data: metrics,
     });
   } catch (error) {
-    logger.warn('Error fetching music impact metrics:', error);
+    logger.warn({ err: error }, 'Error fetching music impact metrics:');
     res.status(500).json({ success: false, error: 'Failed to fetch music impact metrics' });
   }
 });
@@ -175,7 +175,7 @@ router.post('/fanbase/segments', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error creating fan segment:', error);
+    logger.warn({ err: error }, 'Error creating fan segment:');
     res.status(500).json({ success: false, error: 'Failed to create fan segment' });
   }
 });
@@ -191,7 +191,7 @@ router.get('/fanbase/segments', requireAuth, async (req, res) => {
       data: segments,
     });
   } catch (error) {
-    logger.warn('Error fetching fan segments:', error);
+    logger.warn({ err: error }, 'Error fetching fan segments:');
     res.status(500).json({ success: false, error: 'Failed to fetch fan segments' });
   }
 });
@@ -219,7 +219,7 @@ router.put('/fanbase/segments/:id', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error updating fan segment:', error);
+    logger.warn({ err: error }, 'Error updating fan segment:');
     res.status(500).json({ success: false, error: 'Failed to update fan segment' });
   }
 });
@@ -243,7 +243,7 @@ router.delete('/fanbase/segments/:id', requireAuth, async (req, res) => {
       message: 'Segment deleted successfully',
     });
   } catch (error) {
-    logger.warn('Error deleting fan segment:', error);
+    logger.warn({ err: error }, 'Error deleting fan segment:');
     res.status(500).json({ success: false, error: 'Failed to delete fan segment' });
   }
 });
@@ -259,7 +259,7 @@ router.get('/fanbase/patterns', requireAuth, async (req, res) => {
       data: patterns,
     });
   } catch (error) {
-    logger.warn('Error fetching pattern aggregates:', error);
+    logger.warn({ err: error }, 'Error fetching pattern aggregates:');
     res.status(500).json({ success: false, error: 'Failed to fetch pattern aggregates' });
   }
 });
@@ -286,7 +286,7 @@ router.post('/fanbase/content', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error creating autopilot content:', error);
+    logger.warn({ err: error }, 'Error creating autopilot content:');
     res.status(500).json({ success: false, error: 'Failed to create autopilot content' });
   }
 });
@@ -310,7 +310,7 @@ router.put('/fanbase/content/:id/performance', requireAuth, async (req, res) => 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error updating content performance:', error);
+    logger.warn({ err: error }, 'Error updating content performance:');
     res.status(500).json({ success: false, error: 'Failed to update content performance' });
   }
 });
@@ -327,7 +327,7 @@ router.get('/fanbase/content/top', requireAuth, async (req, res) => {
       data: content,
     });
   } catch (error) {
-    logger.warn('Error fetching top performing content:', error);
+    logger.warn({ err: error }, 'Error fetching top performing content:');
     res.status(500).json({ success: false, error: 'Failed to fetch top performing content' });
   }
 });
@@ -343,7 +343,7 @@ router.post('/fanbase/memory/compress', requireAuth, requirePremium, async (req,
       message: 'Memory compression completed',
     });
   } catch (error) {
-    logger.warn('Error compressing memory:', error);
+    logger.warn({ err: error }, 'Error compressing memory:');
     res.status(500).json({ success: false, error: 'Failed to compress memory' });
   }
 });
@@ -359,7 +359,7 @@ router.post('/fanbase/memory/decay', requireAuth, requirePremium, async (req, re
       message: 'Time decay applied successfully',
     });
   } catch (error) {
-    logger.warn('Error applying time decay:', error);
+    logger.warn({ err: error }, 'Error applying time decay:');
     res.status(500).json({ success: false, error: 'Failed to apply time decay' });
   }
 });
@@ -380,7 +380,7 @@ router.post('/organic/weekly-loop', requireAuth, requirePremium, async (req, res
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error in weekly organic loop:', error);
+    logger.warn({ err: error }, 'Error in weekly organic loop:');
     res.status(500).json({ success: false, error: 'Failed to run weekly organic loop' });
   }
 });
@@ -403,7 +403,7 @@ router.post('/organic/assets', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error creating organic asset:', error);
+    logger.warn({ err: error }, 'Error creating organic asset:');
     res.status(500).json({ success: false, error: 'Failed to create organic asset' });
   }
 });
@@ -419,7 +419,7 @@ router.get('/organic/assets', requireAuth, async (req, res) => {
       data: assets,
     });
   } catch (error) {
-    logger.warn('Error fetching organic assets:', error);
+    logger.warn({ err: error }, 'Error fetching organic assets:');
     res.status(500).json({ success: false, error: 'Failed to fetch organic assets' });
   }
 });
@@ -443,7 +443,7 @@ router.put('/organic/assets/:id/performance', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error updating asset performance:', error);
+    logger.warn({ err: error }, 'Error updating asset performance:');
     res.status(500).json({ success: false, error: 'Failed to update asset performance' });
   }
 });
@@ -460,7 +460,7 @@ router.get('/organic/assets/top', requireAuth, async (req, res) => {
       data: assets,
     });
   } catch (error) {
-    logger.warn('Error fetching top performing assets:', error);
+    logger.warn({ err: error }, 'Error fetching top performing assets:');
     res.status(500).json({ success: false, error: 'Failed to fetch top performing assets' });
   }
 });
@@ -483,7 +483,7 @@ router.post('/organic/channels', requireAuth, async (req, res) => {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error creating organic channel:', error);
+    logger.warn({ err: error }, 'Error creating organic channel:');
     res.status(500).json({ success: false, error: 'Failed to create organic channel' });
   }
 });
@@ -499,7 +499,7 @@ router.get('/organic/channels', requireAuth, async (req, res) => {
       data: channels,
     });
   } catch (error) {
-    logger.warn('Error fetching organic channels:', error);
+    logger.warn({ err: error }, 'Error fetching organic channels:');
     res.status(500).json({ success: false, error: 'Failed to fetch organic channels' });
   }
 });
@@ -523,7 +523,7 @@ router.put('/organic/channels/:id/efficiency', requireAuth, async (req, res) => 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error updating channel efficiency:', error);
+    logger.warn({ err: error }, 'Error updating channel efficiency:');
     res.status(500).json({ success: false, error: 'Failed to update channel efficiency' });
   }
 });
@@ -540,7 +540,7 @@ router.get('/organic/roi/:assetId', requireAuth, async (req, res) => {
       data: history,
     });
   } catch (error) {
-    logger.warn('Error fetching ROI history:', error);
+    logger.warn({ err: error }, 'Error fetching ROI history:');
     res.status(500).json({ success: false, error: 'Failed to fetch ROI history' });
   }
 });
@@ -561,7 +561,7 @@ router.get('/organic/lifetime/:assetId', requireAuth, async (req, res) => {
       data: stats,
     });
   } catch (error) {
-    logger.warn('Error fetching lifetime stats:', error);
+    logger.warn({ err: error }, 'Error fetching lifetime stats:');
     res.status(500).json({ success: false, error: 'Failed to fetch lifetime stats' });
   }
 });
@@ -577,7 +577,7 @@ router.get('/organic/compounding-metrics', requireAuth, async (req, res) => {
       data: metrics,
     });
   } catch (error) {
-    logger.warn('Error fetching compounding metrics:', error);
+    logger.warn({ err: error }, 'Error fetching compounding metrics:');
     res.status(500).json({ success: false, error: 'Failed to fetch compounding metrics' });
   }
 });
@@ -593,7 +593,7 @@ router.post('/insights/sync', requireAuth, requirePremium, async (req, res) => {
       data: result,
     });
   } catch (error) {
-    logger.warn('Error syncing insights:', error);
+    logger.warn({ err: error }, 'Error syncing insights:');
     res.status(500).json({ success: false, error: 'Failed to sync insights' });
   }
 });
@@ -609,7 +609,7 @@ router.get('/insights/social-to-organic', requireAuth, async (req, res) => {
       data: insights,
     });
   } catch (error) {
-    logger.warn('Error fetching social-to-organic insights:', error);
+    logger.warn({ err: error }, 'Error fetching social-to-organic insights:');
     res.status(500).json({ success: false, error: 'Failed to fetch social-to-organic insights' });
   }
 });
@@ -625,7 +625,7 @@ router.get('/insights/organic-to-social', requireAuth, async (req, res) => {
       data: insights,
     });
   } catch (error) {
-    logger.warn('Error fetching organic-to-social insights:', error);
+    logger.warn({ err: error }, 'Error fetching organic-to-social insights:');
     res.status(500).json({ success: false, error: 'Failed to fetch organic-to-social insights' });
   }
 });
@@ -641,7 +641,7 @@ router.get('/insights/summary', requireAuth, async (req, res) => {
       data: summary,
     });
   } catch (error) {
-    logger.warn('Error fetching insights summary:', error);
+    logger.warn({ err: error }, 'Error fetching insights summary:');
     res.status(500).json({ success: false, error: 'Failed to fetch insights summary' });
   }
 });
@@ -666,7 +666,7 @@ router.post('/insights/apply/organic', requireAuth, requirePremium, async (req, 
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error applying insights to organic:', error);
+    logger.warn({ err: error }, 'Error applying insights to organic:');
     res.status(500).json({ success: false, error: 'Failed to apply insights to organic' });
   }
 });
@@ -692,7 +692,7 @@ router.post('/insights/apply/social', requireAuth, requirePremium, async (req, r
     if (error instanceof z.ZodError) {
       return res.status(400).json({ success: false, error: 'Validation error', details: error.errors });
     }
-    logger.warn('Error applying insights to social:', error);
+    logger.warn({ err: error }, 'Error applying insights to social:');
     res.status(500).json({ success: false, error: 'Failed to apply insights to social' });
   }
 });

@@ -128,7 +128,7 @@ class MaxBooster247System extends EventEmitter {
           const freed = Math.round((before - after) / 1024 / 1024);
           if (freed > 0) logger.info(`🧹 GC freed ${freed}MB memory`);
         } catch (error: unknown) {
-          logger.warn('⚠️ GC failed:', error);
+          logger.warn({ err: error }, '⚠️ GC failed:');
         }
       }, 600_000).unref();
     } else {
@@ -158,7 +158,7 @@ class MaxBooster247System extends EventEmitter {
 
       this.emit('health-check', { ...this.metrics, gcAvailable });
     } catch (error: unknown) {
-      logger.warn('❌ Health check failed:', error);
+      logger.warn({ err: error }, '❌ Health check failed:');
       this.metrics.errorCount++;
     }
   }
@@ -179,7 +179,7 @@ class MaxBooster247System extends EventEmitter {
           const after = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
           logger.info(`🧹 Forced GC due to high memory: ${memMB}MB → ${after}MB`);
         } catch (error: unknown) {
-          logger.warn('⚠️ Manual GC failed:', error);
+          logger.warn({ err: error }, '⚠️ Manual GC failed:');
         }
       }
     }
@@ -252,7 +252,7 @@ class MaxBooster247System extends EventEmitter {
         `─────────────────────────────────────────────────────`
       );
     } catch (err: unknown) {
-      logger.warn('[ReliabilitySystem] Daily diagnostic failed:', err);
+      logger.warn({ err: err }, '[ReliabilitySystem] Daily diagnostic failed:');
     }
   }
 

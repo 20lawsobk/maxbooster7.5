@@ -845,7 +845,7 @@ adminRouter.get('/financial-config/royalty-rates', async (req, res) => {
     const rates = await db.select().from(platformRoyaltyRates).orderBy(platformRoyaltyRates.displayName).limit(100);
     res.json({ success: true, rates });
   } catch (err) {
-    logger.warn('Error fetching royalty rates:', err);
+    logger.warn({ err: err }, 'Error fetching royalty rates:');
     res.status(500).json({ error: 'Failed to fetch royalty rates' });
   }
 });
@@ -870,7 +870,7 @@ adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Rate not found' });
     res.json({ success: true, rate: updated });
   } catch (err) {
-    logger.warn('Error updating royalty rate:', err);
+    logger.warn({ err: err }, 'Error updating royalty rate:');
     res.status(500).json({ error: 'Failed to update royalty rate' });
   }
 });
@@ -881,7 +881,7 @@ adminRouter.get('/financial-config/tax-treaties', async (req, res) => {
     const treaties = await db.select().from(taxTreatyRates).orderBy(taxTreatyRates.countryName).limit(200);
     res.json({ success: true, treaties });
   } catch (err) {
-    logger.warn('Error fetching tax treaty rates:', err);
+    logger.warn({ err: err }, 'Error fetching tax treaty rates:');
     res.status(500).json({ error: 'Failed to fetch tax treaty rates' });
   }
 });
@@ -907,7 +907,7 @@ adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
     if (!updated) return res.status(404).json({ error: 'Treaty not found' });
     res.json({ success: true, treaty: updated });
   } catch (err) {
-    logger.warn('Error updating tax treaty rate:', err);
+    logger.warn({ err: err }, 'Error updating tax treaty rate:');
     res.status(500).json({ error: 'Failed to update tax treaty rate' });
   }
 });
@@ -918,7 +918,7 @@ adminRouter.get('/financial-config/label-settings', async (req, res) => {
     const settings = await db.select().from(labelSettings).orderBy(labelSettings.key).limit(200);
     res.json({ success: true, settings });
   } catch (err) {
-    logger.warn('Error fetching label settings:', err);
+    logger.warn({ err: err }, 'Error fetching label settings:');
     res.status(500).json({ error: 'Failed to fetch label settings' });
   }
 });
@@ -943,7 +943,7 @@ adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
     }
     res.json({ success: true, setting: updated });
   } catch (err) {
-    logger.warn('Error updating label setting:', err);
+    logger.warn({ err: err }, 'Error updating label setting:');
     res.status(500).json({ error: 'Failed to update label setting' });
   }
 });
@@ -954,7 +954,7 @@ adminRouter.get('/chain-fixer/status', async (_req, res) => {
   try {
     res.json(chainErrorAutoFixer.getStatus());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -964,7 +964,7 @@ adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
     const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
     res.json({ success: ok });
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -976,7 +976,7 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
     chainErrorAutoFixer.forceCheck(message);
     res.json({ success: true });
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -987,7 +987,7 @@ adminRouter.get('/platform-fixer/status', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getStatus());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -996,7 +996,7 @@ adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getSubsystems());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1005,7 +1005,7 @@ adminRouter.get('/platform-fixer/patches', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getPatches());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1014,7 +1014,7 @@ adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getIncidents());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1024,7 +1024,7 @@ adminRouter.post('/platform-fixer/scan', async (_req, res) => {
     await platformAutoFixer.runFullScan();
     res.json({ success: true, status: platformAutoFixer.getStatus() });
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1035,7 +1035,7 @@ adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
     if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
     res.json(result);
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1046,7 +1046,7 @@ adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
     if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
     res.json({ success: true });
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1055,7 +1055,7 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   try {
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });
@@ -1069,7 +1069,7 @@ adminRouter.get('/permanent-fixes', async (_req, res) => {
   try {
     res.json(permanentFixRegistry.getStatus());
   } catch (err: any) {
-    logger.warn('Admin route error:', err);
+    logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
 });

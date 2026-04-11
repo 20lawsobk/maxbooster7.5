@@ -113,7 +113,7 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
 
     return res.json(result);
   } catch (error) {
-    logger.warn('Error predicting metric:', error);
+    logger.warn({ err: error }, 'Error predicting metric:');
     return res.status(500).json({ error: 'Failed to predict metric' });
   }
 });
@@ -188,7 +188,7 @@ router.get('/ai/predict-churn', requireAdmin, async (req: Request, res: Response
 
     return res.json(result);
   } catch (error) {
-    logger.warn('Error predicting churn:', error);
+    logger.warn({ err: error }, 'Error predicting churn:');
     return res.status(500).json({ error: 'Failed to predict churn' });
   }
 });
@@ -277,7 +277,7 @@ router.get('/ai/forecast-revenue', async (req: Request, res: Response) => {
       growthRate: calculatedGrowthRate !== null ? Math.round(calculatedGrowthRate * 10) / 10 : null,
     });
   } catch (error) {
-    logger.warn('Error forecasting revenue:', error);
+    logger.warn({ err: error }, 'Error forecasting revenue:');
     return res.status(500).json({ error: 'Failed to forecast revenue' });
   }
 });
@@ -338,7 +338,7 @@ router.get('/ai/detect-anomalies', async (req: Request, res: Response) => {
 
     return res.json({ anomalies });
   } catch (error) {
-    logger.warn('Error detecting anomalies:', error);
+    logger.warn({ err: error }, 'Error detecting anomalies:');
     return res.status(500).json({ error: 'Failed to detect anomalies' });
   }
 });
@@ -411,7 +411,7 @@ router.get('/ai/insights', async (req: Request, res: Response) => {
 
     return res.json({ insights });
   } catch (error) {
-    logger.warn('Error generating insights:', error);
+    logger.warn({ err: error }, 'Error generating insights:');
     return res.status(500).json({ error: 'Failed to generate insights' });
   }
 });
@@ -489,7 +489,7 @@ router.post('/music/career-growth', async (req: Request, res: Response) => {
       confidence,
     });
   } catch (error) {
-    logger.warn('Error predicting career growth:', error);
+    logger.warn({ err: error }, 'Error predicting career growth:');
     return res.status(500).json({ error: 'Failed to predict career growth' });
   }
 });
@@ -566,7 +566,7 @@ router.get('/music/milestones', async (req: Request, res: Response) => {
 
     return res.json(milestones);
   } catch (error) {
-    logger.warn('Error getting career milestones:', error);
+    logger.warn({ err: error }, 'Error getting career milestones:');
     return res.status(500).json({ error: 'Failed to get career milestones' });
   }
 });
@@ -644,7 +644,7 @@ router.get('/music/fanbase', async (req: Request, res: Response) => {
       growthOpportunities,
     });
   } catch (error) {
-    logger.warn('Error getting fanbase insights:', error);
+    logger.warn({ err: error }, 'Error getting fanbase insights:');
     return res.status(500).json({ error: 'Failed to get fanbase insights' });
   }
 });
@@ -767,7 +767,7 @@ router.get('/music/insights', async (req: Request, res: Response) => {
 
     return res.json(insights);
   } catch (error) {
-    logger.warn('Error getting music insights:', error);
+    logger.warn({ err: error }, 'Error getting music insights:');
     return res.status(500).json({ error: 'Failed to get music insights' });
   }
 });
@@ -826,7 +826,7 @@ router.get('/music/release-strategy', async (req: Request, res: Response) => {
       ],
     });
   } catch (error) {
-    logger.warn('Error getting release strategy:', error);
+    logger.warn({ err: error }, 'Error getting release strategy:');
     return res.status(500).json({ error: 'Failed to get release strategy' });
   }
 });
@@ -898,7 +898,7 @@ router.get('/historical/yearly', async (req: Request, res: Response) => {
 
     return res.json({ success: true, data });
   } catch (error) {
-    logger.warn('Error fetching yearly historical data:', error);
+    logger.warn({ err: error }, 'Error fetching yearly historical data:');
     return res.status(500).json({ error: 'Failed to fetch historical data' });
   }
 });
@@ -947,7 +947,7 @@ router.get('/historical/milestones', async (req: Request, res: Response) => {
 
     return res.json({ success: true, data: milestones });
   } catch (error) {
-    logger.warn('Error fetching milestones:', error);
+    logger.warn({ err: error }, 'Error fetching milestones:');
     return res.status(500).json({ error: 'Failed to fetch milestones' });
   }
 });
@@ -1011,7 +1011,7 @@ router.get('/historical/trends', async (req: Request, res: Response) => {
 
     return res.json({ success: true, data: trends });
   } catch (error) {
-    logger.warn('Error fetching trends:', error);
+    logger.warn({ err: error }, 'Error fetching trends:');
     return res.status(500).json({ error: 'Failed to fetch trends' });
   }
 });
@@ -1128,7 +1128,7 @@ router.get('/global-ranking', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error fetching global ranking:', error);
+    logger.warn({ err: error }, 'Error fetching global ranking:');
     return res.status(500).json({ error: 'Failed to fetch global ranking' });
   }
 });
@@ -1403,7 +1403,7 @@ router.post('/natural-language-query', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error processing natural language query:', error);
+    logger.warn({ err: error }, 'Error processing natural language query:');
     return res.status(500).json({ error: 'Failed to process query' });
   }
 });
@@ -1481,7 +1481,7 @@ router.get('/playlist-journeys', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error fetching playlist journeys:', error);
+    logger.warn({ err: error }, 'Error fetching playlist journeys:');
     return res.status(500).json({ error: 'Failed to fetch playlist journeys' });
   }
 });
@@ -1573,7 +1573,7 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error fetching A&R discovery data:', error);
+    logger.warn({ err: error }, 'Error fetching A&R discovery data:');
     return res.status(500).json({ error: 'Failed to fetch A&R discovery data' });
   }
 });

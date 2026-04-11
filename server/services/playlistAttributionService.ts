@@ -572,7 +572,7 @@ class PlaylistAttributionService {
       logger.info(`No playlist data found for ${platform} user ${userId}. Add playlists via trackPlaylistAdd.`);
       return [];
     } catch (error: unknown) {
-      logger.warn(`Error syncing playlists from ${platform}:`, error);
+      logger.warn({ err: error }, `Error syncing playlists from ${platform}:`);
       throw new Error(`Failed to sync playlists from ${platform}`);
     }
   }

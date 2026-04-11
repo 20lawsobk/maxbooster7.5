@@ -20,7 +20,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(items);
   } catch (error) {
-    logger.warn('[SampleClearances] Failed to list:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to list:');
     res.status(500).json({ error: 'Failed to fetch sample clearances' });
   }
 });
@@ -52,7 +52,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    logger.warn('[SampleClearances] Failed to fetch stats:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to fetch stats:');
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -65,7 +65,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Sample clearance not found' });
     res.json(item);
   } catch (error) {
-    logger.warn('[SampleClearances] Failed to fetch sample clearance:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to fetch sample clearance:');
     res.status(500).json({ error: 'Failed to fetch sample clearance' });
   }
 });
@@ -82,7 +82,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:sampleClearances', req.user!.id));
     res.status(201).json(item);
   } catch (error: unknown) {
-    logger.warn('[SampleClearances] Failed to create:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to create:');
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -116,7 +116,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:sampleClearances', userId));
     res.json(item);
   } catch (error: unknown) {
-    logger.warn('[SampleClearances] Failed to update:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to update:');
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -142,7 +142,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:sampleClearances', userId));
     res.json({ success: true });
   } catch (error) {
-    logger.warn('[SampleClearances] Failed to delete:', error);
+    logger.warn({ err: error }, '[SampleClearances] Failed to delete:');
     res.status(500).json({ error: 'Failed to delete sample clearance' });
   }
 });

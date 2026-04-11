@@ -47,7 +47,7 @@ async function callAIModel<T>(endpoint: string, body: any): Promise<AIModelRespo
       logger.warn(`[PythonAI] ${endpoint} timed out after ${TIMEOUT_MS}ms`);
       return { success: false, error: 'AI Model request timed out' };
     }
-    logger.warn(`[PythonAI] ${endpoint} failed:`, err);
+    logger.warn({ err: err }, `[PythonAI] ${endpoint} failed:`);
     return { success: false, error: 'AI Model service unavailable' };
   }
 }

@@ -148,7 +148,7 @@ export class ScalabilitySystem {
 
       await this.client.setex('scalability:metrics', 300, JSON.stringify(this.metrics));
     } catch (error: unknown) {
-      logger.warn('Error collecting metrics:', error);
+      logger.warn({ err: error }, 'Error collecting metrics:');
     }
   }
 

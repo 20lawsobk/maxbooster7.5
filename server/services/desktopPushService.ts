@@ -112,7 +112,7 @@ class DesktopPushService {
       this.initialized = true;
       logger.info('🖥️ Desktop Push Service initialized (VAPID / Web Push)');
     } catch (error) {
-      logger.warn('🖥️ Desktop Push Service: VAPID init error:', error);
+      logger.warn({ err: error }, '🖥️ Desktop Push Service: VAPID init error:');
     }
   }
 

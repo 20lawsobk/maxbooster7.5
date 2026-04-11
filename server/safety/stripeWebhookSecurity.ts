@@ -236,7 +236,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<{ success
     return result;
   } catch (error: any) {
     // SECURITY: Don't mark as processed on error - allow retry
-    logger.warn(`[Stripe Webhook] Handler error for ${event.type} (${event.id}):`, error);
+    logger.warn({ err: error }, `[Stripe Webhook] Handler error for ${event.type} (${event.id}):`);
     return { success: false, message: error.message };
   }
 }

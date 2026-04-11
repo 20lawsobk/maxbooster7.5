@@ -1182,7 +1182,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
         );
       }
     } catch (e) {
-      logger.warn('[VideoGen] Pipeline content generation failed, using defaults:', e);
+      logger.warn({ err: e }, '[VideoGen] Pipeline content generation failed, using defaults:');
     }
   }
 

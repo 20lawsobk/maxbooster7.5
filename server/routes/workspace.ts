@@ -92,7 +92,7 @@ router.post('/create', requireAuth, async (req: AuthenticatedRequest, res: Respo
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Create workspace error:', error);
+    logger.warn({ err: error }, 'Create workspace error:');
     res.status(500).json({ error: 'Failed to create workspace' });
   }
 });
@@ -107,7 +107,7 @@ router.get('/:id', requireAuth, requireWorkspaceMember, async (req: Authenticate
 
     res.json({ workspace });
   } catch (error) {
-    logger.warn('Get workspace error:', error);
+    logger.warn({ err: error }, 'Get workspace error:');
     res.status(500).json({ error: 'Failed to get workspace' });
   }
 });
@@ -117,7 +117,7 @@ router.get('/user/workspaces', requireAuth, async (req: AuthenticatedRequest, re
     const workspaces = await workspaceService.getUserWorkspaces(req.user!.id);
     res.json({ workspaces });
   } catch (error) {
-    logger.warn('Get user workspaces error:', error);
+    logger.warn({ err: error }, 'Get user workspaces error:');
     res.status(500).json({ error: 'Failed to get workspaces' });
   }
 });
@@ -136,7 +136,7 @@ router.put('/:id', requireAuth, requireWorkspaceAdmin, async (req: Authenticated
 
     res.json({ workspace: result.workspace });
   } catch (error) {
-    logger.warn('Update workspace error:', error);
+    logger.warn({ err: error }, 'Update workspace error:');
     res.status(500).json({ error: 'Failed to update workspace' });
   }
 });
@@ -151,7 +151,7 @@ router.delete('/:id', requireAuth, requireWorkspaceAdmin, async (req: Authentica
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Delete workspace error:', error);
+    logger.warn({ err: error }, 'Delete workspace error:');
     res.status(500).json({ error: 'Failed to delete workspace' });
   }
 });
@@ -161,7 +161,7 @@ router.get('/:id/members', requireAuth, requireWorkspaceMember, async (req: Auth
     const members = await workspaceService.getMembers(req.params.id);
     res.json({ members });
   } catch (error) {
-    logger.warn('Get members error:', error);
+    logger.warn({ err: error }, 'Get members error:');
     res.status(500).json({ error: 'Failed to get members' });
   }
 });
@@ -195,7 +195,7 @@ router.post('/:id/invite', requireAuth, requireWorkspaceAdmin, async (req: Authe
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Invite member error:', error);
+    logger.warn({ err: error }, 'Invite member error:');
     res.status(500).json({ error: 'Failed to send invitation' });
   }
 });
@@ -216,7 +216,7 @@ router.post('/invitations/accept', requireAuth, async (req: AuthenticatedRequest
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Accept invitation error:', error);
+    logger.warn({ err: error }, 'Accept invitation error:');
     res.status(500).json({ error: 'Failed to accept invitation' });
   }
 });
@@ -226,7 +226,7 @@ router.get('/:id/invitations', requireAuth, requireWorkspaceAdmin, async (req: A
     const invitations = await workspaceService.getPendingInvitations(req.params.id);
     res.json({ invitations });
   } catch (error) {
-    logger.warn('Get invitations error:', error);
+    logger.warn({ err: error }, 'Get invitations error:');
     res.status(500).json({ error: 'Failed to get invitations' });
   }
 });
@@ -244,7 +244,7 @@ router.delete('/:id/invitations/:invitationId', requireAuth, requireWorkspaceAdm
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Cancel invitation error:', error);
+    logger.warn({ err: error }, 'Cancel invitation error:');
     res.status(500).json({ error: 'Failed to cancel invitation' });
   }
 });
@@ -275,7 +275,7 @@ router.put('/:id/members/:memberId/role', requireAuth, requireWorkspaceAdmin, as
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Update member role error:', error);
+    logger.warn({ err: error }, 'Update member role error:');
     res.status(500).json({ error: 'Failed to update member role' });
   }
 });
@@ -294,7 +294,7 @@ router.delete('/:id/members/:memberId', requireAuth, requireWorkspaceAdmin, asyn
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Remove member error:', error);
+    logger.warn({ err: error }, 'Remove member error:');
     res.status(500).json({ error: 'Failed to remove member' });
   }
 });
@@ -304,7 +304,7 @@ router.get('/:id/roles', requireAuth, requireWorkspaceMember, async (req: Authen
     const roles = await rbacService.getWorkspaceRoles(req.params.id);
     res.json({ roles });
   } catch (error) {
-    logger.warn('Get roles error:', error);
+    logger.warn({ err: error }, 'Get roles error:');
     res.status(500).json({ error: 'Failed to get roles' });
   }
 });
@@ -341,7 +341,7 @@ router.post('/:id/roles', requireAuth, requireWorkspaceAdmin, async (req: Authen
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Create role error:', error);
+    logger.warn({ err: error }, 'Create role error:');
     res.status(500).json({ error: 'Failed to create role' });
   }
 });
@@ -356,7 +356,7 @@ router.put('/:id/roles/:roleId', requireAuth, requireWorkspaceAdmin, async (req:
 
     res.json({ role: result.role });
   } catch (error) {
-    logger.warn('Update role error:', error);
+    logger.warn({ err: error }, 'Update role error:');
     res.status(500).json({ error: 'Failed to update role' });
   }
 });
@@ -371,7 +371,7 @@ router.delete('/:id/roles/:roleId', requireAuth, requireWorkspaceAdmin, async (r
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Delete role error:', error);
+    logger.warn({ err: error }, 'Delete role error:');
     res.status(500).json({ error: 'Failed to delete role' });
   }
 });
@@ -381,7 +381,7 @@ router.get('/roles/templates', requireAuth, async (req: AuthenticatedRequest, re
     const templates = rbacService.getRoleTemplates();
     res.json({ templates });
   } catch (error) {
-    logger.warn('Get role templates error:', error);
+    logger.warn({ err: error }, 'Get role templates error:');
     res.status(500).json({ error: 'Failed to get role templates' });
   }
 });
@@ -391,7 +391,7 @@ router.get('/:id/my-permissions', requireAuth, requireWorkspaceMember, async (re
     const permissions = await rbacService.getUserPermissions(req.params.id, req.user!.id);
     res.json({ permissions });
   } catch (error) {
-    logger.warn('Get my permissions error:', error);
+    logger.warn({ err: error }, 'Get my permissions error:');
     res.status(500).json({ error: 'Failed to get permissions' });
   }
 });
@@ -401,7 +401,7 @@ router.get('/:id/workflows', requireAuth, requireWorkspaceMember, async (req: Au
     const workflows = await approvalWorkflowService.getWorkspaceWorkflows(req.params.id);
     res.json({ workflows });
   } catch (error) {
-    logger.warn('Get workflows error:', error);
+    logger.warn({ err: error }, 'Get workflows error:');
     res.status(500).json({ error: 'Failed to get workflows' });
   }
 });
@@ -452,7 +452,7 @@ router.post('/:id/workflows', requireAuth, requireWorkspaceAdmin, async (req: Au
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Create workflow error:', error);
+    logger.warn({ err: error }, 'Create workflow error:');
     res.status(500).json({ error: 'Failed to create workflow' });
   }
 });
@@ -471,7 +471,7 @@ router.put('/:id/workflows/:workflowId', requireAuth, requireWorkspaceAdmin, asy
 
     res.json({ workflow: result.workflow });
   } catch (error) {
-    logger.warn('Update workflow error:', error);
+    logger.warn({ err: error }, 'Update workflow error:');
     res.status(500).json({ error: 'Failed to update workflow' });
   }
 });
@@ -489,7 +489,7 @@ router.delete('/:id/workflows/:workflowId', requireAuth, requireWorkspaceAdmin, 
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Delete workflow error:', error);
+    logger.warn({ err: error }, 'Delete workflow error:');
     res.status(500).json({ error: 'Failed to delete workflow' });
   }
 });
@@ -502,7 +502,7 @@ router.get('/:id/approvals/pending', requireAuth, requireWorkspaceMember, async 
     );
     res.json({ approvals: pendingApprovals });
   } catch (error) {
-    logger.warn('Get pending approvals error:', error);
+    logger.warn({ err: error }, 'Get pending approvals error:');
     res.status(500).json({ error: 'Failed to get pending approvals' });
   }
 });
@@ -513,7 +513,7 @@ router.get('/:id/approvals/history', requireAuth, requireWorkspaceMember, async 
     const history = await approvalWorkflowService.getApprovalHistory(req.params.id, limit);
     res.json({ history });
   } catch (error) {
-    logger.warn('Get approval history error:', error);
+    logger.warn({ err: error }, 'Get approval history error:');
     res.status(500).json({ error: 'Failed to get approval history' });
   }
 });
@@ -528,7 +528,7 @@ router.get('/:id/approvals/:requestId', requireAuth, requireWorkspaceMember, asy
 
     res.json(result);
   } catch (error) {
-    logger.warn('Get approval request error:', error);
+    logger.warn({ err: error }, 'Get approval request error:');
     res.status(500).json({ error: 'Failed to get approval request' });
   }
 });
@@ -560,7 +560,7 @@ router.post('/:id/approvals/:requestId/decide', requireAuth, requireWorkspaceMem
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Process approval decision error:', error);
+    logger.warn({ err: error }, 'Process approval decision error:');
     res.status(500).json({ error: 'Failed to process decision' });
   }
 });
@@ -586,7 +586,7 @@ router.get('/:id/activity', requireAuth, requireWorkspaceMember, async (req: Aut
     
     res.json({ activities: formattedActivities });
   } catch (error) {
-    logger.warn('Get activity error:', error);
+    logger.warn({ err: error }, 'Get activity error:');
     res.status(500).json({ error: 'Failed to get activity' });
   }
 });
@@ -631,7 +631,7 @@ router.get('/:id/audit/export', requireAuth, requireWorkspaceAdmin, async (req: 
       res.json({ logs: filteredLogs, exportedAt: new Date().toISOString() });
     }
   } catch (error) {
-    logger.warn('Export audit log error:', error);
+    logger.warn({ err: error }, 'Export audit log error:');
     res.status(500).json({ error: 'Failed to export audit log' });
   }
 });
@@ -662,7 +662,7 @@ router.post('/:id/projects/:projectId/share', requireAuth, requireWorkspaceMembe
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Share project error:', error);
+    logger.warn({ err: error }, 'Share project error:');
     res.status(500).json({ error: 'Failed to share project' });
   }
 });
@@ -672,7 +672,7 @@ router.get('/:id/projects/:projectId/shares', requireAuth, requireWorkspaceMembe
     const shares = await workspaceService.getProjectShares(req.params.projectId);
     res.json({ shares });
   } catch (error) {
-    logger.warn('Get project shares error:', error);
+    logger.warn({ err: error }, 'Get project shares error:');
     res.status(500).json({ error: 'Failed to get project shares' });
   }
 });
@@ -692,7 +692,7 @@ router.put('/:id/projects/:projectId/shares/:shareId', requireAuth, requireWorks
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Update share permission error:', error);
+    logger.warn({ err: error }, 'Update share permission error:');
     res.status(500).json({ error: 'Failed to update share permission' });
   }
 });
@@ -710,7 +710,7 @@ router.delete('/:id/projects/:projectId/shares/:shareId', requireAuth, requireWo
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Revoke share error:', error);
+    logger.warn({ err: error }, 'Revoke share error:');
     res.status(500).json({ error: 'Failed to revoke share' });
   }
 });
@@ -743,7 +743,7 @@ router.post('/:id/projects/:projectId/share-links', requireAuth, requireWorkspac
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Create share link error:', error);
+    logger.warn({ err: error }, 'Create share link error:');
     res.status(500).json({ error: 'Failed to create share link' });
   }
 });
@@ -753,7 +753,7 @@ router.get('/:id/projects/:projectId/share-links', requireAuth, requireWorkspace
     const links = await workspaceService.getShareLinks(req.params.projectId);
     res.json({ links });
   } catch (error) {
-    logger.warn('Get share links error:', error);
+    logger.warn({ err: error }, 'Get share links error:');
     res.status(500).json({ error: 'Failed to get share links' });
   }
 });
@@ -771,7 +771,7 @@ router.delete('/:id/projects/:projectId/share-links/:linkId', requireAuth, requi
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Revoke share link error:', error);
+    logger.warn({ err: error }, 'Revoke share link error:');
     res.status(500).json({ error: 'Failed to revoke share link' });
   }
 });
@@ -781,7 +781,7 @@ router.get('/:id/presence', requireAuth, requireWorkspaceMember, async (req: Aut
     const presence = await workspaceService.getWorkspacePresence(req.params.id);
     res.json({ presence });
   } catch (error) {
-    logger.warn('Get workspace presence error:', error);
+    logger.warn({ err: error }, 'Get workspace presence error:');
     res.status(500).json({ error: 'Failed to get presence' });
   }
 });
@@ -791,7 +791,7 @@ router.get('/:id/sso/config', requireAuth, requireWorkspaceAdmin, async (req: Au
     const config = await ssoService.getSSOConfig(req.params.id);
     res.json({ config });
   } catch (error) {
-    logger.warn('Get SSO config error:', error);
+    logger.warn({ err: error }, 'Get SSO config error:');
     res.status(500).json({ error: 'Failed to get SSO config' });
   }
 });
@@ -873,7 +873,7 @@ router.put('/:id/sso/config', requireAuth, requireWorkspaceAdmin, async (req: Au
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
-    logger.warn('Configure SSO error:', error);
+    logger.warn({ err: error }, 'Configure SSO error:');
     res.status(500).json({ error: 'Failed to configure SSO' });
   }
 });
@@ -888,7 +888,7 @@ router.post('/:id/sso/enable', requireAuth, requireWorkspaceAdmin, async (req: A
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Enable SSO error:', error);
+    logger.warn({ err: error }, 'Enable SSO error:');
     res.status(500).json({ error: 'Failed to enable SSO' });
   }
 });
@@ -903,7 +903,7 @@ router.post('/:id/sso/disable', requireAuth, requireWorkspaceAdmin, async (req: 
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Disable SSO error:', error);
+    logger.warn({ err: error }, 'Disable SSO error:');
     res.status(500).json({ error: 'Failed to disable SSO' });
   }
 });
@@ -918,7 +918,7 @@ router.post('/:id/sso/test', requireAuth, requireWorkspaceAdmin, async (req: Aut
 
     res.json({ success: true, message: result.message });
   } catch (error) {
-    logger.warn('Test SSO error:', error);
+    logger.warn({ err: error }, 'Test SSO error:');
     res.status(500).json({ error: 'Failed to test SSO connection' });
   }
 });
@@ -937,7 +937,7 @@ router.post('/:id/scim/enable', requireAuth, requireWorkspaceAdmin, async (req: 
       endpoint: result.endpoint,
     });
   } catch (error) {
-    logger.warn('Enable SCIM error:', error);
+    logger.warn({ err: error }, 'Enable SCIM error:');
     res.status(500).json({ error: 'Failed to enable SCIM' });
   }
 });
@@ -952,7 +952,7 @@ router.post('/:id/scim/disable', requireAuth, requireWorkspaceAdmin, async (req:
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Disable SCIM error:', error);
+    logger.warn({ err: error }, 'Disable SCIM error:');
     res.status(500).json({ error: 'Failed to disable SCIM' });
   }
 });
@@ -967,7 +967,7 @@ router.post('/:id/scim/rotate-token', requireAuth, requireWorkspaceAdmin, async 
 
     res.json({ success: true, token: result.token });
   } catch (error) {
-    logger.warn('Rotate SCIM token error:', error);
+    logger.warn({ err: error }, 'Rotate SCIM token error:');
     res.status(500).json({ error: 'Failed to rotate SCIM token' });
   }
 });
@@ -980,7 +980,7 @@ router.get('/:id/audit-log', requireAuth, requireWorkspaceAdmin, async (req: Aut
     const logs = await workspaceService.getAuditLog(req.params.id, limit, offset);
     res.json({ logs });
   } catch (error) {
-    logger.warn('Get audit log error:', error);
+    logger.warn({ err: error }, 'Get audit log error:');
     res.status(500).json({ error: 'Failed to get audit log' });
   }
 });
@@ -990,7 +990,7 @@ router.get('/:id/catalog', requireAuth, requireWorkspaceMember, async (req: Auth
     const catalog = await workspaceService.getCatalog(req.params.id);
     res.json({ catalog });
   } catch (error) {
-    logger.warn('Get catalog error:', error);
+    logger.warn({ err: error }, 'Get catalog error:');
     res.status(500).json({ error: 'Failed to get catalog' });
   }
 });
@@ -1015,7 +1015,7 @@ router.post('/:id/catalog', requireAuth, requireWorkspaceMember, async (req: Aut
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Add to catalog error:', error);
+    logger.warn({ err: error }, 'Add to catalog error:');
     res.status(500).json({ error: 'Failed to add to catalog' });
   }
 });
@@ -1039,7 +1039,7 @@ router.delete('/:id/catalog/:projectId', requireAuth, requireWorkspaceMember, as
 
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Remove from catalog error:', error);
+    logger.warn({ err: error }, 'Remove from catalog error:');
     res.status(500).json({ error: 'Failed to remove from catalog' });
   }
 });

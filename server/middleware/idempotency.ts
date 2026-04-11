@@ -128,7 +128,7 @@ export function idempotencyMiddleware(options: IdempotencyMiddlewareOptions = {}
 
       res.json = function (body: any) {
         captureAndCache(body).catch((err) => {
-          logger.warn('Error caching idempotency response:', err);
+          logger.warn({ err: err }, 'Error caching idempotency response:');
         });
         return originalJson(body);
       };
@@ -136,7 +136,7 @@ export function idempotencyMiddleware(options: IdempotencyMiddlewareOptions = {}
       res.send = function (body: any) {
         if (typeof body === 'object') {
           captureAndCache(body).catch((err) => {
-            logger.warn('Error caching idempotency response:', err);
+            logger.warn({ err: err }, 'Error caching idempotency response:');
           });
         }
         return originalSend(body);
@@ -152,7 +152,7 @@ export function idempotencyMiddleware(options: IdempotencyMiddlewareOptions = {}
 
       next();
     } catch (error: unknown) {
-      logger.warn('Idempotency middleware error:', error);
+      logger.warn({ err: error }, 'Idempotency middleware error:');
       next();
     }
   };

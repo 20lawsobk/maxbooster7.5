@@ -60,7 +60,7 @@ export class CompingService {
 
       return { ...takeGroup, activeCompVersionId: initialVersion.id };
     } catch (error: unknown) {
-      logger.warn('Error creating take group:', error);
+      logger.warn({ err: error }, 'Error creating take group:');
       throw new Error('Failed to create take group');
     }
   }
@@ -72,7 +72,7 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn('Error fetching take group:', error);
+      logger.warn({ err: error }, 'Error fetching take group:');
       throw new Error('Failed to fetch take group');
     }
   }
@@ -85,7 +85,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching project take groups:', error);
+      logger.warn({ err: error }, 'Error fetching project take groups:');
       throw new Error('Failed to fetch project take groups');
     }
   }
@@ -98,7 +98,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching track take groups:', error);
+      logger.warn({ err: error }, 'Error fetching track take groups:');
       throw new Error('Failed to fetch track take groups');
     }
   }
@@ -124,7 +124,7 @@ export class CompingService {
         versions,
       };
     } catch (error: unknown) {
-      logger.warn('Error fetching take group with details:', error);
+      logger.warn({ err: error }, 'Error fetching take group with details:');
       throw new Error('Failed to fetch take group details');
     }
   }
@@ -143,7 +143,7 @@ export class CompingService {
       
       return updated;
     } catch (error: unknown) {
-      logger.warn('Error updating take group:', error);
+      logger.warn({ err: error }, 'Error updating take group:');
       throw new Error('Failed to update take group');
     }
   }
@@ -152,7 +152,7 @@ export class CompingService {
     try {
       await db.delete(takeGroups).where(eq(takeGroups.id, groupId));
     } catch (error: unknown) {
-      logger.warn('Error deleting take group:', error);
+      logger.warn({ err: error }, 'Error deleting take group:');
       throw new Error('Failed to delete take group');
     }
   }
@@ -181,7 +181,7 @@ export class CompingService {
 
       return takeLane;
     } catch (error: unknown) {
-      logger.warn('Error creating take lane:', error);
+      logger.warn({ err: error }, 'Error creating take lane:');
       throw new Error('Failed to create take lane');
     }
   }
@@ -193,7 +193,7 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn('Error fetching take lane:', error);
+      logger.warn({ err: error }, 'Error fetching take lane:');
       throw new Error('Failed to fetch take lane');
     }
   }
@@ -206,7 +206,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching group lanes:', error);
+      logger.warn({ err: error }, 'Error fetching group lanes:');
       throw new Error('Failed to fetch group lanes');
     }
   }
@@ -225,7 +225,7 @@ export class CompingService {
       
       return updated;
     } catch (error: unknown) {
-      logger.warn('Error updating take lane:', error);
+      logger.warn({ err: error }, 'Error updating take lane:');
       throw new Error('Failed to update take lane');
     }
   }
@@ -248,7 +248,7 @@ export class CompingService {
         })
         .where(eq(takeGroups.id, lane.takeGroupId));
     } catch (error: unknown) {
-      logger.warn('Error deleting take lane:', error);
+      logger.warn({ err: error }, 'Error deleting take lane:');
       throw new Error('Failed to delete take lane');
     }
   }
@@ -262,7 +262,7 @@ export class CompingService {
           .where(eq(takeLanes.id, laneIds[i]));
       }
     } catch (error: unknown) {
-      logger.warn('Error reordering lanes:', error);
+      logger.warn({ err: error }, 'Error reordering lanes:');
       throw new Error('Failed to reorder lanes');
     }
   }
@@ -283,7 +283,7 @@ export class CompingService {
 
       return segment;
     } catch (error: unknown) {
-      logger.warn('Error creating take segment:', error);
+      logger.warn({ err: error }, 'Error creating take segment:');
       throw new Error('Failed to create take segment');
     }
   }
@@ -295,7 +295,7 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn('Error fetching take segment:', error);
+      logger.warn({ err: error }, 'Error fetching take segment:');
       throw new Error('Failed to fetch take segment');
     }
   }
@@ -308,7 +308,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching group segments:', error);
+      logger.warn({ err: error }, 'Error fetching group segments:');
       throw new Error('Failed to fetch group segments');
     }
   }
@@ -321,7 +321,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching lane segments:', error);
+      logger.warn({ err: error }, 'Error fetching lane segments:');
       throw new Error('Failed to fetch lane segments');
     }
   }
@@ -340,7 +340,7 @@ export class CompingService {
       
       return updated;
     } catch (error: unknown) {
-      logger.warn('Error updating take segment:', error);
+      logger.warn({ err: error }, 'Error updating take segment:');
       throw new Error('Failed to update take segment');
     }
   }
@@ -349,7 +349,7 @@ export class CompingService {
     try {
       await db.delete(takeSegments).where(eq(takeSegments.id, segmentId));
     } catch (error: unknown) {
-      logger.warn('Error deleting take segment:', error);
+      logger.warn({ err: error }, 'Error deleting take segment:');
       throw new Error('Failed to delete take segment');
     }
   }
@@ -382,7 +382,7 @@ export class CompingService {
 
       return segment;
     } catch (error: unknown) {
-      logger.warn('Error selecting segment from lane:', error);
+      logger.warn({ err: error }, 'Error selecting segment from lane:');
       throw new Error('Failed to select segment from lane');
     }
   }
@@ -413,7 +413,7 @@ export class CompingService {
 
       return version;
     } catch (error: unknown) {
-      logger.warn('Error creating comp version:', error);
+      logger.warn({ err: error }, 'Error creating comp version:');
       throw new Error('Failed to create comp version');
     }
   }
@@ -425,7 +425,7 @@ export class CompingService {
       });
       return result;
     } catch (error: unknown) {
-      logger.warn('Error fetching comp version:', error);
+      logger.warn({ err: error }, 'Error fetching comp version:');
       throw new Error('Failed to fetch comp version');
     }
   }
@@ -438,7 +438,7 @@ export class CompingService {
       });
       return results;
     } catch (error: unknown) {
-      logger.warn('Error fetching comp versions:', error);
+      logger.warn({ err: error }, 'Error fetching comp versions:');
       throw new Error('Failed to fetch comp versions');
     }
   }
@@ -485,7 +485,7 @@ export class CompingService {
         }
       }
     } catch (error: unknown) {
-      logger.warn('Error setting active comp version:', error);
+      logger.warn({ err: error }, 'Error setting active comp version:');
       throw new Error('Failed to set active comp version');
     }
   }
@@ -503,7 +503,7 @@ export class CompingService {
 
       await db.delete(compVersions).where(eq(compVersions.id, versionId));
     } catch (error: unknown) {
-      logger.warn('Error deleting comp version:', error);
+      logger.warn({ err: error }, 'Error deleting comp version:');
       throw new Error('Failed to delete comp version');
     }
   }
@@ -556,7 +556,7 @@ export class CompingService {
         status: 'completed',
       };
     } catch (error: unknown) {
-      logger.warn('Error rendering comp:', error);
+      logger.warn({ err: error }, 'Error rendering comp:');
       throw new Error('Failed to render comp');
     }
   }
@@ -608,7 +608,7 @@ export class CompingService {
 
       return newGroup;
     } catch (error: unknown) {
-      logger.warn('Error duplicating take group:', error);
+      logger.warn({ err: error }, 'Error duplicating take group:');
       throw new Error('Failed to duplicate take group');
     }
   }
@@ -628,7 +628,7 @@ export class CompingService {
         totalVersions: versions.length,
       };
     } catch (error: unknown) {
-      logger.warn('Error getting comp history:', error);
+      logger.warn({ err: error }, 'Error getting comp history:');
       throw new Error('Failed to get comp history');
     }
   }

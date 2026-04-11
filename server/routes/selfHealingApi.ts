@@ -58,7 +58,7 @@ router.get('/status', (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error fetching self-healing status:', error);
+    logger.warn({ err: error }, 'Error fetching self-healing status:');
     res.status(500).json({ success: false, error: 'Failed to fetch status' });
   }
 });
@@ -122,7 +122,7 @@ router.get('/metrics', (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error fetching self-healing metrics:', error);
+    logger.warn({ err: error }, 'Error fetching self-healing metrics:');
     res.status(500).json({ success: false, error: 'Failed to fetch metrics' });
   }
 });
@@ -184,7 +184,7 @@ router.get('/proof', (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error generating healing proof:', error);
+    logger.warn({ err: error }, 'Error generating healing proof:');
     res.status(500).json({ success: false, error: 'Failed to generate proof' });
   }
 });
@@ -240,7 +240,7 @@ router.post('/simulate-attack', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Attack simulation error:', error);
+    logger.warn({ err: error }, 'Attack simulation error:');
     res.status(500).json({ success: false, error: 'Simulation failed' });
   }
 });
@@ -254,7 +254,7 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
     logger.info(`Admin ${(req as any).user.email} unblocked IP: ${ip}`);
     res.json({ success: true, message: `IP ${ip} unblocked` });
   } catch (error) {
-    logger.warn('Error unblocking IP:', error);
+    logger.warn({ err: error }, 'Error unblocking IP:');
     res.status(500).json({ success: false, error: 'Failed to unblock IP' });
   }
 });
@@ -267,7 +267,7 @@ router.post('/clear-all-blocks', async (req: Request, res: Response) => {
     logger.warn(`Admin ${(req as any).user.email} cleared ALL blocked IPs`);
     res.json({ success: true, message: 'All blocked IPs cleared' });
   } catch (error) {
-    logger.warn('Error clearing blocked IPs:', error);
+    logger.warn({ err: error }, 'Error clearing blocked IPs:');
     res.status(500).json({ success: false, error: 'Failed to clear blocked IPs' });
   }
 });
@@ -279,7 +279,7 @@ router.get('/blocked-ips', async (req: Request, res: Response) => {
     const blockedIps = selfHealingEngine.getBlockedIps();
     res.json({ success: true, data: { blockedIps, count: blockedIps.length } });
   } catch (error) {
-    logger.warn('Error fetching blocked IPs:', error);
+    logger.warn({ err: error }, 'Error fetching blocked IPs:');
     res.status(500).json({ success: false, error: 'Failed to fetch blocked IPs' });
   }
 });

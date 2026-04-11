@@ -113,7 +113,7 @@ export class AuditLoggerService {
 
       return auditLog;
     } catch (error) {
-      logger.warn('❌ Failed to persist audit log:', error);
+      logger.warn({ err: error }, '❌ Failed to persist audit log:');
       return null;
     }
   }
@@ -468,7 +468,7 @@ export class AuditLoggerService {
         total: countResult?.count || 0
       };
     } catch (error) {
-      logger.warn('❌ Failed to query audit logs:', error);
+      logger.warn({ err: error }, '❌ Failed to query audit logs:');
       throw error;
     }
   }
@@ -513,7 +513,7 @@ export class AuditLoggerService {
         errors: 0
       };
     } catch (error) {
-      logger.warn('❌ Failed to archive audit logs:', error);
+      logger.warn({ err: error }, '❌ Failed to archive audit logs:');
       return {
         archived: 0,
         errors: 1
@@ -539,7 +539,7 @@ export class AuditLoggerService {
       logger.info(`🗑️ Purged ${purgedCount} archived audit logs older than ${olderThanDays} days`);
       return purgedCount;
     } catch (error) {
-      logger.warn('❌ Failed to purge archived logs:', error);
+      logger.warn({ err: error }, '❌ Failed to purge archived logs:');
       throw error;
     }
   }
@@ -612,7 +612,7 @@ export class AuditLoggerService {
         newestLog: newestLog?.timestamp || null
       };
     } catch (error) {
-      logger.warn('❌ Failed to get audit log stats:', error);
+      logger.warn({ err: error }, '❌ Failed to get audit log stats:');
       throw error;
     }
   }

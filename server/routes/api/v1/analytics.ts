@@ -70,7 +70,7 @@ router.get('/platforms', async (req: ApiKeyRequest, res) => {
       totalConnected: platforms.length,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching platforms:', error);
+    logger.warn({ err: error }, 'Error fetching platforms:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch platforms' });
@@ -167,7 +167,7 @@ router.get('/streams{/:artistId}', async (req: ApiKeyRequest, res) => {
 
     return res.json(payload);
   } catch (error: unknown) {
-    logger.warn('Error fetching stream data:', error);
+    logger.warn({ err: error }, 'Error fetching stream data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch stream data' });
@@ -246,7 +246,7 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
       timeline: engagement,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching engagement data:', error);
+    logger.warn({ err: error }, 'Error fetching engagement data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch engagement data' });
@@ -310,7 +310,7 @@ router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching demographics data:', error);
+    logger.warn({ err: error }, 'Error fetching demographics data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch demographics data' });
@@ -386,7 +386,7 @@ router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
       playlists: playlists.slice(0, 50), // Limit to top 50
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching playlist data:', error);
+    logger.warn({ err: error }, 'Error fetching playlist data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch playlist data' });
@@ -431,7 +431,7 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
       tracks,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching track data:', error);
+    logger.warn({ err: error }, 'Error fetching track data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch track data' });
@@ -507,7 +507,7 @@ router.get('/summary{/:artistId}', async (req: ApiKeyRequest, res) => {
       platforms,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching analytics summary:', error);
+    logger.warn({ err: error }, 'Error fetching analytics summary:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch analytics summary' });
@@ -553,7 +553,7 @@ router.post('/playlist-journeys', async (req: ApiKeyRequest, res) => {
       journeys,
     });
   } catch (error: unknown) {
-    logger.warn('Error tracking playlist journey:', error);
+    logger.warn({ err: error }, 'Error tracking playlist journey:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to track playlist journey' });
@@ -583,7 +583,7 @@ router.get('/global-ranking{/:artistId}', async (req: ApiKeyRequest, res) => {
       history,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching global ranking:', error);
+    logger.warn({ err: error }, 'Error fetching global ranking:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch global ranking' });
@@ -626,7 +626,7 @@ router.post('/ar-discovery', async (req: ApiKeyRequest, res) => {
       total: discoveries.length,
     });
   } catch (error: unknown) {
-    logger.warn('Error performing A&R discovery:', error);
+    logger.warn({ err: error }, 'Error performing A&R discovery:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to perform A&R discovery' });
@@ -658,7 +658,7 @@ router.post('/nlp-query', async (req: ApiKeyRequest, res) => {
       result,
     });
   } catch (error: unknown) {
-    logger.warn('Error processing NLP query:', error);
+    logger.warn({ err: error }, 'Error processing NLP query:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to process NLP query' });
@@ -700,7 +700,7 @@ router.get('/historical{/:artistId}', async (req: ApiKeyRequest, res) => {
       ...historicalData,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching historical data:', error);
+    logger.warn({ err: error }, 'Error fetching historical data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch historical data' });
@@ -737,7 +737,7 @@ router.get('/sync-impact{/:artistId}', async (req: ApiKeyRequest, res) => {
       tracks: syncImpact,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching sync impact:', error);
+    logger.warn({ err: error }, 'Error fetching sync impact:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch sync impact' });
@@ -774,7 +774,7 @@ router.get('/cross-platform{/:artistId}', async (req: ApiKeyRequest, res) => {
       ...crossPlatform,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching cross-platform data:', error);
+    logger.warn({ err: error }, 'Error fetching cross-platform data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch cross-platform data' });
@@ -811,7 +811,7 @@ router.get('/data-sources/shazam{/:artistId}', async (req: ApiKeyRequest, res) =
       ...shazamData,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching Shazam data:', error);
+    logger.warn({ err: error }, 'Error fetching Shazam data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch Shazam data' });
@@ -848,7 +848,7 @@ router.get('/data-sources/radio{/:artistId}', async (req: ApiKeyRequest, res) =>
       ...radioData,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching radio data:', error);
+    logger.warn({ err: error }, 'Error fetching radio data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch radio data' });
@@ -875,7 +875,7 @@ router.get('/data-sources/tour{/:artistId}', async (req: ApiKeyRequest, res) => 
       ...tourData,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching tour data:', error);
+    logger.warn({ err: error }, 'Error fetching tour data:');
     return res
       .status(500)
       .json({ error: 'Internal Server Error', message: 'Failed to fetch tour data' });

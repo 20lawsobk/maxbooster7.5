@@ -107,18 +107,18 @@ class AutopilotLearningService {
         engagementRate,
         0   // qualityScore unknown at this point — gate recorded it at publish time
       ).catch(err =>
-        logger.warn('[AutopilotLearning] Quality gate feedback skipped (non-fatal):', err)
+        logger.warn({ err: err }, '[AutopilotLearning] Quality gate feedback skipped (non-fatal):')
       );
 
       if (engagementRate >= CURRICULUM_TRIGGER_ENGAGEMENT_THRESHOLD) {
         this.dispatchCurriculumSessionAsync(engagementRate, postData).catch(err =>
-          logger.warn('[AutopilotLearning] CurriculumTrainer dispatch skipped:', err)
+          logger.warn({ err: err }, '[AutopilotLearning] CurriculumTrainer dispatch skipped:')
         );
       }
 
       return record.id;
     } catch (error) {
-      logger.warn('Failed to record performance:', error);
+      logger.warn({ err: error }, 'Failed to record performance:');
       throw error;
     }
   }
@@ -170,7 +170,7 @@ class AutopilotLearningService {
           avgEngagement: parseFloat(String(r.avgEngagement)) || 0,
         }));
     } catch (error) {
-      logger.warn('Failed to get optimal posting times:', error);
+      logger.warn({ err: error }, 'Failed to get optimal posting times:');
       return [];
     }
   }
@@ -211,7 +211,7 @@ class AutopilotLearningService {
           count: Number(r.count),
         }));
     } catch (error) {
-      logger.warn('Failed to get top performing content types:', error);
+      logger.warn({ err: error }, 'Failed to get top performing content types:');
       return [];
     }
   }
@@ -264,7 +264,7 @@ class AutopilotLearningService {
 
       return weights;
     } catch (error) {
-      logger.warn('Failed to get content pattern weights:', error);
+      logger.warn({ err: error }, 'Failed to get content pattern weights:');
       return {};
     }
   }
@@ -341,7 +341,7 @@ class AutopilotLearningService {
 
       return recommendations.sort((a, b) => a.priority - b.priority);
     } catch (error) {
-      logger.warn('Failed to get recommendations:', error);
+      logger.warn({ err: error }, 'Failed to get recommendations:');
       return [];
     }
   }
@@ -441,7 +441,7 @@ class AutopilotLearningService {
 
       return patterns;
     } catch (error) {
-      logger.warn('Failed to detect patterns:', error);
+      logger.warn({ err: error }, 'Failed to detect patterns:');
       return [];
     }
   }
@@ -476,7 +476,7 @@ class AutopilotLearningService {
         total: Number(countResult[0]?.count || 0),
       };
     } catch (error) {
-      logger.warn('Failed to get performance history:', error);
+      logger.warn({ err: error }, 'Failed to get performance history:');
       return { data: [], total: 0 };
     }
   }
@@ -496,7 +496,7 @@ class AutopilotLearningService {
         .orderBy(desc(autopilotInsights.priority), desc(autopilotInsights.confidence))
         .limit(50);
     } catch (error) {
-      logger.warn('Failed to get active insights:', error);
+      logger.warn({ err: error }, 'Failed to get active insights:');
       return [];
     }
   }
@@ -556,7 +556,7 @@ class AutopilotLearningService {
 
       return insights;
     } catch (error) {
-      logger.warn('Failed to get learning insights:', error);
+      logger.warn({ err: error }, 'Failed to get learning insights:');
       return [];
     }
   }
@@ -593,7 +593,7 @@ class AutopilotLearningService {
         postCount: Number(r.postCount),
       }));
     } catch (error) {
-      logger.warn('Failed to get platform statistics:', error);
+      logger.warn({ err: error }, 'Failed to get platform statistics:');
       return [];
     }
   }
@@ -625,11 +625,11 @@ class AutopilotLearningService {
       // and content style — the more they use it, the more personalised it becomes.
       if (total >= 50 && total % 25 === 0) {
         this.retrainSocialModelAsync(userId, total).catch(err =>
-          logger.warn(`[AutopilotLearning] Social retrain skipped for ${userId}:`, err)
+          logger.warn({ err: err }, `[AutopilotLearning] Social retrain skipped for ${userId}:`)
         );
       }
     } catch (error) {
-      logger.warn('Failed to check insights update:', error);
+      logger.warn({ err: error }, 'Failed to check insights update:');
     }
   }
 
@@ -750,7 +750,7 @@ class AutopilotLearningService {
         logger.info(`Generated ${insightsToInsert.length} insights for user ${userId}`);
       }
     } catch (error) {
-      logger.warn('Failed to generate insights:', error);
+      logger.warn({ err: error }, 'Failed to generate insights:');
     }
   }
 

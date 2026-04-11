@@ -82,7 +82,7 @@ router.post('/keys/create', async (req: Request, res: Response) => {
       warning: 'Save this API key securely. You will not be able to view it again.',
     });
   } catch (error: unknown) {
-    logger.warn('Error creating API key:', error);
+    logger.warn({ err: error }, 'Error creating API key:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to create API key',
@@ -125,7 +125,7 @@ router.get('/keys', async (req: Request, res: Response) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn('Error listing API keys:', error);
+    logger.warn({ err: error }, 'Error listing API keys:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to list API keys',
@@ -165,7 +165,7 @@ router.delete('/keys/:keyId', async (req: Request, res: Response) => {
       message: 'API key revoked successfully',
     });
   } catch (error: unknown) {
-    logger.warn('Error revoking API key:', error);
+    logger.warn({ err: error }, 'Error revoking API key:');
 
     if (error.message === 'API key not found or unauthorized') {
       return res.status(404).json({
@@ -231,7 +231,7 @@ router.get('/usage', async (req: Request, res: Response) => {
       byApiKey: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching API usage:', error);
+    logger.warn({ err: error }, 'Error fetching API usage:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch API usage statistics',
@@ -296,7 +296,7 @@ router.get('/usage/:keyId', async (req: Request, res: Response) => {
       usage: usageStats,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching API key usage:', error);
+    logger.warn({ err: error }, 'Error fetching API key usage:');
     return res.status(500).json({
       error: 'Internal Server Error',
       message: 'Failed to fetch API key usage statistics',

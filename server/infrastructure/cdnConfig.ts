@@ -129,7 +129,7 @@ class CDNManager {
         return false;
       }
     } catch (error) {
-      logger.warn('CDN purge error:', error);
+      logger.warn({ err: error }, 'CDN purge error:');
       return false;
     }
   }
@@ -159,7 +159,7 @@ class CDNManager {
         return false;
       }
     } catch (error) {
-      logger.warn('CDN full purge error:', error);
+      logger.warn({ err: error }, 'CDN full purge error:');
       return false;
     }
   }

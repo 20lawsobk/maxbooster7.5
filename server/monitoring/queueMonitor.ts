@@ -88,7 +88,7 @@ class QueueMonitor {
 
       return metrics;
     } catch (error) {
-      logger.warn(`Error collecting metrics for queue ${queueName}:`, error);
+      logger.warn({ err: error }, `Error collecting metrics for queue ${queueName}:`);
       return null;
     }
   }
@@ -139,7 +139,7 @@ class QueueMonitor {
       logger.warn(`🚨 Queue alerts for ${metrics.queueName}:\n${alerts.join('\n')}`);
 
       alertingService.checkQueueMetrics(metrics).catch((error) => {
-        logger.warn('Failed to send queue alerts:', error);
+        logger.warn({ err: error }, 'Failed to send queue alerts:');
       });
     }
   }

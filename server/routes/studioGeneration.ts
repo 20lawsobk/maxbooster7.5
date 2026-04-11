@@ -42,7 +42,7 @@ async function persistGeneratedSample(opts: {
       userId: opts.userId,
     });
   } catch (err) {
-    logger.warn('[Studio Generation] Could not persist sample to library:', err);
+    logger.warn({ err: err }, '[Studio Generation] Could not persist sample to library:');
   }
 }
 
@@ -166,7 +166,7 @@ router.post('/text', requireAuth, async (req, res) => {
       generatedChords: result.generatedChords || [],
     });
   } catch (error: any) {
-    logger.warn('[Studio Generation] Text generation failed:', error);
+    logger.warn({ err: error }, '[Studio Generation] Text generation failed:');
     
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
@@ -232,7 +232,7 @@ router.post('/audio', requireAuth, upload.single('audio'), async (req, res) => {
       generatedChords: result.generatedChords || [],
     });
   } catch (error: any) {
-    logger.warn('[Studio Generation] Audio generation failed:', error);
+    logger.warn({ err: error }, '[Studio Generation] Audio generation failed:');
     
     if (error instanceof z.ZodError) {
       return res.status(400).json({ 
@@ -300,7 +300,7 @@ router.get('/presets', requireAuth, async (req, res) => {
 
     res.json(presets);
   } catch (error: any) {
-    logger.warn('[Studio Generation] Failed to get presets:', error);
+    logger.warn({ err: error }, '[Studio Generation] Failed to get presets:');
     res.status(500).json({ 
       success: false, 
       message: 'Failed to get presets' 
@@ -326,7 +326,7 @@ router.get('/pattern/instruments', requireAuth, async (_req, res) => {
     const instruments = melodyPatternService.getAvailableInstruments();
     res.json(instruments);
   } catch (error: any) {
-    logger.warn('Error fetching instruments:', error);
+    logger.warn({ err: error }, 'Error fetching instruments:');
     res.status(500).json({ error: 'Failed to fetch instruments' });
   }
 });
@@ -336,7 +336,7 @@ router.get('/pattern/genres', requireAuth, async (_req, res) => {
     const genres = melodyPatternService.getAvailableGenres();
     res.json(genres);
   } catch (error: any) {
-    logger.warn('Error fetching genres:', error);
+    logger.warn({ err: error }, 'Error fetching genres:');
     res.status(500).json({ error: 'Failed to fetch genres' });
   }
 });
@@ -346,7 +346,7 @@ router.get('/pattern/styles', requireAuth, async (_req, res) => {
     const styles = melodyPatternService.getAvailableStyles();
     res.json(styles);
   } catch (error: any) {
-    logger.warn('Error fetching styles:', error);
+    logger.warn({ err: error }, 'Error fetching styles:');
     res.status(500).json({ error: 'Failed to fetch styles' });
   }
 });
@@ -356,7 +356,7 @@ router.get('/pattern/scales', requireAuth, async (_req, res) => {
     const scales = melodyPatternService.getAvailableScales();
     res.json(scales);
   } catch (error: any) {
-    logger.warn('Error fetching scales:', error);
+    logger.warn({ err: error }, 'Error fetching scales:');
     res.status(500).json({ error: 'Failed to fetch scales' });
   }
 });
@@ -385,7 +385,7 @@ router.get('/pattern/stats', requireAuth, async (_req, res) => {
       scales: melodyPatternService.getAvailableScales().length,
     });
   } catch (error: any) {
-    logger.warn('Error fetching stats:', error);
+    logger.warn({ err: error }, 'Error fetching stats:');
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
@@ -408,7 +408,7 @@ router.post('/pattern/melody', requireAuth, async (req, res) => {
       params,
     });
   } catch (error: any) {
-    logger.warn('Error generating melody:', error);
+    logger.warn({ err: error }, 'Error generating melody:');
     res.status(500).json({ error: 'Failed to generate melody' });
   }
 });
@@ -431,7 +431,7 @@ router.post('/pattern/drums', requireAuth, async (req, res) => {
       params,
     });
   } catch (error: any) {
-    logger.warn('Error generating drums:', error);
+    logger.warn({ err: error }, 'Error generating drums:');
     res.status(500).json({ error: 'Failed to generate drums' });
   }
 });
@@ -454,7 +454,7 @@ router.post('/pattern/chords', requireAuth, async (req, res) => {
       params,
     });
   } catch (error: any) {
-    logger.warn('Error generating chords:', error);
+    logger.warn({ err: error }, 'Error generating chords:');
     res.status(500).json({ error: 'Failed to generate chords' });
   }
 });
@@ -488,7 +488,7 @@ router.post('/pattern/arrangement', requireAuth, async (req, res) => {
       params,
     });
   } catch (error: any) {
-    logger.warn('Error generating full arrangement:', error);
+    logger.warn({ err: error }, 'Error generating full arrangement:');
     res.status(500).json({ error: 'Failed to generate arrangement' });
   }
 });
@@ -551,7 +551,7 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
       note_count: result.note_count,
     });
   } catch (err: any) {
-    logger.warn('[audio-to-melody] Error:', err);
+    logger.warn({ err: err }, '[audio-to-melody] Error:');
     res.status(500).json({ error: 'Pitch tracking failed' });
   } finally {
     try { fs.unlinkSync(tmpPath); } catch {}

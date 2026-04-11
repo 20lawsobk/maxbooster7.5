@@ -24,7 +24,7 @@ router.get('/dead-letter', async (req, res) => {
       note: 'Webhook queue monitoring requires Redis/BullMQ configuration. Currently, webhooks are processed synchronously.'
     });
   } catch (error) {
-    logger.warn('Error fetching dead letter queue:', error);
+    logger.warn({ err: error }, 'Error fetching dead letter queue:');
     res.status(500).json({ error: 'Failed to fetch dead letter queue' });
   }
 });
@@ -35,7 +35,7 @@ router.post('/dead-letter/:id/retry', async (req, res) => {
     logger.info(`Retrying webhook: ${id}`);
     res.json({ success: true, message: 'Webhook queued for retry' });
   } catch (error) {
-    logger.warn('Error retrying webhook:', error);
+    logger.warn({ err: error }, 'Error retrying webhook:');
     res.status(500).json({ error: 'Failed to retry webhook' });
   }
 });
@@ -46,7 +46,7 @@ router.post('/:id/retry', async (req, res) => {
     logger.info(`Retrying webhook: ${id}`);
     res.json({ success: true, message: 'Webhook queued for retry' });
   } catch (error) {
-    logger.warn('Error retrying webhook:', error);
+    logger.warn({ err: error }, 'Error retrying webhook:');
     res.status(500).json({ error: 'Failed to retry webhook' });
   }
 });
@@ -57,7 +57,7 @@ router.delete('/dead-letter/:id', async (req, res) => {
     logger.info(`Deleted webhook from dead letter: ${id}`);
     res.json({ success: true, message: 'Webhook deleted' });
   } catch (error) {
-    logger.warn('Error deleting webhook:', error);
+    logger.warn({ err: error }, 'Error deleting webhook:');
     res.status(500).json({ error: 'Failed to delete webhook' });
   }
 });

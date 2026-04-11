@@ -141,7 +141,7 @@ export class AutonomousService extends EventEmitter {
         const now = Date.now();
         if (now - _lastLoadWarnAt >= 60_000) {
           _lastLoadWarnAt = now;
-          logger.warn('[AUTONOMOUS] Could not load metrics from cache:', err);
+          logger.warn({ err: err }, '[AUTONOMOUS] Could not load metrics from cache:');
         }
       }
     }
@@ -155,7 +155,7 @@ export class AutonomousService extends EventEmitter {
       const now = Date.now();
       if (now - _lastPersistWarnAt >= 60_000) {
         _lastPersistWarnAt = now;
-        logger.warn('[AUTONOMOUS] Could not persist metrics to cache:', err);
+        logger.warn({ err: err }, '[AUTONOMOUS] Could not persist metrics to cache:');
       }
     }
   }
@@ -204,7 +204,7 @@ export class AutonomousService extends EventEmitter {
         adminIds.forEach((id) => this.autonomousWhitelist.add(id.trim()));
       }
     } catch (error: unknown) {
-      logger.warn('Error loading autonomous whitelist:', error);
+      logger.warn({ err: error }, 'Error loading autonomous whitelist:');
     }
   }
 
@@ -294,7 +294,7 @@ export class AutonomousService extends EventEmitter {
         };
       }
     } catch (error: unknown) {
-      logger.warn('Error in autonomous posting:', error);
+      logger.warn({ err: error }, 'Error in autonomous posting:');
       return {
         success: false,
         requiresApproval: !this.isAutonomousEnabled(userId),
@@ -323,7 +323,7 @@ export class AutonomousService extends EventEmitter {
 
         await advertisingDispatchService.startCampaign(newCampaign.id);
         scheduleCampaignOptimization(newCampaign.id).catch((err) =>
-          logger.warn('[AUTONOMOUS] Failed to schedule campaign optimization:', err)
+          logger.warn({ err: err }, '[AUTONOMOUS] Failed to schedule campaign optimization:')
         );
 
         this.metrics.campaignsLaunched++;
@@ -361,7 +361,7 @@ export class AutonomousService extends EventEmitter {
         };
       }
     } catch (error: unknown) {
-      logger.warn('Error in autonomous campaign launch:', error);
+      logger.warn({ err: error }, 'Error in autonomous campaign launch:');
       return {
         success: false,
         requiresApproval: !this.isAutonomousEnabled(userId),
@@ -421,7 +421,7 @@ export class AutonomousService extends EventEmitter {
         platforms,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto content generation:', error);
+      logger.warn({ err: error }, 'Error in auto content generation:');
       return { success: false };
     }
   }
@@ -451,7 +451,7 @@ export class AutonomousService extends EventEmitter {
           const result = await distributionService.submitToProvider(release.id, provider, userId);
           dispatchResults.push({ provider, ...result });
         } catch (err) {
-          logger.warn(`Failed to dispatch to ${provider}:`, err);
+          logger.warn({ err: err }, `Failed to dispatch to ${provider}:`);
         }
       }
 
@@ -471,7 +471,7 @@ export class AutonomousService extends EventEmitter {
         royaltyProjection,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto distribution:', error);
+      logger.warn({ err: error }, 'Error in auto distribution:');
       return { success: false };
     }
   }
@@ -557,7 +557,7 @@ export class AutonomousService extends EventEmitter {
         optimizedSize: outputBuffer.length,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto image processing:', error);
+      logger.warn({ err: error }, 'Error in auto image processing:');
       return { success: false };
     }
   }
@@ -658,7 +658,7 @@ export class AutonomousService extends EventEmitter {
         predictions,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto analytics:', error);
+      logger.warn({ err: error }, 'Error in auto analytics:');
       return { success: false };
     }
   }
@@ -708,7 +708,7 @@ export class AutonomousService extends EventEmitter {
         recommendations: algorithmInsights,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto growth optimization:', error);
+      logger.warn({ err: error }, 'Error in auto growth optimization:');
       return { success: false };
     }
   }
@@ -769,7 +769,7 @@ export class AutonomousService extends EventEmitter {
         totalReach,
       };
     } catch (error: unknown) {
-      logger.warn('Error in auto week scheduling:', error);
+      logger.warn({ err: error }, 'Error in auto week scheduling:');
       return { success: false };
     }
   }
@@ -790,7 +790,7 @@ export class AutonomousService extends EventEmitter {
 
       logger.info(`[AUTONOMOUS] Content ${postId} published successfully`);
     } catch (error: unknown) {
-      logger.warn(`[AUTONOMOUS] Error dispatching content ${postId}:`, error);
+      logger.warn({ err: error }, `[AUTONOMOUS] Error dispatching content ${postId}:`);
     }
   }
 
@@ -832,10 +832,10 @@ export class AutonomousService extends EventEmitter {
           message: `Your campaign "${campaign.name || campaignId}" was optimized by the AI. ${roasLabel}. Targeting, creative, and bidding updated.`,
           link: `/campaigns/${campaignId}`,
           metadata: { campaignId, ctr: metrics.ctr, roas: metrics.roas, conversionRate: metrics.conversionRate },
-        }).catch((err) => logger.warn('[AUTONOMOUS] Failed to send campaign notification:', err));
+        }).catch((err) => logger.warn({ err: err }, '[AUTONOMOUS] Failed to send campaign notification:'));
       }
     } catch (error: unknown) {
-      logger.warn(`[AUTONOMOUS] Error optimizing campaign ${campaignId}:`, error);
+      logger.warn({ err: error }, `[AUTONOMOUS] Error optimizing campaign ${campaignId}:`);
     }
   }
 
@@ -860,7 +860,7 @@ export class AutonomousService extends EventEmitter {
         }
       }
     } catch (error: unknown) {
-      logger.warn('[AUTONOMOUS] Error in content dispatch job:', error);
+      logger.warn({ err: error }, '[AUTONOMOUS] Error in content dispatch job:');
     }
   }
 
@@ -873,7 +873,7 @@ export class AutonomousService extends EventEmitter {
         await this.autoOptimizeGrowth(userId);
       }
     } catch (error: unknown) {
-      logger.warn('[AUTONOMOUS] Error in analytics job:', error);
+      logger.warn({ err: error }, '[AUTONOMOUS] Error in analytics job:');
     }
   }
 
@@ -884,7 +884,7 @@ export class AutonomousService extends EventEmitter {
     logger.info('[AUTONOMOUS] Starting 24/7 autonomous operations...');
 
     setupRepeatableJobs().catch((err) =>
-      logger.warn('[AUTONOMOUS] Failed to register repeatable jobs:', err)
+      logger.warn({ err: err }, '[AUTONOMOUS] Failed to register repeatable jobs:')
     );
 
     logger.info('[AUTONOMOUS] 24/7 operations started successfully');
@@ -895,7 +895,7 @@ export class AutonomousService extends EventEmitter {
     this.isRunning = false;
 
     teardownRepeatableJobs().catch((err) =>
-      logger.warn('[AUTONOMOUS] Failed to remove repeatable jobs:', err)
+      logger.warn({ err: err }, '[AUTONOMOUS] Failed to remove repeatable jobs:')
     );
 
     logger.info('[AUTONOMOUS] 24/7 operations stopped');

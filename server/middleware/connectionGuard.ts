@@ -25,7 +25,7 @@ export class ConnectionGuard {
 
       next();
     } catch (error: unknown) {
-      logger.warn('Connection guard error:', error);
+      logger.warn({ err: error }, 'Connection guard error:');
       next(); // Fail open to avoid blocking legitimate requests
     }
   }

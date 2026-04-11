@@ -121,7 +121,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn(`[Presence] Failed to remove collaborator from Redis:`, error);
+      logger.warn({ err: error }, `[Presence] Failed to remove collaborator from Redis:`);
     }
 
     const projectPresence = this.localPresence.get(projectId);
@@ -225,12 +225,12 @@ export class PresenceManager {
               });
             }
           } catch (e) {
-            logger.warn('[Presence] Failed to parse presence data:', e);
+            logger.warn({ err: e }, '[Presence] Failed to parse presence data:');
           }
         }
       }
     } catch (error) {
-      logger.warn('[Presence] Failed to get collaborators from Redis:', error);
+      logger.warn({ err: error }, '[Presence] Failed to get collaborators from Redis:');
     }
 
     if (collaborators.length === 0) {
@@ -278,7 +278,7 @@ export class PresenceManager {
         await redis.expire(redisKey, 3600);
       }
     } catch (error) {
-      logger.warn('[Presence] Failed to save presence to Redis:', error);
+      logger.warn({ err: error }, '[Presence] Failed to save presence to Redis:');
     }
   }
 
@@ -304,7 +304,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn('[Presence] Failed to get presence from Redis:', error);
+      logger.warn({ err: error }, '[Presence] Failed to get presence from Redis:');
     }
 
     return null;
@@ -314,7 +314,7 @@ export class PresenceManager {
     const key = `${userId}:${connectionId}`;
     const interval = setInterval(() => {
       this.heartbeat(projectId, userId, connectionId).catch((err) => {
-        logger.warn('[Presence] Heartbeat failed:', err);
+        logger.warn({ err: err }, '[Presence] Heartbeat failed:');
       });
     }, HEARTBEAT_INTERVAL_MS);
 
@@ -369,7 +369,7 @@ export class PresenceManager {
         }
       }
     } catch (error) {
-      logger.warn('[Presence] Failed to cleanup stale presence:', error);
+      logger.warn({ err: error }, '[Presence] Failed to cleanup stale presence:');
     }
 
     const projectPresence = this.localPresence.get(projectId);

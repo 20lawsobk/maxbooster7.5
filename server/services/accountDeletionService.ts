@@ -95,7 +95,7 @@ export class AccountDeletionService {
           results.failed++;
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
           results.errors.push({ userId: user.id, error: errorMessage });
-          logger.warn(`❌ Failed to delete account ${user.id}:`, error);
+          logger.warn({ err: error }, `❌ Failed to delete account ${user.id}:`);
         }
       }
 
@@ -113,7 +113,7 @@ export class AccountDeletionService {
       return results;
     } catch (error: unknown) {
       this.isRunning = false;
-      logger.warn('❌ Account deletion job failed:', error);
+      logger.warn({ err: error }, '❌ Account deletion job failed:');
       throw error;
     }
   }
@@ -165,7 +165,7 @@ export class AccountDeletionService {
       });
 
     } catch (error: unknown) {
-      logger.warn(`❌ Failed to permanently delete user ${userId}:`, error);
+      logger.warn({ err: error }, `❌ Failed to permanently delete user ${userId}:`);
       throw new Error(`Account deletion failed for ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -206,7 +206,7 @@ export class AccountDeletionService {
         `Reason: ${record.reason}`
       );
     } catch (error: unknown) {
-      logger.warn('❌ Failed to persist deletion audit log:', error);
+      logger.warn({ err: error }, '❌ Failed to persist deletion audit log:');
       // Don't throw - deletion already happened, just log the error
     }
   }

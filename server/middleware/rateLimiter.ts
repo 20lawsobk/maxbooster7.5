@@ -160,7 +160,7 @@ async function slidingWindowCheck(
     ]);
     return result;
   } catch (error) {
-    logger.warn('[RateLimit] Redis error — degraded mode (25% limits):', error);
+    logger.warn({ err: error }, '[RateLimit] Redis error — degraded mode (25% limits):');
     return degradedLimiter.check(key, windowMs, maxRequests);
   }
 }
@@ -516,7 +516,7 @@ export async function getRateLimitStatus(
       total: count
     };
   } catch (error) {
-    logger.warn('Error getting rate limit status:', error);
+    logger.warn({ err: error }, 'Error getting rate limit status:');
     return null;
   }
 }
@@ -558,7 +558,7 @@ export async function resetRateLimit(
     await redis.del(redisKey);
     return true;
   } catch (error) {
-    logger.warn('Error resetting rate limit:', error);
+    logger.warn({ err: error }, 'Error resetting rate limit:');
     return false;
   }
 }

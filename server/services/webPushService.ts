@@ -43,7 +43,7 @@ class WebPushService {
       this.initialized = true;
       logger.info('Web Push service initialized with VAPID keys');
     } catch (error) {
-      logger.warn('Failed to initialize Web Push:', error);
+      logger.warn({ err: error }, 'Failed to initialize Web Push:');
     }
   }
 
@@ -90,7 +90,7 @@ class WebPushService {
         logger.info(`Push subscription saved for user ${userId}`);
       }
     } catch (error) {
-      logger.warn('Failed to save push subscription:', error);
+      logger.warn({ err: error }, 'Failed to save push subscription:');
       throw error;
     }
   }
@@ -102,7 +102,7 @@ class WebPushService {
         .where(eq(pushSubscriptions.endpoint, endpoint));
       logger.info('Push subscription removed');
     } catch (error) {
-      logger.warn('Failed to remove push subscription:', error);
+      logger.warn({ err: error }, 'Failed to remove push subscription:');
       throw error;
     }
   }
@@ -114,7 +114,7 @@ class WebPushService {
         .where(eq(pushSubscriptions.userId, userId));
       logger.info(`All push subscriptions removed for user ${userId}`);
     } catch (error) {
-      logger.warn('Failed to remove user push subscriptions:', error);
+      logger.warn({ err: error }, 'Failed to remove user push subscriptions:');
       throw error;
     }
   }
@@ -126,7 +126,7 @@ class WebPushService {
         .from(pushSubscriptions)
         .where(eq(pushSubscriptions.userId, userId));
     } catch (error) {
-      logger.warn('Failed to get user push subscriptions:', error);
+      logger.warn({ err: error }, 'Failed to get user push subscriptions:');
       return [];
     }
   }

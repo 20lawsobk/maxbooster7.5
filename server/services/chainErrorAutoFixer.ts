@@ -21,7 +21,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { addLogTransport, type LogEntry } from './structuredLogger.ts';
+import { addLogTransport, type LogEntry } from './structuredLogger.js';
 import { logger } from '../logger.js';
 
 // ─── Types ───────────────────────────────────────────────────────────────────

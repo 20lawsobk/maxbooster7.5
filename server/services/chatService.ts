@@ -48,7 +48,7 @@ export class ChatService {
       logger.info(`Created new chat session for user ${userId}`);
       return newSession[0].id;
     } catch (error: unknown) {
-      logger.warn('Error getting/creating chat session:', error);
+      logger.warn({ err: error }, 'Error getting/creating chat session:');
       throw new Error('Failed to create chat session');
     }
   }
@@ -63,7 +63,7 @@ export class ChatService {
         isStaff: input.isStaff || false,
       });
     } catch (error: unknown) {
-      logger.warn('Error saving chat message:', error);
+      logger.warn({ err: error }, 'Error saving chat message:');
       throw new Error('Failed to save message');
     }
   }
@@ -89,7 +89,7 @@ export class ChatService {
 
       return messages;
     } catch (error: unknown) {
-      logger.warn('Error retrieving chat messages:', error);
+      logger.warn({ err: error }, 'Error retrieving chat messages:');
       return [];
     }
   }
@@ -114,7 +114,7 @@ export class ChatService {
 
       return this.getSessionMessages(activeSessions[0].id, userId);
     } catch (error: unknown) {
-      logger.warn('Error retrieving user chat history:', error);
+      logger.warn({ err: error }, 'Error retrieving user chat history:');
       return [];
     }
   }
@@ -134,7 +134,7 @@ export class ChatService {
           )
         );
     } catch (error: unknown) {
-      logger.warn('Error ending chat session:', error);
+      logger.warn({ err: error }, 'Error ending chat session:');
     }
   }
 }

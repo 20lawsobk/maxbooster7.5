@@ -344,7 +344,7 @@ class ReleaseScheduler {
         platformSchedules
       };
     } catch (error) {
-      logger.warn('Error scheduling release:', error);
+      logger.warn({ err: error }, 'Error scheduling release:');
       return {
         success: false,
         scheduledDate: finalDate,
@@ -396,7 +396,7 @@ class ReleaseScheduler {
         landingPageUrl: campaign.landingPageUrl || `/presave/${request.releaseId}`
       };
     } catch (error) {
-      logger.warn('Error creating pre-save campaign:', error);
+      logger.warn({ err: error }, 'Error creating pre-save campaign:');
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -502,7 +502,7 @@ class ReleaseScheduler {
 
         processed++;
       } catch (error) {
-        logger.warn(`Error processing scheduled action ${action.id}:`, error);
+        logger.warn({ err: error }, `Error processing scheduled action ${action.id}:`);
         
         await db.update(releaseScheduledActions)
           .set({

@@ -104,7 +104,7 @@ class OrganicCompoundingService {
         periodEnd: now,
       };
     } catch (error) {
-      logger.warn('Error computing organic ROI:', error);
+      logger.warn({ err: error }, 'Error computing organic ROI:');
       throw error;
     }
   }
@@ -138,7 +138,7 @@ class OrganicCompoundingService {
       
       return Math.max(0, Math.min(1, efficiencyScore));
     } catch (error) {
-      logger.warn('Error computing channel efficiency:', error);
+      logger.warn({ err: error }, 'Error computing channel efficiency:');
       return 0;
     }
   }
@@ -250,7 +250,7 @@ class OrganicCompoundingService {
       
       return candidates;
     } catch (error) {
-      logger.warn('Error proposing candidate assets:', error);
+      logger.warn({ err: error }, 'Error proposing candidate assets:');
       return [];
     }
   }
@@ -304,7 +304,7 @@ class OrganicCompoundingService {
         ltv: avgChannelLtv,
       };
     } catch (error) {
-      logger.warn('Error estimating future ROI:', error);
+      logger.warn({ err: error }, 'Error estimating future ROI:');
       return { effectiveRoi: 0, streams: 0, ltv: 0 };
     }
   }
@@ -323,7 +323,7 @@ class OrganicCompoundingService {
       
       return Math.max(0, Math.min(1, efficiencyScore));
     } catch (error) {
-      logger.warn('Error computing efficiency score:', error);
+      logger.warn({ err: error }, 'Error computing efficiency score:');
       return 0;
     }
   }
@@ -356,7 +356,7 @@ class OrganicCompoundingService {
       
       return selected;
     } catch (error) {
-      logger.warn('Error selecting assets under budget:', error);
+      logger.warn({ err: error }, 'Error selecting assets under budget:');
       return [];
     }
   }
@@ -371,7 +371,7 @@ class OrganicCompoundingService {
       
       return sortedChannels.slice(0, 3);
     } catch (error) {
-      logger.warn('Error selecting best channels for asset:', error);
+      logger.warn({ err: error }, 'Error selecting best channels for asset:');
       return [];
     }
   }
@@ -405,7 +405,7 @@ class OrganicCompoundingService {
       
       return Math.max(0.1, Math.min(1, adjustedDecay));
     } catch (error) {
-      logger.warn('Error calculating decay:', error);
+      logger.warn({ err: error }, 'Error calculating decay:');
       return 1;
     }
   }
@@ -483,7 +483,7 @@ class OrganicCompoundingService {
       
       return weeklyState;
     } catch (error) {
-      logger.warn('Error in weekly organic loop:', error);
+      logger.warn({ err: error }, 'Error in weekly organic loop:');
       throw error;
     }
   }
@@ -498,7 +498,7 @@ class OrganicCompoundingService {
       logger.info(`Created organic asset ${asset.id} for user ${userId}`);
       return asset;
     } catch (error) {
-      logger.warn('Error creating organic asset:', error);
+      logger.warn({ err: error }, 'Error creating organic asset:');
       throw error;
     }
   }
@@ -515,7 +515,7 @@ class OrganicCompoundingService {
       
       return updated || null;
     } catch (error) {
-      logger.warn('Error updating asset performance:', error);
+      logger.warn({ err: error }, 'Error updating asset performance:');
       throw error;
     }
   }
@@ -528,7 +528,7 @@ class OrganicCompoundingService {
         .orderBy(desc(organicAssets.createdAt))
         .limit(500);
     } catch (error) {
-      logger.warn('Error getting assets:', error);
+      logger.warn({ err: error }, 'Error getting assets:');
       throw error;
     }
   }
@@ -542,7 +542,7 @@ class OrganicCompoundingService {
       
       return asset || null;
     } catch (error) {
-      logger.warn('Error getting asset by id:', error);
+      logger.warn({ err: error }, 'Error getting asset by id:');
       throw error;
     }
   }
@@ -557,7 +557,7 @@ class OrganicCompoundingService {
       logger.info(`Created organic channel ${channel.id} for user ${userId}`);
       return channel;
     } catch (error) {
-      logger.warn('Error creating organic channel:', error);
+      logger.warn({ err: error }, 'Error creating organic channel:');
       throw error;
     }
   }
@@ -574,7 +574,7 @@ class OrganicCompoundingService {
       
       return updated || null;
     } catch (error) {
-      logger.warn('Error updating channel efficiency:', error);
+      logger.warn({ err: error }, 'Error updating channel efficiency:');
       throw error;
     }
   }
@@ -586,7 +586,7 @@ class OrganicCompoundingService {
         .where(eq(organicChannels.userId, userId))
         .orderBy(desc(organicChannels.efficiencyScore));
     } catch (error) {
-      logger.warn('Error getting channels:', error);
+      logger.warn({ err: error }, 'Error getting channels:');
       throw error;
     }
   }
@@ -606,7 +606,7 @@ class OrganicCompoundingService {
       
       return snapshot;
     } catch (error) {
-      logger.warn('Error saving ROI snapshot:', error);
+      logger.warn({ err: error }, 'Error saving ROI snapshot:');
       throw error;
     }
   }
@@ -621,7 +621,7 @@ class OrganicCompoundingService {
         ))
         .orderBy(desc(organicRoiSnapshots.createdAt));
     } catch (error) {
-      logger.warn('Error getting ROI history:', error);
+      logger.warn({ err: error }, 'Error getting ROI history:');
       throw error;
     }
   }
@@ -681,7 +681,7 @@ class OrganicCompoundingService {
         return created;
       }
     } catch (error) {
-      logger.warn('Error updating lifetime stats:', error);
+      logger.warn({ err: error }, 'Error updating lifetime stats:');
       throw error;
     }
   }
@@ -698,7 +698,7 @@ class OrganicCompoundingService {
       
       return stats || null;
     } catch (error) {
-      logger.warn('Error getting lifetime stats:', error);
+      logger.warn({ err: error }, 'Error getting lifetime stats:');
       throw error;
     }
   }
@@ -717,7 +717,7 @@ class OrganicCompoundingService {
         })
         .slice(0, limit);
     } catch (error) {
-      logger.warn('Error getting top performing assets:', error);
+      logger.warn({ err: error }, 'Error getting top performing assets:');
       throw error;
     }
   }
@@ -738,7 +738,7 @@ class OrganicCompoundingService {
         return roi > paidRoiBaseline;
       });
     } catch (error) {
-      logger.warn('Error getting assets exceeding paid ROI:', error);
+      logger.warn({ err: error }, 'Error getting assets exceeding paid ROI:');
       throw error;
     }
   }
@@ -798,7 +798,7 @@ class OrganicCompoundingService {
         topChannels,
       };
     } catch (error) {
-      logger.warn('Error getting compounding metrics:', error);
+      logger.warn({ err: error }, 'Error getting compounding metrics:');
       throw error;
     }
   }

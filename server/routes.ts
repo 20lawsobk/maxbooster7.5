@@ -3,19 +3,19 @@ import { type Server } from "http";
 import crypto from "crypto";
 import { execSync } from "child_process";
 import fs from "fs";
-import { storage } from "./storage.ts";
-import { db } from "./db.ts";
+import { storage } from "./storage.js";
+import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects } from "../shared/schema.ts";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects } from "../shared/schema.js";
 import { sum, count, ilike, inArray, or, ne, asc } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import { getCsrfToken } from "./middleware/csrf.ts";
+import { getCsrfToken } from "./middleware/csrf.js";
 import Stripe from "stripe";
-import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.ts";
-import { getBaseUrl } from "./config/defaults.ts";
+import { getStripePriceIds, ensureStripeProductsAndPrices } from "./services/stripeSetup.js";
+import { getBaseUrl } from "./config/defaults.js";
 import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "otplib";
-import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.ts";
-import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.ts";
+import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.js";
+import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.js";
 import { requestIdMiddleware } from "./middleware/requestId.js";
 
 const authenticator = {
@@ -26,14 +26,14 @@ const authenticator = {
     verifySync({ token, secret, strategy: 'totp', epochTolerance: 1 }),
 };
 import QRCode from "qrcode";
-import { emailService } from "./services/emailService.ts";
-import { upload } from "./middleware/uploadHandler.ts";
+import { emailService } from "./services/emailService.js";
+import { upload } from "./middleware/uploadHandler.js";
 import multer from "multer";
 import { logger } from './logger.js';
-import { achievementService } from './services/achievementService.ts';
-import { notificationService } from './services/notificationService.ts';
-import { jwtAuthService } from './services/jwtAuthService.ts';
-import { artistProfileService } from './services/artistProfileService.ts';
+import { achievementService } from './services/achievementService.js';
+import { notificationService } from './services/notificationService.js';
+import { jwtAuthService } from './services/jwtAuthService.js';
+import { artistProfileService } from './services/artistProfileService.js';
 
 const log = (msg: string) => logger.info(msg);
 
@@ -74,12 +74,11 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
     const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
     if (criticalRoutes.includes(name)) {
       log(`ERROR: Critical route '${name}' failed to load - ${error.message}`);
-      logger.warn(`[routes] CRITICAL route loading failure for '${name}':`, error.stack || error.message);
+      logger.warn({ err: error }, `[routes] CRITICAL route loading failure for '${name}'`);
     } else {
       log(`Warning: Could not load ${name} - ${error.message}`);
     }
-    // Always emit to stderr so it appears in deployment logs regardless of log level
-    console.error(`[routes] LOAD FAILURE '${name}': ${error.message}\n${error.stack || ''}`);
+    logger.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
     return null;
   }
 }
@@ -376,7 +375,7 @@ export async function registerRoutes(
         logger.info('[Login] SUCCESS for userId:', user.id);
 
         achievementService.updateStreak(user.id, 'login').catch((e: unknown) =>
-          logger.warn('[Login] Failed to update login streak:', e)
+          logger.warn({ err: e }, '[Login] Failed to update login streak:')
         );
 
         notificationService.sendLoginSecurityNotification(
@@ -454,7 +453,7 @@ export async function registerRoutes(
         message: 'Session refreshed',
       });
     } catch (error) {
-      logger.warn('[Auth] refresh-token error:', error);
+      logger.warn({ err: error }, '[Auth] refresh-token error:');
       return res.status(500).json({ success: false, message: 'Refresh failed' });
     }
   });
@@ -812,7 +811,7 @@ export async function registerRoutes(
     }
     try {
       // Get login events from security threats table
-      const { securityThreats } = await import('../shared/schema.ts');
+      const { securityThreats } = await import('../shared/schema.js');
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
       const loginEvents = await db.select()
@@ -1633,7 +1632,7 @@ export async function registerRoutes(
         return res.redirect('/login?error=login_failed');
       }
     } catch (err) {
-      logger.warn('[Google OAuth] Error:', err);
+      logger.warn({ err: err }, '[Google OAuth] Error:');
       return res.redirect('/login?error=oauth_error');
     }
   });
@@ -1712,7 +1711,7 @@ export async function registerRoutes(
 
       return res.redirect('/settings?tab=connected-accounts&connected=' + provider);
     } catch (error) {
-      logger.warn(`Error connecting ${provider}:`, error);
+      logger.warn({ err: error }, `Error connecting ${provider}:`);
       return res.status(500).json({ error: `Failed to connect ${provider}` });
     }
   });
@@ -1911,7 +1910,7 @@ export async function registerRoutes(
         outcome: { type: 'channel_toggled', success: true, message: token ? 'Mobile device unregistered' : 'All mobile devices unregistered' },
       });
     } catch (error) {
-      logger.warn('Mobile token remove error:', error);
+      logger.warn({ err: error }, 'Mobile token remove error:');
       return res.status(500).json({ error: 'Failed to remove mobile device token' });
     }
   });
@@ -2229,7 +2228,7 @@ export async function registerRoutes(
         },
       });
     } catch (error) {
-      logger.warn('Mobile token register error:', error);
+      logger.warn({ err: error }, 'Mobile token register error:');
       return res.status(500).json({ error: 'Failed to register mobile device token' });
     }
   });
@@ -2242,7 +2241,7 @@ export async function registerRoutes(
       const status = await mobilePushService.getUserTokenStatus(req.user.id);
       return res.json(status);
     } catch (error) {
-      logger.warn('Mobile tokens list error:', error);
+      logger.warn({ err: error }, 'Mobile tokens list error:');
       return res.status(500).json({ error: 'Failed to list mobile device tokens' });
     }
   });
@@ -2257,7 +2256,7 @@ export async function registerRoutes(
       const result = await notificationDispatcher.dispatchSilent(req.user.id, reason);
       return res.json({ success: true, ...result });
     } catch (error) {
-      logger.warn('Silent push error:', error);
+      logger.warn({ err: error }, 'Silent push error:');
       return res.status(500).json({ error: 'Failed to send silent push' });
     }
   });
@@ -3942,17 +3941,17 @@ export async function registerRoutes(
     { default: batchRouter },
     { default: distributionRouter },
   ] = await Promise.all([
-    import("./routes/admin.ts"),
-    import("./routes/paid.ts"),
-    import("./routes/artistProgress.ts"),
-    import("./routes/artistProfiles.ts"),
-    import("./routes/revenueForecast.ts"),
-    import("./routes/files.ts"),
-    import("./routes/preferences.ts"),
-    import("./routes/shortcuts.ts"),
-    import("./routes/undo.ts"),
-    import("./routes/batch.ts"),
-    import("./routes/distribution.ts"),
+    import("./routes/admin.js"),
+    import("./routes/paid.js"),
+    import("./routes/artistProgress.js"),
+    import("./routes/artistProfiles.js"),
+    import("./routes/revenueForecast.js"),
+    import("./routes/files.js"),
+    import("./routes/preferences.js"),
+    import("./routes/shortcuts.js"),
+    import("./routes/undo.js"),
+    import("./routes/batch.js"),
+    import("./routes/distribution.js"),
   ]);
   const { aiServiceProxyRouter, boosterstateProxyRouter } = await import("./routes/internalProxy.js");
   app.use("/api/ai-service", aiServiceProxyRouter);
@@ -4030,12 +4029,12 @@ export async function registerRoutes(
     if (socialMediaRouter && typeof socialMediaRouter === 'function' && socialMediaRouter.stack !== undefined) {
       app.use('/api/social', socialMediaRouter);
       log('Loaded route: socialMedia (direct)');
-      console.log('[routes] socialMedia router registered directly at /api/social');
+      logger.info('[routes] socialMedia router registered directly at /api/social');
     } else {
-      console.error('[routes] socialMedia direct load: no usable router export (type=' + typeof socialMediaRouter + ')');
+      logger.error('[routes] socialMedia direct load: no usable router export (type=' + typeof socialMediaRouter + ')');
     }
   } catch (e: any) {
-    console.error('[routes] socialMedia direct load FAILED:', e.message, '\n', e.stack || '');
+    logger.error({ err: e }, '[routes] socialMedia direct load FAILED');
   }
 
   // Dynamically load and mount route modules (with error handling)
@@ -4429,7 +4428,7 @@ export async function registerRoutes(
 
       res.json({ url: session.url, sessionId: session.id });
     } catch (error: any) {
-      logger.warn('Error creating checkout session:', error);
+      logger.warn({ err: error }, 'Error creating checkout session:');
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
     }
   });
@@ -4530,7 +4529,7 @@ export async function registerRoutes(
         return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
       }
     } catch (error: any) {
-      logger.warn('Error completing registration after payment:', error);
+      logger.warn({ err: error }, 'Error completing registration after payment:');
 
       if (error.type === 'StripeInvalidRequestError') {
         return res.status(400).json({ error: 'Invalid payment session. Please try again.' });

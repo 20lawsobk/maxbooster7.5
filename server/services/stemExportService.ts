@@ -53,7 +53,7 @@ async function initializeFfmpeg() {
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn('FFmpeg not available - stem export features will be limited:', error);
+    logger.warn({ err: error }, 'FFmpeg not available - stem export features will be limited:');
     return false;
   }
 }
@@ -277,7 +277,7 @@ class StemExportService {
             totalFileSize += stemFile.fileSize;
           }
         } catch (error: unknown) {
-          logger.warn(`Error rendering track ${track.name}:`, error);
+          logger.warn({ err: error }, `Error rendering track ${track.name}:`);
         }
       }
 
@@ -303,7 +303,7 @@ class StemExportService {
             totalFileSize += masterFile.fileSize;
           }
         } catch (error: unknown) {
-          logger.warn('Error rendering master bus:', error);
+          logger.warn({ err: error }, 'Error rendering master bus:');
         }
       }
 
@@ -332,7 +332,7 @@ class StemExportService {
       logger.info(`✅ Stem export ${exportId} completed: ${individualFiles.length} files`);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      logger.warn(`Stem export ${exportId} failed:`, error);
+      logger.warn({ err: error }, `Stem export ${exportId} failed:`);
 
       await db
         .update(stemExports)
@@ -402,7 +402,7 @@ class StemExportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.warn(`Failed to render stem for track ${track.name}:`, error);
+      logger.warn({ err: error }, `Failed to render stem for track ${track.name}:`);
       return null;
     }
   }
@@ -940,7 +940,7 @@ class StemExportService {
       try {
         await storageService.deleteFile(exportRecord.zipStorageKey);
       } catch (error: unknown) {
-        logger.warn('Failed to delete ZIP file:', error);
+        logger.warn({ err: error }, 'Failed to delete ZIP file:');
       }
     }
 
@@ -950,7 +950,7 @@ class StemExportService {
         try {
           await storageService.deleteFile(file.storageKey);
         } catch (error: unknown) {
-          logger.warn(`Failed to delete stem file ${file.fileName}:`, error);
+          logger.warn({ err: error }, `Failed to delete stem file ${file.fileName}:`);
         }
       }
     }

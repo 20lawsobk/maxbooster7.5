@@ -153,7 +153,7 @@ export class AdvertisingDispatchService {
               );
               calendarEntries.push(calendarEntry.id);
             } catch (err: unknown) {
-              logger.warn('Failed to create calendar entry:', err);
+              logger.warn({ err: err }, 'Failed to create calendar entry:');
               errors.push(`Calendar entry failed for ${result.platform}: ${err.message}`);
             }
 
@@ -168,7 +168,7 @@ export class AdvertisingDispatchService {
                 deliveredAt: new Date(),
               });
             } catch (err: unknown) {
-              logger.warn('Failed to create delivery log:', err);
+              logger.warn({ err: err }, 'Failed to create delivery log:');
             }
           } else {
             errors.push(`${result.platform}: ${result.error || 'Unknown error'}`);
@@ -183,7 +183,7 @@ export class AdvertisingDispatchService {
                 retryCount: 1,
               });
             } catch (err: unknown) {
-              logger.warn('Failed to create delivery log:', err);
+              logger.warn({ err: err }, 'Failed to create delivery log:');
             }
           }
         }
@@ -236,7 +236,7 @@ export class AdvertisingDispatchService {
         },
       };
     } catch (error: unknown) {
-      logger.warn('Campaign activation error:', error);
+      logger.warn({ err: error }, 'Campaign activation error:');
       return {
         success: false,
         message: 'Campaign activation failed',
@@ -344,7 +344,7 @@ export class AdvertisingDispatchService {
         `✅ Updated engagement metrics for campaign ${campaignId}: ${totalImpressions} impressions, ${totalEngagements} engagements`
       );
     } catch (error: unknown) {
-      logger.warn('Failed to collect campaign engagement:', error);
+      logger.warn({ err: error }, 'Failed to collect campaign engagement:');
     }
   }
 
@@ -462,7 +462,7 @@ export class AdvertisingDispatchService {
 
       logger.info(`✅ Finished collecting engagement for ${activeCampaigns.length} campaigns`);
     } catch (error: unknown) {
-      logger.warn('Failed to collect all engagement:', error);
+      logger.warn({ err: error }, 'Failed to collect all engagement:');
     }
   }
 

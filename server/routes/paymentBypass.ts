@@ -30,7 +30,7 @@ router.get('/status', requireAdmin, async (req: AuthenticatedRequest, res: Respo
       ...status,
     });
   } catch (error) {
-    logger.warn('[PaymentBypass] Failed to get status:', error);
+    logger.warn({ err: error }, '[PaymentBypass] Failed to get status:');
     res.status(500).json({ error: 'Failed to get payment bypass status' });
   }
 });
@@ -50,7 +50,7 @@ router.post('/activate', requireAdmin, async (req: AuthenticatedRequest, res: Re
       config,
     });
   } catch (error) {
-    logger.warn('[PaymentBypass] Failed to activate:', error);
+    logger.warn({ err: error }, '[PaymentBypass] Failed to activate:');
     res.status(500).json({ error: 'Failed to activate payment bypass' });
   }
 });
@@ -70,7 +70,7 @@ router.post('/deactivate', requireAdmin, async (req: AuthenticatedRequest, res: 
       config,
     });
   } catch (error) {
-    logger.warn('[PaymentBypass] Failed to deactivate:', error);
+    logger.warn({ err: error }, '[PaymentBypass] Failed to deactivate:');
     res.status(500).json({ error: 'Failed to deactivate payment bypass' });
   }
 });
@@ -90,7 +90,7 @@ router.post('/extend', requireAdmin, async (req: AuthenticatedRequest, res: Resp
       config,
     });
   } catch (error: any) {
-    logger.warn('[PaymentBypass] Failed to extend:', error);
+    logger.warn({ err: error }, '[PaymentBypass] Failed to extend:');
     res.status(400).json({ error: 'Failed to extend payment bypass' });
   }
 });

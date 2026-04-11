@@ -38,7 +38,7 @@ export class ConsentService {
 
       logger.info(`Consent logged: ${input.userId} - ${input.consentType} - ${input.action}`);
     } catch (error: unknown) {
-      logger.warn('Error logging consent:', error);
+      logger.warn({ err: error }, 'Error logging consent:');
       throw new Error('Failed to log consent');
     }
   }

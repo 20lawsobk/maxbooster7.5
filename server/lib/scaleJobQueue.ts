@@ -206,7 +206,7 @@ export function startRetentionWorker(): Worker {
             logger.warn(`[Worker] Unknown job name: ${jobName}`);
         }
       } catch (err) {
-        logger.warn(`[Worker] Job ${jobName} failed:`, err);
+        logger.warn({ err: err }, `[Worker] Job ${jobName} failed:`);
         throw err;
       }
     },
@@ -234,7 +234,7 @@ export function startRetentionWorker(): Worker {
 
   setImmediate(() => {
     worker.run().catch(err => {
-      logger.warn('[Worker] Failed to start run loop:', err);
+      logger.warn({ err: err }, '[Worker] Failed to start run loop:');
     });
   });
 

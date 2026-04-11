@@ -158,7 +158,7 @@ registerWebhookHandler('customer.subscription.created', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.created`);
     }
   } catch (err) {
-    logger.warn('[Stripe] Failed to update user on subscription.created:', err);
+    logger.warn({ err: err }, '[Stripe] Failed to update user on subscription.created:');
   }
 
   return { success: true, message: 'Subscription created' };
@@ -202,7 +202,7 @@ registerWebhookHandler('customer.subscription.updated', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.updated`);
     }
   } catch (err) {
-    logger.warn('[Stripe] Failed to update user on subscription.updated:', err);
+    logger.warn({ err: err }, '[Stripe] Failed to update user on subscription.updated:');
   }
 
   return { success: true, message: 'Subscription updated' };
@@ -234,7 +234,7 @@ registerWebhookHandler('customer.subscription.deleted', async (event) => {
       logger.warn(`[Stripe] No user found for Stripe customer ${customerId} on subscription.deleted`);
     }
   } catch (err) {
-    logger.warn('[Stripe] Failed to update user on subscription.deleted:', err);
+    logger.warn({ err: err }, '[Stripe] Failed to update user on subscription.deleted:');
   }
 
   return { success: true, message: 'Subscription canceled' };
@@ -254,7 +254,7 @@ registerWebhookHandler('invoice.paid', async (event) => {
   try {
     await dunningService.resolveSequence(invoice.id, 'paid');
   } catch (err) {
-    logger.warn('[Stripe] Failed to resolve dunning sequence:', err);
+    logger.warn({ err: err }, '[Stripe] Failed to resolve dunning sequence:');
   }
   
   return { success: true, message: 'Invoice paid' };
@@ -290,7 +290,7 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
       }
     }
   } catch (err) {
-    logger.warn('[Stripe] Failed to send payment failure notification:', err);
+    logger.warn({ err: err }, '[Stripe] Failed to send payment failure notification:');
   }
   
   return { success: true, message: 'Payment failure recorded' };
@@ -384,7 +384,7 @@ router.post('/', stripeWebhookMiddleware, async (req: Request, res: Response) =>
       res.status(500).json({ error: result.message });
     }
   } catch (error: any) {
-    logger.warn('[Stripe Webhook] Handler error:', error);
+    logger.warn({ err: error }, '[Stripe Webhook] Handler error:');
     res.status(500).json({ error: 'Webhook handler failed' });
   }
 });

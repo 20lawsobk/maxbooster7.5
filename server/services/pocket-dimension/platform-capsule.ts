@@ -330,7 +330,7 @@ class PlatformCapsuleBuilder {
           logger.info(`   Added tarball: ${(stats.size / 1024 / 1024).toFixed(2)} MB (1 file instead of 60k+)`);
         }
       } catch (error) {
-        logger.warn('   Warning: Could not include production tarball:', error);
+        logger.warn({ err: error }, '   Warning: Could not include production tarball:');
       }
     }
     // Legacy: Include production node_modules directory if specified
@@ -344,7 +344,7 @@ class PlatformCapsuleBuilder {
           logger.info(`   Added ${files.filter(f => f.relativePath.startsWith('node_modules')).length} files from production modules`);
         }
       } catch (error) {
-        logger.warn('   Warning: Could not include production modules:', error);
+        logger.warn({ err: error }, '   Warning: Could not include production modules:');
       }
     }
     
@@ -576,7 +576,7 @@ class PlatformCapsuleLoader {
       await fs.rm(capsulePath, { recursive: true, force: true });
       logger.info(`Capsule ${capsuleId} deleted successfully`);
     } catch (error) {
-      logger.error(`Failed to delete capsule ${capsuleId}:`, error);
+      logger.error({ err: error }, `Failed to delete capsule ${capsuleId}:`);
       throw error;
     }
   }

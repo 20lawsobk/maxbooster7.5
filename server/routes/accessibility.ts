@@ -117,7 +117,7 @@ router.get('/accessibility-preferences', requireAuth, async (req: Request, res: 
       ...preferences,
     });
   } catch (error) {
-    logger.warn('Error fetching accessibility preferences:', error);
+    logger.warn({ err: error }, 'Error fetching accessibility preferences:');
     return res.status(500).json({ error: 'Failed to fetch accessibility preferences' });
   }
 });
@@ -158,7 +158,7 @@ router.put('/accessibility-preferences', requireAuth, async (req: Request, res: 
       preferences: newPreferences,
     });
   } catch (error) {
-    logger.warn('Error updating accessibility preferences:', error);
+    logger.warn({ err: error }, 'Error updating accessibility preferences:');
     return res.status(500).json({ error: 'Failed to update accessibility preferences' });
   }
 });
@@ -178,7 +178,7 @@ router.delete('/accessibility-preferences', requireAuth, async (req: Request, re
       preferences: defaultPreferences,
     });
   } catch (error) {
-    logger.warn('Error resetting accessibility preferences:', error);
+    logger.warn({ err: error }, 'Error resetting accessibility preferences:');
     return res.status(500).json({ error: 'Failed to reset accessibility preferences' });
   }
 });

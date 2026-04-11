@@ -172,7 +172,7 @@ class ContentVariantGeneratorService {
           }
         }
       } catch (err) {
-        logger.warn('[VariantGen] Python AI failed, filling with template variants:', err);
+        logger.warn({ err: err }, '[VariantGen] Python AI failed, filling with template variants:');
       }
     }
 

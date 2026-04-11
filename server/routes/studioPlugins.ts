@@ -67,7 +67,7 @@ router.get('/', async (req, res) => {
 
     res.json(groupedByType);
   } catch (error: unknown) {
-    logger.warn('Error fetching plugins:', error);
+    logger.warn({ err: error }, 'Error fetching plugins:');
     res.status(500).json({ error: 'Failed to fetch plugins' });
   }
 });
@@ -116,7 +116,7 @@ router.post('/instantiate/:id', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error instantiating plugin:', error);
+    logger.warn({ err: error }, 'Error instantiating plugin:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -166,7 +166,7 @@ router.get('/instances', requireAuth, async (req, res) => {
       instances: enriched,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching plugin instances:', error);
+    logger.warn({ err: error }, 'Error fetching plugin instances:');
     res.status(500).json({ error: 'Failed to fetch plugin instances' });
   }
 });
@@ -203,7 +203,7 @@ router.get('/instances/:instanceId', requireAuth, async (req, res) => {
       } : null,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching plugin instance:', error);
+    logger.warn({ err: error }, 'Error fetching plugin instance:');
     res.status(500).json({ error: 'Failed to fetch plugin instance' });
   }
 });
@@ -243,7 +243,7 @@ router.put('/instances/:instanceId', requireAuth, async (req, res) => {
       instance: updatedInstance,
     });
   } catch (error: unknown) {
-    logger.warn('Error updating plugin instance:', error);
+    logger.warn({ err: error }, 'Error updating plugin instance:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -273,7 +273,7 @@ router.delete('/instances/:instanceId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error deleting plugin instance:', error);
+    logger.warn({ err: error }, 'Error deleting plugin instance:');
     res.status(500).json({ error: 'Failed to delete plugin instance' });
   }
 });
@@ -325,7 +325,7 @@ router.post('/instances/:instanceId/render', requireAuth, async (req, res) => {
       pluginType: plugin.category,
     });
   } catch (error: unknown) {
-    logger.warn('Error rendering audio through plugin:', error);
+    logger.warn({ err: error }, 'Error rendering audio through plugin:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -363,7 +363,7 @@ router.post('/instances/:instanceId/apply-preset', requireAuth, async (req, res)
       instance: updatedInstance,
     });
   } catch (error: unknown) {
-    logger.warn('Error applying preset:', error);
+    logger.warn({ err: error }, 'Error applying preset:');
     res.status(500).json({ error: 'Failed to apply preset' });
   }
 });
@@ -400,7 +400,7 @@ router.get('/presets', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching presets:', error);
+    logger.warn({ err: error }, 'Error fetching presets:');
     res.status(500).json({ error: 'Failed to fetch presets' });
   }
 });
@@ -426,7 +426,7 @@ router.post('/presets', requireAuth, async (req, res) => {
       preset,
     });
   } catch (error: unknown) {
-    logger.warn('Error saving preset:', error);
+    logger.warn({ err: error }, 'Error saving preset:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -448,7 +448,7 @@ router.get('/presets/:presetId', requireAuth, async (req, res) => {
       preset,
     });
   } catch (error: unknown) {
-    logger.warn('Error loading preset:', error);
+    logger.warn({ err: error }, 'Error loading preset:');
     res.status(500).json({ error: 'Failed to load preset' });
   }
 });
@@ -462,7 +462,7 @@ router.delete('/presets/:presetId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error deleting preset:', error);
+    logger.warn({ err: error }, 'Error deleting preset:');
     res.status(500).json({ error: 'Failed to delete preset' });
   }
 });
@@ -488,7 +488,7 @@ router.get('/factory-presets/:id', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching factory presets:', error);
+    logger.warn({ err: error }, 'Error fetching factory presets:');
     res.status(500).json({ error: 'Failed to fetch factory presets' });
   }
 });
@@ -564,7 +564,7 @@ router.get('/device/ab-compare/:instanceId', requireAuth, async (req, res) => {
       activeSlot: state.activeSlot,
     });
   } catch (error: unknown) {
-    logger.warn('Error getting A/B compare state:', error);
+    logger.warn({ err: error }, 'Error getting A/B compare state:');
     res.status(500).json({ error: 'Failed to get A/B compare state' });
   }
 });
@@ -599,7 +599,7 @@ router.post('/device/ab-compare', requireAuth, async (req, res) => {
       message: 'A/B compare slots configured',
     });
   } catch (error: unknown) {
-    logger.warn('Error setting A/B compare:', error);
+    logger.warn({ err: error }, 'Error setting A/B compare:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -644,7 +644,7 @@ router.post('/device/ab-compare/:instanceId/switch', requireAuth, async (req, re
       parameters: newParams,
     });
   } catch (error: unknown) {
-    logger.warn('Error switching A/B slot:', error);
+    logger.warn({ err: error }, 'Error switching A/B slot:');
     res.status(500).json({ error: 'Failed to switch A/B slot' });
   }
 });
@@ -689,7 +689,7 @@ router.post('/device/ab-compare/:instanceId/copy', requireAuth, async (req, res)
       message: `Copied slot ${from} to slot ${to}`,
     });
   } catch (error: unknown) {
-    logger.warn('Error copying A/B slot:', error);
+    logger.warn({ err: error }, 'Error copying A/B slot:');
     res.status(500).json({ error: 'Failed to copy A/B slot' });
   }
 });
@@ -735,7 +735,7 @@ router.post('/bounce', requireAuth, async (req, res) => {
       bounce: bouncedTrack,
     });
   } catch (error: unknown) {
-    logger.warn('Error bouncing track:', error);
+    logger.warn({ err: error }, 'Error bouncing track:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -761,7 +761,7 @@ router.get('/bounce/:projectId', requireAuth, async (req, res) => {
       bounces: [],
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching bounces:', error);
+    logger.warn({ err: error }, 'Error fetching bounces:');
     res.status(500).json({ error: 'Failed to fetch bounces' });
   }
 });
@@ -827,7 +827,7 @@ router.get('/modulation-matrix/:projectId', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching modulation matrix:', error);
+    logger.warn({ err: error }, 'Error fetching modulation matrix:');
     res.status(500).json({ error: 'Failed to fetch modulation matrix' });
   }
 });
@@ -865,7 +865,7 @@ router.post('/modulation-matrix', requireAuth, async (req, res) => {
       routings: routingsWithIds,
     });
   } catch (error: unknown) {
-    logger.warn('Error updating modulation matrix:', error);
+    logger.warn({ err: error }, 'Error updating modulation matrix:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -897,7 +897,7 @@ router.delete('/modulation-matrix/:projectId/:routingId', requireAuth, async (re
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error deleting modulation routing:', error);
+    logger.warn({ err: error }, 'Error deleting modulation routing:');
     res.status(500).json({ error: 'Failed to delete modulation routing' });
   }
 });
@@ -919,7 +919,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       factoryPresets,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching plugin details:', error);
+    logger.warn({ err: error }, 'Error fetching plugin details:');
     res.status(500).json({ error: 'Failed to fetch plugin details' });
   }
 });

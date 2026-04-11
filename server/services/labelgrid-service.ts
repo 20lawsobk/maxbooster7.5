@@ -339,7 +339,7 @@ class LabelGridService {
         // Silent fallback - provider will be added when distribution is configured
       }
     } catch (error: unknown) {
-      logger.warn('Failed to load LabelGrid config from database:', error);
+      logger.warn({ err: error }, 'Failed to load LabelGrid config from database:');
       this.baseUrl = process.env.LABELGRID_API_URL || 'https://api.labelgrid.com';
       this.endpoints = {};
       this.authHeaderFormat = 'Bearer {token}';
@@ -455,7 +455,7 @@ class LabelGridService {
         syncedAt: new Date().toISOString(),
       };
     } catch (error) {
-      logger.warn('Failed to get local DSP catalog:', error);
+      logger.warn({ err: error }, 'Failed to get local DSP catalog:');
       return { dsps: [], total: 0, syncedAt: new Date().toISOString() };
     }
   }
@@ -480,7 +480,7 @@ class LabelGridService {
         inactive,
       };
     } catch (error: any) {
-      logger.warn('Failed to verify DSP catalog:', error);
+      logger.warn({ err: error }, 'Failed to verify DSP catalog:');
       return { total: 0, active: 0, inactive: 0 };
     }
   }

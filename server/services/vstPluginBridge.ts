@@ -132,7 +132,7 @@ class VSTPluginBridge extends EventEmitter {
       this.emit('bridgeReady');
       logger.info('VST Plugin Bridge initialized successfully');
     } catch (error) {
-      logger.warn('Failed to initialize VST Plugin Bridge:', error);
+      logger.warn({ err: error }, 'Failed to initialize VST Plugin Bridge:');
       throw error;
     }
   }
@@ -156,7 +156,7 @@ class VSTPluginBridge extends EventEmitter {
       this.emit('desktopConnected', this.desktopConnection);
       return true;
     } catch (error) {
-      logger.warn('Failed to connect desktop app:', error);
+      logger.warn({ err: error }, 'Failed to connect desktop app:');
       return false;
     }
   }

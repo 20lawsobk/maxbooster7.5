@@ -68,7 +68,7 @@ export class DatabaseBackupService {
         await this.cleanOldBackups();
         logger.info('✅ Scheduled backup completed successfully');
       } catch (error: unknown) {
-        logger.warn('❌ Scheduled backup failed:', error);
+        logger.warn({ err: error }, '❌ Scheduled backup failed:');
       }
     });
 
@@ -170,7 +170,7 @@ export class DatabaseBackupService {
         logger.info(`✅ Cleaned ${toDelete.length} old backup(s)`);
       }
     } catch (error: unknown) {
-      logger.warn('Error cleaning old backups:', error);
+      logger.warn({ err: error }, 'Error cleaning old backups:');
     }
   }
 
@@ -206,7 +206,7 @@ export class DatabaseBackupService {
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
         .map((e) => ({ name: e.name, date: new Date(e.date), size: e.size, key: e.key }));
     } catch (error: unknown) {
-      logger.warn('Error listing backups:', error);
+      logger.warn({ err: error }, 'Error listing backups:');
       return [];
     }
   }

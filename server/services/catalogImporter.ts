@@ -513,7 +513,7 @@ class CatalogImporter {
         }
       } catch (error) {
         result.failedRows += releaseRows.length;
-        logger.warn(`Error importing release group ${releaseKey}:`, error);
+        logger.warn({ err: error }, `Error importing release group ${releaseKey}:`);
         
         for (const row of releaseRows) {
           result.errors.push({

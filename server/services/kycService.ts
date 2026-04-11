@@ -1010,7 +1010,7 @@ export class KYCService {
         });
       }
     } catch (error) {
-      logger.warn('Error notifying verification complete:', error);
+      logger.warn({ err: error }, 'Error notifying verification complete:');
     }
   }
 
@@ -1038,7 +1038,7 @@ export class KYCService {
         });
       }
     } catch (error) {
-      logger.warn('Error notifying verification rejected:', error);
+      logger.warn({ err: error }, 'Error notifying verification rejected:');
     }
   }
 }

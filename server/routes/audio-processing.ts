@@ -236,7 +236,7 @@ router.post('/analyze', requireAuth, async (req: Request, res: Response) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Audio analysis error:', error);
+    logger.warn({ err: error }, 'Audio analysis error:');
     res.status(500).json({ error: 'Audio analysis failed' });
   }
 });
@@ -304,7 +304,7 @@ router.post('/process', requireAuth, async (req: Request, res: Response) => {
       processingApplied: processingChain.map(p => p.type),
     });
   } catch (error: unknown) {
-    logger.warn('Audio processing error:', error);
+    logger.warn({ err: error }, 'Audio processing error:');
     res.status(500).json({ error: 'Audio processing failed' });
   }
 });
@@ -429,7 +429,7 @@ router.get('/presets', requireAuth, async (req: Request, res: Response) => {
       presets,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching presets:', error);
+    logger.warn({ err: error }, 'Error fetching presets:');
     res.status(500).json({ error: 'Failed to fetch presets' });
   }
 });

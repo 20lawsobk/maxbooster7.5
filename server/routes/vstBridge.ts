@@ -44,7 +44,7 @@ router.get('/status', requireAuth, async (req, res) => {
       lastScanTime: stats.lastScanTime,
     });
   } catch (error: unknown) {
-    logger.warn('Error getting VST bridge status:', error);
+    logger.warn({ err: error }, 'Error getting VST bridge status:');
     res.status(500).json({ error: 'Failed to get VST bridge status' });
   }
 });
@@ -57,7 +57,7 @@ router.post('/initialize', requireAuth, async (req, res) => {
       message: 'VST Plugin Bridge initialized',
     });
   } catch (error: unknown) {
-    logger.warn('Error initializing VST bridge:', error);
+    logger.warn({ err: error }, 'Error initializing VST bridge:');
     res.status(500).json({ error: 'Failed to initialize VST bridge' });
   }
 });
@@ -88,7 +88,7 @@ router.post('/connect-desktop', requireAuth, async (req, res) => {
       res.status(400).json({ error: 'Failed to connect desktop app' });
     }
   } catch (error: unknown) {
-    logger.warn('Error connecting desktop app:', error);
+    logger.warn({ err: error }, 'Error connecting desktop app:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -104,7 +104,7 @@ router.post('/disconnect-desktop', requireAuth, async (req, res) => {
       message: 'Desktop app disconnected',
     });
   } catch (error: unknown) {
-    logger.warn('Error disconnecting desktop app:', error);
+    logger.warn({ err: error }, 'Error disconnecting desktop app:');
     res.status(500).json({ error: 'Failed to disconnect desktop app' });
   }
 });
@@ -119,7 +119,7 @@ router.post('/scan', requireAuth, async (req, res) => {
       result,
     });
   } catch (error: unknown) {
-    logger.warn('Error scanning VST plugins:', error);
+    logger.warn({ err: error }, 'Error scanning VST plugins:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -147,7 +147,7 @@ router.get('/plugins', requireAuth, async (req, res) => {
       count: plugins.length,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching VST plugins:', error);
+    logger.warn({ err: error }, 'Error fetching VST plugins:');
     res.status(500).json({ error: 'Failed to fetch VST plugins' });
   }
 });
@@ -166,7 +166,7 @@ router.get('/plugins/:id', requireAuth, async (req, res) => {
       plugin,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching VST plugin details:', error);
+    logger.warn({ err: error }, 'Error fetching VST plugin details:');
     res.status(500).json({ error: 'Failed to fetch plugin details' });
   }
 });
@@ -189,7 +189,7 @@ router.post('/instances', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn('Error creating VST instance:', error);
+    logger.warn({ err: error }, 'Error creating VST instance:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -215,7 +215,7 @@ router.get('/instances', requireAuth, async (req, res) => {
       instances,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching VST instances:', error);
+    logger.warn({ err: error }, 'Error fetching VST instances:');
     res.status(500).json({ error: 'Failed to fetch VST instances' });
   }
 });
@@ -234,7 +234,7 @@ router.get('/instances/:id', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching VST instance:', error);
+    logger.warn({ err: error }, 'Error fetching VST instance:');
     res.status(500).json({ error: 'Failed to fetch VST instance' });
   }
 });
@@ -251,7 +251,7 @@ router.put('/instances/:id/parameters', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn('Error updating VST parameters:', error);
+    logger.warn({ err: error }, 'Error updating VST parameters:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -275,7 +275,7 @@ router.put('/instances/:id/bypass', requireAuth, async (req, res) => {
       instance,
     });
   } catch (error: unknown) {
-    logger.warn('Error setting VST bypass:', error);
+    logger.warn({ err: error }, 'Error setting VST bypass:');
     res.status(500).json({ error: 'Failed to set VST bypass' });
   }
 });
@@ -292,7 +292,7 @@ router.post('/instances/:id/program', requireAuth, async (req, res) => {
       message: 'Program loaded successfully',
     });
   } catch (error: unknown) {
-    logger.warn('Error loading VST program:', error);
+    logger.warn({ err: error }, 'Error loading VST program:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -310,7 +310,7 @@ router.post('/instances/:id/editor/open', requireAuth, async (req, res) => {
       windowId: result.windowId,
     });
   } catch (error: unknown) {
-    logger.warn('Error opening VST editor:', error);
+    logger.warn({ err: error }, 'Error opening VST editor:');
     res.status(500).json({ error: 'Failed to open VST editor' });
   }
 });
@@ -325,7 +325,7 @@ router.post('/instances/:id/editor/close', requireAuth, async (req, res) => {
       message: 'Editor closed',
     });
   } catch (error: unknown) {
-    logger.warn('Error closing VST editor:', error);
+    logger.warn({ err: error }, 'Error closing VST editor:');
     res.status(500).json({ error: 'Failed to close VST editor' });
   }
 });
@@ -337,7 +337,7 @@ router.delete('/instances/:id', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error deleting VST instance:', error);
+    logger.warn({ err: error }, 'Error deleting VST instance:');
     res.status(500).json({ error: 'Failed to delete VST instance' });
   }
 });
@@ -378,7 +378,7 @@ router.get('/formats', requireAuth, async (req, res) => {
       ],
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching plugin formats:', error);
+    logger.warn({ err: error }, 'Error fetching plugin formats:');
     res.status(500).json({ error: 'Failed to fetch plugin formats' });
   }
 });

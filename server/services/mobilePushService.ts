@@ -137,7 +137,7 @@ class MobilePushService {
           logger.info('📱 Mobile Push Service: FCM v1 API ready (raw key + email)');
           return;
         } catch (err) {
-          logger.warn('📱 Mobile Push Service: Failed to reconstruct service account from raw key', err);
+          logger.warn({ err: err }, '📱 Mobile Push Service: Failed to reconstruct service account from raw key');
         }
       } else {
         logger.warn('📱 Mobile Push Service: FCM_SERVICE_ACCOUNT_KEY is not valid JSON — set FCM_CLIENT_EMAIL to activate raw-key mode');
@@ -204,7 +204,7 @@ class MobilePushService {
         logger.info(`📱 Mobile token registered for user ${userId} (${platform})`);
       }
     } catch (error) {
-      logger.warn('Failed to register mobile device token:', error);
+      logger.warn({ err: error }, 'Failed to register mobile device token:');
       throw error;
     }
   }
@@ -216,7 +216,7 @@ class MobilePushService {
         .set({ isActive: false, updatedAt: new Date() })
         .where(eq(mobileDeviceTokens.token, token));
     } catch (error) {
-      logger.warn('Failed to deactivate mobile device token:', error);
+      logger.warn({ err: error }, 'Failed to deactivate mobile device token:');
     }
   }
 
@@ -227,7 +227,7 @@ class MobilePushService {
         .where(eq(mobileDeviceTokens.userId, userId));
       logger.info(`📱 All mobile tokens removed for user ${userId}`);
     } catch (error) {
-      logger.warn('Failed to remove user mobile tokens:', error);
+      logger.warn({ err: error }, 'Failed to remove user mobile tokens:');
     }
   }
 
@@ -243,7 +243,7 @@ class MobilePushService {
           )
         ) as DeviceTokenRecord[];
     } catch (error) {
-      logger.warn('Failed to get user mobile tokens:', error);
+      logger.warn({ err: error }, 'Failed to get user mobile tokens:');
       return [];
     }
   }
@@ -306,7 +306,7 @@ class MobilePushService {
       this.accessTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       return this.accessToken;
     } catch (error) {
-      logger.warn('FCM access token error:', error);
+      logger.warn({ err: error }, 'FCM access token error:');
       return null;
     }
   }
@@ -389,7 +389,7 @@ class MobilePushService {
       }
       return true;
     } catch (error) {
-      logger.warn('FCM v1 network error:', error);
+      logger.warn({ err: error }, 'FCM v1 network error:');
       return false;
     }
   }
@@ -447,7 +447,7 @@ class MobilePushService {
       }
       return (result.success ?? 0) > 0;
     } catch (error) {
-      logger.warn('FCM legacy network error:', error);
+      logger.warn({ err: error }, 'FCM legacy network error:');
       return false;
     }
   }

@@ -89,7 +89,7 @@ async function runAdBoosterSimulation() {
 
     return results.summary.allScenariosPass;
   } catch (error: unknown) {
-    logger.warn('❌ Ad Booster simulation failed:', error);
+    logger.warn({ err: error }, '❌ Ad Booster simulation failed:');
     return false;
   }
 }
@@ -260,7 +260,7 @@ async function runAutonomousUpgradeSimulation() {
 
     return allPass;
   } catch (error: unknown) {
-    logger.warn('❌ Autonomous Upgrade simulation failed:', error);
+    logger.warn({ err: error }, '❌ Autonomous Upgrade simulation failed:');
     return false;
   }
 }

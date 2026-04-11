@@ -46,7 +46,7 @@ export class SessionTrackingService {
       
       logger.debug(`📝 Session tracked: user=${userId}, session=${sessionId}`);
     } catch (error: unknown) {
-      logger.warn('Error tracking session:', error);
+      logger.warn({ err: error }, 'Error tracking session:');
       // Don't throw - session tracking is non-critical
     }
   }
@@ -68,7 +68,7 @@ export class SessionTrackingService {
       
       logger.debug(`🗑️ Session untracked: user=${userId}, session=${sessionId}`);
     } catch (error: unknown) {
-      logger.warn('Error untracking session:', error);
+      logger.warn({ err: error }, 'Error untracking session:');
     }
   }
 
@@ -88,7 +88,7 @@ export class SessionTrackingService {
       
       return sessionIds;
     } catch (error: unknown) {
-      logger.warn('Error getting user sessions:', error);
+      logger.warn({ err: error }, 'Error getting user sessions:');
       return [];
     }
   }
@@ -130,7 +130,7 @@ export class SessionTrackingService {
       logger.info(`✅ Revoked ${sessionIds.length} sessions for user ${userId} (O(1) lookup)`);
       return sessionIds.length;
     } catch (error: unknown) {
-      logger.warn('Error revoking user sessions:', error);
+      logger.warn({ err: error }, 'Error revoking user sessions:');
       // Fallback to slow method if tracking fails
       return await this.fallbackRevokeAllSessions(userId);
     }
@@ -166,7 +166,7 @@ export class SessionTrackingService {
       
       return deletionPromises.length;
     } catch (error: unknown) {
-      logger.warn('Error in fallback session revocation:', error);
+      logger.warn({ err: error }, 'Error in fallback session revocation:');
       return 0;
     }
   }
@@ -213,7 +213,7 @@ export class SessionTrackingService {
 
       logger.info(`✅ Session tracking cleanup complete - cleaned ${cleaned} stale entries`);
     } catch (error: unknown) {
-      logger.warn('Error cleaning up session tracking:', error);
+      logger.warn({ err: error }, 'Error cleaning up session tracking:');
     }
   }
 
@@ -244,7 +244,7 @@ export class SessionTrackingService {
         avgSessionsPerUser: trackingKeys.length > 0 ? totalSessions / trackingKeys.length : 0
       };
     } catch (error: unknown) {
-      logger.warn('Error getting session stats:', error);
+      logger.warn({ err: error }, 'Error getting session stats:');
       return { totalUsers: 0, totalSessions: 0, avgSessionsPerUser: 0 };
     }
   }

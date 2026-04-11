@@ -36,7 +36,7 @@ async function initializeFfmpeg() {
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn('FFmpeg not available - time stretch features will be limited:', error);
+    logger.warn({ err: error }, 'FFmpeg not available - time stretch features will be limited:');
     return false;
   }
 }
@@ -107,7 +107,7 @@ export class TimeStretchService {
     try {
       await fsPromises.mkdir(this.tempDir, { recursive: true });
     } catch (error) {
-      logger.warn('Failed to create temp directory for warp processing', error);
+      logger.warn({ err: error }, 'Failed to create temp directory for warp processing');
     }
   }
 

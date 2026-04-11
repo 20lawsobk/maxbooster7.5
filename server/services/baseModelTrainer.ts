@@ -432,7 +432,7 @@ async function trainAndSaveSocialBase(): Promise<boolean> {
     logger.info('[BaseTrainer] Social base weights saved to storage bubble');
     return true;
   } catch (err) {
-    logger.warn('[BaseTrainer] Social autopilot training failed:', err);
+    logger.warn({ err: err }, '[BaseTrainer] Social autopilot training failed:');
     return false;
   }
 }
@@ -489,7 +489,7 @@ async function trainAndSaveAdvertisingBase(): Promise<boolean> {
     logger.info('[BaseTrainer] Advertising base weights v2.0 saved to storage bubble — organic-as-ads + paid benchmarks trained');
     return true;
   } catch (err) {
-    logger.warn('[BaseTrainer] Advertising autopilot training failed:', err);
+    logger.warn({ err: err }, '[BaseTrainer] Advertising autopilot training failed:');
     return false;
   }
 }
@@ -674,7 +674,7 @@ async function fineTuneWithPublicDatasets(): Promise<boolean> {
 
     return true;
   } catch (err) {
-    logger.warn('[BaseTrainer] Fine-tuning with public datasets failed:', err);
+    logger.warn({ err: err }, '[BaseTrainer] Fine-tuning with public datasets failed:');
     return false;
   }
 }

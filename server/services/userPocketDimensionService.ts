@@ -90,7 +90,7 @@ export class UserPocketDimensionService {
       
       return storage;
     } catch (error) {
-      logger.warn(`[PocketDimension] Failed to create storage for user ${userId}:`, error);
+      logger.warn({ err: error }, `[PocketDimension] Failed to create storage for user ${userId}:`);
       throw error;
     }
   }
@@ -124,7 +124,7 @@ export class UserPocketDimensionService {
       
       return pocket;
     } catch (error) {
-      logger.warn(`[PocketDimension] Failed to open storage for user ${userId}:`, error);
+      logger.warn({ err: error }, `[PocketDimension] Failed to open storage for user ${userId}:`);
       return null;
     }
   }

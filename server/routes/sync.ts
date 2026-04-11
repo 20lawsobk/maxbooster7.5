@@ -177,7 +177,7 @@ router.post('/batch', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Batch sync request failed:', error);
+    logger.warn({ err: error }, 'Batch sync request failed:');
 
     if (error instanceof z.ZodError) {
       return res.status(400).json({
@@ -201,7 +201,7 @@ router.get('/status', requireAuth, async (req, res) => {
       syncEnabled: true,
     });
   } catch (error: unknown) {
-    logger.warn('Sync status check failed:', error);
+    logger.warn({ err: error }, 'Sync status check failed:');
     res.status(500).json({ error: 'Failed to check sync status' });
   }
 });
@@ -224,7 +224,7 @@ router.post('/resolve-conflict', requireAuth, async (req, res) => {
       resolved: true,
     });
   } catch (error: unknown) {
-    logger.warn('Conflict resolution failed:', error);
+    logger.warn({ err: error }, 'Conflict resolution failed:');
     res.status(500).json({ error: 'Failed to resolve conflict' });
   }
 });

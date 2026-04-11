@@ -64,7 +64,7 @@ router.get('/status', requireAuth, async (_req, res) => {
       recentUpgrades,
     });
   } catch (error) {
-    logger.warn('Failed to get auto-updates status:', error);
+    logger.warn({ err: error }, 'Failed to get auto-updates status:');
     res.status(500).json({ error: 'Failed to get auto-updates status' });
   }
 });
@@ -92,7 +92,7 @@ router.post('/start', requireAdmin, async (req, res) => {
       upgradesDeployed: status.upgradesDeployed,
     });
   } catch (error) {
-    logger.warn('Failed to start self-evolution engine:', error);
+    logger.warn({ err: error }, 'Failed to start self-evolution engine:');
     res.status(500).json({ error: 'Failed to start engine' });
   }
 });
@@ -111,7 +111,7 @@ router.post('/stop', requireAdmin, async (req, res) => {
       upgradesDeployed: status.upgradesDeployed,
     });
   } catch (error) {
-    logger.warn('Failed to stop self-evolution engine:', error);
+    logger.warn({ err: error }, 'Failed to stop self-evolution engine:');
     res.status(500).json({ error: 'Failed to stop engine' });
   }
 });
@@ -129,7 +129,7 @@ router.post('/run-once', requireAdmin, runOnceRateLimit, async (req, res) => {
       upgradesDeployed: result.upgradesDeployed,
     });
   } catch (error) {
-    logger.warn('Failed to run evolution cycle:', error);
+    logger.warn({ err: error }, 'Failed to run evolution cycle:');
     res.status(500).json({ error: 'Evolution cycle failed' });
   }
 });
@@ -140,7 +140,7 @@ router.get('/changes', requireAuth, async (req, res) => {
     const changes = selfEvolution.getIndustryChanges(limit);
     res.json({ changes, total: changes.length });
   } catch (error) {
-    logger.warn('Failed to get industry changes:', error);
+    logger.warn({ err: error }, 'Failed to get industry changes:');
     res.status(500).json({ error: 'Failed to get industry changes' });
   }
 });
@@ -151,7 +151,7 @@ router.get('/upgrades', requireAuth, async (req, res) => {
     const upgrades = selfEvolution.getUpgradeHistory(limit);
     res.json({ upgrades, total: upgrades.length });
   } catch (error) {
-    logger.warn('Failed to get upgrade history:', error);
+    logger.warn({ err: error }, 'Failed to get upgrade history:');
     res.status(500).json({ error: 'Failed to get upgrade history' });
   }
 });
@@ -170,7 +170,7 @@ router.post('/simulation', requireAdmin, simulationRateLimit, async (req, res) =
 
     res.json({ success: true, mainResults, longTermResults, report });
   } catch (error) {
-    logger.warn('Failed to run simulation:', error);
+    logger.warn({ err: error }, 'Failed to run simulation:');
     res.status(500).json({ error: 'Simulation failed' });
   }
 });
@@ -179,7 +179,7 @@ router.get('/silent-deployment/status', requireAdmin, (_req, res) => {
   try {
     res.json(silentDeployment.getStatus());
   } catch (error) {
-    logger.warn('Failed to get silent deployment status:', error);
+    logger.warn({ err: error }, 'Failed to get silent deployment status:');
     res.status(500).json({ error: 'Failed to get silent deployment status' });
   }
 });
@@ -189,7 +189,7 @@ router.get('/silent-deployment/history', requireAdmin, (req, res) => {
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
     res.json({ history: silentDeployment.getHistory(limit) });
   } catch (error) {
-    logger.warn('Failed to get silent deployment history:', error);
+    logger.warn({ err: error }, 'Failed to get silent deployment history:');
     res.status(500).json({ error: 'Failed to get silent deployment history' });
   }
 });
@@ -200,7 +200,7 @@ router.post('/silent-deployment/enable', requireAdmin, (req, res) => {
     logger.info(`[SilentDeploy] Enabled by admin ${req.user!.id}`);
     res.json({ success: true, message: 'Silent deployment system enabled', status: silentDeployment.getStatus() });
   } catch (error) {
-    logger.warn('Failed to enable silent deployment:', error);
+    logger.warn({ err: error }, 'Failed to enable silent deployment:');
     res.status(500).json({ error: 'Failed to enable silent deployment' });
   }
 });
@@ -211,7 +211,7 @@ router.post('/silent-deployment/disable', requireAdmin, (req, res) => {
     logger.info(`[SilentDeploy] Disabled by admin ${req.user!.id}`);
     res.json({ success: true, message: 'Silent deployment system disabled', status: silentDeployment.getStatus() });
   } catch (error) {
-    logger.warn('Failed to disable silent deployment:', error);
+    logger.warn({ err: error }, 'Failed to disable silent deployment:');
     res.status(500).json({ error: 'Failed to disable silent deployment' });
   }
 });
@@ -220,7 +220,7 @@ router.get('/industry-monitor/status', requireAdmin, (_req, res) => {
   try {
     res.json(industryMonitor.getStatus());
   } catch (error) {
-    logger.warn('Failed to get industry monitor status:', error);
+    logger.warn({ err: error }, 'Failed to get industry monitor status:');
     res.status(500).json({ error: 'Failed to get industry monitor status' });
   }
 });
@@ -232,7 +232,7 @@ router.post('/industry-monitor/refresh', requireAdmin, async (req, res) => {
     const changes = await industryMonitor.fetchLiveChanges();
     res.json({ success: true, newChanges: changes.length, changes });
   } catch (error) {
-    logger.warn('Failed to refresh industry monitor:', error);
+    logger.warn({ err: error }, 'Failed to refresh industry monitor:');
     res.status(500).json({ error: 'Failed to refresh industry monitor' });
   }
 });

@@ -38,7 +38,7 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
 
     next();
   } catch (error: unknown) {
-    logger.warn('JWT verification error:', error);
+    logger.warn({ err: error }, 'JWT verification error:');
     return res.status(401).json({ message: 'Token verification failed' });
   }
 };
@@ -76,7 +76,7 @@ export const requireAuthDual = async (req: Request, res: Response, next: NextFun
         return next();
       }
     } catch (error: unknown) {
-      logger.warn('Session auth error:', error);
+      logger.warn({ err: error }, 'Session auth error:');
     }
   }
 

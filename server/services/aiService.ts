@@ -176,7 +176,7 @@ export class AIService {
       ]);
     } catch (error: unknown) {
       if (process.env.NODE_ENV !== 'development') {
-        logger.warn('Failed to initialize AI service audio data in Redis:', error);
+        logger.warn({ err: error }, 'Failed to initialize AI service audio data in Redis:');
       }
     }
   }
@@ -224,7 +224,7 @@ export class AIService {
         },
       };
     } catch (error: unknown) {
-      logger.warn('AI advertising error:', error);
+      logger.warn({ err: error }, 'AI advertising error:');
       throw new Error('Failed to generate zero-cost ad campaign');
     }
   }
@@ -252,7 +252,7 @@ export class AIService {
 
       return { success: true, mixSettings };
     } catch (error: unknown) {
-      logger.warn('AI mix error:', error);
+      logger.warn({ err: error }, 'AI mix error:');
       throw new Error('Failed to mix track with AI');
     }
   }
@@ -281,7 +281,7 @@ export class AIService {
 
       return { success: true, masterSettings };
     } catch (error: unknown) {
-      logger.warn('AI master error:', error);
+      logger.warn({ err: error }, 'AI master error:');
       throw new Error('Failed to master track with AI');
     }
   }
@@ -294,7 +294,7 @@ export class AIService {
     try {
       return await this.analyzeAudio(audioData);
     } catch (error: unknown) {
-      logger.warn('AI analysis error:', error);
+      logger.warn({ err: error }, 'AI analysis error:');
       throw new Error('Failed to analyze track');
     }
   }
@@ -689,7 +689,7 @@ export class AIService {
       const val = await redis.get(`${this.GENRE_PROFILES_PREFIX}${genre}`);
       return val ? JSON.parse(val) : null;
     } catch (error: unknown) {
-      logger.warn(`Failed to get genre profile for ${genre}:`, error);
+      logger.warn({ err: error }, `Failed to get genre profile for ${genre}:`);
       return null;
     }
   }
@@ -702,7 +702,7 @@ export class AIService {
       const val = await redis.get(`${this.AUDIO_PATTERNS_PREFIX}${key}`);
       return val ? JSON.parse(val) : null;
     } catch (error: unknown) {
-      logger.warn(`Failed to get audio pattern for ${key}:`, error);
+      logger.warn({ err: error }, `Failed to get audio pattern for ${key}:`);
       return null;
     }
   }

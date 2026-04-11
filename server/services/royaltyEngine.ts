@@ -828,7 +828,7 @@ export class RoyaltyEngine {
         }
         this._platformRatesCache = { data: map, expiresAt: now + 3600_000 };
       } catch (err) {
-        logger.warn('Failed to load platform royalty rates from DB, using hardcoded fallback:', err);
+        logger.warn({ err: err }, 'Failed to load platform royalty rates from DB, using hardcoded fallback:');
         return null;
       }
     }

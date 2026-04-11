@@ -86,7 +86,7 @@ class AutoPostingServiceV2 {
 
       logger.info(`✅ Reloaded ${reloadedCount} pending posts`);
     } catch (error) {
-      logger.warn('Failed to reload pending jobs:', error);
+      logger.warn({ err: error }, 'Failed to reload pending jobs:');
     }
   }
 
@@ -151,7 +151,7 @@ class AutoPostingServiceV2 {
             ).catch(err => logger.warn('[AutoPost] notification error (non-fatal):', err?.message));
           }
         } catch (error: any) {
-          logger.warn(`Failed to process auto-post ${post.id}:`, error);
+          logger.warn({ err: error }, `Failed to process auto-post ${post.id}:`);
           await storage.updateScheduledPost(post.id, { status: 'failed' });
         }
       } catch (error: any) {
@@ -241,7 +241,7 @@ class AutoPostingServiceV2 {
         const result = await this.postToPlatform(user, platform, post.content);
         results.push(result);
       } catch (error: any) {
-        logger.warn(`Failed to post to ${platform}:`, error);
+        logger.warn({ err: error }, `Failed to post to ${platform}:`);
         results.push({
           platform,
           success: false,

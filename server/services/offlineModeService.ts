@@ -134,7 +134,7 @@ class OfflineModeService extends EventEmitter {
       logger.info('[OfflineCache] Pocket Dimension storage bubble opened (level-9 gzip, dedup)');
       await this.loadCacheIndex();
     } catch (error) {
-      logger.warn('[OfflineCache] Failed to open Pocket Dimension, cache unavailable:', error);
+      logger.warn({ err: error }, '[OfflineCache] Failed to open Pocket Dimension, cache unavailable:');
     }
   }
 
@@ -176,7 +176,7 @@ class OfflineModeService extends EventEmitter {
       projects: Object.fromEntries(this.cachedProjects),
     };
     this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: any) =>
-      logger.warn('[OfflineCache] Failed to save cache index:', err)
+      logger.warn({ err: err }, '[OfflineCache] Failed to save cache index:')
     );
   }
 
@@ -200,7 +200,7 @@ class OfflineModeService extends EventEmitter {
         fs.writeFileSync(localPath, buffer);
         return { localPath, size: buffer.length };
       } catch (error) {
-        logger.warn(`Failed to download audio from URL ${audioUrl}:`, error);
+        logger.warn({ err: error }, `Failed to download audio from URL ${audioUrl}:`);
         return { localPath: audioUrl, size: 0 };
       }
     } else if (fs.existsSync(audioUrl)) {
@@ -209,7 +209,7 @@ class OfflineModeService extends EventEmitter {
         const stats = fs.statSync(localPath);
         return { localPath, size: stats.size };
       } catch (error) {
-        logger.warn(`Failed to copy local audio file ${audioUrl}:`, error);
+        logger.warn({ err: error }, `Failed to copy local audio file ${audioUrl}:`);
         return { localPath: audioUrl, size: 0 };
       }
     }
@@ -347,7 +347,7 @@ class OfflineModeService extends EventEmitter {
 
       return offlineProject;
     } catch (error) {
-      logger.warn('Failed to cache project:', error);
+      logger.warn({ err: error }, 'Failed to cache project:');
       throw error;
     }
   }
@@ -367,7 +367,7 @@ class OfflineModeService extends EventEmitter {
         fs.rmSync(projectAudioDir, { recursive: true, force: true });
       }
     } catch (error) {
-      logger.warn('Failed to clean up cached files:', error);
+      logger.warn({ err: error }, 'Failed to clean up cached files:');
     }
 
     this.cachedProjects.delete(projectId);

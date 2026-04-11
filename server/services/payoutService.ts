@@ -440,7 +440,7 @@ export class PayoutService {
         processed++;
 
       } catch (error) {
-        logger.warn(`Failed scheduled payout for user ${prefs.userId}:`, error);
+        logger.warn({ err: error }, `Failed scheduled payout for user ${prefs.userId}:`);
         failed++;
       }
     }

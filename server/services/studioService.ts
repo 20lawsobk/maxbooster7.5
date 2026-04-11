@@ -175,7 +175,7 @@ export class StudioService {
       const project = await storageAny.createStudioProject(data);
       return project;
     } catch (error: unknown) {
-      logger.warn('Error creating studio project:', error);
+      logger.warn({ err: error }, 'Error creating studio project:');
       throw new Error('Failed to create studio project');
     }
   }
@@ -184,7 +184,7 @@ export class StudioService {
     try {
       return await storageAny.getUserStudioProjects(userId);
     } catch (error: unknown) {
-      logger.warn('Error fetching user projects:', error);
+      logger.warn({ err: error }, 'Error fetching user projects:');
       throw new Error('Failed to fetch user projects');
     }
   }
@@ -208,7 +208,7 @@ export class StudioService {
 
       return project;
     } catch (error: unknown) {
-      logger.warn('Error fetching project:', error);
+      logger.warn({ err: error }, 'Error fetching project:');
       throw new Error('Failed to fetch project');
     }
   }
@@ -221,7 +221,7 @@ export class StudioService {
     try {
       return await storageAny.updateStudioProject(projectId, userId, updates);
     } catch (error: unknown) {
-      logger.warn('Error updating project:', error);
+      logger.warn({ err: error }, 'Error updating project:');
       throw new Error('Failed to update project');
     }
   }
@@ -230,7 +230,7 @@ export class StudioService {
     try {
       await storageAny.deleteStudioProject(projectId, userId);
     } catch (error: unknown) {
-      logger.warn('Error deleting project:', error);
+      logger.warn({ err: error }, 'Error deleting project:');
       throw new Error('Failed to delete project');
     }
   }
@@ -250,7 +250,7 @@ export class StudioService {
 
       return track;
     } catch (error: unknown) {
-      logger.warn('Error adding track:', error);
+      logger.warn({ err: error }, 'Error adding track:');
       throw new Error('Failed to add track');
     }
   }
@@ -259,7 +259,7 @@ export class StudioService {
     try {
       return await storageAny.getProjectTracks(projectId);
     } catch (error: unknown) {
-      logger.warn('Error fetching project tracks:', error);
+      logger.warn({ err: error }, 'Error fetching project tracks:');
       throw new Error('Failed to fetch project tracks');
     }
   }
@@ -272,7 +272,7 @@ export class StudioService {
     try {
       return await storageAny.updateStudioTrack(trackId, projectId, updates);
     } catch (error: unknown) {
-      logger.warn('Error updating track:', error);
+      logger.warn({ err: error }, 'Error updating track:');
       throw new Error('Failed to update track');
     }
   }
@@ -288,7 +288,7 @@ export class StudioService {
         } as Partial<StudioProject>);
       }
     } catch (error: unknown) {
-      logger.warn('Error deleting track:', error);
+      logger.warn({ err: error }, 'Error deleting track:');
       throw new Error('Failed to delete track');
     }
   }
@@ -321,7 +321,7 @@ export class StudioService {
         duration: undefined,
       };
     } catch (error: unknown) {
-      logger.warn('Error uploading audio:', error);
+      logger.warn({ err: error }, 'Error uploading audio:');
       throw new Error('Failed to upload audio file');
     }
   }
@@ -380,7 +380,7 @@ export class StudioService {
         peaks,
       };
     } catch (error: unknown) {
-      logger.warn('Error processing audio:', error);
+      logger.warn({ err: error }, 'Error processing audio:');
       throw new Error('Failed to process audio');
     }
   }
@@ -407,7 +407,7 @@ export class StudioService {
         updatedAt: new Date(),
       } as Partial<StudioProject>);
     } catch (error: unknown) {
-      logger.warn('Error saving autosave:', error);
+      logger.warn({ err: error }, 'Error saving autosave:');
       throw new Error('Failed to save autosave');
     }
   }
@@ -453,7 +453,7 @@ export class StudioService {
         markers,
       };
     } catch (error: unknown) {
-      logger.warn('Error loading project:', error);
+      logger.warn({ err: error }, 'Error loading project:');
       throw new Error('Failed to load project');
     }
   }
@@ -507,7 +507,7 @@ export class StudioService {
         takeGroupId: audioClip.takeGroupId || '',
       };
     } catch (error: unknown) {
-      logger.warn('Error uploading recording:', error);
+      logger.warn({ err: error }, 'Error uploading recording:');
       throw new Error('Failed to upload recording');
     }
   }
@@ -516,7 +516,7 @@ export class StudioService {
     try {
       return await storageAny.getClipsByTakeGroup(takeGroupId);
     } catch (error: unknown) {
-      logger.warn('Error fetching clips by take group:', error);
+      logger.warn({ err: error }, 'Error fetching clips by take group:');
       throw new Error('Failed to fetch clips by take group');
     }
   }
@@ -537,7 +537,7 @@ export class StudioService {
         status: 'processing',
       };
     } catch (error: unknown) {
-      logger.warn('Error exporting project:', error);
+      logger.warn({ err: error }, 'Error exporting project:');
       throw new Error('Failed to export project');
     }
   }
@@ -569,7 +569,7 @@ export class StudioService {
         collaborators,
       } as Partial<StudioProject>);
     } catch (error: unknown) {
-      logger.warn('Error adding collaborator:', error);
+      logger.warn({ err: error }, 'Error adding collaborator:');
       throw new Error('Failed to add collaborator');
     }
   }
@@ -578,7 +578,7 @@ export class StudioService {
     try {
       return await storageAny.createAudioClip(clipData);
     } catch (error: unknown) {
-      logger.warn('Error creating audio clip:', error);
+      logger.warn({ err: error }, 'Error creating audio clip:');
       throw new Error('Failed to create audio clip');
     }
   }
@@ -587,7 +587,7 @@ export class StudioService {
     try {
       return await storageAny.getTrackClips(trackId);
     } catch (error: unknown) {
-      logger.warn('Error fetching track clips:', error);
+      logger.warn({ err: error }, 'Error fetching track clips:');
       throw new Error('Failed to fetch track clips');
     }
   }
@@ -596,7 +596,7 @@ export class StudioService {
     try {
       return await storageAny.updateAudioClip(clipId, updates);
     } catch (error: unknown) {
-      logger.warn('Error updating audio clip:', error);
+      logger.warn({ err: error }, 'Error updating audio clip:');
       throw new Error('Failed to update audio clip');
     }
   }
@@ -605,7 +605,7 @@ export class StudioService {
     try {
       await storageAny.deleteAudioClip(clipId);
     } catch (error: unknown) {
-      logger.warn('Error deleting audio clip:', error);
+      logger.warn({ err: error }, 'Error deleting audio clip:');
       throw new Error('Failed to delete audio clip');
     }
   }
@@ -624,7 +624,7 @@ export class StudioService {
 
       return await this.updateAudioClip(clipId, { gain: normalizeGain });
     } catch (error: unknown) {
-      logger.warn('Error normalizing clip:', error);
+      logger.warn({ err: error }, 'Error normalizing clip:');
       throw new Error('Failed to normalize clip');
     }
   }
@@ -675,7 +675,7 @@ export class StudioService {
 
       return { clip1, clip2 };
     } catch (error: unknown) {
-      logger.warn('Error splitting clip:', error);
+      logger.warn({ err: error }, 'Error splitting clip:');
       throw new Error('Failed to split clip');
     }
   }
@@ -689,7 +689,7 @@ export class StudioService {
       });
       return effect;
     } catch (error: unknown) {
-      logger.warn('Error adding effect:', error);
+      logger.warn({ err: error }, 'Error adding effect:');
       throw new Error('Failed to add effect');
     }
   }
@@ -699,7 +699,7 @@ export class StudioService {
       const effects = await storageAny.getTrackEffects(trackId);
       return effects.sort((a: AudioEffect, b: AudioEffect) => (a.chainPosition || 0) - (b.chainPosition || 0));
     } catch (error: unknown) {
-      logger.warn('Error fetching track effects:', error);
+      logger.warn({ err: error }, 'Error fetching track effects:');
       throw new Error('Failed to fetch track effects');
     }
   }
@@ -708,7 +708,7 @@ export class StudioService {
     try {
       return await storageAny.updateAudioEffect(effectId, updates);
     } catch (error: unknown) {
-      logger.warn('Error updating effect:', error);
+      logger.warn({ err: error }, 'Error updating effect:');
       throw new Error('Failed to update effect');
     }
   }
@@ -717,7 +717,7 @@ export class StudioService {
     try {
       await storageAny.deleteAudioEffect(effectId);
     } catch (error: unknown) {
-      logger.warn('Error deleting effect:', error);
+      logger.warn({ err: error }, 'Error deleting effect:');
       throw new Error('Failed to delete effect');
     }
   }
@@ -728,7 +728,7 @@ export class StudioService {
         await storageAny.updateAudioEffect(effectIds[i], { chainPosition: i });
       }
     } catch (error: unknown) {
-      logger.warn('Error reordering effects:', error);
+      logger.warn({ err: error }, 'Error reordering effects:');
       throw new Error('Failed to reorder effects');
     }
   }
@@ -737,7 +737,7 @@ export class StudioService {
     try {
       return await storageAny.createAutomationData(automationData);
     } catch (error: unknown) {
-      logger.warn('Error saving automation:', error);
+      logger.warn({ err: error }, 'Error saving automation:');
       throw new Error('Failed to save automation');
     }
   }
@@ -746,7 +746,7 @@ export class StudioService {
     try {
       return await storageAny.getProjectAutomation(projectId);
     } catch (error: unknown) {
-      logger.warn('Error fetching automation:', error);
+      logger.warn({ err: error }, 'Error fetching automation:');
       throw new Error('Failed to fetch automation');
     }
   }
@@ -755,7 +755,7 @@ export class StudioService {
     try {
       return await storageAny.updateAutomationData(automationId, updates);
     } catch (error: unknown) {
-      logger.warn('Error updating automation:', error);
+      logger.warn({ err: error }, 'Error updating automation:');
       throw new Error('Failed to update automation');
     }
   }
@@ -764,7 +764,7 @@ export class StudioService {
     try {
       await storageAny.deleteAutomationData(automationId);
     } catch (error: unknown) {
-      logger.warn('Error deleting automation:', error);
+      logger.warn({ err: error }, 'Error deleting automation:');
       throw new Error('Failed to delete automation');
     }
   }
@@ -792,7 +792,7 @@ export class StudioService {
         }
       }
     } catch (error: unknown) {
-      logger.warn('Error saving project:', error);
+      logger.warn({ err: error }, 'Error saving project:');
       throw new Error('Failed to save project');
     }
   }
@@ -801,7 +801,7 @@ export class StudioService {
     try {
       return await storageAny.getProjectAutosaves(projectId);
     } catch (error: unknown) {
-      logger.warn('Error fetching autosaves:', error);
+      logger.warn({ err: error }, 'Error fetching autosaves:');
       throw new Error('Failed to fetch autosaves');
     }
   }
@@ -841,7 +841,7 @@ export class StudioService {
 
       return restoredProject;
     } catch (error: unknown) {
-      logger.warn('Error restoring from autosave:', error);
+      logger.warn({ err: error }, 'Error restoring from autosave:');
       throw new Error('Failed to restore from autosave');
     }
   }
@@ -872,7 +872,7 @@ export class StudioService {
         frozenFilePath,
       };
     } catch (error: unknown) {
-      logger.warn('Error freezing track:', error);
+      logger.warn({ err: error }, 'Error freezing track:');
       throw new Error('Failed to freeze track');
     }
   }
@@ -902,7 +902,7 @@ export class StudioService {
         success: true,
       };
     } catch (error: unknown) {
-      logger.warn('Error unfreezing track:', error);
+      logger.warn({ err: error }, 'Error unfreezing track:');
       throw new Error('Failed to unfreeze track');
     }
   }
@@ -950,7 +950,7 @@ export class StudioService {
 
       return project;
     } catch (error: unknown) {
-      logger.warn('Error creating from template:', error);
+      logger.warn({ err: error }, 'Error creating from template:');
       throw new Error('Failed to create from template');
     }
   }
@@ -1059,7 +1059,7 @@ export class StudioService {
 
       return template;
     } catch (error: unknown) {
-      logger.warn('Error saving as template:', error);
+      logger.warn({ err: error }, 'Error saving as template:');
       throw new Error('Failed to save as template');
     }
   }

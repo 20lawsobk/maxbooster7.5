@@ -124,7 +124,7 @@ class InfiniteCache extends EventEmitter {
       this.initialized = true;
       logger.info('[CACHE] Infinite Cache System initialized with Pocket Dimension backing');
     } catch (error) {
-      logger.warn('[CACHE] Failed to initialize:', error);
+      logger.warn({ err: error }, '[CACHE] Failed to initialize:');
       throw error;
     }
 
@@ -426,7 +426,7 @@ class VersionInfinity extends EventEmitter {
       
       this.initialized = true;
     } catch (error) {
-      logger.warn('[VERSION] Failed to initialize:', error);
+      logger.warn({ err: error }, '[VERSION] Failed to initialize:');
       throw error;
     }
   }
@@ -585,7 +585,7 @@ class AIModelVault extends EventEmitter {
       
       this.initialized = true;
     } catch (error) {
-      logger.warn('[AI-VAULT] Failed to initialize:', error);
+      logger.warn({ err: error }, '[AI-VAULT] Failed to initialize:');
       throw error;
     }
   }
@@ -722,7 +722,7 @@ class AudioQualityMaximizer extends EventEmitter {
       this.initialized = true;
       logger.info('[AUDIO] Audio Quality Maximizer initialized');
     } catch (error) {
-      logger.warn('[AUDIO] Failed to initialize:', error);
+      logger.warn({ err: error }, '[AUDIO] Failed to initialize:');
       throw error;
     }
   }

@@ -297,7 +297,7 @@ export class AutonomousAutopilot extends EventEmitter {
           }
         }
       } catch (error: unknown) {
-        logger.warn('Autonomous content generation failed:', error);
+        logger.warn({ err: error }, 'Autonomous content generation failed:');
         this.emit('autonomousError', { type: 'content_generation', error });
       }
     };
@@ -443,7 +443,7 @@ export class AutonomousAutopilot extends EventEmitter {
         );
       }
     } catch (error: unknown) {
-      logger.warn(`Autonomous content generation failed for ${platform}:`, error);
+      logger.warn({ err: error }, `Autonomous content generation failed for ${platform}:`);
       this.emit('autonomousError', { type: 'content_generation', platform, error });
     }
   }
@@ -597,7 +597,7 @@ export class AutonomousAutopilot extends EventEmitter {
         try {
           await this.performAutonomousAnalysis();
         } catch (error: unknown) {
-          logger.warn('Autonomous performance analysis failed:', error);
+          logger.warn({ err: error }, 'Autonomous performance analysis failed:');
           this.emit('autonomousError', { type: 'performance_analysis', error });
         }
       },
@@ -651,7 +651,7 @@ export class AutonomousAutopilot extends EventEmitter {
         this.emit('autonomousAnalysisCompleted', { contentId, platform, analytics });
       }
     } catch (error: unknown) {
-      logger.warn(`Performance analysis failed for ${contentId}:`, error);
+      logger.warn({ err: error }, `Performance analysis failed for ${contentId}:`);
     }
   }
 
@@ -664,7 +664,7 @@ export class AutonomousAutopilot extends EventEmitter {
         try {
           await this.performAutonomousAdaptation();
         } catch (error: unknown) {
-          logger.warn('Autonomous adaptation failed:', error);
+          logger.warn({ err: error }, 'Autonomous adaptation failed:');
           this.emit('autonomousError', { type: 'adaptation', error });
         }
       },
@@ -845,7 +845,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
       return optimizedContent;
     } catch (error) {
-      logger.warn('Failed to apply HyperLearning optimizations:', error);
+      logger.warn({ err: error }, 'Failed to apply HyperLearning optimizations:');
       return content;
     }
   }

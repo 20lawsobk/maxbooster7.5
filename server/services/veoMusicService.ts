@@ -117,7 +117,7 @@ class VeoMusicService {
         logger.warn(`[VeoMusic] Campaign generation timed out after ${VEO_TIMEOUT_MS}ms`);
         return { success: false, error: 'Veo campaign generation timed out' };
       }
-      logger.warn('[VeoMusic] Campaign generation failed:', err);
+      logger.warn({ err: err }, '[VeoMusic] Campaign generation failed:');
       return { success: false, error: 'Veo Music service unavailable' };
     }
   }

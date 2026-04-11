@@ -83,7 +83,7 @@ router.get('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
 
     res.json({ markers });
   } catch (error: unknown) {
-    logger.warn('Error fetching warp markers:', error);
+    logger.warn({ err: error }, 'Error fetching warp markers:');
     res.status(500).json({ error: 'Failed to fetch warp markers' });
   }
 });
@@ -110,7 +110,7 @@ router.post('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
 
     res.status(201).json(newMarker);
   } catch (error: any) {
-    logger.warn('Error creating warp marker:', error);
+    logger.warn({ err: error }, 'Error creating warp marker:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
     }
@@ -149,7 +149,7 @@ router.put('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, res
 
     res.json(updatedMarker);
   } catch (error: any) {
-    logger.warn('Error updating warp marker:', error);
+    logger.warn({ err: error }, 'Error updating warp marker:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
     }
@@ -179,7 +179,7 @@ router.delete('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, 
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error deleting warp marker:', error);
+    logger.warn({ err: error }, 'Error deleting warp marker:');
     res.status(500).json({ error: 'Failed to delete warp marker' });
   }
 });
@@ -231,7 +231,7 @@ router.post('/clips/:clipId/warp/preview', requireAuth, async (req, res) => {
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
   } catch (error: any) {
-    logger.warn('Error creating warp preview:', error);
+    logger.warn({ err: error }, 'Error creating warp preview:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid preview options', details: error.errors });
     }
@@ -290,7 +290,7 @@ router.post('/clips/:clipId/warp/commit', requireAuth, async (req, res) => {
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
   } catch (error: any) {
-    logger.warn('Error committing warp:', error);
+    logger.warn({ err: error }, 'Error committing warp:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid commit options', details: error.errors });
     }
@@ -332,7 +332,7 @@ router.get('/clips/:clipId/warp/transients', requireAuth, async (req, res) => {
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
   } catch (error: any) {
-    logger.warn('Error detecting transients:', error);
+    logger.warn({ err: error }, 'Error detecting transients:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid detection options', details: error.errors });
     }
@@ -382,7 +382,7 @@ router.post('/clips/:clipId/warp/quantize', requireAuth, async (req, res) => {
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
   } catch (error: any) {
-    logger.warn('Error quantizing to grid:', error);
+    logger.warn({ err: error }, 'Error quantizing to grid:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid quantize options', details: error.errors });
     }
@@ -407,7 +407,7 @@ router.delete('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
       deleted: true,
     });
   } catch (error: unknown) {
-    logger.warn('Error deleting all warp markers:', error);
+    logger.warn({ err: error }, 'Error deleting all warp markers:');
     res.status(500).json({ error: 'Failed to delete warp markers' });
   }
 });
@@ -449,7 +449,7 @@ router.get('/clips/:clipId/warp/tempo', requireAuth, async (req, res) => {
       })),
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching tempo info:', error);
+    logger.warn({ err: error }, 'Error fetching tempo info:');
     res.status(500).json({ error: 'Failed to fetch tempo info' });
   }
 });

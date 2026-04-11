@@ -87,7 +87,7 @@ router.get('/status', async (req: Request, res: Response) => {
       lastUsedAt: store.lastUsedAt ?? null,
     });
   } catch (error) {
-    logger.warn('Error fetching recovery codes status:', error);
+    logger.warn({ err: error }, 'Error fetching recovery codes status:');
     res.status(500).json({ error: 'Failed to fetch recovery codes status' });
   }
 });
@@ -118,7 +118,7 @@ router.post('/generate', async (req: Request, res: Response) => {
       generatedAt: store.generatedAt,
     });
   } catch (error) {
-    logger.warn('Error generating recovery codes:', error);
+    logger.warn({ err: error }, 'Error generating recovery codes:');
     res.status(500).json({ error: 'Failed to generate recovery codes' });
   }
 });
@@ -157,7 +157,7 @@ router.post('/verify', async (req: Request, res: Response) => {
       codesRemaining,
     });
   } catch (error) {
-    logger.warn('Error verifying recovery code:', error);
+    logger.warn({ err: error }, 'Error verifying recovery code:');
     res.status(500).json({ error: 'Failed to verify recovery code' });
   }
 });

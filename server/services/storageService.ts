@@ -63,7 +63,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
       });
       logger.info('📦 [Storage] Pocket Dimension provider ready (PDIM-backed, level-9 gzip, dedup, 32 MB chunks)');
     } catch (err) {
-      logger.warn('[Storage] Failed to initialize Pocket Dimension provider:', err);
+      logger.warn({ err: err }, '[Storage] Failed to initialize Pocket Dimension provider:');
     }
   }
 
@@ -209,7 +209,7 @@ class StorageService {
         await this.deleteFile(key);
         logger.info(`🗑️  Deleted temp file: ${key}`);
       } catch (error: unknown) {
-        logger.warn(`Failed to delete temp file ${key}:`, error);
+        logger.warn({ err: error }, `Failed to delete temp file ${key}:`);
       }
     }, ttlMs);
   }

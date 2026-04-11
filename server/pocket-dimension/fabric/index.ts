@@ -135,6 +135,6 @@ export async function initializeFabric(): Promise<void> {
     autoClusterManager.start();
     logger.info('[PocketFabric] Auto-cluster manager started');
   } catch (err) {
-    logger.warn('[PocketFabric] Failed to initialize fabric:', err);
+    logger.warn({ err: err }, '[PocketFabric] Failed to initialize fabric:');
   }
 }

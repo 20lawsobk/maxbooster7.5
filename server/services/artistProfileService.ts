@@ -459,7 +459,7 @@ class ArtistProfileService {
       this.spotifyTokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
       return this.spotifyToken;
     } catch (err) {
-      logger.warn('[ArtistProfile] Spotify token error:', err);
+      logger.warn({ err: err }, '[ArtistProfile] Spotify token error:');
       return null;
     }
   }
@@ -489,7 +489,7 @@ class ArtistProfileService {
         externalUrl: a.external_urls?.spotify ?? '',
       }));
     } catch (err) {
-      logger.warn('[ArtistProfile] Spotify search error:', err);
+      logger.warn({ err: err }, '[ArtistProfile] Spotify search error:');
       return [];
     }
   }
@@ -518,7 +518,7 @@ class ArtistProfileService {
         externalUrl: a.external_urls?.spotify ?? '',
       };
     } catch (err) {
-      logger.warn('[ArtistProfile] Spotify verify error:', err);
+      logger.warn({ err: err }, '[ArtistProfile] Spotify verify error:');
       return null;
     }
   }
@@ -545,7 +545,7 @@ class ArtistProfileService {
           url: a.artistLinkUrl ?? `https://music.apple.com/us/artist/${a.artistId}`,
         }));
     } catch (err) {
-      logger.warn('[ArtistProfile] Apple search error:', err);
+      logger.warn({ err: err }, '[ArtistProfile] Apple search error:');
       return [];
     }
   }
@@ -571,7 +571,7 @@ class ArtistProfileService {
           link: a.link ?? `https://www.deezer.com/artist/${a.id}`,
         }));
     } catch (err) {
-      logger.warn('[ArtistProfile] Deezer search error:', err);
+      logger.warn({ err: err }, '[ArtistProfile] Deezer search error:');
       return [];
     }
   }
@@ -624,7 +624,7 @@ class ArtistProfileService {
       const relaxedData = await relaxedRes.json() as any;
       return parseMbArtists(relaxedData);
     } catch (err) {
-      logger.warn('[ArtistProfile] MusicBrainz search error (non-fatal):', err);
+      logger.warn({ err: err }, '[ArtistProfile] MusicBrainz search error (non-fatal):');
       return [];
     }
   }
@@ -707,7 +707,7 @@ class ArtistProfileService {
         url: a.url ? `https://www.jiosaavn.com${a.url}` : '',
       }));
     } catch (err) {
-      logger.warn('[ArtistProfile] JioSaavn search error (non-fatal):', err);
+      logger.warn({ err: err }, '[ArtistProfile] JioSaavn search error (non-fatal):');
       return [];
     }
   }

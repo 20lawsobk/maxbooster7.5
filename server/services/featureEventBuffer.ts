@@ -59,7 +59,7 @@ export async function pushFeatureEvent(payload: FeatureEventPayload): Promise<vo
   try {
     await redis.rpush(BUFFER_KEY, JSON.stringify(payload));
   } catch (err) {
-    logger.warn('[FeatureEventBuffer] Redis push failed, writing directly:', err);
+    logger.warn({ err: err }, '[FeatureEventBuffer] Redis push failed, writing directly:');
     await insertDirect([payload]);
   }
 }
@@ -106,7 +106,7 @@ export async function flushFeatureEvents(): Promise<number> {
       String(FLUSH_BATCH_SIZE), String(PROCESSING_TTL_SECONDS)
     )) as string[];
   } catch (err) {
-    logger.warn('[FeatureEventBuffer] Fetch Lua script failed:', err);
+    logger.warn({ err: err }, '[FeatureEventBuffer] Fetch Lua script failed:');
     return 0;
   }
 
@@ -130,7 +130,7 @@ export async function flushFeatureEvents(): Promise<number> {
     await insertDirect(payloads);
     // Confirm delivery: remove the processing key
     await redis.del(processingKey).catch((err) => {
-      logger.warn('[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):', err);
+      logger.warn({ err: err }, '[FeatureEventBuffer] Failed to delete processing key (harmless — TTL will clean up):');
     });
     logger.info(`[FeatureEventBuffer] Flushed ${payloads.length} events (batch ${batchId})`);
     return payloads.length;

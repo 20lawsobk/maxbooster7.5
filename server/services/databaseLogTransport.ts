@@ -1,5 +1,5 @@
-import type { LogEntry, LogLevel } from './structuredLogger.ts';
-import { addLogTransport } from './structuredLogger.ts';
+import type { LogEntry, LogLevel } from './structuredLogger.js';
+import { addLogTransport } from './structuredLogger.js';
 import { db } from '../db.js';
 import { systemLogs } from '@shared/schema';
 

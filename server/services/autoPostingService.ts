@@ -127,7 +127,7 @@ class AutoPostingService {
         const result = await this.postToPlatform(user, platform, content);
         results.push(result);
       } catch (error: any) {
-        logger.warn(`Failed to post to ${platform}:`, error);
+        logger.warn({ err: error }, `Failed to post to ${platform}:`);
         results.push({
           platform,
           success: false,
@@ -607,7 +607,7 @@ class AutoPostingService {
           const refreshed = await this.refreshToken(userId, platform, tokens.refreshToken);
           return refreshed.accessToken;
         } catch (error) {
-          logger.warn(`Failed to refresh token for ${platform}:`, error);
+          logger.warn({ err: error }, `Failed to refresh token for ${platform}:`);
           return null;
         }
       }
@@ -633,7 +633,7 @@ class AutoPostingService {
         expiresIn: result.expiresIn,
       };
     } catch (error: any) {
-      logger.warn(`Token refresh failed for ${platform}:`, error);
+      logger.warn({ err: error }, `Token refresh failed for ${platform}:`);
       throw new Error(`Failed to refresh ${platform} access token: ${error.message}`);
     }
   }
@@ -699,7 +699,7 @@ class AutoPostingService {
                 }
               }
             } catch (error: any) {
-              logger.warn(`Failed scheduled post ${postId}:`, error);
+              logger.warn({ err: error }, `Failed scheduled post ${postId}:`);
               scheduledPost.status = 'failed';
               await storage.updateScheduledPostStatus(postId, 'failed');
             }
@@ -709,7 +709,7 @@ class AutoPostingService {
           }
         }
       } catch (error) {
-        logger.warn('Queue processor error:', error);
+        logger.warn({ err: error }, 'Queue processor error:');
       } finally {
         this.isProcessing = false;
       }

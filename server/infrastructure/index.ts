@@ -19,14 +19,14 @@ export async function initializeInfrastructure(): Promise<void> {
     await distributedCache.connect();
     logger.info('   ✓ Distributed cache initialized');
   } catch (error) {
-    logger.warn('   ⚠️ Distributed cache using fallback mode:', error);
+    logger.warn({ err: error }, '   ⚠️ Distributed cache using fallback mode:');
   }
 
   try {
     await clusterSessionManager.initialize();
     logger.info(`   ✓ Session manager initialized (${clusterSessionManager.getStatus().mode} mode)`);
   } catch (error) {
-    logger.warn('   ⚠️ Session manager using memory store:', error);
+    logger.warn({ err: error }, '   ⚠️ Session manager using memory store:');
   }
 
   logger.info('════════════════════════════════════════════════════════');

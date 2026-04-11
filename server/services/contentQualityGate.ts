@@ -104,7 +104,7 @@ export class ContentQualityGate {
             `best=${variants[0]?.scores.overall.toFixed(1) ?? 'N/A'}`
           );
         } catch (err) {
-          logger.warn('[QualityGate] AdvancedAI round failed, falling back to template:', err);
+          logger.warn({ err: err }, '[QualityGate] AdvancedAI round failed, falling back to template:');
           const res = await contentQualityPipeline.generateAndSelect(
             userId,
             { ...baseContext, objective: this.rotateObjective(baseContext.objective, round) },
@@ -450,7 +450,7 @@ export class ContentQualityGate {
       logger.info(`[QualityGate] Archived session to Pocket Dimension: quality-gate/${key}`);
       return `quality-gate/${key}`;
     } catch (err) {
-      logger.warn('[QualityGate] Pocket Dimension archive failed (non-fatal):', err);
+      logger.warn({ err: err }, '[QualityGate] Pocket Dimension archive failed (non-fatal):');
       return null;
     }
   }

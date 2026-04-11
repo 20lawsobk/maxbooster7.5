@@ -387,7 +387,7 @@ async function main() {
         }
     }
   } catch (error: any) {
-    logger.warn('Simulation failed:', error);
+    logger.warn({ err: error }, 'Simulation failed:');
     process.exit(1);
   }
 

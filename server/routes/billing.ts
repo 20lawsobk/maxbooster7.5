@@ -290,7 +290,7 @@ router.get('/plans', async (req: Request, res: Response) => {
       ]
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to fetch plans:', error);
+    logger.warn({ err: error }, '[Billing] Failed to fetch plans:');
     res.status(500).json({ 
       message: 'Failed to fetch plans',
       code: 'PLANS_FETCH_ERROR',
@@ -350,7 +350,7 @@ router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRe
     const session = await stripe.checkout.sessions.create(sessionParams);
     res.json({ url: session.url, sessionId: session.id });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to create checkout session:', error);
+    logger.warn({ err: error }, '[Billing] Failed to create checkout session:');
     res.status(500).json({ error: 'Checkout failed', message: 'Failed to create checkout session' });
   }
 });
@@ -395,7 +395,7 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
         
         stripeSubscription = activeSubscription || canceledSubscription || pastDueSubscription || null;
       } catch (err: any) {
-        logger.warn('[Billing] Failed to fetch Stripe subscription:', err);
+        logger.warn({ err: err }, '[Billing] Failed to fetch Stripe subscription:');
         subscriptionError = 'Failed to sync subscription status with payment provider';
       }
     }
@@ -526,12 +526,12 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
         try {
           await notificationService.sendSubscriptionExpiringNotification(userId, plan, days);
         } catch (err) {
-          logger.warn('Subscription expiring notification error:', err);
+          logger.warn({ err: err }, 'Subscription expiring notification error:');
         }
       });
     }
   } catch (error) {
-    logger.warn('[Billing] Failed to get subscription:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get subscription:');
     res.status(500).json({ 
       message: 'Failed to get subscription details',
       code: 'SUBSCRIPTION_FETCH_ERROR',
@@ -574,12 +574,12 @@ router.get('/payment-method', requireAuth, async (req: AuthenticatedRequest, res
         });
       }
     } catch (err) {
-      logger.warn('[Billing] Failed to fetch payment methods:', err);
+      logger.warn({ err: err }, '[Billing] Failed to fetch payment methods:');
     }
     
     res.json({ last4: null, expiry: null, brand: null });
   } catch (error) {
-    logger.warn('[Billing] Failed to get payment method:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get payment method:');
     res.status(500).json({ error: 'Failed to get payment method' });
   }
 });
@@ -617,11 +617,11 @@ router.get('/history', requireAuth, async (req: AuthenticatedRequest, res: Respo
       
       return res.json(history);
     } catch (err) {
-      logger.warn('[Billing] Failed to fetch invoices:', err);
+      logger.warn({ err: err }, '[Billing] Failed to fetch invoices:');
       return res.json([]);
     }
   } catch (error) {
-    logger.warn('[Billing] Failed to get billing history:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get billing history:');
     res.status(500).json({ error: 'Failed to get billing history' });
   }
 });
@@ -731,7 +731,7 @@ router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedReques
       });
     }
   } catch (error: any) {
-    logger.warn('[Billing] Failed to cancel subscription:', error);
+    logger.warn({ err: error }, '[Billing] Failed to cancel subscription:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -833,7 +833,7 @@ router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRe
       nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString()
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to reactivate subscription:', error);
+    logger.warn({ err: error }, '[Billing] Failed to reactivate subscription:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -911,7 +911,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
       retryable: false
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to download invoice:', error);
+    logger.warn({ err: error }, '[Billing] Failed to download invoice:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -941,7 +941,7 @@ router.post('/update-payment', requireAuth, async (req: AuthenticatedRequest, re
     
     res.json({ url: session.url });
   } catch (error) {
-    logger.warn('[Billing] Failed to create setup session:', error);
+    logger.warn({ err: error }, '[Billing] Failed to create setup session:');
     res.status(500).json({ error: 'Failed to update payment method' });
   }
 });
@@ -971,7 +971,7 @@ router.post('/create-portal-session', requireAuth, async (req: AuthenticatedRequ
     
     res.json({ url: portalSession.url });
   } catch (error) {
-    logger.warn('[Billing] Failed to create portal session:', error);
+    logger.warn({ err: error }, '[Billing] Failed to create portal session:');
     res.status(500).json({ error: 'Failed to access billing portal' });
   }
 });
@@ -1014,7 +1014,7 @@ router.post('/refund', requireAuth, async (req: AuthenticatedRequest, res: Respo
       message: 'Refund initiated successfully',
     });
   } catch (error) {
-    logger.warn('[Billing] Failed to create refund:', error);
+    logger.warn({ err: error }, '[Billing] Failed to create refund:');
     res.status(500).json({ error: 'Failed to process refund' });
   }
 });
@@ -1034,7 +1034,7 @@ router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, r
     if (error.message === 'Refund not found') {
       return res.status(404).json({ error: 'Refund not found' });
     }
-    logger.warn('[Billing] Failed to get refund status:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get refund status:');
     res.status(500).json({ error: 'Failed to get refund status' });
   }
 });
@@ -1047,7 +1047,7 @@ router.get('/order/:orderId/refunds', requireAuth, async (req: AuthenticatedRequ
     
     res.json({ refunds });
   } catch (error) {
-    logger.warn('[Billing] Failed to get order refunds:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get order refunds:');
     res.status(500).json({ error: 'Failed to get order refunds' });
   }
 });
@@ -1062,7 +1062,7 @@ router.get('/ledger', requireAuth, async (req: AuthenticatedRequest, res: Respon
     
     res.json({ entries, pagination: { limit, offset } });
   } catch (error) {
-    logger.warn('[Billing] Failed to get ledger history:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get ledger history:');
     res.status(500).json({ error: 'Failed to get ledger history' });
   }
 });
@@ -1174,7 +1174,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
       retryable: true
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to retry payment:', error);
+    logger.warn({ err: error }, '[Billing] Failed to retry payment:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -1241,7 +1241,7 @@ router.delete('/payment-method', requireAuth, requireStripe, async (req: Authent
       code: 'PAYMENT_METHOD_REMOVED'
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to remove payment method:', error);
+    logger.warn({ err: error }, '[Billing] Failed to remove payment method:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -1359,7 +1359,7 @@ router.post('/3ds/confirm', requireAuth, requireStripe, async (req: Authenticate
       retryable: true
     });
   } catch (error: any) {
-    logger.warn('[Billing] 3DS confirmation failed:', error);
+    logger.warn({ err: error }, '[Billing] 3DS confirmation failed:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -1516,7 +1516,7 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
       refundRequest: refundRequestPayload,
     });
   } catch (error: any) {
-    logger.warn('[Billing] Failed to create refund request:', error);
+    logger.warn({ err: error }, '[Billing] Failed to create refund request:');
     
     if (error.code === 'resource_missing') {
       return res.status(404).json({ 
@@ -1633,7 +1633,7 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
       throw stripeError;
     }
   } catch (error: any) {
-    logger.warn('[Billing] Failed to submit dispute evidence:', error);
+    logger.warn({ err: error }, '[Billing] Failed to submit dispute evidence:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
       message: mappedError.message,
@@ -1686,7 +1686,7 @@ router.get('/grace-period-status', requireAuth, async (req: AuthenticatedRequest
           latestInvoice = stripeSubscription.latest_invoice as Stripe.Invoice | null;
         }
       } catch (err) {
-        logger.warn('[Billing] Failed to fetch subscription for grace period check:', err);
+        logger.warn({ err: err }, '[Billing] Failed to fetch subscription for grace period check:');
       }
     }
     
@@ -1741,7 +1741,7 @@ router.get('/grace-period-status', requireAuth, async (req: AuthenticatedRequest
       } : null
     });
   } catch (error) {
-    logger.warn('[Billing] Failed to get grace period status:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get grace period status:');
     res.status(500).json({ 
       message: 'Failed to get grace period status',
       code: 'GRACE_PERIOD_CHECK_ERROR',
@@ -1811,12 +1811,12 @@ router.get('/disputes', requireAuth, async (req: AuthenticatedRequest, res: Resp
         hasMore: disputes.length > 20 
       });
     } catch (err) {
-      logger.warn('[Billing] Failed to fetch disputes:', err);
+      logger.warn({ err: err }, '[Billing] Failed to fetch disputes:');
     }
     
     res.json({ disputes: [], hasMore: false });
   } catch (error) {
-    logger.warn('[Billing] Failed to get disputes:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get disputes:');
     res.status(500).json({ error: 'Failed to get disputes' });
   }
 });
@@ -1893,12 +1893,12 @@ router.get('/invoices', requireAuth, async (req: AuthenticatedRequest, res: Resp
         hasMore: invoices.has_more 
       });
     } catch (err) {
-      logger.warn('[Billing] Failed to fetch invoices:', err);
+      logger.warn({ err: err }, '[Billing] Failed to fetch invoices:');
     }
     
     res.json({ invoices: [], hasMore: false });
   } catch (error) {
-    logger.warn('[Billing] Failed to get invoices:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get invoices:');
     res.status(500).json({ error: 'Failed to get invoices' });
   }
 });
@@ -1954,12 +1954,12 @@ router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Respo
         hasMore: refunds.length > 20 
       });
     } catch (err) {
-      logger.warn('[Billing] Failed to fetch refunds:', err);
+      logger.warn({ err: err }, '[Billing] Failed to fetch refunds:');
     }
     
     res.json({ refunds: [], hasMore: false });
   } catch (error) {
-    logger.warn('[Billing] Failed to get refunds:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get refunds:');
     res.status(500).json({ error: 'Failed to get refunds' });
   }
 });
@@ -2006,7 +2006,7 @@ router.get('/usage', requireAuth, async (req: AuthenticatedRequest, res: Respons
     
     res.json(usageStats);
   } catch (error) {
-    logger.warn('[Billing] Failed to get usage stats:', error);
+    logger.warn({ err: error }, '[Billing] Failed to get usage stats:');
     res.status(500).json({ error: 'Failed to get usage stats' });
   }
 });

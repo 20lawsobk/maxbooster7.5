@@ -40,7 +40,7 @@ router.get('/status', requireAuth, async (req, res) => {
       lastOnlineCheck: offlineModeService.getLastOnlineCheck(),
     });
   } catch (error: unknown) {
-    logger.warn('Error getting offline status:', error);
+    logger.warn({ err: error }, 'Error getting offline status:');
     res.status(500).json({ error: 'Failed to get offline status' });
   }
 });
@@ -66,7 +66,7 @@ router.get('/capabilities', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error getting offline capabilities:', error);
+    logger.warn({ err: error }, 'Error getting offline capabilities:');
     res.status(500).json({ error: 'Failed to get offline capabilities' });
   }
 });
@@ -90,7 +90,7 @@ router.post('/cache', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error caching project:', error);
+    logger.warn({ err: error }, 'Error caching project:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -106,7 +106,7 @@ router.delete('/cache/:projectId', requireAuth, async (req, res) => {
 
     res.status(204).send();
   } catch (error: unknown) {
-    logger.warn('Error uncaching project:', error);
+    logger.warn({ err: error }, 'Error uncaching project:');
     res.status(500).json({ error: 'Failed to uncache project' });
   }
 });
@@ -133,7 +133,7 @@ router.get('/cache', requireAuth, async (req, res) => {
       stats: offlineModeService.getCacheStats(),
     });
   } catch (error: unknown) {
-    logger.warn('Error getting cached projects:', error);
+    logger.warn({ err: error }, 'Error getting cached projects:');
     res.status(500).json({ error: 'Failed to get cached projects' });
   }
 });
@@ -152,7 +152,7 @@ router.get('/cache/:projectId', requireAuth, async (req, res) => {
       project: cached,
     });
   } catch (error: unknown) {
-    logger.warn('Error getting cached project:', error);
+    logger.warn({ err: error }, 'Error getting cached project:');
     res.status(500).json({ error: 'Failed to get cached project' });
   }
 });
@@ -168,7 +168,7 @@ router.get('/cache/:projectId/check', requireAuth, async (req, res) => {
       isCached,
     });
   } catch (error: unknown) {
-    logger.warn('Error checking cache status:', error);
+    logger.warn({ err: error }, 'Error checking cache status:');
     res.status(500).json({ error: 'Failed to check cache status' });
   }
 });
@@ -183,7 +183,7 @@ router.post('/sync/:projectId', requireAuth, async (req, res) => {
       result,
     });
   } catch (error: unknown) {
-    logger.warn('Error syncing project:', error);
+    logger.warn({ err: error }, 'Error syncing project:');
     res.status(500).json({ error: 'Failed to sync project' });
   }
 });
@@ -203,7 +203,7 @@ router.post('/sync-all', requireAuth, async (req, res) => {
       },
     });
   } catch (error: unknown) {
-    logger.warn('Error syncing all projects:', error);
+    logger.warn({ err: error }, 'Error syncing all projects:');
     res.status(500).json({ error: 'Failed to sync all projects' });
   }
 });
@@ -217,7 +217,7 @@ router.get('/settings', requireAuth, async (req, res) => {
       settings,
     });
   } catch (error: unknown) {
-    logger.warn('Error getting offline settings:', error);
+    logger.warn({ err: error }, 'Error getting offline settings:');
     res.status(500).json({ error: 'Failed to get offline settings' });
   }
 });
@@ -232,7 +232,7 @@ router.put('/settings', requireAuth, async (req, res) => {
       settings,
     });
   } catch (error: unknown) {
-    logger.warn('Error updating offline settings:', error);
+    logger.warn({ err: error }, 'Error updating offline settings:');
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Invalid request data', details: error.errors });
     }
@@ -249,7 +249,7 @@ router.delete('/cache', requireAuth, async (req, res) => {
       message: 'Cache cleared successfully',
     });
   } catch (error: unknown) {
-    logger.warn('Error clearing cache:', error);
+    logger.warn({ err: error }, 'Error clearing cache:');
     res.status(500).json({ error: 'Failed to clear cache' });
   }
 });
@@ -264,7 +264,7 @@ router.post('/cleanup', requireAuth, async (req, res) => {
       removedProjects: cleaned,
     });
   } catch (error: unknown) {
-    logger.warn('Error cleaning up cache:', error);
+    logger.warn({ err: error }, 'Error cleaning up cache:');
     res.status(500).json({ error: 'Failed to cleanup cache' });
   }
 });
@@ -281,7 +281,7 @@ router.post('/export/:projectId', requireAuth, async (req, res) => {
       ...exportResult,
     });
   } catch (error: unknown) {
-    logger.warn('Error exporting project for offline:', error);
+    logger.warn({ err: error }, 'Error exporting project for offline:');
     res.status(500).json({ error: 'Failed to export project for offline use' });
   }
 });
@@ -298,7 +298,7 @@ router.post('/import', requireAuth, async (req, res) => {
       projectId,
     });
   } catch (error: unknown) {
-    logger.warn('Error importing offline project:', error);
+    logger.warn({ err: error }, 'Error importing offline project:');
     res.status(500).json({ error: 'Failed to import offline project' });
   }
 });
@@ -321,7 +321,7 @@ router.post('/change/:projectId', requireAuth, async (req, res) => {
       message: `${type} change recorded`,
     });
   } catch (error: unknown) {
-    logger.warn('Error recording change:', error);
+    logger.warn({ err: error }, 'Error recording change:');
     res.status(500).json({ error: 'Failed to record change' });
   }
 });

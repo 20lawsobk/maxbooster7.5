@@ -23,7 +23,7 @@ async function initializeFfmpeg() {
     ffmpegAvailable = true;
     return true;
   } catch (error) {
-    logger.warn('FFmpeg not available - audio conversion features will be limited:', error);
+    logger.warn({ err: error }, 'FFmpeg not available - audio conversion features will be limited:');
     return false;
   }
 }
@@ -214,7 +214,7 @@ export async function convertAudioFile(
             try {
               await storage.updateConversion(conversionId, { progress: percentage });
             } catch (err: unknown) {
-              logger.warn('Failed to update conversion progress:', err);
+              logger.warn({ err: err }, 'Failed to update conversion progress:');
             }
           }
         })
@@ -295,7 +295,7 @@ export async function processConversion(conversionId: string, storage: IStorage)
 
     logger.info(`Conversion ${conversionId} completed successfully`);
   } catch (error: unknown) {
-    logger.warn(`Conversion ${conversionId} failed:`, error);
+    logger.warn({ err: error }, `Conversion ${conversionId} failed:`);
     throw error;
   } finally {
     // Remove from queue
@@ -323,7 +323,7 @@ export async function enqueueConversion(conversionId: string, storage: IStorage)
 
   // Don't await - let it process in background
   promise.catch((err) => {
-    logger.warn(`Background conversion ${conversionId} error:`, err);
+    logger.warn({ err: err }, `Background conversion ${conversionId} error:`);
   });
 }
 
@@ -338,7 +338,7 @@ export async function cancelConversion(conversionId: string, storage: IStorage):
       process.kill('SIGKILL');
       activeProcesses.delete(conversionId);
     } catch (err: unknown) {
-      logger.warn(`Failed to kill conversion process ${conversionId}:`, err);
+      logger.warn({ err: err }, `Failed to kill conversion process ${conversionId}:`);
     }
   }
 
@@ -360,7 +360,7 @@ export async function cancelConversion(conversionId: string, storage: IStorage):
         await fs.unlink(fullPath);
       }
     } catch (err: unknown) {
-      logger.warn(`Failed to delete partial file for ${conversionId}:`, err);
+      logger.warn({ err: err }, `Failed to delete partial file for ${conversionId}:`);
     }
   }
 }

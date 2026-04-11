@@ -110,7 +110,7 @@ class SocialQueueService {
 
       return currentHourCount < rateLimits.postsPerHour && currentDayCount < rateLimits.postsPerDay;
     } catch (error) {
-      logger.warn('Error checking rate limit:', error);
+      logger.warn({ err: error }, 'Error checking rate limit:');
       return true;
     }
   }
@@ -126,7 +126,7 @@ class SocialQueueService {
       await client.expire(hourKey, 3600);
       await client.expire(dayKey, 86400);
     } catch (error) {
-      logger.warn('Error incrementing rate limit:', error);
+      logger.warn({ err: error }, 'Error incrementing rate limit:');
     }
   }
 
@@ -184,7 +184,7 @@ class SocialQueueService {
 
       return { backoffMs, shouldRetry };
     } catch (error) {
-      logger.warn('Error handling 429 response:', error);
+      logger.warn({ err: error }, 'Error handling 429 response:');
       return { backoffMs: platformConfig.baseBackoffMs, shouldRetry: true };
     }
   }
@@ -211,7 +211,7 @@ class SocialQueueService {
 
       return { inBackoff: false };
     } catch (error) {
-      logger.warn('Error checking backoff state:', error);
+      logger.warn({ err: error }, 'Error checking backoff state:');
       return { inBackoff: false };
     }
   }
@@ -224,7 +224,7 @@ class SocialQueueService {
       await client.del(backoffKey);
       logger.info(`✅ Cleared backoff for ${platform}/${accountId}`);
     } catch (error) {
-      logger.warn('Error clearing backoff:', error);
+      logger.warn({ err: error }, 'Error clearing backoff:');
     }
   }
 
@@ -270,7 +270,7 @@ class SocialQueueService {
         backoffRemainingMs: backoffStatus.remainingMs,
       };
     } catch (error) {
-      logger.warn('Error getting rate limit status:', error);
+      logger.warn({ err: error }, 'Error getting rate limit status:');
       return {
         withinLimits: true,
         hourlyUsed: 0,

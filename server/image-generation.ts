@@ -69,7 +69,7 @@ export class SocialMediaContentGenerator {
 
       return result;
     } catch (error: unknown) {
-      logger.warn('Error generating social media content:', error);
+      logger.warn({ err: error }, 'Error generating social media content:');
       return {
         content: await this.generateAIContent(platform, musicData, targetAudience),
         image: this.getDefaultImage(platform),
@@ -116,7 +116,7 @@ export class SocialMediaContentGenerator {
         content: aiContent,
       };
     } catch (error: unknown) {
-      logger.warn('Error generating content from URL:', error);
+      logger.warn({ err: error }, 'Error generating content from URL:');
       throw error;
     }
   }
@@ -149,7 +149,7 @@ export class SocialMediaContentGenerator {
       // Return public URL
       return `/generated-content/images/${filename}`;
     } catch (error: unknown) {
-      logger.warn('Error generating social media image:', error);
+      logger.warn({ err: error }, 'Error generating social media image:');
       // Fallback to default image
       return this.getDefaultImage(platform);
     }
@@ -342,7 +342,7 @@ export class SocialMediaContentGenerator {
       logger.info(`✅ Generated animated social content: ${gifFilename} (${frameCount} frames) + WebP poster`);
       return `/generated-content/videos/${webpFilename}`;
     } catch (error: unknown) {
-      logger.warn('Error generating social media video:', error);
+      logger.warn({ err: error }, 'Error generating social media video:');
       return this.getDefaultVideo(platform);
     }
   }
@@ -365,7 +365,7 @@ export class SocialMediaContentGenerator {
 
       return `/generated-content/audio/${filename}`;
     } catch (error: unknown) {
-      logger.warn('Error generating social media audio:', error);
+      logger.warn({ err: error }, 'Error generating social media audio:');
       return this.getDefaultAudio(platform);
     }
   }
@@ -742,7 +742,7 @@ export class SocialMediaContentGenerator {
       
       return this.float32ToWavBuffer(audioData, sampleRate);
     } catch (error) {
-      logger.warn('In-house AI audio generation fallback:', error);
+      logger.warn({ err: error }, 'In-house AI audio generation fallback:');
       return this.generateFallbackAudio(audioConfig.length);
     }
   }
@@ -848,7 +848,7 @@ export class SocialMediaContentGenerator {
 
       return extractedData;
     } catch (error: unknown) {
-      logger.warn('Error extracting content from URL:', error);
+      logger.warn({ err: error }, 'Error extracting content from URL:');
       throw error;
     }
   }
@@ -892,7 +892,7 @@ export class SocialMediaContentGenerator {
         viralPotential: result.estimatedEngagement * 0.2,
       };
     } catch (error) {
-      logger.warn('In-house content generation fallback:', error);
+      logger.warn({ err: error }, 'In-house content generation fallback:');
       return {
         post: `🎵 Check out this amazing track: "${data.title || 'New Release'}"! ${data.description || 'Amazing new music for you.'}`,
         hashtags: ['#Music', '#NewTrack', '#Viral', '#Trending'],
@@ -942,7 +942,7 @@ export class SocialMediaContentGenerator {
         toneMatch: result.toneMatch,
       };
     } catch (error) {
-      logger.warn('In-house content generation fallback:', error);
+      logger.warn({ err: error }, 'In-house content generation fallback:');
       return {
         post: `🎵 Just dropped my latest track! The energy in this one is absolutely incredible. Can't wait for you all to hear it! #NewMusic #Music #Artist`,
         hashtags: ['#NewMusic', '#Music', '#Artist', '#LatestTrack'],

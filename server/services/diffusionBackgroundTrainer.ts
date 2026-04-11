@@ -229,7 +229,7 @@ export function startBackgroundTraining(): void {
   state.paused  = false;
   _syncMemoryStats();
   _trainingLoop().catch(err =>
-    logger.warn('[DiffBG] Unhandled loop error:', err)
+    logger.warn({ err: err }, '[DiffBG] Unhandled loop error:')
   );
   logger.info('[DiffBG] Background self-training started');
 }

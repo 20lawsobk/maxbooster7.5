@@ -142,7 +142,7 @@ class TaxFormService {
       this._treatyCache = { data: map, expiresAt: now + 3600_000 };
       return map;
     } catch (err) {
-      logger.warn('Failed to load tax treaty rates from DB, using hardcoded fallback:', err);
+      logger.warn({ err: err }, 'Failed to load tax treaty rates from DB, using hardcoded fallback:');
       return treatyRates; // fall back to hardcoded
     }
   }

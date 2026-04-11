@@ -34,7 +34,7 @@ async function main() {
     logger.info('   • Rapid search capabilities');
     logger.info('   • Scalable financial reporting');
   } catch (error: unknown) {
-    logger.warn('❌ Database optimization failed:', error);
+    logger.warn({ err: error }, '❌ Database optimization failed:');
     process.exit(1);
   }
 }
@@ -47,7 +47,7 @@ if (require.main === module) {
       process.exit(0);
     })
     .catch((error) => {
-      logger.warn('Fatal error:', error);
+      logger.warn({ err: error }, 'Fatal error:');
       process.exit(1);
     });
 }

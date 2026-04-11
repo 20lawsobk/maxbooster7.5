@@ -37,7 +37,7 @@ class ReadReplicaPool {
     });
 
     this.primaryPool.on('error', (err) => {
-      logger.warn('Primary pool error:', err);
+      logger.warn({ err: err }, 'Primary pool error:');
     });
 
     for (let i = 0; i < config.replicas.length; i++) {
@@ -54,7 +54,7 @@ class ReadReplicaPool {
       });
 
       pool.on('error', (err) => {
-        logger.warn(`Replica ${i} pool error:`, err);
+        logger.warn({ err: err }, `Replica ${i} pool error:`);
         this.healthyReplicas.delete(i);
       });
 
@@ -134,7 +134,7 @@ class ReadReplicaPool {
           client.release();
           this.healthyReplicas.add(i);
         } catch (error) {
-          logger.warn(`Replica ${i} health check failed:`, error);
+          logger.warn({ err: error }, `Replica ${i} health check failed:`);
           this.healthyReplicas.delete(i);
         }
       }
@@ -172,7 +172,7 @@ class ReadReplicaPool {
         try {
           return await replicaPool.query(text, params);
         } catch (error) {
-          logger.warn('Replica query failed, falling back to primary:', error);
+          logger.warn({ err: error }, 'Replica query failed, falling back to primary:');
         }
       }
     }

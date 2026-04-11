@@ -442,7 +442,7 @@ class DynamicTrendsService {
         }
       }
     } catch (error) {
-      logger.warn('Error saving hashtag research:', error);
+      logger.warn({ err: error }, 'Error saving hashtag research:');
     }
   }
 }

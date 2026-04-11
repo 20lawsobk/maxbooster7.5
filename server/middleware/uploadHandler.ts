@@ -313,7 +313,7 @@ export async function storeUploadedFile(
 
     return { key, url, processed: wasProcessed };
   } catch (error: unknown) {
-    logger.warn('Error storing uploaded file:', error);
+    logger.warn({ err: error }, 'Error storing uploaded file:');
     throw error instanceof Error ? error : new Error('Failed to store uploaded file');
   }
 }
@@ -416,7 +416,7 @@ export async function generateUploadUrl(
 
     return { uploadUrl, key };
   } catch (error: unknown) {
-    logger.warn('Error generating upload URL:', error);
+    logger.warn({ err: error }, 'Error generating upload URL:');
     throw error instanceof Error ? error : new Error('Failed to generate upload URL');
   }
 }

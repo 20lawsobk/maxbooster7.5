@@ -35,7 +35,7 @@ class NotificationService {
         this.isInitialized = true;
         logger.info('✅ SendGrid initialized for email notifications');
       } catch (error: unknown) {
-        logger.warn('❌ Failed to initialize SendGrid:', error);
+        logger.warn({ err: error }, '❌ Failed to initialize SendGrid:');
       }
     }
   }
@@ -94,7 +94,7 @@ class NotificationService {
 
       logger.info(`✅ Notification sent to user ${userId}: ${title}`);
     } catch (error: unknown) {
-      logger.warn('Error sending notification:', error);
+      logger.warn({ err: error }, 'Error sending notification:');
       throw error;
     }
   }
@@ -181,7 +181,7 @@ class NotificationService {
         logger.info(`🔔 Push notification [${type || 'generic'}] delivered to ${result.sent} device(s)`);
       }
     } catch (error) {
-      logger.warn('Failed to send push notification:', error);
+      logger.warn({ err: error }, 'Failed to send push notification:');
     }
   }
 

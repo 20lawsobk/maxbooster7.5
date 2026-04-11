@@ -17,7 +17,7 @@ export function initializeWeeklyInsightsCron(): void {
       
       logger.info(`📧 Weekly insights complete: ${result.sent} sent, ${result.failed} failed`);
     } catch (error) {
-      logger.warn('❌ Weekly insights cron job failed:', error);
+      logger.warn({ err: error }, '❌ Weekly insights cron job failed:');
     }
   }, {
     timezone: 'America/New_York',

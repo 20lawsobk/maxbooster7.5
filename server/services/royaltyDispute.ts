@@ -585,7 +585,7 @@ export class RoyaltyDisputeService {
     try {
       logger.info(`New dispute notification would be sent for dispute ${dispute.id}`);
     } catch (error) {
-      logger.warn('Failed to send admin notification for new dispute:', error);
+      logger.warn({ err: error }, 'Failed to send admin notification for new dispute:');
     }
   }
 
@@ -607,7 +607,7 @@ export class RoyaltyDisputeService {
         });
       }
     } catch (error) {
-      logger.warn('Failed to send user notification for resolved dispute:', error);
+      logger.warn({ err: error }, 'Failed to send user notification for resolved dispute:');
     }
   }
 

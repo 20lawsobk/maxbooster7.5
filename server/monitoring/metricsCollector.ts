@@ -81,7 +81,7 @@ export class MetricsCollector {
 
       return filepath;
     } catch (error) {
-      logger.warn('Failed to save baseline metrics:', error);
+      logger.warn({ err: error }, 'Failed to save baseline metrics:');
       throw error;
     }
   }

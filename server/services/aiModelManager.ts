@@ -84,7 +84,7 @@ class AIModelManager {
           logger.info(`✅ Loaded persisted Social AI model for user ${userId} (weights only)`);
         }
       } catch (error) {
-        logger.warn(`Failed to load persisted model for user ${userId}, using fresh model:`, error);
+        logger.warn({ err: error }, `Failed to load persisted model for user ${userId}, using fresh model:`);
       }
     }
 
@@ -109,7 +109,7 @@ class AIModelManager {
           }
         }
       } catch (err) {
-        logger.warn(`[AIModelManager] Could not apply Social base state for user ${userId}:`, err);
+        logger.warn({ err: err }, `[AIModelManager] Could not apply Social base state for user ${userId}:`);
       }
 
       // Train on user's own data on top of the base state if enough data exists
@@ -121,7 +121,7 @@ class AIModelManager {
           logger.info(`✅ Trained and persisted Social AI model for user ${userId} (${posts.length} posts)`);
         }
       } catch (error) {
-        logger.warn(`Could not train Social AI for user ${userId}:`, error);
+        logger.warn({ err: error }, `Could not train Social AI for user ${userId}:`);
       }
     }
 
@@ -182,7 +182,7 @@ class AIModelManager {
           logger.info(`✅ Loaded persisted Advertising AI model for user ${userId} (weights only)`);
         }
       } catch (error) {
-        logger.warn(`Failed to load persisted model for user ${userId}, using fresh model:`, error);
+        logger.warn({ err: error }, `Failed to load persisted model for user ${userId}, using fresh model:`);
       }
     }
 
@@ -197,7 +197,7 @@ class AIModelManager {
           logger.info(`[AIModelManager] Seeded Advertising AI for user ${userId} with organic-as-ads base knowledge`);
         }
       } catch (err) {
-        logger.warn(`[AIModelManager] Could not apply Advertising base state for user ${userId}:`, err);
+        logger.warn({ err: err }, `[AIModelManager] Could not apply Advertising base state for user ${userId}:`);
       }
 
       // Train on user's own campaigns on top of the base state if enough data exists
@@ -209,7 +209,7 @@ class AIModelManager {
           logger.info(`✅ Trained and persisted Advertising AI model for user ${userId} (${campaigns.length} campaigns)`);
         }
       } catch (error) {
-        logger.warn(`Could not train Advertising AI for user ${userId}:`, error);
+        logger.warn({ err: error }, `Could not train Advertising AI for user ${userId}:`);
       }
     }
 
@@ -270,7 +270,7 @@ class AIModelManager {
       });
       logger.info(`💾 Persisted Social AI model for user ${userId} (with metadata)`);
     } catch (error) {
-      logger.warn(`Failed to persist Social AI model for user ${userId}:`, error);
+      logger.warn({ err: error }, `Failed to persist Social AI model for user ${userId}:`);
     }
   }
 
@@ -292,7 +292,7 @@ class AIModelManager {
       });
       logger.info(`💾 Persisted Advertising AI model for user ${userId} (with metadata)`);
     } catch (error) {
-      logger.warn(`Failed to persist Advertising AI model for user ${userId}:`, error);
+      logger.warn({ err: error }, `Failed to persist Advertising AI model for user ${userId}:`);
     }
   }
 
@@ -471,7 +471,7 @@ class AIModelManager {
 
       return weights;
     } catch (error) {
-      logger.warn('Could not extract full model weights, using fallback:', error);
+      logger.warn({ err: error }, 'Could not extract full model weights, using fallback:');
       return {
         version: '1.0',
         timestamp: new Date().toISOString(),
@@ -506,12 +506,12 @@ class AIModelManager {
         logger.debug('Loaded model config from persistence');
       }
     } catch (error) {
-      logger.warn('Could not fully restore model weights:', error);
+      logger.warn({ err: error }, 'Could not fully restore model weights:');
       if (weights.modelState && model.deserializeState) {
         try {
           model.deserializeState(weights.modelState);
         } catch (e) {
-          logger.warn('Fallback state restoration failed:', e);
+          logger.warn({ err: e }, 'Fallback state restoration failed:');
         }
       }
     }

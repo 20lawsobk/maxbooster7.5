@@ -290,14 +290,14 @@ class PostDeploySelfTest {
     // Run initial test after 60 seconds
     setTimeout(() => {
       this.runAllTests().catch(err => {
-        logger.warn('Self-test error:', err);
+        logger.warn({ err: err }, 'Self-test error:');
       });
     }, 60000);
     
     // Schedule periodic tests
     return setInterval(() => {
       this.runAllTests().catch(err => {
-        logger.warn('Periodic self-test error:', err);
+        logger.warn({ err: err }, 'Periodic self-test error:');
       });
     }, intervalMs);
   }

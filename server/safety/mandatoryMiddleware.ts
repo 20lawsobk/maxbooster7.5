@@ -80,7 +80,7 @@ export function prototypePollutionMiddleware(
     }
     next();
   } catch (error) {
-    logger.warn('Prototype pollution protection error:', error);
+    logger.warn({ err: error }, 'Prototype pollution protection error:');
     next();
   }
 }
@@ -220,7 +220,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Request ID middleware');
   } catch (error) {
     failedMiddleware.push('requestId');
-    logger.warn('   ✗ Request ID middleware FAILED', error);
+    logger.warn({ err: error }, '   ✗ Request ID middleware FAILED');
     throw new Error('Failed to load mandatory requestId middleware');
   }
 
@@ -231,7 +231,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Request logging middleware');
   } catch (error) {
     failedMiddleware.push('requestLogging');
-    logger.warn('   ✗ Request logging middleware FAILED', error);
+    logger.warn({ err: error }, '   ✗ Request logging middleware FAILED');
     throw new Error('Failed to load mandatory requestLogging middleware');
   }
 
@@ -257,7 +257,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Helmet security headers (CSP: enabled)');
   } catch (error) {
     failedMiddleware.push('helmet');
-    logger.warn('   ✗ Helmet middleware FAILED', error);
+    logger.warn({ err: error }, '   ✗ Helmet middleware FAILED');
     throw new Error('Failed to load mandatory helmet middleware');
   }
 
@@ -325,7 +325,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ CORS middleware (production allowlist enforced)');
   } catch (error) {
     failedMiddleware.push('cors');
-    logger.warn('   ✗ CORS middleware FAILED', error);
+    logger.warn({ err: error }, '   ✗ CORS middleware FAILED');
     throw new Error('Failed to load mandatory CORS middleware');
   }
 
@@ -336,7 +336,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Prototype pollution protection');
   } catch (error) {
     failedMiddleware.push('prototypePollution');
-    logger.warn('   ✗ Prototype pollution protection FAILED', error);
+    logger.warn({ err: error }, '   ✗ Prototype pollution protection FAILED');
     throw new Error('Failed to load mandatory prototype pollution middleware');
   }
 
@@ -374,7 +374,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info(`   ✓ Rate limiting middleware (max: ${maxRequests}/15min, backend: ${backend}, skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {
     failedMiddleware.push('rateLimit');
-    logger.warn('   ✗ Rate limiting middleware FAILED', error);
+    logger.warn({ err: error }, '   ✗ Rate limiting middleware FAILED');
     throw new Error('Failed to load mandatory rate limiting middleware');
   }
 
@@ -415,7 +415,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info(`   ✓ Strict rate limiting for auth endpoints (skip: ${isDev || isLoadTest ? 'dev/test mode' : 'disabled'})`);
   } catch (error) {
     failedMiddleware.push('strictRateLimit');
-    logger.warn('   ✗ Strict rate limiting FAILED', error);
+    logger.warn({ err: error }, '   ✗ Strict rate limiting FAILED');
     throw new Error('Failed to load mandatory strict rate limiting middleware');
   }
 
@@ -426,7 +426,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     logger.info('   ✓ Self-Healing Security Engine (10x healing speed)');
   } catch (error) {
     failedMiddleware.push('selfHealingSecurity');
-    logger.warn('   ✗ Self-Healing Security Engine FAILED', error);
+    logger.warn({ err: error }, '   ✗ Self-Healing Security Engine FAILED');
     // Non-critical - log but don't throw
     logger.warn('   ⚠️ Self-healing security running in degraded mode');
   }

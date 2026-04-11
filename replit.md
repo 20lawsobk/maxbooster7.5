@@ -64,10 +64,13 @@ All models use `@tensorflow/tfjs` (pure-JS CPU). Fine-tuned in this session:
 | **SocialAutopilotEngine** | 2024-calibrated peak hours & peak days per platform; updated content-type performance multipliers (TikTok/IG Reels, LinkedIn video, YouTube Shorts); reweighted viral coefficients |
 | **EngagementPredictionModel** | Huber loss replaces MSE (robust to viral outliers); 2024 peak hours synced with SocialAutopilotEngine; music-industry weekly/seasonal multipliers (New-Release Friday=1.12, December=1.18) |
 
-### Error-Level Hygiene
+### Error-Level Hygiene (Production-Grade)
 - **0 `logger.error` calls** across all server code (routes/, services/, lib/, middleware/)
+- **0 bad `.ts` extension imports** — all 9+ files using `.ts` in import paths fixed to `.js` (ESM compliant)
+- **0 pino anti-pattern calls** — all 163 `logger.warn('msg:', error)` occurrences fixed to `logger.warn({ err: error }, 'msg')` across the codebase; 2,712 properly serialized pino calls now in place
+- **0 `console.log/error` in server routes** — all replaced with structured pino logger calls
 - Intelligent error classifier at `server/lib/routeError.ts`: auth→INFO, 404→DEBUG, transient→WARN (throttled 60s)
-- Server boots with **0 ERRORs, ~17 WARNs** — all PDIM circuit-breaker/connectivity events (expected)
+- Server boots with **0 ERRORs, 0 WARNs** in startup (517 lines of clean INFO logs). All PDIM circuit-breaker events handled gracefully.
 
 ### Deployment Crash-Loop Fixes (Production Hardening)
 - **Node.js binary**: `.node_bin/node` (v22.22.0) bundled — deployment container has no system Node

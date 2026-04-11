@@ -41,7 +41,7 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
         )
         .join('\n');
     } catch (err) {
-      logger.warn('Sitemap: failed to fetch beat listings, section will be omitted', err);
+      logger.warn({ err: err }, 'Sitemap: failed to fetch beat listings, section will be omitted');
     }
 
     let storefrontUrls = '';
@@ -63,7 +63,7 @@ router.get('/sitemap.xml', async (_req: Request, res: Response) => {
         )
         .join('\n');
     } catch (err) {
-      logger.warn('Sitemap: failed to fetch storefronts, section will be omitted', err);
+      logger.warn({ err: err }, 'Sitemap: failed to fetch storefronts, section will be omitted');
     }
 
     const staticUrls = staticPages
@@ -90,7 +90,7 @@ ${storefrontUrls}
     res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
     res.send(xml);
   } catch (error) {
-    logger.warn('Sitemap generation failed entirely:', error);
+    logger.warn({ err: error }, 'Sitemap generation failed entirely:');
     res.status(500).send('<?xml version="1.0"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
   }
 });

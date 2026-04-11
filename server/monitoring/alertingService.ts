@@ -110,7 +110,7 @@ export class AlertingService {
 
       logger.info(`✅ Webhook alert sent: ${alert.title}`);
     } catch (error) {
-      logger.warn('Failed to send webhook alert:', error);
+      logger.warn({ err: error }, 'Failed to send webhook alert:');
     }
   }
 
@@ -180,7 +180,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
       await sgMail.default.send(msg);
       logger.info(`✅ Email alert sent to ${this.config.emailRecipients.length} recipient(s)`);
     } catch (error) {
-      logger.warn('Failed to send email alert:', error);
+      logger.warn({ err: error }, 'Failed to send email alert:');
     }
   }
 

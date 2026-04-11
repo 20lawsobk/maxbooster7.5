@@ -13,7 +13,7 @@ router.post('/create', requireAdmin, async (req, res) => {
     const backupFile = await databaseBackupService.createBackup();
     res.json({ success: true, backupFile });
   } catch (error) {
-    logger.warn('[Backup] Failed to create backup:', error);
+    logger.warn({ err: error }, '[Backup] Failed to create backup:');
     res.status(500).json({ error: 'Failed to create backup' });
   }
 });
@@ -24,7 +24,7 @@ router.get('/list', requireAdmin, async (req, res) => {
     const backups = await databaseBackupService.listBackups();
     res.json({ backups });
   } catch (error) {
-    logger.warn('[Backup] Failed to list backups:', error);
+    logger.warn({ err: error }, '[Backup] Failed to list backups:');
     res.status(500).json({ error: 'Failed to list backups' });
   }
 });
@@ -35,7 +35,7 @@ router.get('/metrics', requireAdmin, async (req, res) => {
     const metrics = databaseBackupService.getBackupMetrics();
     res.json(metrics);
   } catch (error) {
-    logger.warn('[Backup] Failed to get backup metrics:', error);
+    logger.warn({ err: error }, '[Backup] Failed to get backup metrics:');
     res.status(500).json({ error: 'Failed to get backup metrics' });
   }
 });

@@ -22,7 +22,7 @@ export async function acquireLock(lockName: string, ttlSeconds: number): Promise
     const result = await redis.set(key, token, 'EX', ttlSeconds, 'NX');
     return result === 'OK' ? token : null;
   } catch (err) {
-    logger.warn(`[Lock] Failed to acquire lock ${lockName}:`, err);
+    logger.warn({ err: err }, `[Lock] Failed to acquire lock ${lockName}:`);
     throw err;
   }
 }
@@ -44,7 +44,7 @@ export async function releaseLock(lockName: string, token: string): Promise<void
   try {
     await redis.eval(lua, 1, key, token);
   } catch (err) {
-    logger.warn(`[Lock] Failed to release lock ${lockName}:`, err);
+    logger.warn({ err: err }, `[Lock] Failed to release lock ${lockName}:`);
     throw err;
   }
 }

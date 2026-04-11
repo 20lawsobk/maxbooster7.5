@@ -147,7 +147,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     return res.json(mappedNotifications);
   } catch (error) {
-    logger.warn('Get notifications error:', error);
+    logger.warn({ err: error }, 'Get notifications error:');
     res.status(500).json({ error: 'Get notifications error:' });
   }
 });
@@ -179,7 +179,7 @@ router.put('/:id/read', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Mark notification read error:', error);
+    logger.warn({ err: error }, 'Mark notification read error:');
     return res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
@@ -201,7 +201,7 @@ router.put('/mark-all-read', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Mark all read error:', error);
+    logger.warn({ err: error }, 'Mark all read error:');
     return res.status(500).json({ error: 'Failed to mark all as read' });
   }
 });
@@ -223,7 +223,7 @@ router.delete('/clear-all', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Clear all notifications error:', error);
+    logger.warn({ err: error }, 'Clear all notifications error:');
     return res.status(500).json({ error: 'Failed to clear notifications' });
   }
 });
@@ -255,7 +255,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Delete notification error:', error);
+    logger.warn({ err: error }, 'Delete notification error:');
     return res.status(500).json({ error: 'Failed to delete notification' });
   }
 });
@@ -293,7 +293,7 @@ router.get('/preferences', async (req: Request, res: Response) => {
 
     return res.json(mergedPrefs);
   } catch (error) {
-    logger.warn('Get notification preferences error:', error);
+    logger.warn({ err: error }, 'Get notification preferences error:');
     return res.json(defaultPreferences);
   }
 });
@@ -337,7 +337,7 @@ router.put('/preferences', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Update notification preferences error:', error);
+    logger.warn({ err: error }, 'Update notification preferences error:');
     return res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
@@ -380,7 +380,7 @@ router.post('/push/subscribe', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Push subscribe error:', error);
+    logger.warn({ err: error }, 'Push subscribe error:');
     return res.status(500).json({ error: 'Failed to subscribe to push notifications' });
   }
 });
@@ -414,7 +414,7 @@ router.post('/push/unsubscribe', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Push unsubscribe error:', error);
+    logger.warn({ err: error }, 'Push unsubscribe error:');
     return res.status(500).json({ error: 'Failed to unsubscribe from push notifications' });
   }
 });
@@ -460,7 +460,7 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
       message: 'Verification code sent',
     });
   } catch (error) {
-    logger.warn('SMS verify error:', error);
+    logger.warn({ err: error }, 'SMS verify error:');
     return res.status(500).json({ error: 'Failed to send verification code' });
   }
 });
@@ -502,7 +502,7 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('SMS confirm error:', error);
+    logger.warn({ err: error }, 'SMS confirm error:');
     return res.status(500).json({ error: 'Failed to confirm verification code' });
   }
 });
@@ -547,7 +547,7 @@ router.post('/test', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Test notification error:', error);
+    logger.warn({ err: error }, 'Test notification error:');
     return res.status(500).json({ error: 'Failed to send test notification' });
   }
 });
@@ -573,7 +573,7 @@ router.get('/push/status', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Push status error:', error);
+    logger.warn({ err: error }, 'Push status error:');
     return res.status(500).json({ error: 'Failed to get push status' });
   }
 });
@@ -600,7 +600,7 @@ router.post('/mobile-tokens', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Mobile token register error:', error);
+    logger.warn({ err: error }, 'Mobile token register error:');
     return res.status(500).json({ error: 'Failed to register mobile device token' });
   }
 });
@@ -626,7 +626,7 @@ router.delete('/mobile-tokens', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Mobile token remove error:', error);
+    logger.warn({ err: error }, 'Mobile token remove error:');
     return res.status(500).json({ error: 'Failed to remove mobile device token' });
   }
 });
@@ -638,7 +638,7 @@ router.get('/mobile-tokens', async (req: Request, res: Response) => {
     const status = await mobilePushService.getUserTokenStatus(req.user.id);
     return res.json(status);
   } catch (error) {
-    logger.warn('Mobile tokens list error:', error);
+    logger.warn({ err: error }, 'Mobile tokens list error:');
     return res.status(500).json({ error: 'Failed to list mobile device tokens' });
   }
 });
@@ -773,7 +773,7 @@ router.post('/push/silent', async (req: Request, res: Response) => {
 
     return res.json({ success: true, sent: result.sent, reason: safeReason });
   } catch (error) {
-    logger.warn('Silent push error:', error);
+    logger.warn({ err: error }, 'Silent push error:');
     return res.status(500).json({ error: 'Failed to send silent push' });
   }
 });
@@ -804,7 +804,7 @@ router.post('/push-subscriptions', async (req: Request, res: Response) => {
 
     return res.json({ success: true, message: 'Push subscription registered' });
   } catch (error) {
-    logger.warn('Push subscribe error:', error);
+    logger.warn({ err: error }, 'Push subscribe error:');
     return res.status(500).json({ error: 'Failed to save push subscription' });
   }
 });
@@ -822,7 +822,7 @@ router.delete('/push-subscriptions', async (req: Request, res: Response) => {
     }
     return res.json({ success: true, message: 'Push subscription removed' });
   } catch (error) {
-    logger.warn('Push unsubscribe error:', error);
+    logger.warn({ err: error }, 'Push unsubscribe error:');
     return res.status(500).json({ error: 'Failed to remove push subscription' });
   }
 });
@@ -843,7 +843,7 @@ router.get('/push-subscriptions/status', async (req: Request, res: Response) => 
       })),
     });
   } catch (error) {
-    logger.warn('Push subscription status error:', error);
+    logger.warn({ err: error }, 'Push subscription status error:');
     return res.json({ hasSubscriptions: false, count: 0, devices: [] });
   }
 });
@@ -875,7 +875,7 @@ router.post('/push-test', async (req: Request, res: Response) => {
         : 'No push subscriptions registered on this account',
     });
   } catch (error) {
-    logger.warn('Push test error:', error);
+    logger.warn({ err: error }, 'Push test error:');
     return res.status(500).json({ error: 'Failed to send push test' });
   }
 });
@@ -902,7 +902,7 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
 
     return res.json({ count });
   } catch (error) {
-    logger.warn('Get unread count error:', error);
+    logger.warn({ err: error }, 'Get unread count error:');
     return res.json({ count: 0 });
   }
 });
@@ -920,7 +920,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     if (!notification) return res.status(404).json({ error: 'Notification not found' });
     res.json(notification);
   } catch (error) {
-    logger.warn('Get notification error:', error);
+    logger.warn({ err: error }, 'Get notification error:');
     res.status(500).json({ error: 'Failed to fetch notification' });
   }
 });

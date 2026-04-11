@@ -31,7 +31,7 @@ router.get('/', requireAuth, async (req, res) => {
       .offset(offset);
     res.json(campaigns);
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to list campaigns:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to list campaigns:');
     res.status(500).json({ error: 'Failed to fetch campaigns' });
   }
 });
@@ -66,7 +66,7 @@ router.get('/stats', requireAuth, async (req, res) => {
 
     res.json(stats);
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to fetch stats:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to fetch stats:');
     res.status(500).json({ error: 'Failed to fetch campaign stats' });
   }
 });
@@ -78,7 +78,7 @@ router.post('/', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:fanCampaigns', req.user!.id));
     res.status(201).json(campaign);
   } catch (error: unknown) {
-    logger.warn('[FanCampaigns] Failed to create campaign:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to create campaign:');
     if (error instanceof Error && error.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
     }
@@ -94,7 +94,7 @@ router.get('/:id', requireAuth, async (req, res) => {
     if (!item) return res.status(404).json({ error: 'Campaign not found' });
     res.json(item);
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to fetch campaign:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to fetch campaign:');
     res.status(500).json({ error: 'Failed to fetch campaign' });
   }
 });
@@ -129,7 +129,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:fanCampaigns', userId));
     res.json(campaign);
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to update campaign:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to update campaign:');
     res.status(500).json({ error: 'Failed to update campaign' });
   }
 });
@@ -165,7 +165,7 @@ router.post('/:id/send', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:fanCampaigns', userId));
     res.json({ success: true, recipientCount, campaign });
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to send campaign:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to send campaign:');
     res.status(500).json({ error: 'Failed to send campaign' });
   }
 });
@@ -189,7 +189,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await queryCache.invalidate(createCacheKey('stats:fanCampaigns', userId));
     res.json({ success: true });
   } catch (error) {
-    logger.warn('[FanCampaigns] Failed to delete campaign:', error);
+    logger.warn({ err: error }, '[FanCampaigns] Failed to delete campaign:');
     res.status(500).json({ error: 'Failed to delete campaign' });
   }
 });

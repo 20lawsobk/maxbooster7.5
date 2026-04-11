@@ -110,11 +110,11 @@ router.get('/', async (req: Request, res: Response) => {
           }
         }
       } catch (err) {
-        logger.warn('Social token expiring notification error:', err);
+        logger.warn({ err: err }, 'Social token expiring notification error:');
       }
     });
   } catch (error) {
-    logger.warn('Error fetching connected accounts:', error);
+    logger.warn({ err: error }, 'Error fetching connected accounts:');
     res.status(500).json({ error: 'Failed to fetch connected accounts' });
   }
 });
@@ -136,7 +136,7 @@ router.delete('/:accountId', async (req: Request, res: Response) => {
     
     res.json({ error: 'Account disconnected successfully' });
   } catch (error) {
-    logger.warn('Error disconnecting account:', error);
+    logger.warn({ err: error }, 'Error disconnecting account:');
     res.status(500).json({ error: 'Failed to disconnect account' });
   }
 });
@@ -166,7 +166,7 @@ router.post('/:accountId/refresh', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    logger.warn('Error refreshing account connection:', error);
+    logger.warn({ err: error }, 'Error refreshing account connection:');
     res.status(500).json({ error: 'Failed to refresh account connection' });
   }
 });
@@ -232,7 +232,7 @@ router.post('/manual-token', async (req: Request, res: Response) => {
       res.json({ error: `${platform} connected successfully`, id: newAccount.id });
     }
   } catch (error) {
-    logger.warn('Error saving manual token:', error);
+    logger.warn({ err: error }, 'Error saving manual token:');
     res.status(500).json({ error: 'Failed to save access token' });
   }
 });
@@ -268,7 +268,7 @@ router.put('/:accountId/permissions', async (req: Request, res: Response) => {
       permissions,
     });
   } catch (error) {
-    logger.warn('Error updating account permissions:', error);
+    logger.warn({ err: error }, 'Error updating account permissions:');
     res.status(500).json({ error: 'Failed to update account permissions' });
   }
 });

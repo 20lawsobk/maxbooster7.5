@@ -57,7 +57,7 @@ export class PerformanceRegressionDetector {
 
       return { hasRegression, checks };
     } catch (error) {
-      logger.warn('Failed to detect performance regression:', error);
+      logger.warn({ err: error }, 'Failed to detect performance regression:');
       throw error;
     }
   }

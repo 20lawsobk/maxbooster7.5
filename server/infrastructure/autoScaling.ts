@@ -242,7 +242,7 @@ class AutoScalingManager {
         ]
       });
     } catch (error) {
-      logger.warn('Error fetching kube metrics:', error);
+      logger.warn({ err: error }, 'Error fetching kube metrics:');
       res.status(500).json({ success: false, error: 'Failed to fetch kube metrics' });
     }
   }
@@ -274,7 +274,7 @@ scalingMetricsRouter.get('/metrics', (req: Request, res: Response) => {
       metrics,
     });
   } catch (error) {
-    logger.warn('Error fetching scaling metrics:', error);
+    logger.warn({ err: error }, 'Error fetching scaling metrics:');
     res.status(500).json({ success: false, error: 'Failed to fetch metrics' });
   }
 });

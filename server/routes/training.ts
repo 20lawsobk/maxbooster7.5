@@ -45,7 +45,7 @@ router.post('/start', requireAdmin, async (req: Request, res: Response) => {
     const result = await proxyToAI('/train/start', 'POST', { mode, n_sessions, phase_id });
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /start error:', err);
+    logger.warn({ err: err }, '[Training] /start error:');
     res.status(500).json({ error: 'Failed to start training' });
   }
 });
@@ -55,7 +55,7 @@ router.post('/stop', requireAdmin, async (_req: Request, res: Response) => {
     const result = await proxyToAI('/train/stop', 'POST');
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /stop error:', err);
+    logger.warn({ err: err }, '[Training] /stop error:');
     res.status(500).json({ error: 'Failed to stop training' });
   }
 });
@@ -65,7 +65,7 @@ router.get('/status', requireAdmin, async (_req: Request, res: Response) => {
     const result = await proxyToAI('/train/status', 'GET');
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /status error:', err);
+    logger.warn({ err: err }, '[Training] /status error:');
     res.status(500).json({ error: 'Failed to get training status' });
   }
 });
@@ -76,7 +76,7 @@ router.post('/session', requireAdmin, async (req: Request, res: Response) => {
     const result = await proxyToAI('/train/session', 'POST', body, LONG_TIMEOUT);
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /session error:', err);
+    logger.warn({ err: err }, '[Training] /session error:');
     res.status(500).json({ error: 'Failed to run training session' });
   }
 });
@@ -86,7 +86,7 @@ router.get('/datasets', requireAdmin, async (_req: Request, res: Response) => {
     const result = await proxyToAI('/train/datasets', 'GET');
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /datasets error:', err);
+    logger.warn({ err: err }, '[Training] /datasets error:');
     res.status(500).json({ error: 'Failed to get dataset stats' });
   }
 });
@@ -96,7 +96,7 @@ router.get('/schedule', requireAdmin, async (_req: Request, res: Response) => {
     const result = await proxyToAI('/train/schedule', 'GET');
     res.status(result.ok ? 200 : result.status).json(result.data);
   } catch (err) {
-    logger.warn('[Training] /schedule error:', err);
+    logger.warn({ err: err }, '[Training] /schedule error:');
     res.status(500).json({ error: 'Failed to get training schedule' });
   }
 });

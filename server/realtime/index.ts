@@ -66,7 +66,7 @@ async function authenticateFromSession(request: IncomingMessage): Promise<string
       });
     });
   } catch (error) {
-    logger.warn('WebSocket session auth error:', error);
+    logger.warn({ err: error }, 'WebSocket session auth error:');
     return null;
   }
 }
@@ -238,6 +238,6 @@ export async function initializeRealtimeServer(httpServer: HttpServer): Promise<
       logger.info('Presence manager ready');
     }
   } catch (error) {
-    logger.warn('Failed to initialize realtime server:', error);
+    logger.warn({ err: error }, 'Failed to initialize realtime server:');
   }
 }

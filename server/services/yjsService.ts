@@ -29,7 +29,7 @@ export class YjsCollaborationService {
 
   constructor() {
     if (this.YJS_PUBSUB_ENABLED) {
-      this.initPubSub().catch(err => logger.warn('Failed to init YJS PubSub:', err));
+      this.initPubSub().catch(err => logger.warn({ err: err }, 'Failed to init YJS PubSub:'));
     }
   }
 
@@ -51,7 +51,7 @@ export class YjsCollaborationService {
         });
       }
     } catch (error) {
-      logger.warn('YJS PubSub init error:', error);
+      logger.warn({ err: error }, 'YJS PubSub init error:');
     }
   }
 
@@ -65,7 +65,7 @@ export class YjsCollaborationService {
         await this.subClient.subscribe(channel);
         logger.info(`Subscribed to YJS updates for project: ${projectId}`);
       } catch (error) {
-        logger.warn(`Failed to subscribe to ${channel}:`, error);
+        logger.warn({ err: error }, `Failed to subscribe to ${channel}:`);
       }
     }
     this.pubSubCallbacks.get(projectId)?.add(callback);
@@ -141,7 +141,7 @@ export class YjsCollaborationService {
             await redis.publish(`yjs:updates:${projectId}`, base64Update);
           }
         } catch (error) {
-          logger.warn('Failed to publish YJS update:', error);
+          logger.warn({ err: error }, 'Failed to publish YJS update:');
         }
       }
 
@@ -180,7 +180,7 @@ export class YjsCollaborationService {
           // Clean up old snapshots (keep last 10)
           await storage.deleteOldCollabSnapshots(projectId, 10);
         } catch (error: unknown) {
-          logger.warn('Failed to save collab snapshot:', error);
+          logger.warn({ err: error }, 'Failed to save collab snapshot:');
         }
       }, this.SAVE_DEBOUNCE_MS);
 
@@ -241,7 +241,7 @@ export class YjsCollaborationService {
         await this.subClient.unsubscribe(`yjs:updates:${projectId}`);
         this.pubSubCallbacks.delete(projectId);
       } catch (error) {
-        logger.warn(`Failed to unsubscribe from yjs:updates:${projectId}:`, error);
+        logger.warn({ err: error }, `Failed to unsubscribe from yjs:updates:${projectId}:`);
       }
     }
 

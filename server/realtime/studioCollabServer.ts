@@ -117,7 +117,7 @@ export class StudioCollabServer {
             });
           });
         } catch (error) {
-          logger.warn('[StudioCollab] Upgrade error:', error);
+          logger.warn({ err: error }, '[StudioCollab] Upgrade error:');
           socket.write('HTTP/1.1 500 Internal Server Error\r\n\r\n');
           socket.destroy();
         }
@@ -155,7 +155,7 @@ export class StudioCollabServer {
           }
         }
       } catch (error) {
-        logger.warn('[StudioCollab] JWT verification failed:', error);
+        logger.warn({ err: error }, '[StudioCollab] JWT verification failed:');
       }
     }
 
@@ -191,7 +191,7 @@ export class StudioCollabServer {
             }
           }
         } catch (error) {
-          logger.warn('[StudioCollab] Session verification failed:', error);
+          logger.warn({ err: error }, '[StudioCollab] Session verification failed:');
         }
       }
     }
@@ -212,7 +212,7 @@ export class StudioCollabServer {
           }
         }
       } catch (error) {
-        logger.warn('[StudioCollab] Token param verification failed:', error);
+        logger.warn({ err: error }, '[StudioCollab] Token param verification failed:');
       }
     }
 
@@ -258,7 +258,7 @@ export class StudioCollabServer {
 
       return false;
     } catch (error) {
-      logger.warn('[StudioCollab] Project access check failed:', error);
+      logger.warn({ err: error }, '[StudioCollab] Project access check failed:');
       return false;
     }
   }
@@ -347,7 +347,7 @@ export class StudioCollabServer {
         const message: IncomingCollabMessage = JSON.parse(data.toString());
         await this.handleMessage(client, message, doc!);
       } catch (error) {
-        logger.warn('[StudioCollab] Message handling error:', error);
+        logger.warn({ err: error }, '[StudioCollab] Message handling error:');
       }
     });
 
@@ -362,7 +362,7 @@ export class StudioCollabServer {
     });
 
     ws.on('error', async (error) => {
-      logger.warn('[StudioCollab] WebSocket error:', error);
+      logger.warn({ err: error }, '[StudioCollab] WebSocket error:');
       doc!.off('update', updateHandler);
       await this.handleDisconnect(client);
     });
@@ -556,7 +556,7 @@ export class StudioCollabServer {
               payload: { collaborators },
             });
           } catch (error) {
-            logger.warn(`[StudioCollab] Awareness broadcast failed for project ${projectId}:`, error);
+            logger.warn({ err: error }, `[StudioCollab] Awareness broadcast failed for project ${projectId}:`);
           }
         }
       }

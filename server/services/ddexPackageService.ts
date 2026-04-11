@@ -298,7 +298,7 @@ export class DDEXPackageService {
             audioFilePath = await this.downloadAudioToTemp(audioFilePath, track.trackNumber);
             tempFiles.push(audioFilePath);
           } catch (err) {
-            logger.warn(`[DDEX] Could not download audio for track ${track.trackNumber} — file will be omitted from package:`, err);
+            logger.warn({ err: err }, `[DDEX] Could not download audio for track ${track.trackNumber} — file will be omitted from package:`);
             audioFilePath = '';
           }
         }
@@ -430,7 +430,7 @@ export class DDEXPackageService {
       const fileBuffer = await readFile(filePath);
       return createHash('md5').update(fileBuffer).digest('hex');
     } catch (error: unknown) {
-      logger.warn(`Error calculating MD5 for ${filePath}:`, error);
+      logger.warn({ err: error }, `Error calculating MD5 for ${filePath}:`);
       return '';
     }
   }

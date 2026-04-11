@@ -42,7 +42,7 @@ router.post('/presave', requireAuth, async (req: Request, res: Response) => {
     const page = await promotionalToolsService.createPreSavePage(userId, data.releaseId, data);
     res.json(page);
   } catch (error) {
-    logger.warn('Error creating pre-save page:', error);
+    logger.warn({ err: error }, 'Error creating pre-save page:');
     res.status(500).json({ error: 'Failed to create pre-save page' });
   }
 });
@@ -53,7 +53,7 @@ router.get('/presave', requireAuth, async (req: Request, res: Response) => {
     const pages = await promotionalToolsService.getUserPreSavePages(userId);
     res.json(pages);
   } catch (error) {
-    logger.warn('Error fetching pre-save pages:', error);
+    logger.warn({ err: error }, 'Error fetching pre-save pages:');
     res.status(500).json({ error: 'Failed to fetch pre-save pages' });
   }
 });
@@ -67,7 +67,7 @@ router.get('/presave/:id', async (req: Request, res: Response) => {
     await promotionalToolsService.recordPreSaveAnalytics(page.id, 'view');
     res.json(page);
   } catch (error) {
-    logger.warn('Error fetching pre-save page:', error);
+    logger.warn({ err: error }, 'Error fetching pre-save page:');
     res.status(500).json({ error: 'Failed to fetch pre-save page' });
   }
 });
@@ -81,7 +81,7 @@ router.get('/presave/slug/:slug', async (req: Request, res: Response) => {
     await promotionalToolsService.recordPreSaveAnalytics(page.id, 'view');
     res.json(page);
   } catch (error) {
-    logger.warn('Error fetching pre-save page:', error);
+    logger.warn({ err: error }, 'Error fetching pre-save page:');
     res.status(500).json({ error: 'Failed to fetch pre-save page' });
   }
 });
@@ -95,7 +95,7 @@ router.put('/presave/:id', requireAuth, async (req: Request, res: Response) => {
     if (error?.message === 'Pre-save page not found') {
       return res.status(404).json({ error: 'Pre-save page not found' });
     }
-    logger.warn('Error updating pre-save page:', error);
+    logger.warn({ err: error }, 'Error updating pre-save page:');
     res.status(500).json({ error: 'Failed to update pre-save page' });
   }
 });
@@ -116,7 +116,7 @@ router.post('/presave/:id/analytics', async (req: Request, res: Response) => {
     await promotionalToolsService.recordPreSaveAnalytics(req.params.id, event as PresaveEvent, platform);
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error recording analytics:', error);
+    logger.warn({ err: error }, 'Error recording analytics:');
     res.status(500).json({ error: 'Failed to record analytics' });
   }
 });
@@ -133,7 +133,7 @@ router.post('/presave/:id/email', async (req: Request, res: Response) => {
     }
     res.json({ success });
   } catch (error) {
-    logger.warn('Error capturing email:', error);
+    logger.warn({ err: error }, 'Error capturing email:');
     res.status(500).json({ error: 'Failed to capture email' });
   }
 });
@@ -145,7 +145,7 @@ router.delete('/presave/:id', requireAuth, async (req: Request, res: Response) =
     if (!deleted) return res.status(404).json({ error: 'Pre-save page not found' });
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error deleting pre-save page:', error);
+    logger.warn({ err: error }, 'Error deleting pre-save page:');
     res.status(500).json({ error: 'Failed to delete pre-save page' });
   }
 });
@@ -168,7 +168,7 @@ router.post('/promo-cards', requireAuth, async (req: Request, res: Response) => 
     const card = await promotionalToolsService.createPromoCard(userId, data.releaseId, data);
     res.json(card);
   } catch (error) {
-    logger.warn('Error creating promo card:', error);
+    logger.warn({ err: error }, 'Error creating promo card:');
     res.status(500).json({ error: 'Failed to create promo card' });
   }
 });
@@ -180,7 +180,7 @@ router.get('/promo-cards', requireAuth, async (req: Request, res: Response) => {
     const cards = await promotionalToolsService.getPromoCards(userId, releaseId);
     res.json(cards);
   } catch (error) {
-    logger.warn('Error fetching promo cards:', error);
+    logger.warn({ err: error }, 'Error fetching promo cards:');
     res.status(500).json({ error: 'Failed to fetch promo cards' });
   }
 });
@@ -201,7 +201,7 @@ router.delete('/promo-cards/:id', requireAuth, async (req: Request, res: Respons
     if (!deleted) return res.status(404).json({ error: 'Promo card not found' });
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error deleting promo card:', error);
+    logger.warn({ err: error }, 'Error deleting promo card:');
     res.status(500).json({ error: 'Failed to delete promo card' });
   }
 });
@@ -225,7 +225,7 @@ router.post('/mini-videos', requireAuth, async (req: Request, res: Response) => 
     const video = await promotionalToolsService.createMiniVideo(userId, data.releaseId, data);
     res.json(video);
   } catch (error) {
-    logger.warn('Error creating mini video:', error);
+    logger.warn({ err: error }, 'Error creating mini video:');
     res.status(500).json({ error: 'Failed to create mini video' });
   }
 });
@@ -237,7 +237,7 @@ router.get('/mini-videos', requireAuth, async (req: Request, res: Response) => {
     const videos = await promotionalToolsService.getMiniVideos(userId, releaseId);
     res.json(videos);
   } catch (error) {
-    logger.warn('Error fetching mini videos:', error);
+    logger.warn({ err: error }, 'Error fetching mini videos:');
     res.status(500).json({ error: 'Failed to fetch mini videos' });
   }
 });
@@ -249,7 +249,7 @@ router.delete('/mini-videos/:id', requireAuth, async (req: Request, res: Respons
     if (!deleted) return res.status(404).json({ error: 'Mini video not found' });
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error deleting mini video:', error);
+    logger.warn({ err: error }, 'Error deleting mini video:');
     res.status(500).json({ error: 'Failed to delete mini video' });
   }
 });
@@ -271,7 +271,7 @@ router.post('/spotify-canvas', requireAuth, async (req: Request, res: Response) 
     );
     res.json(canvas);
   } catch (error) {
-    logger.warn('Error creating Spotify Canvas:', error);
+    logger.warn({ err: error }, 'Error creating Spotify Canvas:');
     res.status(500).json({ error: 'Failed to create Spotify Canvas' });
   }
 });
@@ -283,7 +283,7 @@ router.get('/spotify-canvas', requireAuth, async (req: Request, res: Response) =
     const canvases = await promotionalToolsService.getSpotifyCanvases(userId, releaseId);
     res.json(canvases);
   } catch (error) {
-    logger.warn('Error fetching Spotify Canvases:', error);
+    logger.warn({ err: error }, 'Error fetching Spotify Canvases:');
     res.status(500).json({ error: 'Failed to fetch Spotify Canvases' });
   }
 });
@@ -293,7 +293,7 @@ router.post('/spotify-canvas/:id/process', requireAuth, async (req: Request, res
     const canvas = await promotionalToolsService.processSpotifyCanvas(req.params.id);
     res.json(canvas);
   } catch (error) {
-    logger.warn('Error processing Spotify Canvas:', error);
+    logger.warn({ err: error }, 'Error processing Spotify Canvas:');
     res.status(500).json({ error: 'Failed to process Spotify Canvas' });
   }
 });
@@ -303,7 +303,7 @@ router.post('/spotify-canvas/:id/submit', requireAuth, async (req: Request, res:
     const canvas = await promotionalToolsService.submitSpotifyCanvas(req.params.id);
     res.json(canvas);
   } catch (error) {
-    logger.warn('Error submitting Spotify Canvas:', error);
+    logger.warn({ err: error }, 'Error submitting Spotify Canvas:');
     res.status(500).json({ error: 'Failed to submit Spotify Canvas' });
   }
 });
@@ -313,7 +313,7 @@ router.delete('/spotify-canvas/:id', requireAuth, async (req: Request, res: Resp
     await promotionalToolsService.deleteSpotifyCanvas(req.params.id);
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error deleting Spotify Canvas:', error);
+    logger.warn({ err: error }, 'Error deleting Spotify Canvas:');
     res.status(500).json({ error: 'Failed to delete Spotify Canvas' });
   }
 });
@@ -335,7 +335,7 @@ router.post('/lyrics-sync', requireAuth, async (req: Request, res: Response) => 
     );
     res.json(sync);
   } catch (error) {
-    logger.warn('Error creating lyrics sync:', error);
+    logger.warn({ err: error }, 'Error creating lyrics sync:');
     res.status(500).json({ error: 'Failed to create lyrics sync' });
   }
 });
@@ -347,7 +347,7 @@ router.get('/lyrics-sync', requireAuth, async (req: Request, res: Response) => {
     const syncs = await promotionalToolsService.getLyricsSyncs(userId, releaseId);
     res.json(syncs);
   } catch (error) {
-    logger.warn('Error fetching lyrics syncs:', error);
+    logger.warn({ err: error }, 'Error fetching lyrics syncs:');
     res.status(500).json({ error: 'Failed to fetch lyrics syncs' });
   }
 });
@@ -358,7 +358,7 @@ router.put('/lyrics-sync/:id', requireAuth, async (req: Request, res: Response) 
     const sync = await promotionalToolsService.updateLyricsSync(req.params.id, lyrics);
     res.json(sync);
   } catch (error) {
-    logger.warn('Error updating lyrics sync:', error);
+    logger.warn({ err: error }, 'Error updating lyrics sync:');
     res.status(500).json({ error: 'Failed to update lyrics sync' });
   }
 });
@@ -368,7 +368,7 @@ router.post('/lyrics-sync/:id/submit', requireAuth, async (req: Request, res: Re
     const sync = await promotionalToolsService.submitLyricsToplatforms(req.params.id);
     res.json(sync);
   } catch (error) {
-    logger.warn('Error submitting lyrics:', error);
+    logger.warn({ err: error }, 'Error submitting lyrics:');
     res.status(500).json({ error: 'Failed to submit lyrics' });
   }
 });
@@ -385,7 +385,7 @@ router.get('/lyrics-sync/:id/export/lrc', requireAuth, async (req: Request, res:
     res.setHeader('Content-Disposition', `attachment; filename="lyrics-${sync.id}.lrc"`);
     res.send(lrc);
   } catch (error) {
-    logger.warn('Error exporting LRC:', error);
+    logger.warn({ err: error }, 'Error exporting LRC:');
     res.status(500).json({ error: 'Failed to export LRC' });
   }
 });
@@ -402,7 +402,7 @@ router.get('/lyrics-sync/:id/export/srt', requireAuth, async (req: Request, res:
     res.setHeader('Content-Disposition', `attachment; filename="lyrics-${sync.id}.srt"`);
     res.send(srt);
   } catch (error) {
-    logger.warn('Error exporting SRT:', error);
+    logger.warn({ err: error }, 'Error exporting SRT:');
     res.status(500).json({ error: 'Failed to export SRT' });
   }
 });
@@ -412,7 +412,7 @@ router.delete('/lyrics-sync/:id', requireAuth, async (req: Request, res: Respons
     await promotionalToolsService.deleteLyricsSync(req.params.id);
     res.json({ success: true });
   } catch (error) {
-    logger.warn('Error deleting lyrics sync:', error);
+    logger.warn({ err: error }, 'Error deleting lyrics sync:');
     res.status(500).json({ error: 'Failed to delete lyrics sync' });
   }
 });

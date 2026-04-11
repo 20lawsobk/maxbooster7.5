@@ -330,7 +330,7 @@ class ContentQualityPipeline {
         preferredHashtags: (preferencesResult?.preferredHashtags as string[]) || [],
       };
     } catch (error) {
-      logger.warn('Error building content context:', error);
+      logger.warn({ err: error }, 'Error building content context:');
       return {
         userId,
         artistName: baseContext.artistName || 'Artist',
@@ -394,7 +394,7 @@ class ContentQualityPipeline {
           logger.info(`[ContentQuality] Variant ${index} generated via Python AI`);
         }
       } catch (err) {
-        logger.warn('[ContentQuality] Python AI failed for variant, falling through to advanced AI:', err);
+        logger.warn({ err: err }, '[ContentQuality] Python AI failed for variant, falling through to advanced AI:');
       }
     }
 
@@ -428,7 +428,7 @@ class ContentQualityPipeline {
         hashtags = advancedResult.primary.hashtags;
         logger.info(`[ContentQuality] Variant ${index} generated via Advanced AI (${contentType})`);
       } catch (err) {
-        logger.warn('[ContentQuality] Advanced AI also failed for variant:', err);
+        logger.warn({ err: err }, '[ContentQuality] Advanced AI also failed for variant:');
         throw new Error(`[ContentQuality] All generation tiers failed for variant ${index}: ${err}`);
       }
     }

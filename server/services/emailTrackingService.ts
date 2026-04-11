@@ -17,7 +17,7 @@ export class EmailTrackingService {
     try {
       await db.insert(emailMessages).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn('Failed to record sent email:', error);
+      logger.warn({ err: error }, 'Failed to record sent email:');
     }
   }
 
@@ -28,7 +28,7 @@ export class EmailTrackingService {
     try {
       await db.insert(emailEvents).values(data).onConflictDoNothing();
     } catch (error: unknown) {
-      logger.warn('Failed to record email event:', error);
+      logger.warn({ err: error }, 'Failed to record email event:');
     }
   }
 
@@ -84,7 +84,7 @@ export class EmailTrackingService {
 
       return stats;
     } catch (error: unknown) {
-      logger.warn('Failed to get email stats:', error);
+      logger.warn({ err: error }, 'Failed to get email stats:');
       return {
         sent: 0,
         delivered: 0,
@@ -120,7 +120,7 @@ export class EmailTrackingService {
 
       return bounces;
     } catch (error: unknown) {
-      logger.warn('Failed to get recent bounces:', error);
+      logger.warn({ err: error }, 'Failed to get recent bounces:');
       return [];
     }
   }
@@ -149,7 +149,7 @@ export class EmailTrackingService {
 
       return isValid;
     } catch (error: unknown) {
-      logger.warn('Ed25519 signature verification failed:', error);
+      logger.warn({ err: error }, 'Ed25519 signature verification failed:');
       return false;
     }
   }

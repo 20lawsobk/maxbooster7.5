@@ -63,7 +63,7 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
 
     res.status(200).json({ received: true });
   } catch (error: unknown) {
-    logger.warn('SendGrid webhook error:', error);
+    logger.warn({ err: error }, 'SendGrid webhook error:');
     res.status(500).json({ error: 'Webhook processing failed' });
   }
 });

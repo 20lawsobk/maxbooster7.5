@@ -102,7 +102,7 @@ export class AutoClusterManager {
     if (this.running) return;
     this.running = true;
     this.intervalId = setInterval(
-      () => this.evaluate().catch(e => logger.warn('[AutoCluster] Evaluation error:', e)),
+      () => this.evaluate().catch(e => logger.warn({ err: e }, '[AutoCluster] Evaluation error:')),
       this.rules.checkIntervalMs,
     );
     logger.info(
@@ -218,7 +218,7 @@ export class AutoClusterManager {
         reasons.push(`↑${trigger.reason} → [${spawned.join(', ')}]`);
 
         if (trigger.reason === 'hot_node_detected' && trigger.hotNodeId) {
-          this.rebalancer.rebalance().catch(e => logger.warn('[AutoCluster] Rebalance error:', e));
+          this.rebalancer.rebalance().catch(e => logger.warn({ err: e }, '[AutoCluster] Rebalance error:'));
         }
       }
     }

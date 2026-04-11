@@ -55,7 +55,7 @@ router.get('/status', requireAuth, async (req, res) => {
       viralSuccessRate = advertisingModel.getViralSuccessRate();
       organicReachMultiplier = advertisingModel.getAvgOrganicReachMultiplier();
     } catch (e) {
-      logger.warn('getAdvertisingAutopilot unavailable, using defaults:', e);
+      logger.warn({ err: e }, 'getAdvertisingAutopilot unavailable, using defaults:');
     }
 
     // Real campaign stats from ad_campaigns table
@@ -138,7 +138,7 @@ router.get('/status', requireAuth, async (req, res) => {
       },
     });
   } catch (error) {
-    logger.warn('Failed to get advertising autopilot status:', error);
+    logger.warn({ err: error }, 'Failed to get advertising autopilot status:');
     res.status(500).json({ error: 'Failed to get advertising autopilot status' });
   }
 });
@@ -189,7 +189,7 @@ router.post('/start', requireAuth, async (req, res) => {
       config,
     });
   } catch (error) {
-    logger.warn('Failed to start advertising autopilot:', error);
+    logger.warn({ err: error }, 'Failed to start advertising autopilot:');
     res.status(500).json({ error: 'Failed to start advertising autopilot' });
   }
 });
@@ -212,7 +212,7 @@ router.post('/stop', requireAuth, async (req, res) => {
       message: 'Advertising Autopilot paused',
     });
   } catch (error) {
-    logger.warn('Failed to stop advertising autopilot:', error);
+    logger.warn({ err: error }, 'Failed to stop advertising autopilot:');
     res.status(500).json({ error: 'Failed to stop advertising autopilot' });
   }
 });
@@ -237,7 +237,7 @@ router.post('/configure', requireAuth, async (req, res) => {
       res.status(400).json({ error: 'Invalid configuration', details: error.errors });
       return;
     }
-    logger.warn('Failed to configure advertising autopilot:', error);
+    logger.warn({ err: error }, 'Failed to configure advertising autopilot:');
     res.status(500).json({ error: 'Failed to update configuration' });
   }
 });
@@ -272,7 +272,7 @@ router.post('/recommend', requireAuth, async (req, res) => {
       usedMultimodal: !!multimodalFeatures,
     });
   } catch (error) {
-    logger.warn('Failed to generate campaign recommendations:', error);
+    logger.warn({ err: error }, 'Failed to generate campaign recommendations:');
     res.status(500).json({ error: 'Failed to generate campaign recommendations' });
   }
 });
@@ -301,7 +301,7 @@ router.get('/performance', requireAuth, async (req, res) => {
       },
     });
   } catch (error: any) {
-    logger.warn('Performance metrics error:', error);
+    logger.warn({ err: error }, 'Performance metrics error:');
     res.status(500).json({ error: 'Internal server error' });
   }
 });
@@ -313,7 +313,7 @@ router.get('/campaigns', requireAuth, async (req, res) => {
     const campaigns = await storage.getAdvertisingCampaigns?.(userId) || [];
     res.json(campaigns);
   } catch (error) {
-    logger.warn('Failed to get campaigns:', error);
+    logger.warn({ err: error }, 'Failed to get campaigns:');
     res.status(500).json({ error: 'Failed to get campaigns:' });
   }
 });
@@ -325,7 +325,7 @@ router.get('/ai-insights', requireAuth, async (req, res) => {
     const insights = await storage.getAdvertisingInsights?.(userId) || null;
     res.json(insights ?? { campaigns: [], totalSpend: 0, totalRevenue: 0, roas: 0 });
   } catch (error) {
-    logger.warn('Failed to get AI insights:', error);
+    logger.warn({ err: error }, 'Failed to get AI insights:');
     res.status(500).json({ error: 'Failed to get AI insights' });
   }
 });
@@ -337,7 +337,7 @@ router.get('/audience-segments', requireAuth, async (req, res) => {
     const segments = await storage.getAudienceSegments?.(userId) || [];
     res.json(segments);
   } catch (error) {
-    logger.warn('Failed to get audience segments:', error);
+    logger.warn({ err: error }, 'Failed to get audience segments:');
     res.status(500).json({ error: 'Failed to get audience segments:' });
   }
 });
@@ -349,7 +349,7 @@ router.get('/creative-fatigue', requireAuth, async (req, res) => {
     const fatigue = await storage.getCreativeFatigue?.(userId) || [];
     res.json(fatigue);
   } catch (error) {
-    logger.warn('Failed to get creative fatigue:', error);
+    logger.warn({ err: error }, 'Failed to get creative fatigue:');
     res.status(500).json({ error: 'Failed to get creative fatigue:' });
   }
 });
@@ -361,7 +361,7 @@ router.get('/bidding-strategies', requireAuth, async (req, res) => {
     const strategies = await storage.getBiddingStrategies?.(userId) || [];
     res.json(strategies);
   } catch (error) {
-    logger.warn('Failed to get bidding strategies:', error);
+    logger.warn({ err: error }, 'Failed to get bidding strategies:');
     res.status(500).json({ error: 'Failed to get bidding strategies:' });
   }
 });
@@ -373,7 +373,7 @@ router.get('/lookalike-audiences', requireAuth, async (req, res) => {
     const audiences = await storage.getLookalikeAudiences?.(userId) || [];
     res.json(audiences);
   } catch (error) {
-    logger.warn('Failed to get lookalike audiences:', error);
+    logger.warn({ err: error }, 'Failed to get lookalike audiences:');
     res.status(500).json({ error: 'Failed to get lookalike audiences:' });
   }
 });
@@ -385,7 +385,7 @@ router.get('/forecasts', requireAuth, async (req, res) => {
     const forecasts = await storage.getAdvertisingForecasts?.(userId) || null;
     res.json(forecasts ?? []);
   } catch (error) {
-    logger.warn('Failed to get forecasts:', error);
+    logger.warn({ err: error }, 'Failed to get forecasts:');
     res.status(500).json({ error: 'Failed to get forecasts' });
   }
 });
@@ -397,7 +397,7 @@ router.get('/competitor-insights', requireAuth, async (req, res) => {
     const insights = await storage.getCompetitorInsights?.(userId) || [];
     res.json(insights);
   } catch (error) {
-    logger.warn('Failed to get competitor insights:', error);
+    logger.warn({ err: error }, 'Failed to get competitor insights:');
     res.status(500).json({ error: 'Failed to get competitor insights:' });
   }
 });
@@ -409,7 +409,7 @@ router.get('/ab-tests', requireAuth, async (req, res) => {
     const tests = await storage.getABTests?.(userId) || [];
     res.json(tests);
   } catch (error) {
-    logger.warn('Failed to get A/B tests:', error);
+    logger.warn({ err: error }, 'Failed to get A/B tests:');
     res.status(500).json({ error: 'Failed to get A/B tests:' });
   }
 });
@@ -421,7 +421,7 @@ router.get('/creative-variants', requireAuth, async (req, res) => {
     const variants = await storage.getCreativeVariants?.(userId) || [];
     res.json(variants);
   } catch (error) {
-    logger.warn('Failed to get creative variants:', error);
+    logger.warn({ err: error }, 'Failed to get creative variants:');
     res.status(500).json({ error: 'Failed to get creative variants:' });
   }
 });
@@ -433,7 +433,7 @@ router.get('/roas/campaigns', requireAuth, async (req, res) => {
     const campaigns = await storage.getRoasCampaigns?.(userId) || [];
     res.json(campaigns);
   } catch (error) {
-    logger.warn('Failed to get ROAS campaigns:', error);
+    logger.warn({ err: error }, 'Failed to get ROAS campaigns:');
     res.status(500).json({ error: 'Failed to get ROAS campaigns:' });
   }
 });
@@ -445,7 +445,7 @@ router.get('/roas/audience-segments', requireAuth, async (req, res) => {
     const segments = await storage.getRoasAudienceSegments?.(userId) || [];
     res.json(segments);
   } catch (error) {
-    logger.warn('Failed to get ROAS audience segments:', error);
+    logger.warn({ err: error }, 'Failed to get ROAS audience segments:');
     res.status(500).json({ error: 'Failed to get ROAS audience segments:' });
   }
 });
@@ -457,7 +457,7 @@ router.get('/roas/forecast', requireAuth, async (req, res) => {
     const forecast = await storage.getRoasForecast?.(userId) || [];
     res.json(forecast);
   } catch (error) {
-    logger.warn('Failed to get ROAS forecast:', error);
+    logger.warn({ err: error }, 'Failed to get ROAS forecast:');
     res.status(500).json({ error: 'Failed to get ROAS forecast:' });
   }
 });
@@ -469,7 +469,7 @@ router.get('/roas/budget-optimization', requireAuth, async (req, res) => {
     const data = await storage.getBudgetOptimization?.(userId) || [];
     res.json(data);
   } catch (error) {
-    logger.warn('Failed to get budget optimization:', error);
+    logger.warn({ err: error }, 'Failed to get budget optimization:');
     res.status(500).json({ error: 'Failed to get budget optimization:' });
   }
 });
@@ -481,7 +481,7 @@ router.get('/roas/creative-fatigue-analysis', requireAuth, async (req, res) => {
     const data = await storage.getCreativeFatigueAnalysis?.(userId) || [];
     res.json(data);
   } catch (error) {
-    logger.warn('Failed to get creative fatigue analysis:', error);
+    logger.warn({ err: error }, 'Failed to get creative fatigue analysis:');
     res.status(500).json({ error: 'Failed to get creative fatigue analysis:' });
   }
 });
@@ -493,7 +493,7 @@ router.get('/budget-pacing/campaigns', requireAuth, async (req, res) => {
     const campaigns = await storage.getBudgetPacingCampaigns?.(userId) || [];
     res.json(campaigns);
   } catch (error) {
-    logger.warn('Failed to get budget pacing campaigns:', error);
+    logger.warn({ err: error }, 'Failed to get budget pacing campaigns:');
     res.status(500).json({ error: 'Failed to get budget pacing campaigns:' });
   }
 });
@@ -505,7 +505,7 @@ router.get('/budget-pacing/history', requireAuth, async (req, res) => {
     const history = await storage.getBudgetPacingHistory?.(userId) || [];
     res.json(history);
   } catch (error) {
-    logger.warn('Failed to get budget pacing history:', error);
+    logger.warn({ err: error }, 'Failed to get budget pacing history:');
     res.status(500).json({ error: 'Failed to get budget pacing history:' });
   }
 });
@@ -517,7 +517,7 @@ router.get('/attribution', requireAuth, async (req, res) => {
     const data = await storage.getAttributionData?.(userId) || [];
     res.json(data);
   } catch (error) {
-    logger.warn('Failed to get attribution data:', error);
+    logger.warn({ err: error }, 'Failed to get attribution data:');
     res.status(500).json({ error: 'Failed to get attribution data:' });
   }
 });
@@ -529,7 +529,7 @@ router.get('/cross-channel-attribution', requireAuth, async (req, res) => {
     const data = await storage.getCrossChannelAttribution?.(userId) || [];
     res.json(data);
   } catch (error) {
-    logger.warn('Failed to get cross-channel attribution:', error);
+    logger.warn({ err: error }, 'Failed to get cross-channel attribution:');
     res.status(500).json({ error: 'Failed to get cross-channel attribution:' });
   }
 });
@@ -541,7 +541,7 @@ router.get('/social-listening/keywords', requireAuth, async (req, res) => {
     const keywords = await storage.getSocialListeningKeywords?.(userId) || [];
     res.json({ keywords });
   } catch (error) {
-    logger.warn('Failed to get social listening keywords:', error);
+    logger.warn({ err: error }, 'Failed to get social listening keywords:');
     res.status(500).json({ error: "Failed to get social listening keywords" });
   }
 });
@@ -553,7 +553,7 @@ router.get('/social-listening/trending', requireAuth, async (req, res) => {
     const trending = await storage.getSocialListeningTrending?.(userId) || [];
     res.json({ trending });
   } catch (error) {
-    logger.warn('Failed to get social listening trending:', error);
+    logger.warn({ err: error }, 'Failed to get social listening trending:');
     res.status(500).json({ error: "Failed to get social listening trending" });
   }
 });
@@ -565,7 +565,7 @@ router.get('/social-listening/influencers', requireAuth, async (req, res) => {
     const influencers = await storage.getSocialListeningInfluencers?.(userId) || [];
     res.json({ influencers });
   } catch (error) {
-    logger.warn('Failed to get social listening influencers:', error);
+    logger.warn({ err: error }, 'Failed to get social listening influencers:');
     res.status(500).json({ error: "Failed to get social listening influencers" });
   }
 });
@@ -577,7 +577,7 @@ router.get('/social-listening/alerts', requireAuth, async (req, res) => {
     const alerts = await storage.getSocialListeningAlerts?.(userId) || [];
     res.json({ alerts });
   } catch (error) {
-    logger.warn('Failed to get social listening alerts:', error);
+    logger.warn({ err: error }, 'Failed to get social listening alerts:');
     res.status(500).json({ error: "Failed to get social listening alerts" });
   }
 });
@@ -589,7 +589,7 @@ router.get('/competitors', requireAuth, async (req, res) => {
     const competitors = await storage.getCompetitors?.(userId) || [];
     res.json({ competitors });
   } catch (error) {
-    logger.warn('Failed to get competitors:', error);
+    logger.warn({ err: error }, 'Failed to get competitors:');
     res.status(500).json({ error: "Failed to get competitors" });
   }
 });
@@ -607,7 +607,7 @@ router.get('/your-stats', requireAuth, async (req, res) => {
     };
     res.json(stats);
   } catch (error) {
-    logger.warn('Failed to get your social stats:', error);
+    logger.warn({ err: error }, 'Failed to get your social stats:');
     res.status(500).json({ error: 'Failed to get social stats' });
   }
 });

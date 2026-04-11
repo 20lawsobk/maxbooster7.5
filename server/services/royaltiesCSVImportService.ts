@@ -181,14 +181,14 @@ export class RoyaltiesCSVImportService {
         duration,
       };
     } catch (error: unknown) {
-      logger.warn('Error processing CSV import:', error);
+      logger.warn({ err: error }, 'Error processing CSV import:');
       throw error;
     } finally {
       // Clean up CSV file from storage
       try {
         await storageService.deleteFile(data.storageKey);
       } catch (error: unknown) {
-        logger.warn('Failed to clean up CSV file:', error);
+        logger.warn({ err: error }, 'Failed to clean up CSV file:');
       }
     }
   }

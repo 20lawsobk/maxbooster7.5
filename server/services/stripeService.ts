@@ -124,7 +124,7 @@ export class StripeService {
         };
       }
     } catch (error: unknown) {
-      logger.warn('Subscription error:', error);
+      logger.warn({ err: error }, 'Subscription error:');
       throw error;
     }
   }
@@ -150,7 +150,7 @@ export class StripeService {
 
       return result.data;
     } catch (error: unknown) {
-      logger.warn('Beat purchase intent error:', error);
+      logger.warn({ err: error }, 'Beat purchase intent error:');
       throw error;
     }
   }
@@ -203,7 +203,7 @@ export class StripeService {
           logger.info(`Unhandled webhook event type: ${event.type}`);
       }
     } catch (error: unknown) {
-      logger.warn('Webhook error:', error);
+      logger.warn({ err: error }, 'Webhook error:');
       throw error;
     }
   }
@@ -424,7 +424,7 @@ export class StripeService {
         return { success: false, error: stripeError.message };
       }
     } catch (error: any) {
-      logger.warn('Error creating refund:', error);
+      logger.warn({ err: error }, 'Error creating refund:');
       return { success: false, error: error.message || 'Failed to create refund' };
     }
   }
@@ -460,7 +460,7 @@ export class StripeService {
 
       logger.info('Refund status updated from webhook', { refundId, status: refund.status });
     } catch (error) {
-      logger.warn('Error handling refund webhook:', error);
+      logger.warn({ err: error }, 'Error handling refund webhook:');
     }
   }
 
@@ -482,7 +482,7 @@ export class StripeService {
 
       return refund;
     } catch (error) {
-      logger.warn('Error getting refund status:', error);
+      logger.warn({ err: error }, 'Error getting refund status:');
       throw error;
     }
   }
@@ -501,7 +501,7 @@ export class StripeService {
 
       return orderRefunds;
     } catch (error) {
-      logger.warn('Error getting order refunds:', error);
+      logger.warn({ err: error }, 'Error getting order refunds:');
       throw error;
     }
   }
@@ -599,7 +599,7 @@ export class StripeService {
 
       return formData;
     } catch (error) {
-      logger.warn('Error generating tax form data:', error);
+      logger.warn({ err: error }, 'Error generating tax form data:');
       throw error;
     }
   }

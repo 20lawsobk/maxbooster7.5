@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { db } from '../db.ts';
+import { db } from '../db.js';
 import { eq, desc, asc, lt, sql, inArray } from 'drizzle-orm';
 import {
   assistantConversations,
   assistantMessages,
-} from '../../shared/schema.ts';
-import { generateMaxResponse } from '../services/maxAssistantService.ts';
+} from '../../shared/schema.js';
+import { generateMaxResponse } from '../services/maxAssistantService.js';
 import { logger } from '../logger.js';
 import rateLimit from 'express-rate-limit';
 

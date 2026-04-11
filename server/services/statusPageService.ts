@@ -567,7 +567,7 @@ export class StatusPageService {
           `,
         });
       } catch (error) {
-        logger.warn(`Failed to notify subscriber ${subscriber.email}:`, error);
+        logger.warn({ err: error }, `Failed to notify subscriber ${subscriber.email}:`);
       }
     }
 
@@ -586,7 +586,7 @@ export class StatusPageService {
         `,
       });
     } catch (error) {
-      logger.warn(`Failed to send verification email to ${subscriber.email}:`, error);
+      logger.warn({ err: error }, `Failed to send verification email to ${subscriber.email}:`);
     }
   }
 

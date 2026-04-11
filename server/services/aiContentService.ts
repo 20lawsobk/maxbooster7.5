@@ -136,7 +136,7 @@ export class AIContentService {
         .limit(1);
       return preferences || null;
     } catch (error) {
-      logger.warn('Error fetching user autopilot preferences:', error);
+      logger.warn({ err: error }, 'Error fetching user autopilot preferences:');
       return null;
     }
   }
@@ -177,7 +177,7 @@ export class AIContentService {
         if (model.modelName === 'hashtag_optimizer_v1') this.modelIds.hashtagOptimizer = model.id;
       });
     } catch (error: unknown) {
-      logger.warn('Failed to load AI models:', error);
+      logger.warn({ err: error }, 'Failed to load AI models:');
     }
   }
 
@@ -218,7 +218,7 @@ export class AIContentService {
 
       return inference.id;
     } catch (error: unknown) {
-      logger.warn('Failed to log inference:', error);
+      logger.warn({ err: error }, 'Failed to log inference:');
       return null;
     }
   }
@@ -235,7 +235,7 @@ export class AIContentService {
         visualizationData: explanation.viz || {},
       });
     } catch (error: unknown) {
-      logger.warn('Failed to log explanation:', error);
+      logger.warn({ err: error }, 'Failed to log explanation:');
     }
   }
 
@@ -291,7 +291,7 @@ export class AIContentService {
         createdAt: new Date(),
       };
     } catch (error: unknown) {
-      logger.warn('Error generating text:', error);
+      logger.warn({ err: error }, 'Error generating text:');
       throw new Error('Failed to generate text content');
     }
   }
@@ -446,7 +446,7 @@ export class AIContentService {
         });
       }
     } catch (error: unknown) {
-      logger.warn('Failed to save brand voice:', error);
+      logger.warn({ err: error }, 'Failed to save brand voice:');
     }
 
     const executionTimeMs = Date.now() - startTime;
@@ -551,7 +551,7 @@ export class AIContentService {
 
       return content;
     } catch (error: unknown) {
-      logger.warn('Error generating with brand voice:', error);
+      logger.warn({ err: error }, 'Error generating with brand voice:');
       throw new Error('Failed to generate content with brand voice');
     }
   }
@@ -695,7 +695,7 @@ export class AIContentService {
         }
       }
     } catch (error: unknown) {
-      logger.warn('Failed to save hashtag research:', error);
+      logger.warn({ err: error }, 'Failed to save hashtag research:');
     }
 
     const executionTimeMs = Date.now() - startTime;
@@ -790,7 +790,7 @@ export class AIContentService {
           });
         }
       } catch (error: unknown) {
-        logger.warn('Failed to save posting time:', error);
+        logger.warn({ err: error }, 'Failed to save posting time:');
       }
     }
 
@@ -880,7 +880,7 @@ export class AIContentService {
             changes: [spec.desc, `Source: ${aiResult.source || 'AI'}`],
           } as ABVariant;
         } catch (err) {
-          logger.warn(`[AIContentService] generateABVariants MaxCore call failed for tone=${spec.tone}:`, err);
+          logger.warn({ err: err }, `[AIContentService] generateABVariants MaxCore call failed for tone=${spec.tone}:`);
           throw err;
         }
       })

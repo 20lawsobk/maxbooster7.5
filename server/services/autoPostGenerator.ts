@@ -212,7 +212,7 @@ class AutoPostGenerator {
         translations,
       };
     } catch (error) {
-      logger.warn('Enhanced content generation failed, falling back:', error);
+      logger.warn({ err: error }, 'Enhanced content generation failed, falling back:');
       return this.generateSocialContent(userId, request);
     }
   }
@@ -315,7 +315,7 @@ class AutoPostGenerator {
           aiHashtags = aiResult.data.hashtags;
         }
       } catch (err) {
-        logger.warn('[AutoPost] Python AI failed, using templates:', err);
+        logger.warn({ err: err }, '[AutoPost] Python AI failed, using templates:');
       }
     }
 
@@ -409,7 +409,7 @@ class AutoPostGenerator {
           hashtags = aiResult.data.hashtags || [];
         }
       } catch (err) {
-        logger.warn('[AutoPost] Python AI failed for viral content:', err);
+        logger.warn({ err: err }, '[AutoPost] Python AI failed for viral content:');
       }
     }
 

@@ -49,7 +49,7 @@ class PaymentBypassService {
         return config;
       }
     } catch (error) {
-      logger.warn('[PaymentBypass] Failed to load config:', error);
+      logger.warn({ err: error }, '[PaymentBypass] Failed to load config:');
     }
     return this.getDefaultConfig();
   }
@@ -87,7 +87,7 @@ class PaymentBypassService {
       
       logger.info('[PaymentBypass] Config saved successfully');
     } catch (error) {
-      logger.warn('[PaymentBypass] Failed to save config:', error);
+      logger.warn({ err: error }, '[PaymentBypass] Failed to save config:');
       throw error;
     }
   }

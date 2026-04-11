@@ -74,7 +74,7 @@ function workerOpts(concurrency: number) {
 
 function startWorkerSafe(w: Worker, name: string): void {
   setImmediate(() => {
-    w.run().catch(err => logger.warn(`[Worker] ${name} run loop failed:`, err));
+    w.run().catch(err => logger.warn({ err: err }, `[Worker] ${name} run loop failed:`));
   });
 }
 
@@ -178,7 +178,7 @@ async function gracefulShutdown(signal: string): Promise<void> {
     logger.info('✅ All BullMQ workers closed');
     process.exit(0);
   } catch (error) {
-    logger.warn('❌ Error during shutdown:', error);
+    logger.warn({ err: error }, '❌ Error during shutdown:');
     process.exit(1);
   }
 }
@@ -190,7 +190,7 @@ process.on('uncaughtException', (error) => {
   // EPIPE/ECONNRESET/ECONNABORTED are non-fatal stream/pipe errors (e.g. FFmpeg exits mid-render)
   const code = (error as NodeJS.ErrnoException).code;
   if (code === 'EPIPE' || code === 'ECONNRESET' || code === 'ECONNABORTED') return;
-  logger.warn('❌ Uncaught exception:', error);
+  logger.warn({ err: error }, '❌ Uncaught exception:');
   gracefulShutdown('uncaughtException');
 });
 
@@ -242,7 +242,7 @@ export async function initializeWorkers(): Promise<void> {
     const { initializeWeeklyInsightsCron } = await import('./weeklyInsightsCron.js');
     initializeWeeklyInsightsCron();
   } catch (error) {
-    logger.warn('⚠️  Could not initialize weekly insights cron:', error);
+    logger.warn({ err: error }, '⚠️  Could not initialize weekly insights cron:');
   }
 
   logger.info('⏳ BullMQ workers listening for jobs (staggered)...');

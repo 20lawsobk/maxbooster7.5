@@ -254,7 +254,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       
       logger.info(`   └─ Loaded ${blocked.length} blocked IPs from database`);
     } catch (error) {
-      logger.warn('Failed to load blocked IPs:', error);
+      logger.warn({ err: error }, 'Failed to load blocked IPs:');
     }
   }
 
@@ -532,7 +532,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         action.status = 'failed';
         action.endTime = Date.now();
         action.details.error = String(error);
-        logger.warn(`Healing action ${actionType} failed:`, error);
+        logger.warn({ err: error }, `Healing action ${actionType} failed:`);
       }
     }
   }
@@ -609,7 +609,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
 
       logger.info(`🚫 Blocked IP ${ipAddress} for ${reason} (${(durationMs / 60000).toFixed(0)} minutes)`);
     } catch (error) {
-      logger.warn(`Failed to persist IP block for ${ipAddress}:`, error);
+      logger.warn({ err: error }, `Failed to persist IP block for ${ipAddress}:`);
     }
   }
 
@@ -622,7 +622,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         message: `Threat detected and mitigated. Level: ${(assessment.threatLevel * 100).toFixed(0)}%. Indicators: ${assessment.indicators.join(', ')}`,
       });
     } catch (error) {
-      logger.warn('Failed to send security alert:', error);
+      logger.warn({ err: error }, 'Failed to send security alert:');
     }
   }
 
@@ -646,7 +646,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         },
       });
     } catch (error) {
-      logger.warn('Failed to log threat recovery:', error);
+      logger.warn({ err: error }, 'Failed to log threat recovery:');
     }
 
     this.emit('threat_healed', assessment);
@@ -658,7 +658,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
         const events = this.eventQueue.splice(0, 50);
         for (const event of events) {
           this.detectThreat(event).catch(err => 
-            logger.warn('Detection error:', err)
+            logger.warn({ err: err }, 'Detection error:')
           );
         }
       }
@@ -768,7 +768,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       await db.delete(ipBlacklist).where(eq(ipBlacklist.ip, ip));
       logger.info(`✅ Unblocked IP ${ip}`);
     } catch (error) {
-      logger.warn(`Failed to unblock IP ${ip}:`, error);
+      logger.warn({ err: error }, `Failed to unblock IP ${ip}:`);
     }
   }
 
@@ -779,7 +779,7 @@ export class SelfHealingSecurityEngine extends EventEmitter {
       await db.delete(ipBlacklist).where(eq(ipBlacklist.isActive, true));
       logger.warn('⚠️ All blocked IPs cleared by admin');
     } catch (error) {
-      logger.warn('Failed to clear all blocked IPs:', error);
+      logger.warn({ err: error }, 'Failed to clear all blocked IPs:');
     }
   }
 

@@ -56,7 +56,7 @@ export class ApprovalService {
       try {
         await hook(event);
       } catch (error) {
-        logger.warn('State transition hook error:', error);
+        logger.warn({ err: error }, 'State transition hook error:');
       }
     }
   }
@@ -72,7 +72,7 @@ export class ApprovalService {
       }
       return 'content_creator';
     } catch (error) {
-      logger.warn('getUserRole error, defaulting to content_creator:', error);
+      logger.warn({ err: error }, 'getUserRole error, defaulting to content_creator:');
       return 'content_creator';
     }
   }
@@ -162,7 +162,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Submit for review error:', error);
+      logger.warn({ err: error }, 'Submit for review error:');
       return { success: false, error: 'Failed to submit for review' };
     }
   }
@@ -203,7 +203,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Approve post error:', error);
+      logger.warn({ err: error }, 'Approve post error:');
       return { success: false, error: 'Failed to approve post' };
     }
   }
@@ -245,7 +245,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Reject post error:', error);
+      logger.warn({ err: error }, 'Reject post error:');
       return { success: false, error: 'Failed to reject post' };
     }
   }
@@ -301,7 +301,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Schedule post error:', error);
+      logger.warn({ err: error }, 'Schedule post error:');
       return { success: false, error: 'Failed to schedule post' };
     }
   }
@@ -347,7 +347,7 @@ export class ApprovalService {
 
       return { success: true };
     } catch (error: unknown) {
-      logger.warn('Publish post error:', error);
+      logger.warn({ err: error }, 'Publish post error:');
       return { success: false, error: 'Failed to publish post' };
     }
   }
@@ -372,7 +372,7 @@ export class ApprovalService {
         metadata: params.metadata || {},
       });
     } catch (error: unknown) {
-      logger.warn('Log approval action error:', error);
+      logger.warn({ err: error }, 'Log approval action error:');
     }
   }
 
@@ -398,7 +398,7 @@ export class ApprovalService {
 
       return history;
     } catch (error: unknown) {
-      logger.warn('Get approval history error:', error);
+      logger.warn({ err: error }, 'Get approval history error:');
       return [];
     }
   }
@@ -468,7 +468,7 @@ export class ApprovalService {
 
       return enrichedPosts;
     } catch (error: unknown) {
-      logger.warn('Get pending approvals error:', error);
+      logger.warn({ err: error }, 'Get pending approvals error:');
       return [];
     }
   }
@@ -501,7 +501,7 @@ export class ApprovalService {
         }
       }
     } catch (error: unknown) {
-      logger.warn('Notify reviewers error:', error);
+      logger.warn({ err: error }, 'Notify reviewers error:');
     }
   }
 
@@ -531,7 +531,7 @@ export class ApprovalService {
         metadata: { postId, status, reviewerId },
       });
     } catch (error: unknown) {
-      logger.warn('Notify post creator error:', error);
+      logger.warn({ err: error }, 'Notify post creator error:');
     }
   }
 
@@ -573,7 +573,7 @@ export class ApprovalService {
       const results = await (baseQuery as any).orderBy(desc(posts.createdAt)).limit(500);
       return results;
     } catch (error: unknown) {
-      logger.warn('Get user posts error:', error);
+      logger.warn({ err: error }, 'Get user posts error:');
       return [];
     }
   }

@@ -255,7 +255,7 @@ router.post('/audio/:projectId', requireAuth, async (req: Request, res: Response
       estimatedTime: estimatedSeconds,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting audio export:', error);
+    logger.warn({ err: error }, 'Error starting audio export:');
     res.status(500).json({ 
       success: false, 
       error: 'Failed to start export' 
@@ -280,7 +280,7 @@ router.get('/jobs/:jobId', requireAuth, async (req: Request, res: Response) => {
 
     res.json(job);
   } catch (error: unknown) {
-    logger.warn('Error fetching export job:', error);
+    logger.warn({ err: error }, 'Error fetching export job:');
     res.status(500).json({ error: 'Failed to fetch export job' });
   }
 });
@@ -296,7 +296,7 @@ router.get('/jobs', requireAuth, async (req: Request, res: Response) => {
 
     res.json(userJobs);
   } catch (error: unknown) {
-    logger.warn('Error fetching export jobs:', error);
+    logger.warn({ err: error }, 'Error fetching export jobs:');
     res.status(500).json({ error: 'Failed to fetch export jobs' });
   }
 });
@@ -323,7 +323,7 @@ router.post('/jobs/:jobId/cancel', requireAuth, async (req: Request, res: Respon
     job.status = 'cancelled';
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.warn('Error cancelling export job:', error);
+    logger.warn({ err: error }, 'Error cancelling export job:');
     res.status(500).json({ error: 'Failed to cancel export' });
   }
 });
@@ -363,7 +363,7 @@ router.post('/jobs/:jobId/retry', requireAuth, async (req: Request, res: Respons
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.warn('Error retrying export job:', error);
+    logger.warn({ err: error }, 'Error retrying export job:');
     res.status(500).json({ error: 'Failed to retry export' });
   }
 });
@@ -427,7 +427,7 @@ router.post('/data', requireAuth, async (req: Request, res: Response) => {
       estimatedTime: estimatedSeconds,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting data export:', error);
+    logger.warn({ err: error }, 'Error starting data export:');
     res.status(500).json({ 
       success: false, 
       error: 'Failed to start export' 
@@ -463,7 +463,7 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
 
     res.json(paginated);
   } catch (error: unknown) {
-    logger.warn('Error fetching export history:', error);
+    logger.warn({ err: error }, 'Error fetching export history:');
     res.status(500).json({ error: 'Failed to fetch export history' });
   }
 });
@@ -482,7 +482,7 @@ router.delete('/history/:id', requireAuth, async (req: Request, res: Response) =
     exportHistory.splice(index, 1);
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.warn('Error deleting export history item:', error);
+    logger.warn({ err: error }, 'Error deleting export history item:');
     res.status(500).json({ error: 'Failed to delete export' });
   }
 });
@@ -528,7 +528,7 @@ router.post('/share-links', requireAuth, async (req: Request, res: Response) => 
 
     res.json(inserted);
   } catch (error: unknown) {
-    logger.warn('Error creating share link:', error);
+    logger.warn({ err: error }, 'Error creating share link:');
     res.status(500).json({ error: 'Failed to create share link' });
   }
 });
@@ -547,7 +547,7 @@ router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
 
     res.json(rows);
   } catch (error: unknown) {
-    logger.warn('Error fetching share links:', error);
+    logger.warn({ err: error }, 'Error fetching share links:');
     res.status(500).json({ error: 'Failed to fetch share links' });
   }
 });
@@ -590,7 +590,7 @@ router.get('/share/:shortCode', async (req: Request, res: Response) => {
       allowedEmails: link.allowedEmails ? (link.allowedEmails as string[]).length : null,
     });
   } catch (error: unknown) {
-    logger.warn('Error fetching share link:', error);
+    logger.warn({ err: error }, 'Error fetching share link:');
     res.status(500).json({ error: 'Failed to fetch share link' });
   }
 });
@@ -623,7 +623,7 @@ router.post('/share/:shortCode/verify', async (req: Request, res: Response) => {
 
     res.json({ success: true, downloadUrl: `/api/export/share/${shortCode}/download` });
   } catch (error: unknown) {
-    logger.warn('Error verifying share link:', error);
+    logger.warn({ err: error }, 'Error verifying share link:');
     res.status(500).json({ error: 'Failed to verify link' });
   }
 });
@@ -656,7 +656,7 @@ router.get('/share/:shortCode/download', async (req: Request, res: Response) => 
 
     res.json({ success: true, message: 'Download initiated', fileName: link.name });
   } catch (error: unknown) {
-    logger.warn('Error downloading via share link:', error);
+    logger.warn({ err: error }, 'Error downloading via share link:');
     res.status(500).json({ error: 'Failed to download' });
   }
 });
@@ -687,7 +687,7 @@ router.delete('/share-links/:id', requireAuth, async (req: Request, res: Respons
 
     res.json({ success: true });
   } catch (error: unknown) {
-    logger.warn('Error revoking share link:', error);
+    logger.warn({ err: error }, 'Error revoking share link:');
     res.status(500).json({ error: 'Failed to revoke link' });
   }
 });
@@ -725,7 +725,7 @@ router.patch('/share-links/:id', requireAuth, async (req: Request, res: Response
 
     res.json(updated);
   } catch (error: unknown) {
-    logger.warn('Error updating share link:', error);
+    logger.warn({ err: error }, 'Error updating share link:');
     res.status(500).json({ error: 'Failed to update link' });
   }
 });
@@ -767,7 +767,7 @@ router.get('/download/:jobId', requireAuth, async (req: Request, res: Response) 
       fileSize: job.fileSize,
     });
   } catch (error: unknown) {
-    logger.warn('Error downloading export:', error);
+    logger.warn({ err: error }, 'Error downloading export:');
     res.status(500).json({ error: 'Failed to download' });
   }
 });
@@ -831,7 +831,7 @@ router.post('/batch', requireAuth, async (req: Request, res: Response) => {
       totalJobs: jobs.length,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting batch export:', error);
+    logger.warn({ err: error }, 'Error starting batch export:');
     res.status(500).json({ error: 'Failed to start batch export' });
   }
 });
@@ -877,7 +877,7 @@ router.post('/analytics', requireAuth, async (req: Request, res: Response) => {
       downloadUrl: `/api/export/download/${jobId}`,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting analytics export:', error);
+    logger.warn({ err: error }, 'Error starting analytics export:');
     res.status(500).json({ error: 'Failed to start analytics export' });
   }
 });
@@ -968,7 +968,7 @@ router.post('/report/:type', requireAuth, async (req: Request, res: Response) =>
       emailDelivery: options.emailDelivery,
     });
   } catch (error: unknown) {
-    logger.warn('Error generating report:', error);
+    logger.warn({ err: error }, 'Error generating report:');
     res.status(500).json({ error: 'Failed to generate report' });
   }
 });
@@ -1049,7 +1049,7 @@ router.post('/chart', requireAuth, async (req: Request, res: Response) => {
       downloadUrl: `/api/export/download/${jobId}`,
     });
   } catch (error: unknown) {
-    logger.warn('Error exporting chart:', error);
+    logger.warn({ err: error }, 'Error exporting chart:');
     res.status(500).json({ error: 'Failed to export chart' });
   }
 });
@@ -1146,7 +1146,7 @@ router.post('/bulk', requireAuth, async (req: Request, res: Response) => {
         : 'Export started.',
     });
   } catch (error: unknown) {
-    logger.warn('Error starting bulk export:', error);
+    logger.warn({ err: error }, 'Error starting bulk export:');
     res.status(500).json({ error: 'Failed to start bulk export' });
   }
 });
@@ -1178,7 +1178,7 @@ router.get('/download/zip/:jobId', requireAuth, async (req: Request, res: Respon
       itemCount: (job.settings as any)?.items?.length || 0,
     });
   } catch (error: unknown) {
-    logger.warn('Error downloading ZIP:', error);
+    logger.warn({ err: error }, 'Error downloading ZIP:');
     res.status(500).json({ error: 'Failed to download' });
   }
 });
@@ -1272,7 +1272,7 @@ router.post('/audio/:projectId/mastered', requireAuth, async (req: Request, res:
       estimatedTime: 60,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting mastered export:', error);
+    logger.warn({ err: error }, 'Error starting mastered export:');
     res.status(500).json({ error: 'Failed to start mastered export' });
   }
 });
@@ -1350,7 +1350,7 @@ router.post('/audio/:projectId/stems', requireAuth, async (req: Request, res: Re
       estimatedTime: estimatedSeconds,
     });
   } catch (error: unknown) {
-    logger.warn('Error starting stems export:', error);
+    logger.warn({ err: error }, 'Error starting stems export:');
     res.status(500).json({ error: 'Failed to start stems export' });
   }
 });
@@ -1393,7 +1393,7 @@ router.get('/status/:exportId', requireAuth, async (req: Request, res: Response)
 
     res.json(response);
   } catch (error: unknown) {
-    logger.warn('Error fetching export status:', error);
+    logger.warn({ err: error }, 'Error fetching export status:');
     res.status(500).json({ error: 'Failed to fetch status' });
   }
 });
@@ -1424,7 +1424,7 @@ router.post('/notify/:jobId', requireAuth, async (req: Request, res: Response) =
       message: `Notification will be sent to ${email} when export completes`,
     });
   } catch (error: unknown) {
-    logger.warn('Error setting up notification:', error);
+    logger.warn({ err: error }, 'Error setting up notification:');
     res.status(500).json({ error: 'Failed to set up notification' });
   }
 });
