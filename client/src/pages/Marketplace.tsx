@@ -1,4 +1,6 @@
 import { logger } from '@/lib/logger';
+import { uploadImageFile, createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
+import { SafeImg } from '@/components/ui/safe-img';
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
 import { Howl } from 'howler';
@@ -403,7 +405,9 @@ interface BulkUploadItem {
   licenseType: string;
   description: string;
   tags: string;
-  coverArtFile: File | null;
+  coverArtServerUrl: string | null;
+  coverArtPreviewUrl: string | null;
+  coverArtUploading: boolean;
   status: 'pending' | 'uploading' | 'processing' | 'completed' | 'failed';
   progress: number;
   error?: string;
@@ -555,15 +559,6 @@ function ProducerFollowButton({ producerId, followMutation, unfollowMutation }: 
   );
 }
 
-// Stable blob URL cache — returns the same URL for the same File object
-// across re-renders, preventing image reload flicker.
-const _blobUrlCache = new WeakMap<File, string>();
-function getStableBlobUrl(file: File): string {
-  if (!_blobUrlCache.has(file)) {
-    _blobUrlCache.set(file, URL.createObjectURL(file));
-  }
-  return _blobUrlCache.get(file)!;
-}
 
 export default function Marketplace() {
   const { user, isLoading: authLoading } = useAuth();
@@ -634,6 +629,17 @@ export default function Marketplace() {
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [coverArtFile, setCoverArtFile] = useState<File | null>(null);
   const [coverArtPreviewUrl, setCoverArtPreviewUrl] = useState<string | null>(null);
+  const [coverArtServerUrl, setCoverArtServerUrl] = useState<string | null>(null);
+  const [coverArtUploading, setCoverArtUploading] = useState(false);
+  const [editCoverArtServerUrl, setEditCoverArtServerUrl] = useState<string | null>(null);
+  const [editCoverArtPreviewUrl, setEditCoverArtPreviewUrl] = useState<string | null>(null);
+  const [editCoverArtUploading, setEditCoverArtUploading] = useState(false);
+  const [bulkEditUploadedCoverPreviewUrl, setBulkEditUploadedCoverPreviewUrl] = useState<string | null>(null);
+  const [bulkEditUploadedCoverServerUrl, setBulkEditUploadedCoverServerUrl] = useState<string | null>(null);
+  const [bulkEditUploadedCoverUploading, setBulkEditUploadedCoverUploading] = useState(false);
+  const [bulkEditCoverPreviewUrl, setBulkEditCoverPreviewUrl] = useState<string | null>(null);
+  const [bulkEditCoverServerUrl, setBulkEditCoverServerUrl] = useState<string | null>(null);
+  const [bulkEditCoverUploading, setBulkEditCoverUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [audioPreviewUrl, setAudioPreviewUrl] = useState<string | null>(null);
   const [isDraggingAudio, setIsDraggingAudio] = useState(false);
@@ -717,9 +723,22 @@ export default function Marketplace() {
       toast({ title: 'Invalid File', description: error, variant: 'destructive' });
       return;
     }
-    if (coverArtPreviewUrl) URL.revokeObjectURL(coverArtPreviewUrl);
+    if (coverArtPreviewUrl) revokeLocalPreview(coverArtPreviewUrl);
+    const preview = createLocalPreview(file);
     setCoverArtFile(file);
-    setCoverArtPreviewUrl(URL.createObjectURL(file));
+    setCoverArtPreviewUrl(preview);
+    setCoverArtServerUrl(null);
+    setCoverArtUploading(true);
+    uploadImageFile(file, '/api/storage/upload', 'file')
+      .then((url) => {
+        setCoverArtServerUrl(url);
+        revokeLocalPreview(preview);
+        setCoverArtPreviewUrl(null);
+      })
+      .catch(() => {
+        toast({ title: 'Cover Art Upload Failed', description: 'Using local preview — will retry on submit.', variant: 'destructive' });
+      })
+      .finally(() => setCoverArtUploading(false));
   };
 
   const handleAudioDragOver = (e: React.DragEvent) => {
@@ -756,13 +775,15 @@ export default function Marketplace() {
     setAudioFile(null);
     setCoverArtFile(null);
     if (coverArtPreviewUrl) {
-      URL.revokeObjectURL(coverArtPreviewUrl);
+      revokeLocalPreview(coverArtPreviewUrl);
       setCoverArtPreviewUrl(null);
     }
+    setCoverArtServerUrl(null);
+    setCoverArtUploading(false);
     setUploadProgress(0);
     setFileValidationError(null);
     if (audioPreviewUrl) {
-      URL.revokeObjectURL(audioPreviewUrl);
+      revokeLocalPreview(audioPreviewUrl);
       setAudioPreviewUrl(null);
     }
   };
@@ -929,7 +950,8 @@ export default function Marketplace() {
         formData.append('licenseType', bulkEditUploadedValues.licenseType || beat.licenseType || 'basic');
         formData.append('tags', bulkEditUploadedValues.tags || (beat.tags?.join(', ') || ''));
         formData.append('description', beat.description || '');
-        if (bulkEditUploadedValues.coverArtFile) formData.append('artwork', bulkEditUploadedValues.coverArtFile);
+        if (bulkEditUploadedCoverServerUrl) formData.append('artworkUrl', bulkEditUploadedCoverServerUrl);
+        else if (bulkEditUploadedValues.coverArtFile) formData.append('artwork', bulkEditUploadedValues.coverArtFile);
 
         await apiRequest('PUT', `/api/marketplace/listings/${beatId}`, formData, { timeout: 300000 });
 
@@ -1229,6 +1251,10 @@ export default function Marketplace() {
 
   const handleEditBeat = (beat: Beat) => {
     setEditingBeat(beat);
+    if (editCoverArtPreviewUrl) revokeLocalPreview(editCoverArtPreviewUrl);
+    setEditCoverArtPreviewUrl(null);
+    setEditCoverArtServerUrl(null);
+    setEditCoverArtUploading(false);
     setEditForm({
       title: beat.title,
       genre: beat.genre || '',
@@ -1274,7 +1300,11 @@ export default function Marketplace() {
     if (editForm.licenseType) formData.append('licenseType', editForm.licenseType);
     formData.append('description', editForm.description);
     formData.append('tags', editForm.tags);
-    if (editForm.coverArtFile) formData.append('artwork', editForm.coverArtFile);
+    if (editCoverArtServerUrl) {
+      formData.append('artworkUrl', editCoverArtServerUrl);
+    } else if (editForm.coverArtFile) {
+      formData.append('artwork', editForm.coverArtFile);
+    }
     updateBeatMutation.mutate({ id: editingBeat.id, data: formData });
 
     if (!showLicenseTiers) {
@@ -1815,7 +1845,9 @@ export default function Marketplace() {
       licenseType: 'basic',
       description: '',
       tags: '',
-      coverArtFile: null,
+      coverArtServerUrl: null,
+      coverArtPreviewUrl: null,
+      coverArtUploading: false,
       status: 'pending',
       progress: 0,
     }));
@@ -1835,7 +1867,12 @@ export default function Marketplace() {
       if (bulkEditValues.licenseType) updated.licenseType = bulkEditValues.licenseType;
       if (bulkEditValues.description) updated.description = bulkEditValues.description;
       if (bulkEditValues.tags) updated.tags = bulkEditValues.tags;
-      if (bulkEditValues.coverArtFile) updated.coverArtFile = bulkEditValues.coverArtFile;
+      if (bulkEditCoverServerUrl) {
+        updated.coverArtServerUrl = bulkEditCoverServerUrl;
+        if (updated.coverArtPreviewUrl) revokeLocalPreview(updated.coverArtPreviewUrl);
+        updated.coverArtPreviewUrl = null;
+        updated.coverArtUploading = false;
+      }
       return updated;
     }));
     setBulkEditMode(false);
@@ -1864,7 +1901,7 @@ export default function Marketplace() {
           formData.append('licenseType', item.licenseType);
           if (item.description) formData.append('description', item.description);
           if (item.tags) formData.append('tags', item.tags);
-          if (item.coverArtFile) formData.append('coverArt', item.coverArtFile);
+          if (item.coverArtServerUrl) formData.append('artworkUrl', item.coverArtServerUrl);
 
           await uploadWithProgress('/api/marketplace/upload', formData, { timeout: 300000 });
 
@@ -2350,6 +2387,8 @@ return (
                             <img
                               src={beat.coverArt}
                               alt={beat.title}
+                              loading="lazy"
+                              decoding="async"
                               className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                               onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -2632,6 +2671,10 @@ return (
                         onClick={() => {
                           setShowBulkEditUploaded(true);
                           setBulkEditUploadedValues({ genre: '', mood: '', tempo: 0, key: '', price: 0, licenseType: '', tags: '', discountAction: 'keep', discountPercent: 0, discountExpiresAt: '', coverArtFile: null });
+                          if (bulkEditUploadedCoverPreviewUrl) revokeLocalPreview(bulkEditUploadedCoverPreviewUrl);
+                          setBulkEditUploadedCoverPreviewUrl(null);
+                          setBulkEditUploadedCoverServerUrl(null);
+                          setBulkEditUploadedCoverUploading(false);
                         }}
                       >
                         <Edit className="w-3 h-3 mr-1" />
@@ -2659,10 +2702,17 @@ return (
                     <div className="flex items-start gap-4 mb-2">
                       <div className="flex-shrink-0">
                         <Label className="text-xs">Cover Art</Label>
-                        {bulkEditUploadedValues.coverArtFile ? (
+                        {(bulkEditUploadedValues.coverArtFile || bulkEditUploadedCoverServerUrl) ? (
                           <div className="relative w-16 h-16 mt-1">
-                            <img src={getStableBlobUrl(bulkEditUploadedValues.coverArtFile)} alt="" className="w-16 h-16 rounded object-cover" />
-                            <button className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs" onClick={() => setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: null }))}>
+                            <SafeImg src={bulkEditUploadedCoverPreviewUrl || bulkEditUploadedCoverServerUrl || ''} alt="" className="w-16 h-16 rounded object-cover" loading="eager" />
+                            {bulkEditUploadedCoverUploading && <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center"><Loader2 className="w-4 h-4 text-white animate-spin" /></div>}
+                            <button className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-4 h-4 flex items-center justify-center text-xs" onClick={() => {
+                              if (bulkEditUploadedCoverPreviewUrl) revokeLocalPreview(bulkEditUploadedCoverPreviewUrl);
+                              setBulkEditUploadedCoverPreviewUrl(null);
+                              setBulkEditUploadedCoverServerUrl(null);
+                              setBulkEditUploadedCoverUploading(false);
+                              setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: null }));
+                            }}>
                               <X className="w-2.5 h-2.5" />
                             </button>
                           </div>
@@ -2670,7 +2720,17 @@ return (
                           <label className="mt-1 w-16 h-16 border-2 border-dashed rounded flex flex-col items-center justify-center cursor-pointer hover:border-purple-400 transition-colors">
                             <input type="file" accept="image/jpeg,image/png" className="sr-only" onChange={(e) => {
                               const f = e.target.files?.[0];
-                              if (f) setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: f }));
+                              if (!f) return;
+                              if (bulkEditUploadedCoverPreviewUrl) revokeLocalPreview(bulkEditUploadedCoverPreviewUrl);
+                              const preview = createLocalPreview(f);
+                              setBulkEditUploadedValues(prev => ({ ...prev, coverArtFile: f }));
+                              setBulkEditUploadedCoverPreviewUrl(preview);
+                              setBulkEditUploadedCoverServerUrl(null);
+                              setBulkEditUploadedCoverUploading(true);
+                              uploadImageFile(f, '/api/storage/upload', 'file')
+                                .then(url => { setBulkEditUploadedCoverServerUrl(url); revokeLocalPreview(preview); setBulkEditUploadedCoverPreviewUrl(null); })
+                                .catch(() => toast({ title: 'Cover Art Upload Failed', variant: 'destructive' }))
+                                .finally(() => setBulkEditUploadedCoverUploading(false));
                             }} />
                             <ImageIcon className="w-4 h-4 text-muted-foreground" />
                             <span className="text-[9px] text-muted-foreground mt-0.5">Add</span>
@@ -2805,6 +2865,8 @@ return (
                             <img
                               src={beat.coverArt}
                               alt={beat.title}
+                              loading="lazy"
+                              decoding="async"
                               className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
                               onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
                               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
@@ -3885,6 +3947,8 @@ return (
                 <img
                   src={currentBeat.coverArt}
                   alt={currentBeat.title}
+                  loading="eager"
+                  decoding="async"
                   className="absolute inset-0 w-full h-full object-cover"
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
@@ -4170,23 +4234,37 @@ return (
               {coverArtFile ? (
                 <div className="border-2 border-dashed rounded-lg p-4 text-center border-purple-500 bg-purple-50 dark:bg-purple-950">
                   <div className="flex items-center gap-4">
-                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                      <img
-                        src={coverArtPreviewUrl ?? ''}
+                    <div className="w-24 h-24 rounded-lg overflow-hidden bg-gray-200 dark:bg-gray-700 flex-shrink-0 relative">
+                      <SafeImg
+                        src={coverArtServerUrl || coverArtPreviewUrl || ''}
                         alt="Cover art preview"
                         className="w-full h-full object-cover"
+                        loading="eager"
                       />
+                      {coverArtUploading && (
+                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
+                          <Loader2 className="w-6 h-6 text-white animate-spin" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 text-left space-y-1">
                       <p className="font-medium text-purple-700 dark:text-purple-400 truncate">{coverArtFile.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {(coverArtFile.size / (1024 * 1024)).toFixed(2)} MB
+                        {coverArtUploading && <span className="ml-2 text-blue-500">Uploading…</span>}
+                        {coverArtServerUrl && !coverArtUploading && <span className="ml-2 text-green-500">✓ Uploaded</span>}
                       </p>
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        onClick={() => setCoverArtFile(null)}
+                        onClick={() => {
+                          if (coverArtPreviewUrl) revokeLocalPreview(coverArtPreviewUrl);
+                          setCoverArtFile(null);
+                          setCoverArtPreviewUrl(null);
+                          setCoverArtServerUrl(null);
+                          setCoverArtUploading(false);
+                        }}
                       >
                         <X className="w-4 h-4 mr-1" /> Remove
                       </Button>
@@ -4264,7 +4342,11 @@ return (
                 formData.append('description', uploadForm.description);
                 formData.append('tags', uploadForm.tags);
                 formData.append('audioFile', audioFile);
-                if (coverArtFile) formData.append('coverArt', coverArtFile);
+                if (coverArtServerUrl) {
+                  formData.append('artworkUrl', coverArtServerUrl);
+                } else if (coverArtFile) {
+                  formData.append('coverArt', coverArtFile);
+                }
                 uploadBeatMutation.mutate(formData);
               }}
               disabled={uploadBeatMutation.isPending || !audioFile || !uploadForm.title || !uploadForm.genre}
@@ -4355,12 +4437,19 @@ return (
                       <div className="flex items-start gap-4 mb-2">
                         <div className="flex-shrink-0">
                           <Label className="text-xs">Cover Art</Label>
-                          {bulkEditValues.coverArtFile ? (
+                          {(bulkEditValues.coverArtFile || bulkEditCoverServerUrl) ? (
                             <div className="relative w-20 h-20 mt-1">
-                              <img src={getStableBlobUrl(bulkEditValues.coverArtFile)} alt="" className="w-20 h-20 rounded object-cover" />
+                              <SafeImg src={bulkEditCoverPreviewUrl || bulkEditCoverServerUrl || ''} alt="" className="w-20 h-20 rounded object-cover" loading="eager" />
+                              {bulkEditCoverUploading && <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center"><Loader2 className="w-5 h-5 text-white animate-spin" /></div>}
                               <button
                                 className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                                onClick={() => setBulkEditValues(prev => ({ ...prev, coverArtFile: null }))}
+                                onClick={() => {
+                                  if (bulkEditCoverPreviewUrl) revokeLocalPreview(bulkEditCoverPreviewUrl);
+                                  setBulkEditCoverPreviewUrl(null);
+                                  setBulkEditCoverServerUrl(null);
+                                  setBulkEditCoverUploading(false);
+                                  setBulkEditValues(prev => ({ ...prev, coverArtFile: null }));
+                                }}
                               >
                                 <X className="w-3 h-3" />
                               </button>
@@ -4373,11 +4462,19 @@ return (
                                 className="sr-only"
                                 onChange={(e) => {
                                   const f = e.target.files?.[0];
-                                  if (f) {
-                                    const err = validateCoverFile(f);
-                                    if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
-                                    setBulkEditValues(prev => ({ ...prev, coverArtFile: f }));
-                                  }
+                                  if (!f) return;
+                                  const err = validateCoverFile(f);
+                                  if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
+                                  if (bulkEditCoverPreviewUrl) revokeLocalPreview(bulkEditCoverPreviewUrl);
+                                  const preview = createLocalPreview(f);
+                                  setBulkEditCoverPreviewUrl(preview);
+                                  setBulkEditCoverServerUrl(null);
+                                  setBulkEditCoverUploading(true);
+                                  setBulkEditValues(prev => ({ ...prev, coverArtFile: f }));
+                                  uploadImageFile(f, '/api/storage/upload', 'file')
+                                    .then(url => { setBulkEditCoverServerUrl(url); revokeLocalPreview(preview); setBulkEditCoverPreviewUrl(null); })
+                                    .catch(() => toast({ title: 'Cover Art Upload Failed', variant: 'destructive' }))
+                                    .finally(() => setBulkEditCoverUploading(false));
                                 }}
                               />
                               <ImageIcon className="w-5 h-5 text-muted-foreground" />
@@ -4456,9 +4553,10 @@ return (
                             className="flex items-center gap-3 p-3 cursor-pointer hover:bg-muted/50"
                             onClick={() => setExpandedBulkItem(expandedBulkItem === item.id ? null : item.id)}
                           >
-                            {item.coverArtFile ? (
-                              <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0">
-                                <img src={getStableBlobUrl(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                            {(item.coverArtPreviewUrl || item.coverArtServerUrl) ? (
+                              <div className="w-10 h-10 rounded overflow-hidden flex-shrink-0 relative">
+                                <SafeImg src={item.coverArtPreviewUrl || item.coverArtServerUrl || ''} alt="" className="w-full h-full object-cover" loading="eager" />
+                                {item.coverArtUploading && <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center"><Loader2 className="w-4 h-4 text-white animate-spin" /></div>}
                               </div>
                             ) : (
                               <FileAudio className="w-10 h-10 text-blue-500 flex-shrink-0 p-1" />
@@ -4555,14 +4653,18 @@ return (
                               </div>
                               <div>
                                 <Label className="text-xs">Cover Art</Label>
-                                {item.coverArtFile ? (
+                                {(item.coverArtPreviewUrl || item.coverArtServerUrl) ? (
                                   <div className="flex items-center gap-3 mt-1">
-                                    <div className="w-16 h-16 rounded overflow-hidden">
-                                      <img src={getStableBlobUrl(item.coverArtFile)} alt="" className="w-full h-full object-cover" />
+                                    <div className="w-16 h-16 rounded overflow-hidden relative">
+                                      <SafeImg src={item.coverArtPreviewUrl || item.coverArtServerUrl || ''} alt="" className="w-full h-full object-cover" loading="eager" />
+                                      {item.coverArtUploading && <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center"><Loader2 className="w-4 h-4 text-white animate-spin" /></div>}
                                     </div>
                                     <div>
-                                      <p className="text-xs text-muted-foreground">{item.coverArtFile.name}</p>
-                                      <Button variant="ghost" size="sm" className="h-6 text-xs mt-1" onClick={() => setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtFile: null } : i))}>
+                                      <p className="text-xs text-muted-foreground">{item.coverArtServerUrl ? '✓ Uploaded' : item.coverArtUploading ? 'Uploading…' : 'Preview'}</p>
+                                      <Button variant="ghost" size="sm" className="h-6 text-xs mt-1" onClick={() => {
+                                        if (item.coverArtPreviewUrl) revokeLocalPreview(item.coverArtPreviewUrl);
+                                        setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtServerUrl: null, coverArtPreviewUrl: null, coverArtUploading: false } : i));
+                                      }}>
                                         <X className="w-3 h-3 mr-1" /> Remove
                                       </Button>
                                     </div>
@@ -4575,11 +4677,20 @@ return (
                                       className="sr-only"
                                       onChange={(e) => {
                                         const f = e.target.files?.[0];
-                                        if (f) {
-                                          const err = validateCoverFile(f);
-                                          if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
-                                          setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtFile: f } : i));
-                                        }
+                                        if (!f) return;
+                                        const err = validateCoverFile(f);
+                                        if (err) { toast({ title: 'Invalid File', description: err, variant: 'destructive' }); return; }
+                                        const preview = createLocalPreview(f);
+                                        setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtPreviewUrl: preview, coverArtServerUrl: null, coverArtUploading: true } : i));
+                                        uploadImageFile(f, '/api/storage/upload', 'file')
+                                          .then(url => {
+                                            revokeLocalPreview(preview);
+                                            setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtServerUrl: url, coverArtPreviewUrl: null, coverArtUploading: false } : i));
+                                          })
+                                          .catch(() => {
+                                            toast({ title: 'Cover Art Upload Failed', variant: 'destructive' });
+                                            setBulkUploadItems(prev => prev.map(i => i.id === item.id ? { ...i, coverArtUploading: false } : i));
+                                          });
                                       }}
                                     />
                                     <div className="flex items-center gap-2 justify-center">
@@ -4840,12 +4951,19 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
                 <Label className="text-xs">Cover Art</Label>
-                {editForm.coverArtFile ? (
+                {(editForm.coverArtFile || editCoverArtServerUrl) ? (
                   <div className="relative w-24 h-24 mt-1">
-                    <img src={getStableBlobUrl(editForm.coverArtFile)} alt="" className="w-24 h-24 rounded-lg object-cover" />
+                    <SafeImg src={editCoverArtPreviewUrl || editCoverArtServerUrl || ''} alt="" className="w-24 h-24 rounded-lg object-cover" loading="eager" />
+                    {editCoverArtUploading && <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center"><Loader2 className="w-5 h-5 text-white animate-spin" /></div>}
                     <button
                       className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-600"
-                      onClick={() => setEditForm({ ...editForm, coverArtFile: null })}
+                      onClick={() => {
+                        if (editCoverArtPreviewUrl) revokeLocalPreview(editCoverArtPreviewUrl);
+                        setEditCoverArtPreviewUrl(null);
+                        setEditCoverArtServerUrl(null);
+                        setEditCoverArtUploading(false);
+                        setEditForm({ ...editForm, coverArtFile: null });
+                      }}
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -4854,7 +4972,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                   <div className="relative mt-1">
                     {editingBeat?.coverArt ? (
                       <div className="relative w-24 h-24">
-                        <img src={editingBeat.coverArt} alt="" className="w-24 h-24 rounded-lg object-cover" />
+                        <SafeImg src={editingBeat.coverArt} alt="" className="w-24 h-24 rounded-lg object-cover" loading="eager" />
                         <label className="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center cursor-pointer opacity-0 hover:opacity-100 transition-opacity">
                           <input
                             type="file"
@@ -4862,7 +4980,17 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                             className="sr-only"
                             onChange={(e) => {
                               const f = e.target.files?.[0];
-                              if (f) setEditForm({ ...editForm, coverArtFile: f });
+                              if (!f) return;
+                              if (editCoverArtPreviewUrl) revokeLocalPreview(editCoverArtPreviewUrl);
+                              const preview = createLocalPreview(f);
+                              setEditCoverArtPreviewUrl(preview);
+                              setEditCoverArtServerUrl(null);
+                              setEditCoverArtUploading(true);
+                              setEditForm({ ...editForm, coverArtFile: f });
+                              uploadImageFile(f, '/api/storage/upload', 'file')
+                                .then(url => { setEditCoverArtServerUrl(url); revokeLocalPreview(preview); setEditCoverArtPreviewUrl(null); })
+                                .catch(() => toast({ title: 'Cover Art Upload Failed', variant: 'destructive' }))
+                                .finally(() => setEditCoverArtUploading(false));
                             }}
                           />
                           <Edit className="w-5 h-5 text-white" />
@@ -4876,7 +5004,17 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
                           className="sr-only"
                           onChange={(e) => {
                             const f = e.target.files?.[0];
-                            if (f) setEditForm({ ...editForm, coverArtFile: f });
+                            if (!f) return;
+                            if (editCoverArtPreviewUrl) revokeLocalPreview(editCoverArtPreviewUrl);
+                            const preview = createLocalPreview(f);
+                            setEditCoverArtPreviewUrl(preview);
+                            setEditCoverArtServerUrl(null);
+                            setEditCoverArtUploading(true);
+                            setEditForm({ ...editForm, coverArtFile: f });
+                            uploadImageFile(f, '/api/storage/upload', 'file')
+                              .then(url => { setEditCoverArtServerUrl(url); revokeLocalPreview(preview); setEditCoverArtPreviewUrl(null); })
+                              .catch(() => toast({ title: 'Cover Art Upload Failed', variant: 'destructive' }))
+                              .finally(() => setEditCoverArtUploading(false));
                           }}
                         />
                         <ImageIcon className="w-6 h-6 text-muted-foreground" />

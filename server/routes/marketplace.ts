@@ -1179,6 +1179,9 @@ router.post('/upload', upload.fields([
       const result = await storeUploadedFile(coverFile, req.user!.id, 'artwork');
       artworkUrl = result.url;
       logger.info(`Cover art saved via storeUploadedFile: ${result.key} (processed: ${result.processed})`);
+    } else if (req.body.artworkUrl && typeof req.body.artworkUrl === 'string') {
+      // Cover art pre-uploaded separately — use the URL directly
+      artworkUrl = req.body.artworkUrl;
     }
 
     const listing = await marketplaceService.createListing({
@@ -1501,6 +1504,9 @@ router.put('/listings/:id', upload.fields([
       const result = await storeUploadedFile(artworkFile, req.user!.id, 'artwork');
       updateData.artworkUrl = result.url;
       logger.info(`Artwork updated via storeUploadedFile: ${result.key} (processed: ${result.processed})`);
+    } else if (req.body.artworkUrl && typeof req.body.artworkUrl === 'string') {
+      // Cover art pre-uploaded separately — use the URL directly
+      updateData.artworkUrl = req.body.artworkUrl;
     }
 
     const updatedListing = await marketplaceService.updateListing(id, req.user!.id, updateData);
