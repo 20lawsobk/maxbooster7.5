@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { pool } from '../db';
+import { pool } from '../db.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
@@ -161,9 +161,8 @@ router.post('/zones', async (req, res) => {
     await pool.query(
       `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
        ($1, $2, $3, 'NS',  '@', $4, 3600),
-       ($1, $2, $3, 'NS',  '@', $5, 3600),
-       ($1, $2, $3, 'SOA', '@', $6, 3600)`,
-      [zone.id, userId, domain, NS1, NS2, `${NS1} hostmaster.${BASE_DOMAIN} 1 3600 900 604800 300`]
+       ($1, $2, $3, 'SOA', '@', $5, 3600)`,
+      [zone.id, userId, domain, NS1, `${NS1} hostmaster.${BASE_DOMAIN} 1 3600 900 604800 300`]
     );
 
     res.json({ success: true, zone });
@@ -187,11 +186,10 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
 
     let resolved = false;
     try {
-      const { resolve } = await import('dns');
-      const { promisify } = await import('util');
-      const resolveTxt = promisify(resolve.bind(null));
-      const records: any = await resolveTxt(zone.domain, 'TXT').catch(() => []);
-      const flat: string[] = records.flat ? records.flat() : records;
+      const dns = await import('dns');
+      const resolveTxt = dns.promises.resolveTxt;
+      const records: string[][] = await resolveTxt(zone.domain).catch(() => []);
+      const flat = records.flat();
       resolved = flat.some((r: string) => r.includes(zone.verificationToken ?? ''));
     } catch {
       resolved = false;

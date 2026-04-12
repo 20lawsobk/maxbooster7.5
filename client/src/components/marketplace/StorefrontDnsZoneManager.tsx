@@ -67,12 +67,11 @@ import {
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface DomainSearchResult {
-  domain:       string;
-  tld:          string;
-  available:    boolean;
-  isPremium:    boolean;
-  priceCents:   number | null;
-  renewalCents: number | null;
+  domain:            string;
+  tld:               string;
+  available:         boolean;
+  isPremium:         boolean;
+  claimedByPlatform: boolean;
 }
 
 interface ClaimedDomain {
@@ -255,6 +254,10 @@ function SearchResultRow({
               Claim Free
             </Button>
           </>
+        ) : result.claimedByPlatform ? (
+          <span className="text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1">
+            <Server className="w-3 h-3" />On Max Booster
+          </span>
         ) : (
           <span className="text-xs text-muted-foreground">Taken</span>
         )}
@@ -610,6 +613,9 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
+  // Tab control
+  const [activeTab, setActiveTab] = useState('search');
+
   // Domain registrar state
   const [searchInput,    setSearchInput]    = useState('');
   const [searchName,     setSearchName]     = useState('');
@@ -657,13 +663,16 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
   const claimDomain = useMutation({
     mutationFn: (domain: string) =>
       apiRequest('POST', '/api/domain-registrar/claim', { domain, storefrontId }).then(r => r.json()),
-    onMutate:   (domain) => setClaimingDomain(domain),
-    onSettled:  () => setClaimingDomain(null),
-    onSuccess:  (data, domain) => {
+    onMutate:  (domain) => setClaimingDomain(domain),
+    onSettled: () => setClaimingDomain(null),
+    onSuccess: (data, domain) => {
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      qc.invalidateQueries({ queryKey: ['/api/domain-registrar/search', searchName] });
+      setActiveTab('mine');
       toast({
         title: `${domain} claimed!`,
-        description: data.message ?? 'Your domain is being set up. DNS will be live within minutes.',
+        description: data.message ?? 'Your domain is active. DNS zone created — manage records in the DNS Records tab.',
       });
     },
     onError: async (err: any) => {
@@ -676,7 +685,11 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
   // Remove claimed domain
   const removeClaimed = useMutation({
     mutationFn: (id: string) => apiRequest('DELETE', `/api/domain-registrar/my-domains/${id}`).then(r => r.json()),
-    onSuccess:  () => { qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] }); toast({ title: 'Domain removed' }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      toast({ title: 'Domain removed' });
+    },
   });
 
   // Add DNS zone
@@ -739,7 +752,7 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
       </Card>
 
       {/* ── Main Tabs ────────────────────────────────────────────────────── */}
-      <Tabs defaultValue="search">
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-9 w-full sm:w-auto">
           <TabsTrigger value="search"  className="text-xs gap-1.5 flex-1 sm:flex-none"><Search  className="w-3.5 h-3.5" />Find Domain</TabsTrigger>
           <TabsTrigger value="mine"    className="text-xs gap-1.5 flex-1 sm:flex-none"><Globe   className="w-3.5 h-3.5" />My Domains{myDomains.length > 0 && <Badge className="ml-1 text-[9px] h-4 px-1.5 bg-primary/20 text-primary border-primary/30">{myDomains.length}</Badge>}</TabsTrigger>
@@ -860,6 +873,7 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
               {myDomains.map(d => {
                 const st = domainStatusLabel(d.status);
                 const StatusIcon = st.icon;
+                const matchedZone = zones.find(z => z.domain === d.domain);
                 return (
                   <div key={d.id} className="flex items-center justify-between p-3.5 border rounded-lg hover:border-blue-300 transition-colors">
                     <div className="flex items-center gap-3 min-w-0">
@@ -877,15 +891,23 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
                         <p className="text-[11px] text-muted-foreground mt-0.5">
                           via {d.registrarName === 'external' ? 'external registrar' : 'Max Booster'}
                           {d.expiresAt && ` · expires ${new Date(d.expiresAt).toLocaleDateString()}`}
+                          {matchedZone && <span className="text-green-600 dark:text-green-400"> · DNS zone active</span>}
                         </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
-                      {d.status === 'platform_managed' && (
-                        <div className="text-[10px] text-muted-foreground hidden sm:block">
-                          Point NS to Max Booster
-                        </div>
-                      )}
+                      {matchedZone ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-[11px] px-2.5 gap-1 border-blue-300 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950"
+                          onClick={() => { setSelectedZone(matchedZone); setActiveTab('dns'); }}
+                        >
+                          <Server className="w-3 h-3" />Manage DNS
+                        </Button>
+                      ) : d.status === 'platform_managed' ? (
+                        <span className="text-[10px] text-muted-foreground hidden sm:block">Point NS to Max Booster</span>
+                      ) : null}
                       <button
                         onClick={() => { if (confirm(`Remove ${d.domain}?`)) removeClaimed.mutate(d.id); }}
                         className="text-red-400 hover:text-red-600 p-1.5 transition-colors"
