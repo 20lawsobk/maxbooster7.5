@@ -81,33 +81,31 @@ async function isAuthoritative(name: string): Promise<boolean> {
 
 // ─── DNS record builders ──────────────────────────────────────────────────────
 
-/** SOA record — identical structure to Cloudflare's SOA for custom zones */
+const PLATFORM_NS = process.env.PLATFORM_NS || 'maxbooster.replit.app';
+
+/** SOA record — authoritative for all Max Booster zones */
 function makeSOA(zone: string) {
   return {
     name:       zone,
     type:       Packet.TYPE.SOA,
     class:      Packet.CLASS.IN,
     ttl:        TTL_SOA,
-    primary:    `ns1.${BASE_DOMAIN}`,
+    primary:    PLATFORM_NS,
     admin:      `hostmaster.${BASE_DOMAIN}`,
     serial:     SERIAL,
-    refresh:    10800,   // 3 h  (Cloudflare default)
+    refresh:    10800,   // 3 h
     retry:      3600,    // 1 h
     expiration: 604800,  // 7 days
     minimum:    3600,    // negative-cache TTL (RFC 2308)
   };
 }
 
-/** Two NS records (ns1 + ns2) — RFC 2182 requires at least 2 nameservers */
+/** NS record — single unified nameserver (maxbooster.replit.app) */
 function makeNSRecords(zone: string) {
   return [
     {
       name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN,
-      ttl: TTL_NS, ns: `ns1.${BASE_DOMAIN}`,
-    },
-    {
-      name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN,
-      ttl: TTL_NS, ns: `ns2.${BASE_DOMAIN}`,
+      ttl: TTL_NS, ns: PLATFORM_NS,
     },
   ];
 }
@@ -170,9 +168,6 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
 
     case Packet.TYPE.NS:
       makeNSRecords(zone).forEach(r => response.answers.push(r));
-      // Glue A records so resolvers can find the nameservers without a loop
-      response.additionals.push(makeA(`ns1.${BASE_DOMAIN}`, DNS_SERVER_IP));
-      response.additionals.push(makeA(`ns2.${BASE_DOMAIN}`, DNS_SERVER_IP));
       break;
 
     case Packet.TYPE.AAAA:

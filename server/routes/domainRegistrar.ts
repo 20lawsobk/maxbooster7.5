@@ -5,23 +5,22 @@
  * system.  No external registrar API is required or called.
  *
  * Endpoints:
- *   GET  /api/domain-registrar/search?name=mybeats   — availability check
+ *   GET  /api/domain-registrar/config                 — nameserver info
+ *   GET  /api/domain-registrar/search?name=mybeats    — availability check
  *   POST /api/domain-registrar/claim                  — claim a domain
  *   GET  /api/domain-registrar/my-domains             — list user's domains
  *   DELETE /api/domain-registrar/my-domains/:id       — remove a domain record
- *   GET  /api/domain-registrar/config                 — nameserver info
  */
 
 import { Router } from 'express';
-import { eq } from 'drizzle-orm';
-import { db } from '../db.js';
-import { claimedDomains, users } from '@shared/schema';
+import { eq, inArray } from 'drizzle-orm';
+import { db, pool } from '../db.js';
+import { claimedDomains } from '@shared/schema';
 import { logger } from '../logger.js';
 import {
   checkDomainAvailability,
   logClaim,
   SEARCH_TLDS,
-  DOMAIN_PRICES,
   NS,
   NS1,
   NS2,
@@ -34,13 +33,13 @@ const router = Router();
 
 router.get('/config', (_req, res) => {
   return res.json({
-    ok: true,
-    ns: NS,
-    ns1: NS1,
-    ns2: NS2,
+    ok:             true,
+    ns:             NS,
+    ns1:            NS1,
+    ns2:            NS2,
     platformDomain: PLATFORM_DOMAIN,
-    supportedTlds: SEARCH_TLDS,
-    builtIn: true,
+    supportedTlds:  SEARCH_TLDS,
+    builtIn:        true,
   });
 });
 
@@ -50,12 +49,29 @@ router.get('/search', async (req, res) => {
   try {
     const raw = ((req.query.name as string) || '').toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
     if (!raw || raw.length < 2 || raw.length > 63) {
-      return res.status(400).json({ ok: false, error: 'name must be 2–63 characters.' });
+      return res.status(400).json({ ok: false, error: 'Name must be 2–63 characters.' });
     }
 
-    const results = await checkDomainAvailability(raw, SEARCH_TLDS);
+    // Check DNS availability for all TLDs in parallel
+    const dnsResults = await checkDomainAvailability(raw, SEARCH_TLDS);
 
-    // Sort: available first, then by TLD popularity
+    // Also check which of those domains are already claimed in Max Booster
+    const candidateDomains = dnsResults.map(r => r.domain);
+    const alreadyClaimed = await db
+      .select({ domain: claimedDomains.domain })
+      .from(claimedDomains)
+      .where(inArray(claimedDomains.domain, candidateDomains));
+
+    const claimedSet = new Set(alreadyClaimed.map(r => r.domain));
+
+    // Mark claimed-by-us domains as unavailable
+    const results = dnsResults.map(r => ({
+      ...r,
+      available: r.available && !claimedSet.has(r.domain),
+      claimedByPlatform: claimedSet.has(r.domain),
+    }));
+
+    // Sort: available first, then by TLD popularity order
     const tldOrder = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
     results.sort((a, b) => {
       if (a.available !== b.available) return a.available ? -1 : 1;
@@ -71,7 +87,7 @@ router.get('/search', async (req, res) => {
   }
 });
 
-// ── Claim a domain (register with built-in DNS) ───────────────────────────────
+// ── Claim a domain — registers with built-in DNS ──────────────────────────────
 
 router.post('/claim', async (req, res) => {
   try {
@@ -90,7 +106,7 @@ router.post('/claim', async (req, res) => {
       return res.status(400).json({ ok: false, error: 'Invalid domain format.' });
     }
 
-    // Check if already claimed
+    // Check if already claimed in our system
     const [existing] = await db
       .select({ id: claimedDomains.id, userId: claimedDomains.userId })
       .from(claimedDomains)
@@ -107,19 +123,19 @@ router.post('/claim', async (req, res) => {
     const tld = '.' + domainLower.split('.').slice(1).join('.');
     const sld = domainLower.split('.')[0];
 
-    // Determine if platform subdomain (*.maxboostermusic.com) or external domain
     const isPlatformSubdomain = domainLower.endsWith(`.${PLATFORM_DOMAIN}`);
     const status = isPlatformSubdomain ? 'active' : 'platform_managed';
 
     const expiresAt = new Date();
     expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
+    // 1. Create the claimed_domains record
     const [record] = await db
       .insert(claimedDomains)
       .values({
         userId,
         storefrontId: storefrontId || null,
-        domain: domainLower,
+        domain:       domainLower,
         sld,
         tld,
         status,
@@ -132,24 +148,57 @@ router.post('/claim', async (req, res) => {
       })
       .returning();
 
+    // 2. Auto-create a DNS zone for this domain (idempotent)
+    try {
+      const existingZone = await pool.query(
+        'SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1',
+        [domainLower]
+      );
+      if (existingZone.rows.length === 0) {
+        const zoneResult = await pool.query(
+          `INSERT INTO dns_zones (user_id, domain, status, is_verified, nameserver1, nameserver2)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING id`,
+          [userId, domainLower, isPlatformSubdomain ? 'active' : 'pending', isPlatformSubdomain, NS, NS]
+        );
+        const zoneId = zoneResult.rows[0].id;
+
+        // Add default NS + SOA records for the zone
+        await pool.query(
+          `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl) VALUES
+           ($1, $2, $3, 'NS',  '@', $4, 3600),
+           ($1, $2, $3, 'SOA', '@', $5, 3600)`,
+          [
+            zoneId, userId, domainLower,
+            NS,
+            `${NS} hostmaster.${PLATFORM_DOMAIN} 1 3600 900 604800 300`,
+          ]
+        );
+        logger.info({ domain: domainLower, zoneId }, '[domainRegistrar] DNS zone auto-created');
+      }
+    } catch (zoneErr: any) {
+      // DNS zone creation failing should not block the claim response
+      logger.warn({ err: zoneErr, domain: domainLower }, '[domainRegistrar] DNS zone auto-create failed (non-fatal)');
+    }
+
     logClaim(domainLower, userId);
 
     const message = isPlatformSubdomain
-      ? 'Your Max Booster subdomain is active and ready to use.'
-      : `Domain reserved. Point your nameserver to ${NS} to activate Max Booster DNS.`;
+      ? 'Your Max Booster subdomain is active. DNS zone created — you can manage records now.'
+      : `Domain reserved. Set your nameserver to ${NS} to activate Max Booster DNS. Your DNS zone is ready.`;
 
     return res.status(201).json({
-      ok: true,
-      domain: record.domain,
-      status: record.status,
+      ok:        true,
+      domain:    record.domain,
+      status:    record.status,
       expiresAt: record.expiresAt,
-      ns: NS,
+      ns:        NS,
       message,
     });
   } catch (err: any) {
     logger.warn({ err }, '[domainRegistrar] claim error');
-    const status = err.message?.includes('already') ? 409 : 500;
-    return res.status(status).json({ ok: false, error: err.message || 'Registration failed.' });
+    const httpStatus = err.message?.includes('already') ? 409 : 500;
+    return res.status(httpStatus).json({ ok: false, error: err.message || 'Registration failed.' });
   }
 });
 
@@ -181,7 +230,7 @@ router.delete('/my-domains/:id', async (req, res) => {
 
     const userId = (req.user as any).id;
     const [row] = await db
-      .select({ userId: claimedDomains.userId })
+      .select({ userId: claimedDomains.userId, domain: claimedDomains.domain })
       .from(claimedDomains)
       .where(eq(claimedDomains.id, req.params.id))
       .limit(1);
@@ -189,7 +238,16 @@ router.delete('/my-domains/:id', async (req, res) => {
     if (!row) return res.status(404).json({ ok: false, error: 'Domain not found.' });
     if (row.userId !== userId) return res.status(403).json({ ok: false, error: 'Forbidden.' });
 
+    // Remove the claimed_domains record
     await db.delete(claimedDomains).where(eq(claimedDomains.id, req.params.id));
+
+    // Also remove the associated DNS zone (non-fatal if missing)
+    try {
+      await pool.query('DELETE FROM dns_zones WHERE domain = $1 AND user_id = $2', [row.domain, userId]);
+    } catch (zoneErr: any) {
+      logger.warn({ err: zoneErr }, '[domainRegistrar] DNS zone cleanup failed (non-fatal)');
+    }
+
     return res.json({ ok: true });
   } catch (err: any) {
     logger.warn({ err }, '[domainRegistrar] delete error');
