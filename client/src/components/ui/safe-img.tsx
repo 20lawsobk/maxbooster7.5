@@ -94,3 +94,5 @@ export function SafeImg({
     />
   );
 }
+
+export default SafeImg;
