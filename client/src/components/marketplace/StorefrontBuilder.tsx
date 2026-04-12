@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
+import SafeImg from '@/components/ui/safe-img';
+import { createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -221,6 +223,9 @@ export default function StorefrontBuilder() {
 
   const [uploadingAsset, setUploadingAsset] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(null);
+  const [bannerPreviewUrl, setBannerPreviewUrl] = useState<string | null>(null);
+  const [avatarPreviewUrl, setAvatarPreviewUrl] = useState<string | null>(null);
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
@@ -249,6 +254,11 @@ export default function StorefrontBuilder() {
       return;
     }
 
+    const preview = createLocalPreview(file);
+    if (assetType === 'logo') { if (logoPreviewUrl) revokeLocalPreview(logoPreviewUrl); setLogoPreviewUrl(preview); }
+    else if (assetType === 'banner') { if (bannerPreviewUrl) revokeLocalPreview(bannerPreviewUrl); setBannerPreviewUrl(preview); }
+    else { if (avatarPreviewUrl) revokeLocalPreview(avatarPreviewUrl); setAvatarPreviewUrl(preview); }
+
     setUploadingAsset(assetType);
     setUploadProgress(0);
 
@@ -265,6 +275,11 @@ export default function StorefrontBuilder() {
         throw new Error(result.error);
       }
 
+      revokeLocalPreview(preview);
+      if (assetType === 'logo') setLogoPreviewUrl(null);
+      else if (assetType === 'banner') setBannerPreviewUrl(null);
+      else setAvatarPreviewUrl(null);
+
       setCustomization({
         ...customization,
         [assetType]: result.url,
@@ -275,6 +290,10 @@ export default function StorefrontBuilder() {
         description: `Your ${assetType} has been uploaded`,
       });
     } catch (error) {
+      revokeLocalPreview(preview);
+      if (assetType === 'logo') setLogoPreviewUrl(null);
+      else if (assetType === 'banner') setBannerPreviewUrl(null);
+      else setAvatarPreviewUrl(null);
       toast({
         title: 'Upload Failed',
         description: error instanceof Error ? error.message : 'Failed to upload file',
@@ -1519,12 +1538,13 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => logoInputRef.current?.click()}
                       >
-                        {uploadingAsset === 'logo' ? (
-                          <UploadProgressBar label="logo" />
-                        ) : customization.logo ? (
+                        {(logoPreviewUrl || customization.logo) ? (
                           <div className="relative">
-                            <img src={customization.logo} alt="Logo" className="max-h-20 mx-auto object-contain" />
-                            <p className="text-xs text-muted-foreground mt-2">Click to change</p>
+                            <SafeImg src={logoPreviewUrl || customization.logo || ''} alt="Logo" className="max-h-20 mx-auto object-contain" loading="eager" />
+                            {uploadingAsset === 'logo' && (
+                              <div className="mt-2"><UploadProgressBar label="logo" /></div>
+                            )}
+                            {uploadingAsset !== 'logo' && <p className="text-xs text-muted-foreground mt-2">Click to change</p>}
                           </div>
                         ) : (
                           <>
@@ -1553,14 +1573,15 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => bannerInputRef.current?.click()}
                       >
-                        {uploadingAsset === 'banner' ? (
-                          <div className="p-6">
-                            <UploadProgressBar label="banner" />
-                          </div>
-                        ) : customization.banner ? (
+                        {(bannerPreviewUrl || customization.banner) ? (
                           <div className="relative">
-                            <img src={customization.banner} alt="Banner" className="w-full h-32 object-cover" />
-                            <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white bg-black/50 px-2 py-1 rounded">Click to change</p>
+                            <SafeImg src={bannerPreviewUrl || customization.banner || ''} alt="Banner" className="w-full h-32 object-cover" loading="eager" />
+                            {uploadingAsset === 'banner' && (
+                              <div className="absolute inset-0 bg-black/50 flex items-end p-3">
+                                <div className="w-full"><UploadProgressBar label="banner" /></div>
+                              </div>
+                            )}
+                            {uploadingAsset !== 'banner' && <p className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-white bg-black/50 px-2 py-1 rounded">Click to change</p>}
                           </div>
                         ) : (
                           <div className="p-12">
@@ -1589,12 +1610,15 @@ export default function StorefrontBuilder() {
                         className="mt-2 border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors cursor-pointer relative overflow-hidden"
                         onClick={() => avatarInputRef.current?.click()}
                       >
-                        {uploadingAsset === 'avatar' ? (
-                          <UploadProgressBar label="avatar" />
-                        ) : customization.avatar ? (
-                          <div className="relative">
-                            <img src={customization.avatar} alt="Avatar" className="w-20 h-20 mx-auto rounded-full object-cover" />
-                            <p className="text-xs text-muted-foreground mt-2">Click to change</p>
+                        {(avatarPreviewUrl || customization.avatar) ? (
+                          <div className="relative inline-block">
+                            <SafeImg src={avatarPreviewUrl || customization.avatar || ''} alt="Avatar" className="w-20 h-20 mx-auto rounded-full object-cover" loading="eager" />
+                            {uploadingAsset === 'avatar' && (
+                              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                                <div className="w-full px-2"><UploadProgressBar label="avatar" /></div>
+                              </div>
+                            )}
+                            {uploadingAsset !== 'avatar' && <p className="text-xs text-muted-foreground mt-2">Click to change</p>}
                           </div>
                         ) : (
                           <>
