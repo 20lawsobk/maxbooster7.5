@@ -326,14 +326,12 @@ export default function StorefrontBuilder() {
   });
 
   // Auto-select the first storefront once the list loads, if nothing is selected yet.
-  // Uses a ref so it only fires once per mount, not on every re-render.
-  const hasAutoSelected = useRef(false);
+  // Uses functional setState so we never need selectedStorefront in the dep array.
   useEffect(() => {
-    if (!hasAutoSelected.current && !storefrontsLoading && storefronts.length > 0 && !selectedStorefront) {
-      hasAutoSelected.current = true;
-      setSelectedStorefront(storefronts[0]);
+    if (!storefrontsLoading && storefronts.length > 0) {
+      setSelectedStorefront(prev => prev ?? storefronts[0]);
     }
-  }, [storefronts, storefrontsLoading, selectedStorefront]);
+  }, [storefronts, storefrontsLoading]);
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery<StorefrontTemplate[]>({
     queryKey: ['/api/storefront/templates'],
