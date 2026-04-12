@@ -293,11 +293,25 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
   const currentLink: { storefrontId: string; storefrontName: string; storefrontSlug: string; status: string } | null =
     linkData?.linked ?? null;
 
+  const linkQKey = ['/api/dns-manager/zones', zone.id, 'storefront-link'];
+
   const linkStorefront = useMutation({
     mutationFn: () =>
       apiRequest('POST', `/api/dns-manager/zones/${zone.id}/use-as-storefront`, { storefrontId }).then(r => r.json()),
     onSuccess: (data) => {
-      refetchLink();
+      // Immediately write the known result into the cache so the UI flips
+      // to "Active" without waiting for a round-trip (staleTime would block refetch).
+      qc.setQueryData(linkQKey, {
+        zone: { id: zone.id, domain: zone.domain, isVerified: zone.isVerified, status: zone.status },
+        linked: {
+          storefrontId: data.storefrontId,
+          storefrontName: data.storefrontName,
+          storefrontSlug: data.storefrontSlug,
+          status: 'active',
+        },
+      });
+      // Then force a background refetch so the cache stays in sync.
+      qc.invalidateQueries({ queryKey: linkQKey, refetchType: 'active' });
       qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       toast({ title: 'Storefront URL set!', description: `${zone.domain} is now your storefront URL.` });
     },
@@ -312,7 +326,12 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
     mutationFn: () =>
       apiRequest('DELETE', `/api/dns-manager/zones/${zone.id}/use-as-storefront`).then(r => r.json()),
     onSuccess: () => {
-      refetchLink();
+      // Clear the cached link immediately, then force a refetch.
+      qc.setQueryData(linkQKey, {
+        zone: { id: zone.id, domain: zone.domain, isVerified: zone.isVerified, status: zone.status },
+        linked: null,
+      });
+      qc.invalidateQueries({ queryKey: linkQKey, refetchType: 'active' });
       qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       toast({ title: 'Storefront URL removed', description: `${zone.domain} is no longer your storefront URL.` });
     },
