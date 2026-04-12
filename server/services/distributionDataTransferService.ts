@@ -1737,6 +1737,8 @@ class DistributionDataTransferService {
               trackCount: item.total_tracks || 1,
               coverUrl: item.images?.[0]?.url,
               platformUrl: item.external_urls?.spotify,
+              upc: item.external_ids?.upc,
+              genre: item.genres?.[0],
             });
           }
 
@@ -1745,23 +1747,25 @@ class DistributionDataTransferService {
         }
 
         if (results.length > 0) {
-          // Fetch track-level ISRC for first 5 singles for richer metadata
-          for (const release of results.filter(r => r.releaseType === 'single').slice(0, 5)) {
+          // Fetch full track lists (with ISRC + duration) for first 10 releases of any type
+          const trackTargets = results.slice(0, 10);
+          await Promise.allSettled(trackTargets.map(async (release) => {
             try {
-              const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=10`, {
+              const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (tr.ok) {
                 const td = await tr.json() as any;
                 release.tracks = (td.items || []).map((t: any, idx: number) => ({
                   title: t.name,
-                  trackNumber: idx + 1,
+                  trackNumber: t.track_number || idx + 1,
                   isrc: t.external_ids?.isrc,
                   duration: t.duration_ms ? Math.round(t.duration_ms / 1000) : undefined,
                 }));
+                release.trackCount = release.tracks.length || release.trackCount;
               }
             } catch { /* non-fatal */ }
-          }
+          }));
           logger.info(`[DataTransfer] Spotify API returned ${results.length} releases for artist ${artistId}`);
           return results;
         }
@@ -1928,10 +1932,10 @@ class DistributionDataTransferService {
         return [];
       }
 
-      // ── Step 3: Fetch release-groups for this artist ──────────────────────
+      // ── Step 3: Fetch release-groups (with genre tags + release counts) ─────
       await delay(300);
       const rgResp = await fetch(
-        `https://musicbrainz.org/ws/2/release-group?artist=${mbid}&type=album%7Csingle%7Cep&fmt=json&limit=100`,
+        `https://musicbrainz.org/ws/2/release-group?artist=${mbid}&type=album%7Csingle%7Cep&fmt=json&limit=100&inc=tags%2Breleases`,
         { headers: { 'User-Agent': UA } }
       );
       if (!rgResp.ok) return [];
@@ -1946,20 +1950,59 @@ class DistributionDataTransferService {
         return 'album';
       };
 
-      const results: ScannedRelease[] = groups.map((rg: any) => ({
-        id: `mb-${rg.id}`,
-        externalId: rg.id,
-        platformId: 'spotify',
-        title: rg.title,
-        artistName,
-        releaseType: normalizeType(rg['primary-type'] || 'album', rg['secondary-types'] || []),
-        releaseDate: rg['first-release-date'] || null,
-        trackCount: 1,
-        coverUrl: undefined,
-        platformUrl: `https://open.spotify.com/artist/${spotifyArtistId}`,
-      }));
+      // ── Step 4: Batch-resolve cover art from Cover Art Archive ────────────
+      // CAA is hosted by the Internet Archive — no strict rate limit, but we
+      // use controlled concurrency (8 parallel) to be polite and avoid errors.
+      const coverUrlMap = new Map<string, string>();
+      const CAA_CONCURRENCY = 8;
+      for (let i = 0; i < groups.length; i += CAA_CONCURRENCY) {
+        const chunk = groups.slice(i, i + CAA_CONCURRENCY);
+        await Promise.allSettled(chunk.map(async (rg: any) => {
+          try {
+            const caaResp = await fetch(
+              `https://coverartarchive.org/release-group/${rg.id}`,
+              {
+                headers: { 'User-Agent': UA },
+                signal: AbortSignal.timeout(4000),
+              }
+            );
+            if (caaResp.ok) {
+              const caaData = await caaResp.json() as any;
+              const frontImg = (caaData.images || []).find((img: any) => img.front) || caaData.images?.[0];
+              if (frontImg) {
+                const url = frontImg.thumbnails?.['500'] || frontImg.thumbnails?.large || frontImg.image;
+                if (url) coverUrlMap.set(rg.id, url);
+              }
+            }
+          } catch { /* non-fatal — no cover art */ }
+        }));
+      }
 
-      logger.info(`[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid})`);
+      const results: ScannedRelease[] = groups.map((rg: any) => {
+        // Best-effort track count from the first release in the release-group
+        const firstRelease = (rg.releases || [])[0];
+        const trackCount = firstRelease?.['track-count'] || firstRelease?.media?.[0]?.['track-count'] || 1;
+        // Top genre tag (highest vote count wins)
+        const topTag = (rg.tags || []).sort((a: any, b: any) => (b.count || 0) - (a.count || 0))[0];
+        return {
+          id: `mb-${rg.id}`,
+          externalId: rg.id,
+          platformId: 'spotify',
+          title: rg.title,
+          artistName,
+          releaseType: normalizeType(rg['primary-type'] || 'album', rg['secondary-types'] || []),
+          releaseDate: rg['first-release-date'] || null,
+          trackCount,
+          coverUrl: coverUrlMap.get(rg.id),
+          platformUrl: `https://musicbrainz.org/release-group/${rg.id}`,
+          genre: topTag?.name,
+          upc: firstRelease?.barcode,
+        };
+      });
+
+      logger.info(
+        `[DataTransfer] MusicBrainz returned ${results.length} release-group(s) for artist ${artistName} (mbid=${mbid}, ${coverUrlMap.size} with cover art)`
+      );
       return results;
     } catch (err: any) {
       logger.warn(`[DataTransfer] MusicBrainz fallback failed for ${spotifyArtistId}:`, err?.message);
@@ -2011,8 +2054,10 @@ class DistributionDataTransferService {
         releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
         releaseDate: item.release_date || null,
         trackCount: item.nb_tracks || 1,
-        coverUrl: item.cover_xl || item.cover_big,
+        coverUrl: item.cover_xl || item.cover_big || item.cover_medium,
         platformUrl: item.link,
+        upc: item.upc,
+        genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err: any) {
       logger.warn({ err: err }, `[DataTransfer] Deezer album scan failed for ${artistId}:`);
@@ -2065,8 +2110,10 @@ class DistributionDataTransferService {
         releaseType: (item.nb_tracks >= 6 ? 'album' : (item.nb_tracks >= 3 ? 'EP' : 'single')) as 'single' | 'EP' | 'album',
         releaseDate: item.release_date || null,
         trackCount: item.nb_tracks || 1,
-        coverUrl: item.cover_xl || item.cover_big,
+        coverUrl: item.cover_xl || item.cover_big || item.cover_medium,
         platformUrl: item.link,
+        upc: item.upc,
+        genre: item.genres?.data?.[0]?.name,
       }));
     } catch (err: any) {
       logger.warn(`[DataTransfer] Deezer catalog proxy failed for "${artistName}":`, err?.message);
@@ -2108,6 +2155,7 @@ class DistributionDataTransferService {
             trackCount,
             coverUrl: pl.artwork_url?.replace('-large', '-t500x500'),
             platformUrl: pl.permalink_url,
+            genre: pl.genre || pl.tracks?.[0]?.genre || undefined,
           });
         }
       }
@@ -2126,6 +2174,7 @@ class DistributionDataTransferService {
             trackCount: 1,
             coverUrl: track.artwork_url?.replace('-large', '-t500x500'),
             platformUrl: track.permalink_url,
+            genre: track.genre || undefined,
           });
         }
       }
@@ -2313,9 +2362,15 @@ class DistributionDataTransferService {
           const existingMeta = existing.metadata as any;
           const links = existingMeta?.originalPlatformLinks || {};
           if (release.platformUrl) links[platformId] = release.platformUrl;
-          await storage.updateDistroRelease(existing.id, {
-            metadata: { ...existingMeta, originalPlatformLinks: links },
-          });
+          const mergedMeta: Record<string, any> = { ...existingMeta, originalPlatformLinks: links };
+          if (!existingMeta?.coverUrl && release.coverUrl) mergedMeta.coverUrl = release.coverUrl;
+          if (!existingMeta?.upc && release.upc) mergedMeta.upc = release.upc;
+          if (!existingMeta?.primaryGenre && release.genre) mergedMeta.primaryGenre = release.genre;
+          if (release.tracks?.length && (!existingMeta?.tracks || existingMeta.tracks.length === 0)) {
+            mergedMeta.tracks = release.tracks;
+            mergedMeta.trackCount = release.tracks.length;
+          }
+          await storage.updateDistroRelease(existing.id, { metadata: mergedMeta });
           logger.info(`[DataTransfer] Merged existing release from ${platformId}: ${release.title}`);
         } else {
           await storage.createDistroRelease({
@@ -2333,6 +2388,8 @@ class DistributionDataTransferService {
               importedFrom: `${platformId}_profile_scan`,
               originalPlatformLinks: release.platformUrl ? { [platformId]: release.platformUrl } : {},
               coverUrl: release.coverUrl,
+              trackCount: release.trackCount,
+              tracks: release.tracks,
               isImported: true,
               importedAt: new Date().toISOString(),
               scannedExternalId: release.externalId,
