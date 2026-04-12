@@ -7,6 +7,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import compression from "compression";
+import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
 import { setupStartupEndpoints } from "./startup-probes.js";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.js";
@@ -64,9 +65,14 @@ import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
   validateScaleConfig();
 }).catch(() => {});
 
+// Brotli compression — intercepts `Accept-Encoding: br` (all modern browsers) BEFORE gzip.
+// Brotli quality-4 gives gzip-level speed but 15-25 % smaller payload.
+// The downstream gzip middleware skips responses that already carry Content-Encoding: br.
+app.use(brotliMiddleware());
+
 // VM Reserve: use compression level 6 — better ratio, extra CPU cores absorb the cost.
-// Threshold at 512 B so most JSON API responses get compressed (saves ~30-70% transfer).
-app.use(compression({ level: 6, threshold: 512 }));
+// Threshold at 256 B (lowered from 512) so more small JSON responses get compressed.
+app.use(compression({ level: 6, threshold: 256 }));
 app.use(cookieParser());
 
 // Fast-path health endpoint: must be registered BEFORE session/PDIM middleware so

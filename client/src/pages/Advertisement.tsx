@@ -365,9 +365,18 @@ export default function Advertisement() {
       formData.append('image', file);
       return uploadWithProgress('/api/advertising/upload-image', formData, {
         timeout: 300000, // 5 minutes
-      });
+      }) as Promise<{ url?: string; fileUrl?: string }>;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Replace the temporary blob URL with the permanent server URL and free memory
+      const serverUrl = (data as { url?: string; fileUrl?: string })?.url
+        ?? (data as { url?: string; fileUrl?: string })?.fileUrl;
+      if (serverUrl) {
+        setImagePreviewUrl((prev) => {
+          if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev);
+          return serverUrl;
+        });
+      }
       toast({
         title: 'Image Uploaded!',
         description: 'Your campaign image has been uploaded successfully.',
@@ -614,7 +623,7 @@ export default function Advertisement() {
                       {uploadImageMutation.isPending ? 'Uploading...' : 'Upload Campaign Image'}
                     </Button>
                     {uploadedImage && (
-                      <Button type="button" variant="ghost" size="sm" onClick={() => { setUploadedImage(null); setImagePreviewUrl(null); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => { setUploadedImage(null); setImagePreviewUrl((prev) => { if (prev?.startsWith('blob:')) URL.revokeObjectURL(prev); return null; }); if (fileInputRef.current) fileInputRef.current.value = ''; }}>
                         <X className="w-4 h-4 mr-1" />Remove
                       </Button>
                     )}

@@ -57,6 +57,18 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 
+    <!-- Stripe.js — early TCP handshake before the payment page loads -->
+    <link rel="dns-prefetch" href="https://js.stripe.com" />
+    <link rel="preconnect" href="https://js.stripe.com" />
+    <link rel="dns-prefetch" href="https://api.stripe.com" />
+
+    <!-- Analytics & telemetry (Sentry, if loaded at runtime) -->
+    <link rel="dns-prefetch" href="https://o0.ingest.sentry.io" />
+    <link rel="dns-prefetch" href="https://sentry.io" />
+
+    <!-- Neon/Postgres CDN edge (for any client-proxied DB health pages) -->
+    <link rel="dns-prefetch" href="https://neon.tech" />
+
     <!--
       NON-BLOCKING FONT LOADING — preload as="style" fetches the CSS at high priority
       without blocking render. A tiny inline script swaps rel to "stylesheet" once the

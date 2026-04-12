@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { uploadImageFile, createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -102,6 +103,8 @@ export default function WelcomeWizard({
     artistType: '',
   });
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const [showCropDialog, setShowCropDialog] = useState(false);
   const [cropScale, setCropScale] = useState(1);
   const [cropPosition, setCropPosition] = useState({ x: 0, y: 0 });
@@ -172,23 +175,36 @@ export default function WelcomeWizard({
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result as string);
-        setShowCropDialog(true);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file || avatarUploading) return;
+    const previewUrl = createLocalPreview(file);
+    setAvatarPreview(previewUrl);
+    setAvatarFile(file);
+    setShowCropDialog(true);
   };
 
-  const handleCropConfirm = () => {
-    setData((prev) => ({ ...prev, avatarUrl: avatarPreview }));
-    setShowCropDialog(false);
-    toast({
-      title: 'Avatar Updated',
-      description: 'Your profile picture has been set.',
-    });
+  const handleCropConfirm = async () => {
+    if (!avatarFile || avatarUploading) return;
+    setAvatarUploading(true);
+    try {
+      const serverUrl = await uploadImageFile(avatarFile, '/api/auth/avatar', 'avatar');
+      setData((prev) => ({ ...prev, avatarUrl: serverUrl }));
+      setShowCropDialog(false);
+      toast({
+        title: 'Avatar Updated',
+        description: 'Your profile picture has been saved.',
+      });
+    } catch (err) {
+      toast({
+        title: 'Upload failed',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      if (avatarPreview) revokeLocalPreview(avatarPreview);
+      setAvatarPreview(null);
+      setAvatarFile(null);
+      setAvatarUploading(false);
+    }
   };
 
   const toggleGenre = (genreId: string) => {
@@ -334,7 +350,8 @@ export default function WelcomeWizard({
                 </Avatar>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                  disabled={avatarUploading}
+                  className="absolute bottom-0 right-0 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                 >
                   <Camera className="w-5 h-5" />
                 </button>
@@ -343,15 +360,24 @@ export default function WelcomeWizard({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp"
                 onChange={handleAvatarUpload}
+                disabled={avatarUploading}
                 className="hidden"
               />
 
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={avatarUploading}
+              >
                 <Upload className="w-4 h-4 mr-2" />
-                Upload Photo
+                {avatarUploading ? 'Uploading…' : data.avatarUrl ? 'Change Photo' : 'Upload Photo'}
               </Button>
+
+              {data.avatarUrl && !avatarUploading && (
+                <p className="text-sm text-green-600 font-medium">✓ Photo saved to your profile</p>
+              )}
 
               <p className="text-sm text-muted-foreground text-center">
                 You can skip this step and add a photo later
@@ -576,12 +602,28 @@ export default function WelcomeWizard({
             </div>
 
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setShowCropDialog(false)}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  if (avatarPreview) revokeLocalPreview(avatarPreview);
+                  setAvatarPreview(null);
+                  setAvatarFile(null);
+                  setShowCropDialog(false);
+                }}
+                disabled={avatarUploading}
+              >
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleCropConfirm}>
-                <Check className="w-4 h-4 mr-2" />
-                Apply
+              <Button className="flex-1" onClick={handleCropConfirm} disabled={avatarUploading}>
+                {avatarUploading ? (
+                  'Uploading…'
+                ) : (
+                  <>
+                    <Check className="w-4 h-4 mr-2" />
+                    Save Photo
+                  </>
+                )}
               </Button>
             </div>
           </div>

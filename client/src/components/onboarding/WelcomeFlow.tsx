@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiRequest } from '@/lib/queryClient';
+import { uploadImageFile, createLocalPreview, revokeLocalPreview } from '@/lib/imageUpload';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -158,6 +159,8 @@ export default function WelcomeFlow({
     socialLinks: {},
   });
   const [confetti, setConfetti] = useState<Array<{ id: number; x: number; color: string }>>([]);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUploading, setAvatarUploading] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -254,15 +257,29 @@ export default function WelcomeFlow({
     }
   }, [currentStep, data]);
 
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setData(prev => ({ ...prev, avatarUrl: reader.result as string }));
-        toast({ title: 'Photo uploaded!' });
-      };
-      reader.readAsDataURL(file);
+    if (!file || avatarUploading) return;
+
+    const localUrl = createLocalPreview(file);
+    setAvatarPreview(localUrl);
+    setAvatarUploading(true);
+
+    try {
+      const serverUrl = await uploadImageFile(file, '/api/auth/avatar', 'avatar');
+      setData(prev => ({ ...prev, avatarUrl: serverUrl }));
+      toast({ title: 'Photo uploaded!' });
+    } catch (err) {
+      toast({
+        title: 'Upload failed',
+        description: err instanceof Error ? err.message : 'Please try again.',
+        variant: 'destructive',
+      });
+      setAvatarPreview(null);
+      setData(prev => ({ ...prev, avatarUrl: null }));
+    } finally {
+      revokeLocalPreview(localUrl);
+      setAvatarUploading(false);
     }
   };
 
@@ -514,36 +531,45 @@ export default function WelcomeFlow({
             <div className="flex flex-col items-center gap-6">
               <div className="relative">
                 <Avatar className="w-32 h-32 border-4 border-border">
-                  <AvatarImage src={data.avatarUrl || undefined} />
+                  <AvatarImage src={avatarPreview || data.avatarUrl || undefined} />
                   <AvatarFallback className="text-4xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
                     {data.displayName?.[0]?.toUpperCase() || <User className="w-12 h-12" />}
                   </AvatarFallback>
                 </Avatar>
-                <label className="absolute bottom-0 right-0 p-2 rounded-full bg-blue-500 text-white hover:bg-blue-600 transition-colors cursor-pointer">
+                <label className={cn(
+                  'absolute bottom-0 right-0 p-2 rounded-full text-white transition-colors cursor-pointer',
+                  avatarUploading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
+                )}>
                   <Camera className="w-5 h-5" />
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp"
                     onChange={handleAvatarUpload}
+                    disabled={avatarUploading}
                     className="hidden"
                   />
                 </label>
               </div>
 
               <label>
-                <Button variant="outline" asChild>
+                <Button variant="outline" disabled={avatarUploading} asChild>
                   <span>
                     <Upload className="w-4 h-4 mr-2" />
-                    Upload Photo
+                    {avatarUploading ? 'Uploading…' : data.avatarUrl ? 'Change Photo' : 'Upload Photo'}
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp"
                       onChange={handleAvatarUpload}
+                      disabled={avatarUploading}
                       className="hidden"
                     />
                   </span>
                 </Button>
               </label>
+
+              {data.avatarUrl && !avatarUploading && (
+                <p className="text-sm text-green-600 font-medium">✓ Photo saved to your profile</p>
+              )}
 
               <p className="text-sm text-muted-foreground text-center">
                 You can skip this and add a photo later

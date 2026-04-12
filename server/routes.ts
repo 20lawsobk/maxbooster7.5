@@ -17,6 +17,7 @@ import { generateSecret as otpGenerateSecret, verifySync, generateURI } from "ot
 import { loginRateLimiter, registerRateLimiter, forgotPasswordRateLimiter } from "./middleware/rateLimiter.js";
 import { criticalEndpointLimiter } from "./middleware/globalRateLimiter.js";
 import { requestIdMiddleware } from "./middleware/requestId.js";
+import { cacheMiddleware, invalidateCacheOnMutation } from "./middleware/apiCache.js";
 
 const authenticator = {
   generateSecret: () => otpGenerateSecret(),
@@ -164,6 +165,11 @@ export async function registerRoutes(
 
   // Apply user attachment middleware to all routes
   app.use(attachUser);
+
+  // Smart per-user API response caching (30 s TTL, ETag, stale-while-revalidate)
+  // GET responses are cached per-user+path+query; any mutation clears that user's cache.
+  app.use(cacheMiddleware({ ttlSeconds: 30, varyByUser: true, varyByQuery: true }));
+  app.use(invalidateCacheOnMutation());
 
   // Critical endpoint rate limiting — tighter per-IP limits for AI, billing, and admin routes
   // which are the most expensive per-request and most attractive DDoS/abuse targets
