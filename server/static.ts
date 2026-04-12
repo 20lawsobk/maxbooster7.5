@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { db } from './db';
-import { listings, storefronts, users } from '@shared/schema';
+import { listings, storefrontDomains, storefronts, users } from '@shared/schema';
 import { and, eq } from 'drizzle-orm';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -72,12 +72,25 @@ async function getStorefrontSlugForCustomDomain(hostname: string): Promise<strin
   const cached = customDomainCache.get(host);
   if (cached !== undefined) return cached;
   try {
+    // Primary: check storefronts.customDomain (set by the custom-domain form flow)
     const [store] = await db
       .select({ slug: storefronts.slug })
       .from(storefronts)
       .where(and(eq(storefronts.customDomain, host), eq(storefronts.isCustomDomainActive, true)))
       .limit(1);
-    const result = store?.slug ?? null;
+    let result: string | null = store?.slug ?? null;
+
+    // Fallback: check storefront_domains table (covers DNS-manager-linked domains)
+    if (!result) {
+      const [domainRow] = await db
+        .select({ slug: storefronts.slug })
+        .from(storefrontDomains)
+        .innerJoin(storefronts, eq(storefrontDomains.storefrontId, storefronts.id))
+        .where(and(eq(storefrontDomains.domain, host), eq(storefrontDomains.status, 'active')))
+        .limit(1);
+      result = domainRow?.slug ?? null;
+    }
+
     customDomainCache.set(host, result);
     return result;
   } catch {

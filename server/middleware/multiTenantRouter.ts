@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "../db.js";
 import { storefrontDomains, storefronts, users } from "@shared/schema";
 import { logger } from "../logger.js";
@@ -16,6 +16,20 @@ function isInternalHost(host: string): boolean {
   return INTERNAL_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
 }
 
+// Static asset file extensions — never need tenant resolution
+const STATIC_EXT_RE = /\.(js|css|woff2?|ttf|eot|otf|ico|png|jpg|jpeg|gif|webp|svg|avif|map|json|txt|xml)$/i;
+
+function isStaticAssetPath(p: string): boolean {
+  return (
+    p.startsWith("/assets/") ||
+    p.startsWith("/favicon") ||
+    p.startsWith("/icons/") ||
+    p.startsWith("/images/") ||
+    p.startsWith("/fonts/") ||
+    STATIC_EXT_RE.test(p)
+  );
+}
+
 export async function multiTenantRouter(
   req: Request,
   res: Response,
@@ -24,7 +38,13 @@ export async function multiTenantRouter(
   try {
     const host = (req.headers.host || "").toLowerCase().split(":")[0];
 
-    if (isInternalHost(host) || req.path.startsWith("/api/") || req.path.startsWith("/_")) {
+    // Always skip: internal hosts, API paths, Vite internals, static assets
+    if (
+      isInternalHost(host) ||
+      req.path.startsWith("/api/") ||
+      req.path.startsWith("/_") ||
+      isStaticAssetPath(req.path)
+    ) {
       return next();
     }
 
@@ -35,18 +55,16 @@ export async function multiTenantRouter(
       })
       .from(storefrontDomains)
       .innerJoin(storefronts, eq(storefrontDomains.storefrontId, storefronts.id))
-      .where(eq(storefrontDomains.domain, host))
+      .where(and(eq(storefrontDomains.domain, host), eq(storefrontDomains.status, "active")))
       .limit(1);
 
-    if (
-      !domainRow ||
-      domainRow.domain.status !== "active" ||
-      !domainRow.storefront.isActive
-    ) {
-      res.status(404).send("Storefront not found.");
-      return;
+    if (!domainRow) {
+      // Domain not registered — let downstream handlers (static.ts fallbacks) try
+      return next();
     }
 
+    // Attach storefront regardless of isActive/isPublic state so the SPA can
+    // render a "coming soon" / "private" view rather than a raw 404.
     const [user] = await db
       .select()
       .from(users)
@@ -54,12 +72,12 @@ export async function multiTenantRouter(
       .limit(1);
 
     (req as any).storefront = domainRow.storefront;
-    (req as any).artist = user;
+    (req as any).artist = user ?? null;
 
     logger.debug(`[multiTenant] Resolved ${host} → storefront ${domainRow.storefront.id}`);
     next();
   } catch (err) {
-    logger.warn("[multiTenant] Error resolving storefront:", err);
+    logger.warn({ err }, "[multiTenant] Error resolving storefront");
     next();
   }
 }
