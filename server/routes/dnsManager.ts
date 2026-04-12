@@ -5,7 +5,7 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || 'maxboostermusic.com';
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
 const NS1 = process.env.NS1 || 'maxbooster.replit.app';
 const NS2 = process.env.NS2 || 'maxbooster.replit.app';

@@ -32,7 +32,6 @@ const customDomainCache = makeCache<string | null>(60_000);
 const metaCache = makeCache<{ title: string; description: string; image: string; url: string } | null>(120_000);
 
 const BASE_DOMAINS = [
-  'maxboostermusic.com',
   'maxbooster.replit.app',
   'maxbooster.app',
 ];

@@ -14,7 +14,7 @@ export const NS = 'maxbooster.replit.app';
 export const NS1 = NS;
 export const NS2 = NS;
 
-export const PLATFORM_DOMAIN = 'maxboostermusic.com';
+export const PLATFORM_DOMAIN = 'maxbooster.replit.app';
 
 // ── Domain pricing (internal reference only — domains are FREE to subscribers) ─
 // Not shown in the UI; kept for platform cost-tracking purposes.

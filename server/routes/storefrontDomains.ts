@@ -159,7 +159,7 @@ router.get("/registry/:domain", async (req, res) => {
       domain: row.domain,
       status: row.status,
       claimedAt: row.claimedAt,
-      managedBy: "Max Booster DNS (maxboostermusic.com)",
+      managedBy: "Max Booster DNS (maxbooster.replit.app)",
     });
   } catch (err) {
     logger.warn("[domains] registry lookup error:", err);
@@ -273,7 +273,7 @@ router.get("/search", async (req, res) => {
       return true;
     }
 
-    const PLATFORM_DOMAIN_NAME = "maxboostermusic.com";
+    const PLATFORM_DOMAIN_NAME = "maxbooster.replit.app";
     const platformFqdn = `${raw}.${PLATFORM_DOMAIN_NAME}`;
 
     // Check platform subdomain availability in DB

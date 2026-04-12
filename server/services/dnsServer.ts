@@ -4,10 +4,10 @@
  * Configured exactly like a professional DNS provider (Cloudflare, Route 53):
  *
  *   • Listens on UDP :53 + TCP :53 (configurable via DNS_PORT)
- *   • Authoritative for BASE_DOMAIN (maxboostermusic.com) AND any custom domain
+ *   • Authoritative for BASE_DOMAIN (maxbooster.replit.app) AND any custom domain
  *     that a user has claimed/pointed here (stored in storefrontDomains table)
  *   • Single unified nameserver: maxbooster.replit.app (the platform itself)
- *   • Wildcard A records: *.maxboostermusic.com → DNS_SERVER_IP
+ *   • Wildcard A records: *.maxbooster.replit.app → DNS_SERVER_IP
  *   • Custom domains: resolved to DNS_SERVER_IP once user points NS here
  *   • SOA with proper refresh/retry/expire/minimum per RFC 1912 best-practices
  *   • Non-authoritative queries forwarded upstream (8.8.8.8)
@@ -34,7 +34,7 @@ const {
   UDPClient,
 } = dns2 as any;
 
-const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'maxboostermusic.com').toLowerCase();
+const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'maxbooster.replit.app').toLowerCase();
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
 const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
@@ -130,7 +130,7 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
   const qtype: number = question.type;
 
   // Determine the zone root for SOA/NS records
-  // For *.maxboostermusic.com → zone is BASE_DOMAIN
+  // For *.maxbooster.replit.app → zone is BASE_DOMAIN
   // For a claimed custom domain (e.g. mybeats.com) → zone is the domain itself
   const isBaseDomainZone = name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`);
   const auth = await isAuthoritative(name);

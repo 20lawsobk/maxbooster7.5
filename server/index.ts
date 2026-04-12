@@ -1087,7 +1087,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 AUTONOMOUS SYSTEMS READY');
 
-        // Built-in authoritative DNS server for *.maxboostermusic.com
+        // Built-in authoritative DNS server for *.maxbooster.replit.app
         import('./services/dnsServer.js').then(({ startDNSServer }) => {
           startDNSServer().catch((e: any) => logger.warn('[DNS] Start error:', e?.message));
         }).catch(() => {});
