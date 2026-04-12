@@ -393,4 +393,175 @@ router.post('/zones/:zoneId/records/batch', async (req, res) => {
   }
 });
 
+// ── Storefront URL linking ─────────────────────────────────────────────────────
+
+/**
+ * GET /api/dns-manager/zones/:zoneId/storefront-link
+ * Return the storefront currently linked to this zone as its custom URL.
+ */
+router.get('/zones/:zoneId/storefront-link', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
+
+    const zoneResult = await pool.query(
+      'SELECT id, domain, is_verified, status FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = zoneResult.rows[0];
+
+    const linkResult = await pool.query(
+      `SELECT sd.storefront_id, sd.status, s.name, s.slug
+       FROM storefront_domains sd
+       JOIN storefronts s ON s.id = sd.storefront_id
+       WHERE sd.domain = $1 AND sd.type = 'custom_domain' AND s.user_id = $2
+       LIMIT 1`,
+      [zone.domain, userId]
+    );
+
+    const link = linkResult.rows[0] ?? null;
+    return res.json({
+      zone: { id: zone.id, domain: zone.domain, isVerified: zone.is_verified, status: zone.status },
+      linked: link
+        ? { storefrontId: link.storefront_id, storefrontName: link.name, storefrontSlug: link.slug, status: link.status }
+        : null,
+    });
+  } catch (err: any) {
+    logger.warn({ err }, '[DNS Manager] storefront-link GET error');
+    return res.status(500).json({ error: 'Failed to fetch storefront link' });
+  }
+});
+
+/**
+ * POST /api/dns-manager/zones/:zoneId/use-as-storefront
+ * Body: { storefrontId: string }
+ *
+ * Sets the zone's domain as the custom URL for the given storefront.
+ * Requires the zone to be verified (is_verified = true).
+ */
+router.post('/zones/:zoneId/use-as-storefront', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
+
+    const { storefrontId } = req.body;
+    if (!storefrontId || typeof storefrontId !== 'string') {
+      return res.status(400).json({ error: 'storefrontId is required' });
+    }
+
+    // Verify zone belongs to user
+    const zoneResult = await pool.query(
+      'SELECT id, domain, is_verified, status FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = zoneResult.rows[0];
+
+    if (!zone.is_verified) {
+      return res.status(422).json({ error: 'Domain must be verified before it can be used as a storefront URL. Add the verification TXT record and click Check NS first.' });
+    }
+
+    // Verify storefront belongs to user
+    const sfResult = await pool.query(
+      'SELECT id, name, slug FROM storefronts WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [storefrontId, userId]
+    );
+    if (sfResult.rows.length === 0) return res.status(404).json({ error: 'Storefront not found' });
+    const sf = sfResult.rows[0];
+
+    // Clear any existing custom_domain links for this storefront (one at a time)
+    await pool.query(
+      `DELETE FROM storefront_domains WHERE storefront_id = $1 AND type = 'custom_domain'`,
+      [storefrontId]
+    );
+
+    // Clear any existing link for this domain (in case it was linked to a different storefront)
+    await pool.query(
+      `DELETE FROM storefront_domains WHERE domain = $1`,
+      [zone.domain]
+    );
+
+    // Insert new link
+    await pool.query(
+      `INSERT INTO storefront_domains (storefront_id, domain, type, status, is_primary, dns_zone_id)
+       VALUES ($1, $2, 'custom_domain', 'active', true, $3)`,
+      [storefrontId, zone.domain, zone.id]
+    );
+
+    // Upsert storefront_hosts so the edge router picks it up
+    await pool.query(
+      `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
+       VALUES ($1, $2, 'pending', NOW(), NOW())
+       ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
+      [zone.domain, storefrontId]
+    );
+
+    // Update the storefront's customDomain field
+    await pool.query(
+      `UPDATE storefronts SET custom_domain = $1, is_custom_domain_active = true, updated_at = NOW() WHERE id = $2`,
+      [zone.domain, storefrontId]
+    );
+
+    logger.info(`[DNS Manager] Zone ${zone.domain} linked as storefront URL for ${storefrontId}`);
+    return res.json({
+      success: true,
+      domain: zone.domain,
+      url: `https://${zone.domain}`,
+      storefrontId,
+      storefrontName: sf.name,
+      storefrontSlug: sf.slug,
+    });
+  } catch (err: any) {
+    logger.warn({ err }, '[DNS Manager] use-as-storefront POST error');
+    return res.status(500).json({ error: 'Failed to link domain as storefront URL' });
+  }
+});
+
+/**
+ * DELETE /api/dns-manager/zones/:zoneId/use-as-storefront
+ * Remove the link between this zone's domain and any storefront.
+ */
+router.delete('/zones/:zoneId/use-as-storefront', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
+
+    const zoneResult = await pool.query(
+      'SELECT id, domain FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = zoneResult.rows[0];
+
+    // Find the linked storefront so we can clear its customDomain field
+    const linkResult = await pool.query(
+      `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
+      [zone.domain]
+    );
+    const linkedStorefrontId = linkResult.rows[0]?.storefront_id ?? null;
+
+    // Remove storefront_domains entry
+    await pool.query(`DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`, [zone.domain]);
+
+    // Remove storefront_hosts entry
+    await pool.query(`DELETE FROM storefront_hosts WHERE host = $1`, [zone.domain]);
+
+    // Clear customDomain on the storefront if it matches
+    if (linkedStorefrontId) {
+      await pool.query(
+        `UPDATE storefronts SET custom_domain = NULL, is_custom_domain_active = false, updated_at = NOW()
+         WHERE id = $1 AND custom_domain = $2`,
+        [linkedStorefrontId, zone.domain]
+      );
+    }
+
+    logger.info(`[DNS Manager] Storefront URL link removed for zone ${zone.domain}`);
+    return res.json({ success: true });
+  } catch (err: any) {
+    logger.warn({ err }, '[DNS Manager] use-as-storefront DELETE error');
+    return res.status(500).json({ error: 'Failed to unlink storefront URL' });
+  }
+});
+
 export default router;

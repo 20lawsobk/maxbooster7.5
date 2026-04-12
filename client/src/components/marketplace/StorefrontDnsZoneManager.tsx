@@ -62,6 +62,9 @@ import {
   ExternalLink,
   Lock,
   XCircle,
+  Link2,
+  Link2Off,
+  ShoppingBag,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -268,7 +271,7 @@ function SearchResultRow({
 
 // ── Sub-component: DNS Zone Editor ────────────────────────────────────────────
 
-function DnsZoneEditor({ zone, onBack }: { zone: DnsZone; onBack: () => void }) {
+function DnsZoneEditor({ zone, onBack, storefrontId }: { zone: DnsZone; onBack: () => void; storefrontId?: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -281,6 +284,44 @@ function DnsZoneEditor({ zone, onBack }: { zone: DnsZone; onBack: () => void }) 
     queryFn:  () => apiRequest('GET', `/api/dns-manager/zones/${zone.id}/records`).then(r => r.json()),
   });
   const records: DnsRecord[] = recordsData?.records ?? [];
+
+  // ── Storefront URL link ──────────────────────────────────────────────────
+  const { data: linkData, refetch: refetchLink } = useQuery({
+    queryKey: ['/api/dns-manager/zones', zone.id, 'storefront-link'],
+    queryFn:  () => apiRequest('GET', `/api/dns-manager/zones/${zone.id}/storefront-link`).then(r => r.json()),
+  });
+  const currentLink: { storefrontId: string; storefrontName: string; storefrontSlug: string; status: string } | null =
+    linkData?.linked ?? null;
+
+  const linkStorefront = useMutation({
+    mutationFn: () =>
+      apiRequest('POST', `/api/dns-manager/zones/${zone.id}/use-as-storefront`, { storefrontId }).then(r => r.json()),
+    onSuccess: (data) => {
+      refetchLink();
+      qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      toast({ title: 'Storefront URL set!', description: `${zone.domain} is now your storefront URL.` });
+    },
+    onError: async (err: any) => {
+      let msg = 'Failed to link domain';
+      try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    },
+  });
+
+  const unlinkStorefront = useMutation({
+    mutationFn: () =>
+      apiRequest('DELETE', `/api/dns-manager/zones/${zone.id}/use-as-storefront`).then(r => r.json()),
+    onSuccess: () => {
+      refetchLink();
+      qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      toast({ title: 'Storefront URL removed', description: `${zone.domain} is no longer your storefront URL.` });
+    },
+    onError: async (err: any) => {
+      let msg = 'Failed to unlink domain';
+      try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    },
+  });
 
   const verifyZone = useMutation({
     mutationFn: () => apiRequest('POST', `/api/dns-manager/zones/${zone.id}/verify`).then(r => r.json()),
@@ -371,8 +412,14 @@ function DnsZoneEditor({ zone, onBack }: { zone: DnsZone; onBack: () => void }) 
 
       <Tabs defaultValue="records">
         <TabsList className="h-8">
-          <TabsTrigger value="records" className="text-xs">DNS Records</TabsTrigger>
-          <TabsTrigger value="setup"   className="text-xs">Setup Guide</TabsTrigger>
+          <TabsTrigger value="records"   className="text-xs">DNS Records</TabsTrigger>
+          <TabsTrigger value="setup"     className="text-xs">Setup Guide</TabsTrigger>
+          {storefrontId && (
+            <TabsTrigger value="storefront" className="text-xs gap-1">
+              <ShoppingBag className="w-3 h-3" />Storefront URL
+              {currentLink && <span className="ml-1 w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />}
+            </TabsTrigger>
+          )}
         </TabsList>
 
         {/* DNS Records tab */}
@@ -510,6 +557,103 @@ function DnsZoneEditor({ zone, onBack }: { zone: DnsZone; onBack: () => void }) 
             </div>
           </div>
         </TabsContent>
+        {/* Storefront URL tab */}
+        {storefrontId && (
+          <TabsContent value="storefront" className="mt-3 space-y-4">
+            {/* Verification gate */}
+            {!zone.isVerified ? (
+              <div className="border border-amber-300 dark:border-amber-800 rounded-lg p-4 bg-amber-50/40 dark:bg-amber-950/20 space-y-3">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Domain not verified yet</p>
+                    <p className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">
+                      You must verify ownership of <span className="font-mono">{zone.domain}</span> before it can be used as your storefront URL.
+                      Go to the <strong>Setup Guide</strong> tab to add the verification TXT record and check it.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : currentLink ? (
+              /* Already linked */
+              <div className="border border-green-300 dark:border-green-800 rounded-lg p-4 bg-green-50/30 dark:bg-green-950/20 space-y-3">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-green-800 dark:text-green-300">Active storefront URL</p>
+                    <p className="text-xs text-green-700/80 dark:text-green-400/70 mt-0.5">
+                      <span className="font-mono">{zone.domain}</span> is set as the public URL for{' '}
+                      <strong>{currentLink.storefrontName}</strong>.
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <a
+                        href={`https://${zone.domain}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-green-700 dark:text-green-400 hover:underline font-mono"
+                      >
+                        https://{zone.domain} <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div className="pt-1 border-t border-green-200 dark:border-green-800 flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                    onClick={() => { if (confirm(`Remove ${zone.domain} as your storefront URL?`)) unlinkStorefront.mutate(); }}
+                    disabled={unlinkStorefront.isPending}
+                  >
+                    {unlinkStorefront.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Link2Off className="w-3 h-3" />}
+                    Remove URL link
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Not yet linked */
+              <div className="border rounded-lg p-4 space-y-4">
+                <div className="flex items-start gap-3">
+                  <Link2 className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold">Use as storefront URL</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Set <span className="font-mono">{zone.domain}</span> as the public address customers use to reach your storefront.
+                      This replaces the default <span className="font-mono">/storefront/…</span> URL.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-muted/50 rounded-md px-3 py-2 flex items-center gap-2 text-xs">
+                  <Globe className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="font-mono text-foreground">{zone.domain}</span>
+                  <span className="text-muted-foreground ml-auto">→ your storefront</span>
+                </div>
+
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => linkStorefront.mutate()}
+                    disabled={linkStorefront.isPending}
+                  >
+                    {linkStorefront.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Link2 className="w-3 h-3" />}
+                    Use as storefront URL
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Info callout */}
+            <div className="flex items-start gap-2 text-xs text-muted-foreground p-3 rounded-lg bg-muted/40 border">
+              <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+              <span>
+                Your domain must point to Max Booster's nameservers for the storefront to load correctly.
+                DNS changes can take up to 48 hours to propagate globally.
+              </span>
+            </div>
+          </TabsContent>
+        )}
       </Tabs>
 
       {/* Add / Edit Record Dialog */}
@@ -949,7 +1093,7 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
           </div>
 
           {selectedZone ? (
-            <DnsZoneEditor zone={selectedZone} onBack={() => setSelectedZone(null)} />
+            <DnsZoneEditor zone={selectedZone} onBack={() => setSelectedZone(null)} storefrontId={storefrontId} />
           ) : (
             <>
               <div className="flex items-center justify-between">
