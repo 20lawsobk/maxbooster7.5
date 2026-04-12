@@ -116,13 +116,6 @@ function makeA(name: string, ip: string) {
   };
 }
 
-/** CNAME record — used to point storefront subdomains at the Replit app */
-function makeCNAME(name: string, target: string) {
-  return {
-    name, type: Packet.TYPE.CNAME, class: Packet.CLASS.IN, ttl: TTL_A, domain: target,
-  };
-}
-
 // ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleRequest(request: any, send: (response: any) => void): Promise<void> {
@@ -158,35 +151,13 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
   const zone = isBaseDomainZone ? BASE_DOMAIN : name;
   response.header.aa = 1; // we are authoritative
 
-  // Storefront subdomains (*.maxboostermusic.com but NOT the root) must resolve
-  // to the Replit web app, not the DNS VM. Return a CNAME so the browser follows
-  // it to maxbooster.replit.app and Replit routes the Host header correctly.
-  const isStorefrontSubdomain = name !== BASE_DOMAIN && name.endsWith(`.${BASE_DOMAIN}`);
-
   switch (qtype) {
     case Packet.TYPE.A:
-      if (isStorefrontSubdomain) {
-        // CNAME → Replit app (browser follows chain to get the real IP)
-        response.answers.push(makeCNAME(name, PLATFORM_NS));
-      } else {
-        response.answers.push(makeA(name, DNS_SERVER_IP));
-      }
-      break;
-
-    case Packet.TYPE.CNAME:
-      if (isStorefrontSubdomain) {
-        response.answers.push(makeCNAME(name, PLATFORM_NS));
-      } else {
-        response.authorities.push(makeSOA(zone));
-      }
+      response.answers.push(makeA(name, DNS_SERVER_IP));
       break;
 
     case Packet.TYPE.ANY:
-      if (isStorefrontSubdomain) {
-        response.answers.push(makeCNAME(name, PLATFORM_NS));
-      } else {
-        response.answers.push(makeA(name, DNS_SERVER_IP));
-      }
+      response.answers.push(makeA(name, DNS_SERVER_IP));
       response.answers.push(makeSOA(zone));
       makeNSRecords(zone).forEach(r => response.answers.push(r));
       break;
