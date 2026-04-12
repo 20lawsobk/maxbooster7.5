@@ -1968,7 +1968,10 @@ export default function StorefrontBuilder() {
                   </TabsContent>
 
                   <TabsContent value="dns" className="space-y-4 mt-4">
-                    <StorefrontDnsZoneManager storefrontId={selectedStorefront.id} />
+                    <StorefrontDnsZoneManager
+                      storefrontId={selectedStorefront.id}
+                      onCustomizeStorefront={() => setActiveTab('overview')}
+                    />
                   </TabsContent>
                 </Tabs>
               </CardContent>

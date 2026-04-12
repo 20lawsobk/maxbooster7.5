@@ -271,7 +271,7 @@ function SearchResultRow({
 
 // ── Sub-component: DNS Zone Editor ────────────────────────────────────────────
 
-function DnsZoneEditor({ zone, onBack, storefrontId }: { zone: DnsZone; onBack: () => void; storefrontId?: string }) {
+function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { zone: DnsZone; onBack: () => void; storefrontId?: string; onCustomizeStorefront?: () => void }) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -597,11 +597,22 @@ function DnsZoneEditor({ zone, onBack, storefrontId }: { zone: DnsZone; onBack: 
                     </div>
                   </div>
                 </div>
-                <div className="pt-1 border-t border-green-200 dark:border-green-800 flex justify-end">
+                <div className="pt-1 border-t border-green-200 dark:border-green-800 flex items-center justify-between gap-2">
+                  {onCustomizeStorefront && (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="h-7 text-xs gap-1.5"
+                      onClick={onCustomizeStorefront}
+                    >
+                      <ShoppingBag className="w-3 h-3" />
+                      Customize Storefront
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="h-7 text-xs gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                    className="h-7 text-xs gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 ml-auto"
                     onClick={() => { if (confirm(`Remove ${zone.domain} as your storefront URL?`)) unlinkStorefront.mutate(); }}
                     disabled={unlinkStorefront.isPending}
                   >
@@ -751,9 +762,10 @@ function DnsZoneEditor({ zone, onBack, storefrontId }: { zone: DnsZone; onBack: 
 
 interface Props {
   storefrontId?: string;
+  onCustomizeStorefront?: () => void;
 }
 
-export function StorefrontDnsZoneManager({ storefrontId }: Props) {
+export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }: Props) {
   const { toast } = useToast();
   const qc = useQueryClient();
 
@@ -1093,7 +1105,7 @@ export function StorefrontDnsZoneManager({ storefrontId }: Props) {
           </div>
 
           {selectedZone ? (
-            <DnsZoneEditor zone={selectedZone} onBack={() => setSelectedZone(null)} storefrontId={storefrontId} />
+            <DnsZoneEditor zone={selectedZone} onBack={() => setSelectedZone(null)} storefrontId={storefrontId} onCustomizeStorefront={onCustomizeStorefront} />
           ) : (
             <>
               <div className="flex items-center justify-between">
