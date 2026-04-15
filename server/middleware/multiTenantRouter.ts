@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "../db.js";
-import { storefrontDomains, storefronts, users } from "@shared/schema";
+import { storefrontHosts, storefronts, users } from "@shared/schema";
 import { logger } from "../logger.js";
 
 const INTERNAL_HOSTS = [
@@ -48,17 +48,20 @@ export async function multiTenantRouter(
       return next();
     }
 
-    const [domainRow] = await db
+    // storefront_hosts is the canonical routing projection: every activated custom
+    // domain (root + www variant) and platform subdomain is written here by all
+    // three activation paths (storefrontDnsService, dnsManager, domain.controller).
+    const [hostRow] = await db
       .select({
-        domain: storefrontDomains,
+        storefrontId: storefrontHosts.storefrontId,
         storefront: storefronts,
       })
-      .from(storefrontDomains)
-      .innerJoin(storefronts, eq(storefrontDomains.storefrontId, storefronts.id))
-      .where(and(eq(storefrontDomains.domain, host), eq(storefrontDomains.status, "active")))
+      .from(storefrontHosts)
+      .innerJoin(storefronts, eq(storefrontHosts.storefrontId, storefronts.id))
+      .where(eq(storefrontHosts.host, host))
       .limit(1);
 
-    if (!domainRow) {
+    if (!hostRow) {
       // Domain not registered — let downstream handlers (static.ts fallbacks) try
       return next();
     }
@@ -68,13 +71,13 @@ export async function multiTenantRouter(
     const [user] = await db
       .select()
       .from(users)
-      .where(eq(users.id, domainRow.storefront.userId))
+      .where(eq(users.id, hostRow.storefront.userId))
       .limit(1);
 
-    (req as any).storefront = domainRow.storefront;
+    (req as any).storefront = hostRow.storefront;
     (req as any).artist = user ?? null;
 
-    logger.debug(`[multiTenant] Resolved ${host} → storefront ${domainRow.storefront.id}`);
+    logger.debug(`[multiTenant] Resolved ${host} → storefront ${hostRow.storefront.id}`);
     next();
   } catch (err) {
     logger.warn({ err }, "[multiTenant] Error resolving storefront");

@@ -360,6 +360,7 @@ export class StorefrontService {
 
       return {
         ...storefront,
+        publicUrl: this.getStorefrontUrl(storefront),
         user: storefrontUser,
         listings: userListings,
         membershipTiers: tiers,
@@ -384,7 +385,10 @@ export class StorefrontService {
         },
       });
 
-      return userStorefronts;
+      return userStorefronts.map(sf => ({
+        ...sf,
+        publicUrl: this.getStorefrontUrl(sf),
+      }));
     } catch (error: unknown) {
       logger.warn({ err: error }, 'Error fetching user storefronts:');
       throw error;
@@ -1203,6 +1207,7 @@ export class StorefrontService {
 
       return {
         ...storefront,
+        publicUrl: this.getStorefrontUrl(storefront),
         user: storefrontUser,
         listings: userListings,
         membershipTiers: tiers,
@@ -1215,15 +1220,26 @@ export class StorefrontService {
   }
 
   /**
-   * Get the public URL for a storefront
+   * Get the public URL for a storefront.
+   * Priority: custom domain (when active) → managed subdomain → slug path.
    */
-  getStorefrontUrl(storefront: { subdomain?: string | null; slug: string; isSubdomainActive?: boolean }): string {
+  getStorefrontUrl(storefront: {
+    subdomain?: string | null;
+    slug: string;
+    isSubdomainActive?: boolean;
+    customDomain?: string | null;
+    isCustomDomainActive?: boolean;
+  }): string {
     const baseDomain = process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN || 'maxbooster.app';
-    
+
+    if (storefront.customDomain && storefront.isCustomDomainActive) {
+      return `https://${storefront.customDomain}`;
+    }
+
     if (storefront.subdomain && storefront.isSubdomainActive) {
       return `https://${storefront.subdomain}.${baseDomain}`;
     }
-    
+
     return `https://${baseDomain}/store/${storefront.slug}`;
   }
 }

@@ -258,19 +258,21 @@ async function activateStorefrontDomain(
       );
     }
 
-    // Write storefront_hosts projection row
+    // Write storefront_hosts projection row + update storefronts.customDomain
     const { rows } = await client.query<{ storefront_id: string }>(
       `SELECT storefront_id FROM storefront_domains WHERE id = $1`,
       [storefrontDomainId],
     );
     if (rows[0]) {
+      const storefrontId = rows[0].storefront_id;
+
       await client.query(
         `INSERT INTO storefront_hosts (host, storefront_id, cert_status)
          VALUES ($1, $2, 'pending')
          ON CONFLICT (host) DO UPDATE
            SET storefront_id = EXCLUDED.storefront_id,
                updated_at    = now()`,
-        [domain, rows[0].storefront_id],
+        [domain, storefrontId],
       );
 
       // Also add 'www.' variant if it's a root domain (no subdomain)
@@ -281,9 +283,18 @@ async function activateStorefrontDomain(
            ON CONFLICT (host) DO UPDATE
              SET storefront_id = EXCLUDED.storefront_id,
                  updated_at    = now()`,
-          [`www.${domain}`, rows[0].storefront_id],
+          [`www.${domain}`, storefrontId],
         );
       }
+
+      // Sync the storefront's customDomain field so getStorefrontUrl returns
+      // the custom domain as the canonical public URL immediately after activation.
+      await client.query(
+        `UPDATE storefronts
+         SET custom_domain = $1, is_custom_domain_active = true, updated_at = now()
+         WHERE id = $2`,
+        [domain, storefrontId],
+      );
     }
 
     await client.query('COMMIT');
@@ -332,15 +343,15 @@ export async function detachDomainFromStorefront(storefrontDomainId: string): Pr
   try {
     await client.query('BEGIN');
 
-    const { rows } = await client.query<{ domain: string; dns_zone_id: string | null }>(
-      `SELECT domain, dns_zone_id FROM storefront_domains WHERE id = $1`,
+    const { rows } = await client.query<{ domain: string; dns_zone_id: string | null; storefront_id: string }>(
+      `SELECT domain, dns_zone_id, storefront_id FROM storefront_domains WHERE id = $1`,
       [storefrontDomainId],
     );
     if (!rows[0]) {
       await client.query('ROLLBACK');
       return;
     }
-    const { domain, dns_zone_id } = rows[0];
+    const { domain, dns_zone_id, storefront_id } = rows[0];
 
     await client.query(`DELETE FROM storefront_domains WHERE id = $1`, [storefrontDomainId]);
     await client.query(`DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`, [domain, `www.${domain}`]);
@@ -348,6 +359,14 @@ export async function detachDomainFromStorefront(storefrontDomainId: string): Pr
     if (dns_zone_id) {
       await client.query(`DELETE FROM dns_zones WHERE id = $1`, [dns_zone_id]);
     }
+
+    // Clear customDomain on the storefront so getStorefrontUrl falls back correctly
+    await client.query(
+      `UPDATE storefronts
+       SET custom_domain = NULL, is_custom_domain_active = false, updated_at = now()
+       WHERE id = $1 AND custom_domain = $2`,
+      [storefront_id, domain],
+    );
 
     await client.query('COMMIT');
     logger.info({ storefrontDomainId, domain }, '[storefrontDns] domain detached');

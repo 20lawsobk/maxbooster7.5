@@ -489,13 +489,24 @@ router.post('/zones/:zoneId/use-as-storefront', async (req, res) => {
       [storefrontId, zone.domain, zone.id]
     );
 
-    // Upsert storefront_hosts so the edge router picks it up
+    // Upsert storefront_hosts so the edge router picks it up (root domain)
     await pool.query(
       `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
        VALUES ($1, $2, 'pending', NOW(), NOW())
        ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
       [zone.domain, storefrontId]
     );
+
+    // Also add www. variant for root domains (no subdomain prefix)
+    const isRootDomain = !zone.domain.startsWith('www.') && zone.domain.split('.').length === 2;
+    if (isRootDomain) {
+      await pool.query(
+        `INSERT INTO storefront_hosts (host, storefront_id, cert_status, created_at, updated_at)
+         VALUES ($1, $2, 'pending', NOW(), NOW())
+         ON CONFLICT (host) DO UPDATE SET storefront_id = EXCLUDED.storefront_id, updated_at = NOW()`,
+        [`www.${zone.domain}`, storefrontId]
+      );
+    }
 
     // Update the storefront's customDomain field
     await pool.query(
@@ -544,8 +555,8 @@ router.delete('/zones/:zoneId/use-as-storefront', async (req, res) => {
     // Remove storefront_domains entry
     await pool.query(`DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`, [zone.domain]);
 
-    // Remove storefront_hosts entry
-    await pool.query(`DELETE FROM storefront_hosts WHERE host = $1`, [zone.domain]);
+    // Remove storefront_hosts entries (root domain and www variant)
+    await pool.query(`DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`, [zone.domain, `www.${zone.domain}`]);
 
     // Clear customDomain on the storefront if it matches
     if (linkedStorefrontId) {
