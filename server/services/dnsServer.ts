@@ -23,9 +23,9 @@
  */
 
 import dns2 from 'dns2';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { db } from '../db.js';
-import { storefrontDomains } from '@shared/schema';
+import { storefrontDomains, dnsZoneRecords, dnsZones } from '@shared/schema';
 import { logger } from '../logger.js';
 
 const {
@@ -77,6 +77,73 @@ async function isAuthoritative(name: string): Promise<boolean> {
     await refreshCustomDomainCache();
   }
   return customDomainCache.has(n);
+}
+
+// ─── Zone-record DB lookup ────────────────────────────────────────────────────
+
+/**
+ * resolveFromZoneRecords
+ *
+ * Looks up actual DNS records stored in dns_zone_records for a given
+ * query name + type.  Called for TXT, MX, CNAME, AAAA queries so the
+ * built-in DNS server can serve records that artists have configured
+ * (e.g. the verification TXT written by storefrontDnsService).
+ *
+ * Name mapping:
+ *   query `example.com`           → zone domain=`example.com`, name=`@`
+ *   query `_maxbooster.example.com` → zone domain=`example.com`, name=`_maxbooster`
+ *   query `www.example.com`       → zone domain=`example.com`, name=`www`
+ */
+async function resolveFromZoneRecords(
+  qname: string,
+  qtype: string,
+): Promise<Array<{ name: string; value: string; ttl: number; priority?: number }>> {
+  try {
+    // Determine the zone domain and relative name
+    const rootDomain = extractZoneDomain(qname);
+    const namePart = qname === rootDomain ? '@' : qname.slice(0, -(rootDomain.length + 1));
+
+    const rows = await db
+      .select({
+        name:     dnsZoneRecords.name,
+        value:    dnsZoneRecords.value,
+        ttl:      dnsZoneRecords.ttl,
+        priority: dnsZoneRecords.priority,
+      })
+      .from(dnsZoneRecords)
+      .innerJoin(dnsZones, eq(dnsZoneRecords.zoneId, dnsZones.id))
+      .where(
+        and(
+          eq(dnsZones.domain, rootDomain),
+          eq(dnsZoneRecords.type, qtype),
+          eq(dnsZoneRecords.name, namePart),
+        ),
+      );
+
+    return rows.map(r => ({
+      name:     qname,
+      value:    r.value,
+      ttl:      r.ttl ?? 300,
+      priority: r.priority ?? undefined,
+    }));
+  } catch (err) {
+    logger.warn({ err, qname, qtype }, '[DNS] resolveFromZoneRecords error');
+    return [];
+  }
+}
+
+/**
+ * Extract the zone domain for a query name.
+ * Walks from the longest possible zone match (the name itself) up to the root.
+ * For *.maxbooster.replit.app names we always return BASE_DOMAIN.
+ * For custom domains we return the root domain (last two labels).
+ */
+function extractZoneDomain(name: string): string {
+  if (name === BASE_DOMAIN || name.endsWith(`.${BASE_DOMAIN}`)) return BASE_DOMAIN;
+  // For custom domains: extract root domain (last two labels, e.g. example.com)
+  const parts = name.split('.');
+  if (parts.length >= 2) return parts.slice(-2).join('.');
+  return name;
 }
 
 // ─── DNS record builders ──────────────────────────────────────────────────────
@@ -170,9 +237,77 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
       makeNSRecords(zone).forEach(r => response.answers.push(r));
       break;
 
-    case Packet.TYPE.AAAA:
-    case Packet.TYPE.MX:
-    case Packet.TYPE.TXT:
+    case Packet.TYPE.TXT: {
+      const txtRecords = await resolveFromZoneRecords(name, 'TXT');
+      if (txtRecords.length > 0) {
+        for (const r of txtRecords) {
+          response.answers.push({
+            name: r.name,
+            type: Packet.TYPE.TXT,
+            class: Packet.CLASS.IN,
+            ttl: r.ttl,
+            data: r.value,
+          });
+        }
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
+    case Packet.TYPE.MX: {
+      const mxRecords = await resolveFromZoneRecords(name, 'MX');
+      if (mxRecords.length > 0) {
+        for (const r of mxRecords) {
+          response.answers.push({
+            name: r.name,
+            type: Packet.TYPE.MX,
+            class: Packet.CLASS.IN,
+            ttl: r.ttl,
+            priority: r.priority ?? 10,
+            exchange: r.value,
+          });
+        }
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
+    case Packet.TYPE.CNAME: {
+      const cnameRecords = await resolveFromZoneRecords(name, 'CNAME');
+      if (cnameRecords.length > 0) {
+        response.answers.push({
+          name: cnameRecords[0].name,
+          type: Packet.TYPE.CNAME,
+          class: Packet.CLASS.IN,
+          ttl: cnameRecords[0].ttl,
+          domain: cnameRecords[0].value,
+        });
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
+    case Packet.TYPE.AAAA: {
+      const aaaaRecords = await resolveFromZoneRecords(name, 'AAAA');
+      if (aaaaRecords.length > 0) {
+        for (const r of aaaaRecords) {
+          response.answers.push({
+            name: r.name,
+            type: Packet.TYPE.AAAA,
+            class: Packet.CLASS.IN,
+            ttl: r.ttl,
+            address: r.value,
+          });
+        }
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
     default:
       // NOERROR with empty answers — SOA in authority section (RFC 2308)
       response.authorities.push(makeSOA(zone));

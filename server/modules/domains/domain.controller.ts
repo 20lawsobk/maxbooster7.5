@@ -3,7 +3,7 @@ import dns from "node:dns/promises";
 import { Request, Response } from "express";
 import { eq, and } from "drizzle-orm";
 import { db } from "../../db.js";
-import { storefrontDomains, storefronts } from "@shared/schema";
+import { storefrontDomains, storefronts, storefrontHosts } from "@shared/schema";
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
@@ -195,6 +195,32 @@ export async function verifyCustomDomain(req: Request, res: Response) {
       .set({ status: "active", updatedAt: new Date() })
       .where(eq(storefrontDomains.id, record.id));
 
+    // Write storefront_hosts so edge routing + lookupStorefrontByHost pick this up
+    await db
+      .insert(storefrontHosts)
+      .values({ host: domain, storefrontId: record.storefrontId, certStatus: "pending" })
+      .onConflictDoUpdate({
+        target: storefrontHosts.host,
+        set: { storefrontId: record.storefrontId, updatedAt: new Date() },
+      });
+
+    // Also add www variant for root domains
+    if (!domain.startsWith("www.") && domain.split(".").length === 2) {
+      await db
+        .insert(storefrontHosts)
+        .values({ host: `www.${domain}`, storefrontId: record.storefrontId, certStatus: "pending" })
+        .onConflictDoUpdate({
+          target: storefrontHosts.host,
+          set: { storefrontId: record.storefrontId, updatedAt: new Date() },
+        });
+    }
+
+    // Update storefront's customDomain tracking fields
+    await db
+      .update(storefronts)
+      .set({ customDomain: domain, isCustomDomainActive: true, updatedAt: new Date() })
+      .where(eq(storefronts.id, record.storefrontId));
+
     logger.info(`[domains] Custom domain verified and activated: ${domain}`);
     return res.json({ ok: true, verified: true, domain });
   } catch (err) {
@@ -255,6 +281,12 @@ export async function deleteDomain(req: Request, res: Response) {
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     await db.delete(storefrontDomains).where(eq(storefrontDomains.id, domainId));
+
+    // Clean up storefront_hosts so edge routing stops serving this domain
+    await db.delete(storefrontHosts).where(eq(storefrontHosts.host, record.domain));
+    if (!record.domain.startsWith("www.") && record.domain.split(".").length === 2) {
+      await db.delete(storefrontHosts).where(eq(storefrontHosts.host, `www.${record.domain}`));
+    }
 
     return res.json({ ok: true });
   } catch (err) {
