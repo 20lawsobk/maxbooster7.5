@@ -11,7 +11,7 @@ if (!stripeKey || !stripeKey.startsWith('sk_')) {
 
 const stripe =
   stripeKey && stripeKey.startsWith('sk_')
-    ? new Stripe(stripeKey, { apiVersion: '2025-08-27.basil' })
+    ? new Stripe(stripeKey, { apiVersion: '2026-01-28.clover' })
     : null;
 
 export interface StripePriceIds {

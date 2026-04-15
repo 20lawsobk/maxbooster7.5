@@ -80,15 +80,14 @@ export class SocialOAuthService {
     }
   }
 
-  /** Returns the active encryption key, waiting briefly if still initializing */
+  /** Returns the active encryption key, throwing if not yet initialized */
   private getEncryptionKey(): string {
     if (this._encryptionKey) return this._encryptionKey;
-    // Key not yet loaded — generate a session-only fallback (safe: tokens written
-    // before the DB key loads will be readable only in this process lifetime,
-    // but the DB will have the real key ready within seconds of startup)
-    this._encryptionKey = crypto.randomBytes(32).toString('hex');
-    logger.warn('[SocialOAuth] Encryption key not yet loaded from DB — using session fallback');
-    return this._encryptionKey;
+    // Key not yet loaded — throw rather than fall back to a session-scoped key.
+    // A session-scoped fallback would encrypt tokens that become unreadable after
+    // any server restart, silently breaking all social connections.
+    // Callers should retry; the key is available within milliseconds of startup.
+    throw new Error('[SocialOAuth] Encryption key not yet initialized — retry in a moment');
   }
 
   /**

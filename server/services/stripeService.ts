@@ -36,7 +36,7 @@ if (!actualStripeKey) {
 }
 
 const stripe = new Stripe(actualStripeKey, {
-  apiVersion: '2025-08-27.basil',
+  apiVersion: '2026-01-28.clover',
 });
 
 export class StripeService {
