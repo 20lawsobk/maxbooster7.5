@@ -257,7 +257,7 @@
     "reactflow": "^11.11.4",
     "recharts": "^3.7.0",
     "sharp": "^0.34.5",
-    "stripe": "^20.3.1",
+    "stripe": "^20.4.1",
     "tailwind-merge": "^3.4.1",
     "tailwindcss": "^4.1.18",
     "tailwindcss-animate": "^1.0.7",
@@ -318,6 +318,7 @@
     "bufferutil": "^4.1.0"
   },
   "overrides": {
+    "follow-redirects": ">=1.16.0",
     "minimatch": "^10.2.3",
     "braces": "^3.0.3",
     "set-value": "^4.0.1",
