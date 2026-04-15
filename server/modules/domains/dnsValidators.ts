@@ -15,8 +15,22 @@ export function validateDnsLabel(raw: string): { ok: false; error: string } | { 
   return { ok: true, normalized: label };
 }
 
+/**
+ * Strip protocol prefix, trailing slashes, and any path component from a
+ * raw domain string so that inputs like "https://example.com/" or
+ * "http://www.example.com/path" are accepted and normalised to "example.com".
+ */
+export function stripDomainInput(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, '')   // strip http:// or https://
+    .replace(/\/.*$/, '')           // strip trailing slash and any path
+    .replace(/\.$/, '');            // strip trailing dot (FQDN notation)
+}
+
 export function validateDomain(raw: string): { ok: false; error: string } | { ok: true; normalized: string } {
-  const domain = raw.trim().toLowerCase().replace(/\.$/, "");
+  const domain = stripDomainInput(raw);
 
   if (!domain) return { ok: false, error: "Domain cannot be empty." };
   if (domain.length > 253)

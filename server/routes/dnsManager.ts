@@ -60,7 +60,12 @@ function validateRecord(r: z.infer<typeof recordSchema>): string | null {
 }
 
 function normalizeDomain(d: string): string {
-  return d.toLowerCase().trim().replace(/\.$/, '');
+  return d
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, '')  // strip http:// or https://
+    .replace(/\/.*$/, '')           // strip trailing slash and any path
+    .replace(/\.$/, '');            // strip trailing FQDN dot
 }
 
 function mapZone(row: any) {

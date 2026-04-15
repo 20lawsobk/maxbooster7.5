@@ -141,6 +141,20 @@ interface MembershipTier {
 const STOREFRONT_BASE = 'https://maxbooster.replit.app';
 
 /**
+ * Strip protocol, trailing slashes, and path from user-entered domain input.
+ * Matches the server-side normalizer so inputs like "https://example.com/"
+ * are accepted and immediately shown as "example.com".
+ */
+function stripDomainInput(raw: string): string {
+  return raw
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//i, '')  // strip http:// or https://
+    .replace(/\/.*$/, '')           // strip trailing slash and any path
+    .replace(/\.$/, '');            // strip trailing FQDN dot
+}
+
+/**
  * Returns the canonical public URL for a storefront using the same priority
  * order as the server's getStorefrontUrl():
  *   1. Active custom domain  (e.g. artist.com)
@@ -703,7 +717,7 @@ export default function StorefrontBuilder() {
     try {
       const response = await apiRequest('POST', '/api/storefront-domains/custom/request', {
         storefrontId: selectedStorefront.id,
-        domain: customDomainForm.customDomain,
+        domain: stripDomainInput(customDomainForm.customDomain),
       });
       const data = await response.json();
       if (data.ok) {
@@ -722,7 +736,7 @@ export default function StorefrontBuilder() {
 
   const verifyCustomDomain = async () => {
     if (!customDomainInstructions?.domain && !customDomainForm.customDomain) return;
-    const domain = customDomainInstructions?.domain || customDomainForm.customDomain;
+    const domain = stripDomainInput(customDomainInstructions?.domain || customDomainForm.customDomain);
     setVerifyingDomain(true);
     setDomainVerified(null);
     try {
@@ -1431,21 +1445,22 @@ export default function StorefrontBuilder() {
                         <Input
                           value={newDnsZoneDomain}
                           onChange={(e) => {
-                            const val = e.target.value.toLowerCase().trim();
+                            const val = stripDomainInput(e.target.value);
                             setNewDnsZoneDomain(val);
                             setAddedDnsZone(null);
                           }}
-                          placeholder="mybeats.com"
+                          placeholder="mybeats.com  or  https://mybeats.com/"
                           className="flex-1"
                         />
                         <Button
                           size="sm"
                           onClick={() => {
-                            if (newDnsZoneDomain && newDnsZoneDomain.length >= 4) {
-                              addDnsZoneMutation.mutate(newDnsZoneDomain);
+                            const domain = stripDomainInput(newDnsZoneDomain);
+                            if (domain && domain.length >= 4) {
+                              addDnsZoneMutation.mutate(domain);
                             }
                           }}
-                          disabled={!newDnsZoneDomain || newDnsZoneDomain.length < 4 || addDnsZoneMutation.isPending}
+                          disabled={!newDnsZoneDomain || stripDomainInput(newDnsZoneDomain).length < 4 || addDnsZoneMutation.isPending}
                         >
                           {addDnsZoneMutation.isPending ? 'Adding...' : 'Add Domain'}
                         </Button>

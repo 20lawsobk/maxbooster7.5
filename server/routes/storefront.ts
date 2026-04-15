@@ -884,22 +884,22 @@ router.put('/:storefrontId/custom-domain', async (req, res) => {
     const { customDomain, isCustomDomainActive } = req.body;
 
     if (customDomain) {
-      const lower = customDomain.toLowerCase().trim();
-      const domResult = validateDomain(lower);
+      const domResult = validateDomain(customDomain);
       if (!domResult.ok) {
         return res.status(400).json({ error: domResult.error });
       }
+      const normalized = domResult.normalized;
       const existingDomain = await db
         .select({ id: storefrontDomains.id, storefrontId: storefrontDomains.storefrontId })
         .from(storefrontDomains)
-        .where(eq(storefrontDomains.domain, domResult.normalized))
+        .where(eq(storefrontDomains.domain, normalized))
         .limit(1);
       if (existingDomain.length > 0 && existingDomain[0].storefrontId !== storefrontId) {
         return res.status(400).json({ error: 'This domain is already in use by another storefront' });
       }
 
       const updatedStorefront = await storefrontService.updateStorefront(storefrontId, req.user!.id, {
-        customDomain: lower,
+        customDomain: normalized,
         isCustomDomainActive: isCustomDomainActive ?? false,
       });
       return res.json(updatedStorefront);
