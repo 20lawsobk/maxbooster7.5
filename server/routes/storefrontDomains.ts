@@ -14,6 +14,7 @@ import { logger } from "../logger.js";
 import { db } from "../db.js";
 import { storefrontDomains, storefronts } from "@shared/schema";
 import { validateFreeDomain } from "@shared/domainValidation.js";
+import { validateDomain } from "../modules/domains/dnsValidators.js";
 
 const dnsResolve = dns.promises.resolve;
 
@@ -327,9 +328,10 @@ router.get("/search", async (req, res) => {
   }
 });
 
-// DNS server status & configuration info
+// DNS server status & configuration info — authenticated users only (internal config)
 router.get("/dns/status", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
     const { getDNSInfo, isDNSRunning } = await import("../services/dnsServer.js");
     return res.json({ ok: true, ...getDNSInfo(), running: isDNSRunning() });
   } catch (err) {
@@ -351,11 +353,15 @@ router.post("/storefront/:storefrontId/attach-domain", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
 
     const { storefrontId } = req.params;
-    const { domain } = req.body;
+    const { domain: rawDomain } = req.body;
 
-    if (!domain || typeof domain !== "string") {
+    if (!rawDomain || typeof rawDomain !== "string") {
       return res.status(400).json({ ok: false, error: "domain is required." });
     }
+
+    const domResult = validateDomain(rawDomain);
+    if (!domResult.ok) return res.status(400).json(domResult);
+    const domain = domResult.normalized;
 
     const [sf] = await db
       .select({ id: storefronts.id, userId: storefronts.userId })
@@ -410,6 +416,24 @@ router.delete("/custom/detach/:domainId", async (req, res) => {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
 
     const { domainId } = req.params;
+
+    // Verify the domain belongs to a storefront owned by the requesting user
+    const [domainRow] = await db
+      .select({ storefrontId: storefrontDomains.storefrontId })
+      .from(storefrontDomains)
+      .where(eq(storefrontDomains.id, domainId))
+      .limit(1);
+    if (!domainRow) return res.status(404).json({ ok: false, error: "Domain not found." });
+
+    const [sf] = await db
+      .select({ userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, domainRow.storefrontId))
+      .limit(1);
+    if (!sf || sf.userId !== (req.user as any).id) {
+      return res.status(403).json({ ok: false, error: "Access denied." });
+    }
+
     const { detachDomainFromStorefront } = await import("../services/storefrontDnsService.js");
     await detachDomainFromStorefront(domainId);
     return res.json({ ok: true });
@@ -423,10 +447,12 @@ router.delete("/custom/detach/:domainId", async (req, res) => {
  * GET /api/storefront-domains/hosts/:host
  *
  * Internal host-based routing lookup.  Returns the storefront ID for the
- * given hostname (used by edge middleware to route requests).
+ * given hostname.  Requires authentication to prevent enumeration of
+ * configured custom domains.
  */
 router.get("/hosts/:host", async (req, res) => {
   try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
     const { lookupStorefrontByHost } = await import("../services/storefrontDnsService.js");
     const storefrontId = await lookupStorefrontByHost(req.params.host);
     if (!storefrontId) return res.status(404).json({ ok: false, error: "host_not_found" });
