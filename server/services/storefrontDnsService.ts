@@ -18,7 +18,7 @@ import dns from 'dns';
 import crypto from 'crypto';
 
 const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'maxbooster.replit.app').toLowerCase();
-const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
+const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 const NS1 = `ns1.${BASE_DOMAIN}`;
 const NS2 = `ns2.${BASE_DOMAIN}`;
 

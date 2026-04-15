@@ -8,6 +8,7 @@ import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
 const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
+const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
 
 // ─── Managed subdomains ────────────────────────────────────────────────────
 
@@ -130,6 +131,7 @@ export async function requestCustomDomain(req: Request, res: Response) {
       ok: true,
       domain: record.domain,
       verificationToken: token,
+      platformIp: PLATFORM_IP,
       instructions: {
         txt: {
           name: `_maxbooster.${domain}`,
@@ -138,6 +140,12 @@ export async function requestCustomDomain(req: Request, res: Response) {
         cname: {
           name: `www.${domain}`,
           value: `${storefrontId}.${BASE_DOMAIN}`,
+          note: 'Use this if your registrar supports CNAME at the root or for the www subdomain',
+        },
+        a: {
+          name: `@`,
+          value: PLATFORM_IP,
+          note: 'Point your root domain A record to this IP address',
         },
       },
     });

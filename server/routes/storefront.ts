@@ -32,6 +32,7 @@ import dns from 'dns';
 import { validateDnsLabel, validateDomain } from '../modules/domains/dnsValidators.js';
 
 const dnsPromises = dns.promises;
+const PLATFORM_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 
 
 const upload = multer({ 
@@ -974,7 +975,7 @@ router.post('/:storefrontId/verify-domain', async (req, res) => {
         const addresses = await dnsPromises.resolve4(domain);
         result.aRecordFound = addresses.length > 0;
         result.aRecords = addresses;
-        if (addresses.length > 0) {
+        if (addresses.includes(PLATFORM_IP)) {
           result.verified = true;
         }
       } catch {

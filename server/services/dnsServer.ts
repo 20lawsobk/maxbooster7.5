@@ -35,7 +35,7 @@ const {
 } = dns2 as any;
 
 const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'maxbooster.replit.app').toLowerCase();
-const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
+const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
 
