@@ -1,10 +1,14 @@
 #!/bin/bash
 #
 # MAX BOOSTER — PRODUCTION START SCRIPT
-# 
+#
 # Starts all required services for the Max Booster platform:
 #   1. MaxCore Diffusion v4 LITE (port 8008) — training time simulator + memory sync
 #   2. Max Booster main server (port 5000) — primary application
+#
+# Run modes:
+#   Built   (dist/index.js present) → `node dist/index.js`  (fast, no TS overhead)
+#   Fallback (no dist)              → `tsx server/index.ts`  (dev / first-boot)
 #
 # Storage: All persistence routes through the Pocket Dimension (PDIM) system.
 # AI:      MaxCore (https://secure-ai-forge.replit.app) is the sole content
@@ -34,7 +38,12 @@ echo "   PID: $DIFFUSION_PID"
 # Give the Python server a few seconds to bind
 sleep 3
 
-# ── Step 2: Start the main Max Booster Node.js server ──────────────────────
+# ── Step 2: Start the main Max Booster Node.js server ───────────────────────
 echo ""
-echo "🚀 Starting Max Booster main server (port 5000)..."
-exec ./node_modules/.bin/tsx server/index.ts
+if [ -f "$PROJECT_ROOT/dist/index.js" ]; then
+  echo "🚀 Starting Max Booster (compiled — node dist/index.js)..."
+  exec node "$PROJECT_ROOT/dist/index.js"
+else
+  echo "🚀 Starting Max Booster (source — tsx server/index.ts)..."
+  exec ./node_modules/.bin/tsx server/index.ts
+fi
