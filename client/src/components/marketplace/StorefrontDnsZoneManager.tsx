@@ -121,7 +121,7 @@ interface DnsRecord {
 const NS  = 'maxbooster.replit.app';
 const NS1 = NS;
 const NS2 = NS;
-const PLATFORM_DOMAIN = 'maxboostermusic.com';
+const PLATFORM_DOMAIN = 'maxbooster.replit.app';
 
 const FEATURED_TLDS = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
 
