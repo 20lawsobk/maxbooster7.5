@@ -115,6 +115,12 @@ interface Storefront {
   uniqueVisitors: number;
   createdAt: string;
   updatedAt: string;
+  /** Canonical public URL returned by the server — custom domain > subdomain > slug path */
+  publicUrl?: string;
+  customDomain?: string | null;
+  isCustomDomainActive?: boolean;
+  subdomain?: string | null;
+  isSubdomainActive?: boolean;
 }
 
 interface MembershipTier {
@@ -133,6 +139,23 @@ interface MembershipTier {
 }
 
 const STOREFRONT_BASE = 'https://maxbooster.replit.app';
+
+/**
+ * Returns the canonical public URL for a storefront using the same priority
+ * order as the server's getStorefrontUrl():
+ *   1. Active custom domain  (e.g. artist.com)
+ *   2. Server-computed publicUrl (covers managed subdomains)
+ *   3. Slug path fallback
+ */
+function getCanonicalUrl(storefront: Storefront): string {
+  if (storefront.isCustomDomainActive && storefront.customDomain) {
+    return `https://${storefront.customDomain}`;
+  }
+  if (storefront.publicUrl) {
+    return storefront.publicUrl;
+  }
+  return `${STOREFRONT_BASE}/storefront/${storefront.slug}`;
+}
 
 export default function StorefrontBuilder() {
   const { user } = useAuth();
@@ -332,6 +355,18 @@ export default function StorefrontBuilder() {
       setSelectedStorefront(prev => prev ?? storefronts[0]);
     }
   }, [storefronts, storefrontsLoading]);
+
+  // Keep selectedStorefront in sync with fresh server data so that publicUrl,
+  // customDomain, and isCustomDomainActive reflect the latest activation state
+  // whenever the storefront list is refetched (e.g. after domain verification).
+  useEffect(() => {
+    if (storefronts.length === 0) return;
+    setSelectedStorefront(prev => {
+      if (!prev) return prev;
+      const fresh = storefronts.find(s => s.id === prev.id);
+      return fresh ?? prev;
+    });
+  }, [storefronts]);
 
   const { data: templates = [], isLoading: templatesLoading } = useQuery<StorefrontTemplate[]>({
     queryKey: ['/api/storefront/templates'],
@@ -697,6 +732,8 @@ export default function StorefrontBuilder() {
         setDomainVerified(true);
         toast({ title: 'Domain Verified!', description: `${domain} is now active.` });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains', selectedStorefront?.id] });
+        // Refresh storefront list so publicUrl / customDomain fields reflect activation
+        queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       } else {
         setDomainVerified(false);
         toast({ title: 'Not Verified Yet', description: 'TXT record not found. DNS changes can take up to 48 hours.', variant: 'destructive' });
@@ -819,13 +856,13 @@ export default function StorefrontBuilder() {
                 onClick={() => {
                   setSelectedStorefront(storefront);
                   setSubdomainForm({
-                    subdomain: (storefront as any).subdomain || '',
-                    isSubdomainActive: (storefront as any).isSubdomainActive || false,
+                    subdomain: storefront.subdomain || '',
+                    isSubdomainActive: storefront.isSubdomainActive || false,
                   });
                   setSubdomainAvailable(null);
                   setCustomDomainForm({
-                    customDomain: (storefront as any).customDomain || '',
-                    isCustomDomainActive: (storefront as any).isCustomDomainActive || false,
+                    customDomain: storefront.customDomain || '',
+                    isCustomDomainActive: storefront.isCustomDomainActive || false,
                   });
                   setCustomDomainInstructions(null);
                   setDomainVerified(null);
@@ -908,7 +945,7 @@ export default function StorefrontBuilder() {
                       className="flex-1"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`${window.location.origin}/storefront/${storefront.slug}`, '_blank');
+                        window.open(getCanonicalUrl(storefront), '_blank');
                       }}
                     >
                       <Eye className="w-4 h-4 mr-1" />
@@ -922,13 +959,13 @@ export default function StorefrontBuilder() {
                         e.stopPropagation();
                         setSelectedStorefront(storefront);
                         setSubdomainForm({
-                          subdomain: (storefront as any).subdomain || '',
-                          isSubdomainActive: (storefront as any).isSubdomainActive || false,
+                          subdomain: storefront.subdomain || '',
+                          isSubdomainActive: storefront.isSubdomainActive || false,
                         });
                         setSubdomainAvailable(null);
                         setCustomDomainForm({
-                          customDomain: (storefront as any).customDomain || '',
-                          isCustomDomainActive: (storefront as any).isCustomDomainActive || false,
+                          customDomain: storefront.customDomain || '',
+                          isCustomDomainActive: storefront.isCustomDomainActive || false,
                         });
                         setCustomDomainInstructions(null);
                         setDomainVerified(null);
@@ -1029,7 +1066,7 @@ export default function StorefrontBuilder() {
                         variant="outline"
                         size="sm"
                         onClick={() => {
-                          window.open(`${window.location.origin}/storefront/${selectedStorefront.slug}`, '_blank');
+                          window.open(getCanonicalUrl(selectedStorefront), '_blank');
                         }}
                       >
                         <ExternalLink className="w-4 h-4 mr-1" />
@@ -1068,10 +1105,8 @@ export default function StorefrontBuilder() {
                         <Input value={selectedStorefront.slug} disabled className="bg-muted" />
                         <div className="mt-2 space-y-1.5">
                           {(() => {
-                            const activeSubdomain = subdomainForm.subdomain && subdomainForm.isSubdomainActive ? subdomainForm.subdomain : null;
-                            const primaryUrl = activeSubdomain
-                              ? `https://maxbooster.replit.app/s/${activeSubdomain}`
-                              : `${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`;
+                            const primaryUrl = getCanonicalUrl(selectedStorefront);
+                            const isCustom = !!(selectedStorefront.isCustomDomainActive && selectedStorefront.customDomain);
                             return (
                               <>
                                 <div className="flex items-center gap-2">
@@ -1099,6 +1134,12 @@ export default function StorefrontBuilder() {
                                     <Copy className="w-3 h-3" />
                                   </Button>
                                 </div>
+                                {isCustom && (
+                                  <p className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Custom domain active
+                                  </p>
+                                )}
                               </>
                             );
                           })()}
@@ -2114,7 +2155,7 @@ export default function StorefrontBuilder() {
                     <Button 
                       className="flex-1"
                       onClick={() => {
-                        window.open(`${STOREFRONT_BASE}/storefront/${selectedStorefront.slug}`, '_blank');
+                        window.open(getCanonicalUrl(selectedStorefront), '_blank');
                       }}
                     >
                       <ExternalLink className="w-4 h-4 mr-2" />
