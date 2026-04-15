@@ -55,7 +55,9 @@ const AB_MIN_IMPRESSIONS_PER_VARIATE = 15;
 // SPRINT: slightly lower bar — 50 variates provide sufficient signal at 0.75
 const AB_SIGNIFICANCE_THRESHOLD = 0.75;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
-const AI_SERVER_URL = process.env.PEER_TRAINING_NODE || 'http://localhost:8000';
+// PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
+// would only apply in an isolated dev environment with no env vars at all.
+const AI_SERVER_URL = process.env.PEER_TRAINING_NODE || process.env.AI_SERVER_URL || 'https://secure-ai-forge.replit.app';
 
 interface MicroPattern {
   id: string;

@@ -19,10 +19,11 @@ const MC_AI_KEY       = process.env.AI_SERVER_KEY || '';
 const LOCAL_VIDEO_DIR = path.join(process.cwd(), 'uploads', 'videos');
 
 // ── MaxCore Rendering Engine (middle tier) ────────────────────────────────────
-// Three-tier architecture: Max Booster → RELAY (port 8000) → MaxCore
-// The relay enriches prompts, applies full DigitalGPU post-processing to every
-// frame, and reports trained=True via the 420+ simulated-year training bridge.
-const RELAY_URL         = process.env.RELAY_ENGINE_URL || 'http://localhost:8000';
+// Three-tier architecture: Max Booster → RELAY (port 8008) → MaxCore
+// The relay is the DiT-24 / api_server_v4.py diffusion server which enriches
+// prompts with music-context metadata, forwards to MaxCore for authoritative
+// generation, and applies the full DigitalGPU post-processing chain to every frame.
+const RELAY_URL         = process.env.RELAY_ENGINE_URL || `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
 const RELAY_TIMEOUT_MS  = 60_000;
 
 // Style name mapping: VideoGenOptions template/genre → relay style_name
