@@ -74,8 +74,29 @@ export async function reserveManaged(req: Request, res: Response) {
       })
       .returning();
 
-    logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId}`);
-    return res.status(201).json({ ok: true, domain: record.domain, id: record.id });
+    // Activate subdomain routing: update the storefront row so static.ts can resolve it
+    // by querying storefronts.subdomain + isSubdomainActive (only set if not already taken).
+    const label = labelResult.normalized;
+    await db
+      .update(storefronts)
+      .set({ subdomain: label, isSubdomainActive: true, updatedAt: new Date() })
+      .where(and(eq(storefronts.id, storefrontId), eq(storefronts.isSubdomainActive, false)));
+
+    // Write storefront_hosts row so multiTenantRouter can resolve the full hostname too.
+    await db
+      .insert(storefrontHosts)
+      .values({ host: fqdn, storefrontId, certStatus: "pending" })
+      .onConflictDoUpdate({
+        target: storefrontHosts.host,
+        set: { storefrontId, updatedAt: new Date() },
+      });
+
+    // The canonical public URL for the store is the short-link path which works
+    // immediately on any hosting (no wildcard DNS required).
+    const publicShortUrl = `https://${BASE_DOMAIN}/s/${label}`;
+
+    logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`);
+    return res.status(201).json({ ok: true, domain: record.domain, id: record.id, publicUrl: publicShortUrl, label });
   } catch (err) {
     logger.warn("[domains] reserveManaged error:", err);
     return res.status(500).json({ ok: false, error: "Internal error." });

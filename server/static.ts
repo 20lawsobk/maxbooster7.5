@@ -53,12 +53,28 @@ async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string 
   const cached = subdomainCache.get(subdomain);
   if (cached !== undefined) return cached;
   try {
+    // Primary: storefronts.subdomain + isSubdomainActive (set by auto-assign on creation
+    // and by reserveManaged when the artist picks a label via the UI).
     const [store] = await db
       .select({ slug: storefronts.slug })
       .from(storefronts)
       .where(and(eq(storefronts.subdomain, subdomain), eq(storefronts.isSubdomainActive, true)))
       .limit(1);
-    const result = store?.slug ?? null;
+    if (store?.slug) {
+      subdomainCache.set(subdomain, store.slug);
+      return store.slug;
+    }
+
+    // Fallback: storefront_domains table for managed_subdomain rows created via the
+    // "Find Domain" UI flow before the storefront.subdomain field was backfilled.
+    const baseDomainFqdn = `${subdomain}.${process.env.BASE_DOMAIN || 'maxbooster.replit.app'}`;
+    const [domRow] = await db
+      .select({ slug: storefronts.slug })
+      .from(storefrontDomains)
+      .innerJoin(storefronts, eq(storefrontDomains.storefrontId, storefronts.id))
+      .where(and(eq(storefrontDomains.domain, baseDomainFqdn), eq(storefrontDomains.status, 'active')))
+      .limit(1);
+    const result = domRow?.slug ?? null;
     subdomainCache.set(subdomain, result);
     return result;
   } catch {

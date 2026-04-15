@@ -845,9 +845,13 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/search', searchName] });
       setActiveTab('mine');
+      const isPlatformSubdomain = domain.endsWith(`.${PLATFORM_DOMAIN}`);
+      const label = isPlatformSubdomain ? domain.replace(`.${PLATFORM_DOMAIN}`, '') : null;
       toast({
         title: `${domain} claimed!`,
-        description: data.message ?? 'Your domain is active. DNS zone created — manage records in the DNS Records tab.',
+        description: isPlatformSubdomain && label
+          ? `Your store is live now at maxbooster.replit.app/s/${label} — no DNS setup required.`
+          : (data.message ?? 'Your domain is active. DNS zone created — manage records in the DNS Records tab.'),
       });
     },
     onError: async (err: any) => {
@@ -974,7 +978,10 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                     <span className="font-mono text-sm font-semibold">{searchName}<span className="text-primary">.{PLATFORM_DOMAIN}</span></span>
                     <Badge className="text-[10px] bg-primary/15 text-primary border-primary/30">Platform Subdomain</Badge>
                   </div>
-                  <p className="text-[11px] text-muted-foreground">Instant setup · No nameserver changes needed</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Instant setup · Your store loads at{' '}
+                    <span className="font-mono text-primary">{PLATFORM_DOMAIN}/s/{searchName}</span>
+                  </p>
                 </div>
               </div>
               <Button
@@ -1071,6 +1078,19 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
+                      {d.domain.endsWith(`.${PLATFORM_DOMAIN}`) && (() => {
+                        const label = d.domain.replace(`.${PLATFORM_DOMAIN}`, '');
+                        return (
+                          <a
+                            href={`https://${PLATFORM_DOMAIN}/s/${label}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-2.5 py-1 rounded border border-primary/30 hover:bg-primary/5 transition-colors"
+                          >
+                            <Globe className="w-3 h-3" />Open Store
+                          </a>
+                        );
+                      })()}
                       {matchedZone ? (
                         <Button
                           size="sm"
