@@ -24,6 +24,13 @@ import {
   ShieldCheck,
   Zap,
   Settings,
+  Ticket,
+  Heart,
+  ShoppingCart,
+  Newspaper,
+  ListMusic,
+  BookOpen,
+  Film,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,15 +59,22 @@ const navItems: NavItem[] = [
   { labelKey: 'analytics.aiInsights', path: '/analytics/ai', icon: Brain },
   { labelKey: 'navigation.social', path: '/social-media', icon: Share2 },
   { labelKey: 'navigation.advertising', path: '/advertising', icon: Megaphone },
+  { labelKey: 'navigation.playlistPitching', path: '/playlist-pitching', icon: ListMusic },
+  { labelKey: 'navigation.fanHub', path: '/fan-hub', icon: Heart },
 
   // ── Business ──────────────────────────────────────────────────────────
   { labelKey: 'navigation.marketplace', path: '/marketplace', icon: ShoppingBag, section: 'Business' },
-  { labelKey: 'distribution.royalties', path: '/royalties', icon: DollarSign },
+  { labelKey: 'navigation.royalties', path: '/royalties', icon: DollarSign },
   { labelKey: 'navigation.distribution', path: '/distribution', icon: Radio },
+  { labelKey: 'navigation.publishing', path: '/publishing', icon: BookOpen },
+  { labelKey: 'navigation.syncLicensing', path: '/sync-licensing', icon: Film },
+  { labelKey: 'navigation.merch', path: '/merch', icon: ShoppingCart },
   { labelKey: 'navigation.invoices', path: '/invoices', icon: Receipt },
 
   // ── Management ────────────────────────────────────────────────────────
   { labelKey: 'navigation.contracts', path: '/contracts', icon: FileText, section: 'Manage' },
+  { labelKey: 'navigation.shows', path: '/shows', icon: Ticket },
+  { labelKey: 'navigation.pressKit', path: '/press-kit', icon: Newspaper },
   { labelKey: 'navigation.collaborations', path: '/collaborations', icon: Users },
   { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
   { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },

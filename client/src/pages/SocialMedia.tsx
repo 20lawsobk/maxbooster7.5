@@ -34,6 +34,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Dialog,
   DialogContent,
@@ -1413,27 +1414,11 @@ return (
               </div>
             </div>
             <Button
-              onClick={handleGenerateContent}
-              disabled={isGeneratingContent}
+              onClick={() => setActiveTab('create')}
               className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
             >
-              {isGeneratingContent ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  {regularContentFormat === 'audio'
-                    ? 'Creating audio clip...'
-                    : regularContentFormat === 'video'
-                    ? 'Building video...'
-                    : regularContentFormat === 'image'
-                    ? 'Generating image...'
-                    : 'Generating...'}
-                </>
-              ) : (
-                <>
-                  <Wand2 className="w-4 h-4 mr-2" />
-                  Generate Content
-                </>
-              )}
+              <Wand2 className="w-4 h-4 mr-2" />
+              Create Content
             </Button>
           </div>
         </div>
@@ -3690,7 +3675,7 @@ function PressKitTabContent() {
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <form key={pressKit?.id ?? 'new'} onSubmit={handleSave} className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
             <Card>
@@ -3830,6 +3815,7 @@ function RadioPitchingContent() {
   const queryClient = useQueryClient();
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [filterType, setFilterType] = useState('all');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [newPitch, setNewPitch] = useState({
     trackTitle: '', targetName: '', targetType: 'radio', contactEmail: '',
     contactUrl: '', genre: '', pitchNote: '', demoUrl: '',
@@ -3850,6 +3836,8 @@ function RadioPitchingContent() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/radio-pitches/${id}`, { status }); return res.json(); },
+    onMutate: ({ id }) => setUpdatingId(id),
+    onSettled: () => setUpdatingId(null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/radio-pitches'] }),
   });
 
@@ -3969,8 +3957,15 @@ function RadioPitchingContent() {
                     {p.featureUrl && <a href={p.featureUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-green-500 hover:underline mt-1 inline-flex items-center gap-1"><CheckCircle2 className="w-3 h-3" />Featured</a>}
                   </div>
                   <div className="flex items-center gap-2 ml-3">
-                    <Select value={p.status} onValueChange={(v) => updateStatusMutation.mutate({ id: p.id, status: v })}>
-                      <SelectTrigger className="w-36 h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <Select
+                      value={p.status}
+                      onValueChange={(v) => updateStatusMutation.mutate({ id: p.id, status: v })}
+                      disabled={updatingId === p.id}
+                    >
+                      <SelectTrigger className="w-36 h-8 text-xs">
+                        {updatingId === p.id ? <RefreshCw className="w-3 h-3 animate-spin mr-1" /> : null}
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         {['draft','submitted','under_review','following_up','featured','declined'].map(s => <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>)}
                       </SelectContent>
@@ -3995,6 +3990,8 @@ function FanCampaignsContent() {
   const queryClient = useQueryClient();
   const [isNewOpen, setIsNewOpen] = useState(false);
   const [newCampaign, setNewCampaign] = useState({ name: '', subject: '', body: '', campaignType: 'newsletter' });
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: campaigns = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/fan-campaigns'] });
   const { data: stats } = useQuery<any>({ queryKey: ['/api/fan-campaigns/stats'] });
@@ -4011,14 +4008,19 @@ function FanCampaignsContent() {
 
   const sendMutation = useMutation({
     mutationFn: async (id: string) => { const res = await apiRequest('POST', `/api/fan-campaigns/${id}/send`); return res.json(); },
+    onMutate: (id) => setSendingId(id),
+    onSettled: () => setSendingId(null),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] });
-      toast({ title: 'Campaign Sent!', description: `Delivered to ${data.recipientCount} fans.` });
+      toast({ title: 'Campaign Sent!', description: `Delivered to ${data.recipientCount ?? 0} fans.` });
     },
+    onError: () => toast({ title: 'Send Failed', description: 'Could not send campaign. Please try again.', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => { await apiRequest('DELETE', `/api/fan-campaigns/${id}`); },
+    onMutate: (id) => setDeletingId(id),
+    onSettled: () => setDeletingId(null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] }),
   });
 
@@ -4131,11 +4133,14 @@ function FanCampaignsContent() {
                         </div>
                         <div className="flex gap-2 flex-shrink-0">
                           {c.status === 'draft' && (
-                            <Button size="sm" onClick={() => sendMutation.mutate(c.id)} disabled={sendMutation.isPending}>
-                              <Send className="w-3 h-3 mr-1" />Send
+                            <Button size="sm" onClick={() => sendMutation.mutate(c.id)} disabled={sendingId === c.id}>
+                              {sendingId === c.id ? <RefreshCw className="w-3 h-3 mr-1 animate-spin" /> : <Send className="w-3 h-3 mr-1" />}
+                              {sendingId === c.id ? 'Sending…' : 'Send'}
                             </Button>
                           )}
-                          <Button size="sm" variant="ghost" className="text-red-400" onClick={() => deleteMutation.mutate(c.id)}>×</Button>
+                          <Button size="sm" variant="ghost" className="text-red-400" disabled={deletingId === c.id} onClick={() => deleteMutation.mutate(c.id)}>
+                            {deletingId === c.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : '×'}
+                          </Button>
                         </div>
                       </div>
                     </div>

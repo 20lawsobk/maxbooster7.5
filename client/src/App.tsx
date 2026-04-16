@@ -86,6 +86,13 @@ const HandleLink = lazy(() => import('@/pages/HandleLink'));
 const Notifications = lazy(() => import('@/pages/Notifications'));
 const MusicWorkflowAutomations = lazy(() => import('@/pages/MusicWorkflowAutomations'));
 const VideoGeneratorPage = lazy(() => import('@/pages/VideoGeneratorPage'));
+const Shows = lazy(() => import('@/pages/Shows'));
+const FanHub = lazy(() => import('@/pages/FanHub'));
+const MerchStore = lazy(() => import('@/pages/MerchStore'));
+const PressKit = lazy(() => import('@/pages/PressKit'));
+const PlaylistPitching = lazy(() => import('@/pages/PlaylistPitching'));
+const Publishing = lazy(() => import('@/pages/Publishing'));
+const SyncLicensing = lazy(() => import('@/pages/SyncLicensing'));
 
 // Inline component: resolves /s/:label → /storefront/:slug
 function StorefrontShortLink({ params }: { params?: { label?: string } }) {
@@ -169,6 +176,13 @@ function Router() {
       <Route path="/handle-link" component={HandleLink} />
       <Route path="/notifications" component={Notifications} />
       <Route path="/workflow-automations" component={MusicWorkflowAutomations} />
+      <Route path="/shows" component={Shows} />
+      <Route path="/fan-hub" component={FanHub} />
+      <Route path="/merch" component={MerchStore} />
+      <Route path="/press-kit" component={PressKit} />
+      <Route path="/playlist-pitching" component={PlaylistPitching} />
+      <Route path="/publishing" component={Publishing} />
+      <Route path="/sync-licensing" component={SyncLicensing} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -57,6 +57,16 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 // Types from schema or equivalent
 interface FanSubscriber {
@@ -98,6 +108,7 @@ export default function FanHub() {
   const [isAddingFan, setIsAddingFan] = useState(false);
   const [isComposingMessage, setIsComposingMessage] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
+  const [pendingDeleteFanId, setPendingDeleteFanId] = useState<string | null>(null);
 
   // Queries
   const { data: subscribersData, isLoading: loadingSubscribers } = useQuery<{ subscribers: FanSubscriber[] }>({
@@ -413,7 +424,7 @@ export default function FanHub() {
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => setSelectedFan(fan)}>View Profile</DropdownMenuItem>
                               <DropdownMenuItem>Add Tag</DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive" onClick={() => deleteFanMutation.mutate(fan.id)}>Remove Fan</DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => setPendingDeleteFanId(fan.id)}>Remove Fan</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -637,7 +648,7 @@ export default function FanHub() {
                     <Button 
                       variant="destructive" 
                       className="w-full"
-                      onClick={() => deleteFanMutation.mutate(selectedFan.id)}
+                      onClick={() => setPendingDeleteFanId(selectedFan.id)}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Delete Fan
@@ -648,6 +659,32 @@ export default function FanHub() {
             )}
           </SheetContent>
         </Sheet>
+
+        <AlertDialog open={!!pendingDeleteFanId} onOpenChange={(open) => !open && setPendingDeleteFanId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Fan</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove this fan from your list? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (pendingDeleteFanId) {
+                    deleteFanMutation.mutate(pendingDeleteFanId);
+                    setPendingDeleteFanId(null);
+                    if (selectedFan?.id === pendingDeleteFanId) setSelectedFan(null);
+                  }
+                }}
+              >
+                Remove Fan
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );

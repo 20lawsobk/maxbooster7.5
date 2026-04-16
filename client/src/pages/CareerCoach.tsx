@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Brain, Target, TrendingUp, Calendar, CheckCircle, Clock, 
   Lightbulb, Rocket, Star, ArrowRight, MessageSquare, Send,
@@ -79,13 +80,7 @@ export default function CareerCoach() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const res = await fetch('/api/career-coach/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ message }),
-      });
-      if (!res.ok) throw new Error('Failed to get response');
+      const res = await apiRequest('POST', '/api/career-coach/chat', { message });
       return res.json();
     },
     onSuccess: (data) => {

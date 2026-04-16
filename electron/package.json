@@ -1,9 +1,0 @@
-{
-  "name": "max-booster-electron",
-  "version": "3.0.0",
-  "description": "Max Booster Desktop App",
-  "private": true,
-  "devDependencies": {
-    "electron": "^40.4.1"
-  }
-}

@@ -761,6 +761,11 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async getOrganicCampaigns(userId: string): Promise<any[]> {
+    const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
+    return campaigns.filter(c => !c.budget || c.budget === 0);
+  }
+
   async getCreativeFatigueAnalysis(userId: string): Promise<any[]> {
     return this.getCreativeFatigue(userId);
   }

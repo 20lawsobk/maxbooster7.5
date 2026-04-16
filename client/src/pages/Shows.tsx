@@ -30,12 +30,30 @@ import {
   Trash2,
   CalendarDays,
   List as ListIcon,
-  Music
+  Music,
+  ExternalLink
 } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import type { Show, Setlist } from "@shared/schema";
-import { useRequireSubscription } from "@/hooks/useRequireSubscription";
+import { useRequireSubscription } from "@/hooks/useRequireAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Shows() {
   useRequireSubscription();
@@ -44,6 +62,8 @@ export default function Shows() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [setlistCreateDialog, setSetlistCreateDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [pendingDeleteShowId, setPendingDeleteShowId] = useState<string | null>(null);
+  const [editingShow, setEditingShow] = useState<Show | null>(null);
   
   const [newShow, setNewShow] = useState({
     name: "",
@@ -360,12 +380,31 @@ export default function Shows() {
                     <CardFooter className="bg-muted/30 flex gap-2">
                       <Button variant="outline" size="sm" className="flex-1" asChild>
                         <a href={show.ticketUrl || "#"} target="_blank" rel="noopener noreferrer">
+                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
                           Tickets
                         </a>
                       </Button>
-                      <Button variant="outline" size="icon" className="h-9 w-9">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-9 w-9">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingShow(show)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Show
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => setPendingDeleteShowId(show.id)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Show
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </CardFooter>
                   </Card>
                 ))}
@@ -394,7 +433,7 @@ export default function Shows() {
                       <p className="font-bold">{show.ticketsSold}</p>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => deleteShowMutation.mutate(show.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => setPendingDeleteShowId(show.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </Card>
@@ -562,6 +601,106 @@ export default function Shows() {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Delete Confirmation */}
+        <AlertDialog open={!!pendingDeleteShowId} onOpenChange={(open) => !open && setPendingDeleteShowId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Show</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this show? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (pendingDeleteShowId) {
+                    deleteShowMutation.mutate(pendingDeleteShowId);
+                    setPendingDeleteShowId(null);
+                  }
+                }}
+              >
+                Delete Show
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Edit Show Dialog */}
+        {editingShow && (
+          <Dialog open={!!editingShow} onOpenChange={(open) => !open && setEditingShow(null)}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Show</DialogTitle>
+                <DialogDescription>Update the details for this performance.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Show Name</Label>
+                  <Input
+                    value={editingShow.name}
+                    onChange={(e) => setEditingShow({ ...editingShow, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Venue</Label>
+                    <Input
+                      value={editingShow.venue || ''}
+                      onChange={(e) => setEditingShow({ ...editingShow, venue: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>City</Label>
+                    <Input
+                      value={editingShow.city || ''}
+                      onChange={(e) => setEditingShow({ ...editingShow, city: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Date & Time</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editingShow.date ? new Date(editingShow.date).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setEditingShow({ ...editingShow, date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Ticket URL</Label>
+                  <Input
+                    value={editingShow.ticketUrl || ''}
+                    placeholder="https://..."
+                    onChange={(e) => setEditingShow({ ...editingShow, ticketUrl: e.target.value })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingShow(null)}>Cancel</Button>
+                <Button onClick={async () => {
+                  try {
+                    await apiRequest('PATCH', `/api/shows/${editingShow.id}`, {
+                      name: editingShow.name,
+                      venue: editingShow.venue,
+                      city: editingShow.city,
+                      date: editingShow.date,
+                      ticketUrl: editingShow.ticketUrl,
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['/api/shows'] });
+                    setEditingShow(null);
+                    toast({ title: 'Show updated', description: 'Your show details have been saved.' });
+                  } catch {
+                    toast({ title: 'Error', description: 'Failed to update show.', variant: 'destructive' });
+                  }
+                }}>
+                  Save Changes
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AppLayout>
   );
