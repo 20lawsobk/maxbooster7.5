@@ -84,13 +84,13 @@ interface AdvertisingAutopilotConfig {
 }
 
 const PLATFORMS = [
-  { id: 'facebook', name: 'Facebook Ads', icon: FacebookIcon, color: '#1877F2' },
-  { id: 'instagram', name: 'Instagram Ads', icon: InstagramIcon, color: '#E4405F' },
-  { id: 'twitter', name: 'Twitter (X) Ads', icon: null, color: '#000000' },
-  { id: 'tiktok', name: 'TikTok Ads', icon: TikTokIcon, color: '#000000' },
-  { id: 'youtube', name: 'YouTube Ads', icon: YouTubeIcon, color: '#FF0000' },
-  { id: 'linkedin', name: 'LinkedIn Ads', icon: LinkedInIcon, color: '#0077B5' },
-  { id: 'threads', name: 'Threads', icon: ThreadsIcon, color: '#000000' },
+  { id: 'facebook', name: 'Facebook Profile', icon: FacebookIcon, color: '#1877F2' },
+  { id: 'instagram', name: 'Instagram Profile', icon: InstagramIcon, color: '#E4405F' },
+  { id: 'twitter', name: 'Twitter (X) Profile', icon: null, color: '#000000' },
+  { id: 'tiktok', name: 'TikTok Profile', icon: TikTokIcon, color: '#000000' },
+  { id: 'youtube', name: 'YouTube Channel', icon: YouTubeIcon, color: '#FF0000' },
+  { id: 'linkedin', name: 'LinkedIn Profile', icon: LinkedInIcon, color: '#0077B5' },
+  { id: 'threads', name: 'Threads Profile', icon: ThreadsIcon, color: '#000000' },
 ];
 
 const CONTENT_TYPES = [
@@ -272,7 +272,7 @@ export function AutonomousDashboard() {
                 Advertising Autopilot
               </CardTitle>
               <CardDescription>
-                AI-powered ad campaign creation, optimization, and automatic publishing
+                AI generates optimized content via MaxCore and distributes it through your connected social profiles — zero ad spend required
               </CardDescription>
             </div>
             <div className="flex items-center gap-3">
@@ -469,15 +469,15 @@ export function AutonomousDashboard() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Daily Budget Limit ($)</Label>
+                      <Label>Daily Post Limit</Label>
                       <Input
                         type="number"
                         min={0}
                         value={localConfig.dailyBudgetLimit}
                         onChange={(e) => updateConfig({ dailyBudgetLimit: parseInt(e.target.value) || 0 })}
-                        placeholder="0 = No limit (organic only)"
+                        placeholder="0 = No limit"
                       />
-                      <p className="text-xs text-muted-foreground">0 = Zero-cost organic campaigns only</p>
+                      <p className="text-xs text-muted-foreground">Max AI-generated posts per day across all platforms (0 = unlimited)</p>
                     </div>
                   </div>
 

@@ -578,9 +578,9 @@ export default function Advertisement() {
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              🚀 Performance Max AI Advertising
+              🚀 AI-Powered Organic Advertising
             </h1>
-            <p className="text-muted-foreground">Enterprise-grade advertising with Meta Advantage + Google Performance Max features</p>
+            <p className="text-muted-foreground">MaxCore AI generates peak-performance content distributed through your connected social profiles — no ad spend required</p>
           </div>
           <Dialog open={isCreateCampaignOpen} onOpenChange={setIsCreateCampaignOpen}>
             <DialogTrigger asChild>
@@ -593,9 +593,9 @@ export default function Advertisement() {
               <DialogHeader>
                 <DialogTitle className="flex items-center">
                   <Brain className="w-5 h-5 mr-2 text-blue-600" />
-                  Create Performance Max Campaign
+                  Activate AI Campaign
                 </DialogTitle>
-                <DialogDescription>Set up an AI-enhanced advertising campaign with automated optimization</DialogDescription>
+                <DialogDescription>MaxCore AI will generate optimized content and publish it through your connected social profiles</DialogDescription>
               </DialogHeader>
               <div className="space-y-6">
                 <div className="space-y-2">
@@ -688,8 +688,8 @@ export default function Advertisement() {
         <Card className="border-2 border-gradient-to-r from-purple-500 to-pink-600 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
           <CardContent className="p-6">
             <div className="text-center space-y-4">
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">🎯 Enterprise Performance Max Features</h2>
-              <p className="text-lg text-muted-foreground">Meta Advantage + Google Performance Max capabilities powered by AI</p>
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">🎯 How the AI Advertising System Works</h2>
+              <p className="text-lg text-muted-foreground">MaxCore AI replicates peak paid-ad performance using your connected social profiles as organic distribution channels</p>
               <div className="grid grid-cols-3 md:grid-cols-6 lg:grid-cols-9 gap-3 mt-6">
                 <div className="text-center p-3 bg-white/50 dark:bg-gray-900/50 rounded-lg">
                   <div className="text-xl font-bold text-purple-600">AI</div>
@@ -1034,7 +1034,7 @@ export default function Advertisement() {
                   <UserPlus className="w-6 h-6 text-blue-500" />
                   Audience Lookalike Expansion Controls
                 </CardTitle>
-                <CardDescription>Create and manage lookalike audiences based on your best-performing segments with Meta Advantage+ style controls</CardDescription>
+                <CardDescription>Build audience profiles based on your best-performing followers — AI targets similar users organically across your connected profiles</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">

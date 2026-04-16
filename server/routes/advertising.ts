@@ -11,6 +11,8 @@ import { storeUploadedFile, handleUploadError } from '../middleware/uploadHandle
 import { db } from '../db.js';
 import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
 import { adCampaigns, adCreatives, systemSettings } from '@shared/schema';
+import { aiModelManager } from '../services/aiModelManager.js';
+import { autopilotEngine } from '../autopilot-engine.js';
 
 const imageUpload = multer({
   storage: multer.memoryStorage(),
@@ -206,6 +208,10 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
       return res.status(400).json({ error: 'Platform is required — select at least one platform in the targeting section' });
     }
 
+    const platforms = Array.isArray(targetAudience?.platforms) && targetAudience.platforms.length > 0
+      ? targetAudience.platforms
+      : [platform];
+
     const [campaign] = await db
       .insert(adCampaigns)
       .values({
@@ -219,15 +225,47 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
         endDate: endDate ? new Date(endDate) : null,
         targetAudience: targetAudience || null,
         creativeIds: Array.isArray(creativeIds) ? creativeIds : [],
-        status: 'draft',
+        status: 'active',
       })
       .returning();
 
+    // Kick off AI pipeline in the background — campaign immediately primes MaxCore
+    // and ensures content generation is queued for all target platforms
     setImmediate(async () => {
       try {
         await notificationService.sendAdCampaignCreatedNotification(userId, name);
       } catch (err) {
         logger.warn({ err: err }, 'Ad campaign created notification error:');
+      }
+
+      try {
+        // Warm up the per-user MaxCore advertising AI model
+        const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
+        await advertisingModel.generateCampaignRecommendations(
+          objective || 'awareness',
+          null
+        );
+        logger.info({ userId, campaignId: campaign.id }, 'MaxCore ad model primed for new campaign');
+      } catch (err) {
+        logger.warn({ err }, 'MaxCore ad model priming error (non-fatal):');
+      }
+
+      try {
+        // Configure the autopilot engine with this campaign's targeting and start content scheduling
+        const engineConfig = await autopilotEngine.getConfig();
+        await autopilotEngine.configure({
+          ...engineConfig,
+          platforms: platforms.map((p: string) => p.toLowerCase()),
+          campaignObjective: (objective as any) || 'awareness',
+        });
+        // Start the engine if not already running so it schedules the first content generation
+        const status = await autopilotEngine.getStatus();
+        if (!status.isRunning) {
+          await autopilotEngine.start();
+          logger.info({ userId, campaignId: campaign.id }, 'Autopilot engine started for new campaign');
+        }
+      } catch (err) {
+        logger.warn({ err }, 'Autopilot engine start error (non-fatal):');
       }
     });
 
