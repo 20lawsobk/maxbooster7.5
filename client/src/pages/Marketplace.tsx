@@ -2234,6 +2234,25 @@ return (
           </CardContent>
         </Card>
 
+        {/* ── Genre Quick-Filter Chips ── */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+          <button
+            onClick={() => { setSelectedGenre('all'); setSelectedMood('all'); }}
+            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${selectedGenre === 'all' && selectedMood === 'all' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600'}`}
+          >
+            All
+          </button>
+          {BEAT_GENRES.map((genre) => (
+            <button
+              key={genre}
+              onClick={() => setSelectedGenre(selectedGenre === genre ? 'all' : genre)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-medium border transition-all ${selectedGenre === genre ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-blue-400 hover:text-blue-600'}`}
+            >
+              {genre}
+            </button>
+          ))}
+        </div>
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className={`grid w-full ${user ? 'grid-cols-5 lg:grid-cols-11' : 'grid-cols-2'} bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700`}>
             <TabsTrigger value="browse" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white text-xs">
@@ -3937,75 +3956,157 @@ return (
       </div>
 
       {showPreviewPlayer && currentBeat && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t shadow-lg p-4 z-50">
-          <div className="max-w-7xl mx-auto flex items-center space-x-4">
-            <div className="relative w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg overflow-hidden flex-shrink-0">
-              <div className="flex items-center justify-center h-full">
-                <Music className="w-8 h-8 text-white" />
-              </div>
-              {currentBeat.coverArt && (
-                <img
-                  src={currentBeat.coverArt}
-                  alt={currentBeat.title}
-                  loading="eager"
-                  decoding="async"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-              )}
-            </div>
-            <div className="flex-shrink-0 w-48">
-              <p className="font-semibold truncate">{currentBeat.title}</p>
-              <p className="text-sm text-muted-foreground truncate">{currentBeat.producer}</p>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button size="icon" variant="ghost">
-                <SkipBack className="w-4 h-4" />
-              </Button>
-              <Button
-                size="icon"
-                className="bg-gradient-to-r from-blue-600 to-purple-600"
-                onClick={() => handlePlayPause(currentBeat.id)}
-                disabled={isLoadingAudio}
+        <div className="fixed bottom-0 left-0 right-0 z-50">
+          <div
+            className="relative border-t border-white/10 shadow-2xl"
+            style={{ background: 'linear-gradient(to right, #0f0f17 0%, #111827 50%, #0f0f17 100%)', backdropFilter: 'blur(20px)' }}
+          >
+            {/* Seek bar — full width at top of player */}
+            <div className="w-full h-1 bg-white/10 cursor-pointer group" onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const pct = (e.clientX - rect.left) / rect.width;
+              handleSeek([pct * (duration || 100)]);
+            }}>
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-purple-500 group-hover:from-blue-400 group-hover:to-purple-400 transition-colors relative"
+                style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }}
               >
-                {isLoadingAudio ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : isPlaying ? (
-                  <Pause className="w-5 h-5" />
-                ) : (
-                  <Play className="w-5 h-5" />
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+            </div>
+
+            <div className="max-w-screen-xl mx-auto flex items-center gap-4 px-4 py-3">
+              {/* Cover art */}
+              <div className="relative w-14 h-14 rounded-lg overflow-hidden flex-shrink-0 shadow-xl ring-1 ring-white/10">
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+                  <Music className="w-6 h-6 text-white/60" />
+                </div>
+                {currentBeat.coverArt && (
+                  <img
+                    src={currentBeat.coverArt}
+                    alt={currentBeat.title}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                  />
                 )}
-              </Button>
-              <Button size="icon" variant="ghost">
-                <SkipForward className="w-4 h-4" />
-              </Button>
+                {isPlaying && (
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <div className="flex items-end gap-0.5 h-4">
+                      {[1,2,3,4].map((b) => (
+                        <div key={b} className="w-0.5 bg-white rounded-full animate-pulse" style={{ height: `${40 + b * 15}%`, animationDelay: `${b * 0.1}s` }} />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Track info */}
+              <div className="flex-shrink-0 min-w-0 w-44 hidden sm:block">
+                <p className="text-white font-semibold text-sm truncate">{currentBeat.title}</p>
+                <p className="text-gray-400 text-xs truncate">{currentBeat.producer}</p>
+                <div className="flex items-center gap-1.5 mt-1">
+                  {currentBeat.tempo && (
+                    <span className="text-[10px] bg-blue-500/20 text-blue-300 rounded px-1.5 py-0.5 font-mono">{currentBeat.tempo} BPM</span>
+                  )}
+                  {currentBeat.key && (
+                    <span className="text-[10px] bg-purple-500/20 text-purple-300 rounded px-1.5 py-0.5 font-mono">{currentBeat.key}</span>
+                  )}
+                  {currentBeat.genre && (
+                    <span className="text-[10px] bg-white/10 text-gray-300 rounded px-1.5 py-0.5">{currentBeat.genre}</span>
+                  )}
+                </div>
+              </div>
+
+              {/* Transport controls */}
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <button
+                  className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                  onClick={() => { if (howlRef.current) { howlRef.current.seek(Math.max(0, currentTime - 10)); setCurrentTime(Math.max(0, currentTime - 10)); } }}
+                >
+                  <SkipBack className="w-4 h-4" />
+                </button>
+                <button
+                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-xl transition-all hover:scale-105 active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)' }}
+                  onClick={() => handlePlayPause(currentBeat.id)}
+                  disabled={isLoadingAudio}
+                >
+                  {isLoadingAudio ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : isPlaying ? (
+                    <Pause className="w-5 h-5 text-white fill-white" />
+                  ) : (
+                    <Play className="w-5 h-5 text-white fill-white ml-0.5" />
+                  )}
+                </button>
+                <button
+                  className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors text-gray-400 hover:text-white"
+                  onClick={() => { if (howlRef.current) { const t = Math.min(duration, currentTime + 10); howlRef.current.seek(t); setCurrentTime(t); } }}
+                >
+                  <SkipForward className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Time */}
+              <div className="flex items-center gap-2 text-xs font-mono flex-shrink-0">
+                <span className="text-gray-300 tabular-nums">{formatTime(currentTime)}</span>
+                <span className="text-gray-600">/</span>
+                <span className="text-gray-500 tabular-nums">{formatTime(duration)}</span>
+              </div>
+
+              {/* Waveform visualization bars (decorative) */}
+              <div className="flex-1 hidden md:flex items-center gap-px h-8 overflow-hidden">
+                {Array.from({ length: 60 }).map((_, i) => {
+                  const pct = duration > 0 ? currentTime / duration : 0;
+                  const barFrac = i / 60;
+                  const height = 20 + Math.sin(i * 0.5) * 15 + Math.cos(i * 0.3) * 10;
+                  const isPast = barFrac < pct;
+                  return (
+                    <div
+                      key={i}
+                      className="flex-1 rounded-full transition-colors cursor-pointer"
+                      style={{
+                        height: `${height}%`,
+                        background: isPast
+                          ? `linear-gradient(to top, #3b82f6, #8b5cf6)`
+                          : 'rgba(255,255,255,0.12)',
+                      }}
+                      onClick={() => { const t = (i / 60) * duration; handleSeek([t]); }}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Volume */}
+              <div className="flex items-center gap-2 flex-shrink-0 w-28 hidden sm:flex">
+                <button onClick={toggleMute} className="text-gray-400 hover:text-white transition-colors">
+                  {isMuted || volume === 0 ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                </button>
+                <Slider
+                  value={[isMuted ? 0 : volume]}
+                  max={100}
+                  step={1}
+                  onValueChange={handleVolumeChange}
+                  className="w-20"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1 flex-shrink-0">
+                <button
+                  onClick={() => handleShare(currentBeat)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => setShowPreviewPlayer(false)}
+                  className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-            <div className="flex-1 flex items-center space-x-3">
-              <span className="text-sm w-12 text-right">{formatTime(currentTime)}</span>
-              <Slider
-                value={[currentTime]}
-                max={duration || 100}
-                step={1}
-                onValueChange={handleSeek}
-                className="flex-1"
-              />
-              <span className="text-sm w-12">{formatTime(duration)}</span>
-            </div>
-            <div className="flex items-center space-x-2 w-32">
-              <Button size="icon" variant="ghost" onClick={toggleMute}>
-                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
-              </Button>
-              <Slider
-                value={[isMuted ? 0 : volume]}
-                max={100}
-                step={1}
-                onValueChange={handleVolumeChange}
-                className="w-20"
-              />
-            </div>
-            <Button size="icon" variant="ghost" onClick={() => setShowPreviewPlayer(false)}>
-              <X className="w-4 h-4" />
-            </Button>
           </div>
         </div>
       )}

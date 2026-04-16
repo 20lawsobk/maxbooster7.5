@@ -1032,6 +1032,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         onOpenVersions={() => setShowVersionManagement(true)}
         isFullscreen={isFullscreen}
         onToggleFullscreen={handleToggleFullscreen}
+        masterVolume={masterTrack?.volume ?? 0.8}
+        onMasterVolumeChange={(v) => {
+          if (masterTrack) {
+            store.updateTrack(masterTrack.id, { volume: v });
+            audioEngine.setTrackVolume(masterTrack.id, v);
+          }
+        }}
       />
 
       {/* ════ BODY ════ */}
@@ -1273,6 +1280,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                     onAutomationLanesChange={setAutomationLanes}
                     showVideoTrack={showVideoTrack}
                     allTracks={tracks}
+                    onAddTrack={handleAddTrack}
                   />
                 </div>
                 {showEditor && <EditorPanel track={selectedTrack} onClose={() => setShowEditor(false)} />}
@@ -1885,6 +1893,8 @@ interface TransportBarProps {
   onOpenVersions?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  masterVolume?: number;
+  onMasterVolumeChange?: (v: number) => void;
 }
 
 function TransportBar({
@@ -1894,6 +1904,7 @@ function TransportBar({
   punchIn, punchOut, punchInTime, punchOutTime, loopRecord,
   onTogglePunchIn, onTogglePunchOut, onPunchInTimeChange, onPunchOutTimeChange, onToggleLoopRecord,
   expertMode, onToggleExpertMode, onOpenVersions, isFullscreen, onToggleFullscreen,
+  masterVolume = 0.8, onMasterVolumeChange,
 }: TransportBarProps) {
   return (
     <div className="bg-[#252529] border-b border-[#333] shrink-0 overflow-x-auto" style={{ height: 'var(--transport-h)' }}>
@@ -2064,34 +2075,84 @@ function TransportBar({
 
       <div className="h-6 w-px bg-[#444]" />
 
-      <div className="flex items-center gap-4">
+      {/* ── LCD Time Display ── */}
+      <div
+        className="flex items-center gap-3 px-3 py-1 rounded"
+        style={{ background: '#080b0d', border: '1px solid #1e2a2e', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)' }}
+      >
         <div className="flex flex-col items-center">
-          <span className="text-[10px] text-gray-500 uppercase">Time</span>
-          <span className="font-mono text-sm text-white">{formatTime(livePosition)}</span>
+          <span className="text-[8px] text-emerald-900 uppercase tracking-widest font-semibold">TIME</span>
+          <span
+            className="font-mono text-base leading-none tracking-wider tabular-nums"
+            style={{ color: '#00e5a0', textShadow: '0 0 8px rgba(0,229,160,0.5)', fontVariantNumeric: 'tabular-nums' }}
+          >
+            {formatTime(livePosition)}
+          </span>
         </div>
+        <div className="w-px h-6 bg-emerald-900/40" />
         <div className="flex flex-col items-center">
-          <span className="text-[10px] text-gray-500 uppercase">Bars</span>
-          <span className="font-mono text-sm text-white">{formatBars(livePosition)}</span>
+          <span className="text-[8px] text-emerald-900 uppercase tracking-widest font-semibold">BARS</span>
+          <span
+            className="font-mono text-base leading-none tracking-wider tabular-nums"
+            style={{ color: '#00e5a0', textShadow: '0 0 8px rgba(0,229,160,0.5)', fontVariantNumeric: 'tabular-nums' }}
+          >
+            {formatBars(livePosition)}
+          </span>
         </div>
       </div>
 
       <div className="h-6 w-px bg-[#444]" />
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">BPM</span>
+        <span className="text-[10px] text-gray-500 uppercase tracking-wider">BPM</span>
         <input
           type="number"
           value={transport.tempo}
           onChange={(e) => onTempoChange(Number(e.target.value))}
-          className="w-16 h-7 bg-[#1a1a1e] border border-[#444] rounded px-2 text-sm font-mono text-center"
+          className="w-14 h-7 rounded px-2 text-sm font-mono text-center font-semibold"
+          style={{ background: '#080b0d', border: '1px solid #1e2a2e', color: '#f59e0b', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.8)' }}
           min={20}
           max={300}
         />
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-gray-400">Time Sig</span>
-        <span className="font-mono text-sm">{transport.timeSignature || '4/4'}</span>
+        <span className="text-[10px] text-gray-500 uppercase tracking-wider">SIG</span>
+        <span
+          className="font-mono text-sm font-semibold px-2 py-0.5 rounded"
+          style={{ background: '#080b0d', border: '1px solid #1e2a2e', color: '#94a3b8' }}
+        >
+          {transport.timeSignature || '4/4'}
+        </span>
+      </div>
+
+      <div className="h-6 w-px bg-[#444]" />
+
+      {/* ── Master Volume ── */}
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 cursor-default">
+              <Volume2 className="h-3.5 w-3.5 text-gray-400" />
+              <span className="text-[10px] text-gray-500 uppercase tracking-wider hidden lg:block">Master</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>Master Output Volume</TooltipContent>
+        </Tooltip>
+        <Slider
+          value={[Math.round(masterVolume * 100)]}
+          min={0}
+          max={100}
+          step={1}
+          onValueChange={([v]) => onMasterVolumeChange?.(v / 100)}
+          className="w-20"
+        />
+        <span
+          className="text-[10px] font-mono w-7 text-center"
+          style={{ color: masterVolume >= 0.9 ? '#ef4444' : masterVolume >= 0.7 ? '#22c55e' : '#94a3b8' }}
+        >
+          {Math.round(masterVolume * 100)}
+        </span>
       </div>
 
       <div className="h-6 w-px bg-[#444]" />
@@ -2799,12 +2860,14 @@ interface ArrangeViewProps {
   onAutomationLanesChange?: (lanes: any[]) => void;
   showVideoTrack?: boolean;
   allTracks?: any[];
+  onAddTrack?: (type: 'audio' | 'instrument' | 'midi' | 'bus') => void;
 }
 
 function ArrangeView({
   tracks, selectedTrackId, selectedClipId, zoom, scrollX, tempo, playheadPosition, isPlaying,
   trackHeaderWidth, onSelectTrack, onSelectClip, onUpdateTrack, onDeleteTrack, onDuplicateTrack,
-  showAutomation, automationLanes = [], onAutomationLanesChange, showVideoTrack, allTracks = []
+  showAutomation, automationLanes = [], onAutomationLanesChange, showVideoTrack, allTracks = [],
+  onAddTrack,
 }: ArrangeViewProps) {
   const pixelsPerSecond = 40 * zoom * (tempo / 60);
   const playheadX = playheadPosition * pixelsPerSecond;
@@ -2856,11 +2919,31 @@ function ArrangeView({
       )}
 
       {tracks.length === 0 ? (
-        <div className="flex items-center justify-center h-64 text-gray-500">
-          <div className="text-center">
-            <Music className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p className="text-sm">No tracks yet</p>
-            <p className="text-xs text-gray-600 mt-1">Click "Add Track" to get started</p>
+        <div className="flex items-center justify-center h-full min-h-64">
+          <div className="text-center px-6">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #1a1f2e, #252840)' }}>
+              <Music className="h-8 w-8 text-emerald-500/70" />
+            </div>
+            <p className="text-sm font-medium text-gray-300 mb-1">Start Your Session</p>
+            <p className="text-xs text-gray-600 mb-5">Add your first track to begin composing</p>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {([
+                { type: 'audio' as const, icon: Music, label: 'Audio', color: '#3b82f6' },
+                { type: 'instrument' as const, icon: Piano, label: 'Instrument', color: '#8b5cf6' },
+                { type: 'midi' as const, icon: Layers, label: 'MIDI', color: '#22c55e' },
+                { type: 'bus' as const, icon: Sliders, label: 'Bus', color: '#f59e0b' },
+              ] as const).map(({ type, icon: TIcon, label, color }) => (
+                <button
+                  key={type}
+                  onClick={() => onAddTrack(type)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all hover:scale-105 active:scale-95"
+                  style={{ background: `${color}18`, border: `1px solid ${color}30`, color }}
+                >
+                  <TIcon className="h-3.5 w-3.5" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       ) : (
@@ -2961,7 +3044,7 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
           onClick={onSelect}
         >
           <div
-            className="shrink-0 flex items-center gap-2 px-3 border-r border-[#333] relative"
+            className="shrink-0 flex flex-col justify-center px-3 border-r border-[#333] relative"
             style={{ width: 'var(--track-header-w)', backgroundColor: `${track.color}15` }}
           >
             <div className="w-1 h-full absolute left-0 top-0" style={{ backgroundColor: track.color }} />
@@ -2983,54 +3066,80 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
               );
             })()}
 
-            <button
-              onClick={(e) => { e.stopPropagation(); onUpdate({ collapsed: !track.collapsed }); }}
-              className="hover:bg-white/10 rounded p-0.5"
-            >
-              {track.collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            </button>
-
-            <Icon className="h-4 w-4" style={{ color: track.color }} />
-
-            <span className="text-sm truncate flex-1">{track.name}</span>
-
-            <div className="flex items-center gap-1">
+            {/* Top row: collapse + icon + name + M/S/R */}
+            <div className="flex items-center gap-2">
               <button
-                onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
-                className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-                  track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                )}
+                onClick={(e) => { e.stopPropagation(); onUpdate({ collapsed: !track.collapsed }); }}
+                className="hover:bg-white/10 rounded p-0.5 shrink-0"
               >
-                M
+                {track.collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
-                className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-                  track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                )}
-              >
-                S
-              </button>
-              <button
-                onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
-                className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px]",
-                  track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                )}
-              >
-                <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
-              </button>
+
+              <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: track.color }} />
+
+              <span className="text-xs truncate flex-1 font-medium">{track.name}</span>
+
+              <div className="flex items-center gap-0.5 shrink-0">
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
+                  className={cn(
+                    "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                    track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                  )}
+                >
+                  M
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
+                  className={cn(
+                    "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                    track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                  )}
+                >
+                  S
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
+                  className={cn(
+                    "h-5 w-5 flex items-center justify-center rounded text-[10px]",
+                    track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                  )}
+                >
+                  <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
+                </button>
+              </div>
             </div>
 
-            {track.type === 'bus' && (
-              <div className="flex items-center mt-0.5">
+            {/* Bottom row: volume + pan (only when not collapsed) */}
+            {!track.collapsed && (
+              <div className="flex items-center gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
+                <Volume2 className="h-2.5 w-2.5 text-gray-600 shrink-0" />
+                <Slider
+                  value={[Math.round((track.volume ?? 0.8) * 100)]}
+                  min={0}
+                  max={100}
+                  step={1}
+                  onValueChange={([v]) => onUpdate({ volume: v / 100 })}
+                  className="flex-1 h-1"
+                />
+                <span className="text-[9px] font-mono text-gray-600 w-5 text-right shrink-0">{Math.round((track.volume ?? 0.8) * 100)}</span>
+                {/* Pan indicator */}
+                <div
+                  className="h-2.5 w-2.5 rounded-full shrink-0 border border-[#444] flex items-center justify-center cursor-pointer"
+                  title={`Pan: ${Math.round((track.pan ?? 0) * 100)}`}
+                  onClick={(e) => { e.stopPropagation(); onUpdate({ pan: 0 }); }}
+                  style={{ background: track.pan && track.pan !== 0 ? '#3b82f6' : '#333' }}
+                />
+              </div>
+            )}
+
+            {track.type === 'bus' && !track.collapsed && (
+              <div className="flex items-center mt-1" onClick={(e) => e.stopPropagation()}>
                 <select
                   value={track.routeTo || ''}
                   onChange={(e) => { e.stopPropagation(); onUpdate({ routeTo: e.target.value || null }); }}
                   onClick={(e) => e.stopPropagation()}
-                  className="h-4 bg-[#1a1a1e] border border-[#444] rounded text-[9px] text-gray-300 px-0.5 w-full max-w-[100px]"
+                  className="h-4 bg-[#1a1a1e] border border-[#444] rounded text-[9px] text-gray-300 px-0.5 w-full"
                 >
                   <option value="">Route To...</option>
                   <option value="master">Master</option>
