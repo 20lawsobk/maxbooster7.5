@@ -13,7 +13,7 @@
  */
 
 import { Router } from 'express';
-import { eq, inArray } from 'drizzle-orm';
+import { eq, inArray, sql } from 'drizzle-orm';
 import { db, pool } from '../db.js';
 import { claimedDomains } from '@shared/schema';
 import { logger } from '../logger.js';
@@ -118,6 +118,22 @@ router.post('/claim', async (req, res) => {
         return res.json({ ok: true, domain: domainLower, status: 'already_owned', alreadyOwned: true });
       }
       return res.status(409).json({ ok: false, error: 'This domain is already registered by another user.' });
+    }
+
+    // Enforce 2-domain limit per user
+    const MAX_DOMAINS_PER_USER = 2;
+    const [{ count: domainCount }] = await db
+      .select({ count: sql<number>`COUNT(*)` })
+      .from(claimedDomains)
+      .where(eq(claimedDomains.userId, userId));
+
+    if (Number(domainCount) >= MAX_DOMAINS_PER_USER) {
+      return res.status(403).json({
+        ok: false,
+        error: `You have reached the maximum of ${MAX_DOMAINS_PER_USER} custom domains. Remove an existing domain before claiming a new one.`,
+        limitReached: true,
+        limit: MAX_DOMAINS_PER_USER,
+      });
     }
 
     const tld = '.' + domainLower.split('.').slice(1).join('.');
