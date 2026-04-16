@@ -14,7 +14,10 @@ import {
   Disc,
   Radio,
   Shield,
+  ShieldAlert,
   Brain,
+  Sparkles,
+  GraduationCap,
   X,
   FileText,
   Users,
@@ -31,6 +34,7 @@ import {
   ListMusic,
   BookOpen,
   Film,
+  Clapperboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -52,11 +56,12 @@ const navItems: NavItem[] = [
   // ── Creator ───────────────────────────────────────────────────────────
   { labelKey: 'navigation.projects', path: '/projects', icon: Music, section: 'Creator' },
   { labelKey: 'navigation.studio', path: '/studio', icon: Disc },
+  { labelKey: 'navigation.videoGenerator', path: '/video-generator', icon: Clapperboard },
   { labelKey: 'navigation.desktopApp', path: '/desktop-app', icon: Monitor },
 
   // ── Growth ────────────────────────────────────────────────────────────
   { labelKey: 'navigation.analytics', path: '/analytics', icon: BarChart3, section: 'Growth' },
-  { labelKey: 'analytics.aiInsights', path: '/analytics/ai', icon: Brain },
+  { labelKey: 'analytics.aiInsights', path: '/analytics/ai', icon: Sparkles },
   { labelKey: 'navigation.social', path: '/social-media', icon: Share2 },
   { labelKey: 'navigation.advertising', path: '/advertising', icon: Megaphone },
   { labelKey: 'navigation.playlistPitching', path: '/playlist-pitching', icon: ListMusic },
@@ -78,13 +83,13 @@ const navItems: NavItem[] = [
   { labelKey: 'navigation.collaborations', path: '/collaborations', icon: Users },
   { labelKey: 'navigation.workspaces', path: '/workspaces', icon: Building2 },
   { labelKey: 'navigation.releaseCountdown', path: '/release-countdown', icon: Timer },
-  { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: Brain },
+  { labelKey: 'navigation.careerCoach', path: '/career-coach', icon: GraduationCap },
   { labelKey: 'navigation.workflowAutomations', path: '/workflow-automations', icon: Zap },
   { labelKey: 'navigation.verification', path: '/verification', icon: ShieldCheck },
 
   // ── Admin ─────────────────────────────────────────────────────────────
   { labelKey: 'navigation.adminPanel', path: '/admin', icon: Shield, adminOnly: true, section: 'Admin' },
-  { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: Shield, adminOnly: true },
+  { labelKey: 'navigation.adminSecurity', path: '/admin/security', icon: ShieldAlert, adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -133,7 +138,6 @@ export function Sidebar({ isMobileOpen = false, onMobileClose }: SidebarProps) {
   }
 
   const isAdmin = user.role === 'admin';
-  // Memoize so this doesn't re-compute on every render triggered by location changes.
   const visibleNavItems = useMemo(
     () => navItems.filter((item) => !item.adminOnly || isAdmin),
     [isAdmin]

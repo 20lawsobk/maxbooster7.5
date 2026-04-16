@@ -52,4 +52,13 @@ Key architectural decisions include:
 - **Music Integrations**: Spotify, LabelGrid.
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
-- **Search APIs**: Exa, Tavily.
+
+## Platform Audit Changes (2026-04-16)
+Professional artist UX audit and comprehensive improvements:
+- **Sidebar Navigation**: Fixed duplicate icons (AI Insights → Sparkles, Career Coach → GraduationCap, Admin Security → ShieldAlert), added Video Generator page link (Clapperboard icon)
+- **Press Kit (EPK)**: Working "Copy EPK Link" clipboard button with toast feedback; full public URL shown in visibility panel; "View Live" direct link when published; public EPK page at `/epk/:slug` (PublicPressKit.tsx) with clean design for promoters/press
+- **Playlist Pitching**: 3-step onboarding empty state with actionable guidance; Conversion Rate stat card now shows a progress bar; curator search empty state
+- **Sync Licensing**: Rich empty state with TV/Film/Ads/Gaming use-case cards + direct CTA; color-coded status badges (blue=available, yellow=submitted, orange=under review, green=licensed)
+- **Publishing**: Rich empty state with PRO organization badges (ASCAP, BMI, SESAC, PRS, SOCAN, APRA) + direct CTA; color-coded status badges (green=confirmed, yellow=pending)
+- **Merch Store**: Low Stock (≤5) and Out of Stock (0) warning badges on product cards; corrected reversed salePrice display (sale price now green, original crossed out)
+- **i18n**: Added `navigation.videoGenerator` translation key

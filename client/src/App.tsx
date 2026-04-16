@@ -93,6 +93,7 @@ const PressKit = lazy(() => import('@/pages/PressKit'));
 const PlaylistPitching = lazy(() => import('@/pages/PlaylistPitching'));
 const Publishing = lazy(() => import('@/pages/Publishing'));
 const SyncLicensing = lazy(() => import('@/pages/SyncLicensing'));
+const PublicPressKit = lazy(() => import('@/pages/PublicPressKit'));
 
 // Inline component: resolves /s/:label → /storefront/:slug
 function StorefrontShortLink({ params }: { params?: { label?: string } }) {
@@ -183,6 +184,7 @@ function Router() {
       <Route path="/playlist-pitching" component={PlaylistPitching} />
       <Route path="/publishing" component={Publishing} />
       <Route path="/sync-licensing" component={SyncLicensing} />
+      <Route path="/epk/:slug" component={PublicPressKit} />
       <Route component={NotFound} />
     </Switch>
   );

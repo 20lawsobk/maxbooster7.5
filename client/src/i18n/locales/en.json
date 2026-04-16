@@ -57,7 +57,8 @@
     "publishing": "Publishing",
     "verification": "Verification",
     "adminPanel": "Admin Panel",
-    "adminSecurity": "Admin Security"
+    "adminSecurity": "Admin Security",
+    "videoGenerator": "Video Generator"
   },
   "auth": {
     "loginTitle": "Login to Max Booster",

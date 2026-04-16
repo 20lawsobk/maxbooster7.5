@@ -243,8 +243,29 @@ export default function Publishing() {
                 ))}
               </div>
             ) : works.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                No registered works yet. Register your first work to start tracking royalties!
+              <div className="py-14 text-center space-y-5">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Copyright className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">No registered works yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    Register each track with your PRO to collect performance royalties whenever your music is played on radio, TV, or live venues.
+                  </p>
+                </div>
+                <div className="flex flex-wrap justify-center gap-2 max-w-md mx-auto">
+                  {['ASCAP', 'BMI', 'SESAC', 'PRS', 'SOCAN', 'APRA'].map(pro => (
+                    <span key={pro} className="px-3 py-1 rounded-full border text-xs font-medium text-muted-foreground">{pro}</span>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDialogOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Register Your First Work
+                </button>
               </div>
             ) : (
               <Table>
@@ -270,8 +291,14 @@ export default function Publishing() {
                         {work.writerSplit}% / {work.publishingSplit}%
                       </TableCell>
                       <TableCell>
-                        <Badge variant={work.status === 'confirmed' ? 'default' : 'secondary'}>
-                          {work.status}
+                        <Badge variant="outline" className={
+                          work.status === 'confirmed'
+                            ? 'border-green-500/30 text-green-500 bg-green-500/10'
+                            : work.status === 'pending'
+                            ? 'border-yellow-500/30 text-yellow-500 bg-yellow-500/10'
+                            : 'border-muted-foreground/30'
+                        }>
+                          {work.status === 'confirmed' ? '✓ Confirmed' : work.status === 'pending' ? '⏳ Pending' : work.status}
                         </Badge>
                       </TableCell>
                     </TableRow>

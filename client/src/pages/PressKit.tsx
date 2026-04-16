@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
-import { Loader2, Plus, Trash2, Globe, Lock, Share2, Download, Eye, FileImage, User, Mail, Link as LinkIcon, Instagram, Twitter, Youtube, Facebook, Music } from 'lucide-react';
+import { Loader2, Plus, Trash2, Globe, Share2, Download, Eye, EyeOff, FileImage, User, Mail, Copy, Check, Instagram, Twitter, Youtube, Facebook, Music, Newspaper } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
@@ -19,6 +19,26 @@ export default function PressKit() {
   const queryClient = useQueryClient();
   const [isPreview, setIsPreview] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [copiedUrl, setCopiedUrl] = useState(false);
+
+  const getPublicUrl = (slug?: string) =>
+    slug ? `${window.location.origin}/epk/${slug}` : null;
+
+  const handleShare = async () => {
+    const url = getPublicUrl(pressKit?.slug);
+    if (!url) {
+      toast({ title: 'Not published', description: 'Enable public visibility and save a custom slug first.', variant: 'destructive' });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedUrl(true);
+      toast({ title: 'Link copied!', description: 'Share this link with promoters and press.' });
+      setTimeout(() => setCopiedUrl(false), 2500);
+    } catch {
+      toast({ title: 'Copy failed', description: url, variant: 'destructive' });
+    }
+  };
 
   const { data: pressKit, isLoading } = useQuery({
     queryKey: ['/api/press-kit'],
@@ -107,18 +127,26 @@ export default function PressKit() {
             <h1 className="text-3xl font-bold tracking-tight">Press Kit (EPK)</h1>
             <p className="text-muted-foreground">Build and manage your professional Electronic Press Kit.</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setIsPreview(!isPreview)}>
-              {isPreview ? <Eye className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+              {isPreview ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
               {isPreview ? 'Edit Mode' : 'Preview EPK'}
             </Button>
+            {pressKit?.isPublic && pressKit?.slug && (
+              <Button variant="outline" asChild>
+                <a href={`/epk/${pressKit.slug}`} target="_blank" rel="noopener noreferrer">
+                  <Globe className="mr-2 h-4 w-4" />
+                  View Live
+                </a>
+              </Button>
+            )}
             <Button variant="outline" onClick={() => window.print()}>
               <Download className="mr-2 h-4 w-4" />
               Download PDF
             </Button>
-            <Button>
-              <Share2 className="mr-2 h-4 w-4" />
-              Share
+            <Button onClick={handleShare} variant={pressKit?.isPublic ? 'default' : 'outline'}>
+              {copiedUrl ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+              {copiedUrl ? 'Copied!' : 'Copy EPK Link'}
             </Button>
           </div>
         </div>
@@ -357,27 +385,46 @@ export default function PressKit() {
               </TabsContent>
             </Tabs>
 
-            <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg border border-dashed">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Globe className="h-5 w-5 text-primary" />
+            <div className="p-4 bg-muted/30 rounded-lg border border-dashed space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Globe className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Public Visibility</p>
+                    <p className="text-xs text-muted-foreground">When on, your EPK is viewable via a public link.</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium">Public Visibility</p>
-                  <p className="text-xs text-muted-foreground">When on, your EPK is viewable via a public link.</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                {pressKit?.isPublic && (
-                  <Badge variant="outline" className="text-primary border-primary">
-                    Live at: /epk/{pressKit.slug}
-                  </Badge>
-                )}
                 <Switch 
-                  checked={pressKit?.isPublic} 
+                  checked={pressKit?.isPublic ?? false} 
                   onCheckedChange={(checked) => updatePressKitMutation.mutate({ ...pressKit, isPublic: checked })}
                 />
               </div>
+              {pressKit?.isPublic && pressKit?.slug && (
+                <div className="flex items-center gap-2 bg-background/60 rounded-md px-3 py-2 border">
+                  <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                  <span className="text-xs text-primary font-mono flex-1 truncate">
+                    {getPublicUrl(pressKit.slug)}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1.5"
+                    onClick={handleShare}
+                  >
+                    {copiedUrl ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
+                    {copiedUrl ? 'Copied' : 'Copy'}
+                  </Button>
+                </div>
+              )}
+              {pressKit?.isPublic && !pressKit?.slug && (
+                <p className="text-xs text-amber-500 flex items-center gap-1">
+                  <Newspaper className="h-3.5 w-3.5" />
+                  Save your press kit first to generate a public link.
+                </p>
+              )}
             </div>
 
             <div className="flex justify-end gap-4 pb-12">

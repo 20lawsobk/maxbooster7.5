@@ -87,13 +87,13 @@ export default function SyncLicensing() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'available':
-        return <Badge variant="outline">Available</Badge>;
+        return <Badge variant="outline" className="border-blue-500/30 text-blue-400 bg-blue-500/10">Available</Badge>;
       case 'submitted':
-        return <Badge variant="secondary">Submitted</Badge>;
+        return <Badge variant="outline" className="border-yellow-500/30 text-yellow-400 bg-yellow-500/10">Submitted</Badge>;
       case 'under_review':
-        return <Badge className="bg-yellow-500">Under Review</Badge>;
+        return <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10">Under Review</Badge>;
       case 'licensed':
-        return <Badge className="bg-green-500">Licensed</Badge>;
+        return <Badge variant="outline" className="border-green-500/30 text-green-400 bg-green-500/10">Licensed ✓</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -230,8 +230,37 @@ export default function SyncLicensing() {
                 ))}
               </div>
             ) : catalog.length === 0 ? (
-              <div className="py-8 text-center text-muted-foreground">
-                No tracks in your sync catalog yet. Add your first track to get started!
+              <div className="py-14 text-center space-y-5">
+                <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Film className="h-7 w-7 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold mb-1">Your sync catalog is empty</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    Add tracks to license your music to TV shows, films, ads, and video games. Include mood tags and BPM to help music supervisors find your work.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
+                  {[
+                    { icon: '🎬', label: 'TV & Film', desc: 'Score your music for television and movies' },
+                    { icon: '📢', label: 'Advertising', desc: 'License tracks for brand campaigns' },
+                    { icon: '🎮', label: 'Video Games', desc: 'Provide music for gaming environments' },
+                  ].map(item => (
+                    <div key={item.label} className="p-3 rounded-lg border bg-muted/30 text-center space-y-1">
+                      <div className="text-2xl">{item.icon}</div>
+                      <p className="text-xs font-medium">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDialogOpen(true)}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 text-sm font-medium transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Your First Track
+                </button>
               </div>
             ) : (
               <Table>

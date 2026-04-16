@@ -316,10 +316,20 @@ export default function MerchStore() {
                           <Package className="h-12 w-12 text-muted-foreground/20" />
                         </div>
                       )}
-                      <div className="absolute top-2 right-2">
+                      <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
                         <Badge variant={item.isActive ? "default" : "secondary"}>
                           {item.isActive ? "Active" : "Draft"}
                         </Badge>
+                        {!item.isDigital && item.inventory <= 5 && item.inventory > 0 && (
+                          <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">
+                            Low Stock
+                          </Badge>
+                        )}
+                        {!item.isDigital && item.inventory === 0 && (
+                          <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10 text-xs">
+                            Out of Stock
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <CardHeader className="p-4">
@@ -329,11 +339,13 @@ export default function MerchStore() {
                           <p className="text-sm text-muted-foreground capitalize">{item.category}</p>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold">${parseFloat(item.price).toFixed(2)}</div>
-                          {item.salePrice && (
-                            <div className="text-xs text-muted-foreground line-through">
-                              ${parseFloat(item.salePrice).toFixed(2)}
-                            </div>
+                          {item.salePrice ? (
+                            <>
+                              <div className="font-bold text-green-500">${parseFloat(item.salePrice).toFixed(2)}</div>
+                              <div className="text-xs text-muted-foreground line-through">${parseFloat(item.price).toFixed(2)}</div>
+                            </>
+                          ) : (
+                            <div className="font-bold">${parseFloat(item.price).toFixed(2)}</div>
                           )}
                         </div>
                       </div>

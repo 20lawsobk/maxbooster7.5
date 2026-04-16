@@ -219,7 +219,7 @@ export default function PlaylistPitching() {
             </CardContent>
           </Card>
           <Card className="bg-gray-900 border-gray-800">
-            <CardContent className="pt-6">
+            <CardContent className="pt-6 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-400">Conversion Rate</p>
@@ -228,6 +228,12 @@ export default function PlaylistPitching() {
                 <div className="p-2 rounded-full bg-purple-500/10">
                   <BarChart3 className="w-5 h-5 text-purple-500" />
                 </div>
+              </div>
+              <div className="w-full bg-gray-800 rounded-full h-1.5 overflow-hidden">
+                <div
+                  className="bg-purple-500 h-full rounded-full transition-all"
+                  style={{ width: `${Math.min(100, stats?.conversionRate || 0)}%` }}
+                />
               </div>
             </CardContent>
           </Card>
@@ -240,6 +246,36 @@ export default function PlaylistPitching() {
           </TabsList>
 
           <TabsContent value="my-pitches" className="space-y-4">
+            {!pitchesLoading && pitches.length === 0 && (
+              <div className="rounded-xl border border-dashed border-gray-700 bg-gray-900/50 py-14 px-6 text-center space-y-6">
+                <div className="mx-auto w-16 h-16 rounded-full bg-purple-500/10 flex items-center justify-center">
+                  <Send className="w-7 h-7 text-purple-400" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold text-white">Start tracking your pitches</h3>
+                  <p className="text-gray-400 max-w-md mx-auto text-sm leading-relaxed">
+                    Log every playlist submission you make — accepted, rejected, or still waiting. Build a real picture of what's working.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-xl mx-auto text-left">
+                  {[
+                    { step: '1', text: 'Find a curator in the "Find Curators" tab' },
+                    { step: '2', text: 'Submit your music via their submission link' },
+                    { step: '3', text: 'Track the pitch here and update its status' },
+                  ].map(item => (
+                    <div key={item.step} className="flex items-start gap-3 p-3 rounded-lg bg-gray-800/60 border border-gray-700">
+                      <div className="w-6 h-6 rounded-full bg-purple-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{item.step}</div>
+                      <p className="text-xs text-gray-300">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
+                <Button onClick={() => setIsNewPitchOpen(true)} className="bg-purple-600 hover:bg-purple-700">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Track Your First Pitch
+                </Button>
+              </div>
+            )}
+            {(pitchesLoading || pitches.length > 0) && (
             <Card className="bg-gray-900 border-gray-800">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm">
@@ -265,8 +301,6 @@ export default function PlaylistPitching() {
                           </tr>
                         ))}
                       </>
-                    ) : pitches.length === 0 ? (
-                      <tr><td colSpan={5} className="p-8 text-center text-gray-500">No pitches tracked yet.</td></tr>
                     ) : pitches.map((pitch) => (
                       <tr key={pitch.id} className="hover:bg-gray-800/30 transition-colors">
                         <td className="p-4">
@@ -303,6 +337,7 @@ export default function PlaylistPitching() {
                 </table>
               </div>
             </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="find-curators" className="space-y-6">
@@ -339,6 +374,12 @@ export default function PlaylistPitching() {
                 Array(6).fill(0).map((_, i) => (
                   <Card key={i} className="bg-gray-900 border-gray-800 h-48 animate-pulse" />
                 ))
+              ) : filteredCurators.length === 0 ? (
+                <div className="col-span-full py-14 text-center border border-dashed border-gray-700 rounded-xl bg-gray-900/50 space-y-3">
+                  <Users className="mx-auto w-10 h-10 text-gray-600" />
+                  <p className="text-gray-400 font-medium">No curators found</p>
+                  <p className="text-sm text-gray-600">Try a different genre filter or search term.</p>
+                </div>
               ) : filteredCurators.map((curator) => (
                 <Card key={curator.id} className="bg-gray-900 border-gray-800 hover:border-purple-500/50 transition-all group">
                   <CardHeader className="pb-2">
