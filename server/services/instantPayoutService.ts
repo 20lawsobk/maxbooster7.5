@@ -212,13 +212,23 @@ export class InstantPayoutService {
    */
   async calculateAvailableBalance(userId: string): Promise<PayoutBalance> {
     try {
-      // Get total earnings from completed orders where user is the seller
+      // Get total earnings from completed marketplace orders where user is the seller
       const earningsResult = await db.execute(
         sql`SELECT COALESCE(SUM(amount), 0) as total_earnings
             FROM orders 
             WHERE seller_id = ${userId} AND status = 'completed'`
       );
-      const totalEarnings = Number(earningsResult.rows?.[0]?.total_earnings || 0);
+      const marketplaceEarnings = Number(earningsResult.rows?.[0]?.total_earnings || 0);
+
+      // Get total streaming/royalty earnings from royalty_transactions (pending = available to withdraw)
+      const royaltiesResult = await db.execute(
+        sql`SELECT COALESCE(SUM(amount), 0) as total_royalties
+            FROM royalty_transactions
+            WHERE user_id = ${userId} AND status IN ('pending', 'confirmed')`
+      );
+      const royaltyEarnings = Number(royaltiesResult.rows?.[0]?.total_royalties || 0);
+
+      const totalEarnings = marketplaceEarnings + royaltyEarnings;
 
       // Get total payouts already processed for this user (amount_cents / 100 to convert to dollars)
       const payoutsResult = await db.execute(
@@ -236,7 +246,7 @@ export class InstantPayoutService {
       );
       const pendingPaid = Number(pendingPayoutsResult.rows?.[0]?.pending_paid || 0);
 
-      // Available balance = earnings - completed payouts - pending payouts
+      // Available balance = earnings (marketplace + royalties) - completed payouts - pending payouts
       const availableBalance = Math.max(0, totalEarnings - totalPaid - pendingPaid);
       const pendingBalance = pendingPaid;
 

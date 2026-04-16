@@ -267,7 +267,9 @@ export function useAudioRecorder() {
         formData.append('startTime', startTime.toString());
         formData.append('duration', state.duration.toString());
 
-        const response = await fetch(`/api/studio/projects/${projectId}/tracks/${trackId}/clips/upload`, {
+        formData.append('projectId', projectId);
+        formData.append('trackId', trackId);
+        const response = await fetch(`/api/studio/record/upload`, {
           method: 'POST',
           body: formData,
         });

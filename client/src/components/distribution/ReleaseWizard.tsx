@@ -175,47 +175,45 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
         throw new Error('Please upload at least one track');
       }
 
-      const formData = new FormData();
+      // Step 1: Create the release with JSON metadata (no files)
+      const releasePayload = {
+        ...metadataData,
+        releaseDate: releaseDate ? releaseDate.toISOString() : undefined,
+        territoryMode,
+        territories: selectedTerritories,
+        selectedPlatforms,
+        lyrics,
+        royaltySplits,
+      };
 
-      // Add metadata
-      formData.append('title', metadataData.title);
-      formData.append('artistName', metadataData.artistName);
-      formData.append('releaseType', metadataData.releaseType);
-      formData.append('primaryGenre', metadataData.primaryGenre);
-      formData.append('language', metadataData.language);
-      formData.append('copyrightYear', metadataData.copyrightYear.toString());
-      formData.append('copyrightOwner', metadataData.copyrightOwner);
-      formData.append('isExplicit', metadataData.isExplicit.toString());
-
-      if (releaseDate) {
-        formData.append('releaseDate', releaseDate.toISOString());
-      }
-
-      // Add audio files
-      audioFiles.forEach((audioFile, index) => {
-        formData.append(`audio_${index}`, audioFile.file);
-      });
-
-      // Add artwork
-      if (artwork) {
-        formData.append('artwork', artwork);
-      }
-
-      // Add metadata
-      formData.append(
-        'metadata',
-        JSON.stringify({
-          ...metadataData,
-          territoryMode,
-          territories: selectedTerritories,
-          selectedPlatforms,
-          lyrics,
-          royaltySplits,
-        })
-      );
-
-      const response = await apiRequest('POST', '/api/distribution/releases', formData);
+      const response = await apiRequest('POST', '/api/distribution/releases', releasePayload);
       const releaseData = await response.json();
+
+      // Step 2: Upload each track individually to the tracks endpoint
+      if (releaseData.id && audioFiles.length > 0) {
+        await Promise.all(
+          audioFiles.map(async (audioFile) => {
+            const trackFormData = new FormData();
+            trackFormData.append('audio', audioFile.file);
+            trackFormData.append(
+              'metadata',
+              JSON.stringify({
+                title: audioFile.name || audioFile.file.name,
+                isExplicit: metadataData.isExplicit,
+                lyrics: lyrics,
+              })
+            );
+            await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/tracks`, trackFormData);
+          })
+        );
+      }
+
+      // Step 3: Upload artwork if provided
+      if (releaseData.id && artwork) {
+        const artworkFormData = new FormData();
+        artworkFormData.append('artwork', artwork);
+        await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/artwork`, artworkFormData).catch(() => {});
+      }
 
       // Create HyperFollow campaign if enabled
       if (createPreSave && releaseData.id) {

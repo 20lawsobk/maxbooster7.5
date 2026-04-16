@@ -559,7 +559,7 @@ export default function Royalties() {
 
   // Handler functions
   const handleDownloadStatement = (statementId: string) => {
-    window.open(`/api/royalties/download-statement/${statementId}`, '_blank');
+    window.open(`/api/payouts/statements/${statementId}/download`, '_blank');
     toast({ title: 'Downloading Statement', description: 'Your statement is being downloaded' });
   };
 

@@ -283,6 +283,102 @@ router.get('/calendar/stats', requireAuth, async (req: AuthenticatedRequest, res
   }
 });
 
+// Create a new calendar post
+router.post('/calendar', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { platform, content, mediaUrls, scheduledAt, status } = req.body;
+
+    if (!platform || !content) {
+      return res.status(400).json({ error: 'Platform and content are required' });
+    }
+
+    const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
+    const postStatus = status || (scheduledDate ? 'scheduled' : 'draft');
+
+    const [post] = await db.insert(posts).values({
+      userId,
+      platform,
+      content,
+      mediaUrls: mediaUrls || [],
+      status: postStatus,
+      scheduledAt: scheduledDate,
+    }).returning();
+
+    if (scheduledDate && postStatus === 'scheduled') {
+      setImmediate(async () => {
+        try {
+          await notificationService.sendSocialPostScheduledNotification(userId, platform, content, scheduledDate);
+        } catch (err) {
+          logger.warn({ err }, 'Calendar post scheduled notification error:');
+        }
+      });
+    }
+
+    res.status(201).json(post);
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to create calendar post:');
+    res.status(500).json({ error: 'Failed to create calendar post' });
+  }
+});
+
+// Update an existing calendar post
+router.put('/calendar/:postId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postId } = req.params;
+    const { platform, content, mediaUrls, scheduledAt, status } = req.body;
+
+    const existing = await db.select().from(posts)
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+      .limit(1);
+
+    if (!existing.length) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (platform !== undefined) updates.platform = platform;
+    if (content !== undefined) updates.content = content;
+    if (mediaUrls !== undefined) updates.mediaUrls = mediaUrls;
+    if (status !== undefined) updates.status = status;
+    if (scheduledAt !== undefined) updates.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
+
+    const [updated] = await db.update(posts)
+      .set(updates)
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+      .returning();
+
+    res.json(updated);
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to update calendar post:');
+    res.status(500).json({ error: 'Failed to update calendar post' });
+  }
+});
+
+// Delete a calendar post
+router.delete('/calendar/:postId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { postId } = req.params;
+
+    const existing = await db.select().from(posts)
+      .where(and(eq(posts.id, postId), eq(posts.userId, userId)))
+      .limit(1);
+
+    if (!existing.length) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    await db.delete(posts).where(and(eq(posts.id, postId), eq(posts.userId, userId)));
+
+    res.json({ success: true, id: postId });
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to delete calendar post:');
+    res.status(500).json({ error: 'Failed to delete calendar post' });
+  }
+});
+
 // Get social activity - returns empty array when no real data exists
 router.get('/activity', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {

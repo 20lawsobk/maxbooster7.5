@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
@@ -6,9 +7,19 @@ import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
+import { storeUploadedFile, handleUploadError } from '../middleware/uploadHandler.js';
 import { db } from '../db.js';
 import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
-import { adCampaigns, adCreatives } from '@shared/schema';
+import { adCampaigns, adCreatives, systemSettings } from '@shared/schema';
+
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
@@ -79,6 +90,52 @@ router.get('/lookalike-audiences', requireAuth, async (req: AuthenticatedRequest
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get lookalike audiences:');
     res.status(500).json({ error: 'Failed to get lookalike audiences' });
+  }
+});
+
+router.post('/lookalike-audiences', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { name, sourceAudience, targetPlatforms, estimatedSize, status } = req.body;
+    if (!name) {
+      return res.status(400).json({ error: 'Audience name is required' });
+    }
+    const existing = await storage.getLookalikeAudiences(userId);
+    const newAudience = {
+      id: `aud_${Date.now()}`,
+      name,
+      sourceAudience: sourceAudience || 'Custom Audience',
+      targetPlatforms: targetPlatforms || [],
+      estimatedSize: estimatedSize || 0,
+      status: status || 'building',
+      createdAt: new Date().toISOString(),
+    };
+    const updated = [...existing, newAudience];
+    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: updated as any })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: updated as any } });
+    res.status(201).json(newAudience);
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to create lookalike audience:');
+    res.status(500).json({ error: 'Failed to create lookalike audience' });
+  }
+});
+
+router.patch('/lookalike-audiences/:id', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { id } = req.params;
+    const existing = await storage.getLookalikeAudiences(userId);
+    const idx = existing.findIndex((a: any) => a.id === id);
+    if (idx === -1) {
+      return res.status(404).json({ error: 'Audience not found' });
+    }
+    existing[idx] = { ...existing[idx], ...req.body, id };
+    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: existing as any })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: existing as any } });
+    res.json(existing[idx]);
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to update lookalike audience:');
+    res.status(500).json({ error: 'Failed to update lookalike audience' });
   }
 });
 
@@ -181,8 +238,19 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
   }
 });
 
-router.post('/upload-image', requireAuth, async (_req, res) => {
-  res.status(501).json({ error: 'Image upload for ad creatives requires file storage. Use the Files section to upload media, then reference the URL in your creative.' });
+router.post('/upload-image', requireAuth, imageUpload.single('image'), handleUploadError, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const file = req.file;
+    if (!file) {
+      return res.status(400).json({ error: 'Image file required. Send as multipart/form-data with field name "image".' });
+    }
+    const { url, key } = await storeUploadedFile(file, userId, 'images');
+    res.json({ success: true, url, key });
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to upload ad image:');
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
 });
 
 // Advertising autopilot status — returns isRunning, config, modelStatus + campaign metrics
