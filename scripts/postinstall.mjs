@@ -21,19 +21,15 @@ if (process.env.SKIP_POSTINSTALL === '1' || process.env.CI === 'true') {
   process.exit(0);
 }
 
-// Warn if critical env vars are absent (non-fatal — server handles this at boot)
-const recommended = ['NEON_DATABASE_URL', 'STRIPE_SECRET_KEY', 'SENDGRID_API_KEY'];
-const missing = recommended.filter(k => !process.env[k]);
-if (missing.length) {
-  console.warn(`[postinstall] Note: the following env vars are not set yet: ${missing.join(', ')}`);
-  console.warn('[postinstall] They must be configured before starting the server.');
-}
-
-// Confirm the server entry point exists so a bad build is caught early
+// Confirm the server entry point exists so a bad install is caught early
 const serverEntry = join(root, 'server', 'index.ts');
 if (!existsSync(serverEntry)) {
   console.error('[postinstall] ERROR: server/index.ts not found — installation may be incomplete.');
   process.exit(1);
 }
+
+// Runtime env vars (NEON_DATABASE_URL, STRIPE_SECRET_KEY, etc.) are injected
+// by the deployment platform at server start-up, not during npm install.
+// No env var checks needed here.
 
 console.log('[postinstall] Max Booster dependencies installed successfully.');
