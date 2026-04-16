@@ -1127,21 +1127,30 @@ export default function Settings() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="C" data-testid="select-key-c">
-                            C Major
-                          </SelectItem>
-                          <SelectItem value="G" data-testid="select-key-g">
-                            G Major
-                          </SelectItem>
-                          <SelectItem value="D" data-testid="select-key-d">
-                            D Major
-                          </SelectItem>
-                          <SelectItem value="A" data-testid="select-key-a">
-                            A Major
-                          </SelectItem>
-                          <SelectItem value="E" data-testid="select-key-e">
-                            E Major
-                          </SelectItem>
+                          <SelectItem value="C">C Major</SelectItem>
+                          <SelectItem value="Db">D♭ Major</SelectItem>
+                          <SelectItem value="D">D Major</SelectItem>
+                          <SelectItem value="Eb">E♭ Major</SelectItem>
+                          <SelectItem value="E">E Major</SelectItem>
+                          <SelectItem value="F">F Major</SelectItem>
+                          <SelectItem value="Gb">G♭ Major</SelectItem>
+                          <SelectItem value="G">G Major</SelectItem>
+                          <SelectItem value="Ab">A♭ Major</SelectItem>
+                          <SelectItem value="A">A Major</SelectItem>
+                          <SelectItem value="Bb">B♭ Major</SelectItem>
+                          <SelectItem value="B">B Major</SelectItem>
+                          <SelectItem value="Cm">C Minor</SelectItem>
+                          <SelectItem value="C#m">C# Minor</SelectItem>
+                          <SelectItem value="Dm">D Minor</SelectItem>
+                          <SelectItem value="D#m">D# Minor</SelectItem>
+                          <SelectItem value="Em">E Minor</SelectItem>
+                          <SelectItem value="Fm">F Minor</SelectItem>
+                          <SelectItem value="F#m">F# Minor</SelectItem>
+                          <SelectItem value="Gm">G Minor</SelectItem>
+                          <SelectItem value="G#m">G# Minor</SelectItem>
+                          <SelectItem value="Am">A Minor</SelectItem>
+                          <SelectItem value="Bbm">B♭ Minor</SelectItem>
+                          <SelectItem value="Bm">B Minor</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

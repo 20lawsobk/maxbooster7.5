@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -31,7 +32,8 @@ import {
   CalendarDays,
   List as ListIcon,
   Music,
-  ExternalLink
+  ExternalLink,
+  Radio
 } from "lucide-react";
 import { format, isPast, isFuture } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
@@ -59,6 +61,7 @@ export default function Shows() {
   useRequireSubscription();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [, setLocation] = useLocation();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [setlistCreateDialog, setSetlistCreateDialog] = useState(false);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -378,12 +381,21 @@ export default function Shows() {
                       )}
                     </CardContent>
                     <CardFooter className="bg-muted/30 flex gap-2">
-                      <Button variant="outline" size="sm" className="flex-1" asChild>
-                        <a href={show.ticketUrl || "#"} target="_blank" rel="noopener noreferrer">
-                          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
-                          Tickets
-                        </a>
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => setLocation(`/show?id=${show.id}&name=${encodeURIComponent(show.name)}`)}
+                      >
+                        <Radio className="h-3.5 w-3.5 mr-1.5 animate-pulse" />
+                        Go Live
                       </Button>
+                      {show.ticketUrl && (
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={show.ticketUrl} target="_blank" rel="noopener noreferrer">
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        </Button>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="icon" className="h-9 w-9">

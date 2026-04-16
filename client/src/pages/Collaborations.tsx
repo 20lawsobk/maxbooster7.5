@@ -6,13 +6,15 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Search, UserPlus, Check, X, MessageSquare, Music, Star, MapPin, Zap, Clock, Send } from 'lucide-react';
+import { apiRequest } from '@/lib/queryClient';
+import { Users, Search, UserPlus, Check, X, MessageSquare, Music, Star, MapPin, Zap, Clock, Send, FolderPlus } from 'lucide-react';
 
 interface Connection {
   id: string;
@@ -57,6 +59,10 @@ export default function Collaborations() {
   const [showConnectDialog, setShowConnectDialog] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Suggestion | null>(null);
   const [connectionMessage, setConnectionMessage] = useState('');
+  const [showCreateProjectDialog, setShowCreateProjectDialog] = useState(false);
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDescription, setNewProjectDescription] = useState('');
+  const [newProjectGenre, setNewProjectGenre] = useState('');
 
   const { data: connectionsData, isLoading: loadingConnections} = useQuery<Connection[]>({
     queryKey: ['/api/collaborations/connections'],
@@ -129,6 +135,24 @@ export default function Collaborations() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations'] });
       toast({ title: 'Connection declined' });
+    },
+  });
+
+  const createProjectMutation = useMutation({
+    mutationFn: async (data: { title: string; description: string; genre: string }) => {
+      const res = await apiRequest('POST', '/api/collaborations/projects', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
+      setShowCreateProjectDialog(false);
+      setNewProjectName('');
+      setNewProjectDescription('');
+      setNewProjectGenre('');
+      toast({ title: 'Project created!', description: 'Your collaboration project is ready.' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to create project', variant: 'destructive' });
     },
   });
 
@@ -361,6 +385,12 @@ const connections = connectionsData || [];
           </TabsContent>
 
           <TabsContent value="projects" className="space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setShowCreateProjectDialog(true)}>
+                <FolderPlus className="h-4 w-4 mr-2" />
+                New Project
+              </Button>
+            </div>
             {projects.length === 0 ? (
               <Card className="p-8 text-center">
                 <Music className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
@@ -368,7 +398,8 @@ const connections = connectionsData || [];
                 <p className="text-sm text-muted-foreground mt-1">
                   Start a project with your connections to collaborate on music
                 </p>
-                <Button className="mt-4">
+                <Button className="mt-4" onClick={() => setShowCreateProjectDialog(true)}>
+                  <FolderPlus className="h-4 w-4 mr-2" />
                   Start a Project
                 </Button>
               </Card>
@@ -406,6 +437,58 @@ const connections = connectionsData || [];
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Create Project Dialog */}
+        <Dialog open={showCreateProjectDialog} onOpenChange={setShowCreateProjectDialog}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Start a Collaboration Project</DialogTitle>
+              <DialogDescription>
+                Create a shared workspace for you and your collaborators to work on music together.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="project-name">Project Name *</Label>
+                <Input
+                  id="project-name"
+                  placeholder="e.g. Summer EP with DJ Karim"
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="project-genre">Genre</Label>
+                <Input
+                  id="project-genre"
+                  placeholder="e.g. Hip-Hop, R&B, Afrobeats..."
+                  value={newProjectGenre}
+                  onChange={(e) => setNewProjectGenre(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="project-desc">Description</Label>
+                <Textarea
+                  id="project-desc"
+                  placeholder="What's the vision for this project? Goals, vibe, timeline..."
+                  rows={3}
+                  value={newProjectDescription}
+                  onChange={(e) => setNewProjectDescription(e.target.value)}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateProjectDialog(false)}>Cancel</Button>
+              <Button
+                onClick={() => createProjectMutation.mutate({ title: newProjectName, description: newProjectDescription, genre: newProjectGenre })}
+                disabled={!newProjectName.trim() || createProjectMutation.isPending}
+              >
+                <FolderPlus className="h-4 w-4 mr-2" />
+                {createProjectMutation.isPending ? 'Creating...' : 'Create Project'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showConnectDialog} onOpenChange={setShowConnectDialog}>
           <DialogContent>

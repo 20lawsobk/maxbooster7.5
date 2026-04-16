@@ -80,7 +80,7 @@ export default function CareerCoach() {
 
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
-      const res = await apiRequest('POST', '/api/career-coach/chat', { message });
+      const res = await apiRequest('POST', '/api/assistant/chat', { message });
       return res.json();
     },
     onSuccess: (data) => {
@@ -89,7 +89,7 @@ export default function CareerCoach() {
         {
           id: Date.now().toString(),
           role: 'coach',
-          content: data.response,
+          content: data.content || data.response || "I'm here to help you grow your music career. What would you like to work on?",
           timestamp: new Date().toISOString(),
         },
       ]);

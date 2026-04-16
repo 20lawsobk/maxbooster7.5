@@ -38,7 +38,6 @@ export default defineConfig({
     assetsInlineLimit: 8192,
     rollupOptions: {
       output: {
-        charset: "utf-8",
         chunkFileNames: "assets/[name]-[hash].js",
         entryFileNames: "assets/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash].[ext]",

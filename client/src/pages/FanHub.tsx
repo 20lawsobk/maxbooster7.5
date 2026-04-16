@@ -47,7 +47,10 @@ import {
   MailQuestion,
   Plus,
   Trash2,
-  Tag as TagIcon
+  Tag as TagIcon,
+  Share2,
+  Upload,
+  Music
 } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { format } from 'date-fns';
@@ -109,6 +112,12 @@ export default function FanHub() {
   const [isComposingMessage, setIsComposingMessage] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [pendingDeleteFanId, setPendingDeleteFanId] = useState<string | null>(null);
+  const [isTaggingFan, setIsTaggingFan] = useState<FanSubscriber | null>(null);
+  const [tagInput, setTagInput] = useState('');
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isEditingFan, setIsEditingFan] = useState<FanSubscriber | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', phone: '', notes: '', isVip: false });
 
   // Queries
   const { data: subscribersData, isLoading: loadingSubscribers } = useQuery<{ subscribers: FanSubscriber[] }>({
@@ -160,6 +169,101 @@ export default function FanHub() {
       toast({ title: 'Success', description: 'Bulk message sent to your fans!' });
     },
   });
+
+  const addTagMutation = useMutation({
+    mutationFn: async ({ id, tags }: { id: string; tags: string[] }) => {
+      const res = await apiRequest('PUT', `/api/fan-hub/subscribers/${id}/tag`, { tags });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-hub/subscribers'] });
+      setIsTaggingFan(null);
+      setTagInput('');
+      toast({ title: 'Tags updated' });
+    },
+  });
+
+  const updateFanMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<FanSubscriber> }) => {
+      const res = await apiRequest('PUT', `/api/fan-hub/subscribers/${id}`, data);
+      return res.json();
+    },
+    onSuccess: (updated) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-hub/subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-hub/stats'] });
+      setIsEditingFan(null);
+      if (selectedFan) setSelectedFan({ ...selectedFan, ...updated });
+      toast({ title: 'Fan profile updated' });
+    },
+  });
+
+  const handleExport = () => {
+    const headers = ['Name', 'Email', 'Phone', 'VIP', 'Source', 'Joined', 'Total Spent', 'Tags', 'Notes'];
+    const rows = subscribers.map(fan => [
+      fan.name || '',
+      fan.email,
+      fan.phone || '',
+      fan.isVip ? 'Yes' : 'No',
+      fan.source || '',
+      format(new Date(fan.joinedAt), 'yyyy-MM-dd'),
+      fan.totalSpent.toFixed(2),
+      (fan.tags || []).join('|'),
+      (fan.notes || '').replace(/"/g, '""'),
+    ].map(v => `"${v}"`).join(','));
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `fans-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Export complete', description: `${subscribers.length} fans exported to CSV.` });
+  };
+
+  const handleImportCSV = async () => {
+    if (!importFile) return;
+    setIsImporting(true);
+    try {
+      const text = await importFile.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) {
+        toast({ title: 'Empty file', description: 'CSV must have at least a header row and one data row.', variant: 'destructive' });
+        return;
+      }
+      const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim().toLowerCase());
+      const emailIdx = headers.findIndex(h => h === 'email');
+      const nameIdx = headers.findIndex(h => h === 'name');
+      const phoneIdx = headers.findIndex(h => h === 'phone');
+      const tagsIdx = headers.findIndex(h => h === 'tags');
+      if (emailIdx === -1) {
+        toast({ title: 'Missing email column', description: 'Your CSV must have an "email" column.', variant: 'destructive' });
+        return;
+      }
+      const fans = lines.slice(1).map(line => {
+        const cols = line.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+        return {
+          email: cols[emailIdx] || '',
+          name: nameIdx >= 0 ? cols[nameIdx] : undefined,
+          phone: phoneIdx >= 0 ? cols[phoneIdx] : undefined,
+          tags: tagsIdx >= 0 && cols[tagsIdx] ? cols[tagsIdx].split('|').map(t => t.trim()).filter(Boolean) : undefined,
+        };
+      }).filter(f => f.email && f.email.includes('@'));
+
+      const res = await apiRequest('POST', '/api/fan-hub/subscribers/import', { subscribers: fans });
+      const result = await res.json();
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-hub/subscribers'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/fan-hub/stats'] });
+      setImportFile(null);
+      toast({ title: 'Import complete!', description: `${result.imported || fans.length} fans imported successfully.` });
+    } catch {
+      toast({ title: 'Import failed', description: 'Could not parse CSV. Please check the file format.', variant: 'destructive' });
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   const subscribers = subscribersData?.subscribers || [];
   const vipFans = subscribers.filter(f => f.isVip);
@@ -256,9 +360,9 @@ export default function FanHub() {
             />
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" className="flex-1 sm:flex-none">
+            <Button variant="outline" className="flex-1 sm:flex-none" onClick={handleExport} disabled={subscribers.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Export
+              Export CSV
             </Button>
             <Dialog open={isAddingFan} onOpenChange={setIsAddingFan}>
               <DialogTrigger asChild>
@@ -380,12 +484,53 @@ export default function FanHub() {
                     ))
                   ) : subscribers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-64 text-center">
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                          <Users className="h-12 w-12 mb-4 opacity-20" />
-                          <p>No fans found matching your search.</p>
-                          <Button variant="link" onClick={() => setSearchTerm('')}>Clear search</Button>
-                        </div>
+                      <TableCell colSpan={5}>
+                        {searchTerm ? (
+                          <div className="flex flex-col items-center justify-center h-40 text-muted-foreground">
+                            <Users className="h-10 w-10 mb-3 opacity-20" />
+                            <p className="mb-2">No fans match "{searchTerm}"</p>
+                            <Button variant="link" onClick={() => setSearchTerm('')}>Clear search</Button>
+                          </div>
+                        ) : (
+                          <div className="py-12 px-6">
+                            <div className="max-w-xl mx-auto text-center mb-8">
+                              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                                <Users className="h-8 w-8 text-primary opacity-60" />
+                              </div>
+                              <h3 className="text-lg font-semibold mb-2">Build Your Fan Base</h3>
+                              <p className="text-muted-foreground text-sm">You don't have any fans yet. Here are some ways to grow your community:</p>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
+                              <div className="rounded-lg border bg-card p-4 text-center">
+                                <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto mb-3">
+                                  <Music className="h-5 w-5 text-blue-500" />
+                                </div>
+                                <p className="font-medium text-sm mb-1">Release Music</p>
+                                <p className="text-xs text-muted-foreground">Distribute on all platforms to reach new listeners and convert them into fans.</p>
+                              </div>
+                              <div className="rounded-lg border bg-card p-4 text-center">
+                                <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center mx-auto mb-3">
+                                  <Share2 className="h-5 w-5 text-purple-500" />
+                                </div>
+                                <p className="font-medium text-sm mb-1">Share Your EPK</p>
+                                <p className="text-xs text-muted-foreground">Send your press kit link to blogs, playlists, and venues to build awareness.</p>
+                              </div>
+                              <div className="rounded-lg border bg-card p-4 text-center">
+                                <div className="h-10 w-10 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-3">
+                                  <Upload className="h-5 w-5 text-green-500" />
+                                </div>
+                                <p className="font-medium text-sm mb-1">Import Existing Fans</p>
+                                <p className="text-xs text-muted-foreground">Already have fans elsewhere? Import them via CSV from the Import tab above.</p>
+                              </div>
+                            </div>
+                            <div className="flex justify-center mt-6 gap-3">
+                              <Button onClick={() => setIsAddingFan(true)}>
+                                <UserPlus className="h-4 w-4 mr-2" />
+                                Add Your First Fan
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   ) : (
@@ -423,7 +568,10 @@ export default function FanHub() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem onClick={() => setSelectedFan(fan)}>View Profile</DropdownMenuItem>
-                              <DropdownMenuItem>Add Tag</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => { setIsTaggingFan(fan); setTagInput((fan.tags || []).join(', ')); }}>
+                                <TagIcon className="h-4 w-4 mr-2" />
+                                Edit Tags
+                              </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive" onClick={() => setPendingDeleteFanId(fan.id)}>Remove Fan</DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -555,31 +703,60 @@ export default function FanHub() {
           </TabsContent>
 
           <TabsContent value="import" className="pt-4">
-            <Card className="p-12 text-center max-w-2xl mx-auto">
-              <div className="flex flex-col items-center">
+            <Card className="p-10 max-w-2xl mx-auto">
+              <div className="flex flex-col items-center text-center">
                 <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-6">
-                  <Download className="h-8 w-8 text-primary" />
+                  <Plus className="h-8 w-8 text-primary" />
                 </div>
                 <h3 className="text-xl font-bold mb-2">Import Your Fan Base</h3>
                 <p className="text-muted-foreground mb-8">
                   Already have a list of fans from Mailchimp, Bandcamp, or your website? 
                   Upload a CSV file to import them all at once.
                 </p>
-                <div className="grid w-full gap-4 max-w-sm">
-                  <Input type="file" accept=".csv" className="cursor-pointer" />
-                  <Button className="w-full">
-                    Upload & Map Columns
+                <div className="w-full max-w-sm space-y-4">
+                  <div className={`relative border-2 border-dashed rounded-xl p-8 transition-colors ${importFile ? 'border-primary/50 bg-primary/5' : 'border-muted-foreground/20 hover:border-primary/30'}`}>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                      onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                    />
+                    {importFile ? (
+                      <div className="text-center">
+                        <p className="font-medium text-primary">{importFile.name}</p>
+                        <p className="text-xs text-muted-foreground mt-1">{(importFile.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                    ) : (
+                      <div className="text-center">
+                        <Download className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
+                        <p className="text-sm font-medium">Click or drag to select CSV</p>
+                        <p className="text-xs text-muted-foreground mt-1">Max 1,000 fans per import</p>
+                      </div>
+                    )}
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    onClick={handleImportCSV}
+                    disabled={!importFile || isImporting}
+                  >
+                    {isImporting ? 'Importing...' : `Import${importFile ? ' Fans' : ' CSV'}`}
                   </Button>
+                  {importFile && (
+                    <Button variant="ghost" size="sm" className="w-full" onClick={() => setImportFile(null)}>
+                      Clear selection
+                    </Button>
+                  )}
                 </div>
-                <div className="mt-12 pt-8 border-t w-full text-left">
+                <div className="mt-10 pt-8 border-t w-full text-left">
                   <h4 className="font-semibold mb-4 flex items-center gap-2">
                     <Filter className="h-4 w-4" />
                     CSV Format Requirements
                   </h4>
                   <ul className="text-sm text-muted-foreground space-y-2 list-disc list-inside">
-                    <li>Must include an <code className="bg-muted px-1 rounded">email</code> column</li>
-                    <li>Optional columns: <code className="bg-muted px-1 rounded">name</code>, <code className="bg-muted px-1 rounded">phone</code>, <code className="bg-muted px-1 rounded">tags</code></li>
-                    <li>Tags should be comma-separated within the column</li>
+                    <li>Must include an <code className="bg-muted px-1 rounded">email</code> column (required)</li>
+                    <li>Optional: <code className="bg-muted px-1 rounded">name</code>, <code className="bg-muted px-1 rounded">phone</code>, <code className="bg-muted px-1 rounded">tags</code></li>
+                    <li>Multiple tags: pipe-separated inside the tags column (e.g. <code className="bg-muted px-1 rounded">tour|vip|merch</code>)</li>
+                    <li>First row must be the header row</li>
                   </ul>
                 </div>
               </div>
@@ -630,7 +807,12 @@ export default function FanHub() {
                       ) : (
                         <p className="text-sm text-muted-foreground">No tags assigned.</p>
                       )}
-                      <Button variant="outline" size="icon" className="h-6 w-6 rounded-full">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6 rounded-full"
+                        onClick={() => { setIsTaggingFan(selectedFan); setTagInput((selectedFan?.tags || []).join(', ')); }}
+                      >
                         <Plus className="h-3 w-3" />
                       </Button>
                     </div>
@@ -644,7 +826,25 @@ export default function FanHub() {
                   </div>
 
                   <div className="pt-8 border-t space-y-3">
-                    <Button variant="outline" className="w-full">Edit Profile</Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        setIsEditingFan(selectedFan);
+                        setEditForm({ name: selectedFan.name || '', phone: selectedFan.phone || '', notes: selectedFan.notes || '', isVip: selectedFan.isVip });
+                      }}
+                    >
+                      Edit Profile
+                    </Button>
+                    <Button
+                      variant={selectedFan.isVip ? 'secondary' : 'outline'}
+                      className={`w-full ${selectedFan.isVip ? 'border-amber-500/50 text-amber-600' : ''}`}
+                      onClick={() => updateFanMutation.mutate({ id: selectedFan.id, data: { isVip: !selectedFan.isVip } })}
+                      disabled={updateFanMutation.isPending}
+                    >
+                      <Star className={`h-4 w-4 mr-2 ${selectedFan.isVip ? 'fill-amber-500 text-amber-500' : ''}`} />
+                      {selectedFan.isVip ? 'Remove VIP Status' : 'Mark as VIP'}
+                    </Button>
                     <Button 
                       variant="destructive" 
                       className="w-full"
@@ -659,6 +859,82 @@ export default function FanHub() {
             )}
           </SheetContent>
         </Sheet>
+
+        {/* Edit Fan Profile Dialog */}
+        <Dialog open={!!isEditingFan} onOpenChange={(open) => !open && setIsEditingFan(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Edit Fan Profile</DialogTitle>
+              <DialogDescription>{isEditingFan?.email}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <div className="space-y-1">
+                <Label htmlFor="edit-name">Full Name</Label>
+                <Input id="edit-name" value={editForm.name} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="John Doe" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-phone">Phone</Label>
+                <Input id="edit-phone" value={editForm.phone} onChange={(e) => setEditForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1 (555) 000-0000" />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="edit-notes">Notes</Label>
+                <Textarea id="edit-notes" rows={3} value={editForm.notes} onChange={(e) => setEditForm(f => ({ ...f, notes: e.target.value }))} placeholder="Notes about this fan..." />
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Checkbox id="edit-vip" checked={editForm.isVip} onCheckedChange={(c) => setEditForm(f => ({ ...f, isVip: !!c }))} />
+                <Label htmlFor="edit-vip">VIP Fan</Label>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditingFan(null)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (!isEditingFan) return;
+                  updateFanMutation.mutate({ id: isEditingFan.id, data: editForm });
+                }}
+                disabled={updateFanMutation.isPending}
+              >
+                {updateFanMutation.isPending ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Tags Dialog */}
+        <Dialog open={!!isTaggingFan} onOpenChange={(open) => !open && setIsTaggingFan(null)}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Edit Tags</DialogTitle>
+              <DialogDescription>
+                Add or remove tags for {isTaggingFan?.name || isTaggingFan?.email}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 py-2">
+              <Label htmlFor="tags-input">Tags (comma-separated)</Label>
+              <Input
+                id="tags-input"
+                placeholder="tour, vip, merch-buyer, newsletter"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">Current: {isTaggingFan?.tags?.join(', ') || 'none'}</p>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsTaggingFan(null)}>Cancel</Button>
+              <Button
+                onClick={() => {
+                  if (!isTaggingFan) return;
+                  const tags = tagInput.split(',').map(t => t.trim()).filter(Boolean);
+                  addTagMutation.mutate({ id: isTaggingFan.id, tags });
+                }}
+                disabled={addTagMutation.isPending}
+              >
+                <TagIcon className="h-4 w-4 mr-2" />
+                {addTagMutation.isPending ? 'Saving...' : 'Save Tags'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <AlertDialog open={!!pendingDeleteFanId} onOpenChange={(open) => !open && setPendingDeleteFanId(null)}>
           <AlertDialogContent>
