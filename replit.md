@@ -53,6 +53,15 @@ Key architectural decisions include:
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
 
+## Platform Audit Changes (2026-04-16 Session 2)
+AI Career Coach & UX polish pass:
+- **Career Coach**: Full chat upgrade — loads persistent conversation history from `/api/assistant/history` on mount (no more blank state on revisit); quick-action chips rendered below AI responses so artists can follow up with one click; proactive suggestion pills shown as Zap tips; auto-scroll to bottom on new messages; "Clear conversation" trash button wired to `DELETE /api/assistant/history`; sidebar Quick Questions buttons now trigger actual AI chat questions (not dead buttons); input focuses automatically after AI responds
+- **FanHub**: Export CSV, Add Tag dialog, CSV Import tab all verified working end-to-end
+- **Collaborations**: Start a Project dialog fully wired with genre + description fields, POST /api/collaborations/projects
+- **Shows**: Go Live button (red, animated pulse) per upcoming show navigates to `/show?id=&name=` with context; Edit dialog + Delete confirmation both functional
+- **Settings**: Musical key dropdown confirmed to have all 24 keys (12 major + 12 minor)
+- **Dashboard**: Quick Actions verified — Create New Project (mutation), Launch Campaign (/advertising), Distribute Music (/distribution), AI Content Optimization (paid-only)
+
 ## Platform Audit Changes (2026-04-16)
 Professional artist UX audit and comprehensive improvements:
 - **Sidebar Navigation**: Fixed duplicate icons (AI Insights → Sparkles, Career Coach → GraduationCap, Admin Security → ShieldAlert), added Video Generator page link (Clapperboard icon)

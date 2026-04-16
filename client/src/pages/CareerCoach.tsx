@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -6,7 +6,6 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -17,7 +16,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { 
   Brain, Target, TrendingUp, Calendar, CheckCircle, Clock, 
   Lightbulb, Rocket, Star, ArrowRight, MessageSquare, Send,
-  Music, DollarSign, Users, BarChart3, Sparkles
+  Music, DollarSign, Users, BarChart3, Sparkles, Zap, Trash2
 } from 'lucide-react';
 
 interface CareerGoal {
@@ -41,11 +40,18 @@ interface Recommendation {
   actionUrl?: string;
 }
 
+interface QuickAction {
+  label: string;
+  prompt: string;
+}
+
 interface CoachMessage {
   id: string;
-  role: 'user' | 'coach';
+  role: 'user' | 'assistant' | 'coach';
   content: string;
   timestamp: string;
+  quickActions?: QuickAction[];
+  proactiveSuggestions?: string[];
 }
 
 export default function CareerCoach() {
@@ -54,14 +60,10 @@ export default function CareerCoach() {
   const { toast } = useToast();
   
   const [chatInput, setChatInput] = useState('');
-  const [chatMessages, setChatMessages] = useState<CoachMessage[]>([
-    {
-      id: '1',
-      role: 'coach',
-      content: "Hi! I'm your AI Career Coach. I analyze your music career data to provide personalized recommendations. How can I help you grow today?",
-      timestamp: new Date().toISOString(),
-    }
-  ]);
+  const [chatMessages, setChatMessages] = useState<CoachMessage[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{ goals: CareerGoal[] }>({
     queryKey: ['/api/career-coach/goals'],
@@ -78,41 +80,109 @@ export default function CareerCoach() {
     enabled: !!user,
   });
 
+  const { data: historyData } = useQuery<{ messages: any[] }>({
+    queryKey: ['/api/assistant/history'],
+    enabled: !!user,
+  });
+
+  useEffect(() => {
+    if (historyData && !historyLoaded) {
+      const historical = (historyData.messages || []).map((m: any) => ({
+        id: m.id || String(m.createdAt),
+        role: m.role === 'assistant' ? 'coach' as const : 'user' as const,
+        content: m.content,
+        timestamp: m.createdAt,
+      }));
+
+      if (historical.length > 0) {
+        setChatMessages(historical);
+      } else {
+        setChatMessages([{
+          id: 'welcome',
+          role: 'coach',
+          content: "Hi! I'm Max, your AI Career Coach. I analyze your music career data to provide personalized recommendations. Ask me anything about growing your career, releasing music, building your fan base, or running your business as an artist.",
+          timestamp: new Date().toISOString(),
+          quickActions: [
+            { label: 'How do I grow my fan base?', prompt: 'How do I grow my fan base?' },
+            { label: 'Distribute my music', prompt: 'How do I distribute my music to all platforms?' },
+            { label: 'Boost my streams', prompt: 'What can I do to boost my streaming numbers?' },
+            { label: 'Start earning royalties', prompt: 'How do I start earning royalties from my music?' },
+          ],
+        }]);
+      }
+      setHistoryLoaded(true);
+    }
+  }, [historyData, historyLoaded]);
+
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
   const chatMutation = useMutation({
     mutationFn: async (message: string) => {
       const res = await apiRequest('POST', '/api/assistant/chat', { message });
       return res.json();
     },
     onSuccess: (data) => {
+      const quickActions: QuickAction[] = data.quickActions || [];
+      const proactiveSuggestions: string[] = data.proactiveSuggestions || [];
       setChatMessages((prev) => [
         ...prev,
         {
-          id: Date.now().toString(),
+          id: data.assistantMessageId || Date.now().toString(),
           role: 'coach',
           content: data.content || data.response || "I'm here to help you grow your music career. What would you like to work on?",
           timestamp: new Date().toISOString(),
+          quickActions: quickActions.length > 0 ? quickActions : undefined,
+          proactiveSuggestions: proactiveSuggestions.length > 0 ? proactiveSuggestions : undefined,
         },
       ]);
+      inputRef.current?.focus();
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to get AI response', variant: 'destructive' });
     },
   });
 
-  const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+  const clearHistoryMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest('DELETE', '/api/assistant/history');
+    },
+    onSuccess: () => {
+      setChatMessages([{
+        id: 'welcome-new',
+        role: 'coach',
+        content: "Conversation cleared! I'm ready to start fresh. What would you like to work on today?",
+        timestamp: new Date().toISOString(),
+        quickActions: [
+          { label: 'Grow my fan base', prompt: 'How do I grow my fan base?' },
+          { label: 'Distribute music', prompt: 'How do I distribute my music?' },
+          { label: 'Boost streams', prompt: 'How do I boost my streaming numbers?' },
+          { label: 'Earn royalties', prompt: 'How do I maximize my royalty earnings?' },
+        ],
+      }]);
+      setHistoryLoaded(true);
+      toast({ title: 'Cleared', description: 'Conversation history has been cleared.' });
+    },
+  });
+
+  const handleSendMessage = (text?: string) => {
+    const msg = (text || chatInput).trim();
+    if (!msg) return;
     
     setChatMessages((prev) => [
       ...prev,
       {
         id: Date.now().toString(),
         role: 'user',
-        content: chatInput,
+        content: msg,
         timestamp: new Date().toISOString(),
       },
     ]);
     
-    chatMutation.mutate(chatInput);
+    chatMutation.mutate(msg);
     setChatInput('');
   };
 
@@ -154,7 +224,7 @@ export default function CareerCoach() {
     return null;
   }
 
-return (
+  return (
     <AppLayout>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -298,8 +368,9 @@ return (
                     <p className="text-sm text-muted-foreground mt-1 max-w-md mx-auto">
                       Define what success looks like for you, and I'll help you create a roadmap to get there
                     </p>
-                    <Button className="mt-4">
-                      Create Goal
+                    <Button className="mt-4" onClick={() => handleSendMessage('Help me set a career goal for my music')}>
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Ask Coach to Help
                     </Button>
                   </Card>
                 ) : (
@@ -497,54 +568,98 @@ return (
 
           <div className="space-y-4">
             <Card className="h-[600px] flex flex-col">
-              <CardHeader className="border-b">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Chat with Coach
-                </CardTitle>
-              </CardHeader>
-              <ScrollArea className="flex-1 p-4">
-                <div className="space-y-4">
-                  {chatMessages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] rounded-lg p-3 ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <p className="text-sm">{msg.content}</p>
-                      </div>
-                    </div>
-                  ))}
-                  {chatMutation.isPending && (
-                    <div className="flex justify-start">
-                      <div className="bg-muted rounded-lg p-3">
-                        <div className="flex gap-1">
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-100" />
-                          <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-200" />
-                        </div>
-                      </div>
-                    </div>
-                  )}
+              <CardHeader className="border-b flex-shrink-0">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5" />
+                    Chat with Max
+                  </CardTitle>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                    title="Clear conversation"
+                    onClick={() => clearHistoryMutation.mutate()}
+                    disabled={clearHistoryMutation.isPending}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
-              </ScrollArea>
-              <div className="p-4 border-t">
+              </CardHeader>
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                {chatMessages.length === 0 && (
+                  <div className="flex justify-center items-center h-full text-muted-foreground">
+                    <div className="text-center">
+                      <Brain className="h-10 w-10 mx-auto mb-2 opacity-20" />
+                      <p className="text-sm">Loading your conversation...</p>
+                    </div>
+                  </div>
+                )}
+                {chatMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                  >
+                    <div
+                      className={`max-w-[88%] rounded-lg px-3 py-2 ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+
+                    {msg.quickActions && msg.quickActions.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2 max-w-[88%]">
+                        {msg.quickActions.map((qa, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleSendMessage(qa.prompt)}
+                            className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            {qa.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {msg.proactiveSuggestions && msg.proactiveSuggestions.length > 0 && (
+                      <div className="flex flex-col gap-1 mt-2 max-w-[88%]">
+                        {msg.proactiveSuggestions.map((tip, i) => (
+                          <div key={i} className="flex items-start gap-1.5 text-xs text-muted-foreground bg-muted/50 rounded px-2 py-1">
+                            <Zap className="h-3 w-3 text-amber-500 mt-0.5 flex-shrink-0" />
+                            {tip}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {chatMutation.isPending && (
+                  <div className="flex justify-start">
+                    <div className="bg-muted rounded-lg p-3">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" />
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-100" />
+                        <span className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce delay-200" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="p-4 border-t flex-shrink-0">
                 <div className="flex gap-2">
                   <Input
+                    ref={inputRef}
                     placeholder="Ask me anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                   />
                   <Button 
                     size="icon" 
-                    onClick={handleSendMessage}
+                    onClick={() => handleSendMessage()}
                     disabled={chatMutation.isPending || !chatInput.trim()}
                   >
                     <Send className="h-4 w-4" />
@@ -555,21 +670,28 @@ return (
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Quick Actions</CardTitle>
+                <CardTitle className="text-base">Quick Questions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <Target className="h-4 w-4 mr-2" />
-                  Set a new goal
-                </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <BarChart3 className="h-4 w-4 mr-2" />
-                  View full analytics
-                </Button>
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Plan my release
-                </Button>
+                {[
+                  { icon: Target, label: 'Set a career goal', prompt: 'Help me set a music career goal for this quarter' },
+                  { icon: BarChart3, label: 'Analyze my performance', prompt: 'Give me an analysis of my music career performance and what I should focus on' },
+                  { icon: Calendar, label: 'Plan my next release', prompt: 'Help me plan my next music release strategy' },
+                  { icon: DollarSign, label: 'Grow my revenue', prompt: 'What are the best ways for me to grow my music revenue?' },
+                  { icon: Users, label: 'Build my fan base', prompt: 'How can I grow my fan base and build a stronger community?' },
+                ].map(({ icon: Icon, label, prompt }) => (
+                  <Button
+                    key={label}
+                    variant="outline"
+                    className="w-full justify-start text-sm h-auto py-2"
+                    size="sm"
+                    onClick={() => handleSendMessage(prompt)}
+                    disabled={chatMutation.isPending}
+                  >
+                    <Icon className="h-4 w-4 mr-2 flex-shrink-0" />
+                    {label}
+                  </Button>
+                ))}
               </CardContent>
             </Card>
           </div>
