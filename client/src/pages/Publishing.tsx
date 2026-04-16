@@ -23,11 +23,28 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Copyright, Plus, FileText, CheckCircle, Clock, PieChart } from 'lucide-react';
+import { Copyright, Plus, FileText, CheckCircle, Clock, PieChart, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
 import { Cell, Pie, PieChart as RechartsPieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PublishingWork {
   id: string;
@@ -51,6 +68,8 @@ export default function Publishing() {
   const { user } = useRequireSubscription();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingWork, setEditingWork] = useState<PublishingWork | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { data: works = [], isLoading } = useQuery<PublishingWork[]>({
     queryKey: ['/api/publishing'],
@@ -69,7 +88,31 @@ export default function Publishing() {
       queryClient.invalidateQueries({ queryKey: ['/api/publishing'] });
       queryClient.invalidateQueries({ queryKey: ['/api/publishing/stats'] });
       setIsDialogOpen(false);
-      toast({ title: 'Success', description: 'Work registered successfully' });
+      toast({ title: 'Work registered successfully' });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const res = await apiRequest('PUT', `/api/publishing/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing/stats'] });
+      setEditingWork(null);
+      toast({ title: 'Work updated' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/publishing/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/publishing/stats'] });
+      toast({ title: 'Work removed' });
     },
   });
 
@@ -83,10 +126,20 @@ export default function Publishing() {
     });
   };
 
-  const splitData = [
-    { name: 'Writer Split', value: 50, color: '#3b82f6' },
-    { name: 'Publisher Split', value: 50, color: '#10b981' },
-  ];
+  // Build pie chart data from actual works — average splits across all works
+  const splitData = works.length > 0
+    ? (() => {
+        const avgWriter = works.reduce((s, w) => s + (Number(w.writerSplit) || 0), 0) / works.length;
+        const avgPublisher = works.reduce((s, w) => s + (Number(w.publishingSplit) || 0), 0) / works.length;
+        return [
+          { name: 'Writer Split', value: Math.round(avgWriter), color: '#3b82f6' },
+          { name: 'Publisher Split', value: Math.round(avgPublisher), color: '#10b981' },
+        ];
+      })()
+    : [
+        { name: 'Writer Split', value: 50, color: '#3b82f6' },
+        { name: 'Publisher Split', value: 50, color: '#10b981' },
+      ];
 
   if (!user) return null;
 
@@ -276,6 +329,7 @@ export default function Publishing() {
                     <TableHead>PRO</TableHead>
                     <TableHead>Splits (W/P)</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -283,12 +337,12 @@ export default function Publishing() {
                     <TableRow key={work.id}>
                       <TableCell className="font-medium">{work.trackTitle}</TableCell>
                       <TableCell>
-                        <div className="text-xs">ISWC: {work.iswc || 'N/A'}</div>
-                        <div className="text-xs text-muted-foreground">ISRC: {work.isrc || 'N/A'}</div>
+                        <div className="text-xs">ISWC: {work.iswc || '—'}</div>
+                        <div className="text-xs text-muted-foreground">ISRC: {work.isrc || '—'}</div>
                       </TableCell>
-                      <TableCell>{work.proName || 'N/A'}</TableCell>
+                      <TableCell>{work.proName || '—'}</TableCell>
                       <TableCell>
-                        {work.writerSplit}% / {work.publishingSplit}%
+                        {work.writerSplit ?? '—'}% / {work.publishingSplit ?? '—'}%
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={
@@ -300,6 +354,29 @@ export default function Publishing() {
                         }>
                           {work.status === 'confirmed' ? '✓ Confirmed' : work.status === 'pending' ? '⏳ Pending' : work.status}
                         </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingWork(work)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setPendingDeleteId(work.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -339,6 +416,98 @@ export default function Publishing() {
           </Card>
         </div>
       </div>
+
+      {/* Edit Work Dialog */}
+      <Dialog open={!!editingWork} onOpenChange={(open) => { if (!open) setEditingWork(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Work</DialogTitle>
+          </DialogHeader>
+          {editingWork && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const data = Object.fromEntries(fd.entries());
+              updateMutation.mutate({
+                id: editingWork.id,
+                ...data,
+                copyrightYear: data.copyrightYear ? parseInt(data.copyrightYear as string) : undefined,
+              });
+            }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-trackTitle">Track Title</Label>
+                  <Input id="edit-trackTitle" name="trackTitle" defaultValue={editingWork.trackTitle} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-copyrightYear">Copyright Year</Label>
+                  <Input id="edit-copyrightYear" name="copyrightYear" type="number" defaultValue={editingWork.copyrightYear} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-iswc">ISWC</Label>
+                  <Input id="edit-iswc" name="iswc" defaultValue={editingWork.iswc} placeholder="T-123.456.789-C" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-isrc">ISRC</Label>
+                  <Input id="edit-isrc" name="isrc" defaultValue={editingWork.isrc} placeholder="US-ABC-12-34567" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-proName">PRO</Label>
+                  <Input id="edit-proName" name="proName" defaultValue={editingWork.proName} placeholder="ASCAP, BMI, SESAC" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-proRegistrationId">PRO Work ID</Label>
+                  <Input id="edit-proRegistrationId" name="proRegistrationId" defaultValue={editingWork.proRegistrationId} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-writerSplit">Writer Split %</Label>
+                  <Input id="edit-writerSplit" name="writerSplit" type="number" defaultValue={editingWork.writerSplit} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-publishingSplit">Publisher Split %</Label>
+                  <Input id="edit-publishingSplit" name="publishingSplit" type="number" defaultValue={editingWork.publishingSplit} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-publisherName">Publisher Name</Label>
+                <Input id="edit-publisherName" name="publisherName" defaultValue={editingWork.publisherName} />
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingWork(null)}>Cancel</Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Registered Work</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this work registration? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteId) {
+                  deleteMutation.mutate(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+            >
+              Delete Work
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

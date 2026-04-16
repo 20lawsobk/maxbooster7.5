@@ -58,7 +58,9 @@ import {
   Truck,
   CheckCircle,
   ExternalLink,
-  FileText
+  FileText,
+  Store,
+  BarChart3,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -67,6 +69,7 @@ export default function MerchStore() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('products');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -92,8 +95,27 @@ export default function MerchStore() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/merch'] });
       queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
-      toast({ title: 'Success', description: 'Item added successfully' });
+      toast({ title: 'Product added', description: 'Your product is now live in your store.' });
       setIsAddDialogOpen(false);
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to add product.', variant: 'destructive' });
+    },
+  });
+
+  const updateItemMutation = useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const res = await apiRequest('PUT', `/api/merch/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/merch'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
+      toast({ title: 'Product updated', description: 'Changes saved successfully.' });
+      setEditingItem(null);
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to update product.', variant: 'destructive' });
     },
   });
 
@@ -104,7 +126,7 @@ export default function MerchStore() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/merch/orders'] });
-      toast({ title: 'Success', description: 'Order updated successfully' });
+      toast({ title: 'Order updated' });
     },
   });
 
@@ -114,7 +136,8 @@ export default function MerchStore() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/merch'] });
-      toast({ title: 'Success', description: 'Item deleted' });
+      queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
+      toast({ title: 'Product deleted' });
     },
   });
 
@@ -122,7 +145,6 @@ export default function MerchStore() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = Object.fromEntries(formData.entries());
-    
     addItemMutation.mutate({
       ...data,
       price: parseFloat(data.price as string),
@@ -133,9 +155,95 @@ export default function MerchStore() {
     });
   };
 
-  const filteredItems = items?.filter((item: any) => 
+  const handleEditItem = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const data = Object.fromEntries(formData.entries());
+    updateItemMutation.mutate({
+      id: editingItem.id,
+      ...data,
+      price: parseFloat(data.price as string),
+      salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
+      inventory: parseInt(data.inventory as string) || 0,
+      isDigital: data.isDigital === 'on',
+    });
+  };
+
+  const filteredItems = (items as any[])?.filter((item: any) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const ProductForm = ({ defaultValues, onSubmit, isLoading, submitLabel }: {
+    defaultValues?: any;
+    onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+    isLoading: boolean;
+    submitLabel: string;
+  }) => (
+    <form onSubmit={onSubmit} className="space-y-4 py-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="name">Product Name</Label>
+          <Input id="name" name="name" required defaultValue={defaultValues?.name} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="category">Category</Label>
+          <Select name="category" defaultValue={defaultValues?.category || 'clothing'}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="clothing">Clothing</SelectItem>
+              <SelectItem value="accessories">Accessories</SelectItem>
+              <SelectItem value="music">Music (Physical)</SelectItem>
+              <SelectItem value="digital">Digital Download</SelectItem>
+              <SelectItem value="bundle">Bundle</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Textarea id="description" name="description" defaultValue={defaultValues?.description} />
+      </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="price">Price ($)</Label>
+          <Input id="price" name="price" type="number" step="0.01" required defaultValue={defaultValues?.price} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="salePrice">Sale Price ($)</Label>
+          <Input id="salePrice" name="salePrice" type="number" step="0.01" defaultValue={defaultValues?.salePrice} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="inventory">Inventory</Label>
+          <Input id="inventory" name="inventory" type="number" defaultValue={defaultValues?.inventory ?? 0} />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label htmlFor="sku">SKU</Label>
+          <Input id="sku" name="sku" defaultValue={defaultValues?.sku} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="imageUrl">Image URL</Label>
+          <Input id="imageUrl" name="imageUrl" placeholder="https://..." defaultValue={defaultValues?.imageUrl} />
+        </div>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Switch id="isDigital" name="isDigital" defaultChecked={defaultValues?.isDigital} />
+        <Label htmlFor="isDigital">Digital Product</Label>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="downloadUrl">Download URL (digital products)</Label>
+        <Input id="downloadUrl" name="downloadUrl" placeholder="https://..." defaultValue={defaultValues?.downloadUrl} />
+      </div>
+      <DialogFooter>
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : submitLabel}
+        </Button>
+      </DialogFooter>
+    </form>
   );
 
   return (
@@ -143,8 +251,11 @@ export default function MerchStore() {
       <div className="space-y-8 p-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Merch Store</h1>
-            <p className="text-muted-foreground">Manage your physical and digital merchandise.</p>
+            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+              <Store className="h-8 w-8 text-primary" />
+              Merch Store
+            </h1>
+            <p className="text-muted-foreground mt-1">Manage your physical and digital merchandise.</p>
           </div>
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
@@ -156,120 +267,36 @@ export default function MerchStore() {
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
-                <DialogDescription>
-                  Enter the details for your new merchandise item.
-                </DialogDescription>
+                <DialogDescription>Enter the details for your new merchandise item.</DialogDescription>
               </DialogHeader>
-              <form onSubmit={handleAddItem} className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Product Name</Label>
-                    <Input id="name" name="name" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select name="category" defaultValue="clothing">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="clothing">Clothing</SelectItem>
-                        <SelectItem value="accessories">Accessories</SelectItem>
-                        <SelectItem value="music">Music (Physical)</SelectItem>
-                        <SelectItem value="digital">Digital Download</SelectItem>
-                        <SelectItem value="bundle">Bundle</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea id="description" name="description" />
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="price">Price ($)</Label>
-                    <Input id="price" name="price" type="number" step="0.01" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="salePrice">Sale Price ($)</Label>
-                    <Input id="salePrice" name="salePrice" type="number" step="0.01" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="inventory">Inventory</Label>
-                    <Input id="inventory" name="inventory" type="number" defaultValue="0" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sku">SKU</Label>
-                    <Input id="sku" name="sku" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="imageUrl">Image URL</Label>
-                    <Input id="imageUrl" name="imageUrl" placeholder="https://..." />
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Switch id="isDigital" name="isDigital" />
-                  <Label htmlFor="isDigital">Digital Product</Label>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="downloadUrl">Download URL (for digital products)</Label>
-                  <Input id="downloadUrl" name="downloadUrl" placeholder="https://..." />
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={addItemMutation.isPending}>
-                    {addItemMutation.isPending ? 'Adding...' : 'Add Product'}
-                  </Button>
-                </DialogFooter>
-              </form>
+              <ProductForm
+                onSubmit={handleAddItem}
+                isLoading={addItemMutation.isPending}
+                submitLabel="Add Product"
+              />
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Stats Section */}
+        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">${stats?.totalRevenue?.toFixed(2) || '0.00'}</div>
-              <p className="text-xs text-muted-foreground">Lifetime earnings</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Orders (Month)</CardTitle>
-              <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.ordersThisMonth || 0}</div>
-              <p className="text-xs text-muted-foreground">Orders this month</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.totalOrders || 0}</div>
-              <p className="text-xs text-muted-foreground">All time orders</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats?.inventoryAlerts || 0}</div>
-              <p className="text-xs text-muted-foreground">Items needing restock</p>
-            </CardContent>
-          </Card>
+          {[
+            { label: 'Total Revenue', value: `$${(stats as any)?.totalRevenue?.toFixed(2) || '0.00'}`, sub: 'Lifetime earnings', icon: DollarSign, color: 'text-green-500' },
+            { label: 'Orders (Month)', value: (stats as any)?.ordersThisMonth || 0, sub: 'Orders this month', icon: ShoppingCart, color: 'text-blue-500' },
+            { label: 'Total Orders', value: (stats as any)?.totalOrders || 0, sub: 'All time orders', icon: TrendingUp, color: 'text-purple-500' },
+            { label: 'Low Stock', value: (stats as any)?.inventoryAlerts || 0, sub: 'Items needing restock', icon: AlertCircle, color: 'text-destructive' },
+          ].map(({ label, value, sub, icon: Icon, color }) => (
+            <Card key={label}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{label}</CardTitle>
+                <Icon className={`h-4 w-4 ${color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{statsLoading ? '—' : value}</div>
+                <p className="text-xs text-muted-foreground">{sub}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -300,14 +327,17 @@ export default function MerchStore() {
                   </Card>
                 ))
               ) : filteredItems?.length === 0 ? (
-                <div className="col-span-full flex flex-col items-center justify-center py-12 text-center border rounded-lg bg-muted/10">
-                  <Package className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold">No products found</h3>
-                  <p className="text-muted-foreground">Add your first product to get started.</p>
+                <div className="col-span-full flex flex-col items-center justify-center py-16 text-center border rounded-lg bg-muted/10">
+                  <Package className="h-14 w-14 text-muted-foreground mb-4 opacity-30" />
+                  <h3 className="text-lg font-semibold">No products yet</h3>
+                  <p className="text-muted-foreground text-sm mt-1 mb-4">Add your first product to start selling merch.</p>
+                  <Button onClick={() => setIsAddDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" /> Add Product
+                  </Button>
                 </div>
               ) : (
                 filteredItems?.map((item: any) => (
-                  <Card key={item.id} className="overflow-hidden">
+                  <Card key={item.id} className="overflow-hidden group">
                     <div className="aspect-square bg-muted relative">
                       {item.imageUrl ? (
                         <img src={item.imageUrl} alt={item.name} className="object-cover w-full h-full" />
@@ -317,26 +347,22 @@ export default function MerchStore() {
                         </div>
                       )}
                       <div className="absolute top-2 right-2 flex flex-col items-end gap-1">
-                        <Badge variant={item.isActive ? "default" : "secondary"}>
-                          {item.isActive ? "Active" : "Draft"}
+                        <Badge variant={item.isActive ? 'default' : 'secondary'}>
+                          {item.isActive ? 'Active' : 'Draft'}
                         </Badge>
                         {!item.isDigital && item.inventory <= 5 && item.inventory > 0 && (
-                          <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">
-                            Low Stock
-                          </Badge>
+                          <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">Low Stock</Badge>
                         )}
                         {!item.isDigital && item.inventory === 0 && (
-                          <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10 text-xs">
-                            Out of Stock
-                          </Badge>
+                          <Badge variant="outline" className="border-red-500/30 text-red-400 bg-red-500/10 text-xs">Out of Stock</Badge>
                         )}
                       </div>
                     </div>
                     <CardHeader className="p-4">
                       <div className="flex justify-between items-start">
                         <div>
-                          <CardTitle className="text-lg">{item.name}</CardTitle>
-                          <p className="text-sm text-muted-foreground capitalize">{item.category}</p>
+                          <CardTitle className="text-base leading-tight">{item.name}</CardTitle>
+                          <p className="text-xs text-muted-foreground capitalize mt-0.5">{item.category}</p>
                         </div>
                         <div className="text-right">
                           {item.salePrice ? (
@@ -350,23 +376,28 @@ export default function MerchStore() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="p-4 pt-0 space-y-4">
-                      <div className="flex justify-between items-center text-sm">
-                        <span>Stock: {item.isDigital ? '∞ (Digital)' : item.inventory}</span>
-                        <span>Sold: {item.soldCount}</span>
+                    <CardContent className="p-4 pt-0 space-y-3">
+                      <div className="flex justify-between items-center text-sm text-muted-foreground">
+                        <span>Stock: {item.isDigital ? '∞' : item.inventory}</span>
+                        <span>Sold: {item.soldCount || 0}</span>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="flex-1">
-                          <Edit className="h-4 w-4 mr-2" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex-1"
+                          onClick={() => setEditingItem(item)}
+                        >
+                          <Edit className="h-3.5 w-3.5 mr-1.5" />
                           Edit
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-destructive hover:text-destructive"
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
                           onClick={() => setPendingDeleteId(item.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </CardContent>
@@ -401,28 +432,23 @@ export default function MerchStore() {
                           <TableCell colSpan={7} className="h-12" />
                         </TableRow>
                       ))
-                    ) : orders?.length === 0 ? (
+                    ) : !(orders as any[])?.length ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
-                          No orders yet.
+                        <TableCell colSpan={7} className="text-center py-12">
+                          <ShoppingCart className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-20" />
+                          <p className="text-muted-foreground">No orders yet.</p>
                         </TableCell>
                       </TableRow>
                     ) : (
-                      orders?.map((order: any) => (
+                      (orders as any[])?.map((order: any) => (
                         <TableRow key={order.id}>
-                          <TableCell className="font-mono text-xs">
-                            {order.id.split('-')[0]}
-                          </TableCell>
-                          <TableCell className="text-sm">
-                            {format(new Date(order.createdAt), 'MMM d, yyyy')}
-                          </TableCell>
+                          <TableCell className="font-mono text-xs">{order.id.split('-')[0]}</TableCell>
+                          <TableCell className="text-sm">{format(new Date(order.createdAt), 'MMM d, yyyy')}</TableCell>
                           <TableCell>
                             <div className="text-sm font-medium">{order.buyerName}</div>
                             <div className="text-xs text-muted-foreground">{order.buyerEmail}</div>
                           </TableCell>
-                          <TableCell className="font-medium">
-                            ${parseFloat(order.total).toFixed(2)}
-                          </TableCell>
+                          <TableCell className="font-medium">${parseFloat(order.total).toFixed(2)}</TableCell>
                           <TableCell>
                             <Badge variant={
                               order.status === 'delivered' ? 'default' :
@@ -432,9 +458,7 @@ export default function MerchStore() {
                               {order.status}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-sm">
-                            {order.trackingNumber || '-'}
-                          </TableCell>
+                          <TableCell className="text-sm font-mono">{order.trackingNumber || '—'}</TableCell>
                           <TableCell className="text-right">
                             <Dialog>
                               <DialogTrigger asChild>
@@ -450,13 +474,11 @@ export default function MerchStore() {
                                 <div className="space-y-4 py-4">
                                   <div className="space-y-2">
                                     <Label>Status</Label>
-                                    <Select 
+                                    <Select
                                       defaultValue={order.status}
                                       onValueChange={(val) => updateOrderMutation.mutate({ id: order.id, status: val })}
                                     >
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
+                                      <SelectTrigger><SelectValue /></SelectTrigger>
                                       <SelectContent>
                                         <SelectItem value="pending">Pending</SelectItem>
                                         <SelectItem value="processing">Processing</SelectItem>
@@ -469,10 +491,7 @@ export default function MerchStore() {
                                   <div className="space-y-2">
                                     <Label>Tracking Number</Label>
                                     <div className="flex gap-2">
-                                      <Input 
-                                        defaultValue={order.trackingNumber} 
-                                        id={`tracking-${order.id}`}
-                                      />
+                                      <Input defaultValue={order.trackingNumber} id={`tracking-${order.id}`} />
                                       <Button onClick={() => {
                                         const val = (document.getElementById(`tracking-${order.id}`) as HTMLInputElement).value;
                                         updateOrderMutation.mutate({ id: order.id, trackingNumber: val });
@@ -497,73 +516,103 @@ export default function MerchStore() {
           <TabsContent value="analytics">
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
                   <CardTitle>Best Sellers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {stats?.bestSellers?.map((item: any) => (
-                      <div key={item.id} className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 bg-muted rounded flex items-center justify-center">
-                            {item.imageUrl ? (
-                              <img src={item.imageUrl} alt="" className="h-full w-full object-cover rounded" />
-                            ) : (
-                              <Package className="h-5 w-5 text-muted-foreground" />
-                            )}
+                  {(stats as any)?.bestSellers?.length === 0 || !(stats as any)?.bestSellers ? (
+                    <div className="flex flex-col items-center py-8 text-muted-foreground">
+                      <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
+                      <p className="text-sm">No sales data yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {(stats as any)?.bestSellers?.map((item: any, i: number) => (
+                        <div key={item.id} className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <span className="text-muted-foreground text-sm w-4">{i + 1}.</span>
+                            <div className="h-10 w-10 bg-muted rounded flex items-center justify-center overflow-hidden">
+                              {item.imageUrl ? (
+                                <img src={item.imageUrl} alt="" className="h-full w-full object-cover" />
+                              ) : (
+                                <Package className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+                            <div>
+                              <div className="text-sm font-medium">{item.name}</div>
+                              <div className="text-xs text-muted-foreground">{item.soldCount} sales</div>
+                            </div>
                           </div>
-                          <div>
-                            <div className="text-sm font-medium">{item.name}</div>
-                            <div className="text-xs text-muted-foreground">{item.soldCount} sales</div>
+                          <div className="text-sm font-bold text-green-500">
+                            ${(parseFloat(item.price) * item.soldCount).toFixed(2)}
                           </div>
                         </div>
-                        <div className="text-sm font-bold">
-                          ${(parseFloat(item.price) * item.soldCount).toFixed(2)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <AlertCircle className="h-4 w-4 text-destructive" />
                   <CardTitle>Inventory Alerts</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    {stats?.lowInventoryItems?.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-6 text-center">
-                        <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
-                        <p className="text-sm text-muted-foreground">All items are well-stocked.</p>
-                      </div>
-                    ) : (
-                      stats?.lowInventoryItems?.map((item: any) => (
-                        <div key={item.id} className="flex items-center justify-between">
+                  {!(stats as any)?.lowInventoryItems?.length ? (
+                    <div className="flex flex-col items-center py-8 text-center">
+                      <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
+                      <p className="text-sm text-muted-foreground">All items are well-stocked.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {(stats as any)?.lowInventoryItems?.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20">
                           <div className="flex items-center gap-3">
-                            <AlertCircle className="h-5 w-5 text-destructive" />
+                            <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
                             <div>
                               <div className="text-sm font-medium">{item.name}</div>
                               <div className="text-xs text-muted-foreground">{item.inventory} remaining</div>
                             </div>
                           </div>
-                          <Button variant="outline" size="sm">Restock</Button>
+                          <Badge variant="outline" className="text-destructive border-destructive/30">Restock</Badge>
                         </div>
-                      ))
-                    )}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Edit Product Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>Update the details for "{editingItem?.name}".</DialogDescription>
+          </DialogHeader>
+          {editingItem && (
+            <ProductForm
+              defaultValues={editingItem}
+              onSubmit={handleEditItem}
+              isLoading={updateItemMutation.isPending}
+              submitLabel="Save Changes"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
       <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Item</AlertDialogTitle>
+            <AlertDialogTitle>Delete Product</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this item? This action cannot be undone.
+              Are you sure? This will permanently remove the product from your store. Orders already placed won't be affected.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -577,7 +626,7 @@ export default function MerchStore() {
                 }
               }}
             >
-              Delete
+              Delete Product
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

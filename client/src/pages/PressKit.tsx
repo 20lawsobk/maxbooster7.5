@@ -385,7 +385,7 @@ export default function PressKit() {
               </TabsContent>
             </Tabs>
 
-            <div className="p-4 bg-muted/30 rounded-lg border border-dashed space-y-3">
+            <div className="p-4 bg-muted/30 rounded-lg border border-dashed space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -401,6 +401,32 @@ export default function PressKit() {
                   onCheckedChange={(checked) => updatePressKitMutation.mutate({ ...pressKit, isPublic: checked })}
                 />
               </div>
+
+              {/* Custom Slug / URL */}
+              <div className="space-y-1.5">
+                <Label htmlFor="slug" className="text-xs font-medium">Custom URL Slug</Label>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center flex-1 border rounded-md overflow-hidden bg-background/60">
+                    <span className="text-xs text-muted-foreground px-3 py-2 border-r bg-muted/30 whitespace-nowrap">
+                      {window.location.origin}/epk/
+                    </span>
+                    <Input
+                      id="slug"
+                      name="slug"
+                      defaultValue={pressKit?.slug}
+                      placeholder="your-artist-name"
+                      className="border-0 rounded-none h-9 text-sm font-mono focus-visible:ring-0"
+                      pattern="[a-z0-9-]+"
+                      title="Lowercase letters, numbers, and hyphens only"
+                      onChange={(e) => {
+                        e.target.value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+                      }}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">Lowercase letters, numbers and hyphens only. Will be applied when you save.</p>
+              </div>
+
               {pressKit?.isPublic && pressKit?.slug && (
                 <div className="flex items-center gap-2 bg-background/60 rounded-md px-3 py-2 border">
                   <Globe className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
@@ -422,7 +448,7 @@ export default function PressKit() {
               {pressKit?.isPublic && !pressKit?.slug && (
                 <p className="text-xs text-amber-500 flex items-center gap-1">
                   <Newspaper className="h-3.5 w-3.5" />
-                  Save your press kit first to generate a public link.
+                  Set a slug above and save to generate your public link.
                 </p>
               )}
             </div>

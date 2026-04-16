@@ -33,9 +33,11 @@ import {
   List as ListIcon,
   Music,
   ExternalLink,
-  Radio
+  Radio,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
-import { format, isPast, isFuture } from "date-fns";
+import { format, isPast, isFuture, startOfMonth, endOfMonth, eachDayOfInterval, startOfWeek, endOfWeek, isSameMonth, isSameDay, addMonths, subMonths } from "date-fns";
 import { apiRequest } from "@/lib/queryClient";
 import type { Show, Setlist } from "@shared/schema";
 import { useRequireSubscription } from "@/hooks/useRequireAuth";
@@ -84,6 +86,7 @@ export default function Shows() {
     tracks: [] as { title: string; duration: string; notes: string }[],
   });
   const [newTrack, setNewTrack] = useState({ title: "", duration: "", notes: "" });
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
 
   const { data: showsData, isLoading } = useQuery<Show[]>({
     queryKey: ["/api/shows"],
@@ -313,7 +316,99 @@ export default function Shows() {
           </Card>
         </div>
 
-        <Tabs defaultValue="upcoming" className="space-y-4">
+        {viewMode === 'calendar' && (
+          <div className="space-y-4">
+            {/* Calendar Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">{format(calendarMonth, 'MMMM yyyy')}</h2>
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="sm" className="h-8" onClick={() => setCalendarMonth(new Date())}>
+                  Today
+                </Button>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Day Headers */}
+            <div className="grid grid-cols-7 border border-b-0 rounded-t-lg overflow-hidden">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                <div key={day} className="px-2 py-2 text-xs font-semibold text-muted-foreground bg-muted/30 text-center border-r last:border-r-0">
+                  {day}
+                </div>
+              ))}
+            </div>
+
+            {/* Calendar Grid */}
+            {(() => {
+              const monthStart = startOfMonth(calendarMonth);
+              const monthEnd = endOfMonth(calendarMonth);
+              const calStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+              const calEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
+              const days = eachDayOfInterval({ start: calStart, end: calEnd });
+
+              return (
+                <div className="grid grid-cols-7 border rounded-b-lg overflow-hidden">
+                  {days.map((day, i) => {
+                    const dayShows = showsData?.filter(s => isSameDay(new Date(s.date), day)) || [];
+                    const isToday = isSameDay(day, new Date());
+                    const isCurrentMonth = isSameMonth(day, calendarMonth);
+                    return (
+                      <div
+                        key={i}
+                        className={[
+                          'min-h-[90px] p-1.5 border-r border-b last:border-r-0 text-xs',
+                          !isCurrentMonth ? 'bg-muted/20 opacity-50' : '',
+                          isToday ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : '',
+                          (i + 1) % 7 === 0 ? 'border-r-0' : '',
+                        ].join(' ')}
+                      >
+                        <div className={[
+                          'font-semibold mb-1 w-6 h-6 flex items-center justify-center rounded-full text-xs',
+                          isToday ? 'bg-primary text-primary-foreground' : 'text-muted-foreground',
+                        ].join(' ')}>
+                          {format(day, 'd')}
+                        </div>
+                        <div className="space-y-0.5">
+                          {dayShows.map(show => (
+                            <div
+                              key={show.id}
+                              className="rounded px-1.5 py-0.5 text-[10px] leading-tight font-medium truncate cursor-pointer hover:opacity-80"
+                              style={{ background: isPast(new Date(show.date)) ? '#374151' : '#3b82f615', color: isPast(new Date(show.date)) ? '#9ca3af' : '#3b82f6', border: `1px solid ${isPast(new Date(show.date)) ? '#374151' : '#3b82f630'}` }}
+                              title={`${show.name} @ ${show.venue}`}
+                              onClick={() => setEditingShow(show)}
+                            >
+                              <div className="truncate">{show.name}</div>
+                              <div className="truncate text-muted-foreground">{format(new Date(show.date), 'h:mm a')}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* Legend */}
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-blue-500/20 border border-blue-500/30" />
+                Upcoming
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-[#374151] border border-[#374151]" />
+                Past
+              </div>
+            </div>
+          </div>
+        )}
+
+        <Tabs defaultValue="upcoming" className="space-y-4" style={{ display: viewMode === 'calendar' ? 'none' : undefined }}>
           <TabsList>
             <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
             <TabsTrigger value="past">Past Shows</TabsTrigger>

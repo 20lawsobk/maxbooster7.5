@@ -14,7 +14,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Receipt, Plus, Download, Send, Eye, DollarSign, Clock, CheckCircle, AlertCircle, Filter, Search } from 'lucide-react';
+import { Receipt, Plus, Download, Send, Eye, DollarSign, Clock, CheckCircle, AlertCircle, Filter, Search, Trash2, MoreVertical } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 
 interface Invoice {
@@ -46,6 +63,7 @@ export default function Invoices() {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   
   const [newInvoice, setNewInvoice] = useState({
     clientName: '',
@@ -100,6 +118,20 @@ export default function Invoices() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
       toast({ title: 'Invoice sent', description: 'The invoice has been emailed to the client.' });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    },
+  });
+
+  const deleteInvoiceMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await fetch(`/api/invoices/${id}`, { method: 'DELETE', credentials: 'include' });
+      if (!res.ok) throw new Error('Failed to delete invoice');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/invoices'] });
+      toast({ title: 'Invoice deleted' });
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -434,10 +466,11 @@ const invoices = invoicesData?.invoices || [];
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                     <TableCell>{format(new Date(invoice.dueDate), 'MMM d, yyyy')}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-1">
                         <Button 
                           variant="ghost" 
-                          size="sm"
+                          size="icon"
+                          className="h-8 w-8"
                           onClick={() => {
                             setSelectedInvoice(invoice);
                             setShowPreviewDialog(true);
@@ -445,19 +478,57 @@ const invoices = invoicesData?.invoices || [];
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}>
                           <Download className="h-4 w-4" />
                         </Button>
                         {invoice.status === 'draft' && (
                           <Button 
                             size="sm"
+                            className="h-8"
                             onClick={() => sendInvoiceMutation.mutate(invoice.id)}
                             disabled={sendInvoiceMutation.isPending}
                           >
-                            <Send className="h-4 w-4 mr-1" />
+                            <Send className="h-3.5 w-3.5 mr-1" />
                             Send
                           </Button>
                         )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => { setSelectedInvoice(invoice); setShowPreviewDialog(true); }}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => downloadPDF(invoice.id, invoice.invoiceNumber)}>
+                              <Download className="h-4 w-4 mr-2" />
+                              Download PDF
+                            </DropdownMenuItem>
+                            {invoice.status === 'draft' && (
+                              <>
+                                <DropdownMenuItem onClick={() => sendInvoiceMutation.mutate(invoice.id)}>
+                                  <Send className="h-4 w-4 mr-2" />
+                                  Send to Client
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {(invoice.status === 'draft' || invoice.status === 'cancelled') && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive"
+                                  onClick={() => setPendingDeleteId(invoice.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -533,6 +604,32 @@ const invoices = invoicesData?.invoices || [];
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Delete Invoice Confirmation */}
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Invoice</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this invoice? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (pendingDeleteId) {
+                    deleteInvoiceMutation.mutate(pendingDeleteId);
+                    setPendingDeleteId(null);
+                  }
+                }}
+              >
+                Delete Invoice
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
       )}
     </AppLayout>

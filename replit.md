@@ -8,6 +8,15 @@
 - **Studio Master Volume** — Slider in the transport bar right section, wired to `masterTrack.volume` via the store + audioEngine; color-coded readout (green/yellow/red).
 - **Studio track header volume/pan** — Compact horizontal volume slider + pan dot in each track header (visible when not collapsed); clicking the pan dot resets pan to center.
 - **Studio empty track state** — Professional "Start Your Session" empty state with quick-add buttons for Audio / Instrument / MIDI / Bus track types.
+- **MerchStore Edit product dialog** — Full edit dialog with shared `ProductForm` component for add/edit, delete confirmation, improved stats and analytics tab, better empty states.
+- **Shows Calendar view** — Full monthly calendar grid (Mon–Sun week layout, prev/next month, Today button, show dots with click-to-edit, past/upcoming color legend) rendered when viewMode='calendar'.
+- **SyncLicensing Edit/Delete per row** — DropdownMenu per row with Edit dialog (all fields editable) and Remove with AlertDialog confirmation; updateMutation + deleteMutation wired.
+- **PressKit custom slug input** — Slug field in the General tab (lowercase/hyphen enforced, shows full URL preview) that feeds into handleSave automatically.
+- **Publishing Edit/Delete per row** — DropdownMenu per row, Edit dialog for all fields, Delete confirmation; pie chart now uses actual average writer/publisher splits across all registered works instead of hardcoded 50/50.
+- **PlaylistPitching delete per pitch** — Trash2 button per pitch row with AlertDialog confirmation; deletePitchMutation wired.
+- **Invoices delete draft/cancelled invoices** — DropdownMenu per row with View/Download/Send/Delete; deleteInvoiceMutation wired to DELETE /api/invoices/:id with AlertDialog confirmation.
+- **Contracts** — Full audit confirmed: template browser, contract builder, e-signature, void, decline, PDF download, ContractOutcomeHandler, SignatureTimeline all complete.
+- **Royalties / Distribution / Notifications** — Full audit confirmed: all CRUD mutations complete, empty states implemented, no broken buttons.
 
 ## Overview
 Max Booster is an AI-powered, full-stack TypeScript web application designed to empower music artists with comprehensive career management tools. It offers AI-assisted features for social media management, music distribution, analytics, a beat marketplace, career automation, press kit creation, playlist pitching, tour management, merch store integration, sync licensing, publishing rights, A&R submissions, sample clearances, music video production tracking, radio/blog pitching, fan campaigns, revenue intelligence, songwriting, project budget planning, and venue/booking CRM. The platform aims to streamline and optimize various aspects of an artist's career, leveraging AI models fine-tuned specifically for the music industry, with the ambition to become the leading platform for artist career development through intelligent automation and insights.

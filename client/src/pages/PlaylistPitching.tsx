@@ -40,7 +40,18 @@ import {
   CheckCircle,
   XCircle,
   Filter,
+  Trash2,
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface PlaylistPitch {
   id: string;
@@ -80,6 +91,7 @@ export default function PlaylistPitching() {
   const [isNewPitchOpen, setIsNewPitchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterGenre, setFilterGenre] = useState('all');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { data: pitches = [], isLoading: pitchesLoading } = useQuery<PlaylistPitch[]>({
     queryKey: ['/api/playlist-pitching'],
@@ -135,6 +147,17 @@ export default function PlaylistPitching() {
     },
     onSuccess: () => {
       toast({ title: 'Status updated' });
+      queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching/stats'] });
+    },
+  });
+
+  const deletePitchMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/playlist-pitching/${id}`);
+    },
+    onSuccess: () => {
+      toast({ title: 'Pitch removed' });
       queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching'] });
       queryClient.invalidateQueries({ queryKey: ['/api/playlist-pitching/stats'] });
     },
@@ -315,21 +338,31 @@ export default function PlaylistPitching() {
                           {pitch.submittedAt ? new Date(pitch.submittedAt).toLocaleDateString() : 'Draft'}
                         </td>
                         <td className="p-4 text-right">
-                          <Select 
-                            onValueChange={(val) => updateStatusMutation.mutate({ id: pitch.id, status: val })}
-                            defaultValue={pitch.status}
-                          >
-                            <SelectTrigger className="w-[130px] h-8 bg-gray-800 border-gray-700 ml-auto">
-                              <SelectValue placeholder="Update Status" />
-                            </SelectTrigger>
-                            <SelectContent className="bg-gray-900 border-gray-800">
-                              <SelectItem value="draft">Draft</SelectItem>
-                              <SelectItem value="submitted">Submitted</SelectItem>
-                              <SelectItem value="under_review">Under Review</SelectItem>
-                              <SelectItem value="accepted">Accepted</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <div className="flex items-center justify-end gap-2">
+                            <Select 
+                              onValueChange={(val) => updateStatusMutation.mutate({ id: pitch.id, status: val })}
+                              defaultValue={pitch.status}
+                            >
+                              <SelectTrigger className="w-[130px] h-8 bg-gray-800 border-gray-700">
+                                <SelectValue placeholder="Update Status" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-gray-900 border-gray-800">
+                                <SelectItem value="draft">Draft</SelectItem>
+                                <SelectItem value="submitted">Submitted</SelectItem>
+                                <SelectItem value="under_review">Under Review</SelectItem>
+                                <SelectItem value="accepted">Accepted</SelectItem>
+                                <SelectItem value="rejected">Rejected</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => setPendingDeleteId(pitch.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -530,6 +563,32 @@ export default function PlaylistPitching() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Pitch Confirmation */}
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Pitch</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this pitch? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => {
+                  if (pendingDeleteId) {
+                    deletePitchMutation.mutate(pendingDeleteId);
+                    setPendingDeleteId(null);
+                  }
+                }}
+              >
+                Delete Pitch
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );

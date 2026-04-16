@@ -23,10 +23,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Film, Music, Plus, DollarSign, Clock, CheckCircle } from 'lucide-react';
+import { Film, Music, Plus, DollarSign, Clock, CheckCircle, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useRequireSubscription } from '@/hooks/useRequireAuth';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface SyncSubmission {
   id: string;
@@ -52,6 +71,8 @@ export default function SyncLicensing() {
   const { user } = useRequireSubscription();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<SyncSubmission | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const { data: catalog = [], isLoading } = useQuery<SyncSubmission[]>({
     queryKey: ['/api/sync-licensing'],
@@ -70,7 +91,30 @@ export default function SyncLicensing() {
       queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing'] });
       queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing/stats'] });
       setIsDialogOpen(false);
-      toast({ title: 'Success', description: 'Track added to sync catalog' });
+      toast({ title: 'Track added', description: 'Your track is now in the sync catalog.' });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...data }: any) => {
+      const res = await apiRequest('PUT', `/api/sync-licensing/${id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing'] });
+      setEditingItem(null);
+      toast({ title: 'Track updated' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest('DELETE', `/api/sync-licensing/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/sync-licensing/stats'] });
+      toast({ title: 'Track removed from catalog' });
     },
   });
 
@@ -267,11 +311,12 @@ export default function SyncLicensing() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Track</TableHead>
-                    <TableHead>Genre/Mood</TableHead>
+                    <TableHead>Genre / Mood</TableHead>
                     <TableHead>BPM</TableHead>
-                    <TableHead>Usage Type</TableHead>
+                    <TableHead>Usage</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead>Price</TableHead>
+                    <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -282,13 +327,36 @@ export default function SyncLicensing() {
                         <div className="text-xs text-muted-foreground">{item.artistName}</div>
                       </TableCell>
                       <TableCell>
-                        {item.genre}
-                        <div className="text-xs text-muted-foreground">{item.mood}</div>
+                        {item.genre || '—'}
+                        {item.mood && <div className="text-xs text-muted-foreground">{item.mood}</div>}
                       </TableCell>
-                      <TableCell>{item.bpm || '-'}</TableCell>
-                      <TableCell>{item.usageType || '-'}</TableCell>
+                      <TableCell>{item.bpm || '—'}</TableCell>
+                      <TableCell>{item.usageType || '—'}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      <TableCell>${item.price || '0.00'}</TableCell>
+                      <TableCell className="font-medium">${item.price || '0.00'}</TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setEditingItem(item)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setPendingDeleteId(item.id)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -297,6 +365,102 @@ export default function SyncLicensing() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Edit Dialog */}
+      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Track</DialogTitle>
+          </DialogHeader>
+          {editingItem && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const fd = new FormData(e.currentTarget);
+              const data = Object.fromEntries(fd.entries());
+              updateMutation.mutate({
+                id: editingItem.id,
+                ...data,
+                bpm: data.bpm ? parseInt(data.bpm as string) : undefined,
+              });
+            }} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-trackTitle">Track Title</Label>
+                  <Input id="edit-trackTitle" name="trackTitle" defaultValue={editingItem.trackTitle} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-artistName">Artist Name</Label>
+                  <Input id="edit-artistName" name="artistName" defaultValue={editingItem.artistName} required />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-genre">Genre</Label>
+                  <Input id="edit-genre" name="genre" defaultValue={editingItem.genre} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-mood">Mood Tags</Label>
+                  <Input id="edit-mood" name="mood" defaultValue={editingItem.mood} placeholder="Epic, Dark, Happy" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-bpm">BPM</Label>
+                  <Input id="edit-bpm" name="bpm" type="number" defaultValue={editingItem.bpm} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-usageType">Usage Type</Label>
+                  <Input id="edit-usageType" name="usageType" defaultValue={editingItem.usageType} placeholder="TV/Film/Ads" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Licensing Price ($)</Label>
+                  <Input id="edit-price" name="price" type="number" step="0.01" defaultValue={editingItem.price} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select name="status" defaultValue={editingItem.status}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="available">Available</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="under_review">Under Review</SelectItem>
+                      <SelectItem value="licensed">Licensed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>Cancel</Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove from Catalog</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this track from your sync catalog? This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteId) {
+                  deleteMutation.mutate(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+            >
+              Remove Track
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
