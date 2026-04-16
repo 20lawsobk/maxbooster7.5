@@ -138,6 +138,7 @@ export default function ShowPage() {
   const [effectsPanelVisible, setEffectsPanelVisible] = useState(true);
   const [countdownSeconds, setCountdownSeconds] = useState<number | null>(null);
   const [countdownBetweenSongs, setCountdownBetweenSongs] = useState(5);
+  const [setlistId, setSetlistId] = useState<string | null>(null);
   const [clickTrackOutput, setClickTrackOutput] = useState<string>('default');
   const [mainOutput, setMainOutput] = useState<string>('default');
   const [remoteControlEnabled, setRemoteControlEnabled] = useState(false);
@@ -191,6 +192,8 @@ export default function ShowPage() {
   ]);
   const [activePreset, setActivePreset] = useState<string>('1');
 
+  const [newSongForm, setNewSongForm] = useState({ title: '', bpm: 120, key: '', duration: 240, notes: '' });
+
   const [effectValues, setEffectValues] = useState({
     masterVolume: 0.8,
     reverbMix: 0.3,
@@ -204,6 +207,64 @@ export default function ShowPage() {
   const containerRef = useRef<HTMLDivElement>(null);
   const countdownIntervalRef = useRef<number | null>(null);
   const progressIntervalRef = useRef<number | null>(null);
+
+  const { data: savedSetlists } = useQuery<any[]>({
+    queryKey: ['/api/shows/setlists'],
+    queryFn: async () => {
+      const res = await apiRequest('GET', '/api/shows/setlists');
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    if (savedSetlists && savedSetlists.length > 0) {
+      const latest = savedSetlists[0];
+      setSetlistId(latest.id);
+      if (Array.isArray(latest.tracks) && latest.tracks.length > 0) {
+        setSetlist(latest.tracks.map((t: any, i: number) => ({
+          id: String(t.id || i + 1),
+          title: t.title,
+          artist: t.artist || '',
+          duration: typeof t.duration === 'string' ? parseInt(t.duration) || 240 : (t.duration || 240),
+          bpm: t.bpm || 120,
+          key: t.key || '',
+          notes: t.notes || '',
+          markers: t.markers || [],
+        })));
+      }
+    }
+  }, [savedSetlists]);
+
+  const saveSetlistMutation = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        name: 'My Setlist',
+        tracks: setlist.map(s => ({
+          title: s.title,
+          duration: String(s.duration),
+          key: s.key,
+          bpm: s.bpm,
+          notes: s.notes,
+        })),
+        totalDuration: setlist.reduce((acc, s) => acc + s.duration, 0),
+      };
+      if (setlistId) {
+        const res = await apiRequest('PUT', `/api/shows/setlists/${setlistId}`, payload);
+        return res.json();
+      } else {
+        const res = await apiRequest('POST', '/api/shows/setlists', payload);
+        const data = await res.json();
+        setSetlistId(data.id);
+        return data;
+      }
+    },
+    onSuccess: () => {
+      toast({ title: 'Setlist saved' });
+    },
+    onError: () => {
+      toast({ title: 'Failed to save setlist', variant: 'destructive' });
+    },
+  });
 
   const currentSong = useMemo(() => setlist[currentSongIndex], [setlist, currentSongIndex]);
 
@@ -474,9 +535,22 @@ export default function ShowPage() {
                 <ListMusic className="w-4 h-4" />
                 <span className="font-semibold">Setlist</span>
               </div>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowAddSongDialog(true)}>
-                <Plus className="w-4 h-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 text-xs text-gray-400 hover:text-white"
+                  onClick={() => saveSetlistMutation.mutate()}
+                  disabled={saveSetlistMutation.isPending}
+                  title="Save setlist"
+                >
+                  <Save className="w-3 h-3 mr-1" />
+                  Save
+                </Button>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setShowAddSongDialog(true)}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="flex-1">
@@ -943,40 +1017,72 @@ export default function ShowPage() {
             <div className="space-y-4 py-4">
               <div>
                 <Label>Title</Label>
-                <Input className="mt-1 bg-gray-800 border-gray-700" placeholder="Song title" />
+                <Input
+                  className="mt-1 bg-gray-800 border-gray-700"
+                  placeholder="Song title"
+                  value={newSongForm.title}
+                  onChange={(e) => setNewSongForm(f => ({ ...f, title: e.target.value }))}
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>BPM</Label>
-                  <Input type="number" className="mt-1 bg-gray-800 border-gray-700" defaultValue={120} />
+                  <Input
+                    type="number"
+                    className="mt-1 bg-gray-800 border-gray-700"
+                    value={newSongForm.bpm}
+                    onChange={(e) => setNewSongForm(f => ({ ...f, bpm: Number(e.target.value) }))}
+                  />
                 </div>
                 <div>
                   <Label>Key</Label>
-                  <Input className="mt-1 bg-gray-800 border-gray-700" placeholder="C Major" />
+                  <Input
+                    className="mt-1 bg-gray-800 border-gray-700"
+                    placeholder="C Major"
+                    value={newSongForm.key}
+                    onChange={(e) => setNewSongForm(f => ({ ...f, key: e.target.value }))}
+                  />
                 </div>
               </div>
               <div>
                 <Label>Duration (seconds)</Label>
-                <Input type="number" className="mt-1 bg-gray-800 border-gray-700" defaultValue={240} />
+                <Input
+                  type="number"
+                  className="mt-1 bg-gray-800 border-gray-700"
+                  value={newSongForm.duration}
+                  onChange={(e) => setNewSongForm(f => ({ ...f, duration: Number(e.target.value) }))}
+                />
               </div>
               <div>
                 <Label>Notes</Label>
-                <Textarea className="mt-1 bg-gray-800 border-gray-700" placeholder="Performance notes..." />
+                <Textarea
+                  className="mt-1 bg-gray-800 border-gray-700"
+                  placeholder="Performance notes..."
+                  value={newSongForm.notes}
+                  onChange={(e) => setNewSongForm(f => ({ ...f, notes: e.target.value }))}
+                />
               </div>
             </div>
             <DialogFooter>
-              <Button variant="ghost" onClick={() => setShowAddSongDialog(false)}>Cancel</Button>
+              <Button variant="ghost" onClick={() => { setShowAddSongDialog(false); setNewSongForm({ title: '', bpm: 120, key: '', duration: 240, notes: '' }); }}>Cancel</Button>
               <Button
                 onClick={() => {
+                  if (!newSongForm.title.trim()) {
+                    toast({ title: 'Title required', description: 'Please enter a song title', variant: 'destructive' });
+                    return;
+                  }
                   const newSong: SetlistSong = {
                     id: Date.now().toString(),
-                    title: 'New Song',
-                    duration: 240,
-                    bpm: 120,
+                    title: newSongForm.title.trim(),
+                    duration: newSongForm.duration || 240,
+                    bpm: newSongForm.bpm || 120,
+                    key: newSongForm.key || undefined,
+                    notes: newSongForm.notes || undefined,
                   };
-                  setSetlist([...setlist, newSong]);
+                  setSetlist(prev => [...prev, newSong]);
                   setShowAddSongDialog(false);
-                  toast({ title: 'Song added to setlist' });
+                  setNewSongForm({ title: '', bpm: 120, key: '', duration: 240, notes: '' });
+                  toast({ title: 'Song added', description: `"${newSong.title}" added to setlist` });
                 }}
               >
                 Add Song

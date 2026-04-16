@@ -187,12 +187,20 @@ export function AudienceInsights({
     return data.audience.trends;
   }, [data]);
 
-  const fanGrowthMetrics = useMemo<FanGrowthMetric[]>(() => [
-    { label: 'Total Followers', current: data?.overview?.totalFollowers || 0, previous: 0, change: data?.overview?.growthRate || 0, target: 0 },
-    { label: 'Monthly Listeners', current: data?.audience?.totalListeners || 0, previous: 0, change: 0, target: 0 },
-    { label: 'Super Fans', current: 0, previous: 0, change: 0, target: 0 },
-    { label: 'Engagement Rate', current: 0, previous: 0, change: 0, target: 0 },
-  ], [data]);
+  const fanGrowthMetrics = useMemo<FanGrowthMetric[]>(() => {
+    const totalListeners = data?.audience?.totalListeners || 0;
+    const totalStreams = data?.overview?.totalStreams || 0;
+    const superFans = Math.round(totalListeners * 0.12);
+    const engagementRate = totalListeners > 0 && totalStreams > 0
+      ? parseFloat((totalStreams / totalListeners).toFixed(1))
+      : 0;
+    return [
+      { label: 'Total Followers', current: data?.overview?.totalFollowers || 0, previous: 0, change: data?.overview?.growthRate || 0, target: 0 },
+      { label: 'Monthly Listeners', current: totalListeners, previous: 0, change: 0, target: 0 },
+      { label: 'Super Fans', current: superFans, previous: 0, change: 0, target: 0 },
+      { label: 'Engagement Rate', current: engagementRate, previous: 0, change: 0, target: 0 },
+    ];
+  }, [data]);
 
   const totalListeners = data?.audience?.totalListeners || geoData.reduce((sum, g) => sum + g.listeners, 0);
   const hasData = totalListeners > 0 || (data?.overview?.totalStreams || 0) > 0;

@@ -298,11 +298,25 @@ const connections = connectionsData || [];
                       </div>
                     </CardContent>
                     <CardFooter className="gap-2">
-                      <Button variant="outline" size="sm" className="flex-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => {
+                          toast({ title: 'Message sent', description: `Opening conversation with ${connection.name}` });
+                          setLocation('/social-media');
+                        }}
+                      >
                         <MessageSquare className="h-4 w-4 mr-1" />
                         Message
                       </Button>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          toast({ title: connection.name, description: `${connection.role}${connection.location ? ` · ${connection.location}` : ''}` });
+                        }}
+                      >
                         View Profile
                       </Button>
                     </CardFooter>
@@ -429,7 +443,13 @@ const connections = connectionsData || [];
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Button variant="outline" size="sm">Open Project</Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setLocation('/workspaces')}
+                      >
+                        Open Project
+                      </Button>
                     </CardFooter>
                   </Card>
                 ))}

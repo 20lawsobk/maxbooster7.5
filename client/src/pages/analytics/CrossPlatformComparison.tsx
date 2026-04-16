@@ -1,5 +1,6 @@
 import { useState, useMemo, memo } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import {
   BarChart,
@@ -199,6 +200,7 @@ export function CrossPlatformComparison({
   timeRange = '30d',
   onTimeRangeChange,
 }: CrossPlatformComparisonProps) {
+  const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
 
@@ -437,11 +439,17 @@ return (
             <div className="flex-1">
               <h3 className="font-semibold mb-1">AI Insight</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Your YouTube Music streams are growing 22% faster than other platforms. Consider creating 
-                more video content to capitalize on this trend. YouTube listeners also have the highest 
-                share rate at 3.2%.
+                {(() => {
+                  if (!platformData.length) return 'Connect your streaming platforms to receive personalized AI insights about your cross-platform performance.';
+                  const topGrowth = [...platformData].sort((a, b) => b.streamChange - a.streamChange)[0];
+                  const topRevenue = [...platformData].sort((a, b) => b.revenue - a.revenue)[0];
+                  if (topGrowth && topGrowth.streamChange > 0) {
+                    return `Your ${topGrowth.platform} streams are growing ${topGrowth.streamChange.toFixed(1)}% faster than your other platforms. ${topRevenue && topRevenue.platform !== topGrowth.platform ? `Your top revenue platform is ${topRevenue.platform} — consider cross-promoting between these channels to maximize growth.` : 'Keep up the momentum by posting consistently on this platform.'}`;
+                  }
+                  return `You have data from ${platformData.length} connected platform${platformData.length !== 1 ? 's' : ''}. Keep growing your presence to unlock trend insights.`;
+                })()}
               </p>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" onClick={() => setLocation('/career-coach')}>
                 View Recommendations
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>

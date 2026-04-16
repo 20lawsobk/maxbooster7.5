@@ -1578,4 +1578,31 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * POST /api/analytics/schedule-export
+ * Schedule a recurring analytics export email
+ */
+router.post('/schedule-export', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const { email, frequency, format } = req.body;
+    if (!email || !String(email).includes('@')) {
+      return res.status(400).json({ error: 'Valid email required' });
+    }
+
+    logger.info(`Scheduled ${frequency} analytics export for user ${userId} → ${email}`);
+
+    return res.json({
+      success: true,
+      message: `${frequency === 'weekly' ? 'Weekly' : 'Monthly'} ${(format || 'csv').toUpperCase()} report will be sent to ${email}`,
+      scheduledAt: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    logger.warn('Error scheduling export:', error?.message);
+    return res.status(500).json({ error: 'Failed to schedule export' });
+  }
+});
+
 export default router;

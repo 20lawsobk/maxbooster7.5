@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -16,8 +16,12 @@ import { apiRequest } from '@/lib/queryClient';
 import { 
   Brain, Target, TrendingUp, Calendar, CheckCircle, Clock, 
   Lightbulb, Rocket, Star, ArrowRight, MessageSquare, Send,
-  Music, DollarSign, Users, BarChart3, Sparkles, Zap, Trash2
+  Music, DollarSign, Users, BarChart3, Sparkles, Zap, Trash2, Plus
 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface CareerGoal {
   id: string;
@@ -58,12 +62,23 @@ export default function CareerCoach() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [chatInput, setChatInput] = useState('');
   const [chatMessages, setChatMessages] = useState<CoachMessage[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const [showCreateGoalDialog, setShowCreateGoalDialog] = useState(false);
+  const [newGoalForm, setNewGoalForm] = useState({
+    title: '',
+    goalType: 'growth',
+    targetValue: 1000,
+    unit: '',
+    deadline: '',
+    description: '',
+  });
 
   const { data: goalsData, isLoading: isLoadingGoals } = useQuery<{ goals: CareerGoal[] }>({
     queryKey: ['/api/career-coach/goals'],
@@ -165,6 +180,36 @@ export default function CareerCoach() {
       }]);
       setHistoryLoaded(true);
       toast({ title: 'Cleared', description: 'Conversation history has been cleared.' });
+    },
+  });
+
+  const createGoalMutation = useMutation({
+    mutationFn: async (data: { title: string; goalType: string; targetValue: number; unit?: string; deadline?: string; description?: string }) => {
+      const res = await apiRequest('POST', '/api/career-coach/goals', data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/goals'] });
+      setShowCreateGoalDialog(false);
+      setNewGoalForm({ title: '', goalType: 'growth', targetValue: 1000, unit: '', deadline: '', description: '' });
+      toast({ title: 'Goal created!', description: 'Your career goal has been added.' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to create goal', variant: 'destructive' });
+    },
+  });
+
+  const deleteGoalMutation = useMutation({
+    mutationFn: async (goalId: string) => {
+      const res = await apiRequest('DELETE', `/api/career-coach/goals/${goalId}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/career-coach/goals'] });
+      toast({ title: 'Goal deleted' });
+    },
+    onError: () => {
+      toast({ title: 'Error', description: 'Failed to delete goal', variant: 'destructive' });
     },
   });
 
@@ -324,6 +369,12 @@ export default function CareerCoach() {
               </TabsContent>
 
               <TabsContent value="goals" className="space-y-4">
+                <div className="flex justify-end">
+                  <Button size="sm" onClick={() => setShowCreateGoalDialog(true)}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    New Goal
+                  </Button>
+                </div>
                 {isLoadingGoals ? (
                   <div className="space-y-4">
                     {[1, 2].map((i) => (
@@ -383,9 +434,20 @@ export default function CareerCoach() {
                               {getCategoryIcon(goal.category)}
                               {goal.title}
                             </CardTitle>
-                            <Badge variant={goal.status === 'completed' ? 'default' : 'outline'}>
-                              {goal.status}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={goal.status === 'completed' ? 'default' : 'outline'}>
+                                {goal.status}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                                onClick={() => deleteGoalMutation.mutate(goal.id)}
+                                disabled={deleteGoalMutation.isPending}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
                           </div>
                           <CardDescription className="flex items-center gap-2">
                             <Calendar className="h-4 w-4" />
@@ -697,6 +759,106 @@ export default function CareerCoach() {
           </div>
         </div>
       </div>
+
+      <Dialog open={showCreateGoalDialog} onOpenChange={setShowCreateGoalDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create Career Goal</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Goal Title *</Label>
+              <Input
+                placeholder="e.g. Reach 10,000 monthly listeners"
+                value={newGoalForm.title}
+                onChange={(e) => setNewGoalForm(f => ({ ...f, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Goal Type</Label>
+              <Select
+                value={newGoalForm.goalType}
+                onValueChange={(v) => setNewGoalForm(f => ({ ...f, goalType: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="growth">Fan Growth</SelectItem>
+                  <SelectItem value="revenue">Revenue</SelectItem>
+                  <SelectItem value="releases">Music Releases</SelectItem>
+                  <SelectItem value="networking">Networking</SelectItem>
+                  <SelectItem value="streams">Streams</SelectItem>
+                  <SelectItem value="skills">Skills</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Target Value *</Label>
+                <Input
+                  type="number"
+                  min={1}
+                  placeholder="e.g. 10000"
+                  value={newGoalForm.targetValue}
+                  onChange={(e) => setNewGoalForm(f => ({ ...f, targetValue: Number(e.target.value) || 1 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Unit</Label>
+                <Input
+                  placeholder="e.g. listeners, streams"
+                  value={newGoalForm.unit}
+                  onChange={(e) => setNewGoalForm(f => ({ ...f, unit: e.target.value }))}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Deadline</Label>
+              <Input
+                type="date"
+                value={newGoalForm.deadline}
+                onChange={(e) => setNewGoalForm(f => ({ ...f, deadline: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Describe your goal and why it matters..."
+                value={newGoalForm.description}
+                onChange={(e) => setNewGoalForm(f => ({ ...f, description: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateGoalDialog(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!newGoalForm.title.trim()) {
+                  toast({ title: 'Title required', variant: 'destructive' });
+                  return;
+                }
+                if (!newGoalForm.targetValue || newGoalForm.targetValue < 1) {
+                  toast({ title: 'Target value must be at least 1', variant: 'destructive' });
+                  return;
+                }
+                createGoalMutation.mutate({
+                  title: newGoalForm.title,
+                  goalType: newGoalForm.goalType,
+                  targetValue: newGoalForm.targetValue,
+                  unit: newGoalForm.unit || undefined,
+                  deadline: newGoalForm.deadline ? new Date(newGoalForm.deadline).toISOString() : undefined,
+                  description: newGoalForm.description || undefined,
+                });
+              }}
+              disabled={createGoalMutation.isPending}
+            >
+              {createGoalMutation.isPending ? 'Creating...' : 'Create Goal'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }

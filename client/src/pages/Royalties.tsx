@@ -900,7 +900,20 @@ return (
                               {payout.platform} • {payout.payoutDate}
                             </p>
                           </div>
-                          {getStatusBadge(payout.payoutStatus)}
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(payout.payoutStatus)}
+                            {payout.payoutStatus === 'failed' && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-6 text-xs"
+                                onClick={() => retryPayoutMutation.mutate(payout.id)}
+                                disabled={retryPayoutMutation.isPending}
+                              >
+                                Retry
+                              </Button>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>

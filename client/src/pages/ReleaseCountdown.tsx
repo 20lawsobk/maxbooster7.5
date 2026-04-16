@@ -423,11 +423,27 @@ const releases = releasesData?.countdowns || [];
                 </div>
                 
                 <div className="flex gap-3">
-                  <Button className="flex-1">
+                  <Button
+                    className="flex-1"
+                    onClick={() => {
+                      const link = selectedRelease.presaveLink || `${window.location.origin}/presave/${selectedRelease.id}`;
+                      navigator.clipboard.writeText(link).then(() => {
+                        toast({ title: 'Link copied!', description: 'Pre-save link copied to clipboard.' });
+                      }).catch(() => {
+                        toast({ title: 'Pre-save link', description: link });
+                      });
+                    }}
+                  >
                     <Share2 className="h-4 w-4 mr-2" />
                     Share Pre-save Link
                   </Button>
-                  <Button variant="outline">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setLocation('/fan-hub');
+                      toast({ title: 'Opening Fan Hub', description: 'Use Fan Hub to broadcast release updates to your fans.' });
+                    }}
+                  >
                     <Bell className="h-4 w-4 mr-2" />
                     Notify Fans
                   </Button>

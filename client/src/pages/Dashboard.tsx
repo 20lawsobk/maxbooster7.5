@@ -343,9 +343,9 @@ function DashboardContent({ user }: { user: any }) {
       title: 'Create New Project',
       description: 'Start a new music project with AI assistance',
       icon: Plus,
-      action: () => createProjectMutation.mutate(),
+      action: () => setLocation('/projects'),
       color: 'bg-blue-600 hover:bg-blue-700',
-      loading: createProjectMutation.isPending,
+      loading: false,
       disabled: false,
     },
     {

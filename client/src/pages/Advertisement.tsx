@@ -343,6 +343,8 @@ export default function Advertisement() {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [lookalikeSourceType, setLookalikeSourceType] = useState('top-engaged');
+  const [lookalikeExpansionLevel, setLookalikeExpansionLevel] = useState(2);
 
   const { data: campaigns = [], isLoading: campaignsLoading } = useQuery<AdCampaign[]>({
     queryKey: ['/api/advertising/campaigns'],
@@ -388,6 +390,48 @@ export default function Advertisement() {
         description: error.message || 'Failed to upload image. Please try again.',
         variant: 'destructive',
       });
+    },
+  });
+
+  const createLookalikeMutation = useMutation({
+    mutationFn: async (data: { sourceAudienceType: string; expansionLevel: number }) => {
+      const response = await apiRequest('POST', '/api/advertising/lookalike-audiences', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: 'Lookalike Audience Created', description: 'Your new lookalike audience is being built.' });
+      queryClient.invalidateQueries({ queryKey: ['/api/advertising/lookalike-audiences'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to create lookalike audience', variant: 'destructive' });
+    },
+  });
+
+  const updateAudienceStatusMutation = useMutation({
+    mutationFn: async ({ audienceId, status }: { audienceId: string; status: 'active' | 'paused' }) => {
+      const response = await apiRequest('PATCH', `/api/advertising/lookalike-audiences/${audienceId}`, { status });
+      return response.json();
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: vars.status === 'active' ? 'Audience Activated' : 'Audience Paused', description: `Lookalike audience has been ${vars.status === 'active' ? 'activated' : 'paused'}.` });
+      queryClient.invalidateQueries({ queryKey: ['/api/advertising/lookalike-audiences'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update audience status', variant: 'destructive' });
+    },
+  });
+
+  const updateCreativeStatusMutation = useMutation({
+    mutationFn: async ({ creativeId, action }: { creativeId: string; action: 'refresh' | 'pause' }) => {
+      const response = await apiRequest('PATCH', `/api/advertising/creatives/${creativeId}`, { action });
+      return response.json();
+    },
+    onSuccess: (_, vars) => {
+      toast({ title: vars.action === 'refresh' ? 'Creative Refreshed' : 'Creative Paused', description: `Creative has been ${vars.action === 'refresh' ? 'refreshed to reduce fatigue' : 'paused'}.` });
+      queryClient.invalidateQueries({ queryKey: ['/api/advertising/creative-fatigue'] });
+    },
+    onError: (error: Error) => {
+      toast({ title: 'Error', description: error.message || 'Failed to update creative', variant: 'destructive' });
     },
   });
 
@@ -1026,9 +1070,20 @@ export default function Advertisement() {
                       </div>
                       <div className="flex items-center gap-2">
                         {audience.status === 'active' ? (
-                          <Button variant="outline" size="sm"><Lock className="w-3 h-3 mr-1" />Pause</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => updateAudienceStatusMutation.mutate({ audienceId: audience.id, status: 'paused' })}
+                            disabled={updateAudienceStatusMutation.isPending}
+                          ><Lock className="w-3 h-3 mr-1" />Pause</Button>
                         ) : (
-                          <Button variant="outline" size="sm" className="border-green-300 text-green-600"><Unlock className="w-3 h-3 mr-1" />Activate</Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-green-300 text-green-600"
+                            onClick={() => updateAudienceStatusMutation.mutate({ audienceId: audience.id, status: 'active' })}
+                            disabled={updateAudienceStatusMutation.isPending}
+                          ><Unlock className="w-3 h-3 mr-1" />Activate</Button>
                         )}
                       </div>
                     </div>
@@ -1090,7 +1145,7 @@ export default function Advertisement() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>Source Audience</Label>
-                    <Select>
+                    <Select value={lookalikeSourceType} onValueChange={setLookalikeSourceType}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select source..." />
                       </SelectTrigger>
@@ -1103,13 +1158,23 @@ export default function Advertisement() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Expansion Level (1-5)</Label>
-                    <Slider defaultValue={[2]} max={5} min={1} step={1} />
+                    <Label>Expansion Level (1-5): {lookalikeExpansionLevel}</Label>
+                    <Slider
+                      value={[lookalikeExpansionLevel]}
+                      onValueChange={([v]) => setLookalikeExpansionLevel(v)}
+                      max={5}
+                      min={1}
+                      step={1}
+                    />
                   </div>
                   <div className="flex items-end">
-                    <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white">
+                    <Button
+                      className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white"
+                      onClick={() => createLookalikeMutation.mutate({ sourceAudienceType: lookalikeSourceType, expansionLevel: lookalikeExpansionLevel })}
+                      disabled={createLookalikeMutation.isPending}
+                    >
                       <UserPlus className="w-4 h-4 mr-2" />
-                      Create Lookalike
+                      {createLookalikeMutation.isPending ? 'Creating...' : 'Create Lookalike'}
                     </Button>
                   </div>
                 </div>
@@ -1385,8 +1450,19 @@ export default function Advertisement() {
                           </div>
                           {(creative.fatigueLevel === 'high' || creative.fatigueLevel === 'critical') && (
                             <div className="mt-3 flex gap-2">
-                              <Button size="sm" variant="outline" className="border-orange-300 text-orange-600 hover:bg-orange-50"><RefreshCw className="w-3 h-3 mr-1" />Refresh Creative</Button>
-                              <Button size="sm" variant="outline">Pause Creative</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-orange-300 text-orange-600 hover:bg-orange-50"
+                                onClick={() => updateCreativeStatusMutation.mutate({ creativeId: creative.id, action: 'refresh' })}
+                                disabled={updateCreativeStatusMutation.isPending}
+                              ><RefreshCw className="w-3 h-3 mr-1" />Refresh Creative</Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateCreativeStatusMutation.mutate({ creativeId: creative.id, action: 'pause' })}
+                                disabled={updateCreativeStatusMutation.isPending}
+                              >Pause Creative</Button>
                             </div>
                           )}
                         </div>

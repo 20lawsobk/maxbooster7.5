@@ -56,111 +56,6 @@ const exampleQueries = [
   { text: "Which demographics engage most with my music?", icon: PieChart },
 ];
 
-const mockResults: Record<string, QueryResult> = {
-  'top performing': {
-    type: 'table',
-    title: 'Top Performing Tracks - Last Month',
-    summary: 'Your top 5 tracks generated 78% of total streams. "Summer Nights" leads with 125K streams.',
-    data: {
-      tracks: [
-        { name: 'Summer Nights', streams: 125000, revenue: 450, growth: 23 },
-        { name: 'Midnight Drive', streams: 98000, revenue: 352, growth: 15 },
-        { name: 'Ocean Waves', streams: 76000, revenue: 273, growth: 8 },
-        { name: 'City Lights', streams: 54000, revenue: 194, growth: -5 },
-        { name: 'Mountain High', streams: 43000, revenue: 155, growth: 12 },
-      ],
-    },
-  },
-  'streaming trends': {
-    type: 'chart',
-    title: 'Streaming Trends - Last 6 Months',
-    summary: 'Overall streaming up 34% with a notable spike in October due to playlist placements.',
-    data: {
-      chartType: 'line',
-      labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-      values: [85000, 92000, 105000, 156000, 142000, 138000],
-      change: 34,
-    },
-  },
-  'countries': {
-    type: 'chart',
-    title: 'Revenue by Country',
-    summary: 'United States leads with 45% of total revenue, followed by UK (18%) and Germany (12%).',
-    data: {
-      chartType: 'bar',
-      items: [
-        { name: 'United States', value: 4500, percentage: 45 },
-        { name: 'United Kingdom', value: 1800, percentage: 18 },
-        { name: 'Germany', value: 1200, percentage: 12 },
-        { name: 'Canada', value: 850, percentage: 8.5 },
-        { name: 'Australia', value: 650, percentage: 6.5 },
-      ],
-    },
-  },
-  'spotify': {
-    type: 'chart',
-    title: 'Platform Comparison: Spotify vs Apple Music',
-    summary: 'Spotify generates 2.3x more streams but Apple Music has a 40% higher revenue per stream.',
-    data: {
-      chartType: 'comparison',
-      platforms: [
-        { name: 'Spotify', streams: 450000, revenue: 1620, rps: 0.0036, color: '#1DB954' },
-        { name: 'Apple Music', streams: 195000, revenue: 975, rps: 0.005, color: '#FA2D48' },
-      ],
-    },
-  },
-  'new listeners': {
-    type: 'metric',
-    title: 'New Listeners This Week',
-    summary: 'You gained 3,450 new listeners this week, a 12% increase from last week.',
-    data: {
-      value: 3450,
-      change: 12,
-      comparison: 3080,
-      period: 'week',
-    },
-  },
-  'revenue per stream': {
-    type: 'table',
-    title: 'Average Revenue Per Stream by Platform',
-    summary: 'Tidal offers the highest payout at $0.0125 per stream, while YouTube Music pays the lowest.',
-    data: {
-      platforms: [
-        { name: 'Tidal', rps: 0.0125, streams: 12000, revenue: 150 },
-        { name: 'Apple Music', rps: 0.005, streams: 195000, revenue: 975 },
-        { name: 'Amazon Music', rps: 0.004, streams: 85000, revenue: 340 },
-        { name: 'Spotify', rps: 0.0036, streams: 450000, revenue: 1620 },
-        { name: 'YouTube Music', rps: 0.002, streams: 120000, revenue: 240 },
-      ],
-    },
-  },
-  'playlist additions': {
-    type: 'metric',
-    title: 'Playlist Activity - Last 30 Days',
-    summary: 'Added to 8 new playlists with a combined reach of 4.2M listeners.',
-    data: {
-      value: 8,
-      reach: 4200000,
-      topPlaylist: 'Chill Vibes',
-      estimatedStreams: 45000,
-    },
-  },
-  'demographics': {
-    type: 'chart',
-    title: 'Audience Demographics Engagement',
-    summary: 'The 25-34 age group shows the highest engagement at 8.5%, followed by 18-24 at 7.2%.',
-    data: {
-      chartType: 'pie',
-      segments: [
-        { name: '18-24', value: 28, engagement: 7.2 },
-        { name: '25-34', value: 35, engagement: 8.5 },
-        { name: '35-44', value: 22, engagement: 6.1 },
-        { name: '45-54', value: 10, engagement: 4.8 },
-        { name: '55+', value: 5, engagement: 3.2 },
-      ],
-    },
-  },
-};
 
 const ResultChart = memo(({ data }: { data: any }) => {
   if (data.chartType === 'line') {
@@ -391,64 +286,29 @@ export default function NaturalLanguageQuery({ onQuery }: NaturalLanguageQueryPr
             ...prev.slice(0, 9),
           ]);
         } else {
-          const queryLower = queryText.toLowerCase();
-          let matchedResult: QueryResult | null = null;
-          
-          for (const [key, value] of Object.entries(mockResults)) {
-            if (queryLower.includes(key)) {
-              matchedResult = value;
-              break;
-            }
-          }
-
-          if (matchedResult) {
-            setResult(matchedResult);
-            setHistory(prev => [
-              { query: queryText, timestamp: new Date(), resultType: matchedResult!.type },
-              ...prev.slice(0, 9),
-            ]);
-          } else {
-            setResult({
-              type: 'text',
-              title: 'Query Result',
-              summary: `I analyzed your question: "${queryText}". Based on your current data, here's what I found...`,
-              data: null,
-            });
-          }
+          setResult({
+            type: 'text',
+            title: 'No Results',
+            summary: data.message || `No data found for: "${queryText}". Try connecting your streaming platforms in Settings to get real analytics.`,
+            data: null,
+          });
         }
       } else {
+        const errorData = await response.json().catch(() => ({}));
         setResult({
           type: 'text',
-          title: 'Query Result',
-          summary: `Unable to process your query. Please try again later.`,
+          title: 'Query Failed',
+          summary: errorData.message || `Unable to process your query right now. Please try again later.`,
           data: null,
         });
       }
     } catch (error) {
-      const queryLower = queryText.toLowerCase();
-      let matchedResult: QueryResult | null = null;
-      
-      for (const [key, value] of Object.entries(mockResults)) {
-        if (queryLower.includes(key)) {
-          matchedResult = value;
-          break;
-        }
-      }
-
-      if (matchedResult) {
-        setResult(matchedResult);
-        setHistory(prev => [
-          { query: queryText, timestamp: new Date(), resultType: matchedResult!.type },
-          ...prev.slice(0, 9),
-        ]);
-      } else {
-        setResult({
-          type: 'text',
-          title: 'Query Result',
-          summary: `I analyzed your question: "${queryText}". Based on your current data, here's what I found...`,
-          data: null,
-        });
-      }
+      setResult({
+        type: 'text',
+        title: 'Connection Error',
+        summary: `Could not reach the analytics service. Please check your connection and try again.`,
+        data: null,
+      });
     }
 
     setIsLoading(false);

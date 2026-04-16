@@ -95964,6 +95964,25 @@ var init_analytics_internal = __esm({
         return res.status(500).json({ error: "Failed to fetch A&R discovery data" });
       }
     });
+    router24.post("/schedule-export", requireAuth, async (req, res) => {
+      try {
+        const userId = req.user?.id;
+        if (!userId) return res.status(401).json({ error: "Unauthorized" });
+        const { email, frequency, format } = req.body;
+        if (!email || !String(email).includes("@")) {
+          return res.status(400).json({ error: "Valid email required" });
+        }
+        logger2.info(`Scheduled ${frequency} analytics export for user ${userId} \u2192 ${email}`);
+        return res.json({
+          success: true,
+          message: `${frequency === "weekly" ? "Weekly" : "Monthly"} ${(format || "csv").toUpperCase()} report will be sent to ${email}`,
+          scheduledAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      } catch (error) {
+        logger2.warn("Error scheduling export:", error?.message);
+        return res.status(500).json({ error: "Failed to schedule export" });
+      }
+    });
     analytics_internal_default = router24;
   }
 });

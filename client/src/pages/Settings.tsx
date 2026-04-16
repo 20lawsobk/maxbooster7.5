@@ -97,8 +97,24 @@ export default function Settings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { trackProfileComplete, trackSocialAccountConnected, trackCollaboratorInvited } = useOnboardingProgress();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const validTabs = ['profile', 'account', 'notifications', 'preferences', 'studio', 'billing', 'privacy', 'platforms', 'sync', 'shortcuts'];
+    return (tab && validTabs.includes(tab)) ? tab : 'profile';
+  });
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    const validTabs = ['profile', 'account', 'notifications', 'preferences', 'studio', 'billing', 'privacy', 'platforms', 'sync', 'shortcuts'];
+    if (tab && validTabs.includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [location]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -668,7 +684,7 @@ export default function Settings() {
         </div>
 
         {/* Main Content */}
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="overflow-x-auto pb-1">
             <TabsList className="inline-flex h-auto w-max gap-1 p-1 flex-wrap">
               <TabsTrigger value="profile" data-testid="tab-profile" className="flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap">
