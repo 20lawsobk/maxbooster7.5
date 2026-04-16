@@ -228,7 +228,21 @@ export default function PressKit() {
                   {pressKit?.technicalRider && (
                     <section>
                       <h3 className="text-xl font-semibold mb-4 border-b pb-2">Technical Assets</h3>
-                      <Button variant="outline" className="w-full">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          const blob = new Blob([pressKit.technicalRider!], { type: 'text/plain' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = 'technical-rider.txt';
+                          document.body.appendChild(a);
+                          a.click();
+                          document.body.removeChild(a);
+                          URL.revokeObjectURL(url);
+                        }}
+                      >
                         <Download className="mr-2 h-4 w-4" /> Download Technical Rider
                       </Button>
                     </section>

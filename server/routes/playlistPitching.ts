@@ -152,14 +152,17 @@ router.get('/stats', requireAuth, async (req, res) => {
         .where(eq(playlistPitches.userId, userId))
         .groupBy(playlistPitches.status);
 
-      const r = { total: 0, accepted: 0, pending: 0, rejected: 0, conversionRate: 0 };
+      const r = { total: 0, accepted: 0, placed: 0, pending: 0, rejected: 0, conversionRate: 0 };
       stats.forEach(s => {
         r.total += Number(s.count);
         if (s.status === 'accepted') r.accepted = Number(s.count);
-        if (s.status === 'submitted' || s.status === 'under_review') r.pending += Number(s.count);
+        if (s.status === 'placed') r.placed = Number(s.count);
+        if (s.status === 'submitted' || s.status === 'under_review' || s.status === 'following_up') r.pending += Number(s.count);
         if (s.status === 'rejected') r.rejected = Number(s.count);
       });
-      if (r.total > 0) r.conversionRate = (r.accepted / r.total) * 100;
+      // Conversion = accepted + placed (both represent successful pitches)
+      const converted = r.accepted + r.placed;
+      if (r.total > 0) r.conversionRate = (converted / r.total) * 100;
       return r;
     }, 300);
 

@@ -28,6 +28,7 @@ const createShowSchema = z.object({
   capacity: z.number().int().min(0).optional(),
   notes: z.string().max(2000).optional(),
   isPublic: z.boolean().optional().default(true),
+  status: z.enum(["upcoming", "completed", "cancelled"]).optional().default("upcoming"),
 });
 
 const createSetlistSchema = z.object({
@@ -83,6 +84,24 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
 
 // PUT /api/shows/:id - update show
 router.put("/:id", requireAuth, asyncHandler(async (req, res) => {
+  const userId = req.user!.id;
+  const showId = req.params.id;
+  const data = createShowSchema.partial().parse(req.body);
+
+  const [updatedShow] = await db.update(shows)
+    .set({ ...data, updatedAt: new Date() })
+    .where(and(eq(shows.id, showId), eq(shows.userId, userId)))
+    .returning();
+
+  if (!updatedShow) {
+    return res.status(404).json({ error: "Show not found" });
+  }
+
+  res.json(updatedShow);
+}));
+
+// PATCH /api/shows/:id - partial update show (alias for PUT to support both methods)
+router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const showId = req.params.id;
   const data = createShowSchema.partial().parse(req.body);

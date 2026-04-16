@@ -735,6 +735,24 @@ If you did not expect this invitation, you can safely ignore this email.
     };
     return this.sendWithCircuitBreaker(emailData, true);
   }
+
+  /**
+   * Generic email sender — use for fan broadcasts, custom notifications, etc.
+   */
+  async send(options: { to: string; subject: string; html: string; text?: string; from?: string }): Promise<boolean> {
+    if (!this.isInitialized) {
+      logger.warn('⚠️  SendGrid not initialized — skipping email to:', options.to);
+      return false;
+    }
+    const emailData: sgMail.MailDataRequired = {
+      to: options.to,
+      from: options.from ?? process.env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      subject: options.subject,
+      html: options.html,
+      text: options.text ?? options.html.replace(/<[^>]+>/g, ''),
+    };
+    return this.sendWithCircuitBreaker(emailData, true);
+  }
 }
 
 export const emailService = new EmailService();
