@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,7 @@ export function ContractBuilder({
   const [variables, setVariables] = useState<Record<string, any>>(initialVariables);
   const [splits, setSplits] = useState<Split[]>([{ name: '', percentage: 100, role: 'Artist' }]);
   const [validation, setValidation] = useState<{ valid: boolean; errors: string[]; warnings: string[] } | null>(null);
+  const validationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const validateMutation = useMutation({
     mutationFn: async () => {
@@ -87,10 +88,17 @@ export function ContractBuilder({
 
   useEffect(() => {
     if (Object.keys(variables).length > 0) {
-      const timer = setTimeout(() => {
+      if (validationTimerRef.current) clearTimeout(validationTimerRef.current);
+      validationTimerRef.current = setTimeout(() => {
         validateMutation.mutate();
+        validationTimerRef.current = null;
       }, 500);
-      return () => clearTimeout(timer);
+      return () => {
+        if (validationTimerRef.current) {
+          clearTimeout(validationTimerRef.current);
+          validationTimerRef.current = null;
+        }
+      };
     }
   }, [variables, splits]);
 
@@ -116,9 +124,18 @@ export function ContractBuilder({
     }
   };
 
-  const totalSplitPercentage = splits.reduce((sum, s) => sum + (Number(s.percentage) || 0), 0);
+  const totalSplitPercentage = Math.round(
+    splits.reduce((sum, s) => sum + (Number(s.percentage) || 0), 0) * 100
+  ) / 100;
 
   const handleSubmit = () => {
+    if (validationTimerRef.current || validateMutation.isPending) {
+      toast({
+        title: 'Validating…',
+        description: 'Please wait a moment while we check your contract details.',
+      });
+      return;
+    }
     if (validation?.errors && validation.errors.length > 0) {
       toast({
         title: 'Validation Errors',

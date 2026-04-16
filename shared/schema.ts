@@ -875,6 +875,30 @@ export const insertContractTemplateSchema = createInsertSchema(contractTemplates
 });
 
 // ============================================================================
+// GENERATED CONTRACTS (AI-built contracts, persisted for durability)
+// ============================================================================
+export const generatedContracts = pgTable("generated_contracts", {
+  id: varchar("id").primaryKey(),
+  userId: varchar("user_id").notNull(),
+  templateId: varchar("template_id").notNull(),
+  type: text("type").notNull(),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("draft"),
+  content: text("content").notNull(),
+  variables: jsonb("variables").$type<Record<string, any>>().default({}),
+  parties: jsonb("parties").$type<Array<{ name: string; role: string; email?: string }>>().default([]),
+  signatures: jsonb("signatures").$type<Array<{
+    partyName: string;
+    signedAt?: string;
+    signatureHash?: string;
+    ipAddress?: string;
+  }>>().default([]),
+  createdAt: timestamp("created_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  pdfUrl: text("pdf_url"),
+});
+
+// ============================================================================
 // MARKETPLACE DISPUTES
 // ============================================================================
 export const marketplaceDisputes = pgTable("marketplace_disputes", {

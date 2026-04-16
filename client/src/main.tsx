@@ -43,7 +43,13 @@ root.render(
                 query.state.status === 'success' &&
                 !query.queryKey.some((k) =>
                   typeof k === 'string' &&
-                  (k.includes('payment') || k.includes('stripe') || k.includes('billing'))
+                  (k.includes('payment') ||
+                    k.includes('stripe') ||
+                    k.includes('billing') ||
+                    k.includes('contracts') ||
+                    k.includes('invoices') ||
+                    k.includes('presence') ||
+                    k.includes('heartbeat'))
                 ),
             },
           }}

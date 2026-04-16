@@ -3,6 +3,9 @@ import { randomBytes } from 'crypto';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { generatedContracts } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 export type ContractType = 
   | 'non_exclusive_license'
@@ -173,6 +176,87 @@ const contractTemplates: ContractTemplate[] = [
 
 class ContractTemplateService {
   private contracts: Map<string, GeneratedContract> = new Map();
+  private dbInitPromise: Promise<void>;
+
+  constructor() {
+    this.dbInitPromise = this.loadFromDatabase().catch(err => {
+      logger.warn('Failed to load contracts from DB on startup:', err);
+    });
+  }
+
+  async waitForInit(): Promise<void> {
+    await this.dbInitPromise;
+  }
+
+  private async loadFromDatabase(): Promise<void> {
+    try {
+      const rows = await db.select().from(generatedContracts);
+      for (const row of rows) {
+        const contract: GeneratedContract = {
+          id: row.id,
+          templateId: row.templateId,
+          type: row.type as GeneratedContract['type'],
+          title: row.title,
+          content: row.content,
+          variables: (row.variables ?? {}) as ContractVariables,
+          createdBy: row.userId,
+          parties: (row.parties ?? []) as GeneratedContract['parties'],
+          signatures: ((row.signatures ?? []) as any[]).map((s: any) => ({
+            partyName: s.partyName,
+            signedAt: s.signedAt ? new Date(s.signedAt) : undefined,
+            signatureHash: s.signatureHash,
+            ipAddress: s.ipAddress,
+          })),
+          status: row.status as GeneratedContract['status'],
+          createdAt: row.createdAt ?? new Date(),
+          expiresAt: row.expiresAt ?? undefined,
+          pdfUrl: row.pdfUrl ?? undefined,
+        };
+        this.contracts.set(contract.id, contract);
+      }
+      logger.info(`Loaded ${rows.length} contracts from database`);
+    } catch (err) {
+      logger.warn('Error loading contracts from DB:', err);
+    }
+  }
+
+  private persistToDb(contract: GeneratedContract): void {
+    const row = {
+      id: contract.id,
+      userId: contract.createdBy,
+      templateId: contract.templateId,
+      type: contract.type,
+      title: contract.title,
+      status: contract.status,
+      content: contract.content,
+      variables: contract.variables as Record<string, any>,
+      parties: contract.parties,
+      signatures: contract.signatures.map(s => ({
+        partyName: s.partyName,
+        signedAt: s.signedAt ? s.signedAt.toISOString() : undefined,
+        signatureHash: s.signatureHash,
+        ipAddress: s.ipAddress,
+      })),
+      createdAt: contract.createdAt,
+      expiresAt: contract.expiresAt ?? null,
+      pdfUrl: contract.pdfUrl ?? null,
+    };
+    db.insert(generatedContracts)
+      .values(row)
+      .onConflictDoUpdate({
+        target: generatedContracts.id,
+        set: {
+          status: row.status,
+          content: row.content,
+          variables: row.variables,
+          parties: row.parties,
+          signatures: row.signatures,
+          expiresAt: row.expiresAt,
+          pdfUrl: row.pdfUrl,
+        },
+      })
+      .catch(err => logger.warn(`Failed to persist contract ${contract.id} to DB:`, err));
+  }
 
   getTemplates(): ContractTemplate[] {
     return contractTemplates;
@@ -215,6 +299,7 @@ class ContractTemplateService {
     };
 
     this.contracts.set(contract.id, contract);
+    this.persistToDb(contract);
     logger.info(`Generated contract ${contract.id} from template ${templateId}`);
     return contract;
   }
@@ -996,6 +1081,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
     }
 
     this.contracts.set(contractId, contract);
+    this.persistToDb(contract);
     logger.info(`Contract ${contractId} signed by ${partyName}. Status: ${contract.status}`);
     return contract;
   }
@@ -1159,6 +1245,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
     };
 
     this.contracts.set(contractId, updatedContract);
+    this.persistToDb(updatedContract);
     logger.info(`Contract ${contractId} draft updated`);
     return updatedContract;
   }
@@ -1175,6 +1262,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
 
     contract.status = 'pending_signature';
     this.contracts.set(contractId, contract);
+    this.persistToDb(contract);
     logger.info(`Contract ${contractId} sent for signature`);
     return contract;
   }
@@ -1192,6 +1280,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
 
     contract.status = 'voided';
     this.contracts.set(contractId, contract);
+    this.persistToDb(contract);
     logger.info(`Contract ${contractId} declined by ${partyName}. Reason: ${reason}`);
     return contract;
   }
@@ -1208,6 +1297,7 @@ ${vars.producerName || '[PRODUCER NAME]'}
 
     contract.status = 'voided';
     this.contracts.set(contractId, contract);
+    this.persistToDb(contract);
     logger.info(`Contract ${contractId} voided. Reason: ${reason}`);
     return contract;
   }

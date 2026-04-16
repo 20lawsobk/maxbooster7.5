@@ -98,17 +98,15 @@ export default function Contracts() {
 
   const getCanvasPos = (canvas: HTMLCanvasElement, e: MouseEvent | TouchEvent) => {
     const rect = canvas.getBoundingClientRect();
-    const scaleX = canvas.width / rect.width;
-    const scaleY = canvas.height / rect.height;
     if ('touches' in e) {
       return {
-        x: (e.touches[0].clientX - rect.left) * scaleX,
-        y: (e.touches[0].clientY - rect.top) * scaleY,
+        x: e.touches[0].clientX - rect.left,
+        y: e.touches[0].clientY - rect.top,
       };
     }
     return {
-      x: (e.clientX - rect.left) * scaleX,
-      y: (e.clientY - rect.top) * scaleY,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
     };
   };
 
@@ -117,7 +115,15 @@ export default function Contracts() {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width > 0) {
+      canvas.width = Math.round(rect.width * dpr);
+      canvas.height = Math.round(Math.max(rect.height, 180) * dpr);
+      ctx.scale(dpr, dpr);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
@@ -129,6 +135,18 @@ export default function Contracts() {
       setTimeout(setupCanvas, 50);
     }
   }, [signStep, setupCanvas]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || signStep !== 'draw') return;
+    const prevent = (e: Event) => e.preventDefault();
+    canvas.addEventListener('touchstart', prevent, { passive: false });
+    canvas.addEventListener('touchmove', prevent, { passive: false });
+    return () => {
+      canvas.removeEventListener('touchstart', prevent);
+      canvas.removeEventListener('touchmove', prevent);
+    };
+  }, [signStep]);
 
   const startDraw = useCallback((e: MouseEvent | TouchEvent) => {
     const canvas = canvasRef.current;
@@ -190,6 +208,9 @@ export default function Contracts() {
     enabled: !!user,
     staleTime: 0,
     refetchInterval: 3000,
+    refetchIntervalInBackground: true,
+    retry: 2,
+    retryDelay: 2000,
   });
 
   const { data: statsData } = useQuery<{ stats: ContractStats }>({
@@ -226,13 +247,16 @@ export default function Contracts() {
       return res.json();
     },
     onSuccess: (newContract: Contract) => {
-      setPendingContracts(prev => [...prev, newContract]);
+      queryClient.setQueryData<{ contracts: Contract[] }>(
+        ['/api/contracts/my-contracts'],
+        (old) => ({ contracts: [newContract, ...(old?.contracts ?? [])] })
+      );
       queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setShowCreateDialog(false);
       setSelectedTemplate(null);
       setCurrentOutcome('contract_drafted');
       toast({ title: 'Contract created', description: 'Your contract has been generated and saved as a draft.' });
-      refetchContracts().then(() => setPendingContracts([]));
+      refetchContracts();
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -248,8 +272,9 @@ export default function Contracts() {
       if (!res.ok) throw new Error('Failed to send for signature');
       return res.json();
     },
-    onSuccess: (data) => {
-      refetchContracts();
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setCurrentOutcome('signature_requested');
       toast({ title: 'Signature requested', description: 'The contract has been sent for signature.' });
     },
@@ -270,7 +295,8 @@ export default function Contracts() {
       return res.json();
     },
     onSuccess: (data) => {
-      refetchContracts();
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setShowSignDialog(false);
       setSignStep('pick');
       setSigningAs('');
@@ -298,7 +324,8 @@ export default function Contracts() {
       return res.json();
     },
     onSuccess: () => {
-      refetchContracts();
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setShowDeclineDialog(false);
       setDeclineReason('');
       setCurrentOutcome('signature_declined');
@@ -321,7 +348,8 @@ export default function Contracts() {
       return res.json();
     },
     onSuccess: () => {
-      refetchContracts();
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setShowDetailsDialog(false);
       setCurrentOutcome('contract_terminated');
       toast({ title: 'Contract voided', description: 'The contract has been terminated.' });
@@ -556,7 +584,7 @@ return (
                         {getStatusBadge(contract.status)}
                       </div>
                       <CardDescription>
-                        Created {format(new Date(contract.createdAt), 'MMM d, yyyy')}
+                        Created {contract.createdAt ? format(new Date(contract.createdAt), 'MMM d, yyyy') : '—'}
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pb-3">
@@ -671,7 +699,7 @@ return (
                               <CheckCircle className="h-4 w-4 text-green-500" />
                               <span>{sig.partyName}</span>
                               <span className="text-muted-foreground">
-                                (signed {format(new Date(sig.signedAt!), 'MMM d')})
+                                (signed {sig.signedAt ? format(new Date(sig.signedAt), 'MMM d') : '—'})
                               </span>
                             </div>
                           ))}

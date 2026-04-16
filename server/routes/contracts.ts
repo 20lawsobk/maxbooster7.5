@@ -160,12 +160,9 @@ router.delete('/templates/custom/:templateId', requireAuth, async (req: Request,
   }
 });
 
-router.post('/generate', async (req: Request, res: Response) => {
+router.post('/generate', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    await contractTemplateService.waitForInit();
     const { templateId, variables } = req.body;
 
     if (!templateId) {
@@ -185,17 +182,11 @@ router.post('/generate', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/my-contracts', async (req: Request, res: Response) => {
+router.get('/my-contracts', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      logger.warn('[contracts/my-contracts] 401 — isAuthenticated=false, session.userId=' + (req.session as any)?.userId);
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    await contractTemplateService.waitForInit();
     const userId = req.user!.id;
     const contracts = contractTemplateService.getContractsByUser(userId);
-    const totalInMap = (contractTemplateService as any).contracts?.size ?? -1;
-    logger.info(`[contracts/my-contracts] userId=${userId} total_in_map=${totalInMap} found=${contracts.length}`);
     return res.json({ contracts });
   } catch (error: any) {
     logger.warn({ err: error }, 'Error fetching user contracts:');
@@ -203,12 +194,9 @@ router.get('/my-contracts', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/my', async (req: Request, res: Response) => {
+router.get('/my', requireAuth, async (req: Request, res: Response) => {
   try {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
-
+    await contractTemplateService.waitForInit();
     const contracts = contractTemplateService.getContractsByUser(req.user!.id);
     return res.json({ contracts });
   } catch (error: any) {
@@ -838,7 +826,7 @@ router.get('/tax-forms/:formId/pdf', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/tax-forms/calculate-withholding', async (req: Request, res: Response) => {
+router.post('/tax-forms/calculate-withholding', requireAuth, async (req: Request, res: Response) => {
   try {
     const { grossAmount, isUSPerson, country, hasTreatyBenefits, hasValidW9, hasBackupWithholding } = req.body;
 
@@ -1117,7 +1105,7 @@ router.post('/split-sheets/:contractId/add-participant', async (req: Request, re
   }
 });
 
-router.post('/split-sheets/validate', async (req: Request, res: Response) => {
+router.post('/split-sheets/validate', requireAuth, async (req: Request, res: Response) => {
   try {
     const { participants } = req.body;
 
