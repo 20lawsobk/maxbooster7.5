@@ -45,24 +45,30 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { 
-  ShoppingCart, 
-  Package, 
-  DollarSign, 
-  TrendingUp, 
-  AlertCircle, 
-  Plus, 
-  Edit, 
-  Trash2, 
+import {
+  ShoppingCart,
+  Package,
+  DollarSign,
+  TrendingUp,
+  AlertCircle,
+  Plus,
+  Edit,
+  Trash2,
   Search,
   Truck,
   CheckCircle,
-  ExternalLink,
-  FileText,
   Store,
   BarChart3,
+  X,
+  Layers,
 } from 'lucide-react';
 import { format } from 'date-fns';
+
+interface Variant {
+  name: string;
+  value: string;
+  priceOffset: number;
+}
 
 export default function MerchStore() {
   const { toast } = useToast();
@@ -72,21 +78,13 @@ export default function MerchStore() {
   const [editingItem, setEditingItem] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [addVariants, setAddVariants] = useState<Variant[]>([]);
+  const [editVariants, setEditVariants] = useState<Variant[]>([]);
 
-  // Queries
-  const { data: items, isLoading: itemsLoading } = useQuery({
-    queryKey: ['/api/merch'],
-  });
+  const { data: items, isLoading: itemsLoading } = useQuery({ queryKey: ['/api/merch'] });
+  const { data: orders, isLoading: ordersLoading } = useQuery({ queryKey: ['/api/merch/orders'] });
+  const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ['/api/merch/stats'] });
 
-  const { data: orders, isLoading: ordersLoading } = useQuery({
-    queryKey: ['/api/merch/orders'],
-  });
-
-  const { data: stats, isLoading: statsLoading } = useQuery({
-    queryKey: ['/api/merch/stats'],
-  });
-
-  // Mutations
   const addItemMutation = useMutation({
     mutationFn: async (newItem: any) => {
       const res = await apiRequest('POST', '/api/merch', newItem);
@@ -97,6 +95,7 @@ export default function MerchStore() {
       queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
       toast({ title: 'Product added', description: 'Your product is now live in your store.' });
       setIsAddDialogOpen(false);
+      setAddVariants([]);
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to add product.', variant: 'destructive' });
@@ -113,6 +112,7 @@ export default function MerchStore() {
       queryClient.invalidateQueries({ queryKey: ['/api/merch/stats'] });
       toast({ title: 'Product updated', description: 'Changes saved successfully.' });
       setEditingItem(null);
+      setEditVariants([]);
     },
     onError: () => {
       toast({ title: 'Error', description: 'Failed to update product.', variant: 'destructive' });
@@ -152,6 +152,7 @@ export default function MerchStore() {
       inventory: parseInt(data.inventory as string) || 0,
       isDigital: data.isDigital === 'on',
       isActive: true,
+      variants: addVariants,
     });
   };
 
@@ -166,6 +167,7 @@ export default function MerchStore() {
       salePrice: data.salePrice ? parseFloat(data.salePrice as string) : null,
       inventory: parseInt(data.inventory as string) || 0,
       isDigital: data.isDigital === 'on',
+      variants: editVariants,
     });
   };
 
@@ -174,11 +176,107 @@ export default function MerchStore() {
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const ProductForm = ({ defaultValues, onSubmit, isLoading, submitLabel }: {
+  const VariantEditor = ({ variants, setVariants }: { variants: Variant[]; setVariants: (v: Variant[]) => void }) => (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <Label className="flex items-center gap-1.5">
+          <Layers className="h-3.5 w-3.5" />
+          Variants (sizes, colors, etc.)
+        </Label>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setVariants([...variants, { name: 'Size', value: '', priceOffset: 0 }])}
+        >
+          <Plus className="h-3.5 w-3.5 mr-1" />
+          Add Variant
+        </Button>
+      </div>
+      {variants.length > 0 && (
+        <div className="space-y-2 rounded-md border p-3 bg-muted/30">
+          {variants.map((v, i) => (
+            <div key={i} className="grid grid-cols-12 gap-2 items-center">
+              <div className="col-span-4">
+                <Select
+                  value={v.name}
+                  onValueChange={(val) => {
+                    const updated = [...variants];
+                    updated[i] = { ...updated[i], name: val };
+                    setVariants(updated);
+                  }}
+                >
+                  <SelectTrigger className="h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Size">Size</SelectItem>
+                    <SelectItem value="Color">Color</SelectItem>
+                    <SelectItem value="Style">Style</SelectItem>
+                    <SelectItem value="Material">Material</SelectItem>
+                    <SelectItem value="Edition">Edition</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="col-span-5">
+                <Input
+                  className="h-8 text-xs"
+                  placeholder="e.g. Large, Black, Gold..."
+                  value={v.value}
+                  onChange={(e) => {
+                    const updated = [...variants];
+                    updated[i] = { ...updated[i], value: e.target.value };
+                    setVariants(updated);
+                  }}
+                />
+              </div>
+              <div className="col-span-2">
+                <Input
+                  className="h-8 text-xs"
+                  type="number"
+                  step="0.01"
+                  placeholder="+$0"
+                  value={v.priceOffset || ''}
+                  onChange={(e) => {
+                    const updated = [...variants];
+                    updated[i] = { ...updated[i], priceOffset: parseFloat(e.target.value) || 0 };
+                    setVariants(updated);
+                  }}
+                />
+              </div>
+              <div className="col-span-1 flex justify-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => setVariants(variants.filter((_, idx) => idx !== i))}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground pt-1">Type · Value · Price offset (+/-$)</p>
+        </div>
+      )}
+    </div>
+  );
+
+  const ProductForm = ({
+    defaultValues,
+    onSubmit,
+    isLoading,
+    submitLabel,
+    variants,
+    setVariants,
+  }: {
     defaultValues?: any;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     isLoading: boolean;
     submitLabel: string;
+    variants: Variant[];
+    setVariants: (v: Variant[]) => void;
   }) => (
     <form onSubmit={onSubmit} className="space-y-4 py-4">
       <div className="grid grid-cols-2 gap-4">
@@ -238,6 +336,7 @@ export default function MerchStore() {
         <Label htmlFor="downloadUrl">Download URL (digital products)</Label>
         <Input id="downloadUrl" name="downloadUrl" placeholder="https://..." defaultValue={defaultValues?.downloadUrl} />
       </div>
+      <VariantEditor variants={variants} setVariants={setVariants} />
       <DialogFooter>
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Saving...' : submitLabel}
@@ -245,6 +344,43 @@ export default function MerchStore() {
       </DialogFooter>
     </form>
   );
+
+  const itemsArr = (items as any[]) || [];
+  const ordersArr = (orders as any[]) || [];
+
+  const categoryRevenue = (() => {
+    const map: Record<string, number> = {};
+    for (const item of itemsArr) {
+      const rev = parseFloat(item.price) * (item.soldCount || 0);
+      map[item.category] = (map[item.category] || 0) + rev;
+    }
+    return Object.entries(map)
+      .map(([cat, rev]) => ({ cat, rev }))
+      .sort((a, b) => b.rev - a.rev);
+  })();
+
+  const orderStatusBreakdown = (() => {
+    const map: Record<string, number> = {};
+    for (const o of ordersArr) {
+      map[o.status] = (map[o.status] || 0) + 1;
+    }
+    return Object.entries(map).map(([status, count]) => ({ status, count }));
+  })();
+
+  const avgOrderValue =
+    ordersArr.length > 0
+      ? ordersArr.reduce((s: number, o: any) => s + parseFloat(o.total || 0), 0) / ordersArr.length
+      : 0;
+
+  const totalCatRev = categoryRevenue.reduce((s, x) => s + x.rev, 0) || 1;
+
+  const STATUS_COLORS: Record<string, string> = {
+    pending: '#f59e0b',
+    processing: '#6366f1',
+    shipped: '#3b82f6',
+    delivered: '#22c55e',
+    refunded: '#ef4444',
+  };
 
   return (
     <AppLayout>
@@ -257,14 +393,14 @@ export default function MerchStore() {
             </h1>
             <p className="text-muted-foreground mt-1">Manage your physical and digital merchandise.</p>
           </div>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog open={isAddDialogOpen} onOpenChange={(open) => { setIsAddDialogOpen(open); if (!open) setAddVariants([]); }}>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 Add Product
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add New Product</DialogTitle>
                 <DialogDescription>Enter the details for your new merchandise item.</DialogDescription>
@@ -273,12 +409,13 @@ export default function MerchStore() {
                 onSubmit={handleAddItem}
                 isLoading={addItemMutation.isPending}
                 submitLabel="Add Product"
+                variants={addVariants}
+                setVariants={setAddVariants}
               />
             </DialogContent>
           </Dialog>
         </div>
 
-        {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
             { label: 'Total Revenue', value: `$${(stats as any)?.totalRevenue?.toFixed(2) || '0.00'}`, sub: 'Lifetime earnings', icon: DollarSign, color: 'text-green-500' },
@@ -350,6 +487,11 @@ export default function MerchStore() {
                         <Badge variant={item.isActive ? 'default' : 'secondary'}>
                           {item.isActive ? 'Active' : 'Draft'}
                         </Badge>
+                        {item.variants?.length > 0 && (
+                          <Badge variant="outline" className="text-xs bg-background/80">
+                            <Layers className="h-2.5 w-2.5 mr-1" />{item.variants.length} variants
+                          </Badge>
+                        )}
                         {!item.isDigital && item.inventory <= 5 && item.inventory > 0 && (
                           <Badge variant="outline" className="border-orange-500/30 text-orange-400 bg-orange-500/10 text-xs">Low Stock</Badge>
                         )}
@@ -386,7 +528,10 @@ export default function MerchStore() {
                           variant="outline"
                           size="sm"
                           className="flex-1"
-                          onClick={() => setEditingItem(item)}
+                          onClick={() => {
+                            setEditingItem(item);
+                            setEditVariants(item.variants || []);
+                          }}
                         >
                           <Edit className="h-3.5 w-3.5 mr-1.5" />
                           Edit
@@ -432,7 +577,7 @@ export default function MerchStore() {
                           <TableCell colSpan={7} className="h-12" />
                         </TableRow>
                       ))
-                    ) : !(orders as any[])?.length ? (
+                    ) : !ordersArr.length ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-12">
                           <ShoppingCart className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-20" />
@@ -440,7 +585,7 @@ export default function MerchStore() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      (orders as any[])?.map((order: any) => (
+                      ordersArr.map((order: any) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-mono text-xs">{order.id.split('-')[0]}</TableCell>
                           <TableCell className="text-sm">{format(new Date(order.createdAt), 'MMM d, yyyy')}</TableCell>
@@ -514,21 +659,115 @@ export default function MerchStore() {
           </TabsContent>
 
           <TabsContent value="analytics">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Avg Order Value</CardTitle>
+                  <div className="text-2xl font-bold">${avgOrderValue.toFixed(2)}</div>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Products</CardTitle>
+                  <div className="text-2xl font-bold">{itemsArr.length}</div>
+                </CardHeader>
+              </Card>
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">Units Sold</CardTitle>
+                  <div className="text-2xl font-bold">{itemsArr.reduce((s: number, i: any) => s + (i.soldCount || 0), 0)}</div>
+                </CardHeader>
+              </Card>
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader className="flex flex-row items-center gap-2">
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle>Revenue by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {categoryRevenue.length === 0 ? (
+                    <div className="flex flex-col items-center py-8 text-muted-foreground">
+                      <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
+                      <p className="text-sm">No sales data yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {categoryRevenue.map(({ cat, rev }) => (
+                        <div key={cat} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="capitalize font-medium">{cat}</span>
+                            <span className="text-muted-foreground">${rev.toFixed(2)}</span>
+                          </div>
+                          <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full transition-all duration-500"
+                              style={{ width: `${(rev / totalCatRev) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                  <CardTitle>Order Status Breakdown</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {orderStatusBreakdown.length === 0 ? (
+                    <div className="flex flex-col items-center py-8 text-muted-foreground">
+                      <ShoppingCart className="h-8 w-8 mb-2 opacity-30" />
+                      <p className="text-sm">No orders yet.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {orderStatusBreakdown.map(({ status, count }) => (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="w-3 h-3 rounded-full"
+                              style={{ backgroundColor: STATUS_COLORS[status] || '#94a3b8' }}
+                            />
+                            <span className="text-sm capitalize font-medium">{status}</span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${(count / ordersArr.length) * 100}%`,
+                                  backgroundColor: STATUS_COLORS[status] || '#94a3b8',
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm text-muted-foreground w-4 text-right">{count}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="flex flex-row items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
                   <CardTitle>Best Sellers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {(stats as any)?.bestSellers?.length === 0 || !(stats as any)?.bestSellers ? (
+                  {!(stats as any)?.bestSellers?.length ? (
                     <div className="flex flex-col items-center py-8 text-muted-foreground">
                       <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
                       <p className="text-sm">No sales data yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {(stats as any)?.bestSellers?.map((item: any, i: number) => (
+                      {(stats as any).bestSellers.map((item: any, i: number) => (
                         <div key={item.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className="text-muted-foreground text-sm w-4">{i + 1}.</span>
@@ -541,7 +780,7 @@ export default function MerchStore() {
                             </div>
                             <div>
                               <div className="text-sm font-medium">{item.name}</div>
-                              <div className="text-xs text-muted-foreground">{item.soldCount} sales</div>
+                              <div className="text-xs text-muted-foreground">{item.soldCount} units sold</div>
                             </div>
                           </div>
                           <div className="text-sm font-bold text-green-500">
@@ -567,7 +806,7 @@ export default function MerchStore() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {(stats as any)?.lowInventoryItems?.map((item: any) => (
+                      {(stats as any).lowInventoryItems.map((item: any) => (
                         <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20">
                           <div className="flex items-center gap-3">
                             <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />
@@ -586,51 +825,49 @@ export default function MerchStore() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
 
-      {/* Edit Product Dialog */}
-      <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) setEditingItem(null); }}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Edit Product</DialogTitle>
-            <DialogDescription>Update the details for "{editingItem?.name}".</DialogDescription>
-          </DialogHeader>
-          {editingItem && (
-            <ProductForm
-              defaultValues={editingItem}
-              onSubmit={handleEditItem}
-              isLoading={updateItemMutation.isPending}
-              submitLabel="Save Changes"
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        <Dialog open={!!editingItem} onOpenChange={(open) => { if (!open) { setEditingItem(null); setEditVariants([]); } }}>
+          <DialogContent className="sm:max-w-[620px] max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+              <DialogDescription>Update your product details.</DialogDescription>
+            </DialogHeader>
+            {editingItem && (
+              <ProductForm
+                defaultValues={editingItem}
+                onSubmit={handleEditItem}
+                isLoading={updateItemMutation.isPending}
+                submitLabel="Save Changes"
+                variants={editVariants}
+                setVariants={setEditVariants}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
 
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Product</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure? This will permanently remove the product from your store. Orders already placed won't be affected.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (pendingDeleteId) {
-                  deleteItemMutation.mutate(pendingDeleteId);
+        <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => { if (!open) setPendingDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Product</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently remove this product from your store. This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive hover:bg-destructive/90"
+                onClick={() => {
+                  if (pendingDeleteId) deleteItemMutation.mutate(pendingDeleteId);
                   setPendingDeleteId(null);
-                }
-              }}
-            >
-              Delete Product
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                }}
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
     </AppLayout>
   );
 }

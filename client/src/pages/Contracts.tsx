@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { useAuth } from '@/hooks/useAuth';
@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { 
   FileText, Plus, Download, Send, CheckCircle, Clock, PenTool, Eye, Users, Filter,
-  AlertTriangle, XCircle, History, BarChart3, Ban
+  AlertTriangle, XCircle, History, BarChart3, Ban, RotateCcw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { 
@@ -89,6 +89,96 @@ export default function Contracts() {
   const [declineReason, setDeclineReason] = useState('');
   const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(null);
   const [outcomeDetails, setOutcomeDetails] = useState<any>(null);
+  const [signStep, setSignStep] = useState<'pick' | 'draw'>('pick');
+  const [signingAs, setSigningAs] = useState<string>('');
+  const [pendingContracts, setPendingContracts] = useState<Contract[]>([]);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isDrawingRef = useRef(false);
+  const lastPosRef = useRef<{ x: number; y: number } | null>(null);
+
+  const getCanvasPos = (canvas: HTMLCanvasElement, e: MouseEvent | TouchEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    if ('touches' in e) {
+      return {
+        x: (e.touches[0].clientX - rect.left) * scaleX,
+        y: (e.touches[0].clientY - rect.top) * scaleY,
+      };
+    }
+    return {
+      x: (e.clientX - rect.left) * scaleX,
+      y: (e.clientY - rect.top) * scaleY,
+    };
+  };
+
+  const setupCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#1e293b';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+  }, []);
+
+  useEffect(() => {
+    if (signStep === 'draw') {
+      setTimeout(setupCanvas, 50);
+    }
+  }, [signStep, setupCanvas]);
+
+  const startDraw = useCallback((e: MouseEvent | TouchEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    isDrawingRef.current = true;
+    lastPosRef.current = getCanvasPos(canvas, e);
+  }, []);
+
+  const draw = useCallback((e: MouseEvent | TouchEvent) => {
+    if (!isDrawingRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    e.preventDefault();
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !lastPosRef.current) return;
+    const pos = getCanvasPos(canvas, e);
+    ctx.beginPath();
+    ctx.moveTo(lastPosRef.current.x, lastPosRef.current.y);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    lastPosRef.current = pos;
+  }, []);
+
+  const stopDraw = useCallback(() => {
+    isDrawingRef.current = false;
+    lastPosRef.current = null;
+  }, []);
+
+  const clearCanvas = () => setupCanvas();
+
+  const isCanvasEmpty = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return true;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return true;
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    return !data.some(v => v !== 0);
+  };
+
+  const submitSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !selectedContract || !signingAs) return;
+    if (isCanvasEmpty()) {
+      toast({ title: 'Signature required', description: 'Please draw your signature before submitting.', variant: 'destructive' });
+      return;
+    }
+    const signatureDataUrl = canvas.toDataURL('image/png');
+    signContractMutation.mutate({ contractId: selectedContract.id, partyName: signingAs, signatureData: signatureDataUrl });
+  };
 
   const { data: templatesData} = useQuery<{ templates: ContractTemplate[]; categories: string[] }>({
     queryKey: ['/api/contracts/templates'],
@@ -98,6 +188,8 @@ export default function Contracts() {
   const { data: contractsData, refetch: refetchContracts } = useQuery<{ contracts: Contract[] }>({
     queryKey: ['/api/contracts/my-contracts'],
     enabled: !!user,
+    staleTime: 0,
+    refetchInterval: 3000,
   });
 
   const { data: statsData } = useQuery<{ stats: ContractStats }>({
@@ -133,13 +225,14 @@ export default function Contracts() {
       if (!res.ok) throw new Error('Failed to generate contract');
       return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/contracts/my-contracts'] });
+    onSuccess: (newContract: Contract) => {
+      setPendingContracts(prev => [...prev, newContract]);
       queryClient.invalidateQueries({ queryKey: ['/api/contracts/stats/summary'] });
       setShowCreateDialog(false);
       setSelectedTemplate(null);
       setCurrentOutcome('contract_drafted');
       toast({ title: 'Contract created', description: 'Your contract has been generated and saved as a draft.' });
+      refetchContracts().then(() => setPendingContracts([]));
     },
     onError: (error: Error) => {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
@@ -166,12 +259,12 @@ export default function Contracts() {
   });
 
   const signContractMutation = useMutation({
-    mutationFn: async ({ contractId, partyName }: { contractId: string; partyName: string }) => {
+    mutationFn: async ({ contractId, partyName, signatureData }: { contractId: string; partyName: string; signatureData: string }) => {
       const res = await fetch(`/api/contracts/${contractId}/sign`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ partyName, signature: 'electronic-signature' }),
+        body: JSON.stringify({ partyName, signature: signatureData }),
       });
       if (!res.ok) throw new Error('Failed to sign contract');
       return res.json();
@@ -179,6 +272,8 @@ export default function Contracts() {
     onSuccess: (data) => {
       refetchContracts();
       setShowSignDialog(false);
+      setSignStep('pick');
+      setSigningAs('');
       if (data.status === 'fully_executed') {
         setCurrentOutcome('contract_executed');
       } else {
@@ -260,7 +355,9 @@ export default function Contracts() {
 
   const templates = templatesData?.templates || [];
   const categories = templatesData?.categories || [];
-  const contracts = contractsData?.contracts || [];
+  const queryContracts = contractsData?.contracts || [];
+  const pendingIds = new Set(queryContracts.map((c) => c.id));
+  const contracts = [...queryContracts, ...pendingContracts.filter((c) => !pendingIds.has(c.id))];
   const stats = statsData?.stats;
   
   const filteredContracts = filterStatus === 'all' 
@@ -699,45 +796,106 @@ return (
           </DialogContent>
         </Dialog>
 
-        <Dialog open={showSignDialog} onOpenChange={setShowSignDialog}>
-          <DialogContent>
+        <Dialog open={showSignDialog} onOpenChange={(open) => { setShowSignDialog(open); if (!open) { setSignStep('pick'); setSigningAs(''); } }}>
+          <DialogContent className="max-w-lg">
             <DialogHeader>
-              <DialogTitle>Sign Contract</DialogTitle>
+              <DialogTitle className="flex items-center gap-2">
+                <PenTool className="h-5 w-5 text-primary" />
+                {signStep === 'pick' ? 'Sign Contract' : 'Draw Your Signature'}
+              </DialogTitle>
               <DialogDescription>
-                By signing, you agree to all terms in this contract.
+                {signStep === 'pick'
+                  ? 'Select which party you are signing as.'
+                  : 'Draw your signature in the box below using your mouse or finger.'}
               </DialogDescription>
             </DialogHeader>
-            
-            {selectedContract && (
+
+            {selectedContract && signStep === 'pick' && (
               <div className="space-y-4">
                 <Card className="p-4 bg-muted/50">
                   <p className="font-medium">{selectedContract.title}</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    {selectedContract.parties.length} parties involved
+                    {selectedContract.parties.length} {selectedContract.parties.length === 1 ? 'party' : 'parties'} involved
                   </p>
                 </Card>
-                
-                <p className="text-sm text-muted-foreground">
-                  Select your name to sign as:
-                </p>
-                
-                <div className="space-y-2">
-                  {selectedContract.signatures.filter(s => !s.signedAt).map((sig, i) => (
+                <p className="text-sm text-muted-foreground">Who are you signing as?</p>
+                {selectedContract.signatures.filter(s => !s.signedAt).length > 0 ? (
+                  <div className="space-y-2">
+                    {selectedContract.signatures.filter(s => !s.signedAt).map((sig, i) => (
+                      <Button
+                        key={i}
+                        variant="outline"
+                        className="w-full justify-start h-12"
+                        onClick={() => { setSigningAs(sig.partyName); setSignStep('draw'); }}
+                      >
+                        <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">{sig.partyName}</span>
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      placeholder="Enter your name or role (e.g. Artist, Producer)"
+                      value={signingAs}
+                      onChange={e => setSigningAs(e.target.value)}
+                    />
                     <Button
-                      key={i}
-                      variant="outline"
-                      className="w-full justify-start"
-                      onClick={() => signContractMutation.mutate({
-                        contractId: selectedContract.id,
-                        partyName: sig.partyName,
-                      })}
+                      className="w-full"
+                      disabled={!signingAs.trim()}
+                      onClick={() => setSignStep('draw')}
+                    >
+                      Continue to Signature
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {selectedContract && signStep === 'draw' && (
+              <div className="space-y-4">
+                <div className="text-sm text-center text-muted-foreground">
+                  Signing as: <span className="font-semibold text-foreground">{signingAs}</span>
+                </div>
+                <div className="relative rounded-lg border-2 border-dashed border-border bg-white overflow-hidden">
+                  <canvas
+                    ref={canvasRef}
+                    width={460}
+                    height={180}
+                    className="w-full touch-none cursor-crosshair"
+                    onMouseDown={(e) => startDraw(e.nativeEvent)}
+                    onMouseMove={(e) => draw(e.nativeEvent)}
+                    onMouseUp={() => stopDraw()}
+                    onMouseLeave={() => stopDraw()}
+                    onTouchStart={(e) => startDraw(e.nativeEvent)}
+                    onTouchMove={(e) => draw(e.nativeEvent)}
+                    onTouchEnd={() => stopDraw()}
+                  />
+                  <p className="absolute bottom-2 right-3 text-xs text-muted-foreground pointer-events-none select-none">
+                    Sign here
+                  </p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <Button type="button" variant="ghost" size="sm" onClick={clearCanvas}>
+                    <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                    Clear
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setSignStep('pick')}>Back</Button>
+                    <Button
+                      size="sm"
+                      onClick={submitSignature}
                       disabled={signContractMutation.isPending}
                     >
-                      <PenTool className="h-4 w-4 mr-2" />
-                      Sign as {sig.partyName}
+                      {signContractMutation.isPending ? 'Signing...' : 'Submit Signature'}
                     </Button>
-                  ))}
+                  </div>
                 </div>
+                <p className="text-xs text-center text-muted-foreground">
+                  By submitting, you agree to all terms of this contract and confirm this is your legal signature.
+                </p>
               </div>
             )}
           </DialogContent>

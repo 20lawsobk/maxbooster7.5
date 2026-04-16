@@ -188,10 +188,14 @@ router.post('/generate', async (req: Request, res: Response) => {
 router.get('/my-contracts', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
+      logger.warn('[contracts/my-contracts] 401 — isAuthenticated=false, session.userId=' + (req.session as any)?.userId);
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const contracts = contractTemplateService.getContractsByUser(req.user!.id);
+    const userId = req.user!.id;
+    const contracts = contractTemplateService.getContractsByUser(userId);
+    const totalInMap = (contractTemplateService as any).contracts?.size ?? -1;
+    logger.info(`[contracts/my-contracts] userId=${userId} total_in_map=${totalInMap} found=${contracts.length}`);
     return res.json({ contracts });
   } catch (error: any) {
     logger.warn({ err: error }, 'Error fetching user contracts:');

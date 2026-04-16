@@ -187,7 +187,7 @@ export class RBACService {
         .select()
         .from(workspaceRoles)
         .where(eq(workspaceRoles.workspaceId, workspaceId))
-        .orderBy(desc(workspaceRoles.priority));
+        .orderBy(desc(workspaceRoles.createdAt));
 
       return roles;
     } catch (error: unknown) {

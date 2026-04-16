@@ -168887,7 +168887,7 @@ var init_rbacService = __esm({
       }
       async getWorkspaceRoles(workspaceId) {
         try {
-          const roles = await db.select().from(workspaceRoles).where((0, import_drizzle_orm105.eq)(workspaceRoles.workspaceId, workspaceId)).orderBy((0, import_drizzle_orm105.desc)(workspaceRoles.priority));
+          const roles = await db.select().from(workspaceRoles).where((0, import_drizzle_orm105.eq)(workspaceRoles.workspaceId, workspaceId)).orderBy((0, import_drizzle_orm105.desc)(workspaceRoles.createdAt));
           return roles;
         } catch (error) {
           logger2.warn({ err: error }, "Get workspace roles error:");
@@ -170157,7 +170157,7 @@ var workspace_exports = {};
 __export(workspace_exports, {
   default: () => workspace_default
 });
-var import_express69, import_zod40, router66, requireWorkspaceMember, requireWorkspaceAdmin, createWorkspaceSchema, inviteSchema, updateMemberRoleSchema, createRoleSchema, createWorkflowSchema, approvalDecisionSchema, shareProjectSchema, createShareLinkSchema, samlConfigSchema, oidcConfigSchema, ssoConfigSchema, workspace_default;
+var import_express69, import_zod40, import_drizzle_orm108, router66, requireWorkspaceMember, requireWorkspaceAdmin, createWorkspaceSchema, inviteSchema, updateMemberRoleSchema, createRoleSchema, createWorkflowSchema, approvalDecisionSchema, shareProjectSchema, createShareLinkSchema, samlConfigSchema, oidcConfigSchema, ssoConfigSchema, workspace_default;
 var init_workspace = __esm({
   "server/routes/workspace.ts"() {
     "use strict";
@@ -170169,6 +170169,9 @@ var init_workspace = __esm({
     init_ssoService();
     init_logger();
     init_auth();
+    init_db();
+    init_schema();
+    import_drizzle_orm108 = require("drizzle-orm");
     router66 = (0, import_express69.Router)();
     requireWorkspaceMember = async (req, res, next) => {
       try {
@@ -170829,6 +170832,17 @@ var init_workspace = __esm({
         res.status(500).json({ error: "Failed to get presence" });
       }
     });
+    router66.post("/:id/presence/heartbeat", requireAuth, requireWorkspaceMember, async (req, res) => {
+      try {
+        const userId = req.user.id;
+        const workspaceId = req.params.id;
+        await db.update(workspaceMembers).set({ lastActiveAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(workspaceMembers.workspaceId, workspaceId), (0, import_drizzle_orm108.eq)(workspaceMembers.userId, userId)));
+        res.json({ ok: true, ts: (/* @__PURE__ */ new Date()).toISOString() });
+      } catch (error) {
+        logger2.warn({ err: error }, "Presence heartbeat error:");
+        res.status(500).json({ error: "Heartbeat failed" });
+      }
+    });
     router66.get("/:id/sso/config", requireAuth, requireWorkspaceAdmin, async (req, res) => {
       try {
         const config2 = await ssoService.getSSOConfig(req.params.id);
@@ -171105,7 +171119,7 @@ async function validateApiKey(req, res, next) {
       });
     }
     const hashedApiKey = import_crypto91.default.createHash("sha256").update(apiKey).digest("hex");
-    const [keyRecord] = await db.select().from(apiKeys).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiKeys.keyHash, hashedApiKey), (0, import_drizzle_orm108.eq)(apiKeys.isActive, true))).limit(1);
+    const [keyRecord] = await db.select().from(apiKeys).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiKeys.keyHash, hashedApiKey), (0, import_drizzle_orm109.eq)(apiKeys.isActive, true))).limit(1);
     if (!keyRecord) {
       return res.status(401).json({
         error: "Unauthorized",
@@ -171125,7 +171139,7 @@ async function validateApiKey(req, res, next) {
       // Default tier since schema doesn't store tier
       rateLimit: keyRecord.rateLimit || 1e3
     };
-    db.update(apiKeys).set({ lastUsedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm108.eq)(apiKeys.id, keyRecord.id)).execute().catch((err) => logger2.warn({ err }, "Error updating API key last used:"));
+    db.update(apiKeys).set({ lastUsedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm109.eq)(apiKeys.id, keyRecord.id)).execute().catch((err) => logger2.warn({ err }, "Error updating API key last used:"));
     next();
   } catch (error) {
     logger2.warn({ err: error }, "Error validating API key:");
@@ -171231,7 +171245,7 @@ async function trackUsageRecord(usage) {
 }
 async function getApiKeyById(keyId) {
   try {
-    const [key] = await db.select().from(apiKeys).where((0, import_drizzle_orm108.eq)(apiKeys.id, keyId)).limit(1);
+    const [key] = await db.select().from(apiKeys).where((0, import_drizzle_orm109.eq)(apiKeys.id, keyId)).limit(1);
     return key;
   } catch (error) {
     logger2.warn({ err: error }, "Error fetching API key:");
@@ -171250,7 +171264,7 @@ async function listApiKeys(userId) {
       createdAt: apiKeys.createdAt,
       expiresAt: apiKeys.expiresAt,
       scopes: apiKeys.scopes
-    }).from(apiKeys).where((0, import_drizzle_orm108.eq)(apiKeys.userId, userId)).orderBy((0, import_drizzle_orm108.desc)(apiKeys.createdAt));
+    }).from(apiKeys).where((0, import_drizzle_orm109.eq)(apiKeys.userId, userId)).orderBy((0, import_drizzle_orm109.desc)(apiKeys.createdAt));
     return keys;
   } catch (error) {
     logger2.warn({ err: error }, "Error listing API keys:");
@@ -171259,7 +171273,7 @@ async function listApiKeys(userId) {
 }
 async function revokeApiKey(keyId, userId) {
   try {
-    const [updated] = await db.update(apiKeys).set({ isActive: false }).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiKeys.id, keyId), (0, import_drizzle_orm108.eq)(apiKeys.userId, userId))).returning();
+    const [updated] = await db.update(apiKeys).set({ isActive: false }).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiKeys.id, keyId), (0, import_drizzle_orm109.eq)(apiKeys.userId, userId))).returning();
     if (!updated) {
       throw new Error("API key not found or unauthorized");
     }
@@ -171275,22 +171289,22 @@ async function getApiKeyUsageStats(apiKeyId, days = 30) {
     const startDate = /* @__PURE__ */ new Date();
     startDate.setDate(startDate.getDate() - days);
     const [totalRequests] = await db.select({
-      total: import_drizzle_orm108.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`
-    }).from(apiUsage).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm108.gte)(apiUsage.date, startDate)));
+      total: import_drizzle_orm109.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`
+    }).from(apiUsage).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm109.gte)(apiUsage.date, startDate)));
     const byEndpoint = await db.select({
       endpoint: apiUsage.endpoint,
-      requests: import_drizzle_orm108.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
-      avgResponseTime: import_drizzle_orm108.sql`COALESCE(AVG(${apiUsage.responseTime}), 0)`
-    }).from(apiUsage).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm108.gte)(apiUsage.date, startDate))).groupBy(apiUsage.endpoint).orderBy((0, import_drizzle_orm108.desc)(import_drizzle_orm108.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`)).limit(10);
+      requests: import_drizzle_orm109.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
+      avgResponseTime: import_drizzle_orm109.sql`COALESCE(AVG(${apiUsage.responseTime}), 0)`
+    }).from(apiUsage).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm109.gte)(apiUsage.date, startDate))).groupBy(apiUsage.endpoint).orderBy((0, import_drizzle_orm109.desc)(import_drizzle_orm109.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`)).limit(10);
     const byDay = await db.select({
-      date: import_drizzle_orm108.sql`DATE(${apiUsage.date})`,
-      requests: import_drizzle_orm108.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
-      avgResponseTime: import_drizzle_orm108.sql`COALESCE(AVG(${apiUsage.responseTime}), 0)`
-    }).from(apiUsage).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm108.gte)(apiUsage.date, startDate))).groupBy(import_drizzle_orm108.sql`DATE(${apiUsage.date})`).orderBy(import_drizzle_orm108.sql`DATE(${apiUsage.date})`);
+      date: import_drizzle_orm109.sql`DATE(${apiUsage.date})`,
+      requests: import_drizzle_orm109.sql`COALESCE(SUM(${apiUsage.requestCount}), 0)`,
+      avgResponseTime: import_drizzle_orm109.sql`COALESCE(AVG(${apiUsage.responseTime}), 0)`
+    }).from(apiUsage).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm109.gte)(apiUsage.date, startDate))).groupBy(import_drizzle_orm109.sql`DATE(${apiUsage.date})`).orderBy(import_drizzle_orm109.sql`DATE(${apiUsage.date})`);
     const byStatusCode = await db.select({
       statusCode: apiUsage.statusCode,
-      count: import_drizzle_orm108.sql`COUNT(*)`
-    }).from(apiUsage).where((0, import_drizzle_orm108.and)((0, import_drizzle_orm108.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm108.gte)(apiUsage.date, startDate))).groupBy(apiUsage.statusCode);
+      count: import_drizzle_orm109.sql`COUNT(*)`
+    }).from(apiUsage).where((0, import_drizzle_orm109.and)((0, import_drizzle_orm109.eq)(apiUsage.apiKeyId, apiKeyId), (0, import_drizzle_orm109.gte)(apiUsage.date, startDate))).groupBy(apiUsage.statusCode);
     return {
       totalRequests: totalRequests?.total || 0,
       byEndpoint,
@@ -171324,14 +171338,14 @@ async function getUserApiUsageStats(userId, days = 30) {
     throw new Error("Failed to fetch user API usage statistics");
   }
 }
-var import_crypto91, import_drizzle_orm108, apiKeyService;
+var import_crypto91, import_drizzle_orm109, apiKeyService;
 var init_apiKeyService = __esm({
   "server/services/apiKeyService.ts"() {
     "use strict";
     import_crypto91 = __toESM(require("crypto"), 1);
     init_db();
     init_schema();
-    import_drizzle_orm108 = require("drizzle-orm");
+    import_drizzle_orm109 = require("drizzle-orm");
     init_logger();
     apiKeyService = {
       generateApiKey,
@@ -172586,7 +172600,7 @@ function validateExternalUrl(raw2) {
   }
   return parsed.href;
 }
-var import_express71, import_express_rate_limit4, import_drizzle_orm109, PRIVATE_IP_RE, router68, contentAnalysisLimiter, requirePremium2, content_analysis_default;
+var import_express71, import_express_rate_limit4, import_drizzle_orm110, PRIVATE_IP_RE, router68, contentAnalysisLimiter, requirePremium2, content_analysis_default;
 var init_content_analysis = __esm({
   "server/routes/content-analysis.ts"() {
     "use strict";
@@ -172597,7 +172611,7 @@ var init_content_analysis = __esm({
     import_express_rate_limit4 = __toESM(require("express-rate-limit"), 1);
     init_db();
     init_schema();
-    import_drizzle_orm109 = require("drizzle-orm");
+    import_drizzle_orm110 = require("drizzle-orm");
     PRIVATE_IP_RE = /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|169\.254\.|0\.|::1$|fc|fd)/i;
     router68 = (0, import_express71.Router)();
     contentAnalysisLimiter = (0, import_express_rate_limit4.default)({
@@ -172614,7 +172628,7 @@ var init_content_analysis = __esm({
           return res.status(401).json({ error: "Authentication required" });
         }
         const user = await db.query.users.findFirst({
-          where: (0, import_drizzle_orm109.eq)(users.id, req.user.id)
+          where: (0, import_drizzle_orm110.eq)(users.id, req.user.id)
         });
         if (!user) {
           return res.status(404).json({ error: "User not found" });
@@ -172816,7 +172830,7 @@ var init_content_analysis = __esm({
           });
         }
         if (type === "post") {
-          const [post2] = await db.select().from(posts).where((0, import_drizzle_orm109.eq)(posts.id, id)).limit(1);
+          const [post2] = await db.select().from(posts).where((0, import_drizzle_orm110.eq)(posts.id, id)).limit(1);
           if (!post2) {
             return res.status(404).json({ success: false, error: "Post not found" });
           }
@@ -172835,7 +172849,7 @@ var init_content_analysis = __esm({
           });
         }
         if (type === "campaign") {
-          const [campaign] = await db.select().from(adCampaigns).where((0, import_drizzle_orm109.eq)(adCampaigns.id, id)).limit(1);
+          const [campaign] = await db.select().from(adCampaigns).where((0, import_drizzle_orm110.eq)(adCampaigns.id, id)).limit(1);
           if (!campaign) {
             return res.status(404).json({ success: false, error: "Campaign not found" });
           }
@@ -172867,12 +172881,12 @@ var init_content_analysis = __esm({
 });
 
 // server/services/collaborationService.ts
-var import_drizzle_orm110, SKILL_COMPLEMENTS, CollaborationService, collaborationService;
+var import_drizzle_orm111, SKILL_COMPLEMENTS, CollaborationService, collaborationService;
 var init_collaborationService = __esm({
   "server/services/collaborationService.ts"() {
     "use strict";
     init_db();
-    import_drizzle_orm110 = require("drizzle-orm");
+    import_drizzle_orm111 = require("drizzle-orm");
     init_schema();
     SKILL_COMPLEMENTS = {
       producer: ["vocalist", "rapper", "singer", "songwriter", "mixing engineer"],
@@ -172891,14 +172905,14 @@ var init_collaborationService = __esm({
           throw new Error("Cannot send connection request to yourself");
         }
         const existingConnection = await db.select().from(artistConnections).where(
-          (0, import_drizzle_orm110.or)(
-            (0, import_drizzle_orm110.and)(
-              (0, import_drizzle_orm110.eq)(artistConnections.requesterId, fromId),
-              (0, import_drizzle_orm110.eq)(artistConnections.receiverId, toId)
+          (0, import_drizzle_orm111.or)(
+            (0, import_drizzle_orm111.and)(
+              (0, import_drizzle_orm111.eq)(artistConnections.requesterId, fromId),
+              (0, import_drizzle_orm111.eq)(artistConnections.receiverId, toId)
             ),
-            (0, import_drizzle_orm110.and)(
-              (0, import_drizzle_orm110.eq)(artistConnections.requesterId, toId),
-              (0, import_drizzle_orm110.eq)(artistConnections.receiverId, fromId)
+            (0, import_drizzle_orm111.and)(
+              (0, import_drizzle_orm111.eq)(artistConnections.requesterId, toId),
+              (0, import_drizzle_orm111.eq)(artistConnections.receiverId, fromId)
             )
           )
         ).limit(1);
@@ -172923,7 +172937,7 @@ var init_collaborationService = __esm({
         return connection;
       }
       async acceptConnection(connectionId, userId) {
-        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId)).limit(1);
+        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId)).limit(1);
         if (!connection) {
           throw new Error("Connection request not found");
         }
@@ -172936,11 +172950,11 @@ var init_collaborationService = __esm({
         const [updated] = await db.update(artistConnections).set({
           status: "accepted",
           acceptedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId)).returning();
+        }).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId)).returning();
         return updated;
       }
       async declineConnection(connectionId, userId) {
-        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId)).limit(1);
+        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId)).limit(1);
         if (!connection) {
           throw new Error("Connection request not found");
         }
@@ -172949,19 +172963,19 @@ var init_collaborationService = __esm({
         }
         const [updated] = await db.update(artistConnections).set({
           status: "declined"
-        }).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId)).returning();
+        }).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId)).returning();
         return updated;
       }
       async getConnections(userId) {
         const connections = await db.select().from(artistConnections).where(
-          (0, import_drizzle_orm110.and)(
-            (0, import_drizzle_orm110.eq)(artistConnections.status, "accepted"),
-            (0, import_drizzle_orm110.or)(
-              (0, import_drizzle_orm110.eq)(artistConnections.requesterId, userId),
-              (0, import_drizzle_orm110.eq)(artistConnections.receiverId, userId)
+          (0, import_drizzle_orm111.and)(
+            (0, import_drizzle_orm111.eq)(artistConnections.status, "accepted"),
+            (0, import_drizzle_orm111.or)(
+              (0, import_drizzle_orm111.eq)(artistConnections.requesterId, userId),
+              (0, import_drizzle_orm111.eq)(artistConnections.receiverId, userId)
             )
           )
-        ).orderBy((0, import_drizzle_orm110.desc)(artistConnections.acceptedAt));
+        ).orderBy((0, import_drizzle_orm111.desc)(artistConnections.acceptedAt));
         const result = await Promise.all(
           connections.map(async (conn) => {
             const connectedUserId = conn.requesterId === userId ? conn.receiverId : conn.requesterId;
@@ -172973,7 +172987,7 @@ var init_collaborationService = __esm({
               avatarUrl: users.avatarUrl,
               bio: users.bio,
               location: users.location
-            }).from(users).where((0, import_drizzle_orm110.eq)(users.id, connectedUserId)).limit(1);
+            }).from(users).where((0, import_drizzle_orm111.eq)(users.id, connectedUserId)).limit(1);
             return {
               ...conn,
               connectedUser: user || {}
@@ -172984,11 +172998,11 @@ var init_collaborationService = __esm({
       }
       async getPendingRequests(userId) {
         const requests = await db.select().from(artistConnections).where(
-          (0, import_drizzle_orm110.and)(
-            (0, import_drizzle_orm110.eq)(artistConnections.receiverId, userId),
-            (0, import_drizzle_orm110.eq)(artistConnections.status, "pending")
+          (0, import_drizzle_orm111.and)(
+            (0, import_drizzle_orm111.eq)(artistConnections.receiverId, userId),
+            (0, import_drizzle_orm111.eq)(artistConnections.status, "pending")
           )
-        ).orderBy((0, import_drizzle_orm110.desc)(artistConnections.createdAt));
+        ).orderBy((0, import_drizzle_orm111.desc)(artistConnections.createdAt));
         const result = await Promise.all(
           requests.map(async (req) => {
             const [requester] = await db.select({
@@ -172999,7 +173013,7 @@ var init_collaborationService = __esm({
               avatarUrl: users.avatarUrl,
               bio: users.bio,
               location: users.location
-            }).from(users).where((0, import_drizzle_orm110.eq)(users.id, req.requesterId)).limit(1);
+            }).from(users).where((0, import_drizzle_orm111.eq)(users.id, req.requesterId)).limit(1);
             return {
               ...req,
               requester: requester || {}
@@ -173009,7 +173023,7 @@ var init_collaborationService = __esm({
         return result;
       }
       async getSuggestedCollaborators(userId, limit = 10) {
-        const [currentUser] = await db.select().from(users).where((0, import_drizzle_orm110.eq)(users.id, userId)).limit(1);
+        const [currentUser] = await db.select().from(users).where((0, import_drizzle_orm111.eq)(users.id, userId)).limit(1);
         if (!currentUser) {
           throw new Error("User not found");
         }
@@ -173017,9 +173031,9 @@ var init_collaborationService = __esm({
           requesterId: artistConnections.requesterId,
           receiverId: artistConnections.receiverId
         }).from(artistConnections).where(
-          (0, import_drizzle_orm110.or)(
-            (0, import_drizzle_orm110.eq)(artistConnections.requesterId, userId),
-            (0, import_drizzle_orm110.eq)(artistConnections.receiverId, userId)
+          (0, import_drizzle_orm111.or)(
+            (0, import_drizzle_orm111.eq)(artistConnections.requesterId, userId),
+            (0, import_drizzle_orm111.eq)(artistConnections.receiverId, userId)
           )
         );
         const excludeIds = /* @__PURE__ */ new Set([userId]);
@@ -173037,7 +173051,7 @@ var init_collaborationService = __esm({
           location: users.location,
           createdAt: users.createdAt,
           onboardingData: users.onboardingData
-        }).from(users).where((0, import_drizzle_orm110.notInArray)(users.id, Array.from(excludeIds))).limit(100);
+        }).from(users).where((0, import_drizzle_orm111.notInArray)(users.id, Array.from(excludeIds))).limit(100);
         const userFactors = this.extractMatchingFactors(currentUser);
         const scoredMatches = potentialMatches.map((match) => {
           const matchFactors = this.extractMatchingFactors(match);
@@ -173145,16 +173159,16 @@ var init_collaborationService = __esm({
       async getProjects(userId, filters) {
         let query = db.select().from(collaborationProjects);
         if (filters?.ownOnly && userId) {
-          query = query.where((0, import_drizzle_orm110.eq)(collaborationProjects.ownerId, userId));
+          query = query.where((0, import_drizzle_orm111.eq)(collaborationProjects.ownerId, userId));
         } else if (filters?.status) {
           query = query.where(
-            (0, import_drizzle_orm110.eq)(collaborationProjects.status, filters.status)
+            (0, import_drizzle_orm111.eq)(collaborationProjects.status, filters.status)
           );
         }
-        const projects7 = await query.orderBy((0, import_drizzle_orm110.desc)(collaborationProjects.createdAt));
+        const projects7 = await query.orderBy((0, import_drizzle_orm111.desc)(collaborationProjects.createdAt));
         const result = await Promise.all(
           projects7.map(async (project) => {
-            const members = await db.select().from(projectMembers).where((0, import_drizzle_orm110.eq)(projectMembers.projectId, project.id));
+            const members = await db.select().from(projectMembers).where((0, import_drizzle_orm111.eq)(projectMembers.projectId, project.id));
             const membersWithUsers = await Promise.all(
               members.map(async (member) => {
                 const [user] = await db.select({
@@ -173163,7 +173177,7 @@ var init_collaborationService = __esm({
                   firstName: users.firstName,
                   lastName: users.lastName,
                   avatarUrl: users.avatarUrl
-                }).from(users).where((0, import_drizzle_orm110.eq)(users.id, member.userId)).limit(1);
+                }).from(users).where((0, import_drizzle_orm111.eq)(users.id, member.userId)).limit(1);
                 return { ...member, user: user || {} };
               })
             );
@@ -173173,7 +173187,7 @@ var init_collaborationService = __esm({
               firstName: users.firstName,
               lastName: users.lastName,
               avatarUrl: users.avatarUrl
-            }).from(users).where((0, import_drizzle_orm110.eq)(users.id, project.ownerId)).limit(1);
+            }).from(users).where((0, import_drizzle_orm111.eq)(users.id, project.ownerId)).limit(1);
             return {
               ...project,
               members: membersWithUsers,
@@ -173184,7 +173198,7 @@ var init_collaborationService = __esm({
         return result;
       }
       async joinProject(userId, projectId, role = "member") {
-        const [project] = await db.select().from(collaborationProjects).where((0, import_drizzle_orm110.eq)(collaborationProjects.id, projectId)).limit(1);
+        const [project] = await db.select().from(collaborationProjects).where((0, import_drizzle_orm111.eq)(collaborationProjects.id, projectId)).limit(1);
         if (!project) {
           throw new Error("Project not found");
         }
@@ -173192,15 +173206,15 @@ var init_collaborationService = __esm({
           throw new Error("Project is not accepting new members");
         }
         const existingMember = await db.select().from(projectMembers).where(
-          (0, import_drizzle_orm110.and)(
-            (0, import_drizzle_orm110.eq)(projectMembers.projectId, projectId),
-            (0, import_drizzle_orm110.eq)(projectMembers.userId, userId)
+          (0, import_drizzle_orm111.and)(
+            (0, import_drizzle_orm111.eq)(projectMembers.projectId, projectId),
+            (0, import_drizzle_orm111.eq)(projectMembers.userId, userId)
           )
         ).limit(1);
         if (existingMember.length > 0) {
           throw new Error("Already a member of this project");
         }
-        const currentMembers = await db.select().from(projectMembers).where((0, import_drizzle_orm110.eq)(projectMembers.projectId, projectId));
+        const currentMembers = await db.select().from(projectMembers).where((0, import_drizzle_orm111.eq)(projectMembers.projectId, projectId));
         if (currentMembers.length >= (project.maxMembers || 10)) {
           throw new Error("Project has reached maximum members");
         }
@@ -173213,7 +173227,7 @@ var init_collaborationService = __esm({
         return member;
       }
       async leaveProject(userId, projectId) {
-        const [project] = await db.select().from(collaborationProjects).where((0, import_drizzle_orm110.eq)(collaborationProjects.id, projectId)).limit(1);
+        const [project] = await db.select().from(collaborationProjects).where((0, import_drizzle_orm111.eq)(collaborationProjects.id, projectId)).limit(1);
         if (!project) {
           throw new Error("Project not found");
         }
@@ -173221,9 +173235,9 @@ var init_collaborationService = __esm({
           throw new Error("Project owner cannot leave. Transfer ownership or delete the project.");
         }
         await db.delete(projectMembers).where(
-          (0, import_drizzle_orm110.and)(
-            (0, import_drizzle_orm110.eq)(projectMembers.projectId, projectId),
-            (0, import_drizzle_orm110.eq)(projectMembers.userId, userId)
+          (0, import_drizzle_orm111.and)(
+            (0, import_drizzle_orm111.eq)(projectMembers.projectId, projectId),
+            (0, import_drizzle_orm111.eq)(projectMembers.userId, userId)
           )
         );
       }
@@ -173231,16 +173245,16 @@ var init_collaborationService = __esm({
         let whereConditions = [];
         if (query) {
           whereConditions.push(
-            (0, import_drizzle_orm110.or)(
-              (0, import_drizzle_orm110.ilike)(users.username, `%${query}%`),
-              (0, import_drizzle_orm110.ilike)(users.firstName, `%${query}%`),
-              (0, import_drizzle_orm110.ilike)(users.lastName, `%${query}%`),
-              (0, import_drizzle_orm110.ilike)(users.bio, `%${query}%`)
+            (0, import_drizzle_orm111.or)(
+              (0, import_drizzle_orm111.ilike)(users.username, `%${query}%`),
+              (0, import_drizzle_orm111.ilike)(users.firstName, `%${query}%`),
+              (0, import_drizzle_orm111.ilike)(users.lastName, `%${query}%`),
+              (0, import_drizzle_orm111.ilike)(users.bio, `%${query}%`)
             )
           );
         }
         if (filters?.location) {
-          whereConditions.push((0, import_drizzle_orm110.ilike)(users.location, `%${filters.location}%`));
+          whereConditions.push((0, import_drizzle_orm111.ilike)(users.location, `%${filters.location}%`));
         }
         const results = await db.select({
           id: users.id,
@@ -173251,7 +173265,7 @@ var init_collaborationService = __esm({
           bio: users.bio,
           location: users.location,
           onboardingData: users.onboardingData
-        }).from(users).where(whereConditions.length > 0 ? (0, import_drizzle_orm110.and)(...whereConditions) : void 0).limit(limit);
+        }).from(users).where(whereConditions.length > 0 ? (0, import_drizzle_orm111.and)(...whereConditions) : void 0).limit(limit);
         let filteredResults = results;
         if (filters?.genre) {
           filteredResults = results.filter((user) => {
@@ -173276,14 +173290,14 @@ var init_collaborationService = __esm({
       }
       async getConnectionStatus(userId, otherUserId) {
         const [connection] = await db.select().from(artistConnections).where(
-          (0, import_drizzle_orm110.or)(
-            (0, import_drizzle_orm110.and)(
-              (0, import_drizzle_orm110.eq)(artistConnections.requesterId, userId),
-              (0, import_drizzle_orm110.eq)(artistConnections.receiverId, otherUserId)
+          (0, import_drizzle_orm111.or)(
+            (0, import_drizzle_orm111.and)(
+              (0, import_drizzle_orm111.eq)(artistConnections.requesterId, userId),
+              (0, import_drizzle_orm111.eq)(artistConnections.receiverId, otherUserId)
             ),
-            (0, import_drizzle_orm110.and)(
-              (0, import_drizzle_orm110.eq)(artistConnections.requesterId, otherUserId),
-              (0, import_drizzle_orm110.eq)(artistConnections.receiverId, userId)
+            (0, import_drizzle_orm111.and)(
+              (0, import_drizzle_orm111.eq)(artistConnections.requesterId, otherUserId),
+              (0, import_drizzle_orm111.eq)(artistConnections.receiverId, userId)
             )
           )
         ).limit(1);
@@ -173293,14 +173307,14 @@ var init_collaborationService = __esm({
         return { status: connection.status, connectionId: connection.id };
       }
       async removeConnection(connectionId, userId) {
-        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId)).limit(1);
+        const [connection] = await db.select().from(artistConnections).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId)).limit(1);
         if (!connection) {
           throw new Error("Connection not found");
         }
         if (connection.requesterId !== userId && connection.receiverId !== userId) {
           throw new Error("Not authorized to remove this connection");
         }
-        await db.delete(artistConnections).where((0, import_drizzle_orm110.eq)(artistConnections.id, connectionId));
+        await db.delete(artistConnections).where((0, import_drizzle_orm111.eq)(artistConnections.id, connectionId));
       }
     };
     collaborationService = new CollaborationService();
@@ -173997,14 +174011,14 @@ var support_exports = {};
 __export(support_exports, {
   default: () => support_default
 });
-var import_express74, import_drizzle_orm111, router71, requireAdmin4, support_default;
+var import_express74, import_drizzle_orm112, router71, requireAdmin4, support_default;
 var init_support = __esm({
   "server/routes/support.ts"() {
     "use strict";
     import_express74 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm111 = require("drizzle-orm");
+    import_drizzle_orm112 = require("drizzle-orm");
     init_logger();
     init_auth();
     init_notificationService();
@@ -174024,7 +174038,7 @@ var init_support = __esm({
         if (!userId) {
           return res.status(401).json({ error: "User not authenticated" });
         }
-        const tickets = await db.select().from(supportTickets).where((0, import_drizzle_orm111.eq)(supportTickets.userId, userId)).orderBy((0, import_drizzle_orm111.desc)(supportTickets.createdAt)).limit(100);
+        const tickets = await db.select().from(supportTickets).where((0, import_drizzle_orm112.eq)(supportTickets.userId, userId)).orderBy((0, import_drizzle_orm112.desc)(supportTickets.createdAt)).limit(100);
         res.json({ tickets, total: tickets.length });
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching user tickets:");
@@ -174036,20 +174050,20 @@ var init_support = __esm({
         const { status, priority, search } = req.query;
         let conditions = [];
         if (status && status !== "all") {
-          conditions.push((0, import_drizzle_orm111.eq)(supportTickets.status, status));
+          conditions.push((0, import_drizzle_orm112.eq)(supportTickets.status, status));
         }
         if (priority && priority !== "all") {
-          conditions.push((0, import_drizzle_orm111.eq)(supportTickets.priority, priority));
+          conditions.push((0, import_drizzle_orm112.eq)(supportTickets.priority, priority));
         }
         if (search) {
           conditions.push(
-            (0, import_drizzle_orm111.or)(
-              (0, import_drizzle_orm111.like)(supportTickets.subject, `%${search}%`),
-              (0, import_drizzle_orm111.like)(supportTickets.description, `%${search}%`)
+            (0, import_drizzle_orm112.or)(
+              (0, import_drizzle_orm112.like)(supportTickets.subject, `%${search}%`),
+              (0, import_drizzle_orm112.like)(supportTickets.description, `%${search}%`)
             )
           );
         }
-        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm111.and)(...conditions) : void 0;
+        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm112.and)(...conditions) : void 0;
         const tickets = await db.select({
           id: supportTickets.id,
           userId: supportTickets.userId,
@@ -174065,7 +174079,7 @@ var init_support = __esm({
           resolvedAt: supportTickets.resolvedAt,
           createdAt: supportTickets.createdAt,
           updatedAt: supportTickets.updatedAt
-        }).from(supportTickets).where(whereClause).orderBy((0, import_drizzle_orm111.desc)(supportTickets.createdAt));
+        }).from(supportTickets).where(whereClause).orderBy((0, import_drizzle_orm112.desc)(supportTickets.createdAt));
         res.json(tickets);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching tickets:");
@@ -174078,14 +174092,14 @@ var init_support = __esm({
           db.select({
             status: supportTickets.status,
             priority: supportTickets.priority,
-            count: (0, import_drizzle_orm111.count)()
+            count: (0, import_drizzle_orm112.count)()
           }).from(supportTickets).groupBy(supportTickets.status, supportTickets.priority),
           db.select({
-            avg: (0, import_drizzle_orm111.avg)(supportTickets.responseTimeMinutes)
-          }).from(supportTickets).where(import_drizzle_orm111.sql`${supportTickets.responseTimeMinutes} IS NOT NULL`),
+            avg: (0, import_drizzle_orm112.avg)(supportTickets.responseTimeMinutes)
+          }).from(supportTickets).where(import_drizzle_orm112.sql`${supportTickets.responseTimeMinutes} IS NOT NULL`),
           db.select({
-            avg: (0, import_drizzle_orm111.avg)(supportTickets.satisfactionRating)
-          }).from(supportTickets).where(import_drizzle_orm111.sql`${supportTickets.satisfactionRating} IS NOT NULL`)
+            avg: (0, import_drizzle_orm112.avg)(supportTickets.satisfactionRating)
+          }).from(supportTickets).where(import_drizzle_orm112.sql`${supportTickets.satisfactionRating} IS NOT NULL`)
         ]);
         res.json({
           ticketStats: ticketStatsResult,
@@ -174100,7 +174114,7 @@ var init_support = __esm({
     router71.get("/tickets/:ticketId", requireAdmin4, async (req, res) => {
       try {
         const { ticketId } = req.params;
-        const ticket = await db.select().from(supportTickets).where((0, import_drizzle_orm111.eq)(supportTickets.id, ticketId)).limit(1);
+        const ticket = await db.select().from(supportTickets).where((0, import_drizzle_orm112.eq)(supportTickets.id, ticketId)).limit(1);
         if (!ticket.length) {
           return res.status(404).json({ error: "Ticket not found" });
         }
@@ -174132,7 +174146,7 @@ var init_support = __esm({
         if (status === "resolved" && !resolvedAt) {
           updateData.resolvedAt = /* @__PURE__ */ new Date();
         }
-        await db.update(supportTickets).set(updateData).where((0, import_drizzle_orm111.eq)(supportTickets.id, ticketId));
+        await db.update(supportTickets).set(updateData).where((0, import_drizzle_orm112.eq)(supportTickets.id, ticketId));
         logger2.info(`Admin ${req.user?.email} updated ticket ${ticketId}:`, updateData);
         res.json({ success: true, message: "Ticket updated" });
       } catch (error) {
@@ -174328,9 +174342,9 @@ __export(admin_exports2, {
 async function updateSetting2(key, value) {
   const fullKey = `platform.${key}`;
   const stringValue = JSON.stringify(value);
-  const existing = await db.select().from(systemSettings).where((0, import_drizzle_orm112.eq)(systemSettings.key, fullKey)).limit(1);
+  const existing = await db.select().from(systemSettings).where((0, import_drizzle_orm113.eq)(systemSettings.key, fullKey)).limit(1);
   if (existing.length > 0) {
-    await db.update(systemSettings).set({ value: stringValue, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm112.eq)(systemSettings.key, fullKey));
+    await db.update(systemSettings).set({ value: stringValue, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm113.eq)(systemSettings.key, fullKey));
   } else {
     await db.insert(systemSettings).values({ key: fullKey, value: stringValue });
   }
@@ -174346,14 +174360,14 @@ function formatTimeAgo2(date2) {
   if (hours < 24) return `${hours}h ago`;
   return `${days}d ago`;
 }
-var import_express76, import_drizzle_orm112, import_os15, router73, requireAdmin5, ALLOWED_SETTING_KEYS, admin_default2;
+var import_express76, import_drizzle_orm113, import_os15, router73, requireAdmin5, ALLOWED_SETTING_KEYS, admin_default2;
 var init_admin2 = __esm({
   "server/routes/admin/index.ts"() {
     "use strict";
     import_express76 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm112 = require("drizzle-orm");
+    import_drizzle_orm113 = require("drizzle-orm");
     init_logger();
     import_os15 = __toESM(require("os"), 1);
     init_notificationService();
@@ -174418,21 +174432,21 @@ var init_admin2 = __esm({
         let conditions = [];
         if (search) {
           conditions.push(
-            (0, import_drizzle_orm112.or)(
-              (0, import_drizzle_orm112.like)(users.email, `%${search}%`),
-              (0, import_drizzle_orm112.like)(users.username, `%${search}%`),
-              (0, import_drizzle_orm112.like)(users.firstName, `%${search}%`),
-              (0, import_drizzle_orm112.like)(users.lastName, `%${search}%`)
+            (0, import_drizzle_orm113.or)(
+              (0, import_drizzle_orm113.like)(users.email, `%${search}%`),
+              (0, import_drizzle_orm113.like)(users.username, `%${search}%`),
+              (0, import_drizzle_orm113.like)(users.firstName, `%${search}%`),
+              (0, import_drizzle_orm113.like)(users.lastName, `%${search}%`)
             )
           );
         }
         if (status && status !== "all") {
-          conditions.push((0, import_drizzle_orm112.eq)(users.subscriptionStatus, status));
+          conditions.push((0, import_drizzle_orm113.eq)(users.subscriptionStatus, status));
         }
         if (plan && plan !== "all") {
-          conditions.push((0, import_drizzle_orm112.eq)(users.subscriptionTier, plan));
+          conditions.push((0, import_drizzle_orm113.eq)(users.subscriptionTier, plan));
         }
-        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm112.and)(...conditions) : void 0;
+        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm113.and)(...conditions) : void 0;
         const baseSelect = db.select({
           id: users.id,
           email: users.email,
@@ -174444,9 +174458,9 @@ var init_admin2 = __esm({
           subscriptionStatus: users.subscriptionStatus,
           createdAt: users.createdAt
         }).from(users);
-        const countSelect = db.select({ count: (0, import_drizzle_orm112.count)() }).from(users);
+        const countSelect = db.select({ count: (0, import_drizzle_orm113.count)() }).from(users);
         const [usersList, totalResult] = await Promise.all([
-          whereClause ? baseSelect.where(whereClause).orderBy((0, import_drizzle_orm112.desc)(users.createdAt)).limit(limitNum).offset(offset) : baseSelect.orderBy((0, import_drizzle_orm112.desc)(users.createdAt)).limit(limitNum).offset(offset),
+          whereClause ? baseSelect.where(whereClause).orderBy((0, import_drizzle_orm113.desc)(users.createdAt)).limit(limitNum).offset(offset) : baseSelect.orderBy((0, import_drizzle_orm113.desc)(users.createdAt)).limit(limitNum).offset(offset),
           whereClause ? countSelect.where(whereClause) : countSelect
         ]);
         const total = totalResult[0]?.count || 0;
@@ -174479,8 +174493,8 @@ var init_admin2 = __esm({
             subscriptionTier: users.subscriptionTier,
             subscriptionStatus: users.subscriptionStatus,
             createdAt: users.createdAt
-          }).from(users).orderBy((0, import_drizzle_orm112.desc)(users.createdAt)).limit(pageSize).offset(offset),
-          db.select({ count: (0, import_drizzle_orm112.count)() }).from(users)
+          }).from(users).orderBy((0, import_drizzle_orm113.desc)(users.createdAt)).limit(pageSize).offset(offset),
+          db.select({ count: (0, import_drizzle_orm113.count)() }).from(users)
         ]);
         const total = Number(totalResult[0]?.count ?? 0);
         res.json({
@@ -174506,7 +174520,7 @@ var init_admin2 = __esm({
           subscriptionTier: users.subscriptionTier,
           subscriptionStatus: users.subscriptionStatus,
           createdAt: users.createdAt
-        }).from(users).where((0, import_drizzle_orm112.eq)(users.id, userId)).limit(1);
+        }).from(users).where((0, import_drizzle_orm113.eq)(users.id, userId)).limit(1);
         if (!user.length) {
           return res.status(404).json({ error: "User not found" });
         }
@@ -174539,13 +174553,13 @@ var init_admin2 = __esm({
         if (Object.keys(updateData).length === 0) {
           return res.status(400).json({ error: "No valid fields to update" });
         }
-        await db.update(users).set(updateData).where((0, import_drizzle_orm112.eq)(users.id, userId));
+        await db.update(users).set(updateData).where((0, import_drizzle_orm113.eq)(users.id, userId));
         logger2.info(`Admin ${req.user?.email} updated user ${userId}:`, updateData);
         res.json({ success: true, message: "User updated" });
         if (subscriptionStatus === "banned") {
           setImmediate(async () => {
             try {
-              const [targetUser] = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm112.eq)(users.id, userId)).limit(1);
+              const [targetUser] = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm113.eq)(users.id, userId)).limit(1);
               if (targetUser?.email) {
                 await notificationService.sendAdminUserFlaggedNotification(
                   targetUser.email,
@@ -174570,7 +174584,7 @@ var init_admin2 = __esm({
         if (!reason) {
           return res.status(400).json({ error: "Reason is required" });
         }
-        const [targetUser] = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm112.eq)(users.id, userId)).limit(1);
+        const [targetUser] = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm113.eq)(users.id, userId)).limit(1);
         if (!targetUser) {
           return res.status(404).json({ error: "User not found" });
         }
@@ -174598,7 +174612,7 @@ var init_admin2 = __esm({
         if (userId === req.user?.id) {
           return res.status(400).json({ error: "Cannot delete your own account" });
         }
-        await db.delete(users).where((0, import_drizzle_orm112.eq)(users.id, userId));
+        await db.delete(users).where((0, import_drizzle_orm113.eq)(users.id, userId));
         res.json({ success: true, message: "User deleted" });
       } catch (error) {
         logger2.warn({ err: error }, "Error deleting user:");
@@ -174612,7 +174626,7 @@ var init_admin2 = __esm({
         if (!subject || !message) {
           return res.status(400).json({ error: "Subject and message are required" });
         }
-        const targetUser = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm112.eq)(users.id, userId)).limit(1);
+        const targetUser = await db.select({ email: users.email }).from(users).where((0, import_drizzle_orm113.eq)(users.id, userId)).limit(1);
         if (!targetUser.length) {
           return res.status(404).json({ error: "User not found" });
         }
@@ -174643,12 +174657,12 @@ var init_admin2 = __esm({
               subscriptionStatsResult,
               revenueResult
             ] = await Promise.all([
-              db.select({ count: (0, import_drizzle_orm112.count)() }).from(users),
-              db.select({ count: (0, import_drizzle_orm112.count)() }).from(users).where((0, import_drizzle_orm112.gte)(users.createdAt, thirtyDaysAgo)),
-              db.select({ count: (0, import_drizzle_orm112.count)() }).from(projects),
-              db.select({ count: (0, import_drizzle_orm112.count)() }).from(releases),
-              db.select({ plan: users.subscriptionTier, count: (0, import_drizzle_orm112.count)() }).from(users).groupBy(users.subscriptionTier),
-              db.select({ total: (0, import_drizzle_orm112.sum)(analytics.revenue) }).from(analytics)
+              db.select({ count: (0, import_drizzle_orm113.count)() }).from(users),
+              db.select({ count: (0, import_drizzle_orm113.count)() }).from(users).where((0, import_drizzle_orm113.gte)(users.createdAt, thirtyDaysAgo)),
+              db.select({ count: (0, import_drizzle_orm113.count)() }).from(projects),
+              db.select({ count: (0, import_drizzle_orm113.count)() }).from(releases),
+              db.select({ plan: users.subscriptionTier, count: (0, import_drizzle_orm113.count)() }).from(users).groupBy(users.subscriptionTier),
+              db.select({ total: (0, import_drizzle_orm113.sum)(analytics.revenue) }).from(analytics)
             ]);
             const totalUsers = totalUsersResult[0]?.count || 0;
             const newUsers = newUsersResult[0]?.count || 0;
@@ -174691,7 +174705,7 @@ var init_admin2 = __esm({
     });
     router73.get("/settings", async (req, res) => {
       try {
-        const settings = await db.select().from(systemSettings).where((0, import_drizzle_orm112.like)(systemSettings.key, "platform.%")).limit(100);
+        const settings = await db.select().from(systemSettings).where((0, import_drizzle_orm113.like)(systemSettings.key, "platform.%")).limit(100);
         const settingsMap = {
           emailNotifications: true,
           maintenanceMode: false,
@@ -174768,9 +174782,9 @@ var init_admin2 = __esm({
         const { limit = "20" } = req.query;
         const limitNum = Math.min(parseInt(limit) || 20, 100);
         const [recentUsers, recentReleases, pendingFixers] = await Promise.all([
-          db.select({ id: users.id, email: users.email, username: users.username, createdAt: users.createdAt }).from(users).orderBy((0, import_drizzle_orm112.desc)(users.createdAt)).limit(limitNum),
-          db.select({ id: releases.id, title: releases.title, createdAt: releases.createdAt }).from(releases).orderBy((0, import_drizzle_orm112.desc)(releases.createdAt)).limit(Math.floor(limitNum / 2)),
-          db.select({ id: artistProfiles.id, artistName: artistProfiles.artistName, fixerRequestedAt: artistProfiles.fixerRequestedAt }).from(artistProfiles).where((0, import_drizzle_orm112.and)((0, import_drizzle_orm112.eq)(artistProfiles.fixerPending, true), (0, import_drizzle_orm112.eq)(artistProfiles.fixerStatus, "pending"))).orderBy((0, import_drizzle_orm112.desc)(artistProfiles.fixerRequestedAt)).limit(5)
+          db.select({ id: users.id, email: users.email, username: users.username, createdAt: users.createdAt }).from(users).orderBy((0, import_drizzle_orm113.desc)(users.createdAt)).limit(limitNum),
+          db.select({ id: releases.id, title: releases.title, createdAt: releases.createdAt }).from(releases).orderBy((0, import_drizzle_orm113.desc)(releases.createdAt)).limit(Math.floor(limitNum / 2)),
+          db.select({ id: artistProfiles.id, artistName: artistProfiles.artistName, fixerRequestedAt: artistProfiles.fixerRequestedAt }).from(artistProfiles).where((0, import_drizzle_orm113.and)((0, import_drizzle_orm113.eq)(artistProfiles.fixerPending, true), (0, import_drizzle_orm113.eq)(artistProfiles.fixerStatus, "pending"))).orderBy((0, import_drizzle_orm113.desc)(artistProfiles.fixerRequestedAt)).limit(5)
         ]);
         const activities = [
           ...recentUsers.map((u) => ({
@@ -174812,7 +174826,7 @@ var init_admin2 = __esm({
         const freeMem = import_os15.default.freemem();
         const memPercent = Math.round((totalMem - freeMem) / totalMem * 100);
         const [activeUsersResult] = await Promise.all([
-          db.select({ count: (0, import_drizzle_orm112.count)() }).from(users).where((0, import_drizzle_orm112.eq)(users.subscriptionStatus, "active"))
+          db.select({ count: (0, import_drizzle_orm113.count)() }).from(users).where((0, import_drizzle_orm113.eq)(users.subscriptionStatus, "active"))
         ]);
         res.json({
           cpu: cpuPercent,
@@ -174834,13 +174848,13 @@ var init_admin2 = __esm({
 });
 
 // server/services/metricsService.ts
-var import_drizzle_orm113, MetricsService, metricsService;
+var import_drizzle_orm114, MetricsService, metricsService;
 var init_metricsService = __esm({
   "server/services/metricsService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm113 = require("drizzle-orm");
+    import_drizzle_orm114 = require("drizzle-orm");
     init_logger();
     MetricsService = class {
       /**
@@ -174868,10 +174882,10 @@ var init_metricsService = __esm({
               systemMetrics.resolutionSecs
             ],
             set: {
-              avgValue: import_drizzle_orm113.sql`((${systemMetrics.avgValue}::numeric * ${systemMetrics.sampleCount}::numeric + ${value}::numeric) / (${systemMetrics.sampleCount}::numeric + 1))::text`,
-              minValue: import_drizzle_orm113.sql`LEAST(${systemMetrics.minValue}::numeric, ${value}::numeric)::text`,
-              maxValue: import_drizzle_orm113.sql`GREATEST(${systemMetrics.maxValue}::numeric, ${value}::numeric)::text`,
-              sampleCount: import_drizzle_orm113.sql`${systemMetrics.sampleCount} + 1`
+              avgValue: import_drizzle_orm114.sql`((${systemMetrics.avgValue}::numeric * ${systemMetrics.sampleCount}::numeric + ${value}::numeric) / (${systemMetrics.sampleCount}::numeric + 1))::text`,
+              minValue: import_drizzle_orm114.sql`LEAST(${systemMetrics.minValue}::numeric, ${value}::numeric)::text`,
+              maxValue: import_drizzle_orm114.sql`GREATEST(${systemMetrics.maxValue}::numeric, ${value}::numeric)::text`,
+              sampleCount: import_drizzle_orm114.sql`${systemMetrics.sampleCount} + 1`
             }
           });
         } catch (error) {
@@ -174884,19 +174898,19 @@ var init_metricsService = __esm({
       async getMetrics(metricName, startTime, endTime, source) {
         try {
           const conditions = [
-            (0, import_drizzle_orm113.eq)(systemMetrics.metricName, metricName),
-            (0, import_drizzle_orm113.gte)(systemMetrics.bucketStart, startTime),
-            (0, import_drizzle_orm113.lte)(systemMetrics.bucketStart, endTime)
+            (0, import_drizzle_orm114.eq)(systemMetrics.metricName, metricName),
+            (0, import_drizzle_orm114.gte)(systemMetrics.bucketStart, startTime),
+            (0, import_drizzle_orm114.lte)(systemMetrics.bucketStart, endTime)
           ];
           if (source) {
-            conditions.push((0, import_drizzle_orm113.eq)(systemMetrics.source, source));
+            conditions.push((0, import_drizzle_orm114.eq)(systemMetrics.source, source));
           }
           const results = await db.select({
             bucketStart: systemMetrics.bucketStart,
             avgValue: systemMetrics.avgValue,
             minValue: systemMetrics.minValue,
             maxValue: systemMetrics.maxValue
-          }).from(systemMetrics).where((0, import_drizzle_orm113.and)(...conditions)).orderBy(systemMetrics.bucketStart);
+          }).from(systemMetrics).where((0, import_drizzle_orm114.and)(...conditions)).orderBy(systemMetrics.bucketStart);
           return results.map((r) => ({
             bucketStart: r.bucketStart,
             avgValue: parseFloat(r.avgValue || "0"),
@@ -174924,7 +174938,7 @@ var init_metricsService = __esm({
        */
       async evaluateAlerts() {
         try {
-          const activeRules = await db.select().from(alertRules).where((0, import_drizzle_orm113.eq)(alertRules.isActive, true)).limit(200);
+          const activeRules = await db.select().from(alertRules).where((0, import_drizzle_orm114.eq)(alertRules.isActive, true)).limit(200);
           for (const rule of activeRules) {
             const endTime = /* @__PURE__ */ new Date();
             const startTime = new Date(endTime.getTime() - (rule.durationSecs || 300) * 1e3);
@@ -174948,7 +174962,7 @@ var init_metricsService = __esm({
                 break;
             }
             if (shouldTrigger) {
-              const existingIncidents = await db.select().from(alertIncidents).where((0, import_drizzle_orm113.and)((0, import_drizzle_orm113.eq)(alertIncidents.ruleId, rule.id), (0, import_drizzle_orm113.eq)(alertIncidents.status, "triggered"))).limit(1);
+              const existingIncidents = await db.select().from(alertIncidents).where((0, import_drizzle_orm114.and)((0, import_drizzle_orm114.eq)(alertIncidents.ruleId, rule.id), (0, import_drizzle_orm114.eq)(alertIncidents.status, "triggered"))).limit(1);
               if (existingIncidents.length === 0) {
                 await db.insert(alertIncidents).values({
                   ruleId: rule.id,
@@ -174968,7 +174982,7 @@ var init_metricsService = __esm({
               await db.update(alertIncidents).set({
                 status: "resolved",
                 resolvedAt: /* @__PURE__ */ new Date()
-              }).where((0, import_drizzle_orm113.and)((0, import_drizzle_orm113.eq)(alertIncidents.ruleId, rule.id), (0, import_drizzle_orm113.eq)(alertIncidents.status, "triggered")));
+              }).where((0, import_drizzle_orm114.and)((0, import_drizzle_orm114.eq)(alertIncidents.ruleId, rule.id), (0, import_drizzle_orm114.eq)(alertIncidents.status, "triggered")));
             }
           }
         } catch (error) {
@@ -174983,7 +174997,7 @@ var init_metricsService = __esm({
           const incidents = await db.select({
             incident: alertIncidents,
             rule: alertRules
-          }).from(alertIncidents).innerJoin(alertRules, (0, import_drizzle_orm113.eq)(alertIncidents.ruleId, alertRules.id)).where((0, import_drizzle_orm113.eq)(alertIncidents.status, "triggered")).orderBy((0, import_drizzle_orm113.desc)(alertIncidents.triggeredAt));
+          }).from(alertIncidents).innerJoin(alertRules, (0, import_drizzle_orm114.eq)(alertIncidents.ruleId, alertRules.id)).where((0, import_drizzle_orm114.eq)(alertIncidents.status, "triggered")).orderBy((0, import_drizzle_orm114.desc)(alertIncidents.triggeredAt));
           return incidents;
         } catch (error) {
           logger2.warn({ err: error }, "Failed to get active incidents:");
@@ -174996,13 +175010,13 @@ var init_metricsService = __esm({
 });
 
 // server/services/emailTrackingService.ts
-var import_drizzle_orm114, import_tweetnacl, EmailTrackingService, emailTrackingService;
+var import_drizzle_orm115, import_tweetnacl, EmailTrackingService, emailTrackingService;
 var init_emailTrackingService = __esm({
   "server/services/emailTrackingService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm114 = require("drizzle-orm");
+    import_drizzle_orm115 = require("drizzle-orm");
     import_tweetnacl = __toESM(require("tweetnacl"), 1);
     init_logger();
     EmailTrackingService = class {
@@ -175031,12 +175045,12 @@ var init_emailTrackingService = __esm({
        */
       async getEmailStats(startDate) {
         try {
-          const dateFilter = startDate ? (0, import_drizzle_orm114.gte)(emailMessages.sentAt, startDate) : void 0;
-          const [sentCount] = await db.select({ count: import_drizzle_orm114.sql`count(*)::int` }).from(emailMessages).where(dateFilter).limit(1);
+          const dateFilter = startDate ? (0, import_drizzle_orm115.gte)(emailMessages.sentAt, startDate) : void 0;
+          const [sentCount] = await db.select({ count: import_drizzle_orm115.sql`count(*)::int` }).from(emailMessages).where(dateFilter).limit(1);
           const eventCounts = await db.select({
             eventType: emailEvents.eventType,
-            count: import_drizzle_orm114.sql`count(*)::int`
-          }).from(emailEvents).innerJoin(emailMessages, (0, import_drizzle_orm114.eq)(emailEvents.messageId, emailMessages.messageId)).where(dateFilter ? (0, import_drizzle_orm114.gte)(emailMessages.sentAt, startDate) : void 0).groupBy(emailEvents.eventType);
+            count: import_drizzle_orm115.sql`count(*)::int`
+          }).from(emailEvents).innerJoin(emailMessages, (0, import_drizzle_orm115.eq)(emailEvents.messageId, emailMessages.messageId)).where(dateFilter ? (0, import_drizzle_orm115.gte)(emailMessages.sentAt, startDate) : void 0).groupBy(emailEvents.eventType);
           const stats = {
             sent: sentCount?.count || 0,
             delivered: 0,
@@ -175081,7 +175095,7 @@ var init_emailTrackingService = __esm({
             reason: emailEvents.reason,
             smtpResponse: emailEvents.smtpResponse,
             eventAt: emailEvents.eventAt
-          }).from(emailEvents).innerJoin(emailMessages, (0, import_drizzle_orm114.eq)(emailEvents.messageId, emailMessages.messageId)).where((0, import_drizzle_orm114.eq)(emailEvents.eventType, "bounce")).orderBy((0, import_drizzle_orm114.desc)(emailEvents.eventAt)).limit(limit);
+          }).from(emailEvents).innerJoin(emailMessages, (0, import_drizzle_orm115.eq)(emailEvents.messageId, emailMessages.messageId)).where((0, import_drizzle_orm115.eq)(emailEvents.eventType, "bounce")).orderBy((0, import_drizzle_orm115.desc)(emailEvents.eventAt)).limit(limit);
           return bounces;
         } catch (error) {
           logger2.warn({ err: error }, "Failed to get recent bounces:");
@@ -175234,14 +175248,14 @@ var audit_exports = {};
 __export(audit_exports, {
   default: () => audit_default
 });
-var import_express78, import_drizzle_orm115, router75, requireAdmin7, audit_default;
+var import_express78, import_drizzle_orm116, router75, requireAdmin7, audit_default;
 var init_audit = __esm({
   "server/routes/audit.ts"() {
     "use strict";
     import_express78 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm115 = require("drizzle-orm");
+    import_drizzle_orm116 = require("drizzle-orm");
     init_logger();
     router75 = (0, import_express78.Router)();
     requireAdmin7 = (req, res, next) => {
@@ -175259,13 +175273,13 @@ var init_audit = __esm({
         const now = /* @__PURE__ */ new Date();
         const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
         const [userCount, projectCount, releaseCount] = await Promise.all([
-          db.select({ count: (0, import_drizzle_orm115.count)() }).from(users),
-          db.select({ count: (0, import_drizzle_orm115.count)() }).from(projects),
-          db.select({ count: (0, import_drizzle_orm115.count)() }).from(releases)
+          db.select({ count: (0, import_drizzle_orm116.count)() }).from(users),
+          db.select({ count: (0, import_drizzle_orm116.count)() }).from(projects),
+          db.select({ count: (0, import_drizzle_orm116.count)() }).from(releases)
         ]);
         let securityIssues = 0;
         try {
-          const threatCount = await db.select({ count: (0, import_drizzle_orm115.count)() }).from(securityThreats).where((0, import_drizzle_orm115.eq)(securityThreats.status, "active"));
+          const threatCount = await db.select({ count: (0, import_drizzle_orm116.count)() }).from(securityThreats).where((0, import_drizzle_orm116.eq)(securityThreats.status, "active"));
           securityIssues = threatCount[0]?.count || 0;
         } catch {
           securityIssues = 0;
@@ -175559,14 +175573,14 @@ var logs_exports = {};
 __export(logs_exports, {
   default: () => logs_default
 });
-var import_express81, import_drizzle_orm116, router78, requireAdmin10, logs_default;
+var import_express81, import_drizzle_orm117, router78, requireAdmin10, logs_default;
 var init_logs = __esm({
   "server/routes/logs.ts"() {
     "use strict";
     import_express81 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm116 = require("drizzle-orm");
+    import_drizzle_orm117 = require("drizzle-orm");
     init_logger();
     router78 = (0, import_express81.Router)();
     requireAdmin10 = (req, res, next) => {
@@ -175591,15 +175605,15 @@ var init_logs = __esm({
         const offsetNum = parseInt(offset) || 0;
         const conditions = [];
         if (level !== "all") {
-          conditions.push((0, import_drizzle_orm116.eq)(systemLogs.level, level));
+          conditions.push((0, import_drizzle_orm117.eq)(systemLogs.level, level));
         }
         if (service !== "all") {
-          conditions.push((0, import_drizzle_orm116.eq)(systemLogs.service, service));
+          conditions.push((0, import_drizzle_orm117.eq)(systemLogs.service, service));
         }
-        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm116.and)(...conditions) : void 0;
+        const whereClause = conditions.length > 0 ? (0, import_drizzle_orm117.and)(...conditions) : void 0;
         const [logs, totalResult] = await Promise.all([
-          db.select().from(systemLogs).where(whereClause).orderBy((0, import_drizzle_orm116.desc)(systemLogs.timestamp)).limit(limitNum).offset(offsetNum),
-          db.select({ count: (0, import_drizzle_orm116.count)() }).from(systemLogs).where(whereClause)
+          db.select().from(systemLogs).where(whereClause).orderBy((0, import_drizzle_orm117.desc)(systemLogs.timestamp)).limit(limitNum).offset(offsetNum),
+          db.select({ count: (0, import_drizzle_orm117.count)() }).from(systemLogs).where(whereClause)
         ]);
         res.json({
           logs,
@@ -175674,24 +175688,24 @@ function streamingVelocity(current, previous) {
   const growthPct = (current - previous) / previous * 100;
   return Math.max(0, growthPct);
 }
-var import_drizzle_orm117, AdvancedAnalyticsService, advancedAnalyticsService;
+var import_drizzle_orm118, AdvancedAnalyticsService, advancedAnalyticsService;
 var init_advancedAnalyticsService = __esm({
   "server/services/advancedAnalyticsService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm117 = require("drizzle-orm");
+    import_drizzle_orm118 = require("drizzle-orm");
     init_logger();
     AdvancedAnalyticsService = class {
       async fetchMultiPlatformData(userId, startDate, endDate) {
         try {
           const platformData = await db.select().from(platformDataSources).where(
-            (0, import_drizzle_orm117.and)(
-              (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-              (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-              (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+            (0, import_drizzle_orm118.and)(
+              (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+              (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+              (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
             )
-          ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+          ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
           return platformData.map((row) => ({
             platform: row.platform,
             streams: row.shazamCount || 0,
@@ -175710,13 +175724,13 @@ var init_advancedAnalyticsService = __esm({
           count: platformDataSources.shazamCount,
           rank: platformDataSources.shazamRank
         }).from(platformDataSources).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-            (0, import_drizzle_orm117.eq)(platformDataSources.platform, "shazam"),
-            (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-            (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+            (0, import_drizzle_orm118.eq)(platformDataSources.platform, "shazam"),
+            (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+            (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
           )
-        ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+        ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
         const totalShazams = data.reduce((sum11, row) => sum11 + (row.count || 0), 0);
         const currentRank = data[0]?.rank;
         const previousRank = data[1]?.rank;
@@ -175735,13 +175749,13 @@ var init_advancedAnalyticsService = __esm({
           audience: platformDataSources.radioAudience,
           stations: platformDataSources.radioStations
         }).from(platformDataSources).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-            (0, import_drizzle_orm117.eq)(platformDataSources.platform, "radio"),
-            (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-            (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+            (0, import_drizzle_orm118.eq)(platformDataSources.platform, "radio"),
+            (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+            (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
           )
-        ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+        ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
         return {
           timeline: data,
           totalSpins: data.reduce((sum11, row) => sum11 + (row.spins || 0), 0),
@@ -175754,13 +175768,13 @@ var init_advancedAnalyticsService = __esm({
           date: platformDataSources.date,
           pageViews: platformDataSources.wikipediaPageViews
         }).from(platformDataSources).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-            (0, import_drizzle_orm117.eq)(platformDataSources.platform, "wikipedia"),
-            (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-            (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+            (0, import_drizzle_orm118.eq)(platformDataSources.platform, "wikipedia"),
+            (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+            (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
           )
-        ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+        ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
         return {
           timeline: data,
           totalPageViews: data.reduce((sum11, row) => sum11 + (row.pageViews || 0), 0),
@@ -175773,13 +175787,13 @@ var init_advancedAnalyticsService = __esm({
           rank: platformDataSources.beatportRank,
           sales: platformDataSources.beatportSales
         }).from(platformDataSources).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-            (0, import_drizzle_orm117.eq)(platformDataSources.platform, "beatport"),
-            (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-            (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+            (0, import_drizzle_orm118.eq)(platformDataSources.platform, "beatport"),
+            (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+            (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
           )
-        ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+        ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
         return {
           timeline: data,
           currentRank: data[0]?.rank,
@@ -175792,7 +175806,7 @@ var init_advancedAnalyticsService = __esm({
           bandsinTownFollowers: platformDataSources.bandsinTownFollowers,
           upcomingShows: platformDataSources.upcomingShows,
           songkickFollowers: platformDataSources.songkickFollowers
-        }).from(platformDataSources).where((0, import_drizzle_orm117.eq)(platformDataSources.userId, userId)).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date)).limit(1);
+        }).from(platformDataSources).where((0, import_drizzle_orm118.eq)(platformDataSources.userId, userId)).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date)).limit(1);
         return {
           bandsintown: {
             followers: latest?.bandsinTownFollowers || 0,
@@ -175805,12 +175819,12 @@ var init_advancedAnalyticsService = __esm({
       }
       async getRegionalPlatformData(userId, startDate, endDate) {
         const data = await db.select().from(platformDataSources).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(platformDataSources.userId, userId),
-            (0, import_drizzle_orm117.gte)(platformDataSources.date, startDate),
-            (0, import_drizzle_orm117.lte)(platformDataSources.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(platformDataSources.userId, userId),
+            (0, import_drizzle_orm118.gte)(platformDataSources.date, startDate),
+            (0, import_drizzle_orm118.lte)(platformDataSources.date, endDate)
           )
-        ).orderBy((0, import_drizzle_orm117.desc)(platformDataSources.date));
+        ).orderBy((0, import_drizzle_orm118.desc)(platformDataSources.date));
         return {
           qqMusic: {
             plays: data.reduce((sum11, row) => sum11 + (row.qqMusicPlays || 0), 0),
@@ -175855,10 +175869,10 @@ var init_advancedAnalyticsService = __esm({
         };
         if (data.action === "removed") {
           await db.update(playlistJourneys).set({ isActive: false, removedAt: /* @__PURE__ */ new Date() }).where(
-            (0, import_drizzle_orm117.and)(
-              (0, import_drizzle_orm117.eq)(playlistJourneys.userId, userId),
-              (0, import_drizzle_orm117.eq)(playlistJourneys.trackId, data.trackId),
-              (0, import_drizzle_orm117.eq)(playlistJourneys.playlistId, data.playlistId)
+            (0, import_drizzle_orm118.and)(
+              (0, import_drizzle_orm118.eq)(playlistJourneys.userId, userId),
+              (0, import_drizzle_orm118.eq)(playlistJourneys.trackId, data.trackId),
+              (0, import_drizzle_orm118.eq)(playlistJourneys.playlistId, data.playlistId)
             )
           );
         } else {
@@ -175867,12 +175881,12 @@ var init_advancedAnalyticsService = __esm({
         logger2.info(`Tracked playlist journey for track ${data.trackId} on ${data.playlistName}`);
       }
       async getPlaylistJourneys(userId, trackId, options = {}) {
-        const conditions = [(0, import_drizzle_orm117.eq)(playlistJourneys.userId, userId)];
-        if (trackId) conditions.push((0, import_drizzle_orm117.eq)(playlistJourneys.trackId, trackId));
-        if (options.platform) conditions.push((0, import_drizzle_orm117.eq)(playlistJourneys.platform, options.platform));
-        if (options.startDate) conditions.push((0, import_drizzle_orm117.gte)(playlistJourneys.addedAt, options.startDate));
-        if (options.endDate) conditions.push((0, import_drizzle_orm117.lte)(playlistJourneys.addedAt, options.endDate));
-        const journeys = await db.select().from(playlistJourneys).where((0, import_drizzle_orm117.and)(...conditions)).orderBy((0, import_drizzle_orm117.desc)(playlistJourneys.addedAt));
+        const conditions = [(0, import_drizzle_orm118.eq)(playlistJourneys.userId, userId)];
+        if (trackId) conditions.push((0, import_drizzle_orm118.eq)(playlistJourneys.trackId, trackId));
+        if (options.platform) conditions.push((0, import_drizzle_orm118.eq)(playlistJourneys.platform, options.platform));
+        if (options.startDate) conditions.push((0, import_drizzle_orm118.gte)(playlistJourneys.addedAt, options.startDate));
+        if (options.endDate) conditions.push((0, import_drizzle_orm118.lte)(playlistJourneys.addedAt, options.endDate));
+        const journeys = await db.select().from(playlistJourneys).where((0, import_drizzle_orm118.and)(...conditions)).orderBy((0, import_drizzle_orm118.desc)(playlistJourneys.addedAt));
         const byPlaylistType = journeys.reduce((acc, j) => {
           const type = j.playlistType || "unknown";
           if (!acc[type]) acc[type] = { count: 0, totalStreams: 0, totalRevenue: 0 };
@@ -175896,21 +175910,21 @@ var init_advancedAnalyticsService = __esm({
         const endDate = /* @__PURE__ */ new Date();
         const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1e3);
         const [analyticsData] = await db.select({
-          totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-          totalListeners: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-          totalFollowers: import_drizzle_orm117.sql`COALESCE(MAX(${analytics.followers}), 0)`,
-          totalRevenue: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+          totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+          totalListeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+          totalFollowers: import_drizzle_orm118.sql`COALESCE(MAX(${analytics.followers}), 0)`,
+          totalRevenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`
         }).from(analytics).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(analytics.userId, userId),
-            (0, import_drizzle_orm117.gte)(analytics.date, startDate),
-            (0, import_drizzle_orm117.lte)(analytics.date, endDate)
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(analytics.userId, userId),
+            (0, import_drizzle_orm118.gte)(analytics.date, startDate),
+            (0, import_drizzle_orm118.lte)(analytics.date, endDate)
           )
         );
         const platformData = await this.fetchMultiPlatformData(userId, startDate, endDate);
         const prevStartDate = new Date(startDate.getTime() - 30 * 24 * 60 * 60 * 1e3);
-        const [prevAnalyticsData] = await db.select({ totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, prevStartDate), (0, import_drizzle_orm117.lte)(analytics.date, startDate))).limit(1);
-        const activePlaylistCount = await db.select({ count: import_drizzle_orm117.sql`COUNT(*)` }).from(playlistJourneys).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(playlistJourneys.userId, userId), (0, import_drizzle_orm117.eq)(playlistJourneys.isActive, true)));
+        const [prevAnalyticsData] = await db.select({ totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, prevStartDate), (0, import_drizzle_orm118.lte)(analytics.date, startDate))).limit(1);
+        const activePlaylistCount = await db.select({ count: import_drizzle_orm118.sql`COUNT(*)` }).from(playlistJourneys).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(playlistJourneys.userId, userId), (0, import_drizzle_orm118.eq)(playlistJourneys.isActive, true)));
         const streamingScore = Math.min(100, (analyticsData?.totalStreams || 0) / 1e4);
         const socialScore = Math.min(100, (analyticsData?.totalFollowers || 0) / 5e3);
         const playlistCount = Number(activePlaylistCount[0]?.count || 0);
@@ -175970,27 +175984,27 @@ var init_advancedAnalyticsService = __esm({
         const startDate = /* @__PURE__ */ new Date();
         startDate.setDate(startDate.getDate() - days);
         return db.select().from(globalRankings).where(
-          (0, import_drizzle_orm117.and)(
-            (0, import_drizzle_orm117.eq)(globalRankings.userId, userId),
-            (0, import_drizzle_orm117.gte)(globalRankings.date, startDate.toISOString().split("T")[0])
+          (0, import_drizzle_orm118.and)(
+            (0, import_drizzle_orm118.eq)(globalRankings.userId, userId),
+            (0, import_drizzle_orm118.gte)(globalRankings.date, startDate.toISOString().split("T")[0])
           )
-        ).orderBy((0, import_drizzle_orm117.asc)(globalRankings.date));
+        ).orderBy((0, import_drizzle_orm118.asc)(globalRankings.date));
       }
       async discoverArtists(options = {}) {
         const conditions = [];
         if (options.genre) {
-          conditions.push((0, import_drizzle_orm117.eq)(arDiscoveries.genre, options.genre));
+          conditions.push((0, import_drizzle_orm118.eq)(arDiscoveries.genre, options.genre));
         }
         if (options.country) {
-          conditions.push((0, import_drizzle_orm117.eq)(arDiscoveries.country, options.country));
+          conditions.push((0, import_drizzle_orm118.eq)(arDiscoveries.country, options.country));
         }
         if (options.minGrowthScore) {
-          conditions.push((0, import_drizzle_orm117.gte)(arDiscoveries.growthScore, options.minGrowthScore));
+          conditions.push((0, import_drizzle_orm118.gte)(arDiscoveries.growthScore, options.minGrowthScore));
         }
         if (options.minOverallScore) {
-          conditions.push((0, import_drizzle_orm117.gte)(arDiscoveries.overallScore, options.minOverallScore));
+          conditions.push((0, import_drizzle_orm118.gte)(arDiscoveries.overallScore, options.minOverallScore));
         }
-        const discoveries = await db.select().from(arDiscoveries).where(conditions.length > 0 ? (0, import_drizzle_orm117.and)(...conditions) : void 0).orderBy((0, import_drizzle_orm117.desc)(arDiscoveries.overallScore)).limit(options.limit || 50);
+        const discoveries = await db.select().from(arDiscoveries).where(conditions.length > 0 ? (0, import_drizzle_orm118.and)(...conditions) : void 0).orderBy((0, import_drizzle_orm118.desc)(arDiscoveries.overallScore)).limit(options.limit || 50);
         return discoveries.map((d) => ({
           artistId: d.artistId,
           artistName: d.artistName,
@@ -176012,14 +176026,14 @@ var init_advancedAnalyticsService = __esm({
         const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
         const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1e3);
         const [recentData] = await db.select({
-          totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-          totalListeners: import_drizzle_orm117.sql`COALESCE(MAX(${analytics.totalListeners}), 0)`,
-          totalFollowers: import_drizzle_orm117.sql`COALESCE(MAX(${analytics.followers}), 0)`,
-          totalRevenue: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)`
-        }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, artistId), (0, import_drizzle_orm117.gte)(analytics.date, thirtyDaysAgo)));
-        const [prevData] = await db.select({ totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, artistId), (0, import_drizzle_orm117.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm117.lte)(analytics.date, thirtyDaysAgo))).limit(1);
-        const [artistUser] = await db.select({ name: users.name }).from(users).where((0, import_drizzle_orm117.eq)(users.id, artistId)).limit(1);
-        const activePlaylistRows = await db.select({ count: import_drizzle_orm117.sql`COUNT(*)`, totalFollowers: import_drizzle_orm117.sql`COALESCE(SUM(${playlistJourneys.followerCount}), 0)` }).from(playlistJourneys).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(playlistJourneys.userId, artistId), (0, import_drizzle_orm117.eq)(playlistJourneys.isActive, true)));
+          totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+          totalListeners: import_drizzle_orm118.sql`COALESCE(MAX(${analytics.totalListeners}), 0)`,
+          totalFollowers: import_drizzle_orm118.sql`COALESCE(MAX(${analytics.followers}), 0)`,
+          totalRevenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+        }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, artistId), (0, import_drizzle_orm118.gte)(analytics.date, thirtyDaysAgo)));
+        const [prevData] = await db.select({ totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, artistId), (0, import_drizzle_orm118.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm118.lte)(analytics.date, thirtyDaysAgo))).limit(1);
+        const [artistUser] = await db.select({ name: users.name }).from(users).where((0, import_drizzle_orm118.eq)(users.id, artistId)).limit(1);
+        const activePlaylistRows = await db.select({ count: import_drizzle_orm118.sql`COUNT(*)`, totalFollowers: import_drizzle_orm118.sql`COALESCE(SUM(${playlistJourneys.followerCount}), 0)` }).from(playlistJourneys).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(playlistJourneys.userId, artistId), (0, import_drizzle_orm118.eq)(playlistJourneys.isActive, true)));
         const monthlyListeners = Number(recentData?.totalListeners || 0);
         const followerCount = Number(recentData?.totalFollowers || 0);
         const currentStreams = Number(recentData?.totalStreams || 0);
@@ -176108,7 +176122,7 @@ var init_advancedAnalyticsService = __esm({
             const limitN = match ? parseInt(match[1]) : 5;
             entities.limit = limitN;
             entities.locationType = lowerQuery.includes("cities") ? "cities" : "countries";
-            const geoRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`, listeners: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`, metadata: import_drizzle_orm117.sql`MAX(${analytics.metadata})` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform).orderBy(import_drizzle_orm117.sql`SUM(${analytics.streams}) DESC`).limit(limitN);
+            const geoRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`, listeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`, metadata: import_drizzle_orm118.sql`MAX(${analytics.metadata})` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform).orderBy(import_drizzle_orm118.sql`SUM(${analytics.streams}) DESC`).limit(limitN);
             const totalStreams = geoRows.reduce((s, r) => s + Number(r.streams), 0);
             data = geoRows.map((r, i) => ({
               location: r.metadata?.country || r.metadata?.region || r.platform || `Market ${i + 1}`,
@@ -176125,8 +176139,8 @@ var init_advancedAnalyticsService = __esm({
             if (lowerQuery.includes("apple")) requestedPlatforms.push("apple_music");
             if (lowerQuery.includes("youtube")) requestedPlatforms.push("youtube");
             entities.platforms = requestedPlatforms;
-            const platformRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`, listeners: import_drizzle_orm117.sql`COALESCE(MAX(${analytics.totalListeners}), 0)`, revenue: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform).orderBy(import_drizzle_orm117.sql`SUM(${analytics.streams}) DESC`);
-            const prevRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm117.lte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform);
+            const platformRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`, listeners: import_drizzle_orm118.sql`COALESCE(MAX(${analytics.totalListeners}), 0)`, revenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform).orderBy(import_drizzle_orm118.sql`SUM(${analytics.streams}) DESC`);
+            const prevRows = await db.select({ platform: analytics.platform, streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm118.lte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.platform);
             const prevMap = {};
             prevRows.forEach((r) => {
               if (r.platform) prevMap[r.platform] = Number(r.streams);
@@ -176154,8 +176168,8 @@ var init_advancedAnalyticsService = __esm({
             }
             const periodStart = new Date(now.getTime() - daysBack * 24 * 60 * 60 * 1e3);
             const prevPeriodStart = new Date(periodStart.getTime() - daysBack * 24 * 60 * 60 * 1e3);
-            const [curr] = await db.select({ total: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, periodStart))).limit(1);
-            const [prev] = await db.select({ total: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, prevPeriodStart), (0, import_drizzle_orm117.lte)(analytics.date, periodStart))).limit(1);
+            const [curr] = await db.select({ total: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, periodStart))).limit(1);
+            const [prev] = await db.select({ total: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, prevPeriodStart), (0, import_drizzle_orm118.lte)(analytics.date, periodStart))).limit(1);
             const currentTotal = Number(curr?.total || 0);
             const prevTotal = Number(prev?.total || 0);
             const change = prevTotal > 0 ? Math.round((currentTotal - prevTotal) / prevTotal * 1e3) / 10 : 0;
@@ -176164,8 +176178,8 @@ var init_advancedAnalyticsService = __esm({
           } else if (lowerQuery.includes("revenue") || lowerQuery.includes("earnings")) {
             intent = "revenue";
             responseType = "number";
-            const [curr] = await db.select({ total: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, thirtyDaysAgo))).limit(1);
-            const [prev] = await db.select({ total: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm117.lte)(analytics.date, thirtyDaysAgo))).limit(1);
+            const [curr] = await db.select({ total: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, thirtyDaysAgo))).limit(1);
+            const [prev] = await db.select({ total: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm118.lte)(analytics.date, thirtyDaysAgo))).limit(1);
             const currentRev = Number(curr?.total || 0);
             const prevRev = Number(prev?.total || 0);
             const change = prevRev > 0 ? Math.round((currentRev - prevRev) / prevRev * 1e3) / 10 : 0;
@@ -176174,14 +176188,14 @@ var init_advancedAnalyticsService = __esm({
           } else if (lowerQuery.includes("playlist")) {
             intent = "playlist_info";
             responseType = "table";
-            const playlists = await db.select().from(playlistJourneys).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(playlistJourneys.userId, userId), (0, import_drizzle_orm117.eq)(playlistJourneys.isActive, true))).orderBy((0, import_drizzle_orm117.desc)(playlistJourneys.followerCount)).limit(10);
+            const playlists = await db.select().from(playlistJourneys).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(playlistJourneys.userId, userId), (0, import_drizzle_orm118.eq)(playlistJourneys.isActive, true))).orderBy((0, import_drizzle_orm118.desc)(playlistJourneys.followerCount)).limit(10);
             data = playlists.map((p) => ({ name: p.playlistName, platform: p.platform, followers: p.followerCount || 0, position: p.position || null, streams: p.streamsFromPlaylist || 0, type: p.playlistType }));
             const totalReach = playlists.reduce((s, p) => s + (p.followerCount || 0), 0);
             summary = playlists.length > 0 ? `You are on ${playlists.length} active playlist${playlists.length > 1 ? "s" : ""} with a combined reach of ${totalReach.toLocaleString()} followers` : "You are not currently on any tracked playlists";
           } else if (lowerQuery.includes("trend") || lowerQuery.includes("growth")) {
             intent = "growth_trend";
             responseType = "chart";
-            const timeline = await db.select({ date: analytics.date, streams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.date).orderBy((0, import_drizzle_orm117.asc)(analytics.date));
+            const timeline = await db.select({ date: analytics.date, streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, thirtyDaysAgo))).groupBy(analytics.date).orderBy((0, import_drizzle_orm118.asc)(analytics.date));
             const rows = timeline.map((r) => ({ date: r.date instanceof Date ? r.date.toISOString().split("T")[0] : String(r.date), streams: Number(r.streams) }));
             const firstVal = rows[0]?.streams || 0;
             const lastVal = rows[rows.length - 1]?.streams || 0;
@@ -176221,12 +176235,12 @@ var init_advancedAnalyticsService = __esm({
         }
       }
       async getHistoricalData(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm117.eq)(historicalAnalytics.userId, userId)];
-        if (options.trackId) conditions.push((0, import_drizzle_orm117.eq)(historicalAnalytics.trackId, options.trackId));
-        if (options.startDate) conditions.push((0, import_drizzle_orm117.gte)(historicalAnalytics.date, options.startDate.toISOString().split("T")[0]));
-        if (options.endDate) conditions.push((0, import_drizzle_orm117.lte)(historicalAnalytics.date, options.endDate.toISOString().split("T")[0]));
-        if (options.period) conditions.push((0, import_drizzle_orm117.eq)(historicalAnalytics.period, options.period));
-        const data = await db.select().from(historicalAnalytics).where((0, import_drizzle_orm117.and)(...conditions)).orderBy((0, import_drizzle_orm117.asc)(historicalAnalytics.date));
+        const conditions = [(0, import_drizzle_orm118.eq)(historicalAnalytics.userId, userId)];
+        if (options.trackId) conditions.push((0, import_drizzle_orm118.eq)(historicalAnalytics.trackId, options.trackId));
+        if (options.startDate) conditions.push((0, import_drizzle_orm118.gte)(historicalAnalytics.date, options.startDate.toISOString().split("T")[0]));
+        if (options.endDate) conditions.push((0, import_drizzle_orm118.lte)(historicalAnalytics.date, options.endDate.toISOString().split("T")[0]));
+        if (options.period) conditions.push((0, import_drizzle_orm118.eq)(historicalAnalytics.period, options.period));
+        const data = await db.select().from(historicalAnalytics).where((0, import_drizzle_orm118.and)(...conditions)).orderBy((0, import_drizzle_orm118.asc)(historicalAnalytics.date));
         const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
         const yoyComparisons = {};
         const currentYearData = data.filter((d) => new Date(d.date).getFullYear() === currentYear);
@@ -176263,9 +176277,9 @@ var init_advancedAnalyticsService = __esm({
         };
       }
       async getSyncImpact(userId, trackId) {
-        const conditions = [(0, import_drizzle_orm117.eq)(syncPlacements.userId, userId)];
-        if (trackId) conditions.push((0, import_drizzle_orm117.eq)(syncPlacements.trackId, trackId));
-        const placements = await db.select().from(syncPlacements).where((0, import_drizzle_orm117.and)(...conditions)).orderBy((0, import_drizzle_orm117.desc)(syncPlacements.airDate));
+        const conditions = [(0, import_drizzle_orm118.eq)(syncPlacements.userId, userId)];
+        if (trackId) conditions.push((0, import_drizzle_orm118.eq)(syncPlacements.trackId, trackId));
+        const placements = await db.select().from(syncPlacements).where((0, import_drizzle_orm118.and)(...conditions)).orderBy((0, import_drizzle_orm118.desc)(syncPlacements.airDate));
         const groupedByTrack = placements.reduce((acc, p) => {
           if (!acc[p.trackId]) {
             acc[p.trackId] = { trackId: p.trackId, trackTitle: p.trackTitle, placements: [] };
@@ -176300,14 +176314,14 @@ var init_advancedAnalyticsService = __esm({
         const [platformData, previousPeriodData] = await Promise.all([
           db.select({
             platform: analytics.platform,
-            totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-            totalListeners: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-            totalRevenue: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.revenue}), 0)`
-          }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, startDate), (0, import_drizzle_orm117.lte)(analytics.date, endDate))).groupBy(analytics.platform),
+            totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+            totalListeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            totalRevenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+          }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, startDate), (0, import_drizzle_orm118.lte)(analytics.date, endDate))).groupBy(analytics.platform),
           db.select({
             platform: analytics.platform,
-            totalStreams: import_drizzle_orm117.sql`COALESCE(SUM(${analytics.streams}), 0)`
-          }).from(analytics).where((0, import_drizzle_orm117.and)((0, import_drizzle_orm117.eq)(analytics.userId, userId), (0, import_drizzle_orm117.gte)(analytics.date, startDate), (0, import_drizzle_orm117.lt)(analytics.date, midDate))).groupBy(analytics.platform)
+            totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`
+          }).from(analytics).where((0, import_drizzle_orm118.and)((0, import_drizzle_orm118.eq)(analytics.userId, userId), (0, import_drizzle_orm118.gte)(analytics.date, startDate), (0, import_drizzle_orm118.lt)(analytics.date, midDate))).groupBy(analytics.platform)
         ]);
         const prevByPlatform = {};
         for (const p of previousPeriodData) {
@@ -176373,14 +176387,14 @@ var analytics_exports = {};
 __export(analytics_exports, {
   default: () => analytics_default
 });
-var import_express82, import_drizzle_orm118, router79, analytics_default;
+var import_express82, import_drizzle_orm119, router79, analytics_default;
 var init_analytics = __esm({
   "server/routes/api/v1/analytics.ts"() {
     "use strict";
     import_express82 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm118 = require("drizzle-orm");
+    import_drizzle_orm119 = require("drizzle-orm");
     init_apiKeyService();
     init_logger();
     init_advancedAnalyticsService();
@@ -176411,7 +176425,7 @@ var init_analytics = __esm({
           instagram: users.instagramToken,
           twitter: users.twitterToken,
           tiktok: users.tiktokToken
-        }).from(users).where((0, import_drizzle_orm118.eq)(users.id, userId)).limit(1);
+        }).from(users).where((0, import_drizzle_orm119.eq)(users.id, userId)).limit(1);
         if (!user) {
           return res.status(404).json({ error: "Not Found", message: "User not found" });
         }
@@ -176446,32 +176460,32 @@ var init_analytics = __esm({
             const end = endDate ? new Date(endDate) : /* @__PURE__ */ new Date();
             const start = startDate ? new Date(startDate) : new Date(end.getTime() - (parseInt(timeRange) || 30) * 24 * 60 * 60 * 1e3);
             const conditions = [
-              (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-              (0, import_drizzle_orm118.gte)(analytics.date, start),
-              (0, import_drizzle_orm118.lte)(analytics.date, end)
+              (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+              (0, import_drizzle_orm119.gte)(analytics.date, start),
+              (0, import_drizzle_orm119.lte)(analytics.date, end)
             ];
             if (platform) {
-              conditions.push((0, import_drizzle_orm118.eq)(analytics.platform, platform));
+              conditions.push((0, import_drizzle_orm119.eq)(analytics.platform, platform));
             }
             const [streamData, [totals], byPlatform] = await Promise.all([
               db.select({
-                date: import_drizzle_orm118.sql`DATE(${analytics.date})`,
+                date: import_drizzle_orm119.sql`DATE(${analytics.date})`,
                 platform: analytics.platform,
-                streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-                revenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-                listeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
-              }).from(analytics).where((0, import_drizzle_orm118.and)(...conditions)).groupBy(import_drizzle_orm118.sql`DATE(${analytics.date})`, analytics.platform).orderBy(import_drizzle_orm118.sql`DATE(${analytics.date})`),
+                streams: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+                revenue: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+                listeners: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
+              }).from(analytics).where((0, import_drizzle_orm119.and)(...conditions)).groupBy(import_drizzle_orm119.sql`DATE(${analytics.date})`, analytics.platform).orderBy(import_drizzle_orm119.sql`DATE(${analytics.date})`),
               db.select({
-                totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-                totalRevenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-                totalListeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
-              }).from(analytics).where((0, import_drizzle_orm118.and)(...conditions)),
+                totalStreams: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+                totalRevenue: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+                totalListeners: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
+              }).from(analytics).where((0, import_drizzle_orm119.and)(...conditions)),
               db.select({
                 platform: analytics.platform,
-                streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-                revenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-                listeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
-              }).from(analytics).where((0, import_drizzle_orm118.and)(...conditions)).groupBy(analytics.platform).orderBy((0, import_drizzle_orm118.desc)(import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`))
+                streams: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+                revenue: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+                listeners: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
+              }).from(analytics).where((0, import_drizzle_orm119.and)(...conditions)).groupBy(analytics.platform).orderBy((0, import_drizzle_orm119.desc)(import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`))
             ]);
             return {
               success: true,
@@ -176507,16 +176521,16 @@ var init_analytics = __esm({
         const end = endDate ? new Date(endDate) : /* @__PURE__ */ new Date();
         const start = startDate ? new Date(startDate) : new Date(end.getTime() - (parseInt(timeRange) || 30) * 24 * 60 * 60 * 1e3);
         const engagementData = await db.select({
-          date: import_drizzle_orm118.sql`DATE(${analytics.date})`,
+          date: import_drizzle_orm119.sql`DATE(${analytics.date})`,
           platform: analytics.platform,
           platformData: analytics.platformData
         }).from(analytics).where(
-          (0, import_drizzle_orm118.and)(
-            (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-            (0, import_drizzle_orm118.gte)(analytics.date, start),
-            (0, import_drizzle_orm118.lte)(analytics.date, end)
+          (0, import_drizzle_orm119.and)(
+            (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+            (0, import_drizzle_orm119.gte)(analytics.date, start),
+            (0, import_drizzle_orm119.lte)(analytics.date, end)
           )
-        ).orderBy(import_drizzle_orm118.sql`DATE(${analytics.date})`);
+        ).orderBy(import_drizzle_orm119.sql`DATE(${analytics.date})`);
         const engagement = engagementData.map((row) => {
           const data = row.platformData || {};
           return {
@@ -176565,12 +176579,12 @@ var init_analytics = __esm({
         const audienceData = await db.select({
           audienceData: analytics.audienceData
         }).from(analytics).where(
-          (0, import_drizzle_orm118.and)(
-            (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-            (0, import_drizzle_orm118.gte)(analytics.date, start),
-            (0, import_drizzle_orm118.lte)(analytics.date, end)
+          (0, import_drizzle_orm119.and)(
+            (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+            (0, import_drizzle_orm119.gte)(analytics.date, start),
+            (0, import_drizzle_orm119.lte)(analytics.date, end)
           )
-        ).orderBy((0, import_drizzle_orm118.desc)(analytics.date)).limit(1);
+        ).orderBy((0, import_drizzle_orm119.desc)(analytics.date)).limit(1);
         const demographics = audienceData[0]?.audienceData || {
           age: [],
           gender: [],
@@ -176606,16 +176620,16 @@ var init_analytics = __esm({
         const end = endDate ? new Date(endDate) : /* @__PURE__ */ new Date();
         const start = startDate ? new Date(startDate) : new Date(end.getTime() - (parseInt(timeRange) || 30) * 24 * 60 * 60 * 1e3);
         const playlistData = await db.select({
-          date: import_drizzle_orm118.sql`DATE(${analytics.date})`,
+          date: import_drizzle_orm119.sql`DATE(${analytics.date})`,
           platform: analytics.platform,
           platformData: analytics.platformData
         }).from(analytics).where(
-          (0, import_drizzle_orm118.and)(
-            (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-            (0, import_drizzle_orm118.gte)(analytics.date, start),
-            (0, import_drizzle_orm118.lte)(analytics.date, end)
+          (0, import_drizzle_orm119.and)(
+            (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+            (0, import_drizzle_orm119.gte)(analytics.date, start),
+            (0, import_drizzle_orm119.lte)(analytics.date, end)
           )
-        ).orderBy((0, import_drizzle_orm118.desc)(import_drizzle_orm118.sql`DATE(${analytics.date})`));
+        ).orderBy((0, import_drizzle_orm119.desc)(import_drizzle_orm119.sql`DATE(${analytics.date})`));
         const playlists = playlistData.flatMap((row) => {
           const data = row.platformData || {};
           return (data.playlists || []).map((playlist) => ({
@@ -176667,7 +176681,7 @@ var init_analytics = __esm({
           likeCount: projects.likeCount,
           artworkUrl: projects.artworkUrl,
           createdAt: projects.createdAt
-        }).from(projects).where((0, import_drizzle_orm118.eq)(projects.userId, artistId)).orderBy((0, import_drizzle_orm118.desc)(sortBy === "revenue" ? projects.revenue : projects.streams)).limit(parseInt(limit));
+        }).from(projects).where((0, import_drizzle_orm119.eq)(projects.userId, artistId)).orderBy((0, import_drizzle_orm119.desc)(sortBy === "revenue" ? projects.revenue : projects.streams)).limit(parseInt(limit));
         return res.json({
           success: true,
           total: tracks.length,
@@ -176691,26 +176705,26 @@ var init_analytics = __esm({
           end.getTime() - (parseInt(timeRange) || 30) * 24 * 60 * 60 * 1e3
         );
         const [summary] = await db.select({
-          totalStreams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-          totalRevenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-          totalListeners: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-          avgStreamsPerDay: import_drizzle_orm118.sql`COALESCE(AVG(${analytics.streams}), 0)`
+          totalStreams: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+          totalRevenue: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+          totalListeners: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+          avgStreamsPerDay: import_drizzle_orm119.sql`COALESCE(AVG(${analytics.streams}), 0)`
         }).from(analytics).where(
-          (0, import_drizzle_orm118.and)(
-            (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-            (0, import_drizzle_orm118.gte)(analytics.date, start),
-            (0, import_drizzle_orm118.lte)(analytics.date, end)
+          (0, import_drizzle_orm119.and)(
+            (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+            (0, import_drizzle_orm119.gte)(analytics.date, start),
+            (0, import_drizzle_orm119.lte)(analytics.date, end)
           )
         );
         const platforms = await db.select({
           platform: analytics.platform,
-          streams: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-          revenue: import_drizzle_orm118.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+          streams: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+          revenue: import_drizzle_orm119.sql`COALESCE(SUM(${analytics.revenue}), 0)`
         }).from(analytics).where(
-          (0, import_drizzle_orm118.and)(
-            (0, import_drizzle_orm118.eq)(analytics.userId, artistId),
-            (0, import_drizzle_orm118.gte)(analytics.date, start),
-            (0, import_drizzle_orm118.lte)(analytics.date, end)
+          (0, import_drizzle_orm119.and)(
+            (0, import_drizzle_orm119.eq)(analytics.userId, artistId),
+            (0, import_drizzle_orm119.gte)(analytics.date, start),
+            (0, import_drizzle_orm119.lte)(analytics.date, end)
           )
         ).groupBy(analytics.platform);
         return res.json({
@@ -176981,13 +176995,13 @@ var init_analytics = __esm({
 });
 
 // server/services/dspAnalyticsService.ts
-var import_drizzle_orm119, DSPAnalyticsService, dspAnalyticsService;
+var import_drizzle_orm120, DSPAnalyticsService, dspAnalyticsService;
 var init_dspAnalyticsService = __esm({
   "server/services/dspAnalyticsService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm119 = require("drizzle-orm");
+    import_drizzle_orm120 = require("drizzle-orm");
     init_logger();
     DSPAnalyticsService = class {
       constructor() {
@@ -177459,7 +177473,7 @@ var init_dspAnalyticsService = __esm({
       }
       async syncPlatformData(userId, platform, startDate, endDate) {
         try {
-          const [syncStatus] = await db.select().from(dspUserPlatformStatus).where((0, import_drizzle_orm119.and)((0, import_drizzle_orm119.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm119.eq)(dspUserPlatformStatus.platform, platform))).limit(1);
+          const [syncStatus] = await db.select().from(dspUserPlatformStatus).where((0, import_drizzle_orm120.and)((0, import_drizzle_orm120.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm120.eq)(dspUserPlatformStatus.platform, platform))).limit(1);
           await db.insert(dspUserPlatformStatus).values({
             userId,
             platform,
@@ -177478,7 +177492,7 @@ var init_dspAnalyticsService = __esm({
               syncStatus: "disconnected",
               errorMessage: "Platform not connected \u2014 please connect your account in Settings",
               updatedAt: /* @__PURE__ */ new Date()
-            }).where((0, import_drizzle_orm119.and)((0, import_drizzle_orm119.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm119.eq)(dspUserPlatformStatus.platform, platform)));
+            }).where((0, import_drizzle_orm120.and)((0, import_drizzle_orm120.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm120.eq)(dspUserPlatformStatus.platform, platform)));
             return null;
           }
           const credentials = syncStatus.credentials;
@@ -177529,7 +177543,7 @@ var init_dspAnalyticsService = __esm({
               errorMessage: null,
               errorCount: 0,
               updatedAt: /* @__PURE__ */ new Date()
-            }).where((0, import_drizzle_orm119.and)((0, import_drizzle_orm119.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm119.eq)(dspUserPlatformStatus.platform, platform)));
+            }).where((0, import_drizzle_orm120.and)((0, import_drizzle_orm120.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm120.eq)(dspUserPlatformStatus.platform, platform)));
           }
           return normalizedData;
         } catch (error) {
@@ -177537,22 +177551,22 @@ var init_dspAnalyticsService = __esm({
           await db.update(dspUserPlatformStatus).set({
             syncStatus: "error",
             errorMessage: error instanceof Error ? error.message : "Unknown error",
-            errorCount: import_drizzle_orm119.sql`${dspUserPlatformStatus.errorCount} + 1`,
+            errorCount: import_drizzle_orm120.sql`${dspUserPlatformStatus.errorCount} + 1`,
             updatedAt: /* @__PURE__ */ new Date()
-          }).where((0, import_drizzle_orm119.and)((0, import_drizzle_orm119.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm119.eq)(dspUserPlatformStatus.platform, platform)));
+          }).where((0, import_drizzle_orm120.and)((0, import_drizzle_orm120.eq)(dspUserPlatformStatus.userId, userId), (0, import_drizzle_orm120.eq)(dspUserPlatformStatus.platform, platform)));
           return null;
         }
       }
       async fetchGenericPlatformData(platform, userId, startDate, endDate) {
         try {
           const existingData = await db.select().from(dspAnalytics).where(
-            (0, import_drizzle_orm119.and)(
-              (0, import_drizzle_orm119.eq)(dspAnalytics.userId, userId),
-              (0, import_drizzle_orm119.eq)(dspAnalytics.platform, platform),
-              (0, import_drizzle_orm119.gte)(dspAnalytics.date, startDate),
-              (0, import_drizzle_orm119.lte)(dspAnalytics.date, endDate)
+            (0, import_drizzle_orm120.and)(
+              (0, import_drizzle_orm120.eq)(dspAnalytics.userId, userId),
+              (0, import_drizzle_orm120.eq)(dspAnalytics.platform, platform),
+              (0, import_drizzle_orm120.gte)(dspAnalytics.date, startDate),
+              (0, import_drizzle_orm120.lte)(dspAnalytics.date, endDate)
             )
-          ).orderBy((0, import_drizzle_orm119.desc)(dspAnalytics.date)).limit(1);
+          ).orderBy((0, import_drizzle_orm120.desc)(dspAnalytics.date)).limit(1);
           if (existingData.length > 0) {
             const record = existingData[0];
             return {
@@ -177612,51 +177626,51 @@ var init_dspAnalyticsService = __esm({
         logger2.info(`Stored DSP analytics for user ${userId} on ${data.platform}`);
       }
       async getAnalytics(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm119.eq)(dspAnalytics.userId, userId)];
+        const conditions = [(0, import_drizzle_orm120.eq)(dspAnalytics.userId, userId)];
         if (options.platform) {
-          conditions.push((0, import_drizzle_orm119.eq)(dspAnalytics.platform, options.platform));
+          conditions.push((0, import_drizzle_orm120.eq)(dspAnalytics.platform, options.platform));
         }
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm119.gte)(dspAnalytics.date, options.startDate));
+          conditions.push((0, import_drizzle_orm120.gte)(dspAnalytics.date, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm119.lte)(dspAnalytics.date, options.endDate));
+          conditions.push((0, import_drizzle_orm120.lte)(dspAnalytics.date, options.endDate));
         }
         if (options.trackId) {
-          conditions.push((0, import_drizzle_orm119.eq)(dspAnalytics.trackId, options.trackId));
+          conditions.push((0, import_drizzle_orm120.eq)(dspAnalytics.trackId, options.trackId));
         }
-        return db.select().from(dspAnalytics).where((0, import_drizzle_orm119.and)(...conditions)).orderBy((0, import_drizzle_orm119.desc)(dspAnalytics.date));
+        return db.select().from(dspAnalytics).where((0, import_drizzle_orm120.and)(...conditions)).orderBy((0, import_drizzle_orm120.desc)(dspAnalytics.date));
       }
       async getAggregatedAnalytics(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm119.eq)(dspAnalytics.userId, userId)];
+        const conditions = [(0, import_drizzle_orm120.eq)(dspAnalytics.userId, userId)];
         if (options.platform) {
-          conditions.push((0, import_drizzle_orm119.eq)(dspAnalytics.platform, options.platform));
+          conditions.push((0, import_drizzle_orm120.eq)(dspAnalytics.platform, options.platform));
         }
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm119.gte)(dspAnalytics.date, options.startDate));
+          conditions.push((0, import_drizzle_orm120.gte)(dspAnalytics.date, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm119.lte)(dspAnalytics.date, options.endDate));
+          conditions.push((0, import_drizzle_orm120.lte)(dspAnalytics.date, options.endDate));
         }
         const [totals] = await db.select({
-          totalStreams: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-          totalListeners: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
-          totalSaves: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
-          totalRevenue: import_drizzle_orm119.sql`COALESCE(SUM(CAST(${dspAnalytics.revenue} AS NUMERIC)), 0)`,
-          avgCompletionRate: import_drizzle_orm119.sql`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm119.and)(...conditions));
+          totalStreams: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          totalListeners: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+          totalSaves: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.saves}), 0)`,
+          totalRevenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${dspAnalytics.revenue} AS NUMERIC)), 0)`,
+          avgCompletionRate: import_drizzle_orm120.sql`COALESCE(AVG(${dspAnalytics.completionRate}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm120.and)(...conditions));
         const platformBreakdown = await db.select({
           platform: dspAnalytics.platform,
-          streams: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-          revenue: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm119.and)(...conditions)).groupBy(dspAnalytics.platform);
-        const dateFormatSql = options.groupBy === "month" ? import_drizzle_orm119.sql`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM')` : options.groupBy === "week" ? import_drizzle_orm119.sql`TO_CHAR(${dspAnalytics.date}, 'IYYY-IW')` : import_drizzle_orm119.sql`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM-DD')`;
+          streams: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          revenue: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(dspAnalytics.platform);
+        const dateFormatSql = options.groupBy === "month" ? import_drizzle_orm120.sql`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM')` : options.groupBy === "week" ? import_drizzle_orm120.sql`TO_CHAR(${dspAnalytics.date}, 'IYYY-IW')` : import_drizzle_orm120.sql`TO_CHAR(${dspAnalytics.date}, 'YYYY-MM-DD')`;
         const timeline = await db.select({
           date: dateFormatSql,
-          streams: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-          listeners: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
-          revenue: import_drizzle_orm119.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm119.and)(...conditions)).groupBy(dateFormatSql).orderBy((0, import_drizzle_orm119.asc)(dateFormatSql));
+          streams: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+          listeners: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.listeners}), 0)`,
+          revenue: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(dateFormatSql).orderBy((0, import_drizzle_orm120.asc)(dateFormatSql));
         return {
           totalStreams: Number(totals?.totalStreams || 0),
           totalListeners: Number(totals?.totalListeners || 0),
@@ -177729,11 +177743,11 @@ var init_dspAnalyticsService = __esm({
         };
       }
       async getSyncStatus(userId, platform) {
-        const conditions = [(0, import_drizzle_orm119.eq)(dspUserPlatformStatus.userId, userId)];
+        const conditions = [(0, import_drizzle_orm120.eq)(dspUserPlatformStatus.userId, userId)];
         if (platform) {
-          conditions.push((0, import_drizzle_orm119.eq)(dspUserPlatformStatus.platform, platform));
+          conditions.push((0, import_drizzle_orm120.eq)(dspUserPlatformStatus.platform, platform));
         }
-        return db.select().from(dspUserPlatformStatus).where((0, import_drizzle_orm119.and)(...conditions));
+        return db.select().from(dspUserPlatformStatus).where((0, import_drizzle_orm120.and)(...conditions));
       }
       async syncAllPlatforms(userId, startDate, endDate) {
         const platforms = ["spotify", "apple", "youtube", "amazon", "tiktok", "instagram"];
@@ -177757,21 +177771,21 @@ var init_dspAnalyticsService = __esm({
 });
 
 // server/services/playlistAttributionService.ts
-var import_drizzle_orm120, PlaylistAttributionService, playlistAttributionService;
+var import_drizzle_orm121, PlaylistAttributionService, playlistAttributionService;
 var init_playlistAttributionService = __esm({
   "server/services/playlistAttributionService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm120 = require("drizzle-orm");
+    import_drizzle_orm121 = require("drizzle-orm");
     init_logger();
     PlaylistAttributionService = class {
       async trackPlaylistAdd(userId, playlistData) {
         const [existing] = await db.select().from(playlistAttributions).where(
-          (0, import_drizzle_orm120.and)(
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.playlistId, playlistData.playlistId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.platform, playlistData.platform)
+          (0, import_drizzle_orm121.and)(
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.playlistId, playlistData.playlistId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.platform, playlistData.platform)
           )
         ).limit(1);
         if (existing) {
@@ -177780,7 +177794,7 @@ var init_playlistAttributionService = __esm({
             position: playlistData.position,
             followerCount: playlistData.followerCount,
             lastUpdated: /* @__PURE__ */ new Date()
-          }).where((0, import_drizzle_orm120.eq)(playlistAttributions.id, existing.id)).returning();
+          }).where((0, import_drizzle_orm121.eq)(playlistAttributions.id, existing.id)).returning();
           return updated;
         }
         const [newAttribution] = await db.insert(playlistAttributions).values({ ...playlistData, userId }).returning();
@@ -177793,26 +177807,26 @@ var init_playlistAttributionService = __esm({
           removedDate: /* @__PURE__ */ new Date(),
           lastUpdated: /* @__PURE__ */ new Date()
         }).where(
-          (0, import_drizzle_orm120.and)(
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.playlistId, playlistId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.platform, platform)
+          (0, import_drizzle_orm121.and)(
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.playlistId, playlistId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.platform, platform)
           )
         );
         logger2.info(`Tracked playlist removal: ${playlistId} for user ${userId}`);
       }
       async updatePlaylistMetrics(userId, playlistId, platform, metrics) {
         await db.update(playlistAttributions).set({
-          streams: import_drizzle_orm120.sql`${playlistAttributions.streams} + ${metrics.streams}`,
+          streams: import_drizzle_orm121.sql`${playlistAttributions.streams} + ${metrics.streams}`,
           listeners: metrics.listeners,
-          saves: import_drizzle_orm120.sql`${playlistAttributions.saves} + ${metrics.saves}`,
+          saves: import_drizzle_orm121.sql`${playlistAttributions.saves} + ${metrics.saves}`,
           revenue: metrics.revenue?.toString(),
           lastUpdated: /* @__PURE__ */ new Date()
         }).where(
-          (0, import_drizzle_orm120.and)(
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.playlistId, playlistId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.platform, platform)
+          (0, import_drizzle_orm121.and)(
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.playlistId, playlistId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.platform, platform)
           )
         );
       }
@@ -177823,70 +177837,70 @@ var init_playlistAttributionService = __esm({
           pitchResponse: pitchData.response,
           lastUpdated: /* @__PURE__ */ new Date()
         }).where(
-          (0, import_drizzle_orm120.and)(
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.playlistId, playlistId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.platform, platform)
+          (0, import_drizzle_orm121.and)(
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.playlistId, playlistId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.platform, platform)
           )
         );
         logger2.info(`Tracked pitch for playlist ${playlistId}: ${pitchData.status}`);
       }
       async getPlaylistAttributions(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId)];
+        const conditions = [(0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId)];
         if (options.platform) {
-          conditions.push((0, import_drizzle_orm120.eq)(playlistAttributions.platform, options.platform));
+          conditions.push((0, import_drizzle_orm121.eq)(playlistAttributions.platform, options.platform));
         }
         if (options.playlistType) {
-          conditions.push((0, import_drizzle_orm120.eq)(playlistAttributions.playlistType, options.playlistType));
+          conditions.push((0, import_drizzle_orm121.eq)(playlistAttributions.playlistType, options.playlistType));
         }
         if (options.trackId) {
-          conditions.push((0, import_drizzle_orm120.eq)(playlistAttributions.trackId, options.trackId));
+          conditions.push((0, import_drizzle_orm121.eq)(playlistAttributions.trackId, options.trackId));
         }
         if (options.activeOnly) {
-          conditions.push((0, import_drizzle_orm120.eq)(playlistAttributions.isActive, true));
+          conditions.push((0, import_drizzle_orm121.eq)(playlistAttributions.isActive, true));
         }
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm120.gte)(playlistAttributions.addedDate, options.startDate));
+          conditions.push((0, import_drizzle_orm121.gte)(playlistAttributions.addedDate, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm120.lte)(playlistAttributions.addedDate, options.endDate));
+          conditions.push((0, import_drizzle_orm121.lte)(playlistAttributions.addedDate, options.endDate));
         }
-        return db.select().from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).orderBy((0, import_drizzle_orm120.desc)(playlistAttributions.streams));
+        return db.select().from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).orderBy((0, import_drizzle_orm121.desc)(playlistAttributions.streams));
       }
       async getPlaylistPerformanceSummary(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId)];
+        const conditions = [(0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId)];
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm120.gte)(playlistAttributions.addedDate, options.startDate));
+          conditions.push((0, import_drizzle_orm121.gte)(playlistAttributions.addedDate, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm120.lte)(playlistAttributions.addedDate, options.endDate));
+          conditions.push((0, import_drizzle_orm121.lte)(playlistAttributions.addedDate, options.endDate));
         }
         const [totals] = await db.select({
-          totalPlaylists: import_drizzle_orm120.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
-          totalStreams: import_drizzle_orm120.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-          totalRevenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions));
+          totalPlaylists: import_drizzle_orm121.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
+          totalStreams: import_drizzle_orm121.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
+          totalRevenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions));
         const byType = await db.select({
           type: playlistAttributions.playlistType,
-          count: import_drizzle_orm120.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
-          streams: import_drizzle_orm120.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-          revenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(playlistAttributions.playlistType);
+          count: import_drizzle_orm121.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
+          streams: import_drizzle_orm121.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
+          revenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).groupBy(playlistAttributions.playlistType);
         const byPlatform = await db.select({
           platform: playlistAttributions.platform,
-          count: import_drizzle_orm120.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
-          streams: import_drizzle_orm120.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-          revenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(playlistAttributions.platform);
-        const topPlaylistsRaw = await db.select().from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).orderBy((0, import_drizzle_orm120.desc)(playlistAttributions.streams)).limit(10);
-        const recentAddsRaw = await db.select().from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions, (0, import_drizzle_orm120.eq)(playlistAttributions.isActive, true))).orderBy((0, import_drizzle_orm120.desc)(playlistAttributions.addedDate)).limit(5);
+          count: import_drizzle_orm121.sql`COUNT(DISTINCT ${playlistAttributions.playlistId})`,
+          streams: import_drizzle_orm121.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
+          revenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).groupBy(playlistAttributions.platform);
+        const topPlaylistsRaw = await db.select().from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).orderBy((0, import_drizzle_orm121.desc)(playlistAttributions.streams)).limit(10);
+        const recentAddsRaw = await db.select().from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions, (0, import_drizzle_orm121.eq)(playlistAttributions.isActive, true))).orderBy((0, import_drizzle_orm121.desc)(playlistAttributions.addedDate)).limit(5);
         const pitchStats = await db.select({
           status: playlistAttributions.pitchStatus,
-          count: import_drizzle_orm120.sql`COUNT(*)`
+          count: import_drizzle_orm121.sql`COUNT(*)`
         }).from(playlistAttributions).where(
-          (0, import_drizzle_orm120.and)(
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            import_drizzle_orm120.sql`${playlistAttributions.pitchStatus} IS NOT NULL`
+          (0, import_drizzle_orm121.and)(
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            import_drizzle_orm121.sql`${playlistAttributions.pitchStatus} IS NOT NULL`
           )
         ).groupBy(playlistAttributions.pitchStatus);
         const pitchMetrics = {
@@ -177967,30 +177981,30 @@ var init_playlistAttributionService = __esm({
         return history;
       }
       async getPlaylistRevenueAttribution(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId)];
+        const conditions = [(0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId)];
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm120.gte)(playlistAttributions.addedDate, options.startDate));
+          conditions.push((0, import_drizzle_orm121.gte)(playlistAttributions.addedDate, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm120.lte)(playlistAttributions.addedDate, options.endDate));
+          conditions.push((0, import_drizzle_orm121.lte)(playlistAttributions.addedDate, options.endDate));
         }
         const [totals] = await db.select({
-          totalRevenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions));
+          totalRevenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions));
         const totalRevenue = Number(totals?.totalRevenue || 0);
         const byTypeRaw = await db.select({
           type: playlistAttributions.playlistType,
-          revenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(playlistAttributions.playlistType);
+          revenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).groupBy(playlistAttributions.playlistType);
         const byPlatformRaw = await db.select({
           platform: playlistAttributions.platform,
-          revenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).groupBy(playlistAttributions.platform);
+          revenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).groupBy(playlistAttributions.platform);
         const topGenerators = await db.select({
           playlistName: playlistAttributions.playlistName,
           platform: playlistAttributions.platform,
-          revenue: import_drizzle_orm120.sql`COALESCE(${playlistAttributions.revenue}, 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).orderBy((0, import_drizzle_orm120.desc)(playlistAttributions.revenue)).limit(10);
+          revenue: import_drizzle_orm121.sql`COALESCE(${playlistAttributions.revenue}, 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).orderBy((0, import_drizzle_orm121.desc)(playlistAttributions.revenue)).limit(10);
         return {
           totalRevenue,
           byPlaylistType: byTypeRaw.map((t) => ({
@@ -178012,16 +178026,16 @@ var init_playlistAttributionService = __esm({
       }
       async getEditorialPlaylistMetrics(userId) {
         const conditions = [
-          (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-          (0, import_drizzle_orm120.eq)(playlistAttributions.playlistType, "editorial")
+          (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+          (0, import_drizzle_orm121.eq)(playlistAttributions.playlistType, "editorial")
         ];
         const [totals] = await db.select({
-          totalPlacements: import_drizzle_orm120.sql`COUNT(*)`,
-          activePlacements: import_drizzle_orm120.sql`COUNT(*) FILTER (WHERE ${playlistAttributions.isActive} = true)`,
-          totalStreams: import_drizzle_orm120.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
-          totalRevenue: import_drizzle_orm120.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
-        }).from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions));
-        const topPlaylists = await db.select().from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions)).orderBy((0, import_drizzle_orm120.desc)(playlistAttributions.streams)).limit(5);
+          totalPlacements: import_drizzle_orm121.sql`COUNT(*)`,
+          activePlacements: import_drizzle_orm121.sql`COUNT(*) FILTER (WHERE ${playlistAttributions.isActive} = true)`,
+          totalStreams: import_drizzle_orm121.sql`COALESCE(SUM(${playlistAttributions.streams}), 0)`,
+          totalRevenue: import_drizzle_orm121.sql`COALESCE(SUM(CAST(${playlistAttributions.revenue} AS real)), 0)`
+        }).from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions));
+        const topPlaylists = await db.select().from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions)).orderBy((0, import_drizzle_orm121.desc)(playlistAttributions.streams)).limit(5);
         return {
           totalEditorialPlacements: Number(totals?.totalPlacements || 0),
           currentActivePlacements: Number(totals?.activePlacements || 0),
@@ -178047,34 +178061,34 @@ var init_playlistAttributionService = __esm({
       async syncPlaylistsFromPlatform(userId, platform, trackId) {
         try {
           const conditions = [
-            (0, import_drizzle_orm120.eq)(playlistAttributions.userId, userId),
-            (0, import_drizzle_orm120.eq)(playlistAttributions.platform, platform)
+            (0, import_drizzle_orm121.eq)(playlistAttributions.userId, userId),
+            (0, import_drizzle_orm121.eq)(playlistAttributions.platform, platform)
           ];
           if (trackId) {
-            conditions.push((0, import_drizzle_orm120.eq)(playlistAttributions.trackId, trackId));
+            conditions.push((0, import_drizzle_orm121.eq)(playlistAttributions.trackId, trackId));
           }
-          const existingPlaylists = await db.select().from(playlistAttributions).where((0, import_drizzle_orm120.and)(...conditions));
+          const existingPlaylists = await db.select().from(playlistAttributions).where((0, import_drizzle_orm121.and)(...conditions));
           if (existingPlaylists.length > 0) {
             logger2.info(`Found ${existingPlaylists.length} existing playlists for ${platform}`);
             const updatedPlaylists = [];
             for (const playlist of existingPlaylists) {
               const analyticsConditions = [
-                (0, import_drizzle_orm120.eq)(dspAnalytics.userId, userId),
-                (0, import_drizzle_orm120.eq)(dspAnalytics.platform, platform)
+                (0, import_drizzle_orm121.eq)(dspAnalytics.userId, userId),
+                (0, import_drizzle_orm121.eq)(dspAnalytics.platform, platform)
               ];
               if (playlist.trackId) {
-                analyticsConditions.push((0, import_drizzle_orm120.eq)(dspAnalytics.releaseId, playlist.trackId));
+                analyticsConditions.push((0, import_drizzle_orm121.eq)(dspAnalytics.releaseId, playlist.trackId));
               }
               const analytics3 = await db.select({
-                streams: import_drizzle_orm120.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
-                listeners: import_drizzle_orm120.sql`COALESCE(COUNT(DISTINCT ${dspAnalytics.date}), 0)`
-              }).from(dspAnalytics).where((0, import_drizzle_orm120.and)(...analyticsConditions));
+                streams: import_drizzle_orm121.sql`COALESCE(SUM(${dspAnalytics.streams}), 0)`,
+                listeners: import_drizzle_orm121.sql`COALESCE(COUNT(DISTINCT ${dspAnalytics.date}), 0)`
+              }).from(dspAnalytics).where((0, import_drizzle_orm121.and)(...analyticsConditions));
               const newStreams = Number(analytics3[0]?.streams) || 0;
               if (newStreams > 0 && newStreams !== playlist.streams) {
                 const [updated] = await db.update(playlistAttributions).set({
                   streams: newStreams,
                   updatedAt: /* @__PURE__ */ new Date()
-                }).where((0, import_drizzle_orm120.eq)(playlistAttributions.id, playlist.id)).returning();
+                }).where((0, import_drizzle_orm121.eq)(playlistAttributions.id, playlist.id)).returning();
                 updatedPlaylists.push(updated || playlist);
               } else {
                 updatedPlaylists.push(playlist);
@@ -178095,13 +178109,13 @@ var init_playlistAttributionService = __esm({
 });
 
 // server/services/cohortAnalyticsService.ts
-var import_drizzle_orm121, CohortAnalyticsService, cohortAnalyticsService;
+var import_drizzle_orm122, CohortAnalyticsService, cohortAnalyticsService;
 var init_cohortAnalyticsService = __esm({
   "server/services/cohortAnalyticsService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm121 = require("drizzle-orm");
+    import_drizzle_orm122 = require("drizzle-orm");
     init_logger();
     CohortAnalyticsService = class {
       async createCohort(cohortData) {
@@ -178113,26 +178127,26 @@ var init_cohortAnalyticsService = __esm({
         await db.update(listenerCohorts).set({
           ...retentionData,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm121.eq)(listenerCohorts.id, cohortId));
+        }).where((0, import_drizzle_orm122.eq)(listenerCohorts.id, cohortId));
       }
       async getCohorts(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm121.eq)(listenerCohorts.userId, userId)];
+        const conditions = [(0, import_drizzle_orm122.eq)(listenerCohorts.userId, userId)];
         if (options.platform) {
-          conditions.push((0, import_drizzle_orm121.eq)(listenerCohorts.platform, options.platform));
+          conditions.push((0, import_drizzle_orm122.eq)(listenerCohorts.platform, options.platform));
         }
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm121.gte)(listenerCohorts.cohortDate, options.startDate));
+          conditions.push((0, import_drizzle_orm122.gte)(listenerCohorts.cohortDate, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm121.lte)(listenerCohorts.cohortDate, options.endDate));
+          conditions.push((0, import_drizzle_orm122.lte)(listenerCohorts.cohortDate, options.endDate));
         }
-        return db.select().from(listenerCohorts).where((0, import_drizzle_orm121.and)(...conditions)).orderBy((0, import_drizzle_orm121.desc)(listenerCohorts.cohortDate)).limit(options.limit || 100);
+        return db.select().from(listenerCohorts).where((0, import_drizzle_orm122.and)(...conditions)).orderBy((0, import_drizzle_orm122.desc)(listenerCohorts.cohortDate)).limit(options.limit || 100);
       }
       async getCohortAnalysis(userId, cohortDate) {
         const [cohort] = await db.select().from(listenerCohorts).where(
-          (0, import_drizzle_orm121.and)(
-            (0, import_drizzle_orm121.eq)(listenerCohorts.userId, userId),
-            (0, import_drizzle_orm121.eq)(listenerCohorts.cohortDate, cohortDate)
+          (0, import_drizzle_orm122.and)(
+            (0, import_drizzle_orm122.eq)(listenerCohorts.userId, userId),
+            (0, import_drizzle_orm122.eq)(listenerCohorts.cohortDate, cohortDate)
           )
         ).limit(1);
         if (!cohort) return null;
@@ -178355,14 +178369,14 @@ var init_cohortAnalyticsService = __esm({
           const cohortEnd = new Date(cohortDate);
           cohortEnd.setMonth(cohortEnd.getMonth() + 1);
           const [monthData] = await db.select({
-            totalStreams: import_drizzle_orm121.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-            totalListeners: import_drizzle_orm121.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
-            totalRevenue: import_drizzle_orm121.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+            totalStreams: import_drizzle_orm122.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+            totalListeners: import_drizzle_orm122.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`,
+            totalRevenue: import_drizzle_orm122.sql`COALESCE(SUM(${analytics.revenue}), 0)`
           }).from(analytics).where(
-            (0, import_drizzle_orm121.and)(
-              (0, import_drizzle_orm121.eq)(analytics.userId, userId),
-              (0, import_drizzle_orm121.gte)(analytics.date, cohortDate),
-              (0, import_drizzle_orm121.lt)(analytics.date, cohortEnd)
+            (0, import_drizzle_orm122.and)(
+              (0, import_drizzle_orm122.eq)(analytics.userId, userId),
+              (0, import_drizzle_orm122.gte)(analytics.date, cohortDate),
+              (0, import_drizzle_orm122.lt)(analytics.date, cohortEnd)
             )
           );
           const initialSize = Math.max(1, Number(monthData?.totalListeners ?? 0));
@@ -178464,13 +178478,13 @@ var init_cohortAnalyticsService = __esm({
 });
 
 // server/services/revenueForecaster.ts
-var import_drizzle_orm122, RevenueForecaster, revenueForecaster;
+var import_drizzle_orm123, RevenueForecaster, revenueForecaster;
 var init_revenueForecaster = __esm({
   "server/services/revenueForecaster.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm122 = require("drizzle-orm");
+    import_drizzle_orm123 = require("drizzle-orm");
     init_logger();
     RevenueForecaster = class {
       constructor() {
@@ -178527,21 +178541,21 @@ var init_revenueForecaster = __esm({
         return forecasts;
       }
       async getStoredForecasts(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm122.eq)(revenueForecasts.userId, userId)];
+        const conditions = [(0, import_drizzle_orm123.eq)(revenueForecasts.userId, userId)];
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm122.gte)(revenueForecasts.forecastDate, options.startDate));
+          conditions.push((0, import_drizzle_orm123.gte)(revenueForecasts.forecastDate, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm122.lte)(revenueForecasts.forecastDate, options.endDate));
+          conditions.push((0, import_drizzle_orm123.lte)(revenueForecasts.forecastDate, options.endDate));
         }
-        return db.select().from(revenueForecasts).where((0, import_drizzle_orm122.and)(...conditions)).orderBy((0, import_drizzle_orm122.desc)(revenueForecasts.forecastDate)).limit(100);
+        return db.select().from(revenueForecasts).where((0, import_drizzle_orm123.and)(...conditions)).orderBy((0, import_drizzle_orm123.desc)(revenueForecasts.forecastDate)).limit(100);
       }
       async getForecastAccuracy(userId, options = {}) {
         const conditions = [
-          (0, import_drizzle_orm122.eq)(revenueForecasts.userId, userId),
-          import_drizzle_orm122.sql`${revenueForecasts.actualRevenue} IS NOT NULL`
+          (0, import_drizzle_orm123.eq)(revenueForecasts.userId, userId),
+          import_drizzle_orm123.sql`${revenueForecasts.actualRevenue} IS NOT NULL`
         ];
-        const forecasts = await db.select().from(revenueForecasts).where((0, import_drizzle_orm122.and)(...conditions)).orderBy((0, import_drizzle_orm122.asc)(revenueForecasts.forecastDate)).limit(52);
+        const forecasts = await db.select().from(revenueForecasts).where((0, import_drizzle_orm123.and)(...conditions)).orderBy((0, import_drizzle_orm123.asc)(revenueForecasts.forecastDate)).limit(52);
         if (forecasts.length === 0) {
           return {
             overallAccuracy: 85,
@@ -178613,20 +178627,20 @@ var init_revenueForecaster = __esm({
         };
       }
       async getRevenueBreakdown(userId, options = {}) {
-        const conditions = [(0, import_drizzle_orm122.eq)(dspAnalytics.userId, userId)];
+        const conditions = [(0, import_drizzle_orm123.eq)(dspAnalytics.userId, userId)];
         if (options.startDate) {
-          conditions.push((0, import_drizzle_orm122.gte)(dspAnalytics.date, options.startDate));
+          conditions.push((0, import_drizzle_orm123.gte)(dspAnalytics.date, options.startDate));
         }
         if (options.endDate) {
-          conditions.push((0, import_drizzle_orm122.lte)(dspAnalytics.date, options.endDate));
+          conditions.push((0, import_drizzle_orm123.lte)(dspAnalytics.date, options.endDate));
         }
         const [totals] = await db.select({
-          total: import_drizzle_orm122.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm122.and)(...conditions));
+          total: import_drizzle_orm123.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm123.and)(...conditions));
         const byPlatform = await db.select({
           platform: dspAnalytics.platform,
-          revenue: import_drizzle_orm122.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm122.and)(...conditions)).groupBy(dspAnalytics.platform);
+          revenue: import_drizzle_orm123.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm123.and)(...conditions)).groupBy(dspAnalytics.platform);
         const total = Number(totals?.total || 0);
         const platformBreakdown = byPlatform.map((p) => ({
           platform: p.platform,
@@ -178695,16 +178709,16 @@ var init_revenueForecaster = __esm({
         const startDate = /* @__PURE__ */ new Date();
         startDate.setDate(startDate.getDate() - days);
         const conditions = [
-          (0, import_drizzle_orm122.eq)(dspAnalytics.userId, userId),
-          (0, import_drizzle_orm122.gte)(dspAnalytics.date, startDate)
+          (0, import_drizzle_orm123.eq)(dspAnalytics.userId, userId),
+          (0, import_drizzle_orm123.gte)(dspAnalytics.date, startDate)
         ];
         if (options.platform) {
-          conditions.push((0, import_drizzle_orm122.eq)(dspAnalytics.platform, options.platform));
+          conditions.push((0, import_drizzle_orm123.eq)(dspAnalytics.platform, options.platform));
         }
         const data = await db.select({
           date: dspAnalytics.date,
-          revenue: import_drizzle_orm122.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
-        }).from(dspAnalytics).where((0, import_drizzle_orm122.and)(...conditions)).groupBy(dspAnalytics.date).orderBy((0, import_drizzle_orm122.asc)(dspAnalytics.date));
+          revenue: import_drizzle_orm123.sql`COALESCE(SUM(${dspAnalytics.revenue}), 0)`
+        }).from(dspAnalytics).where((0, import_drizzle_orm123.and)(...conditions)).groupBy(dspAnalytics.date).orderBy((0, import_drizzle_orm123.asc)(dspAnalytics.date));
         if (data.length < 7) {
           logger2.warn(`Insufficient historical data for user ${userId}: ${data.length} days found, need at least 7`);
           const filledData = [];
@@ -179258,13 +179272,13 @@ var init_certifiedAnalytics = __esm({
 });
 
 // server/services/analyticsAlertService.ts
-var import_crypto93, import_drizzle_orm123, AnalyticsAlertService, analyticsAlertService;
+var import_crypto93, import_drizzle_orm124, AnalyticsAlertService, analyticsAlertService;
 var init_analyticsAlertService = __esm({
   "server/services/analyticsAlertService.ts"() {
     "use strict";
     init_db();
     import_crypto93 = require("crypto");
-    import_drizzle_orm123 = require("drizzle-orm");
+    import_drizzle_orm124 = require("drizzle-orm");
     init_schema();
     init_logger();
     AnalyticsAlertService = class {
@@ -179290,10 +179304,10 @@ var init_analyticsAlertService = __esm({
           const halfPeriod = new Date(period.start.getTime() + (period.end.getTime() - period.start.getTime()) / 2);
           const [currentData, previousData] = await Promise.all([
             db.select().from(dspAnalytics).where(
-              (0, import_drizzle_orm123.and)((0, import_drizzle_orm123.eq)(dspAnalytics.userId, userId), (0, import_drizzle_orm123.gte)(dspAnalytics.date, halfPeriod), (0, import_drizzle_orm123.lte)(dspAnalytics.date, period.end))
+              (0, import_drizzle_orm124.and)((0, import_drizzle_orm124.eq)(dspAnalytics.userId, userId), (0, import_drizzle_orm124.gte)(dspAnalytics.date, halfPeriod), (0, import_drizzle_orm124.lte)(dspAnalytics.date, period.end))
             ),
             db.select().from(dspAnalytics).where(
-              (0, import_drizzle_orm123.and)((0, import_drizzle_orm123.eq)(dspAnalytics.userId, userId), (0, import_drizzle_orm123.gte)(dspAnalytics.date, period.start), (0, import_drizzle_orm123.lte)(dspAnalytics.date, halfPeriod))
+              (0, import_drizzle_orm124.and)((0, import_drizzle_orm124.eq)(dspAnalytics.userId, userId), (0, import_drizzle_orm124.gte)(dspAnalytics.date, period.start), (0, import_drizzle_orm124.lte)(dspAnalytics.date, halfPeriod))
             )
           ]);
           if (!currentData || currentData.length === 0) {
@@ -179515,12 +179529,12 @@ var init_analyticsAlertService = __esm({
           const now = /* @__PURE__ */ new Date();
           const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
           const analyticsData = await db.select().from(dspAnalytics).where(
-            (0, import_drizzle_orm123.and)(
-              (0, import_drizzle_orm123.eq)(dspAnalytics.userId, userId),
-              (0, import_drizzle_orm123.gte)(dspAnalytics.date, thirtyDaysAgo),
-              (0, import_drizzle_orm123.lte)(dspAnalytics.date, now)
+            (0, import_drizzle_orm124.and)(
+              (0, import_drizzle_orm124.eq)(dspAnalytics.userId, userId),
+              (0, import_drizzle_orm124.gte)(dspAnalytics.date, thirtyDaysAgo),
+              (0, import_drizzle_orm124.lte)(dspAnalytics.date, now)
             )
-          ).orderBy((0, import_drizzle_orm123.desc)(dspAnalytics.date));
+          ).orderBy((0, import_drizzle_orm124.desc)(dspAnalytics.date));
           const metrics = platforms.map((platform) => {
             const platformData = analyticsData.filter((d) => d.platform === platform);
             const totalStreams = platformData.reduce((sum11, d) => sum11 + (d.streams || 0), 0);
@@ -179972,13 +179986,13 @@ function buildDunningEmailHtml(firstName, step, updateCardUrl) {
     </html>
   `.trim();
 }
-var import_drizzle_orm124, DUNNING_STEPS, DunningService, dunningService;
+var import_drizzle_orm125, DUNNING_STEPS, DunningService, dunningService;
 var init_dunningService = __esm({
   "server/services/dunningService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm124 = require("drizzle-orm");
+    import_drizzle_orm125 = require("drizzle-orm");
     init_logger();
     init_emailService();
     DUNNING_STEPS = [
@@ -179990,7 +180004,7 @@ var init_dunningService = __esm({
     DunningService = class {
       async startSequence(userId, invoiceId) {
         try {
-          const existing = await db.select().from(dunningState).where((0, import_drizzle_orm124.eq)(dunningState.stripeInvoiceId, invoiceId)).limit(1);
+          const existing = await db.select().from(dunningState).where((0, import_drizzle_orm125.eq)(dunningState.stripeInvoiceId, invoiceId)).limit(1);
           if (existing.length > 0) {
             logger2.info(`[Dunning] Sequence already started for invoice ${invoiceId}`);
             return;
@@ -180009,7 +180023,7 @@ var init_dunningService = __esm({
       }
       async resolveSequence(invoiceId, reason) {
         try {
-          await db.update(dunningState).set({ resolvedAt: /* @__PURE__ */ new Date(), resolvedReason: reason }).where((0, import_drizzle_orm124.eq)(dunningState.stripeInvoiceId, invoiceId));
+          await db.update(dunningState).set({ resolvedAt: /* @__PURE__ */ new Date(), resolvedReason: reason }).where((0, import_drizzle_orm125.eq)(dunningState.stripeInvoiceId, invoiceId));
           logger2.info(`[Dunning] Resolved sequence for invoice ${invoiceId} (${reason})`);
         } catch (err) {
           logger2.warn({ err }, "[Dunning] Failed to resolve sequence:");
@@ -180026,16 +180040,16 @@ var init_dunningService = __esm({
         try {
           const now = /* @__PURE__ */ new Date();
           const pending = await db.select().from(dunningState).where(
-            (0, import_drizzle_orm124.and)(
-              (0, import_drizzle_orm124.isNull)(dunningState.resolvedAt),
-              (0, import_drizzle_orm124.lte)(dunningState.nextEmailAt, now)
+            (0, import_drizzle_orm125.and)(
+              (0, import_drizzle_orm125.isNull)(dunningState.resolvedAt),
+              (0, import_drizzle_orm125.lte)(dunningState.nextEmailAt, now)
             )
           ).limit(limit);
           let processed = 0;
           for (const record of pending) {
             const nextStep = record.currentStep + 1;
             if (nextStep >= DUNNING_STEPS.length) {
-              await db.update(dunningState).set({ resolvedAt: /* @__PURE__ */ new Date(), resolvedReason: "sequence_complete" }).where((0, import_drizzle_orm124.eq)(dunningState.id, record.id));
+              await db.update(dunningState).set({ resolvedAt: /* @__PURE__ */ new Date(), resolvedReason: "sequence_complete" }).where((0, import_drizzle_orm125.eq)(dunningState.id, record.id));
               processed++;
               continue;
             }
@@ -180043,7 +180057,7 @@ var init_dunningService = __esm({
             const nextStepConfig = DUNNING_STEPS[nextStep];
             const nextEmailAt = /* @__PURE__ */ new Date();
             nextEmailAt.setDate(nextEmailAt.getDate() + (nextStepConfig?.delayDays ?? 0));
-            await db.update(dunningState).set({ currentStep: nextStep, nextEmailAt, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm124.eq)(dunningState.id, record.id));
+            await db.update(dunningState).set({ currentStep: nextStep, nextEmailAt, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm125.eq)(dunningState.id, record.id));
             processed++;
           }
           return processed;
@@ -180055,7 +180069,7 @@ var init_dunningService = __esm({
       async sendStep(userId, invoiceId, step) {
         const stepConfig = DUNNING_STEPS[step];
         if (!stepConfig) return;
-        const userRows = await db.select({ email: users.email, firstName: users.firstName, subscriptionTier: users.subscriptionTier }).from(users).where((0, import_drizzle_orm124.eq)(users.id, userId)).limit(1);
+        const userRows = await db.select({ email: users.email, firstName: users.firstName, subscriptionTier: users.subscriptionTier }).from(users).where((0, import_drizzle_orm125.eq)(users.id, userId)).limit(1);
         if (!userRows.length || !userRows[0].email) return;
         const { email, firstName } = userRows[0];
         const displayName = firstName ?? email.split("@")[0];
@@ -180078,7 +180092,7 @@ var stripe_exports = {};
 __export(stripe_exports, {
   default: () => stripe_default
 });
-var import_express86, import_drizzle_orm125, router83, stripe_default;
+var import_express86, import_drizzle_orm126, router83, stripe_default;
 var init_stripe = __esm({
   "server/routes/webhooks/stripe.ts"() {
     "use strict";
@@ -180088,7 +180102,7 @@ var init_stripe = __esm({
     init_auditLogger();
     init_db();
     init_schema();
-    import_drizzle_orm125 = require("drizzle-orm");
+    import_drizzle_orm126 = require("drizzle-orm");
     init_notificationService();
     init_dunningService();
     router83 = (0, import_express86.Router)();
@@ -180105,7 +180119,7 @@ var init_stripe = __esm({
       if (beatId && buyerId && sellerId) {
         try {
           const paymentRef = session2.payment_intent || session2.id;
-          const [existing] = await db.select({ id: orders.id }).from(orders).where((0, import_drizzle_orm125.eq)(orders.stripePaymentIntentId, paymentRef)).limit(1);
+          const [existing] = await db.select({ id: orders.id }).from(orders).where((0, import_drizzle_orm126.eq)(orders.stripePaymentIntentId, paymentRef)).limit(1);
           let parsedSnapshot = null;
           try {
             if (snapshotStr) parsedSnapshot = JSON.parse(snapshotStr);
@@ -180135,10 +180149,10 @@ var init_stripe = __esm({
       const { storefrontId, promotionId } = session2.metadata || {};
       if (storefrontId) {
         try {
-          await db.update(storefrontOrders).set({ status: "completed" }).where((0, import_drizzle_orm125.eq)(storefrontOrders.stripeSessionId, session2.id));
+          await db.update(storefrontOrders).set({ status: "completed" }).where((0, import_drizzle_orm126.eq)(storefrontOrders.stripeSessionId, session2.id));
           logger2.info(`[Stripe] Storefront orders marked completed for session ${session2.id}`);
           if (promotionId) {
-            await db.update(bogoPromotions).set({ redemptionCount: import_drizzle_orm125.sql`${bogoPromotions.redemptionCount} + 1` }).where((0, import_drizzle_orm125.eq)(bogoPromotions.id, promotionId));
+            await db.update(bogoPromotions).set({ redemptionCount: import_drizzle_orm126.sql`${bogoPromotions.redemptionCount} + 1` }).where((0, import_drizzle_orm126.eq)(bogoPromotions.id, promotionId));
             logger2.info(`[Stripe] BOGO promotion ${promotionId} redemption count incremented`);
           }
         } catch (storefrontError) {
@@ -180150,10 +180164,10 @@ var init_stripe = __esm({
         try {
           const subscriptionId = session2.subscription;
           const existing = await db.select({ id: customerMemberships.id }).from(customerMemberships).where(
-            (0, import_drizzle_orm125.and)(
-              (0, import_drizzle_orm125.eq)(customerMemberships.customerId, memberCustomerId),
-              (0, import_drizzle_orm125.eq)(customerMemberships.tierId, memberTierId),
-              (0, import_drizzle_orm125.eq)(customerMemberships.status, "active")
+            (0, import_drizzle_orm126.and)(
+              (0, import_drizzle_orm126.eq)(customerMemberships.customerId, memberCustomerId),
+              (0, import_drizzle_orm126.eq)(customerMemberships.tierId, memberTierId),
+              (0, import_drizzle_orm126.eq)(customerMemberships.status, "active")
             )
           ).limit(1);
           if (!existing[0]) {
@@ -180186,7 +180200,7 @@ var init_stripe = __esm({
           subscriptionStatus: subscription.status,
           subscriptionEndsAt: endsAt,
           stripeSubscriptionId: subscription.id
-        }).where((0, import_drizzle_orm125.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
+        }).where((0, import_drizzle_orm126.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
         if (updated.length > 0) {
           logger2.info(`[Stripe] User ${updated[0].id} subscription created: tier=${tier}, status=${subscription.status}`);
         } else {
@@ -180209,7 +180223,7 @@ var init_stripe = __esm({
           subscriptionStatus: subscription.status,
           subscriptionEndsAt: endsAt,
           stripeSubscriptionId: subscription.id
-        }).where((0, import_drizzle_orm125.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
+        }).where((0, import_drizzle_orm126.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
         if (updated.length > 0) {
           logger2.info(`[Stripe] User ${updated[0].id} subscription updated: tier=${tier}, status=${subscription.status}`);
           const previousTier = subscription.metadata?.previousPlanId;
@@ -180239,7 +180253,7 @@ var init_stripe = __esm({
           subscriptionTier: "free",
           subscriptionStatus: "canceled",
           subscriptionEndsAt: subscription.ended_at ? new Date(subscription.ended_at * 1e3) : /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm125.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
+        }).where((0, import_drizzle_orm126.eq)(users.stripeCustomerId, customerId)).returning({ id: users.id });
         if (updated.length > 0) {
           logger2.info(`[Stripe] User ${updated[0].id} subscription canceled, downgraded to free`);
         } else {
@@ -180279,7 +180293,7 @@ var init_stripe = __esm({
       try {
         const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
         if (customerId) {
-          const found = await db.select({ id: users.id, email: users.email }).from(users).where((0, import_drizzle_orm125.eq)(users.stripeCustomerId, customerId)).limit(1);
+          const found = await db.select({ id: users.id, email: users.email }).from(users).where((0, import_drizzle_orm126.eq)(users.stripeCustomerId, customerId)).limit(1);
           if (found.length > 0) {
             const amount = invoice.amount_due / 100;
             const reason = invoice.last_payment_error?.message;
@@ -180306,7 +180320,7 @@ var init_stripe = __esm({
         return { success: true, message: "Payment intent succeeded (no user context)" };
       }
       try {
-        const [existingOrder] = await db.select({ id: orders.id }).from(orders).where((0, import_drizzle_orm125.eq)(orders.stripePaymentIntentId, paymentIntent.id)).limit(1);
+        const [existingOrder] = await db.select({ id: orders.id }).from(orders).where((0, import_drizzle_orm126.eq)(orders.stripePaymentIntentId, paymentIntent.id)).limit(1);
         if (!existingOrder) {
           logger2.warn(`[Stripe] payment_intent.succeeded: no order found for ${paymentIntent.id} \u2014 may have been handled via checkout.session.completed or subscription event`);
         } else {
@@ -184975,14 +184989,14 @@ var seo_exports = {};
 __export(seo_exports, {
   default: () => seo_default
 });
-var import_express91, import_drizzle_orm126, router88, SITE_URL, seo_default;
+var import_express91, import_drizzle_orm127, router88, SITE_URL, seo_default;
 var init_seo = __esm({
   "server/routes/seo.ts"() {
     "use strict";
     import_express91 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm126 = require("drizzle-orm");
+    import_drizzle_orm127 = require("drizzle-orm");
     init_logger();
     router88 = (0, import_express91.Router)();
     SITE_URL = "https://maxbooster.replit.app";
@@ -184997,7 +185011,7 @@ var init_seo = __esm({
         ];
         let beatUrls = "";
         try {
-          const beats2 = await db.select({ id: listings.id, updatedAt: listings.updatedAt }).from(listings).where((0, import_drizzle_orm126.eq)(listings.isPublished, true)).orderBy((0, import_drizzle_orm126.desc)(listings.updatedAt)).limit(500);
+          const beats2 = await db.select({ id: listings.id, updatedAt: listings.updatedAt }).from(listings).where((0, import_drizzle_orm127.eq)(listings.isPublished, true)).orderBy((0, import_drizzle_orm127.desc)(listings.updatedAt)).limit(500);
           beatUrls = beats2.map(
             (b) => `  <url>
     <loc>${baseUrl}/marketplace/beat/${b.id}</loc>
@@ -185330,14 +185344,14 @@ __export(security_exports, {
   default: () => security_default,
   userAlertsRouter: () => userAlertsRouter
 });
-var import_express93, import_drizzle_orm127, router90, requireAdmin13, processStartTime, userAlertsRouter, security_default;
+var import_express93, import_drizzle_orm128, router90, requireAdmin13, processStartTime, userAlertsRouter, security_default;
 var init_security = __esm({
   "server/routes/security.ts"() {
     "use strict";
     import_express93 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm127 = require("drizzle-orm");
+    import_drizzle_orm128 = require("drizzle-orm");
     init_logger();
     router90 = (0, import_express93.Router)();
     requireAdmin13 = (req, res, next) => {
@@ -185364,32 +185378,32 @@ var init_security = __esm({
           rateLimitThreatsResult,
           totalUsersResult
         ] = await Promise.all([
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(sessions).where(
-            (0, import_drizzle_orm127.and)(
-              (0, import_drizzle_orm127.gte)(sessions.lastActivity, oneDayAgo),
-              (0, import_drizzle_orm127.gte)(sessions.expiresAt, now)
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(sessions).where(
+            (0, import_drizzle_orm128.and)(
+              (0, import_drizzle_orm128.gte)(sessions.lastActivity, oneDayAgo),
+              (0, import_drizzle_orm128.gte)(sessions.expiresAt, now)
             )
           ),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where((0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneDayAgo)),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where(
-            (0, import_drizzle_orm127.and)(
-              (0, import_drizzle_orm127.eq)(securityThreats.status, "blocked"),
-              (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneDayAgo)
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where((0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneDayAgo)),
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where(
+            (0, import_drizzle_orm128.and)(
+              (0, import_drizzle_orm128.eq)(securityThreats.status, "blocked"),
+              (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneDayAgo)
             )
           ),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where(
-            (0, import_drizzle_orm127.and)(
-              (0, import_drizzle_orm127.eq)(securityThreats.severity, "medium"),
-              (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneDayAgo)
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where(
+            (0, import_drizzle_orm128.and)(
+              (0, import_drizzle_orm128.eq)(securityThreats.severity, "medium"),
+              (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneDayAgo)
             )
           ),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where(
-            (0, import_drizzle_orm127.and)(
-              (0, import_drizzle_orm127.eq)(securityThreats.threatType, "rate_limit"),
-              (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneDayAgo)
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where(
+            (0, import_drizzle_orm128.and)(
+              (0, import_drizzle_orm128.eq)(securityThreats.threatType, "rate_limit"),
+              (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneDayAgo)
             )
           ),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(users)
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(users)
         ]);
         const activeSessions = activeSessionsResult[0]?.count || 0;
         const totalThreats = totalThreatsResult[0]?.count || 0;
@@ -185397,10 +185411,10 @@ var init_security = __esm({
         const suspiciousActivity = suspiciousActivityResult[0]?.count || 0;
         const rateLimit7 = rateLimitThreatsResult[0]?.count || 0;
         const totalUsers = totalUsersResult[0]?.count || 0;
-        const failedLogins = await db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where(
-          (0, import_drizzle_orm127.and)(
-            (0, import_drizzle_orm127.eq)(securityThreats.threatType, "failed_login"),
-            (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneDayAgo)
+        const failedLogins = await db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where(
+          (0, import_drizzle_orm128.and)(
+            (0, import_drizzle_orm128.eq)(securityThreats.threatType, "failed_login"),
+            (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneDayAgo)
           )
         );
         const failedLoginCount = failedLogins[0]?.count || 0;
@@ -185452,12 +185466,12 @@ var init_security = __esm({
           status: securityThreats.status,
           indicators: securityThreats.indicators,
           metadata: securityThreats.metadata
-        }).from(securityThreats).where((0, import_drizzle_orm127.gte)(securityThreats.detectedAt, sevenDaysAgo)).orderBy((0, import_drizzle_orm127.desc)(securityThreats.detectedAt)).limit(100);
+        }).from(securityThreats).where((0, import_drizzle_orm128.gte)(securityThreats.detectedAt, sevenDaysAgo)).orderBy((0, import_drizzle_orm128.desc)(securityThreats.detectedAt)).limit(100);
         const userIds = threats.map((t) => t.userId).filter(Boolean);
         const uniqueUserIds = [...new Set(userIds)];
         let userMap = {};
         if (uniqueUserIds.length > 0) {
-          const usersData = await db.select({ id: users.id, username: users.username, email: users.email }).from(users).where(import_drizzle_orm127.sql`${users.id} = ANY(${uniqueUserIds})`);
+          const usersData = await db.select({ id: users.id, username: users.username, email: users.email }).from(users).where(import_drizzle_orm128.sql`${users.id} = ANY(${uniqueUserIds})`);
           usersData.forEach((u) => {
             userMap[u.id] = u.username || u.email || "Unknown";
           });
@@ -185504,10 +185518,10 @@ var init_security = __esm({
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1e3);
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
         const [recentThreats, dailyThreats, recentSessions, dailySessions] = await Promise.all([
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where((0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneHourAgo)),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where((0, import_drizzle_orm127.gte)(securityThreats.detectedAt, twentyFourHoursAgo)),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(sessions).where((0, import_drizzle_orm127.gte)(sessions.createdAt, oneHourAgo)),
-          db.select({ count: (0, import_drizzle_orm127.count)() }).from(sessions).where((0, import_drizzle_orm127.gte)(sessions.createdAt, twentyFourHoursAgo))
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where((0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneHourAgo)),
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where((0, import_drizzle_orm128.gte)(securityThreats.detectedAt, twentyFourHoursAgo)),
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(sessions).where((0, import_drizzle_orm128.gte)(sessions.createdAt, oneHourAgo)),
+          db.select({ count: (0, import_drizzle_orm128.count)() }).from(sessions).where((0, import_drizzle_orm128.gte)(sessions.createdAt, twentyFourHoursAgo))
         ]);
         const recentThreatCount = recentThreats[0]?.count || 0;
         const dailyThreatCount = dailyThreats[0]?.count || 0;
@@ -185538,10 +185552,10 @@ var init_security = __esm({
             description: `Session creation ${Math.round(recentSessionCount / Math.max(1, avgHourlySessions))}x above average`
           });
         }
-        const failedLoginThreats = await db.select({ count: (0, import_drizzle_orm127.count)() }).from(securityThreats).where(
-          (0, import_drizzle_orm127.and)(
-            (0, import_drizzle_orm127.eq)(securityThreats.threatType, "failed_login"),
-            (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, oneHourAgo)
+        const failedLoginThreats = await db.select({ count: (0, import_drizzle_orm128.count)() }).from(securityThreats).where(
+          (0, import_drizzle_orm128.and)(
+            (0, import_drizzle_orm128.eq)(securityThreats.threatType, "failed_login"),
+            (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, oneHourAgo)
           )
         );
         const failedLogins = failedLoginThreats[0]?.count || 0;
@@ -185568,7 +185582,7 @@ var init_security = __esm({
         const [threatStats] = await Promise.all([
           db.select({
             severity: securityThreats.severity,
-            count: (0, import_drizzle_orm127.count)()
+            count: (0, import_drizzle_orm128.count)()
           }).from(securityThreats).groupBy(securityThreats.severity)
         ]);
         const severityCounts = {};
@@ -185641,7 +185655,7 @@ var init_security = __esm({
       try {
         const limit = Math.min(parseInt(req.query.limit) || 50, 100);
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
-        const threats = await db.select().from(securityThreats).where((0, import_drizzle_orm127.gte)(securityThreats.detectedAt, sevenDaysAgo)).orderBy((0, import_drizzle_orm127.desc)(securityThreats.detectedAt)).limit(limit);
+        const threats = await db.select().from(securityThreats).where((0, import_drizzle_orm128.gte)(securityThreats.detectedAt, sevenDaysAgo)).orderBy((0, import_drizzle_orm128.desc)(securityThreats.detectedAt)).limit(limit);
         res.json({ threats });
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching threats:");
@@ -185657,11 +185671,11 @@ var init_security = __esm({
         const userId = req.user.id;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
         const userThreats = await db.select().from(securityThreats).where(
-          (0, import_drizzle_orm127.and)(
-            (0, import_drizzle_orm127.eq)(securityThreats.userId, userId),
-            (0, import_drizzle_orm127.gte)(securityThreats.detectedAt, sevenDaysAgo)
+          (0, import_drizzle_orm128.and)(
+            (0, import_drizzle_orm128.eq)(securityThreats.userId, userId),
+            (0, import_drizzle_orm128.gte)(securityThreats.detectedAt, sevenDaysAgo)
           )
-        ).orderBy((0, import_drizzle_orm127.desc)(securityThreats.detectedAt)).limit(50);
+        ).orderBy((0, import_drizzle_orm128.desc)(securityThreats.detectedAt)).limit(50);
         const alerts = userThreats.map((threat) => {
           const metadata = threat.metadata || {};
           const indicators = threat.indicators || {};
@@ -185795,9 +185809,9 @@ var init_security = __esm({
         const userId = req.user.id;
         const { alertId } = req.params;
         await db.update(securityThreats).set({ status: "resolved" }).where(
-          (0, import_drizzle_orm127.and)(
-            (0, import_drizzle_orm127.eq)(securityThreats.id, alertId),
-            (0, import_drizzle_orm127.eq)(securityThreats.userId, userId)
+          (0, import_drizzle_orm128.and)(
+            (0, import_drizzle_orm128.eq)(securityThreats.id, alertId),
+            (0, import_drizzle_orm128.eq)(securityThreats.userId, userId)
           )
         );
         res.json({ success: true, message: "Alert dismissed" });
@@ -185811,12 +185825,12 @@ var init_security = __esm({
 });
 
 // server/services/discoveryAlgorithmService.ts
-var import_drizzle_orm128, GENRE_LIST, MOOD_LIST, INTERACTION_WEIGHTS, LEARNING_RATES, GENRE_TRENDING_BOOST, DiscoveryAlgorithmService, discoveryAlgorithmService;
+var import_drizzle_orm129, GENRE_LIST, MOOD_LIST, INTERACTION_WEIGHTS, LEARNING_RATES, GENRE_TRENDING_BOOST, DiscoveryAlgorithmService, discoveryAlgorithmService;
 var init_discoveryAlgorithmService = __esm({
   "server/services/discoveryAlgorithmService.ts"() {
     "use strict";
     init_db();
-    import_drizzle_orm128 = require("drizzle-orm");
+    import_drizzle_orm129 = require("drizzle-orm");
     init_schema();
     init_logger();
     GENRE_LIST = [
@@ -185915,7 +185929,7 @@ var init_discoveryAlgorithmService = __esm({
     DiscoveryAlgorithmService = class {
       async getOrCreateTasteProfile(userId) {
         try {
-          const existing = await db.select().from(userTasteProfiles).where((0, import_drizzle_orm128.eq)(userTasteProfiles.userId, userId)).limit(1);
+          const existing = await db.select().from(userTasteProfiles).where((0, import_drizzle_orm129.eq)(userTasteProfiles.userId, userId)).limit(1);
           if (existing.length > 0) return existing[0];
           const defaultGenreScores = {};
           GENRE_LIST.forEach((g) => {
@@ -185963,7 +185977,7 @@ var init_discoveryAlgorithmService = __esm({
         try {
           const weight = INTERACTION_WEIGHTS[interactionType] ?? 0;
           if (weight === 0) return;
-          const beatData = await db.select().from(listings).where((0, import_drizzle_orm128.eq)(listings.id, beatId)).limit(1);
+          const beatData = await db.select().from(listings).where((0, import_drizzle_orm129.eq)(listings.id, beatId)).limit(1);
           if (beatData.length === 0) return;
           const beat = beatData[0];
           const metadata = beat.metadata || {};
@@ -186007,11 +186021,11 @@ var init_discoveryAlgorithmService = __esm({
           await db.update(userTasteProfiles).set({
             genreScores,
             moodScores,
-            totalInteractions: import_drizzle_orm128.sql`${userTasteProfiles.totalInteractions} + 1`,
-            purchaseCount: interactionType === "purchase" || interactionType === "exclusive_purchase" ? import_drizzle_orm128.sql`${userTasteProfiles.purchaseCount} + 1` : userTasteProfiles.purchaseCount,
+            totalInteractions: import_drizzle_orm129.sql`${userTasteProfiles.totalInteractions} + 1`,
+            purchaseCount: interactionType === "purchase" || interactionType === "exclusive_purchase" ? import_drizzle_orm129.sql`${userTasteProfiles.purchaseCount} + 1` : userTasteProfiles.purchaseCount,
             lastUpdated: /* @__PURE__ */ new Date(),
             ...tempoUpdates
-          }).where((0, import_drizzle_orm128.eq)(userTasteProfiles.userId, userId));
+          }).where((0, import_drizzle_orm129.eq)(userTasteProfiles.userId, userId));
         } catch (error) {
           logger2.warn({ err: error }, "Error updating taste profile:");
         }
@@ -186039,7 +186053,7 @@ var init_discoveryAlgorithmService = __esm({
             metadata: listings.metadata,
             createdAt: listings.createdAt,
             producerName: users.username
-          }).from(listings).leftJoin(users, (0, import_drizzle_orm128.eq)(listings.userId, users.id)).where((0, import_drizzle_orm128.eq)(listings.isPublished, true)).orderBy((0, import_drizzle_orm128.desc)(listings.createdAt)).limit(candidatePool);
+          }).from(listings).leftJoin(users, (0, import_drizzle_orm129.eq)(listings.userId, users.id)).where((0, import_drizzle_orm129.eq)(listings.isPublished, true)).orderBy((0, import_drizzle_orm129.desc)(listings.createdAt)).limit(candidatePool);
           const now = /* @__PURE__ */ new Date();
           const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
           const threeeDaysAgo = new Date(now.getTime() - 3 * 24 * 60 * 60 * 1e3);
@@ -186186,7 +186200,7 @@ var init_discoveryAlgorithmService = __esm({
           const followedProducers = [...profile.followedProducers || []];
           if (!followedProducers.includes(producerId)) {
             followedProducers.push(producerId);
-            await db.update(userTasteProfiles).set({ followedProducers, lastUpdated: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm128.eq)(userTasteProfiles.userId, userId));
+            await db.update(userTasteProfiles).set({ followedProducers, lastUpdated: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm129.eq)(userTasteProfiles.userId, userId));
           }
           await this.syncStorefrontFollow(userId, producerId, true);
           return { success: true, following: true };
@@ -186199,7 +186213,7 @@ var init_discoveryAlgorithmService = __esm({
         try {
           const profile = await this.getOrCreateTasteProfile(userId);
           const followedProducers = (profile.followedProducers || []).filter((id) => id !== producerId);
-          await db.update(userTasteProfiles).set({ followedProducers, lastUpdated: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm128.eq)(userTasteProfiles.userId, userId));
+          await db.update(userTasteProfiles).set({ followedProducers, lastUpdated: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm129.eq)(userTasteProfiles.userId, userId));
           await this.syncStorefrontFollow(userId, producerId, false);
           return { success: true, following: false };
         } catch (error) {
@@ -186209,21 +186223,21 @@ var init_discoveryAlgorithmService = __esm({
       }
       async syncStorefrontFollow(userId, producerId, follow) {
         try {
-          const userStorefront = await db.select({ id: storefronts.id }).from(storefronts).where((0, import_drizzle_orm128.eq)(storefronts.userId, producerId)).limit(1);
+          const userStorefront = await db.select({ id: storefronts.id }).from(storefronts).where((0, import_drizzle_orm129.eq)(storefronts.userId, producerId)).limit(1);
           const storefrontId = userStorefront[0]?.id;
           if (!storefrontId) return;
           if (follow) {
-            const existing = await db.select({ id: storefrontFollows.id }).from(storefrontFollows).where((0, import_drizzle_orm128.and)(
-              (0, import_drizzle_orm128.eq)(storefrontFollows.storefrontId, storefrontId),
-              (0, import_drizzle_orm128.eq)(storefrontFollows.userId, userId)
+            const existing = await db.select({ id: storefrontFollows.id }).from(storefrontFollows).where((0, import_drizzle_orm129.and)(
+              (0, import_drizzle_orm129.eq)(storefrontFollows.storefrontId, storefrontId),
+              (0, import_drizzle_orm129.eq)(storefrontFollows.userId, userId)
             )).limit(1);
             if (!existing[0]) {
               await db.insert(storefrontFollows).values({ userId, storefrontId });
             }
           } else {
-            await db.delete(storefrontFollows).where((0, import_drizzle_orm128.and)(
-              (0, import_drizzle_orm128.eq)(storefrontFollows.storefrontId, storefrontId),
-              (0, import_drizzle_orm128.eq)(storefrontFollows.userId, userId)
+            await db.delete(storefrontFollows).where((0, import_drizzle_orm129.and)(
+              (0, import_drizzle_orm129.eq)(storefrontFollows.storefrontId, storefrontId),
+              (0, import_drizzle_orm129.eq)(storefrontFollows.userId, userId)
             ));
           }
         } catch (error) {
@@ -186233,7 +186247,7 @@ var init_discoveryAlgorithmService = __esm({
       async getProducerFollowers(producerId) {
         try {
           const result = await db.execute(
-            import_drizzle_orm128.sql`SELECT user_id FROM user_taste_profiles
+            import_drizzle_orm129.sql`SELECT user_id FROM user_taste_profiles
             WHERE followed_producers @> ARRAY[${producerId}]::text[]`
           );
           return (result.rows || []).map((row) => row.user_id);
@@ -186249,7 +186263,7 @@ var init_discoveryAlgorithmService = __esm({
           const moodScores = profile.moodScores || {};
           const topGenres = Object.entries(genreScores).filter(([, score]) => score > 0.5).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([genre, score]) => ({ genre, score: Math.round(score * 100) / 100 }));
           const topMoods = Object.entries(moodScores).filter(([, score]) => score > 0.5).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([mood, score]) => ({ mood, score: Math.round(score * 100) / 100 }));
-          const recentInteractions = await db.select().from(beatInteractions).where((0, import_drizzle_orm128.eq)(beatInteractions.userId, userId)).orderBy((0, import_drizzle_orm128.desc)(beatInteractions.createdAt)).limit(10);
+          const recentInteractions = await db.select().from(beatInteractions).where((0, import_drizzle_orm129.eq)(beatInteractions.userId, userId)).orderBy((0, import_drizzle_orm129.desc)(beatInteractions.createdAt)).limit(10);
           return {
             totalInteractions: profile.totalInteractions || 0,
             purchaseCount: profile.purchaseCount || 0,
@@ -186288,7 +186302,7 @@ function toServiceOrder(dbOrder) {
     createdAt: dbOrder.createdAt || /* @__PURE__ */ new Date()
   };
 }
-var import_stripe9, import_drizzle_orm129, stripe6, DEFAULT_LICENSE_TEMPLATES, VALID_MUSICAL_KEYS, MIN_PRICE, MAX_PRICE, MIN_BPM, MAX_BPM, MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MarketplaceService, marketplaceService;
+var import_stripe9, import_drizzle_orm130, stripe6, DEFAULT_LICENSE_TEMPLATES, VALID_MUSICAL_KEYS, MIN_PRICE, MAX_PRICE, MIN_BPM, MAX_BPM, MIN_TITLE_LENGTH, MAX_TITLE_LENGTH, MarketplaceService, marketplaceService;
 var init_marketplaceService = __esm({
   "server/services/marketplaceService.ts"() {
     "use strict";
@@ -186296,7 +186310,7 @@ var init_marketplaceService = __esm({
     init_db();
     import_stripe9 = __toESM(require("stripe"), 1);
     init_schema();
-    import_drizzle_orm129 = require("drizzle-orm");
+    import_drizzle_orm130 = require("drizzle-orm");
     init_instantPayoutService();
     init_logger();
     init_defaults();
@@ -186858,7 +186872,7 @@ var init_marketplaceService = __esm({
           let allTiers = [];
           if (listingIds.length > 0) {
             for (const lid of listingIds) {
-              const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm129.eq)(listingLicenseTiers.listingId, lid)).orderBy(listingLicenseTiers.sortOrder).limit(20);
+              const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm130.eq)(listingLicenseTiers.listingId, lid)).orderBy(listingLicenseTiers.sortOrder).limit(20);
               allTiers.push(...tiers);
             }
           }
@@ -186929,7 +186943,7 @@ var init_marketplaceService = __esm({
           let allTiers = [];
           if (listingIds.length > 0) {
             for (const lid of listingIds) {
-              const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm129.eq)(listingLicenseTiers.listingId, lid)).orderBy(listingLicenseTiers.sortOrder).limit(20);
+              const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm130.eq)(listingLicenseTiers.listingId, lid)).orderBy(listingLicenseTiers.sortOrder).limit(20);
               allTiers.push(...tiers);
             }
           }
@@ -187248,14 +187262,14 @@ async function processUploadedBeat(listingId, userId, audioKey, licenseType) {
         });
       }
       if (stemInserts.length > 0) {
-        await db.delete(listingStems).where((0, import_drizzle_orm130.eq)(listingStems.listingId, listingId));
+        await db.delete(listingStems).where((0, import_drizzle_orm131.eq)(listingStems.listingId, listingId));
         await db.insert(listingStems).values(stemInserts);
         logger2.info(`[AudioSeparator] Inserted ${stemInserts.length} stems for listing ${listingId}`);
       }
       result.stemUrls = stemUrls;
       result.stemsAvailable = stemInserts.length > 0;
     }
-    const listingRow = await db.select({ metadata: listings.metadata }).from(listings).where((0, import_drizzle_orm130.eq)(listings.id, listingId)).limit(1);
+    const listingRow = await db.select({ metadata: listings.metadata }).from(listings).where((0, import_drizzle_orm131.eq)(listings.id, listingId)).limit(1);
     const existingMeta = listingRow[0]?.metadata ?? {};
     const updatedMeta = {
       ...existingMeta,
@@ -187268,10 +187282,10 @@ async function processUploadedBeat(listingId, userId, audioKey, licenseType) {
     if (result.mp3Url) {
       updatePayload.previewUrl = result.mp3Url;
     }
-    await db.update(listings).set(updatePayload).where((0, import_drizzle_orm130.eq)(listings.id, listingId));
+    await db.update(listings).set(updatePayload).where((0, import_drizzle_orm131.eq)(listings.id, listingId));
     logger2.info(`[AudioSeparator] Updated listing ${listingId} metadata`);
     if (result.mp3Url || result.stemUrls) {
-      const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm130.eq)(listingLicenseTiers.listingId, listingId));
+      const tiers = await db.select().from(listingLicenseTiers).where((0, import_drizzle_orm131.eq)(listingLicenseTiers.listingId, listingId));
       for (const tier of tiers) {
         const lt11 = (tier.licenseType ?? "").toLowerCase();
         const existingUrls = tier.audioUrls ?? {};
@@ -187282,7 +187296,7 @@ async function processUploadedBeat(listingId, userId, audioKey, licenseType) {
             newUrls[`stem_${stemName}`] = stemUrl;
           }
         }
-        await db.update(listingLicenseTiers).set({ audioUrls: newUrls }).where((0, import_drizzle_orm130.eq)(listingLicenseTiers.id, tier.id));
+        await db.update(listingLicenseTiers).set({ audioUrls: newUrls }).where((0, import_drizzle_orm131.eq)(listingLicenseTiers.id, tier.id));
       }
       if (tiers.length > 0) {
         logger2.info(`[AudioSeparator] Updated audioUrls on ${tiers.length} license tier(s)`);
@@ -187296,7 +187310,7 @@ async function processUploadedBeat(listingId, userId, audioKey, licenseType) {
     }
   }
 }
-var import_path31, import_fs29, import_os16, import_child_process13, import_util12, import_drizzle_orm130, execFileAsync8, LOCAL_STORAGE_DIR2, PYTHON_SCRIPT, STEM_TYPES;
+var import_path31, import_fs29, import_os16, import_child_process13, import_util12, import_drizzle_orm131, execFileAsync8, LOCAL_STORAGE_DIR2, PYTHON_SCRIPT, STEM_TYPES;
 var init_audioSeparatorService = __esm({
   "server/services/audioSeparatorService.ts"() {
     "use strict";
@@ -187307,7 +187321,7 @@ var init_audioSeparatorService = __esm({
     import_util12 = require("util");
     init_db();
     init_schema();
-    import_drizzle_orm130 = require("drizzle-orm");
+    import_drizzle_orm131 = require("drizzle-orm");
     init_storageService();
     init_logger();
     execFileAsync8 = (0, import_util12.promisify)(import_child_process13.execFile);
@@ -187339,7 +187353,7 @@ async function _computeTimelineData(timeRange, userId) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const now = /* @__PURE__ */ new Date();
   const periodCount = timeRange === "7d" ? 7 : timeRange === "90d" ? 12 : timeRange === "1y" ? 12 : 10;
-  const userListingIds = await db.select({ id: listings.id }).from(listings).where((0, import_drizzle_orm131.eq)(listings.userId, userId)).limit(500);
+  const userListingIds = await db.select({ id: listings.id }).from(listings).where((0, import_drizzle_orm132.eq)(listings.userId, userId)).limit(500);
   const listingIdSet = new Set(userListingIds.map((l) => l.id));
   const data = [];
   for (let i = periodCount - 1; i >= 0; i--) {
@@ -187353,14 +187367,14 @@ async function _computeTimelineData(timeRange, userId) {
       periodEnd.setMonth(periodEnd.getMonth() - i);
     }
     const periodOrders = await db.select({
-      salesCount: import_drizzle_orm131.sql`COUNT(*)`,
-      totalRevenue: import_drizzle_orm131.sql`COALESCE(SUM(${orders.amount}), 0)`
+      salesCount: import_drizzle_orm132.sql`COUNT(*)`,
+      totalRevenue: import_drizzle_orm132.sql`COALESCE(SUM(${orders.amount}), 0)`
     }).from(orders).where(
-      (0, import_drizzle_orm131.and)(
-        (0, import_drizzle_orm131.eq)(orders.sellerId, userId),
-        (0, import_drizzle_orm131.eq)(orders.status, "completed"),
-        (0, import_drizzle_orm131.gte)(orders.createdAt, periodStart),
-        import_drizzle_orm131.sql`${orders.createdAt} < ${periodEnd}`
+      (0, import_drizzle_orm132.and)(
+        (0, import_drizzle_orm132.eq)(orders.sellerId, userId),
+        (0, import_drizzle_orm132.eq)(orders.status, "completed"),
+        (0, import_drizzle_orm132.gte)(orders.createdAt, periodStart),
+        import_drizzle_orm132.sql`${orders.createdAt} < ${periodEnd}`
       )
     );
     const salesCount = Number(periodOrders[0]?.salesCount) || 0;
@@ -187376,7 +187390,7 @@ async function _computeTimelineData(timeRange, userId) {
   }
   return data;
 }
-var import_express94, import_multer7, import_path32, import_crypto95, import_fs30, import_os17, import_zod43, import_drizzle_orm131, router91, ALLOWED_AUDIO_MIMES, ALLOWED_IMAGE_MIMES, upload7, purchaseSchema, licenseTemplateSchema, interactionSchema, contractSchema, affiliateSchema, collaborationSchema, marketplace_default;
+var import_express94, import_multer7, import_path32, import_crypto95, import_fs30, import_os17, import_zod43, import_drizzle_orm132, router91, ALLOWED_AUDIO_MIMES, ALLOWED_IMAGE_MIMES, upload7, purchaseSchema, licenseTemplateSchema, interactionSchema, contractSchema, affiliateSchema, collaborationSchema, marketplace_default;
 var init_marketplace = __esm({
   "server/routes/marketplace.ts"() {
     "use strict";
@@ -187396,7 +187410,7 @@ var init_marketplace = __esm({
     init_logger();
     init_db();
     init_schema();
-    import_drizzle_orm131 = require("drizzle-orm");
+    import_drizzle_orm132 = require("drizzle-orm");
     init_defaults();
     init_auth();
     init_audioSeparatorService();
@@ -187586,8 +187600,8 @@ var init_marketplace = __esm({
             const previousPeriodStart = new Date(Date.now() - days * 2 * 24 * 60 * 60 * 1e3);
             const now = /* @__PURE__ */ new Date();
             const [[currentPeriodOrders], [previousPeriodOrders]] = await Promise.all([
-              db.select({ count: import_drizzle_orm131.sql`COUNT(*)`, revenue: import_drizzle_orm131.sql`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(orders.sellerId, userId), (0, import_drizzle_orm131.eq)(orders.status, "completed"), (0, import_drizzle_orm131.gte)(orders.createdAt, currentPeriodStart), import_drizzle_orm131.sql`${orders.createdAt} < ${now}`)),
-              db.select({ count: import_drizzle_orm131.sql`COUNT(*)`, revenue: import_drizzle_orm131.sql`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(orders.sellerId, userId), (0, import_drizzle_orm131.eq)(orders.status, "completed"), (0, import_drizzle_orm131.gte)(orders.createdAt, previousPeriodStart), import_drizzle_orm131.sql`${orders.createdAt} < ${currentPeriodStart}`))
+              db.select({ count: import_drizzle_orm132.sql`COUNT(*)`, revenue: import_drizzle_orm132.sql`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(orders.sellerId, userId), (0, import_drizzle_orm132.eq)(orders.status, "completed"), (0, import_drizzle_orm132.gte)(orders.createdAt, currentPeriodStart), import_drizzle_orm132.sql`${orders.createdAt} < ${now}`)),
+              db.select({ count: import_drizzle_orm132.sql`COUNT(*)`, revenue: import_drizzle_orm132.sql`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(orders.sellerId, userId), (0, import_drizzle_orm132.eq)(orders.status, "completed"), (0, import_drizzle_orm132.gte)(orders.createdAt, previousPeriodStart), import_drizzle_orm132.sql`${orders.createdAt} < ${currentPeriodStart}`))
             ]);
             const curSales = Number(currentPeriodOrders?.count || 0);
             const prevSales = Number(previousPeriodOrders?.count || 0);
@@ -187654,7 +187668,7 @@ var init_marketplace = __esm({
         if (!req.isAuthenticated()) {
           return res.status(401).json({ error: "Unauthorized" });
         }
-        const userTemplates = await db.select().from(licenseTemplates).where((0, import_drizzle_orm131.eq)(licenseTemplates.userId, req.user.id)).orderBy((0, import_drizzle_orm131.asc)(licenseTemplates.sortOrder)).limit(50);
+        const userTemplates = await db.select().from(licenseTemplates).where((0, import_drizzle_orm132.eq)(licenseTemplates.userId, req.user.id)).orderBy((0, import_drizzle_orm132.asc)(licenseTemplates.sortOrder)).limit(50);
         const mapped = userTemplates.map((t) => ({
           id: t.id,
           name: t.name,
@@ -187711,7 +187725,7 @@ var init_marketplace = __esm({
     router91.put("/license-templates/:id", requireAuth, async (req, res) => {
       try {
         const { id } = req.params;
-        const existing = await db.select().from(licenseTemplates).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(licenseTemplates.id, id), (0, import_drizzle_orm131.eq)(licenseTemplates.userId, req.user.id))).limit(1);
+        const existing = await db.select().from(licenseTemplates).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(licenseTemplates.id, id), (0, import_drizzle_orm132.eq)(licenseTemplates.userId, req.user.id))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "License template not found" });
         }
@@ -187727,7 +187741,7 @@ var init_marketplace = __esm({
           ...musicVideos !== void 0 && { musicVideos: String(musicVideos) },
           updatedAt: /* @__PURE__ */ new Date()
         };
-        const [updated] = await db.update(licenseTemplates).set(updates).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(licenseTemplates.id, id), (0, import_drizzle_orm131.eq)(licenseTemplates.userId, req.user.id))).returning();
+        const [updated] = await db.update(licenseTemplates).set(updates).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(licenseTemplates.id, id), (0, import_drizzle_orm132.eq)(licenseTemplates.userId, req.user.id))).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error updating license template:");
@@ -187737,11 +187751,11 @@ var init_marketplace = __esm({
     router91.delete("/license-templates/:id", requireAuth, async (req, res) => {
       try {
         const { id } = req.params;
-        const existing = await db.select().from(licenseTemplates).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(licenseTemplates.id, id), (0, import_drizzle_orm131.eq)(licenseTemplates.userId, req.user.id))).limit(1);
+        const existing = await db.select().from(licenseTemplates).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(licenseTemplates.id, id), (0, import_drizzle_orm132.eq)(licenseTemplates.userId, req.user.id))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "License template not found" });
         }
-        await db.delete(licenseTemplates).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(licenseTemplates.id, id), (0, import_drizzle_orm131.eq)(licenseTemplates.userId, req.user.id)));
+        await db.delete(licenseTemplates).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(licenseTemplates.id, id), (0, import_drizzle_orm132.eq)(licenseTemplates.userId, req.user.id)));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "Error deleting license template:");
@@ -187816,7 +187830,7 @@ var init_marketplace = __esm({
         if (interactionType === "play") {
           setImmediate(async () => {
             try {
-              const [listing] = await db.select({ id: listings.id, title: listings.title, plays: listings.plays, userId: listings.userId }).from(listings).where((0, import_drizzle_orm131.eq)(listings.id, beatId)).limit(1);
+              const [listing] = await db.select({ id: listings.id, title: listings.title, plays: listings.plays, userId: listings.userId }).from(listings).where((0, import_drizzle_orm132.eq)(listings.id, beatId)).limit(1);
               if (listing) {
                 const plays = (listing.plays || 0) + 1;
                 const milestones = [100, 500, 1e3, 5e3, 1e4, 25e3, 5e4, 1e5, 5e5, 1e6];
@@ -188024,7 +188038,7 @@ var init_marketplace = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const { orderId } = req.params;
-        const [order] = await db.select().from(orders).where((0, import_drizzle_orm131.eq)(orders.id, orderId)).limit(1);
+        const [order] = await db.select().from(orders).where((0, import_drizzle_orm132.eq)(orders.id, orderId)).limit(1);
         if (!order) {
           return res.status(404).json({ error: "Order not found" });
         }
@@ -188032,9 +188046,9 @@ var init_marketplace = __esm({
           return res.status(403).json({ error: "Access denied" });
         }
         const [[listing], [buyer], [seller]] = await Promise.all([
-          db.select().from(listings).where((0, import_drizzle_orm131.eq)(listings.id, order.listingId)).limit(1),
-          db.select().from(users).where((0, import_drizzle_orm131.eq)(users.id, order.userId)).limit(1),
-          db.select().from(users).where((0, import_drizzle_orm131.eq)(users.id, order.sellerId)).limit(1)
+          db.select().from(listings).where((0, import_drizzle_orm132.eq)(listings.id, order.listingId)).limit(1),
+          db.select().from(users).where((0, import_drizzle_orm132.eq)(users.id, order.userId)).limit(1),
+          db.select().from(users).where((0, import_drizzle_orm132.eq)(users.id, order.sellerId)).limit(1)
         ]);
         const licenseType = order.licenseType || "basic";
         const templateMap = {
@@ -188187,10 +188201,10 @@ var init_marketplace = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const userId = req.user.id;
-        const escrowOrders = await db.select().from(orders).where((0, import_drizzle_orm131.and)(
-          (0, import_drizzle_orm131.or)((0, import_drizzle_orm131.eq)(orders.userId, userId), (0, import_drizzle_orm131.eq)(orders.sellerId, userId)),
-          (0, import_drizzle_orm131.or)((0, import_drizzle_orm131.eq)(orders.status, "pending"), (0, import_drizzle_orm131.eq)(orders.status, "escrow"))
-        )).orderBy((0, import_drizzle_orm131.desc)(orders.createdAt)).limit(200);
+        const escrowOrders = await db.select().from(orders).where((0, import_drizzle_orm132.and)(
+          (0, import_drizzle_orm132.or)((0, import_drizzle_orm132.eq)(orders.userId, userId), (0, import_drizzle_orm132.eq)(orders.sellerId, userId)),
+          (0, import_drizzle_orm132.or)((0, import_drizzle_orm132.eq)(orders.status, "pending"), (0, import_drizzle_orm132.eq)(orders.status, "escrow"))
+        )).orderBy((0, import_drizzle_orm132.desc)(orders.createdAt)).limit(200);
         const formatted = escrowOrders.map((o) => ({
           id: o.id,
           orderId: o.id,
@@ -188217,7 +188231,7 @@ var init_marketplace = __esm({
         }
         const userId = req.user.id;
         const settingKey = `affiliates:${userId}`;
-        const [row] = await db.select().from(systemSettings).where((0, import_drizzle_orm131.eq)(systemSettings.key, settingKey)).limit(1);
+        const [row] = await db.select().from(systemSettings).where((0, import_drizzle_orm132.eq)(systemSettings.key, settingKey)).limit(1);
         const affiliates = row ? row.value || [] : [];
         res.json(affiliates);
       } catch (error) {
@@ -188301,18 +188315,18 @@ var init_marketplace = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const userId = req.user.id;
-        const ownedProjects = await db.select().from(collaborationProjects).where((0, import_drizzle_orm131.and)(
-          (0, import_drizzle_orm131.eq)(collaborationProjects.ownerId, userId),
-          import_drizzle_orm131.sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
-        )).orderBy((0, import_drizzle_orm131.desc)(collaborationProjects.createdAt)).limit(100);
-        const memberRows = await db.select({ projectId: projectMembers.projectId }).from(projectMembers).where((0, import_drizzle_orm131.eq)(projectMembers.userId, userId)).limit(200);
+        const ownedProjects = await db.select().from(collaborationProjects).where((0, import_drizzle_orm132.and)(
+          (0, import_drizzle_orm132.eq)(collaborationProjects.ownerId, userId),
+          import_drizzle_orm132.sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
+        )).orderBy((0, import_drizzle_orm132.desc)(collaborationProjects.createdAt)).limit(100);
+        const memberRows = await db.select({ projectId: projectMembers.projectId }).from(projectMembers).where((0, import_drizzle_orm132.eq)(projectMembers.userId, userId)).limit(200);
         let memberProjects = [];
         if (memberRows.length > 0) {
           const memberProjectIds = memberRows.map((r) => r.projectId);
-          memberProjects = await db.select().from(collaborationProjects).where((0, import_drizzle_orm131.and)(
-            (0, import_drizzle_orm131.inArray)(collaborationProjects.id, memberProjectIds),
-            import_drizzle_orm131.sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
-          )).orderBy((0, import_drizzle_orm131.desc)(collaborationProjects.createdAt)).limit(100);
+          memberProjects = await db.select().from(collaborationProjects).where((0, import_drizzle_orm132.and)(
+            (0, import_drizzle_orm132.inArray)(collaborationProjects.id, memberProjectIds),
+            import_drizzle_orm132.sql`${collaborationProjects.metadata}->>'_offerType' = 'marketplace_collab'`
+          )).orderBy((0, import_drizzle_orm132.desc)(collaborationProjects.createdAt)).limit(100);
         }
         const allProjects = [...ownedProjects, ...memberProjects.filter((p) => p.ownerId !== userId)];
         const collaborations = allProjects.map((project) => {
@@ -188404,7 +188418,7 @@ var init_marketplace = __esm({
                   if (!tempo && analysis.data.bpm) updateData.bpm = Math.round(analysis.data.bpm);
                   if (!key && analysis.data.key) updateData.key = analysis.data.key;
                   if (Object.keys(updateData).length > 0) {
-                    await db.update(listings).set(updateData).where((0, import_drizzle_orm131.eq)(listings.id, listing.id));
+                    await db.update(listings).set(updateData).where((0, import_drizzle_orm132.eq)(listings.id, listing.id));
                     logger2.info(`[AutoTag] Beat ${listing.id} tagged: BPM=${updateData.bpm ?? "kept"} key=${updateData.key ?? "kept"}`);
                   }
                 }
@@ -188740,7 +188754,7 @@ var init_marketplace = __esm({
         const { name, email, commissionRate } = parsed.data;
         const userId = req.user.id;
         const settingKey = `affiliates:${userId}`;
-        const [existing] = await db.select().from(systemSettings).where((0, import_drizzle_orm131.eq)(systemSettings.key, settingKey)).limit(1);
+        const [existing] = await db.select().from(systemSettings).where((0, import_drizzle_orm132.eq)(systemSettings.key, settingKey)).limit(1);
         const currentList = existing ? existing.value || [] : [];
         const affiliate = {
           id: `aff-${Date.now()}`,
@@ -188757,7 +188771,7 @@ var init_marketplace = __esm({
         };
         const updatedList = [...currentList, affiliate];
         if (existing) {
-          await db.update(systemSettings).set({ value: updatedList, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm131.eq)(systemSettings.key, settingKey));
+          await db.update(systemSettings).set({ value: updatedList, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm132.eq)(systemSettings.key, settingKey));
         } else {
           await db.insert(systemSettings).values({ key: settingKey, value: updatedList });
         }
@@ -188855,15 +188869,15 @@ var init_marketplace = __esm({
         }
         const producerBeats = await marketplaceService.getListingsByProducer(producerId);
         const beatCount = producerBeats.length;
-        const userStorefront = await db.select({ id: storefronts.id }).from(storefronts).where((0, import_drizzle_orm131.eq)(storefronts.userId, producerId)).limit(1);
+        const userStorefront = await db.select({ id: storefronts.id }).from(storefronts).where((0, import_drizzle_orm132.eq)(storefronts.userId, producerId)).limit(1);
         const storefrontId = userStorefront[0]?.id;
         let followerCount = 0;
         let avgRating = 0;
         let salesCount = 0;
         if (storefrontId) {
-          const [followResult] = await db.select({ count: import_drizzle_orm131.sql`count(*)::int` }).from(storefrontFollows).where((0, import_drizzle_orm131.eq)(storefrontFollows.storefrontId, storefrontId)).limit(1);
+          const [followResult] = await db.select({ count: import_drizzle_orm132.sql`count(*)::int` }).from(storefrontFollows).where((0, import_drizzle_orm132.eq)(storefrontFollows.storefrontId, storefrontId)).limit(1);
           followerCount = followResult?.count || 0;
-          const [ratingResult] = await db.select({ avg: import_drizzle_orm131.sql`coalesce(avg(${storefrontRatings.rating}), 0)` }).from(storefrontRatings).where((0, import_drizzle_orm131.eq)(storefrontRatings.storefrontId, storefrontId)).limit(1);
+          const [ratingResult] = await db.select({ avg: import_drizzle_orm132.sql`coalesce(avg(${storefrontRatings.rating}), 0)` }).from(storefrontRatings).where((0, import_drizzle_orm132.eq)(storefrontRatings.storefrontId, storefrontId)).limit(1);
           avgRating = Math.round((Number(ratingResult?.avg) || 0) * 10) / 10;
         }
         if (avgRating === 0 && producerBeats.length > 0) {
@@ -188872,7 +188886,7 @@ var init_marketplace = __esm({
             avgRating = Math.round(beatRatings.reduce((s, r) => s + r, 0) / beatRatings.length * 10) / 10;
           }
         }
-        const [salesResult] = await db.select({ count: import_drizzle_orm131.sql`count(*)::int` }).from(orders).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(orders.sellerId, producerId), (0, import_drizzle_orm131.eq)(orders.status, "completed"))).limit(1);
+        const [salesResult] = await db.select({ count: import_drizzle_orm132.sql`count(*)::int` }).from(orders).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(orders.sellerId, producerId), (0, import_drizzle_orm132.eq)(orders.status, "completed"))).limit(1);
         salesCount = salesResult?.count || 0;
         const featuredBeats = producerBeats.slice(0, 8).map((beat) => ({
           id: beat.id,
@@ -188940,25 +188954,25 @@ var init_marketplace = __esm({
         }
         const { beatId } = req.params;
         const existingLike = await db.select().from(beatInteractions).where(
-          (0, import_drizzle_orm131.and)(
-            (0, import_drizzle_orm131.eq)(beatInteractions.userId, req.user.id),
-            (0, import_drizzle_orm131.eq)(beatInteractions.beatId, beatId),
-            (0, import_drizzle_orm131.eq)(beatInteractions.interactionType, "like")
+          (0, import_drizzle_orm132.and)(
+            (0, import_drizzle_orm132.eq)(beatInteractions.userId, req.user.id),
+            (0, import_drizzle_orm132.eq)(beatInteractions.beatId, beatId),
+            (0, import_drizzle_orm132.eq)(beatInteractions.interactionType, "like")
           ).limit(1)
         ).limit(1);
         if (existingLike.length > 0) {
           await db.delete(beatInteractions).where(
-            (0, import_drizzle_orm131.and)(
-              (0, import_drizzle_orm131.eq)(beatInteractions.userId, req.user.id),
-              (0, import_drizzle_orm131.eq)(beatInteractions.beatId, beatId),
-              (0, import_drizzle_orm131.eq)(beatInteractions.interactionType, "like")
+            (0, import_drizzle_orm132.and)(
+              (0, import_drizzle_orm132.eq)(beatInteractions.userId, req.user.id),
+              (0, import_drizzle_orm132.eq)(beatInteractions.beatId, beatId),
+              (0, import_drizzle_orm132.eq)(beatInteractions.interactionType, "like")
             )
           );
-          const [listing] = await db.select().from(listings).where((0, import_drizzle_orm131.eq)(listings.id, beatId)).limit(1);
+          const [listing] = await db.select().from(listings).where((0, import_drizzle_orm132.eq)(listings.id, beatId)).limit(1);
           if (listing) {
             const currentMetadata = listing.metadata || {};
             const newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
-            await db.update(listings).set({ metadata: { ...currentMetadata, likes: newLikes } }).where((0, import_drizzle_orm131.eq)(listings.id, beatId));
+            await db.update(listings).set({ metadata: { ...currentMetadata, likes: newLikes } }).where((0, import_drizzle_orm132.eq)(listings.id, beatId));
           }
           res.json({ success: true, liked: false, likes: listing?.metadata?.likes || 0 });
         } else {
@@ -188968,11 +188982,11 @@ var init_marketplace = __esm({
             interactionType: "like",
             source: "marketplace"
           });
-          const [listing] = await db.select().from(listings).where((0, import_drizzle_orm131.eq)(listings.id, beatId)).limit(1);
+          const [listing] = await db.select().from(listings).where((0, import_drizzle_orm132.eq)(listings.id, beatId)).limit(1);
           if (listing) {
             const currentMetadata = listing.metadata || {};
             const newLikes = (currentMetadata.likes || 0) + 1;
-            await db.update(listings).set({ metadata: { ...currentMetadata, likes: newLikes } }).where((0, import_drizzle_orm131.eq)(listings.id, beatId));
+            await db.update(listings).set({ metadata: { ...currentMetadata, likes: newLikes } }).where((0, import_drizzle_orm132.eq)(listings.id, beatId));
             res.json({ success: true, liked: true, likes: newLikes });
           } else {
             res.json({ success: true, liked: true });
@@ -188990,10 +189004,10 @@ var init_marketplace = __esm({
         }
         const { beatId } = req.params;
         const likes = await db.select().from(beatInteractions).where(
-          (0, import_drizzle_orm131.and)(
-            (0, import_drizzle_orm131.eq)(beatInteractions.userId, req.user.id),
-            (0, import_drizzle_orm131.eq)(beatInteractions.beatId, beatId),
-            (0, import_drizzle_orm131.eq)(beatInteractions.interactionType, "like")
+          (0, import_drizzle_orm132.and)(
+            (0, import_drizzle_orm132.eq)(beatInteractions.userId, req.user.id),
+            (0, import_drizzle_orm132.eq)(beatInteractions.beatId, beatId),
+            (0, import_drizzle_orm132.eq)(beatInteractions.interactionType, "like")
           ).limit(1)
         ).limit(1);
         res.json({ isLiked: likes.length > 0 });
@@ -189018,7 +189032,7 @@ var init_marketplace = __esm({
           interactionType: "rate",
           source: "marketplace"
         });
-        const [listing] = await db.select().from(listings).where((0, import_drizzle_orm131.eq)(listings.id, beatId)).limit(1);
+        const [listing] = await db.select().from(listings).where((0, import_drizzle_orm132.eq)(listings.id, beatId)).limit(1);
         if (listing) {
           const currentMetadata = listing.metadata || {};
           const currentRatings = currentMetadata.ratings || [];
@@ -189036,7 +189050,7 @@ var init_marketplace = __esm({
               avgRating: Math.round(avgRating * 10) / 10,
               ratingCount: currentRatings.length
             }
-          }).where((0, import_drizzle_orm131.eq)(listings.id, beatId));
+          }).where((0, import_drizzle_orm132.eq)(listings.id, beatId));
           res.json({ success: true, rating, avgRating: Math.round(avgRating * 10) / 10 });
         } else {
           res.status(404).json({ error: "Beat not found" });
@@ -189049,7 +189063,7 @@ var init_marketplace = __esm({
     router91.get("/beats/:beatId/rating", async (req, res) => {
       try {
         const { beatId } = req.params;
-        const [listing] = await db.select().from(listings).where((0, import_drizzle_orm131.eq)(listings.id, beatId)).limit(1);
+        const [listing] = await db.select().from(listings).where((0, import_drizzle_orm132.eq)(listings.id, beatId)).limit(1);
         if (!listing) {
           return res.status(404).json({ error: "Beat not found" });
         }
@@ -189127,7 +189141,7 @@ var init_marketplace = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const userId = req.user.id;
-        const stems = await db.select().from(listingStems).where((0, import_drizzle_orm131.eq)(listingStems.userId, userId)).orderBy((0, import_drizzle_orm131.desc)(listingStems.createdAt)).limit(100);
+        const stems = await db.select().from(listingStems).where((0, import_drizzle_orm132.eq)(listingStems.userId, userId)).orderBy((0, import_drizzle_orm132.desc)(listingStems.createdAt)).limit(100);
         res.json(stems);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching user stems:");
@@ -189137,7 +189151,7 @@ var init_marketplace = __esm({
     router91.get("/listings/:listingId/stems", async (req, res) => {
       try {
         const { listingId } = req.params;
-        const stems = await db.select().from(listingStems).where((0, import_drizzle_orm131.eq)(listingStems.listingId, listingId)).orderBy((0, import_drizzle_orm131.asc)(listingStems.createdAt)).limit(50);
+        const stems = await db.select().from(listingStems).where((0, import_drizzle_orm132.eq)(listingStems.listingId, listingId)).orderBy((0, import_drizzle_orm132.asc)(listingStems.createdAt)).limit(50);
         res.json(stems);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching listing stems:");
@@ -189174,7 +189188,7 @@ var init_marketplace = __esm({
       try {
         const userId = req.user.id;
         const { stemId } = req.params;
-        const [deleted] = await db.delete(listingStems).where((0, import_drizzle_orm131.and)((0, import_drizzle_orm131.eq)(listingStems.id, stemId), (0, import_drizzle_orm131.eq)(listingStems.userId, userId))).returning();
+        const [deleted] = await db.delete(listingStems).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(listingStems.id, stemId), (0, import_drizzle_orm132.eq)(listingStems.userId, userId))).returning();
         if (!deleted) {
           return res.status(404).json({ error: "Stem not found or not authorized" });
         }
@@ -189260,38 +189274,38 @@ async function searchBeats(query, filters, limit, offset) {
   const conditions = [];
   if (query) {
     conditions.push(
-      (0, import_drizzle_orm132.or)(
-        (0, import_drizzle_orm132.ilike)(beats.title, `%${query}%`),
-        (0, import_drizzle_orm132.ilike)(beats.description, `%${query}%`),
-        (0, import_drizzle_orm132.ilike)(beats.genre, `%${query}%`)
+      (0, import_drizzle_orm133.or)(
+        (0, import_drizzle_orm133.ilike)(beats.title, `%${query}%`),
+        (0, import_drizzle_orm133.ilike)(beats.description, `%${query}%`),
+        (0, import_drizzle_orm133.ilike)(beats.genre, `%${query}%`)
       )
     );
   }
   if (filters.genre) {
-    conditions.push((0, import_drizzle_orm132.eq)(beats.genre, filters.genre));
+    conditions.push((0, import_drizzle_orm133.eq)(beats.genre, filters.genre));
   }
   if (filters.key) {
-    conditions.push((0, import_drizzle_orm132.eq)(beats.key, filters.key));
+    conditions.push((0, import_drizzle_orm133.eq)(beats.key, filters.key));
   }
   if (filters.bpm_min) {
-    conditions.push((0, import_drizzle_orm132.gte)(beats.bpm, filters.bpm_min));
+    conditions.push((0, import_drizzle_orm133.gte)(beats.bpm, filters.bpm_min));
   }
   if (filters.bpm_max) {
-    conditions.push((0, import_drizzle_orm132.lte)(beats.bpm, filters.bpm_max));
+    conditions.push((0, import_drizzle_orm133.lte)(beats.bpm, filters.bpm_max));
   }
   if (filters.price_min) {
-    conditions.push((0, import_drizzle_orm132.gte)(beats.price, filters.price_min));
+    conditions.push((0, import_drizzle_orm133.gte)(beats.price, filters.price_min));
   }
   if (filters.price_max) {
-    conditions.push((0, import_drizzle_orm132.lte)(beats.price, filters.price_max));
+    conditions.push((0, import_drizzle_orm133.lte)(beats.price, filters.price_max));
   }
-  conditions.push((0, import_drizzle_orm132.eq)(beats.isPublished, true));
-  let orderBy = (0, import_drizzle_orm132.desc)(beats.createdAt);
-  if (filters.sort === "popular") orderBy = (0, import_drizzle_orm132.desc)(beats.plays);
-  else if (filters.sort === "price_low") orderBy = (0, import_drizzle_orm132.asc)(beats.price);
-  else if (filters.sort === "price_high") orderBy = (0, import_drizzle_orm132.desc)(beats.price);
-  const results = await db.select().from(beats).where((0, import_drizzle_orm132.and)(...conditions)).orderBy(orderBy).limit(limit).offset(offset);
-  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(beats).where((0, import_drizzle_orm132.and)(...conditions));
+  conditions.push((0, import_drizzle_orm133.eq)(beats.isPublished, true));
+  let orderBy = (0, import_drizzle_orm133.desc)(beats.createdAt);
+  if (filters.sort === "popular") orderBy = (0, import_drizzle_orm133.desc)(beats.plays);
+  else if (filters.sort === "price_low") orderBy = (0, import_drizzle_orm133.asc)(beats.price);
+  else if (filters.sort === "price_high") orderBy = (0, import_drizzle_orm133.desc)(beats.price);
+  const results = await db.select().from(beats).where((0, import_drizzle_orm133.and)(...conditions)).orderBy(orderBy).limit(limit).offset(offset);
+  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(beats).where((0, import_drizzle_orm133.and)(...conditions));
   return {
     items: results.map((beat) => ({
       ...beat,
@@ -189314,18 +189328,18 @@ async function searchUsers(query, limit, offset) {
     bio: users.bio,
     location: users.location
   }).from(users).where(
-    (0, import_drizzle_orm132.or)(
-      (0, import_drizzle_orm132.ilike)(users.username, `%${query}%`),
-      (0, import_drizzle_orm132.ilike)(users.firstName, `%${query}%`),
-      (0, import_drizzle_orm132.ilike)(users.lastName, `%${query}%`),
-      (0, import_drizzle_orm132.ilike)(users.bio, `%${query}%`)
+    (0, import_drizzle_orm133.or)(
+      (0, import_drizzle_orm133.ilike)(users.username, `%${query}%`),
+      (0, import_drizzle_orm133.ilike)(users.firstName, `%${query}%`),
+      (0, import_drizzle_orm133.ilike)(users.lastName, `%${query}%`),
+      (0, import_drizzle_orm133.ilike)(users.bio, `%${query}%`)
     )
   ).limit(limit).offset(offset);
-  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(users).where(
-    (0, import_drizzle_orm132.or)(
-      (0, import_drizzle_orm132.ilike)(users.username, `%${query}%`),
-      (0, import_drizzle_orm132.ilike)(users.firstName, `%${query}%`),
-      (0, import_drizzle_orm132.ilike)(users.lastName, `%${query}%`)
+  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(users).where(
+    (0, import_drizzle_orm133.or)(
+      (0, import_drizzle_orm133.ilike)(users.username, `%${query}%`),
+      (0, import_drizzle_orm133.ilike)(users.firstName, `%${query}%`),
+      (0, import_drizzle_orm133.ilike)(users.lastName, `%${query}%`)
     )
   );
   return {
@@ -189341,18 +189355,18 @@ async function searchProjects(query, userId, limit, offset) {
   const conditions = [];
   if (query) {
     conditions.push(
-      (0, import_drizzle_orm132.or)(
-        (0, import_drizzle_orm132.ilike)(projects.title, `%${query}%`),
-        (0, import_drizzle_orm132.ilike)(projects.description, `%${query}%`),
-        (0, import_drizzle_orm132.ilike)(projects.genre, `%${query}%`)
+      (0, import_drizzle_orm133.or)(
+        (0, import_drizzle_orm133.ilike)(projects.title, `%${query}%`),
+        (0, import_drizzle_orm133.ilike)(projects.description, `%${query}%`),
+        (0, import_drizzle_orm133.ilike)(projects.genre, `%${query}%`)
       )
     );
   }
   if (userId) {
-    conditions.push((0, import_drizzle_orm132.eq)(projects.userId, userId));
+    conditions.push((0, import_drizzle_orm133.eq)(projects.userId, userId));
   }
-  const results = await db.select().from(projects).where(conditions.length > 0 ? (0, import_drizzle_orm132.and)(...conditions) : void 0).orderBy((0, import_drizzle_orm132.desc)(projects.updatedAt)).limit(limit).offset(offset);
-  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(projects).where(conditions.length > 0 ? (0, import_drizzle_orm132.and)(...conditions) : void 0);
+  const results = await db.select().from(projects).where(conditions.length > 0 ? (0, import_drizzle_orm133.and)(...conditions) : void 0).orderBy((0, import_drizzle_orm133.desc)(projects.updatedAt)).limit(limit).offset(offset);
+  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(projects).where(conditions.length > 0 ? (0, import_drizzle_orm133.and)(...conditions) : void 0);
   return {
     items: results.map((project) => ({
       ...project,
@@ -189366,8 +189380,8 @@ async function searchReleases(query, limit, offset) {
   if (!query) {
     return { items: [], total: 0 };
   }
-  const results = await db.select().from(releases).where((0, import_drizzle_orm132.ilike)(releases.title, `%${query}%`)).orderBy((0, import_drizzle_orm132.desc)(releases.createdAt)).limit(limit).offset(offset);
-  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(releases).where((0, import_drizzle_orm132.ilike)(releases.title, `%${query}%`));
+  const results = await db.select().from(releases).where((0, import_drizzle_orm133.ilike)(releases.title, `%${query}%`)).orderBy((0, import_drizzle_orm133.desc)(releases.createdAt)).limit(limit).offset(offset);
+  const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(releases).where((0, import_drizzle_orm133.ilike)(releases.title, `%${query}%`));
   return {
     items: results.map((release) => ({
       ...release,
@@ -189377,13 +189391,13 @@ async function searchReleases(query, limit, offset) {
     total
   };
 }
-var import_express95, import_drizzle_orm132, router92, autocompleteCache, search_default;
+var import_express95, import_drizzle_orm133, router92, autocompleteCache, search_default;
 var init_search = __esm({
   "server/routes/search.ts"() {
     "use strict";
     import_express95 = require("express");
     init_db();
-    import_drizzle_orm132 = require("drizzle-orm");
+    import_drizzle_orm133 = require("drizzle-orm");
     init_schema();
     init_logger();
     router92 = (0, import_express95.Router)();
@@ -189522,9 +189536,9 @@ var init_search = __esm({
         const cacheKey = query.substring(0, 3);
         let cachedSuggestions = autocompleteCache.get(cacheKey);
         if (!cachedSuggestions) {
-          const beatTitles = await db.select({ title: beats.title }).from(beats).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.ilike)(beats.title, `%${query}%`), (0, import_drizzle_orm132.eq)(beats.isPublished, true))).limit(50);
-          const usernames = await db.select({ username: users.username }).from(users).where((0, import_drizzle_orm132.ilike)(users.username, `%${query}%`)).limit(50);
-          const genres = await db.selectDistinct({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm132.ilike)(beats.genre, `%${query}%`)).limit(20);
+          const beatTitles = await db.select({ title: beats.title }).from(beats).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.ilike)(beats.title, `%${query}%`), (0, import_drizzle_orm133.eq)(beats.isPublished, true))).limit(50);
+          const usernames = await db.select({ username: users.username }).from(users).where((0, import_drizzle_orm133.ilike)(users.username, `%${query}%`)).limit(50);
+          const genres = await db.selectDistinct({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm133.ilike)(beats.genre, `%${query}%`)).limit(20);
           cachedSuggestions = [
             ...beatTitles.map((b) => b.title).filter(Boolean),
             ...usernames.map((u) => u.username).filter(Boolean),
@@ -189553,10 +189567,10 @@ var init_search = __esm({
           plays: beats.plays,
           price: beats.price,
           artworkUrl: beats.artworkUrl
-        }).from(beats).where((0, import_drizzle_orm132.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm132.desc)(beats.plays)).limit(10);
+        }).from(beats).where((0, import_drizzle_orm133.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm133.desc)(beats.plays)).limit(10);
         const trendingGenres = await db.select({
           genre: beats.genre
-        }).from(beats).where((0, import_drizzle_orm132.eq)(beats.isPublished, true)).groupBy(beats.genre).limit(10);
+        }).from(beats).where((0, import_drizzle_orm133.eq)(beats.isPublished, true)).groupBy(beats.genre).limit(10);
         const trendingQueries = [
           { query: "trap beats", searchCount: 1523, trend: "up" },
           { query: "lo-fi", searchCount: 1245, trend: "up" },
@@ -189581,7 +189595,7 @@ var init_search = __esm({
       try {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ error: "Authentication required" });
-        const rows = await db.select().from(searchHistory).where((0, import_drizzle_orm132.eq)(searchHistory.userId, userId)).orderBy((0, import_drizzle_orm132.desc)(searchHistory.createdAt)).limit(50);
+        const rows = await db.select().from(searchHistory).where((0, import_drizzle_orm133.eq)(searchHistory.userId, userId)).orderBy((0, import_drizzle_orm133.desc)(searchHistory.createdAt)).limit(50);
         res.json({ history: rows.slice(0, 20), totalCount: rows.length });
       } catch (error) {
         logger2.warn({ err: error }, "Search history error:");
@@ -189592,7 +189606,7 @@ var init_search = __esm({
       try {
         const userId = req.user?.id;
         if (!userId) return res.status(401).json({ error: "Authentication required" });
-        await db.delete(searchHistory).where((0, import_drizzle_orm132.eq)(searchHistory.userId, userId));
+        await db.delete(searchHistory).where((0, import_drizzle_orm133.eq)(searchHistory.userId, userId));
         res.json({ success: true, message: "Search history cleared" });
       } catch (error) {
         logger2.warn({ err: error }, "Clear search history error:");
@@ -189604,7 +189618,7 @@ var init_search = __esm({
         const userId = req.user?.id;
         const { query } = req.params;
         if (!userId) return res.status(401).json({ error: "Authentication required" });
-        await db.delete(searchHistory).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(searchHistory.userId, userId), (0, import_drizzle_orm132.eq)(searchHistory.query, query)));
+        await db.delete(searchHistory).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(searchHistory.userId, userId), (0, import_drizzle_orm133.eq)(searchHistory.query, query)));
         res.json({ success: true, message: "Search item removed" });
       } catch (error) {
         logger2.warn({ err: error }, "Remove search history item error:");
@@ -189615,12 +189629,12 @@ var init_search = __esm({
       try {
         const userId = req.user?.id;
         const { category = "all" } = req.query;
-        const newReleases = await db.select().from(beats).where((0, import_drizzle_orm132.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm132.desc)(beats.createdAt)).limit(12);
-        const trending = await db.select().from(beats).where((0, import_drizzle_orm132.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm132.desc)(beats.plays)).limit(12);
+        const newReleases = await db.select().from(beats).where((0, import_drizzle_orm133.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm133.desc)(beats.createdAt)).limit(12);
+        const trending = await db.select().from(beats).where((0, import_drizzle_orm133.eq)(beats.isPublished, true)).orderBy((0, import_drizzle_orm133.desc)(beats.plays)).limit(12);
         const genres = ["Hip-Hop", "Trap", "R&B", "Pop", "Lo-Fi", "Drill"];
         const curatedCollections = [];
         for (const genre of genres.slice(0, 4)) {
-          const genreBeats = await db.select().from(beats).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(beats.isPublished, true), (0, import_drizzle_orm132.eq)(beats.genre, genre))).orderBy((0, import_drizzle_orm132.desc)(beats.plays)).limit(6);
+          const genreBeats = await db.select().from(beats).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(beats.isPublished, true), (0, import_drizzle_orm133.eq)(beats.genre, genre))).orderBy((0, import_drizzle_orm133.desc)(beats.plays)).limit(6);
           if (genreBeats.length > 0) {
             curatedCollections.push({
               name: `Top ${genre} Beats`,
@@ -189631,16 +189645,16 @@ var init_search = __esm({
         }
         let personalized = [];
         if (userId) {
-          const userHistory = await db.select().from(searchHistory).where((0, import_drizzle_orm132.eq)(searchHistory.userId, userId)).orderBy((0, import_drizzle_orm132.desc)(searchHistory.createdAt)).limit(10);
+          const userHistory = await db.select().from(searchHistory).where((0, import_drizzle_orm133.eq)(searchHistory.userId, userId)).orderBy((0, import_drizzle_orm133.desc)(searchHistory.createdAt)).limit(10);
           const recentGenres = /* @__PURE__ */ new Set();
           for (const item of userHistory.slice(0, 10)) {
-            const matchingBeats = await db.select({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm132.ilike)(beats.title, `%${item.query}%`)).limit(3);
+            const matchingBeats = await db.select({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm133.ilike)(beats.title, `%${item.query}%`)).limit(3);
             matchingBeats.forEach((b) => b.genre && recentGenres.add(b.genre));
           }
           if (recentGenres.size > 0) {
             const genreArray = Array.from(recentGenres).slice(0, 3);
             for (const genre of genreArray) {
-              const recommended = await db.select().from(beats).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(beats.isPublished, true), (0, import_drizzle_orm132.eq)(beats.genre, genre))).orderBy((0, import_drizzle_orm132.desc)(beats.plays)).limit(4);
+              const recommended = await db.select().from(beats).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(beats.isPublished, true), (0, import_drizzle_orm133.eq)(beats.genre, genre))).orderBy((0, import_drizzle_orm133.desc)(beats.plays)).limit(4);
               personalized.push(...recommended);
             }
           }
@@ -189673,19 +189687,19 @@ var init_search = __esm({
       try {
         const { beatId } = req.params;
         const { limit = 10 } = req.query;
-        const [beat] = await db.select().from(beats).where((0, import_drizzle_orm132.eq)(beats.id, beatId)).limit(1);
+        const [beat] = await db.select().from(beats).where((0, import_drizzle_orm133.eq)(beats.id, beatId)).limit(1);
         if (!beat) {
           return res.status(404).json({ error: "Beat not found" });
         }
-        const conditions = [(0, import_drizzle_orm132.eq)(beats.isPublished, true)];
+        const conditions = [(0, import_drizzle_orm133.eq)(beats.isPublished, true)];
         if (beat.genre) {
-          conditions.push((0, import_drizzle_orm132.eq)(beats.genre, beat.genre));
+          conditions.push((0, import_drizzle_orm133.eq)(beats.genre, beat.genre));
         }
         if (beat.bpm) {
-          conditions.push((0, import_drizzle_orm132.gte)(beats.bpm, beat.bpm - 15));
-          conditions.push((0, import_drizzle_orm132.lte)(beats.bpm, beat.bpm + 15));
+          conditions.push((0, import_drizzle_orm133.gte)(beats.bpm, beat.bpm - 15));
+          conditions.push((0, import_drizzle_orm133.lte)(beats.bpm, beat.bpm + 15));
         }
-        const similar = await db.select().from(beats).where((0, import_drizzle_orm132.and)(...conditions)).orderBy((0, import_drizzle_orm132.desc)(beats.plays)).limit(Number(limit) + 1);
+        const similar = await db.select().from(beats).where((0, import_drizzle_orm133.and)(...conditions)).orderBy((0, import_drizzle_orm133.desc)(beats.plays)).limit(Number(limit) + 1);
         const filtered = similar.filter((b) => b.id !== beatId).slice(0, Number(limit));
         res.json({
           sourceBeat: {
@@ -189756,7 +189770,7 @@ var init_search = __esm({
         };
         const contextKey = String(context);
         const contextPresets = builtInPresets[contextKey] || builtInPresets.global;
-        const userPresets = await db.select().from(filterPresets).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(filterPresets.userId, userId), (0, import_drizzle_orm132.eq)(filterPresets.context, contextKey))).orderBy((0, import_drizzle_orm132.desc)(filterPresets.createdAt)).limit(50);
+        const userPresets = await db.select().from(filterPresets).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(filterPresets.userId, userId), (0, import_drizzle_orm133.eq)(filterPresets.context, contextKey))).orderBy((0, import_drizzle_orm133.desc)(filterPresets.createdAt)).limit(50);
         res.json({ presets: [...contextPresets, ...userPresets] });
       } catch (error) {
         logger2.warn({ err: error }, "Get filter presets error:");
@@ -189769,7 +189783,7 @@ var init_search = __esm({
         if (!userId) return res.status(401).json({ error: "Authentication required" });
         const { id, name, filters } = req.body;
         if (!id || !name) return res.status(400).json({ error: "ID and name are required" });
-        const [updated] = await db.update(filterPresets).set({ name, ...filters && { filters }, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(filterPresets.id, id), (0, import_drizzle_orm132.eq)(filterPresets.userId, userId))).returning();
+        const [updated] = await db.update(filterPresets).set({ name, ...filters && { filters }, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(filterPresets.id, id), (0, import_drizzle_orm133.eq)(filterPresets.userId, userId))).returning();
         if (!updated) return res.status(404).json({ error: "Preset not found" });
         res.json({ success: true, preset: updated });
       } catch (error) {
@@ -189782,7 +189796,7 @@ var init_search = __esm({
         const userId = req.user?.id;
         const { presetId } = req.params;
         if (!userId) return res.status(401).json({ error: "Authentication required" });
-        await db.delete(filterPresets).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(filterPresets.id, presetId), (0, import_drizzle_orm132.eq)(filterPresets.userId, userId)));
+        await db.delete(filterPresets).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(filterPresets.id, presetId), (0, import_drizzle_orm133.eq)(filterPresets.userId, userId)));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "Delete filter preset error:");
@@ -189794,10 +189808,10 @@ var init_search = __esm({
         const userId = req.user?.id;
         const { presetId } = req.params;
         if (!userId) return res.status(401).json({ error: "Authentication required" });
-        const [target] = await db.select().from(filterPresets).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(filterPresets.id, presetId), (0, import_drizzle_orm132.eq)(filterPresets.userId, userId))).limit(1);
+        const [target] = await db.select().from(filterPresets).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(filterPresets.id, presetId), (0, import_drizzle_orm133.eq)(filterPresets.userId, userId))).limit(1);
         if (!target) return res.status(404).json({ error: "Preset not found" });
-        await db.update(filterPresets).set({ isDefault: false }).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.eq)(filterPresets.userId, userId), (0, import_drizzle_orm132.eq)(filterPresets.context, target.context)));
-        await db.update(filterPresets).set({ isDefault: !target.isDefault }).where((0, import_drizzle_orm132.eq)(filterPresets.id, presetId));
+        await db.update(filterPresets).set({ isDefault: false }).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.eq)(filterPresets.userId, userId), (0, import_drizzle_orm133.eq)(filterPresets.context, target.context)));
+        await db.update(filterPresets).set({ isDefault: !target.isDefault }).where((0, import_drizzle_orm133.eq)(filterPresets.id, presetId));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "Set default preset error:");
@@ -189812,7 +189826,7 @@ var init_search = __esm({
           return res.json({ suggestions: [] });
         }
         const suggestions = [];
-        const beatTitles = await db.select({ title: beats.title, genre: beats.genre }).from(beats).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.ilike)(beats.title, `%${query}%`), (0, import_drizzle_orm132.eq)(beats.isPublished, true))).limit(5);
+        const beatTitles = await db.select({ title: beats.title, genre: beats.genre }).from(beats).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.ilike)(beats.title, `%${query}%`), (0, import_drizzle_orm133.eq)(beats.isPublished, true))).limit(5);
         beatTitles.forEach((b) => {
           if (b.title) {
             suggestions.push({
@@ -189822,7 +189836,7 @@ var init_search = __esm({
             });
           }
         });
-        const usernames = await db.select({ username: users.username }).from(users).where((0, import_drizzle_orm132.ilike)(users.username, `%${query}%`)).limit(3);
+        const usernames = await db.select({ username: users.username }).from(users).where((0, import_drizzle_orm133.ilike)(users.username, `%${query}%`)).limit(3);
         usernames.forEach((u) => {
           if (u.username) {
             suggestions.push({
@@ -189832,7 +189846,7 @@ var init_search = __esm({
             });
           }
         });
-        const genres = await db.selectDistinct({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm132.ilike)(beats.genre, `%${query}%`)).limit(3);
+        const genres = await db.selectDistinct({ genre: beats.genre }).from(beats).where((0, import_drizzle_orm133.ilike)(beats.genre, `%${query}%`)).limit(3);
         genres.forEach((g) => {
           if (g.genre) {
             suggestions.push({
@@ -189862,15 +189876,15 @@ var init_search = __esm({
         if (!userId) {
           return res.status(401).json({ error: "Authentication required" });
         }
-        const conditions = [(0, import_drizzle_orm132.eq)(releases.userId, userId)];
+        const conditions = [(0, import_drizzle_orm133.eq)(releases.userId, userId)];
         if (q) {
-          conditions.push((0, import_drizzle_orm132.ilike)(releases.title, `%${q}%`));
+          conditions.push((0, import_drizzle_orm133.ilike)(releases.title, `%${q}%`));
         }
         if (status && status !== "all") {
-          conditions.push((0, import_drizzle_orm132.eq)(releases.status, status));
+          conditions.push((0, import_drizzle_orm133.eq)(releases.status, status));
         }
-        const results = await db.select().from(releases).where((0, import_drizzle_orm132.and)(...conditions)).orderBy((0, import_drizzle_orm132.desc)(releases.createdAt)).limit(Number(limit)).offset(Number(offset));
-        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(releases).where((0, import_drizzle_orm132.and)(...conditions));
+        const results = await db.select().from(releases).where((0, import_drizzle_orm133.and)(...conditions)).orderBy((0, import_drizzle_orm133.desc)(releases.createdAt)).limit(Number(limit)).offset(Number(offset));
+        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(releases).where((0, import_drizzle_orm133.and)(...conditions));
         const statusCounts = {
           all: 0,
           draft: 0,
@@ -189878,7 +189892,7 @@ var init_search = __esm({
           live: 0,
           rejected: 0
         };
-        const allReleases = await db.select({ status: releases.status }).from(releases).where((0, import_drizzle_orm132.eq)(releases.userId, userId)).limit(1e3);
+        const allReleases = await db.select({ status: releases.status }).from(releases).where((0, import_drizzle_orm133.eq)(releases.userId, userId)).limit(1e3);
         allReleases.forEach((r) => {
           statusCounts.all++;
           if (r.status && statusCounts[r.status] !== void 0) {
@@ -189925,27 +189939,27 @@ var init_search = __esm({
         const platformData = await Promise.all(
           platforms.map(async (p) => {
             const currentPeriodData = await db.select({
-              totalStreams: (0, import_drizzle_orm132.sum)(analytics.streams),
-              totalRevenue: (0, import_drizzle_orm132.sum)(analytics.revenue),
-              totalListeners: (0, import_drizzle_orm132.sum)(analytics.totalListeners)
+              totalStreams: (0, import_drizzle_orm133.sum)(analytics.streams),
+              totalRevenue: (0, import_drizzle_orm133.sum)(analytics.revenue),
+              totalListeners: (0, import_drizzle_orm133.sum)(analytics.totalListeners)
             }).from(analytics).where(
-              (0, import_drizzle_orm132.and)(
-                (0, import_drizzle_orm132.eq)(analytics.userId, userId),
-                (0, import_drizzle_orm132.eq)(analytics.platform, p),
-                (0, import_drizzle_orm132.gte)(analytics.date, startDate),
-                (0, import_drizzle_orm132.lte)(analytics.date, endDate)
+              (0, import_drizzle_orm133.and)(
+                (0, import_drizzle_orm133.eq)(analytics.userId, userId),
+                (0, import_drizzle_orm133.eq)(analytics.platform, p),
+                (0, import_drizzle_orm133.gte)(analytics.date, startDate),
+                (0, import_drizzle_orm133.lte)(analytics.date, endDate)
               )
             );
             const previousPeriodData = await db.select({
-              totalStreams: (0, import_drizzle_orm132.sum)(analytics.streams),
-              totalRevenue: (0, import_drizzle_orm132.sum)(analytics.revenue),
-              totalListeners: (0, import_drizzle_orm132.sum)(analytics.totalListeners)
+              totalStreams: (0, import_drizzle_orm133.sum)(analytics.streams),
+              totalRevenue: (0, import_drizzle_orm133.sum)(analytics.revenue),
+              totalListeners: (0, import_drizzle_orm133.sum)(analytics.totalListeners)
             }).from(analytics).where(
-              (0, import_drizzle_orm132.and)(
-                (0, import_drizzle_orm132.eq)(analytics.userId, userId),
-                (0, import_drizzle_orm132.eq)(analytics.platform, p),
-                (0, import_drizzle_orm132.gte)(analytics.date, previousStartDate),
-                (0, import_drizzle_orm132.lte)(analytics.date, startDate)
+              (0, import_drizzle_orm133.and)(
+                (0, import_drizzle_orm133.eq)(analytics.userId, userId),
+                (0, import_drizzle_orm133.eq)(analytics.platform, p),
+                (0, import_drizzle_orm133.gte)(analytics.date, previousStartDate),
+                (0, import_drizzle_orm133.lte)(analytics.date, startDate)
               )
             );
             const current = currentPeriodData[0] || { totalStreams: null, totalRevenue: null, totalListeners: null };
@@ -190015,21 +190029,21 @@ var init_search = __esm({
         if (!userId) {
           return res.status(401).json({ error: "Authentication required" });
         }
-        const conditions = [(0, import_drizzle_orm132.eq)(socialCampaigns.userId, userId)];
+        const conditions = [(0, import_drizzle_orm133.eq)(socialCampaigns.userId, userId)];
         if (q) {
-          conditions.push((0, import_drizzle_orm132.ilike)(socialCampaigns.content, `%${q}%`));
+          conditions.push((0, import_drizzle_orm133.ilike)(socialCampaigns.content, `%${q}%`));
         }
         if (platform && platform !== "all") {
-          conditions.push((0, import_drizzle_orm132.eq)(socialCampaigns.platform, platform));
+          conditions.push((0, import_drizzle_orm133.eq)(socialCampaigns.platform, platform));
         }
         if (status && status !== "all") {
-          conditions.push((0, import_drizzle_orm132.eq)(socialCampaigns.status, status));
+          conditions.push((0, import_drizzle_orm133.eq)(socialCampaigns.status, status));
         }
         if (dateFrom) {
-          conditions.push((0, import_drizzle_orm132.gte)(socialCampaigns.createdAt, new Date(dateFrom)));
+          conditions.push((0, import_drizzle_orm133.gte)(socialCampaigns.createdAt, new Date(dateFrom)));
         }
         if (dateTo) {
-          conditions.push((0, import_drizzle_orm132.lte)(socialCampaigns.createdAt, new Date(dateTo)));
+          conditions.push((0, import_drizzle_orm133.lte)(socialCampaigns.createdAt, new Date(dateTo)));
         }
         const posts4 = await db.select({
           id: socialCampaigns.id,
@@ -190040,11 +190054,11 @@ var init_search = __esm({
           publishedAt: socialCampaigns.publishedAt,
           engagement: socialCampaigns.engagement,
           createdAt: socialCampaigns.createdAt
-        }).from(socialCampaigns).where((0, import_drizzle_orm132.and)(...conditions)).orderBy((0, import_drizzle_orm132.desc)(socialCampaigns.createdAt)).limit(Number(limit));
-        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(socialCampaigns).where((0, import_drizzle_orm132.and)(...conditions));
+        }).from(socialCampaigns).where((0, import_drizzle_orm133.and)(...conditions)).orderBy((0, import_drizzle_orm133.desc)(socialCampaigns.createdAt)).limit(Number(limit));
+        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(socialCampaigns).where((0, import_drizzle_orm133.and)(...conditions));
         const hashtagCounts = await db.select({
           content: socialCampaigns.content
-        }).from(socialCampaigns).where((0, import_drizzle_orm132.eq)(socialCampaigns.userId, userId)).limit(200);
+        }).from(socialCampaigns).where((0, import_drizzle_orm133.eq)(socialCampaigns.userId, userId)).limit(200);
         const hashtagMap = {};
         for (const row of hashtagCounts) {
           const tags = (row.content || "").match(/#(\w+)/g) || [];
@@ -190077,10 +190091,10 @@ var init_search = __esm({
         const conditions = [];
         if (q) {
           conditions.push(
-            (0, import_drizzle_orm132.or)(
-              (0, import_drizzle_orm132.ilike)(users.username, `%${q}%`),
-              (0, import_drizzle_orm132.ilike)(users.firstName, `%${q}%`),
-              (0, import_drizzle_orm132.ilike)(users.lastName, `%${q}%`)
+            (0, import_drizzle_orm133.or)(
+              (0, import_drizzle_orm133.ilike)(users.username, `%${q}%`),
+              (0, import_drizzle_orm133.ilike)(users.firstName, `%${q}%`),
+              (0, import_drizzle_orm133.ilike)(users.lastName, `%${q}%`)
             )
           );
         }
@@ -190092,10 +190106,10 @@ var init_search = __esm({
           avatarUrl: users.avatarUrl,
           bio: users.bio,
           location: users.location
-        }).from(users).where(conditions.length > 0 ? (0, import_drizzle_orm132.and)(...conditions) : void 0).limit(Number(limit)).offset(Number(offset));
-        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm132.count)() }).from(users).where(conditions.length > 0 ? (0, import_drizzle_orm132.and)(...conditions) : void 0);
+        }).from(users).where(conditions.length > 0 ? (0, import_drizzle_orm133.and)(...conditions) : void 0).limit(Number(limit)).offset(Number(offset));
+        const [{ value: total }] = await db.select({ value: (0, import_drizzle_orm133.count)() }).from(users).where(conditions.length > 0 ? (0, import_drizzle_orm133.and)(...conditions) : void 0);
         const producerIds = results.map((r) => r.id);
-        const beatCounts = producerIds.length > 0 ? await db.select({ producerId: beats.producerId, value: (0, import_drizzle_orm132.count)() }).from(beats).where((0, import_drizzle_orm132.and)((0, import_drizzle_orm132.inArray)(beats.producerId, producerIds), (0, import_drizzle_orm132.eq)(beats.isPublished, true))).groupBy(beats.producerId) : [];
+        const beatCounts = producerIds.length > 0 ? await db.select({ producerId: beats.producerId, value: (0, import_drizzle_orm133.count)() }).from(beats).where((0, import_drizzle_orm133.and)((0, import_drizzle_orm133.inArray)(beats.producerId, producerIds), (0, import_drizzle_orm133.eq)(beats.isPublished, true))).groupBy(beats.producerId) : [];
         const beatCountMap = new Map(beatCounts.map((b) => [b.producerId, Number(b.value)]));
         const producersWithStats = results.map((producer) => ({
           ...producer,
@@ -191150,9 +191164,6 @@ ${vars.producerName || "[PRODUCER NAME]"}
         if (contract.status !== "draft") {
           throw new Error("Contract must be in draft status to send for signature");
         }
-        if (contract.parties.length === 0) {
-          throw new Error("Contract must have at least one party");
-        }
         contract.status = "pending_signature";
         this.contracts.set(contractId, contract);
         logger2.info(`Contract ${contractId} sent for signature`);
@@ -192057,7 +192068,7 @@ var contracts_exports = {};
 __export(contracts_exports, {
   default: () => contracts_default
 });
-var import_express96, import_crypto98, import_drizzle_orm133, router93, VALID_DISPUTE_TYPES, VALID_STATUS_TRANSITIONS, isAdminUser, canAccessDispute, contracts_default;
+var import_express96, import_crypto98, import_drizzle_orm134, router93, VALID_DISPUTE_TYPES, VALID_STATUS_TRANSITIONS, isAdminUser, canAccessDispute, contracts_default;
 var init_contracts = __esm({
   "server/routes/contracts.ts"() {
     "use strict";
@@ -192069,7 +192080,7 @@ var init_contracts = __esm({
     import_crypto98 = __toESM(require("crypto"), 1);
     init_db();
     init_schema();
-    import_drizzle_orm133 = require("drizzle-orm");
+    import_drizzle_orm134 = require("drizzle-orm");
     init_auth();
     router93 = (0, import_express96.Router)();
     router93.get("/templates", requireAuth, async (req, res) => {
@@ -192080,9 +192091,9 @@ var init_contracts = __esm({
         let userCustomTemplates = [];
         if (userId) {
           try {
-            const dbTemplates = await db.select().from(contractTemplates).where((0, import_drizzle_orm133.and)(
-              (0, import_drizzle_orm133.eq)(contractTemplates.userId, userId),
-              (0, import_drizzle_orm133.eq)(contractTemplates.isDefault, false)
+            const dbTemplates = await db.select().from(contractTemplates).where((0, import_drizzle_orm134.and)(
+              (0, import_drizzle_orm134.eq)(contractTemplates.userId, userId),
+              (0, import_drizzle_orm134.eq)(contractTemplates.isDefault, false)
             )).limit(50);
             userCustomTemplates = dbTemplates.map((t) => ({
               id: t.id,
@@ -192150,9 +192161,9 @@ var init_contracts = __esm({
         const userId = req.user.id;
         const { templateId } = req.params;
         const updates = req.body;
-        const [updated] = await db.update(contractTemplates).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm133.and)(
-          (0, import_drizzle_orm133.eq)(contractTemplates.id, templateId),
-          (0, import_drizzle_orm133.eq)(contractTemplates.userId, userId)
+        const [updated] = await db.update(contractTemplates).set({ ...updates, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm134.and)(
+          (0, import_drizzle_orm134.eq)(contractTemplates.id, templateId),
+          (0, import_drizzle_orm134.eq)(contractTemplates.userId, userId)
         )).returning();
         if (!updated) {
           return res.status(404).json({ error: "Template not found" });
@@ -192167,10 +192178,10 @@ var init_contracts = __esm({
       try {
         const userId = req.user.id;
         const { templateId } = req.params;
-        const [deleted] = await db.delete(contractTemplates).where((0, import_drizzle_orm133.and)(
-          (0, import_drizzle_orm133.eq)(contractTemplates.id, templateId),
-          (0, import_drizzle_orm133.eq)(contractTemplates.userId, userId),
-          (0, import_drizzle_orm133.eq)(contractTemplates.isDefault, false)
+        const [deleted] = await db.delete(contractTemplates).where((0, import_drizzle_orm134.and)(
+          (0, import_drizzle_orm134.eq)(contractTemplates.id, templateId),
+          (0, import_drizzle_orm134.eq)(contractTemplates.userId, userId),
+          (0, import_drizzle_orm134.eq)(contractTemplates.isDefault, false)
         )).returning();
         if (!deleted) {
           return res.status(404).json({ error: "Template not found or cannot delete default templates" });
@@ -192204,9 +192215,13 @@ var init_contracts = __esm({
     router93.get("/my-contracts", async (req, res) => {
       try {
         if (!req.isAuthenticated()) {
+          logger2.warn("[contracts/my-contracts] 401 \u2014 isAuthenticated=false, session.userId=" + req.session?.userId);
           return res.status(401).json({ error: "Unauthorized" });
         }
-        const contracts = contractTemplateService.getContractsByUser(req.user.id);
+        const userId = req.user.id;
+        const contracts = contractTemplateService.getContractsByUser(userId);
+        const totalInMap = contractTemplateService.contracts?.size ?? -1;
+        logger2.info(`[contracts/my-contracts] userId=${userId} total_in_map=${totalInMap} found=${contracts.length}`);
         return res.json({ contracts });
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching user contracts:");
@@ -192249,12 +192264,12 @@ var init_contracts = __esm({
         const isAdmin = isAdminUser(req.user);
         let disputes;
         if (isAdmin) {
-          disputes = await db.select().from(marketplaceDisputes).orderBy((0, import_drizzle_orm133.desc)(marketplaceDisputes.createdAt)).limit(200);
+          disputes = await db.select().from(marketplaceDisputes).orderBy((0, import_drizzle_orm134.desc)(marketplaceDisputes.createdAt)).limit(200);
         } else {
-          disputes = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.or)(
-            (0, import_drizzle_orm133.eq)(marketplaceDisputes.buyerId, userId),
-            (0, import_drizzle_orm133.eq)(marketplaceDisputes.sellerId, userId)
-          )).orderBy((0, import_drizzle_orm133.desc)(marketplaceDisputes.createdAt)).limit(100);
+          disputes = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.or)(
+            (0, import_drizzle_orm134.eq)(marketplaceDisputes.buyerId, userId),
+            (0, import_drizzle_orm134.eq)(marketplaceDisputes.sellerId, userId)
+          )).orderBy((0, import_drizzle_orm134.desc)(marketplaceDisputes.createdAt)).limit(100);
         }
         if (status && typeof status === "string") {
           disputes = disputes.filter((d) => d.status === status);
@@ -192795,11 +192810,11 @@ var init_contracts = __esm({
         }
         const userId = req.user.id;
         const rows = await db.select().from(splitSheets).where(
-          (0, import_drizzle_orm133.or)(
-            (0, import_drizzle_orm133.eq)(splitSheets.creatorId, userId),
-            import_drizzle_orm133.sql`${splitSheets.participants} @> ${JSON.stringify([{ userId }])}::jsonb`
+          (0, import_drizzle_orm134.or)(
+            (0, import_drizzle_orm134.eq)(splitSheets.creatorId, userId),
+            import_drizzle_orm134.sql`${splitSheets.participants} @> ${JSON.stringify([{ userId }])}::jsonb`
           )
-        ).orderBy((0, import_drizzle_orm133.desc)(splitSheets.createdAt)).limit(100);
+        ).orderBy((0, import_drizzle_orm134.desc)(splitSheets.createdAt)).limit(100);
         return res.json({ splitSheets: rows });
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching split sheets:");
@@ -192841,7 +192856,7 @@ var init_contracts = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const { contractId } = req.params;
-        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm133.eq)(splitSheets.id, contractId)).limit(1);
+        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm134.eq)(splitSheets.id, contractId)).limit(1);
         if (!contract) {
           return res.status(404).json({ error: "Split sheet not found" });
         }
@@ -192859,7 +192874,7 @@ var init_contracts = __esm({
         const { contractId } = req.params;
         const { signature } = req.body;
         const userId = req.user.id;
-        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm133.eq)(splitSheets.id, contractId)).limit(1);
+        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm134.eq)(splitSheets.id, contractId)).limit(1);
         if (!contract) {
           return res.status(404).json({ error: "Split sheet not found" });
         }
@@ -192880,7 +192895,7 @@ var init_contracts = __esm({
           signatures,
           status: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm133.eq)(splitSheets.id, contractId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(splitSheets.id, contractId)).returning();
         return res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error signing split sheet:");
@@ -192901,7 +192916,7 @@ var init_contracts = __esm({
         if (!emailRegex.test(email)) {
           return res.status(400).json({ error: "Invalid email address format" });
         }
-        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm133.eq)(splitSheets.id, contractId)).limit(1);
+        const [contract] = await db.select().from(splitSheets).where((0, import_drizzle_orm134.eq)(splitSheets.id, contractId)).limit(1);
         if (!contract) {
           return res.status(404).json({ error: "Split sheet not found" });
         }
@@ -192917,7 +192932,7 @@ var init_contracts = __esm({
           signatures,
           status: "pending_signature",
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm133.eq)(splitSheets.id, contractId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(splitSheets.id, contractId)).returning();
         return res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error adding participant:");
@@ -192977,9 +192992,9 @@ var init_contracts = __esm({
           return res.status(400).json({ error: "Description must be 5000 characters or less" });
         }
         const existingDisputes = await db.select().from(marketplaceDisputes).where(
-          (0, import_drizzle_orm133.and)(
-            (0, import_drizzle_orm133.eq)(marketplaceDisputes.orderId, orderId),
-            (0, import_drizzle_orm133.notInArray)(marketplaceDisputes.status, ["resolved", "closed"])
+          (0, import_drizzle_orm134.and)(
+            (0, import_drizzle_orm134.eq)(marketplaceDisputes.orderId, orderId),
+            (0, import_drizzle_orm134.notInArray)(marketplaceDisputes.status, ["resolved", "closed"])
           )
         ).limit(10);
         if (existingDisputes.length > 0) {
@@ -193025,7 +193040,7 @@ var init_contracts = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const { disputeId } = req.params;
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193051,7 +193066,7 @@ var init_contracts = __esm({
         if (message.length > 2e3) {
           return res.status(400).json({ error: "Message must be 2000 characters or less" });
         }
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193091,7 +193106,7 @@ var init_contracts = __esm({
           messages: updatedMessages,
           status: newStatus,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).returning();
         logger2.info(`Message added to dispute ${disputeId} by user ${req.user.id}`);
         return res.json({ dispute: updatedDispute, message: "Message added successfully" });
       } catch (error) {
@@ -193109,7 +193124,7 @@ var init_contracts = __esm({
         if (!url) {
           return res.status(400).json({ error: "Evidence URL is required" });
         }
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193141,7 +193156,7 @@ var init_contracts = __esm({
           evidence: updatedEvidence,
           messages: updatedMessages,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).returning();
         logger2.info(`Evidence added to dispute ${disputeId} by user ${req.user.id}`);
         return res.json({ dispute: updatedDispute, message: "Evidence added successfully" });
       } catch (error) {
@@ -193156,7 +193171,7 @@ var init_contracts = __esm({
         }
         const { disputeId } = req.params;
         const { reason } = req.body;
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193178,7 +193193,7 @@ var init_contracts = __esm({
           escalatedAt: now,
           updatedAt: now,
           messages: updatedMessages
-        }).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).returning();
         logger2.info(`Dispute ${disputeId} escalated by user ${req.user.id}`);
         return res.json({ dispute: updatedDispute, message: "Dispute escalated successfully" });
       } catch (error) {
@@ -193203,7 +193218,7 @@ var init_contracts = __esm({
         if (outcome === "refund_partial" && (refundAmount === void 0 || refundAmount <= 0)) {
           return res.status(400).json({ error: "Partial refund requires a valid refund amount" });
         }
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193236,7 +193251,7 @@ var init_contracts = __esm({
           updatedAt: now,
           resolution,
           messages: updatedMessages
-        }).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).returning();
         logger2.info(`Dispute ${disputeId} resolved with outcome ${outcome} by user ${req.user.id}`);
         return res.json({ dispute: updatedDispute, message: "Dispute resolved successfully" });
       } catch (error) {
@@ -193250,7 +193265,7 @@ var init_contracts = __esm({
           return res.status(401).json({ error: "Unauthorized" });
         }
         const { disputeId } = req.params;
-        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).limit(1);
+        const [dispute] = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).limit(1);
         if (!dispute) {
           return res.status(404).json({ error: "Dispute not found" });
         }
@@ -193271,7 +193286,7 @@ var init_contracts = __esm({
           status: "closed",
           updatedAt: now,
           messages: updatedMessages
-        }).where((0, import_drizzle_orm133.eq)(marketplaceDisputes.id, disputeId)).returning();
+        }).where((0, import_drizzle_orm134.eq)(marketplaceDisputes.id, disputeId)).returning();
         logger2.info(`Dispute ${disputeId} withdrawn by user ${req.user.id}`);
         return res.json({ dispute: updatedDispute, message: "Dispute withdrawn successfully" });
       } catch (error) {
@@ -193290,9 +193305,9 @@ var init_contracts = __esm({
         if (isAdmin) {
           userDisputes = await db.select().from(marketplaceDisputes).limit(200);
         } else {
-          userDisputes = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm133.or)(
-            (0, import_drizzle_orm133.eq)(marketplaceDisputes.buyerId, userId),
-            (0, import_drizzle_orm133.eq)(marketplaceDisputes.sellerId, userId)
+          userDisputes = await db.select().from(marketplaceDisputes).where((0, import_drizzle_orm134.or)(
+            (0, import_drizzle_orm134.eq)(marketplaceDisputes.buyerId, userId),
+            (0, import_drizzle_orm134.eq)(marketplaceDisputes.sellerId, userId)
           ));
         }
         const stats = {
@@ -193323,7 +193338,7 @@ var ai_exports = {};
 __export(ai_exports, {
   default: () => ai_default
 });
-var import_express97, import_drizzle_orm134, router94, DIT24_BASE, ai_default;
+var import_express97, import_drizzle_orm135, router94, DIT24_BASE, ai_default;
 var init_ai = __esm({
   "server/routes/ai.ts"() {
     "use strict";
@@ -193332,7 +193347,7 @@ var init_ai = __esm({
     init_logger();
     init_db();
     init_schema();
-    import_drizzle_orm134 = require("drizzle-orm");
+    import_drizzle_orm135 = require("drizzle-orm");
     init_unifiedAIController();
     init_rateLimiter();
     init_notificationService();
@@ -193677,14 +193692,14 @@ var init_ai = __esm({
         let query = db.select().from(aiModels);
         const conditions = [];
         if (status && typeof status === "string") {
-          conditions.push((0, import_drizzle_orm134.eq)(aiModels.status, status));
+          conditions.push((0, import_drizzle_orm135.eq)(aiModels.status, status));
         }
         if (type && typeof type === "string") {
-          conditions.push((0, import_drizzle_orm134.eq)(aiModels.modelType, type));
+          conditions.push((0, import_drizzle_orm135.eq)(aiModels.modelType, type));
         }
         let models;
         if (conditions.length > 0) {
-          models = await query.where((0, import_drizzle_orm134.and)(...conditions)).limit(500);
+          models = await query.where((0, import_drizzle_orm135.and)(...conditions)).limit(500);
         } else {
           models = await query.limit(500);
         }
@@ -193700,8 +193715,8 @@ var init_ai = __esm({
     router94.get("/models/:modelId/performance", requireAuth, async (req, res) => {
       try {
         const { modelId } = req.params;
-        const versions = await db.select().from(aiModelVersions).where((0, import_drizzle_orm134.eq)(aiModelVersions.modelId, modelId)).limit(100);
-        const [model5] = await db.select().from(aiModels).where((0, import_drizzle_orm134.eq)(aiModels.id, modelId)).limit(1);
+        const versions = await db.select().from(aiModelVersions).where((0, import_drizzle_orm135.eq)(aiModelVersions.modelId, modelId)).limit(100);
+        const [model5] = await db.select().from(aiModels).where((0, import_drizzle_orm135.eq)(aiModels.id, modelId)).limit(1);
         res.json({
           success: true,
           data: {
@@ -193922,12 +193937,12 @@ var init_ai = __esm({
 });
 
 // server/services/careerCoachService.ts
-var import_drizzle_orm135, CAREER_COACH_PATTERNS, CareerCoachService, careerCoachService;
+var import_drizzle_orm136, CAREER_COACH_PATTERNS, CareerCoachService, careerCoachService;
 var init_careerCoachService = __esm({
   "server/services/careerCoachService.ts"() {
     "use strict";
     init_db();
-    import_drizzle_orm135 = require("drizzle-orm");
+    import_drizzle_orm136 = require("drizzle-orm");
     init_schema();
     init_logger();
     CAREER_COACH_PATTERNS = [
@@ -194434,11 +194449,11 @@ var init_careerCoachService = __esm({
           const today = /* @__PURE__ */ new Date();
           today.setHours(0, 0, 0, 0);
           const existingToday = await db.select().from(careerCoachRecommendations).where(
-            (0, import_drizzle_orm135.and)(
-              (0, import_drizzle_orm135.eq)(careerCoachRecommendations.userId, userId),
-              (0, import_drizzle_orm135.gte)(careerCoachRecommendations.createdAt, today),
-              (0, import_drizzle_orm135.isNull)(careerCoachRecommendations.dismissedAt),
-              (0, import_drizzle_orm135.isNull)(careerCoachRecommendations.completedAt)
+            (0, import_drizzle_orm136.and)(
+              (0, import_drizzle_orm136.eq)(careerCoachRecommendations.userId, userId),
+              (0, import_drizzle_orm136.gte)(careerCoachRecommendations.createdAt, today),
+              (0, import_drizzle_orm136.isNull)(careerCoachRecommendations.dismissedAt),
+              (0, import_drizzle_orm136.isNull)(careerCoachRecommendations.completedAt)
             )
           );
           if (existingToday.length > 0) {
@@ -194564,9 +194579,9 @@ var init_careerCoachService = __esm({
       async dismissRecommendation(userId, recommendationId) {
         try {
           const [updated] = await db.update(careerCoachRecommendations).set({ dismissedAt: /* @__PURE__ */ new Date() }).where(
-            (0, import_drizzle_orm135.and)(
-              (0, import_drizzle_orm135.eq)(careerCoachRecommendations.id, recommendationId),
-              (0, import_drizzle_orm135.eq)(careerCoachRecommendations.userId, userId)
+            (0, import_drizzle_orm136.and)(
+              (0, import_drizzle_orm136.eq)(careerCoachRecommendations.id, recommendationId),
+              (0, import_drizzle_orm136.eq)(careerCoachRecommendations.userId, userId)
             )
           ).returning();
           return !!updated;
@@ -194578,9 +194593,9 @@ var init_careerCoachService = __esm({
       async completeRecommendation(userId, recommendationId) {
         try {
           const [updated] = await db.update(careerCoachRecommendations).set({ completedAt: /* @__PURE__ */ new Date() }).where(
-            (0, import_drizzle_orm135.and)(
-              (0, import_drizzle_orm135.eq)(careerCoachRecommendations.id, recommendationId),
-              (0, import_drizzle_orm135.eq)(careerCoachRecommendations.userId, userId)
+            (0, import_drizzle_orm136.and)(
+              (0, import_drizzle_orm136.eq)(careerCoachRecommendations.id, recommendationId),
+              (0, import_drizzle_orm136.eq)(careerCoachRecommendations.userId, userId)
             )
           ).returning();
           return !!updated;
@@ -194591,15 +194606,15 @@ var init_careerCoachService = __esm({
       }
       async getActiveRecommendations(userId) {
         return db.select().from(careerCoachRecommendations).where(
-          (0, import_drizzle_orm135.and)(
-            (0, import_drizzle_orm135.eq)(careerCoachRecommendations.userId, userId),
-            (0, import_drizzle_orm135.isNull)(careerCoachRecommendations.dismissedAt),
-            (0, import_drizzle_orm135.isNull)(careerCoachRecommendations.completedAt)
+          (0, import_drizzle_orm136.and)(
+            (0, import_drizzle_orm136.eq)(careerCoachRecommendations.userId, userId),
+            (0, import_drizzle_orm136.isNull)(careerCoachRecommendations.dismissedAt),
+            (0, import_drizzle_orm136.isNull)(careerCoachRecommendations.completedAt)
           )
-        ).orderBy((0, import_drizzle_orm135.desc)(careerCoachRecommendations.priority), (0, import_drizzle_orm135.desc)(careerCoachRecommendations.createdAt)).limit(10);
+        ).orderBy((0, import_drizzle_orm136.desc)(careerCoachRecommendations.priority), (0, import_drizzle_orm136.desc)(careerCoachRecommendations.createdAt)).limit(10);
       }
       async getGoals(userId) {
-        return db.select().from(careerGoals).where((0, import_drizzle_orm135.eq)(careerGoals.userId, userId)).orderBy((0, import_drizzle_orm135.desc)(careerGoals.createdAt));
+        return db.select().from(careerGoals).where((0, import_drizzle_orm136.eq)(careerGoals.userId, userId)).orderBy((0, import_drizzle_orm136.desc)(careerGoals.createdAt));
       }
       async createGoal(userId, data) {
         const [goal] = await db.insert(careerGoals).values({
@@ -194609,11 +194624,11 @@ var init_careerCoachService = __esm({
         return goal;
       }
       async updateGoal(userId, goalId, data) {
-        const [goal] = await db.update(careerGoals).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm135.and)((0, import_drizzle_orm135.eq)(careerGoals.id, goalId), (0, import_drizzle_orm135.eq)(careerGoals.userId, userId))).returning();
+        const [goal] = await db.update(careerGoals).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(careerGoals.id, goalId), (0, import_drizzle_orm136.eq)(careerGoals.userId, userId))).returning();
         return goal || null;
       }
       async deleteGoal(userId, goalId) {
-        const [deleted] = await db.delete(careerGoals).where((0, import_drizzle_orm135.and)((0, import_drizzle_orm135.eq)(careerGoals.id, goalId), (0, import_drizzle_orm135.eq)(careerGoals.userId, userId))).returning({ id: careerGoals.id });
+        const [deleted] = await db.delete(careerGoals).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(careerGoals.id, goalId), (0, import_drizzle_orm136.eq)(careerGoals.userId, userId))).returning({ id: careerGoals.id });
         return !!deleted;
       }
       async updateGoalProgress(userId, goalId, currentValue) {
@@ -194622,9 +194637,9 @@ var init_careerCoachService = __esm({
           updatedAt: /* @__PURE__ */ new Date(),
           status: currentValue >= await this.getGoalTarget(goalId) ? "completed" : "active"
         }).where(
-          (0, import_drizzle_orm135.and)(
-            (0, import_drizzle_orm135.eq)(careerGoals.id, goalId),
-            (0, import_drizzle_orm135.eq)(careerGoals.userId, userId)
+          (0, import_drizzle_orm136.and)(
+            (0, import_drizzle_orm136.eq)(careerGoals.id, goalId),
+            (0, import_drizzle_orm136.eq)(careerGoals.userId, userId)
           )
         ).returning();
         return goal || null;
@@ -194642,18 +194657,18 @@ var init_careerCoachService = __esm({
         }));
       }
       async getGoalTarget(goalId) {
-        const [goal] = await db.select({ targetValue: careerGoals.targetValue }).from(careerGoals).where((0, import_drizzle_orm135.eq)(careerGoals.id, goalId)).limit(1);
+        const [goal] = await db.select({ targetValue: careerGoals.targetValue }).from(careerGoals).where((0, import_drizzle_orm136.eq)(careerGoals.id, goalId)).limit(1);
         return goal?.targetValue || 0;
       }
       async getUserAnalyticsSnapshot(userId) {
         const analyticsData = await db.select({
-          totalStreams: import_drizzle_orm135.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-          totalFollowers: import_drizzle_orm135.sql`COALESCE(MAX(${analytics.followers}), 0)`,
-          totalRevenue: import_drizzle_orm135.sql`COALESCE(SUM(${analytics.revenue}), 0)`
-        }).from(analytics).where((0, import_drizzle_orm135.eq)(analytics.userId, userId));
-        const releasesData = await db.select().from(releases).where((0, import_drizzle_orm135.eq)(releases.userId, userId)).orderBy((0, import_drizzle_orm135.desc)(releases.createdAt));
-        const socialData = await db.select().from(socialAccounts).where((0, import_drizzle_orm135.eq)(socialAccounts.userId, userId));
-        const dspData = await db.select().from(dspAnalytics).where((0, import_drizzle_orm135.eq)(dspAnalytics.userId, userId)).limit(100);
+          totalStreams: import_drizzle_orm136.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+          totalFollowers: import_drizzle_orm136.sql`COALESCE(MAX(${analytics.followers}), 0)`,
+          totalRevenue: import_drizzle_orm136.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+        }).from(analytics).where((0, import_drizzle_orm136.eq)(analytics.userId, userId));
+        const releasesData = await db.select().from(releases).where((0, import_drizzle_orm136.eq)(releases.userId, userId)).orderBy((0, import_drizzle_orm136.desc)(releases.createdAt));
+        const socialData = await db.select().from(socialAccounts).where((0, import_drizzle_orm136.eq)(socialAccounts.userId, userId));
+        const dspData = await db.select().from(dspAnalytics).where((0, import_drizzle_orm136.eq)(dspAnalytics.userId, userId)).limit(100);
         let topPlatform = null;
         let topCity = null;
         let avgEngagementRate = 0;
@@ -194764,7 +194779,7 @@ var careerCoach_exports = {};
 __export(careerCoach_exports, {
   default: () => careerCoach_default
 });
-var import_express98, import_zod44, import_drizzle_orm136, router95, createGoalSchema, smartGoalTypeSchema, chatSchema2, CAREER_KNOWLEDGE, DEFAULT_RESPONSE, careerCoach_default;
+var import_express98, import_zod44, import_drizzle_orm137, router95, createGoalSchema, smartGoalTypeSchema, chatSchema2, CAREER_KNOWLEDGE, DEFAULT_RESPONSE, careerCoach_default;
 var init_careerCoach = __esm({
   "server/routes/careerCoach.ts"() {
     "use strict";
@@ -194776,7 +194791,7 @@ var init_careerCoach = __esm({
     import_zod44 = require("zod");
     init_db();
     init_schema();
-    import_drizzle_orm136 = require("drizzle-orm");
+    import_drizzle_orm137 = require("drizzle-orm");
     router95 = (0, import_express98.Router)();
     createGoalSchema = import_zod44.z.object({
       goalType: import_zod44.z.string().min(1),
@@ -195028,13 +195043,13 @@ var init_careerCoach = __esm({
           previousRevenue,
           recentPosts
         ] = await Promise.all([
-          db.select({ streams: (0, import_drizzle_orm136.sum)(analytics.streams), followers: (0, import_drizzle_orm136.sum)(analytics.followers) }).from(analytics).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(analytics.userId, userId), (0, import_drizzle_orm136.gte)(analytics.date, thirtyDaysAgo))),
-          db.select({ streams: (0, import_drizzle_orm136.sum)(analytics.streams), followers: (0, import_drizzle_orm136.sum)(analytics.followers) }).from(analytics).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(analytics.userId, userId), (0, import_drizzle_orm136.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm136.lte)(analytics.date, thirtyDaysAgo))),
-          db.select({ id: releases.id }).from(releases).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(releases.userId, userId), (0, import_drizzle_orm136.gte)(releases.createdAt, ninetyDaysAgo))).limit(500),
-          db.select({ id: releases.id }).from(releases).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(releases.userId, userId), (0, import_drizzle_orm136.gte)(releases.createdAt, new Date(now.getTime() - 180 * 24 * 60 * 60 * 1e3)))).limit(500),
-          db.select({ total: (0, import_drizzle_orm136.sum)(royaltyTransactions.amount) }).from(royaltyTransactions).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm136.gte)(royaltyTransactions.createdAt, thirtyDaysAgo))),
-          db.select({ total: (0, import_drizzle_orm136.sum)(royaltyTransactions.amount) }).from(royaltyTransactions).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm136.gte)(royaltyTransactions.createdAt, sixtyDaysAgo), (0, import_drizzle_orm136.lte)(royaltyTransactions.createdAt, thirtyDaysAgo))),
-          db.select({ id: posts.id }).from(posts).where((0, import_drizzle_orm136.and)((0, import_drizzle_orm136.eq)(posts.userId, userId), (0, import_drizzle_orm136.gte)(posts.createdAt, thirtyDaysAgo))).limit(500)
+          db.select({ streams: (0, import_drizzle_orm137.sum)(analytics.streams), followers: (0, import_drizzle_orm137.sum)(analytics.followers) }).from(analytics).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(analytics.userId, userId), (0, import_drizzle_orm137.gte)(analytics.date, thirtyDaysAgo))),
+          db.select({ streams: (0, import_drizzle_orm137.sum)(analytics.streams), followers: (0, import_drizzle_orm137.sum)(analytics.followers) }).from(analytics).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(analytics.userId, userId), (0, import_drizzle_orm137.gte)(analytics.date, sixtyDaysAgo), (0, import_drizzle_orm137.lte)(analytics.date, thirtyDaysAgo))),
+          db.select({ id: releases.id }).from(releases).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(releases.userId, userId), (0, import_drizzle_orm137.gte)(releases.createdAt, ninetyDaysAgo))).limit(500),
+          db.select({ id: releases.id }).from(releases).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(releases.userId, userId), (0, import_drizzle_orm137.gte)(releases.createdAt, new Date(now.getTime() - 180 * 24 * 60 * 60 * 1e3)))).limit(500),
+          db.select({ total: (0, import_drizzle_orm137.sum)(royaltyTransactions.amount) }).from(royaltyTransactions).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm137.gte)(royaltyTransactions.createdAt, thirtyDaysAgo))),
+          db.select({ total: (0, import_drizzle_orm137.sum)(royaltyTransactions.amount) }).from(royaltyTransactions).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm137.gte)(royaltyTransactions.createdAt, sixtyDaysAgo), (0, import_drizzle_orm137.lte)(royaltyTransactions.createdAt, thirtyDaysAgo))),
+          db.select({ id: posts.id }).from(posts).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(posts.userId, userId), (0, import_drizzle_orm137.gte)(posts.createdAt, thirtyDaysAgo))).limit(500)
         ]);
         const currentStreams = Number(currentAnalytics[0]?.streams) || 0;
         const previousStreams = Number(previousAnalytics[0]?.streams) || 0;
@@ -195143,13 +195158,13 @@ var apiKeys_exports = {};
 __export(apiKeys_exports, {
   default: () => apiKeys_default
 });
-var import_express99, import_drizzle_orm137, import_crypto99, import_express_rate_limit5, router96, MAX_KEYS_PER_USER, keyCreateLimiter, generateApiKey2, hashApiKey, getKeyPrefix, apiKeys_default;
+var import_express99, import_drizzle_orm138, import_crypto99, import_express_rate_limit5, router96, MAX_KEYS_PER_USER, keyCreateLimiter, generateApiKey2, hashApiKey, getKeyPrefix, apiKeys_default;
 var init_apiKeys = __esm({
   "server/routes/apiKeys.ts"() {
     "use strict";
     import_express99 = require("express");
     init_db();
-    import_drizzle_orm137 = require("drizzle-orm");
+    import_drizzle_orm138 = require("drizzle-orm");
     init_schema();
     init_logger();
     import_crypto99 = __toESM(require("crypto"), 1);
@@ -195180,7 +195195,7 @@ var init_apiKeys = __esm({
     router96.get("/", async (req, res) => {
       try {
         const userId = req.user.id;
-        const rows = await db.select().from(apiKeys).where((0, import_drizzle_orm137.eq)(apiKeys.userId, userId)).limit(50);
+        const rows = await db.select().from(apiKeys).where((0, import_drizzle_orm138.eq)(apiKeys.userId, userId)).limit(50);
         const result = rows.map((k) => ({
           id: k.id,
           name: k.name,
@@ -195217,7 +195232,7 @@ var init_apiKeys = __esm({
           return res.status(400).json({ error: "Invalid scopes", invalid: invalidScopes, valid: [...VALID_SCOPES] });
         }
         const validScopes = requestedScopes;
-        const [{ activeCount }] = await db.select({ activeCount: (0, import_drizzle_orm137.count)() }).from(apiKeys).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(apiKeys.userId, userId), (0, import_drizzle_orm137.eq)(apiKeys.isActive, true)));
+        const [{ activeCount }] = await db.select({ activeCount: (0, import_drizzle_orm138.count)() }).from(apiKeys).where((0, import_drizzle_orm138.and)((0, import_drizzle_orm138.eq)(apiKeys.userId, userId), (0, import_drizzle_orm138.eq)(apiKeys.isActive, true)));
         if (Number(activeCount) >= MAX_KEYS_PER_USER) {
           return res.status(409).json({
             error: `Maximum of ${MAX_KEYS_PER_USER} active API keys reached. Revoke an existing key first.`
@@ -195252,7 +195267,7 @@ var init_apiKeys = __esm({
       try {
         const userId = req.user.id;
         const { keyId } = req.params;
-        const [updated] = await db.update(apiKeys).set({ isActive: false }).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(apiKeys.id, keyId), (0, import_drizzle_orm137.eq)(apiKeys.userId, userId))).returning({ id: apiKeys.id });
+        const [updated] = await db.update(apiKeys).set({ isActive: false }).where((0, import_drizzle_orm138.and)((0, import_drizzle_orm138.eq)(apiKeys.id, keyId), (0, import_drizzle_orm138.eq)(apiKeys.userId, userId))).returning({ id: apiKeys.id });
         if (!updated) {
           return res.status(404).json({ error: "API key not found" });
         }
@@ -195266,7 +195281,7 @@ var init_apiKeys = __esm({
       try {
         const userId = req.user.id;
         const { keyId } = req.params;
-        const [existing] = await db.select({ id: apiKeys.id }).from(apiKeys).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(apiKeys.id, keyId), (0, import_drizzle_orm137.eq)(apiKeys.userId, userId))).limit(1);
+        const [existing] = await db.select({ id: apiKeys.id }).from(apiKeys).where((0, import_drizzle_orm138.and)((0, import_drizzle_orm138.eq)(apiKeys.id, keyId), (0, import_drizzle_orm138.eq)(apiKeys.userId, userId))).limit(1);
         if (!existing) {
           return res.status(404).json({ error: "API key not found" });
         }
@@ -195279,7 +195294,7 @@ var init_apiKeys = __esm({
           lastUsedAt: null,
           createdAt: /* @__PURE__ */ new Date(),
           isActive: true
-        }).where((0, import_drizzle_orm137.and)((0, import_drizzle_orm137.eq)(apiKeys.id, keyId), (0, import_drizzle_orm137.eq)(apiKeys.userId, userId))).returning();
+        }).where((0, import_drizzle_orm138.and)((0, import_drizzle_orm138.eq)(apiKeys.id, keyId), (0, import_drizzle_orm138.eq)(apiKeys.userId, userId))).returning();
         res.json({
           id: updated.id,
           name: updated.name,
@@ -195303,23 +195318,23 @@ __export(recoveryCodes_exports, {
   default: () => recoveryCodes_default
 });
 async function getStore(userId) {
-  const [row] = await db.select({ preferences: users.preferences }).from(users).where((0, import_drizzle_orm138.eq)(users.id, userId)).limit(1);
+  const [row] = await db.select({ preferences: users.preferences }).from(users).where((0, import_drizzle_orm139.eq)(users.id, userId)).limit(1);
   const prefs = row?.preferences ?? {};
   return prefs.twoFactorRecoveryCodes ?? null;
 }
 async function saveStore(userId, store) {
-  const [row] = await db.select({ preferences: users.preferences }).from(users).where((0, import_drizzle_orm138.eq)(users.id, userId)).limit(1);
+  const [row] = await db.select({ preferences: users.preferences }).from(users).where((0, import_drizzle_orm139.eq)(users.id, userId)).limit(1);
   const prefs = row?.preferences ?? {};
   prefs.twoFactorRecoveryCodes = store;
-  await db.update(users).set({ preferences: prefs }).where((0, import_drizzle_orm138.eq)(users.id, userId));
+  await db.update(users).set({ preferences: prefs }).where((0, import_drizzle_orm139.eq)(users.id, userId));
 }
-var import_express100, import_drizzle_orm138, import_crypto100, router97, generateRecoveryCode, hashCode, recoveryCodes_default;
+var import_express100, import_drizzle_orm139, import_crypto100, router97, generateRecoveryCode, hashCode, recoveryCodes_default;
 var init_recoveryCodes = __esm({
   "server/routes/recoveryCodes.ts"() {
     "use strict";
     import_express100 = require("express");
     init_db();
-    import_drizzle_orm138 = require("drizzle-orm");
+    import_drizzle_orm139 = require("drizzle-orm");
     init_schema();
     init_logger();
     import_crypto100 = __toESM(require("crypto"), 1);
@@ -195433,7 +195448,7 @@ function getAccountStatus(account) {
   if (account.tokenExpiresAt && new Date(account.tokenExpiresAt) < /* @__PURE__ */ new Date()) return "expired";
   return "connected";
 }
-var import_express101, import_drizzle_orm139, router98, getDefaultPermissions, connectedAccounts_default;
+var import_express101, import_drizzle_orm140, router98, getDefaultPermissions, connectedAccounts_default;
 var init_connectedAccounts = __esm({
   "server/routes/connectedAccounts.ts"() {
     "use strict";
@@ -195441,7 +195456,7 @@ var init_connectedAccounts = __esm({
     init_logger();
     init_db();
     init_schema();
-    import_drizzle_orm139 = require("drizzle-orm");
+    import_drizzle_orm140 = require("drizzle-orm");
     init_auth();
     init_notificationService();
     router98 = (0, import_express101.Router)();
@@ -195498,7 +195513,7 @@ var init_connectedAccounts = __esm({
     router98.get("/", async (req, res) => {
       try {
         const userId = req.user.id;
-        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm139.and)((0, import_drizzle_orm139.eq)(socialAccounts.userId, userId), (0, import_drizzle_orm139.eq)(socialAccounts.isActive, true))).limit(50);
+        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm140.and)((0, import_drizzle_orm140.eq)(socialAccounts.userId, userId), (0, import_drizzle_orm140.eq)(socialAccounts.isActive, true))).limit(50);
         const safeAccounts = accounts.map((account) => ({
           id: account.id,
           provider: account.platform,
@@ -195540,7 +195555,7 @@ var init_connectedAccounts = __esm({
       try {
         const userId = req.user.id;
         const { accountId } = req.params;
-        const result = await db.update(socialAccounts).set({ isActive: false }).where((0, import_drizzle_orm139.and)((0, import_drizzle_orm139.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm139.eq)(socialAccounts.userId, userId))).returning({ id: socialAccounts.id });
+        const result = await db.update(socialAccounts).set({ isActive: false }).where((0, import_drizzle_orm140.and)((0, import_drizzle_orm140.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm140.eq)(socialAccounts.userId, userId))).returning({ id: socialAccounts.id });
         if (result.length === 0) {
           return res.status(404).json({ error: "Connected account not found" });
         }
@@ -195555,7 +195570,7 @@ var init_connectedAccounts = __esm({
         const userId = req.user.id;
         const { accountId } = req.params;
         const now = /* @__PURE__ */ new Date();
-        const result = await db.update(socialAccounts).set({ createdAt: now }).where((0, import_drizzle_orm139.and)((0, import_drizzle_orm139.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm139.eq)(socialAccounts.userId, userId))).returning({ id: socialAccounts.id });
+        const result = await db.update(socialAccounts).set({ createdAt: now }).where((0, import_drizzle_orm140.and)((0, import_drizzle_orm140.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm140.eq)(socialAccounts.userId, userId))).returning({ id: socialAccounts.id });
         if (result.length === 0) {
           return res.status(404).json({ error: "Connected account not found" });
         }
@@ -195594,7 +195609,7 @@ var init_connectedAccounts = __esm({
         if (!validPlatforms.includes(platform)) {
           return res.status(400).json({ error: `Invalid platform. Must be one of: ${validPlatforms.join(", ")}` });
         }
-        const existing = await db.select().from(socialAccounts).where((0, import_drizzle_orm139.and)((0, import_drizzle_orm139.eq)(socialAccounts.userId, userId), (0, import_drizzle_orm139.eq)(socialAccounts.platform, platform))).limit(5);
+        const existing = await db.select().from(socialAccounts).where((0, import_drizzle_orm140.and)((0, import_drizzle_orm140.eq)(socialAccounts.userId, userId), (0, import_drizzle_orm140.eq)(socialAccounts.platform, platform))).limit(5);
         const tokenExpiresAt = expiresIn ? new Date(Date.now() + expiresIn * 1e3) : null;
         if (existing.length > 0) {
           await db.update(socialAccounts).set({
@@ -195604,7 +195619,7 @@ var init_connectedAccounts = __esm({
             platformUserId: platformUserId || existing[0].platformUserId,
             tokenExpiresAt,
             isActive: true
-          }).where((0, import_drizzle_orm139.eq)(socialAccounts.id, existing[0].id));
+          }).where((0, import_drizzle_orm140.eq)(socialAccounts.id, existing[0].id));
           logger2.info(`[ManualToken] Updated ${platform} token for user ${userId}`);
           res.json({ error: `${platform} access token updated successfully`, id: existing[0].id });
         } else {
@@ -195631,7 +195646,7 @@ var init_connectedAccounts = __esm({
         const userId = req.user.id;
         const { accountId } = req.params;
         const permissionUpdates = req.body;
-        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm139.and)((0, import_drizzle_orm139.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm139.eq)(socialAccounts.userId, userId))).limit(1);
+        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm140.and)((0, import_drizzle_orm140.eq)(socialAccounts.id, accountId), (0, import_drizzle_orm140.eq)(socialAccounts.userId, userId))).limit(1);
         if (accounts.length === 0) {
           return res.status(404).json({ error: "Connected account not found" });
         }
@@ -195661,14 +195676,14 @@ var auth_exports = {};
 __export(auth_exports, {
   default: () => auth_default
 });
-var import_express102, import_drizzle_orm140, import_crypto101, router99, auth_default;
+var import_express102, import_drizzle_orm141, import_crypto101, router99, auth_default;
 var init_auth2 = __esm({
   "server/routes/auth.ts"() {
     "use strict";
     import_express102 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm140 = require("drizzle-orm");
+    import_drizzle_orm141 = require("drizzle-orm");
     init_logger();
     import_crypto101 = __toESM(require("crypto"), 1);
     init_auth();
@@ -195686,7 +195701,7 @@ var init_auth2 = __esm({
             action: "reauth_required"
           });
         }
-        const existingSession = await db.select().from(sessions).where((0, import_drizzle_orm140.eq)(sessions.id, sessionId)).limit(1);
+        const existingSession = await db.select().from(sessions).where((0, import_drizzle_orm141.eq)(sessions.id, sessionId)).limit(1);
         if (existingSession.length === 0) {
           return res.status(401).json({
             success: false,
@@ -195708,7 +195723,7 @@ var init_auth2 = __esm({
         await db.update(sessions).set({
           lastActivity: /* @__PURE__ */ new Date(),
           expiresAt: newExpiresAt
-        }).where((0, import_drizzle_orm140.eq)(sessions.id, sessionId));
+        }).where((0, import_drizzle_orm141.eq)(sessions.id, sessionId));
         res.json({
           success: true,
           message: "Token refreshed successfully",
@@ -195737,7 +195752,7 @@ var init_auth2 = __esm({
             message: "No active session to extend"
           });
         }
-        const existingSession = await db.select().from(sessions).where((0, import_drizzle_orm140.eq)(sessions.id, sessionId)).limit(1);
+        const existingSession = await db.select().from(sessions).where((0, import_drizzle_orm141.eq)(sessions.id, sessionId)).limit(1);
         if (existingSession.length === 0) {
           return res.status(401).json({
             success: false,
@@ -195759,7 +195774,7 @@ var init_auth2 = __esm({
         await db.update(sessions).set({
           lastActivity: /* @__PURE__ */ new Date(),
           expiresAt: newExpiresAt
-        }).where((0, import_drizzle_orm140.eq)(sessions.id, sessionId));
+        }).where((0, import_drizzle_orm141.eq)(sessions.id, sessionId));
         res.json({
           success: true,
           message: `Session extended by ${actualExtend} minutes`,
@@ -195781,11 +195796,11 @@ var init_auth2 = __esm({
         const userId = req.user.id;
         const currentSessionId = req.session?.id;
         const userSessions = await db.select().from(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId),
-            (0, import_drizzle_orm140.gte)(sessions.expiresAt, /* @__PURE__ */ new Date())
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId),
+            (0, import_drizzle_orm141.gte)(sessions.expiresAt, /* @__PURE__ */ new Date())
           )
-        ).orderBy((0, import_drizzle_orm140.desc)(sessions.lastActivity)).limit(50);
+        ).orderBy((0, import_drizzle_orm141.desc)(sessions.lastActivity)).limit(50);
         const formattedSessions = userSessions.map((session2) => {
           const userAgent = session2.userAgent || "";
           let device = "Unknown Device";
@@ -195851,9 +195866,9 @@ var init_auth2 = __esm({
           });
         }
         const sessionToDelete = await db.select().from(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.id, sessionId),
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.id, sessionId),
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId)
           )
         ).limit(1);
         if (sessionToDelete.length === 0) {
@@ -195863,7 +195878,7 @@ var init_auth2 = __esm({
             message: "Session not found or already terminated"
           });
         }
-        await db.delete(sessions).where((0, import_drizzle_orm140.eq)(sessions.id, sessionId));
+        await db.delete(sessions).where((0, import_drizzle_orm141.eq)(sessions.id, sessionId));
         await db.insert(securityThreats).values({
           threatType: "remote_session_terminated",
           severity: "low",
@@ -195892,16 +195907,16 @@ var init_auth2 = __esm({
         const userId = req.user.id;
         const currentSessionId = req.session?.id;
         const otherSessions = await db.select({ id: sessions.id }).from(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId),
-            (0, import_drizzle_orm140.ne)(sessions.id, currentSessionId || "")
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId),
+            (0, import_drizzle_orm141.ne)(sessions.id, currentSessionId || "")
           )
         ).limit(500);
         const terminatedCount = otherSessions.length;
         await db.delete(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId),
-            (0, import_drizzle_orm140.ne)(sessions.id, currentSessionId || "")
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId),
+            (0, import_drizzle_orm141.ne)(sessions.id, currentSessionId || "")
           )
         );
         await db.insert(securityThreats).values({
@@ -195940,9 +195955,9 @@ var init_auth2 = __esm({
           });
         }
         const session2 = await db.select().from(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.id, deviceId),
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.id, deviceId),
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId)
           )
         ).limit(1);
         if (session2.length === 0) {
@@ -195953,9 +195968,9 @@ var init_auth2 = __esm({
           });
         }
         await db.update(sessions).set({ trusted: !!trusted }).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.id, deviceId),
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.id, deviceId),
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId)
           )
         );
         const outcome = trusted ? "device_trusted" : "device_untrusted";
@@ -195987,7 +196002,7 @@ var init_auth2 = __esm({
             outcome: "no_session"
           });
         }
-        const session2 = await db.select().from(sessions).where((0, import_drizzle_orm140.eq)(sessions.id, currentSessionId)).limit(1);
+        const session2 = await db.select().from(sessions).where((0, import_drizzle_orm141.eq)(sessions.id, currentSessionId)).limit(1);
         if (session2.length === 0) {
           return res.json({
             valid: false,
@@ -196000,10 +196015,10 @@ var init_auth2 = __esm({
         const now = /* @__PURE__ */ new Date();
         const isValid = expiresAt ? new Date(expiresAt) > now : true;
         const secondsRemaining = expiresAt ? Math.max(0, Math.floor((new Date(expiresAt).getTime() - now.getTime()) / 1e3)) : null;
-        const sessionCount = await db.select({ count: import_drizzle_orm140.sql`count(*)` }).from(sessions).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(sessions.userId, userId),
-            (0, import_drizzle_orm140.gte)(sessions.expiresAt, now)
+        const sessionCount = await db.select({ count: import_drizzle_orm141.sql`count(*)` }).from(sessions).where(
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(sessions.userId, userId),
+            (0, import_drizzle_orm141.gte)(sessions.expiresAt, now)
           )
         );
         res.json({
@@ -196021,9 +196036,9 @@ var init_auth2 = __esm({
     router99.get("/social-token-status", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
-        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm140.and)(
-          (0, import_drizzle_orm140.eq)(socialAccounts.userId, userId),
-          (0, import_drizzle_orm140.eq)(socialAccounts.isActive, true)
+        const accounts = await db.select().from(socialAccounts).where((0, import_drizzle_orm141.and)(
+          (0, import_drizzle_orm141.eq)(socialAccounts.userId, userId),
+          (0, import_drizzle_orm141.eq)(socialAccounts.isActive, true)
         )).limit(20);
         const now = /* @__PURE__ */ new Date();
         const platformStatus = accounts.map((account) => {
@@ -196071,9 +196086,9 @@ var init_auth2 = __esm({
         const userId = req.user.id;
         const { platform } = req.params;
         const account = await db.select().from(socialAccounts).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(socialAccounts.userId, userId),
-            (0, import_drizzle_orm140.eq)(socialAccounts.platform, platform)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(socialAccounts.userId, userId),
+            (0, import_drizzle_orm141.eq)(socialAccounts.platform, platform)
           )
         ).limit(1);
         if (account.length === 0) {
@@ -196114,11 +196129,11 @@ var init_auth2 = __esm({
         const userId = req.user.id;
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1e3);
         const userThreats = await db.select().from(securityThreats).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(securityThreats.userId, userId),
-            (0, import_drizzle_orm140.gte)(securityThreats.detectedAt, sevenDaysAgo)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(securityThreats.userId, userId),
+            (0, import_drizzle_orm141.gte)(securityThreats.detectedAt, sevenDaysAgo)
           )
-        ).orderBy((0, import_drizzle_orm140.desc)(securityThreats.detectedAt)).limit(50);
+        ).orderBy((0, import_drizzle_orm141.desc)(securityThreats.detectedAt)).limit(50);
         const alerts = userThreats.map((threat) => {
           const metadata = threat.metadata || {};
           const indicators = threat.indicators || {};
@@ -196249,9 +196264,9 @@ var init_auth2 = __esm({
         const userId = req.user.id;
         const { alertId } = req.params;
         await db.update(securityThreats).set({ status: "resolved" }).where(
-          (0, import_drizzle_orm140.and)(
-            (0, import_drizzle_orm140.eq)(securityThreats.id, alertId),
-            (0, import_drizzle_orm140.eq)(securityThreats.userId, userId)
+          (0, import_drizzle_orm141.and)(
+            (0, import_drizzle_orm141.eq)(securityThreats.id, alertId),
+            (0, import_drizzle_orm141.eq)(securityThreats.userId, userId)
           )
         );
         res.json({ success: true, message: "Alert dismissed" });
@@ -196263,7 +196278,7 @@ var init_auth2 = __esm({
     router99.post("/send-verification-email", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
-        const [user] = await db.select().from(users).where((0, import_drizzle_orm140.eq)(users.id, userId)).limit(1);
+        const [user] = await db.select().from(users).where((0, import_drizzle_orm141.eq)(users.id, userId)).limit(1);
         if (!user) return res.status(404).json({ error: "User not found" });
         if (user.emailVerified) {
           return res.json({ success: true, message: "Email already verified" });
@@ -196273,7 +196288,7 @@ var init_auth2 = __esm({
         await db.update(users).set({
           emailVerificationToken: token,
           emailVerificationExpires: expires
-        }).where((0, import_drizzle_orm140.eq)(users.id, userId));
+        }).where((0, import_drizzle_orm141.eq)(users.id, userId));
         const appUrl = process.env.APP_URL || process.env.DOMAIN || "https://maxbooster.replit.app";
         const verificationUrl = `${appUrl}/verify-email?token=${token}`;
         try {
@@ -196297,7 +196312,7 @@ var init_auth2 = __esm({
         if (!token || typeof token !== "string") {
           return res.status(400).json({ error: "Verification token required" });
         }
-        const [user] = await db.select().from(users).where((0, import_drizzle_orm140.eq)(users.emailVerificationToken, token)).limit(1);
+        const [user] = await db.select().from(users).where((0, import_drizzle_orm141.eq)(users.emailVerificationToken, token)).limit(1);
         if (!user) {
           return res.status(400).json({ error: "Invalid or expired verification token" });
         }
@@ -196308,7 +196323,7 @@ var init_auth2 = __esm({
           emailVerified: true,
           emailVerificationToken: null,
           emailVerificationExpires: null
-        }).where((0, import_drizzle_orm140.eq)(users.id, user.id));
+        }).where((0, import_drizzle_orm141.eq)(users.id, user.id));
         res.json({ success: true, message: "Email verified successfully" });
       } catch (error) {
         logger2.warn({ err: error }, "Error verifying email:");
@@ -196318,7 +196333,7 @@ var init_auth2 = __esm({
     router99.get("/email-verification-status", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
-        const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where((0, import_drizzle_orm140.eq)(users.id, userId)).limit(1);
+        const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where((0, import_drizzle_orm141.eq)(users.id, userId)).limit(1);
         res.json({ emailVerified: user?.emailVerified ?? false });
       } catch (error) {
         logger2.warn({ err: error }, "Error checking email verification:");
@@ -196334,14 +196349,14 @@ var fanHub_exports = {};
 __export(fanHub_exports, {
   default: () => fanHub_default
 });
-var import_express103, import_drizzle_orm141, import_zod45, router100, createSubscriberSchema, updateSubscriberSchema, sendMessageSchema, importSubscriberSchema, fanHub_default;
+var import_express103, import_drizzle_orm142, import_zod45, router100, createSubscriberSchema, updateSubscriberSchema, sendMessageSchema, importSubscriberSchema, fanHub_default;
 var init_fanHub = __esm({
   "server/routes/fanHub.ts"() {
     "use strict";
     import_express103 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm141 = require("drizzle-orm");
+    import_drizzle_orm142 = require("drizzle-orm");
     init_logger();
     init_auth();
     import_zod45 = require("zod");
@@ -196386,12 +196401,12 @@ var init_fanHub = __esm({
         const limit = Math.min(parseInt(req.query.limit) || 50, 200);
         const search = req.query.search?.slice(0, 200) || "";
         const offset = (page - 1) * limit;
-        const searchCondition = search ? (0, import_drizzle_orm141.or)(
-          (0, import_drizzle_orm141.ilike)(fanSubscribers.email, `%${search}%`),
-          (0, import_drizzle_orm141.ilike)(fanSubscribers.name, `%${search}%`)
+        const searchCondition = search ? (0, import_drizzle_orm142.or)(
+          (0, import_drizzle_orm142.ilike)(fanSubscribers.email, `%${search}%`),
+          (0, import_drizzle_orm142.ilike)(fanSubscribers.name, `%${search}%`)
         ) : void 0;
-        const subscribers = await db.select().from(fanSubscribers).where((0, import_drizzle_orm141.and)((0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId), searchCondition)).limit(limit).offset(offset).orderBy((0, import_drizzle_orm141.desc)(fanSubscribers.joinedAt));
-        const [{ count: count35 }] = await db.select({ count: import_drizzle_orm141.sql`count(*)` }).from(fanSubscribers).where((0, import_drizzle_orm141.and)((0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId), searchCondition));
+        const subscribers = await db.select().from(fanSubscribers).where((0, import_drizzle_orm142.and)((0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId), searchCondition)).limit(limit).offset(offset).orderBy((0, import_drizzle_orm142.desc)(fanSubscribers.joinedAt));
+        const [{ count: count35 }] = await db.select({ count: import_drizzle_orm142.sql`count(*)` }).from(fanSubscribers).where((0, import_drizzle_orm142.and)((0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId), searchCondition));
         return res.json({
           subscribers,
           pagination: {
@@ -196430,7 +196445,7 @@ var init_fanHub = __esm({
         if (!parsed.success) {
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
-        const [updated] = await db.update(fanSubscribers).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm141.and)((0, import_drizzle_orm141.eq)(fanSubscribers.id, id), (0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId))).returning();
+        const [updated] = await db.update(fanSubscribers).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm142.and)((0, import_drizzle_orm142.eq)(fanSubscribers.id, id), (0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId))).returning();
         if (!updated) {
           return res.status(404).json({ error: "Subscriber not found" });
         }
@@ -196444,7 +196459,7 @@ var init_fanHub = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const [deleted] = await db.delete(fanSubscribers).where((0, import_drizzle_orm141.and)((0, import_drizzle_orm141.eq)(fanSubscribers.id, id), (0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId))).returning();
+        const [deleted] = await db.delete(fanSubscribers).where((0, import_drizzle_orm142.and)((0, import_drizzle_orm142.eq)(fanSubscribers.id, id), (0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId))).returning();
         if (!deleted) {
           return res.status(404).json({ error: "Subscriber not found" });
         }
@@ -196489,10 +196504,10 @@ var init_fanHub = __esm({
       try {
         const userId = req.user.id;
         const [stats] = await db.select({
-          totalFans: import_drizzle_orm141.sql`count(*)`,
-          vipCount: import_drizzle_orm141.sql`count(*) filter (where ${fanSubscribers.isVip} = true)`,
-          totalSpent: import_drizzle_orm141.sql`sum(${fanSubscribers.totalSpent})`
-        }).from(fanSubscribers).where((0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId));
+          totalFans: import_drizzle_orm142.sql`count(*)`,
+          vipCount: import_drizzle_orm142.sql`count(*) filter (where ${fanSubscribers.isVip} = true)`,
+          totalSpent: import_drizzle_orm142.sql`sum(${fanSubscribers.totalSpent})`
+        }).from(fanSubscribers).where((0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId));
         return res.json({
           totalFans: Number(stats.totalFans || 0),
           vipCount: Number(stats.vipCount || 0),
@@ -196515,8 +196530,8 @@ var init_fanHub = __esm({
         }
         const { subject, body, segmentFilter } = parsed.data;
         const [{ recipientCount }] = await db.select({
-          recipientCount: import_drizzle_orm141.sql`count(*)`
-        }).from(fanSubscribers).where((0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId));
+          recipientCount: import_drizzle_orm142.sql`count(*)`
+        }).from(fanSubscribers).where((0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId));
         const [message] = await db.insert(fanMessages).values({
           userId,
           subject,
@@ -196536,7 +196551,7 @@ var init_fanHub = __esm({
         const page = Math.max(1, parseInt(req.query.page) || 1);
         const limit = Math.min(parseInt(req.query.limit) || 50, 200);
         const offset = (page - 1) * limit;
-        const messages = await db.select().from(fanMessages).where((0, import_drizzle_orm141.eq)(fanMessages.userId, req.user.id)).orderBy((0, import_drizzle_orm141.desc)(fanMessages.sentAt)).limit(limit).offset(offset);
+        const messages = await db.select().from(fanMessages).where((0, import_drizzle_orm142.eq)(fanMessages.userId, req.user.id)).orderBy((0, import_drizzle_orm142.desc)(fanMessages.sentAt)).limit(limit).offset(offset);
         return res.json(messages);
       } catch (error) {
         logger2.warn("Error fetching fan messages:", error);
@@ -196551,7 +196566,7 @@ var init_fanHub = __esm({
         if (!parsed.success) {
           return res.status(400).json({ error: "Tags must be an array of strings (max 50 tags)" });
         }
-        const [updated] = await db.update(fanSubscribers).set({ tags: parsed.data.tags, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm141.and)((0, import_drizzle_orm141.eq)(fanSubscribers.id, id), (0, import_drizzle_orm141.eq)(fanSubscribers.userId, userId))).returning();
+        const [updated] = await db.update(fanSubscribers).set({ tags: parsed.data.tags, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm142.and)((0, import_drizzle_orm142.eq)(fanSubscribers.id, id), (0, import_drizzle_orm142.eq)(fanSubscribers.userId, userId))).returning();
         if (!updated) {
           return res.status(404).json({ error: "Subscriber not found" });
         }
@@ -196570,14 +196585,14 @@ var pressKit_exports = {};
 __export(pressKit_exports, {
   default: () => pressKit_default
 });
-var import_express104, import_drizzle_orm142, import_zod46, router101, publishSchema, pressKit_default;
+var import_express104, import_drizzle_orm143, import_zod46, router101, publishSchema, pressKit_default;
 var init_pressKit = __esm({
   "server/routes/pressKit.ts"() {
     "use strict";
     import_express104 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm142 = require("drizzle-orm");
+    import_drizzle_orm143 = require("drizzle-orm");
     init_auth();
     init_logger();
     import_zod46 = require("zod");
@@ -196588,7 +196603,7 @@ var init_pressKit = __esm({
     });
     router101.get("/", requireAuth, async (req, res) => {
       try {
-        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm142.eq)(pressKits.userId, req.user.id)).limit(1);
+        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm143.eq)(pressKits.userId, req.user.id)).limit(1);
         res.json(pressKit ?? null);
       } catch (error) {
         logger2.warn({ err: error }, "[PressKit] Failed to fetch press kit:");
@@ -196599,10 +196614,10 @@ var init_pressKit = __esm({
       try {
         const userId = req.user.id;
         const validatedData = insertPressKitSchema.parse({ ...req.body, userId });
-        const [existing] = await db.select().from(pressKits).where((0, import_drizzle_orm142.eq)(pressKits.userId, userId)).limit(1);
+        const [existing] = await db.select().from(pressKits).where((0, import_drizzle_orm143.eq)(pressKits.userId, userId)).limit(1);
         let result;
         if (existing) {
-          [result] = await db.update(pressKits).set({ ...validatedData, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm142.eq)(pressKits.id, existing.id)).returning();
+          [result] = await db.update(pressKits).set({ ...validatedData, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm143.eq)(pressKits.id, existing.id)).returning();
         } else {
           [result] = await db.insert(pressKits).values(validatedData).returning();
         }
@@ -196625,13 +196640,13 @@ var init_pressKit = __esm({
         if (isNaN(index2) || index2 < 0) {
           return res.status(400).json({ error: "Invalid index" });
         }
-        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm142.eq)(pressKits.userId, userId)).limit(1);
+        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm143.eq)(pressKits.userId, userId)).limit(1);
         if (!pressKit) return res.status(404).json({ error: "Press kit not found" });
         const photos = pressKit.photos || [];
         if (index2 >= photos.length) return res.status(400).json({ error: "Invalid photo index" });
         const newPhotos = [...photos];
         newPhotos.splice(index2, 1);
-        const [updated] = await db.update(pressKits).set({ photos: newPhotos, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm142.eq)(pressKits.id, pressKit.id)).returning();
+        const [updated] = await db.update(pressKits).set({ photos: newPhotos, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm143.eq)(pressKits.id, pressKit.id)).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "[PressKit] Failed to delete photo:");
@@ -196640,7 +196655,7 @@ var init_pressKit = __esm({
     });
     router101.get("/public/:slug", async (req, res) => {
       try {
-        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm142.eq)(pressKits.slug, req.params.slug)).limit(1);
+        const [pressKit] = await db.select().from(pressKits).where((0, import_drizzle_orm143.eq)(pressKits.slug, req.params.slug)).limit(1);
         if (!pressKit || !pressKit.isPublic) {
           return res.status(404).json({ error: "Press kit not found or private" });
         }
@@ -196658,9 +196673,9 @@ var init_pressKit = __esm({
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
         const { slug, isPublic } = parsed.data;
-        const [existing] = await db.select().from(pressKits).where((0, import_drizzle_orm142.eq)(pressKits.userId, userId)).limit(1);
+        const [existing] = await db.select().from(pressKits).where((0, import_drizzle_orm143.eq)(pressKits.userId, userId)).limit(1);
         if (!existing) return res.status(404).json({ error: "Press kit not found" });
-        const [updated] = await db.update(pressKits).set({ slug, isPublic, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm142.eq)(pressKits.id, existing.id)).returning();
+        const [updated] = await db.update(pressKits).set({ slug, isPublic, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm143.eq)(pressKits.id, existing.id)).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "[PressKit] Failed to publish press kit:");
@@ -196771,14 +196786,14 @@ var playlistPitching_exports = {};
 __export(playlistPitching_exports, {
   default: () => playlistPitching_default
 });
-var import_express105, import_drizzle_orm143, import_zod47, router102, CURATORS, playlistPitching_default;
+var import_express105, import_drizzle_orm144, import_zod47, router102, CURATORS, playlistPitching_default;
 var init_playlistPitching = __esm({
   "server/routes/playlistPitching.ts"() {
     "use strict";
     import_express105 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm143 = require("drizzle-orm");
+    import_drizzle_orm144 = require("drizzle-orm");
     import_zod47 = require("zod");
     init_auth();
     init_logger();
@@ -196813,7 +196828,7 @@ var init_playlistPitching = __esm({
     router102.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const pitches = await db.select().from(playlistPitches).where((0, import_drizzle_orm143.eq)(playlistPitches.userId, req.user.id)).orderBy((0, import_drizzle_orm143.desc)(playlistPitches.createdAt)).limit(limit).offset(offset);
+        const pitches = await db.select().from(playlistPitches).where((0, import_drizzle_orm144.eq)(playlistPitches.userId, req.user.id)).orderBy((0, import_drizzle_orm144.desc)(playlistPitches.createdAt)).limit(limit).offset(offset);
         res.json(pitches);
       } catch (error) {
         logger2.warn({ err: error }, "[PlaylistPitching] Failed to list pitches:");
@@ -196837,7 +196852,7 @@ var init_playlistPitching = __esm({
     router102.put("/:id", requireAuth, async (req, res) => {
       try {
         const validatedData = insertPlaylistPitchSchema.partial().omit({ userId: true }).parse(req.body);
-        const [updatedPitch] = await db.update(playlistPitches).set({ ...validatedData, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm143.and)((0, import_drizzle_orm143.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm143.eq)(playlistPitches.userId, req.user.id))).returning();
+        const [updatedPitch] = await db.update(playlistPitches).set({ ...validatedData, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm144.eq)(playlistPitches.userId, req.user.id))).returning();
         if (!updatedPitch) return res.status(404).json({ error: "Pitch not found" });
         await queryCache.invalidate(createCacheKey("stats:playlistPitches", req.user.id));
         res.json(updatedPitch);
@@ -196862,7 +196877,7 @@ var init_playlistPitching = __esm({
         if (responseNote !== void 0) setFields.responseNote = responseNote;
         if (["accepted", "rejected", "placed"].includes(status)) setFields.responseAt = /* @__PURE__ */ new Date();
         if (status === "submitted") setFields.submittedAt = /* @__PURE__ */ new Date();
-        const [updated] = await db.update(playlistPitches).set(setFields).where((0, import_drizzle_orm143.and)((0, import_drizzle_orm143.eq)(playlistPitches.id, id), (0, import_drizzle_orm143.eq)(playlistPitches.userId, userId))).returning();
+        const [updated] = await db.update(playlistPitches).set(setFields).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(playlistPitches.id, id), (0, import_drizzle_orm144.eq)(playlistPitches.userId, userId))).returning();
         if (!updated) return res.status(404).json({ error: "Pitch not found" });
         await queryCache.invalidate(createCacheKey("stats:playlistPitches", userId));
         res.json(updated);
@@ -196876,7 +196891,7 @@ var init_playlistPitching = __esm({
     });
     router102.delete("/:id", requireAuth, async (req, res) => {
       try {
-        const [deletedPitch] = await db.delete(playlistPitches).where((0, import_drizzle_orm143.and)((0, import_drizzle_orm143.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm143.eq)(playlistPitches.userId, req.user.id))).returning();
+        const [deletedPitch] = await db.delete(playlistPitches).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm144.eq)(playlistPitches.userId, req.user.id))).returning();
         if (!deletedPitch) return res.status(404).json({ error: "Pitch not found" });
         await queryCache.invalidate(createCacheKey("stats:playlistPitches", req.user.id));
         res.json({ success: true });
@@ -196892,8 +196907,8 @@ var init_playlistPitching = __esm({
         const result = await queryCache.getOrCompute(cacheKey, async () => {
           const stats = await db.select({
             status: playlistPitches.status,
-            count: import_drizzle_orm143.sql`count(*)`
-          }).from(playlistPitches).where((0, import_drizzle_orm143.eq)(playlistPitches.userId, userId)).groupBy(playlistPitches.status);
+            count: import_drizzle_orm144.sql`count(*)`
+          }).from(playlistPitches).where((0, import_drizzle_orm144.eq)(playlistPitches.userId, userId)).groupBy(playlistPitches.status);
           const r = { total: 0, accepted: 0, pending: 0, rejected: 0, conversionRate: 0 };
           stats.forEach((s) => {
             r.total += Number(s.count);
@@ -196912,7 +196927,7 @@ var init_playlistPitching = __esm({
     });
     router102.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(playlistPitches).where((0, import_drizzle_orm143.and)((0, import_drizzle_orm143.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm143.eq)(playlistPitches.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(playlistPitches).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(playlistPitches.id, req.params.id), (0, import_drizzle_orm144.eq)(playlistPitches.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Pitch not found" });
         res.json(item);
       } catch (error) {
@@ -196929,7 +196944,7 @@ var shows_exports = {};
 __export(shows_exports, {
   default: () => shows_default
 });
-var import_express106, import_drizzle_orm144, import_zod48, router103, safeDate, createShowSchema, createSetlistSchema, shows_default;
+var import_express106, import_drizzle_orm145, import_zod48, router103, safeDate, createShowSchema, createSetlistSchema, shows_default;
 var init_shows = __esm({
   "server/routes/shows.ts"() {
     "use strict";
@@ -196938,7 +196953,7 @@ var init_shows = __esm({
     init_errorHandler();
     init_db();
     init_schema();
-    import_drizzle_orm144 = require("drizzle-orm");
+    import_drizzle_orm145 = require("drizzle-orm");
     import_zod48 = require("zod");
     router103 = (0, import_express106.Router)();
     safeDate = import_zod48.z.string().refine(
@@ -196979,13 +196994,13 @@ var init_shows = __esm({
       const offset = parseInt(req.query.offset) || 0;
       const filter = req.query.filter;
       const now = /* @__PURE__ */ new Date();
-      const conditions = [(0, import_drizzle_orm144.eq)(shows.userId, userId)];
+      const conditions = [(0, import_drizzle_orm145.eq)(shows.userId, userId)];
       if (filter === "upcoming") {
-        conditions.push((0, import_drizzle_orm144.gte)(shows.date, now));
+        conditions.push((0, import_drizzle_orm145.gte)(shows.date, now));
       } else if (filter === "past") {
-        conditions.push((0, import_drizzle_orm144.lt)(shows.date, now));
+        conditions.push((0, import_drizzle_orm145.lt)(shows.date, now));
       }
-      const userShows = await db.select().from(shows).where((0, import_drizzle_orm144.and)(...conditions)).orderBy(filter === "upcoming" ? (0, import_drizzle_orm144.asc)(shows.date) : (0, import_drizzle_orm144.desc)(shows.date)).limit(limit).offset(offset);
+      const userShows = await db.select().from(shows).where((0, import_drizzle_orm145.and)(...conditions)).orderBy(filter === "upcoming" ? (0, import_drizzle_orm145.asc)(shows.date) : (0, import_drizzle_orm145.desc)(shows.date)).limit(limit).offset(offset);
       res.json(userShows);
     }));
     router103.post("/", requireAuth, asyncHandler(async (req, res) => {
@@ -196998,7 +197013,7 @@ var init_shows = __esm({
       const userId = req.user.id;
       const showId = req.params.id;
       const data = createShowSchema.partial().parse(req.body);
-      const [updatedShow] = await db.update(shows).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(shows.id, showId), (0, import_drizzle_orm144.eq)(shows.userId, userId))).returning();
+      const [updatedShow] = await db.update(shows).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(shows.id, showId), (0, import_drizzle_orm145.eq)(shows.userId, userId))).returning();
       if (!updatedShow) {
         return res.status(404).json({ error: "Show not found" });
       }
@@ -197007,7 +197022,7 @@ var init_shows = __esm({
     router103.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
       const showId = req.params.id;
-      const [deletedShow] = await db.delete(shows).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(shows.id, showId), (0, import_drizzle_orm144.eq)(shows.userId, userId))).returning();
+      const [deletedShow] = await db.delete(shows).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(shows.id, showId), (0, import_drizzle_orm145.eq)(shows.userId, userId))).returning();
       if (!deletedShow) {
         return res.status(404).json({ error: "Show not found" });
       }
@@ -197029,7 +197044,7 @@ var init_shows = __esm({
         revenue: parsed.data.revenue,
         ...parsed.data.status ? { status: parsed.data.status } : { status: "completed" },
         updatedAt: /* @__PURE__ */ new Date()
-      }).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(shows.id, showId), (0, import_drizzle_orm144.eq)(shows.userId, userId))).returning();
+      }).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(shows.id, showId), (0, import_drizzle_orm145.eq)(shows.userId, userId))).returning();
       if (!updated) {
         return res.status(404).json({ error: "Show not found" });
       }
@@ -197044,7 +197059,7 @@ var init_shows = __esm({
       if (!parsed.success) {
         return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
       }
-      const [updated] = await db.update(shows).set({ status: parsed.data.status, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(shows.id, showId), (0, import_drizzle_orm144.eq)(shows.userId, userId))).returning();
+      const [updated] = await db.update(shows).set({ status: parsed.data.status, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(shows.id, showId), (0, import_drizzle_orm145.eq)(shows.userId, userId))).returning();
       if (!updated) {
         return res.status(404).json({ error: "Show not found" });
       }
@@ -197053,14 +197068,14 @@ var init_shows = __esm({
     router103.get("/stats", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
       const [stats] = await db.select({
-        totalShows: import_drizzle_orm144.sql`count(*)`,
-        totalRevenue: import_drizzle_orm144.sql`coalesce(sum(${shows.revenue}), 0)`,
-        avgTicketsSold: import_drizzle_orm144.sql`coalesce(avg(${shows.ticketsSold}), 0)`,
-        upcomingCount: import_drizzle_orm144.sql`count(*) filter (where ${shows.date} >= now())`,
-        pastCount: import_drizzle_orm144.sql`count(*) filter (where ${shows.date} < now())`,
-        pastRevenue: import_drizzle_orm144.sql`coalesce(sum(${shows.revenue}) filter (where ${shows.date} < now()), 0)`,
-        avgCapacityFill: import_drizzle_orm144.sql`coalesce(avg(case when ${shows.capacity} > 0 then ${shows.ticketsSold}::float / ${shows.capacity} * 100 else null end), 0)`
-      }).from(shows).where((0, import_drizzle_orm144.eq)(shows.userId, userId));
+        totalShows: import_drizzle_orm145.sql`count(*)`,
+        totalRevenue: import_drizzle_orm145.sql`coalesce(sum(${shows.revenue}), 0)`,
+        avgTicketsSold: import_drizzle_orm145.sql`coalesce(avg(${shows.ticketsSold}), 0)`,
+        upcomingCount: import_drizzle_orm145.sql`count(*) filter (where ${shows.date} >= now())`,
+        pastCount: import_drizzle_orm145.sql`count(*) filter (where ${shows.date} < now())`,
+        pastRevenue: import_drizzle_orm145.sql`coalesce(sum(${shows.revenue}) filter (where ${shows.date} < now()), 0)`,
+        avgCapacityFill: import_drizzle_orm145.sql`coalesce(avg(case when ${shows.capacity} > 0 then ${shows.ticketsSold}::float / ${shows.capacity} * 100 else null end), 0)`
+      }).from(shows).where((0, import_drizzle_orm145.eq)(shows.userId, userId));
       res.json({
         totalShows: Number(stats?.totalShows ?? 0),
         totalRevenue: Number(stats?.totalRevenue ?? 0),
@@ -197074,7 +197089,7 @@ var init_shows = __esm({
     router103.get("/:id", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
       const showId = req.params.id;
-      const [show] = await db.select().from(shows).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(shows.id, showId), (0, import_drizzle_orm144.eq)(shows.userId, userId))).limit(1);
+      const [show] = await db.select().from(shows).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(shows.id, showId), (0, import_drizzle_orm145.eq)(shows.userId, userId))).limit(1);
       if (!show) {
         return res.status(404).json({ error: "Show not found" });
       }
@@ -197082,13 +197097,13 @@ var init_shows = __esm({
     }));
     router103.get("/setlists", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
-      const userSetlists = await db.select().from(setlists).where((0, import_drizzle_orm144.eq)(setlists.userId, userId)).orderBy((0, import_drizzle_orm144.desc)(setlists.updatedAt));
+      const userSetlists = await db.select().from(setlists).where((0, import_drizzle_orm145.eq)(setlists.userId, userId)).orderBy((0, import_drizzle_orm145.desc)(setlists.updatedAt));
       res.json(userSetlists);
     }));
     router103.get("/:id/setlist", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
       const showId = req.params.id;
-      const [showSetlist] = await db.select().from(setlists).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(setlists.showId, showId), (0, import_drizzle_orm144.eq)(setlists.userId, userId))).limit(1);
+      const [showSetlist] = await db.select().from(setlists).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(setlists.showId, showId), (0, import_drizzle_orm145.eq)(setlists.userId, userId))).limit(1);
       res.json(showSetlist || null);
     }));
     router103.post("/setlists", requireAuth, asyncHandler(async (req, res) => {
@@ -197101,7 +197116,7 @@ var init_shows = __esm({
       const userId = req.user.id;
       const setlistId = req.params.id;
       const data = createSetlistSchema.partial().parse(req.body);
-      const [updatedSetlist] = await db.update(setlists).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(setlists.id, setlistId), (0, import_drizzle_orm144.eq)(setlists.userId, userId))).returning();
+      const [updatedSetlist] = await db.update(setlists).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(setlists.id, setlistId), (0, import_drizzle_orm145.eq)(setlists.userId, userId))).returning();
       if (!updatedSetlist) {
         return res.status(404).json({ error: "Setlist not found" });
       }
@@ -197110,7 +197125,7 @@ var init_shows = __esm({
     router103.delete("/setlists/:id", requireAuth, asyncHandler(async (req, res) => {
       const userId = req.user.id;
       const setlistId = req.params.id;
-      const [deletedSetlist] = await db.delete(setlists).where((0, import_drizzle_orm144.and)((0, import_drizzle_orm144.eq)(setlists.id, setlistId), (0, import_drizzle_orm144.eq)(setlists.userId, userId))).returning();
+      const [deletedSetlist] = await db.delete(setlists).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(setlists.id, setlistId), (0, import_drizzle_orm145.eq)(setlists.userId, userId))).returning();
       if (!deletedSetlist) {
         return res.status(404).json({ error: "Setlist not found" });
       }
@@ -197125,14 +197140,14 @@ var merch_exports = {};
 __export(merch_exports, {
   default: () => merch_default
 });
-var import_express107, import_drizzle_orm145, import_zod49, router104, VALID_CATEGORIES, VALID_ORDER_STATUSES, createMerchSchema, updateMerchSchema, updateOrderSchema, merch_default;
+var import_express107, import_drizzle_orm146, import_zod49, router104, VALID_CATEGORIES, VALID_ORDER_STATUSES, createMerchSchema, updateMerchSchema, updateOrderSchema, merch_default;
 var init_merch = __esm({
   "server/routes/merch.ts"() {
     "use strict";
     import_express107 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm145 = require("drizzle-orm");
+    import_drizzle_orm146 = require("drizzle-orm");
     init_logger();
     init_auth();
     import_zod49 = require("zod");
@@ -197162,7 +197177,7 @@ var init_merch = __esm({
     router104.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(merchItems).where((0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id)).orderBy((0, import_drizzle_orm145.desc)(merchItems.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(merchItems).where((0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id)).orderBy((0, import_drizzle_orm146.desc)(merchItems.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching merch items:");
@@ -197205,7 +197220,7 @@ var init_merch = __esm({
         if (!parsed.success) {
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
-        const existing = await db.select().from(merchItems).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchItems.id, id), (0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id))).limit(1);
+        const existing = await db.select().from(merchItems).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchItems.id, id), (0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Merch item not found" });
         }
@@ -197226,7 +197241,7 @@ var init_merch = __esm({
         if (Object.keys(allowedUpdates).length === 0) {
           return res.status(400).json({ error: "No valid fields to update" });
         }
-        const [updated] = await db.update(merchItems).set(allowedUpdates).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchItems.id, id), (0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id))).returning();
+        const [updated] = await db.update(merchItems).set(allowedUpdates).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchItems.id, id), (0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id))).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error updating merch item:");
@@ -197236,11 +197251,11 @@ var init_merch = __esm({
     router104.delete("/:id", requireAuth, async (req, res) => {
       try {
         const { id } = req.params;
-        const existing = await db.select().from(merchItems).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchItems.id, id), (0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id))).limit(1);
+        const existing = await db.select().from(merchItems).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchItems.id, id), (0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Merch item not found" });
         }
-        await db.delete(merchItems).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchItems.id, id), (0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id)));
+        await db.delete(merchItems).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchItems.id, id), (0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id)));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "Error deleting merch item:");
@@ -197250,7 +197265,7 @@ var init_merch = __esm({
     router104.get("/orders", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const orders5 = await db.select().from(merchOrders).where((0, import_drizzle_orm145.eq)(merchOrders.userId, req.user.id)).orderBy((0, import_drizzle_orm145.desc)(merchOrders.createdAt)).limit(limit).offset(offset);
+        const orders5 = await db.select().from(merchOrders).where((0, import_drizzle_orm146.eq)(merchOrders.userId, req.user.id)).orderBy((0, import_drizzle_orm146.desc)(merchOrders.createdAt)).limit(limit).offset(offset);
         res.json(orders5);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching merch orders:");
@@ -197264,7 +197279,7 @@ var init_merch = __esm({
         if (!parsed.success) {
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
-        const existing = await db.select().from(merchOrders).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchOrders.id, id), (0, import_drizzle_orm145.eq)(merchOrders.userId, req.user.id))).limit(1);
+        const existing = await db.select().from(merchOrders).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchOrders.id, id), (0, import_drizzle_orm146.eq)(merchOrders.userId, req.user.id))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Order not found" });
         }
@@ -197272,7 +197287,7 @@ var init_merch = __esm({
         const [updated] = await db.update(merchOrders).set({
           status: status ?? existing[0].status,
           trackingNumber: trackingNumber !== void 0 ? trackingNumber : existing[0].trackingNumber
-        }).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchOrders.id, id), (0, import_drizzle_orm145.eq)(merchOrders.userId, req.user.id))).returning();
+        }).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchOrders.id, id), (0, import_drizzle_orm146.eq)(merchOrders.userId, req.user.id))).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error updating merch order:");
@@ -197283,23 +197298,23 @@ var init_merch = __esm({
       try {
         const userId = req.user.id;
         const [orderStats] = await db.select({
-          totalRevenue: import_drizzle_orm145.sql`COALESCE(SUM(${merchOrders.total}), 0)`,
-          totalOrders: import_drizzle_orm145.sql`COUNT(*)`
-        }).from(merchOrders).where((0, import_drizzle_orm145.eq)(merchOrders.userId, userId));
+          totalRevenue: import_drizzle_orm146.sql`COALESCE(SUM(${merchOrders.total}), 0)`,
+          totalOrders: import_drizzle_orm146.sql`COUNT(*)`
+        }).from(merchOrders).where((0, import_drizzle_orm146.eq)(merchOrders.userId, userId));
         const startOfMonth = /* @__PURE__ */ new Date();
         startOfMonth.setDate(1);
         startOfMonth.setHours(0, 0, 0, 0);
         const [monthlyOrders] = await db.select({
-          count: import_drizzle_orm145.sql`COUNT(*)`
-        }).from(merchOrders).where((0, import_drizzle_orm145.and)(
-          (0, import_drizzle_orm145.eq)(merchOrders.userId, userId),
-          import_drizzle_orm145.sql`${merchOrders.createdAt} >= ${startOfMonth}`
+          count: import_drizzle_orm146.sql`COUNT(*)`
+        }).from(merchOrders).where((0, import_drizzle_orm146.and)(
+          (0, import_drizzle_orm146.eq)(merchOrders.userId, userId),
+          import_drizzle_orm146.sql`${merchOrders.createdAt} >= ${startOfMonth}`
         ));
-        const topItems = await db.select().from(merchItems).where((0, import_drizzle_orm145.eq)(merchItems.userId, userId)).orderBy((0, import_drizzle_orm145.desc)(merchItems.soldCount)).limit(5);
-        const lowInventoryItems = await db.select().from(merchItems).where((0, import_drizzle_orm145.and)(
-          (0, import_drizzle_orm145.eq)(merchItems.userId, userId),
-          import_drizzle_orm145.sql`${merchItems.inventory} < 5`,
-          (0, import_drizzle_orm145.eq)(merchItems.isDigital, false)
+        const topItems = await db.select().from(merchItems).where((0, import_drizzle_orm146.eq)(merchItems.userId, userId)).orderBy((0, import_drizzle_orm146.desc)(merchItems.soldCount)).limit(5);
+        const lowInventoryItems = await db.select().from(merchItems).where((0, import_drizzle_orm146.and)(
+          (0, import_drizzle_orm146.eq)(merchItems.userId, userId),
+          import_drizzle_orm146.sql`${merchItems.inventory} < 5`,
+          (0, import_drizzle_orm146.eq)(merchItems.isDigital, false)
         )).limit(50);
         res.json({
           totalRevenue: Number(orderStats?.totalRevenue || 0),
@@ -197316,7 +197331,7 @@ var init_merch = __esm({
     });
     router104.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(merchItems).where((0, import_drizzle_orm145.and)((0, import_drizzle_orm145.eq)(merchItems.id, req.params.id), (0, import_drizzle_orm145.eq)(merchItems.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(merchItems).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(merchItems.id, req.params.id), (0, import_drizzle_orm146.eq)(merchItems.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Merch item not found" });
         res.json(item);
       } catch (error) {
@@ -197333,7 +197348,7 @@ var syncLicensing_exports = {};
 __export(syncLicensing_exports, {
   default: () => syncLicensing_default
 });
-var import_express108, import_drizzle_orm146, import_zod50, router105, insertSyncSchema, syncLicensing_default;
+var import_express108, import_drizzle_orm147, import_zod50, router105, insertSyncSchema, syncLicensing_default;
 var init_syncLicensing = __esm({
   "server/routes/syncLicensing.ts"() {
     "use strict";
@@ -197341,7 +197356,7 @@ var init_syncLicensing = __esm({
     init_auth();
     init_db();
     init_schema();
-    import_drizzle_orm146 = require("drizzle-orm");
+    import_drizzle_orm147 = require("drizzle-orm");
     import_zod50 = require("zod");
     init_pagination();
     router105 = (0, import_express108.Router)();
@@ -197362,7 +197377,7 @@ var init_syncLicensing = __esm({
     router105.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const catalog = await db.select().from(syncSubmissions).where((0, import_drizzle_orm146.eq)(syncSubmissions.userId, req.user.id)).orderBy((0, import_drizzle_orm146.desc)(syncSubmissions.createdAt)).limit(limit).offset(offset);
+        const catalog = await db.select().from(syncSubmissions).where((0, import_drizzle_orm147.eq)(syncSubmissions.userId, req.user.id)).orderBy((0, import_drizzle_orm147.desc)(syncSubmissions.createdAt)).limit(limit).offset(offset);
         res.json(catalog);
       } catch (error) {
         res.status(500).json({ error: "Failed to fetch sync catalog" });
@@ -197372,11 +197387,11 @@ var init_syncLicensing = __esm({
       try {
         const userId = req.user.id;
         const [stats] = await db.select({
-          totalTracks: (0, import_drizzle_orm146.count)(),
-          licensedCount: import_drizzle_orm146.sql`count(*) filter (where status = 'licensed')`,
-          pendingCount: import_drizzle_orm146.sql`count(*) filter (where status in ('under_review', 'submitted'))`,
-          revenue: import_drizzle_orm146.sql`coalesce(sum(license_fee), 0)`
-        }).from(syncSubmissions).where((0, import_drizzle_orm146.eq)(syncSubmissions.userId, userId));
+          totalTracks: (0, import_drizzle_orm147.count)(),
+          licensedCount: import_drizzle_orm147.sql`count(*) filter (where status = 'licensed')`,
+          pendingCount: import_drizzle_orm147.sql`count(*) filter (where status in ('under_review', 'submitted'))`,
+          revenue: import_drizzle_orm147.sql`coalesce(sum(license_fee), 0)`
+        }).from(syncSubmissions).where((0, import_drizzle_orm147.eq)(syncSubmissions.userId, userId));
         res.json({
           totalTracks: Number(stats.totalTracks),
           licensedCount: Number(stats.licensedCount),
@@ -197389,7 +197404,7 @@ var init_syncLicensing = __esm({
     });
     router105.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(syncSubmissions).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(syncSubmissions.id, req.params.id), (0, import_drizzle_orm146.eq)(syncSubmissions.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(syncSubmissions).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(syncSubmissions.id, req.params.id), (0, import_drizzle_orm147.eq)(syncSubmissions.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Listing not found" });
         res.json(item);
       } catch (error) {
@@ -197418,7 +197433,7 @@ var init_syncLicensing = __esm({
         const userId = req.user.id;
         const { id } = req.params;
         const data = insertSyncSchema.partial().parse(req.body);
-        const [updated] = await db.update(syncSubmissions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(syncSubmissions.id, id), (0, import_drizzle_orm146.eq)(syncSubmissions.userId, userId))).returning();
+        const [updated] = await db.update(syncSubmissions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(syncSubmissions.id, id), (0, import_drizzle_orm147.eq)(syncSubmissions.userId, userId))).returning();
         if (!updated) return res.status(404).json({ error: "Listing not found" });
         res.json(updated);
       } catch (error) {
@@ -197442,7 +197457,7 @@ var init_syncLicensing = __esm({
         if (licensedTo !== void 0) setFields.licensedTo = licensedTo;
         if (licenseFee !== void 0) setFields.licenseFee = licenseFee;
         if (status === "licensed") setFields.licensedAt = /* @__PURE__ */ new Date();
-        const [updated] = await db.update(syncSubmissions).set(setFields).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(syncSubmissions.id, id), (0, import_drizzle_orm146.eq)(syncSubmissions.userId, userId))).returning();
+        const [updated] = await db.update(syncSubmissions).set(setFields).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(syncSubmissions.id, id), (0, import_drizzle_orm147.eq)(syncSubmissions.userId, userId))).returning();
         if (!updated) return res.status(404).json({ error: "Listing not found" });
         res.json(updated);
       } catch (error) {
@@ -197456,7 +197471,7 @@ var init_syncLicensing = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const [deleted] = await db.delete(syncSubmissions).where((0, import_drizzle_orm146.and)((0, import_drizzle_orm146.eq)(syncSubmissions.id, id), (0, import_drizzle_orm146.eq)(syncSubmissions.userId, userId))).returning();
+        const [deleted] = await db.delete(syncSubmissions).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(syncSubmissions.id, id), (0, import_drizzle_orm147.eq)(syncSubmissions.userId, userId))).returning();
         if (!deleted) return res.status(404).json({ error: "Listing not found" });
         res.json({ success: true });
       } catch (error) {
@@ -197472,7 +197487,7 @@ var publishing_exports = {};
 __export(publishing_exports, {
   default: () => publishing_default
 });
-var import_express109, import_drizzle_orm147, import_zod51, router106, insertPublishingSchema, publishing_default;
+var import_express109, import_drizzle_orm148, import_zod51, router106, insertPublishingSchema, publishing_default;
 var init_publishing = __esm({
   "server/routes/publishing.ts"() {
     "use strict";
@@ -197480,7 +197495,7 @@ var init_publishing = __esm({
     init_auth();
     init_db();
     init_schema();
-    import_drizzle_orm147 = require("drizzle-orm");
+    import_drizzle_orm148 = require("drizzle-orm");
     import_zod51 = require("zod");
     init_logger();
     router106 = (0, import_express109.Router)();
@@ -197504,7 +197519,7 @@ var init_publishing = __esm({
         const userId = req.user.id;
         const limit = Math.min(parseInt(req.query.limit) || 50, 200);
         const offset = parseInt(req.query.offset) || 0;
-        const works = await db.select().from(publishingRights).where((0, import_drizzle_orm147.eq)(publishingRights.userId, userId)).orderBy((0, import_drizzle_orm147.desc)(publishingRights.registeredAt)).limit(limit).offset(offset);
+        const works = await db.select().from(publishingRights).where((0, import_drizzle_orm148.eq)(publishingRights.userId, userId)).orderBy((0, import_drizzle_orm148.desc)(publishingRights.registeredAt)).limit(limit).offset(offset);
         res.json(works);
       } catch (error) {
         logger2.warn({ err: error }, "[Publishing] Failed to fetch registered works:");
@@ -197540,7 +197555,7 @@ var init_publishing = __esm({
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
         const { status: _status, ...updateData } = parsed.data;
-        const [updated] = await db.update(publishingRights).set(updateData).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(publishingRights.id, id), (0, import_drizzle_orm147.eq)(publishingRights.userId, userId))).returning();
+        const [updated] = await db.update(publishingRights).set(updateData).where((0, import_drizzle_orm148.and)((0, import_drizzle_orm148.eq)(publishingRights.id, id), (0, import_drizzle_orm148.eq)(publishingRights.userId, userId))).returning();
         if (!updated) return res.status(404).json({ error: "Work not found" });
         res.json(updated);
       } catch (error) {
@@ -197552,7 +197567,7 @@ var init_publishing = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const [deleted] = await db.delete(publishingRights).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(publishingRights.id, id), (0, import_drizzle_orm147.eq)(publishingRights.userId, userId))).returning();
+        const [deleted] = await db.delete(publishingRights).where((0, import_drizzle_orm148.and)((0, import_drizzle_orm148.eq)(publishingRights.id, id), (0, import_drizzle_orm148.eq)(publishingRights.userId, userId))).returning();
         if (!deleted) return res.status(404).json({ error: "Work not found" });
         res.json({ success: true });
       } catch (error) {
@@ -197564,10 +197579,10 @@ var init_publishing = __esm({
       try {
         const userId = req.user.id;
         const [stats] = await db.select({
-          totalWorks: (0, import_drizzle_orm147.count)(),
-          pendingCount: import_drizzle_orm147.sql`count(*) filter (where status = 'pending')`,
-          confirmedCount: import_drizzle_orm147.sql`count(*) filter (where status in ('confirmed', 'active'))`
-        }).from(publishingRights).where((0, import_drizzle_orm147.eq)(publishingRights.userId, userId));
+          totalWorks: (0, import_drizzle_orm148.count)(),
+          pendingCount: import_drizzle_orm148.sql`count(*) filter (where status = 'pending')`,
+          confirmedCount: import_drizzle_orm148.sql`count(*) filter (where status in ('confirmed', 'active'))`
+        }).from(publishingRights).where((0, import_drizzle_orm148.eq)(publishingRights.userId, userId));
         res.json({
           totalWorks: Number(stats.totalWorks),
           pendingCount: Number(stats.pendingCount),
@@ -197580,7 +197595,7 @@ var init_publishing = __esm({
     });
     router106.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [work] = await db.select().from(publishingRights).where((0, import_drizzle_orm147.and)((0, import_drizzle_orm147.eq)(publishingRights.id, req.params.id), (0, import_drizzle_orm147.eq)(publishingRights.userId, req.user.id))).limit(1);
+        const [work] = await db.select().from(publishingRights).where((0, import_drizzle_orm148.and)((0, import_drizzle_orm148.eq)(publishingRights.id, req.params.id), (0, import_drizzle_orm148.eq)(publishingRights.userId, req.user.id))).limit(1);
         if (!work) return res.status(404).json({ error: "Work not found" });
         res.json(work);
       } catch (error) {
@@ -197616,14 +197631,14 @@ async function cleanupOldDeletedFiles() {
   try {
     const cutoffDate = /* @__PURE__ */ new Date();
     cutoffDate.setDate(cutoffDate.getDate() - PERMANENT_DELETE_DAYS2);
-    const oldDeletedFiles = await db.select().from(userStorageFiles).where((0, import_drizzle_orm148.and)(
-      (0, import_drizzle_orm148.isNotNull)(userStorageFiles.deletedAt),
-      (0, import_drizzle_orm148.lt)(userStorageFiles.deletedAt, cutoffDate)
+    const oldDeletedFiles = await db.select().from(userStorageFiles).where((0, import_drizzle_orm149.and)(
+      (0, import_drizzle_orm149.isNotNull)(userStorageFiles.deletedAt),
+      (0, import_drizzle_orm149.lt)(userStorageFiles.deletedAt, cutoffDate)
     )).orderBy(userStorageFiles.deletedAt).limit(500);
     for (const file of oldDeletedFiles) {
       try {
         await storageService.deleteFile(file.fileKey);
-        await db.delete(userStorageFiles).where((0, import_drizzle_orm148.eq)(userStorageFiles.id, file.id));
+        await db.delete(userStorageFiles).where((0, import_drizzle_orm149.eq)(userStorageFiles.id, file.id));
         logger2.info(`[SoftDelete] Permanently deleted expired file: ${file.fileKey}`);
       } catch (err) {
         logger2.warn({ err }, `[SoftDelete] Failed to permanently delete file ${file.fileKey}:`);
@@ -197658,7 +197673,7 @@ function formatBytes2(bytes2) {
   const i = Math.floor(Math.log(bytes2) / Math.log(k));
   return parseFloat((bytes2 / Math.pow(k, i)).toFixed(1)) + " " + sizes[i];
 }
-var import_express110, import_multer8, import_crypto102, import_path33, import_drizzle_orm148, router107, audioCache, AUDIO_CACHE_MAX_SIZE, AUDIO_CACHE_TTL, PERMANENT_DELETE_DAYS2, ALLOWED_AUDIO_TYPES2, ALLOWED_IMAGE_TYPES2, ALLOWED_VIDEO_TYPES, MAX_FILE_SIZE, MAX_CHUNK_SIZE, CHUNK_TTL, ALLOWED_CATEGORIES, chunkUploads, storage2, upload8, chunkUpload, storage_default;
+var import_express110, import_multer8, import_crypto102, import_path33, import_drizzle_orm149, router107, audioCache, AUDIO_CACHE_MAX_SIZE, AUDIO_CACHE_TTL, PERMANENT_DELETE_DAYS2, ALLOWED_AUDIO_TYPES2, ALLOWED_IMAGE_TYPES2, ALLOWED_VIDEO_TYPES, MAX_FILE_SIZE, MAX_CHUNK_SIZE, CHUNK_TTL, ALLOWED_CATEGORIES, chunkUploads, storage2, upload8, chunkUpload, storage_default;
 var init_storage2 = __esm({
   "server/routes/storage.ts"() {
     "use strict";
@@ -197672,7 +197687,7 @@ var init_storage2 = __esm({
     import_path33 = __toESM(require("path"), 1);
     init_db();
     init_schema();
-    import_drizzle_orm148 = require("drizzle-orm");
+    import_drizzle_orm149 = require("drizzle-orm");
     init_notificationService();
     router107 = (0, import_express110.Router)();
     audioCache = /* @__PURE__ */ new Map();
@@ -198020,21 +198035,21 @@ var init_storage2 = __esm({
         if (!key.includes(`users/${userId}/`)) {
           return res.status(403).json({ error: "Not authorized to delete this file" });
         }
-        const [file] = await db.select().from(userStorageFiles).where((0, import_drizzle_orm148.and)(
-          (0, import_drizzle_orm148.eq)(userStorageFiles.fileKey, key),
-          (0, import_drizzle_orm148.eq)(userStorageFiles.userId, userId),
-          (0, import_drizzle_orm148.isNull)(userStorageFiles.deletedAt)
+        const [file] = await db.select().from(userStorageFiles).where((0, import_drizzle_orm149.and)(
+          (0, import_drizzle_orm149.eq)(userStorageFiles.fileKey, key),
+          (0, import_drizzle_orm149.eq)(userStorageFiles.userId, userId),
+          (0, import_drizzle_orm149.isNull)(userStorageFiles.deletedAt)
         )).limit(1);
         if (!file) {
           return res.status(404).json({ error: "File not found" });
         }
         if (permanent === "true") {
           await storageService.deleteFile(key);
-          await db.delete(userStorageFiles).where((0, import_drizzle_orm148.eq)(userStorageFiles.id, file.id));
+          await db.delete(userStorageFiles).where((0, import_drizzle_orm149.eq)(userStorageFiles.id, file.id));
           logger2.info(`[SoftDelete] File permanently deleted: ${key} by user ${userId}`);
           res.json({ success: true, restorable: false });
         } else {
-          await db.update(userStorageFiles).set({ deletedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm148.eq)(userStorageFiles.id, file.id));
+          await db.update(userStorageFiles).set({ deletedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm149.eq)(userStorageFiles.id, file.id));
           logger2.info(`[SoftDelete] File soft deleted: ${key} by user ${userId}`);
           res.json({
             success: true,
@@ -198054,10 +198069,10 @@ var init_storage2 = __esm({
       try {
         const { key } = req.params;
         const userId = req.user.id;
-        const [deletedFile] = await db.select().from(userStorageFiles).where((0, import_drizzle_orm148.and)(
-          (0, import_drizzle_orm148.eq)(userStorageFiles.fileKey, key),
-          (0, import_drizzle_orm148.eq)(userStorageFiles.userId, userId),
-          (0, import_drizzle_orm148.isNotNull)(userStorageFiles.deletedAt)
+        const [deletedFile] = await db.select().from(userStorageFiles).where((0, import_drizzle_orm149.and)(
+          (0, import_drizzle_orm149.eq)(userStorageFiles.fileKey, key),
+          (0, import_drizzle_orm149.eq)(userStorageFiles.userId, userId),
+          (0, import_drizzle_orm149.isNotNull)(userStorageFiles.deletedAt)
         )).limit(1);
         if (!deletedFile) {
           return res.status(404).json({
@@ -198071,7 +198086,7 @@ var init_storage2 = __esm({
             error: "Restoration window has expired. The file can no longer be recovered."
           });
         }
-        await db.update(userStorageFiles).set({ deletedAt: null }).where((0, import_drizzle_orm148.eq)(userStorageFiles.id, deletedFile.id));
+        await db.update(userStorageFiles).set({ deletedAt: null }).where((0, import_drizzle_orm149.eq)(userStorageFiles.id, deletedFile.id));
         logger2.info(`[SoftDelete] File restored: ${key} by user ${userId}`);
         res.json({
           success: true,
@@ -198766,7 +198781,7 @@ function simulateExportProgress(jobId) {
     }
   }, 800);
 }
-var import_express112, import_crypto103, import_zod52, import_drizzle_orm149, router109, exportJobs, exportHistory, audioExportSchema, dataExportSchema, shareLinkSchema, reportTypes, reportTypeSchema, chartExportSchema, bulkExportSchema, masteredExportSchema, stemsExportSchema, export_default;
+var import_express112, import_crypto103, import_zod52, import_drizzle_orm150, router109, exportJobs, exportHistory, audioExportSchema, dataExportSchema, shareLinkSchema, reportTypes, reportTypeSchema, chartExportSchema, bulkExportSchema, masteredExportSchema, stemsExportSchema, export_default;
 var init_export = __esm({
   "server/routes/export.ts"() {
     "use strict";
@@ -198778,7 +198793,7 @@ var init_export = __esm({
     import_zod52 = require("zod");
     init_defaults();
     init_schema();
-    import_drizzle_orm149 = require("drizzle-orm");
+    import_drizzle_orm150 = require("drizzle-orm");
     router109 = (0, import_express112.Router)();
     exportJobs = /* @__PURE__ */ new Map();
     exportHistory = [];
@@ -199073,7 +199088,7 @@ var init_export = __esm({
     router109.get("/share-links", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
-        const rows = await db.select().from(shareLinks).where((0, import_drizzle_orm149.eq)(shareLinks.userId, userId)).orderBy((0, import_drizzle_orm149.desc)(shareLinks.createdAt)).limit(100);
+        const rows = await db.select().from(shareLinks).where((0, import_drizzle_orm150.eq)(shareLinks.userId, userId)).orderBy((0, import_drizzle_orm150.desc)(shareLinks.createdAt)).limit(100);
         res.json(rows);
       } catch (error) {
         logger2.warn({ err: error }, "Error fetching share links:");
@@ -199083,7 +199098,7 @@ var init_export = __esm({
     router109.get("/share/:shortCode", async (req, res) => {
       try {
         const { shortCode } = req.params;
-        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm149.eq)(shareLinks.shortCode, shortCode)).limit(1);
+        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm150.eq)(shareLinks.shortCode, shortCode)).limit(1);
         if (!link) {
           return res.status(404).json({ error: "Link not found" });
         }
@@ -199096,7 +199111,7 @@ var init_export = __esm({
         if (link.maxDownloads && link.downloadCount >= link.maxDownloads) {
           return res.status(410).json({ error: "Download limit reached" });
         }
-        await db.update(shareLinks).set({ viewCount: link.viewCount + 1, lastAccessedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm149.eq)(shareLinks.id, link.id));
+        await db.update(shareLinks).set({ viewCount: link.viewCount + 1, lastAccessedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm150.eq)(shareLinks.id, link.id));
         res.json({
           id: link.id,
           name: link.name,
@@ -199114,7 +199129,7 @@ var init_export = __esm({
       try {
         const { shortCode } = req.params;
         const { email } = req.body;
-        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm149.and)((0, import_drizzle_orm149.eq)(shareLinks.shortCode, shortCode), (0, import_drizzle_orm149.eq)(shareLinks.isActive, true))).limit(1);
+        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(shareLinks.shortCode, shortCode), (0, import_drizzle_orm150.eq)(shareLinks.isActive, true))).limit(1);
         if (!link) {
           return res.status(404).json({ error: "Link not found" });
         }
@@ -199136,7 +199151,7 @@ var init_export = __esm({
     router109.get("/share/:shortCode/download", async (req, res) => {
       try {
         const { shortCode } = req.params;
-        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm149.and)((0, import_drizzle_orm149.eq)(shareLinks.shortCode, shortCode), (0, import_drizzle_orm149.eq)(shareLinks.isActive, true))).limit(1);
+        const [link] = await db.select().from(shareLinks).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(shareLinks.shortCode, shortCode), (0, import_drizzle_orm150.eq)(shareLinks.isActive, true))).limit(1);
         if (!link) {
           return res.status(404).json({ error: "Link not found" });
         }
@@ -199146,7 +199161,7 @@ var init_export = __esm({
         if (link.maxDownloads && link.downloadCount >= link.maxDownloads) {
           return res.status(410).json({ error: "Download limit reached" });
         }
-        await db.update(shareLinks).set({ downloadCount: link.downloadCount + 1, lastAccessedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm149.eq)(shareLinks.id, link.id));
+        await db.update(shareLinks).set({ downloadCount: link.downloadCount + 1, lastAccessedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm150.eq)(shareLinks.id, link.id));
         res.json({ success: true, message: "Download initiated", fileName: link.name });
       } catch (error) {
         logger2.warn({ err: error }, "Error downloading via share link:");
@@ -199157,14 +199172,14 @@ var init_export = __esm({
       try {
         const { id } = req.params;
         const userId = req.user.id;
-        const [link] = await db.select({ id: shareLinks.id, userId: shareLinks.userId }).from(shareLinks).where((0, import_drizzle_orm149.eq)(shareLinks.id, id)).limit(1);
+        const [link] = await db.select({ id: shareLinks.id, userId: shareLinks.userId }).from(shareLinks).where((0, import_drizzle_orm150.eq)(shareLinks.id, id)).limit(1);
         if (!link) {
           return res.status(404).json({ error: "Link not found" });
         }
         if (link.userId !== userId) {
           return res.status(403).json({ error: "Access denied" });
         }
-        await db.update(shareLinks).set({ isActive: false }).where((0, import_drizzle_orm149.eq)(shareLinks.id, id));
+        await db.update(shareLinks).set({ isActive: false }).where((0, import_drizzle_orm150.eq)(shareLinks.id, id));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "Error revoking share link:");
@@ -199176,7 +199191,7 @@ var init_export = __esm({
         const { id } = req.params;
         const userId = req.user.id;
         const updates = req.body;
-        const [link] = await db.select({ id: shareLinks.id, userId: shareLinks.userId }).from(shareLinks).where((0, import_drizzle_orm149.eq)(shareLinks.id, id)).limit(1);
+        const [link] = await db.select({ id: shareLinks.id, userId: shareLinks.userId }).from(shareLinks).where((0, import_drizzle_orm150.eq)(shareLinks.id, id)).limit(1);
         if (!link) {
           return res.status(404).json({ error: "Link not found" });
         }
@@ -199187,7 +199202,7 @@ var init_export = __esm({
         if (updates.expiresAt !== void 0) patch.expiresAt = updates.expiresAt ? new Date(updates.expiresAt) : null;
         if (updates.maxDownloads !== void 0) patch.maxDownloads = updates.maxDownloads;
         if (updates.isActive !== void 0) patch.isActive = updates.isActive;
-        const [updated] = await db.update(shareLinks).set(patch).where((0, import_drizzle_orm149.and)((0, import_drizzle_orm149.eq)(shareLinks.id, id), (0, import_drizzle_orm149.eq)(shareLinks.userId, userId))).returning();
+        const [updated] = await db.update(shareLinks).set(patch).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(shareLinks.id, id), (0, import_drizzle_orm150.eq)(shareLinks.userId, userId))).returning();
         res.json(updated);
       } catch (error) {
         logger2.warn({ err: error }, "Error updating share link:");
@@ -202663,10 +202678,10 @@ __export(collaboration_exports, {
   default: () => collaboration_default
 });
 async function verifyProjectAccess(projectId, userId) {
-  const [project] = await db.select({ id: studioProjects.id }).from(studioProjects).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(studioProjects.id, projectId), (0, import_drizzle_orm150.eq)(studioProjects.userId, userId))).limit(1);
+  const [project] = await db.select({ id: studioProjects.id }).from(studioProjects).where((0, import_drizzle_orm151.and)((0, import_drizzle_orm151.eq)(studioProjects.id, projectId), (0, import_drizzle_orm151.eq)(studioProjects.userId, userId))).limit(1);
   return !!project;
 }
-var import_express116, import_zod53, import_drizzle_orm150, router112, sessions2, conflicts, COLORS2, resolveConflictSchema, updatePresenceSchema, createVersionSchema, accessRequestSchema, updateAccessSchema, commentSchema, collaboration_default;
+var import_express116, import_zod53, import_drizzle_orm151, router112, sessions2, conflicts, COLORS2, resolveConflictSchema, updatePresenceSchema, createVersionSchema, accessRequestSchema, updateAccessSchema, commentSchema, collaboration_default;
 var init_collaboration = __esm({
   "server/routes/collaboration.ts"() {
     "use strict";
@@ -202675,7 +202690,7 @@ var init_collaboration = __esm({
     init_logger();
     init_db();
     init_schema();
-    import_drizzle_orm150 = require("drizzle-orm");
+    import_drizzle_orm151 = require("drizzle-orm");
     init_auth();
     router112 = (0, import_express116.Router)();
     sessions2 = /* @__PURE__ */ new Map();
@@ -202926,9 +202941,9 @@ var init_collaboration = __esm({
         if (!await verifyProjectAccess(validatedData.projectId, userId)) {
           return res.status(404).json({ error: "Project not found" });
         }
-        const existingVersions = await db.select({ id: collaborationVersions.id }).from(collaborationVersions).where((0, import_drizzle_orm150.eq)(collaborationVersions.projectId, validatedData.projectId)).limit(500);
+        const existingVersions = await db.select({ id: collaborationVersions.id }).from(collaborationVersions).where((0, import_drizzle_orm151.eq)(collaborationVersions.projectId, validatedData.projectId)).limit(500);
         const nextVersion = existingVersions.length + 1;
-        await db.update(collaborationVersions).set({ isCurrent: false }).where((0, import_drizzle_orm150.eq)(collaborationVersions.projectId, validatedData.projectId));
+        await db.update(collaborationVersions).set({ isCurrent: false }).where((0, import_drizzle_orm151.eq)(collaborationVersions.projectId, validatedData.projectId));
         const [newVersion] = await db.insert(collaborationVersions).values({
           projectId: validatedData.projectId,
           version: nextVersion,
@@ -202960,7 +202975,7 @@ var init_collaboration = __esm({
         if (!await verifyProjectAccess(projectId, req.user.id)) {
           return res.status(404).json({ error: "Project not found" });
         }
-        const rows = await db.select().from(collaborationVersions).where((0, import_drizzle_orm150.eq)(collaborationVersions.projectId, projectId)).orderBy((0, import_drizzle_orm150.desc)(collaborationVersions.version)).limit(100);
+        const rows = await db.select().from(collaborationVersions).where((0, import_drizzle_orm151.eq)(collaborationVersions.projectId, projectId)).orderBy((0, import_drizzle_orm151.desc)(collaborationVersions.version)).limit(100);
         res.json({
           versions: rows,
           outcome: { type: "version_history_displayed", message: `${rows.length} versions found` }
@@ -202976,12 +202991,12 @@ var init_collaboration = __esm({
         if (!await verifyProjectAccess(projectId, req.user.id)) {
           return res.status(404).json({ error: "Project not found" });
         }
-        const [target] = await db.select().from(collaborationVersions).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(collaborationVersions.id, versionId), (0, import_drizzle_orm150.eq)(collaborationVersions.projectId, projectId))).limit(1);
+        const [target] = await db.select().from(collaborationVersions).where((0, import_drizzle_orm151.and)((0, import_drizzle_orm151.eq)(collaborationVersions.id, versionId), (0, import_drizzle_orm151.eq)(collaborationVersions.projectId, projectId))).limit(1);
         if (!target) {
           return res.status(404).json({ error: "Version not found" });
         }
-        await db.update(collaborationVersions).set({ isCurrent: false }).where((0, import_drizzle_orm150.eq)(collaborationVersions.projectId, projectId));
-        const [restored] = await db.update(collaborationVersions).set({ isCurrent: true }).where((0, import_drizzle_orm150.eq)(collaborationVersions.id, versionId)).returning();
+        await db.update(collaborationVersions).set({ isCurrent: false }).where((0, import_drizzle_orm151.eq)(collaborationVersions.projectId, projectId));
+        const [restored] = await db.update(collaborationVersions).set({ isCurrent: true }).where((0, import_drizzle_orm151.eq)(collaborationVersions.id, versionId)).returning();
         res.json({
           success: true,
           version: restored,
@@ -202999,7 +203014,7 @@ var init_collaboration = __esm({
           return res.status(404).json({ error: "Project not found" });
         }
         const { versionAId, versionBId } = req.body;
-        const rows = await db.select().from(collaborationVersions).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(collaborationVersions.projectId, projectId))).limit(200);
+        const rows = await db.select().from(collaborationVersions).where((0, import_drizzle_orm151.and)((0, import_drizzle_orm151.eq)(collaborationVersions.projectId, projectId))).limit(200);
         const versionA = rows.find((v) => v.id === versionAId);
         const versionB = rows.find((v) => v.id === versionBId);
         if (!versionA || !versionB) {
@@ -203020,14 +203035,14 @@ var init_collaboration = __esm({
         if (!await verifyProjectAccess(projectId, req.user.id)) {
           return res.status(404).json({ error: "Project not found" });
         }
-        const [target] = await db.select().from(collaborationVersions).where((0, import_drizzle_orm150.and)((0, import_drizzle_orm150.eq)(collaborationVersions.id, versionId), (0, import_drizzle_orm150.eq)(collaborationVersions.projectId, projectId))).limit(1);
+        const [target] = await db.select().from(collaborationVersions).where((0, import_drizzle_orm151.and)((0, import_drizzle_orm151.eq)(collaborationVersions.id, versionId), (0, import_drizzle_orm151.eq)(collaborationVersions.projectId, projectId))).limit(1);
         if (!target) {
           return res.status(404).json({ error: "Version not found" });
         }
         if (target.isCurrent) {
           return res.status(400).json({ error: "Cannot delete the current version" });
         }
-        await db.delete(collaborationVersions).where((0, import_drizzle_orm150.eq)(collaborationVersions.id, versionId));
+        await db.delete(collaborationVersions).where((0, import_drizzle_orm151.eq)(collaborationVersions.id, versionId));
         res.json({
           success: true,
           outcome: { type: "version_deleted", message: `${target.name} has been deleted`, versionId }
@@ -203075,9 +203090,9 @@ var init_collaboration = __esm({
     router112.get("/access/requests/:projectId", requireAuth, async (req, res) => {
       try {
         const { projectId } = req.params;
-        const rows = await db.select().from(collaborationAccessRequests).where((0, import_drizzle_orm150.and)(
-          (0, import_drizzle_orm150.eq)(collaborationAccessRequests.projectId, projectId),
-          (0, import_drizzle_orm150.eq)(collaborationAccessRequests.status, "pending")
+        const rows = await db.select().from(collaborationAccessRequests).where((0, import_drizzle_orm151.and)(
+          (0, import_drizzle_orm151.eq)(collaborationAccessRequests.projectId, projectId),
+          (0, import_drizzle_orm151.eq)(collaborationAccessRequests.status, "pending")
         )).limit(100);
         res.json({ requests: rows });
       } catch (error) {
@@ -203128,9 +203143,9 @@ var init_collaboration = __esm({
         }
         if (projectId) {
           const newStatus = validatedData.action === "approve" ? "approved" : "denied";
-          await db.update(collaborationAccessRequests).set({ status: newStatus, respondedBy: req.user.id, respondedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm150.and)(
-            (0, import_drizzle_orm150.eq)(collaborationAccessRequests.projectId, projectId),
-            (0, import_drizzle_orm150.eq)(collaborationAccessRequests.requesterId, userId)
+          await db.update(collaborationAccessRequests).set({ status: newStatus, respondedBy: req.user.id, respondedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm151.and)(
+            (0, import_drizzle_orm151.eq)(collaborationAccessRequests.projectId, projectId),
+            (0, import_drizzle_orm151.eq)(collaborationAccessRequests.requesterId, userId)
           ));
         }
         logger2.info(`Access updated for user ${userId}: ${validatedData.action}`);
@@ -203198,7 +203213,7 @@ var init_collaboration = __esm({
     router112.get("/comments/:projectId", requireAuth, async (req, res) => {
       try {
         const { projectId } = req.params;
-        const rows = await db.select().from(collaborationComments).where((0, import_drizzle_orm150.eq)(collaborationComments.projectId, projectId)).orderBy((0, import_drizzle_orm150.desc)(collaborationComments.createdAt)).limit(200);
+        const rows = await db.select().from(collaborationComments).where((0, import_drizzle_orm151.eq)(collaborationComments.projectId, projectId)).orderBy((0, import_drizzle_orm151.desc)(collaborationComments.createdAt)).limit(200);
         res.json({ comments: rows });
       } catch (error) {
         logger2.warn({ err: error }, "Get comments error:");
@@ -203208,7 +203223,7 @@ var init_collaboration = __esm({
     router112.put("/comments/:commentId/resolve", requireAuth, async (req, res) => {
       try {
         const { commentId } = req.params;
-        const [resolved2] = await db.update(collaborationComments).set({ resolved: true }).where((0, import_drizzle_orm150.eq)(collaborationComments.id, commentId)).returning();
+        const [resolved2] = await db.update(collaborationComments).set({ resolved: true }).where((0, import_drizzle_orm151.eq)(collaborationComments.id, commentId)).returning();
         if (!resolved2) {
           return res.status(404).json({ error: "Comment not found" });
         }
@@ -203293,14 +203308,14 @@ var init_collaboration = __esm({
 });
 
 // server/services/musicWorkflowAutomationService.ts
-var import_node_cron3, import_drizzle_orm151, WORKFLOW_TEMPLATES, MusicWorkflowAutomationService, musicWorkflowAutomationService;
+var import_node_cron3, import_drizzle_orm152, WORKFLOW_TEMPLATES, MusicWorkflowAutomationService, musicWorkflowAutomationService;
 var init_musicWorkflowAutomationService = __esm({
   "server/services/musicWorkflowAutomationService.ts"() {
     "use strict";
     import_node_cron3 = __toESM(require("node-cron"), 1);
     init_db();
     init_schema();
-    import_drizzle_orm151 = require("drizzle-orm");
+    import_drizzle_orm152 = require("drizzle-orm");
     init_logger();
     init_notificationService();
     init_emailService();
@@ -204075,7 +204090,7 @@ var init_musicWorkflowAutomationService = __esm({
         return WORKFLOW_TEMPLATES;
       }
       async getUserAutomations(userId) {
-        const rows = await db.select().from(musicWorkflowAutomations).where((0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId));
+        const rows = await db.select().from(musicWorkflowAutomations).where((0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId));
         const map = {};
         for (const row of rows) {
           map[row.templateId] = {
@@ -204089,17 +204104,17 @@ var init_musicWorkflowAutomationService = __esm({
         const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
         if (!template) throw new Error(`Unknown template: ${templateId}`);
         const existing = await db.select().from(musicWorkflowAutomations).where(
-          (0, import_drizzle_orm151.and)(
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId)
+          (0, import_drizzle_orm152.and)(
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId)
           )
         ).limit(1);
         const mergedConfig = { ...template.defaultConfig, ...config2 ?? {} };
         if (existing.length > 0) {
           await db.update(musicWorkflowAutomations).set({ enabled: true, config: mergedConfig, updatedAt: /* @__PURE__ */ new Date() }).where(
-            (0, import_drizzle_orm151.and)(
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId)
+            (0, import_drizzle_orm152.and)(
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId)
             )
           );
         } else {
@@ -204113,9 +204128,9 @@ var init_musicWorkflowAutomationService = __esm({
       }
       async disableAutomation(userId, templateId) {
         await db.update(musicWorkflowAutomations).set({ enabled: false, updatedAt: /* @__PURE__ */ new Date() }).where(
-          (0, import_drizzle_orm151.and)(
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId)
+          (0, import_drizzle_orm152.and)(
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId)
           )
         );
       }
@@ -204123,9 +204138,9 @@ var init_musicWorkflowAutomationService = __esm({
         const template = WORKFLOW_TEMPLATES.find((t) => t.id === templateId);
         if (!template) throw new Error(`Unknown template: ${templateId}`);
         const existing = await db.select().from(musicWorkflowAutomations).where(
-          (0, import_drizzle_orm151.and)(
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId)
+          (0, import_drizzle_orm152.and)(
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId)
           )
         ).limit(1);
         const mergedConfig = {
@@ -204134,9 +204149,9 @@ var init_musicWorkflowAutomationService = __esm({
         };
         if (existing.length > 0) {
           await db.update(musicWorkflowAutomations).set({ config: mergedConfig, updatedAt: /* @__PURE__ */ new Date() }).where(
-            (0, import_drizzle_orm151.and)(
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId)
+            (0, import_drizzle_orm152.and)(
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId)
             )
           );
         } else {
@@ -204149,11 +204164,11 @@ var init_musicWorkflowAutomationService = __esm({
         }
       }
       async getExecutionLogs(userId, templateId, limit = 50) {
-        const conditions = [(0, import_drizzle_orm151.eq)(musicWorkflowExecutionLogs.userId, userId)];
+        const conditions = [(0, import_drizzle_orm152.eq)(musicWorkflowExecutionLogs.userId, userId)];
         if (templateId) {
-          conditions.push((0, import_drizzle_orm151.eq)(musicWorkflowExecutionLogs.templateId, templateId));
+          conditions.push((0, import_drizzle_orm152.eq)(musicWorkflowExecutionLogs.templateId, templateId));
         }
-        const rows = await db.select().from(musicWorkflowExecutionLogs).where((0, import_drizzle_orm151.and)(...conditions)).orderBy(musicWorkflowExecutionLogs.executedAt).limit(limit);
+        const rows = await db.select().from(musicWorkflowExecutionLogs).where((0, import_drizzle_orm152.and)(...conditions)).orderBy(musicWorkflowExecutionLogs.executedAt).limit(limit);
         return rows.reverse();
       }
       /**
@@ -204192,12 +204207,12 @@ var init_musicWorkflowAutomationService = __esm({
           result = await this.dispatch(template.id, userId, eventData, config2);
           await db.update(musicWorkflowAutomations).set({
             lastTriggeredAt: /* @__PURE__ */ new Date(),
-            triggerCount: import_drizzle_orm151.sql`${musicWorkflowAutomations.triggerCount} + 1`,
+            triggerCount: import_drizzle_orm152.sql`${musicWorkflowAutomations.triggerCount} + 1`,
             updatedAt: /* @__PURE__ */ new Date()
           }).where(
-            (0, import_drizzle_orm151.and)(
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId),
-              (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, template.id)
+            (0, import_drizzle_orm152.and)(
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId),
+              (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, template.id)
             )
           );
         } catch (err) {
@@ -204680,7 +204695,7 @@ var init_musicWorkflowAutomationService = __esm({
       }
       // ── Stats ─────────────────────────────────────────────────────────────────
       async getStats(userId) {
-        const userAutomations = await db.select().from(musicWorkflowAutomations).where((0, import_drizzle_orm151.eq)(musicWorkflowAutomations.userId, userId));
+        const userAutomations = await db.select().from(musicWorkflowAutomations).where((0, import_drizzle_orm152.eq)(musicWorkflowAutomations.userId, userId));
         const enabledCount = userAutomations.filter((a) => a.enabled).length;
         const totalRuns = userAutomations.reduce((s, a) => s + (a.triggerCount ?? 0), 0);
         const logs = await this.getExecutionLogs(userId, void 0, 500);
@@ -204738,9 +204753,9 @@ var init_musicWorkflowAutomationService = __esm({
       }
       async runScheduledWorkflow(eventType, templateId) {
         const enabledRows = await db.select().from(musicWorkflowAutomations).where(
-          (0, import_drizzle_orm151.and)(
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.templateId, templateId),
-            (0, import_drizzle_orm151.eq)(musicWorkflowAutomations.enabled, true)
+          (0, import_drizzle_orm152.and)(
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.templateId, templateId),
+            (0, import_drizzle_orm152.eq)(musicWorkflowAutomations.enabled, true)
           )
         );
         for (const row of enabledRows) {
@@ -205123,14 +205138,14 @@ var labelSubmissions_exports = {};
 __export(labelSubmissions_exports, {
   default: () => labelSubmissions_default
 });
-var import_express119, import_drizzle_orm152, import_zod55, router115, CACHE_TTL2, labelSubmissions_default;
+var import_express119, import_drizzle_orm153, import_zod55, router115, CACHE_TTL2, labelSubmissions_default;
 var init_labelSubmissions = __esm({
   "server/routes/labelSubmissions.ts"() {
     "use strict";
     import_express119 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm152 = require("drizzle-orm");
+    import_drizzle_orm153 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_queryCache();
@@ -205141,7 +205156,7 @@ var init_labelSubmissions = __esm({
     router115.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(labelSubmissions).where((0, import_drizzle_orm152.eq)(labelSubmissions.userId, req.user.id)).orderBy((0, import_drizzle_orm152.desc)(labelSubmissions.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(labelSubmissions).where((0, import_drizzle_orm153.eq)(labelSubmissions.userId, req.user.id)).orderBy((0, import_drizzle_orm153.desc)(labelSubmissions.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[LabelSubmissions] Failed to list:");
@@ -205154,12 +205169,12 @@ var init_labelSubmissions = __esm({
         const cacheKey = createCacheKey("stats:labelSubmissions", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm152.count)(),
-            submitted: import_drizzle_orm152.sql`count(*) filter (where status = 'submitted')`,
-            accepted: import_drizzle_orm152.sql`count(*) filter (where status = 'accepted')`,
-            responded: import_drizzle_orm152.sql`count(*) filter (where status in ('accepted','rejected','declined'))`,
-            pending: import_drizzle_orm152.sql`count(*) filter (where status in ('submitted','under_review','following_up'))`
-          }).from(labelSubmissions).where((0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId));
+            total: (0, import_drizzle_orm153.count)(),
+            submitted: import_drizzle_orm153.sql`count(*) filter (where status = 'submitted')`,
+            accepted: import_drizzle_orm153.sql`count(*) filter (where status = 'accepted')`,
+            responded: import_drizzle_orm153.sql`count(*) filter (where status in ('accepted','rejected','declined'))`,
+            pending: import_drizzle_orm153.sql`count(*) filter (where status in ('submitted','under_review','following_up'))`
+          }).from(labelSubmissions).where((0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId));
           const total = Number(totals.total);
           const submitted = Number(totals.submitted);
           const accepted = Number(totals.accepted);
@@ -205182,7 +205197,7 @@ var init_labelSubmissions = __esm({
     });
     router115.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(labelSubmissions).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, req.params.id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(labelSubmissions).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, req.params.id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Submission not found" });
         res.json(item);
       } catch (error) {
@@ -205208,13 +205223,13 @@ var init_labelSubmissions = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(labelSubmissions).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId))).limit(1);
+        const existing = await db.select().from(labelSubmissions).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Submission not found" });
         }
         const parsed = insertLabelSubmissionSchema.partial().parse(req.body);
         const { status: _status, userId: _userId, ...data } = parsed;
-        const [item] = await db.update(labelSubmissions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId))).returning();
+        const [item] = await db.update(labelSubmissions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:labelSubmissions", userId));
         res.json(item);
       } catch (error) {
@@ -205241,7 +205256,7 @@ var init_labelSubmissions = __esm({
         else if (["accepted", "rejected", "declined"].includes(status)) {
           setFields.responseAt = /* @__PURE__ */ new Date();
         }
-        const [item] = await db.update(labelSubmissions).set(setFields).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId))).returning();
+        const [item] = await db.update(labelSubmissions).set(setFields).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId))).returning();
         if (!item) return res.status(404).json({ error: "Submission not found" });
         await queryCache.invalidate(createCacheKey("stats:labelSubmissions", userId));
         res.json(item);
@@ -205268,7 +205283,7 @@ var init_labelSubmissions = __esm({
         };
         if (nextFollowUpAt !== void 0) setFields.followUpAt = new Date(nextFollowUpAt);
         if (notes !== void 0) setFields.notes = notes;
-        const [item] = await db.update(labelSubmissions).set(setFields).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId))).returning();
+        const [item] = await db.update(labelSubmissions).set(setFields).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId))).returning();
         if (!item) return res.status(404).json({ error: "Submission not found" });
         await queryCache.invalidate(createCacheKey("stats:labelSubmissions", userId));
         res.json({ success: true, submission: item });
@@ -205284,11 +205299,11 @@ var init_labelSubmissions = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(labelSubmissions).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId))).limit(1);
+        const existing = await db.select().from(labelSubmissions).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Submission not found" });
         }
-        await db.delete(labelSubmissions).where((0, import_drizzle_orm152.and)((0, import_drizzle_orm152.eq)(labelSubmissions.id, id), (0, import_drizzle_orm152.eq)(labelSubmissions.userId, userId)));
+        await db.delete(labelSubmissions).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(labelSubmissions.id, id), (0, import_drizzle_orm153.eq)(labelSubmissions.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:labelSubmissions", userId));
         res.json({ success: true });
       } catch (error) {
@@ -205305,14 +205320,14 @@ var radioPitches_exports = {};
 __export(radioPitches_exports, {
   default: () => radioPitches_default
 });
-var import_express120, import_drizzle_orm153, import_zod56, router116, CACHE_TTL3, radioPitches_default;
+var import_express120, import_drizzle_orm154, import_zod56, router116, CACHE_TTL3, radioPitches_default;
 var init_radioPitches = __esm({
   "server/routes/radioPitches.ts"() {
     "use strict";
     import_express120 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm153 = require("drizzle-orm");
+    import_drizzle_orm154 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_queryCache();
@@ -205323,7 +205338,7 @@ var init_radioPitches = __esm({
     router116.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(radioPitches).where((0, import_drizzle_orm153.eq)(radioPitches.userId, req.user.id)).orderBy((0, import_drizzle_orm153.desc)(radioPitches.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(radioPitches).where((0, import_drizzle_orm154.eq)(radioPitches.userId, req.user.id)).orderBy((0, import_drizzle_orm154.desc)(radioPitches.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[RadioPitches] Failed to list:");
@@ -205336,14 +205351,14 @@ var init_radioPitches = __esm({
         const cacheKey = createCacheKey("stats:radioPitches", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm153.count)(),
-            radio: import_drizzle_orm153.sql`count(*) filter (where target_type = 'radio')`,
-            blog: import_drizzle_orm153.sql`count(*) filter (where target_type = 'blog')`,
-            dj: import_drizzle_orm153.sql`count(*) filter (where target_type = 'dj')`,
-            podcast: import_drizzle_orm153.sql`count(*) filter (where target_type = 'podcast')`,
-            features: import_drizzle_orm153.sql`count(*) filter (where status = 'featured')`,
-            pending: import_drizzle_orm153.sql`count(*) filter (where status in ('submitted','under_review'))`
-          }).from(radioPitches).where((0, import_drizzle_orm153.eq)(radioPitches.userId, userId));
+            total: (0, import_drizzle_orm154.count)(),
+            radio: import_drizzle_orm154.sql`count(*) filter (where target_type = 'radio')`,
+            blog: import_drizzle_orm154.sql`count(*) filter (where target_type = 'blog')`,
+            dj: import_drizzle_orm154.sql`count(*) filter (where target_type = 'dj')`,
+            podcast: import_drizzle_orm154.sql`count(*) filter (where target_type = 'podcast')`,
+            features: import_drizzle_orm154.sql`count(*) filter (where status = 'featured')`,
+            pending: import_drizzle_orm154.sql`count(*) filter (where status in ('submitted','under_review'))`
+          }).from(radioPitches).where((0, import_drizzle_orm154.eq)(radioPitches.userId, userId));
           return {
             total: Number(totals.total),
             radio: Number(totals.radio),
@@ -205362,7 +205377,7 @@ var init_radioPitches = __esm({
     });
     router116.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(radioPitches).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, req.params.id), (0, import_drizzle_orm153.eq)(radioPitches.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(radioPitches).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, req.params.id), (0, import_drizzle_orm154.eq)(radioPitches.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Radio pitch not found" });
         res.json(item);
       } catch (error) {
@@ -205388,13 +205403,13 @@ var init_radioPitches = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(radioPitches).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, id), (0, import_drizzle_orm153.eq)(radioPitches.userId, userId))).limit(1);
+        const existing = await db.select().from(radioPitches).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, id), (0, import_drizzle_orm154.eq)(radioPitches.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Radio pitch not found" });
         }
         const parsed = insertRadioPitchSchema.partial().parse(req.body);
         const { status: _status, userId: _userId, ...data } = parsed;
-        const [item] = await db.update(radioPitches).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, id), (0, import_drizzle_orm153.eq)(radioPitches.userId, userId))).returning();
+        const [item] = await db.update(radioPitches).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, id), (0, import_drizzle_orm154.eq)(radioPitches.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:radioPitches", userId));
         res.json(item);
       } catch (error) {
@@ -205420,7 +205435,7 @@ var init_radioPitches = __esm({
         if (featureUrl !== void 0) setFields.featureUrl = featureUrl;
         if (["featured", "aired", "rejected"].includes(status)) setFields.responseAt = /* @__PURE__ */ new Date();
         if (status === "submitted") setFields.submittedAt = /* @__PURE__ */ new Date();
-        const [item] = await db.update(radioPitches).set(setFields).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, id), (0, import_drizzle_orm153.eq)(radioPitches.userId, userId))).returning();
+        const [item] = await db.update(radioPitches).set(setFields).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, id), (0, import_drizzle_orm154.eq)(radioPitches.userId, userId))).returning();
         if (!item) return res.status(404).json({ error: "Radio pitch not found" });
         await queryCache.invalidate(createCacheKey("stats:radioPitches", userId));
         res.json(item);
@@ -205436,11 +205451,11 @@ var init_radioPitches = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(radioPitches).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, id), (0, import_drizzle_orm153.eq)(radioPitches.userId, userId))).limit(1);
+        const existing = await db.select().from(radioPitches).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, id), (0, import_drizzle_orm154.eq)(radioPitches.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Radio pitch not found" });
         }
-        await db.delete(radioPitches).where((0, import_drizzle_orm153.and)((0, import_drizzle_orm153.eq)(radioPitches.id, id), (0, import_drizzle_orm153.eq)(radioPitches.userId, userId)));
+        await db.delete(radioPitches).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(radioPitches.id, id), (0, import_drizzle_orm154.eq)(radioPitches.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:radioPitches", userId));
         res.json({ success: true });
       } catch (error) {
@@ -205457,14 +205472,14 @@ var venues_exports = {};
 __export(venues_exports, {
   default: () => venues_default
 });
-var import_express121, import_drizzle_orm154, router117, CACHE_TTL4, venues_default;
+var import_express121, import_drizzle_orm155, router117, CACHE_TTL4, venues_default;
 var init_venues = __esm({
   "server/routes/venues.ts"() {
     "use strict";
     import_express121 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm154 = require("drizzle-orm");
+    import_drizzle_orm155 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_queryCache();
@@ -205474,7 +205489,7 @@ var init_venues = __esm({
     router117.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(venueContacts).where((0, import_drizzle_orm154.eq)(venueContacts.userId, req.user.id)).orderBy((0, import_drizzle_orm154.desc)(venueContacts.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(venueContacts).where((0, import_drizzle_orm155.eq)(venueContacts.userId, req.user.id)).orderBy((0, import_drizzle_orm155.desc)(venueContacts.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[Venues] Failed to list:");
@@ -205487,13 +205502,13 @@ var init_venues = __esm({
         const cacheKey = createCacheKey("stats:venues", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm154.count)(),
-            prospects: import_drizzle_orm154.sql`count(*) filter (where status = 'prospect')`,
-            contacted: import_drizzle_orm154.sql`count(*) filter (where status = 'contacted')`,
-            booked: import_drizzle_orm154.sql`count(*) filter (where status = 'booked')`,
-            declined: import_drizzle_orm154.sql`count(*) filter (where status = 'declined')`,
-            totalCapacity: import_drizzle_orm154.sql`coalesce(sum(capacity), 0)`
-          }).from(venueContacts).where((0, import_drizzle_orm154.eq)(venueContacts.userId, userId));
+            total: (0, import_drizzle_orm155.count)(),
+            prospects: import_drizzle_orm155.sql`count(*) filter (where status = 'prospect')`,
+            contacted: import_drizzle_orm155.sql`count(*) filter (where status = 'contacted')`,
+            booked: import_drizzle_orm155.sql`count(*) filter (where status = 'booked')`,
+            declined: import_drizzle_orm155.sql`count(*) filter (where status = 'declined')`,
+            totalCapacity: import_drizzle_orm155.sql`coalesce(sum(capacity), 0)`
+          }).from(venueContacts).where((0, import_drizzle_orm155.eq)(venueContacts.userId, userId));
           const total = Number(totals.total);
           const totalCapacity = Number(totals.totalCapacity);
           return {
@@ -205513,7 +205528,7 @@ var init_venues = __esm({
     });
     router117.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(venueContacts).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(venueContacts.id, req.params.id), (0, import_drizzle_orm154.eq)(venueContacts.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(venueContacts).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(venueContacts.id, req.params.id), (0, import_drizzle_orm155.eq)(venueContacts.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Venue contact not found" });
         res.json(item);
       } catch (error) {
@@ -205539,12 +205554,12 @@ var init_venues = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(venueContacts).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(venueContacts.id, id), (0, import_drizzle_orm154.eq)(venueContacts.userId, userId))).limit(1);
+        const existing = await db.select().from(venueContacts).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(venueContacts.id, id), (0, import_drizzle_orm155.eq)(venueContacts.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Venue contact not found" });
         }
         const data = insertVenueContactSchema.partial().parse(req.body);
-        const [item] = await db.update(venueContacts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(venueContacts.id, id), (0, import_drizzle_orm154.eq)(venueContacts.userId, userId))).returning();
+        const [item] = await db.update(venueContacts).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(venueContacts.id, id), (0, import_drizzle_orm155.eq)(venueContacts.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:venues", userId));
         res.json(item);
       } catch (error) {
@@ -205559,11 +205574,11 @@ var init_venues = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(venueContacts).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(venueContacts.id, id), (0, import_drizzle_orm154.eq)(venueContacts.userId, userId))).limit(1);
+        const existing = await db.select().from(venueContacts).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(venueContacts.id, id), (0, import_drizzle_orm155.eq)(venueContacts.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Venue contact not found" });
         }
-        await db.delete(venueContacts).where((0, import_drizzle_orm154.and)((0, import_drizzle_orm154.eq)(venueContacts.id, id), (0, import_drizzle_orm154.eq)(venueContacts.userId, userId)));
+        await db.delete(venueContacts).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(venueContacts.id, id), (0, import_drizzle_orm155.eq)(venueContacts.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:venues", userId));
         res.json({ success: true });
       } catch (error) {
@@ -205580,14 +205595,14 @@ var projectBudgets_exports = {};
 __export(projectBudgets_exports, {
   default: () => projectBudgets_default
 });
-var import_express122, import_drizzle_orm155, router118, projectBudgets_default;
+var import_express122, import_drizzle_orm156, router118, projectBudgets_default;
 var init_projectBudgets = __esm({
   "server/routes/projectBudgets.ts"() {
     "use strict";
     import_express122 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm155 = require("drizzle-orm");
+    import_drizzle_orm156 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_pagination();
@@ -205595,7 +205610,7 @@ var init_projectBudgets = __esm({
     router118.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const budgets = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.eq)(projectBudgets.userId, req.user.id)).orderBy((0, import_drizzle_orm155.desc)(projectBudgets.createdAt)).limit(limit).offset(offset);
+        const budgets = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.eq)(projectBudgets.userId, req.user.id)).orderBy((0, import_drizzle_orm156.desc)(projectBudgets.createdAt)).limit(limit).offset(offset);
         res.json(budgets);
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to list:");
@@ -205604,7 +205619,7 @@ var init_projectBudgets = __esm({
     });
     router118.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [budget] = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, req.params.id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, req.user.id))).limit(1);
+        const [budget] = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, req.params.id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, req.user.id))).limit(1);
         if (!budget) return res.status(404).json({ error: "Project budget not found" });
         res.json(budget);
       } catch (error) {
@@ -205616,12 +205631,12 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const budget = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId))).limit(1);
+        const budget = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId))).limit(1);
         if (budget.length === 0) {
           return res.status(404).json({ error: "Budget not found" });
         }
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(budgetLineItems).where((0, import_drizzle_orm155.eq)(budgetLineItems.budgetId, id)).orderBy((0, import_drizzle_orm155.desc)(budgetLineItems.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(budgetLineItems).where((0, import_drizzle_orm156.eq)(budgetLineItems.budgetId, id)).orderBy((0, import_drizzle_orm156.desc)(budgetLineItems.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to fetch line items:");
@@ -205645,12 +205660,12 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId))).limit(1);
+        const existing = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Budget not found" });
         }
         const data = insertProjectBudgetSchema.partial().omit({ userId: true }).parse(req.body);
-        const [item] = await db.update(projectBudgets).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId))).returning();
+        const [item] = await db.update(projectBudgets).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId))).returning();
         res.json(item);
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to update:");
@@ -205664,12 +205679,12 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId))).limit(1);
+        const existing = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Budget not found" });
         }
-        await db.delete(budgetLineItems).where((0, import_drizzle_orm155.eq)(budgetLineItems.budgetId, id));
-        await db.delete(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId)));
+        await db.delete(budgetLineItems).where((0, import_drizzle_orm156.eq)(budgetLineItems.budgetId, id));
+        await db.delete(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId)));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to delete:");
@@ -205680,7 +205695,7 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const budget = await db.select().from(projectBudgets).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(projectBudgets.id, id), (0, import_drizzle_orm155.eq)(projectBudgets.userId, userId))).limit(1);
+        const budget = await db.select().from(projectBudgets).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(projectBudgets.id, id), (0, import_drizzle_orm156.eq)(projectBudgets.userId, userId))).limit(1);
         if (budget.length === 0) {
           return res.status(404).json({ error: "Budget not found" });
         }
@@ -205699,12 +205714,12 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(budgetLineItems).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(budgetLineItems.id, id), (0, import_drizzle_orm155.eq)(budgetLineItems.userId, userId))).limit(1);
+        const existing = await db.select().from(budgetLineItems).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(budgetLineItems.id, id), (0, import_drizzle_orm156.eq)(budgetLineItems.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Line item not found" });
         }
         const data = insertBudgetLineItemSchema.partial().omit({ userId: true, budgetId: true }).parse(req.body);
-        const [item] = await db.update(budgetLineItems).set(data).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(budgetLineItems.id, id), (0, import_drizzle_orm155.eq)(budgetLineItems.userId, userId))).returning();
+        const [item] = await db.update(budgetLineItems).set(data).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(budgetLineItems.id, id), (0, import_drizzle_orm156.eq)(budgetLineItems.userId, userId))).returning();
         res.json(item);
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to update line item:");
@@ -205718,11 +205733,11 @@ var init_projectBudgets = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(budgetLineItems).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(budgetLineItems.id, id), (0, import_drizzle_orm155.eq)(budgetLineItems.userId, userId))).limit(1);
+        const existing = await db.select().from(budgetLineItems).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(budgetLineItems.id, id), (0, import_drizzle_orm156.eq)(budgetLineItems.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Line item not found" });
         }
-        await db.delete(budgetLineItems).where((0, import_drizzle_orm155.and)((0, import_drizzle_orm155.eq)(budgetLineItems.id, id), (0, import_drizzle_orm155.eq)(budgetLineItems.userId, userId)));
+        await db.delete(budgetLineItems).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(budgetLineItems.id, id), (0, import_drizzle_orm156.eq)(budgetLineItems.userId, userId)));
         res.json({ success: true });
       } catch (error) {
         logger2.warn({ err: error }, "[ProjectBudgets] Failed to delete line item:");
@@ -205738,14 +205753,14 @@ var sampleClearances_exports = {};
 __export(sampleClearances_exports, {
   default: () => sampleClearances_default
 });
-var import_express123, import_drizzle_orm156, router119, CACHE_TTL5, sampleClearances_default;
+var import_express123, import_drizzle_orm157, router119, CACHE_TTL5, sampleClearances_default;
 var init_sampleClearances = __esm({
   "server/routes/sampleClearances.ts"() {
     "use strict";
     import_express123 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm156 = require("drizzle-orm");
+    import_drizzle_orm157 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_queryCache();
@@ -205755,7 +205770,7 @@ var init_sampleClearances = __esm({
     router119.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(sampleClearances).where((0, import_drizzle_orm156.eq)(sampleClearances.userId, req.user.id)).orderBy((0, import_drizzle_orm156.desc)(sampleClearances.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(sampleClearances).where((0, import_drizzle_orm157.eq)(sampleClearances.userId, req.user.id)).orderBy((0, import_drizzle_orm157.desc)(sampleClearances.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[SampleClearances] Failed to list:");
@@ -205768,13 +205783,13 @@ var init_sampleClearances = __esm({
         const cacheKey = createCacheKey("stats:sampleClearances", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm156.count)(),
-            cleared: import_drizzle_orm156.sql`count(*) filter (where status = 'cleared')`,
-            pending: import_drizzle_orm156.sql`count(*) filter (where status in ('contacting','negotiating','in_review'))`,
-            needed: import_drizzle_orm156.sql`count(*) filter (where status = 'needed')`,
-            denied: import_drizzle_orm156.sql`count(*) filter (where status = 'denied')`,
-            totalFees: import_drizzle_orm156.sql`coalesce(sum(fee), 0)`
-          }).from(sampleClearances).where((0, import_drizzle_orm156.eq)(sampleClearances.userId, userId));
+            total: (0, import_drizzle_orm157.count)(),
+            cleared: import_drizzle_orm157.sql`count(*) filter (where status = 'cleared')`,
+            pending: import_drizzle_orm157.sql`count(*) filter (where status in ('contacting','negotiating','in_review'))`,
+            needed: import_drizzle_orm157.sql`count(*) filter (where status = 'needed')`,
+            denied: import_drizzle_orm157.sql`count(*) filter (where status = 'denied')`,
+            totalFees: import_drizzle_orm157.sql`coalesce(sum(fee), 0)`
+          }).from(sampleClearances).where((0, import_drizzle_orm157.eq)(sampleClearances.userId, userId));
           return {
             total: Number(totals.total),
             cleared: Number(totals.cleared),
@@ -205792,7 +205807,7 @@ var init_sampleClearances = __esm({
     });
     router119.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(sampleClearances).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(sampleClearances.id, req.params.id), (0, import_drizzle_orm156.eq)(sampleClearances.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(sampleClearances).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(sampleClearances.id, req.params.id), (0, import_drizzle_orm157.eq)(sampleClearances.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Sample clearance not found" });
         res.json(item);
       } catch (error) {
@@ -205823,7 +205838,7 @@ var init_sampleClearances = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(sampleClearances).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(sampleClearances.id, id), (0, import_drizzle_orm156.eq)(sampleClearances.userId, userId))).limit(1);
+        const existing = await db.select().from(sampleClearances).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(sampleClearances.id, id), (0, import_drizzle_orm157.eq)(sampleClearances.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Sample clearance not found" });
         }
@@ -205833,7 +205848,7 @@ var init_sampleClearances = __esm({
           royaltyRate: req.body.royaltyRate !== "" && req.body.royaltyRate != null ? parseFloat(req.body.royaltyRate) : void 0
         });
         const { status: _status, userId: _userId, ...data } = parsed;
-        const [item] = await db.update(sampleClearances).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(sampleClearances.id, id), (0, import_drizzle_orm156.eq)(sampleClearances.userId, userId))).returning();
+        const [item] = await db.update(sampleClearances).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(sampleClearances.id, id), (0, import_drizzle_orm157.eq)(sampleClearances.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:sampleClearances", userId));
         res.json(item);
       } catch (error) {
@@ -205848,11 +205863,11 @@ var init_sampleClearances = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(sampleClearances).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(sampleClearances.id, id), (0, import_drizzle_orm156.eq)(sampleClearances.userId, userId))).limit(1);
+        const existing = await db.select().from(sampleClearances).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(sampleClearances.id, id), (0, import_drizzle_orm157.eq)(sampleClearances.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Sample clearance not found" });
         }
-        await db.delete(sampleClearances).where((0, import_drizzle_orm156.and)((0, import_drizzle_orm156.eq)(sampleClearances.id, id), (0, import_drizzle_orm156.eq)(sampleClearances.userId, userId)));
+        await db.delete(sampleClearances).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(sampleClearances.id, id), (0, import_drizzle_orm157.eq)(sampleClearances.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:sampleClearances", userId));
         res.json({ success: true });
       } catch (error) {
@@ -206076,14 +206091,14 @@ var musicVideos_exports = {};
 __export(musicVideos_exports, {
   default: () => musicVideos_default
 });
-var import_express124, import_drizzle_orm157, router120, CACHE_TTL6, musicVideos_default;
+var import_express124, import_drizzle_orm158, router120, CACHE_TTL6, musicVideos_default;
 var init_musicVideos = __esm({
   "server/routes/musicVideos.ts"() {
     "use strict";
     import_express124 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm157 = require("drizzle-orm");
+    import_drizzle_orm158 = require("drizzle-orm");
     init_auth();
     init_logger();
     init_queryCache();
@@ -206094,7 +206109,7 @@ var init_musicVideos = __esm({
     router120.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const items = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm157.eq)(musicVideoProductions.userId, req.user.id)).orderBy((0, import_drizzle_orm157.desc)(musicVideoProductions.createdAt)).limit(limit).offset(offset);
+        const items = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm158.eq)(musicVideoProductions.userId, req.user.id)).orderBy((0, import_drizzle_orm158.desc)(musicVideoProductions.createdAt)).limit(limit).offset(offset);
         res.json(items);
       } catch (error) {
         logger2.warn({ err: error }, "[MusicVideos] Failed to list:");
@@ -206107,13 +206122,13 @@ var init_musicVideos = __esm({
         const cacheKey = createCacheKey("stats:musicVideos", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm157.count)(),
-            released: import_drizzle_orm157.sql`count(*) filter (where stage = 'released')`,
-            inProduction: import_drizzle_orm157.sql`count(*) filter (where stage in ('filming','editing','color_grade','mastering'))`,
-            planned: import_drizzle_orm157.sql`count(*) filter (where stage in ('concept','pre_production','casting'))`,
-            totalViews: import_drizzle_orm157.sql`coalesce(sum(views), 0)`,
-            totalBudget: import_drizzle_orm157.sql`coalesce(sum(budget), 0)`
-          }).from(musicVideoProductions).where((0, import_drizzle_orm157.eq)(musicVideoProductions.userId, userId));
+            total: (0, import_drizzle_orm158.count)(),
+            released: import_drizzle_orm158.sql`count(*) filter (where stage = 'released')`,
+            inProduction: import_drizzle_orm158.sql`count(*) filter (where stage in ('filming','editing','color_grade','mastering'))`,
+            planned: import_drizzle_orm158.sql`count(*) filter (where stage in ('concept','pre_production','casting'))`,
+            totalViews: import_drizzle_orm158.sql`coalesce(sum(views), 0)`,
+            totalBudget: import_drizzle_orm158.sql`coalesce(sum(budget), 0)`
+          }).from(musicVideoProductions).where((0, import_drizzle_orm158.eq)(musicVideoProductions.userId, userId));
           return {
             total: Number(totals.total),
             released: Number(totals.released),
@@ -206151,7 +206166,7 @@ var init_musicVideos = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm157.eq)(musicVideoProductions.userId, userId))).limit(1);
+        const existing = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm158.eq)(musicVideoProductions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Music video production not found" });
         }
@@ -206159,7 +206174,7 @@ var init_musicVideos = __esm({
           ...req.body,
           budget: req.body.budget !== "" && req.body.budget != null ? parseFloat(req.body.budget) : void 0
         });
-        const [item] = await db.update(musicVideoProductions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm157.eq)(musicVideoProductions.userId, userId))).returning();
+        const [item] = await db.update(musicVideoProductions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm158.eq)(musicVideoProductions.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:musicVideos", userId));
         res.json(item);
       } catch (error) {
@@ -206174,11 +206189,11 @@ var init_musicVideos = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm157.eq)(musicVideoProductions.userId, userId))).limit(1);
+        const existing = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm158.eq)(musicVideoProductions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Music video production not found" });
         }
-        await db.delete(musicVideoProductions).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm157.eq)(musicVideoProductions.userId, userId)));
+        await db.delete(musicVideoProductions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(musicVideoProductions.id, id), (0, import_drizzle_orm158.eq)(musicVideoProductions.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:musicVideos", userId));
         res.json({ success: true });
       } catch (error) {
@@ -206188,7 +206203,7 @@ var init_musicVideos = __esm({
     });
     router120.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm157.and)((0, import_drizzle_orm157.eq)(musicVideoProductions.id, req.params.id), (0, import_drizzle_orm157.eq)(musicVideoProductions.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(musicVideoProductions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(musicVideoProductions.id, req.params.id), (0, import_drizzle_orm158.eq)(musicVideoProductions.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Music video production not found" });
         res.json(item);
       } catch (error) {
@@ -206485,14 +206500,14 @@ function getSongStructures() {
     "Verse \u2013 Chorus \u2013 Verse \u2013 Chorus \u2013 Bridge \u2013 Chorus \u2013 Outro (with tag)"
   ];
 }
-var import_express125, import_drizzle_orm158, import_zod57, router121, CACHE_TTL7, aiAssistSchema, songwriting_default;
+var import_express125, import_drizzle_orm159, import_zod57, router121, CACHE_TTL7, aiAssistSchema, songwriting_default;
 var init_songwriting = __esm({
   "server/routes/songwriting.ts"() {
     "use strict";
     import_express125 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm158 = require("drizzle-orm");
+    import_drizzle_orm159 = require("drizzle-orm");
     init_auth();
     init_logger();
     import_zod57 = require("zod");
@@ -206511,25 +206526,25 @@ var init_songwriting = __esm({
       try {
         const { limit, offset } = parsePaginationParams(req);
         const { search, genre, mood, status } = req.query;
-        const conditions = [(0, import_drizzle_orm158.eq)(songwritingSessions.userId, req.user.id)];
+        const conditions = [(0, import_drizzle_orm159.eq)(songwritingSessions.userId, req.user.id)];
         if (search && typeof search === "string" && search.trim()) {
           conditions.push(
-            (0, import_drizzle_orm158.or)(
-              (0, import_drizzle_orm158.ilike)(songwritingSessions.title, `%${search.trim()}%`),
-              (0, import_drizzle_orm158.ilike)(songwritingSessions.notes, `%${search.trim()}%`)
+            (0, import_drizzle_orm159.or)(
+              (0, import_drizzle_orm159.ilike)(songwritingSessions.title, `%${search.trim()}%`),
+              (0, import_drizzle_orm159.ilike)(songwritingSessions.notes, `%${search.trim()}%`)
             )
           );
         }
         if (genre && typeof genre === "string") {
-          conditions.push((0, import_drizzle_orm158.eq)(songwritingSessions.genre, genre));
+          conditions.push((0, import_drizzle_orm159.eq)(songwritingSessions.genre, genre));
         }
         if (mood && typeof mood === "string") {
-          conditions.push((0, import_drizzle_orm158.eq)(songwritingSessions.mood, mood));
+          conditions.push((0, import_drizzle_orm159.eq)(songwritingSessions.mood, mood));
         }
         if (status && typeof status === "string") {
-          conditions.push((0, import_drizzle_orm158.eq)(songwritingSessions.status, status));
+          conditions.push((0, import_drizzle_orm159.eq)(songwritingSessions.status, status));
         }
-        const sessions3 = await db.select().from(songwritingSessions).where((0, import_drizzle_orm158.and)(...conditions)).orderBy((0, import_drizzle_orm158.desc)(songwritingSessions.updatedAt)).limit(limit).offset(offset);
+        const sessions3 = await db.select().from(songwritingSessions).where((0, import_drizzle_orm159.and)(...conditions)).orderBy((0, import_drizzle_orm159.desc)(songwritingSessions.updatedAt)).limit(limit).offset(offset);
         res.json(sessions3);
       } catch (error) {
         logger2.warn({ err: error }, "[Songwriting] Failed to list sessions:");
@@ -206542,18 +206557,18 @@ var init_songwriting = __esm({
         const cacheKey = createCacheKey("stats:songwriting", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [totals] = await db.select({
-            total: (0, import_drizzle_orm158.count)(),
-            inProgress: import_drizzle_orm158.sql`count(*) filter (where status = 'in_progress')`,
-            completed: import_drizzle_orm158.sql`count(*) filter (where status = 'completed')`,
-            archived: import_drizzle_orm158.sql`count(*) filter (where status = 'archived')`,
-            aiAssisted: import_drizzle_orm158.sql`count(*) filter (where ai_assisted = true)`,
-            withCoWriters: import_drizzle_orm158.sql`count(*) filter (where array_length(co_writers, 1) > 0)`,
-            withLyrics: import_drizzle_orm158.sql`count(*) filter (where lyrics is not null and lyrics != '')`
-          }).from(songwritingSessions).where((0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId));
+            total: (0, import_drizzle_orm159.count)(),
+            inProgress: import_drizzle_orm159.sql`count(*) filter (where status = 'in_progress')`,
+            completed: import_drizzle_orm159.sql`count(*) filter (where status = 'completed')`,
+            archived: import_drizzle_orm159.sql`count(*) filter (where status = 'archived')`,
+            aiAssisted: import_drizzle_orm159.sql`count(*) filter (where ai_assisted = true)`,
+            withCoWriters: import_drizzle_orm159.sql`count(*) filter (where array_length(co_writers, 1) > 0)`,
+            withLyrics: import_drizzle_orm159.sql`count(*) filter (where lyrics is not null and lyrics != '')`
+          }).from(songwritingSessions).where((0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId));
           const genreBreakdown = await db.select({
             genre: songwritingSessions.genre,
-            count: (0, import_drizzle_orm158.count)()
-          }).from(songwritingSessions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId), import_drizzle_orm158.sql`genre is not null`)).groupBy(songwritingSessions.genre).orderBy((0, import_drizzle_orm158.desc)((0, import_drizzle_orm158.count)())).limit(8);
+            count: (0, import_drizzle_orm159.count)()
+          }).from(songwritingSessions).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId), import_drizzle_orm159.sql`genre is not null`)).groupBy(songwritingSessions.genre).orderBy((0, import_drizzle_orm159.desc)((0, import_drizzle_orm159.count)())).limit(8);
           return {
             total: Number(totals.total),
             inProgress: Number(totals.inProgress),
@@ -206573,7 +206588,7 @@ var init_songwriting = __esm({
     });
     router121.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(songwritingSessions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.id, req.params.id), (0, import_drizzle_orm158.eq)(songwritingSessions.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(songwritingSessions).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.id, req.params.id), (0, import_drizzle_orm159.eq)(songwritingSessions.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Session not found" });
         res.json(item);
       } catch (error) {
@@ -206599,12 +206614,12 @@ var init_songwriting = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(songwritingSessions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.id, id), (0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId))).limit(1);
+        const existing = await db.select().from(songwritingSessions).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.id, id), (0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Session not found" });
         }
         const data = insertSongwritingSessionSchema.partial().parse(req.body);
-        const [session2] = await db.update(songwritingSessions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.id, id), (0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId))).returning();
+        const [session2] = await db.update(songwritingSessions).set({ ...data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.id, id), (0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:songwriting", userId));
         res.json(session2);
       } catch (error) {
@@ -206619,11 +206634,11 @@ var init_songwriting = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(songwritingSessions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.id, id), (0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId))).limit(1);
+        const existing = await db.select().from(songwritingSessions).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.id, id), (0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Session not found" });
         }
-        await db.delete(songwritingSessions).where((0, import_drizzle_orm158.and)((0, import_drizzle_orm158.eq)(songwritingSessions.id, id), (0, import_drizzle_orm158.eq)(songwritingSessions.userId, userId)));
+        await db.delete(songwritingSessions).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(songwritingSessions.id, id), (0, import_drizzle_orm159.eq)(songwritingSessions.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:songwriting", userId));
         res.json({ success: true });
       } catch (error) {
@@ -206707,14 +206722,14 @@ var fanCampaigns_exports = {};
 __export(fanCampaigns_exports, {
   default: () => fanCampaigns_default
 });
-var import_express126, import_drizzle_orm159, import_zod58, router122, CACHE_TTL8, updateCampaignSchema, fanCampaigns_default;
+var import_express126, import_drizzle_orm160, import_zod58, router122, CACHE_TTL8, updateCampaignSchema, fanCampaigns_default;
 var init_fanCampaigns = __esm({
   "server/routes/fanCampaigns.ts"() {
     "use strict";
     import_express126 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm159 = require("drizzle-orm");
+    import_drizzle_orm160 = require("drizzle-orm");
     init_auth();
     init_logger();
     import_zod58 = require("zod");
@@ -206734,7 +206749,7 @@ var init_fanCampaigns = __esm({
     router122.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const campaigns3 = await db.select().from(fanCampaigns).where((0, import_drizzle_orm159.eq)(fanCampaigns.userId, req.user.id)).orderBy((0, import_drizzle_orm159.desc)(fanCampaigns.createdAt)).limit(limit).offset(offset);
+        const campaigns3 = await db.select().from(fanCampaigns).where((0, import_drizzle_orm160.eq)(fanCampaigns.userId, req.user.id)).orderBy((0, import_drizzle_orm160.desc)(fanCampaigns.createdAt)).limit(limit).offset(offset);
         res.json(campaigns3);
       } catch (error) {
         logger2.warn({ err: error }, "[FanCampaigns] Failed to list campaigns:");
@@ -206747,12 +206762,12 @@ var init_fanCampaigns = __esm({
         const cacheKey = createCacheKey("stats:fanCampaigns", userId);
         const stats = await queryCache.getOrCompute(cacheKey, async () => {
           const [campaignTotals] = await db.select({
-            totalCampaigns: (0, import_drizzle_orm159.count)(),
-            sent: import_drizzle_orm159.sql`count(*) filter (where status = 'sent')`,
-            totalRecipients: import_drizzle_orm159.sql`coalesce(sum(recipient_count), 0)`,
-            totalOpens: import_drizzle_orm159.sql`coalesce(sum(open_count), 0)`
-          }).from(fanCampaigns).where((0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId));
-          const [subscriberCount] = await db.select({ total: (0, import_drizzle_orm159.count)() }).from(fanSubscribers).where((0, import_drizzle_orm159.eq)(fanSubscribers.userId, userId)).limit(1);
+            totalCampaigns: (0, import_drizzle_orm160.count)(),
+            sent: import_drizzle_orm160.sql`count(*) filter (where status = 'sent')`,
+            totalRecipients: import_drizzle_orm160.sql`coalesce(sum(recipient_count), 0)`,
+            totalOpens: import_drizzle_orm160.sql`coalesce(sum(open_count), 0)`
+          }).from(fanCampaigns).where((0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId));
+          const [subscriberCount] = await db.select({ total: (0, import_drizzle_orm160.count)() }).from(fanSubscribers).where((0, import_drizzle_orm160.eq)(fanSubscribers.userId, userId)).limit(1);
           const totalCampaigns = Number(campaignTotals.totalCampaigns);
           const sentCount = Number(campaignTotals.sent);
           const totalRecipients = Number(campaignTotals.totalRecipients);
@@ -206783,7 +206798,7 @@ var init_fanCampaigns = __esm({
     });
     router122.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [item] = await db.select().from(fanCampaigns).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, req.params.id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, req.user.id))).limit(1);
+        const [item] = await db.select().from(fanCampaigns).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, req.params.id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, req.user.id))).limit(1);
         if (!item) return res.status(404).json({ error: "Campaign not found" });
         res.json(item);
       } catch (error) {
@@ -206795,7 +206810,7 @@ var init_fanCampaigns = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId))).limit(1);
+        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Campaign not found" });
         }
@@ -206806,7 +206821,7 @@ var init_fanCampaigns = __esm({
         if (!parsed.success) {
           return res.status(400).json({ error: "Validation error", details: parsed.error.flatten() });
         }
-        const [campaign] = await db.update(fanCampaigns).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId))).returning();
+        const [campaign] = await db.update(fanCampaigns).set({ ...parsed.data, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
         res.json(campaign);
       } catch (error) {
@@ -206818,16 +206833,16 @@ var init_fanCampaigns = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId))).limit(1);
+        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Campaign not found" });
         }
         if (existing[0].status === "sent") {
           return res.status(400).json({ error: "Campaign already sent" });
         }
-        const [recipientCountRow] = await db.select({ total: (0, import_drizzle_orm159.count)() }).from(fanSubscribers).where((0, import_drizzle_orm159.eq)(fanSubscribers.userId, userId)).limit(1);
+        const [recipientCountRow] = await db.select({ total: (0, import_drizzle_orm160.count)() }).from(fanSubscribers).where((0, import_drizzle_orm160.eq)(fanSubscribers.userId, userId)).limit(1);
         const recipientCount = Number(recipientCountRow.total);
-        const [campaign] = await db.update(fanCampaigns).set({ status: "sent", sentAt: /* @__PURE__ */ new Date(), recipientCount, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId))).returning();
+        const [campaign] = await db.update(fanCampaigns).set({ status: "sent", sentAt: /* @__PURE__ */ new Date(), recipientCount, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId))).returning();
         await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
         res.json({ success: true, recipientCount, campaign });
       } catch (error) {
@@ -206839,11 +206854,11 @@ var init_fanCampaigns = __esm({
       try {
         const userId = req.user.id;
         const { id } = req.params;
-        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId))).limit(1);
+        const existing = await db.select().from(fanCampaigns).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId))).limit(1);
         if (existing.length === 0) {
           return res.status(404).json({ error: "Campaign not found" });
         }
-        await db.delete(fanCampaigns).where((0, import_drizzle_orm159.and)((0, import_drizzle_orm159.eq)(fanCampaigns.id, id), (0, import_drizzle_orm159.eq)(fanCampaigns.userId, userId)));
+        await db.delete(fanCampaigns).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(fanCampaigns.id, id), (0, import_drizzle_orm160.eq)(fanCampaigns.userId, userId)));
         await queryCache.invalidate(createCacheKey("stats:fanCampaigns", userId));
         res.json({ success: true });
       } catch (error) {
@@ -206876,14 +206891,14 @@ function isSafeWebhookUrl(rawUrl) {
   }
   return true;
 }
-var import_express127, import_drizzle_orm160, import_zod59, router123, PRIVATE_IP_PATTERNS, CUSTOM_TRIGGERS, CUSTOM_ACTIONS, VALID_TRIGGER_IDS, createWorkflowSchema2, updateWorkflowSchema, customWorkflows_default;
+var import_express127, import_drizzle_orm161, import_zod59, router123, PRIVATE_IP_PATTERNS, CUSTOM_TRIGGERS, CUSTOM_ACTIONS, VALID_TRIGGER_IDS, createWorkflowSchema2, updateWorkflowSchema, customWorkflows_default;
 var init_customWorkflows = __esm({
   "server/routes/customWorkflows.ts"() {
     "use strict";
     import_express127 = require("express");
     init_db();
     init_schema();
-    import_drizzle_orm160 = require("drizzle-orm");
+    import_drizzle_orm161 = require("drizzle-orm");
     init_notificationService();
     init_logger();
     init_auth();
@@ -206996,7 +207011,7 @@ var init_customWorkflows = __esm({
     router123.get("/", requireAuth, async (req, res) => {
       try {
         const { limit, offset } = parsePaginationParams(req);
-        const rows = await db.select().from(customWorkflows).where((0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id)).orderBy((0, import_drizzle_orm160.desc)(customWorkflows.createdAt)).limit(limit).offset(offset);
+        const rows = await db.select().from(customWorkflows).where((0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id)).orderBy((0, import_drizzle_orm161.desc)(customWorkflows.createdAt)).limit(limit).offset(offset);
         res.json(rows);
       } catch (error) {
         logger2.warn({ err: error }, "[CustomWorkflow] Error fetching:");
@@ -207005,7 +207020,7 @@ var init_customWorkflows = __esm({
     });
     router123.get("/:id", requireAuth, async (req, res) => {
       try {
-        const [row] = await db.select().from(customWorkflows).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id))).limit(1);
+        const [row] = await db.select().from(customWorkflows).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id))).limit(1);
         if (!row) return res.status(404).json({ error: "Workflow not found" });
         res.json(row);
       } catch (error) {
@@ -207050,7 +207065,7 @@ var init_customWorkflows = __esm({
           ...actions !== void 0 && { actions },
           ...enabled !== void 0 && { enabled },
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id))).returning();
+        }).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id))).returning();
         if (!row) return res.status(404).json({ error: "Workflow not found" });
         res.json(row);
       } catch (error) {
@@ -207060,7 +207075,7 @@ var init_customWorkflows = __esm({
     });
     router123.delete("/:id", requireAuth, async (req, res) => {
       try {
-        const [deleted] = await db.delete(customWorkflows).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id))).returning();
+        const [deleted] = await db.delete(customWorkflows).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id))).returning();
         if (!deleted) return res.status(404).json({ error: "Workflow not found" });
         res.json({ success: true });
       } catch (error) {
@@ -207070,7 +207085,7 @@ var init_customWorkflows = __esm({
     });
     router123.post("/:id/enable", requireAuth, async (req, res) => {
       try {
-        const [row] = await db.update(customWorkflows).set({ enabled: true, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id))).returning();
+        const [row] = await db.update(customWorkflows).set({ enabled: true, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id))).returning();
         if (!row) return res.status(404).json({ error: "Workflow not found" });
         res.json(row);
       } catch (error) {
@@ -207080,7 +207095,7 @@ var init_customWorkflows = __esm({
     });
     router123.post("/:id/disable", requireAuth, async (req, res) => {
       try {
-        const [row] = await db.update(customWorkflows).set({ enabled: false, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, req.user.id))).returning();
+        const [row] = await db.update(customWorkflows).set({ enabled: false, updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, req.user.id))).returning();
         if (!row) return res.status(404).json({ error: "Workflow not found" });
         res.json(row);
       } catch (error) {
@@ -207091,7 +207106,7 @@ var init_customWorkflows = __esm({
     router123.post("/:id/test", requireAuth, async (req, res) => {
       try {
         const userId = req.user.id;
-        const [workflow] = await db.select().from(customWorkflows).where((0, import_drizzle_orm160.and)((0, import_drizzle_orm160.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm160.eq)(customWorkflows.userId, userId))).limit(1);
+        const [workflow] = await db.select().from(customWorkflows).where((0, import_drizzle_orm161.and)((0, import_drizzle_orm161.eq)(customWorkflows.id, req.params.id), (0, import_drizzle_orm161.eq)(customWorkflows.userId, userId))).limit(1);
         if (!workflow) return res.status(404).json({ error: "Workflow not found" });
         const actionsRun = [];
         const actions = workflow.actions;
@@ -207158,7 +207173,7 @@ var init_customWorkflows = __esm({
             actionsRun.push(`Action failed: ${action.type} \u2014 ${msg}`);
           }
         }
-        await db.update(customWorkflows).set({ runCount: (workflow.runCount ?? 0) + 1, lastRunAt: /* @__PURE__ */ new Date(), updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm160.eq)(customWorkflows.id, workflow.id));
+        await db.update(customWorkflows).set({ runCount: (workflow.runCount ?? 0) + 1, lastRunAt: /* @__PURE__ */ new Date(), updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm161.eq)(customWorkflows.id, workflow.id));
         res.json({ success: true, actionsRun });
       } catch (error) {
         logger2.warn({ err: error }, "[CustomWorkflow] Error testing:");
@@ -209735,20 +209750,20 @@ __export(assistant_exports, {
   default: () => assistant_default
 });
 async function getOrCreateConversation(userId) {
-  const existing = await db.select().from(assistantConversations).where((0, import_drizzle_orm161.eq)(assistantConversations.userId, userId)).orderBy((0, import_drizzle_orm161.desc)(assistantConversations.createdAt)).limit(1);
+  const existing = await db.select().from(assistantConversations).where((0, import_drizzle_orm162.eq)(assistantConversations.userId, userId)).orderBy((0, import_drizzle_orm162.desc)(assistantConversations.createdAt)).limit(1);
   if (existing.length > 0) {
     return existing[0].id;
   }
   const created = await db.insert(assistantConversations).values({ userId }).returning();
   return created[0].id;
 }
-var import_express128, import_drizzle_orm161, import_express_rate_limit6, chatLimiter, router124, PAGE_SIZE, AI_CONTEXT_MESSAGES, assistant_default;
+var import_express128, import_drizzle_orm162, import_express_rate_limit6, chatLimiter, router124, PAGE_SIZE, AI_CONTEXT_MESSAGES, assistant_default;
 var init_assistant = __esm({
   "server/routes/assistant.ts"() {
     "use strict";
     import_express128 = require("express");
     init_db();
-    import_drizzle_orm161 = require("drizzle-orm");
+    import_drizzle_orm162 = require("drizzle-orm");
     init_schema();
     init_maxAssistantService();
     init_logger();
@@ -209771,25 +209786,25 @@ var init_assistant = __esm({
           return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
         }
         const beforeId = req.query.before;
-        const conversation = await db.select().from(assistantConversations).where((0, import_drizzle_orm161.eq)(assistantConversations.userId, user.id)).orderBy((0, import_drizzle_orm161.desc)(assistantConversations.createdAt)).limit(1);
+        const conversation = await db.select().from(assistantConversations).where((0, import_drizzle_orm162.eq)(assistantConversations.userId, user.id)).orderBy((0, import_drizzle_orm162.desc)(assistantConversations.createdAt)).limit(1);
         if (conversation.length === 0) {
           return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
         }
         const convId = conversation[0].id;
-        const countResult = await db.select({ count: import_drizzle_orm161.sql`count(*)` }).from(assistantMessages).where((0, import_drizzle_orm161.eq)(assistantMessages.conversationId, convId));
+        const countResult = await db.select({ count: import_drizzle_orm162.sql`count(*)` }).from(assistantMessages).where((0, import_drizzle_orm162.eq)(assistantMessages.conversationId, convId));
         const total = Number(countResult[0]?.count ?? 0);
         let fetchedRows;
         if (beforeId) {
-          const cursorMsg = await db.select({ createdAt: assistantMessages.createdAt }).from(assistantMessages).where((0, import_drizzle_orm161.eq)(assistantMessages.id, beforeId)).limit(1);
+          const cursorMsg = await db.select({ createdAt: assistantMessages.createdAt }).from(assistantMessages).where((0, import_drizzle_orm162.eq)(assistantMessages.id, beforeId)).limit(1);
           if (cursorMsg.length === 0) {
             return res.json({ messages: [], hasMore: false, total, conversationId: convId });
           }
           const cursorDate = cursorMsg[0].createdAt;
           fetchedRows = await db.select().from(assistantMessages).where(
-            import_drizzle_orm161.sql`${assistantMessages.conversationId} = ${convId} AND ${assistantMessages.createdAt} < ${cursorDate}`
-          ).orderBy((0, import_drizzle_orm161.desc)(assistantMessages.createdAt)).limit(PAGE_SIZE + 1);
+            import_drizzle_orm162.sql`${assistantMessages.conversationId} = ${convId} AND ${assistantMessages.createdAt} < ${cursorDate}`
+          ).orderBy((0, import_drizzle_orm162.desc)(assistantMessages.createdAt)).limit(PAGE_SIZE + 1);
         } else {
-          fetchedRows = await db.select().from(assistantMessages).where((0, import_drizzle_orm161.eq)(assistantMessages.conversationId, convId)).orderBy((0, import_drizzle_orm161.desc)(assistantMessages.createdAt)).limit(PAGE_SIZE + 1);
+          fetchedRows = await db.select().from(assistantMessages).where((0, import_drizzle_orm162.eq)(assistantMessages.conversationId, convId)).orderBy((0, import_drizzle_orm162.desc)(assistantMessages.createdAt)).limit(PAGE_SIZE + 1);
         }
         const hasMore = fetchedRows.length > PAGE_SIZE;
         const pageRows = hasMore ? fetchedRows.slice(0, PAGE_SIZE) : fetchedRows;
@@ -209814,7 +209829,7 @@ var init_assistant = __esm({
         let assistantMessageId = null;
         if (user) {
           conversationId = await getOrCreateConversation(user.id);
-          const priorRows = await db.select().from(assistantMessages).where((0, import_drizzle_orm161.eq)(assistantMessages.conversationId, conversationId)).orderBy((0, import_drizzle_orm161.desc)(assistantMessages.createdAt)).limit(AI_CONTEXT_MESSAGES);
+          const priorRows = await db.select().from(assistantMessages).where((0, import_drizzle_orm162.eq)(assistantMessages.conversationId, conversationId)).orderBy((0, import_drizzle_orm162.desc)(assistantMessages.createdAt)).limit(AI_CONTEXT_MESSAGES);
           history = priorRows.reverse().map((m) => ({
             role: m.role,
             content: m.content
@@ -209826,7 +209841,7 @@ var init_assistant = __esm({
         if (user && conversationId) {
           const [aiInserted] = await db.insert(assistantMessages).values({ conversationId, role: "assistant", content: aiResponse.content }).returning();
           assistantMessageId = aiInserted.id;
-          await db.update(assistantConversations).set({ updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm161.eq)(assistantConversations.id, conversationId));
+          await db.update(assistantConversations).set({ updatedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm162.eq)(assistantConversations.id, conversationId));
         }
         return res.json({
           content: aiResponse.content,
@@ -209849,12 +209864,12 @@ var init_assistant = __esm({
         if (!user) {
           return res.status(401).json({ error: "Not authenticated" });
         }
-        const conversations = await db.select({ id: assistantConversations.id }).from(assistantConversations).where((0, import_drizzle_orm161.eq)(assistantConversations.userId, user.id)).limit(500);
+        const conversations = await db.select({ id: assistantConversations.id }).from(assistantConversations).where((0, import_drizzle_orm162.eq)(assistantConversations.userId, user.id)).limit(500);
         if (conversations.length > 0) {
           const convIds = conversations.map((c) => c.id);
-          await db.delete(assistantMessages).where((0, import_drizzle_orm161.inArray)(assistantMessages.conversationId, convIds));
+          await db.delete(assistantMessages).where((0, import_drizzle_orm162.inArray)(assistantMessages.conversationId, convIds));
         }
-        await db.delete(assistantConversations).where((0, import_drizzle_orm161.eq)(assistantConversations.userId, user.id));
+        await db.delete(assistantConversations).where((0, import_drizzle_orm162.eq)(assistantConversations.userId, user.id));
         return res.json({ success: true });
       } catch (error) {
         logger2.warn("[assistant] Error clearing history:", error.message);
@@ -210502,11 +210517,11 @@ async function registerRoutes(httpServer2, app2) {
       const { securityThreats: securityThreats2 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3);
       const loginEvents = await db.select().from(securityThreats2).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(securityThreats2.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(securityThreats2.detectedAt, thirtyDaysAgo)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(securityThreats2.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(securityThreats2.detectedAt, thirtyDaysAgo)
         )
-      ).orderBy((0, import_drizzle_orm162.desc)(securityThreats2.detectedAt)).limit(50);
+      ).orderBy((0, import_drizzle_orm163.desc)(securityThreats2.detectedAt)).limit(50);
       const userSessions = await storage.getSessionsByUserId(req.user.id);
       const formattedEvents = loginEvents.map((event) => {
         const metadata = event.metadata || {};
@@ -211178,14 +211193,14 @@ async function registerRoutes(httpServer2, app2) {
     }
     try {
       const { socialAccounts: socialAccounts3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq161, and: and121 } = await import("drizzle-orm");
+      const { eq: eq162, and: and122 } = await import("drizzle-orm");
       const { db: db2 } = await Promise.resolve().then(() => (init_db(), db_exports));
-      const [existing] = await db2.select().from(socialAccounts3).where(and121(
-        eq161(socialAccounts3.userId, req.user.id),
-        eq161(socialAccounts3.platform, provider)
+      const [existing] = await db2.select().from(socialAccounts3).where(and122(
+        eq162(socialAccounts3.userId, req.user.id),
+        eq162(socialAccounts3.platform, provider)
       )).limit(1);
       if (existing) {
-        await db2.update(socialAccounts3).set({ isActive: true, createdAt: /* @__PURE__ */ new Date() }).where(eq161(socialAccounts3.id, existing.id));
+        await db2.update(socialAccounts3).set({ isActive: true, createdAt: /* @__PURE__ */ new Date() }).where(eq162(socialAccounts3.id, existing.id));
       } else {
         await db2.insert(socialAccounts3).values({
           userId: req.user.id,
@@ -211211,7 +211226,7 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const userId = req.user.id;
       const { studioProjects: studioProjects3, releases: releases4, socialAccounts: socialAccounts3, analytics: analytics3 } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { count: count35, sum: sum11, gte: gte57, eq: eq161, and: and121 } = await import("drizzle-orm");
+      const { count: count35, sum: sum11, gte: gte57, eq: eq162, and: and122 } = await import("drizzle-orm");
       const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1e3);
       const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1e3);
       const [
@@ -211225,15 +211240,15 @@ async function registerRoutes(httpServer2, app2) {
         recentNotifications,
         upcomingReleasesResult
       ] = await Promise.all([
-        db.select({ count: count35() }).from(studioProjects3).where(eq161(studioProjects3.userId, userId)),
-        db.select({ count: count35() }).from(studioProjects3).where(and121(eq161(studioProjects3.userId, userId), import_drizzle_orm162.sql`${studioProjects3.createdAt} < ${thirtyDaysAgo}`)),
-        db.select({ count: count35() }).from(releases4).where(and121(eq161(releases4.userId, userId), eq161(releases4.status, "distributed"))),
-        db.select({ count: count35() }).from(releases4).where(and121(eq161(releases4.userId, userId), eq161(releases4.status, "distributed"), import_drizzle_orm162.sql`${releases4.createdAt} < ${thirtyDaysAgo}`)),
-        db.select({ total: sum11(socialAccounts3.followerCount) }).from(socialAccounts3).where(and121(eq161(socialAccounts3.userId, userId), eq161(socialAccounts3.isActive, true))),
-        db.select({ total: sum11(analytics3.revenue) }).from(analytics3).where(and121(eq161(analytics3.userId, userId), gte57(analytics3.date, thirtyDaysAgo))),
-        db.select({ total: sum11(analytics3.revenue) }).from(analytics3).where(and121(eq161(analytics3.userId, userId), gte57(analytics3.date, sixtyDaysAgo), import_drizzle_orm162.sql`${analytics3.date} < ${thirtyDaysAgo}`)),
+        db.select({ count: count35() }).from(studioProjects3).where(eq162(studioProjects3.userId, userId)),
+        db.select({ count: count35() }).from(studioProjects3).where(and122(eq162(studioProjects3.userId, userId), import_drizzle_orm163.sql`${studioProjects3.createdAt} < ${thirtyDaysAgo}`)),
+        db.select({ count: count35() }).from(releases4).where(and122(eq162(releases4.userId, userId), eq162(releases4.status, "distributed"))),
+        db.select({ count: count35() }).from(releases4).where(and122(eq162(releases4.userId, userId), eq162(releases4.status, "distributed"), import_drizzle_orm163.sql`${releases4.createdAt} < ${thirtyDaysAgo}`)),
+        db.select({ total: sum11(socialAccounts3.followerCount) }).from(socialAccounts3).where(and122(eq162(socialAccounts3.userId, userId), eq162(socialAccounts3.isActive, true))),
+        db.select({ total: sum11(analytics3.revenue) }).from(analytics3).where(and122(eq162(analytics3.userId, userId), gte57(analytics3.date, thirtyDaysAgo))),
+        db.select({ total: sum11(analytics3.revenue) }).from(analytics3).where(and122(eq162(analytics3.userId, userId), gte57(analytics3.date, sixtyDaysAgo), import_drizzle_orm163.sql`${analytics3.date} < ${thirtyDaysAgo}`)),
         storage.getNotifications(userId).catch(() => []),
-        db.select().from(releases4).where(and121(eq161(releases4.userId, userId), import_drizzle_orm162.sql`${releases4.releaseDate} > NOW()`)).orderBy(releases4.releaseDate).limit(5)
+        db.select().from(releases4).where(and122(eq162(releases4.userId, userId), import_drizzle_orm163.sql`${releases4.releaseDate} > NOW()`)).orderBy(releases4.releaseDate).limit(5)
       ]);
       const totalTracks = trackCountResult[0]?.count ?? 0;
       const prevTracks = prevTrackCountResult[0]?.count ?? 0;
@@ -211270,12 +211285,12 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const userId = req.user.id;
       const { studioProjects: studioProjects3, releases: releases4, socialAccounts: socialAccounts3, subscriptions: subscriptionsTable } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { count: count35, eq: eq161, and: and121 } = await import("drizzle-orm");
+      const { count: count35, eq: eq162, and: and122 } = await import("drizzle-orm");
       const [trackCount, releaseCount, socialCount, subResult] = await Promise.all([
-        db.select({ count: count35() }).from(studioProjects3).where(eq161(studioProjects3.userId, userId)),
-        db.select({ count: count35() }).from(releases4).where(eq161(releases4.userId, userId)),
-        db.select({ count: count35() }).from(socialAccounts3).where(and121(eq161(socialAccounts3.userId, userId), eq161(socialAccounts3.isActive, true))),
-        db.select().from(subscriptionsTable).where(and121(eq161(subscriptionsTable.userId, userId), eq161(subscriptionsTable.status, "active"))).limit(1)
+        db.select({ count: count35() }).from(studioProjects3).where(eq162(studioProjects3.userId, userId)),
+        db.select({ count: count35() }).from(releases4).where(eq162(releases4.userId, userId)),
+        db.select({ count: count35() }).from(socialAccounts3).where(and122(eq162(socialAccounts3.userId, userId), eq162(socialAccounts3.isActive, true))),
+        db.select().from(subscriptionsTable).where(and122(eq162(subscriptionsTable.userId, userId), eq162(subscriptionsTable.status, "active"))).limit(1)
       ]);
       const tracks = trackCount[0]?.count ?? 0;
       const releasesCount = releaseCount[0]?.count ?? 0;
@@ -211520,7 +211535,7 @@ async function registerRoutes(httpServer2, app2) {
       if (!endpoint || !keys?.p256dh || !keys?.auth) {
         return res.status(400).json({ message: "Invalid push subscription data" });
       }
-      const existing = await db.select().from(pushSubscriptions).where((0, import_drizzle_orm162.eq)(pushSubscriptions.endpoint, endpoint)).limit(1);
+      const existing = await db.select().from(pushSubscriptions).where((0, import_drizzle_orm163.eq)(pushSubscriptions.endpoint, endpoint)).limit(1);
       if (existing.length > 0) {
         await db.update(pushSubscriptions).set({
           userId: req.user.id,
@@ -211528,7 +211543,7 @@ async function registerRoutes(httpServer2, app2) {
           auth: keys.auth,
           userAgent: req.headers["user-agent"] || null,
           updatedAt: /* @__PURE__ */ new Date()
-        }).where((0, import_drizzle_orm162.eq)(pushSubscriptions.endpoint, endpoint));
+        }).where((0, import_drizzle_orm163.eq)(pushSubscriptions.endpoint, endpoint));
       } else {
         await db.insert(pushSubscriptions).values({
           userId: req.user.id,
@@ -211551,12 +211566,12 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const { endpoint } = req.body;
       if (endpoint) {
-        await db.delete(pushSubscriptions).where((0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(pushSubscriptions.endpoint, endpoint),
-          (0, import_drizzle_orm162.eq)(pushSubscriptions.userId, req.user.id)
+        await db.delete(pushSubscriptions).where((0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(pushSubscriptions.endpoint, endpoint),
+          (0, import_drizzle_orm163.eq)(pushSubscriptions.userId, req.user.id)
         ));
       } else {
-        await db.delete(pushSubscriptions).where((0, import_drizzle_orm162.eq)(pushSubscriptions.userId, req.user.id));
+        await db.delete(pushSubscriptions).where((0, import_drizzle_orm163.eq)(pushSubscriptions.userId, req.user.id));
       }
       return res.json({ success: true, message: "Push subscription removed" });
     } catch (error) {
@@ -211569,7 +211584,7 @@ async function registerRoutes(httpServer2, app2) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const subs = await db.select().from(pushSubscriptions).where((0, import_drizzle_orm162.eq)(pushSubscriptions.userId, req.user.id));
+      const subs = await db.select().from(pushSubscriptions).where((0, import_drizzle_orm163.eq)(pushSubscriptions.userId, req.user.id));
       return res.json({
         hasSubscriptions: subs.length > 0,
         count: subs.length,
@@ -211669,9 +211684,9 @@ async function registerRoutes(httpServer2, app2) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const result = await db.select({ count: import_drizzle_orm162.sql`count(*)` }).from(notifications).where((0, import_drizzle_orm162.and)(
-        (0, import_drizzle_orm162.eq)(notifications.userId, req.user.id),
-        (0, import_drizzle_orm162.eq)(notifications.isRead, false)
+      const result = await db.select({ count: import_drizzle_orm163.sql`count(*)` }).from(notifications).where((0, import_drizzle_orm163.and)(
+        (0, import_drizzle_orm163.eq)(notifications.userId, req.user.id),
+        (0, import_drizzle_orm163.eq)(notifications.isRead, false)
       ));
       const count35 = result[0]?.count || 0;
       return res.json({ count: count35 });
@@ -211753,38 +211768,38 @@ async function registerRoutes(httpServer2, app2) {
       const startDate = /* @__PURE__ */ new Date();
       startDate.setDate(startDate.getDate() - days);
       const analyticsData = await db.select({
-        totalStreams: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-        totalRevenue: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-        totalListeners: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
+        totalStreams: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+        totalRevenue: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+        totalListeners: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
       }).from(analytics).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(analytics.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(analytics.date, startDate),
-          (0, import_drizzle_orm162.lte)(analytics.date, endDate)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(analytics.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(analytics.date, startDate),
+          (0, import_drizzle_orm163.lte)(analytics.date, endDate)
         )
       );
       const dailyData = await db.select({
-        date: import_drizzle_orm162.sql`DATE(${analytics.date})`,
-        streams: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+        date: import_drizzle_orm163.sql`DATE(${analytics.date})`,
+        streams: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.revenue}), 0)`
       }).from(analytics).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(analytics.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(analytics.date, startDate),
-          (0, import_drizzle_orm162.lte)(analytics.date, endDate)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(analytics.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(analytics.date, startDate),
+          (0, import_drizzle_orm163.lte)(analytics.date, endDate)
         )
-      ).groupBy(import_drizzle_orm162.sql`DATE(${analytics.date})`).orderBy(import_drizzle_orm162.sql`DATE(${analytics.date})`);
+      ).groupBy(import_drizzle_orm163.sql`DATE(${analytics.date})`).orderBy(import_drizzle_orm163.sql`DATE(${analytics.date})`);
       const platformData = await db.select({
         platform: analytics.platform,
-        streams: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+        streams: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.revenue}), 0)`
       }).from(analytics).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(analytics.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(analytics.date, startDate),
-          (0, import_drizzle_orm162.lte)(analytics.date, endDate)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(analytics.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(analytics.date, startDate),
+          (0, import_drizzle_orm163.lte)(analytics.date, endDate)
         )
-      ).groupBy(analytics.platform).orderBy((0, import_drizzle_orm162.desc)(import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`));
+      ).groupBy(analytics.platform).orderBy((0, import_drizzle_orm163.desc)(import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`));
       const userProjects = await storage.getProjectsByUserId(req.user.id);
       const projectCount = userProjects?.length || 0;
       let performanceScore = 25;
@@ -212003,18 +212018,18 @@ async function registerRoutes(httpServer2, app2) {
       const startDate = /* @__PURE__ */ new Date();
       startDate.setDate(startDate.getDate() - days);
       const analyticsData = await db.select({
-        date: import_drizzle_orm162.sql`DATE(${analytics.date})`,
+        date: import_drizzle_orm163.sql`DATE(${analytics.date})`,
         platform: analytics.platform,
-        streams: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
-        listeners: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
+        streams: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.revenue}), 0)`,
+        listeners: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.totalListeners}), 0)`
       }).from(analytics).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(analytics.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(analytics.date, startDate),
-          (0, import_drizzle_orm162.lte)(analytics.date, endDate)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(analytics.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(analytics.date, startDate),
+          (0, import_drizzle_orm163.lte)(analytics.date, endDate)
         )
-      ).groupBy(import_drizzle_orm162.sql`DATE(${analytics.date})`, analytics.platform).orderBy(import_drizzle_orm162.sql`DATE(${analytics.date})`);
+      ).groupBy(import_drizzle_orm163.sql`DATE(${analytics.date})`, analytics.platform).orderBy(import_drizzle_orm163.sql`DATE(${analytics.date})`);
       if (format === "csv") {
         const csvRows = ["Date,Platform,Streams,Revenue,Listeners"];
         analyticsData.forEach((row) => {
@@ -212066,15 +212081,15 @@ async function registerRoutes(httpServer2, app2) {
       const thirtyDaysAgo = /* @__PURE__ */ new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       const metricsData = await db.select({
-        date: import_drizzle_orm162.sql`DATE(${analytics.date})`,
-        streams: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.streams}), 0)`,
-        revenue: import_drizzle_orm162.sql`COALESCE(SUM(${analytics.revenue}), 0)`
+        date: import_drizzle_orm163.sql`DATE(${analytics.date})`,
+        streams: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.streams}), 0)`,
+        revenue: import_drizzle_orm163.sql`COALESCE(SUM(${analytics.revenue}), 0)`
       }).from(analytics).where(
-        (0, import_drizzle_orm162.and)(
-          (0, import_drizzle_orm162.eq)(analytics.userId, req.user.id),
-          (0, import_drizzle_orm162.gte)(analytics.date, thirtyDaysAgo)
+        (0, import_drizzle_orm163.and)(
+          (0, import_drizzle_orm163.eq)(analytics.userId, req.user.id),
+          (0, import_drizzle_orm163.gte)(analytics.date, thirtyDaysAgo)
         )
-      ).groupBy(import_drizzle_orm162.sql`DATE(${analytics.date})`).orderBy(import_drizzle_orm162.sql`DATE(${analytics.date})`);
+      ).groupBy(import_drizzle_orm163.sql`DATE(${analytics.date})`).orderBy(import_drizzle_orm163.sql`DATE(${analytics.date})`);
       const anomalies = [];
       for (let i = 1; i < metricsData.length; i++) {
         const prev = Number(metricsData[i - 1].streams);
@@ -212208,7 +212223,7 @@ async function registerRoutes(httpServer2, app2) {
     }
     try {
       const preferences = { ...req.user.preferences || {}, ...req.body };
-      await db.update(users).set({ preferences }).where((0, import_drizzle_orm162.eq)(users.id, req.user.id));
+      await db.update(users).set({ preferences }).where((0, import_drizzle_orm163.eq)(users.id, req.user.id));
       return res.json({ success: true, preferences });
     } catch (error) {
       logger2.warn("Error updating user preferences:", error);
@@ -212234,7 +212249,7 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const currentPrefs = req.user.preferences || {};
       const preferences = { ...currentPrefs, studio: req.body };
-      await db.update(users).set({ preferences }).where((0, import_drizzle_orm162.eq)(users.id, req.user.id));
+      await db.update(users).set({ preferences }).where((0, import_drizzle_orm163.eq)(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
     } catch (error) {
       logger2.warn("Error updating studio preferences:", error);
@@ -212334,7 +212349,7 @@ async function registerRoutes(httpServer2, app2) {
     }
     try {
       const pockets = await db.query.userStorage.findMany({
-        where: (0, import_drizzle_orm162.eq)(userStorage.userId, req.user.id)
+        where: (0, import_drizzle_orm163.eq)(userStorage.userId, req.user.id)
       });
       return res.json(pockets);
     } catch (error) {
@@ -212381,7 +212396,7 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const { pocketId } = req.params;
       const pocket2 = await db.query.userStorage.findFirst({
-        where: (0, import_drizzle_orm162.eq)(userStorage.id, pocketId)
+        where: (0, import_drizzle_orm163.eq)(userStorage.id, pocketId)
       });
       if (pocket2 && pocket2.userId !== req.user.id) {
         return res.status(403).json({ message: "Access denied" });
@@ -212404,13 +212419,13 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const { pocketId } = req.params;
       const pocket2 = await db.query.userStorage.findFirst({
-        where: (0, import_drizzle_orm162.eq)(userStorage.id, pocketId)
+        where: (0, import_drizzle_orm163.eq)(userStorage.id, pocketId)
       });
       if (pocket2 && pocket2.userId !== req.user.id) {
         return res.status(403).json({ message: "Access denied" });
       }
       const files = await db.query.userStorageFiles.findMany({
-        where: (0, import_drizzle_orm162.eq)(userStorageFiles.storageId, pocketId)
+        where: (0, import_drizzle_orm163.eq)(userStorageFiles.storageId, pocketId)
       });
       return res.json(files);
     } catch (error) {
@@ -212425,7 +212440,7 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const { pocketId } = req.params;
       const pocket2 = await db.query.userStorage.findFirst({
-        where: (0, import_drizzle_orm162.eq)(userStorage.id, pocketId)
+        where: (0, import_drizzle_orm163.eq)(userStorage.id, pocketId)
       });
       if (pocket2 && pocket2.userId !== req.user.id) {
         return res.status(403).json({ message: "Access denied" });
@@ -212579,16 +212594,16 @@ async function registerRoutes(httpServer2, app2) {
       const daysMap = { "7d": 7, "30d": 30, "90d": 90, "1y": 365, "all": 9999 };
       const days = daysMap[period] ?? 30;
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1e3);
-      const conditions = [(0, import_drizzle_orm162.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm162.gte)(royaltyTransactions.createdAt, since)];
+      const conditions = [(0, import_drizzle_orm163.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm163.gte)(royaltyTransactions.createdAt, since)];
       if (platform && platform !== "all") {
-        conditions.push((0, import_drizzle_orm162.eq)(royaltyTransactions.platform, platform));
+        conditions.push((0, import_drizzle_orm163.eq)(royaltyTransactions.platform, platform));
       }
-      const where = (0, import_drizzle_orm162.and)(...conditions);
+      const where = (0, import_drizzle_orm163.and)(...conditions);
       const [aggregates, rows, [lastPaidRow]] = await Promise.all([
         db.select({
-          totalEarnings: (0, import_drizzle_orm163.sum)(royaltyTransactions.amount),
-          totalRows: (0, import_drizzle_orm163.count)(),
-          pendingPayouts: import_drizzle_orm162.sql`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`
+          totalEarnings: (0, import_drizzle_orm164.sum)(royaltyTransactions.amount),
+          totalRows: (0, import_drizzle_orm164.count)(),
+          pendingPayouts: import_drizzle_orm163.sql`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`
         }).from(royaltyTransactions).where(where),
         db.select({
           id: royaltyTransactions.id,
@@ -212602,8 +212617,8 @@ async function registerRoutes(httpServer2, app2) {
           status: royaltyTransactions.status,
           transactionType: royaltyTransactions.transactionType,
           createdAt: royaltyTransactions.createdAt
-        }).from(royaltyTransactions).where(where).orderBy((0, import_drizzle_orm162.desc)(royaltyTransactions.createdAt)).limit(limitParam).offset(offset),
-        db.select({ paidAt: royaltyTransactions.paidAt }).from(royaltyTransactions).where((0, import_drizzle_orm162.and)((0, import_drizzle_orm162.eq)(royaltyTransactions.userId, userId), import_drizzle_orm162.sql`${royaltyTransactions.paidAt} is not null`)).orderBy((0, import_drizzle_orm162.desc)(royaltyTransactions.paidAt)).limit(1)
+        }).from(royaltyTransactions).where(where).orderBy((0, import_drizzle_orm163.desc)(royaltyTransactions.createdAt)).limit(limitParam).offset(offset),
+        db.select({ paidAt: royaltyTransactions.paidAt }).from(royaltyTransactions).where((0, import_drizzle_orm163.and)((0, import_drizzle_orm163.eq)(royaltyTransactions.userId, userId), import_drizzle_orm163.sql`${royaltyTransactions.paidAt} is not null`)).orderBy((0, import_drizzle_orm163.desc)(royaltyTransactions.paidAt)).limit(1)
       ]);
       const agg = aggregates[0];
       return res.json({
@@ -212630,10 +212645,10 @@ async function registerRoutes(httpServer2, app2) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1e3);
       const rows = await db.select({
         platform: royaltyTransactions.platform,
-        totalAmount: (0, import_drizzle_orm163.sum)(royaltyTransactions.amount),
-        totalStreams: (0, import_drizzle_orm163.sum)(royaltyTransactions.streamCount),
-        transactionCount: (0, import_drizzle_orm163.count)(royaltyTransactions.id)
-      }).from(royaltyTransactions).where((0, import_drizzle_orm162.and)((0, import_drizzle_orm162.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm162.gte)(royaltyTransactions.createdAt, since))).groupBy(royaltyTransactions.platform);
+        totalAmount: (0, import_drizzle_orm164.sum)(royaltyTransactions.amount),
+        totalStreams: (0, import_drizzle_orm164.sum)(royaltyTransactions.streamCount),
+        transactionCount: (0, import_drizzle_orm164.count)(royaltyTransactions.id)
+      }).from(royaltyTransactions).where((0, import_drizzle_orm163.and)((0, import_drizzle_orm163.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm163.gte)(royaltyTransactions.createdAt, since))).groupBy(royaltyTransactions.platform);
       return res.json(rows.map((r) => ({
         platform: r.platform || "unknown",
         earnings: Number(r.totalAmount) || 0,
@@ -212657,11 +212672,11 @@ async function registerRoutes(httpServer2, app2) {
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1e3);
       const rows = await db.select({
         releaseId: royaltyTransactions.releaseId,
-        totalAmount: (0, import_drizzle_orm163.sum)(royaltyTransactions.amount),
-        totalStreams: (0, import_drizzle_orm163.sum)(royaltyTransactions.streamCount)
-      }).from(royaltyTransactions).where((0, import_drizzle_orm162.and)((0, import_drizzle_orm162.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm162.gte)(royaltyTransactions.createdAt, since))).groupBy(royaltyTransactions.releaseId).orderBy((0, import_drizzle_orm162.desc)((0, import_drizzle_orm163.sum)(royaltyTransactions.amount))).limit(10);
+        totalAmount: (0, import_drizzle_orm164.sum)(royaltyTransactions.amount),
+        totalStreams: (0, import_drizzle_orm164.sum)(royaltyTransactions.streamCount)
+      }).from(royaltyTransactions).where((0, import_drizzle_orm163.and)((0, import_drizzle_orm163.eq)(royaltyTransactions.userId, userId), (0, import_drizzle_orm163.gte)(royaltyTransactions.createdAt, since))).groupBy(royaltyTransactions.releaseId).orderBy((0, import_drizzle_orm163.desc)((0, import_drizzle_orm164.sum)(royaltyTransactions.amount))).limit(10);
       const releaseIds = rows.map((r) => r.releaseId).filter(Boolean);
-      const releaseRows = releaseIds.length > 0 ? await db.select({ id: releases.id, title: releases.title }).from(releases).where((0, import_drizzle_orm163.inArray)(releases.id, releaseIds)) : [];
+      const releaseRows = releaseIds.length > 0 ? await db.select({ id: releases.id, title: releases.title }).from(releases).where((0, import_drizzle_orm164.inArray)(releases.id, releaseIds)) : [];
       const releaseMap = new Map(releaseRows.map((r) => [r.id, r.title]));
       return res.json(rows.map((r) => ({
         releaseId: r.releaseId,
@@ -212709,7 +212724,7 @@ async function registerRoutes(httpServer2, app2) {
       const updated = { ...currentPrefs, payout: { ...currentPrefs.payout || {} } };
       if (type === "paypal" && paypalEmail) updated.payout.paypalEmail = paypalEmail;
       if (type === "bank_transfer" && bankDetails) updated.payout.bankDetails = bankDetails;
-      await db.update(users).set({ preferences: updated }).where((0, import_drizzle_orm162.eq)(users.id, req.user.id));
+      await db.update(users).set({ preferences: updated }).where((0, import_drizzle_orm163.eq)(users.id, req.user.id));
       return res.json({ success: true, message: "Payment method added" });
     } catch (error) {
       logger2.warn("Add payment method error:", error);
@@ -212752,7 +212767,7 @@ async function registerRoutes(httpServer2, app2) {
           ...preferredMethod && { preferredMethod }
         }
       };
-      await db.update(users).set({ preferences: updated }).where((0, import_drizzle_orm162.eq)(users.id, req.user.id));
+      await db.update(users).set({ preferences: updated }).where((0, import_drizzle_orm163.eq)(users.id, req.user.id));
       return res.json({ success: true, message: "Payout settings updated" });
     } catch (error) {
       logger2.warn("Update payout settings error:", error);
@@ -212766,9 +212781,9 @@ async function registerRoutes(httpServer2, app2) {
     try {
       const { formType = "W-9", taxYear = (/* @__PURE__ */ new Date()).getFullYear(), formData } = req.body;
       if (!formData) return res.status(400).json({ message: "Form data required" });
-      const [existing] = await db.select({ id: taxForms.id }).from(taxForms).where((0, import_drizzle_orm162.and)((0, import_drizzle_orm162.eq)(taxForms.userId, req.user.id), (0, import_drizzle_orm162.eq)(taxForms.taxYear, taxYear), (0, import_drizzle_orm162.eq)(taxForms.formType, formType))).limit(1);
+      const [existing] = await db.select({ id: taxForms.id }).from(taxForms).where((0, import_drizzle_orm163.and)((0, import_drizzle_orm163.eq)(taxForms.userId, req.user.id), (0, import_drizzle_orm163.eq)(taxForms.taxYear, taxYear), (0, import_drizzle_orm163.eq)(taxForms.formType, formType))).limit(1);
       if (existing) {
-        await db.update(taxForms).set({ formData, status: "submitted", submittedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm162.eq)(taxForms.id, existing.id));
+        await db.update(taxForms).set({ formData, status: "submitted", submittedAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm163.eq)(taxForms.id, existing.id));
       } else {
         await db.insert(taxForms).values({
           userId: req.user.id,
@@ -212790,7 +212805,7 @@ async function registerRoutes(httpServer2, app2) {
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const rows = await db.select().from(royaltySplits).where((0, import_drizzle_orm162.eq)(royaltySplits.userId, req.user.id)).orderBy((0, import_drizzle_orm162.desc)(royaltySplits.createdAt)).limit(500);
+      const rows = await db.select().from(royaltySplits).where((0, import_drizzle_orm163.eq)(royaltySplits.userId, req.user.id)).orderBy((0, import_drizzle_orm163.desc)(royaltySplits.createdAt)).limit(500);
       return res.json(rows);
     } catch (error) {
       logger2.warn("Royalty splits error:", error);
@@ -212830,10 +212845,10 @@ async function registerRoutes(httpServer2, app2) {
     }
     try {
       const { splitId } = req.params;
-      const [existing] = await db.select({ id: royaltySplits.id, userId: royaltySplits.userId }).from(royaltySplits).where((0, import_drizzle_orm162.eq)(royaltySplits.id, splitId)).limit(1);
+      const [existing] = await db.select({ id: royaltySplits.id, userId: royaltySplits.userId }).from(royaltySplits).where((0, import_drizzle_orm163.eq)(royaltySplits.id, splitId)).limit(1);
       if (!existing) return res.status(404).json({ message: "Royalty split not found" });
       if (existing.userId !== req.user.id) return res.status(403).json({ message: "Not authorized" });
-      await db.delete(royaltySplits).where((0, import_drizzle_orm162.eq)(royaltySplits.id, splitId));
+      await db.delete(royaltySplits).where((0, import_drizzle_orm163.eq)(royaltySplits.id, splitId));
       return res.json({ success: true, message: "Royalty split deleted" });
     } catch (error) {
       logger2.warn("Delete split error:", error);
@@ -212849,7 +212864,7 @@ async function registerRoutes(httpServer2, app2) {
       const daysMap = { "7d": 7, "30d": 30, "90d": 90, "1y": 365 };
       const days = daysMap[period] ?? 30;
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1e3);
-      const rows = await db.select().from(royaltyTransactions).where((0, import_drizzle_orm162.and)((0, import_drizzle_orm162.eq)(royaltyTransactions.userId, req.user.id), (0, import_drizzle_orm162.gte)(royaltyTransactions.createdAt, since))).orderBy((0, import_drizzle_orm162.desc)(royaltyTransactions.createdAt));
+      const rows = await db.select().from(royaltyTransactions).where((0, import_drizzle_orm163.and)((0, import_drizzle_orm163.eq)(royaltyTransactions.userId, req.user.id), (0, import_drizzle_orm163.gte)(royaltyTransactions.createdAt, since))).orderBy((0, import_drizzle_orm163.desc)(royaltyTransactions.createdAt));
       if (format === "csv") {
         const csvHeader = "Date,Platform,Release,Amount,Currency,Streams,Status\n";
         const csvBody = rows.map(
@@ -213718,7 +213733,7 @@ async function registerRoutes(httpServer2, app2) {
   }
   return httpServer2;
 }
-var import_crypto105, import_child_process15, import_fs32, import_drizzle_orm162, import_drizzle_orm163, import_bcrypt, import_stripe10, import_otplib, import_qrcode, import_multer10, authenticator, log;
+var import_crypto105, import_child_process15, import_fs32, import_drizzle_orm163, import_drizzle_orm164, import_bcrypt, import_stripe10, import_otplib, import_qrcode, import_multer10, authenticator, log;
 var init_routes = __esm({
   "server/routes.ts"() {
     "use strict";
@@ -213727,9 +213742,9 @@ var init_routes = __esm({
     import_fs32 = __toESM(require("fs"), 1);
     init_storage();
     init_db();
-    import_drizzle_orm162 = require("drizzle-orm");
-    init_schema();
     import_drizzle_orm163 = require("drizzle-orm");
+    init_schema();
+    import_drizzle_orm164 = require("drizzle-orm");
     import_bcrypt = __toESM(require("bcrypt"), 1);
     init_csrf();
     import_stripe10 = __toESM(require("stripe"), 1);
@@ -213797,13 +213812,13 @@ async function getStorefrontSlugForSubdomain(subdomain) {
   const cached = subdomainCache.get(subdomain);
   if (cached !== void 0) return cached;
   try {
-    const [store] = await db.select({ slug: storefronts.slug }).from(storefronts).where((0, import_drizzle_orm164.and)((0, import_drizzle_orm164.eq)(storefronts.subdomain, subdomain), (0, import_drizzle_orm164.eq)(storefronts.isSubdomainActive, true))).limit(1);
+    const [store] = await db.select({ slug: storefronts.slug }).from(storefronts).where((0, import_drizzle_orm165.and)((0, import_drizzle_orm165.eq)(storefronts.subdomain, subdomain), (0, import_drizzle_orm165.eq)(storefronts.isSubdomainActive, true))).limit(1);
     if (store?.slug) {
       subdomainCache.set(subdomain, store.slug);
       return store.slug;
     }
     const baseDomainFqdn = `${subdomain}.${process.env.BASE_DOMAIN || "maxbooster.replit.app"}`;
-    const [domRow] = await db.select({ slug: storefronts.slug }).from(storefrontDomains).innerJoin(storefronts, (0, import_drizzle_orm164.eq)(storefrontDomains.storefrontId, storefronts.id)).where((0, import_drizzle_orm164.and)((0, import_drizzle_orm164.eq)(storefrontDomains.domain, baseDomainFqdn), (0, import_drizzle_orm164.eq)(storefrontDomains.status, "active"))).limit(1);
+    const [domRow] = await db.select({ slug: storefronts.slug }).from(storefrontDomains).innerJoin(storefronts, (0, import_drizzle_orm165.eq)(storefrontDomains.storefrontId, storefronts.id)).where((0, import_drizzle_orm165.and)((0, import_drizzle_orm165.eq)(storefrontDomains.domain, baseDomainFqdn), (0, import_drizzle_orm165.eq)(storefrontDomains.status, "active"))).limit(1);
     const result = domRow?.slug ?? null;
     subdomainCache.set(subdomain, result);
     return result;
@@ -213816,10 +213831,10 @@ async function getStorefrontSlugForCustomDomain(hostname) {
   const cached = customDomainCache2.get(host);
   if (cached !== void 0) return cached;
   try {
-    const [store] = await db.select({ slug: storefronts.slug }).from(storefronts).where((0, import_drizzle_orm164.and)((0, import_drizzle_orm164.eq)(storefronts.customDomain, host), (0, import_drizzle_orm164.eq)(storefronts.isCustomDomainActive, true))).limit(1);
+    const [store] = await db.select({ slug: storefronts.slug }).from(storefronts).where((0, import_drizzle_orm165.and)((0, import_drizzle_orm165.eq)(storefronts.customDomain, host), (0, import_drizzle_orm165.eq)(storefronts.isCustomDomainActive, true))).limit(1);
     let result = store?.slug ?? null;
     if (!result) {
-      const [domainRow] = await db.select({ slug: storefronts.slug }).from(storefrontDomains).innerJoin(storefronts, (0, import_drizzle_orm164.eq)(storefrontDomains.storefrontId, storefronts.id)).where((0, import_drizzle_orm164.and)((0, import_drizzle_orm164.eq)(storefrontDomains.domain, host), (0, import_drizzle_orm164.eq)(storefrontDomains.status, "active"))).limit(1);
+      const [domainRow] = await db.select({ slug: storefronts.slug }).from(storefrontDomains).innerJoin(storefronts, (0, import_drizzle_orm165.eq)(storefrontDomains.storefrontId, storefronts.id)).where((0, import_drizzle_orm165.and)((0, import_drizzle_orm165.eq)(storefrontDomains.domain, host), (0, import_drizzle_orm165.eq)(storefrontDomains.status, "active"))).limit(1);
       result = domainRow?.slug ?? null;
     }
     customDomainCache2.set(host, result);
@@ -213840,7 +213855,7 @@ async function getMetaForPath(reqPath) {
     const beatMatch = reqPath.match(/^\/marketplace\/beat\/(\d+)/);
     if (beatMatch) {
       const beatId = parseInt(beatMatch[1]);
-      const [beat] = await db.select().from(listings).where((0, import_drizzle_orm164.eq)(listings.id, beatId)).limit(1);
+      const [beat] = await db.select().from(listings).where((0, import_drizzle_orm165.eq)(listings.id, beatId)).limit(1);
       if (beat) {
         const metadata = beat.metadata;
         result = {
@@ -213855,7 +213870,7 @@ async function getMetaForPath(reqPath) {
       const storefrontMatch = reqPath.match(/^\/storefront\/([^/]+)/);
       if (storefrontMatch) {
         const slug = storefrontMatch[1];
-        const [store] = await db.select().from(storefronts).where((0, import_drizzle_orm164.eq)(storefronts.slug, slug)).limit(1);
+        const [store] = await db.select().from(storefronts).where((0, import_drizzle_orm165.eq)(storefronts.slug, slug)).limit(1);
         if (store) {
           result = {
             title: `${store.displayName || store.slug} - Producer Storefront on Max Booster`,
@@ -214114,7 +214129,7 @@ function serveStatic(app2) {
     });
   });
 }
-var import_express129, import_fs33, import_path35, import_url6, import_drizzle_orm164, import_meta5, __filename4, __dirname4, SITE_URL2, subdomainCache, customDomainCache2, metaCache, BASE_DOMAINS, DIST_PATH, EXT_CONTENT_TYPE;
+var import_express129, import_fs33, import_path35, import_url6, import_drizzle_orm165, import_meta5, __filename4, __dirname4, SITE_URL2, subdomainCache, customDomainCache2, metaCache, BASE_DOMAINS, DIST_PATH, EXT_CONTENT_TYPE;
 var init_static = __esm({
   "server/static.ts"() {
     "use strict";
@@ -214124,7 +214139,7 @@ var init_static = __esm({
     import_url6 = require("url");
     init_db();
     init_schema();
-    import_drizzle_orm164 = require("drizzle-orm");
+    import_drizzle_orm165 = require("drizzle-orm");
     import_meta5 = {};
     __filename4 = (0, import_url6.fileURLToPath)(import_meta5.url);
     __dirname4 = import_path35.default.dirname(__filename4);
@@ -215052,11 +215067,11 @@ async function multiTenantRouter(req, res, next) {
     const [hostRow] = await db.select({
       storefrontId: storefrontHosts.storefrontId,
       storefront: storefronts
-    }).from(storefrontHosts).innerJoin(storefronts, (0, import_drizzle_orm165.eq)(storefrontHosts.storefrontId, storefronts.id)).where((0, import_drizzle_orm165.eq)(storefrontHosts.host, host)).limit(1);
+    }).from(storefrontHosts).innerJoin(storefronts, (0, import_drizzle_orm166.eq)(storefrontHosts.storefrontId, storefronts.id)).where((0, import_drizzle_orm166.eq)(storefrontHosts.host, host)).limit(1);
     if (!hostRow) {
       return next();
     }
-    const [user] = await db.select().from(users).where((0, import_drizzle_orm165.eq)(users.id, hostRow.storefront.userId)).limit(1);
+    const [user] = await db.select().from(users).where((0, import_drizzle_orm166.eq)(users.id, hostRow.storefront.userId)).limit(1);
     req.storefront = hostRow.storefront;
     req.artist = user ?? null;
     logger2.debug(`[multiTenant] Resolved ${host} \u2192 storefront ${hostRow.storefront.id}`);
@@ -215066,11 +215081,11 @@ async function multiTenantRouter(req, res, next) {
     next();
   }
 }
-var import_drizzle_orm165, INTERNAL_HOSTS, STATIC_EXT_RE;
+var import_drizzle_orm166, INTERNAL_HOSTS, STATIC_EXT_RE;
 var init_multiTenantRouter = __esm({
   "server/middleware/multiTenantRouter.ts"() {
     "use strict";
-    import_drizzle_orm165 = require("drizzle-orm");
+    import_drizzle_orm166 = require("drizzle-orm");
     init_db();
     init_schema();
     init_logger();
@@ -215179,13 +215194,13 @@ function buildReEngagementHtml(firstName, daysSinceLogin, appUrl) {
     </html>
   `.trim();
 }
-var import_drizzle_orm166, ReEngagementService, reEngagementService;
+var import_drizzle_orm167, ReEngagementService, reEngagementService;
 var init_reEngagementService = __esm({
   "server/services/reEngagementService.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm166 = require("drizzle-orm");
+    import_drizzle_orm167 = require("drizzle-orm");
     init_logger();
     init_emailService();
     init_distributedLock();
@@ -215210,13 +215225,13 @@ var init_reEngagementService = __esm({
               email: users.email,
               firstName: users.firstName,
               notificationSettings: users.notificationSettings
-            }).from(customerHealthScores).innerJoin(users, (0, import_drizzle_orm166.eq)(users.id, customerHealthScores.userId)).where(
-              (0, import_drizzle_orm166.and)(
-                (0, import_drizzle_orm166.gte)(customerHealthScores.daysSinceLastLogin, 10),
-                (0, import_drizzle_orm166.lte)(customerHealthScores.daysSinceLastLogin, 30),
-                (0, import_drizzle_orm166.or)(
-                  (0, import_drizzle_orm166.isNull)(customerHealthScores.reEngagementEmailSentAt),
-                  (0, import_drizzle_orm166.lte)(customerHealthScores.reEngagementEmailSentAt, sevenDaysAgo)
+            }).from(customerHealthScores).innerJoin(users, (0, import_drizzle_orm167.eq)(users.id, customerHealthScores.userId)).where(
+              (0, import_drizzle_orm167.and)(
+                (0, import_drizzle_orm167.gte)(customerHealthScores.daysSinceLastLogin, 10),
+                (0, import_drizzle_orm167.lte)(customerHealthScores.daysSinceLastLogin, 30),
+                (0, import_drizzle_orm167.or)(
+                  (0, import_drizzle_orm167.isNull)(customerHealthScores.reEngagementEmailSentAt),
+                  (0, import_drizzle_orm167.lte)(customerHealthScores.reEngagementEmailSentAt, sevenDaysAgo)
                 )
               )
             ).limit(200);
@@ -215236,7 +215251,7 @@ var init_reEngagementService = __esm({
                   `${displayName}, your music career tools are waiting`,
                   html
                 );
-                await db.update(customerHealthScores).set({ reEngagementEmailSentAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm166.eq)(customerHealthScores.userId, userId));
+                await db.update(customerHealthScores).set({ reEngagementEmailSentAt: /* @__PURE__ */ new Date() }).where((0, import_drizzle_orm167.eq)(customerHealthScores.userId, userId));
                 sent++;
               } catch (err) {
                 logger2.warn({ err }, `[ReEngagement] Failed to send to user ${user.userId}:`);
@@ -215737,13 +215752,13 @@ async function seedAchievements() {
   logger2.info("Seeding achievements...");
   try {
     const names = defaultAchievements.map((a) => a.name);
-    const [{ total }] = await db.select({ total: (0, import_drizzle_orm167.count)() }).from(achievements).where((0, import_drizzle_orm167.inArray)(achievements.name, names));
+    const [{ total }] = await db.select({ total: (0, import_drizzle_orm168.count)() }).from(achievements).where((0, import_drizzle_orm168.inArray)(achievements.name, names));
     if (Number(total) >= names.length) {
       logger2.info("Achievements already seeded, skipping...");
       logger2.info("Achievement seeding complete!");
       return;
     }
-    const existing = await db.select({ name: achievements.name }).from(achievements).where((0, import_drizzle_orm167.inArray)(achievements.name, names));
+    const existing = await db.select({ name: achievements.name }).from(achievements).where((0, import_drizzle_orm168.inArray)(achievements.name, names));
     const existingNames = new Set(existing.map((r) => r.name));
     const toInsert = defaultAchievements.filter((a) => !existingNames.has(a.name)).map((a) => ({ ...a, isActive: true }));
     if (toInsert.length > 0) {
@@ -215756,13 +215771,13 @@ async function seedAchievements() {
     throw error;
   }
 }
-var import_drizzle_orm167, defaultAchievements, isMainModule;
+var import_drizzle_orm168, defaultAchievements, isMainModule;
 var init_seedAchievements = __esm({
   "server/seed/seedAchievements.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm167 = require("drizzle-orm");
+    import_drizzle_orm168 = require("drizzle-orm");
     init_logger();
     defaultAchievements = [
       {
@@ -216008,7 +216023,7 @@ async function initializeAIMusicModels() {
       }
     ];
     for (const modelData of models) {
-      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm168.eq)(aiModels.modelName, modelData.modelName)).limit(1);
+      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm169.eq)(aiModels.modelName, modelData.modelName)).limit(1);
       let modelId;
       if (existing) {
         modelId = existing.id;
@@ -216019,7 +216034,7 @@ async function initializeAIMusicModels() {
         logger2.info(`   \u2713 Created AI Model: ${model5.modelName}`);
       }
       const versionHash = `${modelData.modelName}_init`;
-      const [existingVersion] = await db.select().from(aiModelVersions).where((0, import_drizzle_orm168.eq)(aiModelVersions.versionHash, versionHash)).limit(1);
+      const [existingVersion] = await db.select().from(aiModelVersions).where((0, import_drizzle_orm169.eq)(aiModelVersions.versionHash, versionHash)).limit(1);
       if (!existingVersion) {
         await db.insert(aiModelVersions).values({
           modelId,
@@ -216040,13 +216055,13 @@ async function initializeAIMusicModels() {
     throw error;
   }
 }
-var import_drizzle_orm168;
+var import_drizzle_orm169;
 var init_initializeAIMusicModels = __esm({
   "server/seed/initializeAIMusicModels.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm168 = require("drizzle-orm");
+    import_drizzle_orm169 = require("drizzle-orm");
     init_logger();
   }
 });
@@ -216112,7 +216127,7 @@ async function initializeAIInsightsModels() {
       }
     ];
     for (const modelData of models) {
-      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm169.eq)(aiModels.modelName, modelData.modelName)).limit(1);
+      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm170.eq)(aiModels.modelName, modelData.modelName)).limit(1);
       let modelId;
       if (existing) {
         modelId = existing.id;
@@ -216123,7 +216138,7 @@ async function initializeAIInsightsModels() {
         logger2.info(`   \u2713 Created AI Model: ${model5.modelName}`);
       }
       const versionHash = `${modelData.modelName}_init`;
-      const [existingVersion] = await db.select().from(aiModelVersions).where((0, import_drizzle_orm169.eq)(aiModelVersions.versionHash, versionHash)).limit(1);
+      const [existingVersion] = await db.select().from(aiModelVersions).where((0, import_drizzle_orm170.eq)(aiModelVersions.versionHash, versionHash)).limit(1);
       if (!existingVersion) {
         await db.insert(aiModelVersions).values({
           modelId,
@@ -216144,13 +216159,13 @@ async function initializeAIInsightsModels() {
     throw error;
   }
 }
-var import_drizzle_orm169;
+var import_drizzle_orm170;
 var init_initializeAIInsightsModels = __esm({
   "server/seed/initializeAIInsightsModels.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm169 = require("drizzle-orm");
+    import_drizzle_orm170 = require("drizzle-orm");
     init_logger();
   }
 });
@@ -216224,7 +216239,7 @@ async function initializeAIContentModels() {
       }
     ];
     for (const modelData of models) {
-      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm170.eq)(aiModels.modelName, modelData.modelName)).limit(1);
+      const [existing] = await db.select().from(aiModels).where((0, import_drizzle_orm171.eq)(aiModels.modelName, modelData.modelName)).limit(1);
       if (existing) {
         logger2.info(`   \u2713 AI Model ${modelData.modelName} already exists`);
         continue;
@@ -216249,13 +216264,13 @@ async function initializeAIContentModels() {
     throw error;
   }
 }
-var import_drizzle_orm170;
+var import_drizzle_orm171;
 var init_initializeAIContentModels = __esm({
   "server/seed/initializeAIContentModels.ts"() {
     "use strict";
     init_db();
     init_schema();
-    import_drizzle_orm170 = require("drizzle-orm");
+    import_drizzle_orm171 = require("drizzle-orm");
     init_logger();
   }
 });
@@ -216293,7 +216308,7 @@ async function initializeAdmin() {
       return null;
     }
     logger2.info("\u{1F510} Checking for admin account...");
-    const [existingAdmin] = await db.select().from(users).where((0, import_drizzle_orm171.eq)(users.email, adminEmail)).limit(1);
+    const [existingAdmin] = await db.select().from(users).where((0, import_drizzle_orm172.eq)(users.email, adminEmail)).limit(1);
     let admin = existingAdmin;
     let isNewAdmin = false;
     if (admin) {
@@ -216315,7 +216330,7 @@ async function initializeAdmin() {
           skipped: false,
           source: "admin_init"
         }
-      }).where((0, import_drizzle_orm171.eq)(users.id, admin.id));
+      }).where((0, import_drizzle_orm172.eq)(users.id, admin.id));
       logger2.info("\u2705 Admin credentials and subscription synced");
     } else {
       if (!adminUsername) {
@@ -216349,7 +216364,7 @@ async function initializeAdmin() {
           skipped: false,
           source: "admin_init"
         }
-      }).where((0, import_drizzle_orm171.eq)(users.id, admin.id));
+      }).where((0, import_drizzle_orm172.eq)(users.id, admin.id));
       logger2.info(`\u2705 Admin account created: ${admin.email}`);
     }
     await initializeAdminResources(admin.id, adminEmail, isNewAdmin);
@@ -216369,7 +216384,7 @@ async function initializeAdmin() {
 }
 async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
   try {
-    const [existingStorage] = await db.select().from(userStorage).where((0, import_drizzle_orm171.eq)(userStorage.userId, adminId));
+    const [existingStorage] = await db.select().from(userStorage).where((0, import_drizzle_orm172.eq)(userStorage.userId, adminId));
     if (!existingStorage) {
       try {
         const { userPocketService: userPocketService2 } = await Promise.resolve().then(() => (init_userPocketDimensionService(), userPocketDimensionService_exports));
@@ -216381,7 +216396,7 @@ async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
     } else {
       logger2.info("   \u2713 Admin Pocket Dimension storage exists");
     }
-    const [existingTasteProfile] = await db.select().from(userTasteProfiles).where((0, import_drizzle_orm171.eq)(userTasteProfiles.userId, adminId));
+    const [existingTasteProfile] = await db.select().from(userTasteProfiles).where((0, import_drizzle_orm172.eq)(userTasteProfiles.userId, adminId));
     if (!existingTasteProfile) {
       await db.insert(userTasteProfiles).values({
         userId: adminId,
@@ -216399,7 +216414,7 @@ async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
     } else {
       logger2.info("   \u2713 Admin taste profile exists");
     }
-    const [existingStorefront] = await db.select().from(storefronts).where((0, import_drizzle_orm171.eq)(storefronts.userId, adminId));
+    const [existingStorefront] = await db.select().from(storefronts).where((0, import_drizzle_orm172.eq)(storefronts.userId, adminId));
     if (!existingStorefront) {
       const adminUsername = process.env.ADMIN_USERNAME || "blawz";
       const slug = adminUsername.toLowerCase().replace(/[^a-z0-9]/g, "-");
@@ -216435,7 +216450,7 @@ async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
     } else {
       logger2.info("   \u2713 Admin producer storefront exists");
     }
-    const existingLicenses = await db.select().from(licenseTemplates).where((0, import_drizzle_orm171.eq)(licenseTemplates.userId, adminId));
+    const existingLicenses = await db.select().from(licenseTemplates).where((0, import_drizzle_orm172.eq)(licenseTemplates.userId, adminId));
     if (existingLicenses.length === 0) {
       const defaultLicenses = [
         {
@@ -216508,7 +216523,7 @@ async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
     } else {
       logger2.info(`   \u2713 Admin license templates exist (${existingLicenses.length} templates)`);
     }
-    const existingContractTemplates = await db.select().from(contractTemplates).where((0, import_drizzle_orm171.eq)(contractTemplates.userId, adminId));
+    const existingContractTemplates = await db.select().from(contractTemplates).where((0, import_drizzle_orm172.eq)(contractTemplates.userId, adminId));
     if (existingContractTemplates.length === 0) {
       const defaultContractTemplates = [
         {
@@ -216607,9 +216622,9 @@ async function initializeAdminResources(adminId, adminEmail, isNewAdmin) {
     } else {
       logger2.info(`   \u2713 Admin contract templates exist (${existingContractTemplates.length} templates)`);
     }
-    const [adminStorefront] = await db.select().from(storefronts).where((0, import_drizzle_orm171.eq)(storefronts.userId, adminId));
+    const [adminStorefront] = await db.select().from(storefronts).where((0, import_drizzle_orm172.eq)(storefronts.userId, adminId));
     if (adminStorefront) {
-      const existingTiers = await db.select().from(membershipTiers).where((0, import_drizzle_orm171.eq)(membershipTiers.storefrontId, adminStorefront.id));
+      const existingTiers = await db.select().from(membershipTiers).where((0, import_drizzle_orm172.eq)(membershipTiers.storefrontId, adminStorefront.id));
       if (existingTiers.length === 0) {
         const defaultTiers = [
           {
@@ -217606,7 +217621,7 @@ async function seedDSPProviders() {
         set: { isActive: true, name: dsp.name, metadata: dsp.metadata }
       });
     }
-    await db.update(dspProviders).set({ isActive: true }).where(import_drizzle_orm171.sql`is_active IS DISTINCT FROM true`);
+    await db.update(dspProviders).set({ isActive: true }).where(import_drizzle_orm172.sql`is_active IS DISTINCT FROM true`);
     logger2.info(`\u2705 Seeded/activated ${dspList.length} DSP providers`);
   } catch (error) {
     logger2.warn("Failed to seed DSP providers:", error.message);
@@ -217726,7 +217741,7 @@ async function seedAlertRules() {
     logger2.warn("Alert rules seeding skipped:", error.message);
   }
 }
-var import_crypto109, import_bcrypt2, import_drizzle_orm171;
+var import_crypto109, import_bcrypt2, import_drizzle_orm172;
 var init_init_admin = __esm({
   "server/init-admin.ts"() {
     "use strict";
@@ -217736,7 +217751,7 @@ var init_init_admin = __esm({
     init_logger();
     init_db();
     init_schema();
-    import_drizzle_orm171 = require("drizzle-orm");
+    import_drizzle_orm172 = require("drizzle-orm");
     init_dspPolicyChecker();
   }
 });
@@ -223724,15 +223739,15 @@ ${retentionErr.stack}` : String(retentionErr);
     try {
       const { db: sDb } = await Promise.resolve().then(() => (init_db(), db_exports));
       const { storefrontDomains: sDomains, storefronts: sStorefronts } = await Promise.resolve().then(() => (init_schema(), schema_exports));
-      const { eq: eq161, and: and121 } = await import("drizzle-orm");
+      const { eq: eq162, and: and122 } = await import("drizzle-orm");
       const BASE = process.env.BASE_DOMAIN || "maxbooster.replit.app";
       const label = req.params.label.toLowerCase().replace(/[^a-z0-9-]/g, "");
       const fqdn = `${label}.${BASE}`;
-      const [domRow] = await sDb.select({ slug: sStorefronts.slug }).from(sDomains).innerJoin(sStorefronts, eq161(sDomains.storefrontId, sStorefronts.id)).where(and121(eq161(sDomains.domain, fqdn), eq161(sDomains.type, "managed_subdomain"))).limit(1);
+      const [domRow] = await sDb.select({ slug: sStorefronts.slug }).from(sDomains).innerJoin(sStorefronts, eq162(sDomains.storefrontId, sStorefronts.id)).where(and122(eq162(sDomains.domain, fqdn), eq162(sDomains.type, "managed_subdomain"))).limit(1);
       if (domRow?.slug) {
         return res.redirect(302, `/storefront/${domRow.slug}`);
       }
-      const [slugRow] = await sDb.select({ slug: sStorefronts.slug }).from(sStorefronts).where(eq161(sStorefronts.slug, label)).limit(1);
+      const [slugRow] = await sDb.select({ slug: sStorefronts.slug }).from(sStorefronts).where(eq162(sStorefronts.slug, label)).limit(1);
       if (slugRow?.slug) {
         return res.redirect(302, `/storefront/${slugRow.slug}`);
       }

@@ -107,8 +107,26 @@ export default function Workspaces() {
   const { data: presenceData } = useQuery<{ presence: Collaborator[] }>({
     queryKey: [`/api/workspace/${selectedWorkspace?.id}/presence`],
     enabled: !!selectedWorkspace,
-    refetchInterval: 30000,
+    refetchInterval: 5000,
   });
+
+  useEffect(() => {
+    if (!selectedWorkspace) return;
+    const sendHeartbeat = () => {
+      fetch(`/api/workspace/${selectedWorkspace.id}/presence/heartbeat`, {
+        method: 'POST',
+        credentials: 'include',
+      }).catch(() => {});
+    };
+    sendHeartbeat();
+    const interval = setInterval(sendHeartbeat, 30000);
+    const onFocus = () => sendHeartbeat();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
+  }, [selectedWorkspace?.id]);
 
   const createWorkspaceMutation = useMutation({
     mutationFn: async () => {

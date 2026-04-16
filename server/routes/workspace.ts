@@ -6,6 +6,9 @@ import { approvalWorkflowService, type WorkflowStep } from '../services/approval
 import { ssoService, type SAMLMetadata, type OIDCMetadata } from '../services/ssoService';
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
+import { db } from '../db';
+import { workspaceMembers } from '@shared/schema';
+import { eq, and } from 'drizzle-orm';
 
 const router = Router();
 
@@ -783,6 +786,21 @@ router.get('/:id/presence', requireAuth, requireWorkspaceMember, async (req: Aut
   } catch (error) {
     logger.warn({ err: error }, 'Get workspace presence error:');
     res.status(500).json({ error: 'Failed to get presence' });
+  }
+});
+
+router.post('/:id/presence/heartbeat', requireAuth, requireWorkspaceMember, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const workspaceId = req.params.id;
+    await db
+      .update(workspaceMembers)
+      .set({ lastActiveAt: new Date() })
+      .where(and(eq(workspaceMembers.workspaceId, workspaceId), eq(workspaceMembers.userId, userId)));
+    res.json({ ok: true, ts: new Date().toISOString() });
+  } catch (error) {
+    logger.warn({ err: error }, 'Presence heartbeat error:');
+    res.status(500).json({ error: 'Heartbeat failed' });
   }
 });
 

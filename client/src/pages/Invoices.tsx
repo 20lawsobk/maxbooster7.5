@@ -65,9 +65,19 @@ export default function Invoices() {
   const [searchQuery, setSearchQuery] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   
+  const CURRENCIES: Record<string, { symbol: string; label: string }> = {
+    USD: { symbol: '$', label: 'USD — US Dollar' },
+    EUR: { symbol: '€', label: 'EUR — Euro' },
+    GBP: { symbol: '£', label: 'GBP — British Pound' },
+    CAD: { symbol: 'C$', label: 'CAD — Canadian Dollar' },
+    AUD: { symbol: 'A$', label: 'AUD — Australian Dollar' },
+    JPY: { symbol: '¥', label: 'JPY — Japanese Yen' },
+  };
+
   const [newInvoice, setNewInvoice] = useState({
     clientName: '',
     clientEmail: '',
+    currency: 'USD',
     dueDate: '',
     items: [{ description: '', quantity: 1, unitPrice: 0 }],
     notes: '',
@@ -95,6 +105,7 @@ export default function Invoices() {
       setNewInvoice({
         clientName: '',
         clientEmail: '',
+        currency: 'USD',
         dueDate: '',
         items: [{ description: '', quantity: 1, unitPrice: 0 }],
         notes: '',
@@ -273,14 +284,29 @@ const invoices = invoicesData?.invoices || [];
                   </div>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="dueDate">Due Date</Label>
-                  <Input
-                    id="dueDate"
-                    type="date"
-                    value={newInvoice.dueDate}
-                    onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="dueDate">Due Date</Label>
+                    <Input
+                      id="dueDate"
+                      type="date"
+                      value={newInvoice.dueDate}
+                      onChange={(e) => setNewInvoice({ ...newInvoice, dueDate: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="currency">Currency</Label>
+                    <Select value={newInvoice.currency} onValueChange={(val) => setNewInvoice({ ...newInvoice, currency: val })}>
+                      <SelectTrigger id="currency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(CURRENCIES).map(([code, { label }]) => (
+                          <SelectItem key={code} value={code}>{label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -338,8 +364,8 @@ const invoices = invoicesData?.invoices || [];
                   
                   <div className="flex justify-end pt-2 border-t">
                     <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Total</p>
-                      <p className="text-xl font-bold">${calculateTotal().toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">Total ({newInvoice.currency})</p>
+                      <p className="text-xl font-bold">{CURRENCIES[newInvoice.currency]?.symbol}{calculateTotal().toFixed(2)}</p>
                     </div>
                   </div>
                 </div>
@@ -460,8 +486,11 @@ const invoices = invoicesData?.invoices || [];
                     </TableCell>
                     <TableCell>
                       <span className="font-medium">
-                        ${invoice.amount.toLocaleString()}
+                        {CURRENCIES[invoice.currency]?.symbol ?? '$'}{invoice.amount.toLocaleString()}
                       </span>
+                      {invoice.currency && invoice.currency !== 'USD' && (
+                        <span className="text-xs text-muted-foreground ml-1">{invoice.currency}</span>
+                      )}
                     </TableCell>
                     <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                     <TableCell>{format(new Date(invoice.dueDate), 'MMM d, yyyy')}</TableCell>

@@ -1173,10 +1173,6 @@ ${vars.producerName || '[PRODUCER NAME]'}
       throw new Error('Contract must be in draft status to send for signature');
     }
 
-    if (contract.parties.length === 0) {
-      throw new Error('Contract must have at least one party');
-    }
-
     contract.status = 'pending_signature';
     this.contracts.set(contractId, contract);
     logger.info(`Contract ${contractId} sent for signature`);
