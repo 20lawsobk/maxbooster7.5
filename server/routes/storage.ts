@@ -7,8 +7,8 @@ import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import path from 'path';
 import { db } from '../db.js';
-import { userStorageFiles } from '../../shared/schema.js';
-import { eq, and, isNull, lt, isNotNull, sql } from 'drizzle-orm';
+import { userStorageFiles, users } from '../../shared/schema.js';
+import { eq, and, isNull, lt, isNotNull, sql, sum } from 'drizzle-orm';
 import { notificationService } from '../services/notificationService.js';
 
 const router = Router();
@@ -580,31 +580,58 @@ router.post('/restore/*key', requireAuth, async (req: Request, res: Response) =>
 
 router.get('/quota', requireAuth, async (req: Request, res: Response) => {
   try {
-    const _userId = req.user!.id;
-    const userTier = 'free';
+    const userId = req.user!.id;
+
+    // Get user's subscription tier for quota limit
+    const [userRow] = await db.select({ subscriptionTier: users.subscriptionTier })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    const rawTier = userRow?.subscriptionTier || 'free';
     const quotaLimits: Record<string, number> = {
-      free: 5 * 1024 * 1024 * 1024,
-      pro: 50 * 1024 * 1024 * 1024,
-      studio: 200 * 1024 * 1024 * 1024,
+      free:       5   * 1024 * 1024 * 1024,
+      pro:        50  * 1024 * 1024 * 1024,
+      studio:     200 * 1024 * 1024 * 1024,
       enterprise: 1024 * 1024 * 1024 * 1024,
     };
+    const userTier = quotaLimits[rawTier] ? rawTier : 'free';
+    const limit = quotaLimits[userTier];
 
-    const limit = quotaLimits[userTier] || quotaLimits.free;
-    
-    const used = 2.5 * 1024 * 1024 * 1024;
+    // Get actual storage usage from the database, grouped by mime type
+    const usageRows = await db
+      .select({
+        mimeType: userStorageFiles.mimeType,
+        totalBytes: sql<number>`COALESCE(SUM(${userStorageFiles.sizeBytes}), 0)`,
+      })
+      .from(userStorageFiles)
+      .where(and(eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)))
+      .groupBy(userStorageFiles.mimeType);
+
+    let audioBytes = 0, imageBytes = 0, videoBytes = 0, otherBytes = 0;
+    for (const row of usageRows) {
+      const bytes = Number(row.totalBytes) || 0;
+      const mime = row.mimeType || '';
+      if (mime.startsWith('audio/')) audioBytes += bytes;
+      else if (mime.startsWith('image/')) imageBytes += bytes;
+      else if (mime.startsWith('video/')) videoBytes += bytes;
+      else otherBytes += bytes;
+    }
+
+    const used = audioBytes + imageBytes + videoBytes + otherBytes;
 
     const categories = [
-      { name: 'Audio', used: 1.8 * 1024 * 1024 * 1024, icon: 'audio', color: 'bg-blue-500' },
-      { name: 'Images', used: 0.5 * 1024 * 1024 * 1024, icon: 'image', color: 'bg-green-500' },
-      { name: 'Videos', used: 0.15 * 1024 * 1024 * 1024, icon: 'video', color: 'bg-purple-500' },
-      { name: 'Other', used: 0.05 * 1024 * 1024 * 1024, icon: 'file', color: 'bg-gray-500' },
+      { name: 'Audio', used: audioBytes, icon: 'audio', color: 'bg-blue-500' },
+      { name: 'Images', used: imageBytes, icon: 'image', color: 'bg-green-500' },
+      { name: 'Videos', used: videoBytes, icon: 'video', color: 'bg-purple-500' },
+      { name: 'Other', used: otherBytes, icon: 'file', color: 'bg-gray-500' },
     ];
 
     res.json({
       used,
       limit,
-      available: limit - used,
-      percentage: (used / limit) * 100,
+      available: Math.max(0, limit - used),
+      percentage: limit > 0 ? Math.min(100, (used / limit) * 100) : 0,
       tier: userTier,
       categories,
     });
