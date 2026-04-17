@@ -808,7 +808,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const { storefrontDomains: sDomains, storefronts: sStorefronts } = await import('@shared/schema');
       const { eq, and } = await import('drizzle-orm');
       const BASE = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
-      const label = req.params.label.toLowerCase().replace(/[^a-z0-9-]/g, '');
+      const label = String(req.params.label).toLowerCase().replace(/[^a-z0-9-]/g, '');
 
       // 1. Check managed subdomain registry (e.g. b-lawz-music reserved via UI)
       const fqdn = `${label}.${BASE}`;
@@ -935,7 +935,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const { initializeFabric, autoClusterManager } = await import('./pocket-dimension/fabric/index.js');
           await initializeFabric();
           logger.info('✅ [PocketFabric] Distributed fabric storage initialized');
-          killSwitch.registerSystem('pocket-fabric-autocluster', {
+          killSwitch.registerSystem('pocket-fabric-autocluster' as any, {
             kill: () => autoClusterManager.stop(),
             resume: () => autoClusterManager.start(),
           });
@@ -1093,7 +1093,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         }).catch(() => {});
 
         import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
-          runBaseModelTraining().catch((e) => { logger.warn('[BaseTrainer] Background training error:', e instanceof Error ? e.message : String(e)); });
+          runBaseModelTraining().catch((e) => { logger.warn(`[BaseTrainer] Background training error: ${e instanceof Error ? e.message : String(e)}`); });
         }).catch(() => {});
 
         // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
@@ -1224,5 +1224,5 @@ process.on('unhandledRejection', (reason: unknown) => {
     /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded/i.test(err.message)
   );
   if (isNonFatal) return; // instrument.ts already logs as warn
-  logger.warn('[Process] Unhandled promise rejection (non-fatal):', reason);
+  logger.warn(`[Process] Unhandled promise rejection (non-fatal): ${err.message}`);
 });
