@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useLocation } from 'wouter';
 import { motion } from 'framer-motion';
 import {
   Music,
@@ -223,7 +224,7 @@ export function ModuleShortcutsPanel({ isOpen, onClose }: ModuleShortcutsPanelPr
       </ScrollArea>
 
       <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-zinc-800 bg-zinc-950">
-        <Button variant="outline" className="w-full" onClick={() => {}}>
+        <Button variant="outline" className="w-full" onClick={() => { openCustomizer(); onClose(); }}>
           <Settings className="w-4 h-4 mr-2" />
           Customize Shortcuts
         </Button>

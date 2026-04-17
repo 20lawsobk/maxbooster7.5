@@ -4,8 +4,8 @@ import { Router, Request, Response, NextFunction } from 'express';
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { db } from '../db';
-import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles } from '@shared/schema';
-import { eq, and, desc, gte, or } from 'drizzle-orm';
+import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, posts, storefronts, listings, socialAutopilotContent, artistProfiles, campaigns, contentCalendar } from '@shared/schema';
+import { eq, and, desc, gte, or, inArray, isNull, isNotNull } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
@@ -1233,37 +1233,129 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
 
 router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ posts: [] });
+    const userId = req.user!.id;
+    const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+
+    // Scheduled social posts
+    const scheduledPosts = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.userId, userId),
+          inArray(posts.status, ['scheduled', 'published', 'failed']),
+        )
+      )
+      .orderBy(desc(posts.scheduledAt))
+      .limit(200);
+
+    // Content calendar entries
+    const calendarEntries = await db
+      .select()
+      .from(contentCalendar)
+      .where(eq(contentCalendar.userId, userId))
+      .orderBy(desc(contentCalendar.scheduledAt))
+      .limit(200);
+
+    // Merge and normalise both sources
+    const allPosts = [
+      ...scheduledPosts.map(p => ({
+        id: p.id,
+        title: p.content?.slice(0, 80) ?? '(no caption)',
+        platform: p.platform,
+        status: p.status,
+        scheduledAt: p.scheduledAt,
+        publishedAt: p.publishedAt,
+        content: p.content,
+        mediaUrls: p.mediaUrls ?? [],
+        source: 'posts' as const,
+      })),
+      ...calendarEntries.map(c => ({
+        id: c.id,
+        title: c.title,
+        platform: c.platform,
+        status: c.status,
+        scheduledAt: c.scheduledAt,
+        publishedAt: c.publishedAt,
+        content: (c.content as any)?.body ?? null,
+        mediaUrls: c.mediaUrls ?? [],
+        source: 'calendar' as const,
+      })),
+    ];
+
+    return res.json({ posts: allPosts, total: allPosts.length });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get unified calendar posts:');
-    res.json({ posts: [] });
+    return res.json({ posts: [], total: 0 });
   }
 });
 
 router.get('/unified-calendar/campaigns', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ campaigns: [] });
+    const userId = req.user!.id;
+
+    const userCampaigns = await db
+      .select()
+      .from(campaigns)
+      .where(eq(campaigns.userId, userId))
+      .orderBy(desc(campaigns.createdAt))
+      .limit(100);
+
+    return res.json({ campaigns: userCampaigns, total: userCampaigns.length });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get unified calendar campaigns:');
-    res.json({ campaigns: [] });
+    return res.json({ campaigns: [], total: 0 });
   }
 });
 
-router.get('/unified-calendar/holidays', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+// Static music-industry calendar dates — updated for the current year.
+// These mark high-impact windows when artists should schedule releases/campaigns.
+const MUSIC_INDUSTRY_HOLIDAYS = (() => {
+  const y = new Date().getFullYear();
+  return [
+    { id: 'new-release-friday',   name: 'New Release Friday',             date: 'every-friday',     type: 'recurring', description: 'Global release day — highest streaming activity of the week.' },
+    { id: 'grammys',              name: 'Grammy Awards',                  date: `${y}-02-04`,       type: 'awards',    description: 'Release or promote during awards season for maximum press.' },
+    { id: 'valentines',          name: "Valentine's Day",                date: `${y}-02-14`,       type: 'seasonal',  description: 'Strong window for love-themed content and playlists.' },
+    { id: 'international-music', name: 'International Music Day',        date: `${y}-06-21`,       type: 'cultural',  description: 'Global music celebration — ideal for awareness campaigns.' },
+    { id: 'hip-hop-day',         name: 'Hip-Hop Appreciation Week',      date: `${y}-11-12`,       type: 'cultural',  description: 'Celebrate and amplify hip-hop culture.' },
+    { id: 'black-friday',        name: 'Black Friday',                   date: `${y}-11-28`,       type: 'commerce',  description: 'Top window for merch drops, beat bundles, and license deals.' },
+    { id: 'cyber-monday',        name: 'Cyber Monday',                   date: `${y}-12-01`,       type: 'commerce',  description: 'Second peak shopping day — great for digital product offers.' },
+    { id: 'year-end',            name: 'Year-End Wrap',                  date: `${y}-12-20`,       type: 'seasonal',  description: 'Spotify / Apple Music wrap-up coverage starts — push streaming.' },
+    { id: 'new-year-drop',       name: "New Year's Drop",                date: `${y + 1}-01-01`,   type: 'seasonal',  description: 'High-impact date for resolutions content and fresh releases.' },
+  ];
+})();
+
+router.get('/unified-calendar/holidays', requireAuth, async (_req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ holidays: [] });
+    return res.json({ holidays: MUSIC_INDUSTRY_HOLIDAYS, total: MUSIC_INDUSTRY_HOLIDAYS.length });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get unified calendar holidays:');
-    res.json({ holidays: [] });
+    return res.json({ holidays: [], total: 0 });
   }
 });
 
 router.get('/unified-calendar/queue', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    res.json({ queue: [] });
+    const userId = req.user!.id;
+
+    // Posts that are scheduled but not yet published (the publishing queue)
+    const queuedPosts = await db
+      .select()
+      .from(posts)
+      .where(
+        and(
+          eq(posts.userId, userId),
+          inArray(posts.status, ['queued', 'pending', 'scheduled']),
+          isNull(posts.publishedAt),
+        )
+      )
+      .orderBy(posts.scheduledAt)
+      .limit(100);
+
+    return res.json({ queue: queuedPosts, total: queuedPosts.length });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get unified calendar queue:');
-    res.json({ queue: [] });
+    return res.json({ queue: [], total: 0 });
   }
 });
 

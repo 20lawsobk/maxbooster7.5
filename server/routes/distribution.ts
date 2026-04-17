@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { storage } from '../storage';
 import { db } from '../db';
 import { eq, and, desc, sql, gte, lte, sum, count, inArray } from 'drizzle-orm';
-import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks, isrcRegistry, upcRegistry } from '@shared/schema';
+import { royaltyTransactions, royaltyStatements, instantPayouts, royaltySplits, taxForms, royaltyDisputes, systemSettings, distroReleases, distroTracks, isrcRegistry, upcRegistry, dmcaStrikes } from '@shared/schema';
 import { storageService } from '../services/storageService';
 import * as codeGenerationService from '../services/distributionCodeGenerationService';
 import { distributionService } from '../services/distributionService';
@@ -3186,53 +3186,114 @@ router.get('/payout-history', requireAuth, async (req: Request, res: Response) =
 // ADDITIONAL MISSING ENDPOINTS
 // ===========================
 
-// GET /api/distribution/claims - Get content claims
+// GET /api/distribution/claims — Active DMCA strikes against this user's content
 router.get('/claims', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ claims: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const strikes = await db
+      .select()
+      .from(dmcaStrikes)
+      .where(eq(dmcaStrikes.userId, userId))
+      .orderBy(desc(dmcaStrikes.createdAt))
+      .limit(100);
+
+    return res.json({ claims: strikes, total: strikes.length });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching claims:');
-    res.status(500).json({ error: 'Failed to fetch claims' });
+    return res.status(500).json({ error: 'Failed to fetch claims' });
   }
 });
 
-// GET /api/distribution/disputes - Get disputes
+// GET /api/distribution/disputes — Royalty disputes filed by this user
 router.get('/disputes', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ disputes: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const disputes = await db
+      .select()
+      .from(royaltyDisputes)
+      .where(eq(royaltyDisputes.userId, userId))
+      .orderBy(desc(royaltyDisputes.createdAt))
+      .limit(100);
+
+    return res.json({ disputes, total: disputes.length });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching disputes:');
-    res.status(500).json({ error: 'Failed to fetch disputes' });
+    return res.status(500).json({ error: 'Failed to fetch disputes' });
   }
 });
 
-// GET /api/distribution/qc - Quality control status
+// GET /api/distribution/qc — Quality control: pending review, passed, and failed releases
 router.get('/qc', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ pending: [], passed: [], failed: [] });
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const releases = await db
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.artistId, userId))
+      .orderBy(desc(distroReleases.createdAt))
+      .limit(200);
+
+    const pending = releases.filter(r => ['pending', 'processing', 'draft'].includes(r.status ?? ''));
+    const passed  = releases.filter(r => ['delivered', 'active', 'live'].includes(r.status ?? ''));
+    const failed  = releases.filter(r => ['rejected', 'failed', 'error'].includes(r.status ?? ''));
+
+    return res.json({ pending, passed, failed });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching QC status:');
-    res.status(500).json({ error: 'Failed to fetch QC status' });
+    return res.status(500).json({ error: 'Failed to fetch QC status' });
   }
 });
 
-// GET /api/distribution/takedowns - Get takedowns
+// GET /api/distribution/takedowns — DMCA strikes that have not yet expired (active takedowns)
 router.get('/takedowns', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ takedowns: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const now = new Date();
+    const activeStrikes = await db
+      .select()
+      .from(dmcaStrikes)
+      .where(eq(dmcaStrikes.userId, userId))
+      .orderBy(desc(dmcaStrikes.createdAt))
+      .limit(100);
+
+    // A strike with no expiresAt or a future expiresAt counts as an active takedown
+    const takedowns = activeStrikes.filter(
+      s => !s.expiresAt || s.expiresAt > now
+    );
+
+    return res.json({ takedowns, total: takedowns.length });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching takedowns:');
-    res.status(500).json({ error: 'Failed to fetch takedowns' });
+    return res.status(500).json({ error: 'Failed to fetch takedowns' });
   }
 });
 
-// GET /api/distribution/reinstatements - Get reinstatement requests
+// GET /api/distribution/reinstatements — DMCA strikes that have expired (content reinstated)
 router.get('/reinstatements', requireAuth, async (req: Request, res: Response) => {
   try {
-    res.json({ reinstatements: [], total: 0 });
+    const userId = (req.user as AuthenticatedUser).id;
+
+    const now = new Date();
+    const expiredStrikes = await db
+      .select()
+      .from(dmcaStrikes)
+      .where(eq(dmcaStrikes.userId, userId))
+      .orderBy(desc(dmcaStrikes.createdAt))
+      .limit(100);
+
+    // A strike with a past expiresAt means the takedown is lifted — content is reinstated
+    const reinstatements = expiredStrikes.filter(
+      s => s.expiresAt && s.expiresAt <= now
+    );
+
+    return res.json({ reinstatements, total: reinstatements.length });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching reinstatements:');
-    res.status(500).json({ error: 'Failed to fetch reinstatements' });
+    return res.status(500).json({ error: 'Failed to fetch reinstatements' });
   }
 });
 

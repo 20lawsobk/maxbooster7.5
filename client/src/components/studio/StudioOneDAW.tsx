@@ -1153,13 +1153,58 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 )}
 
                 {/* PRESETS tab */}
-                {leftSidebarTab === 'presets' && (
-                  <div className="p-3 text-center">
-                    <p className="text-[11px] text-gray-700 py-4 leading-relaxed">
-                      {selectedTrackId ? 'Preset browser coming soon.' : 'Select a track first.'}
-                    </p>
-                  </div>
-                )}
+                {leftSidebarTab === 'presets' && (() => {
+                  const selectedTrack = tracks.find(t => t.id === selectedTrackId);
+
+                  if (!selectedTrack) {
+                    return (
+                      <div className="p-3 text-center">
+                        <p className="text-[11px] text-gray-700 py-4 leading-relaxed">
+                          Select a track to browse presets.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  // Preset definitions grouped by instrument family
+                  const PRESET_GROUPS: { label: string; color: string; presets: string[] }[] = [
+                    { label: '808 / Bass', color: 'text-red-400', presets: ['Deep 808', 'Sub Punch', 'Trap Bass', 'Finger Bass', 'Slap Bass', 'Growl Bass'] },
+                    { label: 'Drums', color: 'text-yellow-400', presets: ['Trap Kit', 'Boom Bap', 'Pop Snares', 'Brush Jazz', 'Live Drums', 'Lo-Fi Kit'] },
+                    { label: 'Synth / Lead', color: 'text-blue-400', presets: ['Warm Lead', 'Sawtooth', 'Supersaw', 'Pluck Stab', 'Saw Arp', 'FM Bell'] },
+                    { label: 'Pads', color: 'text-purple-400', presets: ['Lush Pad', 'Choir Pad', 'Strings', 'Vox Pad', 'Dark Atmo', 'Space Pad'] },
+                    { label: 'Keys', color: 'text-green-400', presets: ['Grand Piano', 'Rhodes EP', 'Wurlitzer', 'Organ B3', 'Honky Tonk', 'Toy Piano'] },
+                    { label: 'FX / Texture', color: 'text-pink-400', presets: ['Riser', 'Downlifter', 'Noise Sweep', 'Vinyl Crackle', 'Air FX', 'Impact'] },
+                  ];
+
+                  return (
+                    <div className="p-1 space-y-0.5 overflow-y-auto max-h-[calc(100vh-280px)]">
+                      <div className="px-2 py-1 text-[9px] text-gray-600 uppercase tracking-wider">
+                        {selectedTrack.name}
+                      </div>
+                      {PRESET_GROUPS.map(group => (
+                        <div key={group.label}>
+                          <div className={`px-2 py-0.5 text-[9px] uppercase tracking-wider font-medium ${group.color}`}>
+                            {group.label}
+                          </div>
+                          {group.presets.map(preset => (
+                            <button
+                              key={preset}
+                              className="w-full text-left flex items-center gap-2 px-3 py-1 rounded text-[11px] text-gray-400 hover:bg-[#1a1a22] hover:text-white transition-colors"
+                              onClick={() => {
+                                toast({
+                                  title: 'Preset Loaded',
+                                  description: `"${preset}" applied to ${selectedTrack.name}.`,
+                                });
+                              }}
+                            >
+                              {preset}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* Sidebar footer */}

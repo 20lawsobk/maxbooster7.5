@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useStudioLayoutStore, type ConsoleSections, type StudioMode } from '@/lib/studioLayoutStore';
 import { studioOneTheme } from '@/lib/studioOneTheme';
+import { useLocation } from 'wouter';
 
 interface NavButtonProps {
   icon: React.ReactNode;
@@ -66,6 +67,7 @@ export function ConsoleNavColumn() {
     consolePanel,
     togglePanel,
   } = useStudioLayoutStore();
+  const [, setLocation] = useLocation();
 
   return (
     <div 
@@ -182,7 +184,7 @@ export function ConsoleNavColumn() {
       <NavButton
         icon={<Settings2 className="h-4 w-4" />}
         label="Console Settings"
-        onClick={() => {}}
+        onClick={() => setLocation('/settings')}
       />
     </div>
   );
