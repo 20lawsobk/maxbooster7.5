@@ -73,6 +73,55 @@ router.get('/creative-fatigue', requireAuth, async (req: AuthenticatedRequest, r
   }
 });
 
+router.patch('/creatives/:creativeId', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user!.id;
+    const { creativeId } = req.params;
+    const { action } = req.body as { action: 'refresh' | 'pause' | 'resume' | 'archive' | string };
+
+    if (!action || !['refresh', 'pause', 'resume', 'archive'].includes(action)) {
+      return res.status(400).json({ error: 'Invalid action. Must be one of: refresh, pause, resume, archive' });
+    }
+
+    const [existing] = await db
+      .select()
+      .from(adCreatives)
+      .where(and(eq(adCreatives.id, creativeId), eq(adCreatives.userId, userId)))
+      .limit(1);
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Creative not found' });
+    }
+
+    const statusMap: Record<string, string> = {
+      refresh: 'active',
+      pause: 'paused',
+      resume: 'active',
+      archive: 'archived',
+    };
+
+    const newStatus = statusMap[action] ?? existing.status ?? 'active';
+
+    const performanceUpdate = action === 'refresh'
+      ? { ...((existing.performance as Record<string, any>) ?? {}), fatigueResetAt: new Date().toISOString() }
+      : existing.performance;
+
+    const [updated] = await db
+      .update(adCreatives)
+      .set({ status: newStatus, performance: performanceUpdate })
+      .where(and(eq(adCreatives.id, creativeId), eq(adCreatives.userId, userId)))
+      .returning();
+
+    return res.json({
+      creative: updated,
+      message: `Creative ${action === 'refresh' ? 'refreshed' : action + 'd'} successfully`,
+    });
+  } catch (error) {
+    logger.warn({ err: error }, 'Failed to update creative:');
+    return res.status(500).json({ error: 'Failed to update creative' });
+  }
+});
+
 router.get('/bidding-strategies', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;

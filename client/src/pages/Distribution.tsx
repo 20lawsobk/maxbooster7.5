@@ -1260,6 +1260,8 @@ export default function Distribution() {
         isExplicit: false,
         iTunesPricing: 'standard',
         collaborators: [],
+        rightsConfirmed: false,
+        contentOriginal: false,
       });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
       invalidateOnDistributionChange();
