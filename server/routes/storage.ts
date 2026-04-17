@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import { randomUUID } from 'crypto';
 import { storageService } from '../services/storageService.js';
 import { hybridStorageService } from '../services/hybridStorageService.js';
@@ -143,28 +143,17 @@ function cleanupChunks(fileId: string): void {
   chunkUploads.delete(fileId);
 }
 
-const storage = multer.memoryStorage();
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: MAX_FILE_SIZE,
-  },
-  fileFilter: (_req, file, cb) => {
-    const allowedTypes = [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES];
-    if (allowedTypes.includes(file.mimetype) || file.mimetype.startsWith('audio/') || file.mimetype.startsWith('image/')) {
-      cb(null, true);
-    } else {
-      cb(new Error(`File type ${file.mimetype} not supported`));
-    }
-  },
+const upload = createHardenedUpload({
+  maxFileSize: MAX_FILE_SIZE,
+  maxFiles: 1,
+  allowedMimes: [...ALLOWED_AUDIO_TYPES, ...ALLOWED_IMAGE_TYPES, ...ALLOWED_VIDEO_TYPES],
+  label: 'storage upload',
 });
 
-const chunkUpload = multer({
-  storage,
-  limits: {
-    fileSize: MAX_CHUNK_SIZE,
-  },
+const chunkUpload = createHardenedUpload({
+  maxFileSize: MAX_CHUNK_SIZE,
+  maxFiles: 1,
+  label: 'storage chunk',
 });
 
 router.post('/upload', requireAuth, upload.single('file'), async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
@@ -33,26 +33,14 @@ const ALLOWED_IMAGE_MIMES = new Set([
   'image/jpeg', 'image/png', 'image/webp', 'image/gif',
 ]);
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 200 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.fieldname === 'audioFile') {
-      if (ALLOWED_AUDIO_MIMES.has(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error(`Invalid audio file type: ${file.mimetype}. Allowed: mp3, wav, flac, aiff, ogg, aac, m4a`));
-      }
-    } else if (file.fieldname === 'coverArt') {
-      if (ALLOWED_IMAGE_MIMES.has(file.mimetype)) {
-        cb(null, true);
-      } else {
-        cb(new Error(`Invalid image file type: ${file.mimetype}. Allowed: jpeg, png, webp, gif`));
-      }
-    } else {
-      cb(null, true);
-    }
+const upload = createHardenedUpload({
+  maxFileSize: 200 * 1024 * 1024,
+  maxFiles: 5,
+  perFieldMimes: {
+    audioFile: Array.from(ALLOWED_AUDIO_MIMES),
+    coverArt: Array.from(ALLOWED_IMAGE_MIMES),
   },
+  label: 'marketplace upload',
 });
 
 const purchaseSchema = z.object({

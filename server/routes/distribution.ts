@@ -18,7 +18,7 @@ import { releaseWorkflowService, type TakedownReason } from '../services/release
 import { audioFingerprintService, type DuplicateCheckResult } from '../services/audioFingerprint';
 import { logger } from '../logger';
 import { notificationService } from '../services/notificationService.js';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -85,12 +85,39 @@ interface PayoutRecord {
 
 const router = Router();
 
-// Configure multer for audio and artwork uploads — memory storage, routed to Pocket Dimension
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 200 * 1024 * 1024, // 200MB
+// Per-field uploader — supports BOTH audio/artwork (release/QC/fingerprint flows)
+// AND data-import payloads (CSV/JSON/XML/XLSX/PDF) used by transfer & earnings imports.
+// We pick the allowlist at filter time based on multer's field name so each route
+// gets exactly the MIME profile it needs without a second uploader instance.
+const AUDIO_MIMES = [
+  'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave',
+  'audio/flac', 'audio/x-flac', 'audio/aiff', 'audio/x-aiff',
+  'audio/ogg', 'audio/opus', 'audio/x-opus', 'audio/aac', 'audio/x-aac',
+  'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/webm',
+];
+const IMAGE_MIMES = ['image/jpeg', 'image/png', 'image/webp'];
+const DATA_IMPORT_MIMES = [
+  'text/csv', 'application/csv',
+  'text/tab-separated-values',
+  'application/json',
+  'application/xml', 'text/xml',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/zip', 'application/x-zip-compressed',
+  'application/pdf',
+];
+
+const upload = createHardenedUpload({
+  maxFileSize: 200 * 1024 * 1024, // 200MB
+  maxFiles: 10,
+  perFieldMimes: {
+    audio: AUDIO_MIMES,
+    headerImage: IMAGE_MIMES,
+    artwork: IMAGE_MIMES,
+    file: DATA_IMPORT_MIMES,        // /transfer/validate, /transfer/import
+    statement: DATA_IMPORT_MIMES,   // /earnings/import
   },
+  label: 'distribution',
 });
 
 // Validation schemas
@@ -2428,14 +2455,18 @@ router.post('/register-codes', requireAuth, async (req: Request, res: Response) 
 
 import { catalogImporter } from '../services/catalogImporter';
 
-const catalogUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
+const catalogUpload = createHardenedUpload({
+  maxFileSize: 50 * 1024 * 1024,
+  maxFiles: 1,
+  allowedExtensions: ['.csv', '.tsv', '.json', '.xml', '.xlsx', '.xls', '.zip'],
+  label: 'catalog import',
 });
 
-const releaseUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
+const releaseUpload = createHardenedUpload({
+  maxFileSize: 500 * 1024 * 1024,
+  maxFiles: 200, // generous cap for full-album releases (audio + per-track artwork + booklet)
+  allowedMimes: [...AUDIO_MIMES, ...IMAGE_MIMES],
+  label: 'release upload',
 });
 
 // POST /api/distribution/catalog/import - Start catalog import from file

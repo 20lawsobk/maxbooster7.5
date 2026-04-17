@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 import { unifiedAIController } from '../services/unifiedAIController.js';
@@ -7,20 +6,19 @@ import { storage } from '../storage.js';
 import { notificationService } from '../services/notificationService.js';
 import { pythonAIService } from '../services/pythonAIService.js';
 import { renderVideo as renderAdvancedVideo } from '../services/advancedVideoRendererService.js';
-import { storeUploadedFile, handleUploadError } from '../middleware/uploadHandler.js';
+import { storeUploadedFile, handleUploadError, createHardenedUpload } from '../middleware/uploadHandler.js';
 import { db } from '../db.js';
 import { eq, desc, sql, and, isNotNull } from 'drizzle-orm';
 import { adCampaigns, adCreatives, systemSettings } from '@shared/schema';
 import { aiModelManager } from '../services/aiModelManager.js';
 import { autopilotEngine } from '../autopilot-engine.js';
 
-const imageUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  },
+const imageUpload = createHardenedUpload({
+  maxFileSize: 10 * 1024 * 1024,
+  maxFiles: 1,
+  allowedMimes: ['image/jpeg', 'image/png', 'image/webp', 'image/gif'],
+  allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.gif'],
+  label: 'advertising image',
 });
 
 interface AuthenticatedRequest extends Request {

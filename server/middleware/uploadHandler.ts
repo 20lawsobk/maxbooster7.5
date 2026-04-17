@@ -167,6 +167,157 @@ export const mediaUpload = multer({
   },
 });
 
+/**
+ * Factory that builds a hardened multer instance with the same safety floor as
+ * the canonical exports above:
+ *   - memoryStorage (no temp files)
+ *   - SVG always rejected (XSS / SSRF risk)
+ *   - extension + MIME cross-check when allowedMimes is provided
+ *   - sanitized error messages
+ *
+ * Use this in route files instead of calling `multer({...})` directly so every
+ * upload path on the platform shares one security profile.
+ */
+export interface HardenedUploadOptions {
+  /** Maximum size per file, in bytes. */
+  maxFileSize: number;
+  /** Maximum number of files in a single request. Defaults to 1. */
+  maxFiles?: number;
+  /** If provided, only these MIME types are accepted. */
+  allowedMimes?: readonly string[];
+  /** If provided, only these extensions (lowercased, with leading dot) are accepted. */
+  allowedExtensions?: readonly string[];
+  /**
+   * Optional per-field allowlist mapping multer field name -> allowed MIME types.
+   * Useful for endpoints that accept (e.g.) audio in one field and image in another.
+   */
+  perFieldMimes?: Record<string, readonly string[]>;
+  /** Human-readable label used in error messages, e.g. "audio", "artwork". */
+  label?: string;
+}
+
+/**
+ * Canonical MIME → allowed extensions map used for the pairwise cross-check
+ * inside `createHardenedUpload`. If a MIME type is not present here it is
+ * considered "extension-agnostic" (accepted with any extension that also
+ * appears in the route's `allowedExtensions`, if any).
+ */
+const MIME_EXT_MAP: Record<string, readonly string[]> = {
+  // Images
+  'image/jpeg': ['.jpg', '.jpeg'],
+  'image/png': ['.png'],
+  'image/webp': ['.webp'],
+  'image/gif': ['.gif'],
+  // Audio
+  'audio/mpeg': ['.mp3'],
+  'audio/mp3': ['.mp3'],
+  'audio/wav': ['.wav'],
+  'audio/x-wav': ['.wav'],
+  'audio/wave': ['.wav'],
+  'audio/flac': ['.flac'],
+  'audio/x-flac': ['.flac'],
+  'audio/aiff': ['.aiff', '.aif'],
+  'audio/x-aiff': ['.aiff', '.aif'],
+  'audio/ogg': ['.ogg', '.oga'],
+  'audio/opus': ['.opus'],
+  'audio/x-opus': ['.opus'],
+  'audio/aac': ['.aac'],
+  'audio/x-aac': ['.aac'],
+  'audio/mp4': ['.m4a', '.mp4'],
+  'audio/x-m4a': ['.m4a'],
+  'audio/m4a': ['.m4a'],
+  'audio/webm': ['.webm'],
+  // Documents
+  'application/pdf': ['.pdf'],
+  'text/csv': ['.csv'],
+  'application/csv': ['.csv'],
+  'text/tab-separated-values': ['.tsv'],
+  'application/json': ['.json'],
+  'application/xml': ['.xml'],
+  'text/xml': ['.xml'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+  'application/vnd.ms-excel': ['.xls'],
+  'application/zip': ['.zip'],
+  'application/x-zip-compressed': ['.zip'],
+  'application/octet-stream': [], // intentionally empty — too generic to trust
+};
+
+export function createHardenedUpload(options: HardenedUploadOptions) {
+  const {
+    maxFileSize,
+    maxFiles = 1,
+    allowedMimes,
+    allowedExtensions,
+    perFieldMimes,
+    label = 'file',
+  } = options;
+
+  /** Pairwise MIME ↔ extension consistency check. */
+  const mimeMatchesExt = (mime: string, ext: string): boolean => {
+    const expected = MIME_EXT_MAP[mime];
+    if (!expected) return true; // unknown MIME: defer to allowedExtensions list
+    if (expected.length === 0) return false; // explicitly untrustworthy MIME
+    return expected.includes(ext);
+  };
+
+  const fileFilter = (
+    _req: Request,
+    file: Express.Multer.File,
+    cb: multer.FileFilterCallback,
+  ) => {
+    const ext = path.extname(file.originalname || '').toLowerCase();
+
+    if (ext === '.svg' || file.mimetype === 'image/svg+xml') {
+      cb(new Error(`SVG files are not allowed (${label})`));
+      return;
+    }
+
+    if (allowedExtensions && !allowedExtensions.includes(ext)) {
+      cb(new Error(`Invalid ${label} extension "${ext || '<none>'}". Allowed: ${allowedExtensions.join(', ')}`));
+      return;
+    }
+
+    if (perFieldMimes) {
+      const fieldAllowed = perFieldMimes[file.fieldname];
+      if (!fieldAllowed) {
+        cb(new Error(`Unexpected upload field "${file.fieldname}"`));
+        return;
+      }
+      if (!fieldAllowed.includes(file.mimetype)) {
+        cb(new Error(`Invalid type "${file.mimetype}" for ${file.fieldname}. Allowed: ${fieldAllowed.join(', ')}`));
+        return;
+      }
+      if (!mimeMatchesExt(file.mimetype, ext)) {
+        cb(new Error(`Extension "${ext}" does not match declared type "${file.mimetype}" (${file.fieldname})`));
+        return;
+      }
+      cb(null, true);
+      return;
+    }
+
+    if (allowedMimes && !allowedMimes.includes(file.mimetype)) {
+      cb(new Error(`Invalid ${label} type "${file.mimetype}". Allowed: ${allowedMimes.join(', ')}`));
+      return;
+    }
+
+    if (allowedMimes && !mimeMatchesExt(file.mimetype, ext)) {
+      cb(new Error(`Extension "${ext}" does not match declared type "${file.mimetype}" (${label})`));
+      return;
+    }
+
+    cb(null, true);
+  };
+
+  return multer({
+    storage: memoryStorage,
+    fileFilter,
+    limits: {
+      fileSize: maxFileSize,
+      files: maxFiles,
+    },
+  });
+}
+
 export const documentUpload = multer({
   storage: memoryStorage,
   limits: {

@@ -7,14 +7,15 @@
 
 import { Router, Request, Response } from 'express';
 import { hybridStorageService, StorageTier, StorageLocation } from '../services/hybridStorageService.js';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 100 * 1024 * 1024 } // 100MB max
+const upload = createHardenedUpload({
+  maxFileSize: 100 * 1024 * 1024, // 100MB max
+  maxFiles: 1,
+  label: 'hybrid storage file',
 });
 
 /**

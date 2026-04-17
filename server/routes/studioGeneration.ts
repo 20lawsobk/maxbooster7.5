@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import { randomBytes } from 'crypto';
 import { generateFromText, generateFromReference } from '../services/aiAudioGeneratorService.js';
 import { melodyPatternService, GenerationParams } from '../services/melodyPatternService';
@@ -48,16 +48,17 @@ async function persistGeneratedSample(opts: {
 
 const router = Router();
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 50 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('audio/')) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only audio files are allowed'));
-    }
-  },
+const upload = createHardenedUpload({
+  maxFileSize: 50 * 1024 * 1024,
+  maxFiles: 1,
+  allowedMimes: [
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave',
+    'audio/flac', 'audio/x-flac', 'audio/aiff', 'audio/x-aiff',
+    'audio/ogg', 'audio/opus', 'audio/x-opus', 'audio/aac', 'audio/x-aac',
+    'audio/mp4', 'audio/x-m4a', 'audio/m4a', 'audio/webm',
+  ],
+  allowedExtensions: ['.mp3', '.wav', '.flac', '.aiff', '.aif', '.ogg', '.opus', '.aac', '.m4a', '.webm'],
+  label: 'studio audio',
 });
 
 const textGenerationSchema = z.object({

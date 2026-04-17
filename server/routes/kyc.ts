@@ -1,21 +1,16 @@
 import { Router } from 'express';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import { kycService } from '../services/kycService.js';
 import { storageService } from '../services/storageService.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (allowedTypes.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Invalid file type. Only JPG, PNG, and PDF are allowed.'));
-    }
-  },
+const upload = createHardenedUpload({
+  maxFileSize: 10 * 1024 * 1024,
+  maxFiles: 1,
+  allowedMimes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
+  allowedExtensions: ['.jpg', '.jpeg', '.png', '.pdf'],
+  label: 'KYC document',
 });
 
 const router = Router();

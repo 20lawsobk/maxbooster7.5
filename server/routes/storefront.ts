@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import { storefrontService } from '../services/storefrontService';
 import { hybridStorageService } from '../services/hybridStorageService';
@@ -35,17 +35,12 @@ const dnsPromises = dns.promises;
 const PLATFORM_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 
 
-const upload = multer({ 
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
-  fileFilter: (req, file, cb) => {
-    const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (allowed.includes(file.mimetype)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only JPEG, PNG, GIF, and WebP images are allowed'));
-    }
-  }
+const upload = createHardenedUpload({
+  maxFileSize: 200 * 1024 * 1024, // 200MB
+  maxFiles: 1,
+  allowedMimes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
+  allowedExtensions: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
+  label: 'storefront image',
 });
 
 const router = Router();
@@ -1498,17 +1493,15 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
   }
 });
 
-const tierAudioUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB
-  fileFilter: (req, file, cb) => {
-    const allowed = ['audio/mpeg', 'audio/wav', 'audio/x-wav', 'audio/flac', 'audio/aiff', 'audio/x-aiff', 'audio/mp3'];
-    if (allowed.includes(file.mimetype) || file.originalname.match(/\.(mp3|wav|flac|aiff|aif)$/i)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Only MP3, WAV, FLAC, and AIFF audio files are allowed'));
-    }
-  }
+const tierAudioUpload = createHardenedUpload({
+  maxFileSize: 200 * 1024 * 1024, // 200MB
+  maxFiles: 1,
+  allowedMimes: [
+    'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave',
+    'audio/flac', 'audio/x-flac', 'audio/aiff', 'audio/x-aiff',
+  ],
+  allowedExtensions: ['.mp3', '.wav', '.flac', '.aiff', '.aif'],
+  label: 'storefront tier audio',
 });
 
 router.post('/:storefrontId/listings/:listingId/tier-audio', tierAudioUpload.single('audioFile'), async (req, res) => {

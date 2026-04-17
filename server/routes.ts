@@ -28,8 +28,7 @@ const authenticator = {
 };
 import QRCode from "qrcode";
 import { emailService } from "./services/emailService.js";
-import { upload } from "./middleware/uploadHandler.js";
-import multer from "multer";
+import { upload, createHardenedUpload } from "./middleware/uploadHandler.js";
 import { logger } from './logger.js';
 import { achievementService } from './services/achievementService.js';
 import { notificationService } from './services/notificationService.js';
@@ -3942,9 +3941,10 @@ export async function registerRoutes(
   // chunks and upload each one independently, then reassemble here.
   // Chunks are stored in /tmp during assembly then moved to Object Storage.
 
-  const chunkUpload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: 6 * 1024 * 1024 }, // 6 MB safety ceiling per chunk
+  const chunkUpload = createHardenedUpload({
+    maxFileSize: 6 * 1024 * 1024, // 6 MB safety ceiling per chunk
+    maxFiles: 1,
+    label: 'upload chunk',
   });
 
   // POST /api/uploads/chunk

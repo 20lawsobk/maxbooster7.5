@@ -3,7 +3,7 @@ import { db } from '../db.js';
 import { userStorage, userStorageFiles } from '../../shared/schema.js';
 import { eq, and, desc, sql, like, isNull, isNotNull, lt } from 'drizzle-orm';
 import { storageService } from '../services/storageService.js';
-import multer from 'multer';
+import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import crypto from 'crypto';
 import { logger } from '../logger.js';
@@ -14,11 +14,10 @@ const transcodeJobs = new Map<string, { startedAt: number; estimatedDurationMs: 
 
 const router = Router();
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: {
-    fileSize: 500 * 1024 * 1024,
-  },
+const upload = createHardenedUpload({
+  maxFileSize: 500 * 1024 * 1024,
+  maxFiles: 10,
+  label: 'file',
 });
 
 function formatBytes(bytes: number): string {
