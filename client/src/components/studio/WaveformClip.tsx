@@ -58,6 +58,7 @@ export function WaveformClip({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [localWaveformData, setLocalWaveformData] = useState<number[]>([]);
+  const [localMinData, setLocalMinData] = useState<number[]>([]);
   const [isResizing, setIsResizing] = useState<'left' | 'right' | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -91,29 +92,33 @@ export function WaveformClip({
     if (audioBuffer) {
       const renderWidth = Math.max(Math.floor(calculatedWidth), 100);
       const channelData = audioBuffer.getChannelData(0);
-      const samplesPerPixel = Math.floor(channelData.length / renderWidth);
-      const peaks: number[] = [];
+      const samplesPerPixel = Math.max(1, Math.floor(channelData.length / renderWidth));
+      const maxPeaks: number[] = [];
+      const minPeaks: number[] = [];
 
       for (let i = 0; i < renderWidth; i++) {
         const start = i * samplesPerPixel;
         const end = Math.min(start + samplesPerPixel, channelData.length);
         let max = 0;
+        let min = 0;
 
         for (let j = start; j < end; j++) {
-          const abs = Math.abs(channelData[j]);
-          if (abs > max) max = abs;
+          if (channelData[j] > max) max = channelData[j];
+          if (channelData[j] < 0 && -channelData[j] > min) min = -channelData[j];
         }
 
-        peaks.push(max);
+        maxPeaks.push(max);
+        minPeaks.push(min);
       }
 
-      setLocalWaveformData(peaks);
+      setLocalWaveformData(maxPeaks);
+      setLocalMinData(minPeaks);
     } else if (audioUrl) {
       const abortController = new AbortController();
       
       const loadAudioAndGenerateWaveform = async () => {
         try {
-          const { generateWaveformPeaks, getSharedAudioContext } = await import('@/hooks/useAudioContext');
+          const { generateWaveformPeaksPair, getSharedAudioContext } = await import('@/hooks/useAudioContext');
           
           const ctx = getSharedAudioContext();
           let audioContext: AudioContext;
@@ -138,8 +143,9 @@ export function WaveformClip({
           
           const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
           const renderWidth = Math.max(Math.floor(calculatedWidth), Math.floor(width), 100);
-          const peaks = generateWaveformPeaks(decodedBuffer, renderWidth);
-          setLocalWaveformData(peaks);
+          const { maxPeaks, minPeaks } = generateWaveformPeaksPair(decodedBuffer, renderWidth);
+          setLocalWaveformData(maxPeaks);
+          setLocalMinData(minPeaks);
           
           if (shouldClose) {
             audioContext.close();
@@ -153,6 +159,7 @@ export function WaveformClip({
             peaks.push(0.3);
           }
           setLocalWaveformData(peaks);
+          setLocalMinData(peaks);
         }
       };
 
@@ -228,88 +235,62 @@ export function WaveformClip({
     const centerY = height / 2;
     const maxAmplitude = consolidatedWaveform ? height * 0.48 : height * 0.45;
 
+    const dataPointsNeeded = Math.max(localWaveformData.length, Math.floor(renderWidth));
+    const resampledMax = localWaveformData.length < dataPointsNeeded
+      ? resampleWaveform(localWaveformData, dataPointsNeeded)
+      : localWaveformData;
+    // Use real min peaks when available; fall back to max (symmetric) for external waveformData
+    const hasMinData = localMinData.length === localWaveformData.length;
+    const resampledMin = hasMinData
+      ? (localMinData.length < dataPointsNeeded ? resampleWaveform(localMinData, dataPointsNeeded) : localMinData)
+      : resampledMax;
+
+    const applyFade = (amplitude: number, x: number): number => {
+      let a = amplitude;
+      if (showFades && fadeInTime > 0) {
+        const fadeInWidth = (fadeInTime / duration) * renderWidth;
+        if (x < fadeInWidth) a *= x / fadeInWidth;
+      }
+      if (showFades && fadeOutTime > 0) {
+        const fadeOutStart = renderWidth - (fadeOutTime / duration) * renderWidth;
+        if (x > fadeOutStart) a *= (renderWidth - x) / (renderWidth - fadeOutStart);
+      }
+      return a;
+    };
+
+    // ── Filled body ────────────────────────────────────────────────────────────
     ctx.beginPath();
     ctx.moveTo(0, centerY);
 
-    const dataPointsNeeded = Math.max(localWaveformData.length, Math.floor(renderWidth));
-    const resampledData = localWaveformData.length < dataPointsNeeded 
-      ? resampleWaveform(localWaveformData, dataPointsNeeded)
-      : localWaveformData;
-
-    for (let i = 0; i < resampledData.length; i++) {
-      const x = (i / resampledData.length) * renderWidth;
-      let amplitude = resampledData[i] * maxAmplitude;
-
-      if (showFades && fadeInTime > 0) {
-        const fadeInWidth = (fadeInTime / duration) * renderWidth;
-        if (x < fadeInWidth) {
-          amplitude *= x / fadeInWidth;
-        }
-      }
-
-      if (showFades && fadeOutTime > 0) {
-        const fadeOutStart = renderWidth - (fadeOutTime / duration) * renderWidth;
-        if (x > fadeOutStart) {
-          amplitude *= (renderWidth - x) / (renderWidth - fadeOutStart);
-        }
-      }
-
-      ctx.lineTo(x, centerY - amplitude);
+    // Forward pass — top edge (positive / max peaks)
+    for (let i = 0; i < resampledMax.length; i++) {
+      const x = (i / resampledMax.length) * renderWidth;
+      ctx.lineTo(x, centerY - applyFade(resampledMax[i] * maxAmplitude, x));
     }
 
-    for (let i = resampledData.length - 1; i >= 0; i--) {
-      const x = (i / resampledData.length) * renderWidth;
-      let amplitude = resampledData[i] * maxAmplitude;
-
-      if (showFades && fadeInTime > 0) {
-        const fadeInWidth = (fadeInTime / duration) * renderWidth;
-        if (x < fadeInWidth) {
-          amplitude *= x / fadeInWidth;
-        }
-      }
-
-      if (showFades && fadeOutTime > 0) {
-        const fadeOutStart = renderWidth - (fadeOutTime / duration) * renderWidth;
-        if (x > fadeOutStart) {
-          amplitude *= (renderWidth - x) / (renderWidth - fadeOutStart);
-        }
-      }
-
-      ctx.lineTo(x, centerY + amplitude);
+    // Backward pass — bottom edge (negative / min peaks for true asymmetry)
+    for (let i = resampledMin.length - 1; i >= 0; i--) {
+      const x = (i / resampledMin.length) * renderWidth;
+      ctx.lineTo(x, centerY + applyFade(resampledMin[i] * maxAmplitude, x));
     }
 
     ctx.closePath();
     ctx.fill();
 
+    // ── Outline stroke along top edge ─────────────────────────────────────────
     ctx.strokeStyle = muted ? 'rgba(120, 120, 120, 0.9)' : color;
     ctx.lineWidth = consolidatedWaveform ? 1.5 : 1;
     ctx.beginPath();
     ctx.moveTo(0, centerY);
 
-    for (let i = 0; i < resampledData.length; i++) {
-      const x = (i / resampledData.length) * renderWidth;
-      let amplitude = resampledData[i] * maxAmplitude;
-
-      if (showFades && fadeInTime > 0) {
-        const fadeInWidth = (fadeInTime / duration) * renderWidth;
-        if (x < fadeInWidth) {
-          amplitude *= x / fadeInWidth;
-        }
-      }
-
-      if (showFades && fadeOutTime > 0) {
-        const fadeOutStart = renderWidth - (fadeOutTime / duration) * renderWidth;
-        if (x > fadeOutStart) {
-          amplitude *= (renderWidth - x) / (renderWidth - fadeOutStart);
-        }
-      }
-
-      ctx.lineTo(x, centerY - amplitude);
+    for (let i = 0; i < resampledMax.length; i++) {
+      const x = (i / resampledMax.length) * renderWidth;
+      ctx.lineTo(x, centerY - applyFade(resampledMax[i] * maxAmplitude, x));
     }
 
     ctx.stroke();
 
-  }, [localWaveformData, calculatedWidth, height, color, muted, showFades, fadeInTime, fadeOutTime, duration, showGridLines, barWidth, beatWidth, consolidatedWaveform]);
+  }, [localWaveformData, localMinData, calculatedWidth, height, color, muted, showFades, fadeInTime, fadeOutTime, duration, showGridLines, barWidth, beatWidth, consolidatedWaveform]);
 
   const resampleWaveform = (data: number[], targetLength: number): number[] => {
     if (data.length === 0) return [];

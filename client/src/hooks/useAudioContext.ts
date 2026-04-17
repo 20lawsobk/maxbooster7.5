@@ -265,6 +265,39 @@ export function generateWaveformPeaks(
   return peaks;
 }
 
+/**
+ * Like generateWaveformPeaks but returns interleaved [maxPeak, minPeak, maxPeak, minPeak …]
+ * so callers can draw proper asymmetric DAW waveforms.
+ * max = highest positive sample in segment (0–1)
+ * min = absolute value of most-negative sample in segment (0–1)
+ */
+export function generateWaveformPeaksPair(
+  audioBuffer: AudioBuffer,
+  targetWidth: number
+): { maxPeaks: number[]; minPeaks: number[] } {
+  const channelData = audioBuffer.getChannelData(0);
+  const samplesPerPixel = Math.max(1, Math.floor(channelData.length / targetWidth));
+  const maxPeaks: number[] = [];
+  const minPeaks: number[] = [];
+
+  for (let i = 0; i < targetWidth; i++) {
+    const start = i * samplesPerPixel;
+    const end = Math.min(start + samplesPerPixel, channelData.length);
+    let max = 0;
+    let min = 0;
+
+    for (let j = start; j < end; j++) {
+      if (channelData[j] > max) max = channelData[j];
+      if (channelData[j] < 0 && -channelData[j] > min) min = -channelData[j];
+    }
+
+    maxPeaks.push(max);
+    minPeaks.push(min);
+  }
+
+  return { maxPeaks, minPeaks };
+}
+
 export function useAudioContext() {
   const [state, setState] = useState<AudioContextState>({
     context: null,

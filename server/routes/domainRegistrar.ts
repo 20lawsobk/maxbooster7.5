@@ -15,7 +15,7 @@
 import { Router } from 'express';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { db, pool } from '../db.js';
-import { claimedDomains } from '@shared/schema';
+import { claimedDomains, storefronts } from '@shared/schema';
 import { logger } from '../logger.js';
 import {
   checkDomainAvailability,
@@ -164,7 +164,22 @@ router.post('/claim', async (req, res) => {
       })
       .returning();
 
-    // 2. Auto-create a DNS zone for this domain (idempotent)
+    // 2. If a storefront was specified AND this domain is immediately active
+    //    (platform subdomain), push custom_domain into the storefront row so
+    //    the storefront URL shows the claimed domain right away.
+    if (storefrontId && status === 'active') {
+      try {
+        await db
+          .update(storefronts)
+          .set({ customDomain: domainLower, isCustomDomainActive: true })
+          .where(eq(storefronts.id, storefrontId));
+        logger.info({ domain: domainLower, storefrontId }, '[domainRegistrar] storefront custom_domain activated');
+      } catch (sfErr: any) {
+        logger.warn({ err: sfErr, storefrontId }, '[domainRegistrar] storefront custom_domain update failed (non-fatal)');
+      }
+    }
+
+    // 3. Auto-create a DNS zone for this domain (idempotent)
     try {
       const existingZone = await pool.query(
         'SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1',
