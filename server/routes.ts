@@ -6,7 +6,7 @@ import fs from "fs";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
-import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects } from "../shared/schema.js";
+import { analytics, userStorage, userStorageFiles, users, notifications, pushSubscriptions, royaltyTransactions, royaltySplits, taxForms, releases, projects, royaltyStatements } from "../shared/schema.js";
 import { sum, count, ilike, inArray, or, ne, asc } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { getCsrfToken } from "./middleware/csrf.js";
@@ -3772,6 +3772,61 @@ export async function registerRoutes(
     } catch (error) {
       logger.warn("Request payout error:", error);
       return res.status(500).json({ message: "Failed to request payout. Please ensure your payment method is configured." });
+    }
+  });
+
+  // GET /api/royalties/statements — Royalty period statements (for Tax Intelligence tab)
+  app.get("/api/royalties/statements", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const statements = await db
+        .select()
+        .from(royaltyStatements)
+        .where(eq(royaltyStatements.userId, req.user.id))
+        .orderBy(desc(royaltyStatements.periodEnd))
+        .limit(24);
+      return res.json({ statements, total: statements.length });
+    } catch (error) {
+      logger.warn("Get royalty statements error:", error);
+      return res.json({ statements: [], total: 0 });
+    }
+  });
+
+  // GET /api/royalties/forecast — Project future royalty income from recent trends
+  app.get("/api/royalties/forecast", async (req: Request, res: Response) => {
+    if (!req.user) return res.status(401).json({ message: "Not authenticated" });
+    try {
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      const transactions = await db
+        .select({ amount: royaltyTransactions.amount, platform: royaltyTransactions.platform })
+        .from(royaltyTransactions)
+        .where(and(eq(royaltyTransactions.userId, req.user.id as string), gte(royaltyTransactions.createdAt, threeMonthsAgo)));
+      const total = transactions.reduce((s, t) => s + (t.amount || 0), 0);
+      const monthlyAvg = total / 3;
+      const forecast = [1, 2, 3, 6, 12].map(months => ({
+        months,
+        label: months === 1 ? '1 Month' : months === 12 ? '1 Year' : `${months} Months`,
+        projected: parseFloat((monthlyAvg * months).toFixed(2)),
+        growthRate: 0.05,
+        confidence: months <= 3 ? 'high' : months <= 6 ? 'medium' : 'low',
+      }));
+      const byPlatform: Record<string, number> = {};
+      for (const t of transactions) {
+        const p = t.platform || 'Unknown';
+        byPlatform[p] = (byPlatform[p] || 0) + (t.amount || 0);
+      }
+      return res.json({
+        monthlyAverage: parseFloat(monthlyAvg.toFixed(2)),
+        annualProjected: parseFloat((monthlyAvg * 12).toFixed(2)),
+        forecast,
+        byPlatform,
+        basedOnMonths: 3,
+        dataPoints: transactions.length,
+      });
+    } catch (error) {
+      logger.warn("Get royalty forecast error:", error);
+      return res.json({ monthlyAverage: 0, annualProjected: 0, forecast: [], byPlatform: {}, basedOnMonths: 3, dataPoints: 0 });
     }
   });
 

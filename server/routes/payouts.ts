@@ -22,6 +22,32 @@ const router = Router();
 router.use(requireAuth);
 
 /**
+ * GET /api/payouts
+ * Root handler — returns payout summary (balance + recent history) for dashboard use
+ */
+router.get('/', async (req, res) => {
+  try {
+    if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
+    const [balance, history] = await Promise.all([
+      instantPayoutService.calculateAvailableBalance(req.user.id).catch(() => 0),
+      db.select().from(royaltyStatements)
+        .where(eq(royaltyStatements.userId, req.user.id))
+        .orderBy(desc(royaltyStatements.createdAt))
+        .limit(5)
+        .catch(() => []),
+    ]);
+    return res.json({
+      balance,
+      recentStatements: history,
+      currency: 'USD',
+    });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching payout summary:');
+    return res.json({ balance: 0, recentStatements: [], currency: 'USD' });
+  }
+});
+
+/**
  * GET /api/payouts/balance
  * Get user's available balance for payouts
  */

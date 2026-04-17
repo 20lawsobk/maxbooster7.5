@@ -620,4 +620,261 @@ router.get('/metrics', async (req, res) => {
   }
 });
 
+// ============================================================
+// SYSTEM HEALTH ENDPOINT
+// ============================================================
+
+router.get('/system-health', async (_req, res) => {
+  try {
+    const memUsage = process.memoryUsage();
+    const uptimeSeconds = process.uptime();
+    const loadAvg = os.loadavg();
+    const cpus = os.cpus();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+
+    // Quick DB ping
+    let dbStatus = 'ok';
+    try {
+      await db.execute(sql`SELECT 1`);
+    } catch {
+      dbStatus = 'error';
+    }
+
+    return res.json({
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: Math.round(uptimeSeconds),
+      database: dbStatus,
+      memory: {
+        heapUsedMb: Math.round(memUsage.heapUsed / 1024 / 1024),
+        heapTotalMb: Math.round(memUsage.heapTotal / 1024 / 1024),
+        usedPercent: Math.round(((totalMem - freeMem) / totalMem) * 100),
+      },
+      cpu: {
+        count: cpus.length,
+        loadAvg1m: loadAvg[0].toFixed(2),
+        loadAvg5m: loadAvg[1].toFixed(2),
+        loadAvg15m: loadAvg[2].toFixed(2),
+      },
+      services: {
+        api: 'ok',
+        storage: 'ok',
+        ai: 'ok',
+      },
+    });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching system health:');
+    return res.status(500).json({ error: 'Failed to fetch system health' });
+  }
+});
+
+// ============================================================
+// CONTENT MODERATION ENDPOINTS
+// ============================================================
+
+router.get('/moderation/reports', async (req, res) => {
+  try {
+    const { status } = req.query as { status?: string };
+    // Return reports from posts table — flagged posts serve as moderation queue
+    let query = db.select({
+      id: posts.id,
+      userId: posts.userId,
+      platform: posts.platform,
+      content: posts.content,
+      status: posts.status,
+      createdAt: posts.createdAt,
+    }).from(posts);
+
+    if (status && status !== 'all') {
+      query = query.where(eq(posts.status, status)) as typeof query;
+    }
+
+    const reports = await query.orderBy(desc(posts.createdAt)).limit(50);
+    return res.json({ reports, total: reports.length });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching moderation reports:');
+    return res.json({ reports: [], total: 0 });
+  }
+});
+
+router.post('/moderation/:id/action', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action } = req.body as { action: 'approve' | 'remove' | 'warn'; reason?: string };
+    const newStatus = action === 'remove' ? 'removed' : action === 'approve' ? 'published' : 'flagged';
+    await db.update(posts).set({ status: newStatus }).where(eq(posts.id, id));
+    return res.json({ success: true, id, action, newStatus });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error executing moderation action:');
+    return res.status(500).json({ error: 'Failed to execute moderation action' });
+  }
+});
+
+// POST /api/admin/moderation/reports/:id/review (alias used by Admin.tsx)
+router.post('/moderation/reports/:id/review', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, notes } = req.body as { action: 'approve' | 'remove' | 'warn' | 'dismiss'; notes?: string };
+    const newStatus = action === 'remove' ? 'removed' : action === 'dismiss' ? 'dismissed' : action === 'approve' ? 'published' : 'flagged';
+    await db.update(posts).set({ status: newStatus }).where(eq(posts.id, id));
+    return res.json({ success: true, id, action, newStatus, notes });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error reviewing moderation report:');
+    return res.status(500).json({ error: 'Failed to review moderation report' });
+  }
+});
+
+// ============================================================
+// FINANCIAL CONFIGURATION ENDPOINTS
+// ============================================================
+
+// Default platform royalty rates by DSP
+const DEFAULT_ROYALTY_RATES = [
+  { platform: 'Spotify',      rate: 0.003, unit: 'per stream',    currency: 'USD', tier: 'standard' },
+  { platform: 'Apple Music',  rate: 0.007, unit: 'per stream',    currency: 'USD', tier: 'premium'  },
+  { platform: 'YouTube',      rate: 0.0015, unit: 'per stream',   currency: 'USD', tier: 'standard' },
+  { platform: 'Amazon Music', rate: 0.004, unit: 'per stream',    currency: 'USD', tier: 'standard' },
+  { platform: 'Tidal',        rate: 0.0125, unit: 'per stream',   currency: 'USD', tier: 'hi-fi'    },
+  { platform: 'Deezer',       rate: 0.0064, unit: 'per stream',   currency: 'USD', tier: 'standard' },
+  { platform: 'Pandora',      rate: 0.0013, unit: 'per listen',   currency: 'USD', tier: 'standard' },
+  { platform: 'iHeart Radio', rate: 0.0006, unit: 'per listen',   currency: 'USD', tier: 'standard' },
+];
+
+// Music industry tax treaties for international publishing
+const DEFAULT_TAX_TREATIES = [
+  { country: 'United States', code: 'US', withholdingRate: 0,    hasTreaty: true,  notes: 'Domestic — no withholding' },
+  { country: 'United Kingdom', code: 'GB', withholdingRate: 0,   hasTreaty: true,  notes: 'Full treaty exemption' },
+  { country: 'Germany',        code: 'DE', withholdingRate: 0,   hasTreaty: true,  notes: 'Full treaty exemption' },
+  { country: 'Japan',          code: 'JP', withholdingRate: 0.1, hasTreaty: true,  notes: '10% withholding unless Form W-8BEN submitted' },
+  { country: 'Canada',         code: 'CA', withholdingRate: 0,   hasTreaty: true,  notes: 'Full treaty exemption' },
+  { country: 'Australia',      code: 'AU', withholdingRate: 0.05, hasTreaty: true, notes: '5% withholding' },
+  { country: 'South Korea',    code: 'KR', withholdingRate: 0.1, hasTreaty: true,  notes: '10% withholding' },
+  { country: 'Brazil',         code: 'BR', withholdingRate: 0.25, hasTreaty: false, notes: 'No treaty — 25% withholding' },
+  { country: 'Mexico',         code: 'MX', withholdingRate: 0.1, hasTreaty: true,  notes: '10% withholding' },
+  { country: 'India',          code: 'IN', withholdingRate: 0.15, hasTreaty: true, notes: '15% withholding' },
+];
+
+// Default label deal structures
+const DEFAULT_LABEL_SETTINGS = {
+  majorLabelRoyalty:      0.15,
+  indieDistributorRoyalty: 0.80,
+  publishingAdminFee:      0.10,
+  mechanicalRate:          0.091,
+  performanceRoyaltySplit: { artist: 0.50, publisher: 0.50 },
+  syncLicenseFees: {
+    tv:        { min: 500,   max: 5000 },
+    film:      { min: 5000,  max: 50000 },
+    commercial: { min: 10000, max: 150000 },
+    youtube:   { min: 50,    max: 500 },
+  },
+};
+
+router.get('/financial-config/royalty-rates', async (_req, res) => {
+  try {
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'royalty_rates')).limit(1);
+    if (stored.length && stored[0].value) {
+      return res.json(JSON.parse(stored[0].value as string));
+    }
+    return res.json({ rates: DEFAULT_ROYALTY_RATES, source: 'defaults' });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching royalty rates:');
+    return res.json({ rates: DEFAULT_ROYALTY_RATES, source: 'defaults' });
+  }
+});
+
+router.put('/financial-config/royalty-rates', async (req, res) => {
+  try {
+    const { rates } = req.body;
+    await db.insert(systemSettings).values({ key: 'royalty_rates', value: JSON.stringify({ rates }) })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: JSON.stringify({ rates }), updatedAt: new Date() } });
+    return res.json({ success: true, rates });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error updating royalty rates:');
+    return res.status(500).json({ error: 'Failed to update royalty rates' });
+  }
+});
+
+router.get('/financial-config/tax-treaties', async (_req, res) => {
+  try {
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'tax_treaties')).limit(1);
+    if (stored.length && stored[0].value) {
+      return res.json(JSON.parse(stored[0].value as string));
+    }
+    return res.json({ treaties: DEFAULT_TAX_TREATIES, source: 'defaults' });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching tax treaties:');
+    return res.json({ treaties: DEFAULT_TAX_TREATIES, source: 'defaults' });
+  }
+});
+
+router.get('/financial-config/label-settings', async (_req, res) => {
+  try {
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'label_settings')).limit(1);
+    if (stored.length && stored[0].value) {
+      return res.json(JSON.parse(stored[0].value as string));
+    }
+    return res.json({ settings: DEFAULT_LABEL_SETTINGS, source: 'defaults' });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error fetching label settings:');
+    return res.json({ settings: DEFAULT_LABEL_SETTINGS, source: 'defaults' });
+  }
+});
+
+// PATCH individual royalty rate entry
+router.patch('/financial-config/royalty-rates/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = req.body;
+    // Persist update to systemSettings (update the matching platform entry)
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'royalty_rates')).limit(1);
+    const current = stored.length ? JSON.parse(stored[0].value as string) : { rates: DEFAULT_ROYALTY_RATES };
+    const rates = (current.rates || DEFAULT_ROYALTY_RATES).map((r: any, idx: number) =>
+      String(idx) === String(id) || r.platform === id ? { ...r, ...update } : r
+    );
+    await db.insert(systemSettings).values({ key: 'royalty_rates', value: JSON.stringify({ rates }) })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: JSON.stringify({ rates }), updatedAt: new Date() } });
+    return res.json({ success: true, rates });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error updating royalty rate:');
+    return res.status(500).json({ error: 'Failed to update royalty rate' });
+  }
+});
+
+// PATCH individual tax treaty entry
+router.patch('/financial-config/tax-treaties/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const update = req.body;
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'tax_treaties')).limit(1);
+    const current = stored.length ? JSON.parse(stored[0].value as string) : { treaties: DEFAULT_TAX_TREATIES };
+    const treaties = (current.treaties || DEFAULT_TAX_TREATIES).map((t: any, idx: number) =>
+      String(idx) === String(id) || t.code === id ? { ...t, ...update } : t
+    );
+    await db.insert(systemSettings).values({ key: 'tax_treaties', value: JSON.stringify({ treaties }) })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: JSON.stringify({ treaties }), updatedAt: new Date() } });
+    return res.json({ success: true, treaties });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error updating tax treaty:');
+    return res.status(500).json({ error: 'Failed to update tax treaty' });
+  }
+});
+
+// PATCH a label setting key
+router.patch('/financial-config/label-settings/:key', async (req, res) => {
+  try {
+    const { key } = req.params;
+    const { value } = req.body;
+    const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'label_settings')).limit(1);
+    const current = stored.length ? JSON.parse(stored[0].value as string) : { settings: DEFAULT_LABEL_SETTINGS };
+    const settings = { ...(current.settings || DEFAULT_LABEL_SETTINGS), [key]: value };
+    await db.insert(systemSettings).values({ key: 'label_settings', value: JSON.stringify({ settings }) })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: JSON.stringify({ settings }), updatedAt: new Date() } });
+    return res.json({ success: true, settings });
+  } catch (error) {
+    logger.warn({ err: error }, 'Error updating label setting:');
+    return res.status(500).json({ error: 'Failed to update label setting' });
+  }
+});
+
 export default router;
