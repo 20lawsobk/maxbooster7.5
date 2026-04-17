@@ -13,6 +13,7 @@ import {
   Play, Square, Shield, Cpu, Activity, Zap, TrendingUp,
   AlertTriangle, CheckCircle, Clock, RefreshCw, FlaskConical,
   Radio, Globe, Music, BarChart3, PowerOff, Power, Loader2,
+  Wrench, Bug, HeartPulse, Server, Timer,
 } from 'lucide-react';
 
 const URGENCY_COLORS: Record<string, string> = {
@@ -119,6 +120,44 @@ export default function AdminAutonomy() {
   const stopAutonomous = useMutation({
     mutationFn: async () => (await apiRequest('POST', '/api/auto/social/stop', {})).json(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: autonomousKey }),
+  });
+
+  const chainFixerKey = ['/api/admin/chain-fixer/status'];
+  const platformFixerKey = ['/api/admin/platform-fixer/status'];
+  const selfHealingStatusKey = ['/api/security/self-healing/status'];
+  const selfHealingMetricsKey = ['/api/security/self-healing/metrics'];
+
+  const { data: chainFixerStatus, refetch: refetchChainFixer } = useQuery<any>({
+    queryKey: chainFixerKey,
+    refetchInterval: 15000,
+    enabled: !!user,
+  });
+  const { data: platformFixerStatus, refetch: refetchPlatformFixer } = useQuery<any>({
+    queryKey: platformFixerKey,
+    refetchInterval: 15000,
+    enabled: !!user,
+  });
+  const { data: selfHealingStatusData } = useQuery<any>({
+    queryKey: selfHealingStatusKey,
+    refetchInterval: 10000,
+    enabled: !!user,
+  });
+  const { data: selfHealingMetricsData } = useQuery<any>({
+    queryKey: selfHealingMetricsKey,
+    refetchInterval: 10000,
+    enabled: !!user,
+  });
+
+  const forceChainCheck = useMutation({
+    mutationFn: async () => (await apiRequest('POST', '/api/admin/chain-fixer/force-check', { message: 'Admin forced health check' })).json(),
+    onSuccess: () => { toast({ title: 'Health check complete' }); refetchChainFixer(); },
+    onError: () => toast({ title: 'Health check failed', variant: 'destructive' }),
+  });
+
+  const forcePlatformScan = useMutation({
+    mutationFn: async () => (await apiRequest('POST', '/api/admin/platform-fixer/scan')).json(),
+    onSuccess: () => { toast({ title: 'Platform scan triggered' }); refetchPlatformFixer(); },
+    onError: () => toast({ title: 'Scan failed', variant: 'destructive' }),
   });
 
   const killSwitchKey = ['/api/kill-switch/status'];
@@ -566,6 +605,201 @@ export default function AdminAutonomy() {
                     ))}
                   </ScrollArea>
                 )}
+              </CardContent>
+            </Card>
+
+          </div>
+
+          {/* Self-Healing & Auto-Fixer Systems */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+            {/* Self-Healing Security Engine */}
+            <Card className="border border-emerald-200 dark:border-emerald-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <HeartPulse className="w-4 h-4 text-emerald-600" />
+                  Self-Healing Security
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  10× faster than attacks · MTTD &lt;50ms P95
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const healStatus = selfHealingStatusData?.data ?? {};
+                  const metrics = selfHealingMetricsData?.data ?? {};
+                  const summary = metrics.summary ?? {};
+                  const latency = metrics.latencyMetrics ?? {};
+                  const isHealing = summary.isHealingFasterThanAttacks ?? false;
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Healing speed</span>
+                        <Badge className={isHealing ? 'bg-emerald-600 text-white text-xs' : 'bg-yellow-100 text-yellow-700 text-xs'}>
+                          {summary.healingSpeedRatio ?? '—'}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{summary.threatsDetected ?? 0}</div>
+                          <div className="text-muted-foreground">Detected</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{summary.threatsBlocked ?? 0}</div>
+                          <div className="text-muted-foreground">Blocked</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{latency.detection?.p95 ?? '—'}</div>
+                          <div className="text-muted-foreground">Detect P95</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{latency.response?.p95 ?? '—'}</div>
+                          <div className="text-muted-foreground">Respond P95</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className={`w-2 h-2 rounded-full shrink-0 ${healStatus.isRunning !== false ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+                        <span className="text-muted-foreground">
+                          {healStatus.isRunning !== false ? 'Active — intercepting all requests' : 'Inactive'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Blocked IPs: <span className="font-medium text-foreground">{healStatus.blockedIpCount ?? 0}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Chain Error Auto-Fixer */}
+            <Card className="border border-orange-200 dark:border-orange-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Bug className="w-4 h-4 text-orange-600" />
+                  Chain Error Auto-Fixer
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Reactive · intercepts every log error in real-time
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const cf = chainFixerStatus ?? {};
+                  const patterns: any[] = cf.patterns ?? [];
+                  const history: any[] = cf.history ?? [];
+                  const active = patterns.filter((p: any) => !p.suppressed && p.attempts > 0);
+                  const totalFixes = history.length;
+                  const successFixes = history.filter((h: any) => h.result === 'success').length;
+                  return (
+                    <>
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{patterns.length}</div>
+                          <div className="text-muted-foreground">Patterns</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{active.length}</div>
+                          <div className="text-muted-foreground">Active</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{totalFixes}</div>
+                          <div className="text-muted-foreground">Total Fixes</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-emerald-600">{successFixes}</div>
+                          <div className="text-muted-foreground">Succeeded</div>
+                        </div>
+                      </div>
+                      {history.length > 0 && (
+                        <ScrollArea className="h-20">
+                          <div className="space-y-1 pr-1">
+                            {[...history].reverse().slice(0, 5).map((h: any, i: number) => (
+                              <div key={i} className="flex items-center gap-1.5 text-xs">
+                                <span className={`shrink-0 ${h.result === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
+                                  {h.result === 'success' ? '✓' : '✗'}
+                                </span>
+                                <span className="truncate text-muted-foreground">{h.patternName}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => forceChainCheck.mutate()} disabled={forceChainCheck.isPending}>
+                        <RefreshCw className={`w-3 h-3 mr-1.5 ${forceChainCheck.isPending ? 'animate-spin' : ''}`} />
+                        {forceChainCheck.isPending ? 'Checking…' : 'Force Health Check'}
+                      </Button>
+                    </>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Platform Auto-Fixer */}
+            <Card className="border border-violet-200 dark:border-violet-900">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Wrench className="w-4 h-4 text-violet-600" />
+                  Platform Auto-Fixer
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  Proactive · probes all subsystems every 30s
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(() => {
+                  const pf = platformFixerStatus?.data ?? platformFixerStatus ?? {};
+                  const subsystems: any = pf.subsystems ?? {};
+                  const patches: any[] = pf.activePatches ?? [];
+                  const incidents: any[] = pf.incidents ?? [];
+                  const subsysNames = Object.keys(subsystems);
+                  const degraded = subsysNames.filter(s => subsystems[s]?.status === 'degraded' || subsystems[s]?.status === 'critical');
+                  const overallStatus = pf.overallStatus ?? 'unknown';
+                  return (
+                    <>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">Overall health</span>
+                        <Badge className={
+                          overallStatus === 'healthy' ? 'bg-emerald-100 text-emerald-700 text-xs' :
+                          overallStatus === 'degraded' ? 'bg-yellow-100 text-yellow-700 text-xs' :
+                          overallStatus === 'critical' ? 'bg-red-100 text-red-700 text-xs' :
+                          'bg-gray-100 text-gray-600 text-xs'
+                        }>
+                          {overallStatus}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2 text-xs">
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className="font-semibold text-foreground">{subsysNames.length}</div>
+                          <div className="text-muted-foreground">Subsystems</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className={`font-semibold ${patches.length > 0 ? 'text-violet-600' : 'text-foreground'}`}>{patches.length}</div>
+                          <div className="text-muted-foreground">Patches</div>
+                        </div>
+                        <div className="bg-slate-50 dark:bg-slate-800 rounded p-2">
+                          <div className={`font-semibold ${degraded.length > 0 ? 'text-yellow-600' : 'text-foreground'}`}>{degraded.length}</div>
+                          <div className="text-muted-foreground">Degraded</div>
+                        </div>
+                      </div>
+                      {patches.length > 0 && (
+                        <ScrollArea className="h-16">
+                          <div className="space-y-1 pr-1">
+                            {patches.slice(0, 3).map((p: any, i: number) => (
+                              <div key={i} className="text-xs text-muted-foreground truncate">
+                                <span className="text-violet-600 font-medium">patch</span> {p.name ?? p.subsystem}
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      )}
+                      <Button size="sm" variant="outline" className="w-full text-xs" onClick={() => forcePlatformScan.mutate()} disabled={forcePlatformScan.isPending}>
+                        <Server className={`w-3 h-3 mr-1.5 ${forcePlatformScan.isPending ? 'animate-spin' : ''}`} />
+                        {forcePlatformScan.isPending ? 'Scanning…' : 'Force Full Scan'}
+                      </Button>
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
 
