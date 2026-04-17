@@ -30,14 +30,23 @@ on:
           - release
 
 env:
-  NODE_VERSION: '22'
   JAVA_VERSION: '21'
   APP_NAME: 'Max Booster'
   APP_ID: 'com.blawzmusic.maxbooster'
 
+# Cancel superseded mobile builds; keep tag runs intact.
+concurrency:
+  group: build-mobile-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+
+# Read-only by default; create-release & Play upload jobs opt in below.
+permissions:
+  contents: read
+
 jobs:
   build-android:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'deployment' ||
@@ -50,7 +59,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version-file: '.nvmrc'
           cache: 'npm'
 
       - name: Setup Java
@@ -76,7 +85,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --no-audit --no-fund
 
       - name: Build web assets
         run: npx tsx script/build.ts
@@ -199,48 +208,39 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
+  # iOS IPA builds require macOS + Xcode and are produced locally; this job is
+  # intentionally a lightweight notice. We skip the previous wasteful pattern
+  # of checkout + npm ci + web build that always ended in "iOS not supported".
   build-ios:
     runs-on: ubuntu-latest
+    timeout-minutes: 2
     if: >-
       github.event_name == 'push' ||
       github.event_name == 'deployment' ||
       github.event.inputs.platform == 'ios' ||
       github.event.inputs.platform == 'both'
     steps:
-      - name: iOS build requires macOS + Xcode
+      - name: iOS build summary (manual step required)
         run: |
-          echo "::notice::iOS builds require macOS with Xcode and cannot run on ubuntu-latest."
-          echo "::notice::To build iOS: use a Mac with Xcode 15+, run 'npm run build && npx cap sync ios' then open ios/App/App.xcworkspace in Xcode."
-          echo "iOS_SKIPPED=true" >> $GITHUB_ENV
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build web assets (for Capacitor sync reference)
-        run: npx tsx script/build.ts
-        env:
-          NODE_ENV: production
-          SKIP_BOOSTERSTATE: '1'
-
-      - name: iOS build summary
-        run: |
-          echo "## iOS Build" >> $GITHUB_STEP_SUMMARY
-          echo "IPA compilation requires macOS + Xcode and cannot run on Linux." >> $GITHUB_STEP_SUMMARY
-          echo "To build: open ios/App/App.xcworkspace in Xcode on a Mac." >> $GITHUB_STEP_SUMMARY
-          echo "::notice::iOS builds require macOS + Xcode. Build locally: npm run build && npx cap sync ios, then open ios/App/App.xcworkspace in Xcode."
+          {
+            echo "## iOS Build"
+            echo ""
+            echo "IPA compilation requires macOS + Xcode and is not run in CI."
+            echo ""
+            echo "**Local build:**"
+            echo '```bash'
+            echo "npm ci"
+            echo "npm run build"
+            echo "npx cap sync ios"
+            echo "open ios/App/App.xcworkspace"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::iOS builds require macOS + Xcode. Build locally — see job summary."
 
   upload-to-play-store:
     needs: build-android
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: startsWith(github.ref, 'refs/tags/v') && needs.build-android.result == 'success'
     steps:
       - name: Download Android App Bundle
@@ -274,12 +274,15 @@ jobs:
           whatsNewDirectory: .github/whatsnew
 
   create-release:
-    needs: [build-android, build-ios]
+    # iOS is intentionally not in `needs:` because no IPA is produced in CI;
+    # gating on it would either always-fail or always-pass for the wrong reason.
+    needs: [build-android]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     if: >-
       always() &&
       startsWith(github.ref, 'refs/tags/v') &&
-      (needs.build-android.result == 'success' || needs.build-ios.result == 'success')
+      needs.build-android.result == 'success'
     permissions:
       contents: write
     steps:
@@ -300,10 +303,10 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # iOS IPA is built locally on macOS and uploaded out-of-band via Transporter.
           files: |
             artifacts/android-release-apk/*.apk
             artifacts/android-app-bundle/*.aab
-            artifacts/ios-release-ipa/*.ipa
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
@@ -318,7 +321,8 @@ jobs:
             - **AAB**: Google Play Store upload
 
             #### iOS
-            - **IPA**: Upload to App Store Connect via Transporter
+            - iOS IPAs are not produced in CI (Xcode + macOS required). Build locally:
+              `npm ci && npm run build && npx cap sync ios && open ios/App/App.xcworkspace`
 
             ### Installation Instructions
 
@@ -331,9 +335,10 @@ jobs:
             The AAB is automatically uploaded to the internal testing track.
 
             **iOS:**
-            1. Download the IPA
-            2. Use Apple Transporter to upload to App Store Connect
-            3. Submit for TestFlight or App Store review
+            1. On a Mac with Xcode 15+, run: `npm ci && npm run build && npx cap sync ios`
+            2. Open `ios/App/App.xcworkspace` in Xcode and Archive
+            3. Use Apple Transporter to upload the IPA to App Store Connect
+            4. Submit for TestFlight or App Store review
 
             ### What's New
             See the automatically generated release notes below.
@@ -343,6 +348,7 @@ jobs:
   build-summary:
     needs: [build-android, build-ios]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     if: always()
     steps:
       - name: Build Summary
@@ -358,5 +364,4 @@ jobs:
           echo "- Android Debug APK (14 day retention)" >> $GITHUB_STEP_SUMMARY
           echo "- Android Release APK (30 day retention)" >> $GITHUB_STEP_SUMMARY
           echo "- Android App Bundle - AAB (30 day retention)" >> $GITHUB_STEP_SUMMARY
-          echo "- iOS Simulator Build (14 day retention)" >> $GITHUB_STEP_SUMMARY
-          echo "- iOS Release IPA (30 day retention)" >> $GITHUB_STEP_SUMMARY
+          echo "- iOS: not built in CI (manual macOS + Xcode required)" >> $GITHUB_STEP_SUMMARY
