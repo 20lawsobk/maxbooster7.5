@@ -282,9 +282,7 @@ export function ContentGenerator() {
 
   const analyzeBrandVoiceMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest('/api/social/ai-content/analyze-brand-voice', {
-        method: 'POST',
-      });
+      const res = await apiRequest('POST', '/api/social/ai-content/analyze-brand-voice');
       return res.json();
     },
     onSuccess: (data) => {
@@ -304,10 +302,7 @@ export function ContentGenerator() {
 
   const generateContentMutation = useMutation({
     mutationFn: async (data: { prompt: string; language: string; culturalAdaptation: boolean }) => {
-      const res = await apiRequest('/api/social/ai-content/multilingual', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const res = await apiRequest('POST', '/api/social/ai-content/multilingual', data);
       return res.json();
     },
     onSuccess: (data) => {
@@ -351,10 +346,7 @@ export function ContentGenerator() {
 
   const optimizeHashtagsMutation = useMutation({
     mutationFn: async (content: string) => {
-      const res = await apiRequest('/api/social/ai-content/optimize-hashtags', {
-        method: 'POST',
-        body: JSON.stringify({ content }),
-      });
+      const res = await apiRequest('POST', '/api/social/ai-content/optimize-hashtags', { content });
       return res.json();
     },
     onError: (error: Error) => {
@@ -368,10 +360,7 @@ export function ContentGenerator() {
 
   const generateABVariantsMutation = useMutation({
     mutationFn: async (data: { content: string; variantCount: number }) => {
-      const res = await apiRequest('/api/social/ai-content/ab-variants', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      });
+      const res = await apiRequest('POST', '/api/social/ai-content/ab-variants', data);
       return res.json();
     },
     onError: (error: Error) => {

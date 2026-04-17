@@ -125,12 +125,9 @@ export function ConversionDialog({
       targetFormat: string;
       qualityPreset: string;
     }) => {
-      return await apiRequest('/api/studio/conversions', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...data,
-          projectId,
-        }),
+      return await apiRequest('POST', '/api/studio/conversions', {
+        ...data,
+        projectId,
       });
     },
     onSuccess: () => {
@@ -152,9 +149,7 @@ export function ConversionDialog({
   // Cancel conversion mutation
   const cancelConversion = useMutation({
     mutationFn: async (conversionId: string) => {
-      return await apiRequest(`/api/studio/conversions/${conversionId}/cancel`, {
-        method: 'POST',
-      });
+      return await apiRequest('POST', `/api/studio/conversions/${conversionId}/cancel`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/studio/conversions'] });
@@ -230,15 +225,12 @@ export function ConversionDialog({
   const addToProject = useMutation({
     mutationFn: async (data: { outputFilePath: string; name: string }) => {
       // Create a new audio clip from the converted file
-      return await apiRequest('/api/studio/clips/audio', {
-        method: 'POST',
-        body: JSON.stringify({
-          projectId,
-          name: data.name,
-          filePath: data.outputFilePath,
-          startTime: 0,
-          duration: 0, // Will be calculated by backend
-        }),
+      return await apiRequest('POST', '/api/studio/clips/audio', {
+        projectId,
+        name: data.name,
+        filePath: data.outputFilePath,
+        startTime: 0,
+        duration: 0,
       });
     },
     onSuccess: () => {
