@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useToast } from '@/hooks/use-toast';
 import {
   Dialog,
   DialogContent,
@@ -568,6 +569,7 @@ export function SmartTemplates({
   customTemplates = [],
   communityTemplates = [],
 }: SmartTemplatesProps) {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<StudioTemplate | null>(null);
@@ -828,7 +830,25 @@ export function SmartTemplates({
                           <Button
                             variant="outline"
                             className="mt-4"
-                            disabled
+                            onClick={() => {
+                              if (customTemplates.length === 0) {
+                                // Prompt the user to create a custom template first
+                                setActiveTab('custom');
+                                toast({
+                                  title: 'Create a custom template first',
+                                  description:
+                                    'Save one of your sessions as a custom template, then share it to the community.',
+                                });
+                              } else {
+                                // Switch to custom tab so user can pick one to share
+                                setActiveTab('custom');
+                                toast({
+                                  title: 'Pick a template to share',
+                                  description:
+                                    'Open any custom template and use the Share option to publish it to the community.',
+                                });
+                              }
+                            }}
                             style={{
                               borderColor: 'var(--studio-border)',
                               color: 'var(--studio-text-muted)',

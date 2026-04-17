@@ -171,10 +171,13 @@ export function MasteringDeliveryPanel({
       );
       
       let progress = 0;
+      // Progress advances at a fixed rate — no random jumps.
+      // At 5 % per 200 ms the bar completes in exactly 4 seconds, which is a
+      // realistic render time for a short stereo master at standard quality.
+      const TICK_RATE = 5; // percentage points per tick
       const interval = setInterval(() => {
-        progress += Math.random() * 15;
+        progress = Math.min(progress + TICK_RATE, 100);
         if (progress >= 100) {
-          progress = 100;
           clearInterval(interval);
           setExportQueue(prev =>
             prev.map(job =>

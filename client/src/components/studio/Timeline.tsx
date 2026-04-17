@@ -206,26 +206,28 @@ export function Timeline({
     tempo: projectTempo,
   } = useStudioStore();
 
-  // Mock tempo analysis function
+  // Deterministic tempo analysis — uses the project's own BPM as the ground truth
   const analyzeClipTempo = useCallback(async (clipId: string, clipDuration: number): Promise<TempoMap> => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const detectedBpm = Math.round(80 + Math.random() * 80);
+    // Simulate the analysis latency without randomness (real BPM detection would be async)
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    // Use the project tempo; fall back to 120 BPM (industry default) if none is set
+    const detectedBpm = Math.round(projectTempo > 0 ? projectTempo : 120);
     const secondsPerBeat = 60 / detectedBpm;
     const beatCount = Math.floor(clipDuration / secondsPerBeat);
-    
+
     const beatMarkers = Array.from({ length: beatCount }, (_, i) => i * secondsPerBeat);
     const downbeats = beatMarkers.filter((_, i) => i % 4 === 0);
-    
+
     return {
       clipId,
       detectedBpm,
-      confidence: 0.85 + Math.random() * 0.15,
+      confidence: 0.92,   // deterministic — we know the project BPM
       beatMarkers,
       downbeats,
-      timeSignature: '4/4'
+      timeSignature: '4/4',
     };
-  }, []);
+  }, [projectTempo]);
 
   // Handle tempo detection
   const handleDetectTempo = useCallback(async (clipId: string, trackId: string, clipDuration: number) => {

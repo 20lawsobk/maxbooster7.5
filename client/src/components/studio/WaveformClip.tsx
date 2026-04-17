@@ -312,9 +312,14 @@ export function WaveformClip({
     return result;
   };
 
+  // Track the mouse start X so we can compute deltas on subsequent moves
+  const mouseStartXRef = useRef<number>(0);
+
   const handleMouseDown = (e: React.MouseEvent, action: 'move' | 'resize-left' | 'resize-right') => {
     e.stopPropagation();
-    
+    e.preventDefault();
+    mouseStartXRef.current = e.clientX;
+
     if (action === 'move') {
       setIsDragging(true);
     } else if (action === 'resize-left') {
@@ -323,6 +328,34 @@ export function WaveformClip({
       setIsResizing('right');
     }
   };
+
+  // Window-level mouse tracking — fires onMove / onResize callbacks as the user drags
+  useEffect(() => {
+    if (!isDragging && !isResizing) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = e.clientX - mouseStartXRef.current;
+      mouseStartXRef.current = e.clientX;
+
+      if (isDragging && onMove) {
+        onMove(delta);
+      } else if (isResizing && onResize) {
+        onResize(isResizing, delta);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+      setIsResizing(null);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, isResizing, onMove, onResize]);
 
   return (
     <motion.div

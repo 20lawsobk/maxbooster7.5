@@ -1,8 +1,10 @@
 import { Router } from 'express';
 import { approvalService } from '../services/approvalService';
-import { submitForReviewSchema, approvePostSchema, rejectPostSchema } from '@shared/schema';
+import { submitForReviewSchema, approvePostSchema, rejectPostSchema, approvalHistory } from '@shared/schema';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { db } from '../db.js';
+import { eq, desc, count } from 'drizzle-orm';
 
 const router = Router();
 
@@ -346,7 +348,25 @@ router.get('/history', async (req: AuthenticatedRequest, res) => {
     if (!req.user) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    res.json({ history: [], total: 0 });
+    const userId = req.user.id;
+    const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10), 200);
+    const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10), 0);
+
+    const items = await db
+      .select()
+      .from(approvalHistory)
+      .where(eq(approvalHistory.userId, userId))
+      .orderBy(desc(approvalHistory.createdAt))
+      .limit(limit)
+      .offset(offset);
+
+    // Total count for pagination
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(approvalHistory)
+      .where(eq(approvalHistory.userId, userId));
+
+    return res.json({ history: items, total: Number(total) });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Get approval history error:');
     return res.status(500).json({ error: 'Internal server error' });
