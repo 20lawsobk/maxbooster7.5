@@ -172,5 +172,14 @@ export TF_NUM_INTEROP_THREADS="${TF_NUM_INTEROP_THREADS:-2}"
 export TF_NUM_INTRAOP_THREADS="${TF_NUM_INTRAOP_THREADS:-2}"
 export NODE_ENV="production"
 
-echo "[start.sh] starting node dist/cluster.cjs"
-exec "$_NODE_BIN" --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" dist/cluster.cjs
+# Prefer cluster entry (multi-worker); fall back to single-process server
+if [ -f "dist/cluster.mjs" ]; then
+  echo "[start.sh] starting node dist/cluster.mjs"
+  exec "$_NODE_BIN" --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" dist/cluster.mjs
+elif [ -f "dist/index.mjs" ]; then
+  echo "[start.sh] starting node dist/index.mjs (cluster not found)"
+  exec "$_NODE_BIN" --max-old-space-size="${NODE_MAX_OLD_SPACE_SIZE:-4096}" dist/index.mjs
+else
+  echo "[start.sh] FATAL: neither dist/cluster.mjs nor dist/index.mjs found — run npm run build first" >&2
+  exit 1
+fi
