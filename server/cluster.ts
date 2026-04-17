@@ -143,9 +143,12 @@ const DISABLE_CLUSTER = process.env.DISABLE_CLUSTER === 'true';
 
 if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
   // Single-process mode: IDE dev environment, DISABLE_CLUSTER=true, or non-deployment run.
-  const appEntry = path.join(__dirname, 'index.cjs');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require(appEntry);
+  // Use dynamic import — index.mjs is ESM and cannot be loaded with require().
+  const appEntry = path.join(__dirname, 'index.mjs');
+  import(appEntry).catch((err: unknown) => {
+    console.error('[Cluster] Failed to load server entry:', err);
+    process.exit(1);
+  });
 } else {
   const numCPUs = os.cpus().length;
   const freeMemGB = os.freemem() / (1024 ** 3);
@@ -183,7 +186,7 @@ if (!ENABLE_CLUSTER || DISABLE_CLUSTER) {
     ? envOverride
     : Math.min(cpuLimit, memLimit);
 
-  const workerScript = path.join(__dirname, 'index.cjs');
+  const workerScript = path.join(__dirname, 'index.mjs');
 
   // Pass heap size to every worker — workers do NOT inherit the primary's CLI flag.
   // execArgv is propagated to each forked child process by Node.js cluster module.
