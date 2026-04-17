@@ -1304,12 +1304,12 @@ function WebhookMonitorTab() {
   const [eventId, setEventId] = useState('');
 
   const { data: dlqData, isLoading: dlqLoading } = useQuery({
-    queryKey: ['/api/webhooks/dead-letter'],
+    queryKey: ['/api/admin/webhooks/dead-letter'],
   });
 
   const { mutate: retryWebhook, isPending: retrying } = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/webhooks/${id}/retry`, {
+      const response = await fetch(`/api/admin/webhooks/${id}/retry`, {
         method: 'POST',
         credentials: 'include',
       });

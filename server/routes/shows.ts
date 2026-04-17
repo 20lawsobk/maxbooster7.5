@@ -131,7 +131,7 @@ router.delete("/:id", requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Show not found" });
   }
 
-  res.json({ error: "Show deleted successfully" });
+  res.json({ success: true, message: "Show deleted successfully" });
 }));
 
 // PATCH /api/shows/:id/attendance - record post-show actual attendance and revenue
@@ -301,7 +301,7 @@ router.delete("/setlists/:id", requireAuth, asyncHandler(async (req, res) => {
     return res.status(404).json({ error: "Setlist not found" });
   }
 
-  res.json({ error: "Setlist deleted successfully" });
+  res.json({ success: true, message: "Setlist deleted successfully" });
 }));
 
 export default router;

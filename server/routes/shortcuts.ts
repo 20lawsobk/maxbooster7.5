@@ -144,7 +144,7 @@ router.delete('/user', async (req: Request, res: Response) => {
       .set({ preferences: restPrefs })
       .where(eq(users.id, req.user.id));
 
-    return res.json({ error: 'Shortcuts reset successfully' });
+    return res.json({ success: true, message: 'Shortcuts reset successfully' });
   } catch (error) {
     logger.warn({ err: error }, 'Error resetting shortcuts:');
     return res.status(500).json({ error: 'Failed to reset shortcuts' });

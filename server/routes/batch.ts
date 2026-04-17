@@ -1149,7 +1149,7 @@ router.delete('/templates/:id', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json({ error: 'Template deleted' });
+    res.json({ success: true, message: 'Template deleted' });
   } catch (error) {
     logger.warn({ err: error }, 'Delete template error:');
     res.status(500).json({ error: 'Failed to process request' });
@@ -1195,7 +1195,7 @@ router.post('/templates/:id/share', async (req: Request, res: Response) => {
       })
       .returning();
 
-    res.json({ error: 'Template shared successfully', sharedTemplate: sharedCopy });
+    res.json({ success: true, message: 'Template shared successfully', sharedTemplate: sharedCopy });
   } catch (error) {
     logger.warn({ err: error }, 'Share template error:');
     res.status(500).json({ error: 'Failed to process request' });
