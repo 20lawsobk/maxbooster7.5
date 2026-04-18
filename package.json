@@ -58,9 +58,18 @@
     "buildDependenciesFromSource": false,
     "files": [
       "electron/**/*",
+      "dist/index.mjs",
+      "dist/index.cjs",
+      "dist/cluster.mjs",
+      "dist/public/**/*",
       "!electron/package-lock.json",
       "!node_modules/@tensorflow/**/*",
-      "!node_modules/@sentry-internal/node-cpu-profiler/**/*"
+      "!node_modules/@sentry-internal/node-cpu-profiler/**/*",
+      "!**/*.map"
+    ],
+    "asarUnpack": [
+      "dist/index.mjs",
+      "dist/index.cjs"
     ],
     "directories": {
       "output": "dist-installers",
