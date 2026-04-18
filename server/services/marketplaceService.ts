@@ -761,57 +761,34 @@ export class MarketplaceService {
       }
       
       return listings.map(listing => {
-        const metadata = (listing as any).metadata || {};
         const tiers = allTiers.filter(t => t.listingId === listing.id);
+        const mappedTiers = tiers.map(t => ({
+          id: t.id,
+          licenseType: t.licenseType,
+          label: t.label,
+          priceCents: t.priceCents,
+          price: t.priceCents / 100,
+          discountType: t.discountType,
+          discountPercent: t.discountPercent,
+          discountPriceCents: t.discountPriceCents,
+          discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+          discountExpiresAt: t.discountExpiresAt,
+          bogoEnabled: t.bogoEnabled,
+          bogoGetType: t.bogoGetType,
+          bogoGetPercent: t.bogoGetPercent,
+          fileFormats: t.fileFormats || ['mp3'],
+          audioUrls: t.audioUrls || {},
+          isActive: t.isActive,
+        }));
         return {
-          id: listing.id,
-          title: listing.title,
-          producer: user?.username || 'Producer',
+          // Preserve every field storage already mapped (genre, mood, tempo, key,
+          // licenseType, tags, plays, likes, avgRating, ratingCount, coverArt, …)
+          ...listing,
+          producer: user?.username || `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'Producer',
           producerId: listing.userId,
-          price: listing.price,
-          currency: listing.currency || 'usd',
-          genre: listing.category || metadata.genre || 'Hip-Hop',
-          mood: metadata.mood || 'Chill',
-          tempo: metadata.bpm || 120,
-          key: metadata.key || 'C',
-          duration: metadata.duration || 180,
-          audioUrl: listing.audioUrl,
-          previewUrl: listing.previewUrl || listing.audioUrl,
-          artworkUrl: listing.artworkUrl,
-          coverArt: listing.artworkUrl || (listing as any).coverArt,
-          tags: metadata.tags || [],
-          description: listing.description || '',
-          isExclusive: false,
-          isLease: true,
-          licenseType: metadata.licenseType || 'basic',
-          downloads: 0,
-          likes: 0,
-          plays: 0,
-          createdAt: listing.createdAt,
-          updatedAt: listing.updatedAt || listing.createdAt,
-          status: listing.isPublished ? 'active' : 'inactive',
-          discountPercent: (listing as any).discountPercent || null,
-          discountPriceCents: (listing as any).discountPriceCents || null,
-          discountExpiresAt: (listing as any).discountExpiresAt || null,
-          hasLicenseTiers: metadata.hasLicenseTiers || false,
-          licenseTiers: tiers.map(t => ({
-            id: t.id,
-            licenseType: t.licenseType,
-            label: t.label,
-            priceCents: t.priceCents,
-            price: t.priceCents / 100,
-            discountType: t.discountType,
-            discountPercent: t.discountPercent,
-            discountPriceCents: t.discountPriceCents,
-            discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
-            discountExpiresAt: t.discountExpiresAt,
-            bogoEnabled: t.bogoEnabled,
-            bogoGetType: t.bogoGetType,
-            bogoGetPercent: t.bogoGetPercent,
-            fileFormats: t.fileFormats || ['mp3'],
-            audioUrls: t.audioUrls || {},
-            isActive: t.isActive,
-          })),
+          // Derive hasLicenseTiers from the live tiers table, not stale metadata.
+          hasLicenseTiers: mappedTiers.length > 0,
+          licenseTiers: mappedTiers,
         };
       });
     } catch (error: unknown) {
@@ -836,55 +813,38 @@ export class MarketplaceService {
           allTiers.push(...tiers);
         }
       }
-      
+
       return listings.map(listing => {
-        const metadata = (listing as any).metadata || {};
         const tiers = allTiers.filter(t => t.listingId === listing.id);
+        const mappedTiers = tiers.map(t => ({
+          id: t.id,
+          licenseType: t.licenseType,
+          label: t.label,
+          priceCents: t.priceCents,
+          price: t.priceCents / 100,
+          discountType: t.discountType,
+          discountPercent: t.discountPercent,
+          discountPriceCents: t.discountPriceCents,
+          discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
+          discountExpiresAt: t.discountExpiresAt,
+          bogoEnabled: t.bogoEnabled,
+          bogoGetType: t.bogoGetType,
+          bogoGetPercent: t.bogoGetPercent,
+          fileFormats: t.fileFormats || ['mp3'],
+          audioUrls: t.audioUrls || {},
+          isActive: t.isActive,
+        }));
         return {
-          id: listing.id,
-          title: listing.title,
-          producer: producer?.username || 'Producer',
+          // Preserve every field storage already mapped, including counters,
+          // genre, mood, tempo, key, licenseType, tags, coverArt, etc.
+          ...listing,
+          producer: producer?.username || `${producer?.firstName || ''} ${producer?.lastName || ''}`.trim() || 'Producer',
           producerId: listing.userId,
-          price: listing.price,
-          currency: listing.currency || 'usd',
-          genre: listing.category || metadata.genre || 'Hip-Hop',
-          mood: metadata.mood || 'Chill',
-          tempo: metadata.bpm || 120,
-          key: metadata.key || 'C',
-          duration: metadata.duration || 180,
-          audioUrl: listing.audioUrl,
-          previewUrl: listing.previewUrl || listing.audioUrl,
-          artworkUrl: listing.artworkUrl,
-          coverArt: listing.artworkUrl || (listing as any).coverArt,
-          plays: 0,
-          likes: 0,
-          isHot: false,
           isNew: true,
-          licenseOptions: metadata.licenses || [
-            { type: 'basic', price: listing.price, features: ['MP3 Download', 'Non-exclusive rights'] }
-          ],
-          discountPercent: (listing as any).discountPercent || null,
-          discountPriceCents: (listing as any).discountPriceCents || null,
-          discountExpiresAt: (listing as any).discountExpiresAt || null,
-          hasLicenseTiers: metadata.hasLicenseTiers || false,
-          licenseTiers: tiers.map(t => ({
-            id: t.id,
-            licenseType: t.licenseType,
-            label: t.label,
-            priceCents: t.priceCents,
-            price: t.priceCents / 100,
-            discountType: t.discountType,
-            discountPercent: t.discountPercent,
-            discountPriceCents: t.discountPriceCents,
-            discountPrice: t.discountPriceCents ? t.discountPriceCents / 100 : null,
-            discountExpiresAt: t.discountExpiresAt,
-            bogoEnabled: t.bogoEnabled,
-            bogoGetType: t.bogoGetType,
-            bogoGetPercent: t.bogoGetPercent,
-            fileFormats: t.fileFormats || ['mp3'],
-            audioUrls: t.audioUrls || {},
-            isActive: t.isActive,
-          })),
+          isHot: false,
+          // Derive hasLicenseTiers from the live tiers table, not stale metadata.
+          hasLicenseTiers: mappedTiers.length > 0,
+          licenseTiers: mappedTiers,
         };
       });
     } catch (error: unknown) {
