@@ -1,4 +1,6 @@
 import { Router, type RequestHandler } from 'express';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 import { db } from '../db.js';
 import { users, projects, releases } from '../../shared/schema.js';
 import { count } from 'drizzle-orm';
@@ -7,7 +9,7 @@ import { logger } from '../logger.js';
 const router = Router();
 
 const requireAdmin: RequestHandler = (req, res, next) => {
-  if (!req.isAuthenticated()) {
+  if (!req.isAuthenticated || !req.isAuthenticated()) {
     return res.status(401).json({ error: 'Authentication required' });
   }
   if (req.user?.role !== 'admin') {
@@ -18,136 +20,102 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 
 router.use(requireAdmin);
 
-router.get('/results', async (req, res) => {
+interface TestSuiteSummary {
+  name: string;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration: number;
+}
+
+interface TestRunArtifact {
+  ranAt: string;
+  durationMs: number;
+  suites: TestSuiteSummary[];
+  coverage?: { statements: number; branches: number; functions: number; lines: number };
+}
+
+const RESULTS_PATH = path.resolve(process.cwd(), 'logs', 'test-results.json');
+
+async function loadStoredRun(): Promise<TestRunArtifact | null> {
   try {
-    const testSuites: Array<{
-      name: string;
-      passed: number;
-      failed: number;
-      skipped: number;
-      duration: number;
-      tests: Array<{ name: string; status: string; duration: number }>;
-    }> = [
-      {
-        name: 'Authentication Tests',
-        passed: 12,
-        failed: 0,
-        skipped: 0,
-        duration: 1.2,
-        tests: [
-          { name: 'User registration', status: 'passed', duration: 0.1 },
-          { name: 'User login', status: 'passed', duration: 0.08 },
-          { name: 'Session management', status: 'passed', duration: 0.15 },
-          { name: 'Password hashing', status: 'passed', duration: 0.12 },
-          { name: 'Admin access control', status: 'passed', duration: 0.09 },
-          { name: 'Token validation', status: 'passed', duration: 0.11 },
-          { name: 'Logout functionality', status: 'passed', duration: 0.07 },
-          { name: 'Password reset flow', status: 'passed', duration: 0.14 },
-          { name: 'Email verification', status: 'passed', duration: 0.1 },
-          { name: 'Rate limiting', status: 'passed', duration: 0.08 },
-          { name: 'CSRF protection', status: 'passed', duration: 0.06 },
-          { name: 'XSS prevention', status: 'passed', duration: 0.05 },
-        ]
-      },
-      {
-        name: 'API Endpoint Tests',
-        passed: 28,
-        failed: 0,
-        skipped: 2,
-        duration: 3.5,
-        tests: [
-          { name: 'GET /api/user', status: 'passed', duration: 0.1 },
-          { name: 'POST /api/projects', status: 'passed', duration: 0.12 },
-          { name: 'GET /api/projects', status: 'passed', duration: 0.08 },
-          { name: 'PUT /api/projects/:id', status: 'passed', duration: 0.11 },
-          { name: 'DELETE /api/projects/:id', status: 'passed', duration: 0.09 },
-          { name: 'GET /api/releases', status: 'passed', duration: 0.1 },
-          { name: 'POST /api/releases', status: 'passed', duration: 0.15 },
-          { name: 'GET /api/analytics', status: 'passed', duration: 0.12 },
-        ]
-      },
-      {
-        name: 'Database Tests',
-        passed: 15,
-        failed: 0,
-        skipped: 0,
-        duration: 2.1,
-        tests: [
-          { name: 'Connection pooling', status: 'passed', duration: 0.2 },
-          { name: 'Query optimization', status: 'passed', duration: 0.15 },
-          { name: 'Transaction handling', status: 'passed', duration: 0.18 },
-          { name: 'Migration integrity', status: 'passed', duration: 0.12 },
-          { name: 'Foreign key constraints', status: 'passed', duration: 0.1 },
-        ]
-      },
-      {
-        name: 'AI Service Tests',
-        passed: 18,
-        failed: 0,
-        skipped: 1,
-        duration: 4.2,
-        tests: [
-          { name: 'Content generation', status: 'passed', duration: 0.5 },
-          { name: 'Sentiment analysis', status: 'passed', duration: 0.3 },
-          { name: 'Recommendations', status: 'passed', duration: 0.4 },
-          { name: 'Ad optimization', status: 'passed', duration: 0.35 },
-          { name: 'Social predictions', status: 'passed', duration: 0.28 },
-        ]
-      },
-      {
-        name: 'Integration Tests',
-        passed: 10,
-        failed: 0,
-        skipped: 0,
-        duration: 5.8,
-        tests: [
-          { name: 'Stripe integration', status: 'passed', duration: 0.8 },
-          { name: 'Storage integration', status: 'passed', duration: 0.6 },
-          { name: 'Email service', status: 'passed', duration: 0.4 },
-        ]
-      }
-    ];
+    const raw = await fs.readFile(RESULTS_PATH, 'utf-8');
+    const parsed = JSON.parse(raw) as TestRunArtifact;
+    if (!parsed || typeof parsed !== 'object' || !Array.isArray(parsed.suites)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
-    const totalPassed = testSuites.reduce((sum, s) => sum + s.passed, 0);
-    const totalFailed = testSuites.reduce((sum, s) => sum + s.failed, 0);
-    const totalSkipped = testSuites.reduce((sum, s) => sum + s.skipped, 0);
+router.get('/results', async (_req, res) => {
+  try {
+    const stored = await loadStoredRun();
+
+    if (!stored) {
+      const [{ value: userCount }] = await db.select({ value: count() }).from(users);
+      const [{ value: projectCount }] = await db.select({ value: count() }).from(projects);
+      const [{ value: releaseCount }] = await db.select({ value: count() }).from(releases);
+
+      return res.json({
+        overallScore: null,
+        lastRunDate: null,
+        summary: { total: 0, passed: 0, failed: 0, skipped: 0, duration: '0.0' },
+        testSuites: [],
+        coverage: null,
+        runtimeStats: {
+          users: userCount,
+          projects: projectCount,
+          releases: releaseCount,
+        },
+        message: 'No test runs recorded yet. Use POST /api/testing/run to trigger a suite, or write a TestRunArtifact JSON to logs/test-results.json from your CI pipeline.',
+      });
+    }
+
+    const totalPassed = stored.suites.reduce((sum, s) => sum + s.passed, 0);
+    const totalFailed = stored.suites.reduce((sum, s) => sum + s.failed, 0);
+    const totalSkipped = stored.suites.reduce((sum, s) => sum + s.skipped, 0);
     const totalTests = totalPassed + totalFailed + totalSkipped;
-    const totalDuration = testSuites.reduce((sum, s) => sum + s.duration, 0);
-
+    const totalDuration = stored.suites.reduce((sum, s) => sum + s.duration, 0);
     const overallScore = totalTests > 0 ? Math.round((totalPassed / totalTests) * 100) : 0;
 
-    res.json({
+    return res.json({
       overallScore,
-      lastRunDate: new Date().toISOString(),
+      lastRunDate: stored.ranAt,
       summary: {
         total: totalTests,
         passed: totalPassed,
         failed: totalFailed,
         skipped: totalSkipped,
-        duration: totalDuration.toFixed(1)
+        duration: (totalDuration / 1000).toFixed(1),
       },
-      testSuites,
-      coverage: {
-        statements: 87,
-        branches: 82,
-        functions: 91,
-        lines: 88
-      }
+      testSuites: stored.suites,
+      coverage: stored.coverage ?? null,
     });
   } catch (error) {
-    logger.warn({ err: error }, 'Error fetching test results:');
-    res.status(500).json({ error: 'Failed to fetch test results' });
+    logger.warn({ err: error }, 'Error fetching test results');
+    return res.status(500).json({ error: 'Failed to fetch test results' });
   }
 });
 
 router.post('/run', async (req, res) => {
   try {
-    const { suite } = req.body;
-    logger.info(`Test suite triggered: ${suite || 'all'}`);
-    res.json({ success: true, message: 'Tests started', estimatedTime: '5 minutes' });
+    const { suite } = req.body ?? {};
+    const requested = typeof suite === 'string' && suite.length > 0 ? suite : 'all';
+
+    logger.info({ requested, requestedBy: req.user?.id }, 'Test run requested via admin API');
+
+    return res.status(202).json({
+      accepted: true,
+      suite: requested,
+      message: 'Test runs are not executed by the API server. Trigger your CI pipeline (e.g. GitHub Actions test-runner.yml) and write logs/test-results.json on completion to surface results in this dashboard.',
+      docsUrl: '/docs/testing',
+    });
   } catch (error) {
-    logger.warn({ err: error }, 'Error running tests:');
-    res.status(500).json({ error: 'Failed to start tests' });
+    logger.warn({ err: error }, 'Error handling test run request');
+    return res.status(500).json({ error: 'Failed to handle test run request' });
   }
 });
 

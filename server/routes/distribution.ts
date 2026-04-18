@@ -5109,15 +5109,23 @@ router.get('/packages/:id/tracks', requireAuth, async (req: Request, res: Respon
 
     const key = `distribution/packages/${userId}/${id}/tracks.json`;
     const data = await storageService.downloadFile(key).catch(() => null);
-    res.status(500).json({ error: 'Internal server error' });
 
-    const tracks = JSON.parse(data.toString());
-    res.json(tracks);
+    if (!data) {
+      return res.json([]);
+    }
+
+    let tracks: unknown;
+    try {
+      tracks = JSON.parse(data.toString());
+    } catch (parseErr) {
+      logger.warn({ err: parseErr, packageId: id }, 'Corrupt tracks.json for distribution package');
+      return res.status(500).json({ error: 'Stored tracks data is corrupt' });
+    }
+
+    return res.json(Array.isArray(tracks) ? tracks : []);
   } catch (error: unknown) {
-    const err = error as { message?: string };
-    res.status(500).json({ error: 'Internal server error' });
     logger.warn({ err: error }, 'Error fetching package tracks:');
-    res.status(500).json({ error: 'Failed to fetch package tracks' });
+    return res.status(500).json({ error: 'Failed to fetch package tracks' });
   }
 });
 
