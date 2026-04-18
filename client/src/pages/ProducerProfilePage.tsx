@@ -6,6 +6,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { BeatCard } from '@/components/marketplace/BeatCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -376,55 +377,17 @@ if (!producer) {
             ) : beats.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {beats.map((beat) => (
-                  <Card key={beat.id} className="group hover:shadow-lg transition">
-                    <CardContent className="p-0">
-                      <div className="relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
-                        {beat.coverArt ? (
-                          <img src={beat.coverArt} alt={beat.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Music className="w-16 h-16 text-white opacity-50" />
-                          </div>
-                        )}
-                        <Button
-                          size="icon"
-                          className="absolute bottom-4 right-4 rounded-full w-12 h-12 bg-white/90 hover:bg-white text-black shadow-lg"
-                          onClick={() => handlePlayBeat(beat)}
-                        >
-                          {playingBeatId === beat.id ? (
-                            <Pause className="w-5 h-5" />
-                          ) : (
-                            <Play className="w-5 h-5 ml-0.5" />
-                          )}
-                        </Button>
-                      </div>
-                      <div className="p-4 space-y-3">
-                        <div>
-                          <h4 className="font-semibold truncate">{beat.title}</h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>{beat.bpm} BPM</span>
-                            <span>•</span>
-                            <span>{beat.key}</span>
-                            <span>•</span>
-                            <Badge variant="secondary" className="text-xs">
-                              {beat.genre}
-                            </Badge>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-lg font-bold text-green-600">${beat.price}</span>
-                          <Button
-                            size="sm"
-                            className="bg-gradient-to-r from-blue-600 to-purple-600"
-                            onClick={() => { setSelectedLicense('basic'); setPurchaseBeat(beat); }}
-                          >
-                            <ShoppingCart className="w-4 h-4 mr-1" />
-                            Buy
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <BeatCard
+                    key={beat.id}
+                    beat={beat}
+                    mode="buy"
+                    isPlaying={playingBeatId === beat.id}
+                    onPlayToggle={(b) => handlePlayBeat(b as Beat)}
+                    onBuy={(b) => {
+                      setSelectedLicense('basic');
+                      setPurchaseBeat(b as Beat);
+                    }}
+                  />
                 ))}
               </div>
             ) : (

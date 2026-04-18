@@ -63,6 +63,7 @@ import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
 import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
 import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
+import { BeatCard } from '@/components/marketplace/BeatCard';
 import {
   MarketplaceOutcomeHandler,
   useMarketplaceOutcome,
@@ -1147,6 +1148,18 @@ export default function Marketplace() {
       setShowEditModal(false);
       setEditingBeat(null);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const k = q.queryKey?.[0];
+          return (
+            typeof k === 'string' &&
+            (k === 'producer-beats' ||
+              k === 'producer' ||
+              k.startsWith('/api/marketplace/producers/'))
+          );
+        },
+      });
       invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
@@ -1171,6 +1184,18 @@ export default function Marketplace() {
       setShowDeleteConfirm(false);
       setDeletingBeatId(null);
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
+      queryClient.invalidateQueries({
+        predicate: (q) => {
+          const k = q.queryKey?.[0];
+          return (
+            typeof k === 'string' &&
+            (k === 'producer-beats' ||
+              k === 'producer' ||
+              k.startsWith('/api/marketplace/producers/'))
+          );
+        },
+      });
       invalidateOnMarketplaceChange();
     },
     onError: (error: Error) => {
@@ -1657,8 +1682,9 @@ export default function Marketplace() {
       onloaderror: (_id, error) => {
         logger.error('Howler load error:', error);
         toast({
-          title: 'Playback Error',
-          description: 'Failed to load audio file',
+          title: 'Audio Unavailable',
+          description:
+            'This beat\u2019s audio file could not be loaded. It may have been moved or removed \u2014 try re-uploading it from My Beats.',
           variant: 'destructive',
         });
         setIsPlaying(null);
@@ -2865,63 +2891,26 @@ return (
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {myBeats.map((beat: Beat) => (
-                    <Card key={beat.id} className={`group hover:shadow-xl transition-shadow duration-200 ${selectedBeats.has(beat.id) ? 'ring-2 ring-blue-500' : ''}`}>
-                      <CardContent className="p-0">
-                        <div className="relative aspect-square bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
-                          <div className="absolute top-2 left-2 z-10">
-                            <input
-                              type="checkbox"
-                              checked={selectedBeats.has(beat.id)}
-                              onChange={() => toggleBeatSelection(beat.id)}
-                              className="w-5 h-5 rounded border-2 border-white bg-black/30 cursor-pointer"
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </div>
-                          <div className="flex items-center justify-center h-full">
-                            <Music className="w-16 h-16 text-white opacity-50" />
-                          </div>
-                          {beat.coverArt && (
-                            <img
-                              src={beat.coverArt}
-                              alt={beat.title}
-                              loading="lazy"
-                              decoding="async"
-                              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
-                              onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          )}
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-lg mb-1">{beat.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{beat.genre}{beat.mood ? ` \u2022 ${beat.mood}` : ''}</p>
-                          <div className="flex items-center justify-between">
-                            <div>
-                              {beat.discountPercent && beat.discountPriceCents != null ? (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-lg font-bold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</span>
-                                  <span className="text-sm line-through text-muted-foreground">${beat.price}</span>
-                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
-                                </div>
-                              ) : (
-                                <span className="text-lg font-bold">${beat.price}</span>
-                              )}
-                            </div>
-                            <div className="flex space-x-1">
-                              <Button size="sm" variant="outline" onClick={() => { setDiscountBeat(beat); setDiscountForm({ percent: beat.discountPercent || 10, expiresAt: beat.discountExpiresAt || '' }); }} title="Set discount">
-                                <Percent className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleEditBeat(beat)}>
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => handleDeleteBeat(beat.id)} className="hover:bg-red-100 hover:text-red-600 dark:hover:bg-red-900/20">
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <BeatCard
+                      key={beat.id}
+                      beat={beat}
+                      mode="owner"
+                      selectable
+                      selected={selectedBeats.has(beat.id)}
+                      onToggleSelect={() => toggleBeatSelection(beat.id)}
+                      isPlaying={isPlaying === beat.id}
+                      isLoadingAudio={isLoadingAudio && isPlaying === beat.id}
+                      onPlayToggle={(b) => handlePlayPause(b.id)}
+                      onSetDiscount={(b) => {
+                        setDiscountBeat(b as Beat);
+                        setDiscountForm({
+                          percent: (b as Beat).discountPercent || 10,
+                          expiresAt: (b as Beat).discountExpiresAt || '',
+                        });
+                      }}
+                      onEdit={(b) => handleEditBeat(b as Beat)}
+                      onDelete={(b) => handleDeleteBeat(b.id)}
+                    />
                   ))}
                 </div>
               </div>
