@@ -732,6 +732,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     reEngagementService.startDailyCron();
     logger.info('[Retention] Re-engagement cron started');
 
+    // ACME / Let's Encrypt renewal cron — no-ops cleanly when ACME_ENABLED!=true
+    const { startAcmeRenewalCron } = await import('./services/acmeClient.js');
+    startAcmeRenewalCron();
+
     const { recoverStaleProcessingBatches } = await import('./services/featureEventBuffer.js');
     recoverStaleProcessingBatches().catch((e: any) =>
       logger.warn('[Retention] Stale batch recovery failed (non-blocking):', e?.message)

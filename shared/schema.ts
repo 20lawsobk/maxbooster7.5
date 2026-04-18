@@ -414,6 +414,16 @@ export const storefrontHosts = pgTable("storefront_hosts", {
   certStatus: text("cert_status").notNull().default("pending"),
   certIssuedAt: timestamp("cert_issued_at"),
   certExpiresAt: timestamp("cert_expires_at"),
+  // ACME-issued certificate material (set when cert_status = 'issued').
+  // Private key is AES-256-GCM encrypted via acmeClient.encryptKey().
+  certPem: text("cert_pem"),
+  certKeyEncrypted: text("cert_key_encrypted"),
+  certChainPem: text("cert_chain_pem"),
+  certSerial: text("cert_serial"),
+  certProvisionAttempts: integer("cert_provision_attempts").notNull().default(0),
+  certLastError: text("cert_last_error"),
+  certLastAttemptAt: timestamp("cert_last_attempt_at"),
+  certRenewalAfter: timestamp("cert_renewal_after"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

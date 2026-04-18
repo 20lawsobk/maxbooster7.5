@@ -315,27 +315,30 @@ async function activateStorefrontDomain(
 /**
  * provisionCertificateForHost
  *
- * Placeholder for ACME HTTP-01 / DNS-01 certificate provisioning.
- * DNS-01 is possible because Max Booster controls the zone — it can write
- * _acme-challenge.<domain> TXT records directly via dns_zone_records.
+ * Triggers Let's Encrypt DNS-01 issuance for `host` via the acmeClient
+ * service. The actual ACME flow (account key, challenge publish via
+ * dns_zone_records, key encryption, persistence) lives in
+ * server/services/acmeClient.ts.
  *
- * Integration point: wire in node-acme-client or certbot-dns when ready.
+ * Behaviour:
+ *   - When ACME_ENABLED is not "true", marks the host as 'pending' and
+ *     returns; no network calls are made.
+ *   - When ACME_ENABLED is true, issues the cert in-process, persists it on
+ *     storefront_hosts, and the renewal cron handles future renewals.
  */
 export async function provisionCertificateForHost(host: string): Promise<void> {
-  logger.info({ host }, '[storefrontDns] cert provisioning requested (not yet implemented)');
-
+  // Ensure the host row exists in 'pending' state before handing off.
   await pool.query(
     `UPDATE storefront_hosts SET cert_status = 'pending', updated_at = now()
      WHERE host = $1`,
     [host],
   );
 
-  // TODO: call ACME client here:
-  //   1. Create _acme-challenge.<host> TXT record via dns_zone_records
-  //   2. Wait for ACME server to verify
-  //   3. Receive certificate + private key
-  //   4. Store in secrets manager / Vault
-  //   5. Update cert_status = 'issued', cert_issued_at, cert_expires_at
+  // Lazy-import to avoid loading acme-client (and its pkijs/asn1.js graph)
+  // for callers that never provision certs (DNS-only flows, tests, etc.).
+  const { provisionCertificate } = await import('./acmeClient.js');
+  const result = await provisionCertificate(host);
+  logger.info({ host, result }, '[storefrontDns] cert provisioning result');
 }
 
 /**
