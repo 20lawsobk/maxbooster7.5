@@ -1141,13 +1141,93 @@ export default function Marketplace() {
       });
       return response.json();
     },
-    onSuccess: () => {
+    // Optimistic update — apply the edited values to the cached lists immediately
+    // so the UI reflects them as soon as Save is clicked, before the server replies.
+    onMutate: async ({ id, data }) => {
+      await queryClient.cancelQueries({ queryKey: ['/api/marketplace/my-beats'] });
+      await queryClient.cancelQueries({ queryKey: ['/api/marketplace/beats'] });
+
+      const patch: Record<string, any> = {};
+      const get = (k: string) => {
+        const v = data.get(k);
+        return typeof v === 'string' ? v : undefined;
+      };
+      const title = get('title');
+      const description = get('description');
+      const genre = get('genre');
+      const mood = get('mood');
+      const tempo = get('tempo');
+      const key = get('key');
+      const price = get('price');
+      const licenseType = get('licenseType');
+      const tags = get('tags');
+      const artworkUrl = get('artworkUrl');
+      if (title !== undefined) patch.title = title;
+      if (description !== undefined) patch.description = description;
+      if (genre !== undefined) patch.genre = genre;
+      if (mood !== undefined) patch.mood = mood;
+      if (tempo !== undefined) {
+        const t = parseInt(tempo, 10);
+        if (!isNaN(t)) {
+          patch.tempo = t;
+          patch.bpm = t;
+        }
+      }
+      if (key !== undefined) patch.key = key;
+      if (price !== undefined) {
+        const p = parseFloat(price);
+        if (!isNaN(p)) patch.price = p;
+      }
+      if (licenseType !== undefined) patch.licenseType = licenseType;
+      if (tags !== undefined) patch.tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
+      if (artworkUrl) {
+        patch.artworkUrl = artworkUrl;
+        patch.coverArt = artworkUrl;
+      } else if (data.get('artwork') instanceof File) {
+        const file = data.get('artwork') as File;
+        try {
+          const objUrl = URL.createObjectURL(file);
+          patch.artworkUrl = objUrl;
+          patch.coverArt = objUrl;
+        } catch {}
+      }
+
+      const apply = (key: readonly unknown[]) => {
+        const prev = queryClient.getQueryData<any[]>(key as any);
+        if (Array.isArray(prev)) {
+          queryClient.setQueryData(key as any, prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)));
+        }
+      };
+      apply(['/api/marketplace/my-beats']);
+      apply(['/api/marketplace/beats']);
+
+      return { prevMy: queryClient.getQueryData(['/api/marketplace/my-beats']), prevAll: queryClient.getQueryData(['/api/marketplace/beats']) };
+    },
+    onError: (_err, _vars, ctx: any) => {
+      if (ctx?.prevMy !== undefined)
+        queryClient.setQueryData(['/api/marketplace/my-beats'], ctx.prevMy);
+      if (ctx?.prevAll !== undefined)
+        queryClient.setQueryData(['/api/marketplace/beats'], ctx.prevAll);
+    },
+    onSuccess: (updated) => {
       toast({
         title: 'Beat Updated!',
         description: 'Your beat has been updated successfully.',
       });
       setShowEditModal(false);
       setEditingBeat(null);
+      // Merge the authoritative server response into the cache so values reflect
+      // any server-side normalization (e.g. trimmed strings, computed prices).
+      if (updated && updated.id) {
+        const merge = (key: readonly unknown[]) => {
+          const prev = queryClient.getQueryData<any[]>(key as any);
+          if (Array.isArray(prev)) {
+            queryClient.setQueryData(key as any, prev.map((b) => (b?.id === updated.id ? { ...b, ...updated } : b)));
+          }
+        };
+        merge(['/api/marketplace/my-beats']);
+        merge(['/api/marketplace/beats']);
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/my-beats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
       queryClient.invalidateQueries({

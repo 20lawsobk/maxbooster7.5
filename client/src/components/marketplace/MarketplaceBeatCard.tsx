@@ -272,7 +272,7 @@ export function MarketplaceBeatCard({
                 </button>
               </div>
               <div
-                className="inline-flex items-center gap-0.5 shrink-0"
+                className="inline-flex items-center gap-1 shrink-0"
                 role="group"
                 aria-label="Rate beat"
               >
@@ -281,7 +281,7 @@ export function MarketplaceBeatCard({
                     key={star}
                     onClick={() => onRate(beat.id, star)}
                     disabled={isRatePending}
-                    className="p-0.5 -m-0.5 hover:scale-125 transition-transform"
+                    className="hover:scale-110 transition-transform"
                     aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                   >
                     <Star
@@ -299,7 +299,7 @@ export function MarketplaceBeatCard({
 
           {/* License tiers */}
           {availableLicenses.length > 0 && (
-            <div className="space-y-1.5 mt-1">
+            <div className="space-y-1.5 mt-2 pt-2 border-t border-border/40">
               {availableLicenses.map((license) => {
                 const tier = getLicenseTier(license);
                 const originalPrice = getLicenseOriginalPrice(license);
