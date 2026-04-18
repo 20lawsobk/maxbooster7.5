@@ -1745,7 +1745,11 @@ export class DatabaseStorage implements IStorage {
       const limit = filters?.limit ?? 50;
       const offset = filters?.offset ?? 0;
 
-      const results = await dbRead
+      // Owner reads (My Beats) need read-your-writes consistency, so they go
+      // to the primary. Public reads can use the replica for scale.
+      const reader = filters?.userId ? db : dbRead;
+
+      const results = await reader
         .select()
         .from(listings)
         .where(whereClause)
