@@ -33,9 +33,23 @@ export async function uploadImageFile(
     avatarUrl?: string;
     imageUrl?: string;
     fileUrl?: string;
+    // /api/storage/upload nests the URL under `file`
+    file?: { url?: string };
+    // Some endpoints nest under `data`
+    data?: { url?: string; avatarUrl?: string; imageUrl?: string; fileUrl?: string };
   };
 
-  const url = data.url ?? data.avatarUrl ?? data.imageUrl ?? data.fileUrl;
+  const url =
+    data.url ??
+    data.avatarUrl ??
+    data.imageUrl ??
+    data.fileUrl ??
+    data.file?.url ??
+    data.data?.url ??
+    data.data?.avatarUrl ??
+    data.data?.imageUrl ??
+    data.data?.fileUrl;
+
   if (!url) {
     throw new Error('Server did not return a URL after upload');
   }
