@@ -64,6 +64,7 @@ import { StemsManager } from '@/components/StemsManager';
 import { PayoutDashboard } from '@/components/marketplace/PayoutDashboard';
 import StorefrontBuilder from '@/components/marketplace/StorefrontBuilder';
 import { BeatCard } from '@/components/marketplace/BeatCard';
+import { MarketplaceBeatCard } from '@/components/marketplace/MarketplaceBeatCard';
 import {
   MarketplaceOutcomeHandler,
   useMarketplaceOutcome,
@@ -2421,171 +2422,25 @@ return (
             ) : (
               <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'grid-cols-1'}`}>
                 {beats.map((beat) => (
-                  <Card key={beat.id} className="group hover:shadow-xl transition-all duration-300 border border-gray-200 dark:border-gray-700">
-                    <CardContent className="p-0">
-                      <div className="relative">
-                        <div className="relative w-full h-48 bg-gradient-to-br from-blue-500 to-purple-600 rounded-t-lg overflow-hidden">
-                          <div className="flex items-center justify-center h-full">
-                            <Music className="w-16 h-16 text-white opacity-50" />
-                          </div>
-                          {beat.coverArt && (
-                            <img
-                              src={beat.coverArt}
-                              alt={beat.title}
-                              loading="lazy"
-                              decoding="async"
-                              className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300"
-                              onLoad={(e) => { (e.target as HTMLImageElement).style.opacity = '1'; }}
-                              onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                            />
-                          )}
-                        </div>
-                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-200 rounded-t-lg flex items-center justify-center">
-                          <Button
-                            onClick={() => handlePlayPause(beat.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-white/20 hover:bg-white/30 text-white border-white/30"
-                            size="sm"
-                            disabled={isLoadingAudio && isPlaying === beat.id}
-                          >
-                            {isLoadingAudio && isPlaying === beat.id ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : isPlaying === beat.id ? (
-                              <Pause className="w-4 h-4" />
-                            ) : (
-                              <Play className="w-4 h-4" />
-                            )}
-                          </Button>
-                        </div>
-                        <div className="absolute top-3 right-3">
-                          <Badge variant="secondary" className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90">
-                            {beat.tempo} BPM
-                          </Badge>
-                        </div>
-                        <div className="absolute top-3 left-3">
-                          <Badge variant="outline" className="backdrop-blur-sm bg-green-500/90 text-white border-0">
-                            <Shield className="w-3 h-3 mr-1" />
-                            Escrow
-                          </Badge>
-                        </div>
-                      </div>
-
-                      <div className="p-4">
-                        <div className="mb-3">
-                          <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1 line-clamp-1">
-                            {beat.title}
-                          </h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">{beat.producer}</p>
-                          <div className="flex items-center flex-wrap gap-1">
-                            <Badge variant="outline" className="text-xs">{beat.genre}</Badge>
-                            <Badge variant="outline" className="text-xs">{beat.mood}</Badge>
-                            {beat.isExclusive && <Badge variant="destructive" className="text-xs">Exclusive</Badge>}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
-                          <div className="flex items-center space-x-4">
-                            <div className="flex items-center space-x-1">
-                              <Play className="w-3 h-3" />
-                              <span>{(beat.plays ?? 0).toLocaleString()}</span>
-                            </div>
-                            <button 
-                              className="flex items-center space-x-1 hover:text-red-500 transition-colors"
-                              onClick={() => likeBeatMutation.mutate(beat.id)}
-                              disabled={likeBeatMutation.isPending}
-                            >
-                              <Heart className={`w-3 h-3 ${likeBeatMutation.isPending ? 'animate-pulse' : ''}`} />
-                              <span>{(beat.likes ?? 0).toLocaleString()}</span>
-                            </button>
-                            <div className="flex items-center space-x-1">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  key={star}
-                                  onClick={() => rateBeatMutation.mutate({ beatId: beat.id, rating: star })}
-                                  className="hover:scale-110 transition-transform"
-                                  disabled={rateBeatMutation.isPending}
-                                >
-                                  <Star 
-                                    className={`w-3 h-3 ${star <= ((beat as any).avgRating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`} 
-                                  />
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            {beat.discountPercent && beat.discountPriceCents != null ? (
-                              <>
-                                <div className="flex items-center gap-1.5 justify-end">
-                                  <p className="font-semibold text-green-600">${(beat.discountPriceCents / 100).toFixed(2)}</p>
-                                  <Badge variant="destructive" className="text-[10px] px-1 py-0">-{beat.discountPercent}%</Badge>
-                                </div>
-                                <p className="text-xs line-through text-muted-foreground">${beat.price}</p>
-                              </>
-                            ) : (
-                              <>
-                                <p className="font-semibold text-gray-900 dark:text-white">${beat.price}</p>
-                                <p className="text-xs">Starting from</p>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2 mb-4">
-                          {getAvailableLicenses(beat).map((license) => {
-                            const tier = getLicenseTier(beat, license);
-                            const originalPrice = getLicenseOriginalPrice(beat, license);
-                            return (
-                            <div key={license} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded">
-                              <div>
-                                <div className="flex items-center gap-1">
-                                  <p className="text-sm font-medium capitalize">{tier?.label || license}</p>
-                                  {tier?.bogoEnabled && (
-                                    <Badge className="text-[9px] px-1 py-0 bg-orange-500">BOGO</Badge>
-                                  )}
-                                  {tier?.fileFormats && tier.fileFormats.length > 1 && (
-                                    <Badge variant="outline" className="text-[9px] px-1 py-0">{tier.fileFormats.map(f => f.toUpperCase()).join('+')}</Badge>
-                                  )}
-                                </div>
-                                <p className="text-xs text-gray-500">{getLicenseDescription(license)}</p>
-                                {tier?.bogoEnabled && tier.bogoGetType && (
-                                  <p className="text-[10px] text-orange-600">Buy 1, get {tier.bogoGetPercent === 100 ? 'FREE' : `${tier.bogoGetPercent}% off`} {tier.bogoGetType} license</p>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <div className="text-right">
-                                  <span className="text-sm font-semibold">${getLicensePrice(beat, license).toFixed(2)}</span>
-                                  {originalPrice != null && (
-                                    <span className="text-xs line-through text-muted-foreground ml-1">${originalPrice.toFixed(2)}</span>
-                                  )}
-                                  {tier?.discountPercent && tier.discountPercent > 0 && (
-                                    <Badge variant="destructive" className="text-[9px] px-1 py-0 ml-1">-{tier.discountPercent}%</Badge>
-                                  )}
-                                </div>
-                                <Button size="sm" onClick={() => handleAddToCart(beat, license)} className="h-8 px-3">
-                                  <Plus className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            );
-                          })}
-                        </div>
-
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handlePurchase(beat, 'basic', true)}
-                          >
-                            <Shield className="w-4 h-4 mr-1" />
-                            Buy with Escrow
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleShare(beat)}>
-                            <Share2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <MarketplaceBeatCard
+                    key={beat.id}
+                    beat={beat as any}
+                    isPlaying={isPlaying === beat.id}
+                    isLoadingAudio={isLoadingAudio}
+                    availableLicenses={getAvailableLicenses(beat)}
+                    getLicenseTier={(license) => getLicenseTier(beat, license) as any}
+                    getLicensePrice={(license) => getLicensePrice(beat, license)}
+                    getLicenseOriginalPrice={(license) => getLicenseOriginalPrice(beat, license)}
+                    getLicenseDescription={(license) => getLicenseDescription(license)}
+                    onPlayPause={(id) => handlePlayPause(id)}
+                    onLike={(id) => likeBeatMutation.mutate(id)}
+                    isLikePending={likeBeatMutation.isPending}
+                    onRate={(beatId, rating) => rateBeatMutation.mutate({ beatId, rating })}
+                    isRatePending={rateBeatMutation.isPending}
+                    onAddToCart={(license) => handleAddToCart(beat, license)}
+                    onPurchaseEscrow={() => handlePurchase(beat, 'basic', true)}
+                    onShare={() => handleShare(beat)}
+                  />
                 ))}
               </div>
             )}
