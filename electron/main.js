@@ -19,7 +19,8 @@ let serverReady = false;
 
 function resolveServerEntry() {
   const candidates = [
-    path.join(process.resourcesPath || '', 'app.asar', 'dist', 'index.mjs'),
+    path.join(process.resourcesPath || '', 'app.asar.unpacked', 'dist', 'index.mjs'),
+    path.join(process.resourcesPath || '', 'app.asar.unpacked', 'dist', 'index.cjs'),
     path.join(process.resourcesPath || '', 'app', 'dist', 'index.mjs'),
     path.join(__dirname, '..', 'dist', 'index.mjs'),
     path.join(__dirname, '..', 'dist', 'index.cjs'),
@@ -84,9 +85,8 @@ async function waitForServer() {
 
 function getStaticIndex() {
   const candidates = [
-    path.join(process.resourcesPath || '', 'app.asar', 'dist', 'public', 'index.html'),
-    path.join(process.resourcesPath || '', 'app', 'dist', 'public', 'index.html'),
     path.join(__dirname, '..', 'dist', 'public', 'index.html'),
+    path.join(process.resourcesPath || '', 'app', 'dist', 'public', 'index.html'),
   ];
   for (const c of candidates) {
     if (c && fs.existsSync(c)) return c;
