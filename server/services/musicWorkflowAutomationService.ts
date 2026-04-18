@@ -1130,10 +1130,22 @@ class MusicWorkflowAutomationService {
     const actions: string[] = [];
 
     if (config.generateISRC) {
-      actions.push('ISRC placeholder created');
+      try {
+        const { codeGenerationService } = await import('./codeGenerationService.js');
+        const result = await codeGenerationService.generateISRC(
+          userId,
+          trackId,
+          (eventData as Record<string, unknown>).artist as string | undefined,
+          trackName,
+        );
+        actions.push(result?.isrc ? `ISRC ${result.isrc} assigned` : 'ISRC generation skipped (no track id)');
+      } catch (err) {
+        logger.warn({ err, trackId }, 'ISRC generation failed in workflow handler');
+        actions.push('ISRC generation failed (will retry on next event)');
+      }
     }
     if (config.suggestGenre) {
-      actions.push('Genre/mood tag suggestions queued');
+      actions.push('Genre/mood tag suggestions queued for next AI cycle');
     }
     if (config.notifyOnComplete) {
       await notificationService.send({
@@ -1213,7 +1225,9 @@ class MusicWorkflowAutomationService {
     }
 
     if (config.createMasteringTask) {
-      actions.push(`Mastering task created (due in ${config.masteringDeadlineDays} days)`);
+      // No dedicated `tasks` table exists; surface the reminder via notification only.
+      // Avoid claiming a DB-backed task was created when it wasn't.
+      actions.push(`Mastering reminder set (due in ${config.masteringDeadlineDays} days)`);
     }
 
     return { actions };
@@ -1257,10 +1271,12 @@ class MusicWorkflowAutomationService {
     config: Record<string, any>
   ) {
     const { releaseTitle = 'New Release', releaseId } = eventData;
-    const actions: string[] = ['Pre-save landing page created'];
+    // Pre-save pages are created via /api/distribution/hyperfollow during the release wizard,
+    // not here. This handler is the post-event notification side of that flow.
+    const actions: string[] = ['Pre-save campaign event acknowledged'];
 
     if (config.postToSocial) {
-      actions.push('Pre-save link auto-posted to connected social accounts');
+      actions.push('Pre-save link queued for social auto-posting');
     }
 
     await notificationService.send({

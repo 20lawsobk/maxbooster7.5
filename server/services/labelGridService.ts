@@ -494,21 +494,66 @@ export class LabelGridService {
   }
 
   /**
-   * Process earnings from platforms
+   * Process earnings from platforms.
+   * Writes to BOTH `earnings` (for royalty calculations) and `dsp_analytics`
+   * (so the analytics dashboard reflects revenue + streams from LabelGrid).
    */
   private async processEarnings(data: unknown): Promise<void> {
-    // Store earnings data for royalty calculations
-    const { releaseId, platform, amount, streams, period } = data;
+    const payload = data as {
+      releaseId: string;
+      platform: string;
+      amount: number;
+      streams: number;
+      period: { start: string; end: string };
+      trackId?: string;
+      saves?: number;
+      playlistAdds?: number;
+      listeners?: number;
+    };
+    const { releaseId, platform, amount, streams, period, trackId, saves, playlistAdds, listeners } = payload;
 
-    await storage.createEarningsRecord({
-      releaseId,
-      platform,
-      amount,
-      streams,
-      periodStart: new Date(period.start),
-      periodEnd: new Date(period.end),
-      reportedAt: new Date(),
-    });
+    // 1. Write earnings record (guarded — older storage layers may not implement this).
+    // dsp_analytics below is the canonical revenue store for the dashboard.
+    const storageAny = storage as unknown as {
+      createEarningsRecord?: (input: Record<string, unknown>) => Promise<unknown>;
+    };
+    if (typeof storageAny.createEarningsRecord === 'function') {
+      try {
+        await storageAny.createEarningsRecord({
+          releaseId,
+          platform,
+          amount,
+          streams,
+          periodStart: new Date(period.start),
+          periodEnd: new Date(period.end),
+          reportedAt: new Date(),
+        });
+      } catch (err) {
+        logger.warn({ err, releaseId, platform }, '[LABELGRID] createEarningsRecord failed; continuing with dsp_analytics mirror');
+      }
+    }
+
+    // 2. Mirror to dsp_analytics so the analytics dashboard shows revenue/streams
+    try {
+      const { db } = await import('../db.js');
+      const { dspAnalytics } = await import('../../shared/schema.js');
+      const release = await storage.getReleaseByDistributionId(releaseId);
+      await db.insert(dspAnalytics).values({
+        userId: release?.userId ?? null,
+        releaseId: release?.id ?? releaseId,
+        trackId: trackId ?? null,
+        platform,
+        date: new Date(period.end).toISOString().slice(0, 10),
+        streams: streams ?? 0,
+        revenue: amount ?? 0,
+        saves: saves ?? 0,
+        playlistAdds: playlistAdds ?? 0,
+        listeners: listeners ?? 0,
+        metadata: { source: 'labelgrid_webhook', periodStart: period.start, periodEnd: period.end },
+      });
+    } catch (err) {
+      logger.warn({ err, releaseId, platform }, '[LABELGRID] Failed to mirror earnings into dsp_analytics');
+    }
 
     logger.info(`[LABELGRID] Processed earnings: ${amount} from ${platform} (${streams} streams)`);
   }

@@ -215,6 +215,24 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
         await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/artwork`, artworkFormData).catch(() => {});
       }
 
+      // Step 4: Submit to LabelGrid for actual distribution.
+      // The server endpoint validates UPC/ISRC/platform selection and creates dispatch records.
+      // ISRCs are auto-generated during track upload; UPC during release create.
+      let submissionStatus: 'submitted' | 'saved-as-draft' = 'saved-as-draft';
+      let submissionError: string | undefined;
+      if (releaseData.id) {
+        try {
+          await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/submit`, {});
+          submissionStatus = 'submitted';
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : String(err);
+          submissionError = message;
+          logger.warn('Distribution submit deferred (release saved as draft):', err);
+        }
+      }
+      (releaseData as Record<string, unknown>).submissionStatus = submissionStatus;
+      (releaseData as Record<string, unknown>).submissionError = submissionError;
+
       // Create HyperFollow campaign if enabled
       if (createPreSave && releaseData.id) {
         const slug =
@@ -263,13 +281,25 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
 
       return releaseData;
     },
-    onSuccess: () => {
-      toast({
-        title: 'Release submitted!',
-        description: createPreSave
-          ? 'Your release and pre-save campaign have been created!'
-          : 'Your release has been submitted for distribution.',
-      });
+    onSuccess: (releaseData: Record<string, unknown>) => {
+      const status = releaseData?.submissionStatus as string | undefined;
+      const submissionError = releaseData?.submissionError as string | undefined;
+      if (status === 'submitted') {
+        toast({
+          title: 'Release submitted!',
+          description: createPreSave
+            ? 'Your release is queued for distribution and the pre-save campaign is live.'
+            : 'Your release is queued for distribution to the selected platforms.',
+        });
+      } else {
+        toast({
+          title: 'Release saved as draft',
+          description: submissionError
+            ? `Saved, but distribution submission failed: ${submissionError}. Open the release to resolve and resubmit.`
+            : 'Saved successfully. Open the release to submit for distribution.',
+          variant: 'destructive',
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/releases'] });
       queryClient.invalidateQueries({ queryKey: ['/api/distribution/hyperfollow'] });
       onComplete?.();
