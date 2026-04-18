@@ -1143,65 +1143,76 @@ export default function Marketplace() {
     },
     // Optimistic update — apply the edited values to the cached lists immediately
     // so the UI reflects them as soon as Save is clicked, before the server replies.
+    // Wrapped defensively so any error here cannot block the actual PUT request.
     onMutate: async ({ id, data }) => {
-      await queryClient.cancelQueries({ queryKey: ['/api/marketplace/my-beats'] });
-      await queryClient.cancelQueries({ queryKey: ['/api/marketplace/beats'] });
+      const ctx: { prevMy?: any; prevAll?: any } = {};
+      try {
+        // Snapshot BEFORE patching so onError can restore the true pre-edit state.
+        ctx.prevMy = queryClient.getQueryData(['/api/marketplace/my-beats']);
+        ctx.prevAll = queryClient.getQueryData(['/api/marketplace/beats']);
 
-      const patch: Record<string, any> = {};
-      const get = (k: string) => {
-        const v = data.get(k);
-        return typeof v === 'string' ? v : undefined;
-      };
-      const title = get('title');
-      const description = get('description');
-      const genre = get('genre');
-      const mood = get('mood');
-      const tempo = get('tempo');
-      const key = get('key');
-      const price = get('price');
-      const licenseType = get('licenseType');
-      const tags = get('tags');
-      const artworkUrl = get('artworkUrl');
-      if (title !== undefined) patch.title = title;
-      if (description !== undefined) patch.description = description;
-      if (genre !== undefined) patch.genre = genre;
-      if (mood !== undefined) patch.mood = mood;
-      if (tempo !== undefined) {
-        const t = parseInt(tempo, 10);
-        if (!isNaN(t)) {
-          patch.tempo = t;
-          patch.bpm = t;
+        await queryClient.cancelQueries({ queryKey: ['/api/marketplace/my-beats'] });
+        await queryClient.cancelQueries({ queryKey: ['/api/marketplace/beats'] });
+
+        const patch: Record<string, any> = {};
+        const getStr = (k: string) => {
+          const v = data.get(k);
+          return typeof v === 'string' ? v : undefined;
+        };
+        const title = getStr('title');
+        const description = getStr('description');
+        const genre = getStr('genre');
+        const mood = getStr('mood');
+        const tempo = getStr('tempo');
+        const keyVal = getStr('key');
+        const price = getStr('price');
+        const licenseType = getStr('licenseType');
+        const tags = getStr('tags');
+        const artworkUrl = getStr('artworkUrl');
+        if (title !== undefined) patch.title = title;
+        if (description !== undefined) patch.description = description;
+        if (genre !== undefined) patch.genre = genre;
+        if (mood !== undefined) patch.mood = mood;
+        if (tempo !== undefined) {
+          const t = parseInt(tempo, 10);
+          if (!isNaN(t)) {
+            patch.tempo = t;
+            patch.bpm = t;
+          }
         }
-      }
-      if (key !== undefined) patch.key = key;
-      if (price !== undefined) {
-        const p = parseFloat(price);
-        if (!isNaN(p)) patch.price = p;
-      }
-      if (licenseType !== undefined) patch.licenseType = licenseType;
-      if (tags !== undefined) patch.tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
-      if (artworkUrl) {
-        patch.artworkUrl = artworkUrl;
-        patch.coverArt = artworkUrl;
-      } else if (data.get('artwork') instanceof File) {
-        const file = data.get('artwork') as File;
-        try {
-          const objUrl = URL.createObjectURL(file);
-          patch.artworkUrl = objUrl;
-          patch.coverArt = objUrl;
-        } catch {}
-      }
-
-      const apply = (key: readonly unknown[]) => {
-        const prev = queryClient.getQueryData<any[]>(key as any);
-        if (Array.isArray(prev)) {
-          queryClient.setQueryData(key as any, prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)));
+        if (keyVal !== undefined) patch.key = keyVal;
+        if (price !== undefined) {
+          const p = parseFloat(price);
+          if (!isNaN(p)) patch.price = p;
         }
-      };
-      apply(['/api/marketplace/my-beats']);
-      apply(['/api/marketplace/beats']);
+        if (licenseType !== undefined) patch.licenseType = licenseType;
+        if (tags !== undefined) patch.tags = tags.split(',').map((t) => t.trim()).filter(Boolean);
+        if (artworkUrl) {
+          patch.artworkUrl = artworkUrl;
+          patch.coverArt = artworkUrl;
+        } else {
+          const artFile = data.get('artwork');
+          if (typeof Blob !== 'undefined' && artFile instanceof Blob) {
+            try {
+              const objUrl = URL.createObjectURL(artFile);
+              patch.artworkUrl = objUrl;
+              patch.coverArt = objUrl;
+            } catch {}
+          }
+        }
 
-      return { prevMy: queryClient.getQueryData(['/api/marketplace/my-beats']), prevAll: queryClient.getQueryData(['/api/marketplace/beats']) };
+        const apply = (qk: readonly unknown[]) => {
+          const prev = queryClient.getQueryData<any[]>(qk as any);
+          if (Array.isArray(prev)) {
+            queryClient.setQueryData(qk as any, prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)));
+          }
+        };
+        apply(['/api/marketplace/my-beats']);
+        apply(['/api/marketplace/beats']);
+      } catch (e) {
+        console.warn('[updateBeat] optimistic patch failed:', e);
+      }
+      return ctx;
     },
     onError: (_err, _vars, ctx: any) => {
       if (ctx?.prevMy !== undefined)

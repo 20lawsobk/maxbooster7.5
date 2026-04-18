@@ -234,66 +234,65 @@ export function MarketplaceBeatCard({
             </div>
           )}
 
-          {/* Headline price + stats — split into two rows so the star row never clips */}
-          <div className="border-t border-border/40 pt-3 space-y-2">
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                {hasDiscount ? 'Sale price' : 'Starting from'}
-              </span>
-              {hasDiscount ? (
-                <div className="flex items-baseline gap-1.5">
-                  <span className="text-[11px] line-through text-muted-foreground tabular-nums">
-                    ${beat.price}
-                  </span>
-                  <span className="text-base font-bold tabular-nums text-emerald-500">
-                    ${(beat.discountPriceCents! / 100).toFixed(2)}
-                  </span>
-                </div>
-              ) : (
-                <span className="text-base font-bold tabular-nums text-foreground">
+          {/* Headline price */}
+          <div className="border-t border-border/40 pt-3 flex items-baseline justify-between gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
+              {hasDiscount ? 'Sale price' : 'Starting from'}
+            </span>
+            {hasDiscount ? (
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-[11px] line-through text-muted-foreground tabular-nums">
                   ${beat.price}
                 </span>
-              )}
-            </div>
-            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="inline-flex items-center gap-1" title="Plays">
-                  <Play className="w-3 h-3 shrink-0" />
-                  <span className="tabular-nums">{(beat.plays ?? 0).toLocaleString()}</span>
+                <span className="text-base font-bold tabular-nums text-emerald-500">
+                  ${(beat.discountPriceCents! / 100).toFixed(2)}
                 </span>
+              </div>
+            ) : (
+              <span className="text-base font-bold tabular-nums text-foreground">
+                ${beat.price}
+              </span>
+            )}
+          </div>
+
+          {/* Plays + likes */}
+          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1" title="Plays">
+              <Play className="w-3 h-3 shrink-0" />
+              <span className="tabular-nums">{(beat.plays ?? 0).toLocaleString()}</span>
+            </span>
+            <button
+              onClick={() => onLike(beat.id)}
+              disabled={isLikePending}
+              className="inline-flex items-center gap-1 hover:text-rose-500 transition-colors"
+              data-testid={`button-like-${beat.id}`}
+            >
+              <Heart className={`w-3 h-3 shrink-0 ${isLikePending ? 'animate-pulse' : ''}`} />
+              <span className="tabular-nums">{(beat.likes ?? 0).toLocaleString()}</span>
+            </button>
+          </div>
+
+          {/* Rating — own row so stars never collide with neighbors */}
+          <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+            <span className="text-[11px]">Rate this beat</span>
+            <div className="inline-flex items-center gap-1.5" role="group" aria-label="Rate beat">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
-                  onClick={() => onLike(beat.id)}
-                  disabled={isLikePending}
-                  className="inline-flex items-center gap-1 hover:text-rose-500 transition-colors"
-                  data-testid={`button-like-${beat.id}`}
+                  key={star}
+                  onClick={() => onRate(beat.id, star)}
+                  disabled={isRatePending}
+                  className="hover:scale-110 transition-transform"
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                 >
-                  <Heart className={`w-3 h-3 shrink-0 ${isLikePending ? 'animate-pulse' : ''}`} />
-                  <span className="tabular-nums">{(beat.likes ?? 0).toLocaleString()}</span>
+                  <Star
+                    className={`w-4 h-4 ${
+                      star <= userRating
+                        ? 'text-amber-400 fill-amber-400'
+                        : 'text-muted-foreground/40'
+                    }`}
+                  />
                 </button>
-              </div>
-              <div
-                className="inline-flex items-center gap-1 shrink-0"
-                role="group"
-                aria-label="Rate beat"
-              >
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    onClick={() => onRate(beat.id, star)}
-                    disabled={isRatePending}
-                    className="hover:scale-110 transition-transform"
-                    aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
-                  >
-                    <Star
-                      className={`w-3.5 h-3.5 ${
-                        star <= userRating
-                          ? 'text-amber-400 fill-amber-400'
-                          : 'text-muted-foreground/40'
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
+              ))}
             </div>
           </div>
 
