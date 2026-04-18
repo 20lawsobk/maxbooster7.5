@@ -58,6 +58,8 @@ cookies.txt
 .audit-wal/
 .capsule-temp/
 data/
+!client/src/data/
+!client/src/data/**
 
 # Rust build artifacts — all compiled output is rebuilt during deployment.
 # The binary was previously committed but caused Replit's deployment layer
