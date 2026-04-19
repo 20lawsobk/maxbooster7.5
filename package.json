@@ -48,7 +48,13 @@
     "test:all": "npm run security:audit && npm run test:load && npm run test:security",
     "prelaunch": "tsx scripts/pre-launch-check.ts",
     "bootstrap:admin": "tsx -e \"import { bootstrapAdmin } from './server/init-admin'; bootstrapAdmin().then(() => process.exit(0)).catch(e => { console.error(e); process.exit(1); })\"",
-    "db:push:force": "node scripts/db-push.js --force"
+    "db:push:force": "node scripts/db-push.js --force",
+    "test": "vitest run",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "test:integration": "vitest run tests/health.test.ts tests/auth-flows.test.ts tests/api-guards.test.ts tests/security-hardening.test.ts tests/webhook-security.test.ts tests/critical-paths.test.ts tests/paid-user-e2e.test.ts",
+    "test:watch": "vitest watch --config vitest.config.ts",
+    "test:coverage": "vitest run --coverage --config vitest.config.ts",
+    "test:ci": "vitest run --config vitest.config.ts --reporter=junit --outputFile=test-results.xml"
   },
   "build": {
     "appId": "com.blawzmusic.maxbooster",

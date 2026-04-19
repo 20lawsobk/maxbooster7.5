@@ -62,7 +62,7 @@ export type User = typeof users.$inferSelect;
 // ============================================================================
 export const sessions = pgTable("sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   sessionToken: text("session_token").unique(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
@@ -107,7 +107,7 @@ export type InsertAnalytics = z.infer<typeof insertAnalyticsSchema>;
 // ============================================================================
 export const subscriptions = pgTable("subscriptions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   stripeSubscriptionId: text("stripe_subscription_id"),
   plan: text("plan").notNull(),
   status: text("status").notNull(),
@@ -254,7 +254,7 @@ export type StudioProject = typeof studioProjects.$inferSelect;
 // ============================================================================
 export const releases = pgTable("releases", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   artistId: varchar("artist_id"),
   title: text("title").notNull(),
   releaseDate: timestamp("release_date"),
@@ -574,7 +574,7 @@ export const updateMembershipTierSchema = insertMembershipTierSchema.partial();
 // ============================================================================
 export const beats = pgTable("beats", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   title: text("title").notNull(),
   description: text("description"),
   price: real("price").notNull(),
@@ -1613,7 +1613,7 @@ export const kycDocuments = pgTable("kyc_documents", {
 // ============================================================================
 export const notifications = pgTable("notifications", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   type: text("type").notNull(),
   title: text("title").notNull(),
   message: text("message"),
@@ -4238,7 +4238,7 @@ export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
   timestamp: timestamp("timestamp").defaultNow().notNull(),
-  userId: varchar("user_id", { length: 64 }),
+  userId: varchar("user_id", { length: 64 }).references(() => users.id, { onDelete: 'set null' }),
   userEmail: varchar("user_email", { length: 255 }),
   ip: varchar("ip", { length: 64 }).notNull(),
   userAgent: text("user_agent"),
@@ -4464,7 +4464,7 @@ export type MusicWorkflowExecutionLog = typeof musicWorkflowExecutionLogs.$infer
 // ============================================================================
 export const artistProfiles = pgTable("artist_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: 'cascade' }),
   artistName: varchar("artist_name", { length: 255 }).notNull(),
   isNewArtist: boolean("is_new_artist").notNull().default(true),
 

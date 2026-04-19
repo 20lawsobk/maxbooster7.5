@@ -59,7 +59,7 @@ export async function initializeAdmin() {
       logger.info(`✅ Admin account exists: ${adminEmail}`);
       
       // Sync password, role, subscription, and ensure onboarding is complete
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
       await db.update(users).set({ 
         password: hashedPassword,
         role: 'admin',
@@ -91,7 +91,7 @@ export async function initializeAdmin() {
       logger.info('🔐 Creating admin account...');
       isNewAdmin = true;
       
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, 12);
       
       admin = await storage.createUser({
         username: adminUsername,
