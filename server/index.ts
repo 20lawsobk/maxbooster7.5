@@ -726,6 +726,15 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   await registerRoutes(httpServer, app);
 
+  // Register subsystem health probes (DB, Redis, audit, automation) so
+  // /api/ready can report on every dependency uniformly.
+  try {
+    const { registerCoreProbes } = await import('./lib/healthRegistry.js');
+    registerCoreProbes();
+  } catch (err) {
+    logger.warn({ err }, '[Health] Failed to register core probes');
+  }
+
   // Start retention background services
   try {
     const { reEngagementService } = await import('./services/reEngagementService.js');

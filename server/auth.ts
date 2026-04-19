@@ -2,6 +2,41 @@ import type { Request, Response, NextFunction } from 'express';
 import { jwtAuthService } from './services/jwtAuthService';
 import { storage } from './storage';
 import { logger } from './logger.js';
+import { getRedisClient } from './lib/redisConnectionFactory.js';
+
+// Brute-force guard for JWT verification.
+// 60 failed attempts per 15min per IP and per token-prefix.
+const JWT_RL_WINDOW_MS = 15 * 60 * 1000;
+const JWT_RL_MAX = 60;
+
+const localRl = new Map<string, { count: number; resetAt: number }>();
+const localRlPrune = () => {
+  const now = Date.now();
+  for (const [k, v] of localRl) if (v.resetAt <= now) localRl.delete(k);
+};
+
+async function jwtRateLimit(key: string): Promise<boolean> {
+  try {
+    const client = await getRedisClient();
+    if (client) {
+      const redisKey = `ratelimit:jwt:${key}`;
+      const count = await (client as any).incr(redisKey);
+      if (count === 1) await (client as any).pexpire(redisKey, JWT_RL_WINDOW_MS);
+      return count <= JWT_RL_MAX;
+    }
+  } catch {
+    // fall through to in-memory fallback
+  }
+  if (localRl.size > 50_000) localRlPrune();
+  const now = Date.now();
+  const entry = localRl.get(key);
+  if (!entry || entry.resetAt <= now) {
+    localRl.set(key, { count: 1, resetAt: now + JWT_RL_WINDOW_MS });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= JWT_RL_MAX;
+}
 
 export const verifyJWT = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -11,6 +46,16 @@ export const verifyJWT = async (req: Request, res: Response, next: NextFunction)
   }
 
   const token = authHeader.substring(7);
+
+  // Rate-limit failed attempts by IP + token prefix to thwart brute-force.
+  const ip = (req.ip || req.socket?.remoteAddress || 'unknown').toString();
+  const tokenPrefix = token.slice(0, 16);
+  const rlKey = `${ip}:${tokenPrefix}`;
+  if (!(await jwtRateLimit(rlKey))) {
+    return res
+      .status(429)
+      .json({ message: 'Too many JWT verification attempts. Try again later.' });
+  }
 
   try {
     const decoded = await jwtAuthService.verifyAccessToken(token);

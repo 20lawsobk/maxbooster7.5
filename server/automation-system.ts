@@ -8,6 +8,29 @@ import { logger } from './logger.js';
 
 const execAsync = promisify(exec);
 
+// Lazy service loaders — avoid circular imports at module load time.
+async function loadNotificationService() {
+  const m = await import('./services/notificationService.js');
+  return (m as any).notificationService ?? (m as any).default;
+}
+async function loadDistributionService() {
+  const m = await import('./services/distributionService.js');
+  return (m as any).distributionService ?? (m as any).default;
+}
+async function loadAutoPostingService() {
+  try {
+    const m = await import('./services/autoPostingServiceV2.js');
+    return (m as any).autoPostingServiceV2 ?? (m as any).default;
+  } catch {
+    const m = await import('./services/autoPostingService.js');
+    return (m as any).autoPostingService ?? (m as any).default;
+  }
+}
+async function loadStorage() {
+  const m = await import('./storage.js');
+  return (m as any).storage;
+}
+
 // Comprehensive Automation System
 export class AutomationSystem extends EventEmitter {
   private static instance: AutomationSystem;
@@ -69,39 +92,93 @@ export class AutomationSystem extends EventEmitter {
 
   // Register built-in actions
   private registerBuiltInActions(): void {
-    // Email actions
+    // Email actions — routed through notificationService.sendEmail
     this.registerAction('send-email', {
       name: 'Send Email',
       description: 'Send email notification',
-      parameters: ['to', 'subject', 'body', 'template'],
+      parameters: ['to', 'userId', 'subject', 'body', 'template', 'link'],
       execute: async (params) => {
-        logger.info(`📧 Sending email to ${params.to}: ${params.subject}`);
-        // Implement email sending
-        return { success: true, message: 'Email sent successfully' };
+        logger.info(`📧 Sending email to ${params.to ?? params.userId}: ${params.subject}`);
+        try {
+          const notif = await loadNotificationService();
+          if (!notif) throw new Error('notificationService unavailable');
+          // notificationService is user-centric; resolve user when only an
+          // address is supplied so we can hit its public sendEmail flow.
+          let userId: string | undefined = params.userId;
+          if (!userId && params.to) {
+            const storage = await loadStorage();
+            const u = await storage?.getUserByEmail?.(params.to);
+            userId = u?.id;
+          }
+          if (!userId) throw new Error('no userId resolvable for email');
+          if (typeof notif.sendCustomEmail === 'function') {
+            await notif.sendCustomEmail(userId, params.subject, params.body, params.link);
+          } else if (typeof notif.notify === 'function') {
+            await notif.notify(userId, 'system', params.subject, params.body, params.link);
+          } else {
+            throw new Error('notificationService has no email entrypoint');
+          }
+          return { success: true, message: 'Email sent successfully' };
+        } catch (e: any) {
+          logger.warn({ err: e }, 'send-email action failed');
+          return { success: false, message: e?.message ?? 'send-email failed' };
+        }
       },
     });
 
-    // Social media actions
+    // Social media actions — routed through autoPostingService(V2)
     this.registerAction('post-social-media', {
       name: 'Post to Social Media',
       description: 'Post content to social media platforms',
-      parameters: ['platforms', 'content', 'media', 'schedule'],
+      parameters: ['userId', 'platforms', 'content', 'media', 'schedule'],
       execute: async (params) => {
-        logger.info(`📱 Posting to social media: ${params.platforms.join(', ')}`);
-        // Implement social media posting
-        return { success: true, message: 'Posted to social media' };
+        const platforms = Array.isArray(params.platforms) ? params.platforms : [params.platforms];
+        logger.info(`📱 Posting to social media: ${platforms.join(', ')}`);
+        try {
+          const svc = await loadAutoPostingService();
+          if (!svc) throw new Error('autoPostingService unavailable');
+          const results: any[] = [];
+          for (const platform of platforms) {
+            if (typeof svc.schedulePost === 'function') {
+              const r = await svc.schedulePost(params.userId, {
+                platform,
+                content: params.content,
+                mediaUrl: params.media,
+                scheduledFor: params.schedule ? new Date(params.schedule) : undefined,
+              });
+              results.push({ platform, ...r });
+            } else if (typeof svc.publishPost === 'function') {
+              const r = await svc.publishPost(params.userId, platform, params.content, params.media);
+              results.push({ platform, ...r });
+            } else {
+              throw new Error('autoPostingService has no schedule/publish method');
+            }
+          }
+          return { success: true, message: 'Posted to social media', results };
+        } catch (e: any) {
+          logger.warn({ err: e }, 'post-social-media action failed');
+          return { success: false, message: e?.message ?? 'post-social-media failed' };
+        }
       },
     });
 
-    // Distribution actions
+    // Distribution actions — routed through distributionService.distributeRelease
     this.registerAction('distribute-music', {
       name: 'Distribute Music',
       description: 'Distribute music to streaming platforms',
-      parameters: ['releaseId', 'platforms', 'metadata'],
+      parameters: ['userId', 'releaseId', 'platforms', 'metadata'],
       execute: async (params) => {
-        logger.info(`🎵 Distributing music to ${params.platforms.join(', ')}`);
-        // Implement music distribution
-        return { success: true, message: 'Music distributed successfully' };
+        const platforms = Array.isArray(params.platforms) ? params.platforms : [params.platforms];
+        logger.info(`🎵 Distributing music to ${platforms.join(', ')}`);
+        try {
+          const dist = await loadDistributionService();
+          if (!dist?.distributeRelease) throw new Error('distributionService unavailable');
+          const r = await dist.distributeRelease(params.releaseId, params.userId);
+          return { success: true, message: 'Music distribution dispatched', detail: r };
+        } catch (e: any) {
+          logger.warn({ err: e }, 'distribute-music action failed');
+          return { success: false, message: e?.message ?? 'distribute-music failed' };
+        }
       },
     });
 
@@ -164,15 +241,27 @@ export class AutomationSystem extends EventEmitter {
       },
     });
 
-    // Notification actions
+    // Notification actions — routed through notificationService.notify
     this.registerAction('send-notification', {
       name: 'Send Notification',
       description: 'Send push notification',
-      parameters: ['title', 'message', 'recipients', 'type'],
+      parameters: ['title', 'message', 'recipients', 'type', 'link'],
       execute: async (params) => {
         logger.info(`🔔 Sending notification: ${params.title}`);
-        // Implement notification sending
-        return { success: true, message: 'Notification sent' };
+        try {
+          const notif = await loadNotificationService();
+          if (!notif?.notify) throw new Error('notificationService.notify unavailable');
+          const recipients: string[] = Array.isArray(params.recipients)
+            ? params.recipients
+            : [params.recipients].filter(Boolean);
+          for (const userId of recipients) {
+            await notif.notify(userId, params.type ?? 'system', params.title, params.message, params.link);
+          }
+          return { success: true, message: 'Notification sent', count: recipients.length };
+        } catch (e: any) {
+          logger.warn({ err: e }, 'send-notification action failed');
+          return { success: false, message: e?.message ?? 'send-notification failed' };
+        }
       },
     });
 

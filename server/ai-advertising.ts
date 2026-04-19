@@ -1,4 +1,53 @@
 import axios from 'axios';
+import { z } from 'zod';
+import { withRetry } from './lib/retry.js';
+import { logger } from './logger.js';
+
+// ---- Zod schemas for boundary validation -------------------------------
+export const MusicDataSchema = z
+  .object({
+    id: z.string().optional(),
+    title: z.string().optional(),
+    artist: z.string().optional(),
+    genre: z.string().optional(),
+    mood: z.string().optional(),
+    tempo: z.number().optional(),
+    duration: z.number().optional(),
+    audioUrl: z.string().optional(),
+    artworkUrl: z.string().optional(),
+    metadata: z.record(z.unknown()).optional(),
+  })
+  .passthrough();
+export type MusicData = z.infer<typeof MusicDataSchema>;
+
+export const TargetAudienceSchema = z
+  .object({
+    ageRange: z.tuple([z.number(), z.number()]).optional(),
+    genders: z.array(z.string()).optional(),
+    countries: z.array(z.string()).optional(),
+    interests: z.array(z.string()).optional(),
+    languages: z.array(z.string()).optional(),
+  })
+  .passthrough();
+export type TargetAudience = z.infer<typeof TargetAudienceSchema>;
+
+// ---- Resilient HTTP wrapper -------------------------------------------
+async function resilientHttp<T = unknown>(
+  fn: () => Promise<T>,
+  label: string
+): Promise<T> {
+  return withRetry(fn, {
+    label,
+    retries: 4,
+    baseMs: 300,
+    maxMs: 8_000,
+    onRetry: (err, attempt, delayMs) =>
+      logger.warn(
+        { label, attempt, delayMs, err: (err as any)?.message },
+        '[ai-advertising] retrying external call'
+      ),
+  });
+}
 
 interface AIAdOptimization {
   audienceInsights: {
@@ -50,6 +99,17 @@ export class AIAdvertisingEngine {
 
   // Complete Native Platform Replacement System
   async bypassNativeAdPlatforms(musicData: unknown, targetAudience: unknown): Promise<any> {
+    // Validate at the boundary so downstream methods can rely on shape.
+    const md = MusicDataSchema.safeParse(musicData);
+    const ta = TargetAudienceSchema.safeParse(targetAudience);
+    if (!md.success) {
+      logger.warn({ issues: md.error.issues }, '[ai-advertising] invalid musicData');
+    }
+    if (!ta.success) {
+      logger.warn({ issues: ta.error.issues }, '[ai-advertising] invalid targetAudience');
+    }
+    musicData = md.success ? md.data : (musicData ?? {});
+    targetAudience = ta.success ? ta.data : (targetAudience ?? {});
     // This system completely eliminates the need for Facebook Ads, Google Ads, TikTok Ads, etc.
     return {
       platformReplacement: {

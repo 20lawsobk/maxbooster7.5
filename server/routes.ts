@@ -4454,9 +4454,35 @@ export async function registerRoutes(
     res.json({ buildId: BUILD_ID, buildTimestamp: BUILD_TIMESTAMP });
   });
 
-  // Health check endpoint
+  // Liveness — cheap probe used by deployment infra. Always 200 if the
+  // process can serve requests, regardless of subsystem state.
   app.get("/api/health", (_req: Request, res: Response) => {
-    res.json({ status: "ok", timestamp: new Date().toISOString() });
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({ status: "ok", timestamp: new Date().toISOString(), buildId: BUILD_ID });
+  });
+
+  // Readiness — checks downstream subsystems (DB, Redis, audit, automation).
+  // Returns 503 if any subsystem is `down`, 200 otherwise (degraded is still
+  // considered ready, since the platform self-heals around degraded deps).
+  app.get("/api/ready", async (_req: Request, res: Response) => {
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    try {
+      const { healthRegistry } = await import('./lib/healthRegistry.js');
+      const result = await healthRegistry.checkAll();
+      const code = result.status === 'down' ? 503 : 200;
+      res.status(code).json({
+        status: result.status,
+        timestamp: new Date().toISOString(),
+        buildId: BUILD_ID,
+        subsystems: result.subsystems,
+      });
+    } catch (err: any) {
+      res.status(503).json({
+        status: 'down',
+        timestamp: new Date().toISOString(),
+        error: err?.message ?? 'health check failed',
+      });
+    }
   });
 
   // Stripe checkout session creation for subscription plans
