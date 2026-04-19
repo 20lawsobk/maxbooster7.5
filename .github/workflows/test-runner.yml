@@ -78,7 +78,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload security report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-test-report
@@ -156,7 +156,7 @@ jobs:
         run: kill $SERVER_PID 2>/dev/null || true
 
       - name: Upload load test report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: load-test-report
