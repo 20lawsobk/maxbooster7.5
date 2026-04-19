@@ -51,12 +51,18 @@ Key architectural decisions include:
 | R4 | 62c0064a | FK constraints (7 tables), `server/config/env.ts` (Zod), 45/45 unit tests, bcrypt cost 10→12 in `init-admin.ts`, CI test gate |
 | R5 audit | d665f5b5 | Comprehensive 20-dimension audit: deps, auth, secrets, DB, health, CSP, Electron, FastAPI, bundle, observability, CI, 2FA, backup, rate limits — baseline captured, no fixes applied |
 | R6 | 32c867c1 | 133 FK indexes applied live, CSP unsafe-eval removed, HSTS enabled, login rate limit 50→10, OAuth state secret prod guard, Electron sandbox: true, FastAPI CORS wildcard replaced, DNS LIMIT 500 |
+| R7 | f12c3737 | Node.js runtime v20→v22; /api/health/live + /api/health/ready sub-route aliases; all 37 bare `catch {}` blocks annotated with rationale across 19 service/route files |
 
 **GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
 **Branch**: `main`  
-**Latest commit**: `32c867c1` (R6)
+**Latest commit**: `f12c3737` (R7)
 
-### R6 Details (current)
+### R7 Details (current)
+- **Node.js v22**: runtime upgraded via Replit package management
+- **Health sub-routes**: `livenessHandler` + `readinessHandler` consts extracted in `server/routes.ts`; both old paths (`/api/health`, `/api/ready`) and new k8s-style aliases (`/api/health/live`, `/api/health/ready`) registered; request-logger exemption covers all four via `includes('/api/health')`
+- **Empty catch annotation**: All 37 bare `catch {}` blocks replaced with `catch { /* intentional: <reason> */ }` explaining the intent (temp-file cleanup, Redis miss/write, ffmpeg path fallback, TTS engine loop, JSON.parse fallback, PDIM key cleanup, stream close guard, statfsSync platform gap, Stripe webhook logger safety)
+
+### R6 Details
 - **FK indexes** (`server/migrations/r6_fk_indexes.sql`): 133 `CREATE INDEX IF NOT EXISTS` statements applied live for all `user_id`, `storefront_id`, `volume_id`, `pocket_id` FK columns across 124 tables — eliminates seq-scans on every per-user query
 - **CSP**: removed `'unsafe-eval'` from `scriptSrc` in `server/safety/mandatoryMiddleware.ts`; Stripe.js does not require it
 - **HSTS**: added `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }` to helmet config
