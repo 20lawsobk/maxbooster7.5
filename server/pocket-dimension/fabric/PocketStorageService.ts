@@ -189,7 +189,7 @@ export class PocketStorageService {
             await store.deleteChunk(chunkId);
             const node = await this.nodeRegistry.getNode(nodeId);
             if (node) await this.nodeRegistry.updateNode(nodeId, { usedBytes: Math.max(0, node.usedBytes - loc.sizeBytes) });
-          } catch {}
+          } catch { /* intentional: per-node chunk delete runs in parallel forEach — one failure does not cancel others */ }
         }));
         await this.chunkIndex.deleteChunkLocation(chunkId);
       }

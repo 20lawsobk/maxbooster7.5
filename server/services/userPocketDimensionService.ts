@@ -332,7 +332,7 @@ export class UserPocketDimensionService {
       try {
         const raw = await pocket.read(KEY);
         history = JSON.parse(raw.toString());
-      } catch {}
+      } catch { /* intentional: missing or unparseable history JSON → starts fresh */ }
 
       history.push({ ...meta, createdAt: meta.createdAt ?? new Date().toISOString() });
       if (history.length > 1000) history = history.slice(-1000);

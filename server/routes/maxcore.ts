@@ -75,7 +75,7 @@ async function pdimRpc(
     while (Date.now() < deadline) {
       const raw = await pdimExec(cfg, "GET", [`maxcore:rpc:out:${reqId}`]) as string | null;
       if (raw) {
-        try { await pdimExec(cfg, "DEL", [`maxcore:rpc:out:${reqId}`]); } catch {}
+        try { await pdimExec(cfg, "DEL", [`maxcore:rpc:out:${reqId}`]); } catch { /* intentional: PDIM key cleanup is best-effort */ }
         const parsed = JSON.parse(raw) as any;
         return { ok: parsed.ok !== false, status: parsed.status ?? 200, data: parsed.data ?? parsed };
       }
@@ -306,7 +306,7 @@ const DL_STOP_FLAG  = path.join(CTRL_DIR, "downloader.stop");
 const MC_STOP_FLAG  = path.join(CTRL_DIR, "maxcore.stop");
 
 function ensureCtrl() {
-  try { fs.mkdirSync(CTRL_DIR, { recursive: true }); } catch {}
+  try { fs.mkdirSync(CTRL_DIR, { recursive: true }); } catch { /* intentional: dir may already exist */ }
 }
 
 router.get("/downloader/status", (_req, res) => {
@@ -328,7 +328,7 @@ router.post("/downloader/stop", (req, res) => {
 
 router.post("/downloader/start", async (_req, res) => {
   ensureCtrl();
-  try { fs.unlinkSync(DL_STOP_FLAG); } catch {}
+  try { fs.unlinkSync(DL_STOP_FLAG); } catch { /* intentional: flag may not exist yet */ }
   logger.info("[MaxCore] Dataset Downloader stop flag cleared");
 
   const ts  = Date.now();
@@ -365,7 +365,7 @@ router.post("/maxcore/stop", (req, res) => {
 
 router.post("/maxcore/start", (_req, res) => {
   ensureCtrl();
-  try { fs.unlinkSync(MC_STOP_FLAG); } catch {}
+  try { fs.unlinkSync(MC_STOP_FLAG); } catch { /* intentional: flag may not exist yet */ }
   logger.info("[MaxCore] MaxCore stop flag cleared — supervisor will restart server");
   res.json({ ok: true, detail: "Stop flag removed. Supervisor will restart MaxCore on its next loop" });
 });

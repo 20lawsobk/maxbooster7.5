@@ -245,6 +245,6 @@ export async function processUploadedBeat(
     // Clean up temp files
     try {
       fs.rmSync(tmpDir, { recursive: true, force: true });
-    } catch {}
+    } catch { /* intentional: temp-dir cleanup, rmSync failure is non-fatal */ }
   }
 }

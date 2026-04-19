@@ -815,7 +815,7 @@ class AlgorithmIntelligenceService {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) return JSON.parse(cached);
-      } catch {}
+      } catch { /* intentional: Redis cache miss → falls through to live calculation */ }
     }
 
     const metrics = this.analyzeMetrics(platform, recentMetrics);
@@ -843,7 +843,7 @@ class AlgorithmIntelligenceService {
     if (redis) {
       try {
         await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
-      } catch {}
+      } catch { /* intentional: best-effort Redis cache write */ }
     }
 
     logger.info(`🔍 Algorithm health check: ${platform} — Score: ${overallScore}/100 — Status: ${status}`);

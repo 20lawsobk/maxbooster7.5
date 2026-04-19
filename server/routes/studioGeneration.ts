@@ -555,7 +555,7 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
     logger.warn({ err: err }, '[audio-to-melody] Error:');
     res.status(500).json({ error: 'Pitch tracking failed' });
   } finally {
-    try { fs.unlinkSync(tmpPath); } catch {}
+    try { fs.unlinkSync(tmpPath); } catch { /* intentional: temp-file cleanup */ }
   }
 });
 

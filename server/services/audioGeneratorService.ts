@@ -23,7 +23,7 @@ function resolveFFmpegPath(): string {
   try {
     const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
     if (p) return p;
-  } catch {}
+  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
   const candidates = [
     '/run/current-system/sw/bin/ffmpeg',
     '/usr/bin/ffmpeg',
@@ -122,7 +122,7 @@ async function tryGenerateTTS(text: string, maxDur: number): Promise<string | nu
         logger.info(`[AudioGen] TTS via ${bin} — ${clean.length} chars`);
         return outPath;
       }
-    } catch {}
+    } catch { /* intentional: TTS engine attempt failed → tries next engine in loop */ }
   }
 
   const fliteText = clean.slice(0, 200).replace(/'/g, '');
@@ -138,7 +138,7 @@ async function tryGenerateTTS(text: string, maxDur: number): Promise<string | nu
       logger.info('[AudioGen] TTS via FFmpeg flite');
       return outPath;
     }
-  } catch {}
+  } catch { /* intentional: flite TTS attempt failed → caller logs warning and returns null */ }
 
   logger.warn('[AudioGen] All TTS engines unavailable — music-bed only');
   return null;
@@ -201,14 +201,14 @@ export async function generateAudio(opts: AudioGenOptions = {}): Promise<AudioGe
   } catch (err) {
     if (voPath) {
       logger.warn('[AudioGen] First attempt failed (possibly bad TTS file), retrying music-bed only');
-      try { unlinkSync(voPath); } catch {}
+      try { unlinkSync(voPath); } catch { /* intentional: temp voiceover cleanup */ }
       await execFileAsync(FFMPEG, build(false), { timeout: 60_000 });
     } else {
       throw err;
     }
   }
 
-  if (voPath) { try { unlinkSync(voPath); } catch {} }
+  if (voPath) { try { unlinkSync(voPath); } catch { /* intentional: temp voiceover cleanup */ } }
 
   if (!existsSync(outputPath)) {
     return { success: false, error: 'FFmpeg produced no output file' };

@@ -4430,7 +4430,7 @@ export async function registerRoutes(
         };
         logger.info(`[Client Error] ${safeError.message} | stack: ${safeError.stack?.split('\n')[0] || ''} | url: ${safeError.url}`);
       }
-    } catch {}
+    } catch { /* intentional: client error handler must always respond even if logging fails */ }
     res.json({ received: true });
   });
 
@@ -4456,15 +4456,19 @@ export async function registerRoutes(
 
   // Liveness — cheap probe used by deployment infra. Always 200 if the
   // process can serve requests, regardless of subsystem state.
-  app.get("/api/health", (_req: Request, res: Response) => {
+  // Registered under both /api/health and /api/health/live (k8s convention).
+  const livenessHandler = (_req: Request, res: Response) => {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.json({ status: "ok", timestamp: new Date().toISOString(), buildId: BUILD_ID });
-  });
+  };
+  app.get("/api/health", livenessHandler);
+  app.get("/api/health/live", livenessHandler);
 
   // Readiness — checks downstream subsystems (DB, Redis, audit, automation).
   // Returns 503 if any subsystem is `down`, 200 otherwise (degraded is still
   // considered ready, since the platform self-heals around degraded deps).
-  app.get("/api/ready", async (_req: Request, res: Response) => {
+  // Registered under both /api/ready and /api/health/ready (k8s convention).
+  const readinessHandler = async (_req: Request, res: Response) => {
     res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
     try {
       const { healthRegistry } = await import('./lib/healthRegistry.js');
@@ -4483,7 +4487,9 @@ export async function registerRoutes(
         error: err?.message ?? 'health check failed',
       });
     }
-  });
+  };
+  app.get("/api/ready", readinessHandler);
+  app.get("/api/health/ready", readinessHandler);
 
   // Stripe checkout session creation for subscription plans
   const stripe = process.env.STRIPE_SECRET_KEY

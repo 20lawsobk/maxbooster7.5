@@ -44,7 +44,7 @@ function resolveFFmpegPath(): string {
   try {
     const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
     if (p) return p;
-  } catch {}
+  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
   const candidates = [
     '/run/current-system/sw/bin/ffmpeg',
     '/usr/bin/ffmpeg',
@@ -661,8 +661,8 @@ async function renderWithPython(
     ffmpeg.on('error', (e) => doReject(new Error(`FFmpeg error: ${e.message}`)));
 
     ffmpeg.on('close', (code) => {
-      try { python.stdout.unpipe(ffmpeg.stdin); } catch {}
-      try { ffmpeg.stdin.destroy(); } catch {}
+      try { python.stdout.unpipe(ffmpeg.stdin); } catch { /* intentional: stream may already be closed */ }
+      try { ffmpeg.stdin.destroy(); } catch { /* intentional: stream may already be closed */ }
       if (code === 0) resolve();
       else {
         const ffErrSnip = ffErr.slice(-1000);
@@ -1070,7 +1070,7 @@ async function applyAudioAndLogo(
 
   // Clean up temp voiceover file
   if (hasVoiceover && voiceoverPath) {
-    try { unlinkSync(voiceoverPath); } catch {}
+    try { unlinkSync(voiceoverPath); } catch { /* intentional: temp voiceover cleanup */ }
   }
 }
 

@@ -31,7 +31,7 @@ function resolveFFmpegPath(): string {
   try {
     const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
     if (p) return p;
-  } catch {}
+  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
   for (const c of ['/run/current-system/sw/bin/ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
     if (existsSync(c)) return c;
   }
@@ -401,7 +401,7 @@ async function analyzeBeatLibrosa(audioPath: string): Promise<BeatAnalysis | nul
     logger.debug('[BeatSync] librosa analysis failed:', e?.message?.slice(0, 100));
     return null;
   } finally {
-    try { if (existsSync(scriptPath)) unlinkSync(scriptPath); } catch {}
+    try { if (existsSync(scriptPath)) unlinkSync(scriptPath); } catch { /* intentional: temp-script cleanup */ }
   }
 }
 

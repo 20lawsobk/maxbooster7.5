@@ -382,7 +382,7 @@ class TimingOptimizerService {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) return JSON.parse(cached);
-      } catch {}
+      } catch { /* intentional: Redis cache miss → falls through to live calculation */ }
     }
 
     const bestTimes = this.calculateBestTimes(platform, timezone);
@@ -393,7 +393,7 @@ class TimingOptimizerService {
     if (redis) {
       try {
         await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
-      } catch {}
+      } catch { /* intentional: best-effort Redis cache write */ }
     }
 
     logger.info(`🕐 Optimal timing calculated for ${platform} in ${timezone}`);

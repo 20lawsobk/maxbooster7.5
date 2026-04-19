@@ -408,7 +408,7 @@ class UserPreferencesService {
         const event = JSON.parse(eventStr);
         const hour = new Date(event.timestamp).getHours();
         hourCounts[hour] = (hourCounts[hour] || 0) + 1;
-      } catch {}
+      } catch { /* intentional: malformed event string → skipped */ }
     }
 
     const peakHour = Object.entries(hourCounts).sort((a, b) => b[1] - a[1])[0];
@@ -426,7 +426,7 @@ class UserPreferencesService {
         if (event.context?.contentType) {
           typeCounts[event.context.contentType] = (typeCounts[event.context.contentType] || 0) + 1;
         }
-      } catch {}
+      } catch { /* intentional: malformed event string → skipped */ }
     }
 
     const topType = Object.entries(typeCounts).sort((a, b) => b[1] - a[1])[0];

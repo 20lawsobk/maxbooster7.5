@@ -277,7 +277,7 @@ export async function renderDiffusionScene(
     ], { timeout: Math.max(90_000, opts.durationSec * 6000) });
 
     // Clean up raw diffusion file
-    try { if (existsSync(rawPath)) unlinkSync(rawPath); } catch {}
+    try { if (existsSync(rawPath)) unlinkSync(rawPath); } catch { /* intentional: temp raw diffusion file cleanup */ }
 
     logger.info(
       `[DiffusionScene] ✅ Scene ${opts.sceneIndex + 1} — ` +

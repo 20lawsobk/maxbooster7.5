@@ -47,7 +47,7 @@ registerWebhookHandler('checkout.session.completed', async (event) => {
       let parsedSnapshot = null;
       try {
         if (snapshotStr) parsedSnapshot = JSON.parse(snapshotStr);
-      } catch {}
+      } catch { /* intentional: malformed snapshot JSON → parsedSnapshot stays null */ }
 
       if (!existing) {
         await db.insert(orders).values({

@@ -48,7 +48,7 @@ function resolveFFmpegPath(): string {
   try {
     const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
     if (p) return p;
-  } catch {}
+  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
   for (const c of ['/run/current-system/sw/bin/ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
     if (existsSync(c)) return c;
   }
@@ -75,7 +75,7 @@ function tempPath(tag: string): string {
 
 function cleanup(...paths: string[]) {
   for (const p of paths) {
-    try { if (existsSync(p)) unlinkSync(p); } catch {}
+    try { if (existsSync(p)) unlinkSync(p); } catch { /* intentional: temp-file cleanup */ }
   }
 }
 

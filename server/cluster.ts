@@ -110,7 +110,7 @@ import { spawnSync, spawn } from 'child_process';
           fs.writeFileSync(full + '.gz', gz);
           count++;
         }
-      } catch {}
+      } catch { /* intentional: gzip backup is best-effort; main data file already written */ }
     }
     return count;
   }

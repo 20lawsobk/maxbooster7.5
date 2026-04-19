@@ -1216,7 +1216,7 @@ router.post('/upload', upload.fields([
         } catch (tagErr) {
           logger.warn('[AutoTag] Failed to auto-tag beat:', tagErr);
         } finally {
-          try { fs.unlinkSync(tmpPath); } catch {}
+          try { fs.unlinkSync(tmpPath); } catch { /* intentional: temp-file cleanup */ }
         }
       });
     }

@@ -377,7 +377,7 @@ adminRouter.get("/system-health", async (req, res) => {
               const free = stat.bsize * stat.bfree;
               return total > 0 ? Math.round(((total - free) / total) * 100) : 0;
             }
-          } catch {}
+          } catch { /* intentional: statfsSync unavailable on this platform → returns 0 */ }
           return 0;
         })(),
       },

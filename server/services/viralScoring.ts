@@ -348,7 +348,7 @@ class ViralScoringService {
       try {
         const cached = await redis.get(cacheKey);
         if (cached) return JSON.parse(cached);
-      } catch {}
+      } catch { /* intentional: Redis cache miss → falls through to live calculation */ }
     }
 
     const factors = await this.analyzeFactors(content);
@@ -371,7 +371,7 @@ class ViralScoringService {
     if (redis && content.id) {
       try {
         await redis.setEx(cacheKey, this.REDIS_TTL, JSON.stringify(result));
-      } catch {}
+      } catch { /* intentional: best-effort Redis cache write */ }
     }
 
     logger.info(`📊 Viral score calculated: ${overall}/100 for ${content.platform}`, { contentId: content.id });

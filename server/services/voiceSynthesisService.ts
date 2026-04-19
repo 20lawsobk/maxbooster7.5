@@ -40,7 +40,7 @@ function resolveFFmpegPath(): string {
   try {
     const p = execFileSync('/bin/sh', ['-c', 'which ffmpeg'], { timeout: 3000 }).toString().trim();
     if (p) return p;
-  } catch {}
+  } catch { /* intentional: shell which-lookup fails → falls through to hardcoded candidates */ }
   for (const c of ['/run/current-system/sw/bin/ffmpeg', '/usr/bin/ffmpeg', '/usr/local/bin/ffmpeg']) {
     if (existsSync(c)) return c;
   }
@@ -480,7 +480,7 @@ export async function synthesizeSegments(
   } finally {
     // Clean up temp segment files
     for (const f of tempFiles) {
-      try { if (existsSync(f)) unlinkSync(f); } catch {}
+      try { if (existsSync(f)) unlinkSync(f); } catch { /* intentional: temp segment file cleanup */ }
     }
   }
 }
