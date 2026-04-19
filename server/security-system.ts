@@ -18,6 +18,7 @@ import {
 } from '@shared/schema';
 import { eq, and, gte, or, desc, lte, sql } from 'drizzle-orm';
 import { logger } from './logger.js';
+import { env } from './config/env.js';
 
 // Local type definitions for schema items that may not be exported
 interface SecurityBehaviorProfile {
@@ -482,7 +483,7 @@ export class SelfHealingSecuritySystem {
       }
 
       // Check session configuration
-      if (!process.env.SESSION_SECRET || process.env.SESSION_SECRET === 'development-secret') {
+      if (!env.SESSION_SECRET || env.SESSION_SECRET === 'development-secret') {
         auditFindings.push({
           setting: 'session-secret',
           status: 'warning',
@@ -1769,12 +1770,12 @@ export class SelfHealingSecuritySystem {
 
       // Deterministic security configuration checks (no random vulnerability injection)
       const securityConfig = {
-        sql_injection: !!process.env.DATABASE_URL,              // parameterized queries via Drizzle ORM
+        sql_injection: !!env.DATABASE_URL,                       // parameterized queries via Drizzle ORM
         xss: true,                                              // helmet CSP headers enabled
-        csrf: !!(process.env.SESSION_SECRET),                   // CSRF protection tied to session secret
+        csrf: !!(env.SESSION_SECRET),                           // CSRF protection tied to session secret
         auth_bypass: true,                                      // requireAuth middleware on all protected routes
         rate_limit_bypass: !!(process.env.RATE_LIMIT_ENABLED !== 'false'), // rate limiter active
-        session_hijacking: !!(process.env.SESSION_SECRET),      // httpOnly+secure session cookies
+        session_hijacking: !!(env.SESSION_SECRET),              // httpOnly+secure session cookies
       } as Record<string, boolean>;
 
       for (const test of tests) {

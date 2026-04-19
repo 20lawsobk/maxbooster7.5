@@ -1,6 +1,7 @@
 import Redis from 'ioredis';
 import { logger } from '../logger.js';
 import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
+import { env } from '../config/env.js';
 
 const CHANNEL_USER = 'ws:user:notify';
 const CHANNEL_BROADCAST = 'ws:broadcast';
@@ -52,7 +53,7 @@ export async function initRedisPubSub(): Promise<void> {
     return;
   }
 
-  const url = process.env.REDIS_URL;
+  const url = env.REDIS_URL;
   if (!url) {
     logger.warn('[WS PubSub] REDIS_URL not set — cross-instance broadcasting disabled');
     return;

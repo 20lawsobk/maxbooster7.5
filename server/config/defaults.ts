@@ -1,5 +1,6 @@
 import { logger } from '../logger.js';
 import os from 'os';
+import { env } from './env.js';
 
 // VM Reserve auto-sizing: scale queue concurrency proportionally to available CPU cores.
 // Formula: floor(cpuCount / 4) gives a whole-number multiplier:
@@ -151,7 +152,7 @@ export const config: AppConfig = {
   port: parseEnvInt('PORT', 5000),
 
   database: {
-    url: process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '',
+    url: env.NEON_DATABASE_URL || env.DATABASE_URL || '',
     // In production each worker creates its own pool.  With the default of 20
     // connections × N workers we easily exceed Neon's connection limit (53100).
     // Scale the per-worker pool so all workers combined stay ≤ 15 connections:
@@ -167,7 +168,7 @@ export const config: AppConfig = {
   },
 
   redis: {
-    url: process.env.REDIS_URL,
+    url: env.REDIS_URL,
     maxRetries: 3,
     retryDelay: 1000,
   },
@@ -179,7 +180,7 @@ export const config: AppConfig = {
   },
 
   session: {
-    secret: process.env.SESSION_SECRET || 'dev-secret-change-in-production',
+    secret: env.SESSION_SECRET || 'dev-secret-change-in-production',
     maxSessions: parseEnvInt('MAX_SESSIONS', 80000000000), // 80 billion sessions
     ttl: parseEnvInt('SESSION_TTL', 86400), // 24 hours
     name: process.env.SESSION_NAME || 'maxbooster.sid',

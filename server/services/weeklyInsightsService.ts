@@ -13,6 +13,7 @@ import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 import sgMail from '@sendgrid/mail';
 import { logger } from '../logger.js';
 import { notificationService } from './notificationService.js';
+import { env } from '../config/env.js';
 
 interface WeeklyReport {
   userId: string;
@@ -38,9 +39,9 @@ class WeeklyInsightsService {
   }
 
   private initialize() {
-    if (!this.isInitialized && process.env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.SENDGRID_API_KEY) {
       try {
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        sgMail.setApiKey(env.SENDGRID_API_KEY);
         this.isInitialized = true;
         logger.info('✅ Weekly Insights Service initialized');
       } catch (error) {
@@ -252,7 +253,7 @@ class WeeklyInsightsService {
     const clickTrackUrl = `${baseUrl}/api/emails/track/${emailId}/click`;
 
     const html = this.generateEmailTemplate(report, trackingPixel, clickTrackUrl);
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'insights@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'insights@maxbooster.ai';
 
     try {
       await sgMail.send({

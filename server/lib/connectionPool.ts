@@ -18,6 +18,7 @@
 
 import { Pool, PoolConfig } from 'pg';
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 interface PoolStats {
   totalConnections: number;
@@ -46,7 +47,7 @@ class OptimizedConnectionPool {
     const isProduction = process.env.NODE_ENV === 'production';
     
     const baseConfig: PoolConfig = {
-      connectionString: process.env.DATABASE_URL,
+      connectionString: env.DATABASE_URL,
       
       max: isProduction ? 100 : 20,
       min: isProduction ? 10 : 2,
@@ -57,7 +58,7 @@ class OptimizedConnectionPool {
       allowExitOnIdle: !isProduction,
     };
 
-    if (process.env.DATABASE_URL?.includes('neon') || process.env.DATABASE_URL?.includes('pooler')) {
+    if (env.DATABASE_URL?.includes('neon') || env.DATABASE_URL?.includes('pooler')) {
       return {
         ...baseConfig,
         max: isProduction ? 50 : 10,

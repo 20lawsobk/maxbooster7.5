@@ -1,6 +1,7 @@
 import { db } from '../db';
 import { sessions, users, passwordResetTokens } from '@shared/schema';
 import { gte, sql, count, desc, eq, and } from 'drizzle-orm';
+import { env } from '../config/env.js';
 
 // Track metrics in memory (for production, use Redis or dedicated monitoring)
 let requestCounter = 0;
@@ -247,8 +248,8 @@ export async function getPentestResults() {
   }
 
   if (
-    !process.env.SESSION_SECRET ||
-    process.env.SESSION_SECRET === 'fallback-secret-change-in-production'
+    !env.SESSION_SECRET ||
+    env.SESSION_SECRET === 'fallback-secret-change-in-production'
   ) {
     vulnerabilities.push({
       id: 'vuln-session-001',

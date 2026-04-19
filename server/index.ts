@@ -2,6 +2,8 @@
 import "./lib/consoleErrorFilter.js";
 // Mandatory observability — must load before anything else can throw
 import "./instrument.js";
+// Typed env — validates critical vars at startup, throws if DATABASE_URL/SESSION_SECRET missing
+import { env } from "./config/env.js";
 
 import express, { type Request, Response, NextFunction } from "express";
 import cookieParser from "cookie-parser";
@@ -116,7 +118,7 @@ httpServer.on('connection', (socket) => {
 // requests that arrive before they are ready will get 404/503 for a few seconds,
 // which is acceptable; the deployment health check only needs /health to pass.
 {
-  const _earlyPort = parseInt(process.env.PORT || "5000", 10);
+  const _earlyPort = env.PORT;
   httpServer.listen(
     { port: _earlyPort, host: "0.0.0.0", reusePort: true },
     () => log(`serving on port ${_earlyPort} (early listen — full init in progress)`)
@@ -484,7 +486,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   // Validate SESSION_SECRET in production - abort if missing or weak
   if (isProduction) {
-    const sessionSecret = process.env.SESSION_SECRET;
+    const sessionSecret = env.SESSION_SECRET;
     if (!sessionSecret) {
       logger.warn('❌ CRITICAL: SESSION_SECRET environment variable is required in production');
       logger.warn('❌ Cannot start server without secure session configuration');

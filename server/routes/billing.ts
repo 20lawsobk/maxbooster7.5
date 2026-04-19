@@ -35,13 +35,14 @@ import { requireAuth } from '../middleware/auth.js';
 import { notificationService } from '../services/notificationService.js';
 import { stripeService } from '../services/stripeService.js';
 import { instantPayoutService } from '../services/instantPayoutService.js';
+import { env } from '../config/env.js';
 
 const router = Router();
 
 // SECURITY: Apply rate limiting to all billing endpoints
 router.use(billingRateLimiter);
 
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+const stripeSecretKey = env.STRIPE_SECRET_KEY;
 if (!stripeSecretKey) {
   logger.warn('[Billing] STRIPE_SECRET_KEY not configured. Billing endpoints will return errors.');
 }

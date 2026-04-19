@@ -1,5 +1,6 @@
 import sgMail from '@sendgrid/mail';
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 interface AlertConfig {
   emailEnabled: boolean;
@@ -31,7 +32,7 @@ export class AlertingService {
 
   constructor() {
     this.config = {
-      emailEnabled: process.env.SENDGRID_API_KEY ? true : false,
+      emailEnabled: env.SENDGRID_API_KEY ? true : false,
       webhookEnabled: process.env.ALERT_WEBHOOK_URL ? true : false,
       emailRecipients: process.env.ALERT_EMAIL_RECIPIENTS?.split(',') || [],
       webhookUrl: process.env.ALERT_WEBHOOK_URL,
@@ -116,7 +117,7 @@ export class AlertingService {
 
   private async sendEmailAlert(alert: Alert): Promise<void> {
     try {
-      sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+      sgMail.setApiKey(env.SENDGRID_API_KEY!);
 
       const severityEmoji = {
         info: 'ℹ️',
@@ -126,7 +127,7 @@ export class AlertingService {
 
       const msg = {
         to: this.config.emailRecipients,
-        from: process.env.SENDGRID_FROM_EMAIL || 'alerts@maxbooster.ai',
+        from: env.SENDGRID_FROM_EMAIL || 'alerts@maxbooster.ai',
         subject: `${severityEmoji[alert.severity]} Max Booster Alert: ${alert.title}`,
         text: `
 ${alert.title}

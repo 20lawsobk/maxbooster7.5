@@ -194,9 +194,95 @@ jobs:
           path: audit-report.json
           retention-days: 7
 
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: maxbooster_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+      SESSION_SECRET: ci-integration-session-secret-minimum-32-chars-xxxx
+      STRIPE_SECRET_KEY: sk_test_placeholder_for_ci_only_not_real
+      PORT: 5001
+      CI: 'true'
+      TEST_BASE_URL: http://localhost:5001
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Push database schema
+        run: npx drizzle-kit push --force
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/maxbooster_test
+
+      - name: Start server in background
+        run: |
+          npx tsx server/index.ts &
+          echo $! > /tmp/server.pid
+          echo "Server started with PID $(cat /tmp/server.pid)"
+
+      - name: Wait for server to be ready
+        run: |
+          echo "Waiting for server on port 5001..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5001/health > /dev/null 2>&1; then
+              echo "✅ Server is ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "❌ Server did not start within 30s"
+              cat /tmp/server.pid | xargs kill 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Run integration tests (health + auth guards)
+        run: npm run test:integration:ci
+
+      - name: Stop server
+        if: always()
+        run: |
+          if [ -f /tmp/server.pid ]; then
+            kill $(cat /tmp/server.pid) 2>/dev/null || true
+          fi
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: test-results-integration.xml
+          retention-days: 7
+
   ci-summary:
     name: CI Summary
-    needs: [typecheck, lint, test, build, security]
+    needs: [typecheck, lint, test, build, security, test-integration]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: always()
@@ -210,10 +296,11 @@ jobs:
           echo "| Type Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.test.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.test-integration.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Audit | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.lint.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
+          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.lint.result }}" == "success" && "${{ needs.test.result }}" == "success" && "${{ needs.test-integration.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
             echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ One or more checks failed" >> $GITHUB_STEP_SUMMARY

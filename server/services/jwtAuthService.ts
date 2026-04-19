@@ -4,6 +4,7 @@ import { storage } from '../storage';
 import type { InsertJWTToken, InsertRefreshToken } from '@shared/schema';
 import { logger } from '../logger.js';
 import { sessionTracking } from './sessionTrackingService.js';
+import { env } from '../config/env.js';
 
 // SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
 // We never fall back to a deterministic value — that would let any attacker
@@ -11,7 +12,7 @@ import { sessionTracking } from './sessionTrackingService.js';
 // For local boot convenience we accept REPLIT_DB_URL or generate an ephemeral
 // per-process secret, but only when NODE_ENV === 'development' AND no other
 // instance can share that secret (i.e., truly single-process local dev).
-let JWT_SECRET = process.env.SESSION_SECRET || '';
+let JWT_SECRET = env.SESSION_SECRET || '';
 
 if (!JWT_SECRET) {
   if (process.env.NODE_ENV !== 'development') {

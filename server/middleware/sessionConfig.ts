@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { getRedisClient } from '../lib/redisClient.js';
 import { isPdimConfigured } from '../lib/pdimClient.js';
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 /**
  * In-process session cache — eliminates repeated PDIM round-trips for hot
@@ -259,7 +260,7 @@ export async function createSessionStore(): Promise<session.Store> {
 
 export function getSessionConfig(store: session.Store) {
   const isProduction = process.env.NODE_ENV === 'production';
-  const sessionSecret = process.env.SESSION_SECRET;
+  const sessionSecret = env.SESSION_SECRET;
 
   if (isProduction) {
     if (!sessionSecret) throw new Error('SESSION_SECRET environment variable is required in production');

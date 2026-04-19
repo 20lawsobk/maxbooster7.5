@@ -20,6 +20,7 @@ import { orders, storefrontOrders, bogoPromotions, customerMemberships, users } 
 import { eq, and, sql } from 'drizzle-orm';
 import { notificationService } from '../../services/notificationService.js';
 import { dunningService } from '../../services/dunningService.js';
+import { env } from '../../config/env.js';
 
 const router = Router();
 
@@ -396,8 +397,8 @@ router.post('/', stripeWebhookMiddleware, async (req: Request, res: Response) =>
 router.get('/health', (req: Request, res: Response) => {
   res.json({ 
     status: 'ok',
-    webhookSecretConfigured: !!process.env.STRIPE_WEBHOOK_SECRET,
-    stripeKeyConfigured: !!process.env.STRIPE_SECRET_KEY,
+    webhookSecretConfigured: !!env.STRIPE_WEBHOOK_SECRET,
+    stripeKeyConfigured: !!env.STRIPE_SECRET_KEY,
   });
 });
 

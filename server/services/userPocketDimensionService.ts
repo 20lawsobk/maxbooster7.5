@@ -12,6 +12,7 @@ import { userStorage, userStorageFiles, type UserStorage } from '@shared/schema'
 import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { createHash, randomBytes } from 'crypto';
+import { env } from '../config/env.js';
 
 const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024 * 1024; // 5GB default quota
 
@@ -428,7 +429,7 @@ export class UserPocketDimensionService {
 
   private generateEncryptionKey(userId: string, _email: string): string {
     const uniqueSalt = randomBytes(32).toString('hex');
-    const masterSecret = process.env.SESSION_SECRET || randomBytes(32).toString('hex');
+    const masterSecret = env.SESSION_SECRET || randomBytes(32).toString('hex');
     return createHash('sha512')
       .update(`${masterSecret}:${uniqueSalt}:${userId}:${Date.now()}`)
       .digest('hex')

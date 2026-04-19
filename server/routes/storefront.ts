@@ -30,6 +30,7 @@ import { z } from 'zod';
 import { logger } from '../logger.js';
 import dns from 'dns';
 import { validateDnsLabel, validateDomain } from '../modules/domains/dnsValidators.js';
+import { env } from '../config/env.js';
 
 const dnsPromises = dns.promises;
 const PLATFORM_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
@@ -556,7 +557,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
       return res.status(400).json({ error: 'You already have an active membership to this tier' });
     }
 
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey?.startsWith('sk_')) {
       return res.status(503).json({ error: 'Payment service unavailable. Please try again later.' });
     }
@@ -592,7 +593,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
       await db.update(membershipTiers).set({ stripePriceId }).where(eq(membershipTiers.id, tierId));
     }
 
-    const appUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+    const appUrl = env.APP_URL || 'https://maxbooster.replit.app';
     const storefrontSlug = storefront?.slug || '';
     const returnBase = `${appUrl}/storefront/${storefrontSlug}`;
 
@@ -1160,7 +1161,7 @@ router.post('/:id/checkout', async (req, res) => {
       return res.status(400).json({ error: 'Maximum 20 items per checkout' });
     }
 
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const stripeKey = env.STRIPE_SECRET_KEY;
     if (!stripeKey) {
       logger.warn('Stripe secret key is not configured');
       return res.status(503).json({ error: 'Payment processing is not available. Please contact support.' });

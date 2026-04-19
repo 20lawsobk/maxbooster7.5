@@ -1,4 +1,5 @@
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 interface ClusterSessionConfig {
   sessionSecret: string;
@@ -15,7 +16,7 @@ class ClusterSessionManager {
   private constructor() {
     const isProductionEnv =
       process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
-    const rawSecret = process.env.SESSION_SECRET;
+    const rawSecret = env.SESSION_SECRET;
     if (isProductionEnv && (!rawSecret || rawSecret.length < 32)) {
       logger.warn(
         '❌ CRITICAL: SESSION_SECRET missing or too short (<32 chars) — refusing to start in production'

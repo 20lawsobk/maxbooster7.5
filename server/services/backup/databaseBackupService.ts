@@ -3,6 +3,7 @@ import { logger } from '../../logger.js';
 import cron from 'node-cron';
 import fs from 'fs';
 import { storageService } from '../storageService.js';
+import { env } from '../../config/env.js';
 
 const BACKUP_PREFIX = 'database-backups';
 const BACKUP_INDEX_KEY = `${BACKUP_PREFIX}/index.json`;
@@ -39,7 +40,7 @@ export class DatabaseBackupService {
   private isInitialized = false;
 
   async initialize() {
-    if (!process.env.DATABASE_URL) {
+    if (!env.DATABASE_URL) {
       logger.warn('⚠️  DATABASE_URL not configured - backup service disabled');
       return;
     }
@@ -76,7 +77,7 @@ export class DatabaseBackupService {
   }
 
   async createBackup(): Promise<string> {
-    if (!process.env.DATABASE_URL) {
+    if (!env.DATABASE_URL) {
       throw new Error('DATABASE_URL not configured');
     }
 
@@ -87,7 +88,7 @@ export class DatabaseBackupService {
     const tmpPath = `/tmp/${name}`;
 
     await new Promise<void>((resolve, reject) => {
-      const pgDump = spawn('pg_dump', [process.env.DATABASE_URL!], { env: process.env });
+      const pgDump = spawn('pg_dump', [env.DATABASE_URL!], { env: process.env });
       const writeStream = fs.createWriteStream(tmpPath);
       let errorOutput = '';
       let pipelineDone = false;
@@ -207,7 +208,7 @@ export class DatabaseBackupService {
       fs.writeFileSync(tmpPath, buf);
 
       await new Promise<void>((resolve, reject) => {
-        const psql = spawn('psql', [process.env.DATABASE_URL || '', '-f', tmpPath], { env: process.env });
+        const psql = spawn('psql', [env.DATABASE_URL || '', '-f', tmpPath], { env: process.env });
         let errorOutput = '';
         psql.stderr.on('data', (d) => { errorOutput += d.toString(); });
         psql.on('close', (code) => {

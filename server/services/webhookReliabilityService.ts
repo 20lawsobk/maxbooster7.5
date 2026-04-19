@@ -2,9 +2,10 @@ import crypto from 'crypto';
 import axios from 'axios';
 import { storage } from '../storage';
 import type { InsertWebhookAttempt, InsertWebhookDeadLetterQueue } from '@shared/schema';
+import { env } from '../config/env.js';
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
-  || process.env.STRIPE_WEBHOOK_SECRET
+  || env.STRIPE_WEBHOOK_SECRET
   || (process.env.NODE_ENV === 'production'
     ? (() => { throw new Error('WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET is required in production'); })()
     : 'dev_webhook_secret_fallback_32_chars');

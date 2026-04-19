@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import { webPushService } from './webPushService.js';
 import { buildPushPayload } from './pushNotificationTypes.js';
+import { env } from '../config/env.js';
 
 interface NotificationOptions {
   userId: string;
@@ -29,9 +30,9 @@ class NotificationService {
   }
 
   private initialize() {
-    if (!this.isInitialized && process.env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.SENDGRID_API_KEY) {
       try {
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        sgMail.setApiKey(env.SENDGRID_API_KEY);
         this.isInitialized = true;
         logger.info('✅ SendGrid initialized for email notifications');
       } catch (error: unknown) {
@@ -112,7 +113,7 @@ class NotificationService {
     }
 
     const template = this.getEmailTemplate(type, title, message, link);
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'notifications@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'notifications@maxbooster.ai';
 
     try {
       await sgMail.send({

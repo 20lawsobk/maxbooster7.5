@@ -10,6 +10,7 @@ import rateLimit from 'express-rate-limit';
 import { chainErrorAutoFixer } from '../services/chainErrorAutoFixer.js';
 import { platformAutoFixer } from '../services/platformAutoFixer.js';
 import { permanentFixRegistry } from '../services/permanentFixRegistry.js';
+import { env } from '../config/env.js';
 
 const adminRouter = Router();
 
@@ -331,7 +332,7 @@ adminRouter.get("/system-health", async (req, res) => {
     };
 
     const apiChecks = await Promise.allSettled([
-      process.env.STRIPE_SECRET_KEY ? pingApi('https://api.stripe.com/v1') : Promise.resolve({ status: "unknown" as const, latency: null }),
+      env.STRIPE_SECRET_KEY ? pingApi('https://api.stripe.com/v1') : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.LABELGRID_API_TOKEN ? pingApi('https://api.labelgrid.com') : Promise.resolve({ status: "unknown" as const, latency: null }),
       process.env.SPOTIFY_CLIENT_ID ? pingApi('https://api.spotify.com/v1') : Promise.resolve({ status: "unknown" as const, latency: null }),
       pingApi('https://api.music.apple.com'),

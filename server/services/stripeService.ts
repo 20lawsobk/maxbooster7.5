@@ -8,20 +8,21 @@ import { db } from '../db.js';
 import { users, orders, listingStems, refunds, ledgerEntries, notifications, instantPayouts, taxForms } from '@shared/schema';
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { instantPayoutService } from './instantPayoutService';
+import { env } from '../config/env.js';
 
 // Support both production and testing Stripe keys (same logic as routes.ts)
 let actualStripeKey: string | undefined;
 if (process.env.NODE_ENV === 'production') {
   // Production: Only use STRIPE_SECRET_KEY
-  if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
-    actualStripeKey = process.env.STRIPE_SECRET_KEY;
+  if (env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
+    actualStripeKey = env.STRIPE_SECRET_KEY;
   }
 } else {
   // Development: Try TESTING_STRIPE_SECRET_KEY first, then STRIPE_SECRET_KEY
-  if (process.env.TESTING_STRIPE_SECRET_KEY?.startsWith('sk_')) {
-    actualStripeKey = process.env.TESTING_STRIPE_SECRET_KEY;
-  } else if (process.env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
-    actualStripeKey = process.env.STRIPE_SECRET_KEY;
+  if (env.TESTING_STRIPE_SECRET_KEY?.startsWith('sk_')) {
+    actualStripeKey = env.TESTING_STRIPE_SECRET_KEY;
+  } else if (env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
+    actualStripeKey = env.STRIPE_SECRET_KEY;
   }
 }
 

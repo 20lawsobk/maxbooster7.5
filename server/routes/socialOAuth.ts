@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { requireAuth } from '../middleware/auth.js';
 import { syncPlatformData } from '../services/socialSyncService';
 import { socialOAuth as socialOAuthService } from '../services/socialOAuthService';
+import { env } from '../config/env.js';
 
 const router = Router();
 
@@ -76,8 +77,8 @@ const PLATFORMS = {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     scope: 'openid email profile',
-    clientId: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
     responseType: 'code',
     accessType: 'offline',
@@ -89,8 +90,8 @@ const PLATFORMS = {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     scope: 'https://www.googleapis.com/auth/youtube https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/yt-analytics.readonly',
-    clientId: process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.YOUTUBE_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+    clientId: env.YOUTUBE_CLIENT_ID || env.GOOGLE_CLIENT_ID,
+    clientSecret: env.YOUTUBE_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
     responseType: 'code',
     accessType: 'offline',
@@ -102,8 +103,8 @@ const PLATFORMS = {
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     scope: 'https://www.googleapis.com/auth/business.manage https://www.googleapis.com/auth/plus.business.manage',
-    clientId: process.env.GOOGLE_BUSINESS_CLIENT_ID || process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_BUSINESS_CLIENT_SECRET || process.env.GOOGLE_CLIENT_SECRET,
+    clientId: env.GOOGLE_BUSINESS_CLIENT_ID || env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_BUSINESS_CLIENT_SECRET || env.GOOGLE_CLIENT_SECRET,
     usePKCE: false,
     responseType: 'code',
     accessType: 'offline',
@@ -159,7 +160,7 @@ function generateCodeChallenge(verifier: string, encoding: 'hex' | 'base64url' =
   return crypto.createHash('sha256').update(verifier).digest(encoding);
 }
 
-const _rawOAuthSecret = process.env.SESSION_SECRET || process.env.SECRET_KEY;
+const _rawOAuthSecret = env.SESSION_SECRET || process.env.SECRET_KEY;
 if (!_rawOAuthSecret && (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT)) {
   throw new Error('SESSION_SECRET or SECRET_KEY must be set in production (required for OAuth state HMAC)');
 }

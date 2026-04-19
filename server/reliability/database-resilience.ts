@@ -2,6 +2,7 @@ import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
 import { EventEmitter } from 'events';
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 interface ConnectionPool {
   connections: unknown[];
@@ -242,7 +243,7 @@ class DatabaseResilience extends EventEmitter {
       throw new Error('Connection pool exhausted');
     }
 
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(env.DATABASE_URL!);
     const db = drizzle(sql);
 
     this.pool.connections.push(db);

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { neon } from '@neondatabase/serverless';
 import os from 'os';
+import { env } from '../config/env.js';
 import {
   getCachedHealthCheck,
   getLivenessProbe,
@@ -44,7 +45,7 @@ async function checkDatabase(): Promise<{
   try {
     const startTime = Date.now();
     // Simple query to test database connectivity
-    const sql = neon(process.env.DATABASE_URL!);
+    const sql = neon(env.DATABASE_URL!);
     await sql`SELECT 1`;
     const responseTime = Date.now() - startTime;
 

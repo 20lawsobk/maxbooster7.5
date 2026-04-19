@@ -28,9 +28,12 @@ const envSchema = z.object({
   STRIPE_PRICE_ID_PRO_ANNUAL: z.string().optional(),
   STRIPE_PRICE_ID_ELITE_MONTHLY: z.string().optional(),
   STRIPE_PRICE_ID_ELITE_ANNUAL: z.string().optional(),
+  TESTING_STRIPE_SECRET_KEY: z.string().startsWith('sk_').optional(),
+  STRIPE_CONNECT_CLIENT_ID: z.string().optional(),
 
   // ── Email ─────────────────────────────────────────────────────────────────
   SENDGRID_API_KEY: z.string().optional(),
+  SENDGRID_FROM_EMAIL: z.string().email().optional(),
   FROM_EMAIL: z.string().email().optional(),
 
   // ── Storage ───────────────────────────────────────────────────────────────
@@ -42,6 +45,10 @@ const envSchema = z.object({
   // ── OAuth ─────────────────────────────────────────────────────────────────
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  YOUTUBE_CLIENT_ID: z.string().optional(),
+  YOUTUBE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_BUSINESS_CLIENT_ID: z.string().optional(),
+  GOOGLE_BUSINESS_CLIENT_SECRET: z.string().optional(),
 
   // ── AI / ML ───────────────────────────────────────────────────────────────
   OPENAI_API_KEY: z.string().startsWith('sk-').optional(),
@@ -49,7 +56,14 @@ const envSchema = z.object({
 
   // ── App config ────────────────────────────────────────────────────────────
   BASE_URL: z.string().url().optional(),
+  BASE_DOMAIN: z.string().optional(),
   APP_NAME: z.string().default('Max Booster'),
+  APP_URL: z.string().optional(),
+  DOMAIN: z.string().optional(),
+  CORS_ORIGIN: z.string().optional(),
+
+  // ── Database aliases ──────────────────────────────────────────────────────
+  NEON_DATABASE_URL: z.string().url().optional(),
 
   // ── Feature flags ─────────────────────────────────────────────────────────
   SKIP_BOOSTERSTATE: z.string().optional(),

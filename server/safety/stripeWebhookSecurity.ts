@@ -9,6 +9,7 @@ import { Request, Response, NextFunction } from 'express';
 import Stripe from 'stripe';
 import { logger } from '../logger.js';
 import { getRedisClient } from '../lib/redisConnectionFactory.js';
+import { env } from '../config/env.js';
 
 // Audit log for webhook events
 interface WebhookAuditEntry {
@@ -32,7 +33,7 @@ export function stripeWebhookMiddleware(
   res: Response,
   next: NextFunction
 ): void {
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = env.STRIPE_WEBHOOK_SECRET;
   
   if (!webhookSecret) {
     logger.warn('[Stripe Webhook] STRIPE_WEBHOOK_SECRET is not configured');
@@ -55,7 +56,7 @@ export function stripeWebhookMiddleware(
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+    const stripe = new Stripe(env.STRIPE_SECRET_KEY!, {
       apiVersion: '2023-10-16',
     });
 

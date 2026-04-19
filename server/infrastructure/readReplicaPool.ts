@@ -1,5 +1,6 @@
 import { Pool, PoolClient, PoolConfig } from 'pg';
 import { logger } from '../logger.js';
+import { env } from '../config/env.js';
 
 interface ReplicaConfig {
   host: string;
@@ -85,7 +86,7 @@ class ReadReplicaPool {
   }
 
   private static buildConfigFromEnv(): ReadReplicaPoolConfig {
-    const primaryUrl = process.env.DATABASE_URL || '';
+    const primaryUrl = env.DATABASE_URL || '';
     const replicaUrls = (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean);
 
     const parseUrl = (url: string): PoolConfig => {

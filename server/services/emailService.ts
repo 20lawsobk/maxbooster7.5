@@ -3,6 +3,7 @@ import { emailMonitor } from '../monitoring/emailMonitor';
 import { logger } from '../logger.js';
 import { sendgridCircuit, queueForRetry } from './externalServices.js';
 import { CircuitBreakerError, TimeoutError } from './circuitBreaker.js';
+import { env } from '../config/env.js';
 
 interface InvitationEmailData {
   to: string;
@@ -48,15 +49,15 @@ class EmailService {
   }
 
   private initialize() {
-    if (!this.isInitialized && process.env.SENDGRID_API_KEY) {
+    if (!this.isInitialized && env.SENDGRID_API_KEY) {
       try {
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+        sgMail.setApiKey(env.SENDGRID_API_KEY);
         this.isInitialized = true;
         logger.info('✅ SendGrid EmailService initialized');
       } catch (error: unknown) {
         logger.warn({ err: error }, '❌ Failed to initialize SendGrid EmailService:');
       }
-    } else if (!process.env.SENDGRID_API_KEY) {
+    } else if (!env.SENDGRID_API_KEY) {
       logger.warn('⚠️  SendGrid API key not configured. Email features will be disabled.');
     }
   }
@@ -110,7 +111,7 @@ class EmailService {
     }
 
     const template = this.getInvitationTemplate(data);
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'invitations@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'invitations@maxbooster.ai';
 
     const emailData = {
       to: data.to,
@@ -185,7 +186,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
 
     const emailData = {
       to,
@@ -238,7 +239,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
     const truncatedMessage =
       replyMessage.length > 200 ? replyMessage.substring(0, 200) + '...' : replyMessage;
 
@@ -291,7 +292,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'support@maxbooster.ai';
     const statusMessages: Record<string, string> = {
       open: 'Your ticket is now open and awaiting review.',
       in_progress: 'Our team is actively working on your ticket.',
@@ -343,7 +344,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'welcome@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'welcome@maxbooster.ai';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -396,7 +397,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'security@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'security@maxbooster.ai';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -467,7 +468,7 @@ class EmailService {
       failed: 'Distribution Failed',
     };
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'distribution@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'distribution@maxbooster.ai';
     const platformsTags = data.platforms
       .map(
         (p) =>
@@ -531,7 +532,7 @@ class EmailService {
       return false;
     }
 
-    const fromEmail = process.env.SENDGRID_FROM_EMAIL || 'billing@maxbooster.ai';
+    const fromEmail = env.SENDGRID_FROM_EMAIL || 'billing@maxbooster.ai';
     const html = `
 <!DOCTYPE html>
 <html>
@@ -729,7 +730,7 @@ If you did not expect this invitation, you can safely ignore this email.
   async sendTransactional(to: string, subject: string, html: string): Promise<boolean> {
     const emailData: sgMail.MailDataRequired = {
       to,
-      from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      from: env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
       subject,
       html,
     };
@@ -746,7 +747,7 @@ If you did not expect this invitation, you can safely ignore this email.
     }
     const emailData: sgMail.MailDataRequired = {
       to: options.to,
-      from: options.from ?? process.env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
+      from: options.from ?? env.SENDGRID_FROM_EMAIL ?? 'noreply@maxbooster.app',
       subject: options.subject,
       html: options.html,
       text: options.text ?? options.html.replace(/<[^>]+>/g, ''),

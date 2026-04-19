@@ -8,6 +8,7 @@
 import Stripe from 'stripe';
 import { db } from '../db';
 import { sql } from 'drizzle-orm';
+import { env } from '../config/env.js';
 import { logger } from '../logger.js';
 import { registerWebhookHandler } from './stripeWebhookSecurity';
 
@@ -47,7 +48,7 @@ const chargebackRecords = new Map<string, ChargebackRecord>();
  * Initialize Stripe instance
  */
 function getStripe(): Stripe {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
+  const secretKey = env.STRIPE_SECRET_KEY;
   if (!secretKey) {
     throw new Error('STRIPE_SECRET_KEY is not configured');
   }

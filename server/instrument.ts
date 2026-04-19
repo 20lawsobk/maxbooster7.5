@@ -18,9 +18,10 @@
 
 import { createRequire } from 'module';
 import { logger } from './logger.js';
+import { env } from './config/env.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
-const dsn = process.env.SENTRY_DSN;
+const dsn = env.SENTRY_DSN;
 
 // Many subsystems (circuit breakers, workers, reliability monitors) each attach
 // listeners to the global process object.  Raise the cap to silence the Node.js
