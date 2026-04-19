@@ -111,7 +111,7 @@ export function registerCoreProbes(): void {
       const mod = await import('../audit-system.js');
       const audit = (mod as any).default?.getInstance?.() ?? (mod as any).AuditSystem?.getInstance?.();
       if (!audit) return { status: 'unknown', detail: 'not initialized' };
-      const results = audit.getResults?.() ?? audit.auditResults;
+      const results = audit.getAuditResults?.() ?? audit.auditResults;
       const score = results?.overallScore ?? 0;
       if (score === 0) return { status: 'degraded', detail: 'no audit yet' };
       if (score < 60) return { status: 'degraded', detail: `low score ${score}` };

@@ -108,8 +108,10 @@ export class AIAdvertisingEngine {
     if (!ta.success) {
       logger.warn({ issues: ta.error.issues }, '[ai-advertising] invalid targetAudience');
     }
-    musicData = md.success ? md.data : (musicData ?? {});
-    targetAudience = ta.success ? ta.data : (targetAudience ?? {});
+    // On validation failure, fall back to an empty validated object rather than
+    // the raw input — downstream methods then get a guaranteed safe shape.
+    musicData = md.success ? md.data : MusicDataSchema.parse({});
+    targetAudience = ta.success ? ta.data : TargetAudienceSchema.parse({});
     // This system completely eliminates the need for Facebook Ads, Google Ads, TikTok Ads, etc.
     return {
       platformReplacement: {

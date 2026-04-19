@@ -111,13 +111,16 @@ export class AutomationSystem extends EventEmitter {
             userId = u?.id;
           }
           if (!userId) throw new Error('no userId resolvable for email');
-          if (typeof notif.sendCustomEmail === 'function') {
-            await notif.sendCustomEmail(userId, params.subject, params.body, params.link);
-          } else if (typeof notif.notify === 'function') {
-            await notif.notify(userId, 'system', params.subject, params.body, params.link);
-          } else {
-            throw new Error('notificationService has no email entrypoint');
+          if (typeof notif.send !== 'function') {
+            throw new Error('notificationService.send unavailable');
           }
+          await notif.send({
+            userId,
+            type: params.template || 'system',
+            title: params.subject,
+            message: params.body,
+            link: params.link,
+          });
           return { success: true, message: 'Email sent successfully' };
         } catch (e: any) {
           logger.warn({ err: e }, 'send-email action failed');
@@ -136,25 +139,24 @@ export class AutomationSystem extends EventEmitter {
         logger.info(`📱 Posting to social media: ${platforms.join(', ')}`);
         try {
           const svc = await loadAutoPostingService();
-          if (!svc) throw new Error('autoPostingService unavailable');
-          const results: any[] = [];
-          for (const platform of platforms) {
-            if (typeof svc.schedulePost === 'function') {
-              const r = await svc.schedulePost(params.userId, {
-                platform,
-                content: params.content,
-                mediaUrl: params.media,
-                scheduledFor: params.schedule ? new Date(params.schedule) : undefined,
-              });
-              results.push({ platform, ...r });
-            } else if (typeof svc.publishPost === 'function') {
-              const r = await svc.publishPost(params.userId, platform, params.content, params.media);
-              results.push({ platform, ...r });
-            } else {
-              throw new Error('autoPostingService has no schedule/publish method');
-            }
+          if (!svc?.schedulePost) {
+            throw new Error('autoPostingService.schedulePost unavailable');
           }
-          return { success: true, message: 'Posted to social media', results };
+          // autoPostingServiceV2.schedulePost signature:
+          //   (userId, platforms[], content: PostContent, scheduledTime: Date, ...)
+          const text =
+            typeof params.content === 'string'
+              ? params.content
+              : params.content?.text ?? params.content?.caption ?? '';
+          const postContent = {
+            text,
+            hashtags: params.content?.hashtags,
+            mediaUrl: params.media ?? params.content?.mediaUrl,
+            mediaType: params.content?.mediaType,
+          };
+          const scheduledTime = params.schedule ? new Date(params.schedule) : new Date();
+          const r = await svc.schedulePost(params.userId, platforms, postContent, scheduledTime);
+          return { success: true, message: 'Posted to social media', result: r };
         } catch (e: any) {
           logger.warn({ err: e }, 'post-social-media action failed');
           return { success: false, message: e?.message ?? 'post-social-media failed' };
@@ -250,12 +252,18 @@ export class AutomationSystem extends EventEmitter {
         logger.info(`🔔 Sending notification: ${params.title}`);
         try {
           const notif = await loadNotificationService();
-          if (!notif?.notify) throw new Error('notificationService.notify unavailable');
+          if (!notif?.send) throw new Error('notificationService.send unavailable');
           const recipients: string[] = Array.isArray(params.recipients)
             ? params.recipients
             : [params.recipients].filter(Boolean);
           for (const userId of recipients) {
-            await notif.notify(userId, params.type ?? 'system', params.title, params.message, params.link);
+            await notif.send({
+              userId,
+              type: params.type ?? 'system',
+              title: params.title,
+              message: params.message,
+              link: params.link,
+            });
           }
           return { success: true, message: 'Notification sent', count: recipients.length };
         } catch (e: any) {
