@@ -49,16 +49,22 @@ Key architectural decisions include:
 | R2 | 887ca6fa | JWT hardening, CSRF, refund tx, backup OOM guard, audit_logs DB, pino redact, bcrypt-12, ESLint v9, Dependabot, web-vitals |
 | R3 | 0645720b | 399 ESLint errors → 0; 26 real bugs fixed; `/ready` probe via `runAllProbes()`; react-hooks plugin |
 | R4 | 62c0064a | FK constraints (7 tables), `server/config/env.ts` (Zod), 45/45 unit tests, bcrypt cost 10→12 in `init-admin.ts`, CI test gate |
+| R5 audit | d665f5b5 | Comprehensive 20-dimension audit: deps, auth, secrets, DB, health, CSP, Electron, FastAPI, bundle, observability, CI, 2FA, backup, rate limits — baseline captured, no fixes applied |
+| R6 | 32c867c1 | 133 FK indexes applied live, CSP unsafe-eval removed, HSTS enabled, login rate limit 50→10, OAuth state secret prod guard, Electron sandbox: true, FastAPI CORS wildcard replaced, DNS LIMIT 500 |
 
 **GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
 **Branch**: `main`  
-**Latest commit**: `3a075267dec4da86e3294efb88f396e42ddb7a62` (R4)
+**Latest commit**: `32c867c1` (R6)
 
-### R4 Details (current)
-- **FK constraints** added to `shared/schema.ts` + live DB: `sessions`, `subscriptions`, `releases`, `beats`, `notifications`, `artistProfiles` → `CASCADE`; `auditLogs.userId` → `SET NULL`
-- **`server/config/env.ts`**: Zod-validated typed env config; `DATABASE_URL` + `SESSION_SECRET` required at boot; fully-typed `Env` export
-- **Test suite** (45/45 passing): `vitest.config.ts`, `tests/setup.ts`, 7 unit test files across `tests/unit/`; npm scripts: `test`, `test:unit`, `test:ci`, `test:coverage`; CI adds `test` job with JUnit artifact
-- **Security fix**: `server/init-admin.ts` bcrypt cost 10 → 12 (two callsites)
+### R6 Details (current)
+- **FK indexes** (`server/migrations/r6_fk_indexes.sql`): 133 `CREATE INDEX IF NOT EXISTS` statements applied live for all `user_id`, `storefront_id`, `volume_id`, `pocket_id` FK columns across 124 tables — eliminates seq-scans on every per-user query
+- **CSP**: removed `'unsafe-eval'` from `scriptSrc` in `server/safety/mandatoryMiddleware.ts`; Stripe.js does not require it
+- **HSTS**: added `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }` to helmet config
+- **Login rate limit**: `server/middleware/rateLimiter.ts` auth.login.max 50→10 per 15-min window
+- **OAuth state HMAC**: `server/routes/socialOAuth.ts` throws at startup in production if neither `SESSION_SECRET` nor `SECRET_KEY` is set
+- **Electron sandbox**: `electron/main.js` `sandbox: false` → `true`; preload only uses `contextBridge` + `process.platform/versions`, both available in sandboxed context
+- **FastAPI CORS**: `server/services/diffusion/api_server_v4.py` `allow_origins=['*']` replaced with env-driven list via `DIFFUSION_ALLOWED_ORIGINS` or fallback to `APP_URL`/`DOMAIN`; methods restricted to GET/POST
+- **DNS query guard**: `server/routes/dnsManager.ts` unbounded `SELECT * FROM dns_zone_records` given `LIMIT 500`
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
