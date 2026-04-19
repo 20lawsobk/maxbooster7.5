@@ -52,12 +52,19 @@ Key architectural decisions include:
 | R5 audit | d665f5b5 | Comprehensive 20-dimension audit: deps, auth, secrets, DB, health, CSP, Electron, FastAPI, bundle, observability, CI, 2FA, backup, rate limits — baseline captured, no fixes applied |
 | R6 | 32c867c1 | 133 FK indexes applied live, CSP unsafe-eval removed, HSTS enabled, login rate limit 50→10, OAuth state secret prod guard, Electron sandbox: true, FastAPI CORS wildcard replaced, DNS LIMIT 500 |
 | R7 | f12c3737 | Node.js runtime v20→v22; /api/health/live + /api/health/ready sub-route aliases; all 37 bare `catch {}` blocks annotated with rationale across 19 service/route files |
+| R8 | d355b4dd | Process.env sweep (25 server files → env.*); CI integration test job (postgres 16 service, drizzle push, server health-wait, junit upload); drizzle.config.ts SSL conditional; vitest.integration.config.ts; test:integration:ci script |
 
 **GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
 **Branch**: `main`  
-**Latest commit**: `f12c3737` (R7)
+**Latest commit**: `d355b4dd` (R8)
 
-### R7 Details (current)
+### R8 Details (current)
+- **process.env sweep (tasks #2+#4)**: All critical env reads in 25 server files migrated from `process.env.X` to `env.X` (typed Zod schema in `server/config/env.ts`). Covers: jwtAuthService, stripeService, stripeWebhookSecurity, refundHandler, billing, webhooks/stripe, storefront, socialOAuth, admin, clusterSession, readReplicaPool, instrument, connectionPool, healthCheck, sessionConfig, alertingService, redisPubSub, database-resilience, replitAuth, security-system, databaseBackupService, emailService (8 reads), configValidator, notificationService, securityMonitoringService, webhookReliabilityService, weeklyInsightsService, userPocketDimensionService. New vars added to schema: `TESTING_STRIPE_SECRET_KEY`, `SENDGRID_FROM_EMAIL`, `NEON_DATABASE_URL`, `YOUTUBE_CLIENT_ID/SECRET`, `GOOGLE_BUSINESS_CLIENT_ID/SECRET`, `BASE_DOMAIN`, `APP_URL`, `DOMAIN`, `CORS_ORIGIN`, `STRIPE_CONNECT_CLIENT_ID`
+- **CI integration tests (task #3)**: New `test-integration` job in `.github/workflows/ci.yml` — spins up postgres:16 service, runs `drizzle-kit push --force` to create schema, starts Express server in background, polls `/health` up to 30s, then runs `npm run test:integration:ci` targeting `health.test.ts` + `api-guards.test.ts`; uploads JUnit XML artifact; wired into `ci-summary` needs + status table
+- **drizzle.config.ts**: Conditional SSL — requires SSL only for cloud-hosted Neon/Supabase URLs; skips SSL in CI (`CI=true`) and for local `DATABASE_URL` without cloud indicators
+- **vitest.integration.config.ts**: New config for CI-safe integration tests (health + auth guard); 30s timeout; JUnit reporter
+
+### R7 Details
 - **Node.js v22**: runtime upgraded via Replit package management
 - **Health sub-routes**: `livenessHandler` + `readinessHandler` consts extracted in `server/routes.ts`; both old paths (`/api/health`, `/api/ready`) and new k8s-style aliases (`/api/health/live`, `/api/health/ready`) registered; request-logger exemption covers all four via `includes('/api/health')`
 - **Empty catch annotation**: All 37 bare `catch {}` blocks replaced with `catch { /* intentional: <reason> */ }` explaining the intent (temp-file cleanup, Redis miss/write, ffmpeg path fallback, TTS engine loop, JSON.parse fallback, PDIM key cleanup, stream close guard, statfsSync platform gap, Stripe webhook logger safety)
