@@ -298,6 +298,7 @@
     "@capacitor/android": "^8.1.0",
     "@capacitor/cli": "^8.1.0",
     "@capacitor/ios": "^8.1.0",
+    "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
     "@types/compression": "^1.8.1",
     "@types/connect-pg-simple": "^7.0.3",
