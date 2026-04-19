@@ -11,6 +11,7 @@ import App from './App';
 import './index.css';
 import './i18n/config';
 import { idbStorage, IDB_CACHE_KEY } from './lib/idbPersister';
+import { reportWebVitals } from './lib/reportWebVitals';
 
 const rootElement = document.getElementById('root');
 
@@ -27,6 +28,10 @@ const persister = createAsyncStoragePersister({
 });
 
 const root = ReactDOM.createRoot(rootElement);
+
+// Report Core Web Vitals (CLS / INP / LCP / FCP / TTFB) to /api/metrics/web-vitals.
+// Uses sendBeacon when available so reports survive page unload.
+reportWebVitals();
 
 root.render(
   <React.StrictMode>

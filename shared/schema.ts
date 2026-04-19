@@ -4231,6 +4231,35 @@ export const insertSystemLogSchema = createInsertSchema(systemLogs).omit({ id: t
 export type InsertSystemLog = z.infer<typeof insertSystemLogSchema>;
 
 // ============================================================================
+// AUDIT LOGS — persistent, queryable security/compliance audit trail.
+// Mirrors the file sink in server/middleware/auditLogger.ts so audit data
+// survives container restarts and is available for compliance dashboards.
+// ============================================================================
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  userId: varchar("user_id", { length: 64 }),
+  userEmail: varchar("user_email", { length: 255 }),
+  ip: varchar("ip", { length: 64 }).notNull(),
+  userAgent: text("user_agent"),
+  action: varchar("action", { length: 64 }).notNull(),
+  resource: varchar("resource", { length: 64 }).notNull(),
+  result: varchar("result", { length: 16 }).notNull(), // success | failure | error
+  risk: varchar("risk", { length: 16 }).notNull(),     // low | medium | high | critical
+  sessionId: varchar("session_id", { length: 128 }),
+  details: jsonb("details"),
+}, (t) => ({
+  byTimestamp: index("audit_logs_timestamp_idx").on(t.timestamp),
+  byUser: index("audit_logs_user_idx").on(t.userId, t.timestamp),
+  byAction: index("audit_logs_action_idx").on(t.action, t.timestamp),
+  byRisk: index("audit_logs_risk_idx").on(t.risk, t.timestamp),
+}));
+
+export type AuditLog = typeof auditLogs.$inferSelect;
+export const insertAuditLogSchema = createInsertSchema(auditLogs).omit({ id: true, timestamp: true });
+export type InsertAuditLog = z.infer<typeof insertAuditLogSchema>;
+
+// ============================================================================
 // SPLIT SHEETS (royalty split agreements between collaborators)
 // ============================================================================
 export const splitSheets = pgTable("split_sheets", {

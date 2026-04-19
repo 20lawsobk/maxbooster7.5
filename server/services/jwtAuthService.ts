@@ -5,17 +5,31 @@ import type { InsertJWTToken, InsertRefreshToken } from '@shared/schema';
 import { logger } from '../logger.js';
 import { sessionTracking } from './sessionTrackingService.js';
 
+// SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
+// We never fall back to a deterministic value — that would let any attacker
+// who knows the codebase forge tokens against any non-prod deployment.
+// For local boot convenience we accept REPLIT_DB_URL or generate an ephemeral
+// per-process secret, but only when NODE_ENV === 'development' AND no other
+// instance can share that secret (i.e., truly single-process local dev).
 let JWT_SECRET = process.env.SESSION_SECRET || '';
 
 if (!JWT_SECRET) {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('SESSION_SECRET environment variable is required in production');
+  if (process.env.NODE_ENV !== 'development') {
+    throw new Error(
+      'SESSION_SECRET environment variable is required (must be set in production, staging, and CI)'
+    );
   }
-
+  // Local-dev only: generate a random per-process secret. Tokens issued by
+  // one `npm run dev` instance will not validate after restart — by design.
+  JWT_SECRET = crypto.randomBytes(64).toString('hex');
   logger.warn(
-    '⚠️  SESSION_SECRET not set - using development fallback. Set SESSION_SECRET for production!'
+    '⚠️  SESSION_SECRET not set — generated ephemeral per-process secret for local dev only. ' +
+      'Tokens will not survive server restarts. Set SESSION_SECRET to persist sessions.'
   );
-  JWT_SECRET = 'dev-secret-' + crypto.createHash('sha256').update('maxbooster-dev').digest('hex');
+}
+
+if (JWT_SECRET.length < 32) {
+  throw new Error('SESSION_SECRET must be at least 32 characters');
 }
 
 const ACCESS_TOKEN_EXPIRY = '15m';

@@ -329,7 +329,6 @@ export class StripeService {
     initiatedBy?: string;
   }): Promise<{ success: boolean; refundId?: string; stripeRefundId?: string; error?: string }> {
     try {
-
       const [order] = await db
         .select()
         .from(orders)
@@ -345,8 +344,13 @@ export class StripeService {
       }
 
       const amountCents = params.amountCents || Math.round(order.amount * 100);
-      const refundType = params.amountCents && params.amountCents < Math.round(order.amount * 100) ? 'partial' : 'full';
+      const refundType =
+        params.amountCents && params.amountCents < Math.round(order.amount * 100)
+          ? 'partial'
+          : 'full';
 
+      // Step 1 (outside tx): create the pending refund row so we have an id to
+      // pass to Stripe as idempotency metadata.
       const [refundRecord] = await db
         .insert(refunds)
         .values({
@@ -362,67 +366,102 @@ export class StripeService {
         })
         .returning();
 
+      // Step 2: call Stripe BEFORE the local ledger transaction. If Stripe
+      // fails, mark the row failed and bail out — no ledger / notification
+      // writes happen, so the books stay consistent.
+      let stripeRefund: Stripe.Refund;
+      let chargeId: string;
       try {
         const paymentIntent = await stripe.paymentIntents.retrieve(order.stripePaymentIntentId);
-        const chargeId = paymentIntent.latest_charge as string;
+        chargeId = paymentIntent.latest_charge as string;
 
-        const stripeRefund = await stripe.refunds.create({
-          charge: chargeId,
-          amount: amountCents,
-          reason: this.mapRefundReason(params.reason),
-          metadata: {
-            orderId: params.orderId,
-            refundId: refundRecord.id,
-            initiatedBy: params.initiatedBy || 'customer',
+        stripeRefund = await stripe.refunds.create(
+          {
+            charge: chargeId,
+            amount: amountCents,
+            reason: this.mapRefundReason(params.reason),
+            metadata: {
+              orderId: params.orderId,
+              refundId: refundRecord.id,
+              initiatedBy: params.initiatedBy || 'customer',
+            },
           },
-        });
-
-        await db
-          .update(refunds)
-          .set({
-            status: stripeRefund.status as string,
-            stripeRefundId: stripeRefund.id,
-            stripeChargeId: chargeId,
-            processedAt: new Date(),
-          })
-          .where(eq(refunds.id, refundRecord.id));
-
-        await db.insert(ledgerEntries).values({
-          userId: params.userId,
-          entryType: 'refund',
-          amountCents,
-          currency: order.currency || 'usd',
-          referenceType: 'refund',
-          referenceId: refundRecord.id,
-          description: `Refund for order ${params.orderId}`,
-        });
-
-        await db.insert(notifications).values({
-          userId: params.userId,
-          type: 'refund',
-          title: 'Refund Processed',
-          message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
-          metadata: { refundId: refundRecord.id, orderId: params.orderId },
-        });
-
-        logger.info('Refund created successfully', { refundId: refundRecord.id, stripeRefundId: stripeRefund.id });
-
-        return {
-          success: true,
-          refundId: refundRecord.id,
-          stripeRefundId: stripeRefund.id,
-        };
+          // Idempotency: Stripe will dedupe on this key for 24h, so a retry
+          // that also creates a duplicate refundRecord is still safe.
+          { idempotencyKey: `refund:${refundRecord.id}` },
+        );
       } catch (stripeError: any) {
         await db
           .update(refunds)
-          .set({
-            status: 'failed',
-            failureReason: stripeError.message,
-          })
+          .set({ status: 'failed', failureReason: stripeError.message })
           .where(eq(refunds.id, refundRecord.id));
-
         return { success: false, error: stripeError.message };
       }
+
+      // Step 3: atomic ledger update. All three writes must succeed together;
+      // if any fails, Postgres rolls back the whole tx so the local state
+      // matches Stripe's view (which has the successful refund).
+      try {
+        await db.transaction(async (tx) => {
+          await tx
+            .update(refunds)
+            .set({
+              status: stripeRefund.status as string,
+              stripeRefundId: stripeRefund.id,
+              stripeChargeId: chargeId,
+              processedAt: new Date(),
+            })
+            .where(eq(refunds.id, refundRecord.id));
+
+          await tx.insert(ledgerEntries).values({
+            userId: params.userId,
+            entryType: 'refund',
+            amountCents,
+            currency: order.currency || 'usd',
+            referenceType: 'refund',
+            referenceId: refundRecord.id,
+            description: `Refund for order ${params.orderId}`,
+          });
+
+          await tx.insert(notifications).values({
+            userId: params.userId,
+            type: 'refund',
+            title: 'Refund Processed',
+            message: `Your refund of $${(amountCents / 100).toFixed(2)} has been processed and will appear in 5-10 business days.`,
+            metadata: { refundId: refundRecord.id, orderId: params.orderId },
+          });
+        });
+      } catch (ledgerError: any) {
+        // Stripe accepted the refund but the ledger tx failed. Surface a loud
+        // alert — manual reconciliation is required (the refund webhook will
+        // also retry the status update independently).
+        logger.warn(
+          { err: ledgerError, refundId: refundRecord.id, stripeRefundId: stripeRefund.id },
+          '🚨 Stripe refund succeeded but ledger transaction failed — manual reconcile required',
+        );
+        await db
+          .update(refunds)
+          .set({ status: 'reconcile_required', failureReason: ledgerError.message })
+          .where(eq(refunds.id, refundRecord.id))
+          .catch(() => undefined);
+        return {
+          success: false,
+          refundId: refundRecord.id,
+          stripeRefundId: stripeRefund.id,
+          error: 'Refund processed by Stripe but ledger update failed; flagged for reconciliation',
+        };
+      }
+
+      logger.info('Refund created successfully', {
+        refundId: refundRecord.id,
+        stripeRefundId: stripeRefund.id,
+      });
+
+      return {
+        success: true,
+        refundId: refundRecord.id,
+        stripeRefundId: stripeRefund.id,
+      };
     } catch (error: any) {
       logger.warn({ err: error }, 'Error creating refund:');
       return { success: false, error: error.message || 'Failed to create refund' };

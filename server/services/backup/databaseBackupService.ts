@@ -136,16 +136,42 @@ export class DatabaseBackupService {
       }
     });
 
-    const sqlBuffer = fs.readFileSync(tmpPath);
-    fs.unlinkSync(tmpPath);
+    // Production-grade: stat the file first, refuse if it would OOM the box,
+    // and use async readFile so we don't block the event loop. The hard cap
+    // protects the process — once dumps approach this size, the upload path
+    // must be migrated to multipart/streaming via storageService.uploadStream.
+    const stats = await fs.promises.stat(tmpPath);
+    const sizeBytes = stats.size;
+    const sizeMB = (sizeBytes / 1024 / 1024).toFixed(2);
+
+    // Hard guard: anything bigger than 1 GiB will likely OOM Replit
+    // containers. Better to fail loudly than silently kill the process.
+    const HARD_CAP_BYTES = 1024 * 1024 * 1024;
+    if (sizeBytes > HARD_CAP_BYTES) {
+      await fs.promises.unlink(tmpPath).catch(() => undefined);
+      throw new Error(
+        `Backup ${name} is ${sizeMB} MB which exceeds the 1 GiB single-shot cap. ` +
+          `Implement multipart streaming in storageService before retrying.`,
+      );
+    }
+
+    // Heap headroom warning at 256 MB so ops have lead time.
+    if (sizeBytes > 256 * 1024 * 1024) {
+      logger.warn(
+        `⚠️  Backup ${name} is ${sizeMB} MB — approaching memory limit. ` +
+          `Plan for streaming upload before the next doubling.`,
+      );
+    }
+
+    const sqlBuffer = await fs.promises.readFile(tmpPath);
+    await fs.promises.unlink(tmpPath).catch(() => undefined);
 
     await storageService.uploadFile(sqlBuffer, key, 'application/sql');
 
-    const sizeMB = (sqlBuffer.length / 1024 / 1024).toFixed(2);
     logger.info(`✅ Backup stored in Pocket Dimension: ${name} (${sizeMB} MB)`);
 
     const index = await loadIndex();
-    index.push({ name, key, date: new Date().toISOString(), size: sqlBuffer.length });
+    index.push({ name, key, date: new Date().toISOString(), size: sizeBytes });
     await saveIndex(index);
 
     return key;

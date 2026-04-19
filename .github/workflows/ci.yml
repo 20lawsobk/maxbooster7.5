@@ -40,6 +40,32 @@ jobs:
       - name: Run TypeScript type check
         run: npm run check
 
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run ESLint (warnings allowed, errors fail)
+        # --max-warnings is intentionally large during the rollout. Ratchet
+        # this down as type-erosion (`as any`) and console.log usage are
+        # cleaned up. The job still hard-fails on any rule classified as error.
+        run: npx eslint . --max-warnings=99999 || true
+
+      - name: ESLint hard gate (errors only)
+        run: npx eslint . --quiet
+
   build:
     name: Build Verification
     runs-on: ubuntu-latest
@@ -138,7 +164,7 @@ jobs:
 
   ci-summary:
     name: CI Summary
-    needs: [typecheck, build, security]
+    needs: [typecheck, lint, build, security]
     runs-on: ubuntu-latest
     timeout-minutes: 5
     if: always()
@@ -150,10 +176,11 @@ jobs:
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Type Check | ${{ needs.typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Audit | ${{ needs.security.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
+          if [[ "${{ needs.typecheck.result }}" == "success" && "${{ needs.lint.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.security.result }}" == "success" ]]; then
             echo "✅ All checks passed" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ One or more checks failed" >> $GITHUB_STEP_SUMMARY

@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { createWriteStream, mkdirSync, existsSync } from 'fs';
 import { join } from 'path';
+import { db } from '../db.js';
+import { auditLogs } from '@shared/schema';
+import { logger } from '../logger.js';
 
 interface AuditEvent {
   timestamp: string;
@@ -44,6 +47,34 @@ class AuditLogger {
     // Log high-risk events to security log as well
     if (event.risk === 'high' || event.risk === 'critical') {
       this.securityStream.write(logEntry);
+    }
+
+    // Mirror to Postgres `audit_logs` table — fire-and-forget so the request
+    // path is never blocked by DB latency. File sink is the source of truth
+    // for append-only durability; DB sink powers compliance dashboards and
+    // queryable retention. A single try/catch guards both the .insert call
+    // and any unhandled rejection from the underlying driver.
+    try {
+      void db
+        .insert(auditLogs)
+        .values({
+          userId: event.userId ?? null,
+          userEmail: event.userEmail ?? null,
+          ip: event.ip || 'unknown',
+          userAgent: event.userAgent || null,
+          action: event.action,
+          resource: event.resource,
+          result: event.result,
+          risk: event.risk,
+          sessionId: event.sessionId ?? null,
+          details: (event.details ?? null) as any,
+        })
+        .catch((err) => {
+          // Never let an audit DB write crash the request — file sink already wrote.
+          logger.warn({ err, action: event.action }, '[audit] postgres mirror failed');
+        });
+    } catch (err) {
+      logger.warn({ err, action: event.action }, '[audit] postgres mirror threw synchronously');
     }
   }
 

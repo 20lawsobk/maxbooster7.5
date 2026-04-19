@@ -257,7 +257,7 @@ export async function registerRoutes(
         }
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
       let user;
       try {
         user = await storage.createUser({
@@ -1005,7 +1005,7 @@ export async function registerRoutes(
       if (!isValid) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
-      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      const hashedPassword = await bcrypt.hash(newPassword, 12);
       await storage.updateUser(req.user.id, { password: hashedPassword });
       
       // SECURITY FIX: Invalidate all OTHER sessions for this user after password change
@@ -1384,7 +1384,7 @@ export async function registerRoutes(
     try {
       let demoUser = await storage.getUserByEmail("demo@maxbooster.ai");
       if (!demoUser) {
-        const hashedPassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 10);
+        const hashedPassword = await bcrypt.hash(crypto.randomBytes(32).toString('hex'), 12);
         demoUser = await storage.createUser({
           email: "demo@maxbooster.ai",
           password: hashedPassword,
@@ -1485,7 +1485,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Reset token has expired" });
       }
 
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
       await storage.updateUser(user.id, {
         password: hashedPassword,
@@ -4674,7 +4674,7 @@ export async function registerRoutes(
       }
 
       // Hash the password
-      const hashedPassword = await bcrypt.hash(password, 10);
+      const hashedPassword = await bcrypt.hash(password, 12);
 
       // Determine subscription end date based on tier
       let subscriptionEndsAt: Date | null = null;

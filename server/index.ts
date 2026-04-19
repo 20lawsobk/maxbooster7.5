@@ -512,6 +512,22 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   app.use(originValidation);
   logger.info('✅ Origin validation enabled (SameSite=Lax + Origin header check)');
 
+  // ========================================
+  // CSRF PROTECTION (defence-in-depth)
+  // ========================================
+  // origin validation + SameSite=Lax already block cross-site POST; CSRF
+  // double-submit-cookie adds explicit token verification on every state-
+  // changing route. Webhooks, login/register, and idempotent reads are exempt
+  // (see CSRF_EXEMPT_PATHS in server/middleware/csrf.ts).
+  try {
+    const { csrfProtectionWithExemptions, generateCsrfToken } = await import('./middleware/csrf.js');
+    app.use(generateCsrfToken);
+    app.use(csrfProtectionWithExemptions);
+    logger.info('✅ CSRF protection enabled (double-submit cookie, with safe exemptions)');
+  } catch (e: any) {
+    logger.warn(`⚠️  CSRF middleware failed to load: ${e.message}`);
+  }
+
   // Verify read replica once at startup. On failure dbRead is permanently
   // re-pointed to the primary with a loud error — no per-query try/catch needed.
   try {
@@ -723,6 +739,25 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
   const { multiTenantRouter } = await import('./middleware/multiTenantRouter.js');
   app.use(multiTenantRouter);
+
+  // Web Vitals ingestion endpoint — receives Core Web Vitals from the SPA.
+  // Lightweight: log structured metric, no auth (any browser can post their own
+  // perf numbers). Rate-limited via the global API limiter.
+  app.post('/api/metrics/web-vitals', express.json({ limit: '8kb' }), (req, res) => {
+    try {
+      const { name, value, rating, page } = req.body || {};
+      if (typeof name !== 'string' || typeof value !== 'number') {
+        return res.status(400).json({ ok: false });
+      }
+      logger.info(
+        { metric: name, value, rating, page, ua: req.get('user-agent') },
+        '[web-vitals]',
+      );
+      return res.status(204).end();
+    } catch {
+      return res.status(204).end();
+    }
+  });
 
   await registerRoutes(httpServer, app);
 

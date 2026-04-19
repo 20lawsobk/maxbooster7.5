@@ -41,6 +41,30 @@ export class AutomationSystem extends EventEmitter {
   private isRunning: boolean = false;
   private automationMetrics: AutomationMetrics;
   private scheduledTasks: Map<string, cron.ScheduledTask> = new Map();
+  private webhookHandlers: Map<string, Array<{ callback: Function; secret?: string }>> = new Map();
+
+  /**
+   * Public dispatcher invoked by the webhook HTTP route.
+   * Returns the number of handlers fired (0 if no workflow listens on this id).
+   */
+  public async dispatchWebhook(
+    webhookId: string,
+    payload: unknown,
+    headers: Record<string, string> = {},
+  ): Promise<number> {
+    const list = this.webhookHandlers.get(webhookId);
+    if (!list || list.length === 0) return 0;
+    let fired = 0;
+    for (const h of list) {
+      try {
+        await h.callback({ webhookId, payload, headers });
+        fired += 1;
+      } catch (err: unknown) {
+        logger.warn({ err, webhookId }, '[Automation] webhook handler threw');
+      }
+    }
+    return fired;
+  }
 
   private constructor() {
     super();
@@ -448,17 +472,31 @@ export class AutomationSystem extends EventEmitter {
       },
     });
 
-    // Webhook trigger
+    // Webhook trigger — registers an in-process listener keyed by webhook id.
+    // The HTTP route POST /api/automation/webhooks/:id (registered in routes.ts)
+    // looks up the registry and invokes every registered callback for that id.
     this.registerTrigger('webhook', {
       name: 'Webhook',
       description: 'Trigger based on webhook calls',
-      parameters: ['url', 'method', 'headers'],
+      parameters: ['webhookId', 'secret'],
       start: (params, callback) => {
-        // Implement webhook trigger
-        return { url: params.url, callback };
+        const webhookId = String(params.webhookId || params.url || '').trim();
+        if (!webhookId) {
+          throw new Error('webhook trigger requires `webhookId` parameter');
+        }
+        const list = this.webhookHandlers.get(webhookId) || [];
+        const handler = { callback, secret: params.secret as string | undefined };
+        list.push(handler);
+        this.webhookHandlers.set(webhookId, list);
+        logger.info(`[Automation] Webhook trigger registered: ${webhookId} (${list.length} handler[s])`);
+        return { webhookId, handler };
       },
       stop: (trigger) => {
-        // Implement webhook stop
+        if (!trigger?.webhookId) return;
+        const list = this.webhookHandlers.get(trigger.webhookId) || [];
+        const next = list.filter((h: any) => h !== trigger.handler);
+        if (next.length === 0) this.webhookHandlers.delete(trigger.webhookId);
+        else this.webhookHandlers.set(trigger.webhookId, next);
       },
     });
   }
