@@ -42,6 +42,24 @@ Key architectural decisions include:
 - Storage quota system queries real `user_storage_files` table, sums `size_bytes` per user, grouped by `mime_type`, and enforces limits based on `subscription_tier` (free=5GB, pro=50GB, studio=200GB, enterprise=1TB).
 - Advertising autopilot performance endpoint computes ROI estimates from real data based on active campaign count and industry averages, labeled as estimates.
 
+## Production Readiness Audit History
+
+| Round | Commit | Key Deliverables |
+|-------|--------|-----------------|
+| R2 | 887ca6fa | JWT hardening, CSRF, refund tx, backup OOM guard, audit_logs DB, pino redact, bcrypt-12, ESLint v9, Dependabot, web-vitals |
+| R3 | 0645720b | 399 ESLint errors → 0; 26 real bugs fixed; `/ready` probe via `runAllProbes()`; react-hooks plugin |
+| R4 | 62c0064a | FK constraints (7 tables), `server/config/env.ts` (Zod), 45/45 unit tests, bcrypt cost 10→12 in `init-admin.ts`, CI test gate |
+
+**GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
+**Branch**: `main`  
+**Latest commit**: `3a075267dec4da86e3294efb88f396e42ddb7a62` (R4)
+
+### R4 Details (current)
+- **FK constraints** added to `shared/schema.ts` + live DB: `sessions`, `subscriptions`, `releases`, `beats`, `notifications`, `artistProfiles` → `CASCADE`; `auditLogs.userId` → `SET NULL`
+- **`server/config/env.ts`**: Zod-validated typed env config; `DATABASE_URL` + `SESSION_SECRET` required at boot; fully-typed `Env` export
+- **Test suite** (45/45 passing): `vitest.config.ts`, `tests/setup.ts`, 7 unit test files across `tests/unit/`; npm scripts: `test`, `test:unit`, `test:ci`, `test:coverage`; CI adds `test` job with JUnit artifact
+- **Security fix**: `server/init-admin.ts` bcrypt cost 10 → 12 (two callsites)
+
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.
 - **Backend Frameworks**: Express.js, Node.js, tsx.
