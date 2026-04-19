@@ -269,13 +269,8 @@ export class MonitoringService {
       p95ResponseTime: number;
     }>
   > {
-    try {
-      // In production, this would aggregate from middleware logs
-      return [];
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error fetching endpoint stats:');
-      throw new Error('Failed to fetch endpoint stats');
-    }
+    // In production, this would aggregate from middleware logs
+    return [];
   }
 
   /**

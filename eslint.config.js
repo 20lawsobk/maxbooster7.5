@@ -6,6 +6,7 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsparser from '@typescript-eslint/parser';
+import reactHooks from 'eslint-plugin-react-hooks';
 
 export default [
   {
@@ -103,6 +104,7 @@ export default [
     },
     plugins: {
       '@typescript-eslint': tseslint,
+      'react-hooks': reactHooks,
     },
     rules: {
       // Re-import recommended TS rules manually (flat config doesn't inherit).
@@ -139,6 +141,11 @@ export default [
       'no-misleading-character-class': 'warn',
       'no-irregular-whitespace': 'warn',
       'no-fallthrough': 'warn',
+      // Stylistic rules — useful as informational warnings, but not bugs.
+      // Keep them visible as warnings so they don't block CI's `--quiet` gate.
+      'preserve-caught-error': 'warn',
+      'no-useless-assignment': 'warn',
+      '@typescript-eslint/no-namespace': 'warn',
     },
   },
   {

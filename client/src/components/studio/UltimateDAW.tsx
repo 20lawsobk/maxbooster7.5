@@ -450,7 +450,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
         case 'Space':
           e.preventDefault();
           unlockAudio();
-          transport.isPlaying ? store.pause() : store.play();
+          if (transport.isPlaying) store.pause(); else store.play();
           break;
         case 'KeyR':
           if (!e.metaKey && !e.ctrlKey) store.record();
@@ -688,7 +688,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               </Button>
               <Button
                 size="icon"
-                onClick={() => { unlockAudio(); transport.isPlaying ? store.pause() : store.play(); }}
+                onClick={() => { unlockAudio(); if (transport.isPlaying) store.pause(); else store.play(); }}
                 className={cn(
                   'h-10 w-10 rounded-full',
                   transport.isPlaying 
@@ -1231,7 +1231,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
           </Button>
           <Button
             size="sm"
-            onClick={() => { unlockAudio(); transport.isPlaying ? store.pause() : store.play(); }}
+            onClick={() => { unlockAudio(); if (transport.isPlaying) store.pause(); else store.play(); }}
             className={transport.isPlaying ? 'bg-green-600' : 'bg-zinc-700'}
           >
             {transport.isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}

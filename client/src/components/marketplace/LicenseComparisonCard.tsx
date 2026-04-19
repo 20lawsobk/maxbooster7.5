@@ -16,7 +16,7 @@ import {
   Video,
   Radio,
   Clock,
-  Infinity,
+  Infinity as InfinityIcon,
   Star,
   TrendingUp,
   ChevronDown,
@@ -152,7 +152,7 @@ function FeatureRow({
       );
     }
     if (value === 'unlimited') {
-      return <Infinity className="w-4 h-4 text-purple-500" />;
+      return <InfinityIcon className="w-4 h-4 text-purple-500" />;
     }
     return <span className="font-medium">{formatNumber(value as number)}</span>;
   };
@@ -196,7 +196,7 @@ export function LicenseComparisonCard({
       case 'exclusive':
         return Crown;
       case 'unlimited':
-        return Infinity;
+        return InfinityIcon;
       case 'non-exclusive':
         return Music;
       default:

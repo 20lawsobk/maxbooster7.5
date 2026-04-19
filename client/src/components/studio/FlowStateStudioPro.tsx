@@ -158,7 +158,7 @@ export function FlowStateStudioPro({
       switch (e.code) {
         case 'Space':
           e.preventDefault();
-          transport.isPlaying ? adapter.pause() : adapter.play();
+          if (transport.isPlaying) adapter.pause(); else adapter.play();
           break;
         case 'KeyR':
           if (!e.metaKey && !e.ctrlKey) {

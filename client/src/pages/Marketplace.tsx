@@ -1214,11 +1214,16 @@ export default function Marketplace() {
       }
       return ctx;
     },
-    onError: (_err, _vars, ctx: any) => {
+    onError: (err: any, _vars, ctx: any) => {
       if (ctx?.prevMy !== undefined)
         queryClient.setQueryData(['/api/marketplace/my-beats'], ctx.prevMy);
       if (ctx?.prevAll !== undefined)
         queryClient.setQueryData(['/api/marketplace/beats'], ctx.prevAll);
+      toast({
+        title: 'Update Failed',
+        description: (err instanceof Error ? err.message : String(err)) || 'Failed to update beat',
+        variant: 'destructive',
+      });
     },
     onSuccess: (updated) => {
       toast({
@@ -1253,13 +1258,6 @@ export default function Marketplace() {
         },
       });
       invalidateOnMarketplaceChange();
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Update Failed',
-        description: error.message || 'Failed to update beat',
-        variant: 'destructive',
-      });
     },
   });
 
@@ -4213,7 +4211,8 @@ return (
                     onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
                       setTimeout(() => { isPickingFileRef.current = false; }, 1500);
-                      e.target.files?.[0] && handleAudioFileSelect(e.target.files[0]);
+                      const f = e.target.files?.[0];
+                      if (f) handleAudioFileSelect(f);
                     }}
                     className="sr-only"
                   />
@@ -4325,7 +4324,8 @@ return (
                     onClick={() => { isPickingFileRef.current = true; }}
                     onChange={(e) => {
                       setTimeout(() => { isPickingFileRef.current = false; }, 1500);
-                      e.target.files?.[0] && handleCoverFileSelect(e.target.files[0]);
+                      const f = e.target.files?.[0];
+                      if (f) handleCoverFileSelect(f);
                     }}
                     className="sr-only"
                   />

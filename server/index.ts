@@ -9,7 +9,7 @@ import { createServer } from "http";
 import compression from "compression";
 import { brotliMiddleware } from "./middleware/brotliCompression.js";
 import { logger } from "./logger.js";
-import { setupStartupEndpoints } from "./startup-probes.js";
+import { setupStartupEndpoints, startupProbes } from "./startup-probes.js";
 import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudflare.js";
 import path from "path";
 import crypto from "crypto";
@@ -60,6 +60,12 @@ app.use(helmet({ contentSecurityPolicy: false })); // Security auto-fix
 app.use(securityMiddleware as any);
 
 setupStartupEndpoints(app);
+
+// Kick off readiness probes asynchronously — /ready transitions from
+// "not_ready" → "ready"/"degraded" once DB + Redis + TF have responded.
+startupProbes.runAllProbes().catch((err) => {
+  logger.warn({ err }, '[startup-probes] runAllProbes failed');
+});
 
 import('./lib/configValidator.js').then(({ validateScaleConfig }) => {
   validateScaleConfig();

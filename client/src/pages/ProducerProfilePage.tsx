@@ -36,7 +36,7 @@ import {
   RefreshCw,
   Loader2,
   FileText,
-  Infinity,
+  Infinity as InfinityIcon,
   Lock,
 } from 'lucide-react';
 import { useState, useRef } from 'react';
@@ -544,7 +544,7 @@ if (!producer) {
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-blue-500 text-white' : 'bg-muted'}`}>
                         {license.icon === 'file' && <FileText className="w-4 h-4" />}
                         {license.icon === 'star' && <Star className="w-4 h-4" />}
-                        {license.icon === 'infinity' && <Infinity className="w-4 h-4" />}
+                        {license.icon === 'infinity' && <InfinityIcon className="w-4 h-4" />}
                         {license.icon === 'lock' && <Lock className="w-4 h-4" />}
                       </div>
                       <div className="flex-1 min-w-0">

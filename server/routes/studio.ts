@@ -958,7 +958,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
       
       if (studioProject) {
         const metadata = (studioProject.metadata as any) || {};
-        const trackFolders = { ...metadata.trackFolders } || {};
+        const trackFolders = { ...metadata.trackFolders };
         trackFolders[trackId] = data.parentFolderId;
         await db.update(studioProjects)
           .set({ metadata: { ...metadata, trackFolders } })
@@ -1134,7 +1134,7 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
       
       if (studioProject) {
         const metadata = (studioProject.metadata as any) || {};
-        const trackFolders = { ...metadata.trackFolders } || {};
+        const trackFolders = { ...metadata.trackFolders };
         
         if (data.parentFolderId === null) {
           delete trackFolders[trackId];
@@ -2565,7 +2565,7 @@ router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req:
     }
 
     const metadata = (project.metadata as any) || {};
-    const trackFolders = { ...metadata.trackFolders } || {};
+    const trackFolders = { ...metadata.trackFolders };
 
     for (const trackId of trackIds) {
       if (folderId) {

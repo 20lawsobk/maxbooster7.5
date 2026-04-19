@@ -703,15 +703,6 @@ export class SocialMediaContentGenerator {
     return frameBuffer;
   }
 
-  private escapeXml(text: string): string {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&apos;');
-  }
-
   // Create AI-powered audio content using in-house AIAudioGenerator
   private async createAIAudioContent(
     platform: string,

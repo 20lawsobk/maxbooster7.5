@@ -129,7 +129,9 @@ export async function handleDispute(dispute: Stripe.Dispute): Promise<void> {
     amount: dispute.amount,
     reason: dispute.reason,
     status: dispute.status,
-    evidence_due_by: new Date(dispute.evidence_details?.due_by! * 1000),
+    evidence_due_by: dispute.evidence_details?.due_by
+      ? new Date(dispute.evidence_details.due_by * 1000)
+      : new Date(),
     createdAt: new Date(dispute.created * 1000),
     updatedAt: new Date(),
   };

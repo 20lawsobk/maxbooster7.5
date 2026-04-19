@@ -630,7 +630,7 @@ const SceneRow = memo(function SceneRow({
             whileTap={{ scale: 0.95 }}
             onClick={(e) => {
               e.stopPropagation();
-              isActive ? onStop() : onPlay();
+              if (isActive) onStop(); else onPlay();
             }}
             data-testid={`scene-play-${scene.id}`}
           >

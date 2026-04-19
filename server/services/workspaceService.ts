@@ -856,38 +856,23 @@ export class WorkspaceService {
     }
   }
 
-  async getProjectShares(projectId: string): Promise<any[]> {
-    try {
-      return [];
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get project shares error:');
-      return [];
-    }
+  async getProjectShares(_projectId: string): Promise<any[]> {
+    return [];
   }
 
   async updateSharePermission(
-    shareId: string,
-    permission: string,
-    updatedBy: string
+    _shareId: string,
+    _permission: string,
+    _updatedBy: string
   ): Promise<{ success: boolean; error?: string }> {
-    try {
-      return { success: true };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Update share permission error:');
-      return { success: false, error: 'Failed to update share permission' };
-    }
+    return { success: true };
   }
 
   async revokeShare(
-    shareId: string,
-    revokedBy: string
+    _shareId: string,
+    _revokedBy: string
   ): Promise<{ success: boolean; error?: string }> {
-    try {
-      return { success: true };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Revoke share error:');
-      return { success: false, error: 'Failed to revoke share' };
-    }
+    return { success: true };
   }
 
   async createShareLink(params: {
@@ -941,25 +926,15 @@ export class WorkspaceService {
     }
   }
 
-  async getShareLinks(projectId: string): Promise<any[]> {
-    try {
-      return [];
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Get share links error:');
-      return [];
-    }
+  async getShareLinks(_projectId: string): Promise<any[]> {
+    return [];
   }
 
   async revokeShareLink(
-    linkId: string,
-    revokedBy: string
+    _linkId: string,
+    _revokedBy: string
   ): Promise<{ success: boolean; error?: string }> {
-    try {
-      return { success: true };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Revoke share link error:');
-      return { success: false, error: 'Failed to revoke share link' };
-    }
+    return { success: true };
   }
 
   async getWorkspacePresence(workspaceId: string): Promise<any[]> {

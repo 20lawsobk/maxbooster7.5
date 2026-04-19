@@ -250,7 +250,7 @@ export class AdvertisingNormalizationService {
     if (!content.includes('?')) {
       hooks.push('What do you think of this track? 💭');
     }
-    if (!new RegExp('[\\\u{1F300}-\\\u{1F9FF}]', 'u').test(content)) {
+    if (!new RegExp('[\\u{1F300}-\\u{1F9FF}]', 'u').test(content)) {
       hooks.push('React with 🔥 if you love this!');
     }
     hooks.push('Tag someone who needs to hear this!');

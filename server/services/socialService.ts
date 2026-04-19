@@ -183,19 +183,14 @@ export class SocialService {
     reach: number;
     engagement: number;
   }> {
-    try {
-      // In production: Fetch from platform APIs
-      return {
-        likes: 0,
-        shares: 0,
-        comments: 0,
-        reach: 0,
-        engagement: 0,
-      };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Error tracking metrics:');
-      throw new Error('Failed to track metrics');
-    }
+    // In production: Fetch from platform APIs
+    return {
+      likes: 0,
+      shares: 0,
+      comments: 0,
+      reach: 0,
+      engagement: 0,
+    };
   }
 
   /**
@@ -283,18 +278,13 @@ export class SocialService {
     engagementRate: number;
     topPosts: unknown[];
   }> {
-    try {
-      // Fetch analytics from social platforms
-      return {
-        totalFollowers: 0,
-        totalReach: 0,
-        engagementRate: 0,
-        topPosts: [],
-      };
-    } catch (error: unknown) {
-      logger.warn({ err: error }, 'Social analytics error:');
-      throw new Error('Failed to fetch social analytics');
-    }
+    // Fetch analytics from social platforms
+    return {
+      totalFollowers: 0,
+      totalReach: 0,
+      engagementRate: 0,
+      topPosts: [],
+    };
   }
 
   /**

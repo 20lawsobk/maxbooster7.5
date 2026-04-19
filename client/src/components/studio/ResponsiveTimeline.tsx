@@ -125,6 +125,7 @@ export function ResponsiveTimeline({
         {children}
       </div>
       
+      {/* eslint-disable-next-line no-constant-binary-expression */}
       {false && (
         <div
           className="absolute bottom-2 right-2 flex items-center gap-2 px-2 py-1 rounded-lg"
