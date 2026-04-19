@@ -253,7 +253,7 @@ router.get('/zones/:zoneId/records', async (req, res) => {
     const zone = mapZone(zoneResult.rows[0]);
 
     const records = await pool.query(
-      'SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name',
+      'SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name LIMIT 500',
       [zone.id]
     );
 

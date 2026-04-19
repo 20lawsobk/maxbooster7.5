@@ -159,7 +159,11 @@ function generateCodeChallenge(verifier: string, encoding: 'hex' | 'base64url' =
   return crypto.createHash('sha256').update(verifier).digest(encoding);
 }
 
-const OAUTH_STATE_SECRET = process.env.SESSION_SECRET || process.env.SECRET_KEY || 'max-booster-oauth-state-secret';
+const _rawOAuthSecret = process.env.SESSION_SECRET || process.env.SECRET_KEY;
+if (!_rawOAuthSecret && (process.env.NODE_ENV === 'production' || process.env.REPLIT_DEPLOYMENT)) {
+  throw new Error('SESSION_SECRET or SECRET_KEY must be set in production (required for OAuth state HMAC)');
+}
+const OAUTH_STATE_SECRET = _rawOAuthSecret || 'max-booster-oauth-state-secret-dev-only';
 const OAUTH_STATE_TTL_MS = 15 * 60 * 1000;
 
 function createOAuthState(userId: string, platform: string, codeVerifier?: string): string {

@@ -90,11 +90,24 @@ app = FastAPI(
     version='4.0.0',
     lifespan=lifespan,
 )
+_cors_origins_env = os.environ.get('DIFFUSION_ALLOWED_ORIGINS', '')
+_cors_origins: list[str] = (
+    [o.strip() for o in _cors_origins_env.split(',') if o.strip()]
+    if _cors_origins_env
+    else [
+        'http://localhost:5000',
+        'http://localhost:3000',
+        os.environ.get('APP_URL', ''),
+        os.environ.get('DOMAIN', ''),
+    ]
+)
+_cors_origins = [o for o in _cors_origins if o]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
-    allow_methods=['*'],
-    allow_headers=['*'],
+    allow_origins=_cors_origins,
+    allow_methods=['GET', 'POST'],
+    allow_headers=['Content-Type', 'Authorization', 'X-API-Key'],
 )
 
 # ── Global model state ────────────────────────────────────────────────────────

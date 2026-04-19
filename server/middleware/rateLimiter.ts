@@ -15,7 +15,7 @@ export const RATE_LIMITS = {
     perUser: { windowMs: 60000, max: _120M_PER_MIN }
   },
   auth: {
-    login:          { windowMs: 900000,   max: 50  },  // brute-force guard — keep conservative
+    login:          { windowMs: 900000,   max: 10  },  // brute-force guard — 10 attempts per 15 min
     register:       { windowMs: 3600000,  max: 10  },  // abuse guard — keep conservative
     forgotPassword: { windowMs: 3600000,  max: 5   },  // abuse guard — keep conservative
     twoFactor:      { windowMs: 300000,   max: 15  },  // brute-force guard — keep conservative
