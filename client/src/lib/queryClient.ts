@@ -221,6 +221,18 @@ export class ApiError extends Error {
   }
 }
 
+/** Read the CSRF token set by the server (httpOnly=false, same-origin cookie). */
+function getCsrfTokenFromCookie(): string | null {
+  try {
+    const match = document.cookie.split('; ').find(row => row.startsWith('csrf-token='));
+    return match ? decodeURIComponent(match.split('=')[1]) : null;
+  } catch {
+    return null;
+  }
+}
+
+const CSRF_SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
+
 let rateLimitState: {
   isRateLimited: boolean;
   retryAfter: number | null;
@@ -324,6 +336,14 @@ export async function apiRequest(
       headers['Content-Type'] = 'application/json';
     }
 
+    // Include the CSRF double-submit token for every state-mutating request
+    if (!CSRF_SAFE_METHODS.has(method.toUpperCase())) {
+      const csrfToken = getCsrfTokenFromCookie();
+      if (csrfToken) {
+        headers['x-csrf-token'] = csrfToken;
+      }
+    }
+
     const res = await fetch(url, {
       method,
       headers,
@@ -389,6 +409,12 @@ export async function uploadWithProgress(
     xhr.open('POST', url);
     xhr.withCredentials = true;
     xhr.timeout = timeoutMs;
+
+    // Include the CSRF double-submit token (POST is a mutating method)
+    const csrfToken = getCsrfTokenFromCookie();
+    if (csrfToken) {
+      xhr.setRequestHeader('x-csrf-token', csrfToken);
+    }
 
     
     xhr.upload.addEventListener('progress', (event) => {
