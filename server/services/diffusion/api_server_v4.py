@@ -505,17 +505,69 @@ def _reload_live_model() -> None:
 
 # ── Continuous training loop ───────────────────────────────────────────────────
 
+# ── 10-minute session target ───────────────────────────────────────────────────
+# Each session is tuned to complete in ~10 real minutes on CPU.
+# The time simulator converts 1 real minute → 1 simulated year, so every
+# 10-minute session accumulates exactly 10 simulated years of training experience.
+# n_samples=62 × ~100 steps each × (1/4.5 s/step) ≈ 620/4.5 ≈ 138s of pure
+# compute + augmentation burst overhead ≈ 10 minutes total wall time.
+_SESSION_N_SAMPLES     = 62      # ~10 min on 8-core CPU (LITE, T=4)
+_SESSION_SIMULATED_YRS = 10      # years simulated per session (1 min = 1 yr × 10 min)
+_SESSION_PAUSE_S       = 5       # seconds between sessions (keep close to 0 for continuity)
+
+
+def _push_weights_to_maxcore(session_label: str) -> None:
+    """
+    After each training session, push a lightweight sync record to MaxCore so
+    the external server knows new weights are available.  This complements the
+    periodic pull in maxcoreSync.ts.  Fires-and-forgets in a daemon thread.
+    """
+    mc_url = os.environ.get('AI_SERVER_URL', '').rstrip('/')
+    mc_key = os.environ.get('AI_SERVER_KEY', '')
+    if not mc_url or not mc_key:
+        return
+
+    import urllib.request, urllib.error
+    payload = json.dumps({
+        'source':        'maxcore_gateway',
+        'session_label': session_label,
+        'simulated_years': _SESSION_SIMULATED_YRS,
+        'pushed_at':     time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    }).encode()
+    try:
+        req = urllib.request.Request(
+            f'{mc_url}/api/train/weights_updated',
+            data=payload,
+            headers={
+                'Content-Type': 'application/json',
+                'Authorization': f'Bearer {mc_key}',
+                'X-API-Key':     mc_key,
+            },
+            method='POST',
+        )
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            logger.debug(f'[ContinuousTrainer] Weight push → MaxCore: HTTP {resp.status}')
+    except Exception as exc:
+        logger.debug(f'[ContinuousTrainer] Weight push skipped (MaxCore unreachable): {exc}')
+
+
 def _continuous_training_loop() -> None:
     """
-    Runs train_v4() in an infinite loop — never terminates.
+    Runs train_v4() in a tight infinite loop — never terminates.
 
-    Curriculum progression (all T=4 on CPU; increases sample count each phase):
-      Phase 1  sessions  1-10 : n_samples=100  (~16 min/session on CPU)
-      Phase 2  sessions 11-30 : n_samples=150  (~24 min/session on CPU)
-      Phase 3  sessions 31+   : n_samples=200  (~32 min/session on CPU)
+    Session target: 10 real minutes = 10 simulated years per session.
+    At SIMULATED_YEARS_PER_WALL_MINUTE=1.0 (in time_simulator.py) every real
+    minute of CPU training is worth 1 simulated year — so each 10-minute
+    session produces 10 years of simulated music-industry training experience
+    using randomly augmented, MaxCore-sourced prompts (dataset bridge refreshes
+    every 10 min to ensure prompt diversity stays fresh across sessions).
+
+    After each session:
+      1. Hot-reload weights into the live generation model.
+      2. Push a sync notification to MaxCore (/api/train/weights_updated).
+      3. Sleep _SESSION_PAUSE_S seconds, then start the next session immediately.
 
     On exception → exponential back-off (10 s → 20 → 40 → … → 120 s max).
-    On success   → reload weights into live model, sleep 5 s, repeat.
     """
     global _model_trained, _train_status, _training_enabled
 
@@ -525,21 +577,21 @@ def _continuous_training_loop() -> None:
         if _model_ready:
             break
         time.sleep(0.5)
-    logger.info('[ContinuousTrainer] Model ready — continuous loop starting')
+    logger.info(
+        f'[ContinuousTrainer] Model ready — '
+        f'continuous loop starting '
+        f'(target: {_SESSION_N_SAMPLES} samples / session ≈ 10 min = {_SESSION_SIMULATED_YRS} simulated years)'
+    )
 
     session_num = 0
     backoff     = 10  # seconds
 
     while _training_enabled:
-        # ── Curriculum ────────────────────────────────────────────────────────
+        # ── All sessions use the same 10-min sample budget ───────────────────
         session_num += 1
-        if session_num <= 10:
-            n_samples, phase = 100, 1
-        elif session_num <= 30:
-            n_samples, phase = 150, 2
-        else:
-            n_samples, phase = 200, 3
-        label = f'continuous_{session_num:05d}_p{phase}'
+        n_samples    = _SESSION_N_SAMPLES
+        phase        = min(3, (session_num - 1) // 10 + 1)   # phase 1/2/3 for logs only
+        label        = f'continuous_{session_num:05d}_p{phase}'
 
         # ── Skip if a manual /train call is already running ───────────────────
         _should_wait = False
@@ -551,7 +603,7 @@ def _continuous_training_loop() -> None:
             time.sleep(30)
             with _train_lock:
                 if _train_status.get('running'):
-                    continue  # still running — decrement session_num and retry
+                    continue  # still running — retry
 
         # ── Mark as running ───────────────────────────────────────────────────
         with _train_lock:
@@ -565,7 +617,8 @@ def _continuous_training_loop() -> None:
 
         logger.info(
             f'[ContinuousTrainer] Session {session_num} '
-            f'(phase {phase}): T=4 samples={n_samples} label={label}'
+            f'(phase {phase}): T=4 samples={n_samples} '
+            f'target≈10min={_SESSION_SIMULATED_YRS}yr-simulated label={label}'
         )
 
         # ── Train ─────────────────────────────────────────────────────────────
@@ -580,13 +633,22 @@ def _continuous_training_loop() -> None:
                 session_label=label,
             )
             final_loss = meta.get('final_loss', float('inf'))
+            sim_yrs    = meta.get('simulated_years', _SESSION_SIMULATED_YRS)
             logger.info(
                 f'[ContinuousTrainer] Session {session_num} done — '
-                f'loss={final_loss:.4f}'
+                f'loss={final_loss:.4f}  simulated_years≈{sim_yrs}'
             )
 
             # Hot-reload weights into live model
             _reload_live_model()
+
+            # Push sync notification to MaxCore (fire-and-forget)
+            threading.Thread(
+                target=_push_weights_to_maxcore,
+                args=(label,),
+                daemon=True,
+                name=f'WeightPush-{session_num}',
+            ).start()
 
             with _train_lock:
                 _train_status.update({
@@ -599,7 +661,7 @@ def _continuous_training_loop() -> None:
                 })
 
             backoff = 10  # reset on success
-            time.sleep(5) # brief pause between sessions
+            time.sleep(_SESSION_PAUSE_S)
 
         except Exception as exc:
             logger.error(

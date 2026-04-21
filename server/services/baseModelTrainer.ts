@@ -744,7 +744,7 @@ export async function runBaseModelTraining(): Promise<void> {
     `music: ${results.music ? 'OK' : 'SKIP/FAIL'}, ` +
     `fineTune: ${results.fineTune ? 'OK' : 'SKIP/FAIL'}`
   );
-  logger.info('[BaseTrainer] Ongoing learning continues via: user engagement + autopilot + MaxCore 6h sync');
+  logger.info('[BaseTrainer] Ongoing learning continues via: user engagement + autopilot + MaxCore 10-min sync (10 yrs simulated per session)');
 
   // Train the creative model pipeline (deferred, non-blocking)
   trainCreativeModelPipeline().catch((err) =>

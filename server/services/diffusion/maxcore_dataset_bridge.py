@@ -57,8 +57,11 @@ BACKOFF_BASE  = 1.5      # seconds base delay before first retry
 BACKOFF_MAX   = 8.0      # cap on back-off ceiling
 
 # ── Cache policy ─────────────────────────────────────────────────────────────
-# Dataset grows automatically — refresh prompt pool every 6 hours.
-REFRESH_INTERVAL = 6 * 3600   # seconds between full background re-fetches
+# Refresh the prompt pool every 10 minutes — aligned with the 10-minute
+# continuous training session cycle.  Each new session gets a freshly
+# sampled, randomly ordered set of music-industry prompts from MaxCore so
+# the 10-year simulated experience each session accumulates is always diverse.
+REFRESH_INTERVAL = 10 * 60    # seconds between full background re-fetches (10 min)
 _CACHE_TTL       = REFRESH_INTERVAL
 _mem_cache: dict = {}
 _cache_lock      = threading.Lock()

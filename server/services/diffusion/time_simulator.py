@@ -40,6 +40,22 @@ simultaneously.  At 6-burst + 20% interpolation + adaptive LR + curriculum phasi
 the effective information throughput is so high that every 60 seconds of real CPU
 time teaches the model as much as a year of conventional single-frame training would.
 
+10-Year / 10-Minute Session Target
+────────────────────────────────────
+The continuous training loop in api_server_v4.py is calibrated so that each
+training session completes in approximately 10 real minutes.  At the 1-min=1-year
+rate, every session therefore accumulates exactly 10 simulated years of training
+experience drawn from randomly augmented, MaxCore-sourced music-industry data.
+
+The MaxCore dataset bridge (maxcore_dataset_bridge.py) refreshes its prompt pool
+every 10 minutes — one refresh per session — so each 10-year session trains on a
+freshly sampled, randomly ordered set of music-domain prompts.  After each session
+the updated weights are pushed to MaxCore and pulled by all connected Max Booster
+instances (via maxcoreSync.ts, also on a 10-minute cycle).
+
+Result: every 10 minutes the whole system advances by 10 simulated years and
+immediately distributes the updated intelligence to every connected node.
+
 The figure appears in:
   - estimate_simulated_time() → "simulated_years", "simulated_experience"
   - status()                  → "simulated_experience" at the top level

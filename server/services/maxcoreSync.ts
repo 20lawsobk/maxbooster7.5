@@ -22,7 +22,11 @@ const AI_SERVER_KEY  = process.env.AI_SERVER_KEY   || '';
 const PEER_NODE      = process.env.PEER_TRAINING_NODE || '';
 const MBS_KEY        = process.env.MBS_AI_TRAINING_KEY || '';
 
-const SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+// Sync every 10 minutes — aligned with the continuous training session cycle.
+// Each training session takes ~10 real minutes and produces 10 simulated years
+// of experience; pulling weights after each session keeps Max Booster models
+// continuously up to date with the latest MaxCore-trained intelligence.
+const SYNC_INTERVAL_MS = 10 * 60 * 1000; // 10 minutes
 const HEALTH_TIMEOUT   = 6_000;
 const INFER_TIMEOUT    = 10_000;
 
@@ -312,7 +316,7 @@ export async function initMaxCoreSync(): Promise<void> {
     );
   }, SYNC_INTERVAL_MS);
 
-  logger.info('[MaxCoreSync] Initialized — health probe running, weight sync scheduled every 6h');
+  logger.info('[MaxCoreSync] Initialized — health probe running, weight sync scheduled every 10 min (aligned with 10-min training sessions)');
 }
 
 export function stopMaxCoreSync(): void {

@@ -1851,6 +1851,11 @@ def train_v4(n_epochs: int = 5,
               f"gpu_equiv={te['gpu_equivalent_time']}  "
               f"lr_boosts={te['lr_boosts_applied']}  "
               f"interp_frames={te['interp_frames_generated']}", flush=True)
+        # Surface simulated_years in the meta dict so callers (e.g.
+        # _continuous_training_loop in api_server_v4.py) can log it directly.
+        meta['simulated_years']      = te.get('simulated_years', 0.0)
+        meta['simulated_experience'] = te.get('simulated_experience', '')
+        meta['compression_ratio']    = te.get('compression_ratio', 1.0)
     if adv_mem is not None:
         session_id = adv_mem.complete_session(meta, sim_stats)
         print(f"[DiffusionTrainer v4] AdvancedMemoryLayer — session {session_id} registered  "
