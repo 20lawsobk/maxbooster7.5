@@ -888,12 +888,31 @@ _SOBEL_KX = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]], dtype=np.float32)
 _SOBEL_KY = np.array([[-1, -2, -1], [0, 0, 0], [1, 2, 1]], dtype=np.float32)
 
 
+def _numpy_convolve2d_symm(arr: np.ndarray, kernel: np.ndarray) -> np.ndarray:
+    """Pure-NumPy 2D 'same' convolution with symmetric padding (no scipy required).
+    Optimised for small 3×3 kernels by unrolling the dot product explicitly."""
+    kh, kw = kernel.shape
+    ph, pw = kh // 2, kw // 2
+    padded = np.pad(arr, ((ph, ph), (pw, pw)), mode='symmetric')
+    out = np.zeros_like(arr)
+    for i in range(kh):
+        for j in range(kw):
+            out += kernel[i, j] * padded[i:i + arr.shape[0], j:j + arr.shape[1]]
+    return out
+
+
 def _sobel_gradient(x: np.ndarray) -> np.ndarray:
-    from scipy.signal import convolve2d
+    try:
+        from scipy.signal import convolve2d as _conv2d
+        def _apply(channel: np.ndarray, k: np.ndarray) -> np.ndarray:
+            return _conv2d(channel, k, mode='same', boundary='symm')
+    except ImportError:
+        _apply = _numpy_convolve2d_symm  # type: ignore[assignment]
+
     grad = np.zeros_like(x)
     for c in range(x.shape[2]):
-        gx = convolve2d(x[:, :, c], _SOBEL_KX, mode='same', boundary='symm')
-        gy = convolve2d(x[:, :, c], _SOBEL_KY, mode='same', boundary='symm')
+        gx = _apply(x[:, :, c], _SOBEL_KX)
+        gy = _apply(x[:, :, c], _SOBEL_KY)
         grad[:, :, c] = np.sqrt(gx**2 + gy**2 + 1e-8)
     return grad
 
