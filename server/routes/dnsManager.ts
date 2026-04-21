@@ -189,28 +189,63 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
     if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
     const zone = mapZone(zoneResult.rows[0]);
 
-    let resolved = false;
-    try {
-      const dns = await import('dns');
-      const resolveTxt = dns.promises.resolveTxt;
-      const records: string[][] = await resolveTxt(zone.domain).catch(() => []);
-      const flat = records.flat();
-      resolved = flat.some((r: string) => r.includes(zone.verificationToken ?? ''));
-    } catch {
-      resolved = false;
+    // Use DoH (Cloudflare + Google) — system resolver fails in Replit/cloud environments
+    let nsResolved = false;
+    let txtResolved = false;
+
+    const DOH_ENDPOINTS = [
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone.domain)}&type=NS`,
+      `https://dns.google/resolve?name=${encodeURIComponent(zone.domain)}&type=NS`,
+    ];
+    const TXT_ENDPOINTS = [
+      `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(zone.domain)}&type=TXT`,
+      `https://dns.google/resolve?name=${encodeURIComponent(zone.domain)}&type=TXT`,
+    ];
+
+    const token = zone.verificationToken ?? '';
+
+    // Check NS delegation
+    for (const url of DOH_ENDPOINTS) {
+      try {
+        const r = await fetch(url, { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(5000) });
+        const d: any = await r.json();
+        const answers: any[] = d.Answer ?? [];
+        if (answers.some((a: any) => typeof a.data === 'string' && (a.data.includes(NS1) || a.data.includes(BASE_DOMAIN)))) {
+          nsResolved = true;
+          break;
+        }
+      } catch { /* try next */ }
     }
+
+    // Check TXT verification token
+    if (!nsResolved && token) {
+      for (const url of TXT_ENDPOINTS) {
+        try {
+          const r = await fetch(url, { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(5000) });
+          const d: any = await r.json();
+          const answers: any[] = d.Answer ?? [];
+          if (answers.some((a: any) => typeof a.data === 'string' && a.data.includes(token))) {
+            txtResolved = true;
+            break;
+          }
+        } catch { /* try next */ }
+      }
+    }
+
+    const resolved = nsResolved || txtResolved;
+    const method = nsResolved ? 'ns' : txtResolved ? 'txt' : null;
 
     if (resolved) {
       await pool.query(
         'UPDATE dns_zones SET is_verified = true, status = $1, updated_at = NOW() WHERE id = $2',
         ['active', zone.id]
       );
-      return res.json({ verified: true, status: 'active' });
+      return res.json({ verified: true, status: 'active', method });
     }
 
     res.json({
       verified: false,
-      message: `Add a TXT record at your registrar: maxbooster-verify=${zone.verificationToken}`,
+      message: `NS delegation not detected. Make sure your registrar's nameserver is set to ${NS1}, or add TXT record: maxbooster-verify=${token}`,
     });
   } catch (err: any) {
     logger.warn('[DNS Manager] Verify error: ' + (err?.message ?? String(err)));
