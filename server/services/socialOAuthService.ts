@@ -192,7 +192,20 @@ export class SocialOAuthService {
             }
           }
         } catch (error) {
-          logger.warn({ err: error }, `Failed to check/refresh token for ${account.userId}:${account.platform}:`);
+          // If the upstream refresh detected a revocation, handleRevokedToken was
+          // already called inside refreshAccessToken.  Just log at debug level to
+          // avoid noisy warn spam for a condition that is already being handled.
+          const msg = (error as any)?.message ?? '';
+          if (msg.includes('revoked') || msg.includes('Token revoked')) {
+            logger.info(
+              `[SocialOAuth] Proactive refresh: token revoked for ${account.userId}:${account.platform} — platform disconnected`
+            );
+          } else {
+            logger.warn(
+              { err: error },
+              `[SocialOAuth] Failed to proactively refresh token for ${account.userId}:${account.platform}:`
+            );
+          }
         }
       }
     } catch (error) {
@@ -572,7 +585,23 @@ export class SocialOAuthService {
         expiresIn: expires_in,
       };
     } catch (error: unknown) {
-      logger.warn(`Token refresh failed for ${platform}:`, error.response?.data || error.message);
+      // Surface the actual API error (e.g. Google's invalid_grant) in the log
+      const apiError = (error as any)?.response?.data;
+      const httpStatus = (error as any)?.response?.status;
+      const errDetail = apiError
+        ? JSON.stringify(apiError)
+        : (error as any)?.message ?? 'unknown error';
+      logger.warn(
+        `[SocialOAuth] Token refresh failed for ${platform} (HTTP ${httpStatus ?? 'n/a'}): ${errDetail}`
+      );
+
+      // If the token was revoked / invalid_grant, disconnect the platform now
+      // so the proactive monitor stops retrying on every tick.
+      if (this.isTokenRevokedError(error)) {
+        this.handleRevokedToken(userId, platform).catch(() => {});
+        throw new Error(`Token revoked for ${platform} — platform disconnected`);
+      }
+
       throw new Error(`Failed to refresh ${platform} access token`);
     }
   }
