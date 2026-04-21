@@ -68,8 +68,100 @@ router.get("/resolve/:label", async (req, res) => {
 router.post("/managed/check", checkManaged);
 router.post("/managed/reserve", reserveManaged);
 
-router.post("/custom/request", requestCustomDomain);
-router.post("/custom/verify", verifyCustomDomain);
+/**
+ * POST /api/storefront-domains/custom/request
+ *
+ * Attach a custom domain to a storefront and return DNS setup instructions.
+ * Backed by the multi-method DoH verification service (replaces the old
+ * system-resolver-based handler which always failed in Replit/cloud envs).
+ */
+router.post("/custom/request", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { storefrontId, domain: rawDomain } = req.body as { storefrontId?: string; domain?: string };
+    if (!storefrontId) return res.status(400).json({ ok: false, error: "storefrontId required." });
+
+    const domResult = validateDomain(rawDomain || "");
+    if (!domResult.ok) return res.status(400).json(domResult);
+
+    const [sf] = await db
+      .select({ id: storefronts.id, userId: storefronts.userId })
+      .from(storefronts)
+      .where(eq(storefronts.id, storefrontId))
+      .limit(1);
+    if (!sf) return res.status(404).json({ ok: false, error: "Storefront not found." });
+    if (sf.userId !== (req.user as any).id)
+      return res.status(403).json({ ok: false, error: "Unauthorized." });
+
+    const { attachDomainToStorefront } = await import("../services/storefrontDnsService.js");
+    const result = await attachDomainToStorefront(storefrontId, (req.user as any).id, domResult.normalized);
+
+    // Return a response the UI understands (domain + verificationToken + rich instructions)
+    return res.status(201).json({
+      ok: true,
+      storefrontDomainId: result.storefrontDomainId,
+      domain: result.domain,
+      verificationToken: result.verificationToken,
+      nameservers: result.nameservers,
+      instructions: result.instructions,
+      // Legacy-compat fields the old controller used to return
+      platformIp: process.env.DNS_SERVER_IP || "34.111.179.208",
+    });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] custom/request error");
+    const status = err.message?.includes("already active") ? 409 : 500;
+    return res.status(status).json({ ok: false, error: err.message || "Internal error." });
+  }
+});
+
+/**
+ * POST /api/storefront-domains/custom/verify
+ *
+ * Trigger an on-demand verification check for a pending custom domain.
+ * Accepts { domain } (old format) or { domainId } (new format).
+ * Uses Cloudflare/Google DoH — works in all environments.
+ */
+router.post("/custom/verify", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { domain, domainId } = req.body as { domain?: string; domainId?: string };
+
+    let resolvedId: string | null = domainId || null;
+
+    if (!resolvedId && domain) {
+      const normalized = domain.trim().toLowerCase();
+      const [row] = await db
+        .select({ id: storefrontDomains.id, storefrontId: storefrontDomains.storefrontId })
+        .from(storefrontDomains)
+        .where(eq(storefrontDomains.domain, normalized))
+        .limit(1);
+      if (!row) return res.status(404).json({ ok: false, verified: false, error: "Domain not found." });
+
+      // Ownership check
+      const [sf] = await db
+        .select({ userId: storefronts.userId })
+        .from(storefronts)
+        .where(eq(storefronts.id, row.storefrontId))
+        .limit(1);
+      if (sf?.userId !== (req.user as any).id)
+        return res.status(403).json({ ok: false, error: "Unauthorized." });
+
+      resolvedId = row.id;
+    }
+
+    if (!resolvedId) return res.status(400).json({ ok: false, error: "domain or domainId required." });
+
+    const { verifyStorefrontDomain } = await import("../services/storefrontDnsService.js");
+    const result = await verifyStorefrontDomain(resolvedId);
+
+    return res.json({ ok: true, verified: result === "verified", status: result });
+  } catch (err: any) {
+    logger.warn({ err }, "[storefrontDomains] custom/verify error");
+    return res.status(500).json({ ok: false, verified: false, error: err.message || "Internal error." });
+  }
+});
 
 router.get("/storefront/:storefrontId", listDomains);
 router.delete("/:domainId", deleteDomain);
