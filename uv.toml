@@ -1,9 +1,10 @@
 # UV configuration — project-level settings.
-# The virtual environment is created in .venv/ by build.sh via
-# UV_PROJECT_ENVIRONMENT=.venv so UV never writes to the read-only Nix store.
+# All Python packages for the port-8008 diffusion server are installed
+# separately by build.sh into python_runtime/ using the portable CPython
+# binary from python-build-standalone — NOT via uv/pip into the Nix store.
 
-# Only download Python if no system python is found (keep Nix python).
+# Only use system Python — do not download a new interpreter.
 python-preference = "only-system"
 
-# Do not auto-download Python interpreters.
+# Never auto-download Python interpreters.
 python-downloads = "never"
