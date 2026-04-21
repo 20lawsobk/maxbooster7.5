@@ -1162,12 +1162,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           initScoreCalibrator();
         }).catch(() => {});
 
-        // Diffusion self-training: starts 60s after boot so server is stable first
+        // Diffusion self-training: starts 60s after boot so server is stable first.
+        // startBackgroundTraining() checks the MaxCore Diffusion Gateway on port 8008
+        // first — if the Gateway is running, the local synthesizer is skipped (MaxCore
+        // is the authoritative diffusion training source).
         setTimeout(() => {
           import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
-            startBackgroundTraining();
-            logger.info('🎬 [DiffBG] Diffusion self-training loop started — model will continuously improve in the background');
-          }).catch((e) => logger.warn('[DiffBG] Could not start background trainer:', e?.message));
+            startBackgroundTraining().then((result?: void) => {
+              logger.info('🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)');
+            }).catch((e: any) => logger.warn('[DiffBG] Background trainer init error:', e?.message));
+          }).catch((e: any) => logger.warn('[DiffBG] Could not import background trainer:', e?.message));
         }, 60_000);
 
         // Neon keepalive: pool idleTimeoutMillis=60s, keepalive pings every 25s so

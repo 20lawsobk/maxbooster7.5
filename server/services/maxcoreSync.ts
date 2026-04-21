@@ -257,6 +257,34 @@ export async function pushTrainingFeedback(payload: TrainingFeedbackPayload): Pr
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// On-demand sync (called by baseModelTrainer before synthetic seeding)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Pull model weights from MaxCore immediately (no timer — used at training
+ * boot time so MaxCore weights are present before local fallback runs).
+ * Returns the number of models successfully synced.
+ */
+export async function syncWeightsNow(): Promise<number> {
+  if (!AI_SERVER_URL || !AI_SERVER_KEY) return 0;
+  let updated = 0;
+  for (const { name, endpoint } of MODEL_ENDPOINTS) {
+    const result = await fetchMaxCore<Record<string, unknown>>(endpoint, { timeout: 20_000 });
+    if (!result.ok || !result.data) continue;
+    try {
+      await modelWeightStorage.save(name, {
+        ...(result.data as object),
+        syncedFromMaxCore: true,
+        syncedAt: new Date().toISOString(),
+      });
+      logger.info(`[MaxCoreSync] ${name} ✅ eagerly synced from MaxCore`);
+      updated++;
+    } catch { /* non-critical */ }
+  }
+  return updated;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Service lifecycle
 // ─────────────────────────────────────────────────────────────────────────────
 

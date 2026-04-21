@@ -215,15 +215,51 @@ function _sleep(ms: number): Promise<void> {
 
 // ── Public API ───────────────────────────────────────────────────────────────
 
+/** Check whether the MaxCore Diffusion Gateway (port 8008) is responding. */
+async function _isMaxCoreGatewayRunning(): Promise<boolean> {
+  try {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 4_000);
+    const res = await fetch('http://localhost:8008/health', { signal: ctrl.signal });
+    clearTimeout(timer);
+    if (!res.ok) return false;
+    const data = await res.json().catch(() => null);
+    return !!(data && (data as any).status === 'ok');
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Start the background self-training loop.
  * Safe to call multiple times — won't start a second loop if already running.
+ *
+ * MaxCore is the primary diffusion training source. If the MaxCore Diffusion
+ * Gateway (port 8008) is already running this session, we defer to it and do
+ * NOT start a competing local process. The local loop only runs as a fallback
+ * when the Gateway is unavailable.
  */
-export function startBackgroundTraining(): void {
+export async function startBackgroundTraining(): Promise<void> {
   if (state.running) {
     logger.info('[DiffBG] Already running — ignoring start request');
     return;
   }
+
+  // ── MaxCore Gateway check ────────────────────────────────────────────────
+  // The MaxCore Diffusion Gateway (api_server_v4.py on port 8008) is the
+  // authoritative diffusion training source. If it is online, we yield to it
+  // and skip the local synthesizer — running both would conflict on the same
+  // weights_v4.npz file and waste CPU resources.
+  const gatewayUp = await _isMaxCoreGatewayRunning();
+  if (gatewayUp) {
+    logger.info('[DiffBG] MaxCore Diffusion Gateway detected on port 8008 — ' +
+      'deferring diffusion training to MaxCore (local synthesizer will not run)');
+    return;
+  }
+
+  logger.info('[DiffBG] MaxCore Diffusion Gateway not available — ' +
+    'starting local fallback self-training loop');
+
   _stopFlag     = false;
   state.running = true;
   state.paused  = false;
@@ -231,7 +267,7 @@ export function startBackgroundTraining(): void {
   _trainingLoop().catch(err =>
     logger.warn({ err: err }, '[DiffBG] Unhandled loop error:')
   );
-  logger.info('[DiffBG] Background self-training started');
+  logger.info('[DiffBG] Local fallback self-training started');
 }
 
 /**

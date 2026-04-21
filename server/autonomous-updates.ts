@@ -2,6 +2,9 @@ import { EventEmitter } from 'events';
 import { storage } from './storage';
 import { customAI } from './custom-ai-engine';
 import { logger } from './logger.js';
+import { getPdimClient, isPdimConfigured } from './lib/pdimClient.js';
+
+const AUTONOMOUS_STATUS_KEY = 'autonomous:orchestrator:status';
 
 type UpdateFrequency = 'hourly' | 'daily' | 'weekly';
 
@@ -146,6 +149,41 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
+  // ── PDIM-backed status persistence ────────────────────────────────────────
+  // Saves runsCompleted + lastRunAt to PDIM so autonomous activity history
+  // survives server restarts and accumulates over time.
+
+  private async _persistStatus(): Promise<void> {
+    if (!isPdimConfigured()) return;
+    try {
+      const client = getPdimClient();
+      const payload = JSON.stringify({
+        runsCompleted: this.status.runsCompleted,
+        lastRunAt:     this.status.lastRunAt,
+        updatedAt:     new Date().toISOString(),
+      });
+      await (client as any).set(AUTONOMOUS_STATUS_KEY, payload);
+    } catch { /* non-critical — in-memory status is still correct */ }
+  }
+
+  private async _restoreStatus(): Promise<void> {
+    if (!isPdimConfigured()) return;
+    try {
+      const client = getPdimClient();
+      const raw = await (client as any).get(AUTONOMOUS_STATUS_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw as string);
+      if (typeof saved.runsCompleted === 'number' && saved.runsCompleted > 0) {
+        this.status.runsCompleted = saved.runsCompleted;
+        this.status.lastRunAt     = saved.lastRunAt ?? undefined;
+        logger.info(
+          `[AutonomousUpdates] Restored status from PDIM — ` +
+          `${this.status.runsCompleted} total runs, last: ${this.status.lastRunAt ?? 'unknown'}`
+        );
+      }
+    } catch { /* non-critical */ }
+  }
+
   // Silent logging helper - only logs in verbose mode
   private silentLog(message: string, level: 'info' | 'debug' = 'debug'): void {
     if (!this.config.silentMode) {
@@ -265,6 +303,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   async start(): Promise<void> {
     if (this.running) return;
+    // Restore persisted run history from PDIM before first run so the counter
+    // and lastRunAt continue from where they left off across server restarts.
+    await this._restoreStatus();
     this.running = true;
     this.status.isRunning = true;
     this.scheduleNextRun();
@@ -364,6 +405,10 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     this.status.runsCompleted += 1;
     this.status.lastResult = result;
     this.emit('runCompleted', result);
+
+    // Persist the updated run counter and timestamp to PDIM so the history
+    // accumulates across server restarts and always reflects real activity.
+    this._persistStatus().catch(() => { /* non-critical */ });
 
     // Silent completion - no verbose logging
     this.silentLog(`✅ Autonomous update cycle #${this.status.runsCompleted} completed silently`);

@@ -692,9 +692,36 @@ export async function runBaseModelTraining(): Promise<void> {
   }
 
   logger.info('[BaseTrainer] ═══════════════════════════════════════════════════');
-  logger.info('[BaseTrainer] Starting base model training with music industry data');
+  logger.info('[BaseTrainer] Starting base model training');
+  logger.info('[BaseTrainer] Primary source: MaxCore external server');
+  logger.info('[BaseTrainer] Fallback source: local synthetic data (if MaxCore unavailable)');
+  logger.info('[BaseTrainer] Also trained by: real user engagement + autopilot activity');
   logger.info('[BaseTrainer] ═══════════════════════════════════════════════════');
 
+  // ── Step 1: Try MaxCore first — pull trained weights directly ───────────────
+  // MaxCore is the only authoritative external training source. Attempt an
+  // eager weight sync before any local synthetic seeding so per-user models
+  // are initialised with MaxCore intelligence wherever possible.
+  let maxcoreSynced = 0;
+  try {
+    const { syncWeightsNow } = await import('./maxcoreSync.js');
+    logger.info('[BaseTrainer] Requesting weights from MaxCore (primary source)…');
+    maxcoreSynced = await syncWeightsNow();
+    if (maxcoreSynced > 0) {
+      logger.info(`[BaseTrainer] MaxCore provided ${maxcoreSynced} model weight set(s) — ` +
+        'local synthetic seeding will be skipped for synced models');
+    } else {
+      logger.info('[BaseTrainer] MaxCore unavailable or no weights yet — ' +
+        'local synthetic seeding will run as fallback');
+    }
+  } catch (err) {
+    logger.warn('[BaseTrainer] MaxCore weight fetch failed — falling back to synthetic seeding:',
+      err instanceof Error ? err.message : String(err));
+  }
+
+  // ── Step 2: Local seeding (fallback — only runs if MaxCore didn't supply weights) ─
+  // Each trainer checks modelWeightStorage.exists() first — if MaxCore already
+  // stored weights above, this becomes a no-op for those models.
   const [socialOk, adsOk, musicOk, fineTuneOk] = await Promise.allSettled([
     trainAndSaveSocialBase(),
     trainAndSaveAdvertisingBase(),
@@ -703,13 +730,21 @@ export async function runBaseModelTraining(): Promise<void> {
   ]);
 
   const results = {
-    social: socialOk.status === 'fulfilled' && socialOk.value,
+    maxcoreSynced,
+    social:     socialOk.status === 'fulfilled' && socialOk.value,
     advertising: adsOk.status === 'fulfilled' && adsOk.value,
-    music: musicOk.status === 'fulfilled' && musicOk.value,
-    fineTune: fineTuneOk.status === 'fulfilled' && fineTuneOk.value,
+    music:       musicOk.status === 'fulfilled' && musicOk.value,
+    fineTune:    fineTuneOk.status === 'fulfilled' && fineTuneOk.value,
   };
 
-  logger.info(`[BaseTrainer] Training complete — social: ${results.social ? 'OK' : 'FAILED'}, advertising: ${results.advertising ? 'OK' : 'FAILED'}, music: ${results.music ? 'OK' : 'FAILED'}, fineTune: ${results.fineTune ? 'OK' : 'FAILED'}`);
+  logger.info(
+    `[BaseTrainer] Initialization complete — maxcoreSynced: ${results.maxcoreSynced}, ` +
+    `social: ${results.social ? 'OK' : 'SKIP/FAIL'}, ` +
+    `advertising: ${results.advertising ? 'OK' : 'SKIP/FAIL'}, ` +
+    `music: ${results.music ? 'OK' : 'SKIP/FAIL'}, ` +
+    `fineTune: ${results.fineTune ? 'OK' : 'SKIP/FAIL'}`
+  );
+  logger.info('[BaseTrainer] Ongoing learning continues via: user engagement + autopilot + MaxCore 6h sync');
 
   // Train the creative model pipeline (deferred, non-blocking)
   trainCreativeModelPipeline().catch((err) =>
