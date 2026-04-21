@@ -33,6 +33,11 @@ class AutopilotPublisher {
   private isRunning: boolean = false;
   private lastRun: Date | null = null;
   private cronJob: cron.ScheduledTask | null = null;
+  // Tracks the last time we successfully initiated a publish attempt per user
+  // so shouldPostNow can enforce frequency limits without a DB query.
+  // Resets on server restart (acceptable — first cycle after restart triggers promptly
+  // and then enforces frequency from that point forward).
+  private lastPublishAttempt: Map<string, Date> = new Map();
 
   constructor() {
     this.startScheduler();
@@ -122,13 +127,13 @@ class AutopilotPublisher {
     try {
       // Check if auto-publish is enabled for this user
       if (!config.autoPublish) {
-        logger.debug(`User ${config.userId}: autoPublish disabled, skipping`);
+        logger.info(`[Autopilot] User ${config.userId}: autoPublish=false — skipping (user must enable auto-publish in settings)`);
         return result;
       }
 
       // Check posting frequency to determine if we should post now
+      // (shouldPostNow logs its own INFO message with next-attempt time)
       if (!this.shouldPostNow(config)) {
-        logger.debug(`User ${config.userId}: Not time to post yet based on frequency ${config.postingFrequency}`);
         return result;
       }
 
@@ -399,12 +404,13 @@ class AutopilotPublisher {
     try {
       const userId = config.userId;
       
-      // Get the user's trained advertising AI model
+      // Get the user's advertising AI model (works with or without prior campaign training —
+      // generateCampaignRecommendations() runs from its internal prediction engine regardless).
       const advertisingAI = await aiModelManager.getAdvertisingAutopilot(userId);
-      
-      if (!advertisingAI.getIsTrained()) {
-        return { campaigns: 0, error: 'Advertising AI model not trained yet' };
-      }
+      const isTrained = advertisingAI.getIsTrained();
+      logger.info(
+        `[Autopilot] User ${userId}: Advertising AI model ${isTrained ? 'trained' : 'using base predictions (no campaigns yet)'}`
+      );
 
       // Get multimodal features if enabled
       let multimodalFeatures = null;
@@ -501,53 +507,50 @@ class AutopilotPublisher {
   }
 
   /**
-   * Determine if it's time to post based on posting frequency AND optimal posting times
-   * Smart: Uses platform-specific optimal times for maximum engagement
-   * Obedient: Respects user's frequency constraints (hourly/daily/weekly)
+   * Determine if it's time to generate and schedule content for this user.
+   *
+   * Strategy: frequency-based interval tracking rather than a narrow time-of-day window.
+   * The previous approach (first-15-min of 2-4 hardcoded hours) only fired ~3% of cycles.
+   *
+   * - We track the last time we ran for each user in `lastPublishAttempt` (in-memory).
+   * - If enough time has elapsed for the configured frequency, we return true and
+   *   update the tracker; otherwise we log at INFO so operators can see exactly why.
+   * - `calculateNextOptimalPostingTime` still places the scheduled post at the best
+   *   platform-specific time slot — timing quality is NOT lost, just decoupled from
+   *   the "should we generate now" gate.
    */
   private shouldPostNow(config: any): boolean {
     const frequency = config.postingFrequency || 'daily';
-    const currentHour = new Date().getHours();
-    const currentDay = new Date().getDay();
-    const currentMinute = new Date().getMinutes();
+    const userId = config.userId;
+    const now = new Date();
 
-    // Platform-specific optimal posting times (based on industry research)
-    const optimalHours = {
-      twitter: [9, 12, 17],      // 9 AM, 12 PM, 5 PM
-      instagram: [11, 13, 19],   // 11 AM, 1 PM, 7 PM
-      facebook: [13, 15, 19],    // 1 PM, 3 PM, 7 PM
-      tiktok: [6, 10, 19, 22],   // 6 AM, 10 AM, 7 PM, 10 PM
-      youtube: [14, 17, 20],     // 2 PM, 5 PM, 8 PM
+    // Minimum elapsed time between scheduling attempts per frequency
+    const intervalMs: Record<string, number> = {
+      'hourly':      1  * 60 * 60 * 1000,   // 1 hour
+      'twice-daily': 12 * 60 * 60 * 1000,   // 12 hours
+      'daily':       24 * 60 * 60 * 1000,   // 24 hours
+      'weekly':       7 * 24 * 60 * 60 * 1000, // 7 days
     };
 
-    // Get user's primary platform (or use instagram as default)
-    const primaryPlatform = config.platforms?.[0] || 'instagram';
-    const platformOptimalHours = optimalHours[primaryPlatform] || [9, 12, 17];
+    const minInterval = intervalMs[frequency] ?? intervalMs['daily'];
+    const lastAttempt = this.lastPublishAttempt.get(userId);
 
-    // Check if current hour is optimal for the platform
-    const isOptimalHour = platformOptimalHours.includes(currentHour);
-
-    // Only post during the first 15 minutes of optimal hour to avoid duplicate posts
-    const isOptimalWindow = isOptimalHour && currentMinute < 15;
-
-    switch (frequency) {
-      case 'hourly':
-        // Hourly: Post every hour, but prefer optimal times
-        return isOptimalWindow || currentMinute < 5; // Every hour, first 5 minutes
-      
-      case 'daily':
-        // Daily: Post once per day, only at optimal times
-        return isOptimalWindow;
-      
-      case 'weekly':
-        // Weekly: Post once per week on Tuesday-Thursday at optimal times
-        const isOptimalDay = currentDay >= 2 && currentDay <= 4; // Tue-Thu
-        return isOptimalDay && isOptimalWindow;
-      
-      default:
-        // Default: Use optimal times
-        return isOptimalWindow;
+    if (lastAttempt) {
+      const elapsed = now.getTime() - lastAttempt.getTime();
+      if (elapsed < minInterval) {
+        const nextAttempt = new Date(lastAttempt.getTime() + minInterval);
+        logger.info(
+          `[Autopilot] User ${userId}: frequency="${frequency}" — next attempt at ` +
+          `${nextAttempt.toISOString()} (${Math.round((nextAttempt.getTime() - now.getTime()) / 60000)} min away)`
+        );
+        return false;
+      }
     }
+
+    // Enough time has passed — record this attempt and proceed
+    this.lastPublishAttempt.set(userId, now);
+    logger.info(`[Autopilot] User ${userId}: frequency="${frequency}" gate passed — proceeding with content generation`);
+    return true;
   }
 
   /**

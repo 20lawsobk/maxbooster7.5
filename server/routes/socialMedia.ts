@@ -1247,14 +1247,14 @@ router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequ
     const userId = req.user!.id;
     const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
 
-    // Scheduled social posts
+    // Scheduled social posts (includes autopilot-created posts with status 'pending')
     const scheduledPosts = await db
       .select()
       .from(posts)
       .where(
         and(
           eq(posts.userId, userId),
-          inArray(posts.status, ['scheduled', 'published', 'failed']),
+          inArray(posts.status, ['scheduled', 'pending', 'published', 'failed']),
         )
       )
       .orderBy(desc(posts.scheduledAt))
@@ -1268,19 +1268,34 @@ router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequ
       .orderBy(desc(contentCalendar.scheduledAt))
       .limit(200);
 
+    const calendarPostIds = new Set(calendarEntries.map(c => c.id));
+
     // Merge and normalise both sources
     const allPosts = [
-      ...scheduledPosts.map(p => ({
-        id: p.id,
-        title: p.content?.slice(0, 80) ?? '(no caption)',
-        platform: p.platform,
-        status: p.status,
-        scheduledAt: p.scheduledAt,
-        publishedAt: p.publishedAt,
-        content: p.content,
-        mediaUrls: p.mediaUrls ?? [],
-        source: 'posts' as const,
-      })),
+      ...scheduledPosts
+        .filter(p => !calendarPostIds.has(p.id))
+        .map(p => {
+          const eng = (p.engagement as any) || {};
+          const meta = eng._autopilotMeta ? eng : {};
+          let parsedContent: any = {};
+          try { parsedContent = JSON.parse(p.content ?? '{}'); } catch { parsedContent = {}; }
+          const contentObj = meta.content || parsedContent || {};
+          const titleText = contentObj.text || contentObj.caption || (p.content?.slice(0, 80)) || '(no caption)';
+          const resolvedStatus = p.status === 'pending' ? 'scheduled' : (p.status ?? 'scheduled');
+          return {
+            id: p.id,
+            title: String(titleText).slice(0, 80),
+            platform: (meta.platforms?.[0]) || p.platform,
+            platforms: meta.platforms || [p.platform].filter(Boolean),
+            status: resolvedStatus,
+            scheduledAt: p.scheduledAt,
+            publishedAt: p.publishedAt,
+            content: contentObj,
+            mediaUrls: p.mediaUrls ?? [],
+            source: 'autopilot' as const,
+            createdBy: meta.createdBy || 'social_autopilot',
+          };
+        }),
       ...calendarEntries.map(c => ({
         id: c.id,
         title: c.title,

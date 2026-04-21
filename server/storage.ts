@@ -343,11 +343,12 @@ export class DatabaseStorage implements IStorage {
       content: typeof content === 'string' ? content : JSON.stringify(content),
       scheduledAt: scheduledTime ? new Date(scheduledTime) : null,
       status: post.status || 'scheduled',
-      mediaUrls: content?.mediaUrls || [],
-      metadata: {
+      mediaUrls: Array.isArray(content?.mediaUrls) ? content.mediaUrls : [],
+      engagement: {
+        _autopilotMeta: true,
         platforms: platforms || [],
-        viralPrediction,
-        createdBy,
+        viralPrediction: viralPrediction || null,
+        createdBy: createdBy || 'social_autopilot',
         ...(typeof content !== 'string' ? { content } : {}),
       },
     }).returning();
@@ -357,7 +358,8 @@ export class DatabaseStorage implements IStorage {
   async getScheduledPostById(id: string): Promise<any | null> {
     const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
     if (!post) return null;
-    const meta = (post.metadata as any) || {};
+    const eng = (post.engagement as any) || {};
+    const meta = eng._autopilotMeta ? eng : {};
     return {
       ...post,
       platforms: meta.platforms || [post.platform].filter(Boolean),
@@ -365,7 +367,7 @@ export class DatabaseStorage implements IStorage {
       scheduledTime: post.scheduledAt,
       viralPrediction: meta.viralPrediction || null,
       createdBy: meta.createdBy || 'manual',
-      results: post.engagement || [],
+      results: meta._autopilotMeta ? [] : (post.engagement || []),
     };
   }
 
@@ -495,33 +497,118 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSocialCalendarEvents(userId: string): Promise<any[]> {
-    const events = await db
-      .select()
-      .from(contentCalendar)
-      .where(eq(contentCalendar.userId, userId))
-      .orderBy(desc(contentCalendar.scheduledAt))
-      .limit(500);
-    return events;
+    const [calendarEntries, scheduledPosts] = await Promise.all([
+      db
+        .select()
+        .from(contentCalendar)
+        .where(eq(contentCalendar.userId, userId))
+        .orderBy(desc(contentCalendar.scheduledAt))
+        .limit(500),
+      db
+        .select()
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`
+          )
+        )
+        .orderBy(desc(posts.scheduledAt))
+        .limit(500),
+    ]);
+
+    const calendarIds = new Set(calendarEntries.map(e => e.id));
+
+    const normalizedPosts = scheduledPosts
+      .filter(p => !calendarIds.has(p.id))
+      .map(p => {
+        const eng = (p.engagement as any) || {};
+        const meta = eng._autopilotMeta ? eng : {};
+        const rawContent = typeof p.content === 'string' ? p.content : JSON.stringify(p.content ?? '');
+        let parsedContent: any = {};
+        try { parsedContent = JSON.parse(rawContent); } catch { parsedContent = {}; }
+        const contentObj = meta.content || parsedContent || {};
+        const titleText =
+          (typeof contentObj === 'object' ? (contentObj.text || contentObj.caption) : null) ||
+          rawContent ||
+          'Autopilot post';
+        const title = String(titleText).slice(0, 80) + (String(titleText).length > 80 ? '…' : '');
+        const resolvedStatus =
+          p.status === 'pending' || p.status === 'scheduled' ? 'scheduled' :
+          p.status === 'completed' ? 'published' :
+          p.status ?? 'scheduled';
+        return {
+          id: p.id,
+          userId: p.userId,
+          title,
+          contentType: contentObj.mediaType || 'text',
+          platform: (meta.platforms?.[0]) || p.platform || 'social',
+          platforms: meta.platforms || [p.platform].filter(Boolean),
+          scheduledAt: p.scheduledAt,
+          status: resolvedStatus,
+          content: meta.content || contentObj,
+          mediaUrls: p.mediaUrls || [],
+          tags: [],
+          campaignId: null,
+          publishedAt: p.publishedAt,
+          createdAt: p.createdAt,
+          source: 'autopilot',
+          createdBy: meta.createdBy || 'social_autopilot',
+        };
+      });
+
+    const merged = [...calendarEntries, ...normalizedPosts].sort((a, b) => {
+      const aTime = a.scheduledAt ? new Date(a.scheduledAt).getTime() : 0;
+      const bTime = b.scheduledAt ? new Date(b.scheduledAt).getTime() : 0;
+      return bTime - aTime;
+    });
+
+    return merged.slice(0, 500);
   }
 
   async getSocialCalendarStats(userId: string): Promise<any> {
-    // Use a single SQL GROUP BY aggregation instead of fetching up to 500 rows
-    // into JS and filtering — O(1) network, constant memory.
-    const rows = await db
-      .select({
-        status: contentCalendar.status,
-        count: sql<number>`COUNT(*)::int`,
-      })
-      .from(contentCalendar)
-      .where(eq(contentCalendar.userId, userId))
-      .groupBy(contentCalendar.status);
+    const [calendarRows, postRows] = await Promise.all([
+      db
+        .select({
+          status: contentCalendar.status,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(contentCalendar)
+        .where(eq(contentCalendar.userId, userId))
+        .groupBy(contentCalendar.status),
+      db
+        .select({
+          status: posts.status,
+          count: sql<number>`COUNT(*)::int`,
+        })
+        .from(posts)
+        .where(
+          and(
+            eq(posts.userId, userId),
+            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`
+          )
+        )
+        .groupBy(posts.status),
+    ]);
 
-    const counts = Object.fromEntries(rows.map(r => [r.status, r.count]));
+    const calendarCounts = Object.fromEntries(calendarRows.map(r => [r.status, r.count]));
+    const postStatusMap: Record<string, string> = {
+      scheduled: 'scheduled',
+      pending: 'scheduled',
+      published: 'published',
+      completed: 'published',
+    };
+    const postCounts: Record<string, number> = {};
+    for (const row of postRows) {
+      const mapped = postStatusMap[row.status ?? ''] ?? 'scheduled';
+      postCounts[mapped] = (postCounts[mapped] ?? 0) + row.count;
+    }
+
     return {
-      totalScheduled: counts['scheduled'] ?? 0,
-      pendingApproval: counts['pending_approval'] ?? 0,
-      published: counts['published'] ?? 0,
-      drafts: counts['draft'] ?? 0,
+      totalScheduled: (calendarCounts['scheduled'] ?? 0) + (postCounts['scheduled'] ?? 0),
+      pendingApproval: calendarCounts['pending_approval'] ?? 0,
+      published: (calendarCounts['published'] ?? 0) + (postCounts['published'] ?? 0),
+      drafts: calendarCounts['draft'] ?? 0,
     };
   }
 
@@ -912,15 +999,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentAnalyzedContent(userId: string, limit: number): Promise<any[]> {
+    // posts table has no metadata column — engagement (JSONB) is the only structured field.
+    // Return recent posts; callers check features and handle empty gracefully.
     const recentPosts = await db
       .select()
       .from(posts)
-      .where(and(eq(posts.userId, userId), sql`${posts.metadata}->>'analyzed' = 'true'`))
+      .where(eq(posts.userId, userId))
       .orderBy(desc(posts.createdAt))
       .limit(limit || 20);
     return recentPosts.map(p => {
-      const meta = p.metadata as Record<string, any> | null;
-      return { id: p.id, content: p.content, platform: p.platform, analyzedAt: meta?.analyzedAt || p.createdAt, features: meta?.features || {}, performance: meta?.performance || {} };
+      const eng = p.engagement as Record<string, any> | null;
+      return {
+        id: p.id,
+        content: p.content,
+        platform: p.platform,
+        analyzedAt: p.createdAt,
+        features: eng?.features || {},
+        performance: eng || {},
+      };
     });
   }
 

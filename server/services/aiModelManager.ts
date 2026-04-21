@@ -261,13 +261,7 @@ class AIModelManager {
       const weights = await this.extractModelWeights(model);
       const metadata = model.serializeMetadata();
       
-      await storage.saveAIModel({
-        userId,
-        modelType: 'social_autopilot',
-        weights,
-        metadata,
-        trainedAt: new Date(),
-      });
+      await storage.saveUserAIModel(userId, 'social_autopilot', weights, metadata);
       logger.info(`💾 Persisted Social AI model for user ${userId} (with metadata)`);
     } catch (error) {
       logger.warn({ err: error }, `Failed to persist Social AI model for user ${userId}:`);
@@ -283,13 +277,7 @@ class AIModelManager {
       const weights = await this.extractModelWeights(model);
       const metadata = model.serializeMetadata();
       
-      await storage.saveAIModel({
-        userId,
-        modelType: 'advertising_autopilot',
-        weights,
-        metadata,
-        trainedAt: new Date(),
-      });
+      await storage.saveUserAIModel(userId, 'advertising_autopilot', weights, metadata);
       logger.info(`💾 Persisted Advertising AI model for user ${userId} (with metadata)`);
     } catch (error) {
       logger.warn({ err: error }, `Failed to persist Advertising AI model for user ${userId}:`);
