@@ -394,7 +394,9 @@ router.get('/hyper/predict/:platform', requireAuth, async (req, res) => {
         hook: `Start with a ${prediction.optimalHook} hook`,
         length: `Keep content at ${prediction.optimalLength}`,
         emojis: `Use ${prediction.optimalEmojiDensity}`,
-        hashtags: `Include ${prediction.optimalHashtagCount} hashtags`,
+        hashtags: prediction.optimalHashtagCount !== null
+          ? `Include ${prediction.optimalHashtagCount} hashtags`
+          : 'Hashtag count will be available once posting history is established',
         expectedEngagement: `Predicted engagement rate: ${prediction.predictedEngagement.toFixed(2)}%`,
       },
       microPatternRecommendations: prediction.microPatternRecommendations,

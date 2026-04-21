@@ -346,7 +346,7 @@ class HyperLearningEngine extends EventEmitter {
       logger.info(`✅ HyperLearning cycle complete:`);
       logger.info(`   Micro-patterns detected: ${microPatterns.length}`);
       logger.info(`   Cross-platform syntheses: ${crossPlatform.synthesisCount}`);
-      logger.info(`   Predictions generated: ${predictions.length}`);
+      logger.info(`   Predictions generated: ${predictions.reduce((s, m) => s + m.predictions.length, 0)} (${predictions.length} models: ${predictions.map(m => `${m.type}@${m.accuracy.toFixed(2)}`).join(', ')})`);
       logger.info(`   A/B tests processed: ${abTests.length}`);
       logger.info(`   Time: ${actualTimeMs}ms (human equivalent: ${humanEquivalentHours.toFixed(1)} hours)`);
       logger.info(`   Learning multiplier: ${this.learningMetrics.learningMultiplier.toFixed(1)}x`);
@@ -1347,19 +1347,28 @@ class HyperLearningEngine extends EventEmitter {
 
   private calculateOptimalWeights(patterns: MicroPattern[]): number[][] {
     const dimensions = ['hook_structure', 'character_count', 'emoji_density', 'hashtag_position', 'timing_precision'];
-    const weights: number[][] = [];
 
+    // Pre-compute avg absolute impact for each dimension from real pattern data.
+    const dimImpacts = dimensions.map(dim => {
+      const dp = patterns.filter(p => p.type === dim);
+      return dp.length > 0
+        ? dp.reduce((s, p) => s + Math.abs(p.engagementImpact), 0) / dp.length
+        : 0;
+    });
+    const totalImpact = dimImpacts.reduce((s, v) => s + v, 0) || 1;
+
+    const weights: number[][] = [];
     for (let i = 0; i < dimensions.length; i++) {
       const row: number[] = [];
       for (let j = 0; j < dimensions.length; j++) {
         if (i === j) {
-          const dimPatterns = patterns.filter(p => p.type === dimensions[i]);
-          const avgImpact = dimPatterns.length > 0 
-            ? dimPatterns.reduce((s, p) => s + Math.abs(p.engagementImpact), 0) / dimPatterns.length
-            : 0;
-          row.push(Math.min(1, avgImpact / 50));
+          // Diagonal: how strongly this dimension self-predicts engagement.
+          row.push(Math.min(1, dimImpacts[i] / 50));
         } else {
-          row.push(0.1 + Math.random() * 0.2);
+          // Off-diagonal: cross-influence weight derived from the relative share
+          // of dimension j's impact in the overall pattern landscape.
+          // This replaces Math.random() with a deterministic, data-grounded value.
+          row.push(Math.min(0.3, (dimImpacts[j] / totalImpact) * 0.6));
         }
       }
       weights.push(row);
@@ -1441,26 +1450,52 @@ class HyperLearningEngine extends EventEmitter {
       }
       if (currentPeak) peakActivityWindows.push(currentPeak);
 
+      // contentFatigueCycles: derived from distribution of posting intervals in the DB.
+      // We compute 25th/50th/75th/90th percentile gaps (hours) between consecutive posts
+      // to understand when audience fatigue typically sets in.
+      const fatigueCycles: number[] = [];
+      if (hourlyData.length >= 4) {
+        const sorted = [...hourlyData].map(h => h.hour ?? 0).sort((a, b) => a - b);
+        const gaps: number[] = [];
+        for (let k = 1; k < sorted.length; k++) gaps.push(sorted[k] - sorted[k - 1]);
+        const sortedGaps = gaps.sort((a, b) => a - b);
+        const pct = (p: number) => sortedGaps[Math.floor(sortedGaps.length * p)] ?? 0;
+        [0.25, 0.5, 0.75, 0.9].forEach(p => { const v = pct(p); if (v > 0) fatigueCycles.push(v); });
+      }
+
+      // engagementVelocityCurve: derived from the hourly engagement distribution
+      // normalized so the peak hour = 1.0.  Only include hours with above-mean engagement.
+      const maxEng = Math.max(...hourlyData.map(h => parseFloat(String(h.avgEngagement) || '0')), 0.001);
+      const velocityCurve = hourlyData
+        .filter(h => parseFloat(String(h.avgEngagement) || '0') > avgEngagement)
+        .sort((a, b) => parseFloat(String(b.avgEngagement) || '0') - parseFloat(String(a.avgEngagement) || '0'))
+        .map(h => Math.round(parseFloat(String(h.avgEngagement) || '0') / maxEng * 100) / 100)
+        .slice(0, 8);
+
+      // viralityThresholds: the 90th-percentile engagement per platform from real data.
+      // Filled in from the platform-level cross-platform cache when available.
+      const crossKey      = _hlKey('cross_platform_90d');
+      const platformData: any[] = _hlGet<any[]>(crossKey) ?? [];
+      const viralityThresholds: Record<string, number> = {};
+      for (const row of platformData) {
+        const p90 = parseFloat(String(row.avgEngagement) || '0') * 1.5; // approx 90th pct
+        if (row.platform && p90 > 0) viralityThresholds[row.platform] = Math.round(p90 * 100) / 100;
+      }
+
       return {
         peakActivityWindows,
-        contentFatigueCycles: [3, 6, 12, 24],
-        engagementVelocityCurve: [1, 0.8, 0.6, 0.4, 0.3, 0.2, 0.15, 0.1],
-        viralityThresholds: {
-          instagram: 5.0,
-          twitter: 3.0,
-          tiktok: 8.0,
-          linkedin: 2.0,
-          youtube: 4.0,
-          facebook: 2.5,
-        },
+        contentFatigueCycles: fatigueCycles.length > 0 ? fatigueCycles : [],
+        engagementVelocityCurve: velocityCurve.length > 0 ? velocityCurve : [],
+        viralityThresholds,
       };
 
     } catch (error) {
       logger.warn({ err: error }, 'Failed to build audience behavior model:');
+      // On error return empty data structures — no hardcoded fallback values
       return {
-        peakActivityWindows: [{ start: 9, end: 12, intensity: 1.3 }, { start: 17, end: 21, intensity: 1.5 }],
-        contentFatigueCycles: [4, 8, 24],
-        engagementVelocityCurve: [1, 0.7, 0.5, 0.3, 0.2],
+        peakActivityWindows: [],
+        contentFatigueCycles: [],
+        engagementVelocityCurve: [],
         viralityThresholds: {},
       };
     }
@@ -1490,95 +1525,154 @@ class HyperLearningEngine extends EventEmitter {
 
   private async buildTimingPredictiveModel(): Promise<PredictiveModel> {
     const predictions: PredictiveModel['predictions'] = [];
-    
+
+    // Pull real behavioral data already cached by runBehavioralAnalysis() this cycle.
+    // This gives us actual hour×dayOfWeek → avgEngagement derived from the user's own
+    // posting history rather than hardcoded morning/evening heuristics.
+    const behavKey     = _hlKey('behavioral_velocity_30d');
+    const engVelocity: any[] = _hlGet<any[]>(behavKey) ?? [];
+    const hasBehavData = engVelocity.length > 0;
+
+    // Compute data-derived boosts: for each (hour, day) slot, how much does
+    // engagement deviate from the mean across all slots?
+    const hourSums  = new Map<number, { total: number; n: number }>();
+    const daySums   = new Map<number, { total: number; n: number }>();
+    let globalSum   = 0;
+    let globalCount = 0;
+
+    for (const row of engVelocity) {
+      const eng = parseFloat(String(row.avgEngagement) || '0');
+      if (!isFinite(eng)) continue;
+      globalSum += eng; globalCount++;
+      if (row.hour != null) {
+        const s = hourSums.get(row.hour) ?? { total: 0, n: 0 };
+        s.total += eng; s.n++;
+        hourSums.set(row.hour, s);
+      }
+      if (row.dayOfWeek != null) {
+        const s = daySums.get(row.dayOfWeek) ?? { total: 0, n: 0 };
+        s.total += eng; s.n++;
+        daySums.set(row.dayOfWeek, s);
+      }
+    }
+
+    const globalMean   = globalCount > 0 ? globalSum / globalCount : 0;
+    const baseEngagement = globalMean > 0 ? globalMean : 3.0; // industry fallback only when no data at all
+
+    // Relative boost for each hour: (hourAvg - globalMean) / globalMean, capped ±1.0
+    const hourBoost = (hour: number): number => {
+      const s = hourSums.get(hour);
+      if (!s || s.n === 0 || globalMean === 0) return 0;
+      return Math.max(-1, Math.min(1, (s.total / s.n - globalMean) / globalMean));
+    };
+    const dayBoost = (dow: number): number => {
+      const s = daySums.get(dow);
+      if (!s || s.n === 0 || globalMean === 0) return 0;
+      return Math.max(-1, Math.min(1, (s.total / s.n - globalMean) / globalMean));
+    };
+
     const timingPatterns = [...this.microPatternCache.values()]
       .flat()
       .filter(p => p.type === 'timing_precision');
 
     for (let hour = 0; hour < 24; hour++) {
       for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-        const relevantPatterns = timingPatterns.filter(p => 
+        const relevantPatterns = timingPatterns.filter(p =>
           p.pattern.includes(`:${hour.toString().padStart(2, '0')}`) ||
-          p.pattern.includes(`minute`)
+          p.pattern.includes('minute')
         );
 
-        const baseEngagement = 3.0;
-        let predictedBoost = 0;
+        const hBoost = hourBoost(hour);
+        const dBoost = dayBoost(dayOfWeek);
+        let predictedBoost = hBoost + dBoost;
         const factors: Array<{ factor: string; weight: number }> = [];
 
-        if (hour >= 8 && hour <= 10) {
-          predictedBoost += 0.5;
-          factors.push({ factor: 'morning_peak', weight: 0.5 });
-        }
-        if (hour >= 17 && hour <= 21) {
-          predictedBoost += 0.8;
-          factors.push({ factor: 'evening_peak', weight: 0.8 });
-        }
-        if (dayOfWeek === 0 || dayOfWeek === 6) {
-          predictedBoost += 0.3;
-          factors.push({ factor: 'weekend', weight: 0.3 });
+        if (hBoost !== 0) factors.push({ factor: `hour_${hour}_engagement_delta`, weight: hBoost });
+        if (dBoost !== 0) factors.push({ factor: `day_${dayOfWeek}_engagement_delta`, weight: dBoost });
+        for (const p of relevantPatterns) {
+          predictedBoost += p.engagementImpact / 100;
+          factors.push({ factor: p.pattern, weight: p.engagementImpact / 100 });
         }
 
-        for (const pattern of relevantPatterns) {
-          predictedBoost += pattern.engagementImpact / 100;
-          factors.push({ factor: pattern.pattern, weight: pattern.engagementImpact / 100 });
-        }
+        // Confidence scales with how much real data backs this slot
+        const slotRows = engVelocity.filter(r => r.hour === hour && r.dayOfWeek === dayOfWeek);
+        const slotDataPoints = slotRows.length > 0 ? (slotRows[0] as any).postCount || 1 : 0;
+        const confidence = hasBehavData
+          ? Math.min(0.92, 0.35 + (slotDataPoints / 50) * 0.5 + relevantPatterns.length * 0.05)
+          : Math.min(0.5,  0.2  + relevantPatterns.length * 0.05);
 
         predictions.push({
           scenario: { hour, dayOfWeek },
-          predictedEngagement: baseEngagement + predictedBoost,
-          confidence: Math.min(0.9, 0.5 + (relevantPatterns.length * 0.1)),
+          predictedEngagement: baseEngagement * (1 + predictedBoost),
+          confidence,
           factors,
         });
       }
     }
 
+    // Accuracy reflects actual data coverage: what fraction of 168 possible
+    // hour×day slots have at least one real observation?
+    const coveredSlots   = engVelocity.length;
+    const coverageRatio  = Math.min(1, coveredSlots / 168);
+    const patternBonus   = Math.min(0.15, timingPatterns.length * 0.01);
+    const accuracy       = Math.round((0.35 + coverageRatio * 0.5 + patternBonus) * 100) / 100;
+
     return {
       type: 'timing',
-      accuracy: 0.75,
+      accuracy,
       predictions: predictions.sort((a, b) => b.predictedEngagement - a.predictedEngagement).slice(0, 20),
     };
   }
 
   private async buildContentPredictiveModel(): Promise<PredictiveModel> {
     const predictions: PredictiveModel['predictions'] = [];
-    
+
     const contentPatterns = [...this.microPatternCache.values()]
       .flat()
       .filter(p => ['hook_structure', 'character_count', 'emoji_density', 'word_sentiment'].includes(p.type));
 
-    const hookTypes = contentPatterns.filter(p => p.type === 'hook_structure');
+    const hookTypes      = contentPatterns.filter(p => p.type === 'hook_structure');
     const lengthPatterns = contentPatterns.filter(p => p.type === 'character_count');
-    const emojiPatterns = contentPatterns.filter(p => p.type === 'emoji_density');
+    const emojiPatterns  = contentPatterns.filter(p => p.type === 'emoji_density');
+
+    // Derive base engagement from real data if available, otherwise use 0 as the
+    // neutral reference (predictions are expressed as engagement deltas, not
+    // absolute percentages, until the DB has enough posts to compute a true mean).
+    const microKey  = _hlKey('micro_all_90d');
+    const allData: any[] = _hlGet<any[]>(microKey) ?? [];
+    const baseEngagement = allData.length >= 10
+      ? allData.reduce((s, d) => s + (d.engagementRate || 0), 0) / allData.length
+      : 0;
 
     for (const hook of hookTypes.slice(0, 5)) {
       for (const length of lengthPatterns.slice(0, 3)) {
         for (const emoji of emojiPatterns.slice(0, 3)) {
-          const baseEngagement = 3.0;
-          const predictedBoost = hook.engagementImpact / 100 + length.engagementImpact / 100 + emoji.engagementImpact / 100;
+          const boost        = hook.engagementImpact / 100 + length.engagementImpact / 100 + emoji.engagementImpact / 100;
           const avgConfidence = (hook.confidence + length.confidence + emoji.confidence) / 3;
-
           predictions.push({
-            scenario: {
-              hookType: hook.pattern,
-              lengthRange: length.pattern,
-              emojiDensity: emoji.pattern,
-            },
-            predictedEngagement: baseEngagement + predictedBoost,
-            confidence: avgConfidence,
+            scenario:           { hookType: hook.pattern, lengthRange: length.pattern, emojiDensity: emoji.pattern },
+            predictedEngagement: baseEngagement + boost,
+            confidence:          avgConfidence,
             factors: [
-              { factor: hook.pattern, weight: hook.engagementImpact / 100 },
+              { factor: hook.pattern,   weight: hook.engagementImpact / 100   },
               { factor: length.pattern, weight: length.engagementImpact / 100 },
-              { factor: emoji.pattern, weight: emoji.engagementImpact / 100 },
+              { factor: emoji.pattern,  weight: emoji.engagementImpact / 100  },
             ],
           });
         }
       }
     }
 
+    // Accuracy derived from how many patterns back the model (more patterns = higher accuracy)
+    const patternCoverage = Math.min(1, contentPatterns.length / 30);
+    const avgPatternConf  = contentPatterns.length > 0
+      ? contentPatterns.reduce((s, p) => s + p.confidence, 0) / contentPatterns.length
+      : 0;
+    const accuracy = Math.round((0.30 + patternCoverage * 0.35 + avgPatternConf * 0.25) * 100) / 100;
+
     return {
       type: 'content',
-      accuracy: 0.7,
+      accuracy,
       predictions: predictions.sort((a, b) => b.predictedEngagement - a.predictedEngagement).slice(0, 15),
     };
   }
@@ -1610,9 +1704,15 @@ class HyperLearningEngine extends EventEmitter {
       }
     }
 
+    // Composite accuracy = harmonic mean of timing and content accuracies,
+    // reflecting that the composite is only as good as its weakest model.
+    const compositeAccuracy = timingModel.accuracy > 0 && contentModel.accuracy > 0
+      ? Math.round(2 * timingModel.accuracy * contentModel.accuracy / (timingModel.accuracy + contentModel.accuracy) * 100) / 100
+      : 0;
+
     return {
       type: 'composite',
-      accuracy: 0.72,
+      accuracy: compositeAccuracy,
       predictions: predictions.sort((a, b) => b.predictedEngagement - a.predictedEngagement).slice(0, 10),
     };
   }
@@ -1651,7 +1751,51 @@ class HyperLearningEngine extends EventEmitter {
   }
 
   private async runCompetitiveIntelligence(): Promise<{ insightsFound: number }> {
-    return { insightsFound: 0 };
+    try {
+      // Competitive intelligence: compare the user's platform×contentType combinations
+      // against the overall distribution so we can identify which content types are
+      // performing above/below the benchmark (the closest analogue to competitive data
+      // that exists in the system without external data sources).
+      const ninetyDaysAgo = new Date();
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+      const benchKey = _hlKey('competitive_benchmark_90d');
+      let benchmarkData: any[] | undefined = _hlGet<any[]>(benchKey);
+      if (!benchmarkData) {
+        benchmarkData = await db
+          .select({
+            platform:      autopilotLearningData.platform,
+            contentType:   autopilotLearningData.contentType,
+            avgEngagement: avg(autopilotLearningData.engagementRate),
+            postCount:     count(),
+          })
+          .from(autopilotLearningData)
+          .where(gte(autopilotLearningData.createdAt, ninetyDaysAgo))
+          .groupBy(autopilotLearningData.platform, autopilotLearningData.contentType);
+        _hlSet(benchKey, benchmarkData);
+        logger.info(`[HyperLearning] competitive_benchmark_90d: ${benchmarkData.length} rows fetched from DB (cached for next cycle)`);
+      } else {
+        logger.info(`[HyperLearning] competitive_benchmark_90d: ${benchmarkData.length} rows served from process cache`);
+      }
+
+      if (benchmarkData.length === 0) return { insightsFound: 0 };
+
+      // Overall mean engagement across all platform×contentType combos
+      const overallMean = benchmarkData.reduce((s: number, r: any) =>
+        s + parseFloat(String(r.avgEngagement) || '0'), 0) / benchmarkData.length;
+
+      // Insights = combos that beat the mean by ≥15% and have ≥5 posts (statistically meaningful)
+      const insights = benchmarkData.filter((r: any) =>
+        parseFloat(String(r.avgEngagement) || '0') > overallMean * 1.15 &&
+        (r.postCount ?? 0) >= 5
+      );
+
+      return { insightsFound: insights.length };
+
+    } catch (error) {
+      logger.warn({ err: error }, 'Competitive intelligence failed:');
+      return { insightsFound: 0 };
+    }
   }
 
   private async runEmergentPatternDetection(): Promise<MicroPattern[]> {
@@ -2002,7 +2146,7 @@ class HyperLearningEngine extends EventEmitter {
     optimalHook: string;
     optimalLength: string;
     optimalEmojiDensity: string;
-    optimalHashtagCount: number;
+    optimalHashtagCount: number | null;
     predictedEngagement: number;
     microPatternRecommendations: string[];
   }> {
@@ -2037,13 +2181,44 @@ class HyperLearningEngine extends EventEmitter {
       .sort((a, b) => b.engagementImpact - a.engagementImpact)
       .slice(0, 5);
 
+    // Hashtag count: derive from hashtag_position patterns detected for this platform.
+    // If no patterns found (no data yet), return null so callers know we have no data-
+    // backed recommendation rather than serving a made-up number.
+    const hashtagPatterns = [...this.microPatternCache.values()]
+      .flat()
+      .filter(p =>
+        p.type === 'hashtag_position' &&
+        (p.platforms.includes(platform) || p.platforms.includes('all')) &&
+        p.engagementImpact > 0
+      )
+      .sort((a, b) => b.engagementImpact - a.engagementImpact);
+
+    let optimalHashtagCount: number | null = null;
+    if (hashtagPatterns.length > 0) {
+      // Extract numeric count from pattern strings like "3 hashtags" if present
+      const firstPattern = hashtagPatterns[0].pattern;
+      const countMatch = firstPattern.match(/(\d+)/);
+      if (countMatch) optimalHashtagCount = parseInt(countMatch[1], 10);
+    }
+
+    // Base engagement from real data mean, or null when no data is available yet
+    const microKey2 = _hlKey('micro_all_90d');
+    const allDataBase: any[] = _hlGet<any[]>(microKey2) ?? [];
+    const dataMeanEngagement = allDataBase.length >= 10
+      ? allDataBase.reduce((s: number, d: any) => s + (d.engagementRate || 0), 0) / allDataBase.length
+      : null;
+    const patternBoostTotal = platformPatterns.reduce((s, p) => s + p.engagementImpact, 0) / 100;
+    const predictedEngagement = dataMeanEngagement !== null
+      ? dataMeanEngagement + patternBoostTotal
+      : patternBoostTotal; // delta-only when no baseline yet
+
     return {
       optimalTiming,
       optimalHook,
       optimalLength,
       optimalEmojiDensity,
-      optimalHashtagCount: platform === 'instagram' ? 8 : platform === 'twitter' ? 2 : 3,
-      predictedEngagement: 4.5 + (platformPatterns.reduce((s, p) => s + p.engagementImpact, 0) / 100),
+      optimalHashtagCount,
+      predictedEngagement,
       microPatternRecommendations: platformPatterns.map(p => p.pattern),
     };
   }
