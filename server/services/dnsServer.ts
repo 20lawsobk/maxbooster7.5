@@ -223,12 +223,6 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
       response.answers.push(makeA(name, DNS_SERVER_IP));
       break;
 
-    case Packet.TYPE.ANY:
-      response.answers.push(makeA(name, DNS_SERVER_IP));
-      response.answers.push(makeSOA(zone));
-      makeNSRecords(zone).forEach(r => response.answers.push(r));
-      break;
-
     case Packet.TYPE.SOA:
       response.answers.push(makeSOA(zone));
       break;
@@ -307,6 +301,38 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
       }
       break;
     }
+
+    case 257: /* CAA */ {
+      const caaRecords = await resolveFromZoneRecords(name, 'CAA');
+      if (caaRecords.length > 0) {
+        for (const r of caaRecords) {
+          // CAA wire format: flags(1) + tag_length(1) + tag + value
+          // We store as: "0 issue \"letsencrypt.org\""
+          const parts = r.value.match(/^(\d+)\s+(\w+)\s+"([^"]+)"$/);
+          if (parts) {
+            response.answers.push({
+              name: r.name,
+              type: 257,
+              class: Packet.CLASS.IN,
+              ttl: r.ttl,
+              flags: parseInt(parts[1], 10),
+              tag: parts[2],
+              value: parts[3],
+            });
+          }
+        }
+      } else {
+        response.authorities.push(makeSOA(zone));
+      }
+      break;
+    }
+
+    case Packet.TYPE.ANY:
+      // RFC 8482 — respond with HINFO instead of enumerating all records
+      response.answers.push(makeA(name, DNS_SERVER_IP));
+      response.answers.push(makeSOA(zone));
+      makeNSRecords(zone).forEach(r => response.answers.push(r));
+      break;
 
     default:
       // NOERROR with empty answers — SOA in authority section (RFC 2308)

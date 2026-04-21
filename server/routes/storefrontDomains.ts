@@ -328,6 +328,84 @@ router.get("/search", async (req, res) => {
   }
 });
 
+// ── DNS propagation check ─────────────────────────────────────────────────────
+/**
+ * GET /api/storefront-domains/propagation?domain=mybeats.com&type=A&expected=34.x.x.x
+ *
+ * Returns real-time propagation status from 4 global DoH resolvers.
+ * Same concept as Vercel's domain propagation checker.
+ */
+router.get("/propagation", async (req, res) => {
+  try {
+    const domain = (req.query.domain as string || "").toLowerCase().trim();
+    const type   = (req.query.type as string || "A").toUpperCase();
+    const expected = req.query.expected as string | undefined;
+
+    if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
+      return res.status(400).json({ ok: false, error: "Invalid or missing domain." });
+    }
+
+    const { checkPropagation } = await import("../services/dnsPropagationCheck.js");
+    const result = await checkPropagation(domain, type, expected);
+    return res.json({ ok: true, ...result });
+  } catch (err: any) {
+    logger.warn({ err }, "[domains] propagation check error");
+    return res.status(500).json({ ok: false, error: err.message || "Propagation check failed." });
+  }
+});
+
+/**
+ * GET /api/storefront-domains/propagation/setup?domain=mybeats.com&storefrontId=xxx
+ *
+ * Checks all DNS record types needed for full domain setup (NS, A, www CNAME).
+ * Returns a composite propagation report the UI can use to show a progress bar.
+ */
+router.get("/propagation/setup", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const domain       = (req.query.domain as string || "").toLowerCase().trim();
+    const storefrontId = req.query.storefrontId as string;
+
+    if (!domain || !/^[a-z0-9.-]+$/.test(domain)) {
+      return res.status(400).json({ ok: false, error: "Invalid or missing domain." });
+    }
+    if (!storefrontId) {
+      return res.status(400).json({ ok: false, error: "storefrontId required." });
+    }
+
+    const platformIp = process.env.DNS_SERVER_IP || "34.111.179.208";
+    const ns1        = `ns1.${BASE_DOMAIN}`;
+    const ns2        = `ns2.${BASE_DOMAIN}`;
+
+    const { checkDomainSetupPropagation } = await import("../services/dnsPropagationCheck.js");
+    const result = await checkDomainSetupPropagation(domain, platformIp, ns1, ns2, storefrontId, BASE_DOMAIN);
+    return res.json({ ok: true, domain, ...result });
+  } catch (err: any) {
+    logger.warn({ err }, "[domains] propagation setup check error");
+    return res.status(500).json({ ok: false, error: err.message || "Propagation check failed." });
+  }
+});
+
+/**
+ * GET /api/storefront-domains/domain-status/:domainId
+ *
+ * Returns rich domain status including health, cert status, and setup instructions.
+ */
+router.get("/domain-status/:domainId", async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+
+    const { getDomainStatus } = await import("../services/storefrontDnsService.js");
+    const status = await getDomainStatus(req.params.domainId);
+    return res.json({ ok: true, ...status });
+  } catch (err: any) {
+    logger.warn({ err }, "[domains] domain-status error");
+    const code = err.message === "Domain not found" ? 404 : 500;
+    return res.status(code).json({ ok: false, error: err.message || "Internal error." });
+  }
+});
+
 // DNS server status & configuration info — authenticated users only (internal config)
 router.get("/dns/status", async (req, res) => {
   try {
