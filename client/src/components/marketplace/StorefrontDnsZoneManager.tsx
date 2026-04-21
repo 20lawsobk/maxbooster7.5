@@ -204,10 +204,14 @@ function SearchResultRow({
   result,
   onClaim,
   claiming,
+  atLimit,
+  hasSubscription,
 }: {
   result: DomainSearchResult;
   onClaim: (domain: string) => void;
   claiming: boolean;
+  atLimit?: boolean;
+  hasSubscription?: boolean;
 }) {
   const tldColors: Record<string, string> = {
     '.com':    'text-blue-600',
@@ -247,15 +251,21 @@ function SearchResultRow({
             <Badge className="bg-green-600/15 text-green-700 dark:text-green-400 border-green-300 dark:border-green-800 text-[10px] gap-1 hidden sm:flex">
               <Sparkles className="w-2.5 h-2.5" />Included
             </Badge>
-            <Button
-              size="sm"
-              className="h-7 text-xs px-3 gap-1"
-              onClick={() => onClaim(result.domain)}
-              disabled={claiming}
-            >
-              {claiming ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-              Claim Free
-            </Button>
+            {!hasSubscription ? (
+              <span className="text-[11px] text-amber-600 font-medium">Subscribe to claim</span>
+            ) : atLimit ? (
+              <span className="text-[11px] text-orange-600 font-medium">Limit reached</span>
+            ) : (
+              <Button
+                size="sm"
+                className="h-7 text-xs px-3 gap-1"
+                onClick={() => onClaim(result.domain)}
+                disabled={claiming}
+              >
+                {claiming ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                Claim Free
+              </Button>
+            )}
           </>
         ) : result.claimedByPlatform ? (
           <span className="text-[11px] text-blue-600 dark:text-blue-400 flex items-center gap-1">
@@ -801,6 +811,17 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
   const [showAddZone,  setShowAddZone]  = useState(false);
   const [newZoneDomain, setNewZoneDomain] = useState('');
 
+  // Domain usage (subscription perk: up to 2 custom domains)
+  const { data: usageData } = useQuery({
+    queryKey: ['/api/dns-manager/usage'],
+    queryFn:  () => apiRequest('GET', '/api/dns-manager/usage').then(r => r.json()),
+  });
+  const domainLimit: number        = usageData?.limit         ?? 2;
+  const domainsUsed: number        = usageData?.used          ?? 0;
+  const domainsRemaining: number   = usageData?.remaining     ?? 2;
+  const hasSubscription: boolean   = usageData?.hasSubscription ?? false;
+  const atLimit: boolean           = domainsRemaining <= 0;
+
   // Domain search query
   const { data: searchData, isFetching: searchLoading } = useQuery({
     queryKey: ['/api/domain-registrar/search', searchName],
@@ -843,6 +864,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
     onSuccess: (data, domain) => {
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/usage'] });
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/search', searchName] });
       setActiveTab('mine');
       const isPlatformSubdomain = domain.endsWith(`.${PLATFORM_DOMAIN}`);
@@ -867,6 +889,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/usage'] });
       toast({ title: 'Domain removed' });
     },
   });
@@ -876,6 +899,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
     mutationFn: () => apiRequest('POST', '/api/dns-manager/zones', { domain: newZoneDomain }).then(r => r.json()),
     onSuccess:  (data) => {
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/usage'] });
       setShowAddZone(false);
       setNewZoneDomain('');
       setSelectedZone(data.zone);
@@ -930,6 +954,39 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
         </CardContent>
       </Card>
 
+      {/* ── Domain usage bar ─────────────────────────────────────────────── */}
+      <div className={`flex items-center justify-between px-4 py-2.5 rounded-lg border text-xs ${
+        atLimit
+          ? 'bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-800'
+          : !hasSubscription
+          ? 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'
+          : 'bg-muted/40 border-border'
+      }`}>
+        <div className="flex items-center gap-2.5 min-w-0">
+          <Globe className={`w-3.5 h-3.5 flex-shrink-0 ${atLimit ? 'text-orange-500' : !hasSubscription ? 'text-amber-500' : 'text-muted-foreground'}`} />
+          <div className="flex items-center gap-1.5">
+            <span className="font-medium">Custom Domains</span>
+            <span className="text-muted-foreground">— {domainLimit} included with subscription</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          {!hasSubscription ? (
+            <span className="text-amber-600 font-medium">Subscribe to unlock</span>
+          ) : atLimit ? (
+            <span className="text-orange-600 font-medium">Limit reached ({domainsUsed}/{domainLimit})</span>
+          ) : (
+            <span className={domainsUsed > 0 ? 'font-medium' : 'text-muted-foreground'}>
+              {domainsUsed} of {domainLimit} used
+            </span>
+          )}
+          <div className="flex gap-0.5">
+            {Array.from({ length: domainLimit }).map((_, i) => (
+              <div key={i} className={`w-5 h-2 rounded-sm ${i < domainsUsed ? (atLimit ? 'bg-orange-500' : 'bg-green-500') : 'bg-muted-foreground/20'}`} />
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* ── Main Tabs ────────────────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-9 w-full sm:w-auto">
@@ -944,10 +1001,13 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
           {/* Included badge */}
           <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900">
             <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">Domains included with Max Booster</p>
-              <p className="text-xs text-purple-600/70 dark:text-purple-400/70">Register any domain — .com, .music, .band, .io and more — at no extra cost.</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">2 free custom domains included with your subscription</p>
+              <p className="text-xs text-purple-600/70 dark:text-purple-400/70">Claim up to {domainLimit} domains — .com, .music, .band, .io and more — or bring your own. Currently using {domainsUsed} of {domainLimit}.</p>
             </div>
+            {atLimit && (
+              <Badge variant="outline" className="flex-shrink-0 text-[10px] border-orange-400 text-orange-600">Limit reached</Badge>
+            )}
           </div>
 
           {/* Search bar */}
@@ -984,16 +1044,22 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                   </p>
                 </div>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-7 text-xs px-3 gap-1 border-primary/40 text-primary hover:bg-primary/10 flex-shrink-0"
-                onClick={() => claimDomain.mutate(`${searchName}.${PLATFORM_DOMAIN}`)}
-                disabled={claimingDomain === `${searchName}.${PLATFORM_DOMAIN}`}
-              >
-                {claimingDomain === `${searchName}.${PLATFORM_DOMAIN}` ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
-                Claim Free
-              </Button>
+              {!hasSubscription ? (
+                <span className="text-[11px] text-amber-600 font-medium flex-shrink-0">Subscribe to claim</span>
+              ) : atLimit ? (
+                <span className="text-[11px] text-orange-600 font-medium flex-shrink-0">Limit reached</span>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs px-3 gap-1 border-primary/40 text-primary hover:bg-primary/10 flex-shrink-0"
+                  onClick={() => claimDomain.mutate(`${searchName}.${PLATFORM_DOMAIN}`)}
+                  disabled={claimingDomain === `${searchName}.${PLATFORM_DOMAIN}`}
+                >
+                  {claimingDomain === `${searchName}.${PLATFORM_DOMAIN}` ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Plus className="w-3 h-3" />}
+                  Claim Free
+                </Button>
+              )}
             </div>
           )}
 
@@ -1014,6 +1080,8 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                   result={result}
                   onClaim={d => claimDomain.mutate(d)}
                   claiming={claimingDomain === result.domain}
+                  atLimit={atLimit}
+                  hasSubscription={hasSubscription}
                 />
               ))}
             </div>
@@ -1150,10 +1218,17 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-semibold text-sm">Hosted DNS Zones</p>
-                  <p className="text-xs text-muted-foreground">Manage DNS records for any domain — including external ones</p>
+                  <p className="text-xs text-muted-foreground">Manage DNS records for any domain — including external ones you bring</p>
                 </div>
-                <Button size="sm" className="gap-1.5" onClick={() => setShowAddZone(true)}>
-                  <Plus className="w-3.5 h-3.5" /> Add Domain
+                <Button
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setShowAddZone(true)}
+                  disabled={atLimit || !hasSubscription}
+                  title={!hasSubscription ? 'Subscription required' : atLimit ? `Limit reached (${domainsUsed}/${domainLimit})` : undefined}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  {atLimit ? `${domainsUsed}/${domainLimit} Used` : 'Add Domain'}
                 </Button>
               </div>
 
@@ -1168,8 +1243,14 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                   <p className="text-xs text-muted-foreground max-w-xs">
                     Add a domain to manage its DNS records directly from Max Booster. After adding, point your nameservers here.
                   </p>
-                  <Button size="sm" className="mt-4 gap-1.5" onClick={() => setShowAddZone(true)}>
-                    <Plus className="w-3.5 h-3.5" /> Add Domain
+                  <Button
+                    size="sm"
+                    className="mt-4 gap-1.5"
+                    onClick={() => setShowAddZone(true)}
+                    disabled={atLimit || !hasSubscription}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    {!hasSubscription ? 'Subscribe to Add' : atLimit ? 'Limit Reached' : 'Add Domain'}
                   </Button>
                 </div>
               ) : (

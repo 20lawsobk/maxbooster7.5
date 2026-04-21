@@ -11,12 +11,41 @@ import {
 } from "../modules/domains/domain.controller.js";
 import { publishStorefront, unpublishStorefront } from "../modules/publish/publish.service.js";
 import { logger } from "../logger.js";
-import { db } from "../db.js";
+import { db, pool } from "../db.js";
 import { storefrontDomains, storefronts } from "@shared/schema";
 import { validateFreeDomain } from "@shared/domainValidation.js";
 import { validateDomain } from "../modules/domains/dnsValidators.js";
 
 const dnsResolve = dns.promises.resolve;
+
+const DOMAIN_LIMIT = 2;
+
+async function getUserDomainUsage(userId: string): Promise<{ zones: number; claimed: number; total: number }> {
+  const [zonesResult, claimedResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]),
+    pool.query(
+      `SELECT COUNT(*)::int AS n
+       FROM storefront_domains sd
+       JOIN storefronts s ON s.id = sd.storefront_id
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'`,
+      [userId]
+    ),
+  ]);
+  const zones   = zonesResult.rows[0]?.n   ?? 0;
+  const claimed = claimedResult.rows[0]?.n ?? 0;
+  return { zones, claimed, total: zones + claimed };
+}
+
+async function userHasActiveSubscription(userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT subscription_status, role FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+  const user = result.rows[0];
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return ['active', 'trialing'].includes(user.subscription_status ?? '');
+}
 
 /**
  * Returns true if the domain already has real-world DNS records (NS or A/AAAA),
@@ -261,9 +290,11 @@ router.get("/registry/:domain", async (req, res) => {
 });
 
 // Claim a free full domain — provisioned immediately, managed by Max Booster DNS
+// Subscription required; limit: 2 custom domains per user (shared with Bring Your Own Domain slots)
 router.post("/platform/claim", async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: "Unauthorized." });
+    const userId = (req.user as any).id;
 
     const { sld, tld, storefrontId } = req.body;
     if (!storefrontId) {
@@ -282,11 +313,21 @@ router.post("/platform/claim", async (req, res) => {
       .from(storefronts)
       .where(eq(storefronts.id, storefrontId))
       .limit(1);
-    if (!sf || sf.userId !== (req.user as any).id) {
+    if (!sf || sf.userId !== userId) {
       return res.status(403).json({ ok: false, error: "Storefront not found or access denied." });
     }
 
-    // Check the domain isn't taken
+    // Subscription required
+    const hasSubscription = await userHasActiveSubscription(userId);
+    if (!hasSubscription) {
+      return res.status(403).json({
+        ok: false,
+        error: "An active Max Booster subscription is required to claim free custom domains.",
+        code: "SUBSCRIPTION_REQUIRED",
+      });
+    }
+
+    // Check domain isn't taken
     const [existing] = await db
       .select({ id: storefrontDomains.id, storefrontId: storefrontDomains.storefrontId })
       .from(storefrontDomains)
@@ -299,7 +340,27 @@ router.post("/platform/claim", async (req, res) => {
       return res.status(409).json({ ok: false, error: "This domain is already registered on another storefront." });
     }
 
-    // Remove any existing platform domain entries for this storefront first (one free domain at a time)
+    // Enforce 2-domain limit — count BEFORE removing the old one for this storefront
+    // so a swap within the same slot doesn't consume an extra slot.
+    const usage = await getUserDomainUsage(userId);
+    const claimedForThisStorefront = await db
+      .select({ id: storefrontDomains.id })
+      .from(storefrontDomains)
+      .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")))
+      .limit(1);
+    // If this storefront already has a platform domain, the swap won't increase total
+    const wouldIncrease = claimedForThisStorefront.length === 0;
+    if (wouldIncrease && usage.total >= DOMAIN_LIMIT) {
+      return res.status(403).json({
+        ok: false,
+        error: `Domain limit reached. Your subscription includes up to ${DOMAIN_LIMIT} custom domains. Remove an existing domain to add a new one.`,
+        code: "DOMAIN_LIMIT_REACHED",
+        limit: DOMAIN_LIMIT,
+        used: usage.total,
+      });
+    }
+
+    // Replace existing platform domain for this storefront (swap is allowed within the same slot)
     await db
       .delete(storefrontDomains)
       .where(and(eq(storefrontDomains.storefrontId, storefrontId), eq(storefrontDomains.type, "platform_subdomain")));

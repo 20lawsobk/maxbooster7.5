@@ -10,6 +10,41 @@ const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.68.76.67';
 const NS1 = process.env.NS1 || 'maxbooster.replit.app';
 const NS2 = process.env.NS2 || 'maxbooster.replit.app';
 
+const DOMAIN_LIMIT = 2;
+
+/**
+ * Returns the total number of custom domains a user has across both paths:
+ *  - DNS zones (Bring Your Own Domain / NS delegation)
+ *  - Platform subdomain claims (Find Domain / Claim Free)
+ */
+async function getUserDomainUsage(userId: string): Promise<{ zones: number; claimed: number; total: number }> {
+  const [zonesResult, claimedResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]),
+    pool.query(
+      `SELECT COUNT(*)::int AS n
+       FROM storefront_domains sd
+       JOIN storefronts s ON s.id = sd.storefront_id
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'`,
+      [userId]
+    ),
+  ]);
+  const zones   = zonesResult.rows[0]?.n   ?? 0;
+  const claimed = claimedResult.rows[0]?.n ?? 0;
+  return { zones, claimed, total: zones + claimed };
+}
+
+/** Returns true if the user has an active subscription (or is an admin). */
+async function userHasActiveSubscription(userId: string): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT subscription_status, role FROM users WHERE id = $1 LIMIT 1`,
+    [userId]
+  );
+  const user = result.rows[0];
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  return ['active', 'trialing'].includes(user.subscription_status ?? '');
+}
+
 const RECORD_TYPES = ['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'NS', 'SRV', 'CAA'] as const;
 
 const recordSchema = z.object({
@@ -103,6 +138,32 @@ function mapRecord(row: any) {
   };
 }
 
+/**
+ * GET /api/dns-manager/usage
+ * Returns domain usage and limit for the logged-in user.
+ */
+router.get('/usage', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = (req.user as any).id;
+    const [usage, hasSubscription] = await Promise.all([
+      getUserDomainUsage(userId),
+      userHasActiveSubscription(userId),
+    ]);
+    res.json({
+      limit: DOMAIN_LIMIT,
+      used: usage.total,
+      zones: usage.zones,
+      claimed: usage.claimed,
+      remaining: Math.max(0, DOMAIN_LIMIT - usage.total),
+      hasSubscription,
+    });
+  } catch (err: any) {
+    logger.warn('[DNS Manager] Usage error: ' + (err?.message ?? String(err)));
+    res.status(500).json({ error: 'Failed to fetch usage' });
+  }
+});
+
 router.get('/info', (req, res) => {
   res.json({
     nameservers: [NS1, NS2],
@@ -141,13 +202,33 @@ router.get('/zones', async (req, res) => {
 router.post('/zones', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
-    const userId = req.user!.id;
+    const userId = (req.user as any).id;
 
     const schema = z.object({ domain: z.string().min(3), notes: z.string().optional() });
     const parsed = schema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: 'Invalid input', details: parsed.error.issues });
 
     const domain = normalizeDomain(parsed.data.domain);
+
+    // Subscription required
+    const hasSubscription = await userHasActiveSubscription(userId);
+    if (!hasSubscription) {
+      return res.status(403).json({
+        error: 'An active Max Booster subscription is required to add custom domains.',
+        code: 'SUBSCRIPTION_REQUIRED',
+      });
+    }
+
+    // Enforce 2-domain limit (across DNS zones + platform domain claims)
+    const usage = await getUserDomainUsage(userId);
+    if (usage.total >= DOMAIN_LIMIT) {
+      return res.status(403).json({
+        error: `Domain limit reached. Your subscription includes up to ${DOMAIN_LIMIT} custom domains. Remove an existing domain to add a new one.`,
+        code: 'DOMAIN_LIMIT_REACHED',
+        limit: DOMAIN_LIMIT,
+        used: usage.total,
+      });
+    }
 
     const existing = await pool.query(
       'SELECT id FROM dns_zones WHERE domain = $1 LIMIT 1',
