@@ -1119,6 +1119,214 @@ def dataset_status():
         }
 
 
+# ── MaxCore weight sync + training telemetry ──────────────────────────────────
+
+class SyncRequest(BaseModel):
+    force:   bool = False   # push even if already up-to-date
+    dry_run: bool = False   # report what would be synced, don't actually push
+
+
+@app.post('/sync')
+def sync_weights_to_maxcore(req: SyncRequest):
+    """
+    Push locally trained UNetV4 LITE weights back to MaxCore so the full
+    training cluster can benefit from on-device curriculum learning.
+
+    Sync protocol:
+      1. Verify weights_v4.npz exists and model is trained (not random init)
+      2. Load the weight snapshot and compute a SHA-256 fingerprint
+      3. Compare against the last-synced fingerprint (stored in training_state.json)
+      4. If fingerprint changed (or force=True) → POST to MaxCore /api/model/sync
+      5. Record the sync timestamp + fingerprint in training_state.json
+      6. Return a full sync report
+
+    If MaxCore is unreachable the sync is marked as pending — the next call
+    will retry automatically.
+    """
+    import hashlib
+    import json as _json
+    import os as _os
+
+    weights_path = _os.path.join(_HERE, 'weights_v4.npz')
+    state_path   = _os.path.join(_HERE, 'training_state.json')
+
+    # ── 1. Check weights exist ─────────────────────────────────────────────────
+    if not _os.path.exists(weights_path):
+        return JSONResponse(status_code=404, content={
+            'status':  'no_weights',
+            'synced':  False,
+            'message': 'weights_v4.npz not found — model not yet trained locally',
+        })
+
+    if not _model_trained:
+        return JSONResponse(status_code=409, content={
+            'status':  'untrained',
+            'synced':  False,
+            'message': 'Model initialised from random weights — nothing to sync',
+        })
+
+    # ── 2. Fingerprint ────────────────────────────────────────────────────────
+    with open(weights_path, 'rb') as _f:
+        raw = _f.read()
+    fingerprint = hashlib.sha256(raw).hexdigest()
+    size_bytes  = len(raw)
+    size_mb     = round(size_bytes / (1024 * 1024), 3)
+
+    # ── 3. Load last-sync state ───────────────────────────────────────────────
+    sync_state: dict = {}
+    if _os.path.exists(state_path):
+        try:
+            with open(state_path) as _sf:
+                sync_state = _json.load(_sf)
+        except Exception:
+            pass
+
+    last_fingerprint = sync_state.get('last_sync_fingerprint', '')
+    already_current  = (fingerprint == last_fingerprint)
+
+    if already_current and not req.force:
+        return {
+            'status':      'already_synced',
+            'synced':      False,
+            'fingerprint': fingerprint,
+            'size_mb':     size_mb,
+            'message':     'Weights unchanged since last sync — pass force=true to re-push',
+            'last_synced_at': sync_state.get('last_sync_at'),
+        }
+
+    if req.dry_run:
+        return {
+            'status':      'dry_run',
+            'synced':      False,
+            'fingerprint': fingerprint,
+            'size_mb':     size_mb,
+            'would_sync':  not already_current or req.force,
+            'message':     'Dry run — no data pushed to MaxCore',
+        }
+
+    # ── 4. Push to MaxCore ────────────────────────────────────────────────────
+    import urllib.request as _urlreq
+    import base64 as _b64
+
+    base_url = _os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+    api_key  = _os.environ.get('AI_SERVER_KEY', '')
+    sync_url = base_url.rstrip('/').removesuffix('/api') + '/api/model/sync'
+
+    with _train_lock:
+        train_snapshot = dict(_train_status)
+
+    payload = {
+        'source':         'max-booster-local-v4',
+        'model_version':  'v4-lite-numpy',
+        'fingerprint':    fingerprint,
+        'size_bytes':     size_bytes,
+        'size_mb':        size_mb,
+        'total_sessions': train_snapshot.get('total_sessions', 0),
+        'last_loss':      train_snapshot.get('last_loss'),
+        'weights_b64':    _b64.b64encode(raw).decode(),  # full payload
+    }
+
+    hdrs = {'Content-Type': 'application/json'}
+    if api_key:
+        hdrs['Authorization'] = f'Bearer {api_key}'
+        hdrs['X-API-Key']     = api_key
+
+    import json as _json2
+    import time as _time
+
+    sync_at = _time.strftime('%Y-%m-%dT%H:%M:%SZ', _time.gmtime())
+    try:
+        data = _json2.dumps(payload).encode()
+        _req = _urlreq.Request(sync_url, data=data, headers=hdrs, method='POST')
+        with _urlreq.urlopen(_req, timeout=60) as _resp:
+            maxcore_reply = _json2.loads(_resp.read())
+        sync_ok = True
+        error   = None
+    except Exception as exc:
+        maxcore_reply = {}
+        sync_ok = False
+        error   = str(exc)
+        logger.warning(f'[Sync] MaxCore push failed: {exc}')
+
+    # ── 5. Persist sync state ─────────────────────────────────────────────────
+    sync_state.update({
+        'last_sync_fingerprint': fingerprint if sync_ok else last_fingerprint,
+        'last_sync_at':          sync_at if sync_ok else sync_state.get('last_sync_at'),
+        'last_sync_size_mb':     size_mb,
+        'last_sync_sessions':    train_snapshot.get('total_sessions', 0),
+        'last_sync_ok':          sync_ok,
+        'pending_retry':         not sync_ok,
+    })
+    try:
+        with open(state_path, 'w') as _sf:
+            _json2.dump(sync_state, _sf, indent=2)
+    except Exception as _e:
+        logger.warning(f'[Sync] Could not persist state: {_e}')
+
+    # ── 6. Report ─────────────────────────────────────────────────────────────
+    return {
+        'status':         'synced' if sync_ok else 'sync_failed',
+        'synced':         sync_ok,
+        'fingerprint':    fingerprint,
+        'size_mb':        size_mb,
+        'synced_at':      sync_at,
+        'maxcore_url':    sync_url,
+        'maxcore_reply':  maxcore_reply,
+        'total_sessions': train_snapshot.get('total_sessions', 0),
+        'last_loss':      train_snapshot.get('last_loss'),
+        'error':          error,
+        'message': (
+            f'Weights pushed to MaxCore ({size_mb} MB, fingerprint={fingerprint[:12]}…)'
+            if sync_ok
+            else f'Sync failed — marked pending: {error}'
+        ),
+    }
+
+
+@app.get('/sync/status')
+def sync_status():
+    """
+    Return the last sync state (fingerprint, timestamp, pending retry)
+    without performing a sync.
+    """
+    import json as _json
+    import os as _os
+
+    state_path   = _os.path.join(_HERE, 'training_state.json')
+    weights_path = _os.path.join(_HERE, 'weights_v4.npz')
+
+    state: dict = {}
+    if _os.path.exists(state_path):
+        try:
+            with open(state_path) as _f:
+                state = _json.load(_f)
+        except Exception:
+            pass
+
+    weights_size_mb = None
+    if _os.path.exists(weights_path):
+        weights_size_mb = round(_os.path.getsize(weights_path) / (1024 * 1024), 3)
+
+    with _train_lock:
+        sessions = _train_status.get('total_sessions', 0)
+
+    return {
+        'model_trained':         _model_trained,
+        'model_ready':           _model_ready,
+        'weights_available':     _os.path.exists(weights_path),
+        'weights_size_mb':       weights_size_mb,
+        'last_sync_at':          state.get('last_sync_at'),
+        'last_sync_fingerprint': state.get('last_sync_fingerprint', ''),
+        'last_sync_ok':          state.get('last_sync_ok'),
+        'pending_retry':         state.get('pending_retry', False),
+        'total_sessions':        sessions,
+        'maxcore_url':           (
+            _os.environ.get('AI_SERVER_URL', 'https://secure-ai-forge.replit.app')
+            .rstrip('/').removesuffix('/api') + '/api/model/sync'
+        ),
+    }
+
+
 # ── Generic MaxCore proxy helper ──────────────────────────────────────────────
 
 def _maxcore_proxy(path: str, body: dict, timeout: int = 30) -> dict:
@@ -1243,6 +1451,19 @@ def combined_status():
             '/proxy/analyze/sentiment',
             '/generate-video',
             '/generate',
+        ],
+        'sync_endpoints': [
+            '/sync',
+            '/sync/status',
+        ],
+        'training_endpoints': [
+            '/train',
+            '/train/status',
+            '/train/simulator/status',
+            '/train/pause',
+            '/train/resume',
+            '/train/memory/status',
+            '/dataset/status',
         ],
         'description': (
             'Single gateway for all platform content generation. '
