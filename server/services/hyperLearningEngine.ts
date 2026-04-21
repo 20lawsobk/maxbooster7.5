@@ -1505,15 +1505,18 @@ class HyperLearningEngine extends EventEmitter {
     const models: PredictiveModel[] = [];
 
     try {
-      models.push(await this.buildTimingPredictiveModel());
-      models.push(await this.buildContentPredictiveModel());
-      models.push(await this.buildCompositePredictiveModel());
+      // Build timing and content first, then store them so buildCompositePredictiveModel()
+      // can read them from this.predictiveModels during the same cycle.
+      const timingModel  = await this.buildTimingPredictiveModel();
+      const contentModel = await this.buildContentPredictiveModel();
+      this.predictiveModels.set(timingModel.type,  timingModel);
+      this.predictiveModels.set(contentModel.type, contentModel);
 
+      const compositeModel = await this.buildCompositePredictiveModel();
+      this.predictiveModels.set(compositeModel.type, compositeModel);
+
+      models.push(timingModel, contentModel, compositeModel);
       this.learningMetrics.predictionsGenerated += models.reduce((s, m) => s + m.predictions.length, 0);
-
-      for (const model of models) {
-        this.predictiveModels.set(model.type, model);
-      }
 
       return models;
 

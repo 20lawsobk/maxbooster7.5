@@ -726,6 +726,18 @@ def _train_worker(req: TrainRequest) -> None:
 
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
+@app.get('/')
+def root():
+    """Root endpoint — returns server identity so browser/probe GETs don't 404."""
+    return {
+        'service': 'MaxCore Diffusion Gateway',
+        'version': '4.0.0',
+        'model':   'unet_v4_lite_numpy',
+        'status':  'running',
+        'docs':    '/health — liveness | /ready — readiness | /train/status — training',
+    }
+
+
 @app.get('/health')
 def health():
     return {'status': 'ok', 'version': '4.0.0', 'model': 'unet_v4_lite_numpy'}
