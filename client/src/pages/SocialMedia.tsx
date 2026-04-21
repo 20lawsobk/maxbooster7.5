@@ -2574,9 +2574,11 @@ return (
                 editingCalendarPost
                   ? {
                       title: editingCalendarPost.title,
-                      scheduledFor: new Date(editingCalendarPost.scheduledFor)
-                        .toISOString()
-                        .slice(0, 16),
+                      scheduledFor: editingCalendarPost.scheduledFor || editingCalendarPost.scheduledAt
+                        ? new Date(editingCalendarPost.scheduledFor || editingCalendarPost.scheduledAt!)
+                            .toISOString()
+                            .slice(0, 16)
+                        : new Date().toISOString().slice(0, 16),
                       platforms: editingCalendarPost.platforms || [],
                       postType: editingCalendarPost.postType || 'post',
                       content: editingCalendarPost.content || '',
@@ -2805,7 +2807,7 @@ return (
                                 </div>
                                 <div className="flex items-center text-sm text-gray-600">
                                   <Clock className="w-4 h-4 mr-1" />
-                                  {new Date(post.scheduledTime).toLocaleString()}
+                                  {post.scheduledTime ? new Date(post.scheduledTime).toLocaleString() : 'Time not set'}
                                   <Badge className="ml-3 bg-blue-100 text-blue-800">
                                     Scheduled
                                   </Badge>

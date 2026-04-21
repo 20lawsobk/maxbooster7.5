@@ -47,7 +47,7 @@ import {
   type InsertCollabSnapshot
 } from "@shared/schema";
 import { db, dbRead } from "./db";
-import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, gt, ne } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql, inArray, ilike, or, asc, lt, gt, ne, isNotNull } from "drizzle-orm";
 
 type Project = typeof projects.$inferSelect;
 type Release = typeof releases.$inferSelect;
@@ -510,7 +510,8 @@ export class DatabaseStorage implements IStorage {
         .where(
           and(
             eq(posts.userId, userId),
-            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`
+            sql`${posts.status} IN ('scheduled', 'pending', 'published', 'completed')`,
+            isNotNull(posts.scheduledAt)
           )
         )
         .orderBy(desc(posts.scheduledAt))

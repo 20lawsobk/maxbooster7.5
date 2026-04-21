@@ -264,61 +264,93 @@ class AutopilotPublisher {
         return { posts: 1 };
       }
 
-      // Trained model path ─────────────────────────────────────────────────────
-
-      // Get multimodal features if enabled
-      let multimodalFeatures = null;
-      if (config.useMultimodalAnalysis) {
-        const recentAnalysis = await storage.getRecentAnalyzedContent(userId, 1);
-        if (recentAnalysis && recentAnalysis.length > 0) {
-          multimodalFeatures = recentAnalysis[0].features;
-        }
-      }
-
-      // Generate content recommendations — seeded so the same user + config
-      // always picks the same content type (deterministic, auditable)
+      // Trained model path — MaxCore is the ONLY content source ────────────────
+      // Pick content type deterministically, rotating per 15-min window so that
+      // back-to-back cycles vary without being random.
       const contentTypes = config.contentTypes || ['tips', 'insights'];
-      const ctSeed = `${userId}:${contentTypes.join(',')}`;
+      const ctSeed = `${userId}:${contentTypes.join(',')}:${Math.floor(Date.now() / (15 * 60 * 1000))}`;
       const ctIdx = (() => {
         let h = 2166136261;
         for (let i = 0; i < ctSeed.length; i++) { h ^= ctSeed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
         return h % contentTypes.length;
       })();
-      const recommendations = await socialAI.generateContentRecommendations(
-        contentTypes[ctIdx],
-        multimodalFeatures
-      );
+      const selectedContentType = contentTypes[ctIdx];
 
-      if (!recommendations || recommendations.length === 0) {
-        return { posts: 0, error: 'No content recommendations generated' };
-      }
+      // Map autopilot content-type labels → AdvancedContentRequest format
+      const contentTypeMap: Record<string, 'announcement' | 'behind_scenes' | 'engagement' | 'promotional' | 'storytelling'> = {
+        tips:          'behind_scenes',
+        insights:      'storytelling',
+        questions:     'engagement',
+        announcements: 'announcement',
+        promotions:    'promotional',
+      };
+      // Map brand-voice label → valid tone the MaxCore pipeline understands
+      const toneMap: Record<string, 'professional' | 'casual' | 'energetic' | 'inspirational' | 'humorous' | 'storytelling'> = {
+        professional: 'professional',
+        casual:       'casual',
+        energetic:    'energetic',
+        inspirational:'inspirational',
+        humorous:     'humorous',
+        storytelling: 'storytelling',
+        authentic:    'inspirational',
+        bold:         'energetic',
+        friendly:     'casual',
+      };
 
-      // Pick the best recommendation based on predicted engagement
-      const bestRecommendation = recommendations.reduce((best: any, current: any) => {
-        return (current.predictedEngagement || 0) > (best.predictedEngagement || 0) ? current : best;
+      // Build a music-relevant topic so MaxCore generates artist-specific content
+      const genre = config.genre || 'music';
+      const topicByContentType: Record<string, string> = {
+        tips:          `${genre} music production tips`,
+        insights:      `${genre} music industry insights`,
+        questions:     `${genre} music fan conversation`,
+        announcements: `${genre} music release`,
+        promotions:    `${genre} music promotion`,
+      };
+      const mcTopic = topicByContentType[selectedContentType] || `${genre} music`;
+
+      // Generate content through MaxCore via advancedSocialAIService
+      const advancedContent = await advancedSocialAIService.generateAdvancedContent({
+        userId,
+        platforms:      [targetPlatform],
+        topic:          mcTopic,
+        tone:           toneMap[(config.brandVoice || '').toLowerCase()] || 'energetic',
+        genre:          config.genre,
+        targetAudience: config.targetAudience,
+        objective:      'engagement',
+        contentType:    contentTypeMap[selectedContentType] || 'engagement',
+        includeHashtags: true,
+        includeEmojis:   true,
       });
 
-      // Check confidence threshold for auto-publish
-      const confidence = bestRecommendation.confidence || bestRecommendation.predictedEngagement || 0;
+      // Normalise score (0-100) to confidence fraction (0-1) for threshold check
+      const confidence = advancedContent.scoring.overall / 100;
       const minThreshold = config.minConfidenceThreshold || 0.7;
-      
+
       if (confidence < minThreshold) {
-        logger.info(`User ${userId}: Content confidence ${confidence.toFixed(2)} below threshold ${minThreshold}, not publishing`);
+        logger.info(
+          `[Autopilot] User ${userId}: MaxCore content confidence ${confidence.toFixed(2)} ` +
+          `below threshold ${minThreshold} — skipping`
+        );
         return { posts: 0, error: `Confidence ${confidence.toFixed(2)} below threshold ${minThreshold}` };
       }
 
+      logger.info(
+        `[Autopilot] User ${userId}: MaxCore-sourced "${selectedContentType}" content ` +
+        `for "${targetPlatform}" — score=${advancedContent.scoring.overall.toFixed(1)} topic="${mcTopic}"`
+      );
+
       // ── Veo Quality Gate — trained model path ────────────────────────────────
-      // The trained model passes its own confidence check, but the content still
-      // must clear the same Veo-calibrated quality bar as untrained content.
-      // scoreAndGateExisting() scores the already-generated text and, if it
+      // scoreAndGateExisting() scores the MaxCore-generated text and, if it
       // falls short, runs the full A/B retry loop to find a passing variant.
-      const rawText = bestRecommendation.content || bestRecommendation.text || '';
+      const rawText = advancedContent.primary.hook
+        ? `${advancedContent.primary.hook}\n\n${advancedContent.primary.body}`
+        : advancedContent.primary.body;
       const gateResult = await contentQualityGate.scoreAndGateExisting(
         userId,
         rawText,
         targetPlatform,
         {
-          topic:          config.topic || 'new music',
+          topic:          mcTopic,
           objective:      'engagement',
           tone:           config.brandVoice,
           genre:          config.genre,
@@ -327,8 +359,8 @@ class AutopilotPublisher {
       );
 
       if (!gateResult) {
-        logger.warn(`[Autopilot] User ${userId}: trained-model content below Veo pressure floor — skipping post to protect quality`);
-        return { posts: 0, error: 'Veo quality gate: trained model content below minimum floor (73). Skipping to protect brand quality.' };
+        logger.warn(`[Autopilot] User ${userId}: MaxCore content below Veo pressure floor — skipping post to protect quality`);
+        return { posts: 0, error: 'Veo quality gate: MaxCore content below minimum floor (73). Skipping to protect brand quality.' };
       }
 
       const finalText = gateResult.winner.headline
@@ -336,36 +368,45 @@ class AutopilotPublisher {
         : gateResult.winner.content || rawText;
 
       logger.info(
-        `[Autopilot] User ${userId}: trained-model content cleared Veo gate — ` +
+        `[Autopilot] User ${userId}: MaxCore content cleared Veo gate — ` +
         `score=${gateResult.winner.scores.overall.toFixed(1)} threshold=${gateResult.thresholdUsed} ` +
         `variants_tried=${gateResult.totalVariantsTried}`
       );
 
+      // Media type: use MaxCore's recommendation but only if it's a supported format.
+      // 'carousel' and 'live' are not real asset formats — fall back to 'text'.
+      const mcMediaRec = advancedContent.mediaGuidance?.recommendedType;
+      const resolvedMediaType: 'text' | 'image' | 'video' | 'audio' =
+        (mcMediaRec === 'image' || mcMediaRec === 'video')
+          ? mcMediaRec
+          : 'text';
+
       // Generate actual media asset using in-house AI Content Service
       // CRITICAL: No silent fallbacks - if media generation fails, we must propagate the error
       let mediaUrl: string | undefined;
-      if (bestRecommendation.mediaType !== 'text') {
+      if (resolvedMediaType !== 'text') {
         const generatedAsset = await aiContentService.generateContent({
           prompt: finalText,
           platform: targetPlatform as any,
-          format: bestRecommendation.mediaType,
+          format: resolvedMediaType,
           tone: 'creative',
           length: 'medium',
         });
         if (!generatedAsset.url) {
-          throw new Error(`Media generation returned no URL for ${bestRecommendation.mediaType}`);
+          throw new Error(`Media generation returned no URL for ${resolvedMediaType}`);
         }
         mediaUrl = generatedAsset.url;
-        logger.info(`✅ Generated ${bestRecommendation.mediaType} asset for user ${userId}: ${mediaUrl}`);
+        logger.info(`✅ Generated ${resolvedMediaType} asset for user ${userId}: ${mediaUrl}`);
       }
 
-      // Create post content with quality-gated text
+      // Create post content with MaxCore-sourced, quality-gated text
+      const mcHashtags = advancedContent.primary.hashtags || [];
       const postContent: PostContent = {
         text: finalText,
         hashtags: gateResult.winner.hashtags.length > 0
           ? gateResult.winner.hashtags
-          : bestRecommendation.hashtags,
-        mediaType: mediaUrl ? bestRecommendation.mediaType : 'text',
+          : mcHashtags,
+        mediaType: mediaUrl ? resolvedMediaType : 'text',
         mediaUrl,
       };
 
@@ -385,7 +426,7 @@ class AutopilotPublisher {
       );
 
       logger.info(
-        `✅ User ${userId}: Scheduled quality-gated post ${scheduledPost.id} for ${bestRecommendation.platform} ` +
+        `✅ User ${userId}: Scheduled MaxCore-sourced post ${scheduledPost.id} for "${targetPlatform}" ` +
         `at ${nextOptimalTime.toISOString()} (confidence: ${confidence.toFixed(2)}, ` +
         `quality: ${gateResult.winner.scores.overall.toFixed(1)})`
       );
