@@ -15,6 +15,7 @@ import { selfHealingSecurityMiddleware } from '../middleware/selfHealingMiddlewa
 import { Sentry } from '../instrument.js';
 import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
 import { getRedisClient } from '../lib/redisClient.js';
+import { env } from '../config/env.js';
 
 function isInternalIp(ip: string): boolean {
   if (!ip) return false;
@@ -273,9 +274,9 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     // Explicit allowlist. In production this includes the deployed domain plus all
     // Replit preview/dev subdomains (used by Replit's webview and deployment system).
     // In development every origin is permitted so local tooling is not blocked.
-    const explicitOrigin = process.env.CORS_ORIGIN
-      || process.env.DOMAIN
-      || process.env.APP_URL
+    const explicitOrigin = env.CORS_ORIGIN
+      || env.DOMAIN
+      || env.APP_URL
       || '';
 
     const allowedExactOrigins: string[] = explicitOrigin

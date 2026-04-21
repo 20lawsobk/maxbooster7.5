@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import { z } from 'zod';
 import { socialChatbotService, ChatbotMessage } from '../services/socialChatbotService';
 import { socialListeningService } from '../services/socialListeningService';
 import { socialStrategyAIService } from '../services/socialStrategyAIService';
@@ -11,6 +12,29 @@ import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import { db } from '../db.js';
 import { autopilotPreferences, posts } from '@shared/schema';
 import { eq, desc } from 'drizzle-orm';
+
+// ── Shared Zod schemas ────────────────────────────────────────────────────────
+const chatbotRespondSchema = z.object({
+  platform: z.string().min(1).max(50),
+  senderId: z.string().max(255).optional(),
+  senderName: z.string().max(255).optional(),
+  content: z.string().min(1).max(5000),
+  threadId: z.string().max(255).optional(),
+});
+
+const sentimentBatchSchema = z.object({
+  messages: z.array(z.object({
+    id: z.string().optional(),
+    text: z.string().min(1).max(5000),
+    platform: z.string().max(50).optional(),
+  })).min(1).max(100),
+});
+
+const translateSchema = z.object({
+  content: z.string().min(1).max(10000).optional(),
+  prompt: z.string().min(1).max(10000).optional(),
+  targetLanguage: z.string().min(2).max(10).optional(),
+});
 
 /** Extract the first HTTP/HTTPS URL from arbitrary text. */
 function extractFirstUrl(text: string): string | null {
@@ -32,11 +56,12 @@ interface AuthenticatedRequest extends Request {
 router.post('/chatbot/respond', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { platform, senderId, senderName, content, threadId } = req.body;
 
-    if (!platform || !content) {
-      return res.status(400).json({ error: 'Platform and content are required' });
+    const parsed = chatbotRespondSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parsed.error.issues });
     }
+    const { platform, senderId, senderName, content, threadId } = parsed.data;
 
     const message: ChatbotMessage = {
       id: `msg_${Date.now()}`,

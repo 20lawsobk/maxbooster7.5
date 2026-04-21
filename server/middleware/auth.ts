@@ -107,3 +107,28 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
   }
   res.status(403).json({ error: 'Admin access required' });
 };
+
+/**
+ * Enforces two-factor authentication on privileged routes.
+ * If the user has 2FA enabled but has not verified it this session,
+ * the request is rejected with 403 so they must complete the 2FA flow.
+ * Gates that don't require 2FA (e.g. the 2FA setup/verify routes themselves)
+ * should NOT use this middleware.
+ */
+export const require2FA = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+  const user = req.user as any;
+  if (!user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+  // If user has 2FA enabled, they must have verified it this session
+  if (user.twoFactorEnabled) {
+    const session = (req as any).session;
+    if (!session?.twoFactorVerified) {
+      return res.status(403).json({
+        error: 'Two-factor authentication required for this action',
+        requiresTwoFactor: true,
+      });
+    }
+  }
+  next();
+};

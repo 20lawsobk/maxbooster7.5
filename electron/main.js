@@ -1,6 +1,6 @@
 'use strict';
 
-const { app, BrowserWindow, shell, Menu, dialog } = require('electron');
+const { app, BrowserWindow, shell, Menu, dialog, session } = require('electron');
 const path = require('node:path');
 const { fork } = require('node:child_process');
 const http = require('node:http');
@@ -169,6 +169,27 @@ if (!gotLock) {
   });
 
   app.whenReady().then(async () => {
+    // Enforce Content-Security-Policy on all renderer responses via session headers.
+    // This prevents XSS in the Electron renderer even if the server doesn't send CSP.
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      const csp = [
+        "default-src 'self' http://127.0.0.1:* https://*.replit.app https://*.stripe.com https://*.sentry.io",
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.stripe.com",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src 'self' https://fonts.gstatic.com data:",
+        "img-src 'self' data: blob: https:",
+        "connect-src 'self' http://127.0.0.1:* https:",
+        "media-src 'self' blob: https:",
+        "worker-src 'self' blob:",
+      ].join('; ');
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [csp],
+        },
+      });
+    });
+
     buildMenu();
     serverProcess = startServer();
     if (serverProcess) {

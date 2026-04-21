@@ -1152,7 +1152,7 @@ export function EmbedCodeGenerator() {
                           ${rwSize === 'small' ? 'w-12 h-12' : rwSize === 'medium' ? 'w-24 h-24' : 'w-36 h-36'}`}
                         >
                           {selectedRelease?.albumArt ? (
-                            <img src={selectedRelease.albumArt} className="w-full h-full object-cover rounded-lg" alt="" />
+                            <img src={selectedRelease.albumArt} className="w-full h-full object-cover rounded-lg" alt={`${selectedRelease.title ?? 'Release'} album art`} />
                           ) : (
                             <Music className="h-6 w-6 text-white/60" />
                           )}

@@ -8,6 +8,7 @@ import os from 'os';
 import { notificationService } from '../../services/notificationService.js';
 import { distributedCache } from '../../infrastructure/distributedCache.js';
 import { artistProfileService } from '../../services/artistProfileService.js';
+import { require2FA } from '../../middleware/auth.js';
 
 const router = Router();
 
@@ -21,7 +22,9 @@ const requireAdmin: RequestHandler = (req, res, next) => {
   next();
 };
 
+// Admin routes require both admin role AND 2FA verification (if the admin has 2FA enabled)
 router.use(requireAdmin);
+router.use(require2FA);
 
 // Allowlist of admin-configurable platform setting keys.
 // Only keys in this set may be written via PUT /settings.

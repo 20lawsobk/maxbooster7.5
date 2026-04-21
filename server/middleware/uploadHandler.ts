@@ -24,6 +24,21 @@ import {
 
 const memoryStorage = multer.memoryStorage();
 
+// ── General-purpose disk storage (replaces memoryStorage for the large `upload`
+// instance — prevents OOM crashes on files up to 500 MB) ──────────────────────
+const GENERAL_UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'general_temp');
+if (!existsSync(GENERAL_UPLOAD_DIR)) mkdirSync(GENERAL_UPLOAD_DIR, { recursive: true });
+
+const generalDiskStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, GENERAL_UPLOAD_DIR);
+  },
+  filename: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    cb(null, `upload_${randomBytes(8).toString('hex')}${ext}`);
+  },
+});
+
 const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilterCallback) => {
   const allowedMimes = [
     'audio/mpeg',
@@ -70,7 +85,7 @@ const fileFilter = (req: Request, file: Express.Multer.File, cb: multer.FileFilt
 };
 
 export const upload = multer({
-  storage: memoryStorage,
+  storage: generalDiskStorage, // disk — avoids OOM on files up to 500 MB
   fileFilter,
   limits: {
     fileSize: 500 * 1024 * 1024, // 500MB to match UI

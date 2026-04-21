@@ -438,7 +438,7 @@ export function UnifiedInbox() {
                             
                             <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
                               {message.author.avatar ? (
-                                <img src={message.author.avatar} alt="" className="w-10 h-10 rounded-full" />
+                                <img src={message.author.avatar} alt={`${message.author.name ?? 'User'} avatar`} className="w-10 h-10 rounded-full" />
                               ) : (
                                 <User className="w-5 h-5 text-muted-foreground" />
                               )}
@@ -521,7 +521,7 @@ export function UnifiedInbox() {
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                         {selectedMessage.author.avatar ? (
-                          <img src={selectedMessage.author.avatar} alt="" className="w-12 h-12 rounded-full" />
+                          <img src={selectedMessage.author.avatar} alt={`${selectedMessage.author.name ?? 'User'} avatar`} className="w-12 h-12 rounded-full" />
                         ) : (
                           <User className="w-6 h-6 text-muted-foreground" />
                         )}

@@ -379,6 +379,7 @@ export class SocialAutopilotEngine extends BaseModel {
     }
 
     for (const post of historicalPosts) {
+      if (!post.postedAt || !(post.postedAt instanceof Date) || isNaN(post.postedAt.getTime())) continue;
       const hour = post.postedAt.getHours();
       hourPerformance[hour].total += post.engagementRate;
       hourPerformance[hour].count += 1;

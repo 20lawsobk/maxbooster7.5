@@ -156,7 +156,7 @@ function TwitterPreview({ post, authorName, authorHandle, authorAvatar }: {
       <div className="flex gap-3">
         <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
           {authorAvatar ? (
-            <img src={authorAvatar} alt="" className="w-full h-full object-cover" />
+            <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
           )}
@@ -180,7 +180,7 @@ function TwitterPreview({ post, authorName, authorHandle, authorAvatar }: {
                       <Play className="w-12 h-12 text-white drop-shadow-lg" />
                     </div>
                   ) : (
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img src={url} alt="Post media" className="w-full h-full object-cover" />
                   )}
                 </div>
               ))}
@@ -222,7 +222,7 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 p-0.5">
             <div className="w-full h-full rounded-full bg-white dark:bg-gray-900 p-0.5">
               {authorAvatar ? (
-                <img src={authorAvatar} alt="" className="w-full h-full rounded-full object-cover" />
+                <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full rounded-full object-cover" />
               ) : (
                 <div className="w-full h-full rounded-full bg-gradient-to-br from-blue-400 to-blue-600" />
               )}
@@ -240,7 +240,7 @@ function InstagramPreview({ post, authorName, authorHandle, authorAvatar }: {
               <Play className="w-16 h-16 text-white drop-shadow-lg" />
             </div>
           ) : (
-            <img src={post.mediaUrls[0]} alt="" className="w-full h-full object-cover" />
+            <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
           )}
           {post.mediaUrls.length > 1 && (
             <div className="absolute top-2 right-2">
@@ -296,7 +296,7 @@ function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
         <div className="flex gap-3">
           <div className="w-12 h-12 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
             {authorAvatar ? (
-              <img src={authorAvatar} alt="" className="w-full h-full object-cover" />
+              <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
             )}
@@ -324,7 +324,7 @@ function LinkedInPreview({ post, authorName, authorHandle, authorAvatar }: {
 
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative border-t border-gray-200 dark:border-gray-700">
-          <img src={post.mediaUrls[0]} alt="" className="w-full h-full object-cover" />
+          <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
         </div>
       )}
 
@@ -362,7 +362,7 @@ function FacebookPreview({ post, authorName, authorAvatar }: {
           <div className="flex gap-3">
             <div className="w-10 h-10 rounded-full bg-gray-300 flex-shrink-0 overflow-hidden">
               {authorAvatar ? (
-                <img src={authorAvatar} alt="" className="w-full h-full object-cover" />
+                <img src={authorAvatar} alt={`${authorName} avatar`} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600" />
               )}
@@ -380,7 +380,7 @@ function FacebookPreview({ post, authorName, authorAvatar }: {
 
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
-          <img src={post.mediaUrls[0]} alt="" className="w-full h-full object-cover" />
+          <img src={post.mediaUrls[0]} alt="Post media" className="w-full h-full object-cover" />
         </div>
       )}
 

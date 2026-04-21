@@ -633,7 +633,7 @@ export function SocialListening() {
                       <div className="flex items-start gap-3">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                           {influencer.avatar ? (
-                            <img src={influencer.avatar} alt="" className="w-12 h-12 rounded-full" />
+                            <img src={influencer.avatar} alt={`${influencer.name ?? 'Influencer'} avatar`} className="w-12 h-12 rounded-full" />
                           ) : (
                             <User className="w-6 h-6 text-muted-foreground" />
                           )}

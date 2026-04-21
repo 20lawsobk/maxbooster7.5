@@ -722,7 +722,7 @@ function FileUploadItem({
     )}>
       {showPreview && file.previewUrl && file.file.type.startsWith('image/') ? (
         <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-          <img src={file.previewUrl} alt="" className="w-full h-full object-cover" />
+          <img src={file.previewUrl} alt={`${file.file.name} preview`} className="w-full h-full object-cover" />
         </div>
       ) : (
         <div className={cn('p-2 rounded-lg flex-shrink-0', config.color)}>

@@ -53,10 +53,11 @@ Key architectural decisions include:
 | R6 | 32c867c1 | 133 FK indexes applied live, CSP unsafe-eval removed, HSTS enabled, login rate limit 50→10, OAuth state secret prod guard, Electron sandbox: true, FastAPI CORS wildcard replaced, DNS LIMIT 500 |
 | R7 | f12c3737 | Node.js runtime v20→v22; /api/health/live + /api/health/ready sub-route aliases; all 37 bare `catch {}` blocks annotated with rationale across 19 service/route files |
 | R8 | d355b4dd | Process.env sweep (25 server files → env.*); CI integration test job (postgres 16 service, drizzle push, server health-wait, junit upload); drizzle.config.ts SSL conditional; vitest.integration.config.ts; test:integration:ci script |
+| R9 | (current) | P0–P2 hardening: /api/ai/health 503→207; null-guard postedAt in SocialAutopilotEngine+SocialMediaAutopilotAI; multer disk storage (OOM guard); CORS_ORIGIN typed env; require2FA middleware wired to admin router; Electron CSP via session.defaultSession.webRequest.onHeadersReceived; Zod validation on schedule-post (socialMedia.ts) and chatbot/respond (socialAI.ts); 8 meaningful img alt texts across EmbedCodeGenerator, PostPreview, SocialListening, UnifiedInbox, ScoreEditor, FileUploader |
 
 **GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
 **Branch**: `main`  
-**Latest commit**: `d355b4dd` (R8)
+**Latest commit**: R9 (ongoing)
 
 ### R8 Details (current)
 - **process.env sweep (tasks #2+#4)**: All critical env reads in 25 server files migrated from `process.env.X` to `env.X` (typed Zod schema in `server/config/env.ts`). Covers: jwtAuthService, stripeService, stripeWebhookSecurity, refundHandler, billing, webhooks/stripe, storefront, socialOAuth, admin, clusterSession, readReplicaPool, instrument, connectionPool, healthCheck, sessionConfig, alertingService, redisPubSub, database-resilience, replitAuth, security-system, databaseBackupService, emailService (8 reads), configValidator, notificationService, securityMonitoringService, webhookReliabilityService, weeklyInsightsService, userPocketDimensionService. New vars added to schema: `TESTING_STRIPE_SECRET_KEY`, `SENDGRID_FROM_EMAIL`, `NEON_DATABASE_URL`, `YOUTUBE_CLIENT_ID/SECRET`, `GOOGLE_BUSINESS_CLIENT_ID/SECRET`, `BASE_DOMAIN`, `APP_URL`, `DOMAIN`, `CORS_ORIGIN`, `STRIPE_CONNECT_CLIENT_ID`

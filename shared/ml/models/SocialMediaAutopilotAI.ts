@@ -682,11 +682,14 @@ export class SocialMediaAutopilotAI extends BaseModel {
     const maxShares = Math.max(...this.trainingHistory.map(p => p.shares)) || 50;
     const maxReach = Math.max(...this.trainingHistory.map(p => p.reach)) || 10000;
     
+    const postDate = (post.postedAt instanceof Date && !isNaN(post.postedAt.getTime()))
+      ? post.postedAt
+      : new Date();
     const baseFeatures = [
-      post.postedAt.getHours() / 24,
-      post.postedAt.getDay() / 7,
-      post.postedAt.getMonth() / 12,
-      post.postedAt.getDay() === 0 || post.postedAt.getDay() === 6 ? 1 : 0,
+      postDate.getHours() / 24,
+      postDate.getDay() / 7,
+      postDate.getMonth() / 12,
+      postDate.getDay() === 0 || postDate.getDay() === 6 ? 1 : 0,
       post.contentLength / 500,
       post.mediaType === 'video' ? 1 : post.mediaType === 'image' ? 0.5 : 0,
       post.hashtagCount / 10,
@@ -852,6 +855,7 @@ export class SocialMediaAutopilotAI extends BaseModel {
     const hourlyCounts = new Map<number, number>();
 
     for (const post of posts.filter((p) => p.platform === platform)) {
+      if (!post.postedAt || !(post.postedAt instanceof Date) || isNaN(post.postedAt.getTime())) continue;
       const hour = post.postedAt.getHours();
       const current = hourlyPerformance.get(hour) || 0;
       const count = hourlyCounts.get(hour) || 0;

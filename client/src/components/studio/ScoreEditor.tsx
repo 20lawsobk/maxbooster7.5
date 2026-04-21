@@ -762,7 +762,7 @@ export function ScoreEditor({
         <html>
           <head><title>Score - ${trackId}</title></head>
           <body style="margin: 0; display: flex; justify-content: center;">
-            <img src="${dataUrl}" style="max-width: 100%; height: auto;" />
+            <img src="${dataUrl}" alt="Score sheet" style="max-width: 100%; height: auto;" />
           </body>
         </html>
       `);

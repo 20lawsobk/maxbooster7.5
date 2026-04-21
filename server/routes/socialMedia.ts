@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Router, Request, Response, NextFunction } from 'express';
+import { z } from 'zod';
 import { storage } from '../storage';
 import { logger } from '../logger';
 import { db } from '../db';
@@ -146,14 +147,24 @@ router.get('/posts', requireAuth, async (req: AuthenticatedRequest, res: Respons
   }
 });
 
+const VALID_PLATFORMS = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'] as const;
+
+const schedulePostSchema = z.object({
+  platform: z.enum(VALID_PLATFORMS),
+  content: z.string().min(1).max(10000),
+  mediaUrls: z.array(z.string().url()).max(10).optional(),
+  scheduledAt: z.string().optional().nullable(),
+});
+
 router.post('/schedule-post', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user!.id;
-    const { platform, content, mediaUrls, scheduledAt } = req.body;
 
-    if (!platform || !content) {
-      return res.status(400).json({ error: 'Platform and content are required' });
+    const parsed = schedulePostSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: 'Invalid request', details: parsed.error.issues });
     }
+    const { platform, content, mediaUrls, scheduledAt } = parsed.data;
 
     const scheduledDate = scheduledAt ? new Date(scheduledAt) : null;
 
