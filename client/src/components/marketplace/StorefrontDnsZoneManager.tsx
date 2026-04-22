@@ -915,41 +915,62 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
   return (
     <div className="space-y-5">
 
-      {/* ── Nameservers Banner ───────────────────────────────────────────── */}
+      {/* ── Two-path onboarding banner ───────────────────────────────────── */}
       <Card className="border-blue-200 dark:border-blue-900 bg-gradient-to-r from-blue-50/60 to-indigo-50/40 dark:from-blue-950/30 dark:to-indigo-950/20">
         <CardContent className="pt-4 pb-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 bg-blue-600 rounded-lg flex-shrink-0">
-              <Server className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-0.5">
-                Max Booster Nameservers
-              </p>
-              <p className="text-xs text-blue-700/70 dark:text-blue-400/70 mb-2.5">
-                All registered domains are automatically configured. Own a domain elsewhere? Point it here.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-md px-3 py-1.5 font-mono text-xs border border-blue-200 dark:border-blue-800">
-                  <span className="text-blue-400">NS</span>
-                  <span className="text-blue-800 dark:text-blue-300">{NS}</span>
-                  <button onClick={() => copy(NS, 'nameserver')} className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors">
-                    <Copy className="w-3 h-3" />
-                  </button>
-                </div>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+
+            {/* Path A — new domain */}
+            <button
+              onClick={() => setActiveTab('search')}
+              className={`flex-1 flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-colors cursor-pointer ${
+                activeTab === 'search'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-white/60 dark:bg-slate-900/40 hover:border-primary/50'
+              }`}
+            >
+              <div className="p-1.5 bg-primary/10 rounded-md flex-shrink-0">
+                <Sparkles className="w-4 h-4 text-primary" />
               </div>
-            </div>
-            <div className="flex-shrink-0 hidden sm:flex flex-col items-end gap-1">
-              {[
-                { icon: Shield, label: 'DNSSEC' },
-                { icon: Zap,    label: 'TTL ≥ 60s' },
-                { icon: Lock,   label: 'Privacy' },
-              ].map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-1 text-[10px] text-blue-600/70 dark:text-blue-400/70">
-                  <Icon className="w-3 h-3" />{label}
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-sm font-semibold">New to domains?</p>
+                  <Badge className="text-[9px] h-4 px-1.5 bg-green-600/15 text-green-700 border-green-300 dark:text-green-400 dark:border-green-700">Recommended</Badge>
                 </div>
-              ))}
+                <p className="text-xs text-muted-foreground">Get your first domain through Max Booster — instant setup, no extra configuration needed.</p>
+              </div>
+            </button>
+
+            {/* Divider */}
+            <div className="hidden sm:flex flex-col items-center gap-1 flex-shrink-0 text-muted-foreground/40">
+              <div className="w-px h-6 bg-border" />
+              <span className="text-[10px] font-medium">OR</span>
+              <div className="w-px h-6 bg-border" />
             </div>
+            <div className="sm:hidden flex items-center gap-2 text-muted-foreground/40">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-[10px] font-medium">OR</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+
+            {/* Path B — transfer */}
+            <button
+              onClick={() => setActiveTab('dns')}
+              className={`flex-1 flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-colors cursor-pointer ${
+                activeTab === 'dns'
+                  ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20'
+                  : 'border-border bg-white/60 dark:bg-slate-900/40 hover:border-blue-400/50'
+              }`}
+            >
+              <div className="p-1.5 bg-blue-600/10 rounded-md flex-shrink-0">
+                <Server className="w-4 h-4 text-blue-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold mb-0.5">Already have a domain?</p>
+                <p className="text-xs text-muted-foreground">Transfer from GoDaddy, Namecheap, or any registrar — point your nameservers here.</p>
+              </div>
+            </button>
+
           </div>
         </CardContent>
       </Card>
@@ -990,24 +1011,46 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       {/* ── Main Tabs ────────────────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="h-9 w-full sm:w-auto">
-          <TabsTrigger value="search"  className="text-xs gap-1.5 flex-1 sm:flex-none"><Search  className="w-3.5 h-3.5" />Find Domain</TabsTrigger>
-          <TabsTrigger value="mine"    className="text-xs gap-1.5 flex-1 sm:flex-none"><Globe   className="w-3.5 h-3.5" />My Domains{myDomains.length > 0 && <Badge className="ml-1 text-[9px] h-4 px-1.5 bg-primary/20 text-primary border-primary/30">{myDomains.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="dns"     className="text-xs gap-1.5 flex-1 sm:flex-none"><Server  className="w-3.5 h-3.5" />DNS Records</TabsTrigger>
+          <TabsTrigger value="search"  className="text-xs gap-1.5 flex-1 sm:flex-none"><Sparkles className="w-3.5 h-3.5" />Get a Domain</TabsTrigger>
+          <TabsTrigger value="mine"    className="text-xs gap-1.5 flex-1 sm:flex-none"><Globe    className="w-3.5 h-3.5" />My Domains{myDomains.length > 0 && <Badge className="ml-1 text-[9px] h-4 px-1.5 bg-primary/20 text-primary border-primary/30">{myDomains.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="dns"     className="text-xs gap-1.5 flex-1 sm:flex-none"><Server   className="w-3.5 h-3.5" />Transfer Domain</TabsTrigger>
         </TabsList>
 
-        {/* ── Tab 1: Domain Search ─────────────────────────────────────── */}
+        {/* ── Tab 1: Get a Domain (primary / first-time owner path) ───────── */}
         <TabsContent value="search" className="mt-4 space-y-5">
 
-          {/* Included badge */}
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 border border-purple-200 dark:border-purple-900">
-            <Sparkles className="w-4 h-4 text-purple-600 flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-purple-900 dark:text-purple-200">2 free custom domains included with your subscription</p>
-              <p className="text-xs text-purple-600/70 dark:text-purple-400/70">Claim up to {domainLimit} domains — .com, .music, .band, .io and more — or bring your own. Currently using {domainsUsed} of {domainLimit}.</p>
+          {/* First-time owner intro */}
+          <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 to-purple-50/40 dark:from-primary/10 dark:to-purple-950/20 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 bg-primary/15 rounded-md">
+                <Sparkles className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold">Your first domain — included free</p>
+                <p className="text-xs text-muted-foreground">Max Booster is your domain provider. Claim up to {domainLimit} domains with your subscription — no registrar account needed.</p>
+              </div>
+              {atLimit && (
+                <Badge variant="outline" className="ml-auto flex-shrink-0 text-[10px] border-orange-400 text-orange-600">Limit reached</Badge>
+              )}
             </div>
-            {atLimit && (
-              <Badge variant="outline" className="flex-shrink-0 text-[10px] border-orange-400 text-orange-600">Limit reached</Badge>
-            )}
+
+            {/* Two quick-start options */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/50 border border-border">
+                <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary mt-0.5">1</div>
+                <div>
+                  <p className="text-xs font-semibold">Platform subdomain</p>
+                  <p className="text-[11px] text-muted-foreground">yourname.{PLATFORM_DOMAIN} — live in seconds, zero DNS setup</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/50 border border-border">
+                <div className="w-5 h-5 rounded-full bg-purple-600/15 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-purple-600 mt-0.5">2</div>
+                <div>
+                  <p className="text-xs font-semibold">Custom domain</p>
+                  <p className="text-[11px] text-muted-foreground">.com, .music, .band, .io — fully managed by Max Booster</p>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Search bar */}
@@ -1111,12 +1154,20 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
               <RefreshCw className="w-4 h-4 animate-spin mr-2" /> Loading…
             </div>
           ) : myDomains.length === 0 ? (
-            <div className="border border-dashed rounded-xl flex flex-col items-center py-10 text-center">
+            <div className="border border-dashed rounded-xl flex flex-col items-center py-10 text-center px-4">
               <Globe className="w-10 h-10 text-muted-foreground/20 mb-3" />
               <p className="font-semibold text-sm mb-1">No domains yet</p>
-              <p className="text-xs text-muted-foreground max-w-xs">
-                Use the Find Domain tab to search and claim domains included with your Max Booster subscription.
+              <p className="text-xs text-muted-foreground max-w-xs mb-4">
+                Up to {domainLimit} custom domains are included with your subscription — no separate registrar needed.
               </p>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button size="sm" className="gap-1.5 text-xs" onClick={() => setActiveTab('search')}>
+                  <Sparkles className="w-3.5 h-3.5" /> Get your first domain
+                </Button>
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => setActiveTab('dns')}>
+                  <Server className="w-3.5 h-3.5" /> Transfer an existing domain
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -1184,32 +1235,77 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
             </div>
           )}
 
-          {/* Nameserver reminder if user has platform_managed domains */}
+          {/* Nameserver reminder if user has platform_managed (transferred) domains awaiting NS update */}
           {myDomains.some(d => d.status === 'platform_managed') && (
-            <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-xs text-amber-700 dark:text-amber-400">
+            <div className="flex items-start gap-2.5 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 text-xs text-amber-700 dark:text-amber-400">
               <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-              <span>
-                Some domains are managed externally. Log into your registrar and set the nameserver to{' '}
-                <strong>{NS}</strong> to activate Max Booster DNS.
-              </span>
+              <div className="space-y-1">
+                <p className="font-semibold">Nameserver update pending</p>
+                <p>
+                  One or more transferred domains are waiting for a nameserver update. Log in to your current registrar and set the nameserver to{' '}
+                  <strong className="font-mono">{NS}</strong> to complete the transfer. Propagation takes 24–48 hours.
+                </p>
+              </div>
             </div>
           )}
         </TabsContent>
 
-        {/* ── Tab 3: DNS Records (zone manager) ───────────────────────── */}
-        <TabsContent value="dns" className="mt-4 space-y-3">
-          {/* Feature pills */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { icon: Shield, label: 'A · AAAA · CNAME · MX · TXT · SRV · NS · CAA' },
-              { icon: Zap,    label: 'TTL as low as 60s' },
-              { icon: Globe,  label: 'Unlimited records' },
-            ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-1.5 text-xs bg-muted rounded-full px-3 py-1 text-muted-foreground">
-                <Icon className="w-3 h-3" />{label}
+        {/* ── Tab 3: Transfer Domain (secondary / existing-owner path) ────── */}
+        <TabsContent value="dns" className="mt-4 space-y-4">
+
+          {/* Transfer steps */}
+          {!selectedZone && (
+            <div className="rounded-xl border border-blue-200 dark:border-blue-900 bg-gradient-to-br from-blue-50/60 to-indigo-50/40 dark:from-blue-950/30 dark:to-indigo-950/20 p-4 space-y-3">
+              <div className="flex items-center gap-2 mb-1">
+                <Server className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                <p className="text-sm font-semibold">Transfer your existing domain</p>
+                <Badge variant="outline" className="ml-auto text-[10px] border-blue-300 text-blue-600">GoDaddy · Namecheap · any registrar</Badge>
               </div>
-            ))}
-          </div>
+              <div className="space-y-2">
+                {[
+                  { step: '1', label: 'Add your domain below', desc: 'Enter the domain you own at another registrar — Max Booster creates a hosted DNS zone for it.' },
+                  { step: '2', label: 'Copy the nameserver', desc: `Log into your registrar's control panel and replace its current nameservers with Max Booster's NS.` },
+                  { step: '3', label: 'Point to Max Booster', desc: `Set nameserver to: ${NS} — propagation takes 24–48 hours; your DNS records are live immediately.` },
+                ].map(({ step, label, desc }) => (
+                  <div key={step} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full bg-blue-600/15 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-blue-700 dark:text-blue-400 mt-0.5">{step}</div>
+                    <div>
+                      <p className="text-xs font-semibold">{label}</p>
+                      <p className="text-[11px] text-muted-foreground">{desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* NS copy row */}
+              <div className="flex items-center gap-2 pt-1">
+                <div className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-md px-3 py-1.5 font-mono text-xs border border-blue-200 dark:border-blue-800 flex-1 min-w-0 overflow-hidden">
+                  <span className="text-blue-400 flex-shrink-0">NS</span>
+                  <span className="text-blue-800 dark:text-blue-300 truncate">{NS}</span>
+                  <button onClick={() => copy(NS, 'nameserver')} className="text-blue-400 hover:text-blue-700 dark:hover:text-blue-200 transition-colors flex-shrink-0 ml-auto">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+                <div className="hidden sm:flex flex-col gap-0.5 text-[10px] text-blue-600/60 dark:text-blue-400/60 flex-shrink-0">
+                  <span className="flex items-center gap-0.5"><Shield className="w-2.5 h-2.5" />DNSSEC</span>
+                  <span className="flex items-center gap-0.5"><Zap className="w-2.5 h-2.5" />TTL ≥ 60s</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Feature pills (compact, only when no zone selected) */}
+          {!selectedZone && (
+            <div className="flex flex-wrap gap-2">
+              {[
+                { icon: Shield, label: 'A · AAAA · CNAME · MX · TXT · SRV · NS · CAA' },
+                { icon: Globe,  label: 'Unlimited records per zone' },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-1.5 text-xs bg-muted rounded-full px-3 py-1 text-muted-foreground">
+                  <Icon className="w-3 h-3" />{label}
+                </div>
+              ))}
+            </div>
+          )}
 
           {selectedZone ? (
             <DnsZoneEditor zone={selectedZone} onBack={() => setSelectedZone(null)} storefrontId={storefrontId} onCustomizeStorefront={onCustomizeStorefront} />
@@ -1217,8 +1313,8 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
             <>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-sm">Hosted DNS Zones</p>
-                  <p className="text-xs text-muted-foreground">Manage DNS records for any domain — including external ones you bring</p>
+                  <p className="font-semibold text-sm">Your Transferred Domains</p>
+                  <p className="text-xs text-muted-foreground">Domains you've moved to Max Booster DNS</p>
                 </div>
                 <Button
                   size="sm"
@@ -1237,11 +1333,11 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                   <RefreshCw className="w-4 h-4 animate-spin mr-2" /> Loading…
                 </div>
               ) : zones.length === 0 ? (
-                <div className="border border-dashed rounded-xl flex flex-col items-center py-10 text-center">
+                <div className="border border-dashed rounded-xl flex flex-col items-center py-10 text-center px-4">
                   <Server className="w-10 h-10 text-muted-foreground/20 mb-3" />
-                  <p className="font-semibold text-sm mb-1">No DNS zones yet</p>
+                  <p className="font-semibold text-sm mb-1">No transferred domains yet</p>
                   <p className="text-xs text-muted-foreground max-w-xs">
-                    Add a domain to manage its DNS records directly from Max Booster. After adding, point your nameservers here.
+                    Add a domain you own at another registrar — Max Booster will host its DNS records and you just update your nameserver once.
                   </p>
                   <Button
                     size="sm"
@@ -1250,7 +1346,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                     disabled={atLimit || !hasSubscription}
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    {!hasSubscription ? 'Subscribe to Add' : atLimit ? 'Limit Reached' : 'Add Domain'}
+                    {!hasSubscription ? 'Subscribe to Transfer' : atLimit ? 'Limit Reached' : 'Add My Domain'}
                   </Button>
                 </div>
               ) : (
@@ -1280,9 +1376,9 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       <Dialog open={showAddZone} onOpenChange={setShowAddZone}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Domain to DNS</DialogTitle>
+            <DialogTitle>Transfer Domain to Max Booster</DialogTitle>
             <DialogDescription>
-              Enter a domain you own. After adding it, update its nameservers at your registrar to point to Max Booster.
+              Enter a domain you already own at GoDaddy, Namecheap, or any other registrar. Max Booster will host its DNS records — then update your nameserver once to complete the transfer.
             </DialogDescription>
           </DialogHeader>
           <div>
