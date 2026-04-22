@@ -45,6 +45,16 @@ import {
 
 const router = Router();
 
+// ── Auth gate ─────────────────────────────────────────────────────────────────
+// /config and /search are intentionally public (availability checks, NS info).
+// Every route defined below router.use(requireAuth) requires an active session —
+// already guaranteed by Max Booster's protected-route wrapper on the frontend,
+// but enforced here as well for direct API callers.
+const requireAuth = (req: any, res: any, next: any) => {
+  if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
+  next();
+};
+
 // ── Config / nameserver info (public) ────────────────────────────────────────
 
 router.get('/config', async (_req, res) => {
@@ -103,12 +113,13 @@ router.get('/search', async (req, res) => {
   }
 });
 
+// All routes below this line require an authenticated session.
+router.use(requireAuth);
+
 // ── Claim a domain ────────────────────────────────────────────────────────────
 
 router.post('/claim', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const { domain, storefrontId } = req.body;
 
@@ -208,8 +219,6 @@ router.post('/claim', async (req, res) => {
 
 router.get('/my-domains', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const domains = await db
       .select()
@@ -230,8 +239,6 @@ router.get('/my-domains', async (req, res) => {
 
 router.get('/my-domains/:id', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const [row] = await db
       .select()
@@ -253,8 +260,6 @@ router.get('/my-domains/:id', async (req, res) => {
 
 router.post('/my-domains/:id/release', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     await softReleaseDomain(req.params.id, userId);
 
@@ -275,8 +280,6 @@ router.post('/my-domains/:id/release', async (req, res) => {
 
 router.post('/my-domains/:id/renew', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const years  = Math.max(1, Math.min(10, Number(req.body.years ?? 1)));
 
@@ -311,8 +314,6 @@ router.post('/my-domains/:id/renew', async (req, res) => {
 
 router.get('/my-domains/:id/events', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
 
     // Verify ownership
@@ -337,8 +338,6 @@ router.get('/my-domains/:id/events', async (req, res) => {
 
 router.delete('/my-domains/:id', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const [row] = await db
       .select({ userId: claimedDomains.userId, domain: claimedDomains.domain })
@@ -369,8 +368,6 @@ router.delete('/my-domains/:id', async (req, res) => {
 
 router.get('/contacts', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const contacts = await db
       .select()
@@ -393,8 +390,6 @@ router.get('/contacts', async (req, res) => {
 
 router.put('/contacts', async (req, res) => {
   try {
-    if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
-
     const userId = (req.user as any).id;
     const { name, org, email, phone, address } = req.body;
 
