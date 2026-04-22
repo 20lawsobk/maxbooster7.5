@@ -48,6 +48,21 @@ import { resolveGeoIP, getGeoDnsStatus } from './geoDns.js';
 // ── Feature flags ─────────────────────────────────────────────────────────────
 const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === 'true';
 
+// ── Eager GeoDNS warm-up at module load ───────────────────────────────────────
+// Decoupled from startDNSServer so it runs even when port 53 is unavailable.
+if (process.env.GEODNS_ENABLED === 'true') {
+  (async () => {
+    try {
+      const { lookupGeo } = await import('./geoDns.js');
+      const geo = await lookupGeo('8.8.8.8');
+      if (geo) {
+        const { logger: _log } = await import('../logger.js');
+        _log.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent}/${geo.country}`);
+      }
+    } catch { /* mmdb may not exist yet — silently ignored */ }
+  })();
+}
+
 const {
   Packet,
   createServer,
@@ -528,6 +543,14 @@ export function getDNSInfo() {
 async function warmCache(): Promise<void> {
   await refreshCustomDomainCache();
   logger.info(`[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`);
+
+  // Eagerly load GeoDNS database so the first real query doesn't pay the I/O cost
+  if (process.env.GEODNS_ENABLED === 'true') {
+    const { lookupGeo } = await import('./geoDns.js');
+    lookupGeo('8.8.8.8').then(geo => {
+      if (geo) logger.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent}/${geo.country}`);
+    }).catch(() => { /* DB may not be present yet — ignored */ });
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

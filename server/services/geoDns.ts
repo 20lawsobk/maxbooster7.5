@@ -53,27 +53,33 @@ try {
 // ── MaxMind mmdb reader (lazy-loaded) ─────────────────────────────────────────
 
 let geoReader: any = null;
-let geoReaderAttempted = false;
+let geoReaderLoading: Promise<any> | null = null;
 
 async function getGeoReader(): Promise<any> {
   if (geoReader) return geoReader;
-  if (geoReaderAttempted) return null;
-  geoReaderAttempted = true;
+
+  // Deduplicate concurrent load attempts
+  if (geoReaderLoading) return geoReaderLoading;
 
   if (!fs.existsSync(GEODB_PATH)) {
     logger.info(`[GeoDNS] Database not found at ${GEODB_PATH}. Run scripts/download-geodb.sh to enable GeoDNS.`);
     return null;
   }
 
-  try {
-    const { default: maxmind } = await import('maxmind');
-    geoReader = await maxmind.open(GEODB_PATH);
-    logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
-    return geoReader;
-  } catch (err: any) {
-    logger.warn({ err: err.message }, '[GeoDNS] Failed to open GeoIP database — install maxmind package if needed');
-    return null;
-  }
+  geoReaderLoading = (async () => {
+    try {
+      const { default: maxmind } = await import('maxmind');
+      geoReader = await maxmind.open(GEODB_PATH);
+      logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
+      return geoReader;
+    } catch (err: any) {
+      logger.warn({ err: err.message }, '[GeoDNS] Failed to open GeoIP database');
+      geoReaderLoading = null; // allow retry on next request
+      return null;
+    }
+  })();
+
+  return geoReaderLoading;
 }
 
 // ── IP classification ─────────────────────────────────────────────────────────
