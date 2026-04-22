@@ -866,8 +866,89 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`⚠️ SEO routes not available: ${e.message}`);
   }
 
-  // Storefront short-link: /s/:label → /storefront/:slug
-  // First checks managed subdomain registry, then falls back to direct slug lookup
+  // ── Platform Subdomain Router ────────────────────────────────────────────────
+  // Handles requests to {label}.maxbooster.replit.app — Max Booster's built-in
+  // storefront subdomain system.  Each artist can claim e.g. beatsby.maxbooster.replit.app
+  // and this middleware resolves the label → storefront slug and serves the SPA.
+  //
+  // This works independently of Replit's deployment DNS: the Express app inspects
+  // the Host header, so any request that reaches this process with that hostname
+  // (via CNAME, proxy, or Replit's custom-domain routing) is handled correctly.
+  //
+  // API + asset paths are passed through so the full app still works on the subdomain.
+  app.use(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const BASE = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
+      const host = req.hostname ?? '';
+
+      // Only intercept true subdomains of the platform domain (not the root itself)
+      if (host === BASE || !host.endsWith(`.${BASE}`)) return next();
+
+      // Let API calls, assets, and Vite HMR pass through unchanged
+      const p = req.path;
+      if (
+        p.startsWith('/api/') ||
+        p.startsWith('/assets/') ||
+        p.startsWith('/@') ||
+        p.startsWith('/node_modules/')
+      ) return next();
+
+      const label = host.slice(0, -(`.${BASE}`.length)).toLowerCase().replace(/[^a-z0-9-]/g, '');
+      if (!label) return next();
+
+      // Already on the /storefront/ path — SPA will render it, nothing to do
+      if (p.startsWith('/storefront/')) return next();
+
+      const { db: sDb } = await import('./db.js');
+      const { storefrontDomains: sDoms, storefronts: sStores } = await import('@shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      const fqdn = `${label}.${BASE}`;
+
+      // 1. Managed subdomain registry (reserved via DNS Manager UI)
+      const [domRow] = await sDb
+        .select({ slug: sStores.slug })
+        .from(sDoms)
+        .innerJoin(sStores, eq(sDoms.storefrontId, sStores.id))
+        .where(and(eq(sDoms.domain, fqdn), eq(sDoms.type, 'managed_subdomain')))
+        .limit(1);
+
+      if (domRow?.slug) {
+        return res.redirect(302, `/storefront/${domRow.slug}`);
+      }
+
+      // 2. Claimed domains registry (registered via domain registrar)
+      const { claimedDomains: cDoms } = await import('@shared/schema');
+      const [claimRow] = await sDb
+        .select({ slug: sStores.slug })
+        .from(cDoms)
+        .innerJoin(sStores, eq(cDoms.storefrontId, sStores.id))
+        .where(eq(cDoms.domain, fqdn))
+        .limit(1);
+
+      if (claimRow?.slug) {
+        return res.redirect(302, `/storefront/${claimRow.slug}`);
+      }
+
+      // 3. Direct slug match (artist's slug == subdomain label)
+      const [slugRow] = await sDb
+        .select({ slug: sStores.slug })
+        .from(sStores)
+        .where(eq(sStores.slug, label))
+        .limit(1);
+
+      if (slugRow?.slug) {
+        return res.redirect(302, `/storefront/${slugRow.slug}`);
+      }
+
+      // No match — fall through to SPA (will show not-found)
+      return next();
+    } catch (err) {
+      logger.warn({ err }, '[subdomain] routing error');
+      return next();
+    }
+  });
+
+  // Storefront short-link: /s/:label → /storefront/:slug (backward compat)
   app.get('/s/:label', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { db: sDb } = await import('./db.js');

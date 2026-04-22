@@ -91,9 +91,10 @@ export async function reserveManaged(req: Request, res: Response) {
         set: { storefrontId, updatedAt: new Date() },
       });
 
-    // The canonical public URL for the store is the /storefront/ path which works
-    // immediately without any DNS or subdomain configuration.
-    const publicShortUrl = `https://${BASE_DOMAIN}/storefront/${label}`;
+    // The canonical public URL for the store is the platform subdomain.
+    // Requests to {label}.maxbooster.replit.app are routed by the Express
+    // Host-header middleware — no separate DNS config required.
+    const publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
 
     logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`);
     return res.status(201).json({ ok: true, domain: record.domain, id: record.id, publicUrl: publicShortUrl, label });

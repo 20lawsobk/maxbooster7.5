@@ -122,12 +122,11 @@ router.get('/suggest-url', async (req, res) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const slug = await storefrontService.generateRandomSlug();
-    const appRoot  = process.env.APP_URL || 'https://maxbooster.replit.app';
-    const publicUrl = `${appRoot}/storefront/${slug}`;
-
-    // Keep suggestedDomain for any legacy callers, but publicUrl is the canonical URL
-    const suggestedDomain = `storefront.maxbooster.replit.app/${slug}`;
+    const slug       = await storefrontService.generateRandomSlug();
+    const baseDomain = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
+    // Platform subdomain: each artist's store lives at {slug}.maxbooster.replit.app
+    const suggestedDomain = `${slug}.${baseDomain}`;
+    const publicUrl       = `https://${suggestedDomain}`;
 
     res.json({
       slug,
