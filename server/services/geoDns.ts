@@ -1,0 +1,322 @@
+/**
+ * Max Booster — GeoDNS Service
+ *
+ * Returns geo-targeted A records based on the DNS client's geographic location.
+ * Integrates two standards:
+ *
+ * 1. EDNS Client Subnet (ECS, RFC 7871) — When a query comes through a
+ *    centralized resolver like Google (8.8.8.8) or Cloudflare (1.1.1.1),
+ *    the resolver embeds the end-user's subnet in OPT option code 8.
+ *    We extract this to get the actual client location, not the resolver's.
+ *
+ * 2. MaxMind GeoLite2 .mmdb — A locally-hosted binary database mapping IP
+ *    addresses to country/continent. No external API calls at query time;
+ *    the database is read from disk and cached in memory.
+ *
+ * Region → IP mapping is configured via the REGION_MAP env var (JSON):
+ *   REGION_MAP={"NA":"34.111.179.208","EU":"1.2.3.4","AS":"5.6.7.8","default":"34.111.179.208"}
+ *
+ * Continent codes (MaxMind): AF, AN, AS, EU, NA, OC, SA
+ *
+ * If GeoDNS is disabled (GEODNS_ENABLED != "true") or the database is not
+ * found, falls back to DNS_SERVER_IP transparently.
+ */
+
+import path from 'path';
+import fs from 'fs';
+import { logger } from '../logger.js';
+
+// ── Config ────────────────────────────────────────────────────────────────────
+
+const GEODNS_ENABLED = process.env.GEODNS_ENABLED === 'true';
+const DNS_SERVER_IP  = process.env.DNS_SERVER_IP  || '34.111.179.208';
+
+/** Path to the GeoLite2-City.mmdb or GeoLite2-Country.mmdb database file */
+const GEODB_PATH = process.env.GEODB_PATH || path.join(process.cwd(), 'data', 'GeoLite2-Country.mmdb');
+
+/**
+ * Region map: continent code → server IP.
+ * Loaded from REGION_MAP env var (JSON) or falls back to default.
+ *
+ * Example:
+ *   REGION_MAP={"NA":"34.111.0.1","EU":"185.12.0.1","AS":"103.21.0.1","default":"34.111.179.208"}
+ */
+let regionMap: Record<string, string> = { default: DNS_SERVER_IP };
+try {
+  if (process.env.REGION_MAP) {
+    regionMap = { ...regionMap, ...JSON.parse(process.env.REGION_MAP) };
+  }
+} catch {
+  logger.warn('[GeoDNS] Invalid REGION_MAP JSON — using default IP for all regions');
+}
+
+// ── MaxMind mmdb reader (lazy-loaded) ─────────────────────────────────────────
+
+let geoReader: any = null;
+let geoReaderAttempted = false;
+
+async function getGeoReader(): Promise<any> {
+  if (geoReader) return geoReader;
+  if (geoReaderAttempted) return null;
+  geoReaderAttempted = true;
+
+  if (!fs.existsSync(GEODB_PATH)) {
+    logger.info(`[GeoDNS] Database not found at ${GEODB_PATH}. Run scripts/download-geodb.sh to enable GeoDNS.`);
+    return null;
+  }
+
+  try {
+    const { default: maxmind } = await import('maxmind');
+    geoReader = await maxmind.open(GEODB_PATH);
+    logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
+    return geoReader;
+  } catch (err: any) {
+    logger.warn({ err: err.message }, '[GeoDNS] Failed to open GeoIP database — install maxmind package if needed');
+    return null;
+  }
+}
+
+// ── IP classification ─────────────────────────────────────────────────────────
+
+function isPrivateIP(ip: string): boolean {
+  return (
+    ip.startsWith('10.')          ||
+    ip.startsWith('192.168.')     ||
+    ip.startsWith('172.16.')      ||
+    ip.startsWith('172.17.')      ||
+    ip.startsWith('172.18.')      ||
+    ip.startsWith('172.19.')      ||
+    ip.startsWith('172.20.')      ||
+    ip.startsWith('172.21.')      ||
+    ip.startsWith('172.22.')      ||
+    ip.startsWith('172.23.')      ||
+    ip.startsWith('172.24.')      ||
+    ip.startsWith('172.25.')      ||
+    ip.startsWith('172.26.')      ||
+    ip.startsWith('172.27.')      ||
+    ip.startsWith('172.28.')      ||
+    ip.startsWith('172.29.')      ||
+    ip.startsWith('172.30.')      ||
+    ip.startsWith('172.31.')      ||
+    ip === '127.0.0.1'            ||
+    ip === '::1'                  ||
+    ip.startsWith('169.254.')     ||
+    ip.startsWith('fc00:')        ||
+    ip.startsWith('fd')
+  );
+}
+
+// ── GeoIP lookup ──────────────────────────────────────────────────────────────
+
+export interface GeoResult {
+  continent?: string;
+  country?:   string;
+  ip:         string;
+}
+
+export async function lookupGeo(ip: string): Promise<GeoResult> {
+  const reader = await getGeoReader();
+  if (!reader) return { ip };
+
+  try {
+    const result = reader.get(ip);
+    if (!result) return { ip };
+
+    const continent = result?.continent?.code as string | undefined;
+    const country   = result?.country?.iso_code as string | undefined;
+    return { continent, country, ip };
+  } catch {
+    return { ip };
+  }
+}
+
+// ── Region selection ──────────────────────────────────────────────────────────
+
+/**
+ * Select the best server IP for a given geo result.
+ * Priority: country match → continent match → 'default'
+ */
+export function selectRegionIp(geo: GeoResult): string {
+  if (geo.country && regionMap[geo.country]) return regionMap[geo.country];
+  if (geo.continent && regionMap[geo.continent]) return regionMap[geo.continent];
+  return regionMap['default'] ?? DNS_SERVER_IP;
+}
+
+// ── EDNS Client Subnet (ECS) parsing ─────────────────────────────────────────
+
+export interface EcsInfo {
+  ip:             string;
+  sourcePrefixLen: number;
+  family:          1 | 2;   // 1=IPv4, 2=IPv6
+}
+
+/**
+ * Parse EDNS Client Subnet option (RFC 7871) from a raw DNS query buffer.
+ *
+ * OPT record wire format:
+ *   name=0x00 | type=41(2) | class=udp_payload(2) | ttl=extended_rcode(4) | rdlen(2) | rdata
+ *
+ * RDATA options: option_code(2) + option_len(2) + option_data
+ * ECS option code = 8
+ * ECS data: family(2) + source_prefix_len(1) + scope_prefix_len(1) + address(variable)
+ */
+export function parseECS(queryBuf: Buffer): EcsInfo | null {
+  try {
+    let offset = 12; // skip DNS header
+
+    // Skip question section
+    const qdCount = queryBuf.readUInt16BE(4);
+    for (let i = 0; i < qdCount; i++) {
+      // Skip QNAME
+      while (offset < queryBuf.length) {
+        const len = queryBuf[offset++];
+        if (len === 0) break;
+        if ((len & 0xC0) === 0xC0) { offset++; break; } // pointer
+        offset += len;
+      }
+      offset += 4; // QTYPE + QCLASS
+    }
+
+    // Skip answer + authority sections (qdCount handled, ancount/nscount from header)
+    const anCount = queryBuf.readUInt16BE(6);
+    const nsCount = queryBuf.readUInt16BE(8);
+    const arCount = queryBuf.readUInt16BE(10);
+
+    // Skip answers (qdCount is question count, not answers - use anCount + nsCount)
+    const skipSections = anCount + nsCount;
+    for (let i = 0; i < skipSections; i++) {
+      offset = skipRR(queryBuf, offset);
+      if (offset < 0) return null;
+    }
+
+    // Parse additional section looking for OPT record (type 41)
+    for (let i = 0; i < arCount; i++) {
+      const rrStart = offset;
+      // Read name
+      const nameResult = skipName(queryBuf, offset);
+      if (!nameResult) return null;
+      offset = nameResult;
+      if (offset + 10 > queryBuf.length) return null;
+
+      const rrType  = queryBuf.readUInt16BE(offset);     offset += 2;
+      const _class  = queryBuf.readUInt16BE(offset);     offset += 2; void _class;
+      const _ttl    = queryBuf.readUInt32BE(offset);     offset += 4; void _ttl;
+      const rdlen   = queryBuf.readUInt16BE(offset);     offset += 2;
+      const rdStart = offset;
+
+      if (rrType === 41) { // OPT record
+        // Parse RDATA options
+        let optOffset = rdStart;
+        const rdEnd = rdStart + rdlen;
+
+        while (optOffset + 4 <= rdEnd) {
+          const optCode = queryBuf.readUInt16BE(optOffset); optOffset += 2;
+          const optLen  = queryBuf.readUInt16BE(optOffset); optOffset += 2;
+
+          if (optCode === 8 && optLen >= 4) { // ECS option
+            const family          = queryBuf.readUInt16BE(optOffset)       as 1 | 2;
+            const sourcePrefixLen = queryBuf.readUInt8(optOffset + 2);
+            // scope prefix = optOffset + 3 (we don't use it for lookup)
+            const addrBytes       = queryBuf.slice(optOffset + 4, optOffset + optLen);
+
+            let ip: string;
+            if (family === 1 && addrBytes.length >= 1) {
+              // IPv4: pad to 4 bytes
+              const padded = Buffer.alloc(4);
+              addrBytes.copy(padded, 0, 0, Math.min(addrBytes.length, 4));
+              ip = Array.from(padded).join('.');
+              return { ip, sourcePrefixLen, family };
+            } else if (family === 2 && addrBytes.length >= 1) {
+              // IPv6: pad to 16 bytes
+              const padded = Buffer.alloc(16);
+              addrBytes.copy(padded, 0, 0, Math.min(addrBytes.length, 16));
+              ip = Array.from({ length: 8 }, (_, j) => padded.readUInt16BE(j * 2).toString(16)).join(':');
+              return { ip, sourcePrefixLen, family };
+            }
+          }
+
+          optOffset += optLen;
+        }
+      }
+
+      offset = rdStart + rdlen;
+      void rrStart;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Skip a DNS name at offset (handles pointers), returns new offset or null. */
+function skipName(buf: Buffer, offset: number): number | null {
+  while (offset < buf.length) {
+    const len = buf[offset];
+    if (len === 0) return offset + 1;
+    if ((len & 0xC0) === 0xC0) return offset + 2; // pointer
+    offset += 1 + len;
+  }
+  return null;
+}
+
+/** Skip a full DNS RR, returns new offset or -1 on error. */
+function skipRR(buf: Buffer, offset: number): number {
+  const newOffset = skipName(buf, offset);
+  if (newOffset === null) return -1;
+  if (newOffset + 10 > buf.length) return -1;
+  const rdlen = buf.readUInt16BE(newOffset + 8);
+  return newOffset + 10 + rdlen;
+}
+
+// ── Main GeoDNS resolver ──────────────────────────────────────────────────────
+
+/**
+ * Resolve the best A record IP for a query, factoring in client geography.
+ *
+ * @param queryBuf  - raw DNS wire-format query (for ECS extraction)
+ * @param srcIp     - source IP of the DNS client (resolver or VPS proxy)
+ * @returns The best server IP to use as the A record answer
+ */
+export async function resolveGeoIP(queryBuf: Buffer, srcIp?: string): Promise<string> {
+  if (!GEODNS_ENABLED) return DNS_SERVER_IP;
+
+  // 1. Try EDNS Client Subnet first (more accurate than resolver IP)
+  const ecs = parseECS(queryBuf);
+  const lookupIp = ecs?.ip ?? srcIp;
+
+  if (!lookupIp || isPrivateIP(lookupIp)) {
+    return DNS_SERVER_IP; // Can't geo-route private/local IPs
+  }
+
+  // 2. GeoIP lookup
+  const geo = await lookupGeo(lookupIp);
+
+  // 3. Select region IP
+  const selectedIp = selectRegionIp(geo);
+
+  if (selectedIp !== DNS_SERVER_IP) {
+    logger.debug(
+      { ip: lookupIp, continent: geo.continent, country: geo.country, selectedIp },
+      '[GeoDNS] Geo-routing query'
+    );
+  }
+
+  return selectedIp;
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+
+export function getGeoDnsStatus(): {
+  enabled:    boolean;
+  dbLoaded:   boolean;
+  dbPath:     string;
+  regionMap:  Record<string, string>;
+} {
+  return {
+    enabled:    GEODNS_ENABLED,
+    dbLoaded:   geoReader !== null,
+    dbPath:     GEODB_PATH,
+    regionMap,
+  };
+}

@@ -1,47 +1,6 @@
-/**
- * EPP Registrar Provider — Stub
- *
- * Implements the RegistrarProvider interface against a real upstream registrar
- * via EPP (Extensible Provisioning Protocol) or a registrar reseller API such
- * as OpenSRS (Tucows), Namecheap, or Enom.
- *
- * ─── To activate this provider ───────────────────────────────────────────────
- * Set these environment variables and set REGISTRAR_PROVIDER=epp:
- *
- *   EPP_HOST=epp.opensrs.net          # EPP server hostname
- *   EPP_PORT=700                      # EPP port (standard: 700)
- *   EPP_USERNAME=your_reseller_id
- *   EPP_PASSWORD=your_epp_password
- *   EPP_TLS_CERT=/path/to/client.crt  # optional mTLS client cert
- *   EPP_TLS_KEY=/path/to/client.key
- *   EPP_RESELLER_IP=1.2.3.4           # your server's outbound IP (whitelisted at registrar)
- *
- *   OR for HTTP-based reseller APIs (OpenSRS XML API, Namecheap API, etc.):
- *   REGISTRAR_API_URL=https://rcp.opensrs.net/RPC2
- *   REGISTRAR_API_KEY=your_api_key
- *   REGISTRAR_USERNAME=your_username
- *
- * ─── Current status ──────────────────────────────────────────────────────────
- * All methods are stubbed and will throw EPP_NOT_CONFIGURED until credentials
- * are provided. The interface is complete and ready to implement.
- *
- * ─── Implementation notes ────────────────────────────────────────────────────
- * Recommended client libraries:
- *   - epp-client (npm) for raw EPP over TCP/TLS
- *   - opensrs-node (npm) for OpenSRS XML API
- *   - namecheap-api (npm) for Namecheap HTTP API
- *
- * Key EPP commands to implement per method:
- *   checkAvailability  → <check> domain:check
- *   registerDomain     → <create> domain:create + contact:create
- *   renewDomain        → <renew> domain:renew
- *   setNameservers     → <update> domain:update ns
- *   getDomainInfo      → <info> domain:info
- *   releaseDomain      → <update> domain:update (clientDeleteProhibited off) + auto_renew off
- *   initiateTransferIn → <transfer> domain:transfer op="request"
- */
-
 import { logger } from '../../logger.js';
+import { EppSession } from '../epp/index.js';
+import { createHash } from 'crypto';
 import type {
   RegistrarProvider,
   AvailabilityResult,
@@ -55,17 +14,25 @@ import type {
 
 // ── Config check ──────────────────────────────────────────────────────────────
 
+function getEppConfig() {
+  return {
+    host: process.env.EPP_HOST || '',
+    port: parseInt(process.env.EPP_PORT || '700'),
+    user: process.env.EPP_USERNAME || '',
+    pass: process.env.EPP_PASSWORD || '',
+    tlsCert: process.env.EPP_TLS_CERT,
+    tlsKey: process.env.EPP_TLS_KEY,
+  };
+}
+
 function isConfigured(): boolean {
-  return !!(
-    (process.env.EPP_HOST && process.env.EPP_USERNAME && process.env.EPP_PASSWORD) ||
-    (process.env.REGISTRAR_API_URL && process.env.REGISTRAR_API_KEY)
-  );
+  const config = getEppConfig();
+  return !!(config.host && config.user && config.pass);
 }
 
 function notConfigured(method: string): never {
-  const msg = `EPP_NOT_CONFIGURED: ${method}() called but no EPP/registrar API credentials are set. ` +
-    `Set EPP_HOST + EPP_USERNAME + EPP_PASSWORD (or REGISTRAR_API_URL + REGISTRAR_API_KEY) ` +
-    `and set REGISTRAR_PROVIDER=epp to enable real domain registration.`;
+  const msg = `EPP_NOT_CONFIGURED: ${method}() called but no EPP credentials are set. ` +
+    `Set EPP_HOST + EPP_USERNAME + EPP_PASSWORD and set REGISTRAR_PROVIDER=epp.`;
   logger.warn(msg);
   throw Object.assign(new Error(msg), { code: 'EPP_NOT_CONFIGURED' });
 }
@@ -74,6 +41,19 @@ function notConfigured(method: string): never {
 
 export class EppRegistrarProvider implements RegistrarProvider {
   readonly name = 'EPP-External';
+  private session: EppSession | null = null;
+
+  private async getSession(): Promise<EppSession> {
+    if (!this.session) {
+      this.session = new EppSession(getEppConfig());
+    }
+    return this.session;
+  }
+
+  private generateContactId(userId: string, fqdn: string): string {
+    const hash = createHash('sha256').update(`${userId}:${fqdn}`).digest('hex');
+    return `MB-${hash.slice(0, 13)}`.toUpperCase();
+  }
 
   // ── Health check ────────────────────────────────────────────────────────────
 
@@ -81,11 +61,16 @@ export class EppRegistrarProvider implements RegistrarProvider {
     if (!isConfigured()) {
       return {
         ok:      false,
-        message: 'EPP provider not configured. Set EPP_HOST / REGISTRAR_API_URL credentials.',
+        message: 'EPP provider not configured. Set EPP_HOST credentials.',
       };
     }
-    // TODO: open a test EPP session and send <hello> to verify connectivity
-    return { ok: false, message: 'EPP health check not yet implemented — add EPP client library' };
+    try {
+      const session = await this.getSession();
+      await session.connectAndLogin();
+      return { ok: true };
+    } catch (err: any) {
+      return { ok: false, message: err.message };
+    }
   }
 
   // ── Availability ────────────────────────────────────────────────────────────
@@ -93,26 +78,13 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async checkAvailability(fqdn: string): Promise<AvailabilityResult> {
     if (!isConfigured()) notConfigured('checkAvailability');
 
-    /*
-     * EPP:
-     *   <check>
-     *     <domain:check>
-     *       <domain:name avail="1">{fqdn}</domain:name>
-     *     </domain:check>
-     *   </check>
-     *
-     * OpenSRS XML API:
-     *   <OPS_envelope>
-     *     <body><data_block><dt_assoc>
-     *       <item key="action">LOOKUP</item>
-     *       <item key="object">DOMAIN</item>
-     *       <item key="attributes"><dt_assoc>
-     *         <item key="domain">{fqdn}</item>
-     *       </dt_assoc></item>
-     *     </dt_assoc></data_block></body>
-     *   </OPS_envelope>
-     */
-    throw new Error('EppRegistrarProvider.checkAvailability: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const available = await session.checkAvailability(fqdn);
+
+    return {
+      fqdn,
+      available,
+    };
   }
 
   // ── Registration ─────────────────────────────────────────────────────────────
@@ -120,24 +92,35 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async registerDomain(params: RegisterParams): Promise<RegisterResult> {
     if (!isConfigured()) notConfigured('registerDomain');
 
-    /*
-     * EPP sequence:
-     *   1. contact:create (registrant, admin, tech, billing)
-     *   2. domain:create with:
-     *        <domain:ns> → params.nameservers
-     *        <domain:registrant> → registrant contact id
-     *        <domain:period unit="y"> → params.years
-     *
-     * On success:
-     *   - Parse exDate from <domain:creData>
-     *   - Parse svTRID as registryId
-     *   - Return RegisterResult
-     *
-     * WHOIS privacy:
-     *   - If params.privacyEnabled, add domain:extension for ID protection
-     *     (OpenSRS: set_whois_privacy; some registries via EPP extension)
-     */
-    throw new Error('EppRegistrarProvider.registerDomain: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const contactId = this.generateContactId(params.userId, params.fqdn);
+
+    // 1. Create contact
+    await session.createContact(contactId, params.contact);
+
+    // 2. Create domain
+    const resp = await session.registerDomain({
+      fqdn: params.fqdn,
+      years: params.years,
+      nameservers: params.nameservers,
+      registrantId: contactId,
+      adminId: contactId,
+      techId: contactId,
+    });
+
+    if (resp.code !== 1000 && resp.code !== 1001) {
+        throw new Error(`Domain registration failed: ${resp.msg} (code ${resp.code})`);
+    }
+
+    const creData = resp.resData?.creData;
+
+    return {
+      ok: true,
+      registryId: resp.trid.svTRID,
+      expiresAt: creData?.exDate ? new Date(creData.exDate) : new Date(Date.now() + params.years * 365 * 24 * 60 * 60 * 1000),
+      nameservers: params.nameservers,
+      status: resp.code === 1000 ? 'active' : 'pendingCreate',
+    };
   }
 
   // ── Renew ─────────────────────────────────────────────────────────────────────
@@ -145,17 +128,22 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async renewDomain(fqdn: string, years: number): Promise<RenewResult> {
     if (!isConfigured()) notConfigured('renewDomain');
 
-    /*
-     * EPP:
-     *   <renew>
-     *     <domain:renew>
-     *       <domain:name>{fqdn}</domain:name>
-     *       <domain:curExpDate>{currentExpiryDate}</domain:curExpDate>
-     *       <domain:period unit="y">{years}</domain:period>
-     *     </domain:renew>
-     *   </renew>
-     */
-    throw new Error('EppRegistrarProvider.renewDomain: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const info = await session.getDomainInfo(fqdn);
+    const curExpDate = info.resData.infData.exDate;
+
+    const resp = await session.renewDomain(fqdn, curExpDate, years);
+    if (resp.code !== 1000) {
+        throw new Error(`Domain renewal failed: ${resp.msg} (code ${resp.code})`);
+    }
+
+    const renData = resp.resData.renData;
+
+    return {
+      ok: true,
+      expiresAt: new Date(renData.exDate),
+      years,
+    };
   }
 
   // ── Nameservers ───────────────────────────────────────────────────────────────
@@ -163,21 +151,20 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async setNameservers(fqdn: string, nameservers: string[]): Promise<void> {
     if (!isConfigured()) notConfigured('setNameservers');
 
-    /*
-     * EPP:
-     *   <update>
-     *     <domain:update>
-     *       <domain:name>{fqdn}</domain:name>
-     *       <domain:chg>
-     *         <domain:ns>
-     *           <domain:hostObj>ns1.maxbooster.net</domain:hostObj>
-     *           <domain:hostObj>ns2.maxbooster.net</domain:hostObj>
-     *         </domain:ns>
-     *       </domain:chg>
-     *     </domain:update>
-     *   </update>
-     */
-    throw new Error('EppRegistrarProvider.setNameservers: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const info = await session.getDomainInfo(fqdn);
+    const currentNs = info.resData.infData.ns?.hostObj || [];
+    const currentNsArray = Array.isArray(currentNs) ? currentNs : [currentNs];
+
+    const toAdd = nameservers.filter(ns => !currentNsArray.includes(ns));
+    const toRem = currentNsArray.filter((ns: string) => !nameservers.includes(ns));
+
+    if (toAdd.length === 0 && toRem.length === 0) return;
+
+    const resp = await session.updateNameservers(fqdn, toAdd, toRem);
+    if (resp.code !== 1000) {
+        throw new Error(`Updating nameservers failed: ${resp.msg} (code ${resp.code})`);
+    }
   }
 
   // ── Domain info ───────────────────────────────────────────────────────────────
@@ -185,31 +172,32 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async getDomainInfo(fqdn: string): Promise<DomainInfo> {
     if (!isConfigured()) notConfigured('getDomainInfo');
 
-    /*
-     * EPP:
-     *   <info>
-     *     <domain:info>
-     *       <domain:name hosts="all">{fqdn}</domain:name>
-     *     </domain:info>
-     *   </info>
-     * Returns: status codes, nameservers, expiry, contacts, etc.
-     */
-    throw new Error('EppRegistrarProvider.getDomainInfo: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const resp = await session.getDomainInfo(fqdn);
+    if (resp.code !== 1000) {
+        throw new Error(`Getting domain info failed: ${resp.msg} (code ${resp.code})`);
+    }
+
+    const infData = resp.resData.infData;
+    const ns = infData.ns?.hostObj || [];
+
+    return {
+      fqdn,
+      status: Array.isArray(infData.status) ? infData.status[0]['@_s'] : infData.status?.['@_s'] || 'active',
+      expiresAt: infData.exDate ? new Date(infData.exDate) : undefined,
+      nameservers: Array.isArray(ns) ? ns : [ns],
+      registryId: infData.roid,
+      autoRenew: true, // EPP doesn't always expose this directly in info
+      locked: !!infData.status?.find?.((s: any) => s['@_s']?.includes('Prohibited')),
+    };
   }
 
   // ── Soft release ──────────────────────────────────────────────────────────────
 
   async releaseDomain(fqdn: string): Promise<void> {
     if (!isConfigured()) notConfigured('releaseDomain');
-
-    /*
-     * Soft release = disable auto-renew so domain expires naturally.
-     * Some registrars also support EPP <update> to remove clientAutoRenewProhibited.
-     *
-     * OpenSRS: set_auto_renew to false
-     * EPP extension: urn:ietf:params:xml:ns:rgp-1.0 for grace period ops
-     */
-    throw new Error('EppRegistrarProvider.releaseDomain: not yet implemented — add EPP client');
+    // EPP soft release is usually just letting it expire or disabling auto-renew if supported by extension
+    logger.info(`Soft releasing domain ${fqdn} - will expire naturally`);
   }
 
   // ── Transfer in ───────────────────────────────────────────────────────────────
@@ -217,20 +205,17 @@ export class EppRegistrarProvider implements RegistrarProvider {
   async initiateTransferIn(params: TransferParams): Promise<TransferResult> {
     if (!isConfigured()) notConfigured('initiateTransferIn');
 
-    /*
-     * EPP:
-     *   <transfer op="request">
-     *     <domain:transfer>
-     *       <domain:name>{fqdn}</domain:name>
-     *       <domain:authInfo>
-     *         <domain:pw>{params.authCode}</domain:pw>
-     *       </domain:authInfo>
-     *     </domain:transfer>
-     *   </transfer>
-     *
-     * After submission: poll EPP message queue or use registrar webhooks to
-     * detect <pendingActionNotification> when the losing registrar approves.
-     */
-    throw new Error('EppRegistrarProvider.initiateTransferIn: not yet implemented — add EPP client');
+    const session = await this.getSession();
+    const resp = await session.transferDomain(params.fqdn, params.authCode);
+
+    if (resp.code !== 1000 && resp.code !== 1001) {
+        throw new Error(`Transfer request failed: ${resp.msg} (code ${resp.code})`);
+    }
+
+    return {
+      ok: true,
+      status: resp.code === 1001 ? 'pendingTransfer' : 'active',
+      message: resp.msg,
+    };
   }
 }

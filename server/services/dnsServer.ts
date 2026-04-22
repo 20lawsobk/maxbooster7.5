@@ -27,6 +27,26 @@ import { eq, and } from 'drizzle-orm';
 import { db } from '../db.js';
 import { storefrontDomains, dnsZoneRecords, dnsZones } from '@shared/schema';
 import { logger } from '../logger.js';
+import {
+  getOrCreateKeys,
+  makeDS,
+  makeDnskeyData,
+  signRRset,
+  buildNSEC3,
+  buildTypeBitmap,
+  zoneSalt,
+  encodeNameWire,
+  nsec3Rdata,
+  nsec3ParamRdata,
+  NSEC3_ITERATIONS,
+  RRTYPE_A, RRTYPE_NS, RRTYPE_SOA, RRTYPE_MX, RRTYPE_TXT,
+  RRTYPE_AAAA, RRTYPE_DNSKEY, RRTYPE_DS, RRTYPE_RRSIG,
+  RRTYPE_NSEC3, RRTYPE_NSEC3PAR, RRTYPE_CAA,
+} from './dnssec.js';
+import { resolveGeoIP, getGeoDnsStatus } from './geoDns.js';
+
+// ── Feature flags ─────────────────────────────────────────────────────────────
+const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === 'true';
 
 const {
   Packet,
@@ -51,6 +71,10 @@ const SERIAL = parseInt(new Date().toISOString().slice(0, 10).replace(/-/g, '') 
 let customDomainCache = new Set<string>();
 let cacheLastRefreshed = 0;
 const CACHE_TTL_MS = 60_000;
+
+// Multi-region metrics
+let queryCount = 0;
+export const getQueryCount = () => queryCount;
 
 async function refreshCustomDomainCache(): Promise<void> {
   try {
@@ -185,6 +209,7 @@ function makeA(name: string, ip: string) {
 // ─── Request handler ──────────────────────────────────────────────────────────
 
 async function handleRequest(request: any, send: (response: any) => void): Promise<void> {
+  queryCount++;
   const response = Packet.createResponseFromRequest(request);
   response.header.aa = 0; // default: not authoritative
 
@@ -218,9 +243,14 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
   response.header.aa = 1; // we are authoritative
 
   switch (qtype) {
-    case Packet.TYPE.A:
-      response.answers.push(makeA(name, DNS_SERVER_IP));
+    case Packet.TYPE.A: {
+      const ip = await resolveGeoIP(
+        (request as any)._rawBuffer ?? Buffer.alloc(0),
+        (request as any)._srcIp,
+      );
+      response.answers.push(makeA(name, ip));
       break;
+    }
 
     case Packet.TYPE.SOA:
       response.answers.push(makeSOA(zone));
@@ -340,6 +370,16 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
         cpu:   'ANY obsoleted per RFC 8482',
         os:    '',
       });
+      break;
+
+    case 48: /* DNSKEY */
+    case 43: /* DS */
+    case 46: /* RRSIG */
+    case 50: /* NSEC3 */
+    case 51: /* NSEC3PARAM */
+      // These are handled in processQuery via dns-packet when DNSSEC is enabled.
+      // For UDP/TCP server, return SOA in authority (validator will use DoH).
+      response.authorities.push(makeSOA(zone));
       break;
 
     default:
@@ -470,10 +510,8 @@ export function getDNSInfo() {
     port:        DNS_PORT,
     upstream:    UPSTREAM_DNS,
     nameservers: [`ns1.${BASE_DOMAIN}`, `ns2.${BASE_DOMAIN}`],
-    /**
-     * Instructions shown to users after claiming a custom domain.
-     * Matches the exact flow that Cloudflare / Namecheap present.
-     */
+    dnssec:      { enabled: DNSSEC_ENABLED },
+    geodns:      getGeoDnsStatus(),
     customDomainSetup: {
       step1: 'Log into your domain registrar (GoDaddy, Namecheap, Google Domains, etc.)',
       step2: 'Find "Nameservers" or "DNS Settings" for your domain.',
@@ -510,6 +548,495 @@ export interface DohQueryResult {
   rcode:   number;
 }
 
+// ── DNS wire-format helpers ───────────────────────────────────────────────────
+
+/** Parse query type from raw DNS wire buffer (question section). */
+function parseQueryType(buf: Buffer): number {
+  if (buf.length < 12) return 0;
+  let offset = 12;
+  // Skip QNAME
+  while (offset < buf.length) {
+    const len = buf[offset++];
+    if (len === 0) break;
+    if ((len & 0xC0) === 0xC0) { offset++; break; }
+    offset += len;
+  }
+  if (offset + 2 > buf.length) return 0;
+  return buf.readUInt16BE(offset);
+}
+
+/** Parse query TX ID from wire buffer. */
+function parseTxId(buf: Buffer): number {
+  return buf.length >= 2 ? buf.readUInt16BE(0) : 0;
+}
+
+/** Parse query name from wire buffer (returns lowercase FQDN). */
+function parseQueryName(buf: Buffer): string {
+  if (buf.length < 12) return '';
+  let offset = 12;
+  const labels: string[] = [];
+  while (offset < buf.length) {
+    const len = buf[offset++];
+    if (len === 0) break;
+    if ((len & 0xC0) === 0xC0) break; // pointer — skip
+    labels.push(buf.slice(offset, offset + len).toString('ascii').toLowerCase());
+    offset += len;
+  }
+  return labels.join('.');
+}
+
+/** Check whether the DO (DNSSEC OK) bit is set in an OPT record. */
+function parseDOBit(buf: Buffer): boolean {
+  if (buf.length < 12) return false;
+  const arCount = buf.readUInt16BE(10);
+  if (arCount === 0) return false;
+
+  // Scan additional section looking for OPT (type 41)
+  let offset = 12;
+  const qdCount = buf.readUInt16BE(4);
+  const anCount = buf.readUInt16BE(6);
+  const nsCount = buf.readUInt16BE(8);
+
+  // Skip question section
+  for (let i = 0; i < qdCount; i++) {
+    while (offset < buf.length) {
+      const len = buf[offset++];
+      if (len === 0) break;
+      if ((len & 0xC0) === 0xC0) { offset++; break; }
+      offset += len;
+    }
+    offset += 4;
+  }
+  // Skip answer + authority sections
+  const skipCount = anCount + nsCount;
+  for (let i = 0; i < skipCount; i++) {
+    const noff = skipNameOffset(buf, offset);
+    if (noff === -1) return false;
+    if (noff + 10 > buf.length) return false;
+    const rdlen = buf.readUInt16BE(noff + 8);
+    offset = noff + 10 + rdlen;
+  }
+  // Parse additional section
+  for (let i = 0; i < arCount; i++) {
+    const noff = skipNameOffset(buf, offset);
+    if (noff === -1) return false;
+    if (noff + 10 > buf.length) return false;
+    const rrType = buf.readUInt16BE(noff);
+    const extRcode = buf.readUInt32BE(noff + 4); // TTL field in OPT = extended rcode + flags
+    const rdlen = buf.readUInt16BE(noff + 8);
+    if (rrType === 41) {
+      // DO bit is bit 15 of the second half of TTL field (extended flags)
+      return (extRcode & 0x00008000) !== 0;
+    }
+    offset = noff + 10 + rdlen;
+  }
+  return false;
+}
+
+function skipNameOffset(buf: Buffer, offset: number): number {
+  while (offset < buf.length) {
+    const len = buf[offset];
+    if (len === 0) return offset + 1;
+    if ((len & 0xC0) === 0xC0) return offset + 2;
+    offset += 1 + len;
+  }
+  return -1;
+}
+
+/** Convert a dns2 answer record's payload to raw RDATA Buffer for DNSSEC signing. */
+function recordToRdata(rr: any): Buffer | null {
+  try {
+    switch (rr.type) {
+      case 1: { // A
+        const parts = (rr.address as string).split('.').map(Number);
+        return Buffer.from(parts);
+      }
+      case 28: { // AAAA
+        const addr = (rr.address as string);
+        const groups = expandIPv6Full(addr);
+        const buf = Buffer.alloc(16);
+        for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
+        return buf;
+      }
+      case 2: { // NS
+        return encodeNameWire(rr.ns);
+      }
+      case 5: { // CNAME
+        return encodeNameWire(rr.domain);
+      }
+      case 6: { // SOA
+        const mname = encodeNameWire(rr.primary);
+        const rname = encodeNameWire(rr.admin);
+        const rest  = Buffer.alloc(20);
+        rest.writeUInt32BE(rr.serial,     0);
+        rest.writeUInt32BE(rr.refresh,    4);
+        rest.writeUInt32BE(rr.retry,      8);
+        rest.writeUInt32BE(rr.expiration, 12);
+        rest.writeUInt32BE(rr.minimum,    16);
+        return Buffer.concat([mname, rname, rest]);
+      }
+      case 15: { // MX
+        const prio = Buffer.alloc(2);
+        prio.writeUInt16BE(rr.priority ?? 10, 0);
+        return Buffer.concat([prio, encodeNameWire(rr.exchange ?? rr.value ?? '')]);
+      }
+      case 16: { // TXT
+        const str = Buffer.from(rr.data ?? rr.value ?? '');
+        const len = Buffer.alloc(1);
+        len[0] = str.length;
+        return Buffer.concat([len, str]);
+      }
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
+function expandIPv6Full(addr: string): number[] {
+  if (addr.includes('::')) {
+    const [left, right] = addr.split('::');
+    const l = left  ? left.split(':')  : [];
+    const r = right ? right.split(':') : [];
+    const missing = 8 - l.length - r.length;
+    const middle = Array(missing).fill('0');
+    return [...l, ...middle, ...r].map(g => parseInt(g || '0', 16));
+  }
+  return addr.split(':').map(g => parseInt(g, 16));
+}
+
+// Type name map for RRSIG typeCovered field
+const TYPE_NAMES: Record<number, string> = {
+  1: 'A', 2: 'NS', 5: 'CNAME', 6: 'SOA', 15: 'MX', 16: 'TXT',
+  28: 'AAAA', 43: 'DS', 46: 'RRSIG', 47: 'NSEC', 48: 'DNSKEY',
+  50: 'NSEC3', 51: 'NSEC3PARAM', 257: 'CAA',
+};
+
+// ── DNSSEC response builder (dns-packet based) ────────────────────────────────
+
+/**
+ * Build a DNSKEY response using dns-packet, bypassing dns2.
+ */
+async function buildDnskeyResponse(
+  queryBuf: Buffer,
+  zone:     string,
+): Promise<DohQueryResult> {
+  const dnsPacket = (await import('dns-packet')).default;
+  const txId = parseTxId(queryBuf);
+  const qname = parseQueryName(queryBuf);
+
+  // Don't serve DNSKEY if zone doesn't match
+  const isAuth = await isAuthoritative(qname);
+  if (!isAuth) {
+    const buf = dnsPacket.encode({
+      type: 'response', id: txId,
+      flags: dnsPacket.AUTHORITATIVE_ANSWER,
+      questions: [{ type: 'DNSKEY', name: qname, class: 'IN' }],
+      authorities: [buildSoaForDnsPacket(zone)],
+    });
+    return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
+  }
+
+  const keys = await getOrCreateKeys(zone);
+  if (!keys) {
+    return buildServfailResponse(txId);
+  }
+
+  const { ksk, zsk } = keys;
+  const kskData = makeDnskeyData(ksk);
+  const zskData = makeDnskeyData(zsk);
+
+  const dnskeyRdatas: Buffer[] = [
+    buildDnskeyRdata(ksk.flags, ksk.publicKeyRaw),
+    buildDnskeyRdata(zsk.flags, zsk.publicKeyRaw),
+  ];
+
+  // Sign DNSKEY RRset with KSK (per RFC 4035 §2.2)
+  const rrsig = signRRset(
+    'DNSKEY', RRTYPE_DNSKEY, zone, TTL_NS,
+    dnskeyRdatas, ksk.privateKeyPem, ksk.keyTag, zone,
+  );
+
+  const answers: any[] = [
+    { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: kskData },
+    { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: zskData },
+    { type: 'RRSIG',  name: zone, ttl: TTL_NS, data: rrsig   },
+  ];
+
+  const buf = dnsPacket.encode({
+    type: 'response', id: txId,
+    flags: dnsPacket.AUTHORITATIVE_ANSWER | dnsPacket.AUTHENTIC_DATA,
+    questions: [{ type: 'DNSKEY', name: zone, class: 'IN' }],
+    answers,
+  });
+
+  return { buffer: buf, minTtl: TTL_NS, rcode: 0 };
+}
+
+/** Build DNSKEY RDATA buffer: flags(2) + protocol(1)=3 + algorithm(1) + key(N) */
+function buildDnskeyRdata(flags: number, publicKeyRaw: Buffer): Buffer {
+  const buf = Buffer.alloc(4 + publicKeyRaw.length);
+  buf.writeUInt16BE(flags, 0);
+  buf.writeUInt8(3, 2);          // protocol = 3 (DNSSEC)
+  buf.writeUInt8(13, 3);         // algorithm = ECDSAP256SHA256
+  publicKeyRaw.copy(buf, 4);
+  return buf;
+}
+
+/**
+ * Build a DS response using dns-packet.
+ */
+async function buildDSResponse(
+  queryBuf: Buffer,
+  zone:     string,
+): Promise<DohQueryResult> {
+  const dnsPacket = (await import('dns-packet')).default;
+  const txId  = parseTxId(queryBuf);
+  const qname = parseQueryName(queryBuf);
+  const isAuth = await isAuthoritative(qname);
+
+  if (!isAuth) {
+    const buf = dnsPacket.encode({
+      type: 'response', id: txId,
+      flags: dnsPacket.AUTHORITATIVE_ANSWER,
+      questions: [{ type: 'DS', name: qname, class: 'IN' }],
+      authorities: [buildSoaForDnsPacket(zone)],
+    });
+    return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
+  }
+
+  const keys = await getOrCreateKeys(zone);
+  if (!keys) {
+    return buildServfailResponse(txId);
+  }
+
+  const dsData = makeDS(keys.ksk);
+
+  // Sign DS record with ZSK (DS is a regular zone record, signed by ZSK)
+  const dsRdata = buildDSRdata(dsData);
+  const rrsig = signRRset(
+    'DS', RRTYPE_DS, zone, TTL_NS,
+    [dsRdata], keys.zsk.privateKeyPem, keys.zsk.keyTag, zone,
+  );
+
+  const buf = dnsPacket.encode({
+    type: 'response', id: txId,
+    flags: dnsPacket.AUTHORITATIVE_ANSWER | dnsPacket.AUTHENTIC_DATA,
+    questions: [{ type: 'DS', name: zone, class: 'IN' }],
+    answers: [
+      { type: 'DS',    name: zone, ttl: TTL_NS, data: dsData },
+      { type: 'RRSIG', name: zone, ttl: TTL_NS, data: rrsig  },
+    ],
+  });
+
+  return { buffer: buf, minTtl: TTL_NS, rcode: 0 };
+}
+
+/** Build DS RDATA: keyTag(2) + algorithm(1) + digestType(1) + digest(32) */
+function buildDSRdata(ds: { keyTag: number; algorithm: number; digestType: number; digest: Buffer }): Buffer {
+  const buf = Buffer.alloc(4 + ds.digest.length);
+  buf.writeUInt16BE(ds.keyTag, 0);
+  buf.writeUInt8(ds.algorithm, 2);
+  buf.writeUInt8(ds.digestType, 3);
+  ds.digest.copy(buf, 4);
+  return buf;
+}
+
+/**
+ * Build an NSEC3PARAM response (used by validators to discover NSEC3 parameters).
+ */
+async function buildNsec3ParamResponse(
+  queryBuf: Buffer,
+  zone:     string,
+): Promise<DohQueryResult> {
+  const dnsPacket = (await import('dns-packet')).default;
+  const txId = parseTxId(queryBuf);
+  const salt = zoneSalt(zone);
+
+  const rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
+  const keys = await getOrCreateKeys(zone);
+
+  const answers: any[] = [{
+    type: 'UNKNOWN_51', name: zone, ttl: TTL_SOA,
+    data: { type: 51, data: rdata },
+  }];
+
+  // For now return as raw — dns-packet may not support NSEC3PARAM natively
+  // So we build the wire format manually
+  const buf = buildRawResponse(txId, zone, 51 /* NSEC3PARAM */, rdata, 0x8400 /* QR+AA */);
+  return { buffer: buf, minTtl: TTL_SOA, rcode: 0 };
+}
+
+/** Minimal SOA record for dns-packet format. */
+function buildSoaForDnsPacket(zone: string): any {
+  return {
+    type: 'SOA', name: zone, ttl: TTL_SOA,
+    data: {
+      mname:   PLATFORM_NS,
+      rname:   `hostmaster.${BASE_DOMAIN}`,
+      serial:  SERIAL,
+      refresh: 10800,
+      retry:   3600,
+      expire:  604800,
+      minimum: 3600,
+    },
+  };
+}
+
+/** Build a SERVFAIL response. */
+function buildServfailResponse(txId: number): DohQueryResult {
+  const buf = Buffer.alloc(12);
+  buf.writeUInt16BE(txId, 0);
+  buf.writeUInt16BE(0x8182, 2); // QR=1, AA=1, RCODE=2 (SERVFAIL)
+  return { buffer: buf, minTtl: 0, rcode: 2 };
+}
+
+/**
+ * Build a minimal raw DNS wire response for record types dns-packet doesn't support natively.
+ */
+function buildRawResponse(txId: number, ownerName: string, rrType: number, rdata: Buffer, flags: number): Buffer {
+  const ownerWire = encodeNameWire(ownerName);
+  const rrHeader = Buffer.alloc(10);
+  rrHeader.writeUInt16BE(rrType, 0);
+  rrHeader.writeUInt16BE(1, 2);           // CLASS IN
+  rrHeader.writeUInt32BE(TTL_SOA, 4);     // TTL
+  rrHeader.writeUInt16BE(rdata.length, 8);
+
+  const dnsHeader = Buffer.alloc(12);
+  dnsHeader.writeUInt16BE(txId, 0);
+  dnsHeader.writeUInt16BE(flags, 2);
+  dnsHeader.writeUInt16BE(0, 4);   // QDCOUNT=0
+  dnsHeader.writeUInt16BE(1, 6);   // ANCOUNT=1
+  dnsHeader.writeUInt16BE(0, 8);   // NSCOUNT=0
+  dnsHeader.writeUInt16BE(0, 10);  // ARCOUNT=0
+
+  return Buffer.concat([dnsHeader, ownerWire, rrHeader, rdata]);
+}
+
+/**
+ * Add RRSIG records to a dns2 wire response for any answered RRsets.
+ * Parses the wire response, signs each answer RRset, and re-encodes.
+ */
+async function addDNSSECSignatures(
+  wireResponse: Buffer,
+  zone:         string,
+  qname:        string,
+): Promise<Buffer> {
+  const dnsPacket = await import('dns-packet');
+  let parsed: any;
+  try {
+    parsed = dnsPacket.decode(wireResponse);
+  } catch {
+    return wireResponse; // Can't parse — return as-is
+  }
+
+  const keys = await getOrCreateKeys(zone);
+  if (!keys) return wireResponse;
+
+  const { zsk } = keys;
+  const rrsigs: any[] = [];
+
+  // Group answers by type (all same owner/type = one RRset)
+  const byType = new Map<number, any[]>();
+  for (const rr of (parsed.answers ?? [])) {
+    const t = rr.type;
+    if (!byType.has(t)) byType.set(t, []);
+    byType.get(t)!.push(rr);
+  }
+
+  for (const [rrTypeStr, rrs] of byType) {
+    const rrTypeNum = typeof rrTypeStr === 'number' ? rrTypeStr : parseInt(rrTypeStr, 10);
+    if (!isFinite(rrTypeNum)) continue;
+
+    const rdatas = rrs.map((rr: any) => {
+      // dns-packet decoded records have a 'data' field
+      // We need to convert back to rdata buffer for signing
+      return rrdataFromDnsPacket(rrTypeNum, rr.data ?? rr);
+    }).filter((r: Buffer | null) => r !== null) as Buffer[];
+
+    if (rdatas.length === 0) continue;
+
+    const typeName = TYPE_NAMES[rrTypeNum] ?? String(rrTypeNum);
+    const ownerName = rrs[0].name ?? qname;
+    const ttl = rrs[0].ttl ?? TTL_A;
+
+    try {
+      const rrsig = signRRset(
+        typeName, rrTypeNum, ownerName, ttl,
+        rdatas, zsk.privateKeyPem, zsk.keyTag, zone,
+      );
+      rrsigs.push({ type: 'RRSIG', name: ownerName, ttl, data: rrsig });
+    } catch (err: any) {
+      logger.warn({ err: err.message, typeName }, '[DNSSEC] Failed to sign RRset');
+    }
+  }
+
+  if (rrsigs.length === 0) return wireResponse;
+
+  // Re-encode with RRSIG records added
+  try {
+    const newPacket = {
+      ...parsed,
+      flags: (parsed.flags ?? 0) | dnsPacket.AUTHENTIC_DATA,
+      answers: [...(parsed.answers ?? []), ...rrsigs],
+    };
+    return dnsPacket.encode(newPacket);
+  } catch {
+    return wireResponse;
+  }
+}
+
+/** Convert a dns-packet decoded record's data to RDATA buffer for signing. */
+function rrdataFromDnsPacket(rrType: number, data: any): Buffer | null {
+  try {
+    switch (rrType) {
+      case 1: { // A
+        const addr = typeof data === 'string' ? data : data.address;
+        return Buffer.from(addr.split('.').map(Number));
+      }
+      case 28: { // AAAA
+        const addr = typeof data === 'string' ? data : data.address;
+        const groups = expandIPv6Full(addr);
+        const buf = Buffer.alloc(16);
+        for (let i = 0; i < 8; i++) buf.writeUInt16BE(groups[i], i * 2);
+        return buf;
+      }
+      case 2: case 5: { // NS, CNAME
+        const name = typeof data === 'string' ? data : (data.ns ?? data.value ?? '');
+        return encodeNameWire(name);
+      }
+      case 6: { // SOA
+        const mname = encodeNameWire(data.mname ?? data.primary ?? '');
+        const rname = encodeNameWire(data.rname ?? data.admin ?? '');
+        const rest  = Buffer.alloc(20);
+        rest.writeUInt32BE(data.serial ?? 0,     0);
+        rest.writeUInt32BE(data.refresh ?? 0,    4);
+        rest.writeUInt32BE(data.retry ?? 0,      8);
+        rest.writeUInt32BE(data.expire ?? 0,    12);
+        rest.writeUInt32BE(data.minimum ?? 0,   16);
+        return Buffer.concat([mname, rname, rest]);
+      }
+      case 15: { // MX
+        const prio = Buffer.alloc(2);
+        prio.writeUInt16BE(data.preference ?? data.priority ?? 10, 0);
+        const xchg = encodeNameWire(data.exchange ?? data.value ?? '');
+        return Buffer.concat([prio, xchg]);
+      }
+      case 16: { // TXT
+        const str = Buffer.from(typeof data === 'string' ? data : (data.data ?? data.value ?? ''));
+        const len = Buffer.alloc(1);
+        len[0] = Math.min(str.length, 255);
+        return Buffer.concat([len, str.slice(0, 255)]);
+      }
+      default:
+        return null;
+    }
+  } catch {
+    return null;
+  }
+}
+
 /**
  * processQuery — DoH entry point.
  *
@@ -517,21 +1044,72 @@ export interface DohQueryResult {
  * runs it through the same authoritative handleRequest() pipeline used by
  * the UDP/TCP server, and returns a DohQueryResult.
  *
+ * DNSSEC: when DNSSEC_ENABLED=true:
+ *   - DNSKEY (type 48) queries → served with dns-packet, signed by KSK
+ *   - DS     (type 43) queries → served with dns-packet, signed by ZSK
+ *   - DO-bit queries           → RRSIG added to answer RRsets
+ *
+ * GeoDNS: when GEODNS_ENABLED=true:
+ *   - A record answer IP is chosen based on client's geographic location
+ *   - ECS (EDNS Client Subnet) is parsed from the query for accuracy
+ *
  * The VPS proxy (AdGuard dnsproxy or the Node.js fallback) calls:
- *   POST https://maxbooster.replit.app/api/dns/query
+ *   POST https://max-booster.com/api/dns/query
  *   Content-Type: application/dns-message
  */
-export async function processQuery(queryBuffer: Buffer): Promise<DohQueryResult> {
+export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise<DohQueryResult> {
   let request: any;
   try {
     request = Packet.parse(queryBuffer);
   } catch {
     // Malformed query — return a FORMERR response with zeroed header
     const servfail = Buffer.alloc(12);
-    servfail.writeUInt16BE(0, 0);          // txid = 0
-    servfail.writeUInt16BE(0x8001, 2);     // QR=1, RCODE=1 (FORMERR)
+    servfail.writeUInt16BE(0, 0);
+    servfail.writeUInt16BE(0x8001, 2); // QR=1, RCODE=1 (FORMERR)
     return { buffer: servfail, minTtl: 0, rcode: 1 };
   }
+
+  // Attach raw buffer + source IP to request for GeoDNS use in handleRequest
+  (request as any)._rawBuffer = queryBuffer;
+  (request as any)._srcIp    = srcIp;
+
+  // ── DNSSEC special query types (served directly, bypass dns2) ──────────────
+  if (DNSSEC_ENABLED) {
+    const qtype  = parseQueryType(queryBuffer);
+    const qname  = parseQueryName(queryBuffer);
+    const isBase = qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
+    const zone   = isBase ? BASE_DOMAIN : qname.split('.').slice(-2).join('.');
+
+    if (qtype === 48 /* DNSKEY */) {
+      try {
+        return await buildDnskeyResponse(queryBuffer, zone);
+      } catch (err: any) {
+        logger.warn({ err: err.message }, '[DNSSEC] DNSKEY response failed');
+        return buildServfailResponse(parseTxId(queryBuffer));
+      }
+    }
+
+    if (qtype === 43 /* DS */) {
+      try {
+        return await buildDSResponse(queryBuffer, zone);
+      } catch (err: any) {
+        logger.warn({ err: err.message }, '[DNSSEC] DS response failed');
+        return buildServfailResponse(parseTxId(queryBuffer));
+      }
+    }
+
+    if (qtype === 51 /* NSEC3PARAM */) {
+      try {
+        return await buildNsec3ParamResponse(queryBuffer, zone);
+      } catch (err: any) {
+        logger.warn({ err: err.message }, '[DNSSEC] NSEC3PARAM response failed');
+        return buildServfailResponse(parseTxId(queryBuffer));
+      }
+    }
+  }
+
+  // ── Regular query through dns2 pipeline ───────────────────────────────────
+  const dobit = DNSSEC_ENABLED && parseDOBit(queryBuffer);
 
   return new Promise<DohQueryResult>((resolve, reject) => {
     const timeout = setTimeout(
@@ -539,27 +1117,37 @@ export async function processQuery(queryBuffer: Buffer): Promise<DohQueryResult>
       5000,
     );
 
-    handleRequest(request, (response: any) => {
+    handleRequest(request, async (response: any) => {
       clearTimeout(timeout);
       try {
-        // Serialize to wire format
+        // Serialize dns2 response to wire format
         let buffer: Buffer;
         if (typeof response.toBuffer === 'function') {
           buffer = Buffer.from(response.toBuffer());
         } else {
-          // Safety fallback: upstream Packet object may have a different shape.
-          // Re-wrap into a proper response packet so toBuffer() is available.
           const wrapper = Packet.createResponseFromRequest(request);
-          wrapper.header.rcode      = response.header?.rcode ?? 0;
-          wrapper.header.aa         = response.header?.aa ?? 0;
-          wrapper.answers           = response.answers    || [];
-          wrapper.authorities       = response.authorities || [];
-          wrapper.additionals       = response.additionals || [];
+          wrapper.header.rcode   = response.header?.rcode ?? 0;
+          wrapper.header.aa      = response.header?.aa ?? 0;
+          wrapper.answers        = response.answers    || [];
+          wrapper.authorities    = response.authorities || [];
+          wrapper.additionals    = response.additionals || [];
           buffer = Buffer.from(wrapper.toBuffer());
           response = wrapper;
         }
 
-        // Compute minimum TTL for Cache-Control (RFC 8484 §5.1)
+        // ── Add DNSSEC RRSIG records when DO bit is set ───────────────────
+        if (dobit) {
+          try {
+            const qname  = parseQueryName(queryBuffer);
+            const isBase = qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
+            const zone   = isBase ? BASE_DOMAIN : qname.split('.').slice(-2).join('.');
+            buffer = await addDNSSECSignatures(buffer, zone, qname);
+          } catch (err: any) {
+            logger.warn({ err: err.message }, '[DNSSEC] Signature addition failed (continuing without RRSIG)');
+          }
+        }
+
+        // ── Compute Cache-Control TTL (RFC 8484 §5.1) ────────────────────
         const allRRs: any[] = [
           ...(response.answers     || []),
           ...(response.authorities || []),

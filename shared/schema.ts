@@ -5645,3 +5645,33 @@ export const insertDomainEventSchema = createInsertSchema(domainEvents).omit({
 });
 export type DomainEvent = typeof domainEvents.$inferSelect;
 export type InsertDomainEvent = z.infer<typeof insertDomainEventSchema>;
+
+// ============================================================================
+// DNSSEC KEYS — KSK + ZSK key pairs per zone (ECDSAP256SHA256 / alg 13)
+// ============================================================================
+export const dnssecKeys = pgTable("dnssec_keys", {
+  id:            varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  zone:          varchar("zone", { length: 253 }).notNull(),
+  isKsk:         boolean("is_ksk").notNull().default(false),
+  algorithm:     integer("algorithm").notNull().default(13),  // ECDSAP256SHA256
+  flags:         integer("flags").notNull(),  // 257=KSK, 256=ZSK
+  keyTag:        integer("key_tag").notNull(),
+  privateKeyPem: text("private_key_pem").notNull(),
+  publicKeyPem:  text("public_key_pem").notNull(),
+  /** Raw 64-byte public key stored as base64 (x||y, no 0x04 prefix) */
+  publicKeyRaw:  text("public_key_raw").notNull(),
+  /** NSEC3 salt for this zone (8 bytes, hex-encoded) */
+  nsec3Salt:     varchar("nsec3_salt", { length: 32 }),
+  active:        boolean("active").notNull().default(true),
+  createdAt:     timestamp("created_at").defaultNow(),
+  expiresAt:     timestamp("expires_at"),
+}, (table) => ({
+  zoneIdx:    index("dnssec_keys_zone_idx").on(table.zone),
+  zoneKskIdx: index("dnssec_keys_zone_ksk_idx").on(table.zone, table.isKsk),
+}));
+
+export const insertDnssecKeySchema = createInsertSchema(dnssecKeys).omit({
+  id: true, createdAt: true,
+});
+export type DnssecKey = typeof dnssecKeys.$inferSelect;
+export type InsertDnssecKey = z.infer<typeof insertDnssecKeySchema>;

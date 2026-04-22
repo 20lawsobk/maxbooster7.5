@@ -3,7 +3,7 @@ import { db } from '../db';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
-import { processQuery, getDNSInfo, type DohQueryResult } from '../services/dnsServer.js';
+import { processQuery, getDNSInfo, getQueryCount, type DohQueryResult } from '../services/dnsServer.js';
 import {
   dnsRecordCache,
   dnsTemplates,
@@ -106,6 +106,21 @@ router.get('/info', (_req, res) => {
 });
 
 /**
+ * GET /api/dns/health
+ * Returns health status, region, and metrics for multi-region monitoring.
+ */
+router.get('/health', (_req, res) => {
+  const info = getDNSInfo();
+  res.json({
+    ok: true,
+    region: process.env.REGION_NAME || 'default',
+    uptime: process.uptime(),
+    queryCount: getQueryCount(),
+    version: process.env.npm_package_version || '1.0.0',
+  });
+});
+
+/**
  * POST /api/dns/query
  * RFC 8484 DNS-over-HTTPS — POST method.
  * Body: raw DNS wire format (Content-Type: application/dns-message)
@@ -130,7 +145,8 @@ router.post('/query', expressRaw({ type: 'application/dns-message', limit: '64kb
       return res.status(400).send('DNS message too short (< 12 bytes)');
     }
 
-    const result = await processQuery(body);
+    const srcIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip;
+    const result = await processQuery(body, srcIp);
     res.set('Content-Type', 'application/dns-message');
     res.set('Cache-Control', dohCacheControl(result));
     res.send(result.buffer);
