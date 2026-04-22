@@ -594,7 +594,10 @@ router.post('/zones/:zoneId/use-as-storefront', async (req, res) => {
     const zone = zoneResult.rows[0];
 
     if (!zone.is_verified) {
-      return res.status(422).json({ error: 'Domain must be verified before it can be used as a storefront URL. Add the verification TXT record and click Check NS first.' });
+      return res.status(422).json({
+        error: 'Ownership of this transferred domain must be verified first. Go to the Setup Guide tab, add the TXT verification record at your current registrar, then click Check Verification.',
+        code: 'TRANSFER_VERIFICATION_REQUIRED',
+      });
     }
 
     // Verify storefront belongs to user

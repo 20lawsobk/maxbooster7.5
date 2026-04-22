@@ -639,10 +639,10 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
                 <div className="flex items-start gap-3">
                   <AlertCircle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Domain not verified yet</p>
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">Transfer verification required</p>
                     <p className="text-xs text-amber-700/80 dark:text-amber-400/70 mt-0.5">
-                      You must verify ownership of <span className="font-mono">{zone.domain}</span> before it can be used as your storefront URL.
-                      Go to the <strong>Setup Guide</strong> tab to add the verification TXT record and check it.
+                      You need to verify ownership of <span className="font-mono">{zone.domain}</span> before it can be used as your storefront URL.
+                      Since this domain was transferred from an external registrar, go to the <strong>Setup Guide</strong> tab, add the TXT record at your current registrar, and click <strong>Check Verification</strong>.
                     </p>
                   </div>
                 </div>
