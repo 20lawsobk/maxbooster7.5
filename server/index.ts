@@ -629,6 +629,16 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`Domain verification worker unavailable: ${e.message}`);
   }
 
+  // Domain lifecycle job — manages expiry states, auto-renewal, and grace periods.
+  // Runs every 6 hours; first run is deferred 2 minutes post-startup.
+  try {
+    const { startDomainLifecycleJob } = await import('./services/domainLifecycleJob.js');
+    startDomainLifecycleJob();
+    logger.info('[domainVerify] Domain lifecycle job started');
+  } catch (e: any) {
+    logger.warn(`Domain lifecycle job unavailable: ${e.message}`);
+  }
+
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
   try {
     const { tfWorkerPool } = await import('./lib/tensorflowWorkerPool.js');

@@ -5596,3 +5596,52 @@ export const insertClaimedDomainSchema = createInsertSchema(claimedDomains).omit
 });
 export type ClaimedDomain = typeof claimedDomains.$inferSelect;
 export type InsertClaimedDomain = z.infer<typeof insertClaimedDomainSchema>;
+
+// ============================================================================
+// DOMAIN CONTACTS — WHOIS / EPP registrant contact objects
+// One user may have multiple contact profiles (registrant, admin, tech, billing)
+// ============================================================================
+export const domainContacts = pgTable("domain_contacts", {
+  id:          varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId:      varchar("user_id").notNull().references(() => users.id),
+  // 'registrant' | 'admin' | 'tech' | 'billing'
+  contactType: varchar("contact_type", { length: 16 }).notNull().default("registrant"),
+  name:        varchar("name",  { length: 256 }).notNull(),
+  org:         varchar("org",   { length: 256 }),
+  email:       varchar("email", { length: 256 }).notNull(),
+  phone:       varchar("phone", { length: 32 }),
+  // { street, city, state, postalCode, country }
+  address:     jsonb("address"),
+  isDefault:   boolean("is_default").notNull().default(false),
+  createdAt:   timestamp("created_at").defaultNow(),
+  updatedAt:   timestamp("updated_at").defaultNow(),
+});
+
+export const insertDomainContactSchema = createInsertSchema(domainContacts).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type DomainContact = typeof domainContacts.$inferSelect;
+export type InsertDomainContact = z.infer<typeof insertDomainContactSchema>;
+
+// ============================================================================
+// DOMAIN EVENTS — Immutable event ledger for domain lifecycle audit trail
+// ============================================================================
+export const domainEvents = pgTable("domain_events", {
+  id:        varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  // References claimed_domains.id (no FK to allow retention after domain deleted)
+  domainId:  varchar("domain_id").notNull(),
+  userId:    varchar("user_id").notNull().references(() => users.id),
+  // DomainRegistered | DomainRenewed | DomainReleased | DomainExpiringSoon |
+  // DomainEnteredGrace | DomainExpired | DomainTransferInitiated |
+  // DomainNameserversUpdated | QuotaEnforced | SubscriptionCouplingUpdated | ...
+  eventType: varchar("event_type", { length: 64 }).notNull(),
+  fqdn:      varchar("fqdn",       { length: 253 }).notNull(),
+  metadata:  jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertDomainEventSchema = createInsertSchema(domainEvents).omit({
+  id: true, createdAt: true,
+});
+export type DomainEvent = typeof domainEvents.$inferSelect;
+export type InsertDomainEvent = z.infer<typeof insertDomainEventSchema>;
