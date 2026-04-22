@@ -1230,7 +1230,7 @@ export class StorefrontService {
     customDomain?: string | null;
     isCustomDomainActive?: boolean;
   }): string {
-    const baseDomain = process.env.REPLIT_DEPLOYMENT_URL || process.env.REPLIT_DEV_DOMAIN || 'maxbooster.app';
+    const baseDomain = process.env.BASE_DOMAIN || 'max-booster.com';
 
     if (storefront.customDomain && storefront.isCustomDomainActive) {
       return `https://${storefront.customDomain}`;
@@ -1240,7 +1240,7 @@ export class StorefrontService {
       return `https://${storefront.subdomain}.${baseDomain}`;
     }
 
-    return `https://${baseDomain}/store/${storefront.slug}`;
+    return `https://${baseDomain}/storefront/${storefront.slug}`;
   }
 }
 
