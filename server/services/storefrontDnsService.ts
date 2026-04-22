@@ -368,7 +368,7 @@ export async function attachDomainToStorefront(
       [zoneId, userId, domain, DNS_SERVER_IP],
     );
 
-    // www CNAME → storefrontId.maxbooster.replit.app (for CNAME verification)
+    // www CNAME → storefrontId.max-booster.com (for CNAME verification)
     await client.query(
       `INSERT INTO dns_zone_records (zone_id, user_id, domain, type, name, value, ttl)
        VALUES ($1,$2,$3,'CNAME','www',$4,300) ON CONFLICT DO NOTHING`,

@@ -491,8 +491,8 @@ export const dnsZones = pgTable("dns_zones", {
   status: text("status").notNull().default("pending"), // 'pending' | 'active' | 'suspended'
   verificationToken: text("verification_token").default(sql`gen_random_uuid()`),
   isVerified: boolean("is_verified").default(false),
-  nameserver1: text("nameserver1").default("maxbooster.replit.app"),
-  nameserver2: text("nameserver2").default("maxbooster.replit.app"),
+  nameserver1: text("nameserver1").default("ns1.max-booster.com"),
+  nameserver2: text("nameserver2").default("ns2.max-booster.com"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -5578,8 +5578,8 @@ export const claimedDomains = pgTable("claimed_domains", {
   // 'pending' | 'active' | 'expired' | 'transferring' | 'platform_managed'
   registrarOrderId:  varchar("registrar_order_id", { length: 256 }),
   registrarName:     varchar("registrar_name", { length: 64 }).default("maxbooster"),
-  nameserver1:       varchar("nameserver1", { length: 253 }).default("maxbooster.replit.app"),
-  nameserver2:       varchar("nameserver2", { length: 253 }).default("maxbooster.replit.app"),
+  nameserver1:       varchar("nameserver1", { length: 253 }).default("ns1.max-booster.com"),
+  nameserver2:       varchar("nameserver2", { length: 253 }).default("ns2.max-booster.com"),
   expiresAt:         timestamp("expires_at"),
   yearsRegistered:   integer("years_registered").default(1),
   autoRenew:         boolean("auto_renew").notNull().default(true),
