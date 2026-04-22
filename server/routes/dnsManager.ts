@@ -668,6 +668,147 @@ router.post('/zones/:zoneId/use-as-storefront', async (req, res) => {
 });
 
 /**
+ * GET /api/dns-manager/zones/:zoneId/export
+ * Export all DNS records for this zone as a BIND-format zone file.
+ * Returns { zoneText, filename } so the client can trigger a download.
+ */
+router.get('/zones/:zoneId/export', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
+
+    const recordsResult = await pool.query(
+      'SELECT * FROM dns_zone_records WHERE zone_id = $1 ORDER BY type, name',
+      [zone.id]
+    );
+    const records: ReturnType<typeof mapRecord>[] = recordsResult.rows.map(mapRecord);
+
+    const now   = new Date();
+    const serial = now.toISOString().slice(0, 10).replace(/-/g, '') + '01';
+    const origin = zone.domain.endsWith('.') ? zone.domain : `${zone.domain}.`;
+
+    function fqdn(name: string): string {
+      if (name === '@' || name === '') return '@';
+      if (name.endsWith('.')) return name;
+      return name.includes('.') && !name.endsWith(zone.domain) ? `${name}.` : name;
+    }
+
+    function fqdnVal(val: string, type: string): string {
+      if (['NS', 'CNAME', 'MX', 'SRV'].includes(type)) {
+        return val.endsWith('.') ? val : `${val}.`;
+      }
+      if (type === 'TXT') return `"${val.replace(/"/g, '\\"')}"`;
+      return val;
+    }
+
+    const lines: string[] = [
+      `; Zone file for ${zone.domain}`,
+      `; Exported from Max Booster on ${now.toUTCString()}`,
+      `; `,
+      `; Import this at Cloudflare, Route 53, Namecheap, or any BIND-compatible provider.`,
+      `; Replace or remove the NS records below with your new provider's nameservers.`,
+      ``,
+      `$ORIGIN ${origin}`,
+      `$TTL 3600`,
+      ``,
+      `@   IN  SOA   ${NS1}. hostmaster.${BASE_DOMAIN}. (`,
+      `              ${serial} ; Serial`,
+      `              3600       ; Refresh`,
+      `              900        ; Retry`,
+      `              604800     ; Expire`,
+      `              300 )      ; Minimum TTL`,
+      ``,
+      `; Name servers — replace with your new provider's NS records`,
+      `@   IN  NS    ${NS1}.`,
+      `@   IN  NS    ${NS2}.`,
+      ``,
+      `; ── Your DNS records ─────────────────────────────────────────────────────`,
+    ];
+
+    const userRecords = records.filter(r => !['SOA', 'NS'].includes(r.type));
+    for (const r of userRecords) {
+      const name  = fqdn(r.name).padEnd(24);
+      const ttlStr = String(r.ttl ?? 3600).padEnd(8);
+      const typeStr = r.type.padEnd(6);
+      let valueStr = fqdnVal(r.value, r.type);
+
+      if (r.type === 'MX' && r.priority !== undefined) {
+        valueStr = `${r.priority} ${valueStr}`;
+      } else if (r.type === 'SRV' && r.priority !== undefined) {
+        valueStr = `${r.priority} ${r.weight ?? 0} ${r.port ?? 0} ${valueStr}`;
+      } else if (r.type === 'CAA' && r.tag) {
+        valueStr = `0 ${r.tag} "${r.value}"`;
+      }
+
+      lines.push(`${name} ${ttlStr} IN  ${typeStr} ${valueStr}`);
+    }
+
+    const zoneText = lines.join('\n') + '\n';
+    const filename = `${zone.domain.replace(/\./g, '_')}_zone.txt`;
+
+    res.json({ zoneText, filename, domain: zone.domain, recordCount: userRecords.length });
+  } catch (err: any) {
+    logger.warn({ err }, '[DNS Manager] export error');
+    res.status(500).json({ error: 'Failed to export zone' });
+  }
+});
+
+/**
+ * POST /api/dns-manager/zones/:zoneId/transfer-out
+ * Remove this zone from Max Booster DNS hosting entirely.
+ * Cleans up all records and storefront links.
+ * Returns the zone file export before deletion so the client has a final copy.
+ */
+router.post('/zones/:zoneId/transfer-out', async (req, res) => {
+  try {
+    if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
+    const userId = req.user!.id;
+
+    const zoneResult = await pool.query(
+      'SELECT * FROM dns_zones WHERE id = $1 AND user_id = $2 LIMIT 1',
+      [req.params.zoneId, userId]
+    );
+    if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
+    const zone = mapZone(zoneResult.rows[0]);
+
+    // Clean up storefront links before deleting the zone
+    const linkResult = await pool.query(
+      `SELECT storefront_id FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain' LIMIT 1`,
+      [zone.domain]
+    );
+    const linkedStorefrontId = linkResult.rows[0]?.storefront_id ?? null;
+
+    await pool.query(`DELETE FROM storefront_domains WHERE domain = $1 AND type = 'custom_domain'`, [zone.domain]);
+    await pool.query(`DELETE FROM storefront_hosts WHERE host = $1 OR host = $2`, [zone.domain, `www.${zone.domain}`]);
+
+    if (linkedStorefrontId) {
+      await pool.query(
+        `UPDATE storefronts SET custom_domain = NULL, is_custom_domain_active = false, updated_at = NOW()
+         WHERE id = $1 AND custom_domain = $2`,
+        [linkedStorefrontId, zone.domain]
+      );
+    }
+
+    // Delete all DNS records, then the zone itself
+    await pool.query('DELETE FROM dns_zone_records WHERE zone_id = $1', [zone.id]);
+    await pool.query('DELETE FROM dns_zones WHERE id = $1', [zone.id]);
+
+    logger.info(`[DNS Manager] Zone ${zone.domain} transferred out by user ${userId}`);
+    res.json({ success: true, domain: zone.domain });
+  } catch (err: any) {
+    logger.warn({ err }, '[DNS Manager] transfer-out error');
+    res.status(500).json({ error: 'Failed to transfer out domain' });
+  }
+});
+
+/**
  * DELETE /api/dns-manager/zones/:zoneId/use-as-storefront
  * Remove the link between this zone's domain and any storefront.
  */

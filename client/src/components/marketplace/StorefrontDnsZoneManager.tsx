@@ -65,6 +65,10 @@ import {
   Link2,
   Link2Off,
   ShoppingBag,
+  ArrowUpRight,
+  Download,
+  FileText,
+  TriangleAlert,
 } from 'lucide-react';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -288,9 +292,15 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
   const { toast } = useToast();
   const qc = useQueryClient();
 
-  const [showRecordDialog, setShowRecordDialog] = useState(false);
-  const [editingRecord, setEditingRecord]       = useState<DnsRecord | null>(null);
-  const [rec, setRec]                           = useState(emptyRecord());
+  const [showRecordDialog, setShowRecordDialog]     = useState(false);
+  const [editingRecord, setEditingRecord]           = useState<DnsRecord | null>(null);
+  const [rec, setRec]                               = useState(emptyRecord());
+  const [showTransferOut, setShowTransferOut]       = useState(false);
+  const [transferStep, setTransferStep]             = useState<'export' | 'confirm'>('export');
+  const [zoneFileText, setZoneFileText]             = useState<string | null>(null);
+  const [zoneFilename, setZoneFilename]             = useState('zone.txt');
+  const [loadingExport, setLoadingExport]           = useState(false);
+  const [confirmText, setConfirmText]               = useState('');
 
   const { data: recordsData, isLoading: recordsLoading } = useQuery({
     queryKey: ['/api/dns-manager/zones', zone.id, 'records'],
@@ -370,6 +380,56 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
     onSuccess:  () => { qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] }); onBack(); toast({ title: 'Domain removed' }); },
   });
 
+  const transferOut = useMutation({
+    mutationFn: () => apiRequest('POST', `/api/dns-manager/zones/${zone.id}/transfer-out`).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      setShowTransferOut(false);
+      onBack();
+      toast({ title: 'Domain transferred out', description: `${zone.domain} has been removed from Max Booster DNS.` });
+    },
+    onError: async (err: any) => {
+      let msg = 'Transfer failed';
+      try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+    },
+  });
+
+  async function fetchExport() {
+    setLoadingExport(true);
+    try {
+      const res = await apiRequest('GET', `/api/dns-manager/zones/${zone.id}/export`);
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setZoneFileText(data.zoneText);
+      setZoneFilename(data.filename ?? 'zone.txt');
+    } catch (e: any) {
+      toast({ title: 'Export failed', description: e.message, variant: 'destructive' });
+    } finally {
+      setLoadingExport(false);
+    }
+  }
+
+  function downloadZoneFile() {
+    if (!zoneFileText) return;
+    const blob = new Blob([zoneFileText], { type: 'text/plain' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = zoneFilename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function openTransferDialog() {
+    setTransferStep('export');
+    setZoneFileText(null);
+    setConfirmText('');
+    setShowTransferOut(true);
+    fetchExport();
+  }
+
   function copy(text: string, label: string) {
     navigator.clipboard.writeText(text);
     toast({ title: `Copied ${label}` });
@@ -435,6 +495,10 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
               Check NS
             </Button>
           )}
+          <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs text-amber-600 border-amber-300 hover:bg-amber-50 hover:text-amber-700"
+            onClick={openTransferDialog}>
+            <ArrowUpRight className="w-3 h-3" /> Transfer Out
+          </Button>
           <Button size="sm" variant="ghost" className="gap-1.5 h-7 text-xs text-red-500 hover:text-red-600"
             onClick={() => { if (confirm(`Remove ${zone.domain}?`)) deleteZone.mutate(); }}>
             <Trash2 className="w-3 h-3" /> Remove
@@ -825,6 +889,129 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
               {editingRecord ? 'Save Changes' : 'Add Record'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Transfer Out Dialog ─────────────────────────────────────────── */}
+      <Dialog open={showTransferOut} onOpenChange={open => { setShowTransferOut(open); if (!open) setConfirmText(''); }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <ArrowUpRight className="w-4 h-4 text-amber-600" />
+              Transfer Out — {zone.domain}
+            </DialogTitle>
+            <DialogDescription>
+              Move this domain's DNS to another provider (Cloudflare, Route 53, Namecheap, etc.).
+              Download your records first, then update your nameservers at your registrar.
+            </DialogDescription>
+          </DialogHeader>
+
+          {transferStep === 'export' && (
+            <div className="space-y-4">
+              {/* Step 1 — Export */}
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-3">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary">1</div>
+                  Export your DNS records
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Download a BIND-format zone file containing all your DNS records. You can import this at your new provider to avoid re-entering everything manually.
+                </p>
+                {loadingExport ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Building zone file…
+                  </div>
+                ) : zoneFileText ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={downloadZoneFile}>
+                        <Download className="w-3.5 h-3.5" /> Download Zone File
+                      </Button>
+                      <span className="text-[11px] text-muted-foreground font-mono">{zoneFilename}</span>
+                    </div>
+                    <pre className="text-[10px] font-mono bg-muted rounded p-2 max-h-40 overflow-auto border leading-relaxed whitespace-pre">
+                      {zoneFileText}
+                    </pre>
+                  </div>
+                ) : (
+                  <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={fetchExport}>
+                    <FileText className="w-3.5 h-3.5" /> Generate Zone File
+                  </Button>
+                )}
+              </div>
+
+              {/* Step 2 — Nameserver instructions */}
+              <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm font-semibold">
+                  <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center text-[10px] font-bold text-primary">2</div>
+                  Update nameservers at your registrar
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Log into wherever you registered <span className="font-mono font-semibold">{zone.domain}</span> (GoDaddy, Namecheap, Google Domains, etc.) and change the nameservers to your new provider's NS values. Once propagated (1–48 h), your new provider will serve all DNS.
+                </p>
+                <div className="text-[11px] bg-background border rounded px-3 py-2 font-mono space-y-0.5 text-muted-foreground">
+                  <p>Current NS (Max Booster):</p>
+                  <p className="text-foreground">{zone.nameserver1}</p>
+                  <p className="text-foreground">{zone.nameserver2}</p>
+                  <p className="mt-1">→ Replace with your new provider's nameservers</p>
+                </div>
+              </div>
+
+              <DialogFooter className="pt-2">
+                <Button variant="outline" onClick={() => setShowTransferOut(false)}>Cancel</Button>
+                <Button
+                  variant="default"
+                  className="bg-amber-600 hover:bg-amber-700 text-white gap-1.5"
+                  onClick={() => setTransferStep('confirm')}
+                >
+                  Continue to Remove
+                  <ArrowUpRight className="w-3.5 h-3.5" />
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {transferStep === 'confirm' && (
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 dark:bg-red-950/20 p-4">
+                <TriangleAlert className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-red-700 dark:text-red-400">This removes the domain from Max Booster</p>
+                  <ul className="text-xs text-red-600 dark:text-red-400 space-y-0.5 list-disc list-inside">
+                    <li>All DNS records for <span className="font-mono">{zone.domain}</span> will be deleted from our servers</li>
+                    <li>Any storefront link using this domain as a custom URL will be unlinked</li>
+                    <li>You keep your zone file — import it at your new DNS provider</li>
+                    <li>Your registrar's NS settings are unaffected — update them yourself</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-xs">
+                  Type <span className="font-mono font-semibold">{zone.domain}</span> to confirm
+                </Label>
+                <Input
+                  className="font-mono text-sm"
+                  placeholder={zone.domain}
+                  value={confirmText}
+                  onChange={e => setConfirmText(e.target.value)}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setTransferStep('export')}>Back</Button>
+                <Button
+                  variant="destructive"
+                  className="gap-1.5"
+                  disabled={confirmText !== zone.domain || transferOut.isPending}
+                  onClick={() => transferOut.mutate()}
+                >
+                  {transferOut.isPending && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                  Remove from Max Booster
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
