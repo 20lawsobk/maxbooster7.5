@@ -528,66 +528,107 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
 
         {/* Setup Guide tab */}
         <TabsContent value="setup" className="mt-3 space-y-3">
-          <div className="border rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</div>
-              <p className="font-semibold text-sm">Point your nameservers to Max Booster</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Log into your domain registrar and set the nameserver to:</p>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 bg-muted/60 rounded px-3 py-2 font-mono text-xs">
-                <span className="text-muted-foreground w-8">NS</span>
-                <span className="flex-1">{NS}</span>
-                <button onClick={() => copy(NS, 'nameserver')} className="text-muted-foreground hover:text-foreground">
-                  <Copy className="w-3 h-3" />
-                </button>
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground flex items-start gap-1">
-              <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
-              DNS changes propagate within 1–48 hours.
-            </p>
-          </div>
 
-          <div className="border rounded-lg p-4 space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</div>
-              <p className="font-semibold text-sm">Verify ownership</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Add this TXT record at your current DNS provider:</p>
-            <div className="bg-muted/60 rounded px-3 py-2 font-mono text-xs flex items-center gap-2">
-              <span className="flex-1 break-all">maxbooster-verify={zone.verificationToken}</span>
-              <button onClick={() => copy(`maxbooster-verify=${zone.verificationToken}`, 'token')} className="text-muted-foreground hover:text-foreground flex-shrink-0">
-                <Copy className="w-3 h-3" />
-              </button>
-            </div>
-            <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => verifyZone.mutate()} disabled={verifyZone.isPending}>
-              {verifyZone.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
-              Check Verification
-            </Button>
-          </div>
-
-          <div className="border rounded-lg p-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</div>
-              <p className="font-semibold text-sm">Add your DNS records</p>
-            </div>
-            <p className="text-xs text-muted-foreground">Switch to DNS Records and configure your records:</p>
-            <div className="space-y-1.5">
-              {[
-                { type: 'A',     name: '@',   note: 'Root domain → server IP' },
-                { type: 'CNAME', name: 'www', note: 'www → root domain alias' },
-                { type: 'MX',    name: '@',   note: 'Email delivery server' },
-                { type: 'TXT',   name: '@',   note: 'SPF / DKIM / site verify' },
-              ].map(ex => (
-                <div key={ex.type + ex.name} className="flex items-center gap-2 text-xs py-1 border-b last:border-0">
-                  <Badge variant="outline" className={`font-mono text-[10px] px-1.5 flex-shrink-0 ${TYPE_COLORS[ex.type] ?? ''}`}>{ex.type}</Badge>
-                  <span className="font-mono text-muted-foreground w-10 flex-shrink-0">{ex.name}</span>
-                  <span className="text-muted-foreground">{ex.note}</span>
+          {zone.isVerified ? (
+            /* ── Max Booster-registered: already active, no verification needed ── */
+            <>
+              <div className="border border-green-300 dark:border-green-800 rounded-lg p-4 bg-green-50/30 dark:bg-green-950/20 flex items-start gap-3">
+                <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-green-800 dark:text-green-300">Domain active — no verification needed</p>
+                  <p className="text-xs text-green-700/80 dark:text-green-400/70 mt-0.5">
+                    <span className="font-mono">{zone.domain}</span> was registered through Max Booster. Your subscription covers this domain — it's ready to use immediately.
+                  </p>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
+
+              <div className="border rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</div>
+                  <p className="font-semibold text-sm">Add your DNS records</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Switch to the DNS Records tab and configure your records:</p>
+                <div className="space-y-1.5">
+                  {[
+                    { type: 'A',     name: '@',   note: 'Root domain → server IP' },
+                    { type: 'CNAME', name: 'www', note: 'www → root domain alias' },
+                    { type: 'MX',    name: '@',   note: 'Email delivery server' },
+                    { type: 'TXT',   name: '@',   note: 'SPF / DKIM / site verify' },
+                  ].map(ex => (
+                    <div key={ex.type + ex.name} className="flex items-center gap-2 text-xs py-1 border-b last:border-0">
+                      <Badge variant="outline" className={`font-mono text-[10px] px-1.5 flex-shrink-0 ${TYPE_COLORS[ex.type] ?? ''}`}>{ex.type}</Badge>
+                      <span className="font-mono text-muted-foreground w-10 flex-shrink-0">{ex.name}</span>
+                      <span className="text-muted-foreground">{ex.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* ── BYOD / external transfer: needs NS delegation + TXT verification ── */
+            <>
+              <div className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">1</div>
+                  <p className="font-semibold text-sm">Point your nameservers to Max Booster</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Log into your current registrar and set the nameserver to:</p>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 bg-muted/60 rounded px-3 py-2 font-mono text-xs">
+                    <span className="text-muted-foreground w-8">NS</span>
+                    <span className="flex-1">{NS}</span>
+                    <button onClick={() => copy(NS, 'nameserver')} className="text-muted-foreground hover:text-foreground">
+                      <Copy className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground flex items-start gap-1">
+                  <Info className="w-3 h-3 flex-shrink-0 mt-0.5" />
+                  DNS changes propagate within 1–48 hours.
+                </p>
+              </div>
+
+              <div className="border rounded-lg p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">2</div>
+                  <p className="font-semibold text-sm">Verify ownership</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Add this TXT record at your current DNS provider to confirm you control this domain:</p>
+                <div className="bg-muted/60 rounded px-3 py-2 font-mono text-xs flex items-center gap-2">
+                  <span className="flex-1 break-all">maxbooster-verify={zone.verificationToken}</span>
+                  <button onClick={() => copy(`maxbooster-verify=${zone.verificationToken}`, 'token')} className="text-muted-foreground hover:text-foreground flex-shrink-0">
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+                <Button size="sm" variant="outline" className="gap-1.5 h-7 text-xs" onClick={() => verifyZone.mutate()} disabled={verifyZone.isPending}>
+                  {verifyZone.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <CheckCircle2 className="w-3 h-3" />}
+                  Check Verification
+                </Button>
+              </div>
+
+              <div className="border rounded-lg p-4 space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0">3</div>
+                  <p className="font-semibold text-sm">Add your DNS records</p>
+                </div>
+                <p className="text-xs text-muted-foreground">Switch to DNS Records and configure your records:</p>
+                <div className="space-y-1.5">
+                  {[
+                    { type: 'A',     name: '@',   note: 'Root domain → server IP' },
+                    { type: 'CNAME', name: 'www', note: 'www → root domain alias' },
+                    { type: 'MX',    name: '@',   note: 'Email delivery server' },
+                    { type: 'TXT',   name: '@',   note: 'SPF / DKIM / site verify' },
+                  ].map(ex => (
+                    <div key={ex.type + ex.name} className="flex items-center gap-2 text-xs py-1 border-b last:border-0">
+                      <Badge variant="outline" className={`font-mono text-[10px] px-1.5 flex-shrink-0 ${TYPE_COLORS[ex.type] ?? ''}`}>{ex.type}</Badge>
+                      <span className="font-mono text-muted-foreground w-10 flex-shrink-0">{ex.name}</span>
+                      <span className="text-muted-foreground">{ex.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </TabsContent>
         {/* Storefront URL tab */}
         {storefrontId && (

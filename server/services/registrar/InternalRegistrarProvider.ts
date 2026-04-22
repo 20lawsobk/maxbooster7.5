@@ -100,8 +100,9 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       pricePaidCents:  0,
     });
 
-    // Auto-create DNS zone (idempotent)
-    await this._ensureDnsZone(domainLower, userId, isPlatformSub);
+    // Auto-create DNS zone — always active/verified for Max Booster-registered domains.
+    // Subscription payment is the authorization; no TXT ownership proof is required.
+    await this._ensureDnsZone(domainLower, userId, true);
 
     logger.info({ fqdn: domainLower, provider: this.name }, '[InternalRegistrar] domain registered');
 
@@ -112,7 +113,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
       status:      'active',
       message:     isPlatformSub
         ? 'Platform subdomain is live immediately.'
-        : `Domain registered. DNS zone is active — set your nameserver to ${NS} if using an external registrar.`,
+        : 'Domain registered and active — your DNS zone is ready to configure.',
     };
   }
 

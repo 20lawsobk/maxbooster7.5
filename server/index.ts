@@ -639,6 +639,28 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     logger.warn(`Domain lifecycle job unavailable: ${e.message}`);
   }
 
+  // ── Backfill: mark existing Max Booster-registered domain zones as verified ──
+  // Domains registered through Max Booster are pre-authorized by subscription payment;
+  // they should never require a TXT ownership verification step.
+  try {
+    const { pool: bPool } = await import('./db.js');
+    const { rowCount } = await bPool.query(`
+      UPDATE dns_zones z
+         SET is_verified = true,
+             status      = 'active',
+             updated_at  = NOW()
+        FROM claimed_domains cd
+       WHERE cd.domain          = z.domain
+         AND cd.registrar_name  = 'maxbooster'
+         AND (z.is_verified = false OR z.status = 'pending')
+    `);
+    if (rowCount && rowCount > 0) {
+      logger.info(`[domainVerify] Backfilled ${rowCount} Max Booster-owned zone(s) to verified/active`);
+    }
+  } catch (e: any) {
+    logger.warn(`[domainVerify] Backfill skipped: ${e.message}`);
+  }
+
   // Initialize TensorFlow worker pool — keeps inference off the HTTP event loop
   try {
     const { tfWorkerPool } = await import('./lib/tensorflowWorkerPool.js');

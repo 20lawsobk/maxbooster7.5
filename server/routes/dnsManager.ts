@@ -270,6 +270,20 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
     if (zoneResult.rows.length === 0) return res.status(404).json({ error: 'Zone not found' });
     const zone = mapZone(zoneResult.rows[0]);
 
+    // Max Booster-registered domains are pre-verified — subscription payment is the
+    // authorization. No TXT record or NS delegation check required.
+    const maxBoosterOwned = await pool.query(
+      `SELECT id FROM claimed_domains WHERE domain = $1 AND registrar_name = 'maxbooster' LIMIT 1`,
+      [zone.domain]
+    );
+    if (maxBoosterOwned.rows.length > 0) {
+      await pool.query(
+        'UPDATE dns_zones SET is_verified = true, status = $1, updated_at = NOW() WHERE id = $2',
+        ['active', zone.id]
+      );
+      return res.json({ verified: true, status: 'active', method: 'maxbooster_registered' });
+    }
+
     // Use DoH (Cloudflare + Google) — system resolver fails in Replit/cloud environments
     let nsResolved = false;
     let txtResolved = false;
