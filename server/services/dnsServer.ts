@@ -713,6 +713,11 @@ const TYPE_NAMES: Record<number, string> = {
   50: 'NSEC3', 51: 'NSEC3PARAM', 257: 'CAA',
 };
 
+// Reverse map: string type name → numeric type code (dns-packet uses strings)
+const TYPE_NUMS: Record<string, number> = Object.fromEntries(
+  Object.entries(TYPE_NAMES).map(([n, s]) => [s, Number(n)])
+);
+
 // ── DNSSEC response builder (dns-packet based) ────────────────────────────────
 
 /**
@@ -937,17 +942,20 @@ async function addDNSSECSignatures(
   const { zsk } = keys;
   const rrsigs: any[] = [];
 
-  // Group answers by type (all same owner/type = one RRset)
+  // Group answers by numeric type code
+  // dns-packet returns rr.type as a string (e.g. 'A', 'MX') not a number
   const byType = new Map<number, any[]>();
   for (const rr of (parsed.answers ?? [])) {
-    const t = rr.type;
-    if (!byType.has(t)) byType.set(t, []);
-    byType.get(t)!.push(rr);
+    const raw = rr.type;
+    const rrTypeNum = typeof raw === 'number'
+      ? raw
+      : (TYPE_NUMS[String(raw).toUpperCase()] ?? parseInt(raw, 10));
+    if (!isFinite(rrTypeNum) || rrTypeNum <= 0) continue;
+    if (!byType.has(rrTypeNum)) byType.set(rrTypeNum, []);
+    byType.get(rrTypeNum)!.push(rr);
   }
 
-  for (const [rrTypeStr, rrs] of byType) {
-    const rrTypeNum = typeof rrTypeStr === 'number' ? rrTypeStr : parseInt(rrTypeStr, 10);
-    if (!isFinite(rrTypeNum)) continue;
+  for (const [rrTypeNum, rrs] of byType) {
 
     const rdatas = rrs.map((rr: any) => {
       // dns-packet decoded records have a 'data' field
