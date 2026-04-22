@@ -148,7 +148,8 @@ function extractZoneDomain(name: string): string {
 
 // ─── DNS record builders ──────────────────────────────────────────────────────
 
-const PLATFORM_NS = process.env.PLATFORM_NS || `ns1.${BASE_DOMAIN}`;
+const PLATFORM_NS  = process.env.PLATFORM_NS  || `ns1.${BASE_DOMAIN}`;
+const PLATFORM_NS2 = process.env.PLATFORM_NS2 || `ns2.${BASE_DOMAIN}`;
 
 /** SOA record — authoritative for all Max Booster zones */
 function makeSOA(zone: string) {
@@ -167,13 +168,11 @@ function makeSOA(zone: string) {
   };
 }
 
-/** NS records — ns1/ns2.max-booster.com */
+/** NS records — both ns1 and ns2 (RFC requires ≥ 2 NS per zone) */
 function makeNSRecords(zone: string) {
   return [
-    {
-      name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN,
-      ttl: TTL_NS, ns: PLATFORM_NS,
-    },
+    { name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN, ttl: TTL_NS, ns: PLATFORM_NS  },
+    { name: zone, type: Packet.TYPE.NS, class: Packet.CLASS.IN, ttl: TTL_NS, ns: PLATFORM_NS2 },
   ];
 }
 
@@ -407,7 +406,7 @@ export async function startDNSServer(): Promise<void> {
         logger.info(
           `[DNS] ✅ Authoritative nameserver online — ${BASE_DOMAIN} → ${DNS_SERVER_IP} (UDP+TCP :${DNS_PORT})`
         );
-        logger.info(`[DNS] 📋 NS records: ns1.${BASE_DOMAIN} + ns2.${BASE_DOMAIN} → ${DNS_SERVER_IP}`);
+        logger.info(`[DNS] 📋 NS records: ${PLATFORM_NS} + ${PLATFORM_NS2} → ${DNS_SERVER_IP}`);
         // Prime cache so first query hits DB immediately, not on first request
         await warmCache();
         settle(true);
