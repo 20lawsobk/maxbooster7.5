@@ -1,31 +1,40 @@
 [Unit]
-Description=Max Booster DNS Proxy
-Documentation=https://max-booster.com
+Description=Max Booster DNS Proxy (AdGuard dnsproxy)
+Documentation=https://github.com/AdguardTeam/dnsproxy
 After=network-online.target
 Wants=network-online.target
 
 [Service]
 Type=simple
 User=root
-WorkingDirectory=/opt/maxbooster-dns
-ExecStart=/usr/bin/node /opt/maxbooster-dns/dns-proxy.js
+
+# AdGuard dnsproxy — single Go binary, no dependencies.
+# Forwards all port-53 DNS queries as RFC 8484 DoH to the Max Booster app.
+#
+# Flags:
+#   --listen       bind address
+#   --port         DNS listen port (53)
+#   --upstream     RFC 8484 DoH upstream (https:// prefix = DoH)
+#   --cache        enable in-memory answer cache
+#   --cache-size   cache entries (default 4096)
+#   --all-servers  try all upstreams in parallel, use fastest response
+#   --timeout      upstream timeout in milliseconds
+#
+# Edit APP_URL below after deploying (use your Replit .app domain or custom domain).
+ExecStart=/usr/local/bin/dnsproxy \
+  --listen=0.0.0.0 \
+  --port=53 \
+  --upstream=https://maxbooster.replit.app/api/dns/query \
+  --cache \
+  --cache-size=4096 \
+  --all-servers \
+  --timeout=5000
+
 Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=maxbooster-dns
-
-# Environment — edit APP_URL after deploying
-Environment=APP_URL=https://maxbooster.replit.app
-Environment=LISTEN_IP=0.0.0.0
-Environment=DNS_PORT=53
-Environment=TIMEOUT_MS=5000
-Environment=NODE_ENV=production
-
-# Harden the service
-NoNewPrivileges=yes
-ProtectSystem=strict
-ReadWritePaths=/opt/maxbooster-dns
 
 [Install]
 WantedBy=multi-user.target

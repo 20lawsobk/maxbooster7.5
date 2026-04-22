@@ -3,7 +3,7 @@ import { db } from '../db';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
-import { processQuery, getDNSInfo } from '../services/dnsServer.js';
+import { processQuery, getDNSInfo, type DohQueryResult } from '../services/dnsServer.js';
 import {
   dnsRecordCache,
   dnsTemplates,
@@ -72,9 +72,30 @@ function domainBelongsToStorefront(domain: string, storefront: { customDomain: s
 }
 
 // ── DNS-over-HTTPS (DoH) — RFC 8484 ──────────────────────────────────────────
-// These endpoints are called by the VPS proxy (ns1/ns2.max-booster.com).
-// They accept DNS wire-format queries and return DNS wire-format responses.
-// No authentication required — DNS queries are public by design.
+// Called by the VPS proxy (ns1/ns2.max-booster.com via AdGuard dnsproxy).
+// Accepts DNS wire-format queries, returns DNS wire-format responses.
+// No authentication — DNS queries are public by design.
+
+/**
+ * RFC 8484 §5.1 — Set Cache-Control on DoH responses.
+ *
+ * NOERROR with answers → max-age = min TTL of all answer/authority RRs
+ * NOERROR with no answers (NODATA) → max-age = SOA minimum (we use 60 s floor)
+ * NXDOMAIN (rcode 3) → max-age = SOA minimum TTL
+ * SERVFAIL / FORMERR → no-store (don't cache error responses)
+ */
+function dohCacheControl(result: DohQueryResult): string {
+  if (result.rcode === 2 || result.rcode === 1) {
+    // SERVFAIL (2) or FORMERR (1) — never cache errors
+    return 'no-store';
+  }
+  if (result.minTtl > 0) {
+    // NOERROR or NXDOMAIN with a known TTL
+    return `max-age=${result.minTtl}`;
+  }
+  // Fallback: NXDOMAIN or NODATA without a computable TTL — short positive cache
+  return 'max-age=60';
+}
 
 /**
  * GET /api/dns/info
@@ -99,44 +120,47 @@ router.post('/query', expressRaw({ type: 'application/dns-message', limit: '64kb
     } else if (req.body instanceof Uint8Array) {
       body = Buffer.from(req.body);
     } else if (typeof req.body === 'string') {
+      // Fallback: some clients send base64-encoded body
       body = Buffer.from(req.body, 'base64');
     } else {
-      return res.status(400).send('Invalid body — expected DNS wire format');
+      return res.status(400).send('Expected application/dns-message body');
     }
 
     if (body.length < 12) {
-      return res.status(400).send('DNS message too short');
+      return res.status(400).send('DNS message too short (< 12 bytes)');
     }
 
-    const responseBuffer = await processQuery(body);
+    const result = await processQuery(body);
     res.set('Content-Type', 'application/dns-message');
-    res.set('Cache-Control', 'no-store');
-    res.send(responseBuffer);
+    res.set('Cache-Control', dohCacheControl(result));
+    res.send(result.buffer);
   } catch (err: any) {
     logger.warn({ err }, '[DoH] POST /api/dns/query error');
-    res.status(500).send('DNS query failed');
+    res.status(500).set('Cache-Control', 'no-store').send('DNS query failed');
   }
 });
 
 /**
  * GET /api/dns/query?dns=<base64url>
- * RFC 8484 DNS-over-HTTPS — GET method.
+ * RFC 8484 DNS-over-HTTPS — GET method (base64url, no padding).
  */
 router.get('/query', async (req, res) => {
   try {
     const dnsParam = req.query.dns as string;
     if (!dnsParam) return res.status(400).send('Missing ?dns= parameter');
 
-    const body = Buffer.from(dnsParam.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
-    if (body.length < 12) return res.status(400).send('DNS message too short');
+    // RFC 8484 §4.1 — base64url (RFC 4648 §5), padding is optional
+    const padded = dnsParam.replace(/-/g, '+').replace(/_/g, '/');
+    const body   = Buffer.from(padded, 'base64');
+    if (body.length < 12) return res.status(400).send('DNS message too short (< 12 bytes)');
 
-    const responseBuffer = await processQuery(body);
+    const result = await processQuery(body);
     res.set('Content-Type', 'application/dns-message');
-    res.set('Cache-Control', 'no-store');
-    res.send(responseBuffer);
+    res.set('Cache-Control', dohCacheControl(result));
+    res.send(result.buffer);
   } catch (err: any) {
     logger.warn({ err }, '[DoH] GET /api/dns/query error');
-    res.status(500).send('DNS query failed');
+    res.status(500).set('Cache-Control', 'no-store').send('DNS query failed');
   }
 });
 

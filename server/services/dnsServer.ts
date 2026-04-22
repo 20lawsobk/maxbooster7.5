@@ -228,6 +228,9 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
 
     case Packet.TYPE.NS:
       makeNSRecords(zone).forEach(r => response.answers.push(r));
+      // RFC 1034 §4.3.2 — glue A records in ADDITIONAL to prevent circular lookups
+      response.additionals.push(makeA(PLATFORM_NS,  DNS_SERVER_IP));
+      response.additionals.push(makeA(PLATFORM_NS2, DNS_SERVER_IP));
       break;
 
     case Packet.TYPE.TXT: {
@@ -327,10 +330,16 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
     }
 
     case Packet.TYPE.ANY:
-      // RFC 8482 — respond with HINFO instead of enumerating all records
-      response.answers.push(makeA(name, DNS_SERVER_IP));
-      response.answers.push(makeSOA(zone));
-      makeNSRecords(zone).forEach(r => response.answers.push(r));
+      // RFC 8482 — respond with a minimal HINFO record to discourage ANY queries.
+      // Major resolvers (Cloudflare, Google) follow this approach.
+      response.answers.push({
+        name,
+        type:  13,           // HINFO
+        class: Packet.CLASS.IN,
+        ttl:   TTL_A,
+        cpu:   'ANY obsoleted per RFC 8482',
+        os:    '',
+      });
       break;
 
     default:
@@ -483,30 +492,86 @@ async function warmCache(): Promise<void> {
   logger.info(`[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// DNS-over-HTTPS (RFC 8484) gateway
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * processQuery — DNS-over-HTTPS gateway entry point.
+ * Result returned by processQuery.
+ * The HTTP layer needs minTtl to set a correct Cache-Control header per
+ * RFC 8484 §5.1, and rcode to decide between max-age and no-store.
+ */
+export interface DohQueryResult {
+  /** Raw DNS wire-format response buffer */
+  buffer:  Buffer;
+  /** Minimum TTL across all RRs in answers + authorities (0 if no RRs) */
+  minTtl:  number;
+  /** DNS RCODE from the response header (0=NOERROR, 2=SERVFAIL, 3=NXDOMAIN) */
+  rcode:   number;
+}
+
+/**
+ * processQuery — DoH entry point.
  *
- * Accepts a raw DNS wire-format query Buffer (the binary body of a DoH POST
- * request), runs it through the same handleRequest() pipeline used by the
- * UDP/TCP server, and returns a raw DNS wire-format response Buffer.
+ * Accepts a raw DNS wire-format query (application/dns-message body),
+ * runs it through the same authoritative handleRequest() pipeline used by
+ * the UDP/TCP server, and returns a DohQueryResult.
  *
- * The VPS proxy calls this via:
+ * The VPS proxy (AdGuard dnsproxy or the Node.js fallback) calls:
  *   POST https://maxbooster.replit.app/api/dns/query
  *   Content-Type: application/dns-message
- *   Body: <binary DNS wire format>
- *
- * RFC 8484 §6 — the response is also application/dns-message.
  */
-export async function processQuery(queryBuffer: Buffer): Promise<Buffer> {
-  const request = Packet.parse(queryBuffer);
+export async function processQuery(queryBuffer: Buffer): Promise<DohQueryResult> {
+  let request: any;
+  try {
+    request = Packet.parse(queryBuffer);
+  } catch {
+    // Malformed query — return a FORMERR response with zeroed header
+    const servfail = Buffer.alloc(12);
+    servfail.writeUInt16BE(0, 0);          // txid = 0
+    servfail.writeUInt16BE(0x8001, 2);     // QR=1, RCODE=1 (FORMERR)
+    return { buffer: servfail, minTtl: 0, rcode: 1 };
+  }
 
-  return new Promise<Buffer>((resolve, reject) => {
-    const timeout = setTimeout(() => reject(new Error('DNS query timed out')), 5000);
+  return new Promise<DohQueryResult>((resolve, reject) => {
+    const timeout = setTimeout(
+      () => reject(new Error('DNS query timed out after 5 s')),
+      5000,
+    );
 
     handleRequest(request, (response: any) => {
       clearTimeout(timeout);
       try {
-        resolve(Buffer.from(response.toBuffer()));
+        // Serialize to wire format
+        let buffer: Buffer;
+        if (typeof response.toBuffer === 'function') {
+          buffer = Buffer.from(response.toBuffer());
+        } else {
+          // Safety fallback: upstream Packet object may have a different shape.
+          // Re-wrap into a proper response packet so toBuffer() is available.
+          const wrapper = Packet.createResponseFromRequest(request);
+          wrapper.header.rcode      = response.header?.rcode ?? 0;
+          wrapper.header.aa         = response.header?.aa ?? 0;
+          wrapper.answers           = response.answers    || [];
+          wrapper.authorities       = response.authorities || [];
+          wrapper.additionals       = response.additionals || [];
+          buffer = Buffer.from(wrapper.toBuffer());
+          response = wrapper;
+        }
+
+        // Compute minimum TTL for Cache-Control (RFC 8484 §5.1)
+        const allRRs: any[] = [
+          ...(response.answers     || []),
+          ...(response.authorities || []),
+        ];
+        const positiveTtls = allRRs
+          .map((rr: any) => (typeof rr.ttl === 'number' ? rr.ttl : 0))
+          .filter((t: number) => t > 0);
+        const minTtl = positiveTtls.length > 0 ? Math.min(...positiveTtls) : 0;
+
+        const rcode: number = response.header?.rcode ?? 0;
+
+        resolve({ buffer, minTtl, rcode });
       } catch (err) {
         reject(err);
       }
