@@ -91,9 +91,9 @@ export async function reserveManaged(req: Request, res: Response) {
         set: { storefrontId, updatedAt: new Date() },
       });
 
-    // The canonical public URL for the store is the short-link path which works
-    // immediately on any hosting (no wildcard DNS required).
-    const publicShortUrl = `https://${BASE_DOMAIN}/s/${label}`;
+    // The canonical public URL for the store is the /storefront/ path which works
+    // immediately without any DNS or subdomain configuration.
+    const publicShortUrl = `https://${BASE_DOMAIN}/storefront/${label}`;
 
     logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`);
     return res.status(201).json({ ok: true, domain: record.domain, id: record.id, publicUrl: publicShortUrl, label });

@@ -121,7 +121,10 @@ interface DnsRecord {
 const NS  = 'maxbooster.replit.app';
 const NS1 = NS;
 const NS2 = NS;
-const PLATFORM_DOMAIN = 'maxbooster.replit.app';
+const PLATFORM_DOMAIN    = 'maxbooster.replit.app';
+// Storefront path base — individual stores live at STOREFRONT_BASE/storefront/{slug}
+const STOREFRONT_BASE    = 'https://maxbooster.replit.app';
+const STOREFRONT_BRAND   = 'storefront.maxbooster.replit.app'; // display branding only
 
 const FEATURED_TLDS = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
 
@@ -870,9 +873,9 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       const isPlatformSubdomain = domain.endsWith(`.${PLATFORM_DOMAIN}`);
       const label = isPlatformSubdomain ? domain.replace(`.${PLATFORM_DOMAIN}`, '') : null;
       toast({
-        title: `${domain} claimed!`,
+        title: `${isPlatformSubdomain && label ? `${STOREFRONT_BRAND}/${label}` : domain} claimed!`,
         description: isPlatformSubdomain && label
-          ? `Your store is live now at maxbooster.replit.app/s/${label} — no DNS setup required.`
+          ? `Your store is live at ${STOREFRONT_BASE}/storefront/${label} — no DNS setup required.`
           : (data.message ?? 'Your domain is active. DNS zone created — manage records in the DNS Records tab.'),
       });
     },
@@ -1040,7 +1043,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                 <div className="w-5 h-5 rounded-full bg-primary/15 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary mt-0.5">1</div>
                 <div>
                   <p className="text-xs font-semibold">Platform subdomain</p>
-                  <p className="text-[11px] text-muted-foreground">yourname.{PLATFORM_DOMAIN} — live in seconds, zero DNS setup</p>
+                  <p className="text-[11px] text-muted-foreground">{STOREFRONT_BRAND} — live in seconds, zero DNS setup</p>
                 </div>
               </div>
               <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/50 border border-border">
@@ -1078,12 +1081,14 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                 <Star className="w-4 h-4 text-primary flex-shrink-0" />
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-mono text-sm font-semibold">{searchName}<span className="text-primary">.{PLATFORM_DOMAIN}</span></span>
+                    <span className="font-mono text-sm font-semibold">
+                      <span className="text-muted-foreground">{STOREFRONT_BRAND}/</span>{searchName}
+                    </span>
                     <Badge className="text-[10px] bg-primary/15 text-primary border-primary/30">Platform Subdomain</Badge>
                   </div>
                   <p className="text-[11px] text-muted-foreground">
                     Instant setup · Your store loads at{' '}
-                    <span className="font-mono text-primary">{PLATFORM_DOMAIN}/s/{searchName}</span>
+                    <span className="font-mono text-primary">maxbooster.replit.app/storefront/{searchName}</span>
                   </p>
                 </div>
               </div>
@@ -1201,7 +1206,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                         const label = d.domain.replace(`.${PLATFORM_DOMAIN}`, '');
                         return (
                           <a
-                            href={`https://${PLATFORM_DOMAIN}/s/${label}`}
+                            href={`${STOREFRONT_BASE}/storefront/${label}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-2.5 py-1 rounded border border-primary/30 hover:bg-primary/5 transition-colors"

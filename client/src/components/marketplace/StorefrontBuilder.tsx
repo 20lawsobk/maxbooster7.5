@@ -584,7 +584,7 @@ export default function StorefrontBuilder() {
     },
     onSuccess: (data) => {
       if (data.ok) {
-        toast({ title: 'Subdomain Reserved', description: `Your store is now at https://maxbooster.replit.app/s/${data.subdomain || subdomainForm.subdomain}` });
+        toast({ title: 'Subdomain Reserved', description: `Your store is now at https://maxbooster.replit.app/storefront/${data.subdomain || subdomainForm.subdomain}` });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains', selectedStorefront?.id] });
       } else {
@@ -1318,7 +1318,7 @@ export default function StorefrontBuilder() {
                         >
                           <Shuffle className="w-4 h-4" />
                         </Button>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">→ maxbooster.replit.app/s/</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">→ storefront.maxbooster.replit.app/</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1356,7 +1356,7 @@ export default function StorefrontBuilder() {
                       </Button>
                       <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800 space-y-1">
                         <p className="font-semibold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Subdomain URL format</p>
-                        <p>Once reserved and active, your store is accessible at <span className="font-mono font-medium">{subdomainForm.subdomain ? `https://maxbooster.replit.app/s/${subdomainForm.subdomain}` : `maxbooster.replit.app/s/{your-name}`}</span>. The direct path URL <span className="font-mono font-medium">{STOREFRONT_BASE}/storefront/{selectedStorefront?.slug}</span> also always works.</p>
+                        <p>Once reserved and active, your store is accessible at <span className="font-mono font-medium">{subdomainForm.subdomain ? `https://maxbooster.replit.app/storefront/${subdomainForm.subdomain}` : `maxbooster.replit.app/storefront/{your-name}`}</span>. The direct slug URL <span className="font-mono font-medium">{STOREFRONT_BASE}/storefront/{selectedStorefront?.slug}</span> also always works.</p>
                       </div>
                     </div>
 

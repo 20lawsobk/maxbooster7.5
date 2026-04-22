@@ -123,19 +123,17 @@ router.get('/suggest-url', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const slug = await storefrontService.generateRandomSlug();
-    const baseDomain = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
-    const suggestedDomain = `${slug}.${baseDomain}`;
+    const appRoot  = process.env.APP_URL || 'https://maxbooster.replit.app';
+    const publicUrl = `${appRoot}/storefront/${slug}`;
 
-    const existingDomain = await db
-      .select({ id: storefrontDomains.id })
-      .from(storefrontDomains)
-      .where(eq(storefrontDomains.domain, suggestedDomain))
-      .limit(1);
+    // Keep suggestedDomain for any legacy callers, but publicUrl is the canonical URL
+    const suggestedDomain = `storefront.maxbooster.replit.app/${slug}`;
 
     res.json({
       slug,
       suggestedDomain,
-      domainAvailable: existingDomain.length === 0,
+      publicUrl,
+      domainAvailable: true,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error suggesting URL:');
