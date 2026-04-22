@@ -1,8 +1,9 @@
-import { Router } from 'express';
+import { Router, raw as expressRaw } from 'express';
 import { db } from '../db';
 import { eq, and } from 'drizzle-orm';
 import { z } from 'zod';
 import { logger } from '../logger.js';
+import { processQuery, getDNSInfo } from '../services/dnsServer.js';
 import {
   dnsRecordCache,
   dnsTemplates,
@@ -69,6 +70,77 @@ function domainBelongsToStorefront(domain: string, storefront: { customDomain: s
   const sfRoot = extractRootDomain(storefront.customDomain);
   return reqRoot === sfRoot;
 }
+
+// ── DNS-over-HTTPS (DoH) — RFC 8484 ──────────────────────────────────────────
+// These endpoints are called by the VPS proxy (ns1/ns2.max-booster.com).
+// They accept DNS wire-format queries and return DNS wire-format responses.
+// No authentication required — DNS queries are public by design.
+
+/**
+ * GET /api/dns/info
+ * Returns the current DNS server status and nameserver configuration.
+ */
+router.get('/info', (_req, res) => {
+  res.json(getDNSInfo());
+});
+
+/**
+ * POST /api/dns/query
+ * RFC 8484 DNS-over-HTTPS — POST method.
+ * Body: raw DNS wire format (Content-Type: application/dns-message)
+ * Response: raw DNS wire format (Content-Type: application/dns-message)
+ */
+router.post('/query', expressRaw({ type: 'application/dns-message', limit: '64kb' }), async (req, res) => {
+  try {
+    let body: Buffer;
+
+    if (Buffer.isBuffer(req.body)) {
+      body = req.body;
+    } else if (req.body instanceof Uint8Array) {
+      body = Buffer.from(req.body);
+    } else if (typeof req.body === 'string') {
+      body = Buffer.from(req.body, 'base64');
+    } else {
+      return res.status(400).send('Invalid body — expected DNS wire format');
+    }
+
+    if (body.length < 12) {
+      return res.status(400).send('DNS message too short');
+    }
+
+    const responseBuffer = await processQuery(body);
+    res.set('Content-Type', 'application/dns-message');
+    res.set('Cache-Control', 'no-store');
+    res.send(responseBuffer);
+  } catch (err: any) {
+    logger.warn({ err }, '[DoH] POST /api/dns/query error');
+    res.status(500).send('DNS query failed');
+  }
+});
+
+/**
+ * GET /api/dns/query?dns=<base64url>
+ * RFC 8484 DNS-over-HTTPS — GET method.
+ */
+router.get('/query', async (req, res) => {
+  try {
+    const dnsParam = req.query.dns as string;
+    if (!dnsParam) return res.status(400).send('Missing ?dns= parameter');
+
+    const body = Buffer.from(dnsParam.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+    if (body.length < 12) return res.status(400).send('DNS message too short');
+
+    const responseBuffer = await processQuery(body);
+    res.set('Content-Type', 'application/dns-message');
+    res.set('Cache-Control', 'no-store');
+    res.send(responseBuffer);
+  } catch (err: any) {
+    logger.warn({ err }, '[DoH] GET /api/dns/query error');
+    res.status(500).send('DNS query failed');
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 router.get('/providers', (req, res) => {
   if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });

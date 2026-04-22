@@ -1,0 +1,31 @@
+[Unit]
+Description=Max Booster DNS Proxy
+Documentation=https://max-booster.com
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/maxbooster-dns
+ExecStart=/usr/bin/node /opt/maxbooster-dns/dns-proxy.js
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=maxbooster-dns
+
+# Environment — edit APP_URL after deploying
+Environment=APP_URL=https://maxbooster.replit.app
+Environment=LISTEN_IP=0.0.0.0
+Environment=DNS_PORT=53
+Environment=TIMEOUT_MS=5000
+Environment=NODE_ENV=production
+
+# Harden the service
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/maxbooster-dns
+
+[Install]
+WantedBy=multi-user.target

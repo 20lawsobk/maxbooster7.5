@@ -129,6 +129,7 @@ const CSRF_EXEMPT_PATHS = [
   '/api/errors',
   '/api/sendgrid/webhook',
   '/api/metrics/web-vitals',
+  '/api/dns/query',
   '/health',
   '/ready',
   '/status',

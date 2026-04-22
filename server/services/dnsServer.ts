@@ -482,3 +482,34 @@ async function warmCache(): Promise<void> {
   await refreshCustomDomainCache();
   logger.info(`[DNS] Custom domain cache warmed — ${customDomainCache.size} active domain(s) loaded.`);
 }
+
+/**
+ * processQuery — DNS-over-HTTPS gateway entry point.
+ *
+ * Accepts a raw DNS wire-format query Buffer (the binary body of a DoH POST
+ * request), runs it through the same handleRequest() pipeline used by the
+ * UDP/TCP server, and returns a raw DNS wire-format response Buffer.
+ *
+ * The VPS proxy calls this via:
+ *   POST https://maxbooster.replit.app/api/dns/query
+ *   Content-Type: application/dns-message
+ *   Body: <binary DNS wire format>
+ *
+ * RFC 8484 §6 — the response is also application/dns-message.
+ */
+export async function processQuery(queryBuffer: Buffer): Promise<Buffer> {
+  const request = Packet.parse(queryBuffer);
+
+  return new Promise<Buffer>((resolve, reject) => {
+    const timeout = setTimeout(() => reject(new Error('DNS query timed out')), 5000);
+
+    handleRequest(request, (response: any) => {
+      clearTimeout(timeout);
+      try {
+        resolve(Buffer.from(response.toBuffer()));
+      } catch (err) {
+        reject(err);
+      }
+    });
+  });
+}
