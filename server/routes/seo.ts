@@ -7,7 +7,7 @@ import { logger } from '../logger.js';
 
 const router = Router();
 
-const SITE_URL = 'https://maxbooster.replit.app';
+const SITE_URL = process.env.SITE_URL || 'https://max-booster.com';
 
 router.get('/sitemap.xml', async (_req: Request, res: Response) => {
   try {

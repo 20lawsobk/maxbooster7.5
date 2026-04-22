@@ -123,8 +123,8 @@ router.get('/suggest-url', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     const slug       = await storefrontService.generateRandomSlug();
-    const baseDomain = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
-    // Platform subdomain: each artist's store lives at {slug}.maxbooster.replit.app
+    const baseDomain = process.env.BASE_DOMAIN || 'max-booster.com';
+    // Platform subdomain: each artist's store lives at {slug}.max-booster.com
     const suggestedDomain = `${slug}.${baseDomain}`;
     const publicUrl       = `https://${suggestedDomain}`;
 
@@ -590,7 +590,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
       await db.update(membershipTiers).set({ stripePriceId }).where(eq(membershipTiers.id, tierId));
     }
 
-    const appUrl = env.APP_URL || 'https://maxbooster.replit.app';
+    const appUrl = env.APP_URL || 'https://max-booster.com';
     const storefrontSlug = storefront?.slug || '';
     const returnBase = `${appUrl}/storefront/${storefrontSlug}`;
 
@@ -916,7 +916,7 @@ router.put('/:storefrontId/custom-domain', async (req, res) => {
 /**
  * POST /api/storefront/:storefrontId/verify-domain
  * Perform DNS verification of the custom domain
- * Checks for CNAME pointing to maxbooster.replit.app
+ * Checks for CNAME pointing to max-booster.com
  */
 router.post('/:storefrontId/verify-domain', async (req, res) => {
   try {

@@ -71,7 +71,7 @@ async function isDomainRegisteredExternally(domain: string): Promise<boolean> {
   return false;
 }
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'max-booster.com';
 
 const router = Router();
 
@@ -281,7 +281,7 @@ router.get("/registry/:domain", async (req, res) => {
       domain: row.domain,
       status: row.status,
       claimedAt: row.claimedAt,
-      managedBy: "Max Booster DNS (maxbooster.replit.app)",
+      managedBy: `Max Booster DNS (${BASE_DOMAIN})`,
     });
   } catch (err) {
     logger.warn("[domains] registry lookup error:", err);
@@ -427,8 +427,7 @@ router.get("/search", async (req, res) => {
       return true;
     }
 
-    const PLATFORM_DOMAIN_NAME = "maxbooster.replit.app";
-    const platformFqdn = `${raw}.${PLATFORM_DOMAIN_NAME}`;
+    const platformFqdn = `${raw}.${BASE_DOMAIN}`;
 
     // Check platform subdomain availability in DB
     const [dbRow] = await db

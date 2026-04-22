@@ -1441,7 +1441,7 @@ export async function registerRoutes(
           passwordResetExpires: expires,
         });
 
-        const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+        const baseUrl = process.env.APP_URL || 'https://max-booster.com';
         const resetLink = `${baseUrl}/reset-password?token=${resetToken}`;
 
         await emailService.sendPasswordResetEmail(
@@ -1536,7 +1536,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+    const baseUrl = process.env.APP_URL || 'https://max-booster.com';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     const params = new URLSearchParams({
@@ -1575,7 +1575,7 @@ export async function registerRoutes(
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
-    const baseUrl = process.env.APP_URL || 'https://maxbooster.replit.app';
+    const baseUrl = process.env.APP_URL || 'https://max-booster.com';
     const redirectUri = `${baseUrl}/api/auth/google/callback`;
 
     try {

@@ -729,7 +729,7 @@ router.post('/send-verification-email', requireAuth, async (req: any, res) => {
       emailVerificationExpires: expires,
     }).where(eq(users.id, userId));
 
-    const appUrl = process.env.APP_URL || process.env.DOMAIN || 'https://maxbooster.replit.app';
+    const appUrl = process.env.APP_URL || process.env.DOMAIN || 'https://max-booster.com';
     const verificationUrl = `${appUrl}/verify-email?token=${token}`;
 
     try {

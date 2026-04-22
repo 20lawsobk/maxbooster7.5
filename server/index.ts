@@ -889,18 +889,17 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // ── Platform Subdomain Router ────────────────────────────────────────────────
-  // Handles requests to {label}.maxbooster.replit.app — Max Booster's built-in
-  // storefront subdomain system.  Each artist can claim e.g. beatsby.maxbooster.replit.app
+  // Handles requests to {label}.max-booster.com — Max Booster's built-in
+  // storefront subdomain system.  Each artist can claim e.g. beatsby.max-booster.com
   // and this middleware resolves the label → storefront slug and serves the SPA.
   //
-  // This works independently of Replit's deployment DNS: the Express app inspects
-  // the Host header, so any request that reaches this process with that hostname
-  // (via CNAME, proxy, or Replit's custom-domain routing) is handled correctly.
+  // Requires a wildcard DNS record at the registrar:
+  //   *.max-booster.com  →  A/CNAME  →  this app's IP / deployed hostname
   //
   // API + asset paths are passed through so the full app still works on the subdomain.
   app.use(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const BASE = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
+      const BASE = process.env.BASE_DOMAIN || 'max-booster.com';
       const host = req.hostname ?? '';
 
       // Only intercept true subdomains of the platform domain (not the root itself)
@@ -976,7 +975,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const { db: sDb } = await import('./db.js');
       const { storefrontDomains: sDomains, storefronts: sStorefronts } = await import('@shared/schema');
       const { eq, and } = await import('drizzle-orm');
-      const BASE = process.env.BASE_DOMAIN || 'maxbooster.replit.app';
+      const BASE = process.env.BASE_DOMAIN || 'max-booster.com';
       const label = String(req.params.label).toLowerCase().replace(/[^a-z0-9-]/g, '');
 
       // 1. Check managed subdomain registry (e.g. b-lawz-music reserved via UI)

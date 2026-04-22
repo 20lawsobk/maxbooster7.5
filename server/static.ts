@@ -9,7 +9,7 @@ import { and, eq } from 'drizzle-orm';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SITE_URL = process.env.SITE_URL || 'https://maxbooster.replit.app';
+const SITE_URL = process.env.SITE_URL || 'https://max-booster.com';
 
 interface CacheEntry<T> { value: T; expiresAt: number; }
 function makeCache<T>(ttlMs: number) {
@@ -32,8 +32,8 @@ const customDomainCache = makeCache<string | null>(60_000);
 const metaCache = makeCache<{ title: string; description: string; image: string; url: string } | null>(120_000);
 
 const BASE_DOMAINS = [
-  'maxbooster.replit.app',
-  'maxbooster.app',
+  'max-booster.com',
+  'maxbooster.replit.app',  // legacy — keep for backward-compat during migration
 ];
 
 function extractSubdomain(hostname: string): string | null {
@@ -67,7 +67,7 @@ async function getStorefrontSlugForSubdomain(subdomain: string): Promise<string 
 
     // Fallback: storefront_domains table for managed_subdomain rows created via the
     // "Find Domain" UI flow before the storefront.subdomain field was backfilled.
-    const baseDomainFqdn = `${subdomain}.${process.env.BASE_DOMAIN || 'maxbooster.replit.app'}`;
+    const baseDomainFqdn = `${subdomain}.${process.env.BASE_DOMAIN || 'max-booster.com'}`;
     const [domRow] = await db
       .select({ slug: storefronts.slug })
       .from(storefrontDomains)

@@ -4,17 +4,18 @@
  * All domain registration and management is handled entirely by Max Booster's
  * built-in DNS system.  No external registrar API is required.
  *
- * NS for all registered domains: maxbooster.replit.app
+ * Platform domain : max-booster.com
+ * Nameservers     : ns1.max-booster.com  /  ns2.max-booster.com
+ * Artist stores   : {name}.max-booster.com  (wildcard A/CNAME at registrar)
  */
 
 import { logger } from '../logger.js';
 import dns from 'dns';
 
-export const NS = 'maxbooster.replit.app';
-export const NS1 = NS;
-export const NS2 = NS;
-
-export const PLATFORM_DOMAIN = 'maxbooster.replit.app';
+export const PLATFORM_DOMAIN = process.env.BASE_DOMAIN  || 'max-booster.com';
+export const NS               = PLATFORM_DOMAIN;
+export const NS1              = process.env.NS1          || `ns1.${PLATFORM_DOMAIN}`;
+export const NS2              = process.env.NS2          || `ns2.${PLATFORM_DOMAIN}`;
 
 // ── Domain pricing (internal reference only — domains are FREE to subscribers) ─
 // Not shown in the UI; kept for platform cost-tracking purposes.

@@ -12,7 +12,7 @@ const TOKEN_REFRESH_CHECK_INTERVAL_MS = 60 * 1000; // Check every minute
 const ENCRYPTION_KEY_SETTING = 'social_oauth_encryption_key';
 
 // Get base domain for OAuth redirects - always use production URL for consistency
-const getOAuthDomain = () => process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
+const getOAuthDomain = () => process.env.DOMAIN || process.env.APP_URL || 'https://max-booster.com';
 
 /**
  * Social OAuth Service

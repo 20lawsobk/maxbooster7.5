@@ -7,7 +7,7 @@ import { storefrontDomains, storefronts, storefrontHosts } from "@shared/schema"
 import { validateDnsLabel, validateDomain } from "./dnsValidators.js";
 import { logger } from "../../logger.js";
 
-const BASE_DOMAIN = process.env.BASE_DOMAIN || "maxbooster.replit.app";
+const BASE_DOMAIN = process.env.BASE_DOMAIN || 'max-booster.com';
 const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
 
 // ─── Managed subdomains ────────────────────────────────────────────────────
@@ -92,8 +92,8 @@ export async function reserveManaged(req: Request, res: Response) {
       });
 
     // The canonical public URL for the store is the platform subdomain.
-    // Requests to {label}.maxbooster.replit.app are routed by the Express
-    // Host-header middleware — no separate DNS config required.
+    // Requests to {label}.max-booster.com reach the Express server via the
+    // wildcard A/CNAME record and are routed by the Host-header middleware.
     const publicShortUrl = `https://${label}.${BASE_DOMAIN}`;
 
     logger.info(`[domains] Managed subdomain reserved: ${fqdn} → storefront ${storefrontId} (public: ${publicShortUrl})`);

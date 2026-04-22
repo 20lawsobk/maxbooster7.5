@@ -82,7 +82,7 @@ const updateNotifications: Map<string, UpdateNotification[]> = new Map();
 const updateRollouts: Map<string, UpdateRollout> = new Map();
 const latestVersions: Map<PlatformType, { version: string; releaseDate: string; changelog: string; downloadUrl: string }> = new Map();
 
-latestVersions.set('web', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest web release', downloadUrl: 'https://maxbooster.replit.app' });
+latestVersions.set('web', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest web release', downloadUrl: 'https://max-booster.com' });
 latestVersions.set('android', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest Android release', downloadUrl: '' });
 latestVersions.set('desktop', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest desktop release', downloadUrl: '' });
 

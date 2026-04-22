@@ -1014,6 +1014,6 @@ export function buildCaaRecords(domain: string): DnsRecord[] {
     { type: 'CAA', name: '@', value: '0 issue "letsencrypt.org"',    ttl: 3600 },
     { type: 'CAA', name: '@', value: '0 issue "pki.goog"',           ttl: 3600 },
     { type: 'CAA', name: '@', value: '0 issuewild "letsencrypt.org"', ttl: 3600 },
-    { type: 'CAA', name: '@', value: '0 iodef "mailto:admin@maxbooster.replit.app"', ttl: 3600 },
+    { type: 'CAA', name: '@', value: '0 iodef "mailto:admin@max-booster.com"', ttl: 3600 },
   ];
 }

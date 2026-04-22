@@ -38,7 +38,7 @@ const ACME_ENABLED = process.env.ACME_ENABLED === 'true';
 const ACME_DIRECTORY_URL =
   process.env.ACME_DIRECTORY_URL || acme.directory.letsencrypt.staging;
 const ACME_CONTACT_EMAIL =
-  process.env.ACME_CONTACT_EMAIL || 'admin@maxbooster.replit.app';
+  process.env.ACME_CONTACT_EMAIL || 'admin@max-booster.com';
 
 const RENEWAL_THRESHOLD_DAYS = 30;       // Renew when < this many days remain
 const MAX_PROVISION_ATTEMPTS = 5;

@@ -83,7 +83,7 @@ const RECORD_TYPE_INFO: Record<string, { description: string; placeholder: strin
   SRV: { description: 'Service location record', placeholder: 'sip.example.com', fields: ['value', 'priority', 'weight', 'port'] },
 };
 
-const MAXBOOSTER_NAMESERVERS = ['maxbooster.replit.app'];
+const MAXBOOSTER_NAMESERVERS = ['ns1.max-booster.com', 'ns2.max-booster.com'];
 
 function formatTTL(seconds: number): string {
   if (seconds <= 1) return 'Auto';

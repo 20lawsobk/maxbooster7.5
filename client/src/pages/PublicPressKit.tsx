@@ -245,7 +245,7 @@ export default function PublicPressKit() {
               <p className="text-xs text-muted-foreground">
                 Press kit powered by
               </p>
-              <a href="https://maxbooster.replit.app" target="_blank" rel="noopener noreferrer"
+              <a href="https://max-booster.com" target="_blank" rel="noopener noreferrer"
                 className="text-sm font-semibold text-primary hover:underline flex items-center justify-center gap-1">
                 Max Booster <ExternalLink className="h-3 w-3" />
               </a>

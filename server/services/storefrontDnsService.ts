@@ -31,7 +31,7 @@ import { pool } from '../db.js';
 import { logger } from '../logger.js';
 import crypto from 'crypto';
 
-const BASE_DOMAIN   = (process.env.BASE_DOMAIN   || 'maxbooster.replit.app').toLowerCase();
+const BASE_DOMAIN   = (process.env.BASE_DOMAIN   || 'max-booster.com').toLowerCase();
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP   || '34.111.179.208';
 const NS1           = `ns1.${BASE_DOMAIN}`;
 const NS2           = `ns2.${BASE_DOMAIN}`;

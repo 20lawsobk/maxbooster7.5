@@ -255,7 +255,8 @@ function classifyUrl(url: string): UrlContext {
     // Detect any maxbooster domain and route to 'article' category so copy
     // templates produce promotional content suited to feature/info pages
     // ("Worth reading", "check this out") rather than generic "link in bio".
-    if (host === 'maxbooster.replit.app' || host.endsWith('.maxbooster.replit.app') ||
+    if (host === 'max-booster.com'        || host.endsWith('.max-booster.com') ||
+        host === 'maxbooster.replit.app'  || host.endsWith('.maxbooster.replit.app') ||
         host === 'maxbooster.app'         || host.endsWith('.maxbooster.app') ||
         host === 'localhost'              || host === '127.0.0.1') {
       const firstPath = parts[0] ?? '';
@@ -532,7 +533,8 @@ const MAXBOOSTER_ROUTE_META: Record<string, PageMeta> = {
 };
 
 const MAXBOOSTER_HOSTS = new Set([
-  'maxbooster.replit.app',
+  'max-booster.com',
+  'maxbooster.replit.app',  // legacy
   'maxbooster.app',
   'localhost',
   '127.0.0.1',
@@ -542,7 +544,7 @@ function getMaxBoosterRouteMeta(url: string): PageMeta | null {
   try {
     const u = new URL(url);
     const host = u.hostname.split(':')[0].toLowerCase();
-    if (!MAXBOOSTER_HOSTS.has(host) && !host.endsWith('.maxbooster.replit.app') && !host.endsWith('.maxbooster.app')) {
+    if (!MAXBOOSTER_HOSTS.has(host) && !host.endsWith('.max-booster.com') && !host.endsWith('.maxbooster.replit.app') && !host.endsWith('.maxbooster.app')) {
       return null;
     }
     const cleanPath = u.pathname.replace(/\/$/, '') || '/';

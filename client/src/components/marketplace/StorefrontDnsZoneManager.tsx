@@ -118,13 +118,13 @@ interface DnsRecord {
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const NS  = 'maxbooster.replit.app';
-const NS1 = NS;
-const NS2 = NS;
-const PLATFORM_DOMAIN    = 'maxbooster.replit.app';
-// Public store URLs use the /s/:label path — subdomains are not routed by Replit's infra.
-// The domain value stored in DB is still {label}.maxbooster.replit.app (internal identifier).
-const platformStoreUrl = (label: string) => `/s/${label}`;
+const PLATFORM_DOMAIN = 'max-booster.com';
+const NS              = PLATFORM_DOMAIN;
+const NS1             = `ns1.${PLATFORM_DOMAIN}`;
+const NS2             = `ns2.${PLATFORM_DOMAIN}`;
+// Artist stores live at {label}.max-booster.com — resolved via wildcard A/CNAME at registrar.
+// The domain value stored in DB is {label}.max-booster.com.
+const platformStoreUrl = (label: string) => `https://${label}.${PLATFORM_DOMAIN}`;
 
 const FEATURED_TLDS = ['.com', '.io', '.music', '.band', '.studio', '.net', '.co', '.org'];
 

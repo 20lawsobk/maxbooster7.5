@@ -138,7 +138,8 @@ interface MembershipTier {
   currentSubscribers: number;
 }
 
-const STOREFRONT_BASE = 'https://maxbooster.replit.app';
+const STOREFRONT_BASE = 'https://max-booster.com';
+const PLATFORM_DOMAIN = 'max-booster.com';
 
 /**
  * Strip protocol, trailing slashes, and path from user-entered domain input.
@@ -584,7 +585,7 @@ export default function StorefrontBuilder() {
     },
     onSuccess: (data) => {
       if (data.ok) {
-        toast({ title: 'Subdomain Reserved', description: `Your store is now at https://${data.subdomain || subdomainForm.subdomain}.maxbooster.replit.app` });
+        toast({ title: 'Subdomain Reserved', description: `Your store is now at https://${data.subdomain || subdomainForm.subdomain}.${PLATFORM_DOMAIN}` });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront/my'] });
         queryClient.invalidateQueries({ queryKey: ['/api/storefront-domains', selectedStorefront?.id] });
       } else {
@@ -1153,7 +1154,7 @@ export default function StorefrontBuilder() {
                             <p className="text-xs text-muted-foreground">
                               Go to your domain registrar (GoDaddy, Namecheap, Google Domains, etc.), find <strong>Nameservers</strong>, change to <strong>Custom</strong>, and enter:
                             </p>
-                            {(['maxbooster.replit.app'] as const).map((ns) => (
+                            {([`ns1.${PLATFORM_DOMAIN}`, `ns2.${PLATFORM_DOMAIN}`] as const).map((ns) => (
                               <div key={ns} className="flex items-center gap-2 bg-white dark:bg-gray-900 border border-input rounded px-2 py-1">
                                 <span className="font-mono text-xs flex-1 select-all">{ns}</span>
                                 <button
@@ -1318,7 +1319,7 @@ export default function StorefrontBuilder() {
                         >
                           <Shuffle className="w-4 h-4" />
                         </Button>
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">.maxbooster.replit.app</span>
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">.{PLATFORM_DOMAIN}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
@@ -1356,7 +1357,7 @@ export default function StorefrontBuilder() {
                       </Button>
                       <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800 space-y-1">
                         <p className="font-semibold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> Subdomain URL format</p>
-                        <p>Once reserved and active, your store is accessible at <span className="font-mono font-medium">{subdomainForm.subdomain ? `https://${subdomainForm.subdomain}.maxbooster.replit.app` : `{your-name}.maxbooster.replit.app`}</span>.</p>
+                        <p>Once reserved and active, your store is accessible at <span className="font-mono font-medium">{subdomainForm.subdomain ? `https://${subdomainForm.subdomain}.${PLATFORM_DOMAIN}` : `{your-name}.${PLATFORM_DOMAIN}`}</span>.</p>
                       </div>
                     </div>
 
@@ -1424,7 +1425,7 @@ export default function StorefrontBuilder() {
                           </p>
                           <div className="flex items-center gap-2 bg-white rounded px-3 py-2 border font-mono text-xs">
                             <span className="text-muted-foreground w-6">NS</span>
-                            <span className="text-blue-800 font-medium select-all flex-1">maxbooster.replit.app</span>
+                            <span className="text-blue-800 font-medium select-all flex-1">{ns}</span>
                           </div>
                           <p className="text-[11px] text-blue-600">
                             Log into your registrar (where you bought the domain) and replace their nameservers with the one above. DNS propagation takes 1–48 hours. Once resolved, the domain shows Active and you can link it to your storefront in the DNS tab.

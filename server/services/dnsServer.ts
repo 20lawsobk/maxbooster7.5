@@ -4,10 +4,10 @@
  * Configured exactly like a professional DNS provider (Cloudflare, Route 53):
  *
  *   • Listens on UDP :53 + TCP :53 (configurable via DNS_PORT)
- *   • Authoritative for BASE_DOMAIN (maxbooster.replit.app) AND any custom domain
+ *   • Authoritative for BASE_DOMAIN (max-booster.com) AND any custom domain
  *     that a user has claimed/pointed here (stored in storefrontDomains table)
- *   • Single unified nameserver: maxbooster.replit.app (the platform itself)
- *   • Wildcard A records: *.maxbooster.replit.app → DNS_SERVER_IP
+ *   • Nameservers: ns1.max-booster.com / ns2.max-booster.com
+ *   • Wildcard A records: *.max-booster.com → DNS_SERVER_IP
  *   • Custom domains: resolved to DNS_SERVER_IP once user points NS here
  *   • SOA with proper refresh/retry/expire/minimum per RFC 1912 best-practices
  *   • Non-authoritative queries forwarded upstream (8.8.8.8)
@@ -15,7 +15,7 @@
  * To activate for a custom domain (e.g. mybeats.com):
  *   1. User claims the domain inside Max Booster (Domain Hub → Find Domain)
  *   2. User goes to their registrar and sets the nameserver to:
- *        maxbooster.replit.app
+ *        ns1.max-booster.com  /  ns2.max-booster.com
  *   3. DNS propagates (up to 48 h). The domain then resolves here automatically.
  *
  * No glue records or external registrar API required — the built-in DNS is
@@ -34,7 +34,7 @@ const {
   UDPClient,
 } = dns2 as any;
 
-const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'maxbooster.replit.app').toLowerCase();
+const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'max-booster.com').toLowerCase();
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
@@ -148,7 +148,7 @@ function extractZoneDomain(name: string): string {
 
 // ─── DNS record builders ──────────────────────────────────────────────────────
 
-const PLATFORM_NS = process.env.PLATFORM_NS || 'maxbooster.replit.app';
+const PLATFORM_NS = process.env.PLATFORM_NS || `ns1.${BASE_DOMAIN}`;
 
 /** SOA record — authoritative for all Max Booster zones */
 function makeSOA(zone: string) {
@@ -167,7 +167,7 @@ function makeSOA(zone: string) {
   };
 }
 
-/** NS record — single unified nameserver (maxbooster.replit.app) */
+/** NS records — ns1/ns2.max-booster.com */
 function makeNSRecords(zone: string) {
   return [
     {

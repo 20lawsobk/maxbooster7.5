@@ -37,7 +37,7 @@ const PLATFORMS = {
     clientSecret: process.env.THREADS_APP_SECRET,
     // redirectUri must be set explicitly and match exactly what is registered
     // in the Meta developer console under Threads → Valid OAuth Redirect URIs.
-    redirectUri: process.env.THREADS_REDIRECT_URI || `${process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app'}/auth/threads/callback`,
+    redirectUri: process.env.THREADS_REDIRECT_URI || `${process.env.DOMAIN || process.env.APP_URL || 'https://max-booster.com'}/auth/threads/callback`,
     usePKCE: false,
     responseType: 'code',
     enabled: !!(process.env.THREADS_APP_ID && process.env.THREADS_APP_SECRET),
@@ -199,7 +199,7 @@ function verifyOAuthState(rawState: string): { userId: string; platform: string;
 }
 
 function getBaseUrl(): string {
-  return process.env.DOMAIN || process.env.APP_URL || 'https://maxbooster.replit.app';
+  return process.env.DOMAIN || process.env.APP_URL || 'https://max-booster.com';
 }
 
 function buildOAuthUrl(baseUrl: string, params: URLSearchParams, scope: string): string {
