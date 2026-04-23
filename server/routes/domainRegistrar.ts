@@ -1,14 +1,15 @@
 /**
- * Domain Registrar API — Max Booster Built-In DNS
+ * Domain Registrar API — Max Booster Registrar
  *
- * Domains are claimed and managed entirely within Max Booster's registrar
- * infrastructure.  The RegistrarService abstraction means the underlying
- * provider (internal DB or EPP) can be swapped without changing these routes.
+ * Max Booster IS the registrar. All domain registrations are handled natively
+ * by Max Booster's own DNS infrastructure (ns1/ns2/ns3.max-booster.com).
+ * No third-party EPP or reseller API is required.
  *
  * Endpoints:
- *   GET    /api/domain-registrar/config                  — nameserver info + provider
+ *   GET    /api/domain-registrar/config                  — registrar info + nameservers
+ *   GET    /api/domain-registrar/whois/:domain           — public RDAP/WHOIS lookup
  *   GET    /api/domain-registrar/search?name=mybeats     — availability check
- *   POST   /api/domain-registrar/claim                   — claim / register a domain
+ *   POST   /api/domain-registrar/claim                   — register a domain
  *   GET    /api/domain-registrar/my-domains              — list user's domains
  *   GET    /api/domain-registrar/my-domains/:id          — single domain detail
  *   POST   /api/domain-registrar/my-domains/:id/release  — soft-release (frees quota)
@@ -31,9 +32,15 @@ import {
   NS,
   NS1,
   NS2,
+  NS3,
+  ALL_NS,
   PLATFORM_DOMAIN,
+  REGISTRAR_NAME,
+  REGISTRAR_URL,
+  REGISTRAR_EMAIL,
+  REGISTRAR_ABUSE,
 } from '../services/domainRegistrarService.js';
-import { getRegistrarProvider }      from '../services/registrar/index.js';
+import { getRegistrarProvider, MaxBoosterRegistrarProvider } from '../services/registrar/index.js';
 import {
   enforceQuota,
   softReleaseDomain,
@@ -61,16 +68,67 @@ router.get('/config', async (_req, res) => {
   const provider = getRegistrarProvider();
   const health   = await provider.healthCheck().catch(() => ({ ok: false }));
   return res.json({
-    ok:             true,
-    ns:             NS,
-    ns1:            NS1,
-    ns2:            NS2,
-    platformDomain: PLATFORM_DOMAIN,
-    supportedTlds:  SEARCH_TLDS,
-    builtIn:        true,
-    provider:       provider.name,
+    ok:              true,
+    registrar:       REGISTRAR_NAME,
+    registrarUrl:    REGISTRAR_URL,
+    registrarEmail:  REGISTRAR_EMAIL,
+    abuseEmail:      REGISTRAR_ABUSE,
+    ns:              NS,
+    ns1:             NS1,
+    ns2:             NS2,
+    ns3:             NS3,
+    nameservers:     ALL_NS,
+    platformDomain:  PLATFORM_DOMAIN,
+    supportedTlds:   SEARCH_TLDS,
+    builtIn:         true,
+    provider:        provider.name,
     providerHealthy: health.ok,
   });
+});
+
+// ── WHOIS / RDAP lookup (public, RFC 7483) ────────────────────────────────
+
+router.get('/whois/:domain', async (req, res) => {
+  const domain = (req.params.domain || '').toLowerCase().trim();
+  if (!domain || !domain.includes('.')) {
+    return res.status(400).json({ ok: false, error: 'Invalid domain name.' });
+  }
+
+  try {
+    const provider = getRegistrarProvider();
+
+    if (provider instanceof MaxBoosterRegistrarProvider) {
+      const rdap = await provider.getRdapResponse(domain, true);
+      if (!rdap) {
+        return res
+          .status(404)
+          .set('Content-Type', 'application/rdap+json')
+          .json({
+            errorCode:        404,
+            title:            'Not Found',
+            description:      [`${domain} is not registered with ${REGISTRAR_NAME}.`],
+            rdapConformance:  ['rdap_level_0'],
+          });
+      }
+      return res
+        .set('Content-Type', 'application/rdap+json')
+        .json(rdap);
+    }
+
+    // Fallback for EPP or other providers — basic DB lookup
+    const { rows } = await pool.query(
+      'SELECT domain, status, expires_at, nameserver1, nameserver2 FROM claimed_domains WHERE domain = $1 LIMIT 1',
+      [domain]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ ok: false, error: `${domain} not found.` });
+    }
+    return res.json({ ok: true, domain: rows[0].domain, status: rows[0].status });
+
+  } catch (err: any) {
+    logger.error({ err: err.message, domain }, '[WHOIS] lookup error');
+    return res.status(500).json({ ok: false, error: 'WHOIS lookup failed.' });
+  }
 });
 
 // ── Domain availability search ────────────────────────────────────────────────

@@ -16,6 +16,16 @@ export const PLATFORM_DOMAIN = process.env.BASE_DOMAIN  || 'max-booster.com';
 export const NS               = PLATFORM_DOMAIN;
 export const NS1              = process.env.NS1          || `ns1.${PLATFORM_DOMAIN}`;
 export const NS2              = process.env.NS2          || `ns2.${PLATFORM_DOMAIN}`;
+export const NS3              = process.env.NS3          || `ns3.${PLATFORM_DOMAIN}`;
+
+/** All three Max Booster authoritative nameservers. */
+export const ALL_NS           = [NS1, NS2, NS3];
+
+/** Max Booster registrar identity constants. */
+export const REGISTRAR_NAME   = 'Max Booster, LLC';
+export const REGISTRAR_URL    = `https://${PLATFORM_DOMAIN}`;
+export const REGISTRAR_EMAIL  = `registrar@${PLATFORM_DOMAIN}`;
+export const REGISTRAR_ABUSE  = `abuse@${PLATFORM_DOMAIN}`;
 
 // ── Domain pricing (internal reference only — domains are FREE to subscribers) ─
 // Not shown in the UI; kept for platform cost-tracking purposes.
