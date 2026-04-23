@@ -925,24 +925,29 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       const { eq, and } = await import('drizzle-orm');
       const fqdn = `${label}.${BASE}`;
 
-      // 1. Managed subdomain registry (reserved via DNS Manager UI)
+      // 1. storefront_domains registry — any type (managed_subdomain, custom_domain, platform_subdomain)
+      const { inArray } = await import('drizzle-orm');
       const [domRow] = await sDb
         .select({ slug: sStores.slug })
         .from(sDoms)
         .innerJoin(sStores, eq(sDoms.storefrontId, sStores.id))
-        .where(and(eq(sDoms.domain, fqdn), eq(sDoms.type, 'managed_subdomain')))
+        .where(and(
+          eq(sDoms.domain, fqdn),
+          inArray(sDoms.type, ['managed_subdomain', 'custom_domain', 'platform_subdomain']),
+        ))
         .limit(1);
 
       if (domRow?.slug) {
         return res.redirect(302, `/storefront/${domRow.slug}`);
       }
 
-      // 2. Claimed domains registry (registered via domain registrar)
+      // 2. Claimed domains registry — try by domain name even without storefrontId,
+      //    falling back to slug derived from subdomain label
       const { claimedDomains: cDoms } = await import('@shared/schema');
       const [claimRow] = await sDb
-        .select({ slug: sStores.slug })
+        .select({ slug: sStores.slug, storefrontId: cDoms.storefrontId })
         .from(cDoms)
-        .innerJoin(sStores, eq(cDoms.storefrontId, sStores.id))
+        .leftJoin(sStores, eq(cDoms.storefrontId, sStores.id))
         .where(eq(cDoms.domain, fqdn))
         .limit(1);
 
