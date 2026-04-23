@@ -34,7 +34,7 @@ import { claimedDomains } from '@shared/schema';
 import { logger } from '../../logger.js';
 import {
   NS1, NS2, NS3, ALL_NS, PLATFORM_DOMAIN,
-  REGISTRAR_NAME, REGISTRAR_URL, REGISTRAR_EMAIL, REGISTRAR_ABUSE,
+  REGISTRAR_NAME, REGISTRAR_BRAND, REGISTRAR_URL, REGISTRAR_EMAIL, REGISTRAR_ABUSE,
   DOMAIN_PRICES,
 } from '../domainRegistrarService.js';
 import type {
@@ -118,17 +118,27 @@ export function buildRdapResponse(row: any, privacyRedact = true): RdapDomain {
       {
         objectClassName: 'entity',
         roles:           ['registrar'],
-        publicIds:       [{ type: 'IANA Registrar ID', identifier: 'Max Booster' }],
+        publicIds:       [{ type: 'IANA Registrar ID', identifier: REGISTRAR_BRAND }],
         vcardArray:      ['vcard', [
           ['version', {}, 'text', '4.0'],
-          ['fn',      {}, 'text', REGISTRAR_NAME],
+          ['fn',      {}, 'text', `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`],
+          ['org',     {}, 'text', REGISTRAR_NAME],
           ['url',     {}, 'uri',  REGISTRAR_URL],
           ['email',   {}, 'text', REGISTRAR_EMAIL],
         ]],
-        remarks: [{
-          title: 'Abuse Contact',
-          description: [`Email: ${REGISTRAR_ABUSE}`, `URL: ${REGISTRAR_URL}/abuse`],
-        }],
+        remarks: [
+          {
+            title: 'Registrar',
+            description: [
+              `${REGISTRAR_NAME} is the registrar of record.`,
+              `${REGISTRAR_BRAND} is a domain registration product operated by ${REGISTRAR_NAME}.`,
+            ],
+          },
+          {
+            title: 'Abuse Contact',
+            description: [`Email: ${REGISTRAR_ABUSE}`, `URL: ${REGISTRAR_URL}/abuse`],
+          },
+        ],
       },
     ],
     links: [{
@@ -138,7 +148,9 @@ export function buildRdapResponse(row: any, privacyRedact = true): RdapDomain {
     }],
     rdapConformance: ['rdap_level_0'],
     registrar: {
-      name:       REGISTRAR_NAME,
+      name:       `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`,
+      legalName:  REGISTRAR_NAME,
+      brand:      REGISTRAR_BRAND,
       url:        REGISTRAR_URL,
       email:      REGISTRAR_EMAIL,
       abuseEmail: REGISTRAR_ABUSE,
@@ -149,7 +161,8 @@ export function buildRdapResponse(row: any, privacyRedact = true): RdapDomain {
 // ── Provider ──────────────────────────────────────────────────────────────
 
 export class MaxBoosterRegistrarProvider implements RegistrarProvider {
-  readonly name = REGISTRAR_NAME;
+  readonly name  = `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`;
+  readonly brand = REGISTRAR_BRAND;
 
   // ── Availability ──────────────────────────────────────────────────────────
 

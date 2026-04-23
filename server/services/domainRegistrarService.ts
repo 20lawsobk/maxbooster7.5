@@ -22,7 +22,8 @@ export const NS3              = process.env.NS3          || `ns3.${PLATFORM_DOMA
 export const ALL_NS           = [NS1, NS2, NS3];
 
 /** Max Booster registrar identity constants. */
-export const REGISTRAR_NAME   = 'Max Booster, LLC';
+export const REGISTRAR_NAME   = 'B-Lawz Music LLC';
+export const REGISTRAR_BRAND  = 'Max Booster';
 export const REGISTRAR_URL    = `https://${PLATFORM_DOMAIN}`;
 export const REGISTRAR_EMAIL  = `registrar@${PLATFORM_DOMAIN}`;
 export const REGISTRAR_ABUSE  = `abuse@${PLATFORM_DOMAIN}`;

@@ -36,6 +36,7 @@ import {
   ALL_NS,
   PLATFORM_DOMAIN,
   REGISTRAR_NAME,
+  REGISTRAR_BRAND,
   REGISTRAR_URL,
   REGISTRAR_EMAIL,
   REGISTRAR_ABUSE,
@@ -68,11 +69,13 @@ router.get('/config', async (_req, res) => {
   const provider = getRegistrarProvider();
   const health   = await provider.healthCheck().catch(() => ({ ok: false }));
   return res.json({
-    ok:              true,
-    registrar:       REGISTRAR_NAME,
-    registrarUrl:    REGISTRAR_URL,
-    registrarEmail:  REGISTRAR_EMAIL,
-    abuseEmail:      REGISTRAR_ABUSE,
+    ok:                 true,
+    registrar:          `${REGISTRAR_NAME} d/b/a ${REGISTRAR_BRAND}`,
+    registrarLegalName: REGISTRAR_NAME,
+    registrarBrand:     REGISTRAR_BRAND,
+    registrarUrl:       REGISTRAR_URL,
+    registrarEmail:     REGISTRAR_EMAIL,
+    abuseEmail:         REGISTRAR_ABUSE,
     ns:              NS,
     ns1:             NS1,
     ns2:             NS2,
