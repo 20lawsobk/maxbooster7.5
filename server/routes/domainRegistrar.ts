@@ -128,7 +128,13 @@ router.post('/claim', async (req, res) => {
     }
 
     const domainLower = domain.toLowerCase().trim();
-    if (!/^[a-z0-9][a-z0-9-]*\.[a-z.]+$/.test(domainLower)) {
+    // Each DNS label: starts/ends with alnum, may contain hyphens internally.
+    // Full domain: two or more labels separated by dots.
+    // Allows platform subdomains like {name}.max-booster.com as well as plain .com/.music etc.
+    const labelRe = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+    const labels  = domainLower.split('.');
+    const validFqdn = labels.length >= 2 && labels.every(l => l.length > 0 && labelRe.test(l));
+    if (!validFqdn) {
       return res.status(400).json({ ok: false, error: 'Invalid domain format.' });
     }
 
