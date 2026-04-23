@@ -18,19 +18,27 @@ const DOMAIN_LIMIT = 2;
  *  - Platform subdomain claims (Find Domain / Claim Free)
  */
 async function getUserDomainUsage(userId: string): Promise<{ zones: number; claimed: number; total: number }> {
-  const [zonesResult, claimedResult] = await Promise.all([
-    pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]),
-    pool.query(
-      `SELECT COUNT(*)::int AS n
+  // Count DISTINCT domain names across both sources so the same domain
+  // (e.g. max-booster.com appearing in both dns_zones and storefront_domains)
+  // is only counted once.
+  const uniqueResult = await pool.query(
+    `SELECT COUNT(DISTINCT domain)::int AS n FROM (
+       SELECT domain FROM dns_zones WHERE user_id = $1
+       UNION
+       SELECT sd.domain
        FROM storefront_domains sd
        JOIN storefronts s ON s.id = sd.storefront_id
-       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'`,
-      [userId]
-    ),
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
+     ) combined`,
+    [userId]
+  );
+  const total = uniqueResult.rows[0]?.n ?? 0;
+  // zones/claimed kept for informational breakdown (not used for quota)
+  const [zonesResult] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]),
   ]);
-  const zones   = zonesResult.rows[0]?.n   ?? 0;
-  const claimed = claimedResult.rows[0]?.n ?? 0;
-  return { zones, claimed, total: zones + claimed };
+  const zones = zonesResult.rows[0]?.n ?? 0;
+  return { zones, claimed: 0, total };
 }
 
 /** Returns true if the user has an active subscription (or is an admin). */

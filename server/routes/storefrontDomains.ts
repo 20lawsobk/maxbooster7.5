@@ -21,19 +21,21 @@ const dnsResolve = dns.promises.resolve;
 const DOMAIN_LIMIT = 2;
 
 async function getUserDomainUsage(userId: string): Promise<{ zones: number; claimed: number; total: number }> {
-  const [zonesResult, claimedResult] = await Promise.all([
-    pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]),
-    pool.query(
-      `SELECT COUNT(*)::int AS n
+  const uniqueResult = await pool.query(
+    `SELECT COUNT(DISTINCT domain)::int AS n FROM (
+       SELECT domain FROM dns_zones WHERE user_id = $1
+       UNION
+       SELECT sd.domain
        FROM storefront_domains sd
        JOIN storefronts s ON s.id = sd.storefront_id
-       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'`,
-      [userId]
-    ),
-  ]);
-  const zones   = zonesResult.rows[0]?.n   ?? 0;
-  const claimed = claimedResult.rows[0]?.n ?? 0;
-  return { zones, claimed, total: zones + claimed };
+       WHERE s.user_id = $1 AND sd.type = 'platform_subdomain'
+     ) combined`,
+    [userId]
+  );
+  const total = uniqueResult.rows[0]?.n ?? 0;
+  const zonesResult = await pool.query('SELECT COUNT(*)::int AS n FROM dns_zones WHERE user_id = $1', [userId]);
+  const zones = zonesResult.rows[0]?.n ?? 0;
+  return { zones, claimed: 0, total };
 }
 
 async function userHasActiveSubscription(userId: string): Promise<boolean> {
