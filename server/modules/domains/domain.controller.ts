@@ -10,13 +10,48 @@ import { logger } from "../../logger.js";
 const BASE_DOMAIN = process.env.BASE_DOMAIN || 'max-booster.com';
 const PLATFORM_IP = process.env.DNS_SERVER_IP || "34.111.179.208";
 
+const SUBDOMAIN_MIN = 3;
+const SUBDOMAIN_MAX = 30;
+
+const RESERVED_SUBDOMAIN_LABELS = new Set([
+  "ns", "ns1", "ns2", "ns3", "ns4", "ns5", "ns6", "dns", "mx", "mx1", "mx2",
+  "www", "ftp", "smtp", "pop", "pop3", "imap", "mail", "email", "webmail",
+  "admin", "administrator", "root", "system", "server", "cpanel",
+  "host", "hostmaster", "postmaster", "abuse", "noc",
+  "api", "app", "auth", "login", "signin", "signup", "register", "account",
+  "dashboard", "portal", "panel", "control", "manage",
+  "support", "help", "docs", "status", "health",
+  "blog", "news", "press", "media", "assets", "cdn", "static",
+  "dev", "staging", "test", "beta", "alpha", "demo", "sandbox", "localhost",
+  "store", "shop", "market", "marketplace",
+]);
+
+function validateSubdomainLabel(raw: string): { ok: false; error: string } | { ok: true; normalized: string } {
+  const result = validateDnsLabel(raw);
+  if (!result.ok) return result;
+
+  const { normalized } = result;
+
+  if (normalized.length < SUBDOMAIN_MIN) {
+    return { ok: false, error: `Label must be at least ${SUBDOMAIN_MIN} characters.` };
+  }
+  if (normalized.length > SUBDOMAIN_MAX) {
+    return { ok: false, error: `Label cannot exceed ${SUBDOMAIN_MAX} characters.` };
+  }
+  if (RESERVED_SUBDOMAIN_LABELS.has(normalized)) {
+    return { ok: false, error: `"${normalized}" is a reserved name and cannot be used.` };
+  }
+
+  return { ok: true, normalized };
+}
+
 // ─── Managed subdomains ────────────────────────────────────────────────────
 
 export async function checkManaged(req: Request, res: Response) {
   try {
     const { desiredLabel } = req.body as { desiredLabel?: string };
-    const result = validateDnsLabel(desiredLabel || "");
-    if (!result.ok) return res.status(400).json(result);
+    const result = validateSubdomainLabel(desiredLabel || "");
+    if (!result.ok) return res.status(400).json({ ok: false, error: result.error });
 
     const fqdn = `${result.normalized}.${BASE_DOMAIN}`;
     const existing = await db
@@ -39,8 +74,8 @@ export async function reserveManaged(req: Request, res: Response) {
     const { storefrontId, desiredLabel } = req.body as { storefrontId?: string; desiredLabel?: string };
     if (!storefrontId) return res.status(400).json({ ok: false, error: "storefrontId required." });
 
-    const labelResult = validateDnsLabel(desiredLabel || "");
-    if (!labelResult.ok) return res.status(400).json(labelResult);
+    const labelResult = validateSubdomainLabel(desiredLabel || "");
+    if (!labelResult.ok) return res.status(400).json({ ok: false, error: labelResult.error });
 
     const fqdn = `${labelResult.normalized}.${BASE_DOMAIN}`;
 

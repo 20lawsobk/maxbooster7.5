@@ -18,78 +18,30 @@ Key architectural decisions include:
 - Comprehensive workflow automations managed by `musicWorkflowAutomationService.ts`, and a Unified Content Orchestration System for all content generation.
 - Custom in-house AI models exclusively used for Advertisement and Autopilot Systems, integrating an advanced AI Content Stack (v2, v3, v4) for social content and songwriting.
 - A Multimodal Content Generation System via `server/services/multimodalGenerationService.ts` orchestrates text, image, audio, and video generation, all calling MaxCore.
-- Video Generation Engine: `advancedVideoRendererService.ts` is MaxCore-only.
-- Voice Synthesis Engine (`voiceSynthesisService.ts`) offering 14 distinct voice profiles using FFmpeg processing chains.
-- Python Audio Analysis Engine using `librosa`, `soundfile`, `scipy`, `scikit-learn`, and `basic-pitch`.
-- Beat Audio Separator (`server/services/audioSeparator.py` + `server/services/audioSeparatorService.ts`) for generating MP3s and frequency-band stems from uploaded WAV beats.
+- Video Generation Engine, Voice Synthesis Engine, and Python Audio Analysis Engine for media processing.
+- Beat Audio Separator for generating MP3s and frequency-band stems from uploaded WAV beats.
 - Offline mode for app-wide context and background sync.
 - Autopilot Learning Feedback Loop for recording performance patterns.
 - Dedicated admin UI for financial configuration.
 - `Chain Error Auto-Fixer` and `Platform Auto Error Fixer & Patcher` for system health and runtime patching.
 - Profile Claiming System v2 for artist profile management.
 - Per-Artist Storefront Deployment System for dynamic domain management and multi-tenant routing, including a `dns-os/` monorepo for a fully self-hosted DNS provider.
-- **dns-node — Standalone Nameserver Package** (`dns-node/`): Self-contained authoritative DNS node v3.0.0 with custom binary DNS packet codec (raw node:dgram + node:net, no dns2 library). Architecture: `packet.ts` (RFC 1035 binary codec — parser + builder for A/AAAA/NS/SOA/MX/TXT/CAA/DNSKEY/RRSIG/NSEC3/OPT/ECS), `zone.ts` (zone.json loader + periodic HTTP pull from primary), `dnssec.ts` (file-based PEM keys, ECDSAP256SHA256 signing, NSEC3, DS), `geodns.ts` (maxmind mmdb, EDNS Client Subnet), `server.ts` (UDP+TCP listeners, DoH upstream fallback), `health.ts` (node:http — /health, /metrics, /reload, /ds-record, BGP route hook). Three running nodes: ns1 (:5353, main app), ns2 (:5354, dns-node, health :5381), ns3 (:5355, dns-node, health :5382). Health watchdog v2 monitors all 3 + alerts on ≥2 failures. DS record format: `max-booster.com IN DS <kskTag> 13 2 <sha256hex>`.
-- **Full DIY DNS Infrastructure** — zero third-party DNS dependencies:
-  - **DNSSEC** (`server/services/dnssec.ts`): ECDSAP256SHA256 (alg 13), KSK/ZSK key lifecycle with DB persistence (`dnssec_keys` table), RRSIG signing, NSEC3 (0 iterations per RFC 9276), DS records. Controlled by `DNSSEC_ENABLED=true` env var. `DNSKEY`/`DS`/`NSEC3PARAM` query types served via dns-packet; RRSIG added to any DO-bit query.
-  - **GeoDNS + EDNS Client Subnet** (`server/services/geoDns.ts`): MaxMind GeoLite2 mmdb (self-hosted), RFC 7871 ECS option code 8 parsing, continent-to-IP mapping via `REGION_MAP` env var JSON. Controlled by `GEODNS_ENABLED=true`. Source IP passed from DoH routes.
-  - **Multi-Region Nameservers** (`multi-region/`): `setup-region.sh`, `health-check.sh`, nginx stream proxy config, systemd unit, `region-config.json`. Health endpoint: `GET /api/dns/health` → `{ok, region, uptime, queryCount, version}`.
-  - **BGP Anycast / BIRD2** (`bgp-anycast/`): `bird2.conf`, `setup-bgp.sh`, `healthcheck.sh` (3-strike anycast0 withdrawal), `dummy-interface-setup.sh`, systemd timer, ARIN ASN application guide, BGP state machine reference.
-  - **EPP Registrar Client** (`server/services/epp/`): `EppClient.ts` (TLS + 4-byte frame protocol from scratch), `EppCommands.ts` (11 RFC 5731 XML builders: hello/login/domainCheck/Create/Info/Renew/Update/Transfer/Delete/contactCreate/contactCheck), `EppParser.ts`, `EppSession` wrapper. `EppRegistrarProvider.ts` implements all `RegistrarProvider` interface methods. OT&E target: `epp-ote.verisign-grs.com:700`.
-- Built-in Authoritative DNS Server (`server/services/dnsServer.ts`) using `dns2`. Handles A, AAAA, NS, SOA, CNAME, MX, TXT, and **CAA** (type 257) records. RFC 8482-compliant ANY response. GeoDNS-aware A record resolution (uses `resolveGeoIP` with `_rawBuffer`/`_srcIp` context).
-- Built-in DNS Zone Manager (`server/routes/dnsManager.ts`) for users to manage custom domains and DNS records.
-- Domain Registrar System (`server/routes/domainRegistrar.ts`, `server/services/domainRegistrarService.ts`): **Max Booster IS the registrar** — no third-party EPP or reseller API. Domains are registered natively via `MaxBoosterRegistrarProvider` with automatic DNS zone creation and delegation to all 3 nameservers (ns1/ns2/ns3.max-booster.com). RDAP/WHOIS endpoint at `/api/domain-registrar/whois/:domain`. Registrar identity: Max Booster, LLC / registrar@max-booster.com.
-- **Multi-Provider DNS Adapter** (`server/services/dnsProviderService.ts`): Supports GoDaddy, Cloudflare, Namecheap (XML API), AWS Route 53 (inline SigV4), DigitalOcean, and Porkbun. Enforces 60 s minimum TTL (Vercel policy). Exponential-backoff retry on 5xx. CAA record type supported. `buildCaaRecords()` generates Let's Encrypt + Google Trust Services CAA entries.
-- **Domain Lifecycle Service** (`server/services/storefrontDnsService.ts`): Vercel/Netlify-style four-method verification — NS delegation (recommended), www CNAME, apex A record, TXT token. All checks via Cloudflare DoH (1.1.1.1) with Google DoH fallback — bypasses system resolver which fails in Replit. CAA records auto-provisioned on domain activation (letsencrypt.org, pki.goog, issuewild, iodef). Continuous domain health sweep every 12 hours; domains failing 3+ checks flagged `health_degraded`.
-- **Domain Verification Worker** (`server/workers/domainVerificationWorker.ts`): Background 1-minute polling of all pending custom domains. Exponential-backoff skip for repeated-failure domains (after 60 failures → hourly retry). 12-hour health sweep via `runDomainHealthSweep()`.
-- **DNS Propagation Check API** (`server/services/dnsPropagationCheck.ts`): Real-time propagation status from 4 public DoH resolvers (Cloudflare, Cloudflare-alt, Google, Google-alt). Per-resolver results with latency. 30 s result cache to avoid rate limiting. Endpoints: `GET /api/storefront-domains/propagation`, `GET /api/storefront-domains/propagation/setup`, `GET /api/storefront-domains/domain-status/:id`.
+- Full DIY DNS Infrastructure including a standalone nameserver package (`dns-node/`), DNSSEC, GeoDNS + EDNS Client Subnet, multi-region nameservers, BGP Anycast, and an EPP Registrar Client.
+- Built-in Authoritative DNS Server and DNS Zone Manager for user-managed custom domains and records.
+- Domain Registrar System where Max Booster acts as the registrar, handling native domain registration, DNS zone creation, and delegation.
+- Multi-Provider DNS Adapter supporting various commercial DNS providers (GoDaddy, Cloudflare, Namecheap, AWS Route 53, DigitalOcean, Porkbun).
+- Domain Lifecycle Service for domain verification (NS delegation, CNAME, A record, TXT token) and auto-provisioning of CAA records.
+- Domain Verification Worker for background polling of custom domains and health sweeps.
+- DNS Propagation Check API for real-time propagation status from public DoH resolvers.
 - Advanced AI Routing through `unifiedAIController.generateContent()` to MaxCore.
 - Seeded, deterministic outcomes for content generation, aesthetic elements, and AI decision-making, including UCB1 Multi-Armed Bandit for topic selection.
-- Three-Tier Video Diffusion Architecture: Max Booster → MaxCore Rendering Engine relay (port 8000, DiT-24 + DigitalGPU) → MaxCore AI Content Gateway (port 8008, continuous self-training DiT-24 UNetV4 LITE) → MaxCore (`secure-ai-forge.replit.app`).
-- Performance hardening features include pagination, composite DB indexes, Neon PostgreSQL, request correlation IDs, server-side in-memory API cache (30s TTL, per-user, per-query, globally wired via `cacheMiddleware` / `invalidateCacheOnMutation`), Brotli compression middleware (`server/middleware/brotliCompression.ts`), browser caching for media, i18n lazy-loading, IndexedDB async query-cache persister, non-blocking Google Fonts loading, DNS resource hints for Stripe/Sentry/Neon, and production static caching.
-- Image upload canonical pattern: All image uploads use `uploadImageFile(file, '/api/storage/upload', 'file')` for general images, `POST /api/auth/avatar` (field: `avatar`) for avatars, rendered via `SafeImg` component.
-- Beat marketplace cover art: Server endpoints (`POST /api/marketplace/upload`, `PUT /api/marketplace/listings/:id`) accept `artworkUrl` text field (pre-uploaded URL) as alternative to multipart file. Client uploads cover art immediately on file select (upload-on-select), stores server URL in separate state, passes URL at form submission.
-- Contracts DB Persistence: Generated contracts are persisted in the `generated_contracts` PostgreSQL table. `contractTemplateService` loads all contracts from DB on startup and upserts on every mutation.
-- Marketplace storefront custom-domain security audit resolutions involving ownership verification, authentication requirements for DNS status and host enumeration, and proper domain input validation.
-- Storage quota system queries real `user_storage_files` table, sums `size_bytes` per user, grouped by `mime_type`, and enforces limits based on `subscription_tier` (free=5GB, pro=50GB, studio=200GB, enterprise=1TB).
-- Advertising autopilot performance endpoint computes ROI estimates from real data based on active campaign count and industry averages, labeled as estimates.
-
-## Production Readiness Audit History
-
-| Round | Commit | Key Deliverables |
-|-------|--------|-----------------|
-| R2 | 887ca6fa | JWT hardening, CSRF, refund tx, backup OOM guard, audit_logs DB, pino redact, bcrypt-12, ESLint v9, Dependabot, web-vitals |
-| R3 | 0645720b | 399 ESLint errors → 0; 26 real bugs fixed; `/ready` probe via `runAllProbes()`; react-hooks plugin |
-| R4 | 62c0064a | FK constraints (7 tables), `server/config/env.ts` (Zod), 45/45 unit tests, bcrypt cost 10→12 in `init-admin.ts`, CI test gate |
-| R5 audit | d665f5b5 | Comprehensive 20-dimension audit: deps, auth, secrets, DB, health, CSP, Electron, FastAPI, bundle, observability, CI, 2FA, backup, rate limits — baseline captured, no fixes applied |
-| R6 | 32c867c1 | 133 FK indexes applied live, CSP unsafe-eval removed, HSTS enabled, login rate limit 50→10, OAuth state secret prod guard, Electron sandbox: true, FastAPI CORS wildcard replaced, DNS LIMIT 500 |
-| R7 | f12c3737 | Node.js runtime v20→v22; /api/health/live + /api/health/ready sub-route aliases; all 37 bare `catch {}` blocks annotated with rationale across 19 service/route files |
-| R8 | d355b4dd | Process.env sweep (25 server files → env.*); CI integration test job (postgres 16 service, drizzle push, server health-wait, junit upload); drizzle.config.ts SSL conditional; vitest.integration.config.ts; test:integration:ci script |
-| R9 | (current) | P0–P2 hardening: /api/ai/health 503→207; null-guard postedAt in SocialAutopilotEngine+SocialMediaAutopilotAI; multer disk storage (OOM guard); CORS_ORIGIN typed env; require2FA middleware wired to admin router; Electron CSP via session.defaultSession.webRequest.onHeadersReceived; Zod validation on schedule-post (socialMedia.ts) and chatbot/respond (socialAI.ts); 8 meaningful img alt texts across EmbedCodeGenerator, PostPreview, SocialListening, UnifiedInbox, ScoreEditor, FileUploader |
-
-**GitHub remote**: `https://github.com/20lawsobk/maxbooster7.5.git`  
-**Branch**: `main`  
-**Latest commit**: R9 (ongoing)
-
-### R8 Details (current)
-- **process.env sweep (tasks #2+#4)**: All critical env reads in 25 server files migrated from `process.env.X` to `env.X` (typed Zod schema in `server/config/env.ts`). Covers: jwtAuthService, stripeService, stripeWebhookSecurity, refundHandler, billing, webhooks/stripe, storefront, socialOAuth, admin, clusterSession, readReplicaPool, instrument, connectionPool, healthCheck, sessionConfig, alertingService, redisPubSub, database-resilience, replitAuth, security-system, databaseBackupService, emailService (8 reads), configValidator, notificationService, securityMonitoringService, webhookReliabilityService, weeklyInsightsService, userPocketDimensionService. New vars added to schema: `TESTING_STRIPE_SECRET_KEY`, `SENDGRID_FROM_EMAIL`, `NEON_DATABASE_URL`, `YOUTUBE_CLIENT_ID/SECRET`, `GOOGLE_BUSINESS_CLIENT_ID/SECRET`, `BASE_DOMAIN`, `APP_URL`, `DOMAIN`, `CORS_ORIGIN`, `STRIPE_CONNECT_CLIENT_ID`
-- **CI integration tests (task #3)**: New `test-integration` job in `.github/workflows/ci.yml` — spins up postgres:16 service, runs `drizzle-kit push --force` to create schema, starts Express server in background, polls `/health` up to 30s, then runs `npm run test:integration:ci` targeting `health.test.ts` + `api-guards.test.ts`; uploads JUnit XML artifact; wired into `ci-summary` needs + status table
-- **drizzle.config.ts**: Conditional SSL — requires SSL only for cloud-hosted Neon/Supabase URLs; skips SSL in CI (`CI=true`) and for local `DATABASE_URL` without cloud indicators
-- **vitest.integration.config.ts**: New config for CI-safe integration tests (health + auth guard); 30s timeout; JUnit reporter
-
-### R7 Details
-- **Node.js v22**: runtime upgraded via Replit package management
-- **Health sub-routes**: `livenessHandler` + `readinessHandler` consts extracted in `server/routes.ts`; both old paths (`/api/health`, `/api/ready`) and new k8s-style aliases (`/api/health/live`, `/api/health/ready`) registered; request-logger exemption covers all four via `includes('/api/health')`
-- **Empty catch annotation**: All 37 bare `catch {}` blocks replaced with `catch { /* intentional: <reason> */ }` explaining the intent (temp-file cleanup, Redis miss/write, ffmpeg path fallback, TTS engine loop, JSON.parse fallback, PDIM key cleanup, stream close guard, statfsSync platform gap, Stripe webhook logger safety)
-
-### R6 Details
-- **FK indexes** (`server/migrations/r6_fk_indexes.sql`): 133 `CREATE INDEX IF NOT EXISTS` statements applied live for all `user_id`, `storefront_id`, `volume_id`, `pocket_id` FK columns across 124 tables — eliminates seq-scans on every per-user query
-- **CSP**: removed `'unsafe-eval'` from `scriptSrc` in `server/safety/mandatoryMiddleware.ts`; Stripe.js does not require it
-- **HSTS**: added `hsts: { maxAge: 31536000, includeSubDomains: true, preload: true }` to helmet config
-- **Login rate limit**: `server/middleware/rateLimiter.ts` auth.login.max 50→10 per 15-min window
-- **OAuth state HMAC**: `server/routes/socialOAuth.ts` throws at startup in production if neither `SESSION_SECRET` nor `SECRET_KEY` is set
-- **Electron sandbox**: `electron/main.js` `sandbox: false` → `true`; preload only uses `contextBridge` + `process.platform/versions`, both available in sandboxed context
-- **FastAPI CORS**: `server/services/diffusion/api_server_v4.py` `allow_origins=['*']` replaced with env-driven list via `DIFFUSION_ALLOWED_ORIGINS` or fallback to `APP_URL`/`DOMAIN`; methods restricted to GET/POST
-- **DNS query guard**: `server/routes/dnsManager.ts` unbounded `SELECT * FROM dns_zone_records` given `LIMIT 500`
+- Three-Tier Video Diffusion Architecture: Max Booster → MaxCore Rendering Engine relay → MaxCore AI Content Gateway → MaxCore.
+- Performance hardening features include pagination, composite DB indexes, Neon PostgreSQL, request correlation IDs, server-side in-memory API cache, Brotli compression, browser caching, i18n lazy-loading, IndexedDB async query-cache persister, non-blocking Google Fonts, and DNS resource hints.
+- Canonical image upload patterns and specific handling for beat marketplace cover art.
+- Generated contracts are persisted in the `generated_contracts` PostgreSQL table.
+- Marketplace storefront custom-domain security audit resolutions for ownership verification and authentication.
+- Storage quota system based on `user_storage_files` table, `mime_type`, and `subscription_tier`.
+- Advertising autopilot performance endpoint computes ROI estimates.
 
 ## External Dependencies
 - **Frontend Frameworks**: React, Vite, TypeScript, TailwindCSS, Wouter, Zustand, TanStack Query.

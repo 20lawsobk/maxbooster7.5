@@ -454,7 +454,7 @@ router.get("/search", async (req, res) => {
       {
         domain: platformFqdn,
         type: "platform",
-        tld: `.${PLATFORM_DOMAIN_NAME}`,
+        tld: `.${BASE_DOMAIN}`,
         available: platformAvailable,
         isFree: true,
         label: "Free — Instant, no setup required",
