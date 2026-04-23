@@ -44,6 +44,7 @@ import {
   RRTYPE_NSEC3, RRTYPE_NSEC3PAR, RRTYPE_CAA,
 } from './dnssec.js';
 import { resolveGeoIP, getGeoDnsStatus } from './geoDns.js';
+import { resolveRecursive, rrToA, TYPE_A as REC_TYPE_A } from './recursiveResolver.js';
 
 // ── Feature flags ─────────────────────────────────────────────────────────────
 const DNSSEC_ENABLED = process.env.DNSSEC_ENABLED === 'true';
@@ -73,6 +74,37 @@ const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'max-booster.com').toLowerCase()
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
 const DNS_PORT = parseInt(process.env.DNS_PORT || '53', 10);
 const UPSTREAM_DNS = process.env.UPSTREAM_DNS || '8.8.8.8';
+
+// DoH upstream used when outbound UDP port 53 is blocked (e.g. in sandboxed envs)
+// Cloudflare DoH: https://cloudflare-dns.com/dns-query
+// Google DoH:     https://dns.google/dns-query
+const DOH_UPSTREAM = process.env.DOH_UPSTREAM || 'https://cloudflare-dns.com/dns-query';
+
+/**
+ * DNS-over-HTTPS fallback resolver.
+ * Sends the raw DNS wire-format query to a public DoH endpoint.
+ * Returns the parsed dns2 Packet on success, or null on failure.
+ * This works even when outbound UDP port 53 is firewalled.
+ */
+async function dohFallback(queryBuf: Buffer): Promise<any | null> {
+  try {
+    const { default: fetch } = await import('node-fetch').catch(() => ({ default: null as any }));
+    const fetchFn = fetch ?? (globalThis as any).fetch;
+    if (!fetchFn) return null;
+
+    const resp = await fetchFn(DOH_UPSTREAM, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/dns-message', 'Accept': 'application/dns-message' },
+      body:    queryBuf,
+      signal:  AbortSignal.timeout(8_000),
+    });
+    if (!resp.ok) return null;
+    const buf  = Buffer.from(await resp.arrayBuffer());
+    return Packet.parse(buf);
+  } catch {
+    return null;
+  }
+}
 
 // ─── TTL values — match Cloudflare's defaults (RFC 1912 §2.2) ────────────────
 const TTL_A   = 300;      // 5 min A records — fast propagation on IP changes
@@ -242,13 +274,70 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
   const auth = await isAuthoritative(name);
 
   if (!auth) {
-    // Forward non-authoritative queries upstream unchanged
+    // Non-authoritative — 3-tier resolution cascade (Build 2: Max Booster Public Resolver)
+    //   Tier 1: Iterative recursive resolution from 13 IANA root servers (UDP)
+    //   Tier 2: DNS-over-HTTPS to Cloudflare (works even when UDP port 53 is firewalled)
+    //   Tier 3: UDP forwarding to configured upstream (8.8.8.8 default)
+    const rawBuf: Buffer | undefined = (request as any)._rawBuffer;
+
+    // ── Tier 1: Recursive resolver (2 s cap — UDP may be firewalled) ────────
     try {
-      const resolve = UDPClient({ dns: UPSTREAM_DNS });
+      const result = await Promise.race([
+        resolveRecursive(name, qtype),
+        new Promise<never>((_, rej) =>
+          setTimeout(() => rej(new Error('Tier1 timeout')), 2_000)),
+      ]);
+
+      if (result.rcode === 3) {
+        response.header.rcode = 3; // NXDOMAIN — authoritative from root
+        send(response);
+        return;
+      }
+
+      if (result.rcode === 0 && result.answers.length > 0) {
+        // Got answers — build response
+        let fallThrough = false;
+        for (const rr of result.answers) {
+          if (rr.type === REC_TYPE_A && rr.rdata.length === 4) {
+            response.answers.push({
+              name:    rr.name,
+              type:    Packet.TYPE.A,
+              class:   Packet.CLASS.IN,
+              ttl:     rr.ttl,
+              address: rrToA(rr) ?? '0.0.0.0',
+            });
+          } else {
+            fallThrough = true;
+            break;
+          }
+        }
+        if (!fallThrough) {
+          send(response);
+          return;
+        }
+        // Non-A type — continue to DoH tier below
+      }
+      // SERVFAIL / empty — fall through to Tier 2
+    } catch { /* UDP blocked or timeout — fall through to Tier 2 */ }
+
+    // ── Tier 2: DNS-over-HTTPS fallback (Cloudflare) ────────────────────────
+    if (rawBuf) {
+      try {
+        const dohPacket = await dohFallback(rawBuf);
+        if (dohPacket) {
+          send(dohPacket);
+          return;
+        }
+      } catch { /* DoH failed — fall through to Tier 3 */ }
+    }
+
+    // ── Tier 3: UDP upstream (8.8.8.8) ──────────────────────────────────────
+    try {
+      const resolve  = UDPClient({ dns: UPSTREAM_DNS });
       const upstream = await resolve(question.name, qtype);
       send(upstream);
     } catch {
-      response.header.rcode = 2; // SERVFAIL
+      response.header.rcode = 2; // SERVFAIL — all tiers exhausted
       send(response);
     }
     return;
@@ -1144,8 +1233,8 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
 
   return new Promise<DohQueryResult>((resolve, reject) => {
     const timeout = setTimeout(
-      () => reject(new Error('DNS query timed out after 5 s')),
-      5000,
+      () => reject(new Error('DNS query timed out after 15 s')),
+      15_000,
     );
 
     handleRequest(request, async (response: any) => {

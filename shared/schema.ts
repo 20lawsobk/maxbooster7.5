@@ -5675,3 +5675,27 @@ export const insertDnssecKeySchema = createInsertSchema(dnssecKeys).omit({
 });
 export type DnssecKey = typeof dnssecKeys.$inferSelect;
 export type InsertDnssecKey = z.infer<typeof insertDnssecKeySchema>;
+
+// ── HNS Auctions (Build 3 — Handshake TLD ownership) ─────────────────────────
+export const hnsAuctions = pgTable("hns_auctions", {
+  id:        varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId:    varchar("user_id").notNull(),
+  name:      text("name").notNull(),
+  bidHns:    real("bid_hns").notNull(),
+  lockupHns: real("lockup_hns").notNull(),
+  state:     text("state").notNull().default("pending_open"),
+  txHash:    text("tx_hash"),
+  nameHash:  text("name_hash"),
+  error:     text("error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  userIdx: index("hns_auctions_user_idx").on(table.userId),
+  nameIdx: index("hns_auctions_name_idx").on(table.name),
+}));
+
+export const insertHnsAuctionSchema = createInsertSchema(hnsAuctions).omit({
+  id: true, createdAt: true, updatedAt: true,
+});
+export type HnsAuction       = typeof hnsAuctions.$inferSelect;
+export type InsertHnsAuction = z.infer<typeof insertHnsAuctionSchema>;

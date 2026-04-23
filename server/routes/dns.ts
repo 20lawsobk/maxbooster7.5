@@ -121,6 +121,57 @@ router.get('/health', (_req, res) => {
 });
 
 /**
+ * POST /api/dns/resolve  — Max Booster Public Recursive Resolver (Build 2)
+ * RFC 8484 DNS-over-HTTPS endpoint backed by the full iterative resolver.
+ * Resolves ANY domain from root — not just max-booster.com zones.
+ * This is what makes the platform a full public DNS resolver (like 8.8.8.8).
+ *
+ * No authentication required — DNS is a public protocol.
+ * Rate-limited at the global rate limiter level.
+ */
+router.post('/resolve', expressRaw({ type: 'application/dns-message', limit: '64kb' }), async (req, res) => {
+  try {
+    const body: Buffer = Buffer.isBuffer(req.body)      ? req.body
+                       : req.body instanceof Uint8Array  ? Buffer.from(req.body)
+                       : Buffer.from(req.body as string, 'base64');
+
+    if (body.length < 12) {
+      return res.status(400).send('Malformed DNS message');
+    }
+
+    // Forward to the authoritative DoH endpoint which now has the recursive resolver
+    const result = await processQuery(body, '0.0.0.0');
+
+    const cacheHeader = dohCacheControl(result);
+    res
+      .set('Content-Type', 'application/dns-message')
+      .set('Cache-Control', cacheHeader)
+      .status(200)
+      .send(result.buffer);
+  } catch (err: any) {
+    logger.warn({ err: err.message }, '[DNS] /resolve error');
+    res.status(500).send('Internal resolver error');
+  }
+});
+
+/**
+ * GET /api/dns/resolver/status — Public resolver cache + stats
+ */
+router.get('/resolver/status', (_req, res) => {
+  import('../services/recursiveResolver.js').then(({ getCacheStats }) => {
+    res.json({
+      ok:      true,
+      cache:   getCacheStats(),
+      version: '1.0.0',
+      type:    'iterative-from-root',
+      roots:   13,
+    });
+  }).catch(() => {
+    res.json({ ok: false, error: 'Resolver module not loaded' });
+  });
+});
+
+/**
  * POST /api/dns/query
  * RFC 8484 DNS-over-HTTPS — POST method.
  * Body: raw DNS wire format (Content-Type: application/dns-message)
