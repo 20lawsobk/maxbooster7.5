@@ -1093,10 +1093,17 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
     onMutate:  (domain) => setClaimingDomain(domain),
     onSettled: () => setClaimingDomain(null),
     onSuccess: (data, domain) => {
+      // Invalidate every query that displays domain / zone / usage / storefront data
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/usage'] });
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/search', searchName] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront-domains', storefrontId] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront-domains/platform', storefrontId] });
+      // Clear search so the "Get a Domain" tab looks fresh
+      setSearchInput('');
+      setSearchName('');
       setActiveTab('mine');
       const isPlatformSubdomain = domain.endsWith(`.${PLATFORM_DOMAIN}`);
       const label = isPlatformSubdomain ? domain.replace(`.${PLATFORM_DOMAIN}`, '') : null;
@@ -1121,6 +1128,9 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       qc.invalidateQueries({ queryKey: ['/api/domain-registrar/my-domains'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones'] });
       qc.invalidateQueries({ queryKey: ['/api/dns-manager/usage'] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront-domains', storefrontId] });
+      qc.invalidateQueries({ queryKey: ['/api/storefront-domains/platform', storefrontId] });
       toast({ title: 'Domain removed' });
     },
   });
