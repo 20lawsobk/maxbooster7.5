@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Max Booster — DNS Health Watchdog
+# Max Booster — DNS Health Watchdog v2
 #
-# Monitors ns1 (port 5353) and ns2 (port 5354) every 30 seconds.
-# If either nameserver stops responding it logs an alert and attempts
-# to wake the process via the main app's health API.
+# Monitors ns1 (5353), ns2 (5354), ns3 (5355) every 30 seconds.
+# Also checks health HTTP endpoints on ns2 (5381) and ns3 (5382).
+# Logs alerts after configurable consecutive failure threshold.
 #
 # Runs as a persistent Replit workflow ("DNS Health Watchdog").
 
@@ -12,59 +12,64 @@ set -uo pipefail
 APP_URL="${APP_URL:-http://localhost:5000}"
 NS1_PORT="${NS1_PORT:-5353}"
 NS2_PORT="${NS2_PORT:-5354}"
+NS3_PORT="${NS3_PORT:-5355}"
+NS2_HEALTH="${NS2_HEALTH:-5381}"
+NS3_HEALTH="${NS3_HEALTH:-5382}"
 CHECK_INTERVAL="${CHECK_INTERVAL:-30}"
-
-ns1_failures=0
-ns2_failures=0
 MAX_FAILURES=3
+
+declare -A failures=(["ns1"]=0 ["ns2"]=0 ["ns3"]=0)
 
 log() {
   echo "[$(date -u '+%Y-%m-%dT%H:%M:%SZ')] [watchdog] $*"
 }
 
-# Send a minimal DNS query (A record for "health.max-booster.com") using nc/bash TCP.
-# Returns 0 if a DNS response arrives within 3 seconds, 1 otherwise.
 probe_dns() {
   local port="$1"
-  # Build a raw DNS query: header (ID=0xABCD, QR+RD, 1 question) + qname + qtype A + qclass IN
-  # Using Python for reliable binary send/recv in bash environment
   python3 - <<PYEOF 2>/dev/null
 import socket, struct, sys
 query = (
-    b'\xab\xcd'   # ID
-    b'\x01\x00'   # flags: recursion desired
-    b'\x00\x01'   # QDCOUNT=1
-    b'\x00\x00'   # ANCOUNT=0
-    b'\x00\x00'   # NSCOUNT=0
-    b'\x00\x00'   # ARCOUNT=0
-    b'\x06health'
-    b'\x0bmax-booster'
-    b'\x03com\x00'
-    b'\x00\x01'   # QTYPE=A
-    b'\x00\x01'   # QCLASS=IN
+    b'\xab\xcd\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00'
+    b'\x0bmax-booster\x03com\x00\x00\x01\x00\x01'
 )
 try:
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(3)
     sock.sendto(query, ('127.0.0.1', $port))
     data, _ = sock.recvfrom(512)
-    # Any response (even NXDOMAIN rcode=3) means server is alive
     sys.exit(0 if len(data) >= 12 else 1)
 except Exception:
     sys.exit(1)
 PYEOF
 }
 
-# Also check the HTTP health endpoint
-probe_http() {
+probe_health() {
+  local port="$1"
+  curl -sf --max-time 5 "http://localhost:${port}/health" > /dev/null 2>&1
+}
+
+probe_app() {
   curl -sf --max-time 5 "${APP_URL}/api/dns/health" > /dev/null 2>&1
 }
 
+check_node() {
+  local name="$1" port="$2"
+  if probe_dns "$port"; then
+    failures[$name]=0
+    echo "UP"
+  else
+    failures[$name]=$((${failures[$name]} + 1))
+    local fc=${failures[$name]}
+    log "ALERT ${name} DNS not responding — ${fc}/${MAX_FAILURES} consecutive failures"
+    echo "DOWN(${fc})"
+  fi
+}
+
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-log "DNS Health Watchdog starting"
-log "  ns1 → 127.0.0.1:${NS1_PORT}"
-log "  ns2 → 127.0.0.1:${NS2_PORT}"
-log "  HTTP → ${APP_URL}/api/dns/health"
+log "DNS Health Watchdog v2 starting"
+log "  ns1 → :${NS1_PORT}   ns2 → :${NS2_PORT}   ns3 → :${NS3_PORT}"
+log "  ns2-health → :${NS2_HEALTH}   ns3-health → :${NS3_HEALTH}"
+log "  app → ${APP_URL}/api/dns/health"
 log "  interval=${CHECK_INTERVAL}s  max_failures=${MAX_FAILURES}"
 log "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
@@ -72,46 +77,36 @@ cycle=0
 while true; do
   cycle=$((cycle + 1))
 
-  # ── ns1 probe ─────────────────────────────────────────────────────────────
-  if probe_dns "${NS1_PORT}"; then
-    ns1_failures=0
-    ns1_status="✅ UP"
-  else
-    ns1_failures=$((ns1_failures + 1))
-    ns1_status="❌ DOWN (fail ${ns1_failures}/${MAX_FAILURES})"
-    log "ALERT ns1 not responding — ${ns1_failures}/${MAX_FAILURES} consecutive failures"
+  ns1_s=$(check_node "ns1" "$NS1_PORT")
+  ns2_s=$(check_node "ns2" "$NS2_PORT")
+  ns3_s=$(check_node "ns3" "$NS3_PORT")
+
+  # Health API checks
+  ns2_h=$(probe_health "$NS2_HEALTH" && echo "HTTP-UP" || echo "HTTP-DOWN")
+  ns3_h=$(probe_health "$NS3_HEALTH" && echo "HTTP-UP" || echo "HTTP-DOWN")
+  app_h=$(probe_app               && echo "HTTP-UP" || echo "HTTP-DOWN")
+
+  # Fetch query counts from health APIs
+  ns2_q=$(curl -sf --max-time 3 "http://localhost:${NS2_HEALTH}/health" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('queries',0))" 2>/dev/null || echo "?")
+  ns3_q=$(curl -sf --max-time 3 "http://localhost:${NS3_HEALTH}/health" 2>/dev/null | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('queries',0))" 2>/dev/null || echo "?")
+
+  # Status report every 5 cycles (2.5 min) or on any DNS failure
+  if (( cycle % 5 == 0 )) || [[ "$ns1_s" == DOWN* ]] || [[ "$ns2_s" == DOWN* ]] || [[ "$ns3_s" == DOWN* ]]; then
+    log "Status — ns1=${ns1_s} ns2=${ns2_s}(${ns2_h},q=${ns2_q}) ns3=${ns3_s}(${ns3_h},q=${ns3_q}) app=${app_h}"
   fi
 
-  # ── ns2 probe ─────────────────────────────────────────────────────────────
-  if probe_dns "${NS2_PORT}"; then
-    ns2_failures=0
-    ns2_status="✅ UP"
-  else
-    ns2_failures=$((ns2_failures + 1))
-    ns2_status="❌ DOWN (fail ${ns2_failures}/${MAX_FAILURES})"
-    log "ALERT ns2 not responding — ${ns2_failures}/${MAX_FAILURES} consecutive failures"
+  # Critical: at least 2 of 3 nodes must be up
+  down_count=0
+  [[ "$ns1_s" == DOWN* ]] && down_count=$((down_count + 1))
+  [[ "$ns2_s" == DOWN* ]] && down_count=$((down_count + 1))
+  [[ "$ns3_s" == DOWN* ]] && down_count=$((down_count + 1))
+
+  if (( down_count >= 2 )); then
+    log "🚨 CRITICAL: ${down_count}/3 nameservers are DOWN! DNS service degraded."
   fi
 
-  # ── HTTP probe ─────────────────────────────────────────────────────────────
-  if probe_http; then
-    http_status="✅ UP"
-    # Fetch query count from health endpoint
-    health_json=$(curl -sf --max-time 5 "${APP_URL}/api/dns/health" 2>/dev/null || echo '{}')
-    query_count=$(echo "$health_json" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('queryCount',0))" 2>/dev/null || echo "?")
-  else
-    http_status="❌ DOWN"
-    query_count="?"
-  fi
-
-  # ── Status report every 10 cycles (5 min) or on any failure ───────────────
-  if (( cycle % 10 == 0 )) || (( ns1_failures > 0 )) || (( ns2_failures > 0 )); then
-    log "Status — ns1=${ns1_status}  ns2=${ns2_status}  http=${http_status}  queries=${query_count}"
-  fi
-
-  # ── Critical alert if both nameservers are down ────────────────────────────
-  if (( ns1_failures >= MAX_FAILURES )) && (( ns2_failures >= MAX_FAILURES )); then
-    log "🚨 CRITICAL: Both ns1 AND ns2 have failed ${MAX_FAILURES}+ consecutive checks!"
-    log "   Manual intervention required. Check Replit workflow console for errors."
+  if (( down_count == 3 )); then
+    log "🚨 TOTAL OUTAGE: All 3 nameservers are DOWN! Manual intervention required."
   fi
 
   sleep "${CHECK_INTERVAL}"
