@@ -1221,7 +1221,14 @@ export class StorefrontService {
 
   /**
    * Get the public URL for a storefront.
-   * Priority: custom domain (when active) → managed subdomain → slug path.
+   *
+   * Normal priority: custom domain (when active) → managed subdomain → slug path.
+   *
+   * Temporary override: when STOREFRONT_URL_FORMAT=slug the slug-path URL is always
+   * returned regardless of custom domain / subdomain state.  This is used while the
+   * platform wildcard SSL cert is being provisioned so that autopilot-generated
+   * social posts and ads always link to a URL that is guaranteed to resolve over
+   * HTTPS.  Remove / unset the env var once the wildcard cert is live.
    */
   getStorefrontUrl(storefront: {
     subdomain?: string | null;
@@ -1231,6 +1238,11 @@ export class StorefrontService {
     isCustomDomainActive?: boolean;
   }): string {
     const baseDomain = process.env.BASE_DOMAIN || 'max-booster.com';
+    const slugUrl = `https://${baseDomain}/storefront/${storefront.slug}`;
+
+    if (process.env.STOREFRONT_URL_FORMAT === 'slug') {
+      return slugUrl;
+    }
 
     if (storefront.customDomain && storefront.isCustomDomainActive) {
       return `https://${storefront.customDomain}`;
@@ -1240,7 +1252,7 @@ export class StorefrontService {
       return `https://${storefront.subdomain}.${baseDomain}`;
     }
 
-    return `https://${baseDomain}/storefront/${storefront.slug}`;
+    return slugUrl;
   }
 }
 

@@ -321,6 +321,9 @@ export interface AdvancedContentRequest {
   variantCount?: number;
   trendContext?: string[];
   competitorContext?: string[];
+  storefrontUrl?: string;
+  beatContext?: string;
+  promotionContext?: string;
 }
 
 export interface AdvancedGeneratedContent {
@@ -1072,6 +1075,9 @@ class AdvancedSocialAIService {
       r.contentType || '',
       r.objective || '',
       r.artistName || '',
+      r.storefrontUrl || '',
+      r.beatContext   || '',
+      r.promotionContext || '',
     ].join('|');
   }
 
@@ -1092,13 +1098,16 @@ class AdvancedSocialAIService {
 
     // ── 8TB dataset via MaxCore is the ONLY text source ─────────────────────
     const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
-      platform:        request.platforms[0] || 'instagram',
-      topic:           request.topic || 'new music',
-      tone:            request.tone || 'energetic',
-      genre:           request.genre || userContext.genre,
-      artist_name:     request.artistName || userContext.artistName,
-      brand_voice:     userContext.brandVoice,
-      target_audience: request.targetAudience,
+      platform:          request.platforms[0] || 'instagram',
+      topic:             request.topic || 'new music',
+      tone:              request.tone || 'energetic',
+      genre:             request.genre || userContext.genre,
+      artist_name:       request.artistName || userContext.artistName,
+      brand_voice:       userContext.brandVoice,
+      target_audience:   request.targetAudience,
+      storefront_url:    request.storefrontUrl,
+      beat_context:      request.beatContext,
+      promotion_context: request.promotionContext,
     });
 
     if (!mc?.hook && !mc?.caption) {
@@ -1107,7 +1116,14 @@ class AdvancedSocialAIService {
 
     const hook        = mc.hook || '';
     const bodyText    = mc.body || '';
-    const cta         = mc.cta  || '';
+    const baseCta     = mc.cta  || '';
+
+    // Append storefront URL to the CTA so every autopilot post links back to the
+    // storefront — critical for driving traffic during the temp slug-URL period.
+    const cta = request.storefrontUrl && !baseCta.includes(request.storefrontUrl)
+      ? `${baseCta}\n🔗 ${request.storefrontUrl}`.trim()
+      : baseCta;
+
     const hashtags: string[] = Array.isArray(mc.hashtags) ? mc.hashtags : [];
     const emojis      = this.selectEmojis(request, primaryPlatform, tone);
     const fullContent = mc.caption || [hook, bodyText, cta].filter(Boolean).join('\n\n');

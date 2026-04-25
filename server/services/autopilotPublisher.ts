@@ -1,6 +1,10 @@
 import cron from 'node-cron';
+import { eq, and, desc, isNotNull } from 'drizzle-orm';
+import { db } from '../db.js';
+import { storefronts, listings, listingLicenseTiers } from '../../shared/schema.js';
 import { storage } from '../storage.js';
 import { logger } from '../logger.js';
+import { storefrontService } from './storefrontService.js';
 import { aiModelManager } from './aiModelManager.js';
 import { autoPostingServiceV2 } from './autoPostingServiceV2.js';
 import type { PostContent } from './autoPostingServiceV2.js';
@@ -201,6 +205,128 @@ class AutopilotPublisher {
     }
   }
 
+  /**
+   * Fetch live storefront + listing context for a user so both autopilots can
+   * generate content that references real beat titles, prices, and promotions
+   * instead of generic placeholders.
+   */
+  private async fetchStorefrontContext(userId: string): Promise<{
+    storefrontUrl: string;
+    beatContext: string;
+    promotionContext: string;
+  }> {
+    const baseDomain = process.env.BASE_DOMAIN || 'max-booster.com';
+    const defaultUrl = `https://${baseDomain}`;
+
+    try {
+      // Fetch the user's primary storefront
+      const [storefront] = await db
+        .select()
+        .from(storefronts)
+        .where(and(eq(storefronts.userId, userId), eq(storefronts.isActive, true)))
+        .orderBy(desc(storefronts.createdAt))
+        .limit(1);
+
+      const storefrontUrl = storefront
+        ? storefrontService.getStorefrontUrl({
+            slug:                storefront.slug,
+            subdomain:           storefront.subdomain ?? null,
+            customDomain:        storefront.customDomain ?? null,
+            isSubdomainActive:   storefront.isSubdomainActive ?? false,
+            isCustomDomainActive: storefront.isCustomDomainActive ?? false,
+          })
+        : defaultUrl;
+
+      // Fetch up to 5 recent published listings for beat context
+      const recentListings = await db
+        .select({
+          id:               listings.id,
+          title:            listings.title,
+          category:         listings.category,
+          priceCents:       listings.priceCents,
+          discountPercent:  listings.discountPercent,
+          discountPriceCents: listings.discountPriceCents,
+          discountExpiresAt:  listings.discountExpiresAt,
+          metadata:         listings.metadata,
+          previewUrl:       listings.previewUrl,
+          artworkUrl:       listings.artworkUrl,
+        })
+        .from(listings)
+        .where(and(eq(listings.userId, userId), eq(listings.isPublished, true)))
+        .orderBy(desc(listings.createdAt))
+        .limit(5);
+
+      // Build beat context string
+      const beatLines = recentListings.map((l) => {
+        const meta = (l.metadata as Record<string, unknown> | null) ?? {};
+        const genre = (meta.genre as string) || l.category || 'beat';
+        const bpm   = meta.bpm ? `${meta.bpm} BPM` : '';
+        const key   = meta.key ? `key of ${meta.key}` : '';
+        const price = l.priceCents ? `$${(l.priceCents / 100).toFixed(2)}` : '';
+        const details = [genre, bpm, key, price].filter(Boolean).join(' · ');
+        return `"${l.title}"${details ? ` (${details})` : ''}`;
+      });
+      const beatContext = beatLines.length > 0
+        ? `Latest beats available: ${beatLines.join('; ')}.`
+        : '';
+
+      // Build promotion context string — highlight any active discounts or BOGO
+      const promoLines: string[] = [];
+      for (const l of recentListings) {
+        const now = new Date();
+        const hasDiscount =
+          l.discountPercent && l.discountPercent > 0 &&
+          (!l.discountExpiresAt || new Date(l.discountExpiresAt) > now);
+
+        if (hasDiscount) {
+          const origPrice = l.priceCents ? `$${(l.priceCents / 100).toFixed(2)}` : '';
+          const salePrice = l.discountPriceCents
+            ? `$${(l.discountPriceCents / 100).toFixed(2)}`
+            : '';
+          const expiry = l.discountExpiresAt
+            ? ` (expires ${new Date(l.discountExpiresAt).toLocaleDateString()})`
+            : '';
+          promoLines.push(
+            `"${l.title}" is ${l.discountPercent}% off${origPrice ? ` — was ${origPrice}` : ''}${salePrice ? `, now ${salePrice}` : ''}${expiry}`
+          );
+        }
+      }
+
+      // Also check license tier BOGOs
+      if (recentListings.length > 0) {
+        const listingIds = recentListings.map((l) => l.id);
+        const bogoTiers = await db
+          .select({ listingId: listingLicenseTiers.listingId, licenseType: listingLicenseTiers.licenseType })
+          .from(listingLicenseTiers)
+          .where(and(
+            eq(listingLicenseTiers.bogoEnabled, true),
+            eq(listingLicenseTiers.isActive, true),
+          ))
+          .limit(5);
+
+        for (const tier of bogoTiers) {
+          const listing = recentListings.find((l) => l.id === tier.listingId);
+          if (listing) {
+            promoLines.push(`Buy one ${tier.licenseType} license for "${listing.title}", get one free`);
+          }
+        }
+      }
+
+      const promotionContext = promoLines.length > 0
+        ? `Active promotions: ${promoLines.join('; ')}.`
+        : '';
+
+      logger.info(
+        `[Autopilot] Storefront context for ${userId}: url=${storefrontUrl} beats=${beatLines.length} promos=${promoLines.length}`
+      );
+
+      return { storefrontUrl, beatContext, promotionContext };
+    } catch (err) {
+      logger.warn({ err }, `[Autopilot] Failed to fetch storefront context for ${userId} — using defaults`);
+      return { storefrontUrl: defaultUrl, beatContext: '', promotionContext: '' };
+    }
+  }
+
   private async publishSocialContent(config: any): Promise<{ posts: number; error?: string }> {
     try {
       const userId = config.userId;
@@ -208,8 +334,11 @@ class AutopilotPublisher {
         ? config.platforms
         : ['twitter', 'instagram'];
 
-      // Pick the target platform for this cycle via round-robin
-      const targetPlatform = await this.pickNextPlatform(userId, platforms);
+      // Fetch live storefront + beat data in parallel with platform selection
+      const [targetPlatform, sfContext] = await Promise.all([
+        this.pickNextPlatform(userId, platforms),
+        this.fetchStorefrontContext(userId),
+      ]);
       logger.info(`[Autopilot] User ${userId}: targeting platform "${targetPlatform}" this cycle`);
 
       // Get the user's trained social media AI model
@@ -220,8 +349,13 @@ class AutopilotPublisher {
         // variants each) so every post still meets ≥ 90% of Veo quality before scheduling.
         logger.info(`[Autopilot] User ${userId}: model untrained — running A/B quality gate (target: 81/100 = 90% Veo)`);
 
+        // Enrich the quality gate topic with real beat data when available
+        const enrichedTopic = sfContext.beatContext
+          ? `${config.topic || 'new music'} — ${sfContext.beatContext}`
+          : (config.topic || 'new music');
+
         const gateResult = await contentQualityGate.run(userId, {
-          topic: config.topic || 'new music',
+          topic: enrichedTopic,
           objective: 'engagement',
           platform: targetPlatform,
           tone: config.brandVoice,
@@ -234,10 +368,16 @@ class AutopilotPublisher {
           return { posts: 0, error: 'Content quality gate: all variants below minimum threshold (73). Skipping to protect brand quality.' };
         }
 
+        // Append storefront URL to the gated content so every post links back
+        const baseText = gateResult.winner.headline
+          ? `${gateResult.winner.headline}\n\n${gateResult.winner.content}`
+          : gateResult.winner.content;
+        const gatedText = sfContext.storefrontUrl && !baseText.includes(sfContext.storefrontUrl)
+          ? `${baseText}\n🔗 ${sfContext.storefrontUrl}`
+          : baseText;
+
         const postContent: PostContent = {
-          text: gateResult.winner.headline
-            ? `${gateResult.winner.headline}\n\n${gateResult.winner.content}`
-            : gateResult.winner.content,
+          text: gatedText,
           hashtags: gateResult.winner.hashtags,
           mediaType: 'text',
         };
@@ -297,7 +437,7 @@ class AutopilotPublisher {
         friendly:     'casual',
       };
 
-      // Build a music-relevant topic so MaxCore generates artist-specific content
+      // Build a music-relevant topic, enriched with real beat titles when available
       const genre = config.genre || 'music';
       const topicByContentType: Record<string, string> = {
         tips:          `${genre} music production tips`,
@@ -306,20 +446,28 @@ class AutopilotPublisher {
         announcements: `${genre} music release`,
         promotions:    `${genre} music promotion`,
       };
-      const mcTopic = topicByContentType[selectedContentType] || `${genre} music`;
+      const baseTopic = topicByContentType[selectedContentType] || `${genre} music`;
+
+      // For promotions, embed active promo details directly into the topic
+      const mcTopic = selectedContentType === 'promotions' && sfContext.promotionContext
+        ? `${baseTopic} — ${sfContext.promotionContext}`
+        : baseTopic;
 
       // Generate content through MaxCore via advancedSocialAIService
       const advancedContent = await advancedSocialAIService.generateAdvancedContent({
         userId,
-        platforms:      [targetPlatform],
-        topic:          mcTopic,
-        tone:           toneMap[(config.brandVoice || '').toLowerCase()] || 'energetic',
-        genre:          config.genre,
-        targetAudience: config.targetAudience,
-        objective:      'engagement',
-        contentType:    contentTypeMap[selectedContentType] || 'engagement',
-        includeHashtags: true,
-        includeEmojis:   true,
+        platforms:         [targetPlatform],
+        topic:             mcTopic,
+        tone:              toneMap[(config.brandVoice || '').toLowerCase()] || 'energetic',
+        genre:             config.genre,
+        targetAudience:    config.targetAudience,
+        objective:         'engagement',
+        contentType:       contentTypeMap[selectedContentType] || 'engagement',
+        includeHashtags:   true,
+        includeEmojis:     true,
+        storefrontUrl:     sfContext.storefrontUrl,
+        beatContext:       sfContext.beatContext,
+        promotionContext:  sfContext.promotionContext,
       });
 
       // Normalise score (0-100) to confidence fraction (0-1) for threshold check
@@ -444,6 +592,9 @@ class AutopilotPublisher {
   private async publishAdvertisingCampaigns(config: any): Promise<{ campaigns: number; error?: string }> {
     try {
       const userId = config.userId;
+
+      // Fetch live storefront + beat data for ad content enrichment
+      const sfContext = await this.fetchStorefrontContext(userId);
       
       // Get the user's advertising AI model (works with or without prior campaign training —
       // generateCampaignRecommendations() runs from its internal prediction engine regardless).
@@ -462,11 +613,19 @@ class AutopilotPublisher {
         }
       }
 
+      // Inject storefront context into multimodal features so the ad AI can use it
+      const enrichedFeatures = {
+        ...(multimodalFeatures || {}),
+        storefrontUrl:    sfContext.storefrontUrl,
+        beatContext:      sfContext.beatContext      || undefined,
+        promotionContext: sfContext.promotionContext || undefined,
+      };
+
       // Generate campaign recommendations
       const objective = 'brand_awareness'; // Could be configurable
       const recommendations = await advertisingAI.generateCampaignRecommendations(
         objective,
-        multimodalFeatures
+        enrichedFeatures
       );
 
       if (!recommendations || recommendations.length === 0) {
@@ -512,6 +671,12 @@ class AutopilotPublisher {
         config.postingFrequency || 'daily'
       );
 
+      // Append storefront URL + beat/promo context to the ad content body
+      let adContent = bestCampaign.content || '';
+      if (sfContext.storefrontUrl && !adContent.includes(sfContext.storefrontUrl)) {
+        adContent = `${adContent}\n🔗 ${sfContext.storefrontUrl}`.trim();
+      }
+
       // Create campaign via storage with AI-selected media type, timing, and generated assets
       const campaign = await storage.createAdCampaign({
         userId,
@@ -530,11 +695,14 @@ class AutopilotPublisher {
         useAIAmplification: true,
         targetAudience: bestCampaign.targetAudience || {},
         creativeAssets: bestCampaign.creatives || [],
+        landingPageUrl: sfContext.storefrontUrl,
         aiPredictions: {
           viralityScore: confidence,
           expectedReach: bestCampaign.expectedReach || 1000,
           expectedEngagement: bestCampaign.expectedEngagement || 50,
           confidence,
+          beatContext:      sfContext.beatContext      || undefined,
+          promotionContext: sfContext.promotionContext || undefined,
         },
       });
 
