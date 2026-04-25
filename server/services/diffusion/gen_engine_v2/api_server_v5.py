@@ -186,15 +186,17 @@ def _run_audio_generation(body: dict) -> dict:
                                    duration=duration, energy=energy, mode=mode)
     wav    = _AUDIO_SYNTH.to_wav_bytes(result)
     return {
-        'genre':       genre,
-        'bpm':         bpm,
-        'mood':        mood,
-        'mode':        mode,
+        'genre':        genre,
+        'bpm':          bpm,
+        'mood':         mood,
+        'mode':         mode,
+        'backend':      result.get('backend', 'dsp_a'),
         'duration_sec': result['duration'],
-        'sample_rate': result['sample_rate'],
-        'n_samples':   len(result['samples']),
-        'wav_b64':     base64.b64encode(wav).decode(),
-        'elapsed_sec': round(time.time() - t0, 2),
+        'sample_rate':  result['sample_rate'],
+        'n_samples':    len(result['samples']),
+        'channels':     2,
+        'wav_b64':      base64.b64encode(wav).decode(),
+        'elapsed_sec':  round(time.time() - t0, 2),
     }
 
 

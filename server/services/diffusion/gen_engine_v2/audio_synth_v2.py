@@ -759,14 +759,15 @@ class AudioSynthV2:
             mood:     Emotional character (see MOOD_IDS for options).
             duration: Requested length in seconds.
             energy:   Intensity 0–1 (affects velocity, density).
-            mode:     'A' fast DSP, 'B' HD DSP+reverb, 'C' MaxCore AI.
+            mode:     'A' fast DSP  |  'B' HD DSP+reverb  |  'C' MaxCore AI
+                      'ABC' / 'ALL' — combined: all three engines simultaneously
 
         Returns dict with:
             samples         : np.ndarray [N] float32 mono
             samples_stereo  : np.ndarray [2,N] float32 stereo
             sample_rate     : int
             duration        : float (actual seconds)
-            backend         : str
+            backend         : str  ('dsp_a'|'dsp_b'|'maxcore'|'dsp_ab+maxcore')
         """
         genre    = genre.lower().strip()
         mood     = mood.lower().strip()
@@ -775,36 +776,117 @@ class AudioSynthV2:
         energy   = float(np.clip(energy, 0.0, 1.0))
         mode     = mode.upper().strip()
 
+        # ── Combined mode: all three engines simultaneously ─────────────────
+        if mode in ('ABC', 'ALL', 'COMBINED', 'MAX'):
+            return self._generate_combined(genre, bpm, mood, duration, energy)
+
+        # ── Mode C: MaxCore AI (falls back to B) ────────────────────────────
         if mode == 'C':
             result = _try_maxcore_audio(genre, bpm, mood, duration, energy)
             if result is not None:
                 return result
-            # Fallback to Mode B
             mode = 'B'
 
+        # ── Mode A / B: pure DSP ─────────────────────────────────────────────
         L, R = _build_arrangement(genre, bpm, mood, energy, duration)
 
         if mode == 'B':
-            # HD: add reverb + Haas stereo widening
             mood_mod = MOOD_MODS.get(mood, MOOD_MODS['hype'])
             wet = float(np.clip(mood_mod['reverb'] * 0.6, 0.08, 0.40))
             ir  = _make_reverb_ir(room_size=0.4)
             L   = _apply_reverb(L, ir, wet=wet)
             R   = _apply_reverb(R, ir, wet=wet * 0.85)
-            # Haas effect: slight delay on R pad for width (only pads benefit)
-            haas_smp = int(0.018 * SR)  # 18 ms
+            haas_smp = int(0.018 * SR)
             if haas_smp < len(R):
                 R = np.concatenate([np.zeros(haas_smp, dtype=np.float32),
                                     R[:-haas_smp]])
 
         L, R = _master(L, R, target_rms=0.22 if mode == 'A' else 0.20)
-        mono = ((L + R) * 0.5).astype(np.float32)
+        mono   = ((L + R) * 0.5).astype(np.float32)
         stereo = np.stack([L, R])
-
-        backend = 'dsp_b' if mode == 'B' else 'dsp_a'
         return {
             'samples':        mono,
             'samples_stereo': stereo,
+            'sample_rate':    SR,
+            'duration':       len(mono) / SR,
+            'backend':        'dsp_b' if mode == 'B' else 'dsp_a',
+        }
+
+    def _generate_combined(self, genre: str, bpm: float, mood: str,
+                           duration: float, energy: float) -> Dict:
+        """
+        Mode ABC — combined engine: A + B + C running in parallel.
+
+        Strategy
+        --------
+        · MaxCore request fires in a background thread immediately.
+        · While it runs, Mode A builds the full DSP arrangement:
+            drums, bass, chord pads (all 20 genre profiles).
+        · Mode B processing is applied: plate reverb + Haas widening.
+        · When both complete, the two stereo streams are RMS-matched
+          and blended:
+              DSP (A+B)  : 55 % — provides rhythm backbone & timing
+              MaxCore (C): 45 % — adds AI-trained harmonic richness
+        · Final mix is re-mastered to −1 dBFS true peak.
+        · If MaxCore times out or is unavailable, returns the Mode B
+          result with no penalty to quality.
+        """
+        import concurrent.futures
+
+        # Fire MaxCore concurrently — wall-time cost = max(dsp_time, mc_time)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            mc_future = pool.submit(_try_maxcore_audio,
+                                    genre, bpm, mood, duration, energy)
+
+            # ── Mode A: DSP arrangement ───────────────────────────────────────
+            L, R = _build_arrangement(genre, bpm, mood, energy, duration)
+
+            # ── Mode B: reverb + Haas widening ────────────────────────────────
+            mood_mod = MOOD_MODS.get(mood, MOOD_MODS['hype'])
+            wet = float(np.clip(mood_mod['reverb'] * 0.6, 0.08, 0.40))
+            ir  = _make_reverb_ir(room_size=0.4)
+            L   = _apply_reverb(L, ir, wet=wet)
+            R   = _apply_reverb(R, ir, wet=wet * 0.85)
+            haas_smp = int(0.018 * SR)
+            if haas_smp < len(R):
+                R = np.concatenate([np.zeros(haas_smp, dtype=np.float32),
+                                    R[:-haas_smp]])
+            L, R = _master(L, R, target_rms=0.20)
+
+            # ── Collect MaxCore result (already running) ───────────────────────
+            mc = mc_future.result()
+
+        # ── Mode C: blend MaxCore into the DSP mix ────────────────────────────
+        backend = 'dsp_ab'
+        if mc is not None:
+            n     = len(L)
+            mc_L  = mc_R = None
+
+            if 'samples_stereo' in mc:
+                s = mc['samples_stereo']
+                if s.shape[1] >= n:
+                    mc_L, mc_R = s[0, :n].astype(np.float32), s[1, :n].astype(np.float32)
+
+            if mc_L is None and 'samples' in mc:
+                raw  = mc['samples'][:n].astype(np.float32)
+                mc_L = mc_R = raw
+
+            if mc_L is not None:
+                # RMS-match MaxCore to the DSP mix
+                dsp_rms = float(np.sqrt(np.mean(L ** 2 + R ** 2) / 2.0) + 1e-8)
+                mc_rms  = float(np.sqrt(np.mean(mc_L ** 2 + mc_R ** 2) / 2.0) + 1e-8)
+                mc_gain = dsp_rms / mc_rms
+
+                # Blend: 55 % DSP rhythm + 45 % MaxCore AI
+                L = 0.55 * L + 0.45 * mc_gain * mc_L
+                R = 0.55 * R + 0.45 * mc_gain * mc_R
+                L, R = _master(L, R, target_rms=0.20)
+                backend = 'dsp_ab+maxcore'
+
+        mono = ((L + R) * 0.5).astype(np.float32)
+        return {
+            'samples':        mono,
+            'samples_stereo': np.stack([L, R]),
             'sample_rate':    SR,
             'duration':       len(mono) / SR,
             'backend':        backend,
