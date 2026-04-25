@@ -56,3 +56,26 @@ Key architectural decisions include:
 - **Music Integrations**: Spotify, LabelGrid.
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
 - **Version Control**: GitHub.
+
+## Gen Engine v2 — MaxCore Diffusion Stack (v3.0.0)
+
+Production AI generation pipeline at `server/services/diffusion/gen_engine_v2/`.
+
+### Modules
+| File | Purpose |
+|---|---|
+| `ops.py` | GPU-aware primitives: `matmul_fwd`, `conv2d_fwd`, `softmax_fwd`, `silu_fwd`, `gn_fwd` — dispatches to `digitalgpu` singleton (CUDA/MPS) or falls back to NumPy |
+| `unet_v5.py` | `UNetV5` — ~22.7M-param 4-level U-Net with v-prediction, cross-attention, temporal self-attention, skip-first decoder order. LITE config: 32×32×8 latent, channels [64,128,256,256] |
+| `scheduler_v2.py` | `SchedulerV2` + `DPMSolver2M` + `KarrasSampler` — v-prediction, Karras sigmas, DPM-Solver-2M |
+| `audio_synth_v2.py` | `AudioSynthV2` — 3 modes: neural additive (A), mel+Griffin-Lim (B), WaveNet-lite (C) |
+| `trainer_v5.py` | `TrainerV5` — joint VAE+UNet training via NumPy Adam |
+| `ltx_adapter.py` | `LTXAdapter` — LTX-2.3 GPU path with UNetV5 CPU fallback |
+| `api_server_v5.py` | Drop-in HTTP server for v4; adds `/generate/audio`, `/generate/video_hd`, `/generate/multimodal` |
+| `latent_encoder.py` | `VAELite` — 8-ch latent VAE with corrected `forward_train` (8-ch concat: `[z_sample | logvar]`) |
+| `text_encoder_v3.py` | `TextEncoderV3` — transformer text encoder with fixed FFN backward |
+
+### Architecture Notes
+- `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.
+- Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).
+- Upsampler chain: `dec3_up(chs[3]→chs[3])`, `dec2_up(chs[2]→chs[1])`, `dec1_up(chs[1]→chs[0])`.
+- MaxCore Diffusion Gateway workflow runs `api_server_v5.py` on port 8008 (LITE mode).
