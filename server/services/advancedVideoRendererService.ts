@@ -389,6 +389,38 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
       `relay_source=${data.relay_source}`
     );
 
+    // Relay returned a real encoded MP4 (from UNetV5 local renderer) — write to disk
+    if (data.mp4_b64 && typeof data.mp4_b64 === 'string' && data.mp4_b64.length > 100) {
+      try {
+        const mp4Buf = Buffer.from(data.mp4_b64, 'base64');
+        if (looksLikeRealVideo(mp4Buf)) {
+          if (!fs.existsSync(LOCAL_VIDEO_DIR)) {
+            fs.mkdirSync(LOCAL_VIDEO_DIR, { recursive: true });
+          }
+          const filename = `relay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
+          const localPath = path.join(LOCAL_VIDEO_DIR, filename);
+          fs.writeFileSync(localPath, mp4Buf);
+          logger.info(
+            `[RelayTier] Saved relay MP4 to disk: ${filename} ` +
+            `(${(mp4Buf.length / 1024).toFixed(0)} KB, backend=${data.backend || 'unetv5'})`
+          );
+          return {
+            success:             true,
+            url:                 `/uploads/videos/${filename}`,
+            source:              'MaxCoreRelay_UNetV5',
+            processing_time_ms:  elapsedMs,
+            relay_trained:       data.trained,
+            relay_style:         data.style_used,
+            relay_gpu_applied:   data.gpu_applied,
+            relay_frames:        data.num_frames,
+            ...intelligence,
+          } as any;
+        }
+      } catch (encErr: any) {
+        logger.warn(`[RelayTier] mp4_b64 decode/write failed: ${encErr.message}`);
+      }
+    }
+
     // If relay has a MaxCore authoritative video URL, cache it locally
     if (data.video_url) {
       const servedUrl = await cacheVideoLocally(data.video_url);

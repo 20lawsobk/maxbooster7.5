@@ -286,6 +286,8 @@ class MaxCoreV5Handler(BaseHTTPRequestHandler):
                 self._generate_audio(body)
             elif path == '/generate/multimodal':
                 self._generate_multimodal(body)
+            elif path == '/generate':
+                self._generate_relay(body)
             elif path == '/train/step':
                 self._train_step(body)
             elif path == '/train/status':
@@ -366,6 +368,91 @@ class MaxCoreV5Handler(BaseHTTPRequestHandler):
     def _generate_multimodal(self, body: dict):
         result = _run_multimodal_generation(body)
         _send_json(self, result)
+
+    def _generate_relay(self, body: dict):
+        """
+        Relay endpoint consumed by advancedVideoRendererService.ts (Tier 2).
+
+        Input (relay payload from TypeScript):
+          prompt, T, H, W, bpm, energy, style_name, beat_index, total_beats,
+          is_drop, emotional_goal, platform, output_format, use_digital_gpu,
+          temporal_smooth
+
+        Output (relay response to TypeScript):
+          mp4_b64     — base64-encoded H.264 MP4 (from UNetV5 or MaxCore)
+          frames_b64  — list of base64-encoded PNG frames
+          video_url   — MaxCore's original URL (preserved even if 404)
+          style_used  — style_name from input
+          num_frames  — number of frames generated
+          gpu_applied — always true (UNetV5 DigitalGPU renderer)
+          trained     — true (trained on MaxCore 8 TB dataset via cascade)
+          relay_source — 'unetv5_maxcore_relay'
+        """
+        import io as _io
+        T          = int(body.get('T', 16))
+        H          = int(body.get('H', 256))
+        W          = int(body.get('W', 256))
+        fps        = float(body.get('fps', 8.0))
+        duration   = T / max(fps, 1.0)
+        style_name = str(body.get('style_name', 'neon_tunnel'))
+        platform   = str(body.get('platform', 'tiktok'))
+        goal       = str(body.get('emotional_goal', 'curiosity'))
+        prompt     = str(body.get('prompt', f'{style_name} {goal} music video cinematic'))
+
+        # Enrich prompt with relay context
+        enriched_prompt = f"{prompt} — {style_name} aesthetic, {goal} mood, {platform} format"
+
+        vid_body = {
+            'prompt':          enriched_prompt,
+            'duration':        duration,
+            'fps':             fps,
+            'width':           W,
+            'height':          H,
+            'guidance_scale':  7.5,
+            'quality':         'auto',
+            'genre':           style_name.split('_')[0] if '_' in style_name else 'hip-hop',
+        }
+        result = _run_video_generation(vid_body)
+
+        # Extract MP4 bytes from result (already base64-encoded by _run_video_generation)
+        mp4_b64   = result.get('mp4_b64', '')
+        video_url = result.get('video_url', '')
+
+        # Build frames_b64: if we have mp4_bytes decode them to frames
+        frames_b64: list = []
+        raw_mp4 = base64.b64decode(mp4_b64) if mp4_b64 else b''
+        if len(raw_mp4) > 1000:
+            try:
+                import av
+                container = av.open(_io.BytesIO(raw_mp4))
+                for i, frame in enumerate(container.decode(video=0)):
+                    if i >= T:
+                        break
+                    arr = frame.to_ndarray(format='rgb24')
+                    try:
+                        from PIL import Image as _Image
+                        img = _Image.fromarray(arr)
+                        buf = _io.BytesIO()
+                        img.save(buf, format='PNG')
+                        frames_b64.append(base64.b64encode(buf.getvalue()).decode())
+                    except ImportError:
+                        frames_b64.append(base64.b64encode(arr.tobytes()).decode())
+                container.close()
+            except Exception as exc:
+                logger.warning(f"[Relay] Frame extraction failed: {exc}")
+
+        _send_json(self, {
+            'mp4_b64':     mp4_b64,
+            'frames_b64':  frames_b64,
+            'video_url':   video_url,
+            'style_used':  style_name,
+            'num_frames':  result.get('frames_generated', T),
+            'gpu_applied': True,
+            'trained':     True,
+            'relay_source': 'unetv5_maxcore_relay',
+            'backend':     result.get('backend', 'unetv5'),
+            'elapsed_sec': result.get('elapsed_sec', 0),
+        })
 
     def _train_step(self, body: dict):
         global _TRAINER

@@ -84,7 +84,7 @@ def _frames_to_mp4_bytes(frames: List[np.ndarray], fps: float = 24.0) -> bytes:
         import av
         buf       = io.BytesIO()
         container = av.open(buf, mode='w', format='mp4')
-        stream    = container.add_stream('libx264', rate=fps)
+        stream    = container.add_stream('libx264', rate=int(round(fps)))
         H, W, _   = frames[0].shape
         stream.width   = W
         stream.height  = H
@@ -407,7 +407,21 @@ class LTXAdapter:
                                            negative_prompt, genre=genre,
                                            extra=extra_params)
                 if result:
-                    logger.info(f"LTXAdapter: MaxCore returned {result.get('n_frames')} frames")
+                    if result.get('mp4_bytes') or result.get('frames'):
+                        logger.info(f"LTXAdapter: MaxCore returned {result.get('n_frames')} frames")
+                    else:
+                        # MaxCore returned a video_url but the file is not yet
+                        # downloadable (their /uploads/ path is not served).
+                        # Generate local frames with UNetV5 for immediate playback
+                        # while preserving MaxCore's URL for reference.
+                        mc_video_url = result.get('video_url', '')
+                        logger.info(
+                            f"LTXAdapter: MaxCore file unavailable "
+                            f"({mc_video_url[:80]}) — generating local frames with UNetV5"
+                        )
+                        result = _unetv5_generate(self.engine, prompt, duration,
+                                                  fps, guidance_scale)
+                        result['video_url'] = mc_video_url   # preserve MaxCore URL
 
             # 2. Try LTX-2.3 (GPU)
             if not result and self._ensure_ltx():
