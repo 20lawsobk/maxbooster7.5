@@ -67,10 +67,10 @@ Production AI generation pipeline at `server/services/diffusion/gen_engine_v2/`.
 | `ops.py` | GPU-aware primitives: `matmul_fwd`, `conv2d_fwd`, `softmax_fwd`, `silu_fwd`, `gn_fwd` — dispatches to `digitalgpu` singleton (CUDA/MPS) or falls back to NumPy |
 | `unet_v5.py` | `UNetV5` — ~22.7M-param 4-level U-Net with v-prediction, cross-attention, temporal self-attention, skip-first decoder order. LITE config: 32×32×8 latent, channels [64,128,256,256] |
 | `scheduler_v2.py` | `SchedulerV2` + `DPMSolver2M` + `KarrasSampler` — v-prediction, Karras sigmas, DPM-Solver-2M |
-| `audio_synth_v2.py` | `AudioSynthV2` — 3 modes: neural additive (A), mel+Griffin-Lim (B), WaveNet-lite (C) |
+| `audio_synth_v2.py` | `AudioSynthV2` — Production music engine: Mode A (fast DSP, 20 genres, bandlimited oscillators, physically-modelled drums, chord pads, mastering chain, stereo 44.1kHz, ~500ms/3s), Mode B (HD + plate reverb + Haas), Mode C (MaxCore AI with Mode B fallback) |
 | `trainer_v5.py` | `TrainerV5` — joint VAE+UNet training via NumPy Adam |
-| `ltx_adapter.py` | `LTXAdapter` — LTX-2.3 GPU path with UNetV5 CPU fallback |
-| `api_server_v5.py` | Drop-in HTTP server for v4; adds `/generate/audio`, `/generate/video_hd`, `/generate/multimodal` |
+| `ltx_adapter.py` | `LTXAdapter` — 3-tier backend cascade: MaxCore (trained 8TB model, primary) → LTX-2.3 (GPU) → UNetV5 (CPU fallback). Reads `AI_SERVER_URL`+`AI_SERVER_KEY`. |
+| `api_server_v5.py` | Drop-in HTTP server for v4; adds `/generate/audio`, `/generate/video_hd`, `/generate/multimodal`. Video passes `genre` + MaxCore-specific fields to LTXAdapter. |
 | `latent_encoder.py` | `VAELite` — 8-ch latent VAE with corrected `forward_train` (8-ch concat: `[z_sample | logvar]`) |
 | `text_encoder_v3.py` | `TextEncoderV3` — transformer text encoder with fixed FFN backward |
 
@@ -79,3 +79,5 @@ Production AI generation pipeline at `server/services/diffusion/gen_engine_v2/`.
 - Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).
 - Upsampler chain: `dec3_up(chs[3]→chs[3])`, `dec2_up(chs[2]→chs[1])`, `dec1_up(chs[1]→chs[0])`.
 - MaxCore Diffusion Gateway workflow runs `api_server_v5.py` on port 8008 (LITE mode).
+- Audio Mode A: fully vectorized harmonic summation (NumPy outer-product, no Python loops). 20 genre profiles, 12 mood modifiers, 16-step drum sequencer, chord progressions, sub-bass, ADSR envelopes, soft-knee limiter.
+- Video backend priority: MaxCore (`/api/generate-video`) → LTX-2.3 → UNetV5. MaxCore returns async `video_url`; the TypeScript `advancedVideoRendererService` handles polling/proxy.

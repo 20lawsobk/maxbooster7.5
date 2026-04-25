@@ -126,16 +126,22 @@ def _frames_to_gif_bytes(frames, fps: float = 10.0) -> bytes:
 def _run_video_generation(body: dict) -> dict:
     """
     Shared video generation logic for /generate/video and /generate/video_hd.
-    Returns dict including 'frames' list and 'mp4_b64' base64 string.
+    Backend priority: MaxCore (trained) → LTX-2.3 (GPU) → UNetV5 (CPU).
+    Returns dict including 'mp4_b64' and/or 'video_url' (MaxCore async).
     """
     prompt   = str(body.get('prompt', 'music performance cinematic'))
     duration = float(body.get('duration', 3.0))
     fps      = float(body.get('fps', 8.0))
     gs       = float(body.get('guidance_scale', 7.5))
-    quality  = str(body.get('quality', 'auto'))   # 'auto'|'ltx'|'unet'
-    n_steps  = int(body.get('n_steps', 15))
+    quality  = str(body.get('quality', 'auto'))   # 'auto'|'maxcore'|'ltx'|'unet'
     width    = int(body.get('width', 512))
     height   = int(body.get('height', 512))
+    genre    = str(body.get('genre', 'hip-hop'))
+
+    # Extra MaxCore-specific fields forwarded verbatim
+    extra_keys = ('hook', 'body_text', 'cta', 'platform', 'tone', 'artist_name',
+                  'template', 'aspect_ratio')
+    extra = {k: body[k] for k in extra_keys if k in body}
 
     result = _LTX.generate(
         prompt          = prompt,
@@ -146,19 +152,24 @@ def _run_video_generation(body: dict) -> dict:
         guidance_scale  = gs,
         negative_prompt = body.get('negative_prompt', ''),
         quality         = quality,
+        genre           = genre,
+        extra_params    = extra or None,
     )
 
-    mp4_b64 = base64.b64encode(result['mp4_bytes']).decode() if result.get('mp4_bytes') else ''
+    mp4_b64   = base64.b64encode(result['mp4_bytes']).decode() if result.get('mp4_bytes') else ''
+    video_url = result.get('video_url', '')
 
     return {
-        'prompt':       prompt,
-        'n_frames':     result['n_frames'],
-        'fps':          result['fps'],
-        'width':        result['width'],
-        'height':       result['height'],
-        'backend':      result['backend'],
-        'elapsed_sec':  result['elapsed_sec'],
-        'mp4_b64':      mp4_b64,
+        'prompt':           prompt,
+        'n_frames':         result.get('n_frames', 0),
+        'fps':              result.get('fps', fps),
+        'width':            result.get('width', width),
+        'height':           result.get('height', height),
+        'backend':          result.get('backend', 'unknown'),
+        'elapsed_sec':      result.get('elapsed_sec', 0),
+        'mp4_b64':          mp4_b64,
+        'video_url':        video_url,   # populated when MaxCore returns async URL
+        'frames_generated': result.get('n_frames', 0),
     }
 
 
