@@ -184,8 +184,8 @@ def _run_audio_generation(body: dict) -> dict:
     t0     = time.time()
     result = _AUDIO_SYNTH.generate(genre=genre, bpm=bpm, mood=mood,
                                    duration=duration, energy=energy, mode=mode)
-    wav    = _AUDIO_SYNTH.to_wav_bytes(result)
-    return {
+    wav  = _AUDIO_SYNTH.to_wav_bytes(result)
+    resp = {
         'genre':        genre,
         'bpm':          bpm,
         'mood':         mood,
@@ -198,6 +198,12 @@ def _run_audio_generation(body: dict) -> dict:
         'wav_b64':      base64.b64encode(wav).decode(),
         'elapsed_sec':  round(time.time() - t0, 2),
     }
+    # Forward MaxCore musical metadata when present (Mode C / ABC)
+    if result.get('mc_bpm') is not None:
+        resp['mc_bpm'] = result['mc_bpm']
+    if result.get('mc_key'):
+        resp['mc_key'] = result['mc_key']
+    return resp
 
 
 def _run_multimodal_generation(body: dict) -> dict:
