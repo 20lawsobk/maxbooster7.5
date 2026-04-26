@@ -72,15 +72,50 @@ interface PluginDefinition {
 }
 
 const TYPE_ICON_MAP: Record<string, React.ReactNode> = {
+  // Effects — spatial / time
   'reverb': <Waves className="h-5 w-5" />,
+  'plate': <Waves className="h-5 w-5" />,
+  'hall': <Waves className="h-5 w-5" />,
+  'spring': <Waves className="h-5 w-5" />,
+  'shimmer': <Sparkles className="h-5 w-5" />,
+  'ambient': <Waves className="h-5 w-5" />,
+  'chamber': <Waves className="h-5 w-5" />,
   'delay': <Clock className="h-5 w-5" />,
+  // Effects — dynamics
   'compressor': <Volume2 className="h-5 w-5" />,
+  'limiter': <Volume2 className="h-5 w-5" />,
+  'gate': <Filter className="h-5 w-5" />,
+  'expander': <Filter className="h-5 w-5" />,
+  'transient-shaper': <Zap className="h-5 w-5" />,
+  'de-esser': <Mic2 className="h-5 w-5" />,
+  'maximizer': <Volume2 className="h-5 w-5" />,
+  'leveler': <Activity className="h-5 w-5" />,
+  'ducker': <Volume2 className="h-5 w-5" />,
+  // Effects — EQ
   'eq': <Activity className="h-5 w-5" />,
+  'mastering': <Star className="h-5 w-5" />,
+  // Effects — saturation / distortion
   'distortion': <Sparkles className="h-5 w-5" />,
+  'ring-mod': <Zap className="h-5 w-5" />,
+  // Effects — modulation
+  'chorus': <Music className="h-5 w-5" />,
+  'flanger': <Wind className="h-5 w-5" />,
+  'phaser': <Wind className="h-5 w-5" />,
+  'tremolo': <Activity className="h-5 w-5" />,
+  'vibrato': <Activity className="h-5 w-5" />,
+  'rotary': <RefreshCw className="h-5 w-5" />,
+  'auto-pan': <Layers className="h-5 w-5" />,
+  'ensemble': <Music className="h-5 w-5" />,
+  'dimension': <Layers className="h-5 w-5" />,
   'modulation': <Music className="h-5 w-5" />,
   'dynamics': <Filter className="h-5 w-5" />,
+  // Effects — vocal
   'vocal': <Mic2 className="h-5 w-5" />,
+  'auto-tune': <Mic2 className="h-5 w-5" />,
+  'harmony': <Mic2 className="h-5 w-5" />,
+  'formant': <Mic2 className="h-5 w-5" />,
   'microphone': <Headphones className="h-5 w-5" />,
+  // Instruments
   'piano': <Piano className="h-5 w-5" />,
   'strings': <Music className="h-5 w-5" />,
   'drums': <Drum className="h-5 w-5" />,
@@ -96,15 +131,50 @@ const TYPE_ICON_MAP: Record<string, React.ReactNode> = {
 };
 
 const TYPE_COLOR_MAP: Record<string, string> = {
+  // Spatial
   'reverb': '#8b5cf6',
+  'plate': '#7c3aed',
+  'hall': '#6d28d9',
+  'spring': '#5b21b6',
+  'shimmer': '#a78bfa',
+  'ambient': '#c4b5fd',
+  'chamber': '#8b5cf6',
   'delay': '#06b6d4',
+  // Dynamics
   'compressor': '#f59e0b',
+  'limiter': '#d97706',
+  'gate': '#6366f1',
+  'expander': '#4f46e5',
+  'transient-shaper': '#f97316',
+  'de-esser': '#ec4899',
+  'maximizer': '#dc2626',
+  'leveler': '#b45309',
+  'ducker': '#92400e',
+  // EQ
   'eq': '#3b82f6',
+  'mastering': '#1d4ed8',
+  // Distortion
   'distortion': '#ef4444',
+  'ring-mod': '#dc2626',
+  // Modulation
+  'chorus': '#10b981',
+  'flanger': '#059669',
+  'phaser': '#047857',
+  'tremolo': '#34d399',
+  'vibrato': '#6ee7b7',
+  'rotary': '#065f46',
+  'auto-pan': '#10b981',
+  'ensemble': '#14b8a6',
+  'dimension': '#0d9488',
   'modulation': '#10b981',
   'dynamics': '#6366f1',
+  // Vocal
   'vocal': '#ec4899',
+  'auto-tune': '#db2777',
+  'harmony': '#be185d',
+  'formant': '#9d174d',
   'microphone': '#14b8a6',
+  // Instruments
   'piano': '#f59e0b',
   'strings': '#a855f7',
   'drums': '#ef4444',

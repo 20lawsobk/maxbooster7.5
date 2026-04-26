@@ -48,20 +48,62 @@ export class PluginHost {
    */
   private resolveType(type: string): string {
     if (type.startsWith('mb-')) {
-      if (type.includes('reverb'))    return 'reverb';
-      if (type.includes('delay'))     return 'delay';
-      if (type.includes('chorus'))    return 'chorus';
-      if (type.includes('comp') || type.includes('compressor')) return 'compressor';
-      if (type.includes('eq') || type.includes('vintage-eq')) return 'eq';
+      // Reverb variants — all route to convolution/algorithmic reverb
+      if (type.includes('reverb') || type.includes('plate') || type.includes('hall') ||
+          type.includes('spring') || type.includes('shimmer') || type.includes('ambient') ||
+          type.includes('cathedral') || type.includes('chamber') || type.includes('gated-reverb'))
+        return 'reverb';
+
+      // Delay
+      if (type.includes('delay'))   return 'delay';
+
+      // EQ variants — dynamic EQ and mid-side EQ use the dynamic EQ processor
+      if (type.includes('dynamic-eq') || type.includes('mid-side-eq') || type.includes('midside') ||
+          type.includes('surgical'))
+        return 'dynamiceq';
+      if (type.includes('eq') || type.includes('parametric') || type.includes('linear-phase'))
+        return 'eq';
+
+      // Compressor variants
+      if (type.includes('vca') || type.includes('optical') || type.includes('fet') ||
+          type.includes('tube-comp') || type.includes('bus-comp') || type.includes('glue') ||
+          type.includes('mastering-comp') || type.includes('vintage-comp') || type.includes('parallel'))
+        return 'compressor';
+      if (type.includes('multiband'))     return 'compressor';
+      if (type.includes('comp'))          return 'compressor';
+
+      // Limiters & loudness
+      if (type.includes('limiter') || type.includes('maximizer') || type.includes('leveler'))
+        return 'compressor';
+
+      // Dynamics — gate, expander, transient shaper use dynamic EQ processor
+      if (type.includes('gate') || type.includes('expander') || type.includes('transient') ||
+          type.includes('ducker') || type.includes('pumper'))
+        return 'dynamiceq';
+
+      // De-esser
+      if (type.includes('deesser') || type.includes('de-ess') || type.includes('de_ess'))
+        return 'deesser';
+
+      // Distortion & saturation
+      if (type.includes('dist') || type.includes('fuzz') || type.includes('overdrive') ||
+          type.includes('bitcrush') || type.includes('ring-mod') || type.includes('ringmod'))
+        return 'distortion';
+
+      // Modulation — each type routes to the most appropriate processor
       if (type.includes('flanger'))   return 'flanger';
       if (type.includes('phaser'))    return 'phaser';
-      if (type.includes('dist') || type.includes('fuzz') || type.includes('overdrive') || type.includes('bitcrush')) return 'distortion';
-      if (type.includes('deesser') || type.includes('de-ess')) return 'deesser';
-      if (type.includes('vocoder'))   return 'vocoder';
-      if (type.includes('gate') || type.includes('expander')) return 'dynamiceq';
-      if (type.includes('limiter') || type.includes('maximizer') || type.includes('leveler')) return 'compressor';
-      if (type.includes('tremolo') || type.includes('vibrato') || type.includes('rotary')) return 'chorus';
-      if (type.includes('vocal'))     return 'vocoder';
+      if (type.includes('chorus') || type.includes('ensemble') || type.includes('dimension'))
+        return 'chorus';
+      // Tremolo, vibrato, rotary, auto-pan use chorus (LFO modulation) processor
+      if (type.includes('tremolo') || type.includes('vibrato') || type.includes('rotary') ||
+          type.includes('auto-pan') || type.includes('autopan'))
+        return 'chorus';
+
+      // Vocal / vocoder
+      if (type.includes('vocoder') || type.includes('vocal') || type.includes('harmony') ||
+          type.includes('formant'))
+        return 'vocoder';
     }
     return type;
   }
