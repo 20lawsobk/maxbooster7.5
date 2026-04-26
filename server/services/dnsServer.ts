@@ -56,9 +56,9 @@ if (process.env.GEODNS_ENABLED === 'true') {
     try {
       const { lookupGeo } = await import('./geoDns.js');
       const geo = await lookupGeo('8.8.8.8');
-      if (geo) {
+      if (geo?.continent || geo?.country) {
         const { logger: _log } = await import('../logger.js');
-        _log.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent}/${geo.country}`);
+        _log.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? '?'}/${geo.country ?? '?'}`);
       }
     } catch { /* mmdb may not exist yet — silently ignored */ }
   })();
@@ -637,7 +637,9 @@ async function warmCache(): Promise<void> {
   if (process.env.GEODNS_ENABLED === 'true') {
     const { lookupGeo } = await import('./geoDns.js');
     lookupGeo('8.8.8.8').then(geo => {
-      if (geo) logger.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent}/${geo.country}`);
+      if (geo?.continent || geo?.country) {
+        logger.info(`[DNS] GeoDNS database warm — 8.8.8.8 → ${geo.continent ?? '?'}/${geo.country ?? '?'}`);
+      }
     }).catch(() => { /* DB may not be present yet — ignored */ });
   }
 }

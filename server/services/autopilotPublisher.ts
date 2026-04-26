@@ -150,7 +150,7 @@ class AutopilotPublisher {
         result.socialPosts = socialResult.posts;
         if (socialResult.error) {
           // Non-critical errors (like low confidence) are recorded but not thrown
-          if (!socialResult.error.includes('below threshold') && 
+          if (!socialResult.error.includes('threshold') && 
               !socialResult.error.includes('not trained')) {
             throw new Error(`Social media publishing failed: ${socialResult.error}`);
           }
@@ -364,7 +364,7 @@ class AutopilotPublisher {
         });
 
         if (!gateResult) {
-          logger.warn(`[Autopilot] User ${userId}: quality gate rejected all variants — skipping post to protect quality`);
+          logger.info(`[Autopilot] User ${userId}: quality gate rejected all variants — skipping post to protect quality`);
           return { posts: 0, error: 'Content quality gate: all variants below minimum threshold (73). Skipping to protect brand quality.' };
         }
 

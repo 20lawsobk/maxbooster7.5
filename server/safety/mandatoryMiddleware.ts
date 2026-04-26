@@ -194,7 +194,15 @@ export function requestLoggingMiddleware(
     const duration = Date.now() - start;
     // 401/403 are expected auth flows (unauthenticated clients, token expiry) — log at INFO.
     const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
-    const level = res.statusCode >= 500 ? 'error' : (res.statusCode >= 400 && !isAuthStatus) ? 'warn' : 'info';
+    // Static/Vite asset 404s are browser SW cache artifacts on restart — not actionable.
+    const isStaticAsset =
+      req.path.startsWith('/assets/') ||
+      req.path.startsWith('/src/') ||
+      req.path.startsWith('/@fs/') ||
+      req.path.startsWith('/@vite') ||
+      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req.path);
+    const isAsset404 = res.statusCode === 404 && isStaticAsset;
+    const level = res.statusCode >= 500 ? 'error' : (res.statusCode >= 400 && !isAuthStatus && !isAsset404) ? 'warn' : 'info';
     
     logger[level](`[${requestId}] ${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`);
   });

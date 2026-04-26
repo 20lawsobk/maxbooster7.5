@@ -1076,13 +1076,13 @@ class ContentQualityPipeline {
       const best = variants.sort((a, b) => b.scores.overall - a.scores.overall)[0];
       // Fallback floor: VEO_PRESSURE_FLOOR — never publish below 87% of Veo gate
       if (best && best.scores.overall >= VEO_PRESSURE_FLOOR) {
-        logger.warn(
+        logger.info(
           `[VeoGate] Fallback: best available ${best.scores.overall.toFixed(1)} passes ` +
           `VEO_PRESSURE_FLOOR (${VEO_PRESSURE_FLOOR}). Issues: ${best.platformOptimizations.issues.join(', ') || 'none'}`
         );
         return best;
       }
-      logger.warn(
+      logger.info(
         `[VeoGate] All ${variants.length} variant(s) below ${VEO_PRESSURE_FLOOR} — content rejected. ` +
         `Best score: ${best?.scores.overall.toFixed(1) ?? 'N/A'}`
       );

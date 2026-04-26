@@ -153,7 +153,7 @@ export class ContentQualityGate {
 
       const pressureFloor = VEO_PRESSURE_FLOOR();
       if (!best || best.scores.overall < pressureFloor) {
-        logger.warn(
+        logger.info(
           `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
           `best score ${best?.scores.overall.toFixed(1) ?? 'N/A'} is below ` +
           `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality.`
@@ -163,7 +163,7 @@ export class ContentQualityGate {
 
       winner = best;
       passedOnAttempt = MAX_ROUNDS;
-      logger.warn(
+      logger.info(
         `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
         `using best available: score=${winner.scores.overall.toFixed(1)} ` +
         `(above pressure floor ${pressureFloor}, below threshold ${threshold})`

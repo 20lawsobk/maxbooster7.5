@@ -47,7 +47,7 @@ try {
     regionMap = { ...regionMap, ...JSON.parse(process.env.REGION_MAP) };
   }
 } catch {
-  logger.warn('[GeoDNS] Invalid REGION_MAP JSON — using default IP for all regions');
+  logger.info('[GeoDNS] Invalid REGION_MAP JSON — using default IP for all regions');
 }
 
 // ── MaxMind mmdb reader (lazy-loaded) ─────────────────────────────────────────
@@ -120,9 +120,9 @@ export interface GeoResult {
   ip:         string;
 }
 
-export async function lookupGeo(ip: string): Promise<GeoResult> {
+export async function lookupGeo(ip: string): Promise<GeoResult | null> {
   const reader = await getGeoReader();
-  if (!reader) return { ip };
+  if (!reader) return null;
 
   try {
     const result = reader.get(ip);
@@ -298,7 +298,8 @@ export async function resolveGeoIP(queryBuf: Buffer, srcIp?: string): Promise<st
   // 2. GeoIP lookup
   const geo = await lookupGeo(lookupIp);
 
-  // 3. Select region IP
+  // 3. Select region IP — fall back to default when geo is unavailable
+  if (!geo) return DNS_SERVER_IP;
   const selectedIp = selectRegionIp(geo);
 
   if (selectedIp !== DNS_SERVER_IP) {

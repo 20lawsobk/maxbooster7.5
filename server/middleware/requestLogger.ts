@@ -50,17 +50,23 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     const isError = res.statusCode >= 400;
     const isServerError = res.statusCode >= 500;
 
-    // Skip logging of static assets and health checks in production
+    // Static/Vite asset paths — browser SW cache mismatches produce transient 404s on every
+    // restart; these are not actionable and should never surface as WARN.
+    const isStaticAssetRequest =
+      req.originalUrl.startsWith('/assets/') ||
+      req.originalUrl.startsWith('/src/') ||
+      req.originalUrl.startsWith('/@fs/') ||
+      req.originalUrl.startsWith('/@vite') ||
+      /\.(js|css|map|woff2?|ttf|eot|svg|png|ico|webp)(\?|$)/.test(req.originalUrl);
+
+    // Skip logging of static assets and health checks in production; also skip static
+    // assets in dev to avoid noise from browser SW cache mismatches.
     const skipLogging =
-      process.env.NODE_ENV === 'production' &&
-      (req.originalUrl.includes('/src/') ||
-        req.originalUrl.includes('/@fs/') ||
-        req.originalUrl.includes('/@vite') ||
-        req.originalUrl.includes('.map') ||
-        req.originalUrl.includes('/api/health') ||
+      (req.originalUrl.includes('/api/health') ||
         req.originalUrl.includes('/api/version') ||
         req.originalUrl.includes('/api/ready') ||
-        req.originalUrl.includes('/api/live'));
+        req.originalUrl.includes('/api/live')) ||
+      (process.env.NODE_ENV === 'production' && isStaticAssetRequest);
 
     if (!skipLogging) {
       // Log request for audit trail
@@ -94,8 +100,10 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       // Console log for development and critical errors
       if (process.env.NODE_ENV === 'development' || isServerError) {
         // 401/403 are expected auth flows (e.g. unauthenticated polling) — log at INFO.
+        // 404s on static/asset paths are browser SW cache artifacts — log at INFO.
         const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;
-        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus) ? 'warn' : 'info';
+        const isAsset404 = res.statusCode === 404 && isStaticAssetRequest;
+        const logLevel = isServerError ? 'error' : (isError && !isAuthStatus && !isAsset404) ? 'warn' : 'info';
         const message = `${logData.method} ${logData.url} - ${logData.statusCode} in ${responseTime}ms`;
 
         if (logLevel === 'error') {

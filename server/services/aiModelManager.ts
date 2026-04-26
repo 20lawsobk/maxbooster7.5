@@ -473,6 +473,7 @@ class AIModelManager {
    * Implements actual weight loading using TensorFlow.js deserialization
    */
   private async loadModelWeights(model: any, weights: any): Promise<void> {
+    if (!weights) return;
     try {
       if (weights.tensors && model.setWeights && typeof model.setWeights === 'function') {
         const tf = await import('@tensorflow/tfjs');
