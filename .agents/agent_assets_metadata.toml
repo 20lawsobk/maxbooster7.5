@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "zfhfPirZsCK4sboc2AIRO"
+uri = "file://daw-plugin-comparison.md"
+type = "text"
+title = "Max Booster DAW Plugins — Professional Comparison"
