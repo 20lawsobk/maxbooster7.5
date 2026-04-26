@@ -74,6 +74,17 @@ Production AI generation pipeline at `server/services/diffusion/gen_engine_v2/`.
 | `latent_encoder.py` | `VAELite` — 8-ch latent VAE with corrected `forward_train` (8-ch concat: `[z_sample | logvar]`) |
 | `text_encoder_v3.py` | `TextEncoderV3` — transformer text encoder with fixed FFN backward |
 
+### DAW Timeline Clip Width Fix (April 2026)
+- **Root cause**: `AIAudioGenerator.generateFromText` was using the text-parsed tempo (e.g., 140 BPM for trap genre) instead of the client's transport tempo. This caused generated clips to have the wrong duration relative to the DAW's bar grid (e.g., 8 bars at 140 BPM = ~13.7s, which on a 120 BPM timeline reads as ~6.8 bars instead of 8).
+- **Fixes applied**:
+  1. `shared/ml/audio/AIAudioGenerator.ts`: Added `tempo?: number` to `TextGenerationInput`; `generateFromText` now uses `input.tempo || parsed.params.tempo` so the client's tempo takes precedence.
+  2. `server/services/aiAudioGeneratorService.ts`: Added `tempo` to `TextToAudioRequest`; passes it through to `generateFromText`.
+  3. `server/routes/studioGeneration.ts`: Passes `validatedData.tempo` to `generateFromText` (was missing before).
+  4. `client/src/components/studio/AIMusicGenerator.tsx`: Added `initialTempo` prop so both DAWs can initialize the generator with the current transport tempo.
+  5. `client/src/components/studio/UltimateDAW.tsx` and `StudioOneDAW.tsx`: Pass `transport.tempo` as `initialTempo` to `AIMusicGenerator`.
+  6. `client/src/hooks/useProjectSync.ts`: Expanded clip duration auto-detect to also run for clips with `duration < 2` seconds (not just `<= 0`), correcting wrong values stored from previous tempo mismatches.
+  7. `client/src/components/studio/StudioOneDAW.tsx`: Fixed `onTrackGenerated` handler to actually add generated clips to the timeline (previously only showed a toast).
+
 ### Architecture Notes
 - `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.
 - Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).

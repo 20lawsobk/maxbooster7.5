@@ -45,6 +45,7 @@ export interface TextGenerationInput {
   text: string;
   duration?: number;       // seconds
   bars?: number;           // number of bars to generate
+  tempo?: number;          // BPM override — use client transport tempo so audio matches timeline
 }
 
 export interface AudioReferenceInput {
@@ -219,10 +220,13 @@ export class AIAudioGenerator {
     // Parse text to get intent and parameters
     const parsed = await this.textAI.parseText(input.text);
     const bars = input.bars || parsed.patternLength;
+    // Use client-provided tempo first so generated audio length matches the client's timeline.
+    // Fall back to text-parsed tempo only when no explicit tempo is given.
+    const resolvedTempo = input.tempo || parsed.params.tempo;
     
     // Build generation config
     const config: GenerationConfig = {
-      tempo: parsed.params.tempo,
+      tempo: resolvedTempo,
       key: parsed.params.key,
       scale: parsed.params.scale,
       bars,

@@ -660,13 +660,24 @@ export function useProjectSync(projectId: string | null) {
         const currentTracks = getStoreState().tracks;
         for (const track of currentTracks) {
           for (const clip of track.audioClips) {
-            if (clip.duration <= 0 && clip.sourceUrl) {
+            // Detect duration from the audio file when:
+            // - duration is missing/zero, OR
+            // - duration is suspiciously small (< 2 seconds) for a clip with a source URL
+            //   which would indicate a tempo-mismatch from generation at the wrong BPM
+            const needsDurationDetect = clip.sourceUrl && (
+              clip.duration <= 0 ||
+              clip.duration < 2
+            );
+            if (needsDurationDetect) {
               try {
                 const response = await fetch(clip.sourceUrl);
                 const arrayBuffer = await response.arrayBuffer();
                 const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
                 const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                store.updateAudioClip(track.id, clip.id, { duration: audioBuffer.duration });
+                if (audioBuffer.duration > 0 && Math.abs(audioBuffer.duration - clip.duration) > 0.5) {
+                  store.updateAudioClip(track.id, clip.id, { duration: audioBuffer.duration });
+                  logger.info(`[ProjectSync] Corrected clip "${clip.name}" duration: ${clip.duration.toFixed(2)}s → ${audioBuffer.duration.toFixed(2)}s`);
+                }
                 audioContext.close();
               } catch (e) {
                 logger.error('[ProjectSync] Failed to detect clip duration:', e);

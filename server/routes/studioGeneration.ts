@@ -132,6 +132,7 @@ router.post('/text', requireAuth, async (req, res) => {
       text: enhancedText,
       duration: validatedData.duration,
       bars: validatedData.bars,
+      tempo: validatedData.tempo,
       projectId: validatedData.projectId,
     });
 

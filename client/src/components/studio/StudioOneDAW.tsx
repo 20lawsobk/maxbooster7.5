@@ -1577,9 +1577,29 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         <DialogContent className="max-w-4xl h-[80vh] p-0 bg-transparent border-0">
           <AIMusicGenerator
             projectId={projectId}
+            initialTempo={transport.tempo}
             onClose={() => setShowMusicGenerator(false)}
             onTrackGenerated={(result) => {
-              toast({ title: 'AI Generation Complete', description: `Generated audio successfully.` });
+              const s = useStudioStore.getState();
+              const trackName = result.name || 'AI Generated Track';
+              const newTrackId = s.addTrack(result.type || 'audio', trackName);
+              if (result.audioFilePath && newTrackId) {
+                s.addAudioClip(newTrackId, {
+                  trackId: newTrackId,
+                  startTime: 0,
+                  duration: result.duration || 30,
+                  sourceUrl: result.audioFilePath,
+                  name: trackName,
+                  offset: 0,
+                  gain: 1,
+                  fadeIn: 0,
+                  fadeOut: 0,
+                  color: result.color || '#3b82f6',
+                  muted: false,
+                  locked: false,
+                });
+              }
+              toast({ title: 'AI Generation Complete', description: `"${trackName}" added to timeline.` });
               setShowMusicGenerator(false);
             }}
           />

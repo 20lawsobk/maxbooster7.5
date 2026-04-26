@@ -829,6 +829,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
             >
               <AIMusicGenerator
                 projectId={projectId}
+                initialTempo={transport.tempo}
                 onTrackGenerated={(track) => {
                   const trackName = track.name || 'AI Generated Track';
                   const trackType = track.type || 'audio';

@@ -27,6 +27,7 @@ interface AIMusicGeneratorProps {
   projectId?: string | null;
   onTrackGenerated?: (trackData: GeneratedTrack) => void;
   onClose?: () => void;
+  initialTempo?: number;
 }
 
 interface GeneratedTrack {
@@ -176,13 +177,13 @@ const INSTRUMENTS: Record<string, Array<{ id: string; name: string; category: 'm
 const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const SCALES = ['Major', 'Minor', 'Dorian', 'Mixolydian', 'Phrygian', 'Lydian'];
 
-export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMusicGeneratorProps) {
+export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initialTempo }: AIMusicGeneratorProps) {
   const { toast } = useToast();
   const [prompt, setPrompt] = useState('');
   const [selectedGenre, setSelectedGenre] = useState('hip_hop');
   const [selectedInstrumentCategory, setSelectedInstrumentCategory] = useState('synths');
   const [selectedInstrument, setSelectedInstrument] = useState('synth_lead');
-  const [tempo, setTempo] = useState(120);
+  const [tempo, setTempo] = useState(initialTempo && initialTempo > 0 ? initialTempo : 120);
   const [key, setKey] = useState('C');
   const [scale, setScale] = useState('Minor');
   const [complexity, setComplexity] = useState(0.5);

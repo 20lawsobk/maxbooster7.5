@@ -27,6 +27,7 @@ export interface TextToAudioRequest {
   text: string;
   duration?: number;
   bars?: number;
+  tempo?: number;
   projectId?: string;
 }
 
@@ -81,6 +82,7 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
       text: request.text,
       duration: request.duration,
       bars: request.bars,
+      tempo: request.tempo,
     });
 
     const audioFilePath = await saveToWav(output.audioData, output.sampleRate);
