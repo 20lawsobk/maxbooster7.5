@@ -586,10 +586,10 @@ export function FlowStateStudioPro({
               </motion.button>
               
               <motion.button
-                onClick={() => setShowAIPanel(!showAIPanel)}
+                onClick={() => setShowAIGeneratorDialog(true)}
                 className={cn(
                   "p-2 rounded-lg transition-all",
-                  showAIPanel
+                  showAIGeneratorDialog
                     ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
                     : "bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
                 )}
@@ -1128,16 +1128,14 @@ export function FlowStateStudioPro({
         <span>Press TAB for Zero-Chrome mode</span>
       </div>
 
-      {projectId && (
-        <AIGeneratorDialog
-          isOpen={showAIGeneratorDialog}
-          onClose={() => setShowAIGeneratorDialog(false)}
-          projectId={parseInt(projectId)}
-          onGenerated={(params) => {
-            setShowAIGeneratorDialog(false);
-          }}
-        />
-      )}
+      <AIGeneratorDialog
+        isOpen={showAIGeneratorDialog}
+        onClose={() => setShowAIGeneratorDialog(false)}
+        projectId={projectId ? parseInt(projectId) : 0}
+        onGenerated={(params) => {
+          setShowAIGeneratorDialog(false);
+        }}
+      />
 
       <FlowStateAddTrack
         isOpen={showAddTrackDialog}

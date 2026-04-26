@@ -302,7 +302,7 @@ export function FlowStatePluginBrowser({
     let plugins = allPlugins;
 
     if (category === 'effects') {
-      plugins = plugins.filter((p) => p.type === 'effect');
+      plugins = plugins.filter((p) => p.type === 'effect' || p.type === 'microphone');
     } else if (category === 'instruments') {
       plugins = plugins.filter((p) => p.type === 'instrument');
     } else if (category === 'favorites') {

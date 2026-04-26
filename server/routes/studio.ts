@@ -83,7 +83,11 @@ async function verifyProjectOwnership(projectId: string, userId: string): Promis
   const project = await db.query.projects.findFirst({
     where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
   });
-  return !!project;
+  if (project) return true;
+  const studioProject = await db.query.studioProjects.findFirst({
+    where: and(eq(studioProjects.id, projectId), eq(studioProjects.userId, userId)),
+  });
+  return !!studioProject;
 }
 
 // GET all projects for user (with optional pagination)
