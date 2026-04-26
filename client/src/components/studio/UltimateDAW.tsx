@@ -830,14 +830,16 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
               <AIMusicGenerator
                 projectId={projectId}
                 onTrackGenerated={(track) => {
-                  const newTrackId = store.addTrack(track.type || 'audio', track.name || 'Generated Track');
-                  if (track.audioUrl && newTrackId) {
+                  const trackName = track.name || 'AI Generated Track';
+                  const trackType = track.type || 'audio';
+                  const newTrackId = store.addTrack(trackType as any, trackName);
+                  if (track.audioFilePath && newTrackId) {
                     store.addAudioClip(newTrackId, {
                       trackId: newTrackId,
                       startTime: 0,
                       duration: track.duration || 30,
-                      sourceUrl: track.audioUrl,
-                      name: track.name || 'AI Generated',
+                      sourceUrl: track.audioFilePath,
+                      name: trackName,
                       offset: 0,
                       gain: 1,
                       fadeIn: 0,
@@ -847,7 +849,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                       locked: false,
                     });
                   }
-                  toast({ title: 'Track Added', description: `"${track.name || 'Generated Track'}" added to project.` });
+                  toast({ title: 'Track Added', description: `"${trackName}" added to project.` });
                 }}
                 onClose={() => setShowMusicGenerator(false)}
               />

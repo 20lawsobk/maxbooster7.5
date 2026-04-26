@@ -40,6 +40,9 @@ interface GeneratedTrack {
   duration: number;
   generatedNotes?: any[];
   generatedChords?: any[];
+  name?: string;
+  type?: 'audio' | 'midi' | 'instrument';
+  color?: string;
 }
 
 const GENRES = [
@@ -261,14 +264,27 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
   }, [audioElement, isMuted]);
 
   const handleAddToProject = useCallback(() => {
-    if (generatedTrack && onTrackGenerated) {
-      onTrackGenerated(generatedTrack);
+    if (!generatedTrack) return;
+    if (!onTrackGenerated) {
       toast({
-        title: 'Added to Project',
-        description: 'The generated track has been added to your project',
+        title: 'No project open',
+        description: 'Open a project in the studio to add this track to the timeline.',
+        variant: 'destructive',
       });
+      return;
     }
-  }, [generatedTrack, onTrackGenerated, toast]);
+    const instrumentName = (INSTRUMENTS[selectedInstrumentCategory] || []).find(i => i.id === selectedInstrument)?.name
+      || selectedInstrument.replace(/_/g, ' ');
+    onTrackGenerated({
+      ...generatedTrack,
+      name: `AI ${instrumentName}`,
+      type: 'audio',
+    });
+    toast({
+      title: 'Added to Project',
+      description: 'The generated track has been added to your project',
+    });
+  }, [generatedTrack, onTrackGenerated, selectedInstrumentCategory, selectedInstrument, toast]);
 
   const [isGeneratingArrangement, setIsGeneratingArrangement] = useState(false);
 
@@ -303,10 +319,14 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose }: AIMus
           const track = data.arrangement[t.key];
           if (track) {
             onTrackGenerated({
-              audioFilePath: track.audioFilePath || '',
+              audioFilePath: '',
+              name: t.label,
+              type: t.category === 'drums' ? 'midi' : 'midi',
               parameters: { key, scale: scale.toLowerCase(), tempo, genre: selectedGenre },
               duration: (bars * 4 * 60) / tempo,
-              generatedNotes: track.notes || [],
+              generatedNotes: Array.isArray(track.notes) ? track.notes
+                : Array.isArray(track.kick) ? track.kick
+                : [],
               generatedChords: track.chords || [],
             });
           }

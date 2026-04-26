@@ -338,6 +338,11 @@ export function FlowStatePluginBrowser({
   const handleAdd = (plugin: PluginDefinition) => {
     if (projectId) {
       instantiateMutation.mutate({ pluginId: plugin.id, trackId });
+    } else {
+      toast({
+        title: 'Plugin added to session',
+        description: 'No project is open — this plugin is active for the current session but will not be saved.',
+      });
     }
     onAddPlugin(plugin.id, plugin.type);
     onOpenChange(false);

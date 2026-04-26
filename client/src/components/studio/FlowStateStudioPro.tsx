@@ -300,11 +300,21 @@ export function FlowStateStudioPro({
   }, []);
 
   const handleAddPlugin = useCallback((pluginId: string, type: 'effect' | 'instrument') => {
+    const friendlyName = pluginId
+      .split(/[-_]/)
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+
+    // Wire the plugin into the actual audio graph on the targeted track
+    if (activeTrackForPlugin) {
+      dawCore.addPlugin(activeTrackForPlugin, pluginId, friendlyName);
+    }
+
     if (type === 'effect') {
       const newPlugin: PluginInstance = {
         id: `plugin-${Date.now()}`,
         type: pluginId as PluginType,
-        name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+        name: friendlyName,
         bypass: false,
         expanded: true,
         parameters: {},
@@ -315,7 +325,7 @@ export function FlowStateStudioPro({
       const newInstrument: InstrumentInstance = {
         id: `inst-${Date.now()}`,
         type: pluginId as InstrumentType,
-        name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+        name: friendlyName,
         bypass: false,
         parameters: {},
       };
@@ -323,7 +333,7 @@ export function FlowStateStudioPro({
       setInstrumentDialogOpen(true);
     }
     setShowPluginBrowser(false);
-  }, []);
+  }, [activeTrackForPlugin]);
 
   const handlePluginParameterChange = useCallback((key: string, value: number) => {
     setSelectedPlugin(prev => prev ? { ...prev, parameters: { ...prev.parameters, [key]: value } } : null);
