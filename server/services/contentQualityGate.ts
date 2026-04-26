@@ -34,7 +34,8 @@ import {
 import { pocketManager } from '../pocket-dimension/index.js';
 import { isPdimConfigured, getPdimClient } from '../lib/pdimClient.js';
 import { pushTrainingFeedback } from './maxcoreSync.js';
-import { getCalibratedThresholds } from './maxcoreScoreCalibrator.js';
+import { getCalibratedThresholds, isCalibrated, runCalibration } from './maxcoreScoreCalibrator.js';
+import { modelWeightStorage } from './modelWeightStorage.js';
 
 export interface QualityGateResult {
   winner: ContentVariant;
@@ -52,6 +53,90 @@ const VEO_PRESSURE_FLOOR = () => getCalibratedThresholds().floor ?? _VEO_PRESSUR
 const MAX_ROUNDS           = 10;   // A/B retry budget
 const VARIANTS_PER_ROUND   = 30;   // 30+ variants per batch — maximises quality hit rate
                                    // and shortens the time to reach the 81/100 threshold
+
+// ── Training readiness awareness ──────────────────────────────────────────────
+
+const BASE_MODEL_NAMES = [
+  'social_base',
+  'advertising_base',
+  'content_base',
+  'engagement_base',
+] as const;
+
+/**
+ * Snapshot of how ready the MaxCore training infrastructure is.
+ * Used by the quality gate to surface meaningful context when content fails
+ * and to auto-trigger calibration when it hasn't yet run.
+ */
+export interface ReadinessProfile {
+  modelsReady: number;
+  modelsTotal: number;
+  calibrated: boolean;
+  calibratedGate: number;
+  calibratedFloor: number;
+  level: 'cold' | 'warming' | 'ready' | 'optimal';
+  summary: string;
+}
+
+let _lastReadinessTs  = 0;
+let _cachedReadiness: ReadinessProfile | null = null;
+const READINESS_CACHE_MS = 60_000; // re-check every 60 s — cheap but not on every variant
+
+async function computeReadinessProfile(): Promise<ReadinessProfile> {
+  const now = Date.now();
+  if (_cachedReadiness && now - _lastReadinessTs < READINESS_CACHE_MS) {
+    return _cachedReadiness;
+  }
+
+  const checks = await Promise.all(
+    BASE_MODEL_NAMES.map(n => modelWeightStorage.exists(n).catch(() => false))
+  );
+  const modelsReady  = checks.filter(Boolean).length;
+  const calibrated   = isCalibrated();
+  const thresholds   = getCalibratedThresholds();
+
+  let level: ReadinessProfile['level'];
+  let summary: string;
+
+  if (modelsReady === 0 && !calibrated) {
+    level   = 'cold';
+    summary = 'No MaxCore base weights synced yet and calibration has not run — system is starting up';
+  } else if (modelsReady < BASE_MODEL_NAMES.length || !calibrated) {
+    level   = 'warming';
+    summary =
+      `${modelsReady}/${BASE_MODEL_NAMES.length} MaxCore base models present, ` +
+      `calibration ${calibrated ? 'complete' : 'pending'} — scores will improve as the ` +
+      `training simulator and memory sync complete their first cycle`;
+  } else if (calibrated && thresholds.gate > _DEFAULT_THRESHOLD) {
+    level   = 'optimal';
+    summary =
+      `All ${BASE_MODEL_NAMES.length} MaxCore base models synced and training-calibrated ` +
+      `(gate=${thresholds.gate}, floor=${thresholds.floor}) — maximum quality capability active`;
+  } else {
+    level   = 'ready';
+    summary =
+      `All ${BASE_MODEL_NAMES.length} MaxCore base models synced, calibrated at defaults ` +
+      `(gate=${thresholds.gate}, floor=${thresholds.floor}) — ` +
+      `scores will rise further as training simulator accumulates sessions`;
+  }
+
+  _cachedReadiness = {
+    modelsReady,
+    modelsTotal: BASE_MODEL_NAMES.length,
+    calibrated,
+    calibratedGate:  thresholds.gate,
+    calibratedFloor: thresholds.floor,
+    level,
+    summary,
+  };
+  _lastReadinessTs = now;
+  return _cachedReadiness;
+}
+
+/** Public accessor — used by monitoring routes and autopilot status APIs. */
+export async function getReadinessStatus(): Promise<ReadinessProfile> {
+  return computeReadinessProfile();
+}
 
 export class ContentQualityGate {
   private static instance: ContentQualityGate;
@@ -80,6 +165,34 @@ export class ContentQualityGate {
     overrideThreshold?: number
   ): Promise<QualityGateResult | null> {
     const threshold = overrideThreshold ?? (await this.getUserThreshold(userId));
+
+    // ── Awareness layer ─────────────────────────────────────────────────────
+    // Check training infrastructure readiness before running the gate.
+    // If calibration hasn't happened yet, kick it off immediately (non-blocking)
+    // so the next cycle benefits from MaxCore-calibrated thresholds.
+    const readiness = await computeReadinessProfile();
+
+    if (readiness.level === 'cold' || readiness.level === 'warming') {
+      logger.info(
+        `[QualityGate] Training readiness: ${readiness.level.toUpperCase()} — ${readiness.summary}`
+      );
+      if (!readiness.calibrated) {
+        // Non-blocking: kick off calibration so subsequent gate runs see
+        // MaxCore-calibrated thresholds rather than static defaults.
+        runCalibration().catch(() => {});
+        logger.info(
+          '[QualityGate] Calibration triggered — MaxCore dataset + training simulator ' +
+          'will update gate/floor thresholds for subsequent runs'
+        );
+      }
+    } else {
+      logger.info(
+        `[QualityGate] Training readiness: ${readiness.level.toUpperCase()} — ` +
+        `models=${readiness.modelsReady}/${readiness.modelsTotal} ` +
+        `gate=${readiness.calibratedGate} floor=${readiness.calibratedFloor}`
+      );
+    }
+    // ────────────────────────────────────────────────────────────────────────
 
     const rejectedVariants: ContentVariant[] = [];
     let allTriedVariants: ContentVariant[] = [];
@@ -153,10 +266,17 @@ export class ContentQualityGate {
 
       const pressureFloor = VEO_PRESSURE_FLOOR();
       if (!best || best.scores.overall < pressureFloor) {
+        const readinessHint =
+          readiness.level === 'cold'    ? 'System is still starting up — MaxCore sync + calibration not yet complete.' :
+          readiness.level === 'warming' ? 'Training requirements not yet fully met — scores will improve once the MaxCore training simulator and memory sync complete their first cycle.' :
+          readiness.level === 'ready'   ? 'System is ready; the training simulator is still accumulating sessions that will raise content scores over time.' :
+                                          'System is fully calibrated — the model is producing its best available content.';
         logger.info(
           `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
           `best score ${best?.scores.overall.toFixed(1) ?? 'N/A'} is below ` +
-          `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality.`
+          `VEO_PRESSURE_FLOOR (${pressureFloor}). Content rejected to protect quality. ` +
+          `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models, ` +
+          `calibrated=${readiness.calibrated}). ${readinessHint}`
         );
         return null;
       }
@@ -166,7 +286,8 @@ export class ContentQualityGate {
       logger.info(
         `[QualityGate] user=${userId} exhausted ${MAX_ROUNDS} rounds — ` +
         `using best available: score=${winner.scores.overall.toFixed(1)} ` +
-        `(above pressure floor ${pressureFloor}, below threshold ${threshold})`
+        `(above pressure floor ${pressureFloor}, below threshold ${threshold}). ` +
+        `Training readiness: ${readiness.level} (${readiness.modelsReady}/${readiness.modelsTotal} models)`
       );
     }
 
