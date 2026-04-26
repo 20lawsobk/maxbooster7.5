@@ -8,7 +8,7 @@ const MbShimmerReverbPlugin: PluginDefinition = {
     type: 'reverb',
     version: '1.0.0',
     description: 'Ethereal shimmer reverb with octave-shifted tails',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true },
       { id: 'decay', name: 'Decay', type: 'float', defaultValue: 5, minValue: 1, maxValue: 30, unit: 's', automatable: true },

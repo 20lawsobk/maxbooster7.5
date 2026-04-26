@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbBassFmPlugin: PluginDefinition = {
     id: 'mb-bass-fm', slug: 'mb-bass-fm', name: 'MB FM Bass', category: 'instrument', type: 'bass', version: '1.0.0',
-    description: 'Punchy FM bass', author: 'Max Booster',
+    description: 'Punchy FM bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.8 }],
     envelope: { attack: 0.001, decay: 0.2, sustain: 0.5, release: 0.15 },
     parameters: [

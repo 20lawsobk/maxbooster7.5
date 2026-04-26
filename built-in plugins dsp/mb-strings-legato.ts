@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbStringsLegatoPlugin: PluginDefinition = {
     id: 'mb-strings-legato', slug: 'mb-strings-legato', name: 'MB Legato Strings', category: 'instrument', type: 'strings', version: '1.0.0',
-    description: 'Smooth connected legato strings', author: 'Max Booster',
+    description: 'Smooth connected legato strings', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -7, gain: 0.25 }, { type: 'sawtooth', detune: 7, gain: 0.25 }, { type: 'triangle', detune: 0, gain: 0.5 }],
     envelope: { attack: 0.5, decay: 0.3, sustain: 0.9, release: 1.5 },
     parameters: [

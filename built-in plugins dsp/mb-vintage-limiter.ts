@@ -8,7 +8,7 @@ const MbVintageLimiterPlugin: PluginDefinition = {
     type: 'limiter',
     version: '1.0.0',
     description: 'Warm optical-style limiter for gentle peak control',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'input', name: 'Input Gain', type: 'float', defaultValue: 0, minValue: 0, maxValue: 24, unit: 'dB', automatable: true },
       { id: 'release', name: 'Release', type: 'float', defaultValue: 100, minValue: 10, maxValue: 1000, unit: 'ms', automatable: true },

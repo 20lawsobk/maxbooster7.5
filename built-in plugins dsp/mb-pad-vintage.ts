@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadVintagePlugin: PluginDefinition = {
     id: 'mb-pad-vintage', slug: 'mb-pad-vintage', name: 'MB Vintage Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Classic analog synth pad', author: 'Max Booster',
+    description: 'Classic analog synth pad', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.4 }, { type: 'square', detune: -5, gain: 0.3 }, { type: 'square', detune: 5, gain: 0.3 }],
     envelope: { attack: 0.4, decay: 0.6, sustain: 0.8, release: 1.2 },
     parameters: [

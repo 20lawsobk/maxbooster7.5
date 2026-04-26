@@ -8,7 +8,7 @@ const MbSupersawLeadPlugin: PluginDefinition = {
     type: 'synth',
     version: '1.0.0',
     description: 'Massive supersaw lead synth for EDM and trance productions',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: -25, gain: 0.15 },
       { type: 'sawtooth', detune: -15, gain: 0.2 },

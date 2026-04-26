@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadCinematicPlugin: PluginDefinition = {
     id: 'mb-pad-cinematic', slug: 'mb-pad-cinematic', name: 'MB Cinematic Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Epic cinematic atmosphere', author: 'Max Booster',
+    description: 'Epic cinematic atmosphere', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -15, gain: 0.2 }, { type: 'sawtooth', detune: 15, gain: 0.2 }, { type: 'triangle', detune: 0, gain: 0.3 }, { type: 'sine', detune: -1200, gain: 0.3 }],
     envelope: { attack: 2.5, decay: 1.5, sustain: 0.9, release: 4.0 },
     parameters: [

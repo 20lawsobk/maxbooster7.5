@@ -8,7 +8,7 @@ const MbFmElectricPianoPlugin: PluginDefinition = {
     type: 'fm',
     version: '1.0.0',
     description: 'Classic DX7-style FM electric piano with warm tines and bells',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 0.5 },
       { type: 'sine', detune: 0, gain: 0.3 },

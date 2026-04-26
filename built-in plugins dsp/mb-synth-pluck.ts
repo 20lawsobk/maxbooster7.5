@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthPluckPlugin: PluginDefinition = {
     id: 'mb-synth-pluck', slug: 'mb-synth-pluck', name: 'MB Synth Pluck', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Short plucky synth', author: 'Max Booster',
+    description: 'Short plucky synth', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.6 }, { type: 'triangle', detune: 0, gain: 0.4 }],
     envelope: { attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.15 },
     parameters: [

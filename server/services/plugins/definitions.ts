@@ -35,6 +35,7 @@ export interface PluginDefinition {
   version: string;
   description: string;
   author: string;
+  grade?: string;
   parameters: PluginParameter[];
   defaultPreset: Record<string, number | boolean | string>;
   oscillators?: OscillatorConfig[];
@@ -101,7 +102,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'piano',
     version: '1.0.0',
     description: 'Virtual acoustic piano with realistic tone and dynamics',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'triangle', detune: 0, gain: 0.6 },
       { type: 'sine', detune: 0.5, gain: 0.3 },
@@ -127,7 +128,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'strings',
     version: '1.0.0',
     description: 'Lush string ensemble with multiple articulations',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: -5, gain: 0.3 },
       { type: 'sawtooth', detune: 5, gain: 0.3 },
@@ -153,7 +154,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'drums',
     version: '1.0.0',
     description: 'Punchy drum kit with multiple kits and samples',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 1.0 },
       { type: 'noise', detune: 0, gain: 0.5 },
@@ -178,7 +179,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'bass',
     version: '1.0.0',
     description: 'Deep bass synthesizer with sub and harmonics',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 0.6 },
       { type: 'sawtooth', detune: -1200, gain: 0.3 },
@@ -204,7 +205,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'pad',
     version: '1.0.0',
     description: 'Atmospheric pad synthesizer with rich textures',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: -7, gain: 0.25 },
       { type: 'sawtooth', detune: 7, gain: 0.25 },
@@ -232,7 +233,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'analog',
     version: '1.0.0',
     description: 'Classic analog synthesizer with dual oscillators, ladder filter, and modulation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: 0, gain: 0.5 },
       { type: 'square', detune: -0.1, gain: 0.3 },
@@ -276,7 +277,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'fm',
     version: '1.0.0',
     description: 'FM synthesis engine with 6 operators and 32 algorithms for complex harmonic content',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 1.0 },
     ],
@@ -324,7 +325,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'wavetable',
     version: '1.0.0',
     description: 'Modern wavetable synthesizer with morphing capabilities',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 1.0 },
     ],
@@ -362,7 +363,7 @@ export const BUILT_IN_INSTRUMENTS: PluginDefinition[] = [
     type: 'sampler',
     version: '1.0.0',
     description: 'Professional sampler with multi-sample support and advanced playback',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [],
     envelope: { attack: 0.001, decay: 0.1, sustain: 1.0, release: 0.2 },
     parameters: [
@@ -408,7 +409,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'reverb',
     version: '1.0.0',
     description: 'Algorithmic reverb with multiple room types',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'roomSize', name: 'Room Size', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
       { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 2.0, minValue: 0.1, maxValue: 20, unit: 's', automatable: true },
@@ -429,7 +430,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'delay',
     version: '1.0.0',
     description: 'Stereo delay with sync and modulation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'timeLeft', name: 'Time Left', type: 'float', defaultValue: 250, minValue: 1, maxValue: 2000, unit: 'ms', automatable: true },
       { id: 'timeRight', name: 'Time Right', type: 'float', defaultValue: 375, minValue: 1, maxValue: 2000, unit: 'ms', automatable: true },
@@ -452,7 +453,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'chorus',
     version: '1.0.0',
     description: 'Rich stereo chorus effect',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'rate', name: 'Rate', type: 'float', defaultValue: 1.0, minValue: 0.1, maxValue: 10, unit: 'Hz', automatable: true },
       { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -471,7 +472,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Professional dynamics compressor',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -20, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 4, minValue: 1, maxValue: 20, automatable: true },
@@ -493,7 +494,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'eq',
     version: '1.0.0',
     description: '3-band parametric equalizer',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'lowFreq', name: 'Low Freq', type: 'float', defaultValue: 80, minValue: 20, maxValue: 500, unit: 'Hz', automatable: true },
       { id: 'lowGain', name: 'Low Gain', type: 'float', defaultValue: 0, minValue: -24, maxValue: 24, unit: 'dB', automatable: true },
@@ -518,7 +519,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'limiter',
     version: '1.0.0',
     description: 'Brickwall limiter for mastering',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'ceiling', name: 'Ceiling', type: 'float', defaultValue: -0.3, minValue: -6, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -6, minValue: -24, maxValue: 0, unit: 'dB', automatable: true },
@@ -537,7 +538,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'gate',
     version: '1.0.0',
     description: 'Noise gate with expander mode',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -40, minValue: -80, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'range', name: 'Range', type: 'float', defaultValue: -80, minValue: -80, maxValue: 0, unit: 'dB', automatable: true },
@@ -550,7 +551,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     ],
     defaultPreset: { threshold: -40, range: -80, attack: 1, hold: 50, release: 100, hysteresis: 3, sidechain: false, scFilter: 100 },
   },
-    { id: 'mb-distortion', slug: 'mb-distortion', name: 'MB Distortion FX', category: 'effect', type: 'distortion', version: '2.0.0', description: 'All-purpose multi-mode distortion effect unit', author: 'Max Booster', parameters: [{ id: 'type', name: 'Distortion Type', type: 'choice', defaultValue: 'distortion', choices: ['overdrive','distortion','fuzz','bitcrush','waveshape','tube','transistor','tape'], automatable: false }, { id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'tone', name: 'Tone', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'presence', name: 'Presence', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'low_cut', name: 'Low Cut', type: 'float', defaultValue: 100, minValue: 20, maxValue: 2000, unit: 'Hz', automatable: true }, { id: 'high_cut', name: 'High Cut', type: 'float', defaultValue: 8000, minValue: 1000, maxValue: 20000, unit: 'Hz', automatable: true }, { id: 'output', name: 'Output Level', type: 'float', defaultValue: 0, minValue: -18, maxValue: 18, unit: 'dB', automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { type: 'distortion', drive: 0.5, tone: 0.5, presence: 0.5, low_cut: 100, high_cut: 8000, output: 0, mix: 0.5 } },
+    { id: 'mb-distortion', slug: 'mb-distortion', name: 'MB Distortion FX', category: 'effect', type: 'distortion', version: '2.0.0', description: 'All-purpose multi-mode distortion effect unit', author: 'Max Booster', grade: 'A', parameters: [{ id: 'type', name: 'Distortion Type', type: 'choice', defaultValue: 'distortion', choices: ['overdrive','distortion','fuzz','bitcrush','waveshape','tube','transistor','tape'], automatable: false }, { id: 'drive', name: 'Drive', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'tone', name: 'Tone', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'presence', name: 'Presence', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'low_cut', name: 'Low Cut', type: 'float', defaultValue: 100, minValue: 20, maxValue: 2000, unit: 'Hz', automatable: true }, { id: 'high_cut', name: 'High Cut', type: 'float', defaultValue: 8000, minValue: 1000, maxValue: 20000, unit: 'Hz', automatable: true }, { id: 'output', name: 'Output Level', type: 'float', defaultValue: 0, minValue: -18, maxValue: 18, unit: 'dB', automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { type: 'distortion', drive: 0.5, tone: 0.5, presence: 0.5, low_cut: 100, high_cut: 8000, output: 0, mix: 0.5 } },
   {
     id: 'mb-phaser',
     slug: 'mb-phaser',
@@ -559,7 +560,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'phaser',
     version: '1.0.0',
     description: 'Classic phaser with multiple stages and stereo modulation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'rate', name: 'Rate', type: 'float', defaultValue: 0.5, minValue: 0.01, maxValue: 10, unit: 'Hz', automatable: true },
       { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.7, minValue: 0, maxValue: 1, automatable: true },
@@ -582,7 +583,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'flanger',
     version: '1.0.0',
     description: 'Vintage flanger with through-zero capability',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'rate', name: 'Rate', type: 'float', defaultValue: 0.3, minValue: 0.01, maxValue: 10, unit: 'Hz', automatable: true },
       { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true },
@@ -608,7 +609,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'plate',
     version: '1.0.0',
     description: 'Classic EMT 140-style plate reverb — dense, smooth, and silky',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 2.5, minValue: 0.3, maxValue: 10, unit: 's', automatable: true },
       { id: 'preDelay', name: 'Pre-Delay', type: 'float', defaultValue: 10, minValue: 0, maxValue: 150, unit: 'ms', automatable: true },
@@ -628,7 +629,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'hall',
     version: '1.0.0',
     description: 'Large concert hall reverb with wide, three-dimensional space',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'size', name: 'Hall Size', type: 'float', defaultValue: 0.8, minValue: 0.1, maxValue: 1, automatable: true },
       { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 4.0, minValue: 0.5, maxValue: 20, unit: 's', automatable: true },
@@ -651,7 +652,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'spring',
     version: '1.0.0',
     description: 'Vintage spring tank reverb — drip, twang, and surf-guitar character',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'decay', name: 'Decay', type: 'float', defaultValue: 1.8, minValue: 0.3, maxValue: 6, unit: 's', automatable: true },
       { id: 'tension', name: 'Spring Tension', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -670,7 +671,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'shimmer',
     version: '1.0.0',
     description: 'Ethereal shimmer reverb with pitch-shifted feedback — cinematic and evolving',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 5.0, minValue: 1, maxValue: 20, unit: 's', automatable: true },
       { id: 'shimmer', name: 'Shimmer Amount', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true },
@@ -683,7 +684,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     ],
     defaultPreset: { decay: 5.0, shimmer: 0.6, shimmerPitch: '+1oct', feedback: 0.7, diffusion: 0.8, damping: 0.3, modRate: 0.2, mix: 0.4 },
   },
-    { id: 'mb-gated-reverb', slug: 'mb-gated-reverb', name: 'MB Gated Reverb FX', category: 'effect', type: 'reverb', version: '2.0.0', description: '1980s gated snare reverb with hard gate cutoff', author: 'Max Booster', parameters: [{ id: 'size', name: 'Room Size', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 0.6, minValue: 0.1, maxValue: 20, unit: 's', automatable: true }, { id: 'pre_delay', name: 'Pre-Delay', type: 'float', defaultValue: 8, minValue: 0, maxValue: 150, unit: 'ms', automatable: true }, { id: 'diffusion', name: 'Diffusion', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'damping', name: 'Damping', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'high_cut', name: 'High Cut', type: 'float', defaultValue: 6000, minValue: 500, maxValue: 20000, unit: 'Hz', automatable: true }, { id: 'width', name: 'Stereo Width', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }, { id: 'early_mix', name: 'Early/Tail Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { size: 0.4, decay: 0.6, pre_delay: 8, diffusion: 0.5, damping: 0.6, high_cut: 6000, width: 1, early_mix: 0.5, mix: 0.5 } },
+    { id: 'mb-gated-reverb', slug: 'mb-gated-reverb', name: 'MB Gated Reverb FX', category: 'effect', type: 'reverb', version: '2.0.0', description: '1980s gated snare reverb with hard gate cutoff', author: 'Max Booster', grade: 'A', parameters: [{ id: 'size', name: 'Room Size', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'decay', name: 'Decay Time', type: 'float', defaultValue: 0.6, minValue: 0.1, maxValue: 20, unit: 's', automatable: true }, { id: 'pre_delay', name: 'Pre-Delay', type: 'float', defaultValue: 8, minValue: 0, maxValue: 150, unit: 'ms', automatable: true }, { id: 'diffusion', name: 'Diffusion', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'damping', name: 'Damping', type: 'float', defaultValue: 0.6, minValue: 0, maxValue: 1, automatable: true }, { id: 'high_cut', name: 'High Cut', type: 'float', defaultValue: 6000, minValue: 500, maxValue: 20000, unit: 'Hz', automatable: true }, { id: 'width', name: 'Stereo Width', type: 'float', defaultValue: 1, minValue: 0, maxValue: 1, automatable: true }, { id: 'early_mix', name: 'Early/Tail Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { size: 0.4, decay: 0.6, pre_delay: 8, diffusion: 0.5, damping: 0.6, high_cut: 6000, width: 1, early_mix: 0.5, mix: 0.5 } },
   {
     id: 'mb-ambient-reverb',
     slug: 'mb-ambient-reverb',
@@ -692,7 +693,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'ambient',
     version: '1.0.0',
     description: 'Infinite-sustain ambient reverb for drone and soundscape textures',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'density', name: 'Density', type: 'float', defaultValue: 0.9, minValue: 0, maxValue: 1, automatable: true },
       { id: 'size', name: 'Space Size', type: 'float', defaultValue: 0.95, minValue: 0, maxValue: 1, automatable: true },
@@ -715,7 +716,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Ultra-fast VCA compressor — punchy and precise, inspired by the 1176 classic',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -18, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 4, minValue: 1, maxValue: 20, automatable: true },
@@ -735,7 +736,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Program-dependent optical compressor — smooth, musical gain riding inspired by LA-2A',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -20, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 3, minValue: 1.5, maxValue: 10, automatable: true },
@@ -755,7 +756,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Aggressive FET compressor — adds grit and excitement, perfect for drums and bus',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -20, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'choice', defaultValue: '4:1', choices: ['2:1', '4:1', '8:1', '12:1', '20:1', 'Limit'], automatable: false },
@@ -775,7 +776,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Warm tube compressor — gentle saturation and harmonic richness, inspired by the Fairchild',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -22, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 3, minValue: 1, maxValue: 10, automatable: true },
@@ -796,7 +797,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'mastering',
     version: '1.0.0',
     description: '4-band multiband compressor for mastering and advanced mix shaping',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'band1Threshold', name: 'Low Threshold', type: 'float', defaultValue: -18, minValue: -60, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'band1Ratio', name: 'Low Ratio', type: 'float', defaultValue: 3, minValue: 1, maxValue: 20, automatable: true },
@@ -829,7 +830,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'Smooth SSL-style bus compressor — glues the mix and adds punch',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -15, minValue: -40, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'choice', defaultValue: '4:1', choices: ['2:1', '4:1', '10:1'], automatable: false },
@@ -849,7 +850,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'compressor',
     version: '1.0.0',
     description: 'API-style glue compressor — adds cohesion and energy to group buses',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -16, minValue: -40, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 4, minValue: 1, maxValue: 10, automatable: true },
@@ -870,7 +871,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'mastering',
     version: '1.0.0',
     description: 'Transparent mastering compressor with intelligent program detection',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -12, minValue: -40, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 2, minValue: 1, maxValue: 8, automatable: true },
@@ -894,7 +895,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'eq',
     version: '2.0.0',
     description: '8-band fully parametric EQ with HP/LP filters — professional mastering precision',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'hpEnabled', name: 'HP Filter', type: 'bool', defaultValue: false, automatable: false },
       { id: 'hpFreq', name: 'HP Frequency', type: 'float', defaultValue: 20, minValue: 20, maxValue: 1000, unit: 'Hz', automatable: true },
@@ -931,7 +932,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'eq',
     version: '1.0.0',
     description: '4-band dynamic EQ — frequency-specific compression or expansion with full band control',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'band1Freq', name: 'Band 1 Freq', type: 'float', defaultValue: 150, minValue: 20, maxValue: 500, unit: 'Hz', automatable: true },
       { id: 'band1Gain', name: 'Band 1 Gain', type: 'float', defaultValue: 0, minValue: -18, maxValue: 18, unit: 'dB', automatable: true },
@@ -969,7 +970,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'eq',
     version: '1.0.0',
     description: 'M/S parametric EQ — independent mid and side channel sculpting for mastering',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'midLowFreq', name: 'Mid Low Freq', type: 'float', defaultValue: 100, minValue: 20, maxValue: 500, unit: 'Hz', automatable: true },
       { id: 'midLowGain', name: 'Mid Low Gain', type: 'float', defaultValue: 0, minValue: -18, maxValue: 18, unit: 'dB', automatable: true },
@@ -1003,7 +1004,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'mastering',
     version: '1.0.0',
     description: 'Linear-phase EQ with zero phase distortion — ideal for mastering bus and mid-side work',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'hpFreq', name: 'HP Frequency', type: 'float', defaultValue: 20, minValue: 20, maxValue: 500, unit: 'Hz', automatable: true },
       { id: 'hpEnabled', name: 'HP Enabled', type: 'bool', defaultValue: false, automatable: false },
@@ -1043,7 +1044,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'transient-shaper',
     version: '1.0.0',
     description: 'Independent attack and sustain shaping — sculpt punch and tail without compression',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'attack', name: 'Attack Gain', type: 'float', defaultValue: 0, minValue: -24, maxValue: 24, unit: 'dB', automatable: true },
       { id: 'attackSpeed', name: 'Attack Speed', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1063,7 +1064,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'de-esser',
     version: '1.0.0',
     description: 'Frequency-selective de-esser for vocal sibilance control',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'frequency', name: 'Detection Freq', type: 'float', defaultValue: 7000, minValue: 3000, maxValue: 16000, unit: 'Hz', automatable: true },
       { id: 'range', name: 'Reduction Range', type: 'float', defaultValue: -10, minValue: -30, maxValue: 0, unit: 'dB', automatable: true },
@@ -1083,7 +1084,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'maximizer',
     version: '1.0.0',
     description: 'Loudness maximizer with intelligent peak limiting and LUFS targeting',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'ceiling', name: 'Output Ceiling', type: 'float', defaultValue: -0.1, minValue: -6, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'intensity', name: 'Intensity', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1103,7 +1104,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'leveler',
     version: '1.0.0',
     description: 'Automatic gain rider for consistent loudness over long passages',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'target', name: 'Target Level', type: 'float', defaultValue: -18, minValue: -40, maxValue: -6, unit: 'dBFS', automatable: false },
       { id: 'speed', name: 'Leveling Speed', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1122,7 +1123,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'expander',
     version: '1.0.0',
     description: 'Downward expander — reduces low-level signals for noise reduction and punch',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -40, minValue: -80, maxValue: 0, unit: 'dB', automatable: true },
       { id: 'ratio', name: 'Ratio', type: 'float', defaultValue: 2, minValue: 1, maxValue: 10, automatable: true },
@@ -1142,7 +1143,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'limiter',
     version: '2.0.0',
     description: 'Advanced true-peak limiter with 8 limiting algorithms and LUFS metering',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'ceiling', name: 'Ceiling', type: 'float', defaultValue: -0.1, minValue: -6, maxValue: 0, unit: 'dBTP', automatable: true },
       { id: 'threshold', name: 'Threshold', type: 'float', defaultValue: -3, minValue: -20, maxValue: 0, unit: 'dB', automatable: true },
@@ -1166,7 +1167,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'tremolo',
     version: '1.0.0',
     description: 'Amplitude tremolo with multiple LFO shapes and tempo sync',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'rate', name: 'Rate', type: 'float', defaultValue: 4, minValue: 0.1, maxValue: 30, unit: 'Hz', automatable: true },
       { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1186,7 +1187,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'vibrato',
     version: '1.0.0',
     description: 'Pitch vibrato with expression-curve LFO and MIDI CC control',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'rate', name: 'Rate', type: 'float', defaultValue: 5, minValue: 0.1, maxValue: 20, unit: 'Hz', automatable: true },
       { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1196,7 +1197,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     ],
     defaultPreset: { rate: 5, depth: 0.5, shape: 'sine', delay: 0, tempoSync: false },
   },
-      { id: 'mb-ring-mod', slug: 'mb-ring-mod', name: 'MB Ring Modulator', category: 'effect', type: 'ring-mod', version: '2.0.0', description: 'Carrier-frequency ring modulation for metallic and robotic tones', author: 'Max Booster', parameters: [{ id: 'frequency', name: 'Carrier Freq', type: 'float', defaultValue: 100, minValue: 1, maxValue: 5000, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Modulation Depth', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'shape', name: 'Carrier Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'sideband', name: 'Sideband', type: 'choice', defaultValue: 'both', choices: ['both','upper','lower'], automatable: false }, { id: 'fine', name: 'Fine Tune', type: 'float', defaultValue: 0, minValue: -50, maxValue: 50, unit: 'ct', automatable: true }, { id: 'lfo_rate', name: 'LFO Modulation', type: 'float', defaultValue: 0, minValue: 0, maxValue: 10, unit: 'Hz', automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { frequency: 100, depth: 1.0, shape: 'sine', sideband: 'both', fine: 0, lfo_rate: 0, mix: 0.5 } },
+      { id: 'mb-ring-mod', slug: 'mb-ring-mod', name: 'MB Ring Modulator', category: 'effect', type: 'ring-mod', version: '2.0.0', description: 'Carrier-frequency ring modulation for metallic and robotic tones', author: 'Max Booster', grade: 'A', parameters: [{ id: 'frequency', name: 'Carrier Freq', type: 'float', defaultValue: 100, minValue: 1, maxValue: 5000, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Modulation Depth', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'shape', name: 'Carrier Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'sideband', name: 'Sideband', type: 'choice', defaultValue: 'both', choices: ['both','upper','lower'], automatable: false }, { id: 'fine', name: 'Fine Tune', type: 'float', defaultValue: 0, minValue: -50, maxValue: 50, unit: 'ct', automatable: true }, { id: 'lfo_rate', name: 'LFO Modulation', type: 'float', defaultValue: 0, minValue: 0, maxValue: 10, unit: 'Hz', automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { frequency: 100, depth: 1.0, shape: 'sine', sideband: 'both', fine: 0, lfo_rate: 0, mix: 0.5 } },
   {
     id: 'mb-rotary',
     slug: 'mb-rotary',
@@ -1205,7 +1206,7 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     type: 'rotary',
     version: '1.0.0',
     description: 'Leslie cabinet simulation — spinning speaker Doppler with fast/slow horn speeds',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'speed', name: 'Speed', type: 'choice', defaultValue: 'slow', choices: ['stop', 'slow', 'fast'], automatable: true },
       { id: 'acceleration', name: 'Acceleration', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },
@@ -1218,8 +1219,8 @@ export const BUILT_IN_EFFECTS: PluginDefinition[] = [
     ],
     defaultPreset: { speed: 'slow', acceleration: 0.5, hornLevel: 0.7, drumLevel: 0.5, slowRate: 0.8, fastRate: 7, spread: 0.8, mix: 1.0 },
   },
-      { id: 'mb-auto-pan', slug: 'mb-auto-pan', name: 'MB Auto Pan', category: 'effect', type: 'auto-pan', version: '2.0.0', description: 'LFO auto-panning with stereo widening, shape and output control', author: 'Max Booster', parameters: [{ id: 'rate', name: 'Rate', type: 'float', defaultValue: 1.0, minValue: 0.01, maxValue: 20, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }, { id: 'shape', name: 'LFO Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'width', name: 'Width', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'sync', name: 'Tempo Sync', type: 'bool', defaultValue: false, automatable: false }, { id: 'phase', name: 'Initial Phase', type: 'float', defaultValue: 0, minValue: 0, maxValue: 1, automatable: true }, { id: 'output', name: 'Output', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, unit: 'dB', automatable: true }], defaultPreset: { rate: 1.0, depth: 0.8, shape: 'sine', width: 1.0, sync: false, phase: 0, output: 0 } },
-    { id: 'mb-ensemble', slug: 'mb-ensemble', name: 'MB Ensemble', category: 'effect', type: 'ensemble', version: '2.0.0', description: 'Unison ensemble with pitch scatter — Roland Juno class', author: 'Max Booster', parameters: [{ id: 'rate', name: 'Rate', type: 'float', defaultValue: 0.5, minValue: 0.01, maxValue: 10, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'delay', name: 'Delay Time', type: 'float', defaultValue: 25, minValue: 1, maxValue: 50, unit: 'ms', automatable: true }, { id: 'feedback', name: 'Feedback', type: 'float', defaultValue: 0.2, minValue: -0.95, maxValue: 0.95, automatable: true }, { id: 'shape', name: 'LFO Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'width', name: 'Stereo Width', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { rate: 0.5, depth: 0.4, delay: 25, feedback: 0.2, shape: 'sine', width: 1.0, mix: 0.5 } },
+      { id: 'mb-auto-pan', slug: 'mb-auto-pan', name: 'MB Auto Pan', category: 'effect', type: 'auto-pan', version: '2.0.0', description: 'LFO auto-panning with stereo widening, shape and output control', author: 'Max Booster', grade: 'A', parameters: [{ id: 'rate', name: 'Rate', type: 'float', defaultValue: 1.0, minValue: 0.01, maxValue: 20, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.8, minValue: 0, maxValue: 1, automatable: true }, { id: 'shape', name: 'LFO Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'width', name: 'Width', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'sync', name: 'Tempo Sync', type: 'bool', defaultValue: false, automatable: false }, { id: 'phase', name: 'Initial Phase', type: 'float', defaultValue: 0, minValue: 0, maxValue: 1, automatable: true }, { id: 'output', name: 'Output', type: 'float', defaultValue: 0, minValue: -12, maxValue: 12, unit: 'dB', automatable: true }], defaultPreset: { rate: 1.0, depth: 0.8, shape: 'sine', width: 1.0, sync: false, phase: 0, output: 0 } },
+    { id: 'mb-ensemble', slug: 'mb-ensemble', name: 'MB Ensemble', category: 'effect', type: 'ensemble', version: '2.0.0', description: 'Unison ensemble with pitch scatter — Roland Juno class', author: 'Max Booster', grade: 'A', parameters: [{ id: 'rate', name: 'Rate', type: 'float', defaultValue: 0.5, minValue: 0.01, maxValue: 10, unit: 'Hz', automatable: true }, { id: 'depth', name: 'Depth', type: 'float', defaultValue: 0.4, minValue: 0, maxValue: 1, automatable: true }, { id: 'delay', name: 'Delay Time', type: 'float', defaultValue: 25, minValue: 1, maxValue: 50, unit: 'ms', automatable: true }, { id: 'feedback', name: 'Feedback', type: 'float', defaultValue: 0.2, minValue: -0.95, maxValue: 0.95, automatable: true }, { id: 'shape', name: 'LFO Shape', type: 'choice', defaultValue: 'sine', choices: ['sine','triangle','square','sawtooth','random'], automatable: false }, { id: 'width', name: 'Stereo Width', type: 'float', defaultValue: 1.0, minValue: 0, maxValue: 1, automatable: true }, { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true }], defaultPreset: { rate: 0.5, depth: 0.4, delay: 25, feedback: 0.2, shape: 'sine', width: 1.0, mix: 0.5 } },
 ];
 
 export const EXPANDED_INSTRUMENTS: PluginDefinition[] = BUILT_IN_INSTRUMENTS;

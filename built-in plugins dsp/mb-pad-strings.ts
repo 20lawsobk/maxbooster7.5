@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadStringsPlugin: PluginDefinition = {
     id: 'mb-pad-strings', slug: 'mb-pad-strings', name: 'MB String Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Orchestral string pad', author: 'Max Booster',
+    description: 'Orchestral string pad', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -5, gain: 0.35 }, { type: 'sawtooth', detune: 5, gain: 0.35 }, { type: 'triangle', detune: 0, gain: 0.3 }],
     envelope: { attack: 1.0, decay: 0.5, sustain: 0.8, release: 2.5 },
     parameters: [

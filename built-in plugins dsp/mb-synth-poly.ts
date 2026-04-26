@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthPolyPlugin: PluginDefinition = {
     id: 'mb-synth-poly', slug: 'mb-synth-poly', name: 'MB Poly Synth', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Polyphonic synth', author: 'Max Booster',
+    description: 'Polyphonic synth', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -3, gain: 0.35 }, { type: 'sawtooth', detune: 3, gain: 0.35 }, { type: 'triangle', detune: 0, gain: 0.3 }],
     envelope: { attack: 0.02, decay: 0.4, sustain: 0.6, release: 0.5 },
     parameters: [

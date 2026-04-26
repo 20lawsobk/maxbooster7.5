@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthAnalogPlugin: PluginDefinition = {
     id: 'mb-synth-analog', slug: 'mb-synth-analog', name: 'MB Analog Lead', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Classic analog lead synth', author: 'Max Booster',
+    description: 'Classic analog lead synth', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.5 }, { type: 'square', detune: -0.1, gain: 0.3 }],
     envelope: { attack: 0.01, decay: 0.3, sustain: 0.6, release: 0.4 },
     parameters: [

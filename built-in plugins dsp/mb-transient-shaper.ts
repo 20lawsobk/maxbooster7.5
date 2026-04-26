@@ -8,7 +8,7 @@ const MbTransientShaperPlugin: PluginDefinition = {
     type: 'compressor',
     version: '1.0.0',
     description: 'Attack and sustain control for drums and percussive sounds',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'attack', name: 'Attack', type: 'float', defaultValue: 0, minValue: -100, maxValue: 100, unit: '%', automatable: true },
       { id: 'sustain', name: 'Sustain', type: 'float', defaultValue: 0, minValue: -100, maxValue: 100, unit: '%', automatable: true },

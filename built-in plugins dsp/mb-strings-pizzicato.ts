@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbStringsPizzicatoPlugin: PluginDefinition = {
     id: 'mb-strings-pizzicato', slug: 'mb-strings-pizzicato', name: 'MB Pizzicato', category: 'instrument', type: 'strings', version: '1.0.0',
-    description: 'Plucked string pizzicato', author: 'Max Booster',
+    description: 'Plucked string pizzicato', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'triangle', detune: 0, gain: 0.7 }, { type: 'sine', detune: 1200, gain: 0.3 }],
     envelope: { attack: 0.001, decay: 0.3, sustain: 0.0, release: 0.2 },
     parameters: [

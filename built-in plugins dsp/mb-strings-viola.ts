@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbStringsViolaPlugin: PluginDefinition = {
     id: 'mb-strings-viola', slug: 'mb-strings-viola', name: 'MB Solo Viola', category: 'instrument', type: 'strings', version: '1.0.0',
-    description: 'Rich solo viola', author: 'Max Booster',
+    description: 'Rich solo viola', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.5 }, { type: 'triangle', detune: 2, gain: 0.5 }],
     envelope: { attack: 0.08, decay: 0.4, sustain: 0.85, release: 0.5 },
     parameters: [

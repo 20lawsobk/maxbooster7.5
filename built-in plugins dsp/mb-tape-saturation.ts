@@ -8,7 +8,7 @@ const MbTapeSaturationPlugin: PluginDefinition = {
     type: 'distortion',
     version: '1.0.0',
     description: 'Warm analog tape emulation with compression and harmonics',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'input_gain', name: 'Input Gain', type: 'float', defaultValue: 0, minValue: -12, maxValue: 24, unit: 'dB', automatable: true },
       { id: 'saturation', name: 'Saturation', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 1, automatable: true },

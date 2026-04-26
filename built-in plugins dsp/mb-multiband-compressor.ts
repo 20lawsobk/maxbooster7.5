@@ -8,7 +8,7 @@ const MbMultibandCompressorPlugin: PluginDefinition = {
     type: 'compressor',
     version: '1.0.0',
     description: 'Professional 4-band dynamics processor for mixing and mastering',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'crossover_low', name: 'Low Crossover', type: 'float', defaultValue: 100, minValue: 20, maxValue: 500, unit: 'Hz', automatable: true },
       { id: 'crossover_mid', name: 'Mid Crossover', type: 'float', defaultValue: 1000, minValue: 200, maxValue: 5000, unit: 'Hz', automatable: true },

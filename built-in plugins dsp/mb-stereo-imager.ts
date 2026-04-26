@@ -8,7 +8,7 @@ const MbStereoImagerPlugin: PluginDefinition = {
     type: 'eq',
     version: '1.0.0',
     description: 'Multiband stereo width processor for spatial enhancement',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'low_width', name: 'Low Width', type: 'float', defaultValue: 0.5, minValue: 0, maxValue: 2, automatable: true },
       { id: 'mid_width', name: 'Mid Width', type: 'float', defaultValue: 1, minValue: 0, maxValue: 2, automatable: true },

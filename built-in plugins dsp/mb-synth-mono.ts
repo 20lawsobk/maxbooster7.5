@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthMonoPlugin: PluginDefinition = {
     id: 'mb-synth-mono', slug: 'mb-synth-mono', name: 'MB Mono Lead', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Fat monophonic lead', author: 'Max Booster',
+    description: 'Fat monophonic lead', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.6 }, { type: 'square', detune: 0, gain: 0.4 }],
     envelope: { attack: 0.005, decay: 0.2, sustain: 0.7, release: 0.3 },
     parameters: [

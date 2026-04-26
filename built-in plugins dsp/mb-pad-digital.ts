@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadDigitalPlugin: PluginDefinition = {
     id: 'mb-pad-digital', slug: 'mb-pad-digital', name: 'MB Digital Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Clean digital pad', author: 'Max Booster',
+    description: 'Clean digital pad', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.4 }, { type: 'triangle', detune: 1200, gain: 0.3 }, { type: 'sine', detune: 1900, gain: 0.3 }],
     envelope: { attack: 0.5, decay: 0.8, sustain: 0.85, release: 1.5 },
     parameters: [

@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbStringsViolinPlugin: PluginDefinition = {
     id: 'mb-strings-violin', slug: 'mb-strings-violin', name: 'MB Solo Violin', category: 'instrument', type: 'strings', version: '1.0.0',
-    description: 'Expressive solo violin', author: 'Max Booster',
+    description: 'Expressive solo violin', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.6 }, { type: 'triangle', detune: 3, gain: 0.4 }],
     envelope: { attack: 0.05, decay: 0.3, sustain: 0.9, release: 0.4 },
     parameters: [

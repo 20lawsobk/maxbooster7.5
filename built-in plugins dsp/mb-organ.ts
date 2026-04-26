@@ -8,7 +8,7 @@ const MbOrganPlugin: PluginDefinition = {
     type: 'synth',
     version: '1.0.0',
     description: 'Classic tonewheel organ with drawbars and rotary speaker simulation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: -1200, gain: 0 },
       { type: 'sine', detune: -700, gain: 0 },

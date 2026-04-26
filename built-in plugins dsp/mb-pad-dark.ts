@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadDarkPlugin: PluginDefinition = {
     id: 'mb-pad-dark', slug: 'mb-pad-dark', name: 'MB Dark Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Moody dark atmosphere', author: 'Max Booster',
+    description: 'Moody dark atmosphere', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -12, gain: 0.3 }, { type: 'sawtooth', detune: 12, gain: 0.3 }, { type: 'sine', detune: -1200, gain: 0.4 }],
     envelope: { attack: 1.5, decay: 1.0, sustain: 0.8, release: 3.0 },
     parameters: [

@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadWarmPlugin: PluginDefinition = {
     id: 'mb-pad-warm', slug: 'mb-pad-warm', name: 'MB Warm Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Warm analog-style pad', author: 'Max Booster',
+    description: 'Warm analog-style pad', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -7, gain: 0.25 }, { type: 'sawtooth', detune: 7, gain: 0.25 }, { type: 'triangle', detune: 0, gain: 0.5 }],
     envelope: { attack: 0.8, decay: 1.0, sustain: 0.9, release: 2.0 },
     parameters: [

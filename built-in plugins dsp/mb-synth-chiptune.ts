@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthChiptunePlugin: PluginDefinition = {
     id: 'mb-synth-chiptune', slug: 'mb-synth-chiptune', name: 'MB Chiptune', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: '8-bit chiptune sounds', author: 'Max Booster',
+    description: '8-bit chiptune sounds', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'square', detune: 0, gain: 0.8 }, { type: 'triangle', detune: 0, gain: 0.2 }],
     envelope: { attack: 0.001, decay: 0.1, sustain: 0.5, release: 0.1 },
     parameters: [

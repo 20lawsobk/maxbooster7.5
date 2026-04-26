@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbDrumsAcousticPlugin: PluginDefinition = {
     id: 'mb-drums-acoustic', slug: 'mb-drums-acoustic', name: 'MB Acoustic Kit', category: 'instrument', type: 'drums', version: '1.0.0',
-    description: 'Natural acoustic drum kit', author: 'Max Booster',
+    description: 'Natural acoustic drum kit', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 1.0 }, { type: 'noise', detune: 0, gain: 0.5 }],
     envelope: { attack: 0.001, decay: 0.2, sustain: 0.0, release: 0.3 },
     parameters: [

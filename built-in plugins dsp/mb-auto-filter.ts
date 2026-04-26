@@ -8,7 +8,7 @@ const MbAutoFilterPlugin: PluginDefinition = {
     type: 'eq',
     version: '1.0.0',
     description: 'Resonant filter with envelope follower and LFO modulation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'filter_type', name: 'Filter Type', type: 'choice', defaultValue: 'lowpass', choices: ['lowpass', 'highpass', 'bandpass', 'notch'], automatable: false },
       { id: 'cutoff', name: 'Cutoff', type: 'float', defaultValue: 1000, minValue: 20, maxValue: 20000, unit: 'Hz', automatable: true },

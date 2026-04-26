@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthSupersawPlugin: PluginDefinition = {
     id: 'mb-synth-supersaw', slug: 'mb-synth-supersaw', name: 'MB Supersaw', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Massive supersaw stack', author: 'Max Booster',
+    description: 'Massive supersaw stack', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -15, gain: 0.15 }, { type: 'sawtooth', detune: -7, gain: 0.15 }, { type: 'sawtooth', detune: 0, gain: 0.2 }, { type: 'sawtooth', detune: 7, gain: 0.15 }, { type: 'sawtooth', detune: 15, gain: 0.15 }],
     envelope: { attack: 0.02, decay: 0.4, sustain: 0.7, release: 0.5 },
     parameters: [

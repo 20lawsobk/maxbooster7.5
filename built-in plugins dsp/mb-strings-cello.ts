@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbStringsCelloPlugin: PluginDefinition = {
     id: 'mb-strings-cello', slug: 'mb-strings-cello', name: 'MB Solo Cello', category: 'instrument', type: 'strings', version: '1.0.0',
-    description: 'Deep expressive cello', author: 'Max Booster',
+    description: 'Deep expressive cello', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.6 }, { type: 'sine', detune: 0, gain: 0.4 }],
     envelope: { attack: 0.1, decay: 0.5, sustain: 0.8, release: 0.6 },
     parameters: [

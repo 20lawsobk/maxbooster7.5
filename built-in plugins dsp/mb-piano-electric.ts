@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPianoElectricPlugin: PluginDefinition = {
     id: 'mb-piano-electric', slug: 'mb-piano-electric', name: 'MB Electric Piano', category: 'instrument', type: 'piano', version: '1.0.0',
-    description: 'Rhodes-style electric piano with bell-like tones', author: 'Max Booster',
+    description: 'Rhodes-style electric piano with bell-like tones', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.7 }, { type: 'triangle', detune: 0.3, gain: 0.3 }],
     envelope: { attack: 0.001, decay: 0.8, sustain: 0.3, release: 0.6 },
     parameters: [

@@ -8,7 +8,7 @@ const MbSpringReverbPlugin: PluginDefinition = {
     type: 'reverb',
     version: '1.0.0',
     description: 'Classic spring reverb emulation with drip and splash',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'mix', name: 'Mix', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true },
       { id: 'decay', name: 'Decay', type: 'float', defaultValue: 2, minValue: 0.5, maxValue: 6, unit: 's', automatable: true },

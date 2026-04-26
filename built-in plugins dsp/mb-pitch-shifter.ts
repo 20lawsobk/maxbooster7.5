@@ -8,7 +8,7 @@ const MbPitchShifterPlugin: PluginDefinition = {
     type: 'eq',
     version: '1.0.0',
     description: 'High-quality pitch shifting with formant preservation',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'semitones', name: 'Semitones', type: 'float', defaultValue: 0, minValue: -24, maxValue: 24, automatable: true },
       { id: 'cents', name: 'Fine Tune', type: 'float', defaultValue: 0, minValue: -100, maxValue: 100, unit: 'cents', automatable: true },

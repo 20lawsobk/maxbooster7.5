@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadAmbientPlugin: PluginDefinition = {
     id: 'mb-pad-ambient', slug: 'mb-pad-ambient', name: 'MB Ambient Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Ethereal ambient texture', author: 'Max Booster',
+    description: 'Ethereal ambient texture', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.3 }, { type: 'triangle', detune: 1200, gain: 0.25 }, { type: 'sine', detune: 1900, gain: 0.25 }, { type: 'triangle', detune: -700, gain: 0.2 }],
     envelope: { attack: 2.0, decay: 1.0, sustain: 0.9, release: 4.0 },
     parameters: [

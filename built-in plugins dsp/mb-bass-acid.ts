@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbBassAcidPlugin: PluginDefinition = {
     id: 'mb-bass-acid', slug: 'mb-bass-acid', name: 'MB Acid Bass', category: 'instrument', type: 'bass', version: '1.0.0',
-    description: 'TB-303 style acid bass', author: 'Max Booster',
+    description: 'TB-303 style acid bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.8 }, { type: 'square', detune: 0, gain: 0.2 }],
     envelope: { attack: 0.001, decay: 0.3, sustain: 0.3, release: 0.1 },
     parameters: [

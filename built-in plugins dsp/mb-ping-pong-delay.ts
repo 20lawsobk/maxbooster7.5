@@ -8,7 +8,7 @@ const MbPingPongDelayPlugin: PluginDefinition = {
     type: 'delay',
     version: '1.0.0',
     description: 'Stereo ping pong delay with tempo sync',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'time_l', name: 'Time Left', type: 'float', defaultValue: 250, minValue: 1, maxValue: 2000, unit: 'ms', automatable: true },
       { id: 'time_r', name: 'Time Right', type: 'float', defaultValue: 375, minValue: 1, maxValue: 2000, unit: 'ms', automatable: true },

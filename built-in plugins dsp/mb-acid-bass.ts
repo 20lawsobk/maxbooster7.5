@@ -8,7 +8,7 @@ const MbAcidBassPlugin: PluginDefinition = {
     type: 'synth',
     version: '1.0.0',
     description: 'Classic 303-style acid bass synthesizer with squelchy filter',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: 0, gain: 0.7 },
       { type: 'square', detune: 0, gain: 0.3 },

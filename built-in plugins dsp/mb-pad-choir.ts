@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPadChoirPlugin: PluginDefinition = {
     id: 'mb-pad-choir', slug: 'mb-pad-choir', name: 'MB Choir Pad', category: 'instrument', type: 'pad', version: '1.0.0',
-    description: 'Vocal choir pad', author: 'Max Booster',
+    description: 'Vocal choir pad', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.5 }, { type: 'triangle', detune: -5, gain: 0.25 }, { type: 'triangle', detune: 5, gain: 0.25 }],
     envelope: { attack: 0.6, decay: 0.5, sustain: 0.85, release: 1.8 },
     parameters: [

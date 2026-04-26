@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbBassReesePlugin: PluginDefinition = {
     id: 'mb-bass-reese', slug: 'mb-bass-reese', name: 'MB Reese Bass', category: 'instrument', type: 'bass', version: '1.0.0',
-    description: 'Detuned reese bass', author: 'Max Booster',
+    description: 'Detuned reese bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: -7, gain: 0.5 }, { type: 'sawtooth', detune: 7, gain: 0.5 }],
     envelope: { attack: 0.01, decay: 0.3, sustain: 0.7, release: 0.3 },
     parameters: [

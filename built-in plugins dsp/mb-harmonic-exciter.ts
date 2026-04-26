@@ -8,7 +8,7 @@ const MbHarmonicExciterPlugin: PluginDefinition = {
     type: 'distortion',
     version: '1.0.0',
     description: 'Multiband harmonic enhancer for adding presence and clarity',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'low_amount', name: 'Low Harmonics', type: 'float', defaultValue: 0, minValue: 0, maxValue: 100, unit: '%', automatable: true },
       { id: 'mid_amount', name: 'Mid Harmonics', type: 'float', defaultValue: 0, minValue: 0, maxValue: 100, unit: '%', automatable: true },

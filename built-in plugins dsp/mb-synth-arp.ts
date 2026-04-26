@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbSynthArpPlugin: PluginDefinition = {
     id: 'mb-synth-arp', slug: 'mb-synth-arp', name: 'MB Arp Synth', category: 'instrument', type: 'analog', version: '1.0.0',
-    description: 'Arpeggiated synth sounds', author: 'Max Booster',
+    description: 'Arpeggiated synth sounds', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'square', detune: 0, gain: 0.5 }, { type: 'sawtooth', detune: 5, gain: 0.5 }],
     envelope: { attack: 0.001, decay: 0.15, sustain: 0.3, release: 0.1 },
     parameters: [

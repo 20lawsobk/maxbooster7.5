@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPianoClavinetPlugin: PluginDefinition = {
     id: 'mb-piano-clavinet', slug: 'mb-piano-clavinet', name: 'MB Clavinet', category: 'instrument', type: 'piano', version: '1.0.0',
-    description: 'Funky clavinet with percussive attack', author: 'Max Booster',
+    description: 'Funky clavinet with percussive attack', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.5 }, { type: 'square', detune: 0.1, gain: 0.3 }],
     envelope: { attack: 0.001, decay: 0.3, sustain: 0.2, release: 0.2 },
     parameters: [

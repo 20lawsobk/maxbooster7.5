@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPianoPreparedPlugin: PluginDefinition = {
     id: 'mb-piano-prepared', slug: 'mb-piano-prepared', name: 'MB Prepared Piano', category: 'instrument', type: 'piano', version: '1.0.0',
-    description: 'Experimental prepared piano textures', author: 'Max Booster',
+    description: 'Experimental prepared piano textures', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'triangle', detune: 0, gain: 0.4 }, { type: 'noise', detune: 0, gain: 0.2 }],
     envelope: { attack: 0.005, decay: 0.5, sustain: 0.3, release: 0.8 },
     parameters: [

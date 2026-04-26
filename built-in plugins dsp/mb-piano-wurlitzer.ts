@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbPianoWurlitzerPlugin: PluginDefinition = {
     id: 'mb-piano-wurlitzer', slug: 'mb-piano-wurlitzer', name: 'MB Wurlitzer', category: 'instrument', type: 'piano', version: '1.0.0',
-    description: 'Vintage Wurlitzer electric piano', author: 'Max Booster',
+    description: 'Vintage Wurlitzer electric piano', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'triangle', detune: 0, gain: 0.6 }, { type: 'square', detune: 0, gain: 0.15 }],
     envelope: { attack: 0.002, decay: 0.5, sustain: 0.4, release: 0.5 },
     parameters: [

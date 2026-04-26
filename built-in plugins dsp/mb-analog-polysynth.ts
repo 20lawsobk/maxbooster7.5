@@ -8,7 +8,7 @@ const MbAnalogPolysynthPlugin: PluginDefinition = {
     type: 'analog',
     version: '1.0.0',
     description: 'Classic analog polyphonic synthesizer with fat oscillators and resonant filters',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sawtooth', detune: -7, gain: 0.4 },
       { type: 'sawtooth', detune: 7, gain: 0.4 },

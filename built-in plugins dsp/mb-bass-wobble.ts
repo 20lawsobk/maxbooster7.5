@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbBassWobblePlugin: PluginDefinition = {
     id: 'mb-bass-wobble', slug: 'mb-bass-wobble', name: 'MB Wobble Bass', category: 'instrument', type: 'bass', version: '1.0.0',
-    description: 'Dubstep wobble bass', author: 'Max Booster',
+    description: 'Dubstep wobble bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sawtooth', detune: 0, gain: 0.6 }, { type: 'square', detune: 0, gain: 0.4 }],
     envelope: { attack: 0.01, decay: 0.2, sustain: 0.8, release: 0.2 },
     parameters: [

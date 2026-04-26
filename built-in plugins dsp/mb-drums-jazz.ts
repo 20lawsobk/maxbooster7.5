@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbDrumsJazzPlugin: PluginDefinition = {
     id: 'mb-drums-jazz', slug: 'mb-drums-jazz', name: 'MB Jazz Kit', category: 'instrument', type: 'drums', version: '1.0.0',
-    description: 'Smooth jazz brush kit', author: 'Max Booster',
+    description: 'Smooth jazz brush kit', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'triangle', detune: 0, gain: 0.6 }, { type: 'noise', detune: 0, gain: 0.4 }],
     envelope: { attack: 0.005, decay: 0.3, sustain: 0.1, release: 0.4 },
     parameters: [

@@ -8,7 +8,7 @@ const MbGranularSynthPlugin: PluginDefinition = {
     type: 'wavetable',
     version: '1.0.0',
     description: 'Advanced granular synthesizer for textural and ambient sounds',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     oscillators: [
       { type: 'sine', detune: 0, gain: 0.5 },
       { type: 'triangle', detune: 0, gain: 0.3 },

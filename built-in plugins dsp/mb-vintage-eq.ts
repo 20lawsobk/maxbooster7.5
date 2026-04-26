@@ -8,7 +8,7 @@ const MbVintageEqPlugin: PluginDefinition = {
     type: 'eq',
     version: '1.0.0',
     description: 'Classic Pultec-style passive EQ with musical curves',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'low_freq', name: 'Low Frequency', type: 'choice', defaultValue: '100', choices: ['20', '30', '60', '100'], automatable: false },
       { id: 'low_boost', name: 'Low Boost', type: 'float', defaultValue: 0, minValue: 0, maxValue: 10, unit: 'dB', automatable: true },

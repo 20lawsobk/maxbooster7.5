@@ -8,7 +8,7 @@ const MbBitcrusherPlugin: PluginDefinition = {
     type: 'distortion',
     version: '1.0.0',
     description: 'Bit reduction and sample rate destruction for lo-fi effects',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'bit_depth', name: 'Bit Depth', type: 'float', defaultValue: 16, minValue: 1, maxValue: 16, automatable: true },
       { id: 'sample_rate', name: 'Sample Rate', type: 'float', defaultValue: 44100, minValue: 100, maxValue: 44100, unit: 'Hz', automatable: true },

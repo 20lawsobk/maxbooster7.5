@@ -8,7 +8,7 @@ const MbVinylSimulatorPlugin: PluginDefinition = {
     type: 'distortion',
     version: '1.0.0',
     description: 'Authentic vinyl record emulation with crackle and warmth',
-    author: 'Max Booster',
+    author: 'Max Booster', grade: 'A',
     parameters: [
       { id: 'year', name: 'Year', type: 'choice', defaultValue: '1970s', choices: ['1950s', '1960s', '1970s', '1980s', '1990s'], automatable: false },
       { id: 'wear', name: 'Wear', type: 'float', defaultValue: 0.3, minValue: 0, maxValue: 1, automatable: true },

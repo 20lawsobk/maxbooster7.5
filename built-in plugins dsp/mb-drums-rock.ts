@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbDrumsRockPlugin: PluginDefinition = {
     id: 'mb-drums-rock', slug: 'mb-drums-rock', name: 'MB Rock Kit', category: 'instrument', type: 'drums', version: '1.0.0',
-    description: 'Powerful rock drum kit', author: 'Max Booster',
+    description: 'Powerful rock drum kit', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 0.9 }, { type: 'noise', detune: 0, gain: 0.6 }],
     envelope: { attack: 0.001, decay: 0.15, sustain: 0.1, release: 0.25 },
     parameters: [

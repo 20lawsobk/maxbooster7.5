@@ -2,7 +2,7 @@ import type { PluginDefinition } from '../server/services/pluginHostService';
 
 const MbBassSubPlugin: PluginDefinition = {
     id: 'mb-bass-sub', slug: 'mb-bass-sub', name: 'MB Sub Bass', category: 'instrument', type: 'bass', version: '1.0.0',
-    description: 'Deep sub bass', author: 'Max Booster',
+    description: 'Deep sub bass', author: 'Max Booster', grade: 'A',
     oscillators: [{ type: 'sine', detune: 0, gain: 1.0 }],
     envelope: { attack: 0.01, decay: 0.2, sustain: 0.8, release: 0.2 },
     parameters: [
