@@ -3623,12 +3623,29 @@ export async function registerRoutes(
     try {
       const user = req.user as any;
       const prefs = user.preferences?.payoutSettings || {};
+
+      // Pull the latest submitted tax form to surface taxCountry / taxId
+      const [latestTaxForm] = await db
+        .select({ formData: taxForms.formData, formType: taxForms.formType, status: taxForms.status })
+        .from(taxForms)
+        .where(eq(taxForms.userId, req.user.id))
+        .orderBy(desc(taxForms.submittedAt))
+        .limit(1);
+
+      const taxFormData = latestTaxForm?.formData as any;
+      const taxCountry = taxFormData?.taxCountry ?? taxFormData?.address?.country ?? null;
+      const taxId = taxFormData?.taxId ? '***-**-' + String(taxFormData.taxId).slice(-4) : null;
+
       return res.json({
         minimumPayout: prefs.minimumPayout ?? 50,
         payoutSchedule: prefs.payoutSchedule ?? 'monthly',
         preferredMethod: prefs.preferredMethod ?? null,
         stripeConnected: !!(user.stripeConnectedAccountId),
         paypalEmail: user.preferences?.payout?.paypalEmail ?? null,
+        taxCountry,
+        taxId,
+        taxFormType: latestTaxForm?.formType ?? null,
+        taxFormStatus: latestTaxForm?.status ?? null,
       });
     } catch (error) {
       logger.warn("Payout settings error:", error);
@@ -3666,8 +3683,10 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { formType = 'W-9', taxYear = new Date().getFullYear(), formData } = req.body;
-      if (!formData) return res.status(400).json({ message: 'Form data required' });
+      const { formType = 'W-9', taxYear = new Date().getFullYear(), formData, taxCountry, taxId } = req.body;
+      // Accept either a full nested formData object OR the simple flat {taxCountry, taxId} shape
+      const resolvedFormData = formData ?? ((taxCountry || taxId) ? { taxCountry, taxId } : null);
+      if (!resolvedFormData) return res.status(400).json({ message: 'Form data required' });
 
       const [existing] = await db.select({ id: taxForms.id })
         .from(taxForms)
@@ -3676,14 +3695,14 @@ export async function registerRoutes(
 
       if (existing) {
         await db.update(taxForms)
-          .set({ formData, status: 'submitted', submittedAt: new Date() })
+          .set({ formData: resolvedFormData, status: 'submitted', submittedAt: new Date() })
           .where(eq(taxForms.id, existing.id));
       } else {
         await db.insert(taxForms).values({
           userId: req.user.id,
           formType,
           taxYear,
-          formData,
+          formData: resolvedFormData,
           status: 'submitted',
           submittedAt: new Date(),
         });
