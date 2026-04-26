@@ -496,6 +496,58 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
   }
 
+  async getUserSocialToken(userId: string, platform: string): Promise<string | null> {
+    const rows = await db
+      .select({ accessToken: socialAccounts.accessToken })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform),
+          eq(socialAccounts.isActive, true)
+        )
+      )
+      .limit(1);
+    return rows[0]?.accessToken ?? null;
+  }
+
+  async updateUserSocialToken(userId: string, platform: string, tokenData: string): Promise<void> {
+    const existing = await db
+      .select({ id: socialAccounts.id })
+      .from(socialAccounts)
+      .where(
+        and(
+          eq(socialAccounts.userId, userId),
+          eq(socialAccounts.platform, platform)
+        )
+      )
+      .limit(1);
+
+    if (tokenData === '') {
+      if (existing.length > 0) {
+        await db
+          .update(socialAccounts)
+          .set({ isActive: false, accessToken: null, refreshToken: null })
+          .where(eq(socialAccounts.id, existing[0].id));
+      }
+      return;
+    }
+
+    if (existing.length > 0) {
+      await db
+        .update(socialAccounts)
+        .set({ accessToken: tokenData, isActive: true })
+        .where(eq(socialAccounts.id, existing[0].id));
+    } else {
+      await db.insert(socialAccounts).values({
+        userId,
+        platform,
+        accessToken: tokenData,
+        isActive: true,
+      });
+    }
+  }
+
   async getSocialCalendarEvents(userId: string): Promise<any[]> {
     const [calendarEntries, scheduledPosts] = await Promise.all([
       db

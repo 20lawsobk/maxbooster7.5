@@ -791,10 +791,29 @@ router.post('/sync/:platform', requireAuth, async (req: AuthenticatedRequest, re
 
     const results = await syncPlatformData(userId, platform);
 
-    res.json({ success: true, results });
+    res.json({
+      success: true,
+      message: `${platform} stats synced successfully`,
+      results,
+      outcome: {
+        status: 'success',
+        category: 'oauth',
+        title: 'Platform Synced',
+        platforms: [platform],
+      },
+    });
   } catch (error) {
     logger.warn({ err: error }, 'Failed to sync platform stats:');
-    res.status(500).json({ error: 'Failed to sync platform stats' });
+    res.status(500).json({
+      success: false,
+      message: 'Failed to sync platform stats',
+      outcome: {
+        status: 'error',
+        category: 'oauth',
+        title: 'Sync Failed',
+        retryable: true,
+      },
+    });
   }
 });
 

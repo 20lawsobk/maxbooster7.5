@@ -3390,6 +3390,43 @@ export async function registerRoutes(
     }
   });
 
+  // Royalties summary endpoint (used by royalties page header cards)
+  app.get("/api/royalties/summary", async (req: Request, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    try {
+      const userId = req.user.id;
+      const [aggregates, [lastPaidRow], platformRows] = await Promise.all([
+        db.select({
+          totalEarnings: sum(royaltyTransactions.amount),
+          pendingPayouts: sql<number>`coalesce(sum(case when ${royaltyTransactions.status} = 'pending' then ${royaltyTransactions.amount} else 0 end), 0)`,
+        }).from(royaltyTransactions).where(eq(royaltyTransactions.userId, userId)),
+
+        db.select({ paidAt: royaltyTransactions.paidAt })
+          .from(royaltyTransactions)
+          .where(and(eq(royaltyTransactions.userId, userId), sql`${royaltyTransactions.paidAt} is not null`))
+          .orderBy(desc(royaltyTransactions.paidAt))
+          .limit(1),
+
+        db.selectDistinct({ platform: royaltyTransactions.platform })
+          .from(royaltyTransactions)
+          .where(eq(royaltyTransactions.userId, userId)),
+      ]);
+
+      const agg = aggregates[0];
+      return res.json({
+        totalEarnings: Number(agg?.totalEarnings || 0),
+        pendingPayouts: Number(agg?.pendingPayouts || 0),
+        lastPayout: lastPaidRow?.paidAt ?? null,
+        platformsCount: platformRows.length,
+      });
+    } catch (error) {
+      logger.warn("Royalties summary error:", error);
+      return res.status(500).json({ message: "Failed to fetch royalties summary" });
+    }
+  });
+
   // Royalties endpoints — backed by real DB data
   app.get("/api/royalties", async (req: Request, res: Response) => {
     if (!req.user) {
@@ -3840,8 +3877,18 @@ export async function registerRoutes(
       const returnUrl = `${baseUrl}/royalties?setup=complete`;
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
-    } catch (error) {
+    } catch (error: any) {
       logger.warn("Connect Stripe error:", error);
+      if (
+        error?.type === 'StripeInvalidRequestError' ||
+        error?.rawType === 'invalid_request_error' ||
+        (error?.message && error.message.toLowerCase().includes('connect'))
+      ) {
+        return res.status(400).json({
+          message: "Stripe Connect payouts are not yet enabled on this account. Please contact support to enable direct payouts.",
+          code: "STRIPE_CONNECT_NOT_ENABLED",
+        });
+      }
       return res.status(500).json({ message: "Failed to connect bank account. Please try again." });
     }
   });
