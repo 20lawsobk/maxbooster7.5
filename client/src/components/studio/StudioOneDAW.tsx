@@ -3459,10 +3459,19 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
     if (isPeakCache(waveform)) {
       // ── Multi-resolution min/max path (new clips) ─────────────────────
       const { levels, totalSamples } = waveform;
-      const samplesPerPixel = totalSamples / drawW;
 
-      // Pick the smallest resolution level whose samplesPerPeak ≥ samplesPerPixel
-      // so we never skip data (transients are always captured).
+      // Use physical pixels for the waveform loop so HiDPI screens get full
+      // detail.  drawW is in CSS pixels; physW is the actual canvas pixel count.
+      const physW = canvas.width;  // already set to drawW * dpr above
+      const physH = canvas.height;
+      const physMidY = physH / 2;
+
+      // samplesPerPixel based on physical pixels — gives the renderer accurate
+      // data density regardless of devicePixelRatio.
+      const samplesPerPixel = totalSamples / physW;
+
+      // Pick the finest resolution level whose samplesPerPeak ≥ samplesPerPixel
+      // so we never discard transients.
       let level = levels[levels.length - 1]; // coarsest as safe default
       for (const l of levels) {
         if (l.samplesPerPeak >= samplesPerPixel) { level = l; break; }
@@ -3470,15 +3479,18 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
 
       const { peaks, count } = level;
 
-      // Center line
+      // Center line (drawn in physical pixel space — ctx is NOT pre-scaled here)
+      ctx.save();
+      ctx.resetTransform();
       ctx.strokeStyle = `${trackColor}25`;
       ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(drawW, midY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, physMidY); ctx.lineTo(physW, physMidY); ctx.stroke();
+      ctx.fillStyle = `${trackColor}90`;
 
-      for (let x = 0; x < drawW; x++) {
-        // Map this pixel to a range of peak buckets
-        const startPeak = Math.floor((x       / drawW) * count);
-        const endPeak   = Math.floor(((x + 1) / drawW) * count);
+      for (let x = 0; x < physW; x++) {
+        // Map this physical pixel to a range of peak buckets
+        const startPeak = Math.floor((x       / physW) * count);
+        const endPeak   = Math.floor(((x + 1) / physW) * count);
 
         let pMin = 0;
         let pMax = 0;
@@ -3489,10 +3501,11 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
           if (hi > pMax) pMax = hi;
         }
 
-        const yTop = Math.floor(midY - pMax * midY);
-        const yBot = Math.ceil (midY - pMin * midY);
+        const yTop = Math.floor(physMidY - pMax * physMidY);
+        const yBot = Math.ceil (physMidY - pMin * physMidY);
         ctx.fillRect(x, yTop, 1, Math.max(1, yBot - yTop));
       }
+      ctx.restore();
     } else {
       // ── Legacy single-peak path (old clips loaded before upgrade) ─────
       const legacy = waveform as Float32Array;
