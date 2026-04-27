@@ -2987,6 +2987,21 @@ function ArrangeView({
   const pixelsPerBeat = 40 * zoom;
   const pixelsPerBar = pixelsPerBeat * timeSignatureNumerator;
 
+  // Compute the pixel position of the rightmost clip edge across all tracks so the
+  // scrollable container is always wide enough to show the full content.
+  const totalTimelineWidth = useMemo(() => {
+    let maxRight = trackHeaderWidth + 2000;
+    for (const track of tracks) {
+      for (const clip of [...(track.audioClips || []), ...(track.midiClips || [])]) {
+        const clipEnd =
+          trackHeaderWidth +
+          ((clip.startTime || 0) + (clip.duration || 0)) * pixelsPerSecond;
+        if (clipEnd > maxRight) maxRight = clipEnd;
+      }
+    }
+    return maxRight + 800; // generous right-hand padding after the last clip
+  }, [tracks, pixelsPerSecond, trackHeaderWidth]);
+
   const gridElements = useMemo(() => {
     const startBar = Math.max(0, Math.floor(scrollX / pixelsPerBar));
     const visibleBars = Math.ceil(1400 / pixelsPerBar) + 2;
@@ -3015,7 +3030,7 @@ function ArrangeView({
   }, [scrollX, pixelsPerBar, pixelsPerBeat, timeSignatureNumerator, trackHeaderWidth]);
 
   return (
-    <div className="relative min-h-full">
+    <div className="relative min-h-full" style={{ minWidth: totalTimelineWidth }}>
       {gridElements}
 
       {showVideoTrack && (
@@ -3262,7 +3277,7 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
             )}
           </div>
 
-          <div className="flex-1 relative bg-[#1a1a1e] overflow-hidden">
+          <div className="flex-1 relative bg-[#1a1a1e]">
             {!track.collapsed && track.audioClips?.map((clip: any) => (
               <AudioClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} trackId={track.id} isSelected={clip.id === selectedClipId} onSelect={() => onSelectClip(clip.id)} />
             ))}
