@@ -223,6 +223,7 @@ export class AIAudioGenerator {
     // Use client-provided tempo first so generated audio length matches the client's timeline.
     // Fall back to text-parsed tempo only when no explicit tempo is given.
     const resolvedTempo = input.tempo || parsed.params.tempo;
+    console.log(`[AIAudioGenerator] input.bars=${input.bars} parsed.patternLength=${parsed.patternLength} → bars=${bars}, tempo=${resolvedTempo}`);
     
     // Build generation config
     const config: GenerationConfig = {
@@ -340,6 +341,7 @@ export class AIAudioGenerator {
     }
     
     const duration = audioData.length / this.sampleRate;
+    console.log(`[AIAudioGenerator] audioData.length=${audioData.length} sampleRate=${this.sampleRate} → duration=${duration.toFixed(2)}s (${(duration / (60 / config.tempo) / 4).toFixed(1)} bars at ${config.tempo}bpm)`);
     
     return {
       audioData,

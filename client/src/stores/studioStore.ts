@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { subscribeWithSelector, persist, devtools } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
+import type { WaveformPeakCache } from '../lib/daw/AudioWorkletEngine';
 
 export type TrackType = 'audio' | 'instrument' | 'midi' | 'bus' | 'master' | 'aux';
 
@@ -15,7 +16,7 @@ export interface AudioClip {
   fadeIn: number;
   fadeOut: number;
   color: string;
-  waveformData?: Float32Array;
+  waveformData?: WaveformPeakCache | Float32Array;
   sourceUrl?: string;
   muted: boolean;
   locked: boolean;

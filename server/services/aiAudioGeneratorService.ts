@@ -78,12 +78,16 @@ export async function generateFromText(request: TextToAudioRequest): Promise<Gen
   logger.info(`[AI Audio] Generating from text: "${request.text}"`);
   
   try {
+    logger.info(`[AI Audio] Request — bars: ${request.bars}, tempo: ${request.tempo}`);
+
     const output = await audioGenerator.generateFromText({
       text: request.text,
       duration: request.duration,
       bars: request.bars,
       tempo: request.tempo,
     });
+
+    logger.info(`[AI Audio] Synthesis complete — samples: ${output.audioData.length}, sampleRate: ${output.sampleRate}, duration: ${output.duration.toFixed(2)}s`);
 
     const audioFilePath = await saveToWav(output.audioData, output.sampleRate);
 

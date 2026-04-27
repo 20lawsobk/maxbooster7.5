@@ -26,6 +26,7 @@ import {
 } from '@/components/ui/context-menu';
 import { useUnifiedStore } from '@/stores/unifiedStoreAdapter';
 import { useStudioStore } from '@/stores/studioStore';
+import type { WaveformPeakCache } from '@/lib/daw/AudioWorkletEngine';
 import { useToast } from '@/hooks/use-toast';
 import { useProjectSync } from '@/hooks/useProjectSync';
 import { apiRequest } from '@/lib/queryClient';
@@ -577,6 +578,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             // Use the decoded audio file length as ground truth — avoids any
             // mismatch between stored metadata and what was actually synthesized.
             const durationSeconds = buffer.duration;
+            logger.info(`[DAW] Clip "${clip.name}" decoded: buffer.duration=${durationSeconds.toFixed(2)}s, stored clip.duration=${(clip.duration||0).toFixed(2)}s, buffer.length=${buffer.length}, buffer.sampleRate=${buffer.sampleRate}`);
 
             audioEngine.scheduleClip({
               id: clip.id,
@@ -590,7 +592,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
               fadeOutSamples: Math.floor((clip.fadeOut || 0) * sampleRate),
             });
 
-            const peakData = audioEngine.extractPeakData(buffer, 256);
+            const peakData = audioEngine.extractPeakCache(buffer);
             const updates: Record<string, any> = { waveformData: peakData };
             // Sync stored duration to actual decoded audio length whenever they differ.
             if (Math.abs((clip.duration || 0) - durationSeconds) > 0.1) {
@@ -3271,6 +3273,11 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
   const bars = beats / timeSignatureNumerator;
   const pixelWidth = bars * pixelsPerBar;
 
+  // DEBUG: track clip rendering
+  if (durationSeconds > 0) {
+    console.log(`[AudioClipView] clip="${clip.name}" duration=${durationSeconds.toFixed(2)}s bars=${bars.toFixed(1)} pixelWidth=${pixelWidth.toFixed(0)} zoom=${zoom} tempo=${tempo} tsNum=${timeSignatureNumerator}`);
+  }
+
   const startBeats = (clip.startTime || 0) * (tempo / 60);
   const startBars = startBeats / timeSignatureNumerator;
   const left = startBars * pixelsPerBar;
@@ -3362,27 +3369,12 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, drawW, drawH);
 
-    const waveform = clip.waveformData;
-    if (!waveform || waveform.length === 0) {
-      ctx.fillStyle = `${trackColor}50`;
-      const barCount = Math.min(50, Math.floor(drawW / 4));
-      const barW = Math.max(1, drawW / barCount);
-      for (let i = 0; i < barCount; i++) {
-        const h = drawH * (0.2 + Math.random() * 0.5);
-        ctx.fillRect(i * barW, (drawH - h) / 2, Math.max(barW - 1, 1), h);
-      }
-      return;
-    }
-
-    const peakCount = waveform.length;
-    const step = Math.max(1, Math.floor(peakCount / drawW));
-    const barsToRender = Math.min(drawW, peakCount);
-
     const clipStartTime = clip.startTime || 0;
     const clipDuration = clip.duration || 0;
     const secondsPerBeat = 60 / tempo;
     const secondsPerBar = secondsPerBeat * timeSignatureNumerator;
 
+    // ── bar / beat grid lines ─────────────────────────────────────────────
     if (clipDuration > 0 && secondsPerBar > 0) {
       const firstBar = Math.ceil(clipStartTime / secondsPerBar);
       const lastBar = Math.floor((clipStartTime + clipDuration) / secondsPerBar);
@@ -3391,40 +3383,98 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
         const t = bar * secondsPerBar;
         const x = ((t - clipStartTime) / clipDuration) * drawW;
         if (x > 0 && x < drawW) {
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, drawH);
-          ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, drawH); ctx.stroke();
         }
       }
       const firstBeat = Math.ceil(clipStartTime / secondsPerBeat);
-      const lastBeat = Math.floor((clipStartTime + clipDuration) / secondsPerBeat);
+      const lastBeat  = Math.floor((clipStartTime + clipDuration) / secondsPerBeat);
       for (let beat = firstBeat; beat <= lastBeat; beat++) {
         if (beat % timeSignatureNumerator === 0) continue;
         const t = beat * secondsPerBeat;
         const x = ((t - clipStartTime) / clipDuration) * drawW;
         if (x > 0 && x < drawW) {
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          ctx.lineTo(x, drawH);
-          ctx.stroke();
+          ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, drawH); ctx.stroke();
         }
       }
     }
 
-    ctx.fillStyle = `${trackColor}90`;
-    for (let i = 0; i < barsToRender; i++) {
-      const peakIdx = Math.floor((i / barsToRender) * peakCount);
-      let maxVal = 0;
-      for (let j = 0; j < step && peakIdx + j < peakCount; j++) {
-        const v = Math.abs(waveform[peakIdx + j]);
-        if (v > maxVal) maxVal = v;
+    // ── waveform ──────────────────────────────────────────────────────────
+    const waveform = clip.waveformData;
+    const midY = drawH / 2;
+
+    // Helper: detect new WaveformPeakCache vs legacy Float32Array
+    const isPeakCache = (w: unknown): w is WaveformPeakCache =>
+      typeof w === 'object' && w !== null && 'levels' in (w as object);
+
+    if (!waveform) {
+      // No data yet — draw a subtle placeholder shimmer
+      ctx.fillStyle = `${trackColor}30`;
+      for (let i = 0; i < Math.floor(drawW / 3); i++) {
+        const h = drawH * (0.15 + Math.random() * 0.3);
+        ctx.fillRect(i * 3, midY - h / 2, 2, h);
       }
-      const h = Math.max(1, maxVal * drawH);
-      const x = (i / barsToRender) * drawW;
-      ctx.fillRect(x, (drawH - h) / 2, Math.max(drawW / barsToRender, 1), h);
+      return;
+    }
+
+    ctx.fillStyle = `${trackColor}90`;
+
+    if (isPeakCache(waveform)) {
+      // ── Multi-resolution min/max path (new clips) ─────────────────────
+      const { levels, totalSamples } = waveform;
+      const samplesPerPixel = totalSamples / drawW;
+
+      // Pick the smallest resolution level whose samplesPerPeak ≥ samplesPerPixel
+      // so we never skip data (transients are always captured).
+      let level = levels[levels.length - 1]; // coarsest as safe default
+      for (const l of levels) {
+        if (l.samplesPerPeak >= samplesPerPixel) { level = l; break; }
+      }
+
+      const { peaks, count } = level;
+
+      // Center line
+      ctx.strokeStyle = `${trackColor}25`;
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, midY); ctx.lineTo(drawW, midY); ctx.stroke();
+
+      for (let x = 0; x < drawW; x++) {
+        // Map this pixel to a range of peak buckets
+        const startPeak = Math.floor((x       / drawW) * count);
+        const endPeak   = Math.floor(((x + 1) / drawW) * count);
+
+        let pMin = 0;
+        let pMax = 0;
+        for (let p = startPeak; p <= endPeak && p < count; p++) {
+          const lo = peaks[p * 2];
+          const hi = peaks[p * 2 + 1];
+          if (lo < pMin) pMin = lo;
+          if (hi > pMax) pMax = hi;
+        }
+
+        const yTop = Math.floor(midY - pMax * midY);
+        const yBot = Math.ceil (midY - pMin * midY);
+        ctx.fillRect(x, yTop, 1, Math.max(1, yBot - yTop));
+      }
+    } else {
+      // ── Legacy single-peak path (old clips loaded before upgrade) ─────
+      const legacy = waveform as Float32Array;
+      const peakCount = legacy.length;
+      const barsToRender = Math.min(drawW, peakCount);
+      const step = Math.max(1, Math.floor(peakCount / drawW));
+
+      for (let i = 0; i < barsToRender; i++) {
+        const peakIdx = Math.floor((i / barsToRender) * peakCount);
+        let maxVal = 0;
+        for (let j = 0; j < step && peakIdx + j < peakCount; j++) {
+          const v = Math.abs(legacy[peakIdx + j]);
+          if (v > maxVal) maxVal = v;
+        }
+        const h = Math.max(1, maxVal * drawH);
+        const x = (i / barsToRender) * drawW;
+        ctx.fillRect(x, midY - h / 2, Math.max(drawW / barsToRender, 1), h);
+      }
     }
   }, [clip.waveformData, clip.startTime, clip.duration, displayWidth, trackColor, zoom, tempo, timeSignatureNumerator]);
 

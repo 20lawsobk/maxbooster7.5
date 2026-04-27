@@ -1,4 +1,18 @@
 import { logger } from '../logger';
+
+export interface WaveformPeakLevel {
+  samplesPerPeak: number;
+  /** Interleaved [min0, max0, min1, max1, …] */
+  peaks: Float32Array;
+  count: number;
+}
+
+export interface WaveformPeakCache {
+  sampleRate: number;
+  totalSamples: number;
+  levels: WaveformPeakLevel[];
+}
+
 export interface AudioEngineConfig {
   sampleRate: number;
   bufferSize: number;
@@ -650,24 +664,62 @@ export class AudioWorkletEngine {
     return await this.audioContext.decodeAudioData(arrayBuffer);
   }
   
+  /**
+   * Build a multi-resolution min/max peak cache from a decoded AudioBuffer.
+   * Each level stores interleaved [min, max] pairs at a different samples-per-peak
+   * resolution (64 → 256 → 1024 → 4096).  The canvas renderer picks the level
+   * whose samplesPerPeak is closest (but ≥) to the current samples-per-pixel
+   * ratio so transients are never discarded.
+   */
+  static readonly PEAK_RESOLUTIONS = [64, 256, 1024, 4096];
+
+  extractPeakCache(buffer: AudioBuffer): WaveformPeakCache {
+    const ch0 = buffer.getChannelData(0);
+    const ch1 = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : null;
+    const sampleRate = buffer.sampleRate;
+    const totalSamples = ch0.length;
+
+    const levels: WaveformPeakLevel[] = AudioWorkletEngine.PEAK_RESOLUTIONS.map(spp => {
+      const count = Math.ceil(totalSamples / spp);
+      const peaks = new Float32Array(count * 2);
+
+      for (let i = 0; i < count; i++) {
+        const start = i * spp;
+        const end = Math.min(start + spp, totalSamples);
+        let minVal = 0;
+        let maxVal = 0;
+
+        for (let j = start; j < end; j++) {
+          const v = ch1 ? (ch0[j] + ch1[j]) * 0.5 : ch0[j];
+          if (v < minVal) minVal = v;
+          if (v > maxVal) maxVal = v;
+        }
+
+        peaks[i * 2]     = minVal;
+        peaks[i * 2 + 1] = maxVal;
+      }
+
+      return { samplesPerPeak: spp, peaks, count };
+    });
+
+    return { sampleRate, totalSamples, levels };
+  }
+
+  /** @deprecated Use extractPeakCache for accurate min/max waveform data. */
   extractPeakData(buffer: AudioBuffer, samplesPerPeak: number = 256): Float32Array {
     const channelData = buffer.getChannelData(0);
     const peaks = Math.ceil(channelData.length / samplesPerPeak);
     const peakData = new Float32Array(peaks);
-    
     for (let i = 0; i < peaks; i++) {
       const start = i * samplesPerPeak;
       const end = Math.min(start + samplesPerPeak, channelData.length);
       let peak = 0;
-      
       for (let j = start; j < end; j++) {
         const abs = Math.abs(channelData[j]);
         if (abs > peak) peak = abs;
       }
-      
       peakData[i] = peak;
     }
-    
     return peakData;
   }
   
