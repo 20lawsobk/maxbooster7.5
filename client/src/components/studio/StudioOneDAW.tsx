@@ -1077,7 +1077,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 {leftSidebarTab === 'tracks' && (
                   <div className="p-1 space-y-px">
                     <button
-                      onClick={handleAddTrack}
+                      onClick={() => handleAddTrack('audio')}
                       className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded text-xs text-emerald-400 hover:bg-[#1a1a22] transition-colors"
                     >
                       <Plus className="h-3 w-3" /> Add Track
@@ -1265,7 +1265,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                   <ZoomIn className="h-3 w-3" />
                 </button>
                 <div className="w-px h-4 bg-[#28282e] mx-0.5" />
-                <button onClick={handleAddTrack} className="flex items-center gap-1 px-2 h-6 rounded text-[10px] text-gray-500 hover:text-white hover:bg-[#22222c] transition-colors">
+                <button onClick={() => handleAddTrack('audio')} className="flex items-center gap-1 px-2 h-6 rounded text-[10px] text-gray-500 hover:text-white hover:bg-[#22222c] transition-colors">
                   <Plus className="h-3 w-3" /> Track
                 </button>
                 <button onClick={() => setShowAutomation(!showAutomation)} className={cn("flex items-center gap-1 px-2 h-6 rounded text-[10px] hover:bg-[#22222c] transition-colors", showAutomation ? "text-amber-400 bg-amber-500/10" : "text-gray-500 hover:text-white")}>
