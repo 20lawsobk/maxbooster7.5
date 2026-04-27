@@ -3145,7 +3145,7 @@ interface TrackLaneProps {
 }
 
 function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSelect, onSelectClip, onUpdate, onDelete, onDuplicate, allTracks = [] }: TrackLaneProps) {
-  const height = track.collapsed ? 24 : (track.height || 80);
+  const height = track.collapsed ? 40 : (track.height || 80);
 
   const trackTypeIcon = {
     audio: Music,
@@ -3170,7 +3170,7 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
           onClick={onSelect}
         >
           <div
-            className="shrink-0 flex flex-col justify-center px-3 border-r border-[#333] relative"
+            className="shrink-0 flex flex-col justify-center px-2 border-r border-[#333] relative overflow-hidden"
             style={{ width: 'var(--track-header-w)', backgroundColor: `${track.color}15` }}
           >
             <div className="w-1 h-full absolute left-0 top-0" style={{ backgroundColor: track.color }} />
@@ -3192,8 +3192,8 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
               );
             })()}
 
-            {/* Top row: collapse + icon + name + M/S/R */}
-            <div className="flex items-center gap-2">
+            {/* Row 1: collapse + icon + name */}
+            <div className="flex items-center gap-1.5 min-w-0">
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate({ collapsed: !track.collapsed }); }}
                 className="hover:bg-white/10 rounded p-0.5 shrink-0"
@@ -3203,40 +3203,41 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
 
               <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: track.color }} />
 
-              <span className="text-xs truncate flex-1 font-medium">{track.name}</span>
-
-              <div className="flex items-center gap-0.5 shrink-0">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
-                  className={cn(
-                    "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-                    track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                  )}
-                >
-                  M
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
-                  className={cn(
-                    "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
-                    track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                  )}
-                >
-                  S
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
-                  className={cn(
-                    "h-5 w-5 flex items-center justify-center rounded text-[10px]",
-                    track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
-                  )}
-                >
-                  <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
-                </button>
-              </div>
+              <span className="text-xs truncate flex-1 font-medium min-w-0">{track.name}</span>
             </div>
 
-            {/* Bottom row: volume + pan (only when not collapsed) */}
+            {/* Row 2: M / S / R — always visible regardless of collapsed state */}
+            <div className="flex items-center gap-0.5 mt-0.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                M
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                S
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
+                className={cn(
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px]",
+                  track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                )}
+              >
+                <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
+              </button>
+            </div>
+
+            {/* Row 3: volume + pan (only when not collapsed) */}
             {!track.collapsed && (
               <div className="flex items-center gap-2 mt-1.5" onClick={(e) => e.stopPropagation()}>
                 <Volume2 className="h-2.5 w-2.5 text-gray-600 shrink-0" />
