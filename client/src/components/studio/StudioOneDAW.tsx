@@ -3236,11 +3236,11 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
                 className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px]",
-                  track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444]"
+                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444] text-red-400"
                 )}
               >
-                <Circle className="h-2.5 w-2.5" fill={track.armed ? "white" : "none"} />
+                R
               </button>
             </div>
 
