@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { audioWorkletEngine, type PlaybackState, type MeteringData, type ScheduledClip } from '@/lib/daw';
+import type { WaveformPeakCache } from '@/lib/daw/AudioWorkletEngine';
 
 interface AudioEngineHook {
   isInitialized: boolean;
@@ -33,6 +34,7 @@ interface AudioEngineHook {
   loadAudioFile: (url: string) => Promise<AudioBuffer>;
   loadAudioBlob: (blob: Blob) => Promise<AudioBuffer>;
   extractPeakData: (buffer: AudioBuffer, samplesPerPeak?: number) => Float32Array;
+  extractPeakCache: (buffer: AudioBuffer) => WaveformPeakCache;
   
   getTrackMeter: (trackId: string) => MeteringData | undefined;
   getMasterMeter: () => MeteringData | undefined;
@@ -186,6 +188,10 @@ export function useAudioEngine(): AudioEngineHook {
   const extractPeakData = useCallback((buffer: AudioBuffer, samplesPerPeak: number = 256) => {
     return audioWorkletEngine.extractPeakData(buffer, samplesPerPeak);
   }, []);
+
+  const extractPeakCache = useCallback((buffer: AudioBuffer) => {
+    return audioWorkletEngine.extractPeakCache(buffer);
+  }, []);
   
   const getTrackMeter = useCallback((trackId: string) => {
     return meteringData.get(trackId);
@@ -227,6 +233,7 @@ export function useAudioEngine(): AudioEngineHook {
     loadAudioFile,
     loadAudioBlob,
     extractPeakData,
+    extractPeakCache,
     
     getTrackMeter,
     getMasterMeter,
