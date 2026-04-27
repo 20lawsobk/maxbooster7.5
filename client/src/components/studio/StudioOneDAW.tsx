@@ -760,6 +760,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const debouncedTrackUpdate = useCallback((trackId: string, updates: Record<string, unknown>) => {
     if (!projectId) return;
+    if (trackId === 'master') return;
     if (trackUpdateTimersRef.current[trackId]) {
       clearTimeout(trackUpdateTimersRef.current[trackId]);
     }
@@ -782,8 +783,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 
   const handleTrackUpdate = useCallback((trackId: string, updates: any) => {
     store.updateTrack(trackId, updates);
+    if (trackId === 'master') {
+      if (updates.volume !== undefined) audioEngine.setMasterVolume(updates.volume);
+      return;
+    }
+    if (updates.volume !== undefined) audioEngine.setTrackVolume(trackId, updates.volume);
     debouncedTrackUpdate(trackId, updates);
-  }, [store, debouncedTrackUpdate]);
+  }, [store, audioEngine, debouncedTrackUpdate]);
 
   const handleDeleteTrack = useCallback((trackId: string) => {
     store.removeTrack(trackId);
