@@ -284,7 +284,7 @@ const createMasterTrack = (): Track => ({
   name: 'Master',
   type: 'master',
   color: '#64748b',
-  volume: 0,
+  volume: 0.8,
   pan: 0,
   muted: false,
   solo: false,

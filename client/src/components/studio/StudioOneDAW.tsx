@@ -4159,11 +4159,11 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
         ))}
         {masterTrack && (
           <ChannelStrip
-            track={{ ...masterTrack, name: 'Master', type: 'master', color: '#888' }}
+            track={{ ...masterTrack, name: 'Master', type: 'master', color: '#a0a0b0' }}
             isSelected={false}
             isMaster
             onSelect={() => {}}
-            onUpdate={() => {}}
+            onUpdate={(updates) => onUpdateTrack(masterTrack.id, updates)}
           />
         )}
       </div>
@@ -4200,22 +4200,26 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
 
   const meterGradient = 'linear-gradient(to top, #22c55e 0%, #22c55e 60%, #eab308 75%, #ef4444 95%, #ef4444 100%)';
 
+  const volumePct = Math.round((track.volume ?? 0.8) * 100);
+
   return (
     <div
       className={cn(
         "shrink-0 flex flex-col rounded overflow-hidden cursor-pointer transition-colors",
         isSelected ? "bg-[#2a2a3a]" : "bg-[#252529] hover:bg-[#2a2a2e]",
-        isMaster && "bg-[#2a2a35]"
+        isMaster && "bg-[#2a2a35] ring-1 ring-[#444]"
       )}
-      style={{ width: 'var(--strip-w)' }}
+      style={{ width: isMaster ? 72 : 64 }}
       onClick={onSelect}
     >
-      <div className="text-[10px] text-center py-1 truncate px-1 border-b border-[#333]" style={{ color: track.color }}>
+      {/* Track name */}
+      <div className="text-[10px] text-center py-1 truncate px-1 border-b border-[#333] font-medium" style={{ color: track.color }}>
         {track.name}
       </div>
 
+      {/* Level meters */}
       <div className="flex-1 flex items-center justify-center py-2 gap-0.5">
-        <div className="h-full w-1.5 bg-[#1a1a1e] rounded relative overflow-hidden">
+        <div className="h-full w-2 bg-[#111] rounded relative overflow-hidden">
           <div
             className="absolute bottom-0 left-0 right-0 transition-all duration-75"
             style={{ height: `${leftPct}%`, background: meterGradient }}
@@ -4225,7 +4229,7 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
             style={{ bottom: `${peakHold.left}%`, height: '1px', opacity: peakHold.left > 0 ? 0.8 : 0 }}
           />
         </div>
-        <div className="h-full w-1.5 bg-[#1a1a1e] rounded relative overflow-hidden">
+        <div className="h-full w-2 bg-[#111] rounded relative overflow-hidden">
           <div
             className="absolute bottom-0 left-0 right-0 transition-all duration-75"
             style={{ height: `${rightPct}%`, background: meterGradient }}
@@ -4237,41 +4241,52 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
         </div>
       </div>
 
-      <div className="px-1.5 pb-1">
+      {/* Vertical fader — rotated horizontal range (universally supported) */}
+      <div className="flex items-center justify-center overflow-hidden" style={{ height: 80 }}>
         <input
           type="range"
           min={0}
           max={100}
-          value={track.volume * 100}
+          value={volumePct}
           onChange={(e) => onUpdate({ volume: Number(e.target.value) / 100 })}
-          className="w-full h-20 appearance-none bg-transparent cursor-pointer"
-          style={{
-            writingMode: 'vertical-lr',
-            direction: 'rtl',
-          }}
           onClick={(e) => e.stopPropagation()}
+          style={{
+            width: 68,
+            transform: 'rotate(-90deg)',
+            cursor: 'pointer',
+          }}
         />
       </div>
 
-      <div className="flex justify-center gap-0.5 pb-1">
+      {/* Volume readout */}
+      <div className="text-[10px] text-center pb-1 text-gray-400">
+        {volumePct}%
+      </div>
+
+      {/* M / S buttons — solo hidden on master */}
+      <div className="flex justify-center gap-0.5 pb-1.5">
         <button
           onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
           className={cn(
-            "h-4 w-4 flex items-center justify-center rounded text-[8px] font-bold",
-            track.muted ? "bg-orange-600" : "bg-[#333]"
+            "flex items-center justify-center rounded font-bold leading-none",
+            track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
           )}
+          style={{ width: 16, height: 16, fontSize: 8 }}
         >
           M
         </button>
-        <button
-          onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
-          className={cn(
-            "h-4 w-4 flex items-center justify-center rounded text-[8px] font-bold",
-            track.solo ? "bg-yellow-600" : "bg-[#333]"
-          )}
-        >
-          S
-        </button>
+        {!isMaster && (
+          <button
+            onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
+            className={cn(
+              "flex items-center justify-center rounded font-bold leading-none",
+              track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
+            )}
+            style={{ width: 16, height: 16, fontSize: 8 }}
+          >
+            S
+          </button>
+        )}
       </div>
 
       {track.type === 'bus' && (
@@ -4290,10 +4305,6 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
           </select>
         </div>
       )}
-
-      <div className="text-[10px] text-center py-1 text-gray-400">
-        {Math.round(track.volume * 100)}%
-      </div>
     </div>
   );
 }
