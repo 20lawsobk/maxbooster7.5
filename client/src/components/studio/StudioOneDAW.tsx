@@ -2921,16 +2921,23 @@ function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>
-        <div
-          className={`${rulerHeight} bg-[#1f1f23] border-b border-[#333] flex items-end overflow-hidden shrink-0 cursor-pointer`}
-          style={{ marginLeft: 'var(--track-header-w)' }}
-          onClick={handleRulerClick}
-        >
+        <div className={`${rulerHeight} flex shrink-0 border-b border-[#333]`}>
+          {/* Track-header column placeholder — same width as the track headers below */}
           <div
-            className="relative h-full"
-            style={{ width: `${containerWidth}px`, transform: `translateX(-${scrollX}px)` }}
+            className="shrink-0 bg-[#181820] border-r border-[#444]"
+            style={{ width: 'var(--track-header-w)' }}
+          />
+          {/* Bar / beat / time markers — x:0 here == bar 1 == start of the clip lane */}
+          <div
+            className="flex-1 relative bg-[#1f1f23] overflow-hidden flex items-end cursor-pointer"
+            onClick={handleRulerClick}
           >
-            {getContent()}
+            <div
+              className="relative h-full"
+              style={{ width: `${containerWidth}px`, transform: `translateX(-${scrollX}px)` }}
+            >
+              {getContent()}
+            </div>
           </div>
         </div>
       </ContextMenuTrigger>
