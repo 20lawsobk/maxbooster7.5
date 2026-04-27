@@ -3214,31 +3214,34 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
             </div>
 
             {/* Row 2: M / S / R — always visible regardless of collapsed state */}
-            <div className="flex items-center gap-0.5 mt-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center mt-0.5" style={{ gap: '2px' }} onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate({ muted: !track.muted }); }}
                 className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  "shrink-0 flex items-center justify-center rounded font-bold leading-none",
                   track.muted ? "bg-orange-600 text-white" : "bg-[#333] hover:bg-[#444]"
                 )}
+                style={{ width: 20, height: 20, fontSize: 10 }}
               >
                 M
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate({ solo: !track.solo }); }}
                 className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  "shrink-0 flex items-center justify-center rounded font-bold leading-none",
                   track.solo ? "bg-yellow-600 text-white" : "bg-[#333] hover:bg-[#444]"
                 )}
+                style={{ width: 20, height: 20, fontSize: 10 }}
               >
                 S
               </button>
               <button
                 onClick={(e) => { e.stopPropagation(); onUpdate({ armed: !track.armed }); }}
                 className={cn(
-                  "h-5 w-5 flex items-center justify-center rounded text-[10px] font-bold",
+                  "shrink-0 flex items-center justify-center rounded font-bold leading-none",
                   track.armed ? "bg-red-600 text-white" : "bg-[#333] hover:bg-[#444] text-red-400"
                 )}
+                style={{ width: 20, height: 20, fontSize: 10 }}
               >
                 R
               </button>
