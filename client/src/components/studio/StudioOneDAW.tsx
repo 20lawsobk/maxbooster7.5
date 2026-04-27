@@ -80,6 +80,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const audioEngine = useAudioEngine();
   const audioInitializedRef = useRef(false);
   const loadedClipsRef = useRef<Set<string>>(new Set());
+  /** Maps clip.id → decoded buffer.duration so we can detect stale stored durations */
+  const clipDecodedDurationsRef = useRef<Map<string, number>>(new Map());
   const loadedTracksRef = useRef<Set<string>>(new Set());
   const prevProjectIdRef = useRef<string | null>(null);
   
@@ -529,6 +531,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         audioEngine.removeClip(clipId);
       }
       loadedClipsRef.current.clear();
+      clipDecodedDurationsRef.current.clear();
       
       // Remove all previously loaded tracks
       for (const trackId of loadedTracksRef.current) {
@@ -567,18 +570,44 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       // Load and schedule audio clips
       for (const track of tracks) {
         for (const clip of (track.audioClips || [])) {
-          if (loadedClipsRef.current.has(clip.id)) continue;
-          const clipUrl = clip.sourceUrl || clip.filePath;
+          const clipUrl = clip.sourceUrl || (clip as any).filePath;
           if (!clipUrl) continue;
+
+          const alreadyLoaded = loadedClipsRef.current.has(clip.id);
+          const knownDuration = clipDecodedDurationsRef.current.get(clip.id);
+
+          // If already loaded: only re-run the duration correction when the
+          // store's clip.duration has drifted from the ground-truth decoded
+          // value (e.g. project was saved before the first correction completed).
+          if (alreadyLoaded) {
+            if (
+              knownDuration !== undefined &&
+              Math.abs((clip.duration || 0) - knownDuration) > 0.5
+            ) {
+              logger.info(
+                `[DAW] Stale duration detected for "${clip.name}": ` +
+                `stored=${(clip.duration || 0).toFixed(2)}s decoded=${knownDuration.toFixed(2)}s — correcting`,
+              );
+              useStudioStore.getState().updateAudioClip(track.id, clip.id, {
+                duration: knownDuration,
+              });
+            }
+            continue;
+          }
 
           try {
             const buffer = await audioEngine.loadAudioFile(clipUrl);
             const sampleRate = audioEngine.sampleRate || 48000;
             const startSample = Math.floor((clip.startTime || 0) * sampleRate);
-            // Use the decoded audio file length as ground truth — avoids any
-            // mismatch between stored metadata and what was actually synthesized.
+            // buffer.duration is always the ground truth — decoded from the actual file.
             const durationSeconds = buffer.duration;
-            logger.info(`[DAW] Clip "${clip.name}" decoded: buffer.duration=${durationSeconds.toFixed(2)}s, stored clip.duration=${(clip.duration||0).toFixed(2)}s, buffer.length=${buffer.length}, buffer.sampleRate=${buffer.sampleRate}`);
+            clipDecodedDurationsRef.current.set(clip.id, durationSeconds);
+
+            logger.info(
+              `[DAW] Clip "${clip.name}" decoded: ` +
+              `buffer=${durationSeconds.toFixed(2)}s stored=${(clip.duration || 0).toFixed(2)}s ` +
+              `samples=${buffer.length} sr=${buffer.sampleRate}`,
+            );
 
             audioEngine.scheduleClip({
               id: clip.id,
@@ -593,13 +622,20 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             });
 
             const peakData = audioEngine.extractPeakCache(buffer);
-            const updates: Record<string, any> = { waveformData: peakData };
-            // Sync stored duration to actual decoded audio length whenever they differ.
+            // Always write duration from the decoded buffer — no threshold.
+            // This guarantees imported clips whose metadata was initially wrong
+            // (e.g. null/0 from DB) always display at the correct width.
+            useStudioStore.getState().updateAudioClip(track.id, clip.id, {
+              waveformData: peakData,
+              duration: durationSeconds,
+            });
+
             if (Math.abs((clip.duration || 0) - durationSeconds) > 0.1) {
-              updates.duration = durationSeconds;
-              logger.info(`[DAW] Synced clip "${clip.name}" duration from audio: ${(clip.duration || 0).toFixed(2)}s → ${durationSeconds.toFixed(2)}s`);
+              logger.info(
+                `[DAW] Corrected clip "${clip.name}" duration: ` +
+                `${(clip.duration || 0).toFixed(2)}s → ${durationSeconds.toFixed(2)}s`,
+              );
             }
-            useStudioStore.getState().updateAudioClip(track.id, clip.id, updates);
 
             loadedClipsRef.current.add(clip.id);
             logger.info(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);

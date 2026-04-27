@@ -651,6 +651,11 @@ export class AudioWorkletEngine {
     }
     
     const response = await fetch(normalizedUrl);
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch audio "${normalizedUrl}": HTTP ${response.status} ${response.statusText}`,
+      );
+    }
     const arrayBuffer = await response.arrayBuffer();
     return await this.audioContext.decodeAudioData(arrayBuffer);
   }
