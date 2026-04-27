@@ -574,7 +574,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             const buffer = await audioEngine.loadAudioFile(clipUrl);
             const sampleRate = audioEngine.sampleRate || 48000;
             const startSample = Math.floor((clip.startTime || 0) * sampleRate);
-            const durationSeconds = clip.duration || buffer.duration;
+            // Use the decoded audio file length as ground truth — avoids any
+            // mismatch between stored metadata and what was actually synthesized.
+            const durationSeconds = buffer.duration;
 
             audioEngine.scheduleClip({
               id: clip.id,
@@ -589,7 +591,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             });
 
             const peakData = audioEngine.extractPeakData(buffer, 256);
-            useStudioStore.getState().updateAudioClip(track.id, clip.id, { waveformData: peakData });
+            const updates: Record<string, any> = { waveformData: peakData };
+            // Sync stored duration to actual decoded audio length whenever they differ.
+            if (Math.abs((clip.duration || 0) - durationSeconds) > 0.1) {
+              updates.duration = durationSeconds;
+              logger.info(`[DAW] Synced clip "${clip.name}" duration from audio: ${(clip.duration || 0).toFixed(2)}s → ${durationSeconds.toFixed(2)}s`);
+            }
+            useStudioStore.getState().updateAudioClip(track.id, clip.id, updates);
 
             loadedClipsRef.current.add(clip.id);
             logger.info(`[DAW] Loaded clip: ${clip.name} on track ${track.name}`);

@@ -656,36 +656,10 @@ export function useProjectSync(projectId: string | null) {
         }
       }
 
-      setTimeout(async () => {
-        const currentTracks = getStoreState().tracks;
-        for (const track of currentTracks) {
-          for (const clip of track.audioClips) {
-            // Detect duration from the audio file when:
-            // - duration is missing/zero, OR
-            // - duration is suspiciously small (< 2 seconds) for a clip with a source URL
-            //   which would indicate a tempo-mismatch from generation at the wrong BPM
-            const needsDurationDetect = clip.sourceUrl && (
-              clip.duration <= 0 ||
-              clip.duration < 2
-            );
-            if (needsDurationDetect) {
-              try {
-                const response = await fetch(clip.sourceUrl);
-                const arrayBuffer = await response.arrayBuffer();
-                const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-                if (audioBuffer.duration > 0 && Math.abs(audioBuffer.duration - clip.duration) > 0.5) {
-                  store.updateAudioClip(track.id, clip.id, { duration: audioBuffer.duration });
-                  logger.info(`[ProjectSync] Corrected clip "${clip.name}" duration: ${clip.duration.toFixed(2)}s → ${audioBuffer.duration.toFixed(2)}s`);
-                }
-                audioContext.close();
-              } catch (e) {
-                logger.error('[ProjectSync] Failed to detect clip duration:', e);
-              }
-            }
-          }
-        }
-      }, 100);
+      // Note: clip duration correction from actual audio length is handled by
+      // StudioOneDAW when it decodes each clip's audio buffer for playback.
+      // That approach is more accurate (uses already-decoded data) and avoids
+      // downloading audio files twice just to check duration.
 
       store.markSaved();
       logger.info(`[ProjectSync] Loaded project ${projectId} with ${backendTracks.length} tracks from database`);
