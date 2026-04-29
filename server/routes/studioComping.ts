@@ -466,7 +466,7 @@ router.delete('/projects/:projectId/comping/versions/:versionId', requireAuth, a
     res.status(204).send();
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error deleting comp version:');
-    if ((error as any).message === 'Cannot delete active comp version') {
+    if (error instanceof Error && error.message === 'Cannot delete active comp version') {
       return res.status(400).json({ error: 'Cannot delete active comp version' });
     }
     res.status(500).json({ error: 'Failed to delete comp version' });
@@ -491,7 +491,7 @@ router.post('/projects/:projectId/comping/render', requireAuth, async (req, res)
     res.status(201).json(result);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error rendering comp:');
-    if ((error as any).message === 'No segments selected for rendering') {
+    if (error instanceof Error && error.message === 'No segments selected for rendering') {
       return res.status(400).json({ error: 'No segments selected for rendering' });
     }
     res.status(500).json({ error: 'Failed to render comp' });

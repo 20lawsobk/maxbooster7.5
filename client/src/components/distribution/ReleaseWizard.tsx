@@ -212,7 +212,10 @@ export function ReleaseWizard({ releaseId, onComplete, onCancel }: ReleaseWizard
       if (releaseData.id && artwork) {
         const artworkFormData = new FormData();
         artworkFormData.append('artwork', artwork);
-        await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/artwork`, artworkFormData).catch(() => {});
+        await apiRequest('POST', `/api/distribution/releases/${releaseData.id}/artwork`, artworkFormData).catch((artworkErr: unknown) => {
+          logger.warn('Artwork upload failed (non-fatal):', artworkErr);
+          toast({ title: 'Artwork upload failed', description: 'Your release was saved but the artwork could not be uploaded. You can re-upload it from the release editor.', variant: 'destructive' });
+        });
       }
 
       // Step 4: Submit to LabelGrid for actual distribution.

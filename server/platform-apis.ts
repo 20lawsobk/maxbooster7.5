@@ -135,10 +135,11 @@ export const platformAPI = {
 
         logger.info(`✅ Successfully posted to ${platform}: ${postId}`);
       } catch (error: unknown) {
+        const axiosErr = error as Record<string, any>;
         const errorMsg =
-          error.response?.data?.error?.message ||
-          error.response?.data?.error_description ||
-          error.message ||
+          axiosErr?.response?.data?.error?.message ||
+          axiosErr?.response?.data?.error_description ||
+          (error instanceof Error ? error.message : null) ||
           'Unknown error';
 
         results.push({
@@ -527,7 +528,8 @@ export const platformAPI = {
           : 0,
       };
     } catch (error: unknown) {
-      if (error.code === 401) {
+      const statusCode = (error as Record<string, any>)?.code ?? (error as Record<string, any>)?.status;
+      if (statusCode === 401) {
         throw new Error('Twitter OAuth token expired or invalid');
       }
       throw error;

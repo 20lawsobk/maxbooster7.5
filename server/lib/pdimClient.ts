@@ -1028,10 +1028,18 @@ export class PdimRedisClient extends EventEmitter {
   /** XINFO STREAM|GROUPS|CONSUMERS|FULL key */
   async xinfo(subCmd: string, key: string, ...args: any[]): Promise<any> { return this.exec(['XINFO', subCmd, key, ...args]); }
   /**
-   * XREADGROUP — not yet supported by PDIM; returns empty result so callers
-   * degrade gracefully instead of throwing.
+   * XREADGROUP GROUP group consumer [COUNT count] [BLOCK milliseconds] [NOACK] STREAMS key [key ...] id [id ...]
+   * Attempts to forward to PDIM exec endpoint; falls back to null (graceful degradation)
+   * if PDIM does not support the command.
    */
-  async xreadgroup(..._args: any[]): Promise<any[] | null> { return null; }
+  async xreadgroup(...args: any[]): Promise<any[] | null> {
+    try {
+      return await this.exec(['XREADGROUP', ...args]);
+    } catch {
+      // PDIM may not support XREADGROUP — return null so callers degrade gracefully
+      return null;
+    }
+  }
 
   // ── camelCase stream aliases (node-redis v4 compat) ───────────────────────
   xAdd        = (key: string, ...args: any[]) => this.xadd(key, ...args);

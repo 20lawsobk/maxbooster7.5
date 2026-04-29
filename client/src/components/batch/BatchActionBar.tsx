@@ -56,27 +56,6 @@ export interface BatchActionBarProps {
   position?: 'top' | 'bottom' | 'floating';
 }
 
-const defaultActions: BatchAction[] = [
-  {
-    id: 'edit',
-    label: 'Edit',
-    icon: <Edit className="h-4 w-4" />,
-    onClick: () => {},
-  },
-  {
-    id: 'export',
-    label: 'Export',
-    icon: <Download className="h-4 w-4" />,
-    onClick: () => {},
-  },
-  {
-    id: 'delete',
-    label: 'Delete',
-    icon: <Trash2 className="h-4 w-4" />,
-    variant: 'destructive',
-    onClick: () => {},
-  },
-];
 
 export function BatchActionBar({
   actions = [],

@@ -118,9 +118,9 @@ class ProcessMonitor extends EventEmitter {
       this.addAlert({
         type: 'restart',
         severity: 'critical',
-        message: `Uncaught exception: ${error.message}`,
+        message: `Uncaught exception: ${error instanceof Error ? error.message : String(error)}`,
         timestamp: new Date(),
-        metrics: { stack: error.stack },
+        metrics: { stack: error instanceof Error ? error.stack : undefined },
       });
     });
 

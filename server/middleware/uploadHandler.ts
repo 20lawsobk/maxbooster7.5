@@ -377,7 +377,7 @@ export const handleUploadError = (error: unknown, req: Request, res: unknown, ne
     }
   } else if (error) {
     return res.status(400).json({
-      message: error.message || 'Upload failed',
+      message: error instanceof Error ? error.message : 'Upload failed',
       code: 'UPLOAD_ERROR',
     });
   }

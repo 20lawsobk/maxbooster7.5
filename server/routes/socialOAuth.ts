@@ -267,7 +267,7 @@ router.get('/connections', requireAuth, async (req: AuthenticatedRequest, res: R
     res.json(enrichedConnections);
   } catch (error) {
     logger.warn({ err: error }, 'Failed to get social connections:');
-    res.status(500).json({ error: 'Failed to get social connections:' });
+    res.status(500).json({ error: 'Failed to get social connections' });
   }
 });
 

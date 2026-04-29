@@ -25,6 +25,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { syncManager, offlineQueue, offlineCache, QueuedAction } from '@/lib/offline';
 import { useOfflineStatus } from '@/hooks/useOfflineStatus';
@@ -67,6 +77,7 @@ export function SyncStatusPanel({
   const [cacheStats, setCacheStats] = useState<CacheStats | null>(null);
   const [recentActions, setRecentActions] = useState<QueuedAction[]>([]);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'clearQueue' | 'clearCache' | null>(null);
 
   const isSyncing = syncStatus === 'syncing';
   const isPaused = syncStatus === 'paused';
@@ -111,18 +122,18 @@ export function SyncStatusPanel({
     }
   };
 
-  const handleClearQueue = async () => {
-    if (window.confirm('Are you sure you want to clear all pending changes? This cannot be undone.')) {
-      await offlineQueue.clearAll();
-      loadData();
-    }
-  };
+  const handleClearQueue = () => setConfirmAction('clearQueue');
 
-  const handleClearCache = async () => {
-    if (window.confirm('Are you sure you want to clear the offline cache?')) {
+  const handleClearCache = () => setConfirmAction('clearCache');
+
+  const handleConfirm = async () => {
+    if (confirmAction === 'clearQueue') {
+      await offlineQueue.clearAll();
+    } else if (confirmAction === 'clearCache') {
       await offlineCache.clear();
-      loadData();
     }
+    setConfirmAction(null);
+    loadData();
   };
 
   const formatBytes = (bytes: number): string => {
@@ -366,6 +377,30 @@ export function SyncStatusPanel({
           </>
         )}
       </CardContent>
+
+      <AlertDialog open={confirmAction !== null} onOpenChange={() => setConfirmAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmAction === 'clearQueue' ? 'Clear pending changes?' : 'Clear offline cache?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmAction === 'clearQueue'
+                ? 'This will permanently delete all pending changes that have not yet been synced. This cannot be undone.'
+                : 'This will remove all cached data from local storage. Unsynced changes will not be affected.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleConfirm}
+            >
+              {confirmAction === 'clearQueue' ? 'Clear Changes' : 'Clear Cache'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

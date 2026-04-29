@@ -193,13 +193,22 @@ export async function buildContactProfile(userId: string): Promise<ContactProfil
 
   const name = [user.firstName, user.lastName].filter(Boolean).join(' ') || 'Max Booster Artist';
 
+  // Parse city from location string (may be "City, State" or "City, Country" format)
+  let city = 'Los Angeles';
+  if (user.location) {
+    const parts = user.location.split(',');
+    city = parts[0].trim() || 'Los Angeles';
+  }
+
   return {
     name,
     email:   user.email,
-    phone:   '+1.5555550100',   // placeholder — artists should update in profile
+    // Phone is not collected at signup — users should add it in Profile Settings.
+    // A generic registrar-compliant placeholder is used until then.
+    phone:   '+1.5555550100',
     address: {
       street:     '100 Music Ave',
-      city:       user.location ?? 'Los Angeles',
+      city,
       state:      'CA',
       postalCode: '90001',
       country:    'US',

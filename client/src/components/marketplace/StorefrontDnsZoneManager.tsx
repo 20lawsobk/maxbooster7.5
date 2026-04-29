@@ -26,6 +26,16 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -301,6 +311,10 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
   const [zoneFilename, setZoneFilename]             = useState('zone.txt');
   const [loadingExport, setLoadingExport]           = useState(false);
   const [confirmText, setConfirmText]               = useState('');
+  const [pendingDeleteAction, setPendingDeleteAction] = useState<{
+    label: string;
+    onConfirm: () => void;
+  } | null>(null);
 
   const { data: recordsData, isLoading: recordsLoading } = useQuery({
     queryKey: ['/api/dns-manager/zones', zone.id, 'records'],
@@ -500,7 +514,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
             <ArrowUpRight className="w-3 h-3" /> Transfer Out
           </Button>
           <Button size="sm" variant="ghost" className="gap-1.5 h-7 text-xs text-red-500 hover:text-red-600"
-            onClick={() => { if (confirm(`Remove ${zone.domain}?`)) deleteZone.mutate(); }}>
+            onClick={() => setPendingDeleteAction({ label: `Remove ${zone.domain}?`, onConfirm: () => deleteZone.mutate() })}>
             <Trash2 className="w-3 h-3" /> Remove
           </Button>
         </div>
@@ -576,7 +590,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
                             <button onClick={() => openEdit(r)} className="text-muted-foreground hover:text-foreground p-1">
                               <Edit className="w-3 h-3" />
                             </button>
-                            <button onClick={() => { if (confirm('Delete this record?')) deleteRecord.mutate(r.id); }} className="text-red-400 hover:text-red-600 p-1">
+                            <button onClick={() => setPendingDeleteAction({ label: `Delete the ${r.type} record for "${r.name}"?`, onConfirm: () => deleteRecord.mutate(r.id) })} className="text-red-400 hover:text-red-600 p-1">
                               <Trash2 className="w-3 h-3" />
                             </button>
                           </div>
@@ -750,7 +764,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
                     size="sm"
                     variant="ghost"
                     className="h-7 text-xs gap-1.5 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 ml-auto"
-                    onClick={() => { if (confirm(`Remove ${zone.domain} as your storefront URL?`)) unlinkStorefront.mutate(); }}
+                    onClick={() => setPendingDeleteAction({ label: `Remove ${zone.domain} as your storefront URL?`, onConfirm: () => unlinkStorefront.mutate() })}
                     disabled={unlinkStorefront.isPending}
                   >
                     {unlinkStorefront.isPending ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Link2Off className="w-3 h-3" />}
@@ -1014,6 +1028,28 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Confirmation Dialog — replaces native window.confirm() */}
+      <AlertDialog open={pendingDeleteAction !== null} onOpenChange={() => setPendingDeleteAction(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>{pendingDeleteAction?.label}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                pendingDeleteAction?.onConfirm();
+                setPendingDeleteAction(null);
+              }}
+            >
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -1467,7 +1503,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
                         <span className="text-[10px] text-muted-foreground hidden sm:block">Point NS to Max Booster</span>
                       ) : null}
                       <button
-                        onClick={() => { if (confirm(`Remove ${d.domain}?`)) removeClaimed.mutate(d.id); }}
+                        onClick={() => setPendingDeleteAction({ label: `Remove ${d.domain} from your claimed domains?`, onConfirm: () => removeClaimed.mutate(d.id) })}
                         className="text-red-400 hover:text-red-600 p-1.5 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

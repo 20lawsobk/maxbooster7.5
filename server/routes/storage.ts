@@ -197,7 +197,12 @@ router.post('/upload', requireAuth, upload.single('file'), async (req: Request, 
         await notificationService.sendUploadCompleteNotification(userId, req.file!.originalname, category);
 
         const PLATFORM_QUOTA_GB = 1000;
-        const usedGB = 2.5;
+        const usageResult = await db
+          .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
+          .from(userStorageFiles)
+          .where(and(eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)));
+        const usedBytes = Number(usageResult[0]?.totalBytes ?? 0);
+        const usedGB = usedBytes / (1024 ** 3);
         const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
         if (usedPercent >= 75) {
           await notificationService.sendStorageQuotaNotification(userId, usedPercent);
@@ -305,7 +310,12 @@ router.post('/upload/chunk', requireAuth, chunkUpload.single('chunk'), async (re
           await notificationService.sendUploadCompleteNotification(userId, fileName, fileCategory);
 
           const PLATFORM_QUOTA_GB = 1000;
-          const usedGB = 2.5;
+          const chunkUsageResult = await db
+            .select({ totalBytes: sum(userStorageFiles.sizeBytes) })
+            .from(userStorageFiles)
+            .where(and(eq(userStorageFiles.userId, userId), isNull(userStorageFiles.deletedAt)));
+          const chunkUsedBytes = Number(chunkUsageResult[0]?.totalBytes ?? 0);
+          const usedGB = chunkUsedBytes / (1024 ** 3);
           const usedPercent = Math.round((usedGB / PLATFORM_QUOTA_GB) * 100);
           if (usedPercent >= 75) {
             await notificationService.sendStorageQuotaNotification(userId, usedPercent);
@@ -819,7 +829,7 @@ router.post('/hybrid/upload', requireAuth, upload.single('file'), async (req: Re
         folder,
         forceTier: forceTier as 'hot' | 'cold' | undefined,
         isPublic: isPublic === 'true',
-        metadata: req.body.metadata ? JSON.parse(req.body.metadata) : undefined,
+        metadata: req.body.metadata ? (() => { try { return JSON.parse(req.body.metadata); } catch { return undefined; } })() : undefined,
       }
     );
 

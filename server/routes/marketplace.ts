@@ -1880,15 +1880,16 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
       
       // Decrement like count in listing metadata
       const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
+      let newLikes = 0;
       if (listing) {
         const currentMetadata = (listing.metadata as any) || {};
-        const newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
+        newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
         await db.update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
           .where(eq(listings.id, beatId));
       }
       
-      res.json({ success: true, liked: false, likes: (listing?.metadata as any)?.likes || 0 });
+      res.json({ success: true, liked: false, likes: newLikes });
     } else {
       // Like - record the interaction
       await discoveryAlgorithmService.recordInteraction({

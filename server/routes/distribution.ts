@@ -16,6 +16,7 @@ import { labelCopyLinter, type ReleaseMetadata, type LintResult } from '../servi
 import { dspPolicyChecker, DSP_POLICIES, type ComplianceResult } from '../services/dspPolicyChecker';
 import { releaseWorkflowService, type TakedownReason } from '../services/releaseWorkflow';
 import { audioFingerprintService, type DuplicateCheckResult } from '../services/audioFingerprint';
+import { audioMetadataService } from '../services/audioMetadataService.js';
 import { logger } from '../logger';
 import { notificationService } from '../services/notificationService.js';
 import { createHardenedUpload } from '../middleware/uploadHandler.js';
@@ -4737,10 +4738,16 @@ router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Requ
 
     const audioFile = req.file;
 
-    // Only report checks we can actually evaluate. Audio-dependent checks
-    // (LUFS, true peak, sample rate, bit depth) require server-side ffmpeg
-    // analysis which is not currently available — mark them as not_analyzed
-    // rather than returning fabricated "passed" results.
+    // Try to extract real format metadata from the uploaded audio file.
+    let audioMeta: Awaited<ReturnType<typeof audioMetadataService.extractMetadata>> | null = null;
+    if (audioFile) {
+      try {
+        audioMeta = await audioMetadataService.extractMetadata(audioFile.buffer, audioFile.mimetype);
+      } catch (metaErr) {
+        logger.warn({ err: metaErr }, 'QC: audio metadata extraction failed — falling back to not_analyzed');
+      }
+    }
+
     const REQUIRES_ANALYSIS = 'not_analyzed';
 
     const metadataStatus = (title && artist && isrc) ? 'passed'
@@ -4752,13 +4759,99 @@ router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Requ
       ? 'ISRC is missing — required for digital distribution'
       : 'Title and artist are required';
 
-    const checks = [
+    // Sample rate check
+    const ACCEPTED_SAMPLE_RATES = [44100, 48000, 88200, 96000, 176400, 192000];
+    let sampleRateStatus: string;
+    let sampleRateDetail: string;
+    if (!audioFile) {
+      sampleRateStatus = 'warning';
+      sampleRateDetail = 'No audio file uploaded — upload the master to verify sample rate';
+    } else if (audioMeta) {
+      const sr = audioMeta.sampleRate;
+      if (ACCEPTED_SAMPLE_RATES.includes(sr)) {
+        sampleRateStatus = 'passed';
+        sampleRateDetail = `Sample rate is ${(sr / 1000).toFixed(1)} kHz — accepted for distribution`;
+      } else {
+        sampleRateStatus = 'failed';
+        sampleRateDetail = `Sample rate is ${sr} Hz — not accepted. Export at 44.1 kHz or 48 kHz`;
+      }
+    } else {
+      sampleRateStatus = REQUIRES_ANALYSIS;
+      sampleRateDetail = `Audio file received (${(audioFile.size / 1024 / 1024).toFixed(2)} MB) — format not recognized for sample rate analysis`;
+    }
+
+    // Bit depth check
+    let bitDepthStatus: string;
+    let bitDepthDetail: string;
+    if (!audioFile) {
+      bitDepthStatus = 'warning';
+      bitDepthDetail = 'No audio file uploaded — upload the master to verify bit depth';
+    } else if (audioMeta) {
+      if (audioMeta.lossless) {
+        const bd = audioMeta.bitDepth;
+        if (bd && bd >= 16) {
+          bitDepthStatus = 'passed';
+          bitDepthDetail = `Lossless audio at ${bd}-bit depth — accepted for distribution`;
+        } else if (bd) {
+          bitDepthStatus = 'warning';
+          bitDepthDetail = `${bd}-bit lossless detected — 16-bit or 24-bit recommended for distribution`;
+        } else {
+          bitDepthStatus = 'passed';
+          bitDepthDetail = `Lossless audio (${audioMeta.codec}) — accepted for distribution`;
+        }
+      } else {
+        // Lossy codec — warn unless it's a high-quality MP3 for preview only
+        const bitrate = audioMeta.bitrate ? Math.round(audioMeta.bitrate / 1000) : null;
+        bitDepthStatus = 'warning';
+        bitDepthDetail = `Lossy codec detected (${audioMeta.codec}${bitrate ? ` at ${bitrate} kbps` : ''}) — use WAV or FLAC for distribution masters`;
+      }
+    } else {
+      bitDepthStatus = REQUIRES_ANALYSIS;
+      bitDepthDetail = 'Audio format not recognized for bit depth analysis';
+    }
+
+    // Codec / lossless format check
+    let codecStatus: string;
+    let codecDetail: string;
+    if (!audioFile) {
+      codecStatus = 'warning';
+      codecDetail = 'No audio file uploaded — upload the master to check the format';
+    } else if (audioMeta) {
+      const losslessCodecs = ['PCM', 'FLAC', 'ALAC', 'WAV', 'AIFF', 'DSD'];
+      const isLossless = audioMeta.lossless || losslessCodecs.some(c => audioMeta!.codec.toUpperCase().includes(c));
+      if (isLossless) {
+        codecStatus = 'passed';
+        codecDetail = `${audioMeta.codec} (${audioMeta.container}) — lossless format accepted for distribution`;
+      } else {
+        codecStatus = 'warning';
+        codecDetail = `${audioMeta.codec} (${audioMeta.container}) is a lossy format — WAV or FLAC recommended for distribution masters`;
+      }
+    } else {
+      codecStatus = REQUIRES_ANALYSIS;
+      codecDetail = 'Audio format not recognized';
+    }
+
+    // Duration check (distributors typically require at least 30 seconds)
+    let durationStatus: string | undefined;
+    let durationDetail: string | undefined;
+    if (audioMeta) {
+      const durationSecs = audioMeta.duration;
+      if (durationSecs < 30) {
+        durationStatus = 'failed';
+        durationDetail = `Track duration is ${durationSecs.toFixed(1)}s — most distributors require at least 30 seconds`;
+      } else {
+        durationStatus = 'passed';
+        durationDetail = `Track duration is ${(durationSecs / 60).toFixed(1)} min — accepted`;
+      }
+    }
+
+    const checks: Array<{ id: string; name: string; status: string; detail: string }> = [
       {
         id: 'loudness',
         name: 'Loudness (LUFS)',
         status: REQUIRES_ANALYSIS,
         detail: audioFile
-          ? 'Audio file received — full LUFS analysis requires audio processing tools not yet configured on this server'
+          ? 'LUFS measurement requires PCM decoding (ffmpeg). Upload your master and use the dedicated audio analysis tool for a loudness report.'
           : 'No audio file uploaded — upload the master WAV/AIFF to analyze loudness',
       },
       {
@@ -4766,24 +4859,26 @@ router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Requ
         name: 'True Peak',
         status: REQUIRES_ANALYSIS,
         detail: audioFile
-          ? 'Audio file received — true peak analysis requires audio processing tools not yet configured'
+          ? 'True peak measurement requires PCM decoding (ffmpeg). Use the dedicated audio analysis tool for a full loudness + true peak report.'
           : 'No audio file uploaded',
       },
       {
         id: 'samplerate',
         name: 'Sample Rate',
-        status: audioFile ? REQUIRES_ANALYSIS : 'warning',
-        detail: audioFile
-          ? `Audio file received (${(audioFile.size / 1024 / 1024).toFixed(2)} MB, ${audioFile.mimetype}) — sample rate analysis requires audio processing tools not yet configured`
-          : 'No audio file uploaded — upload the master to verify sample rate',
+        status: sampleRateStatus,
+        detail: sampleRateDetail,
       },
       {
         id: 'bitdepth',
-        name: 'Bit Depth',
-        status: audioFile ? REQUIRES_ANALYSIS : 'warning',
-        detail: audioFile
-          ? 'Bit depth analysis requires audio processing tools not yet configured'
-          : 'No audio file uploaded — upload the master to verify bit depth',
+        name: 'Bit Depth / Codec',
+        status: bitDepthStatus,
+        detail: bitDepthDetail,
+      },
+      {
+        id: 'codec',
+        name: 'Audio Format',
+        status: codecStatus,
+        detail: codecDetail,
       },
       {
         id: 'metadata',
@@ -4799,6 +4894,12 @@ router.post('/qc/analyze', requireAuth, upload.single('audio'), async (req: Requ
           ? 'Artwork URL provided — resolution check (3000×3000 px minimum) requires server-side image analysis'
           : 'No artwork URL provided — artwork is required for distribution',
       },
+      ...(durationStatus ? [{
+        id: 'duration',
+        name: 'Track Duration',
+        status: durationStatus,
+        detail: durationDetail!,
+      }] : []),
     ];
 
     const passed = checks.filter(c => c.status === 'passed').length;
@@ -4826,13 +4927,50 @@ router.post('/qc/fix', requireAuth, async (req: Request, res: Response) => {
   try {
     const { releaseId, checkId, fixType } = req.body;
     if (!releaseId || !checkId) return res.status(400).json({ error: 'releaseId and checkId are required' });
-    // QC fixes for audio metrics require audio processing tools not yet available.
-    // Only metadata fixes can be applied server-side.
+
+    // Server-side fixes for metadata issues (missing fields, formatting, etc.)
     if (checkId === 'metadata') {
-      res.json({ success: true, releaseId, checkId, fixType, message: 'Please update the missing metadata fields and re-run QC analysis.', status: 'pending_user_action' });
-    } else {
-      res.status(501).json({ error: 'Automatic QC fixes for audio checks require audio processing tools not yet configured on this server.' });
+      return res.json({
+        success: true,
+        releaseId,
+        checkId,
+        fixType,
+        message: 'Please update the missing metadata fields in the release editor and re-run QC analysis.',
+        status: 'pending_user_action',
+        actions: [
+          { label: 'Open Release Editor', path: `/distribution/releases/${releaseId}/edit` },
+          { label: 'Re-run QC', action: 'rerun_qc' },
+        ],
+      });
     }
+
+    // Audio QC checks (sample rate, bit depth, loudness, codec) require the audio
+    // processing pipeline. Guide the user through the manual fix workflow.
+    const audioCheckGuidance: Record<string, string> = {
+      sample_rate:  'Export your audio at 44.1 kHz or 48 kHz and re-upload the track.',
+      bit_depth:    'Export your audio at 16-bit or 24-bit depth and re-upload the track.',
+      loudness:     'Adjust your master to -14 LUFS integrated loudness (streaming standard) and re-upload.',
+      codec:        'Export your audio as WAV or FLAC and re-upload the track.',
+      duration:     'Ensure the track is at least 30 seconds long before re-submitting.',
+      silence:      'Remove excessive silence from the beginning or end of the track and re-upload.',
+      clipping:     'Apply a limiter to remove digital clipping and re-upload the corrected master.',
+    };
+
+    const guidance = audioCheckGuidance[checkId] || 'Correct the flagged issue in your DAW and re-upload the audio file.';
+
+    return res.json({
+      success: false,
+      releaseId,
+      checkId,
+      fixType,
+      requiresManualAction: true,
+      message: guidance,
+      status: 'manual_fix_required',
+      actions: [
+        { label: 'Re-upload Audio', path: `/distribution/releases/${releaseId}/upload` },
+        { label: 'Re-run QC', action: 'rerun_qc' },
+      ],
+    });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error applying QC fix:');
     res.status(500).json({ error: 'Failed to apply QC fix' });

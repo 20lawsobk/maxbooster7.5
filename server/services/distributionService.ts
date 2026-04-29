@@ -433,17 +433,25 @@ export class DistributionService {
 
       await db.delete(royaltySplits).where(eq(royaltySplits.releaseId, releaseId));
 
-      const inserted = await db.insert(royaltySplits).values(
-        splits.map(s => ({
+      const splitValues = splits.map(s => {
+        if (!s.email) {
+          logger.warn(
+            `[Distribution] Royalty split collaborator ${s.userId} has no email — ` +
+            `payouts may not be deliverable. Ask the collaborator to update their profile.`
+          );
+        }
+        return {
           releaseId,
           userId: s.userId,
           collaboratorName: s.name || s.userId,
-          collaboratorEmail: s.email || `${s.userId}@placeholder.local`,
+          collaboratorEmail: s.email || null,
           role: s.role,
           percentage: s.percentage,
           status: 'active',
-        }))
-      ).returning();
+        };
+      });
+
+      const inserted = await db.insert(royaltySplits).values(splitValues).returning();
 
       return { success: true, splitId: `split_${releaseId}`, splits: inserted };
     } catch (error: unknown) {

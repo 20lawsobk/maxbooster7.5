@@ -50,8 +50,48 @@ router.put('/', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/photo', requireAuth, async (_req, res) => {
-  res.status(501).json({ error: 'Use /api/storage/upload for direct uploads' });
+// POST /api/press-kit/photo — Add a photo URL to the press kit's photos array.
+// Upload the file first via POST /api/storage/upload, then pass the returned URL here.
+router.post('/photo', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user!.id;
+    const { url, caption } = req.body;
+
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        error: 'url is required. Upload the file first via POST /api/storage/upload, then pass the returned URL.',
+      });
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      return res.status(400).json({ error: 'url must be a valid URL' });
+    }
+
+    const [pressKit] = await db.select().from(pressKits).where(eq(pressKits.userId, userId)).limit(1);
+
+    const photos = ((pressKit?.photos as unknown[]) || []) as Array<{ url: string; caption?: string }>;
+    photos.push({ url, caption: caption || undefined });
+
+    let updated;
+    if (pressKit) {
+      [updated] = await db.update(pressKits)
+        .set({ photos, updatedAt: new Date() })
+        .where(eq(pressKits.id, pressKit.id))
+        .returning();
+    } else {
+      [updated] = await db.insert(pressKits)
+        .values({ userId, photos })
+        .returning();
+    }
+
+    res.json(updated);
+  } catch (error) {
+    logger.warn({ err: error }, '[PressKit] Failed to add photo:');
+    res.status(500).json({ error: 'Failed to add photo' });
+  }
 });
 
 router.delete('/photo/:index', requireAuth, async (req, res) => {

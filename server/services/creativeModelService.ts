@@ -832,8 +832,7 @@ async function assemblyStage(
     const jobResp = await maxcorePost('/generate-video', videoPayload, 60_000);
 
     if (!jobResp) {
-      logger.warn('[CreativeModel] Stage 6: MaxCore returned no response — using placeholder');
-      return `creative_video_${randomUUID()}_placeholder`;
+      throw new Error('[CreativeModel] Stage 6: MaxCore returned no response for video generation');
     }
 
     if (jobResp.url) {
@@ -861,8 +860,8 @@ async function assemblyStage(
     logger.warn('[CreativeModel] Stage 6: MaxCore direct video generation error', { err });
   }
 
-  logger.warn('[CreativeModel] Stage 6: All video sources exhausted — returning placeholder');
-  return `creative_video_${randomUUID()}_placeholder`;
+  logger.error('[CreativeModel] Stage 6: All video sources exhausted — DiT-24 relay and MaxCore both unavailable');
+  throw new Error('Video generation failed: all sources (DiT-24 relay, MaxCore) are currently unavailable. Please try again later.');
 }
 
 // ─── Stage 7: Engagement Scoring ──────────────────────────────────────────────

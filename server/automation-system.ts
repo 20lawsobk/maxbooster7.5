@@ -624,7 +624,7 @@ export class AutomationSystem extends EventEmitter {
       logger.warn({ err: error }, `Action execution failed: ${actionConfig.type}`);
       workflow.status = 'failed';
       workflow.endTime = Date.now();
-      workflow.error = error.message;
+      workflow.error = error instanceof Error ? error.message : String(error);
 
       this.automationMetrics.failedWorkflows++;
 

@@ -334,32 +334,45 @@ class AutoPostingService {
    */
   private async postToTikTok(token: string, content: PostContent): Promise<PostResult> {
     try {
-      // TikTok requires video content
+      // TikTok Content Posting API v2 requires video content
       if (!content.mediaUrl || content.mediaType !== 'video') {
         throw new Error('TikTok requires video content');
       }
 
+      // TikTok Content Posting API v2 (replaces deprecated v1 open-api.tiktok.com)
       const response = await axios.post(
-        'https://open-api.tiktok.com/share/video/upload/',
+        'https://open.tiktokapis.com/v2/post/publish/video/init/',
         {
-          video: {
+          post_info: {
+            title: this.formatContent(content, 2200), // TikTok caption limit
+            privacy_level: 'PUBLIC_TO_EVERYONE',
+            disable_duet: false,
+            disable_comment: false,
+            disable_stitch: false,
+          },
+          source_info: {
+            source: 'URL',
             video_url: content.mediaUrl,
-            caption: this.formatContent(content, 2200), // TikTok caption limit
           },
         },
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=UTF-8',
           },
         }
       );
 
+      const publishId = response.data?.data?.publish_id;
+      if (!publishId) {
+        throw new Error(`TikTok API returned unexpected response: ${JSON.stringify(response.data)}`);
+      }
+
       return {
         platform: 'tiktok',
         success: true,
-        postId: response.data.share_id,
-        postUrl: `https://tiktok.com/@user/video/${response.data.share_id}`,
+        postId: publishId,
+        postUrl: `https://www.tiktok.com/@/video/${publishId}`,
         postedAt: new Date(),
       };
     } catch (error: any) {
@@ -412,8 +425,18 @@ class AutoPostingService {
    */
   private async postToLinkedIn(token: string, content: PostContent): Promise<PostResult> {
     try {
+      // Resolve the authenticated user's LinkedIn person URN
+      const profileResp = await axios.get('https://api.linkedin.com/v2/userinfo', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const personId = profileResp.data?.sub;
+      if (!personId) {
+        throw new Error('Could not determine LinkedIn author URN — missing sub in userinfo response');
+      }
+      const authorUrn = `urn:li:person:${personId}`;
+
       const postData: any = {
-        author: 'urn:li:person:CURRENT_USER',
+        author: authorUrn,
         lifecycleState: 'PUBLISHED',
         specificContent: {
           'com.linkedin.ugc.ShareContent': {
@@ -432,6 +455,7 @@ class AutoPostingService {
         postData.specificContent['com.linkedin.ugc.ShareContent'].media = [
           {
             status: 'READY',
+            description: { text: this.formatContent(content, 200) },
             originalUrl: content.mediaUrl,
           },
         ];
@@ -444,6 +468,7 @@ class AutoPostingService {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
+            'X-Restli-Protocol-Version': '2.0.0',
           },
         }
       );

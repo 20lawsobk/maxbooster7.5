@@ -80,12 +80,13 @@ class DatabaseOptimizer {
       });
     } catch (error: unknown) {
       const executionTime = Date.now() - startTime;
-      logger.warn(`❌ Failed to create index ${indexName}: ${error.message}`);
+      const errMsg = error instanceof Error ? error.message : String(error);
+      logger.warn(`❌ Failed to create index ${indexName}: ${errMsg}`);
 
       this.results.push({
         indexName,
         created: false,
-        error: error.message,
+        error: errMsg,
         executionTime,
       });
     }

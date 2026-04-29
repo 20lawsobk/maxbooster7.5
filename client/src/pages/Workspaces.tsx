@@ -827,8 +827,12 @@ const workspaces = workspacesData?.workspaces || [];
             onShareWithMembers={async (memberIds, permission) => {
               workspaceOutcome.projectShared('', memberIds.length);
             }}
-            onUpdateMemberPermission={async () => {}}
-            onRemoveMember={async () => {}}
+            onUpdateMemberPermission={async (memberId, permission) => {
+              await updateMemberRoleMutation.mutateAsync({ memberId, role: permission });
+            }}
+            onRemoveMember={async (memberId) => {
+              await removeMemberMutation.mutateAsync(memberId);
+            }}
             onCreateLink={async (settings) => {
               const link = {
                 id: crypto.randomUUID(),

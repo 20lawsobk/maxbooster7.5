@@ -110,7 +110,7 @@ class DatabaseResilience extends EventEmitter {
       logger.warn(`🚨 Database circuit breaker: OPEN (${this.connectionRetryCount} failures)`);
       this.emit('circuit-breaker-open', {
         failures: this.connectionRetryCount,
-        lastError: error.message,
+        lastError: error instanceof Error ? error.message : String(error),
       });
 
       // Auto-recovery attempt after timeout
@@ -123,7 +123,7 @@ class DatabaseResilience extends EventEmitter {
     }
 
     this.emit('connection-failure', {
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       retryCount: this.connectionRetryCount,
       circuitState: this.pool.circuitBreakerState,
     });
@@ -170,7 +170,7 @@ class DatabaseResilience extends EventEmitter {
         this.pool.activeConnections--;
 
         logger.warn(
-          `⚠️  Database ${context} failed (attempt ${attempt}/${this.circuitBreaker.retryAttempts}): ${error.message}`
+          `⚠️  Database ${context} failed (attempt ${attempt}/${this.circuitBreaker.retryAttempts}): ${error instanceof Error ? error.message : String(error)}`
         );
 
         if (attempt < this.circuitBreaker.retryAttempts) {

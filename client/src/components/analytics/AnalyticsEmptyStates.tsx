@@ -120,7 +120,7 @@ export function StreamingEmptyState({ onUpload }: { onUpload?: () => void }) {
       title="No streaming data yet"
       description="Once your music is distributed and starts getting plays, you'll see your streaming analytics here."
       action={onUpload ? { label: 'Upload Music', onClick: onUpload } : undefined}
-      secondaryAction={{ label: 'Learn More', onClick: () => {} }}
+      secondaryAction={{ label: 'Learn More', onClick: () => window.open('https://support.maxbooster.app/analytics', '_blank', 'noopener,noreferrer') }}
     />
   );
 }

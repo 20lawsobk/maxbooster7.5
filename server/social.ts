@@ -556,11 +556,24 @@ export class SocialMediaService {
             results.platforms.push('Threads');
             break;
 
+          case 'TikTok':
+          case 'tiktok':
+            await this.postToTikTok(content, mediaUrl);
+            results.platforms.push('TikTok');
+            break;
+
+          case 'YouTube':
+          case 'youtube':
+            await this.postToYouTube(content, mediaUrl);
+            results.platforms.push('YouTube');
+            break;
+
           default:
-            results.errors?.push(`Platform ${platform} not yet implemented`);
+            results.errors?.push(`Platform ${platform} is not supported for direct posting`);
         }
       } catch (error: unknown) {
-        results.errors?.push(`Failed to post to ${platform}: ${error.message}`);
+        const msg = error instanceof Error ? error.message : String(error);
+        results.errors?.push(`Failed to post to ${platform}: ${msg}`);
       }
     }
 
@@ -628,8 +641,133 @@ export class SocialMediaService {
       throw new Error('LinkedIn API credentials not configured');
     }
 
-    // LinkedIn posting would require user access token from OAuth flow
-    logger.info('LinkedIn posting configured but requires user OAuth');
+    const accessToken = process.env.LINKEDIN_ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error('LinkedIn access token not available — complete OAuth flow first');
+    }
+
+    // Resolve the authenticated user's LinkedIn URN
+    const profileResp = await axios.get('https://api.linkedin.com/v2/userinfo', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    const authorUrn = profileResp.data?.sub
+      ? `urn:li:person:${profileResp.data.sub}`
+      : null;
+
+    if (!authorUrn) {
+      throw new Error('Could not determine LinkedIn author URN from access token');
+    }
+
+    const body: Record<string, unknown> = {
+      author: authorUrn,
+      lifecycleState: 'PUBLISHED',
+      specificContent: {
+        'com.linkedin.ugc.ShareContent': {
+          shareCommentary: { text: content.slice(0, 3000) },
+          shareMediaCategory: mediaUrl ? 'IMAGE' : 'NONE',
+          ...(mediaUrl
+            ? {
+                media: [
+                  {
+                    status: 'READY',
+                    description: { text: content.slice(0, 200) },
+                    originalUrl: mediaUrl,
+                  },
+                ],
+              }
+            : {}),
+        },
+      },
+      visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' },
+    };
+
+    const response = await axios.post('https://api.linkedin.com/v2/ugcPosts', body, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Restli-Protocol-Version': '2.0.0',
+      },
+    });
+
+    logger.info(`[Social] LinkedIn post created — id: ${response.data?.id}`);
+  }
+
+  private async postToTikTok(content: string, mediaUrl?: string): Promise<void> {
+    if (!process.env.TIKTOK_CLIENT_KEY || !process.env.TIKTOK_CLIENT_SECRET) {
+      throw new Error('TikTok API credentials not configured');
+    }
+
+    if (!mediaUrl) {
+      throw new Error('TikTok posts require a video URL');
+    }
+
+    // TikTok Content Posting API v2 — requires a user access token
+    // The token must be obtained via the TikTok OAuth flow (socialOAuth routes)
+    const accessToken = process.env.TIKTOK_ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error('TikTok access token not available — complete OAuth flow first');
+    }
+
+    const response = await axios.post(
+      'https://open.tiktokapis.com/v2/post/publish/video/init/',
+      {
+        post_info: {
+          title: content.slice(0, 2200),
+          privacy_level: 'PUBLIC_TO_EVERYONE',
+          disable_duet: false,
+          disable_comment: false,
+          disable_stitch: false,
+        },
+        source_info: {
+          source: 'URL',
+          video_url: mediaUrl,
+        },
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+      }
+    );
+
+    if (!response.data?.data?.publish_id) {
+      throw new Error(`TikTok API returned unexpected response: ${JSON.stringify(response.data)}`);
+    }
+
+    logger.info(`[Social] TikTok video post initiated — publish_id: ${response.data.data.publish_id}`);
+  }
+
+  private async postToYouTube(content: string, mediaUrl?: string): Promise<void> {
+    const accessToken = process.env.YOUTUBE_ACCESS_TOKEN;
+    if (!accessToken) {
+      throw new Error('YouTube access token not available — complete OAuth flow first');
+    }
+
+    // YouTube Community Post (text + optional image)
+    const postBody: Record<string, unknown> = {
+      snippet: {
+        description: content,
+      },
+    };
+
+    if (mediaUrl) {
+      (postBody.snippet as Record<string, unknown>).images = [{ url: mediaUrl }];
+    }
+
+    const response = await axios.post(
+      'https://youtube.googleapis.com/youtube/v3/communityPosts',
+      postBody,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        params: { part: 'snippet' },
+      }
+    );
+
+    logger.info(`[Social] YouTube community post created — id: ${response.data?.id}`);
   }
 
   private async postToThreads(content: string, mediaUrl?: string): Promise<void> {
