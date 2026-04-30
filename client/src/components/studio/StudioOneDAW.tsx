@@ -3341,11 +3341,6 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
   const bars = beats / timeSignatureNumerator;
   const pixelWidth = bars * pixelsPerBar;
 
-  // DEBUG: track clip rendering
-  if (durationSeconds > 0) {
-    console.log(`[AudioClipView] clip="${clip.name}" duration=${durationSeconds.toFixed(2)}s bars=${bars.toFixed(1)} pixelWidth=${pixelWidth.toFixed(0)} zoom=${zoom} tempo=${tempo} tsNum=${timeSignatureNumerator}`);
-  }
-
   const startBeats = (clip.startTime || 0) * (tempo / 60);
   const startBars = startBeats / timeSignatureNumerator;
   const left = startBars * pixelsPerBar;

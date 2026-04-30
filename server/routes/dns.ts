@@ -167,7 +167,7 @@ router.get('/resolver/status', (_req, res) => {
       roots:   13,
     });
   }).catch(() => {
-    res.json({ ok: false, error: 'Resolver module not loaded' });
+    res.status(503).json({ ok: false, error: 'Resolver module not loaded' });
   });
 });
 

@@ -5,7 +5,6 @@ import { eq, desc, like, or, sql, count, and, gte, lte } from "drizzle-orm";
 import { logger } from "../logger.js";
 import { killSwitch } from "../safety/killSwitch.js";
 import * as os from 'os';
-import * as fs from 'fs';
 import rateLimit from 'express-rate-limit';
 import { chainErrorAutoFixer } from '../services/chainErrorAutoFixer.js';
 import { platformAutoFixer } from '../services/platformAutoFixer.js';
@@ -56,7 +55,7 @@ adminRouter.use(requireAdmin);
 
 adminRouter.get("/dashboard", (req, res) => {
   const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as any;
-  res.json({ error: "Welcome to the admin dashboard!", user: safeUser });
+  res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
 });
 
 adminRouter.get("/users", async (req, res) => {
@@ -296,7 +295,7 @@ adminRouter.post("/subscriptions/lifetime", async (req, res) => {
 
     logger.info(`Admin ${req.user?.email} granted lifetime subscription to user ${userId}`);
 
-    res.json({ error: "Lifetime subscription granted." });
+    res.json({ message: "Lifetime subscription granted." });
   } catch (error) {
     logger.warn("Error granting lifetime subscription:", error);
     res.status(500).json({ error: "Failed to grant lifetime subscription" });

@@ -3447,13 +3447,8 @@ router.post('/upload', requireAuth, releaseUpload.any(), async (req: Request, re
 });
 
 // POST /api/distribution/export-report - Export report
-router.post('/export-report', requireAuth, async (req: Request, res: Response) => {
-  try {
-    res.json({ success: true, reportId: `report_${Date.now()}`, downloadUrl: null });
-  } catch (error: unknown) {
-    logger.warn({ err: error }, 'Error exporting report:');
-    res.status(500).json({ error: 'Failed to export report' });
-  }
+router.post('/export-report', requireAuth, async (_req: Request, res: Response) => {
+  res.status(501).json({ error: 'Report export is not yet available. Use the analytics dashboard to view your data.' });
 });
 
 // GET /api/distribution/codes/stats - Get code generation stats
