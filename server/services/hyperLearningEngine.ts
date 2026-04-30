@@ -31,29 +31,17 @@ function _hlKey(id: string): string {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-// ── SPRINT MODE (3-day deadline — due Friday) ─────────────────────────────────
-// Original config was calibrated for an 18-day learning window.
-// With ~3 days remaining every parameter is pushed to maximum throughput:
-//   - Owner multiplier: 3x → 6x  (sprint intensity — all hands on deck)
-//   - Combined: 24 × 6 = 144x human baseline (was 72x)
-//   - Learning interval: 5 min → 75 s (permanent max-caffeine mode)
-//   - A/B variates: 30 → 50 (more signal density per cycle)
-//   - Min impressions: 30 → 15 (faster variate elimination)
-//   - Significance threshold: 0.80 → 0.75 (faster winner selection)
-// ─────────────────────────────────────────────────────────────────────────────
 const HUMAN_BASELINE         = 1.0;
 const OWNER_LEARNING_RATE    = 24.0;   // 24x faster than average human
-const OWNER_MULTIPLIER       = 6.0;    // SPRINT: 6x owner capacity (was 3x)
-const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 144x
+const OWNER_MULTIPLIER       = 3.0;    // 3x owner capacity
+const LEARNING_MULTIPLIER    = OWNER_LEARNING_RATE * OWNER_MULTIPLIER; // = 72x
 const HUMAN_ANALYSIS_DIMENSIONS = 5;
 const HYPER_ANALYSIS_DIMENSIONS = HUMAN_ANALYSIS_DIMENSIONS * LEARNING_MULTIPLIER;
 
-// Hyper A/B testing — 50 simultaneous variates for maximum sprint signal density
-const HYPER_AB_VARIATES         = 50;
-// SPRINT: lower impressions threshold — eliminate losers faster under time pressure
-const AB_MIN_IMPRESSIONS_PER_VARIATE = 15;
-// SPRINT: slightly lower bar — 50 variates provide sufficient signal at 0.75
-const AB_SIGNIFICANCE_THRESHOLD = 0.75;
+// Hyper A/B testing — 30 simultaneous variates for signal density
+const HYPER_AB_VARIATES         = 30;
+const AB_MIN_IMPRESSIONS_PER_VARIATE = 30;
+const AB_SIGNIFICANCE_THRESHOLD = 0.80;
 // AI server for CurriculumTrainer / DiffusionTrainer dispatch
 // PEER_TRAINING_NODE env var is always set to MaxCore — localhost fallback
 // would only apply in an isolated dev environment with no env vars at all.
