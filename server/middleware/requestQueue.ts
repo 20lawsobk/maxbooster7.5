@@ -115,6 +115,24 @@ class RequestQueue {
     }
   }
 
+  // Routes that produce long-running or streamed responses — exempt from the
+  // active-processing hard timeout.
+  private static readonly STREAMING_PATH_PATTERNS = [
+    '/api/ai/',
+    '/api/stream',
+    '/api/studio/export',
+    '/api/export',
+    '/api/download',
+    '/api/upload',
+    '/api/multipart',
+    '/api/sse',
+    '/api/events',
+  ];
+
+  private isStreamingRoute(path: string): boolean {
+    return RequestQueue.STREAMING_PATH_PATTERNS.some(p => path.startsWith(p) || path.includes(p));
+  }
+
   private processRequest(queuedRequest: QueuedRequest): void {
     this.processing++;
     clearTimeout(queuedRequest.timeout);
@@ -146,6 +164,30 @@ class RequestQueue {
         release();
       }
     });
+
+    // Hard active-processing timeout: kills the request if the handler has not
+    // sent a response within 60 s.  This catches stuck handlers (e.g. an external
+    // API call with no timeout) that would otherwise hold a concurrency slot open
+    // indefinitely.  Streaming/AI routes are exempt because they can legitimately
+    // run longer and the client reads data incrementally.
+    if (!this.isStreamingRoute(queuedRequest.req.path)) {
+      const activeTimeout = setTimeout(() => {
+        if (!queuedRequest.res.headersSent) {
+          this.stats.timedOut++;
+          logger.warn(`[RequestQueue] Active handler timeout on ${queuedRequest.req.method} ${queuedRequest.req.path}`);
+          queuedRequest.res.status(503).json({
+            error: 'Gateway Timeout',
+            message: 'The server took too long to process your request. Please try again.',
+            retryAfter: 5,
+          });
+        }
+        // Always release to avoid starving the queue even if headers were already sent.
+        release();
+      }, 60_000);
+
+      queuedRequest.res.on('finish', () => clearTimeout(activeTimeout));
+      queuedRequest.res.on('close', () => clearTimeout(activeTimeout));
+    }
 
     const waitTime = Date.now() - queuedRequest.timestamp;
     queuedRequest.res.setHeader('X-Queue-Wait-Ms', waitTime);

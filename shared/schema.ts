@@ -177,7 +177,10 @@ export const studioTemplates = pgTable("studio_templates", {
   usageCount: integer("usage_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdCategoryIdx: index("studio_templates_user_id_category_idx").on(t.userId, t.category),
+  isBuiltInIdx: index("studio_templates_is_built_in_idx").on(t.isBuiltIn),
+}));
 
 export const insertStudioTemplateSchema = createInsertSchema(studioTemplates).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertStudioTemplate = z.infer<typeof insertStudioTemplateSchema>;
@@ -195,7 +198,9 @@ export const studioRecentFiles = pgTable("studio_recent_files", {
   fileType: text("file_type").default("audio"),
   accessedAt: timestamp("accessed_at").defaultNow(),
   metadata: jsonb("metadata"),
-});
+}, (t) => ({
+  userIdAccessedAtIdx: index("studio_recent_files_user_id_accessed_at_idx").on(t.userId, t.accessedAt),
+}));
 
 export const insertStudioRecentFileSchema = createInsertSchema(studioRecentFiles).omit({ id: true, accessedAt: true });
 export type InsertStudioRecentFile = z.infer<typeof insertStudioRecentFileSchema>;
@@ -211,7 +216,9 @@ export const studioPinnedFolders = pgTable("studio_pinned_folders", {
   path: text("path").notNull(),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("studio_pinned_folders_user_id_idx").on(t.userId),
+}));
 
 export const insertStudioPinnedFolderSchema = createInsertSchema(studioPinnedFolders).omit({ id: true, createdAt: true });
 export type InsertStudioPinnedFolder = z.infer<typeof insertStudioPinnedFolderSchema>;
@@ -243,7 +250,10 @@ export const studioProjects = pgTable("studio_projects", {
   lastSavedAt: timestamp("last_saved_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdUpdatedAtIdx: index("studio_projects_user_id_updated_at_idx").on(t.userId, t.updatedAt),
+  userIdStatusIdx: index("studio_projects_user_id_status_idx").on(t.userId, t.status),
+}));
 
 export const insertStudioProjectSchema = createInsertSchema(studioProjects).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertStudioProject = z.infer<typeof insertStudioProjectSchema>;
@@ -289,7 +299,10 @@ export const campaigns = pgTable("campaigns", {
   endDate: timestamp("end_date"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStatusIdx: index("campaigns_user_id_status_idx").on(t.userId, t.status),
+  userIdCreatedAtIdx: index("campaigns_user_id_created_at_idx").on(t.userId, t.createdAt),
+}));
 
 export const insertCampaignSchema = createInsertSchema(campaigns).omit({ id: true, createdAt: true });
 export type InsertCampaign = z.infer<typeof insertCampaignSchema>;
@@ -309,7 +322,10 @@ export const socialCampaigns = pgTable("social_campaigns", {
   engagement: jsonb("engagement"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStatusIdx: index("social_campaigns_user_id_status_idx").on(t.userId, t.status),
+  userIdScheduledAtIdx: index("social_campaigns_user_id_scheduled_at_idx").on(t.userId, t.scheduledAt),
+}));
 
 export const insertSocialCampaignSchema = createInsertSchema(socialCampaigns).omit({ id: true, createdAt: true });
 export type InsertSocialCampaign = z.infer<typeof insertSocialCampaignSchema>;
@@ -333,7 +349,10 @@ export const storefronts = pgTable("storefronts", {
   isPublic: boolean("is_public").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIdx: index("storefronts_user_id_idx").on(t.userId),
+  isActiveIsPublicIdx: index("storefronts_is_active_is_public_idx").on(t.isActive, t.isPublic),
+}));
 
 export const insertStorefrontSchema = createInsertSchema(storefronts).omit({
   id: true,
@@ -361,7 +380,10 @@ export const dnsRecordCache = pgTable("dns_record_cache", {
   lastSyncedAt: timestamp("last_synced_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  storefrontIdDomainIdx: index("dns_record_cache_storefront_id_domain_idx").on(t.storefrontId, t.domain),
+  domainRecordTypeIdx: index("dns_record_cache_domain_record_type_idx").on(t.domain, t.recordType),
+}));
 
 export const insertDnsRecordCacheSchema = createInsertSchema(dnsRecordCache).omit({
   id: true,
@@ -390,7 +412,10 @@ export const storefrontDomains = pgTable("storefront_domains", {
   verifiedAt: timestamp("verified_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  storefrontIdStatusIdx: index("storefront_domains_storefront_id_status_idx").on(t.storefrontId, t.status),
+  storefrontIdIsPrimaryIdx: index("storefront_domains_storefront_id_is_primary_idx").on(t.storefrontId, t.isPrimary),
+}));
 
 export const insertStorefrontDomainSchema = createInsertSchema(storefrontDomains).omit({
   id: true,
@@ -448,7 +473,9 @@ export const dnsTemplates = pgTable("dns_templates", {
   isGlobal: boolean("is_global").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIsGlobalIdx: index("dns_templates_user_id_is_global_idx").on(t.userId, t.isGlobal),
+}));
 
 export const insertDnsTemplateSchema = createInsertSchema(dnsTemplates).omit({
   id: true,
@@ -471,7 +498,9 @@ export const dnsProviderCredentials = pgTable("dns_provider_credentials", {
   lastUsedAt: timestamp("last_used_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdProviderIdx: index("dns_provider_creds_user_id_provider_idx").on(t.userId, t.provider),
+}));
 
 export const insertDnsProviderCredentialsSchema = createInsertSchema(dnsProviderCredentials).omit({
   id: true,
@@ -496,7 +525,10 @@ export const dnsZones = pgTable("dns_zones", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStatusIdx: index("dns_zones_user_id_status_idx").on(t.userId, t.status),
+  isVerifiedIdx: index("dns_zones_is_verified_idx").on(t.isVerified),
+}));
 
 export const insertDnsZoneSchema = createInsertSchema(dnsZones).omit({
   id: true,
@@ -525,7 +557,11 @@ export const dnsZoneRecords = pgTable("dns_zone_records", {
   tag: text("tag"), // for CAA records
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  zoneIdTypeIdx: index("dns_zone_records_zone_id_type_idx").on(t.zoneId, t.type),
+  userIdIdx: index("dns_zone_records_user_id_idx").on(t.userId),
+  domainTypeIdx: index("dns_zone_records_domain_type_idx").on(t.domain, t.type),
+}));
 
 export const insertDnsZoneRecordSchema = createInsertSchema(dnsZoneRecords).omit({
   id: true,
@@ -554,7 +590,9 @@ export const membershipTiers = pgTable("membership_tiers", {
   sortOrder: integer("sort_order").default(0),
   stripePriceId: text("stripe_price_id"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  storefrontIdIsActiveIdx: index("membership_tiers_storefront_id_is_active_idx").on(t.storefrontId, t.isActive),
+}));
 
 export const insertMembershipTierSchema = createInsertSchema(membershipTiers).pick({
   storefrontId: true,
@@ -589,7 +627,11 @@ export const beats = pgTable("beats", {
   plays: integer("plays").default(0),
   downloads: integer("downloads").default(0),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIsPublishedIdx: index("beats_user_id_is_published_idx").on(t.userId, t.isPublished),
+  isPublishedCreatedAtIdx: index("beats_is_published_created_at_idx").on(t.isPublished, t.createdAt),
+  genreIsPublishedIdx: index("beats_genre_is_published_idx").on(t.genre, t.isPublished),
+}));
 
 // ============================================================================
 // HYPERFOLLOW PAGES
@@ -602,7 +644,9 @@ export const hyperFollowPages = pgTable("hyperfollow_pages", {
   imageUrl: text("image_url"),
   links: jsonb("links"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdCreatedAtIdx: index("hyperfollow_pages_user_id_created_at_idx").on(t.userId, t.createdAt),
+}));
 
 // ============================================================================
 // DISTRIBUTION RELEASES
@@ -616,7 +660,10 @@ export const distroReleases = pgTable("distro_releases", {
   artworkUrl: text("artwork_url"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  artistIdStatusIdx: index("distro_releases_artist_id_status_idx").on(t.artistId, t.status),
+  artistIdCreatedAtIdx: index("distro_releases_artist_id_created_at_idx").on(t.artistId, t.createdAt),
+}));
 
 // ============================================================================
 // DISTRIBUTION TRACKS
@@ -631,7 +678,9 @@ export const distroTracks = pgTable("distro_tracks", {
   duration: integer("duration"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdTrackNumberIdx: index("distro_tracks_release_id_track_number_idx").on(t.releaseId, t.trackNumber),
+}));
 
 // ============================================================================
 // DSP PROVIDERS
@@ -658,7 +707,11 @@ export const customerMemberships = pgTable("customer_memberships", {
   startDate: timestamp("start_date").defaultNow(),
   endDate: timestamp("end_date"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  customerIdStorefrontIdIdx: index("customer_memberships_customer_id_storefront_id_idx").on(t.customerId, t.storefrontId),
+  storefrontIdStatusIdx: index("customer_memberships_storefront_id_status_idx").on(t.storefrontId, t.status),
+  customerIdStatusIdx: index("customer_memberships_customer_id_status_idx").on(t.customerId, t.status),
+}));
 
 export const insertCustomerMembershipSchema = createInsertSchema(customerMemberships).pick({
   customerId: true,
@@ -721,7 +774,10 @@ export const dmcaStrikes = pgTable("dmca_strikes", {
   reason: text("reason"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdCreatedAtIdx: index("dmca_strikes_user_id_created_at_idx").on(t.userId, t.createdAt),
+  contentIdContentTypeIdx: index("dmca_strikes_content_id_content_type_idx").on(t.contentId, t.contentType),
+}));
 
 // ============================================================================
 // LISTINGS (Marketplace)
@@ -746,7 +802,12 @@ export const listings = pgTable("listings", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStorefrontIdIdx: index("listings_user_id_storefront_id_idx").on(t.userId, t.storefrontId),
+  storefrontIdIsPublishedIdx: index("listings_storefront_id_is_published_idx").on(t.storefrontId, t.isPublished),
+  isPublishedCategoryIdx: index("listings_is_published_category_idx").on(t.isPublished, t.category),
+  userIdIsPublishedIdx: index("listings_user_id_is_published_idx").on(t.userId, t.isPublished),
+}));
 
 export const insertListingSchema = createInsertSchema(listings).omit({
   id: true,
@@ -776,7 +837,9 @@ export const listingLicenseTiers = pgTable("listing_license_tiers", {
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  listingIdIsActiveIdx: index("listing_license_tiers_listing_id_is_active_idx").on(t.listingId, t.isActive),
+}));
 
 export type ListingLicenseTier = typeof listingLicenseTiers.$inferSelect;
 
@@ -788,14 +851,20 @@ export const storefrontFollows = pgTable("storefront_follows", {
   userId: varchar("user_id").notNull(),
   storefrontId: varchar("storefront_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStorefrontIdIdx: index("storefront_follows_user_id_storefront_id_idx").on(t.userId, t.storefrontId),
+  storefrontIdIdx: index("storefront_follows_storefront_id_idx").on(t.storefrontId),
+}));
 
 export const storefrontLikes = pgTable("storefront_likes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   userId: varchar("user_id").notNull(),
   storefrontId: varchar("storefront_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStorefrontIdIdx: index("storefront_likes_user_id_storefront_id_idx").on(t.userId, t.storefrontId),
+  storefrontIdIdx: index("storefront_likes_storefront_id_idx").on(t.storefrontId),
+}));
 
 export const storefrontRatings = pgTable("storefront_ratings", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -805,7 +874,10 @@ export const storefrontRatings = pgTable("storefront_ratings", {
   review: text("review"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStorefrontIdIdx: index("storefront_ratings_user_id_storefront_id_idx").on(t.userId, t.storefrontId),
+  storefrontIdIdx: index("storefront_ratings_storefront_id_idx").on(t.storefrontId),
+}));
 
 // ============================================================================
 // BEAT LIKES (Marketplace)
@@ -815,7 +887,10 @@ export const beatLikes = pgTable("beat_likes", {
   userId: varchar("user_id").notNull(),
   beatId: varchar("beat_id").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdBeatIdIdx: index("beat_likes_user_id_beat_id_idx").on(t.userId, t.beatId),
+  beatIdIdx: index("beat_likes_beat_id_idx").on(t.beatId),
+}));
 
 // ============================================================================
 // LICENSE TEMPLATES (Marketplace)
@@ -838,7 +913,10 @@ export const licenseTemplates = pgTable("license_templates", {
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdIsActiveIdx: index("license_templates_user_id_is_active_idx").on(t.userId, t.isActive),
+  userIdTypeIdx: index("license_templates_user_id_type_idx").on(t.userId, t.type),
+}));
 
 // ============================================================================
 // STOREFRONT ORDERS (Checkout)
@@ -860,7 +938,13 @@ export const storefrontOrders = pgTable("storefront_orders", {
   isFreeItem: boolean("is_free_item").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  buyerIdStatusIdx: index("storefront_orders_buyer_id_status_idx").on(t.buyerId, t.status),
+  storefrontIdStatusCreatedAtIdx: index("storefront_orders_storefront_id_status_created_at_idx").on(t.storefrontId, t.status, t.createdAt),
+  sellerIdStatusIdx: index("storefront_orders_seller_id_status_idx").on(t.sellerId, t.status),
+  listingIdIdx: index("storefront_orders_listing_id_idx").on(t.listingId),
+  stripeSessionIdIdx: index("storefront_orders_stripe_session_id_idx").on(t.stripeSessionId),
+}));
 
 // ============================================================================
 // CONTRACT TEMPLATES (Marketplace)
@@ -876,7 +960,9 @@ export const contractTemplates = pgTable("contract_templates", {
   isDefault: boolean("is_default").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdCategoryIdx: index("contract_templates_user_id_category_idx").on(t.userId, t.category),
+}));
 
 export const insertContractTemplateSchema = createInsertSchema(contractTemplates).omit({
   id: true,
@@ -906,7 +992,10 @@ export const generatedContracts = pgTable("generated_contracts", {
   createdAt: timestamp("created_at").defaultNow(),
   expiresAt: timestamp("expires_at"),
   pdfUrl: text("pdf_url"),
-});
+}, (t) => ({
+  userIdStatusCreatedAtIdx: index("generated_contracts_user_id_status_created_at_idx").on(t.userId, t.status, t.createdAt),
+  userIdTypeIdx: index("generated_contracts_user_id_type_idx").on(t.userId, t.type),
+}));
 
 // ============================================================================
 // MARKETPLACE DISPUTES
@@ -933,7 +1022,11 @@ export const marketplaceDisputes = pgTable("marketplace_disputes", {
   resolvedAt: timestamp("resolved_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  orderIdIdx: index("marketplace_disputes_order_id_idx").on(t.orderId),
+  buyerIdStatusIdx: index("marketplace_disputes_buyer_id_status_idx").on(t.buyerId, t.status),
+  sellerIdStatusIdx: index("marketplace_disputes_seller_id_status_idx").on(t.sellerId, t.status),
+}));
 
 export const insertMarketplaceDisputeSchema = createInsertSchema(marketplaceDisputes).omit({
   id: true,
@@ -1006,7 +1099,10 @@ export const legalHolds = pgTable("legal_holds", {
   status: text("status").default("active"),
   expiresAt: timestamp("expires_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStatusIdx: index("legal_holds_user_id_status_idx").on(t.userId, t.status),
+  contentIdContentTypeIdx: index("legal_holds_content_id_content_type_idx").on(t.contentId, t.contentType),
+}));
 
 // ============================================================================
 // ISRC REGISTRY
@@ -1020,7 +1116,10 @@ export const isrcRegistry = pgTable("isrc_registry", {
   title: text("title").notNull(),
   registeredAt: timestamp("registered_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  artistIdIdx: index("isrc_registry_artist_id_idx").on(t.artistId),
+  releaseIdIdx: index("isrc_registry_release_id_idx").on(t.releaseId),
+}));
 
 // ============================================================================
 // STATUS PAGE SUBSCRIBERS
@@ -1045,7 +1144,10 @@ export const upcRegistry = pgTable("upc_registry", {
   title: text("title").notNull(),
   registeredAt: timestamp("registered_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  artistIdIdx: index("upc_registry_artist_id_idx").on(t.artistId),
+  releaseIdIdx: index("upc_registry_release_id_idx").on(t.releaseId),
+}));
 
 // ============================================================================
 // STATUS PAGE UPTIME METRICS
@@ -1058,7 +1160,9 @@ export const statusPageUptimeMetrics = pgTable("status_page_uptime_metrics", {
   downtime: integer("downtime").default(0),
   responseTime: integer("response_time"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  serviceIdDateIdx: index("status_page_uptime_metrics_service_id_date_idx").on(t.serviceId, t.date),
+}));
 
 // ============================================================================
 // CATALOG IMPORT JOBS
@@ -1076,7 +1180,9 @@ export const catalogImportJobs = pgTable("catalog_import_jobs", {
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  artistIdStatusIdx: index("catalog_import_jobs_artist_id_status_idx").on(t.artistId, t.status),
+}));
 
 // ============================================================================
 // CATALOG IMPORT ROWS
@@ -1094,7 +1200,9 @@ export const catalogImportRows = pgTable("catalog_import_rows", {
   importedTrackId: varchar("imported_track_id"),
   rawData: jsonb("raw_data"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  jobIdStatusIdx: index("catalog_import_rows_job_id_status_idx").on(t.jobId, t.status),
+}));
 
 // ============================================================================
 // RELEASE WORKFLOW REQUESTS
@@ -1109,7 +1217,10 @@ export const releaseWorkflowRequests = pgTable("release_workflow_requests", {
   processedAt: timestamp("processed_at"),
   processedBy: varchar("processed_by"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdStatusIdx: index("release_workflow_requests_release_id_status_idx").on(t.releaseId, t.status),
+  requestedByStatusIdx: index("release_workflow_requests_requested_by_status_idx").on(t.requestedBy, t.status),
+}));
 
 // ============================================================================
 // RELEASE VERSION HISTORY
@@ -1123,7 +1234,9 @@ export const releaseVersionHistory = pgTable("release_version_history", {
   changes: jsonb("changes"),
   previousData: jsonb("previous_data"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdVersionIdx: index("release_version_history_release_id_version_idx").on(t.releaseId, t.version),
+}));
 
 // ============================================================================
 // RELEASE SCHEDULED ACTIONS
@@ -1137,7 +1250,10 @@ export const releaseScheduledActions = pgTable("release_scheduled_actions", {
   metadata: jsonb("metadata"),
   executedAt: timestamp("executed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdStatusIdx: index("release_scheduled_actions_release_id_status_idx").on(t.releaseId, t.status),
+  statusScheduledForIdx: index("release_scheduled_actions_status_scheduled_for_idx").on(t.status, t.scheduledFor),
+}));
 
 // ============================================================================
 // PRE-SAVE CAMPAIGNS (Enhanced for production)
@@ -1165,7 +1281,10 @@ export const preSaveCampaigns = pgTable("pre_save_campaigns", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  userIdStatusIdx: index("pre_save_campaigns_user_id_status_idx").on(t.userId, t.status),
+  releaseIdIdx: index("pre_save_campaigns_release_id_idx").on(t.releaseId),
+}));
 
 export const insertPreSaveCampaignSchema = createInsertSchema(preSaveCampaigns).omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertPreSaveCampaign = typeof preSaveCampaigns.$inferInsert;
@@ -1191,7 +1310,10 @@ export const preSaveEntries = pgTable("pre_save_entries", {
   utmCampaign: text("utm_campaign"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  campaignIdPlatformIdx: index("pre_save_entries_campaign_id_platform_idx").on(t.campaignId, t.platform),
+  campaignIdCreatedAtIdx: index("pre_save_entries_campaign_id_created_at_idx").on(t.campaignId, t.createdAt),
+}));
 
 export const insertPreSaveEntrySchema = createInsertSchema(preSaveEntries).omit({ id: true, createdAt: true });
 export type PreSaveEntry = typeof preSaveEntries.$inferSelect;
@@ -1221,7 +1343,10 @@ export const distributionSLAMetrics = pgTable("distribution_sla_metrics", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdPlatformIdx: index("distribution_sla_metrics_release_id_platform_idx").on(t.releaseId, t.platform),
+  statusDeliveryPhaseIdx: index("distribution_sla_metrics_status_delivery_phase_idx").on(t.status, t.deliveryPhase),
+}));
 
 export const insertDistributionSLAMetricSchema = createInsertSchema(distributionSLAMetrics).omit({ id: true, createdAt: true, updatedAt: true });
 export type DistributionSLAMetric = typeof distributionSLAMetrics.$inferSelect;
@@ -1255,7 +1380,10 @@ export const contentIdRegistrations = pgTable("content_id_registrations", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  releaseIdTrackIdIdx: index("content_id_registrations_release_id_track_id_idx").on(t.releaseId, t.trackId),
+  userIdStatusIdx: index("content_id_registrations_user_id_status_idx").on(t.userId, t.status),
+}));
 
 export const insertContentIdRegistrationSchema = createInsertSchema(contentIdRegistrations).omit({ id: true, createdAt: true, updatedAt: true });
 export type ContentIdRegistration = typeof contentIdRegistrations.$inferSelect;
@@ -1322,7 +1450,11 @@ export const syncLicenseInquiries = pgTable("sync_license_inquiries", {
   responseNotes: text("response_notes"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  bySyncLicense: index("sync_license_inquiries_license_idx").on(t.syncLicenseId, t.createdAt),
+  byUser: index("sync_license_inquiries_user_idx").on(t.userId),
+  byStatus: index("sync_license_inquiries_status_idx").on(t.status),
+}));
 
 export const insertSyncLicenseInquirySchema = createInsertSchema(syncLicenseInquiries).omit({ id: true, createdAt: true });
 export type SyncLicenseInquiry = typeof syncLicenseInquiries.$inferSelect;
@@ -1358,7 +1490,11 @@ export const royaltySplits = pgTable("royalty_splits", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byRelease: index("royalty_splits_release_idx").on(t.releaseId),
+  byUser: index("royalty_splits_user_idx").on(t.userId, t.status),
+  byTrack: index("royalty_splits_track_idx").on(t.trackId),
+}));
 
 export const insertRoyaltySplitSchema = createInsertSchema(royaltySplits).omit({ id: true, createdAt: true, updatedAt: true });
 export type RoyaltySplit = typeof royaltySplits.$inferSelect;
@@ -1412,7 +1548,10 @@ export const instantPayouts = pgTable("instant_payouts", {
   metadata: jsonb("metadata"),
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("instant_payouts_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("instant_payouts_status_idx").on(t.status),
+}));
 
 // ============================================================================
 // REFUNDS (Payment Refund Tracking)
@@ -1434,7 +1573,11 @@ export const refunds = pgTable("refunds", {
   metadata: jsonb("metadata"),
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byOrder: index("refunds_order_idx").on(t.orderId),
+  byUser: index("refunds_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("refunds_status_idx").on(t.status),
+}));
 
 export type Refund = typeof refunds.$inferSelect;
 export type InsertRefund = typeof refunds.$inferInsert;
@@ -1455,7 +1598,10 @@ export const ledgerEntries = pgTable("ledger_entries", {
   description: text("description"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("ledger_entries_user_created_idx").on(t.userId, t.createdAt),
+  byReference: index("ledger_entries_reference_idx").on(t.referenceType, t.referenceId),
+}));
 
 export type LedgerEntry = typeof ledgerEntries.$inferSelect;
 export type InsertLedgerEntry = typeof ledgerEntries.$inferInsert;
@@ -1477,7 +1623,10 @@ export const taxForms = pgTable("tax_forms", {
   generatedAt: timestamp("generated_at"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUserYear: index("tax_forms_user_year_idx").on(t.userId, t.taxYear),
+  byStatus: index("tax_forms_status_idx").on(t.status),
+}));
 
 export type TaxForm = typeof taxForms.$inferSelect;
 export type InsertTaxForm = typeof taxForms.$inferInsert;
@@ -1496,7 +1645,10 @@ export const royaltyStatements = pgTable("royalty_statements", {
   status: text("status").default("available"),
   downloadUrl: text("download_url"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("royalty_statements_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("royalty_statements_status_idx").on(t.status),
+}));
 
 export type RoyaltyStatement = typeof royaltyStatements.$inferSelect;
 export type InsertRoyaltyStatement = typeof royaltyStatements.$inferInsert;
@@ -1518,7 +1670,10 @@ export const royaltyDisputes = pgTable("royalty_disputes", {
   evidenceCount: integer("evidence_count").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("royalty_disputes_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("royalty_disputes_status_idx").on(t.status),
+}));
 
 export type RoyaltyDispute = typeof royaltyDisputes.$inferSelect;
 export type InsertRoyaltyDispute = typeof royaltyDisputes.$inferInsert;
@@ -1565,7 +1720,10 @@ export const invoices = pgTable("invoices", {
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("invoices_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("invoices_status_idx").on(t.status, t.dueDate),
+}));
 
 export type Invoice = typeof invoices.$inferSelect;
 export type InsertInvoice = typeof invoices.$inferInsert;
@@ -1587,7 +1745,10 @@ export const splitPayments = pgTable("split_payments", {
   failureReason: text("failure_reason"),
   processedAt: timestamp("processed_at"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byOrder: index("split_payments_order_idx").on(t.orderId),
+  byCollaborator: index("split_payments_collaborator_idx").on(t.collaboratorId, t.status),
+}));
 
 export type SplitPayment = typeof splitPayments.$inferSelect;
 export type InsertSplitPayment = typeof splitPayments.$inferInsert;
@@ -1606,7 +1767,9 @@ export const kycDocuments = pgTable("kyc_documents", {
   expiresAt: timestamp("expires_at"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("kyc_documents_user_idx").on(t.userId, t.status),
+}));
 
 // ============================================================================
 // NOTIFICATIONS
@@ -1621,7 +1784,10 @@ export const notifications = pgTable("notifications", {
   actionUrl: text("action_url"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUserCreated: index("notifications_user_created_idx").on(t.userId, t.createdAt),
+  byUserRead: index("notifications_user_read_idx").on(t.userId, t.isRead),
+}));
 
 // ============================================================================
 // PUSH SUBSCRIPTIONS (Web Push Notifications)
@@ -1635,7 +1801,9 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("push_subscriptions_user_idx").on(t.userId),
+}));
 
 // ============================================================================
 // SUPPORT TICKETS
@@ -1655,7 +1823,11 @@ export const supportTickets = pgTable("support_tickets", {
   resolvedAt: timestamp("resolved_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("support_tickets_user_idx").on(t.userId, t.createdAt),
+  byStatus: index("support_tickets_status_idx").on(t.status, t.priority),
+  byAssigned: index("support_tickets_assigned_idx").on(t.assignedTo, t.status),
+}));
 
 export type SupportTicket = typeof supportTickets.$inferSelect;
 export type InsertSupportTicket = typeof supportTickets.$inferInsert;
@@ -1681,7 +1853,11 @@ export const securityThreats = pgTable("security_threats", {
   resolvedAt: timestamp("resolved_at"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  bySourceIp: index("security_threats_source_ip_idx").on(t.sourceIp, t.detectedAt),
+  bySeverityStatus: index("security_threats_severity_status_idx").on(t.severity, t.status),
+  byUser: index("security_threats_user_idx").on(t.userId, t.detectedAt),
+}));
 
 export type SecurityThreat = typeof securityThreats.$inferSelect;
 export type InsertSecurityThreat = typeof securityThreats.$inferInsert;
@@ -1754,7 +1930,10 @@ export const audioClips = pgTable("audio_clips", {
   warpSettings: jsonb("warp_settings"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byProject: index("audio_clips_project_idx").on(t.projectId),
+  byTrack: index("audio_clips_track_idx").on(t.trackId),
+}));
 
 // ============================================================================
 // MARKERS (Studio Timeline)
@@ -1807,7 +1986,11 @@ export const workspaceAuditLog = pgTable("workspace_audit_log", {
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byWorkspace: index("workspace_audit_log_workspace_idx").on(t.workspaceId, t.createdAt),
+  byUser: index("workspace_audit_log_user_idx").on(t.userId, t.createdAt),
+  byResource: index("workspace_audit_log_resource_idx").on(t.resourceType, t.resourceId),
+}));
 
 export const insertWorkspaceAuditLogSchema = createInsertSchema(workspaceAuditLog).omit({ id: true, createdAt: true });
 export type InsertWorkspaceAuditLog = z.infer<typeof insertWorkspaceAuditLogSchema>;
@@ -1827,7 +2010,10 @@ export const apiKeys = pgTable("api_keys", {
   expiresAt: timestamp("expires_at"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byUser: index("api_keys_user_idx").on(t.userId, t.isActive),
+  byKeyHash: index("api_keys_key_hash_idx").on(t.keyHash),
+}));
 
 // ============================================================================
 // DSP ANALYTICS
@@ -1846,7 +2032,11 @@ export const dspAnalytics = pgTable("dsp_analytics", {
   listeners: integer("listeners").default(0),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byRelease: index("dsp_analytics_release_platform_date_idx").on(t.releaseId, t.platform, t.date),
+  byUser: index("dsp_analytics_user_idx").on(t.userId, t.date),
+  byTrack: index("dsp_analytics_track_idx").on(t.trackId, t.date),
+}));
 
 // ============================================================================
 // TYPE EXPORTS
@@ -1912,7 +2102,13 @@ export const orders = pgTable("orders", {
   stripePaymentIntentId: text("stripe_payment_intent_id"),
   metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow(),
-});
+}, (t) => ({
+  byBuyer: index("orders_buyer_idx").on(t.userId, t.createdAt),
+  bySeller: index("orders_seller_idx").on(t.sellerId, t.createdAt),
+  byListing: index("orders_listing_idx").on(t.listingId),
+  byStatus: index("orders_status_idx").on(t.status, t.createdAt),
+  byStripeIntent: index("orders_stripe_intent_idx").on(t.stripePaymentIntentId),
+}));
 
 // ============================================================================
 // KYC VERIFICATIONS

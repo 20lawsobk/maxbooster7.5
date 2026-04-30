@@ -181,15 +181,20 @@ declare module "express-session" {
 // Session middleware is configured in the async initialization block below
 // to support Redis session store for production
 
+// Global JSON body limit: 1 MB is generous for API payloads and prevents
+// memory-exhaustion DoS from crafted large request bodies.  Routes that
+// genuinely need larger bodies (studio project auto-save, AI file ingest)
+// register their own express.json({ limit: '10mb' }) middleware inline.
 app.use(
   express.json({
-    limit: '10mb',
+    limit: '1mb',
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
   }),
 );
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+// URL-encoded forms (contact pages, simple forms) — keep the same 1 MB cap.
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // Serve client/public static files (sw.js, manifest.json, etc.) early — before
 // session/PDIM middleware so the service worker and PWA assets are always available.

@@ -1,4 +1,4 @@
-import { Router, Request, Response } from 'express';
+import express, { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { promises as fsPromises } from 'fs';
 import path from 'path';
@@ -566,7 +566,7 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
   }
 });
 
-router.post('/projects/:projectId/save-daw-state', requireAuth, async (req: Request, res: Response) => {
+router.post('/projects/:projectId/save-daw-state', requireAuth, express.json({ limit: '10mb' }), async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
     const userId = (req as any).user.id;
@@ -1399,7 +1399,7 @@ router.get('/tracks/:trackId/automation', requireAuth, async (req: Request, res:
   }
 });
 
-router.put('/tracks/:trackId/automation', requireAuth, async (req: Request, res: Response) => {
+router.put('/tracks/:trackId/automation', requireAuth, express.json({ limit: '10mb' }), async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
     const userId = (req as any).user.id;
