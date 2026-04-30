@@ -156,7 +156,6 @@ class HyperLearningEngine extends EventEmitter {
   private pendingTrainingSignals: Record<string, unknown>[] = [];
   
   // Baseline interval — Caffeine Mode compresses this dynamically via applyDeadlinePressure()
-  // Sprint deadline fires pressure > 1.5 at startup → 75-second cycles automatically
   private readonly LEARNING_INTERVAL_MS = 5 * 60 * 1000;
   private readonly MICRO_PATTERN_THRESHOLD = 0.15;
   private readonly CROSS_PLATFORM_MIN_OVERLAP = 0.3;
@@ -168,7 +167,7 @@ class HyperLearningEngine extends EventEmitter {
 
   constructor() {
     super();
-    logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (${OWNER_MULTIPLIER}x owner · ${OWNER_LEARNING_RATE}x baseline) [SPRINT MODE]`);
+    logger.info(`🧠 HyperLearning Engine initialized — ${LEARNING_MULTIPLIER}x human capacity (${OWNER_MULTIPLIER}x owner · ${OWNER_LEARNING_RATE}x baseline)`);
   }
 
   private initializeMetrics(): LearningMetrics {
