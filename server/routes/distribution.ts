@@ -3446,9 +3446,68 @@ router.post('/upload', requireAuth, releaseUpload.any(), async (req: Request, re
   }
 });
 
-// POST /api/distribution/export-report - Export report
-router.post('/export-report', requireAuth, async (_req: Request, res: Response) => {
-  res.status(501).json({ error: 'Report export is not yet available. Use the analytics dashboard to view your data.' });
+// POST /api/distribution/export-report - Export CSV report of all user's releases + tracks
+router.post('/export-report', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const userId = req.user!.id;
+
+    // Fetch all releases for this user
+    const releases = await db
+      .select()
+      .from(distroReleases)
+      .where(eq(distroReleases.artistId, userId))
+      .orderBy(desc(distroReleases.createdAt));
+
+    // Count tracks per release
+    const trackCounts = await db
+      .select({ releaseId: distroTracks.releaseId, count: count() })
+      .from(distroTracks)
+      .where(inArray(distroTracks.releaseId, releases.length > 0 ? releases.map(r => r.id) : ['__none__']))
+      .groupBy(distroTracks.releaseId);
+
+    const trackCountMap = new Map(trackCounts.map(t => [t.releaseId, Number(t.count)]));
+
+    // RFC 4180 CSV escaping
+    const csvEscape = (val: unknown): string => {
+      const s = val == null ? '' : String(val);
+      if (s.includes('"') || s.includes(',') || s.includes('\n') || s.includes('\r')) {
+        return `"${s.replace(/"/g, '""')}"`;
+      }
+      return s;
+    };
+
+    const headers = [
+      'Release ID', 'Title', 'Artist', 'Genre', 'Release Date',
+      'Status', 'Track Count', 'Platforms', 'Created At',
+    ];
+
+    const rows = releases.map(release => {
+      const meta = (release.metadata ?? {}) as Record<string, unknown>;
+      const platforms = Array.isArray(meta.platforms) ? (meta.platforms as unknown[]).length : 0;
+      return [
+        release.id,
+        release.title,
+        meta.artistName ?? '',
+        meta.primaryGenre ?? '',
+        release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : '',
+        release.status ?? 'draft',
+        trackCountMap.get(release.id) ?? 0,
+        platforms,
+        release.createdAt ? new Date(release.createdAt).toISOString().split('T')[0] : '',
+      ].map(csvEscape).join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\r\n');
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="distribution-report-${dateStr}.csv"`);
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(csv);
+  } catch (error: unknown) {
+    logger.warn({ err: error }, 'Error exporting distribution report:');
+    res.status(500).json({ error: 'Failed to generate distribution report' });
+  }
 });
 
 // GET /api/distribution/codes/stats - Get code generation stats

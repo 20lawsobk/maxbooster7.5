@@ -238,6 +238,23 @@ export default function Admin() {
     refetchInterval: 30000,
   });
 
+  const { data: dnsResolverStatus, isError: dnsResolverError, refetch: refetchDnsResolver } = useQuery<{
+    ok: boolean; cache?: { size: number; maxSize: number }; version?: string; type?: string; roots?: number; error?: string;
+  }>({
+    queryKey: ['/api/dns/resolver/status'],
+    enabled: !!user,
+    refetchInterval: 60000,
+    retry: 1,
+    queryFn: async () => {
+      const res = await fetch('/api/dns/resolver/status', { credentials: 'include' });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { ok: false, error: body.error || 'Resolver unavailable' };
+      }
+      return res.json();
+    },
+  });
+
   const { data: moderationReports, isLoading: moderationLoading, refetch: refetchModeration } = useQuery({
     queryKey: ['/api/admin/moderation/reports', { status: moderationFilter }],
     enabled: !!user,
@@ -966,6 +983,60 @@ export default function Admin() {
               </CardContent>
             </Card>
           </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="flex items-center gap-2">
+                <Wifi className="h-5 w-5" />
+                DNS Resolver Status
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => refetchDnsResolver()} className="h-8 px-2">
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {dnsResolverError || dnsResolverStatus?.ok === false ? (
+                <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <XCircle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+                  <div>
+                    <p className="font-medium text-red-800">Resolver Unavailable</p>
+                    <p className="text-sm text-red-600 mt-1">
+                      {dnsResolverStatus?.error || 'The recursive DNS resolver module failed to load. Public DNS resolution is degraded. Restart the server to reload it.'}
+                    </p>
+                  </div>
+                </div>
+              ) : dnsResolverStatus?.ok ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Status</span>
+                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+                      <CheckCircle className="h-3 w-3 mr-1" /> Operational
+                    </Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Resolver Type</span>
+                    <span className="font-medium text-sm">{dnsResolverStatus.type ?? 'iterative'} · {dnsResolverStatus.roots ?? 13} root servers</span>
+                  </div>
+                  {dnsResolverStatus.cache && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <span>Cache Entries</span>
+                      <span className="font-medium">
+                        {dnsResolverStatus.cache.size.toLocaleString()} / {dnsResolverStatus.cache.maxSize.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <span>Version</span>
+                    <span className="font-medium text-sm">{dnsResolverStatus.version ?? '1.0.0'}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-4 text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span className="text-sm">Checking resolver status...</span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
