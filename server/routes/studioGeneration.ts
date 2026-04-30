@@ -11,6 +11,7 @@ import { studioSamples } from '../../shared/schema.js';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 
@@ -506,7 +507,7 @@ router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req,
   const tmpPath = path.join(os.tmpdir(), `pitch_${Date.now()}.${ext}`);
 
   try {
-    fs.writeFileSync(tmpPath, file.buffer);
+    await fsPromises.writeFile(tmpPath, file.buffer);
 
     let stdout = '';
     let stderr = '';

@@ -22,6 +22,7 @@ import { notificationService } from '../services/notificationService.js';
 import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import os from 'os';
 
 interface AuthenticatedUser {
@@ -2284,7 +2285,7 @@ router.post('/fingerprint/check', requireAuth, upload.single('audio'), async (re
     let tmpPath: string | null = null;
     if (file) {
       tmpPath = path.join(os.tmpdir(), `fp_check_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
-      fs.writeFileSync(tmpPath, file.buffer);
+      await fsPromises.writeFile(tmpPath, file.buffer);
       audioPath = tmpPath;
     }
     if (!audioPath) {
@@ -2339,7 +2340,7 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
     }
 
     const tmpPath = path.join(os.tmpdir(), `fp_gen_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
-    fs.writeFileSync(tmpPath, file.buffer);
+    await fsPromises.writeFile(tmpPath, file.buffer);
 
     let fingerprint: any;
     try {

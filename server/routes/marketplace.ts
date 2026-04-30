@@ -3,6 +3,7 @@ import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import crypto from 'crypto';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import os from 'os';
 import { z } from 'zod';
 import { discoveryAlgorithmService } from '../services/discoveryAlgorithmService';
@@ -1199,7 +1200,7 @@ router.post('/upload', upload.fields([
       const tmpPath = path.join(os.tmpdir(), `beat_autotag_${listing.id}${ext}`);
       setImmediate(async () => {
         try {
-          fs.writeFileSync(tmpPath, audioBuffer);
+          await fsPromises.writeFile(tmpPath, audioBuffer);
           const available = await pythonAIService.isAvailable();
           if (available) {
             const analysis = await pythonAIService.analyzeAudio(tmpPath, false);
@@ -1216,7 +1217,7 @@ router.post('/upload', upload.fields([
         } catch (tagErr) {
           logger.warn('[AutoTag] Failed to auto-tag beat:', tagErr);
         } finally {
-          try { fs.unlinkSync(tmpPath); } catch { /* intentional: temp-file cleanup */ }
+          fsPromises.unlink(tmpPath).catch(() => { /* intentional: temp-file cleanup */ });
         }
       });
     }
@@ -1352,8 +1353,8 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
     const LOCAL_STORAGE_DIR = path.resolve('./uploads/files');
     const localPath = path.join(LOCAL_STORAGE_DIR, fileKey.replace(/\//g, path.sep));
 
-    if (fs.existsSync(localPath)) {
-      const stat = fs.statSync(localPath);
+    try {
+      const stat = await fsPromises.stat(localPath);
       const fileSize = stat.size;
       const range = req.headers.range;
 
@@ -1375,6 +1376,8 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
         fs.createReadStream(localPath).pipe(res);
       }
       return;
+    } catch {
+      // File not on local disk — fall through to PDIM
     }
 
     // Fallback: load from PDIM into buffer (for files not yet written to disk)

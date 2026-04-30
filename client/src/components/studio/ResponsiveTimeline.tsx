@@ -125,34 +125,6 @@ export function ResponsiveTimeline({
         {children}
       </div>
       
-      {/* eslint-disable-next-line no-constant-binary-expression */}
-      {false && (
-        <div
-          className="absolute bottom-2 right-2 flex items-center gap-2 px-2 py-1 rounded-lg"
-          style={{ background: 'rgba(0,0,0,0.6)' }}
-        >
-          <button
-            onClick={() => onZoomChange(Math.max(0.25, zoomLevel * 0.8))}
-            className="w-8 h-8 rounded flex items-center justify-center bg-white/10 active:bg-white/20 touch-manipulation"
-            style={{ color: studioOneTheme.colors.text.primary }}
-          >
-            −
-          </button>
-          <span
-            className="text-xs font-mono min-w-[40px] text-center"
-            style={{ color: studioOneTheme.colors.text.secondary }}
-          >
-            {Math.round(zoomLevel * 100)}%
-          </span>
-          <button
-            onClick={() => onZoomChange(Math.min(5, zoomLevel * 1.25))}
-            className="w-8 h-8 rounded flex items-center justify-center bg-white/10 active:bg-white/20 touch-manipulation"
-            style={{ color: studioOneTheme.colors.text.primary }}
-          >
-            +
-          </button>
-        </div>
-      )}
     </div>
   );
 }

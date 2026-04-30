@@ -1,4 +1,5 @@
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import { Router, Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
@@ -2519,10 +2520,8 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
           // Cache to disk after full stream
           const buf = Buffer.concat(chunks);
           if (buf.length > 10_240) {
-            if (!fs.existsSync(path.join(process.cwd(), 'uploads', 'videos'))) {
-              fs.mkdirSync(path.join(process.cwd(), 'uploads', 'videos'), { recursive: true });
-            }
-            fs.writeFileSync(localPath, buf);
+            await fsPromises.mkdir(path.join(process.cwd(), 'uploads', 'videos'), { recursive: true });
+            await fsPromises.writeFile(localPath, buf);
             logger.info(`[VideoProxy] Cached ${filename} to disk (${(buf.length / 1024).toFixed(0)} KB)`);
           }
         } catch { nodeStream.destroy(); }
