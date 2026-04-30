@@ -4,6 +4,7 @@ import { db } from '../db';
 import { projects, studioTracks, audioClips } from '@shared/schema';
 import { eq } from 'drizzle-orm';
 import * as fs from 'fs';
+import fsPromises from 'fs/promises';
 import * as path from 'path';
 import { PocketDimensionManager } from '../pocket-dimension/index.js';
 
@@ -182,9 +183,7 @@ class OfflineModeService extends EventEmitter {
 
   private async downloadAudioFile(audioUrl: string, projectId: string, clipId: string): Promise<{ localPath: string; size: number }> {
     const projectAudioDir = path.join(OFFLINE_AUDIO_DIR, projectId);
-    if (!fs.existsSync(projectAudioDir)) {
-      fs.mkdirSync(projectAudioDir, { recursive: true });
-    }
+    await fsPromises.mkdir(projectAudioDir, { recursive: true });
 
     const ext = path.extname(audioUrl) || '.wav';
     const localFilename = `${clipId}${ext}`;
@@ -197,7 +196,7 @@ class OfflineModeService extends EventEmitter {
           throw new Error(`HTTP error: ${response.status}`);
         }
         const buffer = Buffer.from(await response.arrayBuffer());
-        fs.writeFileSync(localPath, buffer);
+        await fsPromises.writeFile(localPath, buffer);
         return { localPath, size: buffer.length };
       } catch (error) {
         logger.warn({ err: error }, `Failed to download audio from URL ${audioUrl}:`);

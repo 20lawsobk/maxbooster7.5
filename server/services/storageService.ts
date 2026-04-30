@@ -8,7 +8,7 @@
 
 import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
-import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 
 export interface StorageProvider {
@@ -26,11 +26,8 @@ function localFilePath(key: string): string {
   return path.join(LOCAL_STORAGE_DIR, key.replace(/\//g, path.sep));
 }
 
-function ensureLocalDir(filePath: string): void {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+async function ensureLocalDir(filePath: string): Promise<void> {
+  await fsPromises.mkdir(path.dirname(filePath), { recursive: true });
 }
 
 /**
@@ -76,8 +73,8 @@ class PocketDimensionStorageProvider implements StorageProvider {
     // Write to local filesystem first (durable)
     try {
       const localPath = localFilePath(key);
-      ensureLocalDir(localPath);
-      fs.writeFileSync(localPath, file);
+      await ensureLocalDir(localPath);
+      await fsPromises.writeFile(localPath, file);
     } catch (fsErr) {
       logger.warn(`[Storage] Local filesystem write failed for key=${key}:`, fsErr);
     }
@@ -104,8 +101,10 @@ class PocketDimensionStorageProvider implements StorageProvider {
 
     // Fall back to local filesystem
     const localPath = localFilePath(key);
-    if (fs.existsSync(localPath)) {
-      return fs.readFileSync(localPath);
+    try {
+      return await fsPromises.readFile(localPath);
+    } catch {
+      // file not on disk either
     }
 
     throw new Error(`File not found: ${key}`);
@@ -114,12 +113,11 @@ class PocketDimensionStorageProvider implements StorageProvider {
   async deleteFile(key: string): Promise<void> {
     // Delete from local filesystem
     try {
-      const localPath = localFilePath(key);
-      if (fs.existsSync(localPath)) {
-        fs.unlinkSync(localPath);
+      await fsPromises.unlink(localFilePath(key));
+    } catch (fsErr: any) {
+      if (fsErr.code !== 'ENOENT') {
+        logger.warn(`[StorageService] local deleteFile failed for key=${key}:`, fsErr);
       }
-    } catch (fsErr) {
-      logger.warn(`[StorageService] local deleteFile failed for key=${key}:`, fsErr);
     }
 
     // Delete from PDIM

@@ -1,4 +1,5 @@
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';
 import { PocketDimensionManager } from '../pocket-dimension/index.js';
@@ -20,7 +21,7 @@ class ModelWeightStorage {
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    fs.mkdirSync(WEIGHTS_DIR, { recursive: true });
+    await fsPromises.mkdir(WEIGHTS_DIR, { recursive: true });
     try {
       const manager = PocketDimensionManager.getInstance('./pocket-dimensions');
       this.pocket = await manager.openPocket(POCKET_ID, {
@@ -53,7 +54,7 @@ class ModelWeightStorage {
       try {
         const data = await this.pocket.read(this.pocketPath(name));
         if (data && data.length > 0) {
-          this._writeLocalFile(name, data);
+          await this._writeLocalFile(name, data);
           logger.info(`[WeightStorage] Restored ${name} from Pocket Dimension → local cache`);
           return true;
         }
@@ -70,7 +71,7 @@ class ModelWeightStorage {
     const json = JSON.stringify(data, null, 2);
     const buf = Buffer.from(json, 'utf-8');
 
-    this._writeLocalFile(name, buf);
+    await this._writeLocalFile(name, buf);
 
     if (this.pocket) {
       try {
@@ -93,9 +94,9 @@ class ModelWeightStorage {
     }
   }
 
-  private _writeLocalFile(name: string, buf: Buffer): void {
-    fs.mkdirSync(WEIGHTS_DIR, { recursive: true });
-    fs.writeFileSync(this.localPath(name), buf);
+  private async _writeLocalFile(name: string, buf: Buffer): Promise<void> {
+    await fsPromises.mkdir(WEIGHTS_DIR, { recursive: true });
+    await fsPromises.writeFile(this.localPath(name), buf);
   }
 }
 

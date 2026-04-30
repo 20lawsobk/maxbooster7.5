@@ -10,9 +10,9 @@ import { db } from '../db.js';
 import { studioSamples } from '../../shared/schema.js';
 import os from 'os';
 import path from 'path';
-import fs from 'fs';
 import fsPromises from 'fs/promises';
 import { execFile } from 'child_process';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import { promisify } from 'util';
 
 const execFileAsync = promisify(execFile);
@@ -87,7 +87,7 @@ const audioGenerationSchema = z.object({
   bars: z.number().int().positive().optional(),
 });
 
-router.post('/text', requireAuth, async (req, res) => {
+router.post('/text', requireAuth, aiRateLimiter, async (req, res) => {
   try {
     const validatedData = textGenerationSchema.parse(req.body);
     
@@ -186,7 +186,7 @@ router.post('/text', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/audio', requireAuth, upload.single('audio'), async (req, res) => {
+router.post('/audio', requireAuth, aiRateLimiter, upload.single('audio'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ 
@@ -393,7 +393,7 @@ router.get('/pattern/stats', requireAuth, async (_req, res) => {
   }
 });
 
-router.post('/pattern/melody', requireAuth, async (req, res) => {
+router.post('/pattern/melody', requireAuth, aiRateLimiter, async (req, res) => {
   try {
     const validation = patternGenerationSchema.safeParse(req.body);
     if (!validation.success) {
@@ -416,7 +416,7 @@ router.post('/pattern/melody', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/pattern/drums', requireAuth, async (req, res) => {
+router.post('/pattern/drums', requireAuth, aiRateLimiter, async (req, res) => {
   try {
     const validation = patternGenerationSchema.safeParse(req.body);
     if (!validation.success) {
@@ -439,7 +439,7 @@ router.post('/pattern/drums', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/pattern/chords', requireAuth, async (req, res) => {
+router.post('/pattern/chords', requireAuth, aiRateLimiter, async (req, res) => {
   try {
     const validation = patternGenerationSchema.safeParse(req.body);
     if (!validation.success) {
@@ -462,7 +462,7 @@ router.post('/pattern/chords', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/pattern/arrangement', requireAuth, async (req, res) => {
+router.post('/pattern/arrangement', requireAuth, aiRateLimiter, async (req, res) => {
   try {
     const validation = patternGenerationSchema.safeParse(req.body);
     if (!validation.success) {
@@ -496,7 +496,7 @@ router.post('/pattern/arrangement', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/audio-to-melody', requireAuth, upload.single('audio'), async (req, res) => {
+router.post('/audio-to-melody', requireAuth, aiRateLimiter, upload.single('audio'), async (req, res) => {
   const file = (req as any).file as Express.Multer.File | undefined;
   if (!file) {
     return res.status(400).json({ error: 'No audio file provided' });

@@ -1,7 +1,7 @@
 import { spawn } from 'child_process';
 import { logger } from '../../logger.js';
 import cron from 'node-cron';
-import fs from 'fs';
+import fsPromises from 'fs/promises';
 import { storageService } from '../storageService.js';
 import { env } from '../../config/env.js';
 
@@ -205,7 +205,7 @@ export class DatabaseBackupService {
     const tmpPath = `/tmp/restore-${Date.now()}.sql`;
     try {
       const buf = await storageService.downloadFile(key);
-      fs.writeFileSync(tmpPath, buf);
+      await fsPromises.writeFile(tmpPath, buf);
 
       await new Promise<void>((resolve, reject) => {
         const psql = spawn('psql', [env.DATABASE_URL || '', '-f', tmpPath], { env: process.env });
@@ -222,7 +222,7 @@ export class DatabaseBackupService {
         psql.on('error', reject);
       });
     } finally {
-      try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+      try { await fsPromises.unlink(tmpPath); } catch { /* ignore */ }
     }
   }
 

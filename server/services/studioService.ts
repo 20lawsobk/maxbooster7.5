@@ -6,7 +6,6 @@ import type {
   StudioTrack,
 } from '@shared/schema';
 
-import fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';
@@ -853,12 +852,8 @@ export class StudioService {
       const fileName = `${frozenId}${ext}`;
       const uploadPath = path.join(process.cwd(), 'uploads', 'audio', fileName);
 
-      const audioDir = path.join(process.cwd(), 'uploads', 'audio');
-      if (!fs.existsSync(audioDir)) {
-        fs.mkdirSync(audioDir, { recursive: true });
-      }
-
-      fs.renameSync(file.path, uploadPath);
+      await fsPromises.mkdir(path.join(process.cwd(), 'uploads', 'audio'), { recursive: true });
+      await fsPromises.rename(file.path, uploadPath);
 
       const frozenFilePath = `/uploads/audio/${fileName}`;
 
@@ -888,9 +883,7 @@ export class StudioService {
       const frozenFilePath = (track as { frozenFilePath?: string }).frozenFilePath;
       if (frozenFilePath) {
         const frozenPath = path.join(process.cwd(), frozenFilePath);
-        if (fs.existsSync(frozenPath)) {
-          fs.unlinkSync(frozenPath);
-        }
+        try { await fsPromises.unlink(frozenPath); } catch (e: any) { if (e.code !== 'ENOENT') throw e; }
       }
 
       await storageAny.updateStudioTrack(trackId, projectId, {

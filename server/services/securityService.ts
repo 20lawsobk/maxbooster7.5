@@ -1,6 +1,6 @@
 import { randomBytes } from 'crypto';
 
-import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';
 import { db } from '../db.js';
@@ -385,26 +385,22 @@ export class SecurityService {
 
   private async writeAuditLogToFile(log: AuditLog): Promise<void> {
     const logDir = path.join(process.cwd(), 'logs');
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
+    await fsPromises.mkdir(logDir, { recursive: true });
 
     const logFile = path.join(logDir, 'audit.log');
     const logEntry = `${log.timestamp.toISOString()} | ${log.userId} | ${log.action} | ${log.resource} | ${JSON.stringify(log.metadata)}\n`;
 
-    fs.appendFileSync(logFile, logEntry);
+    await fsPromises.appendFile(logFile, logEntry);
   }
 
   private async writeIncidentToFile(incident: SecurityIncident): Promise<void> {
     const logDir = path.join(process.cwd(), 'logs');
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
+    await fsPromises.mkdir(logDir, { recursive: true });
 
     const logFile = path.join(logDir, 'security.log');
     const logEntry = `${incident.createdAt.toISOString()} | ${incident.severity} | ${incident.title} | ${incident.description}\n`;
 
-    fs.appendFileSync(logFile, logEntry);
+    await fsPromises.appendFile(logFile, logEntry);
   }
 
   private async sendIncidentAlert(incident: SecurityIncident): Promise<void> {
