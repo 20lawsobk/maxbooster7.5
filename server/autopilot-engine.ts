@@ -151,9 +151,23 @@ export class AutopilotEngine extends EventEmitter {
     // Start the job scheduler
     this.schedulerInterval = setInterval(() => {
       this.processJobs();
+      this.pruneCompletedJobs();
     }, 60000); // Check every minute
 
     logger.info('Autopilot started with config:', this.config);
+  }
+
+  /** Remove completed/failed jobs older than 24 h to prevent the Map growing unbounded. */
+  private pruneCompletedJobs(): void {
+    const cutoff = Date.now() - 86_400_000;
+    for (const [id, job] of this.jobs.entries()) {
+      if (
+        (job.status === 'completed' || job.status === 'failed') &&
+        job.scheduledAt.getTime() < cutoff
+      ) {
+        this.jobs.delete(id);
+      }
+    }
   }
 
   async stop(): Promise<void> {

@@ -53,8 +53,19 @@ function resolveStyleName(opts: VideoGenOptions): string {
 /**
  * Maps filename → absolute MaxCore URL for the video-proxy route.
  * Populated when local caching fails so the proxy can still serve the video.
+ * Capped at MAX_URL_STORE_SIZE entries (oldest evicted first) to prevent
+ * unbounded memory growth in long-running production deployments.
  */
+const MAX_URL_STORE_SIZE = 500;
 export const maxcoreVideoUrlStore = new Map<string, string>();
+
+function urlStoreSet(filename: string, url: string): void {
+  if (maxcoreVideoUrlStore.size >= MAX_URL_STORE_SIZE) {
+    const firstKey = maxcoreVideoUrlStore.keys().next().value;
+    if (firstKey !== undefined) maxcoreVideoUrlStore.delete(firstKey);
+  }
+  maxcoreVideoUrlStore.set(filename, url);
+}
 
 function maxcoreAuthHeaders(): Record<string, string> {
   return {
@@ -175,7 +186,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
 
   // Register the raw MaxCore URL for the proxy route regardless of what happens below
   const absoluteForProxy = rawUrl.startsWith('http') ? rawUrl : `${MAXCORE_ORIGIN}${rawUrl}`;
-  maxcoreVideoUrlStore.set(filename, absoluteForProxy);
+  urlStoreSet(filename, absoluteForProxy);
 
   try {
     await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
@@ -207,7 +218,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
 
         await fsPromises.writeFile(localPath, buffer);
         logger.info(`[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
-        maxcoreVideoUrlStore.set(filename, url);
+        urlStoreSet(filename, url);
         return `/uploads/videos/${filename}`;
       } catch (err: any) {
         logger.info(`[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err.message}`);

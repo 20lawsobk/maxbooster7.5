@@ -10,6 +10,7 @@ import { socialInboxMessages, socialMentions, socialKeywords, socialAccounts, po
 import { eq, and, desc, gte, or, inArray, isNull, isNotNull } from 'drizzle-orm';
 import { syncPlatformData } from '../services/socialSyncService';
 import { requireAuth, requireAuthOnly } from '../middleware/auth.js';
+import { aiRateLimiter } from '../middleware/rateLimiter.js';
 import { notificationService } from '../services/notificationService.js';
 import { audioUpload, artworkUpload, mediaUpload } from '../middleware/uploadHandler.js';
 import {
@@ -2163,7 +2164,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
   }
 });
 
-router.post('/generate-video', requireAuthOnly, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/generate-video', requireAuthOnly, aiRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       hook: rawHook, body: rawBody, cta: rawCta,
@@ -2583,7 +2584,7 @@ router.get('/video-templates', requireAuthOnly, async (_req: AuthenticatedReques
   }
 });
 
-router.post('/veo-campaign', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/veo-campaign', requireAuth, aiRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const {
       title, artist, album, story, mood, era, references,
@@ -2630,7 +2631,7 @@ router.post('/veo-campaign', requireAuth, async (req: AuthenticatedRequest, res:
   }
 });
 
-router.post('/veo-campaign/single', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/veo-campaign/single', requireAuth, aiRateLimiter, async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { title, artist, platform, mood, story, lyrics, tone } = req.body;
 
