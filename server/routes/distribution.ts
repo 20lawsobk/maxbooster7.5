@@ -1308,11 +1308,9 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
       if (err && !res.headersSent) {
         logger.warn({ err: err }, 'Error downloading DDEX package:');
       }
-      try {
-        fs.unlinkSync(outputPath);
-      } catch (cleanupErr) {
+      fsPromises.unlink(outputPath).catch((cleanupErr) => {
         logger.warn('Failed to clean up DDEX temp file:', cleanupErr);
-      }
+      });
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating DDEX package:');

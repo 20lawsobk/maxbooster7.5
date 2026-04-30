@@ -2374,8 +2374,8 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
   //    Minimum 10 KB: MaxCore's SPA returns ~683-byte HTML pages for unknown paths.
   //    Anything smaller than 10 KB is a corrupted/HTML cache entry — skip and re-proxy.
   const localPath = path.join(process.cwd(), 'uploads', 'videos', filename);
-  if (fs.existsSync(localPath)) {
-    const stat = fs.statSync(localPath);
+  try {
+    const stat = await fsPromises.stat(localPath);
     if (stat.size > 10_240) {
       res.setHeader('Content-Type', 'video/mp4');
       res.setHeader('Cache-Control', 'public, max-age=86400');
@@ -2384,7 +2384,9 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
     }
     // Corrupted/HTML entry — delete it so we re-fetch from MaxCore
     logger.warn(`[VideoProxy] Local cache entry ${filename} is too small (${stat.size} bytes) — deleting stale cache`);
-    fs.unlinkSync(localPath);
+    await fsPromises.unlink(localPath).catch(() => { /* intentional: stale cache cleanup */ });
+  } catch {
+    // File not on local disk — fall through to MaxCore proxy
   }
 
   // 2. Try to fetch from MaxCore using stored URL or candidate paths
