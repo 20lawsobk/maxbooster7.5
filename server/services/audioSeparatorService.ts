@@ -16,6 +16,7 @@
 
 import path from 'path';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import os from 'os';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
@@ -65,7 +66,7 @@ async function uploadLocalFile(
   category: string,
   contentType: string,
 ): Promise<{ key: string; url: string }> {
-  const buffer = fs.readFileSync(filePath);
+  const buffer = await fsPromises.readFile(filePath);
   const filename = path.basename(filePath);
   const key = await storageService.uploadFile(buffer, category, filename, contentType);
   return { key, url: `/api/marketplace/audio/${key}` };
@@ -118,14 +119,16 @@ export async function processUploadedBeat(
 ): Promise<AudioSeparationResult> {
   const localWavPath = localFilePath(audioKey);
 
-  if (!fs.existsSync(localWavPath)) {
+  try {
+    await fsPromises.access(localWavPath);
+  } catch {
     logger.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
     return { stemsAvailable: false };
   }
 
   const modes = resolveModes(licenseType);
   const tmpDir = path.join(os.tmpdir(), `audio_sep_${listingId}`);
-  fs.mkdirSync(tmpDir, { recursive: true });
+  await fsPromises.mkdir(tmpDir, { recursive: true });
 
   logger.info(`[AudioSeparator] Processing beat ${listingId} — MP3=${modes.mp3} stems=${modes.stems}`);
 
@@ -135,7 +138,8 @@ export async function processUploadedBeat(
     const result: AudioSeparationResult = { stemsAvailable: false };
 
     // ── Upload MP3 ─────────────────────────────────────────────────────────
-    if (output.mp3 && fs.existsSync(output.mp3)) {
+    const mp3Accessible = output.mp3 ? await fsPromises.access(output.mp3).then(() => true).catch(() => false) : false;
+    if (output.mp3 && mp3Accessible) {
       const { key, url } = await uploadLocalFile(output.mp3, 'beats-mp3', 'audio/mpeg');
       result.mp3Key = key;
       result.mp3Url = url;
@@ -148,8 +152,12 @@ export async function processUploadedBeat(
       const stemInserts = [];
 
       for (const [name, filePath] of Object.entries(output.stems)) {
-        if (!fs.existsSync(filePath)) continue;
-        const fileSize = fs.statSync(filePath).size;
+        let fileSize: number;
+        try {
+          fileSize = (await fsPromises.stat(filePath)).size;
+        } catch {
+          continue;
+        }
         const { key, url } = await uploadLocalFile(filePath, 'beats-stems', 'audio/wav');
         stemUrls[name] = url;
 

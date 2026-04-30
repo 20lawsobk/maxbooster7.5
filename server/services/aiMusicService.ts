@@ -386,7 +386,8 @@ export class AIMusicService {
         const primaryClip = clips[0];
         const inputPath = path.join(process.cwd(), primaryClip.filePath);
 
-        if (fs.existsSync(inputPath) && track) {
+        const inputAccessible = await fsPromises.access(inputPath).then(() => true).catch(() => false);
+        if (inputAccessible && track) {
           const processedDir = path.join(process.cwd(), 'uploads', 'processed');
           await fsPromises.mkdir(processedDir, { recursive: true });
 
@@ -797,7 +798,8 @@ export class AIMusicService {
         const primaryClip = clips[0];
         const inputPath = path.join(process.cwd(), primaryClip.filePath);
 
-        if (fs.existsSync(inputPath) && track) {
+        const inputAccessible = await fsPromises.access(inputPath).then(() => true).catch(() => false);
+        if (inputAccessible && track) {
           const normalizedDir = path.join(process.cwd(), 'uploads', 'normalized');
           await fsPromises.mkdir(normalizedDir, { recursive: true });
 
@@ -2019,7 +2021,8 @@ export class AIMusicService {
       const primaryClip = clips[0];
       const audioPath = path.join(process.cwd(), primaryClip.filePath);
 
-      if (!fs.existsSync(audioPath)) {
+      const audioAccessible = await fsPromises.access(audioPath).then(() => true).catch(() => false);
+      if (!audioAccessible) {
         logger.warn(`Audio file not found at ${audioPath}, generating simulated audio buffer`);
         return this.generateSimulatedAudioBuffer(
           primaryClip.duration || 30,

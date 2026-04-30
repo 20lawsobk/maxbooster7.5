@@ -10,7 +10,8 @@
 
 import { execFile, execFileSync } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { existsSync } from 'fs';
+import fsPromises from 'fs/promises';
 import { randomBytes } from 'crypto';
 import path from 'path';
 import os from 'os';
@@ -118,7 +119,7 @@ async function tryGenerateTTS(text: string, maxDur: number): Promise<string | nu
   for (const bin of ['espeak-ng', 'espeak']) {
     try {
       await execFileAsync(bin, espeakArgs, { timeout: 12_000 });
-      if (existsSync(outPath)) {
+      if (await fsPromises.access(outPath).then(() => true).catch(() => false)) {
         logger.info(`[AudioGen] TTS via ${bin} — ${clean.length} chars`);
         return outPath;
       }
@@ -134,7 +135,7 @@ async function tryGenerateTTS(text: string, maxDur: number): Promise<string | nu
       '-ar', '44100', '-ac', '2',
       outPath,
     ], { timeout: 20_000 });
-    if (existsSync(outPath)) {
+    if (await fsPromises.access(outPath).then(() => true).catch(() => false)) {
       logger.info('[AudioGen] TTS via FFmpeg flite');
       return outPath;
     }
@@ -145,7 +146,7 @@ async function tryGenerateTTS(text: string, maxDur: number): Promise<string | nu
 }
 
 export async function generateAudio(opts: AudioGenOptions = {}): Promise<AudioGenResult> {
-  if (!existsSync(AUDIO_DIR)) mkdirSync(AUDIO_DIR, { recursive: true });
+  await fsPromises.mkdir(AUDIO_DIR, { recursive: true });
 
   const genre    = (opts.genre || 'default').toLowerCase().replace(/[\s/]/g, '-');
   const profile  = AUDIO_PROFILES[genre] || AUDIO_PROFILES['default'];
@@ -201,16 +202,16 @@ export async function generateAudio(opts: AudioGenOptions = {}): Promise<AudioGe
   } catch (err) {
     if (voPath) {
       logger.warn('[AudioGen] First attempt failed (possibly bad TTS file), retrying music-bed only');
-      try { unlinkSync(voPath); } catch { /* intentional: temp voiceover cleanup */ }
+      fsPromises.unlink(voPath).catch(() => { /* intentional: temp voiceover cleanup */ });
       await execFileAsync(FFMPEG, build(false), { timeout: 60_000 });
     } else {
       throw err;
     }
   }
 
-  if (voPath) { try { unlinkSync(voPath); } catch { /* intentional: temp voiceover cleanup */ } }
+  if (voPath) { fsPromises.unlink(voPath).catch(() => { /* intentional: temp voiceover cleanup */ }); }
 
-  if (!existsSync(outputPath)) {
+  if (!await fsPromises.access(outputPath).then(() => true).catch(() => false)) {
     return { success: false, error: 'FFmpeg produced no output file' };
   }
 

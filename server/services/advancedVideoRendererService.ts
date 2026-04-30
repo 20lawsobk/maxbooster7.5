@@ -6,6 +6,7 @@
  */
 
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';
 import type { VideoGenOptions, VideoGenResult } from './videoGeneratorService.js';
@@ -178,9 +179,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
   maxcoreVideoUrlStore.set(filename, absoluteForProxy);
 
   try {
-    if (!fs.existsSync(LOCAL_VIDEO_DIR)) {
-      fs.mkdirSync(LOCAL_VIDEO_DIR, { recursive: true });
-    }
+    await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
 
     const candidates = candidateUrls(rawUrl);
     for (const url of candidates) {
@@ -207,7 +206,7 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
           continue;
         }
 
-        fs.writeFileSync(localPath, buffer);
+        await fsPromises.writeFile(localPath, buffer);
         logger.info(`[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
         maxcoreVideoUrlStore.set(filename, url);
         return `/uploads/videos/${filename}`;
@@ -394,12 +393,10 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
       try {
         const mp4Buf = Buffer.from(data.mp4_b64, 'base64');
         if (looksLikeRealVideo(mp4Buf)) {
-          if (!fs.existsSync(LOCAL_VIDEO_DIR)) {
-            fs.mkdirSync(LOCAL_VIDEO_DIR, { recursive: true });
-          }
+          await fsPromises.mkdir(LOCAL_VIDEO_DIR, { recursive: true });
           const filename = `relay_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.mp4`;
           const localPath = path.join(LOCAL_VIDEO_DIR, filename);
-          fs.writeFileSync(localPath, mp4Buf);
+          await fsPromises.writeFile(localPath, mp4Buf);
           logger.info(
             `[RelayTier] Saved relay MP4 to disk: ${filename} ` +
             `(${(mp4Buf.length / 1024).toFixed(0)} KB, backend=${data.backend || 'unetv5'})`
