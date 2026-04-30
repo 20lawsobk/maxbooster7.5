@@ -5,7 +5,6 @@
  * No local FFmpeg fallback. No Python AI fallback.
  */
 
-import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
 import { logger } from '../logger.js';

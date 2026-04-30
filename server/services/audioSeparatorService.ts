@@ -15,7 +15,6 @@
  */
 
 import path from 'path';
-import fs from 'fs';
 import fsPromises from 'fs/promises';
 import os from 'os';
 import { execFile } from 'child_process';
@@ -119,9 +118,7 @@ export async function processUploadedBeat(
 ): Promise<AudioSeparationResult> {
   const localWavPath = localFilePath(audioKey);
 
-  try {
-    await fsPromises.access(localWavPath);
-  } catch {
+  if (!(await fsPromises.access(localWavPath).then(() => true).catch(() => false))) {
     logger.warn(`[AudioSeparator] WAV file not found on disk: ${localWavPath}`);
     return { stemsAvailable: false };
   }
@@ -138,8 +135,7 @@ export async function processUploadedBeat(
     const result: AudioSeparationResult = { stemsAvailable: false };
 
     // ── Upload MP3 ─────────────────────────────────────────────────────────
-    const mp3Accessible = output.mp3 ? await fsPromises.access(output.mp3).then(() => true).catch(() => false) : false;
-    if (output.mp3 && mp3Accessible) {
+    if (output.mp3 && (await fsPromises.access(output.mp3).then(() => true).catch(() => false))) {
       const { key, url } = await uploadLocalFile(output.mp3, 'beats-mp3', 'audio/mpeg');
       result.mp3Key = key;
       result.mp3Url = url;
@@ -152,12 +148,8 @@ export async function processUploadedBeat(
       const stemInserts = [];
 
       for (const [name, filePath] of Object.entries(output.stems)) {
-        let fileSize: number;
-        try {
-          fileSize = (await fsPromises.stat(filePath)).size;
-        } catch {
-          continue;
-        }
+        if (!(await fsPromises.access(filePath).then(() => true).catch(() => false))) continue;
+        const fileSize = (await fsPromises.stat(filePath)).size;
         const { key, url } = await uploadLocalFile(filePath, 'beats-stems', 'audio/wav');
         stemUrls[name] = url;
 
@@ -252,7 +244,7 @@ export async function processUploadedBeat(
   } finally {
     // Clean up temp files
     try {
-      fs.rmSync(tmpDir, { recursive: true, force: true });
+      await fsPromises.rm(tmpDir, { recursive: true, force: true });
     } catch { /* intentional: temp-dir cleanup, rmSync failure is non-fatal */ }
   }
 }

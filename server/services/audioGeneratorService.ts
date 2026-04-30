@@ -202,16 +202,16 @@ export async function generateAudio(opts: AudioGenOptions = {}): Promise<AudioGe
   } catch (err) {
     if (voPath) {
       logger.warn('[AudioGen] First attempt failed (possibly bad TTS file), retrying music-bed only');
-      fsPromises.unlink(voPath).catch(() => { /* intentional: temp voiceover cleanup */ });
+      try { await fsPromises.unlink(voPath); } catch { /* intentional: temp voiceover cleanup */ }
       await execFileAsync(FFMPEG, build(false), { timeout: 60_000 });
     } else {
       throw err;
     }
   }
 
-  if (voPath) { fsPromises.unlink(voPath).catch(() => { /* intentional: temp voiceover cleanup */ }); }
+  if (voPath) { try { await fsPromises.unlink(voPath); } catch { /* intentional: temp voiceover cleanup */ } }
 
-  if (!await fsPromises.access(outputPath).then(() => true).catch(() => false)) {
+  if (!(await fsPromises.access(outputPath).then(() => true).catch(() => false))) {
     return { success: false, error: 'FFmpeg produced no output file' };
   }
 
