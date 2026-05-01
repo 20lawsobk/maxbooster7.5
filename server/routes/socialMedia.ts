@@ -1547,6 +1547,41 @@ function getOptimalPostTime(platform: string): string {
   return optimalTimes[platform] || 'Today at 12:00 PM';
 }
 
+/**
+ * Validate that a user-supplied URL is safe to fetch from the server.
+ * Blocks loopback, private, link-local, and cloud-metadata addresses to
+ * prevent Server-Side Request Forgery (SSRF) attacks.
+ */
+function assertSafeExternalUrl(raw: string): void {
+  let parsed: URL;
+  try { parsed = new URL(raw); } catch { throw Object.assign(new Error('Invalid URL'), { status: 400 }); }
+  if (!['http:', 'https:'].includes(parsed.protocol)) {
+    throw Object.assign(new Error('Only http/https URLs are permitted'), { status: 400 });
+  }
+  const h = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, ''); // strip IPv6 brackets
+  const blocked = [
+    /^localhost$/i,
+    /^127\./,                             // 127.0.0.0/8  loopback
+    /^0\.0\.0\.0$/,
+    /^::1$/,
+    /^fc00:/i, /^fd/i,                    // IPv6 unique-local
+    /^fe80:/i,                            // IPv6 link-local
+    /^10\./,                              // 10.0.0.0/8   private
+    /^172\.(1[6-9]|2\d|3[01])\./,        // 172.16.0.0/12 private
+    /^192\.168\./,                        // 192.168.0.0/16 private
+    /^169\.254\./,                        // 169.254.0.0/16 link-local + AWS/GCP metadata
+    /^100\.64\./,                         // 100.64.0.0/10 CGNAT
+    /^198\.51\.100\./,                    // TEST-NET-2
+    /^203\.0\.113\./,                     // TEST-NET-3
+    /metadata\.google\.internal$/i,
+    /\.internal$/i,
+    /\.local$/i,
+  ];
+  if (blocked.some(re => re.test(h))) {
+    throw Object.assign(new Error('URL resolves to a restricted network range'), { status: 400 });
+  }
+}
+
 // Helper function to fetch and extract metadata from any URL
 async function extractUrlMetadata(url: string): Promise<{
   title: string;
@@ -1554,6 +1589,8 @@ async function extractUrlMetadata(url: string): Promise<{
   type: string;
   contentType: string;
 }> {
+  // Guard against SSRF: reject private/loopback/metadata addresses before fetching.
+  assertSafeExternalUrl(url);
   try {
     const response = await fetch(url, {
       headers: {

@@ -117,7 +117,7 @@ export async function audit(entry: Omit<AuditEntry, 'id' | 'timestamp'>): Promis
 async function writeToWAL(entry: AuditEntry): Promise<void> {
   try {
     const walFile = path.join(WAL_PATH, `${entry.id}.json`);
-    fs.writeFileSync(walFile, JSON.stringify(entry), 'utf8');
+    await fs.promises.writeFile(walFile, JSON.stringify(entry), 'utf8');
   } catch (error) {
     logger.warn({ err: error }, '[Audit] Failed to write to WAL:');
   }
@@ -184,9 +184,9 @@ function removeFromWAL(entryId: string): void {
  */
 async function recoverWAL(): Promise<void> {
   try {
-    if (!fs.existsSync(WAL_PATH)) return;
+    try { await fs.promises.access(WAL_PATH); } catch { return; }
 
-    const files = fs.readdirSync(WAL_PATH).filter(f => f.endsWith('.json'));
+    const files = (await fs.promises.readdir(WAL_PATH)).filter(f => f.endsWith('.json'));
     
     if (files.length > 0) {
       logger.info(`[Audit] Recovering ${files.length} pending audit entries from WAL`);
@@ -194,7 +194,7 @@ async function recoverWAL(): Promise<void> {
 
     for (const file of files) {
       try {
-        const content = fs.readFileSync(path.join(WAL_PATH, file), 'utf8');
+        const content = await fs.promises.readFile(path.join(WAL_PATH, file), 'utf8');
         const entry = JSON.parse(content) as AuditEntry;
         walBuffer.push(entry);
       } catch (error) {

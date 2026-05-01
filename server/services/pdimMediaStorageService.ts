@@ -23,7 +23,8 @@
  * the user's content library, quota usage, and PDIM namespace are correct.
  */
 
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
+import { readFile as fsReadFile } from 'fs/promises';
 import { createHash }               from 'crypto';
 import { logger }                   from '../logger.js';
 import { hybridStorageService }     from './hybridStorageService.js';
@@ -37,9 +38,10 @@ const VOICE_META_TTL  = 60 * 60 * 48;       // 48 hours
 const VIDEO_META_TTL  = 60 * 60 * 48;       // 48 hours
 
 // ── HELPERS ───────────────────────────────────────────────────────────────────
-function fileHash(filePath: string): string {
+// async — readFileSync would block the event loop for multi-MB audio files
+async function fileHash(filePath: string): Promise<string> {
   try {
-    const buf = readFileSync(filePath);
+    const buf = await fsReadFile(filePath);
     return createHash('sha256').update(buf).digest('hex').slice(0, 32);
   } catch {
     return createHash('sha256').update(filePath + Date.now()).digest('hex').slice(0, 32);
@@ -72,7 +74,7 @@ async function pdimGet(key: string): Promise<string | null> {
  * Avoids re-running expensive FFmpeg/librosa analysis on the same file.
  */
 export async function cacheBeatAnalysis(audioPath: string, analysis: BeatAnalysis): Promise<void> {
-  const hash = fileHash(audioPath);
+  const hash = await fileHash(audioPath);
   await pdimSet(`beat:${hash}`, JSON.stringify(analysis), BEAT_CACHE_TTL);
   logger.debug(`[PDIM Media] Cached beat analysis for ${hash}`);
 }
@@ -82,7 +84,7 @@ export async function cacheBeatAnalysis(audioPath: string, analysis: BeatAnalysi
  * Returns null if cache miss or PDIM unavailable.
  */
 export async function getCachedBeatAnalysis(audioPath: string): Promise<BeatAnalysis | null> {
-  const hash = fileHash(audioPath);
+  const hash = await fileHash(audioPath);
   const cached = await pdimGet(`beat:${hash}`);
   if (!cached) return null;
   try {
@@ -126,7 +128,7 @@ export async function storeVoiceFile(
   }
 
   try {
-    const buffer   = readFileSync(filePath);
+    const buffer   = await fsReadFile(filePath);
     const filename = filePath.split('/').pop() || `voice_${Date.now()}.wav`;
     const ext      = filename.split('.').pop()?.toLowerCase() || 'wav';
     const mimeType = ext === 'mp3' ? 'audio/mpeg' : 'audio/wav';
@@ -209,7 +211,7 @@ export async function storeMusicVideo(
   }
 
   try {
-    const buffer   = readFileSync(filePath);
+    const buffer   = await fsReadFile(filePath);
     const filename = filePath.split('/').pop() || `musicvideo_${Date.now()}.mp4`;
 
     const result = await hybridStorageService.upload(
