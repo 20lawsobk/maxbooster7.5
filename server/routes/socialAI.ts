@@ -540,7 +540,8 @@ router.post('/ai-content/multilingual', requireAuth, async (req: AuthenticatedRe
     // Accept both field naming conventions:
     // Frontend sends { prompt, language, culturalAdaptation }
     // Spec also accepts { content, targetLanguages, headline, hashtags, platform }
-    const content: string = req.body.content || req.body.prompt || '';
+    const MAX_CONTENT_CHARS = 5_000;
+    const content: string = (req.body.content || req.body.prompt || '').toString().slice(0, MAX_CONTENT_CHARS);
     const rawLangs = req.body.targetLanguages ?? (req.body.language ? [req.body.language] : null);
     const targetLanguages: string[] = Array.isArray(rawLangs) ? rawLangs : [];
     const { headline, hashtags, platform } = req.body;

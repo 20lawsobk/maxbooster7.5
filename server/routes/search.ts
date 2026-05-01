@@ -50,6 +50,7 @@ interface TrendingSearch {
 
 const trendingSearchesCache: TrendingSearch[] = [];
 const autocompleteCache = new Map<string, string[]>();
+const MAX_AUTOCOMPLETE_CACHE = 2_000; // cap total entries; each key expires via setTimeout
 
 function levenshteinDistance(a: string, b: string): number {
   const matrix: number[][] = [];
@@ -475,8 +476,12 @@ router.get('/autocomplete', async (req: Request, res: Response) => {
         ...genres.map(g => g.genre).filter(Boolean),
       ] as string[];
       
+      // Evict oldest entry if at capacity before inserting
+      if (autocompleteCache.size >= MAX_AUTOCOMPLETE_CACHE) {
+        const oldest = autocompleteCache.keys().next().value;
+        if (oldest) autocompleteCache.delete(oldest);
+      }
       autocompleteCache.set(cacheKey, cachedSuggestions);
-      
       setTimeout(() => autocompleteCache.delete(cacheKey), 5 * 60 * 1000);
     }
     

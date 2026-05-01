@@ -77,8 +77,45 @@ interface AccessRequest {
   respondedAt?: Date;
 }
 
-const sessions = new Map<string, Map<string, PresenceInfo>>();
+// ── Bounded in-memory state ────────────────────────────────────────────────
+// Both Maps are capped and swept so they cannot grow unboundedly.
+const MAX_SESSIONS  = 50_000; // max concurrent project sessions held in memory
+const MAX_CONFLICTS = 10_000; // max project IDs tracked for conflict history
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours idle → evict session
+
+/** sessionId → (userId → PresenceInfo) */
+const sessions  = new Map<string, Map<string, PresenceInfo>>();
+/** projectId → ConflictResolution[] (each array already capped at 500 entries) */
 const conflicts = new Map<string, ConflictResolution[]>();
+
+/** Remove idle sessions and trim both Maps to their capacity caps. */
+function sweepCollaborationMaps(): void {
+  const cutoff = Date.now() - SESSION_TTL_MS;
+  for (const [sid, presence] of sessions) {
+    const lastActive = Math.max(0, ...[...presence.values()].map(p => new Date(p.lastActive).getTime()));
+    if (lastActive < cutoff) sessions.delete(sid);
+  }
+  // If still over cap after TTL sweep, drop oldest-inserted entries (FIFO)
+  if (sessions.size > MAX_SESSIONS) {
+    const excess = sessions.size - MAX_SESSIONS;
+    let dropped = 0;
+    for (const key of sessions.keys()) {
+      sessions.delete(key);
+      if (++dropped >= excess) break;
+    }
+  }
+  if (conflicts.size > MAX_CONFLICTS) {
+    const excess = conflicts.size - MAX_CONFLICTS;
+    let dropped = 0;
+    for (const key of conflicts.keys()) {
+      conflicts.delete(key);
+      if (++dropped >= excess) break;
+    }
+  }
+}
+// Sweep every 30 minutes — low overhead, catches stale collaboration sessions
+const _collabSweepTimer = setInterval(sweepCollaborationMaps, 30 * 60 * 1000);
+_collabSweepTimer.unref(); // do not block process exit
 
 const COLORS = [
   '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6',
@@ -173,6 +210,13 @@ router.get('/presence/:sessionId', requireAuth, async (req: AuthenticatedRequest
         role: 'owner',
       };
       
+      // Enforce cap at insertion time — don't wait for the 30-min sweep.
+      if (sessions.size >= MAX_SESSIONS) sweepCollaborationMaps();
+      if (sessions.size >= MAX_SESSIONS) {
+        // Still over cap after sweep — evict the oldest entry to make room.
+        const oldest = sessions.keys().next().value;
+        if (oldest) sessions.delete(oldest);
+      }
       const newSession = new Map<string, PresenceInfo>();
       newSession.set(req.user!.id, initialPresence);
       sessions.set(sessionId, newSession);

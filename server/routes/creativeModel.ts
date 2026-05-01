@@ -112,7 +112,8 @@ router.post('/score', async (req: Request, res: Response) => {
   }
 
   const plan: CreativePlan | undefined = req.body.plan;
-  const script: string = req.body.script ?? '';
+  const MAX_SCRIPT_CHARS = 10_000;
+  const script: string = (req.body.script ?? '').toString().slice(0, MAX_SCRIPT_CHARS);
 
   if (!plan || !Array.isArray(plan.beats)) {
     return res.status(400).json({ error: 'plan with beats array is required' });

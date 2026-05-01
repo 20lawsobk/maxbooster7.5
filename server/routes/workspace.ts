@@ -625,12 +625,15 @@ router.get('/:id/audit/export', requireAuth, requireWorkspaceAdmin, async (req: 
         `${log.id},${log.action},${log.resourceType || ''},${log.resourceId || ''},${log.userId},${log.userName || ''},${log.createdAt}`
       ).join('\n');
       
+      // Strip non-safe characters to prevent HTTP response splitting via header injection.
+      const safeId = req.params.id.replace(/[^a-zA-Z0-9_\-]/g, '').slice(0, 64);
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${req.params.id}.csv`);
+      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${safeId}.csv`);
       res.send(csvHeaders + csvRows);
     } else {
+      const safeId = req.params.id.replace(/[^a-zA-Z0-9_\-]/g, '').slice(0, 64);
       res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${req.params.id}.json`);
+      res.setHeader('Content-Disposition', `attachment; filename=audit-log-${safeId}.json`);
       res.json({ logs: filteredLogs, exportedAt: new Date().toISOString() });
     }
   } catch (error) {

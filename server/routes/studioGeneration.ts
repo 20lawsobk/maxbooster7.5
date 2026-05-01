@@ -63,27 +63,27 @@ const upload = createHardenedUpload({
 });
 
 const textGenerationSchema = z.object({
-  text: z.string().optional().default(''),
-  projectId: z.string().optional(),
+  text: z.string().max(500).optional().default(''), // fed to AI — cap to prevent prompt injection
+  projectId: z.string().max(64).optional(),
   duration: z.number().positive().optional(),
   bars: z.number().int().positive().optional(),
-  instrumentType: z.string().optional(),
+  instrumentType: z.string().max(64).optional(),
   instrumentCategory: z.enum(['melodic', 'drums', 'percussion']).optional(),
-  genre: z.string().optional(),
-  genreCategory: z.string().optional(),
-  style: z.string().optional(),
+  genre: z.string().max(64).optional(),
+  genreCategory: z.string().max(64).optional(),
+  style: z.string().max(64).optional(),
   tempo: z.number().int().min(40).max(240).optional(),
-  key: z.string().optional(),
-  scale: z.string().optional(),
+  key: z.string().max(8).optional(),
+  scale: z.string().max(32).optional(),
   complexity: z.number().min(0).max(1).optional(),
   swing: z.number().min(0).max(1).optional(),
   humanize: z.number().min(0).max(1).optional(),
 });
 
 const audioGenerationSchema = z.object({
-  targetType: z.string().optional(),
-  text: z.string().optional(),
-  projectId: z.string().optional(),
+  targetType: z.string().max(64).optional(),
+  text: z.string().max(500).optional(),  // fed to AI — cap to prevent prompt injection / cost abuse
+  projectId: z.string().max(64).optional(),
   bars: z.number().int().positive().optional(),
 });
 

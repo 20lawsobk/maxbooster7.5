@@ -739,7 +739,7 @@ router.post('/send-verification-email', requireAuth, async (req: any, res) => {
         html: `<h2>Email Verification</h2><p>Click the link below to verify your email address:</p><p><a href="${verificationUrl}">Verify Email</a></p><p>This link expires in 24 hours.</p>`,
       });
     } catch (emailError) {
-      logger.warn('Email service unavailable, verification token generated:', token);
+      logger.warn('Email service unavailable — verification email not sent (token not logged).');
     }
 
     res.json({ success: true, message: 'Verification email sent' });
