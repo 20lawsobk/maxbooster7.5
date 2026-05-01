@@ -178,7 +178,16 @@ router.patch('/lookalike-audiences/:id', requireAuth, async (req: AuthenticatedR
     if (idx === -1) {
       return res.status(404).json({ error: 'Audience not found' });
     }
-    existing[idx] = { ...existing[idx], ...req.body, id };
+    const { name, sourceAudience, targetPlatforms, estimatedSize, status } = req.body;
+    existing[idx] = {
+      ...existing[idx],
+      ...(name            !== undefined && { name }),
+      ...(sourceAudience  !== undefined && { sourceAudience }),
+      ...(targetPlatforms !== undefined && { targetPlatforms }),
+      ...(estimatedSize   !== undefined && { estimatedSize }),
+      ...(status          !== undefined && { status }),
+      id,
+    };
     await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: existing as any })
       .onConflictDoUpdate({ target: systemSettings.key, set: { value: existing as any } });
     res.json(existing[idx]);
@@ -410,7 +419,26 @@ router.post('/configure', requireAuth, async (req: AuthenticatedRequest, res) =>
   try {
     const userId = req.user!.id;
     const existing = await storage.getAdvertisingAutopilotConfig(userId);
-    const config = { ...(existing || {}), ...req.body };
+    // Extract only known autopilot config fields — never spread the entire body.
+    const {
+      enabled, platforms, campaignObjective, campaignFrequency, brandVoice,
+      contentTypes, mediaTypes, targetAudience, ageMin, ageMax, interests,
+      locations, budgetOptimization, dailyBudgetLimit, viralOptimization,
+      algorithmicTargeting, autoPublish, optimalTimesOnly,
+      crossPlatformCampaigns, engagementThreshold,
+      minConfidenceThreshold, autoAnalyzeBeforePosting,
+    } = req.body;
+    const patch = Object.fromEntries(
+      Object.entries({
+        enabled, platforms, campaignObjective, campaignFrequency, brandVoice,
+        contentTypes, mediaTypes, targetAudience, ageMin, ageMax, interests,
+        locations, budgetOptimization, dailyBudgetLimit, viralOptimization,
+        algorithmicTargeting, autoPublish, optimalTimesOnly,
+        crossPlatformCampaigns, engagementThreshold,
+        minConfidenceThreshold, autoAnalyzeBeforePosting,
+      }).filter(([, v]) => v !== undefined)
+    );
+    const config = { ...(existing || {}), ...patch };
     await storage.saveAdvertisingAutopilotConfig(userId, config);
     logger.info(`⚙️ Advertising autopilot configured for user ${userId}`);
     res.json({ success: true, message: 'Advertising autopilot configuration updated', config });

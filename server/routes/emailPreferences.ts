@@ -100,19 +100,47 @@ router.get('/api/emails/track/:id/open', async (req: Request, res: Response) => 
   }
 });
 
+const EMAIL_CLICK_FALLBACK = 'https://maxbooster.ai/dashboard';
+const ALLOWED_REDIRECT_HOSTS = new Set([
+  'maxbooster.ai',
+  'www.maxbooster.ai',
+  'max-booster.com',
+  'www.max-booster.com',
+  'app.maxbooster.ai',
+]);
+
+function sanitizeEmailRedirect(raw: unknown): string {
+  if (typeof raw !== 'string' || !raw) return EMAIL_CLICK_FALLBACK;
+  // Allow relative paths (no host = same origin)
+  if (raw.startsWith('/') && !raw.startsWith('//')) {
+    // Reject path traversal and javascript: pseudo-paths
+    if (/[<>"']/.test(raw)) return EMAIL_CLICK_FALLBACK;
+    return raw;
+  }
+  // Allow only pre-approved hosts for absolute URLs
+  try {
+    const parsed = new URL(raw);
+    if ((parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+        ALLOWED_REDIRECT_HOSTS.has(parsed.hostname)) {
+      return raw;
+    }
+  } catch {
+    // malformed URL
+  }
+  return EMAIL_CLICK_FALLBACK;
+}
+
 router.get('/api/emails/track/:id/click', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const { redirect } = req.query;
-    
-    const redirectUrl = typeof redirect === 'string' ? redirect : 'https://maxbooster.ai/dashboard';
-    
+    const redirectUrl = sanitizeEmailRedirect(req.query.redirect);
+
     await weeklyInsightsService.trackEmailClick(id, redirectUrl);
-    
+
     return res.redirect(redirectUrl);
   } catch (error) {
     logger.warn({ err: error }, 'Failed to track email click:');
-    return res.redirect('https://maxbooster.ai/dashboard');
+    return res.redirect(EMAIL_CLICK_FALLBACK);
   }
 });
 

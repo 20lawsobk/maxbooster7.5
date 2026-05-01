@@ -17,7 +17,8 @@
 
 import { execFile, execFileSync, spawn } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, writeFileSync, readFileSync, unlinkSync } from 'fs';
+import { existsSync, readFileSync, unlinkSync } from 'fs';
+import { writeFile as fsWriteFile } from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { randomBytes } from 'crypto';
@@ -354,7 +355,7 @@ async function analyzeBeatLibrosa(audioPath: string): Promise<BeatAnalysis | nul
 
   const scriptPath = path.join(os.tmpdir(), `beat_analysis_${randomBytes(4).toString('hex')}.py`);
   try {
-    writeFileSync(scriptPath, LIBROSA_SCRIPT);
+    await fsWriteFile(scriptPath, LIBROSA_SCRIPT);
 
     const raw = await new Promise<string>((resolve, reject) => {
       const proc = spawn(PYTHON, [scriptPath, audioPath]);

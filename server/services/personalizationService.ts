@@ -149,6 +149,42 @@ class PersonalizationService {
   private userInsights: Map<string, LearningInsight[]> = new Map();
   private userLearningState: Map<string, LearningState> = new Map();
 
+  // Memory caps — in-process cache only. Preferences are persisted in the DB.
+  private static readonly MAX_USERS          = 50_000;  // max concurrent cached users
+  private static readonly MAX_INTERACTIONS   =  1_000;  // max interaction events per user
+  private static readonly STALE_USER_TTL_MS  = 4 * 60 * 60 * 1000; // 4 h inactivity → evict
+
+  constructor() {
+    // Periodic cleanup: evict users whose last interaction is older than TTL,
+    // then enforce hard cap on overall Map size.
+    setInterval(() => {
+      const cutoff = Date.now() - PersonalizationService.STALE_USER_TTL_MS;
+      for (const [uid, events] of this.userInteractions.entries()) {
+        const lastTs = events.length > 0
+          ? new Date(events[events.length - 1].timestamp).getTime()
+          : 0;
+        if (lastTs < cutoff) {
+          this.userInteractions.delete(uid);
+          this.userPatterns.delete(uid);
+          this.userInsights.delete(uid);
+          this.userLearningState.delete(uid);
+        }
+      }
+      // Hard-cap safety net
+      const overage = this.userInteractions.size - PersonalizationService.MAX_USERS;
+      if (overage > 0) {
+        let n = overage;
+        for (const uid of this.userInteractions.keys()) {
+          this.userInteractions.delete(uid);
+          this.userPatterns.delete(uid);
+          this.userInsights.delete(uid);
+          this.userLearningState.delete(uid);
+          if (--n <= 0) break;
+        }
+      }
+    }, 10 * 60 * 1000).unref();
+  }
+
   async getPreferences(userId: string): Promise<PersonalizationPreferences> {
     const user = await storage.getUser(userId);
     const storedPrefs = (user?.preferences as Record<string, any>)?.personalization || {};

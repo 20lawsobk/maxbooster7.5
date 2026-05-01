@@ -4,6 +4,7 @@ import {
   royaltyStatements,
   recoupmentAccounts,
   instantPayouts,
+  systemSettings,
 } from '@shared/schema';
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { logger } from '../logger.js';
@@ -108,21 +109,75 @@ const TAX_WITHHOLDING_RATES: Record<string, number> = {
   default: 0.00,
 };
 
+const PREF_CACHE_MAX  = 50_000;   // max users cached in-process
+const PREF_CACHE_TTL  = 30 * 60 * 1000; // 30 min read-through cache
+
 export class PayoutService {
   private payoutRequests: Map<string, PayoutRequest> = new Map();
-  private paymentPreferences: Map<string, PaymentPreferences> = new Map();
+  private readonly MAX_PAYOUT_REQUESTS = 20_000;  // cap in-flight request cache
+  private readonly MAX_RECEIPTS        = 50_000;  // cap receipt cache
   private receipts: Map<string, PaymentReceipt> = new Map();
 
+  // payment preferences: DB-backed with in-process LRU read-through cache.
+  // Key: userId, Value: { prefs, cachedAt }
+  private paymentPreferences: Map<string, { prefs: PaymentPreferences; cachedAt: number }> = new Map();
+
+  constructor() {
+    // Periodic cleanup: evict stale cache entries and enforce hard caps.
+    setInterval(() => {
+      const cutoff = Date.now() - PREF_CACHE_TTL;
+      for (const [uid, entry] of this.paymentPreferences.entries()) {
+        if (entry.cachedAt < cutoff) this.paymentPreferences.delete(uid);
+      }
+      // Hard caps
+      while (this.paymentPreferences.size > PREF_CACHE_MAX) {
+        const k = this.paymentPreferences.keys().next().value;
+        if (k !== undefined) this.paymentPreferences.delete(k);
+      }
+      while (this.payoutRequests.size > this.MAX_PAYOUT_REQUESTS) {
+        const k = this.payoutRequests.keys().next().value;
+        if (k !== undefined) this.payoutRequests.delete(k);
+      }
+      while (this.receipts.size > this.MAX_RECEIPTS) {
+        const k = this.receipts.keys().next().value;
+        if (k !== undefined) this.receipts.delete(k);
+      }
+    }, 15 * 60 * 1000).unref();
+  }
+
   async getPaymentPreferences(userId: string): Promise<PaymentPreferences | null> {
-    return this.paymentPreferences.get(userId) || null;
+    // 1. Check in-process cache
+    const cached = this.paymentPreferences.get(userId);
+    if (cached && Date.now() - cached.cachedAt < PREF_CACHE_TTL) return cached.prefs;
+    // 2. Read through to DB
+    try {
+      const row = await db
+        .select({ value: systemSettings.value })
+        .from(systemSettings)
+        .where(eq(systemSettings.key, `payment_prefs:${userId}`))
+        .limit(1);
+      if (row.length && row[0].value) {
+        const prefs = row[0].value as unknown as PaymentPreferences;
+        this.paymentPreferences.set(userId, { prefs, cachedAt: Date.now() });
+        return prefs;
+      }
+    } catch (err) {
+      logger.warn({ err }, `[PayoutService] Failed to read payment prefs for ${userId} from DB`);
+    }
+    return null;
   }
 
   async setPaymentPreferences(preferences: PaymentPreferences): Promise<PaymentPreferences> {
     if (preferences.minimumThreshold < this.getMinimumThreshold(preferences.currency)) {
       throw new Error(`Minimum threshold must be at least ${this.getMinimumThreshold(preferences.currency)} ${preferences.currency}`);
     }
-
-    this.paymentPreferences.set(preferences.userId, preferences);
+    // Persist to DB first
+    await db
+      .insert(systemSettings)
+      .values({ key: `payment_prefs:${preferences.userId}`, value: preferences as any })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: preferences as any } });
+    // Update in-process cache
+    this.paymentPreferences.set(preferences.userId, { prefs: preferences, cachedAt: Date.now() });
     logger.info(`Updated payment preferences for user ${preferences.userId}`);
     return preferences;
   }
@@ -414,7 +469,7 @@ export class PayoutService {
     let failed = 0;
     let skipped = 0;
 
-    const allPreferences = Array.from(this.paymentPreferences.values());
+    const allPreferences = Array.from(this.paymentPreferences.values()).map(e => e.prefs);
 
     for (const prefs of allPreferences) {
       if (!prefs.autoPayoutEnabled) {

@@ -54,24 +54,40 @@ export interface TrainingStatus {
 
 
 // ── Training status ────────────────────────────────────────────────────────
+// Cache the status for 30 s to avoid repeated synchronous disk reads on
+// every request to GET /diffusion/status.
+let _statusCache: { value: TrainingStatus; expiresAt: number } | null = null;
+const STATUS_CACHE_TTL_MS = 30_000;
 
 export function getDiffusionTrainingStatus(): TrainingStatus {
-  const trained = fs.existsSync(WEIGHTS_PATH) && fs.existsSync(META_PATH);
-  if (!trained) return { trained: false };
+  const now = Date.now();
+  if (_statusCache && now < _statusCache.expiresAt) return _statusCache.value;
 
-  try {
-    const meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8'));
-    const stat = fs.statSync(WEIGHTS_PATH);
-    return {
-      trained:        true,
-      finalLoss:      meta.final_loss,
-      epochs:         meta.epochs,
-      samples:        meta.samples,
-      weightsSizeKB:  Math.round(stat.size / 1024),
-    };
-  } catch {
-    return { trained };
+  const trained = fs.existsSync(WEIGHTS_PATH) && fs.existsSync(META_PATH);
+  let value: TrainingStatus;
+  if (!trained) {
+    value = { trained: false };
+  } else {
+    try {
+      const meta = JSON.parse(fs.readFileSync(META_PATH, 'utf8'));
+      const stat = fs.statSync(WEIGHTS_PATH);
+      value = {
+        trained:        true,
+        finalLoss:      meta.final_loss,
+        epochs:         meta.epochs,
+        samples:        meta.samples,
+        weightsSizeKB:  Math.round(stat.size / 1024),
+      };
+    } catch {
+      value = { trained };
+    }
   }
+  _statusCache = { value, expiresAt: now + STATUS_CACHE_TTL_MS };
+  return value;
+}
+
+export function invalidateDiffusionStatusCache(): void {
+  _statusCache = null;
 }
 
 

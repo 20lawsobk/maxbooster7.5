@@ -43,6 +43,27 @@ export class SecurityService {
   private incidents: Map<string, SecurityIncident> = new Map();
   private healthChecks: Map<string, HealthCheck> = new Map();
 
+  private static readonly MAX_AUDIT_LOGS  = 20_000;
+  private static readonly MAX_INCIDENTS   =  5_000;
+  private static readonly MAX_HEALTH      =    200;
+
+  constructor() {
+    setInterval(() => {
+      while (this.auditLogs.size > SecurityService.MAX_AUDIT_LOGS) {
+        const k = this.auditLogs.keys().next().value;
+        if (k !== undefined) this.auditLogs.delete(k); else break;
+      }
+      while (this.incidents.size > SecurityService.MAX_INCIDENTS) {
+        const k = this.incidents.keys().next().value;
+        if (k !== undefined) this.incidents.delete(k); else break;
+      }
+      while (this.healthChecks.size > SecurityService.MAX_HEALTH) {
+        const k = this.healthChecks.keys().next().value;
+        if (k !== undefined) this.healthChecks.delete(k); else break;
+      }
+    }, 30 * 60 * 1000).unref();
+  }
+
   /**
    * Create audit log entry
    */

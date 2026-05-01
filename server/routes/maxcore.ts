@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import { logger } from "../logger.js";
 import fs from "fs";
+import { writeFile as fsWriteFile } from "fs/promises";
 import path from "path";
 import crypto from "crypto";
 
@@ -315,13 +316,13 @@ router.get("/downloader/status", (_req, res) => {
   res.json({ stopped, flag: DL_STOP_FLAG, peerMode: PEER_CFG.type });
 });
 
-router.post("/downloader/stop", (req, res) => {
+router.post("/downloader/stop", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res.status(400).json({ error: 'Send { "confirm": "STOP" } to confirm' });
   }
   ensureCtrl();
-  fs.writeFileSync(DL_STOP_FLAG, new Date().toISOString());
+  await fsWriteFile(DL_STOP_FLAG, new Date().toISOString());
   logger.warn("[MaxCore] Dataset Downloader STOP flag written by admin");
   res.json({ ok: true, detail: "Downloader will stop after current dataset completes" });
 });
@@ -352,13 +353,13 @@ router.post("/downloader/start", async (_req, res) => {
   }
 });
 
-router.post("/maxcore/stop", (req, res) => {
+router.post("/maxcore/stop", async (req, res) => {
   const { confirm } = req.body || {};
   if (confirm !== "STOP") {
     return res.status(400).json({ error: 'Send { "confirm": "STOP" } to confirm' });
   }
   ensureCtrl();
-  fs.writeFileSync(MC_STOP_FLAG, new Date().toISOString());
+  await fsWriteFile(MC_STOP_FLAG, new Date().toISOString());
   logger.warn("[MaxCore] MaxCore Server STOP flag written by admin");
   res.json({ ok: true, detail: "MaxCore supervisor will stop after current child exits" });
 });

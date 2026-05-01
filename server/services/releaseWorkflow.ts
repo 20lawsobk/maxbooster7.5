@@ -106,6 +106,33 @@ export class ReleaseWorkflowService {
   private updateRequests: Map<string, UpdateRequest> = new Map();
   private stateHistory: Map<string, StateTransition[]> = new Map();
 
+  private static readonly MAX_AUDIT     = 10_000;
+  private static readonly MAX_TAKEDOWNS =  5_000;
+  private static readonly MAX_UPDATES   = 10_000;
+  private static readonly MAX_HISTORY   = 10_000;
+
+  constructor() {
+    setInterval(() => {
+      // Drop oldest entries when over cap
+      while (this.auditLog.size > ReleaseWorkflowService.MAX_AUDIT) {
+        const k = this.auditLog.keys().next().value;
+        if (k !== undefined) this.auditLog.delete(k); else break;
+      }
+      while (this.takedownRequests.size > ReleaseWorkflowService.MAX_TAKEDOWNS) {
+        const k = this.takedownRequests.keys().next().value;
+        if (k !== undefined) this.takedownRequests.delete(k); else break;
+      }
+      while (this.updateRequests.size > ReleaseWorkflowService.MAX_UPDATES) {
+        const k = this.updateRequests.keys().next().value;
+        if (k !== undefined) this.updateRequests.delete(k); else break;
+      }
+      while (this.stateHistory.size > ReleaseWorkflowService.MAX_HISTORY) {
+        const k = this.stateHistory.keys().next().value;
+        if (k !== undefined) this.stateHistory.delete(k); else break;
+      }
+    }, 20 * 60 * 1000).unref();
+  }
+
   canTransition(currentState: ReleaseState, targetState: ReleaseState): boolean {
     const allowedTransitions = STATE_TRANSITIONS[currentState];
     return allowedTransitions?.includes(targetState) ?? false;

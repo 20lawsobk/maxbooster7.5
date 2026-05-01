@@ -18,7 +18,8 @@
  * assembly.
  */
 
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { unlinkSync, existsSync } from 'fs';
+import { writeFile as fsWriteFile } from 'fs/promises';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { logger } from '../logger.js';
@@ -247,7 +248,7 @@ export async function renderDiffusionScene(
 
     // ── Decode base64 → raw diffusion clip ──────────────────────────────────
     const rawPath = opts.outputPath.replace(/\.mp4$/, '_diffraw.mp4');
-    writeFileSync(rawPath, Buffer.from(result.mp4_b64, 'base64'));
+    await fsWriteFile(rawPath, Buffer.from(result.mp4_b64, 'base64'));
 
     // ── Post-process: scale to target res + text overlays ───────────────────
     //

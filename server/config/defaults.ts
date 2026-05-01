@@ -187,9 +187,9 @@ export const config: AppConfig = {
   },
 
   rateLimiting: {
-    windowMs:    parseEnvInt('RATE_LIMIT_WINDOW_MS',       60000),          // 1 minute
-    maxRequests: parseEnvInt('RATE_LIMIT_MAX',         7_200_000_000),      // 120M req/s × 60 s
-    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX', 7_200_000_000),     // 120M req/s × 60 s
+    windowMs:    parseEnvInt('RATE_LIMIT_WINDOW_MS',  60000),  // 1 minute window
+    maxRequests: parseEnvInt('RATE_LIMIT_MAX',         1_200),  // 1 200 req/min per user/IP (20 req/s)
+    criticalMax: parseEnvInt('RATE_LIMIT_CRITICAL_MAX',   30),  // 30 req/min for auth/payment endpoints
   },
 
   upload: {

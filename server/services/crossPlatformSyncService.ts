@@ -75,6 +75,12 @@ interface UpdateRollout {
 const WEB_VERSION = '3.0.0';
 const HEARTBEAT_TIMEOUT_MS = 5 * 60 * 1000;
 
+// Memory caps — in-process cache only. Persistent state lives in Redis/DB.
+const MAX_USER_CACHE         = 50_000;   // ~50 K concurrent active users
+const MAX_DEVICE_SYNC_KEYS   = 200_000;  // 50 K users × 4 devices each
+const MAX_UPDATE_ROLLOUTS    =  1_000;   // admin-created, small by nature
+const DEVICE_STALE_TTL_MS    = 2 * 60 * 60 * 1000; // 2 h without a heartbeat → evict
+
 const userDevices: Map<string, Map<string, DeviceInfo>> = new Map();
 const userSyncStates: Map<string, SyncState> = new Map();
 const deviceSyncVersions: Map<string, number> = new Map();
@@ -85,6 +91,37 @@ const latestVersions: Map<PlatformType, { version: string; releaseDate: string; 
 latestVersions.set('web', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest web release', downloadUrl: 'https://max-booster.com' });
 latestVersions.set('android', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest Android release', downloadUrl: '' });
 latestVersions.set('desktop', { version: WEB_VERSION, releaseDate: new Date().toISOString(), changelog: 'Latest desktop release', downloadUrl: '' });
+
+// Periodic eviction — runs every 5 minutes, removes users whose every device
+// has been idle for DEVICE_STALE_TTL_MS.  Also enforces hard caps as a safety net.
+setInterval(() => {
+  const now = Date.now();
+  for (const [uid, devices] of userDevices.entries()) {
+    const allStale = [...devices.values()].every(
+      (d) => now - new Date(d.lastSeen).getTime() > DEVICE_STALE_TTL_MS
+    );
+    if (allStale) {
+      for (const [did] of devices.entries()) deviceSyncVersions.delete(`${uid}:${did}`);
+      userDevices.delete(uid);
+      userSyncStates.delete(uid);
+    }
+  }
+  // Hard-cap safety net: if still over limit after TTL eviction, drop oldest entries.
+  while (userDevices.size > MAX_USER_CACHE) {
+    const oldest = userDevices.keys().next().value;
+    if (oldest === undefined) break;
+    userDevices.delete(oldest);
+    userSyncStates.delete(oldest);
+  }
+  while (deviceSyncVersions.size > MAX_DEVICE_SYNC_KEYS) {
+    const oldest = deviceSyncVersions.keys().next().value;
+    if (oldest !== undefined) deviceSyncVersions.delete(oldest);
+  }
+  while (updateRollouts.size > MAX_UPDATE_ROLLOUTS) {
+    const oldest = updateRollouts.keys().next().value;
+    if (oldest !== undefined) updateRollouts.delete(oldest);
+  }
+}, 5 * 60 * 1000).unref(); // unref: won't keep process alive on shutdown
 
 function compareVersions(a: string, b: string): number {
   const partsA = a.replace(/^v/, '').split('.').map(Number);

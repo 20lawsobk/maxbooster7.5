@@ -26,7 +26,8 @@
 
 import { execFile, execFileSync } from 'child_process';
 import { promisify } from 'util';
-import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { writeFile as fsWriteFile } from 'fs/promises';
 import path from 'path';
 import os from 'os';
 import { randomBytes } from 'crypto';
@@ -461,7 +462,7 @@ export async function synthesizeSegments(
 
     // Concatenate all segments using FFmpeg concat demuxer
     const concatList = path.join(os.tmpdir(), `concat_${randomBytes(4).toString('hex')}.txt`);
-    writeFileSync(concatList, segPaths.map(p => `file '${p}'`).join('\n'));
+    await fsWriteFile(concatList, segPaths.map(p => `file '${p}'`).join('\n'));
     tempFiles.push(concatList);
 
     const outFilename = `voice_${randomBytes(6).toString('hex')}.wav`;
