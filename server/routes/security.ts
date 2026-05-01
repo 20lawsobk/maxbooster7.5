@@ -1,4 +1,5 @@
 import { Router, Request, Response, RequestHandler } from 'express';
+import { require2FA } from '../middleware/auth.js';
 import { db } from '../db.js';
 import { users, sessions, securityThreats } from '../../shared/schema.js';
 import { eq, desc, count, and, gte, sql } from 'drizzle-orm';
@@ -17,6 +18,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 const processStartTime = Date.now();
 

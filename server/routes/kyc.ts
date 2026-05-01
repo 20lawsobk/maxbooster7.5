@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { createHardenedUpload } from '../middleware/uploadHandler.js';
+import { requireAuth } from '../middleware/auth.js';
+import { kycRateLimiter } from '../middleware/rateLimiter.js';
 import { kycService } from '../services/kycService.js';
 import { storageService } from '../services/storageService.js';
 import { z } from 'zod';
@@ -14,6 +16,9 @@ const upload = createHardenedUpload({
 });
 
 const router = Router();
+
+router.use(requireAuth);
+router.use(kycRateLimiter);
 
 const startVerificationSchema = z.object({
   type: z.enum(['individual', 'business']),

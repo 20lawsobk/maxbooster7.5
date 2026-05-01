@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { require2FA } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -14,6 +15,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 router.get('/dead-letter', async (req, res) => {
   try {

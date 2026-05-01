@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { require2FA } from '../middleware/auth.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { db } from '../db.js';
@@ -19,6 +20,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 interface TestSuiteSummary {
   name: string;

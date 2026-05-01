@@ -1,4 +1,5 @@
 import { Router, type RequestHandler } from 'express';
+import { require2FA } from '../middleware/auth.js';
 import { db } from '../db.js';
 import { users, projects, releases, securityThreats } from '../../shared/schema.js';
 import { count, eq, gte, desc } from 'drizzle-orm';
@@ -17,6 +18,7 @@ const requireAdmin: RequestHandler = (req, res, next) => {
 };
 
 router.use(requireAdmin);
+router.use(require2FA);
 
 router.get('/results', async (req, res) => {
   try {

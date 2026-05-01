@@ -44,6 +44,16 @@ export const RATE_LIMITS = {
     // 100 AI requests per hour — balances GPU cost against user experience.
     perUser: { windowMs: 3_600_000,  max: Number(process.env.RATE_LIMIT_AI ?? 100) },
   },
+  payouts: {
+    // 10 payout requests per hour — financial ops are expensive; prevents
+    // accidental or malicious payout floods.
+    perUser: { windowMs: 3_600_000,  max: Number(process.env.RATE_LIMIT_PAYOUTS ?? 10) },
+  },
+  kyc: {
+    // 5 KYC submissions per hour — document uploads are heavyweight;
+    // also guards against identity-verification abuse.
+    perUser: { windowMs: 3_600_000,  max: Number(process.env.RATE_LIMIT_KYC ?? 5) },
+  },
 };
 
 const REDIS_KEY_PREFIX = 'ratelimit:';
@@ -470,6 +480,68 @@ export const aiRateLimiter: RequestHandler = async (
 
   if (!result.allowed) {
     logger.warn(`AI rate limit exceeded for user: ${userId}`);
+    sendRateLimitExceeded(res, result.resetAt);
+    return;
+  }
+
+  next();
+};
+
+export const payoutsRateLimiter: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (process.env.NODE_ENV !== 'production') {
+    next();
+    return;
+  }
+
+  const userId = getUserId(req);
+  if (!userId) {
+    next();
+    return;
+  }
+
+  const key = `payouts:user:${userId}`;
+  const { perUser } = RATE_LIMITS.payouts;
+
+  const result = await slidingWindowCheck(key, perUser.windowMs, perUser.max);
+  setRateLimitHeaders(res, perUser.max, result.remaining, result.resetAt);
+
+  if (!result.allowed) {
+    logger.warn(`Payout rate limit exceeded for user: ${userId}`);
+    sendRateLimitExceeded(res, result.resetAt);
+    return;
+  }
+
+  next();
+};
+
+export const kycRateLimiter: RequestHandler = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  if (process.env.NODE_ENV !== 'production') {
+    next();
+    return;
+  }
+
+  const userId = getUserId(req);
+  if (!userId) {
+    next();
+    return;
+  }
+
+  const key = `kyc:user:${userId}`;
+  const { perUser } = RATE_LIMITS.kyc;
+
+  const result = await slidingWindowCheck(key, perUser.windowMs, perUser.max);
+  setRateLimitHeaders(res, perUser.max, result.remaining, result.resetAt);
+
+  if (!result.allowed) {
+    logger.warn(`KYC rate limit exceeded for user: ${userId}`);
     sendRateLimitExceeded(res, result.resetAt);
     return;
   }

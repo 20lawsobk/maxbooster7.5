@@ -43,8 +43,40 @@ class AutopilotPublisher {
   // and then enforces frequency from that point forward).
   private lastPublishAttempt: Map<string, Date> = new Map();
 
+  // Max entries kept in memory. Entries are evicted by the cleanup interval
+  // before this limit is reached under normal load.
+  private static readonly MAX_TRACKED_USERS = 50_000;
+
+  // Longest publish frequency is weekly (7 days). Keep entries for 8 days
+  // then evict — they no longer affect frequency-gate logic.
+  private static readonly ATTEMPT_TTL_MS = 8 * 24 * 60 * 60 * 1000;
+
   constructor() {
     this.startScheduler();
+    this.startAttemptMapCleanup();
+  }
+
+  private startAttemptMapCleanup(): void {
+    // Run every 6 hours; each pass is O(n) over active users — fast.
+    setInterval(() => {
+      const cutoff = Date.now() - AutopilotPublisherService.ATTEMPT_TTL_MS;
+      for (const [userId, lastAttempt] of this.lastPublishAttempt) {
+        if (lastAttempt.getTime() < cutoff) {
+          this.lastPublishAttempt.delete(userId);
+        }
+      }
+      // Safety valve: if the map is still over cap after TTL eviction (e.g. a
+      // burst of new users), drop the oldest entries until we're back under cap.
+      if (this.lastPublishAttempt.size > AutopilotPublisherService.MAX_TRACKED_USERS) {
+        const overflow = this.lastPublishAttempt.size - AutopilotPublisherService.MAX_TRACKED_USERS;
+        let evicted = 0;
+        for (const key of this.lastPublishAttempt.keys()) {
+          if (evicted >= overflow) break;
+          this.lastPublishAttempt.delete(key);
+          evicted++;
+        }
+      }
+    }, 6 * 60 * 60 * 1000);
   }
 
   private startScheduler(): void {

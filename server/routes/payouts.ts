@@ -15,11 +15,13 @@ import { db } from '../db.js';
 import { eq, and, desc, gte, inArray, lte, sql, sum } from 'drizzle-orm';
 import { getBaseUrl } from '../config/defaults.js';
 import { requireAuth } from '../middleware/auth.js';
+import { payoutsRateLimiter } from '../middleware/rateLimiter.js';
 import { stripeService } from '../services/stripeService.js';
 
 const router = Router();
 
 router.use(requireAuth);
+router.use(payoutsRateLimiter);
 
 /**
  * GET /api/payouts

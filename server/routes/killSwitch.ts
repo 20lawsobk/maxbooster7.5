@@ -7,6 +7,7 @@
 
 import { Router, Request, Response } from 'express';
 import { killSwitch, AutonomousSystemName } from '../safety/killSwitch';
+import { require2FA } from '../middleware/auth.js';
 import { logger } from '../logger.js';
 
 const router = Router();
@@ -23,6 +24,10 @@ const requireAdmin = (req: Request, res: Response, next: Function) => {
   }
   next();
 };
+
+// All kill-switch ops require admin role AND 2FA verification.
+// An admin with 2FA enabled must have completed 2FA in the current session.
+router.use(requireAdmin as any, require2FA);
 
 /**
  * GET /api/kill-switch/status
