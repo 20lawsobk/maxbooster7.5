@@ -64,15 +64,18 @@ adminRouter.get("/users", async (req, res) => {
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const limitNum = Math.min(Math.max(1, parseInt(limit as string) || 20), 200);
     const offset = (pageNum - 1) * limitNum;
+    // Cap search string — even admin-authed endpoints should not feed
+    // an unbounded pattern into a LIKE scan across 90M user rows.
+    const safeSearch = typeof search === 'string' ? search.slice(0, 200) : '';
 
     const conditions = [];
-    if (search) {
+    if (safeSearch) {
       conditions.push(
         or(
-          like(users.email, `%${search}%`),
-          like(users.username, `%${search}%`),
-          like(users.firstName, `%${search}%`),
-          like(users.lastName, `%${search}%`)
+          like(users.email, `%${safeSearch}%`),
+          like(users.username, `%${safeSearch}%`),
+          like(users.firstName, `%${safeSearch}%`),
+          like(users.lastName, `%${safeSearch}%`)
         )
       );
     }

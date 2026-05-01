@@ -26,10 +26,13 @@ router.get('/', requireAuth, async (req, res) => {
 
     const conditions = [eq(songwritingSessions.userId, req.user!.id)];
     if (search && typeof search === 'string' && search.trim()) {
+      // Clamp search to 200 chars — an unbounded ilike pattern causes the DB
+      // to do a full-table regex scan against potentially very long strings.
+      const safeSearch = search.trim().slice(0, 200);
       conditions.push(
         or(
-          ilike(songwritingSessions.title, `%${search.trim()}%`),
-          ilike(songwritingSessions.notes, `%${search.trim()}%`),
+          ilike(songwritingSessions.title, `%${safeSearch}%`),
+          ilike(songwritingSessions.notes, `%${safeSearch}%`),
         ) as any,
       );
     }

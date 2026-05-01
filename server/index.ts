@@ -1400,11 +1400,20 @@ process.on('uncaughtException', (error: Error) => {
 process.on('unhandledRejection', (reason: unknown) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const code = (reason as NodeJS.ErrnoException)?.code;
-  // Non-fatal: known transient errors that the ChainFixer / circuit breaker handle automatically.
+
+  // Non-fatal: known transient errors that the ChainFixer / circuit breaker
+  // handle automatically.  Suppress them so they do not trigger a restart.
   const isNonFatal = (
     (code && ['EPIPE', 'ECONNRESET', 'ECONNABORTED'].includes(code)) ||
     /EPIPE|ECONNRESET|ECONNABORTED|ECONNREFUSED|AbortError|fetch failed|Failed to fetch|Command timed out|Connection is closed|\[PDIM\] Circuit OPEN|\[LuaExecutor\] script timeout|\[LuaExecutor\] Wait queue saturated|erroredJobIds|PDIM.*Circuit|script timeout exceeded/i.test(err.message)
   );
+
   if (isNonFatal) return; // instrument.ts already logs as warn
-  logger.warn(`[Process] Unhandled promise rejection (non-fatal): ${err.message}`);
+
+  // Fatal unhandled rejection: the process is in an unknown state.
+  // Trigger a graceful shutdown so the process manager can restart clean.
+  // This mirrors the uncaughtException handler behaviour and ensures no
+  // "zombie" server serves requests from a corrupted async call stack.
+  logger.warn({ err }, '[Process] Fatal unhandled promise rejection — shutting down:');
+  gracefulShutdown('unhandledRejection', 1);
 });

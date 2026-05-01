@@ -3792,22 +3792,33 @@ export async function registerRoutes(
       const days = daysMap[period] ?? 30;
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
+      // Hard cap: 50 000 rows prevents a multi-year user from generating a
+      // 500 MB CSV that exhausts server memory and stalls the event loop.
+      // The X-Truncated header lets the client show a "results capped" notice.
+      const EXPORT_ROW_LIMIT = 50_000;
+
       const rows = await db.select().from(royaltyTransactions)
         .where(and(eq(royaltyTransactions.userId, req.user.id), gte(royaltyTransactions.createdAt, since)))
-        .orderBy(desc(royaltyTransactions.createdAt));
+        .orderBy(desc(royaltyTransactions.createdAt))
+        .limit(EXPORT_ROW_LIMIT + 1); // fetch one extra to detect truncation
+
+      const truncated = rows.length > EXPORT_ROW_LIMIT;
+      const safeRows = truncated ? rows.slice(0, EXPORT_ROW_LIMIT) : rows;
 
       if (format === 'csv') {
         const csvHeader = 'Date,Platform,Release,Amount,Currency,Streams,Status\n';
-        const csvBody = rows.map(r =>
+        const csvBody = safeRows.map(r =>
           `${r.createdAt?.toISOString()},${r.platform || ''},${r.releaseId},${r.amount},${r.currency || 'usd'},${r.streamCount || 0},${r.status}`
         ).join('\n');
         const csv = csvHeader + csvBody;
         res.setHeader('Content-Type', 'text/csv');
         res.setHeader('Content-Disposition', `attachment; filename="royalties_${period}_${Date.now()}.csv"`);
+        if (truncated) res.setHeader('X-Truncated', 'true');
         return res.send(csv);
       }
 
-      return res.json({ success: true, data: rows });
+      if (truncated) res.setHeader('X-Truncated', 'true');
+      return res.json({ success: true, data: safeRows, truncated });
     } catch (error) {
       logger.warn("Export royalties error:", error);
       return res.status(500).json({ message: "Failed to export royalties" });
