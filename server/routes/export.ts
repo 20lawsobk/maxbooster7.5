@@ -80,6 +80,18 @@ interface ExportHistoryItem {
 const exportJobs = new Map<string, ExportJob>();
 const exportHistory: ExportHistoryItem[] = [];
 
+// Prevent unbounded memory growth: remove terminal-state jobs after 30 minutes.
+// exportJobs had set() calls but no delete() anywhere — every export leaked.
+const EXPORT_JOB_TTL_MS = 30 * 60 * 1000;
+setInterval(() => {
+  const cutoff = Date.now() - EXPORT_JOB_TTL_MS;
+  for (const [id, job] of exportJobs) {
+    const terminal = ['complete', 'failed', 'cancelled', 'expired'].includes(job.status);
+    const tooOld = (job.createdAt ? new Date(job.createdAt).getTime() : 0) < cutoff;
+    if (terminal || tooOld) exportJobs.delete(id);
+  }
+}, 10 * 60 * 1000).unref();
+
 // ============================================================================
 // VALIDATION SCHEMAS
 // ============================================================================
@@ -187,6 +199,8 @@ function simulateExportProgress(jobId: string): void {
           projectId: currentJob.projectId,
           projectName: currentJob.projectName,
         });
+        // Keep history bounded: drop the oldest entries once over cap.
+        if (exportHistory.length > 10_000) exportHistory.splice(10_000);
 
         clearInterval(interval);
       }

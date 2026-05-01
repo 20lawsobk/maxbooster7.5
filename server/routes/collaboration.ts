@@ -112,6 +112,9 @@ router.post('/resolve-conflict', requireAuth, async (req: AuthenticatedRequest, 
 
     const projectConflicts = conflicts.get(validatedData.projectId) || [];
     projectConflicts.push(resolution);
+    // Cap per-project conflict history to prevent unbounded growth.
+    // Conflicts are in-memory only; 500 is more than enough for any live session.
+    if (projectConflicts.length > 500) projectConflicts.splice(0, projectConflicts.length - 500);
     conflicts.set(validatedData.projectId, projectConflicts);
 
     let outcomeType: string;

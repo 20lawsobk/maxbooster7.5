@@ -41,6 +41,21 @@ function simulationRateLimit(req: Request, res: Response, next: NextFunction) {
   return next();
 }
 
+// Both rate-limit maps accumulate stale entries: inactive users are never
+// cleaned up because the filter only runs for the requesting user.
+// Periodic sweep removes keys whose windows have fully expired.
+setInterval(() => {
+  const now = Date.now();
+  const rlWindow = 60 * 1000;
+  const simCooldown = 30 * 1000;
+  for (const [uid, calls] of runOnceCalls) {
+    if (calls.every(t => now - t >= rlWindow)) runOnceCalls.delete(uid);
+  }
+  for (const [uid, last] of simulationCalls) {
+    if (now - last >= simCooldown) simulationCalls.delete(uid);
+  }
+}, 5 * 60 * 1000).unref();
+
 router.get('/status', requireAuth, async (_req, res) => {
   try {
     const engineStatus = selfEvolution.getStatus();

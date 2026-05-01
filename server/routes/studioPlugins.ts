@@ -532,6 +532,14 @@ const modulationMatrixSchema = z.object({
 const abCompareStates = new Map<string, { slotA: any; slotB: any; activeSlot: 'A' | 'B' }>();
 const modulationConfigs = new Map<string, any>();
 
+// Both maps are keyed by instanceId/projectId and grow without bound if not capped.
+// Evict oldest entries (insertion order) once the cap is reached.
+const AB_COMPARE_MAX = 5_000;
+const MODULATION_MAX = 10_000;
+function capMap<K, V>(m: Map<K, V>, max: number) {
+  while (m.size > max) m.delete(m.keys().next().value as K);
+}
+
 router.get('/device/ab-compare/:instanceId', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
@@ -592,6 +600,7 @@ router.post('/device/ab-compare', requireAuth, async (req, res) => {
       slotB: data.slotB,
       activeSlot: 'A',
     });
+    capMap(abCompareStates, AB_COMPARE_MAX);
 
     res.json({
       success: true,
@@ -637,6 +646,7 @@ router.post('/device/ab-compare/:instanceId/switch', requireAuth, async (req, re
     await pluginHostService.updateInstanceParameters(instanceId, newParams);
     state.activeSlot = targetSlot;
     abCompareStates.set(instanceId, state);
+    capMap(abCompareStates, AB_COMPARE_MAX);
 
     res.json({
       success: true,
@@ -683,6 +693,7 @@ router.post('/device/ab-compare/:instanceId/copy', requireAuth, async (req, res)
       state.slotB = { ...state.slotA };
     }
     abCompareStates.set(instanceId, state);
+    capMap(abCompareStates, AB_COMPARE_MAX);
 
     res.json({
       success: true,
@@ -857,6 +868,7 @@ router.post('/modulation-matrix', requireAuth, async (req, res) => {
       routings: routingsWithIds,
       updatedAt: new Date().toISOString(),
     });
+    capMap(modulationConfigs, MODULATION_MAX);
 
     logger.info(`Modulation matrix updated for ${key}: ${routingsWithIds.length} routings`);
 
@@ -893,6 +905,7 @@ router.delete('/modulation-matrix/:projectId/:routingId', requireAuth, async (re
     if (config) {
       config.routings = config.routings.filter((r: any) => r.id !== routingId);
       modulationConfigs.set(key, config);
+      capMap(modulationConfigs, MODULATION_MAX);
     }
 
     res.status(204).send();

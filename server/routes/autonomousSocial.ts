@@ -17,6 +17,31 @@ interface AutonomousSocialState {
 }
 
 const autonomousStates: Map<string, AutonomousSocialState> = new Map();
+// Companion access-time map — needed for LRU eviction without mutating the state shape.
+const autonomousStateLastAccessed: Map<string, number> = new Map();
+// At 90M users, even 1% using autonomous social = 900K entries × ~300B each ≈ 270MB.
+// Evict entries inactive for >24h; hard-cap at 50K to prevent runaway growth on spikes.
+const AUTONOMOUS_STATE_MAX = 50_000;
+const AUTONOMOUS_STATE_TTL_MS = 24 * 60 * 60 * 1000;
+
+setInterval(() => {
+  const cutoff = Date.now() - AUTONOMOUS_STATE_TTL_MS;
+  for (const [uid, ts] of autonomousStateLastAccessed) {
+    if (ts < cutoff) {
+      autonomousStates.delete(uid);
+      autonomousStateLastAccessed.delete(uid);
+    }
+  }
+  // Hard size cap: if still over limit, evict oldest entries first.
+  if (autonomousStates.size > AUTONOMOUS_STATE_MAX) {
+    const sorted = [...autonomousStateLastAccessed.entries()].sort((a, b) => a[1] - b[1]);
+    for (const [uid] of sorted) {
+      autonomousStates.delete(uid);
+      autonomousStateLastAccessed.delete(uid);
+      if (autonomousStates.size <= AUTONOMOUS_STATE_MAX) break;
+    }
+  }
+}, 60 * 60 * 1000).unref(); // hourly
 
 function getState(userId: string): AutonomousSocialState {
   if (!autonomousStates.has(userId)) {
@@ -32,6 +57,7 @@ function getState(userId: string): AutonomousSocialState {
       },
     });
   }
+  autonomousStateLastAccessed.set(userId, Date.now());
   return autonomousStates.get(userId)!;
 }
 

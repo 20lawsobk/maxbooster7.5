@@ -24,6 +24,23 @@ router.use(requireAdmin);
 const activeSimulations: Map<string, RealLifeSimulationEngine> = new Map();
 const simulationResults: Map<string, any> = new Map();
 const simulationLogs: Map<string, string[]> = new Map();
+// Track when each result was stored so we can auto-expire it.
+const simulationResultTimestamps: Map<string, number> = new Map();
+
+// Auto-expire completed simulation results after 1 hour.
+// Without this, simulationResults/Logs only shrink when the user explicitly
+// calls DELETE — at 90M scale users frequently abandon results.
+const SIM_RESULT_TTL_MS = 60 * 60 * 1000;
+setInterval(() => {
+  const cutoff = Date.now() - SIM_RESULT_TTL_MS;
+  for (const [id, ts] of simulationResultTimestamps) {
+    if (ts < cutoff) {
+      simulationResults.delete(id);
+      simulationLogs.delete(id);
+      simulationResultTimestamps.delete(id);
+    }
+  }
+}, 15 * 60 * 1000).unref();
 
 // Generate unique simulation ID
 function generateSimulationId(): string {
@@ -147,6 +164,7 @@ router.post('/start', async (req: Request, res: Response) => {
 
     simulation.on('complete', (result) => {
       simulationResults.set(simulationId, result);
+      simulationResultTimestamps.set(simulationId, Date.now());
       activeSimulations.delete(simulationId);
       logger.info(`[SIM ${simulationId}] Complete - stored results`);
     });
@@ -154,6 +172,7 @@ router.post('/start', async (req: Request, res: Response) => {
     simulation.runSimulation().catch((error) => {
       logger.warn({ err: error }, `[SIM ${simulationId}] Failed:`);
       simulationResults.set(simulationId, { error: error.message });
+      simulationResultTimestamps.set(simulationId, Date.now());
       activeSimulations.delete(simulationId);
     });
 
@@ -196,11 +215,13 @@ router.post('/start-full', async (req: Request, res: Response) => {
     runFullLifecycleSimulation()
       .then((results) => {
         simulationResults.set(simulationId, results);
+        simulationResultTimestamps.set(simulationId, Date.now());
         logger.info(`Full lifecycle simulation complete: ${simulationId}`);
       })
       .catch((error) => {
         logger.warn({ err: error }, `Full lifecycle simulation failed:`);
         simulationResults.set(simulationId, { error: error.message });
+        simulationResultTimestamps.set(simulationId, Date.now());
       });
 
   } catch (error: any) {
@@ -693,6 +714,7 @@ router.delete('/:id', (req: Request, res: Response) => {
 
     simulationResults.delete(id);
     simulationLogs.delete(id);
+    simulationResultTimestamps.delete(id);
 
     res.json({ success: true, message: 'Simulation deleted' });
   } catch (error: any) {

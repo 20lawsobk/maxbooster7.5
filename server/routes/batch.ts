@@ -694,6 +694,18 @@ router.post('/analytics/compare', async (req: Request, res: Response) => {
 
 const batchJobs: Map<string, { status: string; processed: number; total: number; success: number; failed: number; failures: Array<{ id: string; error: string }>; currentItem?: string; startTime: number; exportData?: Record<string, unknown>[] }> = new Map();
 
+// Prevent unbounded memory growth: evict jobs that are done or older than 30 min.
+// Without this, every batch/analytics export leaks a Map entry forever.
+const BATCH_JOB_TTL_MS = 30 * 60 * 1000;
+setInterval(() => {
+  const cutoff = Date.now() - BATCH_JOB_TTL_MS;
+  for (const [id, job] of batchJobs) {
+    if (job.startTime < cutoff || ['completed', 'failed', 'error', 'cancelled'].includes(job.status)) {
+      batchJobs.delete(id);
+    }
+  }
+}, 10 * 60 * 1000).unref();
+
 router.post('/tracks/move', async (req: Request, res: Response) => {
   try {
     if (!req.isAuthenticated()) {
