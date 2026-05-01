@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import { dmcaService } from '../services/dmcaService.js';
 import { z } from 'zod';
 import { logger } from '../logger.js';
@@ -7,33 +8,44 @@ const router = Router();
 
 const dmcaNoticeSchema = z.object({
   type: z.enum(['takedown', 'counter']),
-  contentId: z.string().min(1),
+  contentId: z.string().min(1).max(500),
   contentType: z.enum(['track', 'artwork', 'video', 'other']),
-  claimantName: z.string().min(1),
-  claimantEmail: z.string().email(),
-  claimantAddress: z.string().min(1),
-  claimantPhone: z.string().optional(),
-  originalWorkUrl: z.string().url(),
-  originalWorkDescription: z.string().optional(),
-  infringingUrl: z.string().url().optional(),
-  signature: z.string().min(1),
+  claimantName: z.string().min(1).max(500),
+  claimantEmail: z.string().email().max(254),
+  claimantAddress: z.string().min(1).max(1000),
+  claimantPhone: z.string().max(50).optional(),
+  originalWorkUrl: z.string().url().max(2000),
+  originalWorkDescription: z.string().max(5000).optional(),
+  infringingUrl: z.string().url().max(2000).optional(),
+  signature: z.string().min(1).max(500),
   goodFaithStatement: z.boolean(),
   accuracyStatement: z.boolean(),
   perjuryStatement: z.boolean(),
 });
 
 const counterNoticeSchema = z.object({
-  originalNoticeId: z.string().min(1),
-  claimantName: z.string().min(1),
-  claimantEmail: z.string().email(),
-  claimantAddress: z.string().min(1),
-  counterNoticeReason: z.string().min(1),
-  signature: z.string().min(1),
+  originalNoticeId: z.string().min(1).max(500),
+  claimantName: z.string().min(1).max(500),
+  claimantEmail: z.string().email().max(254),
+  claimantAddress: z.string().min(1).max(1000),
+  counterNoticeReason: z.string().min(1).max(5000),
+  signature: z.string().min(1).max(500),
   goodFaithStatement: z.boolean(),
   perjuryStatement: z.boolean(),
 });
 
-router.post('/notice', async (req, res) => {
+// 5 DMCA notices per IP per hour — prevents automated takedown spam
+// while allowing legitimate copyright holders to file notices
+const dmcaNoticeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many DMCA notices from this IP. Please try again later.' },
+  skip: (req) => !!(req.user?.isAdmin),
+});
+
+router.post('/notice', dmcaNoticeLimiter, async (req, res) => {
   try {
     const validated = dmcaNoticeSchema.parse(req.body);
     

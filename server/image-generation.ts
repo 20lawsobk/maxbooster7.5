@@ -1,4 +1,5 @@
-import { writeFileSync, mkdirSync } from 'fs';
+import { mkdirSync } from 'fs';
+import { writeFile as fsWriteFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from './logger.js';
@@ -143,7 +144,7 @@ export class SocialMediaContentGenerator {
       const filename = `social-${platform}-${Date.now()}.png`;
       const filepath = join(this.imageDir, filename);
 
-      writeFileSync(filepath, buffer);
+      await fsWriteFile(filepath, buffer);
       logger.info(`✅ Generated Sharp image: ${filename} (${width}x${height})`);
 
       // Return public URL
@@ -330,7 +331,7 @@ export class SocialMediaContentGenerator {
         .gif({ delay: 100, loop: 0 })
         .toBuffer();
 
-      writeFileSync(gifFilepath, combinedBuffer);
+      await fsWriteFile(gifFilepath, combinedBuffer);
       
       const webpFilename = `social-${platform}-${timestamp}.webp`;
       const webpFilepath = join(this.videoDir, webpFilename);
@@ -361,7 +362,7 @@ export class SocialMediaContentGenerator {
       const audioContent = await this.createAIAudioContent(platform, musicData, targetAudience);
 
       // Write audio file
-      writeFileSync(filepath, audioContent);
+      await fsWriteFile(filepath, audioContent);
 
       return `/generated-content/audio/${filename}`;
     } catch (error: unknown) {

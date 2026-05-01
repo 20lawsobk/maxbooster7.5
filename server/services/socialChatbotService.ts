@@ -79,17 +79,45 @@ export interface KnowledgeBaseEntry {
   usageCount: number;
 }
 
+const CHATBOT_MAX_THREADS = 20_000;
+const CHATBOT_THREAD_TTL_MS = 2 * 60 * 60 * 1000;
+
 class SocialChatbotService {
   private templates: Map<string, ResponseTemplate> = new Map();
   private knowledgeBase: Map<string, KnowledgeBaseEntry> = new Map();
   private escalationRules: EscalationRule[] = [];
   private intentPatterns: Map<string, RegExp[]> = new Map();
   private messageHistory: Map<string, ChatbotMessage[]> = new Map();
+  private threadLastAccess: Map<string, number> = new Map();
 
   constructor() {
     this.initializeDefaultTemplates();
     this.initializeIntentPatterns();
     this.initializeEscalationRules();
+    setInterval(() => this._sweepExpiredThreads(), CHATBOT_THREAD_TTL_MS).unref();
+  }
+
+  private _sweepExpiredThreads(): void {
+    const cutoff = Date.now() - CHATBOT_THREAD_TTL_MS;
+    for (const [tid, ts] of this.threadLastAccess) {
+      if (ts < cutoff) {
+        this.messageHistory.delete(tid);
+        this.threadLastAccess.delete(tid);
+      }
+    }
+  }
+
+  private _evictOldestThreadIfFull(): void {
+    if (this.messageHistory.size < CHATBOT_MAX_THREADS) return;
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+    for (const [tid, ts] of this.threadLastAccess) {
+      if (ts < oldestTime) { oldestTime = ts; oldestKey = tid; }
+    }
+    if (oldestKey) {
+      this.messageHistory.delete(oldestKey);
+      this.threadLastAccess.delete(oldestKey);
+    }
   }
 
   private initializeDefaultTemplates() {
@@ -583,10 +611,12 @@ class SocialChatbotService {
   }
 
   private storeMessageInHistory(message: ChatbotMessage) {
+    this._evictOldestThreadIfFull();
     const history = this.messageHistory.get(message.threadId) || [];
     history.push(message);
     if (history.length > 100) history.shift();
     this.messageHistory.set(message.threadId, history);
+    this.threadLastAccess.set(message.threadId, Date.now());
   }
 
   async addToKnowledgeBase(

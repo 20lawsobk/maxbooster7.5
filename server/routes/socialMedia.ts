@@ -1754,6 +1754,13 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
       return res.status(400).json({ error: 'URL is required' });
     }
 
+    // SSRF guard — block private/internal targets before spawning Python subprocess
+    try {
+      assertSafeExternalUrl(url.trim());
+    } catch (ssrfErr: any) {
+      return res.status(400).json({ error: ssrfErr?.message || 'Invalid URL' });
+    }
+
     // Use the rich Python URL analyzer for full metadata extraction.
     // If the analyzer fails (network error, SSL issue, bot-block) we fall back
     // to a minimal stub so MaxCore can still generate relevant content from the URL.
@@ -3053,6 +3060,13 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
     const { url, platform } = req.body;
     if (!url || typeof url !== 'string') {
       return res.status(400).json({ success: false, message: 'url is required' });
+    }
+
+    // SSRF guard — block private/internal targets before spawning Python subprocess
+    try {
+      assertSafeExternalUrl(url.trim());
+    } catch (ssrfErr: any) {
+      return res.status(400).json({ success: false, message: ssrfErr?.message || 'Invalid URL' });
     }
 
     const analysis = await analyzeUrl(url.trim());

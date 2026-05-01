@@ -77,10 +77,50 @@ interface CrossPlatformComparison {
   recommendations: string[];
 }
 
+const ALERT_MAX_USERS = 50_000;
+const ALERT_MAX_PER_USER = 200;
+const ALERT_USER_TTL_MS = 24 * 60 * 60 * 1000;
+
 class AnalyticsAlertService {
   private alertStore: Map<string, Alert[]> = new Map();
   private triggerCityCache: Map<string, TriggerCity[]> = new Map();
   private playlistTracking: Map<string, Map<string, Set<string>>> = new Map();
+  private lastAccess: Map<string, number> = new Map();
+
+  constructor() {
+    setInterval(() => this._sweepExpired(), ALERT_USER_TTL_MS).unref();
+  }
+
+  private _sweepExpired(): void {
+    const cutoff = Date.now() - ALERT_USER_TTL_MS;
+    for (const [uid, ts] of this.lastAccess) {
+      if (ts < cutoff) {
+        this.alertStore.delete(uid);
+        this.triggerCityCache.delete(uid);
+        this.playlistTracking.delete(uid);
+        this.lastAccess.delete(uid);
+      }
+    }
+  }
+
+  private _touch(userId: string): void {
+    this.lastAccess.set(userId, Date.now());
+  }
+
+  private _evictIfFull(): void {
+    if (this.alertStore.size < ALERT_MAX_USERS) return;
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+    for (const [uid, ts] of this.lastAccess) {
+      if (ts < oldestTime) { oldestTime = ts; oldestKey = uid; }
+    }
+    if (oldestKey) {
+      this.alertStore.delete(oldestKey);
+      this.triggerCityCache.delete(oldestKey);
+      this.playlistTracking.delete(oldestKey);
+      this.lastAccess.delete(oldestKey);
+    }
+  }
 
   private readonly milestoneThresholds = {
     streams: [1000, 10000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000],
@@ -194,7 +234,9 @@ class AnalyticsAlertService {
         });
       }
 
+      this._evictIfFull();
       this.triggerCityCache.set(userId, triggerCities);
+      this._touch(userId);
 
       return triggerCities;
     } catch (error) {
@@ -418,14 +460,16 @@ class AnalyticsAlertService {
       ...alertData,
     };
 
+    this._evictIfFull();
     const userAlerts = this.alertStore.get(alertData.userId) || [];
     userAlerts.unshift(alert);
-    
-    if (userAlerts.length > 100) {
-      userAlerts.splice(100);
+
+    if (userAlerts.length > ALERT_MAX_PER_USER) {
+      userAlerts.splice(ALERT_MAX_PER_USER);
     }
-    
+
     this.alertStore.set(alertData.userId, userAlerts);
+    this._touch(alertData.userId);
 
     logger.info(`Created ${alert.type} alert for user ${alertData.userId}: ${alert.title}`);
 

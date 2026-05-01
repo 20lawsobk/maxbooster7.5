@@ -25,6 +25,7 @@ interface ConversationContext {
   messages: ChatMessage[];
   category?: string;
   resolved: boolean;
+  lastAccessedAt: number;
 }
 
 // Knowledge base categories
@@ -71,26 +72,61 @@ const KNOWLEDGE_BASE = {
   }
 };
 
+const HELPDESK_MAX_SESSIONS = 10_000;
+const HELPDESK_SESSION_TTL_MS = 30 * 60 * 1000;
+
 class AIHelpDeskService {
   private conversations: Map<string, ConversationContext> = new Map();
-  
+
+  constructor() {
+    setInterval(() => this._sweepExpired(), HELPDESK_SESSION_TTL_MS).unref();
+  }
+
+  private _sweepExpired(): void {
+    const now = Date.now();
+    for (const [id, ctx] of this.conversations) {
+      if (now - ctx.lastAccessedAt > HELPDESK_SESSION_TTL_MS) {
+        this.conversations.delete(id);
+      }
+    }
+  }
+
+  private _evictOldestIfFull(): void {
+    if (this.conversations.size < HELPDESK_MAX_SESSIONS) return;
+    let oldestKey: string | null = null;
+    let oldestTime = Infinity;
+    for (const [id, ctx] of this.conversations) {
+      if (ctx.lastAccessedAt < oldestTime) {
+        oldestTime = ctx.lastAccessedAt;
+        oldestKey = id;
+      }
+    }
+    if (oldestKey) this.conversations.delete(oldestKey);
+  }
+
   /**
    * Get or create a conversation context
    */
   getConversation(sessionId: string, userId?: number): ConversationContext {
-    if (!this.conversations.has(sessionId)) {
-      this.conversations.set(sessionId, {
-        sessionId,
-        userId,
-        messages: [{
-          role: 'system',
-          content: `You are ${BUSINESS_CONFIG.helpDesk.aiAssistantName}, the AI help desk assistant for ${BUSINESS_CONFIG.company.platform}, owned by ${BUSINESS_CONFIG.company.name} (LLC #${BUSINESS_CONFIG.company.llcNumber}). Be helpful, friendly, and knowledgeable about all platform features.`,
-          timestamp: new Date()
-        }],
-        resolved: false
-      });
+    const existing = this.conversations.get(sessionId);
+    if (existing) {
+      existing.lastAccessedAt = Date.now();
+      return existing;
     }
-    return this.conversations.get(sessionId)!;
+    this._evictOldestIfFull();
+    const ctx: ConversationContext = {
+      sessionId,
+      userId,
+      messages: [{
+        role: 'system',
+        content: `You are ${BUSINESS_CONFIG.helpDesk.aiAssistantName}, the AI help desk assistant for ${BUSINESS_CONFIG.company.platform}, owned by ${BUSINESS_CONFIG.company.name} (LLC #${BUSINESS_CONFIG.company.llcNumber}). Be helpful, friendly, and knowledgeable about all platform features.`,
+        timestamp: new Date()
+      }],
+      resolved: false,
+      lastAccessedAt: Date.now(),
+    };
+    this.conversations.set(sessionId, ctx);
+    return ctx;
   }
   
   /**

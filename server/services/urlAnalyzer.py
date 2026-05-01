@@ -29,8 +29,85 @@ import urllib.request
 import urllib.parse
 import urllib.error
 import ssl
+import socket
+import ipaddress
 from html.parser import HTMLParser
 from typing import Optional, Any
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SSRF GUARD — blocks requests to loopback, RFC-1918, link-local, metadata IPs
+# ─────────────────────────────────────────────────────────────────────────────
+
+_BLOCKED_NETWORKS = [
+    ipaddress.ip_network('127.0.0.0/8'),       # loopback
+    ipaddress.ip_network('::1/128'),            # IPv6 loopback
+    ipaddress.ip_network('10.0.0.0/8'),         # RFC-1918 private
+    ipaddress.ip_network('172.16.0.0/12'),      # RFC-1918 private
+    ipaddress.ip_network('192.168.0.0/16'),     # RFC-1918 private
+    ipaddress.ip_network('169.254.0.0/16'),     # link-local / AWS metadata
+    ipaddress.ip_network('fe80::/10'),          # IPv6 link-local
+    ipaddress.ip_network('fc00::/7'),           # IPv6 unique-local
+    ipaddress.ip_network('0.0.0.0/8'),          # unspecified
+    ipaddress.ip_network('100.64.0.0/10'),      # shared address space (RFC 6598)
+    ipaddress.ip_network('192.0.2.0/24'),       # TEST-NET-1
+    ipaddress.ip_network('198.51.100.0/24'),    # TEST-NET-2
+    ipaddress.ip_network('203.0.113.0/24'),     # TEST-NET-3
+    ipaddress.ip_network('240.0.0.0/4'),        # reserved
+]
+
+_BLOCKED_HOSTNAMES = {'localhost', 'metadata.google.internal'}
+
+
+def _is_safe_ip(addr: str) -> bool:
+    """Return True if the IP address is safe to connect to."""
+    try:
+        ip = ipaddress.ip_address(addr)
+        return not any(ip in net for net in _BLOCKED_NETWORKS)
+    except ValueError:
+        return False
+
+
+def _assert_safe_url(url: str) -> None:
+    """
+    Raise ValueError if the URL resolves to a private/internal address.
+    Also blocks suspicious hostnames (.internal, .local, metadata services).
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+    except Exception:
+        raise ValueError(f'Malformed URL: {url!r}')
+
+    host = parsed.hostname or ''
+    if not host:
+        raise ValueError('URL has no hostname')
+
+    # Block suspicious TLDs and metadata hostnames
+    lower_host = host.lower()
+    if lower_host in _BLOCKED_HOSTNAMES:
+        raise ValueError(f'Blocked hostname: {host!r}')
+    if lower_host.endswith('.internal') or lower_host.endswith('.local'):
+        raise ValueError(f'Blocked internal hostname: {host!r}')
+
+    # Resolve all IP addresses for the hostname and check each one
+    try:
+        results = socket.getaddrinfo(host, None, socket.AF_UNSPEC, socket.SOCK_STREAM)
+    except socket.gaierror as e:
+        raise ValueError(f'DNS resolution failed for {host!r}: {e}')
+
+    if not results:
+        raise ValueError(f'No DNS results for {host!r}')
+
+    for _family, _type, _proto, _canonname, sockaddr in results:
+        addr = sockaddr[0]
+        if not _is_safe_ip(addr):
+            raise ValueError(f'Blocked private/internal IP: {addr}')
+
+
+class _SSRFAwareRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Redirect handler that validates each redirect target against private IPs."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        _assert_safe_url(newurl)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # PLATFORM CATALOGUE
@@ -461,6 +538,9 @@ def fetch_html(url: str, timeout: int = 20) -> tuple[str, str]:
     Tries with SSL verification first; falls back to no verification if it fails.
     Also retries with a simplified Accept-Encoding to handle sites that block identity encoding.
     """
+    # SSRF guard: validate URL before any network I/O (including redirects)
+    _assert_safe_url(url)
+
     headers = {
         'User-Agent':      BROWSER_UA,
         'Accept':          'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -476,8 +556,12 @@ def fetch_html(url: str, timeout: int = 20) -> tuple[str, str]:
     for verify_ssl in (True, False):
         ctx = _make_ssl_context(verify_ssl)
         req = urllib.request.Request(url, headers=headers)
+        opener = urllib.request.build_opener(
+            urllib.request.HTTPSHandler(context=ctx),
+            _SSRFAwareRedirectHandler,
+        )
         try:
-            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            with opener.open(req, timeout=timeout) as resp:
                 final_url = resp.url
                 raw = resp.read(400 * 1024)
                 ct = resp.headers.get('Content-Type', '')
@@ -520,7 +604,11 @@ def fetch_json(url: str, timeout: int = 8) -> Optional[dict]:
                     'Accept':     'application/json, text/json, */*',
                 }
             )
-            with urllib.request.urlopen(req, timeout=timeout, context=ctx) as resp:
+            opener = urllib.request.build_opener(
+                urllib.request.HTTPSHandler(context=ctx),
+                _SSRFAwareRedirectHandler,
+            )
+            with opener.open(req, timeout=timeout) as resp:
                 raw = resp.read(100 * 1024)
                 return json.loads(raw.decode('utf-8', errors='replace'))
         except ssl.SSLError:
@@ -1250,6 +1338,12 @@ def analyze_url(url: str) -> dict:
         return {'error': 'Empty URL'}
     if not url.startswith(('http://', 'https://')):
         url = 'https://' + url
+
+    # SSRF guard — reject private/internal targets before any I/O
+    try:
+        _assert_safe_url(url)
+    except ValueError as ssrf_err:
+        return {'error': f'Blocked: {ssrf_err}', 'url': url}
 
     # ── 1. Platform detection ──────────────────────────────────────────────
     platform     = 'web'

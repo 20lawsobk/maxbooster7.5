@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { aiHelpDeskService } from '../services/aiHelpDeskService';
 import { BUSINESS_CONFIG } from '../config/businessConfig';
 import { logger } from '../logger.js';
@@ -6,6 +7,17 @@ import crypto from 'crypto';
 import { z } from 'zod';
 
 const router = Router();
+
+// 30 messages per IP per 10 min — prevents AI cost abuse on public endpoint
+// Authenticated users get 3× headroom via the skip
+const chatRateLimiter = rateLimit({
+  windowMs: 10 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, error: 'Too many messages. Please slow down and try again shortly.' },
+  skip: (req) => !!(req.user),
+});
 
 const chatSchema = z.object({
   message: z.string().min(1).max(5000),
@@ -38,7 +50,7 @@ router.get('/welcome', (req: Request, res: Response) => {
   }
 });
 
-router.post('/chat', async (req: Request, res: Response) => {
+router.post('/chat', chatRateLimiter, async (req: Request, res: Response) => {
   try {
     const parsed = chatSchema.safeParse(req.body);
     if (!parsed.success) {
