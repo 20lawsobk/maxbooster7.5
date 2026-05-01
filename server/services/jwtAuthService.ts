@@ -90,7 +90,7 @@ export class JWTAuthService {
         ver: tokenVersion,
       },
       JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY }
+      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
     );
 
     const jwtTokenData: InsertJWTToken = {
@@ -126,7 +126,7 @@ export class JWTAuthService {
     token: string
   ): Promise<{ userId: string; role: string; jti: string; ver?: number } | null> {
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as { 
+      const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as { 
         sub: string; 
         jti: string; 
         role: string;
@@ -195,7 +195,7 @@ export class JWTAuthService {
         ver: tokenVersion,
       },
       JWT_SECRET,
-      { expiresIn: ACCESS_TOKEN_EXPIRY }
+      { expiresIn: ACCESS_TOKEN_EXPIRY, algorithm: 'HS256' }
     );
 
     const jwtTokenData: InsertJWTToken = {

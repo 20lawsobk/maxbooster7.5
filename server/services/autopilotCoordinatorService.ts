@@ -64,8 +64,32 @@ class AutopilotCoordinatorService extends EventEmitter {
   private connectedAutopilots: Map<string, Set<AutopilotType>> = new Map();
   private lastSyncTimes: Map<string, Date> = new Map();
 
+  private static readonly MAX_CONNECTED_USERS = 20_000;
+  private static readonly SYNC_STALE_MS = 4 * 60 * 60 * 1000; // 4 hours
+
   constructor() {
     super();
+    // Evict stale / over-cap entries every 30 minutes.
+    setInterval(() => {
+      const cutoff = Date.now() - AutopilotCoordinatorService.SYNC_STALE_MS;
+      for (const [uid, lastSync] of this.lastSyncTimes.entries()) {
+        if (lastSync.getTime() < cutoff) {
+          this.scheduleQueue.delete(uid);
+          this.sharedInsights.delete(uid);
+          this.connectedAutopilots.delete(uid);
+          this.lastSyncTimes.delete(uid);
+        }
+      }
+      // Hard cap — drop oldest
+      while (this.connectedAutopilots.size > AutopilotCoordinatorService.MAX_CONNECTED_USERS) {
+        const k = this.connectedAutopilots.keys().next().value;
+        if (k === undefined) break;
+        this.scheduleQueue.delete(k);
+        this.sharedInsights.delete(k);
+        this.connectedAutopilots.delete(k);
+        this.lastSyncTimes.delete(k);
+      }
+    }, 30 * 60 * 1000).unref();
     logger.info('AutopilotCoordinatorService initialized');
   }
 

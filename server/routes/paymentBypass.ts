@@ -1,48 +1,46 @@
 import { Router, Request, Response } from 'express';
 import { paymentBypassService } from '../services/paymentBypassService';
+import { require2FA } from '../middleware/auth';
 import { logger } from '../logger';
 
 const router = Router();
 
-interface AuthenticatedRequest extends Request {
-  user?: {
-    id: string;
-    email: string;
-    role?: string;
-  };
-}
-
-const requireAdmin = (req: AuthenticatedRequest, res: Response, next: any) => {
-  if (!req.user) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (req.user.role !== 'admin') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
+// All payment-bypass routes require admin role + 2FA — defined locally to
+// avoid circular deps, but require2FA is the canonical shared middleware.
+const requireAdmin = (req: Request, res: Response, next: any) => {
+  if (!req.user) return res.status(401).json({ error: 'Authentication required' });
+  if ((req.user as any).role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   next();
 };
 
-router.get('/status', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+// Double-gate: admin role AND completed 2FA challenge (prevents session-hijack attacks)
+router.use(requireAdmin, require2FA);
+
+const MAX_BYPASS_HOURS = 72;  // hard ceiling — prevents indefinite bypass
+const MAX_EXTEND_HOURS = 24;  // per-extension ceiling
+
+router.get('/status', async (req: Request, res: Response) => {
   try {
     const status = await paymentBypassService.getStatus();
-    res.json({
-      success: true,
-      ...status,
-    });
+    res.json({ success: true, ...status });
   } catch (error) {
     logger.warn({ err: error }, '[PaymentBypass] Failed to get status:');
     res.status(500).json({ error: 'Failed to get payment bypass status' });
   }
 });
 
-router.post('/activate', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/activate', async (req: Request, res: Response) => {
   try {
-    const { durationHours = 2, reason } = req.body;
-    const adminId = req.user!.id;
+    const rawHours = Number(req.body.durationHours ?? 2);
+    if (!Number.isFinite(rawHours) || rawHours <= 0) {
+      return res.status(400).json({ error: 'durationHours must be a positive number' });
+    }
+    const durationHours = Math.min(rawHours, MAX_BYPASS_HOURS);
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.slice(0, 500) : undefined;
+    const adminId = (req.user as any).id;
 
     const config = await paymentBypassService.activate(adminId, reason, durationHours);
-    
-    logger.info(`[PaymentBypass] Admin ${req.user!.email} activated payment bypass for ${durationHours} hours`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} activated bypass for ${durationHours}h (requested ${rawHours}h)`);
 
     res.json({
       success: true,
@@ -55,34 +53,32 @@ router.post('/activate', requireAdmin, async (req: AuthenticatedRequest, res: Re
   }
 });
 
-router.post('/deactivate', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/deactivate', async (req: Request, res: Response) => {
   try {
-    const { reason } = req.body;
-    const adminId = req.user!.id;
+    const reason = typeof req.body.reason === 'string' ? req.body.reason.slice(0, 500) : undefined;
+    const adminId = (req.user as any).id;
 
     const config = await paymentBypassService.deactivate(adminId, reason);
-    
-    logger.info(`[PaymentBypass] Admin ${req.user!.email} deactivated payment bypass`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} deactivated payment bypass`);
 
-    res.json({
-      success: true,
-      message: 'Payment requirements re-enabled',
-      config,
-    });
+    res.json({ success: true, message: 'Payment requirements re-enabled', config });
   } catch (error) {
     logger.warn({ err: error }, '[PaymentBypass] Failed to deactivate:');
     res.status(500).json({ error: 'Failed to deactivate payment bypass' });
   }
 });
 
-router.post('/extend', requireAdmin, async (req: AuthenticatedRequest, res: Response) => {
+router.post('/extend', async (req: Request, res: Response) => {
   try {
-    const { additionalHours = 1 } = req.body;
-    const adminId = req.user!.id;
+    const rawHours = Number(req.body.additionalHours ?? 1);
+    if (!Number.isFinite(rawHours) || rawHours <= 0) {
+      return res.status(400).json({ error: 'additionalHours must be a positive number' });
+    }
+    const additionalHours = Math.min(rawHours, MAX_EXTEND_HOURS);
+    const adminId = (req.user as any).id;
 
     const config = await paymentBypassService.extendBypass(adminId, additionalHours);
-    
-    logger.info(`[PaymentBypass] Admin ${req.user!.email} extended payment bypass by ${additionalHours} hours`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} extended bypass by ${additionalHours}h (requested ${rawHours}h)`);
 
     res.json({
       success: true,
@@ -91,7 +87,7 @@ router.post('/extend', requireAdmin, async (req: AuthenticatedRequest, res: Resp
     });
   } catch (error: any) {
     logger.warn({ err: error }, '[PaymentBypass] Failed to extend:');
-    res.status(400).json({ error: 'Failed to extend payment bypass' });
+    res.status(400).json({ error: error?.message || 'Failed to extend payment bypass' });
   }
 });
 

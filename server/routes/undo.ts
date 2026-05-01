@@ -439,6 +439,34 @@ interface DeletedItem {
 const restorePointCache = new Map<string, RestorePoint>();
 const deletedItemCache = new Map<string, DeletedItem>();
 
+// Global eviction: max 5K deleted items, max 10K restore points, max 100K action entries.
+// Individual per-user caps are enforced inline, but this is the global safety net.
+const MAX_DELETED_ITEMS   =  5_000;
+const MAX_RESTORE_POINTS  = 10_000;
+const UNDO_ITEM_TTL_MS    = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [id, item] of deletedItemCache.entries()) {
+    if (item.expiresAt && new Date(item.expiresAt).getTime() < now) deletedItemCache.delete(id);
+  }
+  while (deletedItemCache.size > MAX_DELETED_ITEMS) {
+    const k = deletedItemCache.keys().next().value;
+    if (k !== undefined) deletedItemCache.delete(k); else break;
+  }
+  for (const [id, rp] of restorePointCache.entries()) {
+    if (rp.expiresAt && new Date(rp.expiresAt).getTime() < now) restorePointCache.delete(id);
+  }
+  while (restorePointCache.size > MAX_RESTORE_POINTS) {
+    const k = restorePointCache.keys().next().value;
+    if (k !== undefined) restorePointCache.delete(k); else break;
+  }
+  while (actionCache.size > 100_000) {
+    const k = actionCache.keys().next().value;
+    if (k !== undefined) actionCache.delete(k); else break;
+  }
+}, 60 * 60 * 1000).unref(); // run hourly
+
 function generateRestorePointId(): string {
   return `restore_${Date.now()}_${randomBytes(4).toString("hex")}`;
 }

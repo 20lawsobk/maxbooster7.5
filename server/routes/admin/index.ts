@@ -824,12 +824,22 @@ router.get('/financial-config/label-settings', async (_req, res) => {
   }
 });
 
+// Allowlists for financial-config PATCH endpoints — prevents arbitrary field injection
+const ROYALTY_RATE_FIELDS = new Set(['platform', 'rate', 'unit', 'currency', 'tier']);
+const TAX_TREATY_FIELDS   = new Set(['country', 'code', 'withholdingRate', 'hasTreaty', 'notes']);
+
 // PATCH individual royalty rate entry
 router.patch('/financial-config/royalty-rates/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const update = req.body;
-    // Persist update to systemSettings (update the matching platform entry)
+    const raw = req.body as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+    for (const k of Object.keys(raw)) {
+      if (ROYALTY_RATE_FIELDS.has(k)) update[k] = raw[k];
+    }
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update', allowed: [...ROYALTY_RATE_FIELDS] });
+    }
     const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'royalty_rates')).limit(1);
     const current = stored.length ? JSON.parse(stored[0].value as string) : { rates: DEFAULT_ROYALTY_RATES };
     const rates = (current.rates || DEFAULT_ROYALTY_RATES).map((r: any, idx: number) =>
@@ -848,7 +858,14 @@ router.patch('/financial-config/royalty-rates/:id', async (req, res) => {
 router.patch('/financial-config/tax-treaties/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const update = req.body;
+    const raw = req.body as Record<string, unknown>;
+    const update: Record<string, unknown> = {};
+    for (const k of Object.keys(raw)) {
+      if (TAX_TREATY_FIELDS.has(k)) update[k] = raw[k];
+    }
+    if (Object.keys(update).length === 0) {
+      return res.status(400).json({ error: 'No valid fields to update', allowed: [...TAX_TREATY_FIELDS] });
+    }
     const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'tax_treaties')).limit(1);
     const current = stored.length ? JSON.parse(stored[0].value as string) : { treaties: DEFAULT_TAX_TREATIES };
     const treaties = (current.treaties || DEFAULT_TAX_TREATIES).map((t: any, idx: number) =>
