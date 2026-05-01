@@ -23,6 +23,7 @@ function authHeaders(): Record<string, string> {
 async function post(path: string, body: Record<string, any>): Promise<any> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
+    signal: AbortSignal.timeout(10_000), // 10 s — internal service hang must not hold event loop
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
@@ -39,7 +40,10 @@ export class BoosterStateClient {
   }
 
   async connect(): Promise<void> {
-    const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
+    const res = await fetch(`${BASE_URL}/ping`, {
+      signal: AbortSignal.timeout(5_000),
+      headers: authHeaders(),
+    });
     if (!res.ok) {
       throw new Error(`BoosterState ping returned ${res.status}`);
     }
@@ -47,7 +51,10 @@ export class BoosterStateClient {
   }
 
   async ping(): Promise<string> {
-    const res = await fetch(`${BASE_URL}/ping`, { headers: authHeaders() });
+    const res = await fetch(`${BASE_URL}/ping`, {
+      signal: AbortSignal.timeout(5_000),
+      headers: authHeaders(),
+    });
     return await res.text();
   }
 
@@ -171,7 +178,7 @@ export async function getBoosterStateClient(): Promise<BoosterStateClient> {
 
 export async function isBoosterStateHealthy(): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/health`, { headers: authHeaders() });
+    const res = await fetch(`${BASE_URL}/health`, { signal: AbortSignal.timeout(5_000), headers: authHeaders() });
     if (!res.ok) return false;
     const data = await res.json();
     return data.status === 'ok';

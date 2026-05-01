@@ -25,6 +25,12 @@
 
 import { logger } from '../logger.js';
 
+// ── Timeout-guarded fetch: adds a 8s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(8_000), ...init });
+
+
 // ─── Public types ─────────────────────────────────────────────────────────────
 
 export interface DnsRecord {
@@ -97,7 +103,7 @@ async function fetchWithRetry(
   let lastErr: unknown;
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const res = await fetch(url, init);
+      const res = await timedFetch(url, init);
       // Retry on server errors; surface client errors immediately
       if (res.status >= 500 && attempt < maxRetries - 1) {
         const delay = 500 * Math.pow(2, attempt);

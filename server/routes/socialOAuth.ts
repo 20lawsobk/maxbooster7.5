@@ -9,6 +9,12 @@ import { syncPlatformData } from '../services/socialSyncService';
 import { socialOAuth as socialOAuthService } from '../services/socialOAuthService';
 import { env } from '../config/env.js';
 
+// ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
+
+
 const router = Router();
 
 interface AuthenticatedRequest extends Request {
@@ -406,8 +412,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             code_verifier: stateData.codeVerifier!,
           });
           const twitterBasicAuth = Buffer.from(`${twitterClientId}:${twitterClientSecret}`).toString('base64');
-          const twitterTokenRes = await fetch('https://api.x.com/2/oauth2/token', {
+          const twitterTokenRes = await timedFetch('https://api.x.com/2/oauth2/token', {
             method: 'POST',
+            signal: AbortSignal.timeout(15_000), // 15 s — X/Twitter token exchange
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
               'Authorization': `Basic ${twitterBasicAuth}`,
@@ -457,7 +464,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       
       if (platform !== 'twitter') {
         try {
-          tokenResponse = await fetch(config.tokenUrl, {
+          tokenResponse = await timedFetch(config.tokenUrl, {
             method: 'POST',
             headers,
             body: tokenParams.toString(),
@@ -487,8 +494,9 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
 
       if (platform === 'threads' && tokenData.access_token && config.clientSecret) {
         try {
-          const longLivedResponse = await fetch(
-            `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`
+          const longLivedResponse = await timedFetch(
+            `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`,
+            { signal: AbortSignal.timeout(15_000) } // 15 s — Threads token exchange
           );
           const longLivedData = await longLivedResponse.json();
           if (longLivedResponse.ok && longLivedData.access_token) {
@@ -526,7 +534,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
     try {
       if (platform === 'meta') {
         try {
-          const userResponse = await fetch(`https://graph.facebook.com/me?fields=id,name,picture&access_token=${tokenData.access_token}`);
+          const userResponse = await timedFetch(`https://graph.facebook.com/me?fields=id,name,picture&access_token=${tokenData.access_token}`, { signal: AbortSignal.timeout(10_000) });
           const userData = await userResponse.json();
           facebookUsername = userData.name || 'Facebook User';
           username = facebookUsername;
@@ -538,18 +546,20 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
         
         try {
-          const igResponse = await fetch(`https://graph.facebook.com/me/accounts?access_token=${tokenData.access_token}`);
+          const igResponse = await timedFetch(`https://graph.facebook.com/me/accounts?access_token=${tokenData.access_token}`, { signal: AbortSignal.timeout(10_000) });
           const igData = await igResponse.json();
           if (igData.data && igData.data.length > 0) {
             const pageId = igData.data[0].id;
             const pageToken = igData.data[0].access_token;
-            const igAccountResponse = await fetch(
-              `https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`
+            const igAccountResponse = await timedFetch(
+              `https://graph.facebook.com/${pageId}?fields=instagram_business_account&access_token=${pageToken}`,
+              { signal: AbortSignal.timeout(10_000) }
             );
             const igAccountData = await igAccountResponse.json();
             if (igAccountData.instagram_business_account) {
-              const igUserResponse = await fetch(
-                `https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username,followers_count,media_count&access_token=${pageToken}`
+              const igUserResponse = await timedFetch(
+                `https://graph.facebook.com/${igAccountData.instagram_business_account.id}?fields=username,followers_count,media_count&access_token=${pageToken}`,
+                { signal: AbortSignal.timeout(10_000) }
               );
               const igUserData = await igUserResponse.json();
               instagramUsername = igUserData.username || 'Instagram User';
@@ -564,7 +574,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'twitter') {
         try {
-          const userResponse = await fetch('https://api.x.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
+          const userResponse = await timedFetch('https://api.x.com/2/users/me?user.fields=public_metrics,profile_image_url,description', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
@@ -578,7 +588,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'youtube') {
         try {
-          const userResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
+          const userResponse = await timedFetch('https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
@@ -593,7 +603,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'tiktok') {
         try {
-          const userResponse = await fetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username,bio_description,profile_deep_link,is_verified', {
+          const userResponse = await timedFetch('https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,username,bio_description,profile_deep_link,is_verified', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
@@ -609,7 +619,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'linkedin') {
         try {
-          const userResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
+          const userResponse = await timedFetch('https://api.linkedin.com/v2/userinfo', {
             headers: { 'Authorization': `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
@@ -623,7 +633,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'threads') {
         try {
-          const userResponse = await fetch(`https://graph.threads.net/me?fields=id,username,threads_profile_picture_url&access_token=${tokenData.access_token}`);
+          const userResponse = await timedFetch(`https://graph.threads.net/me?fields=id,username,threads_profile_picture_url&access_token=${tokenData.access_token}`);
           const userData = await userResponse.json();
           username = userData.username || 'Threads User';
           platformUserId = userData.id || '';
@@ -635,7 +645,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'spotify') {
         try {
-          const userResponse = await fetch('https://api.spotify.com/v1/me', {
+          const userResponse = await timedFetch('https://api.spotify.com/v1/me', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();
@@ -650,7 +660,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
         }
       } else if (platform === 'google' || platform === 'googlebusiness') {
         try {
-          const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+          const userResponse = await timedFetch('https://www.googleapis.com/oauth2/v2/userinfo', {
             headers: { Authorization: `Bearer ${tokenData.access_token}` },
           });
           const userData = await userResponse.json();

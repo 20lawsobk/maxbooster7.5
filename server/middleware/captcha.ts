@@ -88,6 +88,7 @@ async function verifyCaptchaToken(token: string, secret: string): Promise<boolea
   try {
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
+      signal: AbortSignal.timeout(8_000), // 8 s — fail open on Google outage, don't block auth
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
@@ -120,6 +121,7 @@ async function verifyHCaptchaToken(token: string, secret: string): Promise<boole
   try {
     const response = await fetch('https://hcaptcha.com/siteverify', {
       method: 'POST',
+      signal: AbortSignal.timeout(8_000), // 8 s — fail open on hCaptcha outage
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },

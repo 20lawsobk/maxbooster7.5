@@ -37,7 +37,7 @@ async function proxyTo(
   const url = `${target}${req.path}${qs}`;
   try {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    const opts: RequestInit = { method: req.method, headers };
+    const opts: RequestInit = { method: req.method, headers, signal: AbortSignal.timeout(15_000) };
     if (req.method !== 'GET' && req.method !== 'HEAD') {
       opts.body = JSON.stringify(req.body);
     }

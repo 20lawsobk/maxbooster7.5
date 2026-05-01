@@ -9,6 +9,12 @@ import {
 import { eq, and, gte, lte, desc, sql, asc } from 'drizzle-orm';
 import { logger } from '../logger.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 export type DSPPlatform = 'spotify' | 'apple' | 'youtube' | 'amazon' | 'tidal' | 'deezer' | 'soundcloud' | 'pandora' | 'tiktok' | 'instagram';
 
 interface DemographicData {
@@ -154,7 +160,7 @@ class DSPAnalyticsService {
       const config = this.platformConfigs.get('spotify');
       if (!config) return null;
 
-      const profileRes = await fetch(`${config.apiBaseUrl}/me`, {
+      const profileRes = await timedFetch(`${config.apiBaseUrl}/me`, {
         headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
       });
 
@@ -165,7 +171,7 @@ class DSPAnalyticsService {
 
       const profile = await profileRes.json();
 
-      const topTracksRes = await fetch(`${config.apiBaseUrl}/me/top/tracks?limit=50&time_range=short_term`, {
+      const topTracksRes = await timedFetch(`${config.apiBaseUrl}/me/top/tracks?limit=50&time_range=short_term`, {
         headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
       });
       const topTracks = topTracksRes.ok ? await topTracksRes.json() : { items: [] };
@@ -203,7 +209,7 @@ class DSPAnalyticsService {
       const config = this.platformConfigs.get('apple');
       if (!config) return null;
 
-      const response = await fetch(`${config.apiBaseUrl}/me/recent/played/tracks?limit=50`, {
+      const response = await timedFetch(`${config.apiBaseUrl}/me/recent/played/tracks?limit=50`, {
         headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
       });
 
@@ -247,7 +253,7 @@ class DSPAnalyticsService {
       const startDateStr = startDate.toISOString().split('T')[0];
       const endDateStr = endDate.toISOString().split('T')[0];
 
-      const response = await fetch(
+      const response = await timedFetch(
         `${config.apiBaseUrl}/reports?ids=channel==MINE&startDate=${startDateStr}&endDate=${endDateStr}&metrics=views,estimatedMinutesWatched,subscribersGained,likes,comments,averageViewDuration`,
         { headers: { 'Authorization': `Bearer ${credentials.accessToken}` } }
       );
@@ -290,7 +296,7 @@ class DSPAnalyticsService {
       const config = this.platformConfigs.get('amazon');
       if (!config) return null;
 
-      const response = await fetch(`${config.apiBaseUrl}/analytics/streams`, {
+      const response = await timedFetch(`${config.apiBaseUrl}/analytics/streams`, {
         headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
       });
 
@@ -328,7 +334,7 @@ class DSPAnalyticsService {
       const config = this.platformConfigs.get('tiktok');
       if (!config) return null;
 
-      const response = await fetch(`${config.apiBaseUrl}/user/info/`, {
+      const response = await timedFetch(`${config.apiBaseUrl}/user/info/`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${credentials.accessToken}`,
@@ -380,7 +386,7 @@ class DSPAnalyticsService {
       const config = this.platformConfigs.get('instagram');
       if (!config) return null;
 
-      const response = await fetch(
+      const response = await timedFetch(
         `${config.apiBaseUrl}/me?fields=followers_count,media_count&access_token=${credentials.accessToken}`
       );
 
@@ -391,7 +397,7 @@ class DSPAnalyticsService {
 
       const userData = await response.json();
 
-      const insightsResponse = await fetch(
+      const insightsResponse = await timedFetch(
         `${config.apiBaseUrl}/me/insights?metric=reach,impressions&period=day&since=${Math.floor(startDate.getTime() / 1000)}&until=${Math.floor(endDate.getTime() / 1000)}&access_token=${credentials.accessToken}`
       );
 

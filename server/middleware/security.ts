@@ -12,16 +12,16 @@ const helmetMiddleware = helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
-        "'unsafe-inline'",
-        "'unsafe-eval'",
+        // 'unsafe-inline' / 'unsafe-eval' only in development (Vite HMR needs them).
+        // In production the compiled bundle has no inline scripts and no eval usage.
+        ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
         'https://js.stripe.com',
         'https://www.googletagmanager.com',
         'https://connect.facebook.net',
-        ...(isDev ? ["'unsafe-inline'", "'unsafe-eval'"] : []),
       ],
       styleSrc: [
         "'self'",
-        "'unsafe-inline'",
+        "'unsafe-inline'", // CSS-in-JS libraries require this; scoped to styles only
         'https://fonts.googleapis.com',
       ],
       fontSrc: [
@@ -81,6 +81,24 @@ const helmetMiddleware = helmet({
   xssFilter: true,
 });
 
+// Permissions-Policy restricts which browser feature APIs this origin may use.
+// Helmet v8 does not expose this as a constructor option; set it as a raw header.
+// Deny access to sensors/hardware that Max Booster never legitimately needs.
+const PERMISSIONS_POLICY =
+  'camera=(), ' +
+  'microphone=(), ' +       // audio is uploaded, not captured in-browser
+  'geolocation=(), ' +
+  'payment=(self "https://js.stripe.com"), ' +
+  'usb=(), ' +
+  'bluetooth=(), ' +
+  'accelerometer=(), ' +
+  'gyroscope=(), ' +
+  'magnetometer=(), ' +
+  'ambient-light-sensor=(), ' +
+  'autoplay=(self), ' +      // needed for the media player
+  'fullscreen=(self), ' +    // needed for the media player
+  'picture-in-picture=(self)'; // needed for the media player
+
 const globalRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: isDev ? 100_000 : 2000,
@@ -111,6 +129,8 @@ export function securityMiddleware(
     if (helmetErr) {
       logger.warn('[Security] Helmet error (non-fatal):', helmetErr?.message);
     }
+    // Set Permissions-Policy — not natively supported by this helmet version.
+    res.setHeader('Permissions-Policy', PERMISSIONS_POLICY);
     globalRateLimit(req, res, next);
   });
 }

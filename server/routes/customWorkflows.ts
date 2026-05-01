@@ -314,6 +314,7 @@ router.post('/:id/test', requireAuth, async (req, res) => {
                 try {
                   await fetch(webhookUrl, {
                     method: 'POST',
+                    signal: AbortSignal.timeout(10_000), // 10 s hard cap — prevents hanging slots
                     headers: {
                       'Content-Type': 'application/json',
                       ...(action.config.secret ? { Authorization: String(action.config.secret) } : {}),

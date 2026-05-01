@@ -65,14 +65,14 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
 
     const response = await fetch(
       `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
-      { headers }
+      { signal: AbortSignal.timeout(10_000), headers }
     );
 
     if (!response.ok) {
       if (response.status === 404) {
         const allResponse = await fetch(
           `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases?per_page=1`,
-          { headers }
+          { signal: AbortSignal.timeout(10_000), headers }
         );
         if (!allResponse.ok) {
           logger.warn(`GitHub releases API returned ${allResponse.status}`);

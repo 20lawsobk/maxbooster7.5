@@ -1582,6 +1582,7 @@ export async function registerRoutes(
       // Exchange code for tokens
       const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
+        signal: AbortSignal.timeout(10_000), // 10 s — Google outage must not hang the login flow
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           code: code as string,
@@ -1601,6 +1602,7 @@ export async function registerRoutes(
 
       // Get user info
       const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        signal: AbortSignal.timeout(10_000), // 10 s — userinfo hang must not block session creation
         headers: { Authorization: `Bearer ${tokens.access_token}` },
       });
 

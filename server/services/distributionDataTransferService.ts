@@ -6,6 +6,12 @@ import { CircuitBreaker, CircuitBreakerRegistry } from '../services/circuitBreak
 import { labelGridService, type LabelGridCatalogRelease } from './labelgrid-service';
 import { DISTRIBUTION_PLATFORMS } from '../seed/distributionPlatforms.js';
 
+// ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
+
+
 export const SUPPORTED_DISTRIBUTORS = [
   { id: 'distrokid', name: 'DistroKid', importFormat: 'csv', exportUrl: 'https://distrokid.com/stats/' },
   { id: 'tunecore', name: 'TuneCore', importFormat: 'csv', exportUrl: 'https://www.tunecore.com/dashboard' },
@@ -1195,7 +1201,7 @@ class DistributionDataTransferService {
     }
 
     try {
-      const resp = await fetch('https://accounts.spotify.com/api/token', {
+      const resp = await timedFetch('https://accounts.spotify.com/api/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -1277,7 +1283,7 @@ class DistributionDataTransferService {
       // (no songs) to avoid re-importing the same release data from a second source.
       const entityParam = sharedTopTracks ? 'musicArtist' : 'song';
       const limitParam = sharedTopTracks ? '1' : '10';
-      const resp = await fetch(
+      const resp = await timedFetch(
         `https://itunes.apple.com/lookup?id=${artistId}&entity=${entityParam}&limit=${limitParam}`
       );
       if (!resp.ok) throw new Error(`iTunes API returned ${resp.status}`);
@@ -1319,7 +1325,7 @@ class DistributionDataTransferService {
 
     const breaker = this.getCircuitBreaker('youtube_music');
     const fetcher = async () => {
-      const resp = await fetch(
+      const resp = await timedFetch(
         `https://www.googleapis.com/youtube/v3/channels?part=statistics,snippet&id=${channelId}&key=${apiKey}`
       );
       if (!resp.ok) throw new Error(`YouTube API returned ${resp.status}`);
@@ -1349,7 +1355,7 @@ class DistributionDataTransferService {
 
   private async fetchYouTubeMusicFallback(channelId: string): Promise<Partial<StreamingProfileData> | null> {
     try {
-      const resp = await fetch(`https://www.youtube.com/channel/${channelId}`, {
+      const resp = await timedFetch(`https://www.youtube.com/channel/${channelId}`, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)', 'Accept-Language': 'en-US,en;q=0.9' },
       });
       if (!resp.ok) return null;
@@ -1452,7 +1458,7 @@ class DistributionDataTransferService {
     }
 
     try {
-      const pageResp = await fetch('https://soundcloud.com', {
+      const pageResp = await timedFetch('https://soundcloud.com', {
         headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' },
       });
       if (!pageResp.ok) return null;
@@ -1462,7 +1468,7 @@ class DistributionDataTransferService {
       if (!scriptUrls || scriptUrls.length === 0) return null;
 
       for (const url of scriptUrls.slice(-3)) {
-        const jsResp = await fetch(url);
+        const jsResp = await timedFetch(url);
         if (!jsResp.ok) continue;
         const js = await jsResp.text();
         const match = js.match(/client_id:"([a-zA-Z0-9]+)"/);
@@ -1484,7 +1490,7 @@ class DistributionDataTransferService {
     const fetcher = async () => {
       const clientId = await this.getSoundCloudClientId();
       if (clientId) {
-        const resp = await fetch(
+        const resp = await timedFetch(
           `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
         );
         if (resp.ok) {
@@ -1503,7 +1509,7 @@ class DistributionDataTransferService {
         }
       }
 
-      const resp = await fetch(`https://soundcloud.com/${permalink}`, {
+      const resp = await timedFetch(`https://soundcloud.com/${permalink}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
@@ -1541,7 +1547,7 @@ class DistributionDataTransferService {
       const tidalToken = process.env.TIDAL_TOKEN;
       if (tidalToken) {
         try {
-          const resp = await fetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
+          const resp = await timedFetch(`https://api.tidal.com/v1/artists/${artistId}?countryCode=US`, {
             headers: { 'x-tidal-token': tidalToken },
           });
           if (resp.ok) {
@@ -1557,7 +1563,7 @@ class DistributionDataTransferService {
         }
       }
 
-      const resp = await fetch(`https://listen.tidal.com/artist/${artistId}`, {
+      const resp = await timedFetch(`https://listen.tidal.com/artist/${artistId}`, {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept-Language': 'en-US,en;q=0.9',
@@ -1592,7 +1598,7 @@ class DistributionDataTransferService {
   private async fetchBandcampData(slug: string): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('bandcamp');
     const fetcher = async () => {
-      const resp = await fetch(`https://${slug}.bandcamp.com`, {
+      const resp = await timedFetch(`https://${slug}.bandcamp.com`, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
       });
       if (!resp.ok) throw new Error(`Bandcamp returned ${resp.status}`);
@@ -1623,7 +1629,7 @@ class DistributionDataTransferService {
   private async fetchAudiomackData(slug: string): Promise<Partial<StreamingProfileData> | null> {
     const breaker = this.getCircuitBreaker('audiomack');
     const fetcher = async () => {
-      const resp = await fetch(`https://api.audiomack.com/v1/artist/${slug}`);
+      const resp = await timedFetch(`https://api.audiomack.com/v1/artist/${slug}`);
       if (!resp.ok) throw new Error(`Audiomack API returned ${resp.status}`);
       const data = await resp.json() as any;
       const artist = data.results;
@@ -1704,7 +1710,7 @@ class DistributionDataTransferService {
         let spotifyApiBlocked = false;
 
         while (url) {
-          const resp = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+          const resp = await timedFetch(url, { headers: { Authorization: `Bearer ${token}` } });
 
           if (!resp.ok) {
             // Detect premium-subscription block on the developer app — the
@@ -1751,7 +1757,7 @@ class DistributionDataTransferService {
           const trackTargets = results.slice(0, 10);
           await Promise.allSettled(trackTargets.map(async (release) => {
             try {
-              const tr = await fetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`, {
+              const tr = await timedFetch(`https://api.spotify.com/v1/albums/${release.externalId}/tracks?limit=50`, {
                 headers: { Authorization: `Bearer ${token}` },
               });
               if (tr.ok) {
@@ -1816,7 +1822,7 @@ class DistributionDataTransferService {
 
     try {
       // Step 1 — Find the iTunes artist ID by name
-      const searchResp = await fetch(
+      const searchResp = await timedFetch(
         `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`
       );
       if (!searchResp.ok) return [];
@@ -1837,7 +1843,7 @@ class DistributionDataTransferService {
       if (!bestId) return [];
 
       // Step 2 — Get all releases for that artist ID (up to 200)
-      const lookupResp = await fetch(
+      const lookupResp = await timedFetch(
         `https://itunes.apple.com/lookup?id=${bestId}&entity=album&limit=200&country=US`
       );
       if (!lookupResp.ok) return [];
@@ -1901,7 +1907,7 @@ class DistributionDataTransferService {
 
       try {
         const spotifyUrl = `https://open.spotify.com/artist/${spotifyArtistId}`;
-        const urlResp = await fetch(
+        const urlResp = await timedFetch(
           `https://musicbrainz.org/ws/2/url?resource=${encodeURIComponent(spotifyUrl)}&inc=artist-rels&fmt=json`,
           { headers: { 'User-Agent': UA } }
         );
@@ -1916,7 +1922,7 @@ class DistributionDataTransferService {
       if (!mbid && artistName && artistName !== 'Unknown Artist') {
         await delay(300); // respect rate limit
         try {
-          const searchResp = await fetch(
+          const searchResp = await timedFetch(
             `https://musicbrainz.org/ws/2/artist/?query=${encodeURIComponent(artistName)}&fmt=json&limit=5`,
             { headers: { 'User-Agent': UA } }
           );
@@ -1934,7 +1940,7 @@ class DistributionDataTransferService {
 
       // ── Step 3: Fetch release-groups (with genre tags + release counts) ─────
       await delay(300);
-      const rgResp = await fetch(
+      const rgResp = await timedFetch(
         `https://musicbrainz.org/ws/2/release-group?artist=${mbid}&type=album%7Csingle%7Cep&fmt=json&limit=100&inc=tags%2Breleases`,
         { headers: { 'User-Agent': UA } }
       );
@@ -1959,7 +1965,7 @@ class DistributionDataTransferService {
         const chunk = groups.slice(i, i + CAA_CONCURRENCY);
         await Promise.allSettled(chunk.map(async (rg: any) => {
           try {
-            const caaResp = await fetch(
+            const caaResp = await timedFetch(
               `https://coverartarchive.org/release-group/${rg.id}`,
               {
                 headers: { 'User-Agent': UA },
@@ -2012,7 +2018,7 @@ class DistributionDataTransferService {
 
   private async fetchAppleMusicAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
     try {
-      const resp = await fetch(
+      const resp = await timedFetch(
         `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=50`
       );
       if (!resp.ok) return [];
@@ -2040,7 +2046,7 @@ class DistributionDataTransferService {
 
   private async fetchDeezerAlbums(artistId: string, artistName: string): Promise<ScannedRelease[]> {
     try {
-      const resp = await fetch(`https://api.deezer.com/artist/${artistId}/albums?limit=50`);
+      const resp = await timedFetch(`https://api.deezer.com/artist/${artistId}/albums?limit=50`);
       if (!resp.ok) return [];
       const data = await resp.json() as any;
       if (data.error) return [];
@@ -2078,7 +2084,7 @@ class DistributionDataTransferService {
   ): Promise<ScannedRelease[]> {
     if (!artistName || artistName === 'Unknown Artist') return [];
     try {
-      const searchResp = await fetch(
+      const searchResp = await timedFetch(
         `https://api.deezer.com/search/artist?q=${encodeURIComponent(artistName)}&limit=5`
       );
       if (!searchResp.ok) return [];
@@ -2094,7 +2100,7 @@ class DistributionDataTransferService {
 
       if (!bestArtist?.id) return [];
 
-      const albumResp = await fetch(
+      const albumResp = await timedFetch(
         `https://api.deezer.com/artist/${bestArtist.id}/albums?limit=50`
       );
       if (!albumResp.ok) return [];
@@ -2126,7 +2132,7 @@ class DistributionDataTransferService {
       const clientId = await this.getSoundCloudClientId();
       if (!clientId) return [];
 
-      const userResp = await fetch(
+      const userResp = await timedFetch(
         `https://api-v2.soundcloud.com/resolve?url=https://soundcloud.com/${permalink}&client_id=${clientId}`
       );
       if (!userResp.ok) return [];
@@ -2188,7 +2194,7 @@ class DistributionDataTransferService {
 
   private async fetchBandcampAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
     try {
-      const resp = await fetch(`https://${slug}.bandcamp.com/music`, {
+      const resp = await timedFetch(`https://${slug}.bandcamp.com/music`, {
         headers: { 'User-Agent': 'Mozilla/5.0 (compatible; MaxBooster/1.0)' },
       });
       if (!resp.ok) return [];
@@ -2240,7 +2246,7 @@ class DistributionDataTransferService {
 
   private async fetchAudiomackAlbums(slug: string, artistName: string): Promise<ScannedRelease[]> {
     try {
-      const resp = await fetch(`https://api.audiomack.com/v1/artist/${slug}/playlists?limit=20`);
+      const resp = await timedFetch(`https://api.audiomack.com/v1/artist/${slug}/playlists?limit=20`);
       if (!resp.ok) return [];
       const data = await resp.json() as any;
       const items = data.results || data.data || [];

@@ -45,6 +45,11 @@ interface AutopilotConfig {
 }
 
 export class AutopilotEngine extends EventEmitter {
+  // Cap performance-data memory: keep only the most recent MAX_PERF_ENTRIES
+  // content IDs. Without a cap, long-running autopilot instances accumulate
+  // an entry per published piece of content and never release it.
+  private static readonly MAX_PERF_ENTRIES = 2_000;
+
   private jobs: Map<string, AutopilotJob> = new Map();
   private config: AutopilotConfig;
   private isRunning: boolean = false;
@@ -456,7 +461,11 @@ export class AutopilotEngine extends EventEmitter {
     const analytics = await platformAPI.collectEngagementData(postId, job.platform, this.userId);
 
     if (analytics) {
-      // Store performance data for learning
+      // Store performance data for learning — evict oldest entry first when at cap.
+      if (this.performanceData.size >= AutopilotEngine.MAX_PERF_ENTRIES) {
+        const oldestKey = this.performanceData.keys().next().value;
+        if (oldestKey !== undefined) this.performanceData.delete(oldestKey);
+      }
       this.performanceData.set(contentId, {
         platform: job.platform,
         engagement: analytics,

@@ -6,6 +6,12 @@ import archiver from 'archiver';
 import { create } from 'xmlbuilder2';
 import { logger } from '../logger.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 interface ReleaseMetadata {
   id: string;
   title: string;
@@ -276,7 +282,7 @@ export class DDEXPackageService {
   private async downloadAudioToTemp(url: string, trackNumber: number): Promise<string> {
     const ext = url.split('?')[0].split('.').pop() || 'mp3';
     const tmpPath = join(tmpdir(), `ddex_track_${trackNumber}_${Date.now()}.${ext}`);
-    const res = await fetch(url);
+    const res = await timedFetch(url);
     if (!res.ok) throw new Error(`Failed to download audio for track ${trackNumber}: HTTP ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
     await writeFile(tmpPath, buf);

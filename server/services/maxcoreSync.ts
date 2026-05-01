@@ -17,6 +17,12 @@ import { logger } from '../logger.js';
 import { modelWeightStorage } from './modelWeightStorage.js';
 import { getPdimClient, isPdimConfigured } from '../lib/pdimClient.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 const AI_SERVER_URL  = process.env.AI_SERVER_URL   || '';
 const AI_SERVER_KEY  = process.env.AI_SERVER_KEY   || '';
 const PEER_NODE      = process.env.PEER_TRAINING_NODE || '';
@@ -52,7 +58,7 @@ async function fetchMaxCore<T = any>(
       signal: AbortSignal.timeout(opts.timeout ?? INFER_TIMEOUT),
     };
     if (opts.body !== undefined) init.body = JSON.stringify(opts.body);
-    const r = await fetch(`${url}${endpoint}`, init);
+    const r = await timedFetch(`${url}${endpoint}`, init);
     if (!r.ok) return { ok: false, data: null, status: r.status };
     const text = await r.text().catch(() => null);
     if (!text) return { ok: false, data: null, status: r.status };
@@ -224,7 +230,7 @@ export async function pushTrainingFeedback(payload: TrainingFeedbackPayload): Pr
   const peerIsPdim = PEER_NODE.startsWith('pdim://');
   if (PEER_NODE && MBS_KEY && !peerIsPdim) {
     try {
-      const r = await fetch(`${PEER_NODE}/api/train/feedback`, {
+      const r = await timedFetch(`${PEER_NODE}/api/train/feedback`, {
         method:  'POST',
         headers: {
           'Content-Type':  'application/json',

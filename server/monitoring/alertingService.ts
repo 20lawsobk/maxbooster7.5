@@ -101,6 +101,7 @@ export class AlertingService {
 
       const response = await fetch(this.config.webhookUrl, {
         method: 'POST',
+        signal: AbortSignal.timeout(10_000), // 10 s — alert delivery must not block monitoring loop
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });

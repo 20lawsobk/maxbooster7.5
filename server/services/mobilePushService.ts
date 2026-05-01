@@ -29,6 +29,12 @@ import { eq, and } from 'drizzle-orm';
 import { logger } from '../logger.js';
 import type { RichPushPayload } from './pushNotificationTypes.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 interface FCMAndroidConfig {
   notification_key?: string;
   priority?: 'normal' | 'high';
@@ -287,7 +293,7 @@ class MobilePushService {
       const signature = sign.sign(this.serviceAccountKey.private_key, 'base64url');
       const jwt = `${unsignedToken}.${signature}`;
 
-      const response = await fetch('https://oauth2.googleapis.com/token', {
+      const response = await timedFetch('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -367,7 +373,7 @@ class MobilePushService {
     };
 
     try {
-      const response = await fetch(
+      const response = await timedFetch(
         `https://fcm.googleapis.com/v1/projects/${this.projectId}/messages:send`,
         {
           method: 'POST',
@@ -423,7 +429,7 @@ class MobilePushService {
     };
 
     try {
-      const response = await fetch('https://fcm.googleapis.com/fcm/send', {
+      const response = await timedFetch('https://fcm.googleapis.com/fcm/send', {
         method: 'POST',
         headers: {
           Authorization: `key=${this.serverKey}`,

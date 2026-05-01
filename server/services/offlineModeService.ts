@@ -8,6 +8,12 @@ import fsPromises from 'fs/promises';
 import * as path from 'path';
 import { PocketDimensionManager } from '../pocket-dimension/index.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 export interface OfflineProject {
   id: string;
   projectId: string;
@@ -191,7 +197,7 @@ class OfflineModeService extends EventEmitter {
 
     if (audioUrl.startsWith('http://') || audioUrl.startsWith('https://')) {
       try {
-        const response = await fetch(audioUrl);
+        const response = await timedFetch(audioUrl);
         if (!response.ok) {
           throw new Error(`HTTP error: ${response.status}`);
         }

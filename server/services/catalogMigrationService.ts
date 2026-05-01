@@ -42,6 +42,12 @@ import type { LabelGridCatalogRelease, LabelGridCatalogTrack } from './labelgrid
 import type { ScannedRelease } from './distributionDataTransferService.js';
 import { DISTRIBUTION_PLATFORMS } from '../seed/distributionPlatforms.js';
 
+// ── Timeout-guarded fetch: adds a 10s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(10_000), ...init });
+
+
 // ─── All registered DSP platform slugs ────────────────────────────────────────
 // LabelGrid is the authority layer for every platform in this list.
 // When LabelGrid confirms a release is live on a set of platforms, that list
@@ -216,7 +222,10 @@ function releaseTypeNormalize(t: string): 'album' | 'EP' | 'single' {
 
 async function deezerRequest<T>(url: string): Promise<T | null> {
   try {
-    const resp = await fetch(url, { headers: { Accept: 'application/json' } });
+    const resp = await timedFetch(url, {
+      signal: AbortSignal.timeout(10_000), // 10 s — prevent hanging during batch imports
+      headers: { Accept: 'application/json' },
+    });
     if (!resp.ok) return null;
     return await resp.json() as T;
   } catch {
@@ -266,7 +275,7 @@ async function deezerFindTrack(
 
 async function itunesRequest<T>(url: string): Promise<T | null> {
   try {
-    const resp = await fetch(url);
+    const resp = await timedFetch(url);
     if (!resp.ok) return null;
     return await resp.json() as T;
   } catch {

@@ -3,33 +3,47 @@ import { randomBytes } from 'crypto';
 import { getRedisClient } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
-// 120M req/s system capacity (PDIM + MaxCore both at 120M req/s).
-// General API limits: 120M/s × 60s window = 7.2B req/min per IP or user.
-// Security-sensitive auth endpoints retain conservative limits to prevent
-// brute-force attacks regardless of backend capacity.
-const _120M_PER_MIN = 7_200_000_000; // 120 000 000 req/s × 60 s
+// ── Production rate limits calibrated for 90M-user scale ─────────────────────
+// At 90M users with ~1% DAU = 900K concurrent-peak, these limits prevent
+// individual IPs/users from monopolising server capacity while leaving ample
+// headroom for legitimate traffic bursts on high-tier subscriptions.
+//
+// Enforcement strategy (defence-in-depth):
+//   Layer 1 — express-rate-limit (security.ts): 2 000 req / 15 min per IP
+//   Layer 2 — sliding-window Redis (here): per-IP and per-authenticated-user
+//   Layer 3 — request queue load shedding at 90 % utilisation
+//
+// Values chosen conservatively; dial up via env-vars as real traffic data
+// arrives. Auth endpoints remain at brute-force-safe levels always.
 
 export const RATE_LIMITS = {
   global: {
-    perIP:  { windowMs: 60000, max: _120M_PER_MIN },
-    perUser: { windowMs: 60000, max: _120M_PER_MIN }
+    // 300 req/min per IP  (~5 req/s) — generous enough for SPA polling,
+    // tight enough to blunt DDoS amplification.
+    perIP:   { windowMs: 60_000,     max: Number(process.env.RATE_LIMIT_GLOBAL_IP   ?? 300) },
+    // 2 000 req/min per authenticated user — covers heavy dashboard use,
+    // real-time analytics refresh, and bulk playlist operations.
+    perUser: { windowMs: 60_000,     max: Number(process.env.RATE_LIMIT_GLOBAL_USER ?? 2_000) },
   },
   auth: {
-    login:          { windowMs: 900000,   max: 10  },  // brute-force guard — 10 attempts per 15 min
-    register:       { windowMs: 3600000,  max: 10  },  // abuse guard — keep conservative
-    forgotPassword: { windowMs: 3600000,  max: 5   },  // abuse guard — keep conservative
-    twoFactor:      { windowMs: 300000,   max: 15  },  // brute-force guard — keep conservative
+    login:          { windowMs: 900_000,   max: 10  },  // 10 per 15 min — brute-force guard
+    register:       { windowMs: 3_600_000, max: 10  },  // 10 per hour   — abuse guard
+    forgotPassword: { windowMs: 3_600_000, max: 5   },  // 5 per hour    — abuse guard
+    twoFactor:      { windowMs: 300_000,   max: 15  },  // 15 per 5 min  — brute-force guard
     captchaThreshold: 15
   },
   billing: {
-    perUser: { windowMs: 60000,   max: _120M_PER_MIN }
+    // 60 req/min — Stripe calls are expensive; prevent runaway retry loops.
+    perUser: { windowMs: 60_000,     max: Number(process.env.RATE_LIMIT_BILLING ?? 60) },
   },
   uploads: {
-    perUser: { windowMs: 3600000, max: _120M_PER_MIN }
+    // 50 uploads per hour — prevents storage exhaustion via rapid-fire uploads.
+    perUser: { windowMs: 3_600_000,  max: Number(process.env.RATE_LIMIT_UPLOADS ?? 50) },
   },
   ai: {
-    perUser: { windowMs: 3600000, max: _120M_PER_MIN }
-  }
+    // 100 AI requests per hour — balances GPU cost against user experience.
+    perUser: { windowMs: 3_600_000,  max: Number(process.env.RATE_LIMIT_AI ?? 100) },
+  },
 };
 
 const REDIS_KEY_PREFIX = 'ratelimit:';

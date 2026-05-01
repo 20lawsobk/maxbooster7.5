@@ -3,6 +3,12 @@ import { socialAccounts, posts } from '@shared/schema';
 import { eq, and, isNotNull, desc, inArray } from 'drizzle-orm';
 import { logger } from '../logger';
 
+// ── Timeout-guarded fetch: adds a 15s default signal so no outbound HTTP call
+// can hold the event loop indefinitely.  Per-call signal overrides this default.
+const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promise<Response> =>
+  fetch(url, { signal: AbortSignal.timeout(15_000), ...init });
+
+
 // ─── Token refresh helpers ────────────────────────────────────────────────────
 
 interface TokenRefreshResult {
@@ -26,7 +32,7 @@ async function refreshOAuth2Token(
       client_secret: clientSecret,
       ...extraParams,
     });
-    const res = await fetch(tokenUrl, {
+    const res = await timedFetch(tokenUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: body.toString(),
@@ -88,7 +94,7 @@ async function getValidAccessToken(
     // Twitter OAuth2 uses Basic auth for refresh
     const basicAuth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
     try {
-      const res = await fetch('https://api.x.com/2/oauth2/token', {
+      const res = await timedFetch('https://api.x.com/2/oauth2/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -130,7 +136,7 @@ async function getValidAccessToken(
   } else if (p === 'threads') {
     // Threads uses a simple GET for token refresh
     try {
-      const res = await fetch(
+      const res = await timedFetch(
         `https://graph.threads.net/refresh_access_token?grant_type=th_refresh_token&access_token=${connection.refreshToken}`
       );
       const data = await res.json();
@@ -150,7 +156,7 @@ async function getValidAccessToken(
     try {
       const appId = process.env.FACEBOOK_APP_ID || process.env.INSTAGRAM_APP_ID || '';
       const appSecret = process.env.FACEBOOK_APP_SECRET || process.env.INSTAGRAM_APP_SECRET || '';
-      const res = await fetch(
+      const res = await timedFetch(
         `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${token}`
       );
       const data = await res.json();
@@ -290,7 +296,7 @@ export async function syncPlatformData(
     try {
       if (p === 'facebook') {
         // Step 1: basic personal profile
-        const userRes = await fetch(
+        const userRes = await timedFetch(
           `https://graph.facebook.com/me?fields=id,name,picture&access_token=${accessToken}`
         );
         const userData = await userRes.json();
@@ -301,7 +307,7 @@ export async function syncPlatformData(
         syncedMetadata = { ...syncedMetadata, picture: userData.picture?.data?.url };
 
         // Step 2: fetch managed pages and sum their fan/follower counts
-        const pagesRes = await fetch(
+        const pagesRes = await timedFetch(
           `https://graph.facebook.com/me/accounts?fields=id,name,fan_count,followers_count&access_token=${accessToken}`
         );
         const pagesData = await pagesRes.json();
@@ -327,7 +333,7 @@ export async function syncPlatformData(
 
       } else if (p === 'instagram') {
         // Fetch Instagram Business account via the Facebook Graph API
-        const pagesRes = await fetch(
+        const pagesRes = await timedFetch(
           `https://graph.facebook.com/me/accounts?fields=id,name,access_token&access_token=${accessToken}`
         );
         const pagesData = await pagesRes.json();
@@ -339,14 +345,14 @@ export async function syncPlatformData(
           // Check all pages for linked Instagram Business accounts
           for (const page of pagesData.data) {
             const pageToken = page.access_token;
-            const igAccountRes = await fetch(
+            const igAccountRes = await timedFetch(
               `https://graph.facebook.com/${page.id}?fields=instagram_business_account&access_token=${pageToken}`
             );
             const igAccountData = await igAccountRes.json();
             if (!igAccountData.instagram_business_account) continue;
 
             const igId = igAccountData.instagram_business_account.id;
-            const igUserRes = await fetch(
+            const igUserRes = await timedFetch(
               `https://graph.facebook.com/${igId}?fields=username,followers_count,media_count,profile_picture_url&access_token=${pageToken}`
             );
             const igUserData = await igUserRes.json();
@@ -382,7 +388,7 @@ export async function syncPlatformData(
         }
 
       } else if (p === 'twitter') {
-        const userRes = await fetch(
+        const userRes = await timedFetch(
           'https://api.twitter.com/2/users/me?user.fields=public_metrics,profile_image_url,description',
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
@@ -406,7 +412,7 @@ export async function syncPlatformData(
         }
 
       } else if (p === 'youtube') {
-        const userRes = await fetch(
+        const userRes = await timedFetch(
           'https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&mine=true',
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
@@ -429,7 +435,7 @@ export async function syncPlatformData(
         }
 
       } else if (p === 'tiktok' || p === 'tiktok_sandbox') {
-        const userRes = await fetch(
+        const userRes = await timedFetch(
           'https://open.tiktokapis.com/v2/user/info/?fields=open_id,union_id,avatar_url,display_name,follower_count,following_count,likes_count,video_count',
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
@@ -455,7 +461,7 @@ export async function syncPlatformData(
         }
 
       } else if (p === 'linkedin') {
-        const profileRes = await fetch('https://api.linkedin.com/v2/userinfo', {
+        const profileRes = await timedFetch('https://api.linkedin.com/v2/userinfo', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const profileData = await profileRes.json();
@@ -481,7 +487,7 @@ export async function syncPlatformData(
         if (syncedPlatformUserId && !liErr) {
           try {
             // Attempt 1: r_network scope → connections list (count in paging._total)
-            const connectionsRes = await fetch(
+            const connectionsRes = await timedFetch(
               'https://api.linkedin.com/v2/connections?q=viewer&start=0&count=0',
               { headers: { Authorization: `Bearer ${accessToken}`, 'LinkedIn-Version': '202304' } }
             );
@@ -493,7 +499,7 @@ export async function syncPlatformData(
             } else {
               // Attempt 2: networkSizes endpoint (company-follower count, requires r_organization_social)
               const personUrn = encodeURIComponent(`urn:li:person:${syncedPlatformUserId}`);
-              const networkRes = await fetch(
+              const networkRes = await timedFetch(
                 `https://api.linkedin.com/v2/networkSizes/${personUrn}?edgeType=CompanyFollowedByMember`,
                 { headers: { Authorization: `Bearer ${accessToken}` } }
               );
@@ -514,7 +520,7 @@ export async function syncPlatformData(
 
       } else if (p === 'threads') {
         // Include followers_count in the fields
-        const userRes = await fetch(
+        const userRes = await timedFetch(
           `https://graph.threads.net/me?fields=id,username,threads_profile_picture_url,followers_count&access_token=${accessToken}`
         );
         const userData = await userRes.json();
@@ -533,7 +539,7 @@ export async function syncPlatformData(
         }
 
       } else if (p === 'google' || p === 'googlebusiness') {
-        const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+        const userRes = await timedFetch('https://www.googleapis.com/oauth2/v2/userinfo', {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         const userData = await userRes.json();
@@ -544,14 +550,14 @@ export async function syncPlatformData(
 
         // Try to get Business Profile review/follower count
         try {
-          const accountsRes = await fetch(
+          const accountsRes = await timedFetch(
             'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
             { headers: { Authorization: `Bearer ${accessToken}` } }
           );
           const accountsData = await accountsRes.json();
           const account = accountsData.accounts?.[0];
           if (account) {
-            const locRes = await fetch(
+            const locRes = await timedFetch(
               `https://mybusiness.googleapis.com/v4/${account.name}/locations`,
               { headers: { Authorization: `Bearer ${accessToken}` } }
             );
