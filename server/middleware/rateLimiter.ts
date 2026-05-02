@@ -3,6 +3,12 @@ import { randomBytes } from 'crypto';
 import { getRedisClient } from '../lib/redisConnectionFactory.js';
 import { logger } from '../logger.js';
 
+// Robust production detection: NODE_ENV may not be set correctly on some
+// hosting environments. REPLIT_DEPLOYMENT is always set by Replit autoscale,
+// so we treat either flag as production to prevent bypass via misconfig.
+const isProductionEnv = (): boolean =>
+  process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
+
 // ── Production rate limits calibrated for 90M-user scale ─────────────────────
 // At 90M users with ~1% DAU = 900K concurrent-peak, these limits prevent
 // individual IPs/users from monopolising server capacity while leaving ample
@@ -211,7 +217,7 @@ function sendRateLimitExceeded(res: Response, resetAt: number): void {
 }
 
 function shouldSkipRateLimiting(req: Request): boolean {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     return true;
   }
 
@@ -289,7 +295,7 @@ export const loginRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -320,7 +326,7 @@ export const registerRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -346,7 +352,7 @@ export const forgotPasswordRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -372,7 +378,7 @@ export const twoFactorRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -399,7 +405,7 @@ export const billingRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -430,7 +436,7 @@ export const uploadRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -461,7 +467,7 @@ export const aiRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -492,7 +498,7 @@ export const payoutsRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }
@@ -523,7 +529,7 @@ export const kycRateLimiter: RequestHandler = async (
   res: Response,
   next: NextFunction
 ): Promise<void> => {
-  if (process.env.NODE_ENV !== 'production') {
+  if (!isProductionEnv()) {
     next();
     return;
   }

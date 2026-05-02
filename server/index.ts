@@ -166,6 +166,17 @@ app.get('/tiktokShgx3KxJb3b1mCeV8AHEsINRNKf2pmH5.txt', (_req, res) => {
   res.type('text/plain').send('tiktok-developers-site-verification=Shgx3KxJb3b1mCeV8AHEsINRNKf2pmH5');
 });
 
+// Responsible-disclosure endpoint — industry standard for 90M-user platforms.
+// https://securitytxt.org/
+app.get('/.well-known/security.txt', (_req, res) => {
+  res.type('text/plain').send(
+    'Contact: mailto:security@max-booster.com\n' +
+    'Expires: 2027-01-01T00:00:00.000Z\n' +
+    'Preferred-Languages: en\n' +
+    'Policy: https://max-booster.com/security-policy\n'
+  );
+});
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;

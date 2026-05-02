@@ -70,9 +70,17 @@ const PING_INTERVAL_MS = 30000;
 const PONG_TIMEOUT_MS = 10000;
 const AWARENESS_BROADCAST_INTERVAL_MS = 5000;
 
+// Hard cap on simultaneous studio collaboration connections per process.
+// Each WebSocket holds ~50 KB of Yjs document state + OS FD; beyond ~10k
+// per process memory pressure grows faster than the linear model.
+const MAX_STUDIO_WS_CONNECTIONS = 10_000;
+// Max simultaneous collab connections per user (multiple projects / browser tabs)
+const MAX_STUDIO_WS_PER_USER = 10;
+
 export class StudioCollabServer {
   private wss: WebSocketServer | null = null;
   private clients: Map<string, Set<CollabClient>> = new Map();
+  private userConnectionCount: Map<string, number> = new Map();
   private documents: Map<string, Y.Doc> = new Map();
   private pingInterval: NodeJS.Timeout | null = null;
   private awarenessInterval: NodeJS.Timeout | null = null;
@@ -85,10 +93,29 @@ export class StudioCollabServer {
 
       if (pathname?.startsWith(path)) {
         try {
+          // Global studio WS cap — reject before the expensive auth + Yjs load
+          const totalClients = Array.from(this.clients.values())
+            .reduce((sum, set) => sum + set.size, 0);
+          if (totalClients >= MAX_STUDIO_WS_CONNECTIONS) {
+            logger.warn(`[StudioCollab] Global connection limit reached (${MAX_STUDIO_WS_CONNECTIONS})`);
+            socket.write('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+
           const authResult = await this.authenticateRequest(request);
 
           if (!authResult.authenticated) {
             socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+            socket.destroy();
+            return;
+          }
+
+          // Per-user studio connection cap
+          const userCount = this.userConnectionCount.get(authResult.userId!) ?? 0;
+          if (userCount >= MAX_STUDIO_WS_PER_USER) {
+            logger.warn(`[StudioCollab] Per-user connection limit reached for ${authResult.userId}`);
+            socket.write('HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n');
             socket.destroy();
             return;
           }
@@ -295,6 +322,9 @@ export class StudioCollabServer {
     }
     projectClients.add(client);
 
+    // Track per-user connection count for the upgrade-time limit check
+    this.userConnectionCount.set(userId, (this.userConnectionCount.get(userId) ?? 0) + 1);
+
     this.sendToClient(ws, {
       type: 'connected',
       payload: {
@@ -472,6 +502,14 @@ export class StudioCollabServer {
   }
 
   private async handleDisconnect(client: CollabClient): Promise<void> {
+    // Decrement per-user connection counter
+    const prev = this.userConnectionCount.get(client.userId) ?? 1;
+    if (prev <= 1) {
+      this.userConnectionCount.delete(client.userId);
+    } else {
+      this.userConnectionCount.set(client.userId, prev - 1);
+    }
+
     const projectClients = this.clients.get(client.projectId);
     if (projectClients) {
       projectClients.delete(client);

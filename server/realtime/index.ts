@@ -26,6 +26,11 @@ let notificationWss: WebSocketServer | null = null;
 const notificationClients: Set<WebSocket> = new Set();
 const userConnections: Map<string, Set<WebSocket>> = new Map();
 
+// Connection limits — prevent FD exhaustion and memory runaway at scale.
+// At 90M registered users even a modest over-connection rate causes problems.
+const MAX_GLOBAL_WS_CONNECTIONS = 50_000;   // per process; multiply by # replicas
+const MAX_WS_CONNECTIONS_PER_USER = 5;      // tabs + mobile + desktop
+
 // Session store reference - set by main server during initialization
 let sessionStore: any = null;
 
@@ -85,8 +90,27 @@ function initializeNotificationServer(httpServer: HttpServer): void {
 
     // Handle general /ws path for notifications
     if (pathname === '/ws') {
+      // Global connection cap — reject before paying the upgrade cost
+      if (notificationClients.size >= MAX_GLOBAL_WS_CONNECTIONS) {
+        logger.warn(`[WS] Global connection limit reached (${MAX_GLOBAL_WS_CONNECTIONS}) — rejecting upgrade`);
+        socket.write('HTTP/1.1 503 Service Unavailable\r\nRetry-After: 30\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
       // Authenticate using session cookie before upgrading
       const userId = await authenticateFromSession(request);
+
+      // Per-user connection cap — prevent one account from monopolising FDs
+      if (userId) {
+        const existing = userConnections.get(userId);
+        if (existing && existing.size >= MAX_WS_CONNECTIONS_PER_USER) {
+          logger.warn(`[WS] Per-user connection limit reached for user ${userId} (${MAX_WS_CONNECTIONS_PER_USER} max)`);
+          socket.write('HTTP/1.1 429 Too Many Requests\r\nRetry-After: 10\r\n\r\n');
+          socket.destroy();
+          return;
+        }
+      }
       
       notificationWss!.handleUpgrade(request, socket, head, (ws: AuthenticatedWebSocket) => {
         notificationClients.add(ws);

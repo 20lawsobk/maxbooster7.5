@@ -85,6 +85,45 @@ Production AI generation pipeline at `server/services/diffusion/gen_engine_v2/`.
   6. `client/src/hooks/useProjectSync.ts`: Expanded clip duration auto-detect to also run for clips with `duration < 2` seconds (not just `<= 0`), correcting wrong values stored from previous tempo mismatches.
   7. `client/src/components/studio/StudioOneDAW.tsx`: Fixed `onTrackGenerated` handler to actually add generated clips to the timeline (previously only showed a toast).
 
+## Scale Hardening — 90M User Readiness (May 2026)
+
+All gaps identified and resolved in this session:
+
+### Database Indexes (Migration 0016)
+- Added 38 indexes across 14 previously under-indexed tables (each had only PK):
+  - `tracks` → (project_id), (project_id, created_at)
+  - `social_accounts` → (user_id), (platform, user_id), (user_id, is_active)
+  - `social_metrics` → (campaign_id), (campaign_id, metric_at), (variant_id)
+  - `audit_logs` → (user_id), (user_id, created_at), (action), (created_at)
+  - `earnings` → (user_id), (user_id, created_at), (user_id, platform), (release_id)
+  - `lyrics` → (project_id unique)
+  - `assets` → (project_id), (owner_id), (owner_id, created_at), (kind)
+  - `clips` → (track_id), (asset_id)
+  - `collaborators` → (user_id), (release_id), (track_id), (email)
+  - `distro_releases` → (artist_id), (artist_id, created_at), (release_date)
+  - `distro_tracks` → (release_id), (release_id, track_number)
+  - `royalty_splits` → (listing_id), (recipient_id)
+  - `webhook_events` → (processed, created_at), (event_type), (provider)
+  - `notifications` → compound (user_id, read, created_at) covering index
+
+### WebSocket Connection Limits
+- `/ws` notification server: global cap 50k, per-user cap 5 connections
+- `/ws/studio` collab server: global cap 10k, per-user cap 10 connections
+- Per-user count tracked in `userConnectionCount` Map with proper connect/disconnect accounting
+- Over-limit upgrades rejected with 429/503 + Retry-After before incurring auth cost
+
+### Rate Limiter Production Bypass Fix
+- All 10 individual rate limiters previously checked only `NODE_ENV !== 'production'`
+- Added `isProductionEnv()` helper: `NODE_ENV === 'production' || !!REPLIT_DEPLOYMENT`
+- Ensures rate limiting always fires on Replit Autoscale even if NODE_ENV is misconfigured
+
+### Admin Export Pagination Cap
+- `/api/admin/users/export` reduced from 5,000 rows/page to 500
+
+### Security.txt (Responsible Disclosure)
+- `/.well-known/security.txt` route added (industry-standard for large platforms)
+- Static file also written to `client/public/.well-known/security.txt`
+
 ### Architecture Notes
 - `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.
 - Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).
