@@ -6,6 +6,11 @@ Max Booster is an AI-powered, full-stack TypeScript web application designed to 
 ## User Preferences
 I prefer iterative development, with clear communication before significant changes. Please prioritize stability and performance. Do not make changes to folder `AI training server/ai_model/` or file `server/services/hybridStorageService.ts` unless explicitly instructed. Ensure that all new features integrate seamlessly with the existing hybrid storage system.
 
+## Production Validation
+- `npm run test:smoke` — runs `tests/smoke/post-deployment-tests.ts` (14 public-endpoint tests covering liveness, readiness, frontend HTML, security headers, public auth/me, marketplace, favicon, OpenAPI). Override the target with `TEST_BASE_URL=https://...`.
+- `npm run test:load` — runs `tests/load/load-test.ts` (60 s, 50 concurrent users, 10 s ramp-up) against public endpoints only (`/api/health`, `/api/ping`, `/ready`, `/api/auth/me`, `/api/marketplace/beats`, `/`). Admin `/api/monitoring/*` paths are intentionally excluded — they require auth and would only measure 401 throughput.
+- Root-route bug (May 2026): `server/startup-probes.ts` previously resolved the SPA shell as `resolve(__dirname, 'public', 'index.html')` (i.e. `server/public/...`) which never exists; the `existsSync` fallback then registered `app.get('/', (_req, res) => res.send(''))`, causing every production `GET /` to return a zero-byte body. Fixed by resolving against `process.cwd() + 'dist/public/index.html'` and removing the empty-body fallback so requests fall through to the real boot fallback / `serveStatic` chain that does meta injection.
+
 ## System Architecture
 The Max Booster application uses a monorepo structure, separating concerns into `client/`, `server/`, `shared/`, `boosterstate/`, `server/pocket-dimension/`, and `AI training server/`. The UI/UX emphasizes a clean, responsive design and a Studio DAW-like interface with TopBar, LeftSidebar Browser, MainArea with view tabs (Timeline / Mixer / Node Graph / Flow), and RightSidebar Universal Inspector.
 

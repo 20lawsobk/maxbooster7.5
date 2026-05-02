@@ -201,16 +201,22 @@ class LoadTester {
   }
 }
 
+// Public endpoints only — admin /api/monitoring/* routes require auth and would
+// produce a 401 storm that does not measure real-user load.  These paths model a
+// realistic mix of liveness probes, readiness probes, the SPA shell, the public
+// marketplace listings query, and the (unauthenticated) auth-state check that
+// every page load issues.
 const defaultConfig: LoadTestConfig = {
   duration: 60,
   concurrentUsers: 50,
   rampUpTime: 10,
   endpoints: [
-    { path: '/api/monitoring/system-health', method: 'GET', weight: 10 },
-    { path: '/api/monitoring/queue-health', method: 'GET', weight: 10 },
-    { path: '/api/monitoring/ai-models', method: 'GET', weight: 5 },
-    { path: '/api/monitoring/dashboard', method: 'GET', weight: 5 },
-    { path: '/api/auth/me', method: 'GET', weight: 20 },
+    { path: '/api/health',              method: 'GET', weight: 15 },
+    { path: '/api/ping',                method: 'GET', weight: 10 },
+    { path: '/ready',                   method: 'GET', weight: 5  },
+    { path: '/api/auth/me',             method: 'GET', weight: 20 },
+    { path: '/api/marketplace/beats',   method: 'GET', weight: 15 },
+    { path: '/',                        method: 'GET', weight: 10 },
   ],
 };
 

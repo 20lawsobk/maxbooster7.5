@@ -271,8 +271,15 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   // deployment health check (which always hits /) gets a 200 from the moment
   // the process starts — not after the 2-minute async init window.
   // In development Vite handles /, so this only runs in production.
+  //
+  // IMPORTANT: the built SPA shell lives in <repo>/dist/public/index.html, NOT
+  // in <repo>/server/public/index.html.  An earlier version of this code used
+  // resolve(__dirname, 'public', 'index.html'), which always missed the file
+  // and registered an empty `app.get('/')` handler — causing GET / to return
+  // a zero-byte body in production.  Resolve the path against process.cwd()
+  // so it works whether we run via tsx (dev), node dist/ (built), or cluster.
   if (isProductionEnv()) {
-    const indexPath = resolve(__dirname, 'public', 'index.html');
+    const indexPath = resolve(process.cwd(), 'dist', 'public', 'index.html');
     if (existsSync(indexPath)) {
       const html = readFileSync(indexPath, 'utf8');
       app.get('/', (_req, res) => {
@@ -280,11 +287,12 @@ export function setupStartupEndpoints(app: import('express').Express): void {
         res.setHeader('Cache-Control', 'no-cache');
         res.status(200).send(html);
       });
-    } else {
-      // Build hasn't produced index.html yet — still return 200 so the health
-      // check doesn't kill the deployment during a first-ever cold start.
-      app.get('/', (_req, res) => res.status(200).send(''));
     }
+    // If the build is missing entirely, do NOT register a fallback that returns
+    // an empty body — let the request fall through to the boot-fallback shim
+    // (which serves a real loading page) and ultimately to serveStatic, which
+    // injects route metadata.  Returning an empty 200 here would mask real
+    // build failures and ship a blank page to users.
   }
 
   // /startup - Verbose startup status
