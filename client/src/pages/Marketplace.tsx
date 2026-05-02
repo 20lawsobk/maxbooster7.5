@@ -814,6 +814,7 @@ export default function Marketplace() {
   });
   const [showBulkUploadModal, setShowBulkUploadModal] = useState(false);
   const [showCollaborationModal, setShowCollaborationModal] = useState(false);
+  const [collaborationTargetId, setCollaborationTargetId] = useState<string>('');
 
   const [bulkUploadItems, setBulkUploadItems] = useState<BulkUploadItem[]>([]);
   const [selectedLicense, setSelectedLicense] = useState<LicenseTemplate | null>(null);
@@ -2611,6 +2612,7 @@ return (
                             variant="outline"
                             size="icon"
                             onClick={() => {
+                              setCollaborationTargetId(producer.id);
                               setShowCollaborationModal(true);
                             }}
                           >
@@ -4885,7 +4887,7 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
         </DialogContent>
       </Dialog>
 
-      <Dialog open={showCollaborationModal} onOpenChange={setShowCollaborationModal}>
+      <Dialog open={showCollaborationModal} onOpenChange={(open) => { setShowCollaborationModal(open); if (!open) setCollaborationTargetId(''); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center">
@@ -4960,10 +4962,16 @@ Producer hereby grants Licensee a non-exclusive license to use the beat...
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCollaborationModal(false)}>Cancel</Button>
             <Button
-              onClick={() => sendCollaborationMutation.mutate({
-                toUserId: 'placeholder',
-                ...collaborationForm
-              })}
+              onClick={() => {
+                if (!collaborationTargetId) {
+                  toast({ title: 'Select a producer', description: 'Please open this form from a producer card to send a collaboration offer.', variant: 'destructive' });
+                  return;
+                }
+                sendCollaborationMutation.mutate({
+                  toUserId: collaborationTargetId,
+                  ...collaborationForm
+                });
+              }}
               disabled={sendCollaborationMutation.isPending}
               className="bg-gradient-to-r from-blue-600 to-purple-600"
             >
