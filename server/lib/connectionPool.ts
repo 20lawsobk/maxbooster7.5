@@ -44,7 +44,7 @@ class OptimizedConnectionPool {
   }
 
   private getOptimalConfig(): PoolConfig {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
     
     const baseConfig: PoolConfig = {
       connectionString: env.DATABASE_URL,

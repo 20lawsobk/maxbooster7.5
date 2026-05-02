@@ -136,7 +136,7 @@ function _runSession(tier: 'quick' | 'medium' | 'deep'): Promise<boolean> {
     _proc.stdout?.on('data', (d: Buffer) => {
       d.toString().split('\n').filter(Boolean).forEach(line => {
         _appendLog(line.trim());
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) {
           process.stdout.write(`[DiffBG] ${line}\n`);
         }
       });

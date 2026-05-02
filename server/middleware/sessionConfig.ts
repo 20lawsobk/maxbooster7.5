@@ -259,7 +259,7 @@ export async function createSessionStore(): Promise<session.Store> {
 }
 
 export function getSessionConfig(store: session.Store) {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
   const sessionSecret = env.SESSION_SECRET;
 
   if (isProduction) {

@@ -3,8 +3,10 @@ import rateLimit from 'express-rate-limit';
 import type { Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
 
+import { isProductionEnv } from '../lib/envHelpers.js';
+
 const APP_DOMAIN = process.env.APP_URL || 'https://max-booster.com';
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = !isProductionEnv();
 
 const helmetMiddleware = helmet({
   contentSecurityPolicy: {

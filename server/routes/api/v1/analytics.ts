@@ -401,7 +401,9 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
   try {
     const userId = req.apiKey?.userId;
     const artistId = req.params.artistId || userId;
-    const { limit = '50', sortBy = 'streams' } = req.query;
+    const rawLimit = parseInt(String(req.query.limit ?? '50'), 10);
+    const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50, 500);
+    const { sortBy = 'streams' } = req.query;
 
     if (!userId) {
       return res.status(401).json({ error: 'Unauthorized', message: 'User ID not found' });
@@ -423,7 +425,7 @@ router.get('/tracks{/:artistId}', async (req: ApiKeyRequest, res) => {
       .from(projects)
       .where(eq(projects.userId, artistId as string))
       .orderBy(desc(sortBy === 'revenue' ? projects.revenue : projects.streams))
-      .limit(parseInt(limit as string));
+      .limit(limit);
 
     return res.json({
       success: true,

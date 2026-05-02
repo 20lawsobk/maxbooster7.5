@@ -279,7 +279,10 @@ router.get('/trash', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { limit = 50, offset = 0 } = req.query;
+    const rawLimit = Number(req.query.limit ?? 50);
+    const rawOffset = Number(req.query.offset ?? 0);
+    const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50, 500);
+    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
 
     const deletedFiles = await db.select()
       .from(userStorageFiles)
@@ -288,8 +291,8 @@ router.get('/trash', async (req: Request, res: Response) => {
         isNotNull(userStorageFiles.deletedAt)
       ))
       .orderBy(desc(userStorageFiles.deletedAt))
-      .limit(Number(limit))
-      .offset(Number(offset));
+      .limit(limit)
+      .offset(offset);
 
     // Calculate expiry dates for each file
     const cutoffMs = PERMANENT_DELETE_DAYS * 24 * 60 * 60 * 1000;
@@ -465,7 +468,11 @@ router.get('/list', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
 
-    const { folder = '/', type, sort = 'uploadedAt', order = 'desc', limit = 50, offset = 0, includeDeleted = 'false' } = req.query;
+    const { folder = '/', type, sort = 'uploadedAt', order = 'desc', includeDeleted = 'false' } = req.query;
+    const rawLimit2 = Number(req.query.limit ?? 50);
+    const rawOffset2 = Number(req.query.offset ?? 0);
+    const limit = Math.min(Number.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50, 500);
+    const offset = Number.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0;
 
     // Filter out soft-deleted files unless explicitly requested
     const baseConditions = includeDeleted === 'true' 

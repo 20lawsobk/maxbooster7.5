@@ -27,7 +27,7 @@ class ClusterSessionManager {
       sessionSecret: rawSecret || 'dev-only-insecure-fallback-not-for-production',
       sessionName: 'maxbooster.sid',
       maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000'),
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT,
     };
     this.isDistributedMode = true;
   }

@@ -9,10 +9,11 @@ import { users, orders, listingStems, refunds, ledgerEntries, notifications, ins
 import { eq, and, desc, gte, lte, sql } from 'drizzle-orm';
 import { instantPayoutService } from './instantPayoutService';
 import { env } from '../config/env.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 // Support both production and testing Stripe keys (same logic as routes.ts)
 let actualStripeKey: string | undefined;
-if (process.env.NODE_ENV === 'production') {
+if (isProductionEnv()) {
   // Production: Only use STRIPE_SECRET_KEY
   if (env.STRIPE_SECRET_KEY?.startsWith('sk_')) {
     actualStripeKey = env.STRIPE_SECRET_KEY;

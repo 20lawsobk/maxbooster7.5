@@ -16,6 +16,7 @@ import { Sentry } from '../instrument.js';
 import { DistributedRateLimiter } from '../middleware/scalableRateLimiter.js';
 import { getRedisClient } from '../lib/redisClient.js';
 import { env } from '../config/env.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 function isInternalIp(ip: string): boolean {
   if (!ip) return false;
@@ -147,7 +148,7 @@ export function globalErrorHandler(
     }
   }
 
-  const isDev = process.env.NODE_ENV !== 'production';
+  const isDev = !isProductionEnv();
 
   // Sanitize infrastructure-level error messages before surfacing to clients.
   // PDIM / circuit-breaker errors are service-layer internals — they're not
@@ -277,7 +278,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
 
   // 4. CORS (required)
   try {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = isProductionEnv();
 
     // Explicit allowlist. In production this includes the deployed domain plus all
     // Replit preview/dev subdomains (used by Replit's webview and deployment system).
@@ -356,7 +357,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
 
   // 6. Rate limiting — Redis-backed distributed sliding window; in-memory fallback
   try {
-    const isDev = process.env.NODE_ENV !== 'production';
+    const isDev = !isProductionEnv();
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
     const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
     const windowMs = 15 * 60 * 1000;
@@ -394,7 +395,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
 
   // 7. Strict API rate limiting (for sensitive endpoints) — Redis-backed
   try {
-    const isDev = process.env.NODE_ENV !== 'production';
+    const isDev = !isProductionEnv();
     const isLoadTest = process.env.LOAD_TEST_MODE === 'true' || process.env.DISABLE_RATE_LIMIT === 'true';
     const maxRequests = isDev || isLoadTest ? 100_000 : 200;
     const windowMs = 15 * 60 * 1000;

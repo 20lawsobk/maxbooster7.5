@@ -332,7 +332,7 @@ export class AuditSystem {
   private async checkDataEncryption(): Promise<boolean> {
     // Real: verify TLS is on (production), DB connection uses SSL, and a
     // bcrypt/argon password hashing salt rounds env is sane.
-    const inProd = process.env.NODE_ENV === 'production';
+    const inProd = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
     const dbUrl = process.env.DATABASE_URL || '';
     const dbHasSsl = dbUrl.includes('sslmode=require') || dbUrl.includes('sslmode=verify') || !inProd;
     const tlsOk = !inProd || !!process.env.TLS_CERT_PATH || !!process.env.REPLIT_DEPLOYMENT;

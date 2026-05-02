@@ -22,13 +22,15 @@ router.get('/alerts', async (req: AuthenticatedRequest, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { type, priority, unreadOnly, limit } = req.query;
+    const { type, priority, unreadOnly } = req.query;
+    const rawLimit = parseInt(String(req.query.limit ?? ''), 10);
+    const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : undefined;
     
     const alerts = await analyticsAlertService.getAlerts(userId, {
       type: type as any,
       priority: priority as any,
       unreadOnly: unreadOnly === 'true',
-      limit: limit ? parseInt(limit as string) : undefined,
+      limit,
     });
 
     return res.json({ success: true, data: alerts });

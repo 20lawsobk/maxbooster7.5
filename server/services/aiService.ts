@@ -175,7 +175,7 @@ export class AIService {
         }),
       ]);
     } catch (error: unknown) {
-      if (process.env.NODE_ENV !== 'development') {
+      if (process.env.NODE_ENV !== 'development' || !!process.env.REPLIT_DEPLOYMENT) {
         logger.warn({ err: error }, 'Failed to initialize AI service audio data in Redis:');
       }
     }

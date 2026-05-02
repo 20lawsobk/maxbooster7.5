@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { type Server } from 'http';
 import { logger } from '../logger.js';
 import { auditLogger } from './auditLogger.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 export class AppError extends Error {
   public statusCode: number;
@@ -141,7 +142,7 @@ export function globalErrorHandler(
   const isPdimError = /^(\[?PDIM\]?|Circuit OPEN|PDIM HTTP|PDIM returned)/i.test(message);
   if (isPdimError) {
     message = 'A temporary service issue occurred. Please try again in a moment.';
-  } else if (statusCode >= 500 && process.env.NODE_ENV === 'production') {
+  } else if (statusCode >= 500 && isProductionEnv()) {
     message = 'Internal server error';
   }
 
@@ -204,7 +205,7 @@ export function globalErrorHandler(
     }
   };
 
-  if (process.env.NODE_ENV === 'development') {
+  if (!isProductionEnv()) {
     errorResponse.error.details = {
       stack: normalized.stack,
       context: normalized.context,
@@ -224,7 +225,7 @@ export function globalErrorHandler(
         name: normalized.name,
         message: normalized.message,
         code: normalized.code,
-        stack: process.env.NODE_ENV === 'development' ? normalized.stack : undefined,
+        stack: !isProductionEnv() ? normalized.stack : undefined,
         isOperational,
       },
       request: {
@@ -295,7 +296,7 @@ export function handleUnhandledRejection(server?: Server) {
       info.message.includes('Connection is closed')
     );
 
-    if (isRedisError && process.env.NODE_ENV === 'development') {
+    if (isRedisError && !isProductionEnv()) {
       return;
     }
 
@@ -319,7 +320,7 @@ export function handleUnhandledRejection(server?: Server) {
       risk: 'critical'
     });
 
-    if (process.env.NODE_ENV === 'production') {
+    if (isProductionEnv()) {
       logger.info('Starting graceful shutdown due to unhandled promise rejection...');
       gracefulShutdown(server, 'UNHANDLED_REJECTION');
     }

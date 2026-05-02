@@ -15,12 +15,12 @@ router.post('/', raw({ type: 'application/json' }), async (req, res) => {
     const timestamp = req.headers['x-twilio-email-event-webhook-timestamp'] as string;
     const rawBody = req.body?.toString('utf-8') || '';
 
-    if (process.env.NODE_ENV === 'production' && !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+    if ((process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT) && !process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
       logger.warn('❌ CRITICAL: SendGrid webhook public key not configured in production');
       return res.status(500).json({ error: 'Webhook verification not configured' });
     }
 
-    if (process.env.NODE_ENV === 'production' || process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
+    if (process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT || process.env.SENDGRID_WEBHOOK_PUBLIC_KEY) {
       if (!signature || !timestamp) {
         logger.warn('⚠️  SendGrid webhook missing required signature headers');
         return res.status(401).json({ error: 'Missing signature headers' });

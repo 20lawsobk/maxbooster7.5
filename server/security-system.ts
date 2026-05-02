@@ -5,6 +5,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import { promisify } from 'util';
 import { exec } from 'child_process';
+import { isProductionEnv } from './lib/envHelpers.js';
 import { db } from './db';
 import {
   ipBlacklist,
@@ -474,7 +475,7 @@ export class SelfHealingSecuritySystem {
       const auditFindings: Array<{ setting: string; status: string; recommendation: string }> = [];
 
       // Check if HTTPS is enforced (in production)
-      if (process.env.NODE_ENV === 'production') {
+      if (isProductionEnv()) {
         auditFindings.push({
           setting: 'https-enforcement',
           status: 'configured',
@@ -588,8 +589,7 @@ export class SelfHealingSecuritySystem {
   private async checkFileSystemIntegrity(): Promise<void> {
     try {
       // Skip in development to avoid false positives from Vite/tools
-      const nodeEnv = process.env.NODE_ENV || 'development';
-      if (nodeEnv === 'development') {
+      if (!isProductionEnv()) {
         return;
       }
 
@@ -2282,7 +2282,7 @@ export const securityHeadersMiddleware = helmet({
 
 // CORS middleware
 export const corsMiddleware = cors({
-  origin: process.env.NODE_ENV === 'production' ? ['https://maxbooster.com'] : true,
+  origin: isProductionEnv() ? ['https://maxbooster.com'] : true,
   credentials: true,
   optionsSuccessStatus: 200,
 });

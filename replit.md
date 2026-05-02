@@ -115,7 +115,7 @@ All gaps identified and resolved in this session:
 ### Rate Limiter Production Bypass Fix
 - All 10 individual rate limiters previously checked only `NODE_ENV !== 'production'`
 - Added `isProductionEnv()` helper: `NODE_ENV === 'production' || !!REPLIT_DEPLOYMENT`
-- Ensures rate limiting always fires on Replit Autoscale even if NODE_ENV is misconfigured
+- Ensures rate limiting always fires on Replit Reserved VM even if NODE_ENV is undefined
 
 ### Admin Export Pagination Cap
 - `/api/admin/users/export` reduced from 5,000 rows/page to 500
@@ -123,6 +123,52 @@ All gaps identified and resolved in this session:
 ### Security.txt (Responsible Disclosure)
 - `/.well-known/security.txt` route added (industry-standard for large platforms)
 - Static file also written to `client/public/.well-known/security.txt`
+
+### Systemic NODE_ENV=undefined Fix (Reserved VM — May 2026)
+
+**Root cause**: Replit Reserved VM sets `REPLIT_DEPLOYMENT=1` but leaves `NODE_ENV` as `undefined`. Every bare `process.env.NODE_ENV === 'production'` check therefore evaluated to `false` in deployed production, silently disabling all security controls.
+
+**Canonical helper**: `server/lib/envHelpers.ts` exports `isProductionEnv()` = `NODE_ENV==='production' || !!REPLIT_DEPLOYMENT`. This is the authoritative check to use everywhere.
+
+**Files fixed** (all `NODE_ENV` production/development checks replaced with `isProductionEnv()` or the `|| REPLIT_DEPLOYMENT` dual-check pattern):
+- `server/config/defaults.ts` — `isProduction`/`isDevelopment` exports
+- `server/middleware/csrf.ts` — Secure CSRF cookie flag
+- `server/middleware/security.ts` — CSP `unsafe-inline`/`unsafe-eval` removal in prod
+- `server/middleware/selfHealingMiddleware.ts` — security mode gate
+- `server/middleware/requestValidation.ts` — input validation gate
+- `server/middleware/sessionConfig.ts` — Secure session cookie
+- `server/middleware/errorHandler.ts` — 5 checks: stack trace, graceful shutdown, dev details
+- `server/middleware/requestLogger.ts` — log verbosity gating
+- `server/middleware/globalRateLimiter.ts` — rate limiter dev bypass
+- `server/safety/mandatoryMiddleware.ts` — CORS + rate limiters ×2 + error handler
+- `server/db.ts` — read replica routing + slow query logging
+- `server/lib/connectionPool.ts` — pool sizing (max=100 prod vs 20 dev)
+- `server/index.ts` — static serving, Vite handler, SESSION_SECRET validation, request log
+- `server/routes.ts` — `attachUser` and `auth/me` isProduction guard
+- `server/services/jwtAuthService.ts` — JWT secret requirement enforcement
+- `server/services/stripeService.ts` — live vs test Stripe key selection
+- `server/services/structuredLogger.ts` — log level production gate
+- `server/services/backup/databaseBackupService.ts` — backup enabled in prod
+- `server/services/aiService.ts` — error logging gate
+- `server/services/diffusionBackgroundTrainer.ts` — subprocess stdout gating
+- `server/services/securityMonitoringService.ts` — HTTPS check + file integrity skip
+- `server/scalability-system.ts` — `isDevelopment` flag + cluster setup gate
+- `server/startup-probes.ts` — boot-time SPA shim serving
+- `server/self-evolution-engine.ts` — production safety gate
+- `server/security-system.ts` — audit, file integrity, CORS origin
+- `server/infrastructure/clusterSession.ts` — Secure session cookie flag
+- `server/instrument.ts` — Sentry `isProduction` init
+- `server/logger.ts` — pino-pretty transport (dev only)
+- `server/audit-system.ts` — data encryption check
+- `server/routes/fabric.ts` — error detail exposure
+- `server/routes/webhooks/sendgrid.ts` — webhook signature enforcement
+
+### Unbounded DB Limit() Cap (May 2026)
+All routes that accepted user-supplied `limit` query params without a cap now enforce `Math.min(userValue, 500)`:
+- `server/routes/api/v1/analytics.ts` — tracks endpoint (was unbounded)
+- `server/routes/files.ts` — trash listing + file listing (×2)
+- `server/routes/search.ts` — autocomplete (50), similar (100), suggestions (50), distribution (500), social/search (500), marketplace/producers (500)
+- `server/routes/api/analyticsAlerts.ts` — alerts listing (500)
 
 ### Architecture Notes
 - `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.

@@ -5,10 +5,11 @@ import { exec } from 'child_process';
 import cluster from 'cluster';
 import * as os from 'os';
 import { logger } from './logger.js';
+import { isProductionEnv } from './lib/envHelpers.js';
 
 const execAsync = promisify(exec);
 
-const isDevelopment = process.env.NODE_ENV === 'development';
+const isDevelopment = !isProductionEnv();
 let hasLoggedWarning = false;
 
 // Scalability Optimization System
@@ -59,7 +60,7 @@ export class ScalabilitySystem {
     this.startAutoScaling();
     this.startOptimization();
 
-    if (process.env.NODE_ENV === 'production') {
+    if (isProductionEnv()) {
       this.setupCluster();
     }
 

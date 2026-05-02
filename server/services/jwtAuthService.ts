@@ -5,17 +5,18 @@ import type { InsertJWTToken, InsertRefreshToken } from '@shared/schema';
 import { logger } from '../logger.js';
 import { sessionTracking } from './sessionTrackingService.js';
 import { env } from '../config/env.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 // SESSION_SECRET is REQUIRED in every environment (prod, staging, dev, test).
 // We never fall back to a deterministic value — that would let any attacker
 // who knows the codebase forge tokens against any non-prod deployment.
 // For local boot convenience we accept REPLIT_DB_URL or generate an ephemeral
-// per-process secret, but only when NODE_ENV === 'development' AND no other
+// per-process secret, but only when NOT in production AND no other
 // instance can share that secret (i.e., truly single-process local dev).
 let JWT_SECRET = env.SESSION_SECRET || '';
 
 if (!JWT_SECRET) {
-  if (process.env.NODE_ENV !== 'development') {
+  if (isProductionEnv()) {
     throw new Error(
       'SESSION_SECRET environment variable is required (must be set in production, staging, and CI)'
     );

@@ -24,8 +24,11 @@ const _vmConcMult = Math.max(1, Math.floor(_vmCpuCount / 4));
 
 export const isReplitDeployment = process.env.REPLIT_DEPLOYMENT === '1';
 export const isReplitWorkspace = !!process.env.REPLIT_DEV_DOMAIN;
-export const isProduction = process.env.NODE_ENV === 'production';
-export const isDevelopment = process.env.NODE_ENV === 'development' || !process.env.NODE_ENV;
+
+// CRITICAL: NODE_ENV is NOT automatically set to 'production' on Replit Autoscale.
+// REPLIT_DEPLOYMENT=1 is the authoritative production signal. Both must be checked.
+export const isProduction = process.env.NODE_ENV === 'production' || isReplitDeployment;
+export const isDevelopment = !isProduction;
 
 export function getBaseUrl(): string {
   if (process.env.REPLIT_DEPLOYMENT_URL) {

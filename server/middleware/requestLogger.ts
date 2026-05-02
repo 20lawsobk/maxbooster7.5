@@ -66,7 +66,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
         req.originalUrl.includes('/api/version') ||
         req.originalUrl.includes('/api/ready') ||
         req.originalUrl.includes('/api/live')) ||
-      (process.env.NODE_ENV === 'production' && isStaticAssetRequest);
+      ((process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT) && isStaticAssetRequest);
 
     if (!skipLogging) {
       // Log request for audit trail
@@ -98,7 +98,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       });
 
       // Console log for development and critical errors
-      if (process.env.NODE_ENV === 'development' || isServerError) {
+      if ((process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) || isServerError) {
         // 401/403 are expected auth flows (e.g. unauthenticated polling) — log at INFO.
         // 404s on static/asset paths are browser SW cache artifacts — log at INFO.
         const isAuthStatus = res.statusCode === 401 || res.statusCode === 403;

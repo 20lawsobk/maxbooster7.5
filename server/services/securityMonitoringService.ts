@@ -2,6 +2,7 @@ import { db } from '../db';
 import { sessions, users, passwordResetTokens } from '@shared/schema';
 import { gte, sql, count, desc, eq, and } from 'drizzle-orm';
 import { env } from '../config/env.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 // Track metrics in memory (for production, use Redis or dedicated monitoring)
 let requestCounter = 0;
@@ -229,13 +230,13 @@ export async function detectSecurityAnomalies() {
 }
 
 export async function getPentestResults() {
-  const hasHttps = process.env.NODE_ENV === 'production';
+  const hasHttps = isProductionEnv();
   const hasSecurityHeaders = true;
 
   const vulnerabilities = [];
   const recommendations = [];
 
-  if (!hasHttps && process.env.NODE_ENV === 'production') {
+  if (!hasHttps && isProductionEnv()) {
     vulnerabilities.push({
       id: 'vuln-https-001',
       severity: 'high' as const,

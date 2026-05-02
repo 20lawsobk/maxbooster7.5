@@ -3,6 +3,7 @@ import { type Server } from "http";
 import crypto from "crypto";
 import { execSync } from "child_process";
 import fs from "fs";
+import { isProductionEnv } from "./lib/envHelpers.js";
 import { storage } from "./storage.js";
 import { db } from "./db.js";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
@@ -95,7 +96,7 @@ declare global {
 
 // Middleware to attach user to request
 async function attachUser(req: Request, res: Response, next: NextFunction) {
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = isProductionEnv();
   const isApiRoute = req.path.startsWith('/api/');
 
   if (req.session?.userId) {
@@ -183,7 +184,7 @@ export async function registerRoutes(
 
   // Auth: Get current user
   app.get("/api/auth/me", async (req: Request, res: Response) => {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = isProductionEnv();
 
     // Production debugging for session issues
     if (isProduction) {

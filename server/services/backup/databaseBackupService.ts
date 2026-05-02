@@ -45,7 +45,7 @@ export class DatabaseBackupService {
       return;
     }
 
-    if (process.env.NODE_ENV !== 'production' && process.env.ENABLE_BACKUPS !== 'true') {
+    if (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT && process.env.ENABLE_BACKUPS !== 'true') {
       logger.info('ℹ️  Database backups disabled (not in production)');
       logger.info('   Set ENABLE_BACKUPS=true to enable in development');
       return;

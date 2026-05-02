@@ -1,5 +1,6 @@
 import { RequestHandler, Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
 
@@ -63,7 +64,7 @@ export const originValidation: RequestHandler = (
   const referer = req.headers.referer as string | undefined;
 
   if (!origin && !referer) {
-    if (process.env.NODE_ENV !== 'production') return next();
+    if (!isProductionEnv()) return next();
     logger.warn(`Mutation without Origin: ${req.method} ${req.path}`, {
       ip: req.ip,
       userAgent: req.get('user-agent'),

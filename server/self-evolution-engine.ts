@@ -27,6 +27,7 @@ import { customAI } from './custom-ai-engine.js';
 import * as esbuild from 'esbuild';
 import { industryMonitor } from './services/industryMonitorService.js';
 import { storageService } from './services/storageService.js';
+import { isProductionEnv } from './lib/envHelpers.js';
 
 interface IndustryChange {
   id: string;
@@ -1067,11 +1068,11 @@ export class SelfEvolutionEngine extends EventEmitter {
    * Manual triggering via API is always available for controlled upgrades.
    */
   isProductionSafetyEnabled(): boolean {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProd = isProductionEnv();
     const explicitlyEnabled = process.env.ENABLE_SELF_EVOLUTION === 'true';
     
     // In development, auto-evolution is allowed
-    if (!isProduction) {
+    if (!isProd) {
       return true;
     }
     
@@ -1095,7 +1096,7 @@ export class SelfEvolutionEngine extends EventEmitter {
     explicitOptIn: boolean;
     reason: string;
   } {
-    const isProduction = process.env.NODE_ENV === 'production';
+    const isProduction = isProductionEnv();
     const explicitOptIn = process.env.ENABLE_SELF_EVOLUTION === 'true';
     const autoEvolutionEnabled = this.isProductionSafetyEnabled();
     

@@ -16,6 +16,7 @@ import { cloudflareMiddleware, buildTrustProxyValue } from "./middleware/cloudfl
 import path from "path";
 import crypto from "crypto";
 import fs from "fs";
+import { isProductionEnv } from "./lib/envHelpers.js";
 
 // MANDATORY safety imports - these MUST load successfully
 import {
@@ -288,7 +289,7 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse && process.env.NODE_ENV !== 'production') {
+      if (capturedJsonResponse && !isProductionEnv()) {
         const responseStr = JSON.stringify(capturedJsonResponse);
         logLine += ` :: ${responseStr.length > 500 ? responseStr.substring(0, 500) + '...[truncated]' : responseStr}`;
       }
@@ -441,7 +442,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // to single-digit milliseconds regardless of PDIM health.
   // The SPA catch-all (serveStatic) remains registered after API routes so
   // it can do OG meta injection and subdomain routing for page navigations.
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionEnv()) {
     serveStaticFiles(app);
     logger.info('✅ [Static] Pre-session asset serving registered (assets bypass session/PDIM)');
   }
@@ -498,7 +499,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // ========================================
   // SESSION STORE INITIALIZATION (PRODUCTION-READY)
   // ========================================
-  const isProduction = process.env.NODE_ENV === 'production';
+  const isProduction = isProductionEnv();
 
   // Validate SESSION_SECRET in production - abort if missing or weak
   if (isProduction) {
@@ -1031,7 +1032,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // MANDATORY global error handler (from safety module) - must be LAST middleware
   app.use(safetyErrorHandler);
 
-  if (process.env.NODE_ENV === "production") {
+  if (isProductionEnv()) {
     serveStatic(app);
   } else {
     const { setupVite } = await import("./vite.js");

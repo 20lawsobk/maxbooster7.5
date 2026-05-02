@@ -8,6 +8,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { selfHealingEngine } from '../services/selfHealingSecurityEngine.js';
 import { logger } from '../logger.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 const WHITELISTED_IPS = new Set([
   '127.0.0.1',
@@ -16,7 +17,7 @@ const WHITELISTED_IPS = new Set([
   'localhost',
 ]);
 
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = !isProductionEnv();
 
 function isInternalIp(ip: string): boolean {
   if (!ip || ip === 'unknown') return false;

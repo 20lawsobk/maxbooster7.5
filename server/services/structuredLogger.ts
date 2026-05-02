@@ -66,7 +66,7 @@ class StructuredLogger {
   constructor(options: LoggerOptions = {}) {
     this.service = options.service;
     this.defaultMetadata = options.defaultMetadata;
-    this.isProduction = process.env.NODE_ENV === 'production';
+    this.isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
     this.minLevel = (process.env.LOG_LEVEL as LogLevel) || (this.isProduction ? 'info' : 'debug');
   }
 

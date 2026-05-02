@@ -112,7 +112,7 @@ export const globalRateLimiter = rateLimit({
   legacyHeaders: false,
   validate: { trustProxy: false },
   skip: (req: Request) => {
-    const isDevelopment = process.env.NODE_ENV === 'development';
+    const isDevelopment = process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT;
     const isMonitoringEndpoint =
       req.path.startsWith('/api/monitoring/') || req.path.startsWith('/api/system/');
     const isStaticAsset =

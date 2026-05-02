@@ -72,7 +72,7 @@ class QueryTelemetry {
     // Only flag queries that would genuinely degrade user experience (> 1s).
     if (duration > 1000 && !isWarmingUp) {
       this.lifetimeSlow++;
-      const isDev = process.env.NODE_ENV === 'development';
+      const isDev = !(process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT);
       const sqlPreview = isDev ? sql.substring(0, 200).replace(/\s+/g, ' ') : '';
       logger.warn(
         `⚠️ Slow query detected (${duration}ms):`,
@@ -227,7 +227,7 @@ export const db = drizzle(pool, { schema });
 // Read replica routing: production-only read-write split.
 // In production, DATABASE_REPLICA_URLS routes SELECT queries to the Neon read replica.
 // In development, all queries run on the primary — replicas are a production resource.
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
 const replicaUrl = isProduction
   ? (process.env.DATABASE_REPLICA_URLS || '').split(',').filter(Boolean)[0]
   : undefined;

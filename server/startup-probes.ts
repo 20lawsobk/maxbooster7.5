@@ -19,6 +19,7 @@ import { existsSync, readFileSync } from 'fs';
 import { db } from './db.js';
 import { sql } from 'drizzle-orm';
 import { logger } from './logger.js';
+import { isProductionEnv } from './lib/envHelpers.js';
 
 const __metaUrl = (import.meta as any)?.url as string | undefined;
 const __filename = __metaUrl ? fileURLToPath(__metaUrl) : resolve(process.argv[1] ?? '');
@@ -270,7 +271,7 @@ export function setupStartupEndpoints(app: import('express').Express): void {
   // deployment health check (which always hits /) gets a 200 from the moment
   // the process starts — not after the 2-minute async init window.
   // In development Vite handles /, so this only runs in production.
-  if (process.env.NODE_ENV === 'production') {
+  if (isProductionEnv()) {
     const indexPath = resolve(__dirname, 'public', 'index.html');
     if (existsSync(indexPath)) {
       const html = readFileSync(indexPath, 'utf8');

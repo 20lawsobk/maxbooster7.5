@@ -1,11 +1,12 @@
 import { randomBytes, timingSafeEqual } from 'crypto';
 import { RequestHandler, Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
 export const CSRF_COOKIE = 'csrf-token';
 export const CSRF_HEADER = 'x-csrf-token';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = isProductionEnv();
 
 function safeCompare(a: string, b: string): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') {

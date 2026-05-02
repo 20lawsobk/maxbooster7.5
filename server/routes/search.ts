@@ -444,7 +444,8 @@ router.get('/unified', async (req: Request, res: Response) => {
 
 router.get('/autocomplete', async (req: Request, res: Response) => {
   try {
-    const { q = '', limit = 10 } = req.query;
+    const { q = '' } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 10)), 50);
     const query = String(q).trim().toLowerCase();
     
     if (query.length < 2) {
@@ -692,7 +693,7 @@ router.get('/discover', async (req: Request, res: Response) => {
 router.get('/similar/:beatId', async (req: Request, res: Response) => {
   try {
     const { beatId } = req.params;
-    const { limit = 10 } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 10)), 100);
     
     const [beat] = await db.select()
       .from(beats)
@@ -888,7 +889,8 @@ router.post('/filter-presets/:presetId/default', async (req: Request, res: Respo
 
 router.get('/suggestions', async (req: Request, res: Response) => {
   try {
-    const { q = '', limit = 10, context = 'global' } = req.query;
+    const { q = '', context = 'global' } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 10)), 50);
     const query = String(q).trim().toLowerCase();
     
     if (query.length < 2) {
@@ -960,7 +962,9 @@ router.get('/suggestions', async (req: Request, res: Response) => {
 router.get('/distribution', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { q = '', status, platform, limit = 20, offset = 0 } = req.query;
+    const { q = '', status, platform } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
+    const offset = Math.max(0, Number(req.query.offset ?? 0));
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -1156,7 +1160,8 @@ router.get('/analytics/search', async (req: Request, res: Response) => {
 router.get('/social/search', async (req: Request, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { q = '', platform, status, dateFrom, dateTo, limit = 20 } = req.query;
+    const { q = '', platform, status, dateFrom, dateTo } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -1247,7 +1252,9 @@ router.get('/social/search', async (req: Request, res: Response) => {
 
 router.get('/marketplace/producers', async (req: Request, res: Response) => {
   try {
-    const { q = '', genre, limit = 20, offset = 0 } = req.query;
+    const { q = '', genre } = req.query;
+    const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
+    const offset = Math.max(0, Number(req.query.offset ?? 0));
     
     const conditions: any[] = [];
     

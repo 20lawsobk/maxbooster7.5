@@ -40,7 +40,7 @@ const REDACT_PATHS = [
   'body.apiKey',
 ];
 
-const transport = process.env.NODE_ENV !== 'production'
+const transport = (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT)
   ? { target: 'pino-pretty', options: { colorize: true } }
   : undefined;
 

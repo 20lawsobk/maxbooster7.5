@@ -10,7 +10,7 @@ interface AuthenticatedRequest extends Request {
 const router = Router();
 
 function sanitizeError(err: unknown): string {
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && !process.env.REPLIT_DEPLOYMENT) {
     return err instanceof Error ? err.message : String(err);
   }
   return 'Internal server error';

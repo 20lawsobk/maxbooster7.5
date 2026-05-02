@@ -20,7 +20,7 @@ import { createRequire } from 'module';
 import { logger } from './logger.js';
 import { env } from './config/env.js';
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === 'production' || !!process.env.REPLIT_DEPLOYMENT;
 const dsn = env.SENTRY_DSN;
 
 // Many subsystems (circuit breakers, workers, reliability monitors) each attach
