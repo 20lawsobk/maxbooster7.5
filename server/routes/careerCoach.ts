@@ -4,6 +4,7 @@ import { asyncHandler } from '../middleware/errorHandler';
 import { careerCoachService } from '../services/careerCoachService';
 import { logger } from '../logger';
 import { z } from 'zod';
+import { requireSafeParam } from '../middleware/requestValidation.js';
 import { db } from '../db';
 import { analytics, releases, royaltyTransactions, posts } from '../../shared/schema';
 import { eq, and, gte, lte, desc, count, sum } from 'drizzle-orm';
@@ -46,7 +47,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
-router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
+router.post('/dismiss/:id', requireAuth, requireSafeParam('id'), asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
     const recommendationId = req.params.id;
@@ -72,7 +73,7 @@ router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
-router.post('/complete/:id', requireAuth, asyncHandler(async (req, res) => {
+router.post('/complete/:id', requireAuth, requireSafeParam('id'), asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
     const recommendationId = req.params.id;
@@ -158,7 +159,7 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
-router.delete('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
+router.delete('/goals/:id', requireAuth, requireSafeParam('id'), asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
     const goalId = req.params.id;
@@ -174,7 +175,7 @@ router.delete('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
-router.put('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
+router.put('/goals/:id', requireAuth, requireSafeParam('id'), asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
     const goalId = req.params.id;
@@ -229,7 +230,7 @@ router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
   }
 }));
 
-router.patch('/goals/:id/progress', requireAuth, asyncHandler(async (req, res) => {
+router.patch('/goals/:id/progress', requireAuth, requireSafeParam('id'), asyncHandler(async (req, res) => {
   try {
     const userId = req.user!.id;
     const goalId = req.params.id;

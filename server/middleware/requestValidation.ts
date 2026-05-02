@@ -2,6 +2,65 @@ import { RequestHandler, Request, Response, NextFunction } from 'express';
 import { logger } from '../logger.js';
 import { isProductionEnv } from '../lib/envHelpers.js';
 
+// ── Param validation helpers ──────────────────────────────────────────────────
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SAFE_ID_RE = /^[a-zA-Z0-9_-]{1,128}$/;
+
+/**
+ * Returns true if `value` is a well-formed UUID v4.
+ * Use for params that must be database row IDs.
+ */
+export function isValidUUID(value: unknown): value is string {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
+
+/**
+ * Returns true if `value` is a safe alphanumeric/dash/underscore ID.
+ * Use for params that may be slugs, numeric IDs, or short codes.
+ */
+export function isSafeId(value: unknown): value is string {
+  return typeof value === 'string' && SAFE_ID_RE.test(value);
+}
+
+/**
+ * Express middleware factory: validates that the named route param is a valid UUID.
+ * Returns 400 immediately if validation fails.
+ *
+ * Usage:  router.get('/:id', requireUUIDParam('id'), handler)
+ */
+export function requireUUIDParam(paramName: string): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const val = req.params[paramName];
+    if (!isValidUUID(val)) {
+      return res.status(400).json({
+        error: 'Invalid parameter',
+        message: `Parameter '${paramName}' must be a valid UUID.`,
+      });
+    }
+    next();
+  };
+}
+
+/**
+ * Express middleware factory: validates that the named route param is a safe ID
+ * (alphanumeric, dash, underscore, max 128 chars). Returns 400 if invalid.
+ *
+ * Usage:  router.get('/:slug', requireSafeParam('slug'), handler)
+ */
+export function requireSafeParam(paramName: string): RequestHandler {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const val = req.params[paramName];
+    if (!isSafeId(val)) {
+      return res.status(400).json({
+        error: 'Invalid parameter',
+        message: `Parameter '${paramName}' contains invalid characters.`,
+      });
+    }
+    next();
+  };
+}
+
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS', 'TRACE']);
 
 const EXEMPT_PATH_PREFIXES = [

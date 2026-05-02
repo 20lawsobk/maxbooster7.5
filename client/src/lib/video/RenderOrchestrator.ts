@@ -425,7 +425,11 @@ export class RenderOrchestrator {
   }
 
   private getAudioData(time: number): AudioAnalysisData {
-    if (this.mockAudio || !this.audioAnalyzer) {
+    if (this.mockAudio) {
+      return generateMockAudioData(time, 120);
+    }
+    if (!this.audioAnalyzer) {
+      console.warn('[RenderOrchestrator] No audio analyzer attached — falling back to synthetic audio data. Pass an audioElement or set mockAudio:true to suppress this warning.');
       return generateMockAudioData(time, 120);
     }
     return this.audioAnalyzer.getAnalysisData();

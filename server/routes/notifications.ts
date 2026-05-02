@@ -8,6 +8,7 @@ import { logger } from '../logger.js';
 import crypto from 'crypto';
 import { webPushService } from '../services/webPushService.js';
 import { buildSilentPayload } from '../services/pushNotificationTypes.js';
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 
 const router = Router();
 
@@ -152,7 +153,7 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-router.put('/:id/read', async (req: Request, res: Response) => {
+router.put('/:id/read', requireUUIDParam('id'), async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -228,7 +229,7 @@ router.delete('/clear-all', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireUUIDParam('id'), async (req: Request, res: Response) => {
   if (!req.user) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -908,7 +909,7 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
 });
 
 // GET /:id - get single notification (after all specific paths to avoid route shadowing)
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', requireUUIDParam('id'), async (req: Request, res: Response) => {
   const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
   try {

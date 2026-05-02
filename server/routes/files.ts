@@ -7,6 +7,7 @@ import { createHardenedUpload } from '../middleware/uploadHandler.js';
 import path from 'path';
 import crypto from 'crypto';
 import { logger } from '../logger.js';
+import { requireUUIDParam, requireSafeParam } from '../middleware/requestValidation.js';
 
 const PERMANENT_DELETE_DAYS = 30;
 
@@ -518,7 +519,7 @@ router.get('/list', async (req: Request, res: Response) => {
   }
 });
 
-router.delete('/:id', async (req: Request, res: Response) => {
+router.delete('/:id', requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -672,7 +673,7 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/:id/download', async (req: Request, res: Response) => {
+router.get('/:id/download', requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -880,7 +881,7 @@ router.post('/validate', upload.single('file'), async (req: Request, res: Respon
   }
 });
 
-router.post('/:id/restore', async (req: Request, res: Response) => {
+router.post('/:id/restore', requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -944,7 +945,7 @@ router.post('/:id/restore', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/transcode', async (req: Request, res: Response) => {
+router.post('/:id/transcode', requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -1003,7 +1004,7 @@ router.post('/:id/transcode', async (req: Request, res: Response) => {
   }
 });
 
-router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
+router.get('/transcode/:jobId/status', requireSafeParam('jobId'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -1049,7 +1050,7 @@ router.get('/transcode/:jobId/status', async (req: Request, res: Response) => {
   }
 });
 
-router.post('/:id/preview', async (req: Request, res: Response) => {
+router.post('/:id/preview', requireUUIDParam('id'), async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });

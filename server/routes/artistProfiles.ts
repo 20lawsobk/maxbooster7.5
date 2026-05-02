@@ -6,6 +6,7 @@ import type { ClaimState } from '../services/artistProfileService.js';
 import { CLAIM_STATES } from '../services/artistProfileService.js';
 import { requireAuth } from '../middleware/auth.js';
 import { logger } from '../logger.js';
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 
 const router = Router();
 

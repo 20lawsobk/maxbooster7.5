@@ -7,6 +7,7 @@ import { logger } from '../logger.js';
 import { z } from 'zod';
 import { queryCache, createCacheKey } from '../lib/queryCache.js';
 import { parsePaginationParams } from '../middleware/pagination.js';
+import { requireUUIDParam } from '../middleware/requestValidation.js';
 
 const router = Router();
 const CACHE_TTL = 60;
@@ -86,7 +87,7 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
-router.get('/:id', requireAuth, async (req, res) => {
+router.get('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const [item] = await db.select().from(fanCampaigns)
       .where(and(eq(fanCampaigns.id, req.params.id), eq(fanCampaigns.userId, req.user!.id)))
@@ -99,7 +100,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-router.put('/:id', requireAuth, async (req, res) => {
+router.put('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;
@@ -170,7 +171,7 @@ router.post('/:id/send', requireAuth, async (req, res) => {
   }
 });
 
-router.delete('/:id', requireAuth, async (req, res) => {
+router.delete('/:id', requireAuth, requireUUIDParam('id'), async (req, res) => {
   try {
     const userId = req.user!.id;
     const { id } = req.params;

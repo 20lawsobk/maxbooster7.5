@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { achievementService } from "../services/achievementService";
 import { logger } from '../logger.js';
 import { requireAuth } from '../middleware/auth.js';
+import { requireSafeParam } from '../middleware/requestValidation.js';
 
 const router = Router();
 
@@ -35,7 +36,7 @@ router.get("/unnotified", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/mark-notified/:achievementId", requireAuth, async (req: Request, res: Response) => {
+router.post("/mark-notified/:achievementId", requireAuth, requireSafeParam('achievementId'), async (req: Request, res: Response) => {
   try {
     await achievementService.markAchievementNotified(req.user!.id, req.params.achievementId);
     return res.json({ success: true });
@@ -68,7 +69,7 @@ router.get("/streaks", requireAuth, async (req: Request, res: Response) => {
   }
 });
 
-router.post("/streaks/:type", requireAuth, async (req: Request, res: Response) => {
+router.post("/streaks/:type", requireAuth, requireSafeParam('type'), async (req: Request, res: Response) => {
   try {
     const streak = await achievementService.updateStreak(req.user!.id, req.params.type);
     return res.json(streak);
