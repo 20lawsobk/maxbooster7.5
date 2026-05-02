@@ -751,6 +751,14 @@ export class DatabaseStorage implements IStorage {
     return stats;
   }
 
+  async createAdCampaign(data: Record<string, unknown>): Promise<AdCampaign> {
+    const [campaign] = await db
+      .insert(adCampaigns)
+      .values(data as typeof adCampaigns.$inferInsert)
+      .returning();
+    return campaign;
+  }
+
   async getAdvertisingCampaigns(userId: string): Promise<AdCampaign[]> {
     return await db
       .select()
