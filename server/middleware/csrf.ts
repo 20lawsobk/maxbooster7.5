@@ -31,10 +31,10 @@ export const csrfProtection: RequestHandler = (req: Request, res: Response, next
   const headerToken = (req.headers[CSRF_HEADER] as string) || req.body?._csrf;
 
   if (!cookieToken) {
-    logger.warn(`CSRF validation failed: Missing CSRF cookie - ${req.method} ${req.path}`, {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    });
+    logger.warn(
+      { ip: req.ip, userAgent: req.get('user-agent') },
+      `CSRF validation failed: Missing CSRF cookie - ${req.method} ${req.path}`,
+    );
     return res.status(403).json({ 
       error: 'CSRF validation failed',
       message: 'Missing security token. Please refresh the page and try again.'
@@ -42,10 +42,10 @@ export const csrfProtection: RequestHandler = (req: Request, res: Response, next
   }
 
   if (!headerToken) {
-    logger.warn(`CSRF validation failed: Missing CSRF header/body token - ${req.method} ${req.path}`, {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    });
+    logger.warn(
+      { ip: req.ip, userAgent: req.get('user-agent') },
+      `CSRF validation failed: Missing CSRF header/body token - ${req.method} ${req.path}`,
+    );
     return res.status(403).json({ 
       error: 'CSRF validation failed',
       message: 'Missing security token in request. Please refresh the page and try again.'
@@ -53,10 +53,10 @@ export const csrfProtection: RequestHandler = (req: Request, res: Response, next
   }
 
   if (!safeCompare(cookieToken, headerToken)) {
-    logger.warn(`CSRF validation failed: Token mismatch - ${req.method} ${req.path}`, {
-      ip: req.ip,
-      userAgent: req.get('user-agent'),
-    });
+    logger.warn(
+      { ip: req.ip, userAgent: req.get('user-agent') },
+      `CSRF validation failed: Token mismatch - ${req.method} ${req.path}`,
+    );
     return res.status(403).json({ 
       error: 'CSRF validation failed',
       message: 'Invalid security token. Please refresh the page and try again.'

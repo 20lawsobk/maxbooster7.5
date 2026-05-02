@@ -17,6 +17,31 @@ const timedFetch = (url: string | URL | Request, init: RequestInit = {}): Promis
 
 const router = Router();
 
+// ── Secret-scrubbing helpers for OAuth error logs.
+// OAuth providers commonly accept `client_secret` and `access_token` as URL
+// query parameters, so any error log that echoes a URL or upstream JSON body
+// can leak credentials. These helpers normalise that risk in one place.
+const OAUTH_SECRET_FIELDS = ['access_token', 'refresh_token', 'id_token', 'client_secret'] as const;
+
+function redactOAuthFields(value: unknown): unknown {
+  if (!value || typeof value !== 'object') return value;
+  const out: Record<string, unknown> = { ...(value as Record<string, unknown>) };
+  for (const k of OAUTH_SECRET_FIELDS) {
+    if (k in out && out[k] != null && out[k] !== '') out[k] = '<redacted>';
+  }
+  return out;
+}
+
+function scrubSecretsFromText(text: string): string {
+  if (!text) return text;
+  let out = text;
+  for (const k of OAUTH_SECRET_FIELDS) {
+    // Match `key=<value>` in any URL/query-string form (stops at &, whitespace, quote, or end).
+    out = out.replace(new RegExp(`(${k}=)[^&\\s"']+`, 'gi'), `$1<redacted>`);
+  }
+  return out;
+}
+
 interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
@@ -431,13 +456,17 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             expires_in: twitterTokenJson.expires_in,
             token_type: twitterTokenJson.token_type || 'bearer',
           };
+          // SAFE: only logs presence booleans + numeric expiry — no token material.
           logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
-        } catch (twitterErr: Record<string, unknown>) {
-          logger.warn(`[OAuth] Twitter token exchange ERROR:`, { 
-            error: twitterErr?.message || twitterErr,
-            data: twitterErr?.data,
+        } catch (twitterErr: unknown) {
+          const e = twitterErr as { message?: string; data?: unknown };
+          logger.warn(`[OAuth] Twitter token exchange ERROR:`, {
+            error: e?.message ?? String(twitterErr),
+            // INTENTIONAL: e.data may contain the upstream provider error body
+            // (which can include access tokens on partial-success responses) —
+            // do NOT log it. Only the error message is safe.
           });
-          return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(twitterErr?.message || 'Twitter authentication failed')}`);
+          return res.redirect(`/social-media?error=token_exchange_failed&platform=twitter&detail=${encodeURIComponent(e?.message ?? 'Twitter authentication failed')}`);
         }
       } else if (platform === 'spotify') {
         const basicAuth = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString('base64');
@@ -471,9 +500,10 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             signal: AbortSignal.timeout(15000),
           });
           responseText = await tokenResponse.text();
-        } catch (fetchErr: Record<string, unknown>) {
-          logger.warn(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
-          return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
+        } catch (fetchErr: unknown) {
+          const fe = fetchErr as { message?: string };
+          logger.warn(`[OAuth] Token exchange network error for ${platform}:`, { error: fe?.message ?? String(fetchErr), tokenUrl: config.tokenUrl });
+          return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fe?.message ?? 'Network error')}`);
         }
         
         try {
@@ -483,19 +513,36 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
           tokenData = Object.fromEntries(parsed.entries());
         }
         
+        // SAFE: only logs status, presence boolean, and the upstream error code
+        // (e.g. "invalid_grant") — never the access_token or refresh_token.
         logger.warn(`[OAuth] Token exchange response for ${platform}:`, { status: tokenResponse!.status, ok: tokenResponse!.ok, hasAccessToken: !!tokenData?.access_token, error: tokenData?.error || 'none' });
       }
 
       if (tokenResponse && (!tokenResponse.ok || tokenData?.error)) {
-        logger.warn(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: tokenData, tokenUrl: config.tokenUrl });
+        // INTENTIONAL: Build a redacted copy of tokenData for the failure log.
+        // Even on a non-2xx response some providers echo a token field; never log it.
+        const safeTokenData = (() => {
+          if (!tokenData || typeof tokenData !== 'object') return tokenData;
+          const { access_token, refresh_token, id_token, ...rest } = tokenData as Record<string, unknown>;
+          return {
+            ...rest,
+            access_token: access_token ? '<redacted>' : undefined,
+            refresh_token: refresh_token ? '<redacted>' : undefined,
+            id_token: id_token ? '<redacted>' : undefined,
+          };
+        })();
+        logger.warn(`[OAuth] Token exchange failed for ${platform}:`, { status: tokenResponse!.status, data: safeTokenData, tokenUrl: config.tokenUrl });
         const errorDetail = tokenData.error_description || tokenData.error || 'unknown';
         return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(errorDetail)}`);
       }
 
       if (platform === 'threads' && tokenData.access_token && config.clientSecret) {
+        // Threads long-lived token exchange: build URL, then log a SCRUBBED form
+        // (client_secret + access_token are query params and MUST never reach logs).
+        const threadsLongLivedUrl = `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`;
         try {
           const longLivedResponse = await timedFetch(
-            `https://graph.threads.net/access_token?grant_type=th_exchange_token&client_secret=${encodeURIComponent(config.clientSecret)}&access_token=${encodeURIComponent(tokenData.access_token)}`,
+            threadsLongLivedUrl,
             { signal: AbortSignal.timeout(15_000) } // 15 s — Threads token exchange
           );
           const longLivedData = await longLivedResponse.json();
@@ -504,14 +551,24 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             tokenData.expires_in = longLivedData.expires_in || 5184000;
             logger.info(`[OAuth] Threads: exchanged for long-lived token (${tokenData.expires_in}s)`);
           } else {
-            logger.warn('[OAuth] Threads: long-lived token exchange returned error, using short-lived token', { data: longLivedData });
+            logger.warn('[OAuth] Threads: long-lived token exchange returned error, using short-lived token', { data: redactOAuthFields(longLivedData) });
           }
-        } catch (llErr) {
-          logger.warn('[OAuth] Threads: failed to get long-lived token, using short-lived:', llErr);
+        } catch (llErr: unknown) {
+          // INTENTIONAL: never log llErr directly — fetch errors can include the
+          // request URL (which contains client_secret + access_token query params).
+          // Only log a sanitized message string.
+          const msg = llErr instanceof Error ? llErr.message : String(llErr);
+          logger.warn('[OAuth] Threads: failed to get long-lived token, using short-lived', { error: scrubSecretsFromText(msg) });
         }
       }
-    } catch (err) {
-      logger.warn({ err: err }, `Token exchange error for ${platform}:`);
+    } catch (err: unknown) {
+      // INTENTIONAL: pass only sanitized message + name. Raw error objects can
+      // serialize the request URL (which may contain access_token / client_secret).
+      const e = err instanceof Error ? err : null;
+      logger.warn(
+        { errMessage: scrubSecretsFromText(e?.message ?? String(err)), errName: e?.name },
+        `Token exchange error for ${platform}`,
+      );
       return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}`);
     }
     

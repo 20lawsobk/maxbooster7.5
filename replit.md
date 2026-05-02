@@ -45,4 +45,10 @@ Key architectural decisions include:
 - **Push Notifications**: Web Push, Desktop Push, Mobile Push (FCM v1 API / legacy FCM).
 - **Music Integrations**: Spotify, LabelGrid.
 - **Social Media OAuth Integrations**: Facebook, Instagram, Twitter/X, TikTok, YouTube, LinkedIn, Google, Threads.
+
+## Recent Hardening (May 2026)
+- **OAuth log redaction**: `server/routes/socialOAuth.ts` now centralises secret scrubbing via `redactOAuthFields()` and `scrubSecretsFromText()`. The Token Exchange Failed log redacts `access_token` / `refresh_token` / `id_token` from `tokenData`. The Threads long-lived token exchange — whose request URL contains `client_secret` and `access_token` query params — no longer logs the raw error object; messages are scrubbed before being passed to pino. The outer `catch (err)` only logs sanitized message + name.
+- **Logout fix**: `WebLayout.tsx` and `DesktopLayout.tsx` previously called a non-existent `logoutMutation` from `useAuth`. Both now call `await logout()` then redirect to `/login`, gated by a `signingOut` flag, matching `TopBar`. Verified by the existing `tests/auth-flows.test.ts` steps 9-10.
+- **Go CVEs**: `dns-os/services/dns-authoritative/go.mod` bumped `github.com/jackc/pgx/v5` 5.6.0 → 5.9.0 and `golang.org/x/crypto` 0.24.0 → 0.35.0. `go.sum` regenerates on the next `go mod tidy` (Go isn't installed in the dev container).
+- **Type cleanup**: `safeLoadRoute` in `server/routes.ts` now uses explicit `LoadedModule` / `RouterLike` / `SetupFn` types with `error: unknown` narrowing; pino calls in `server/middleware/csrf.ts` flipped to `(object, message)`; `client/src/lib/queryClient.ts` narrows `query.meta`; `WebLayout` no longer references the non-existent `user.displayName`; `DesktopLayout` electron-bridge access uses a typed `electronWindow` cast.
 - **Version Control**: GitHub.

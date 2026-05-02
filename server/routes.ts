@@ -38,46 +38,62 @@ import { artistProfileService } from './services/artistProfileService.js';
 
 const log = (msg: string) => logger.info(msg);
 
-// Helper to safely load route modules
-async function safeLoadRoute(name: string, importFn: () => Promise<{ default?: unknown; router?: unknown }>): Promise<{ type: 'router' | 'function' | 'skip'; value: unknown } | null> {
+// Helper to safely load route modules.
+// `module.default` may be either an Express Router (has a `stack` array) or a
+// setup function `(app) => void`. We narrow with a structural cast at each branch.
+type LoadedModule = {
+  default?: unknown;
+  router?: unknown;
+  setupReliabilityEndpoints?: unknown;
+  stack?: unknown;
+};
+type RouterLike = ((...args: unknown[]) => unknown) & { stack: unknown };
+type SetupFn = (...args: unknown[]) => unknown;
+
+async function safeLoadRoute(
+  name: string,
+  importFn: () => Promise<LoadedModule>,
+): Promise<{ type: 'router' | 'function' | 'skip'; value: unknown } | null> {
   try {
-    const module = await importFn();
+    const mod = await importFn();
 
     // Check if module has a default export that's a router
-    if (module.default && typeof module.default === 'function') {
-      // Check if it's an Express router (has stack property)
-      if (module.default.stack !== undefined) {
+    if (mod.default && typeof mod.default === 'function') {
+      const fn = mod.default as SetupFn;
+      // Express routers carry a `stack` array.
+      if ((fn as RouterLike).stack !== undefined) {
         log(`Loaded route: ${name}`);
-        return { type: 'router', value: module.default };
+        return { type: 'router', value: fn };
       }
       // It's a setup function
       log(`Loaded route function: ${name}`);
-      return { type: 'function', value: module.default };
+      return { type: 'function', value: fn };
     }
 
     // Check for named exports that are setup functions
-    if (module.setupReliabilityEndpoints) {
+    if (typeof mod.setupReliabilityEndpoints === 'function') {
       log(`Loaded route function: ${name}`);
-      return { type: 'function', value: module.setupReliabilityEndpoints };
+      return { type: 'function', value: mod.setupReliabilityEndpoints };
     }
 
     // Check if the module itself is a router
-    if (module.stack !== undefined) {
+    if (mod.stack !== undefined) {
       log(`Loaded route: ${name}`);
-      return { type: 'router', value: module };
+      return { type: 'router', value: mod };
     }
 
     // Module doesn't export anything usable — this is a programming error, not a runtime condition
     logger.warn(`[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`);
     log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: 'skip', value: null };
-  } catch (error) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
     const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
     if (criticalRoutes.includes(name)) {
-      log(`ERROR: Critical route '${name}' failed to load - ${error.message}`);
+      log(`ERROR: Critical route '${name}' failed to load - ${message}`);
       logger.warn({ err: error }, `[routes] CRITICAL route loading failure for '${name}'`);
     } else {
-      log(`Warning: Could not load ${name} - ${error.message}`);
+      log(`Warning: Could not load ${name} - ${message}`);
     }
     logger.error({ err: error }, `[routes] LOAD FAILURE '${name}'`);
     return null;

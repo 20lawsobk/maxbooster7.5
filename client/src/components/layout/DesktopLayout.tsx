@@ -62,8 +62,9 @@ export function DesktopLayout({
   const [isFocused, setIsFocused] = useState(true);
   const fluidLayout = useFluidLayout();
   const { containerRef, layoutMode, containerWidth, containerHeight, isSmallHeight } = fluidLayout;
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [signingOut, setSigningOut] = useState(false);
   const capabilities = getPlatformCapabilities();
 
   useEffect(() => {
@@ -98,26 +99,43 @@ export function DesktopLayout({
     return getFluidGap(layoutMode);
   };
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      setSigningOut(false);
+      setLocation('/login');
+    }
+  };
+
+  // Narrow window for the Electron preload bridge — these methods only exist
+  // when the renderer is running inside our Electron shell.
+  const electronWindow = window as Window & {
+    electronAPI?: {
+      minimize?: () => void;
+      maximize?: () => void;
+      close?: () => void;
+    };
   };
 
   const handleMinimize = () => {
-    if (isElectron() && (window as Record<string, unknown>).electronAPI?.minimize) {
-      (window as Record<string, unknown>).electronAPI.minimize();
+    if (isElectron() && electronWindow.electronAPI?.minimize) {
+      electronWindow.electronAPI.minimize();
     }
   };
 
   const handleMaximize = () => {
-    if (isElectron() && (window as Record<string, unknown>).electronAPI?.maximize) {
-      (window as Record<string, unknown>).electronAPI.maximize();
+    if (isElectron() && electronWindow.electronAPI?.maximize) {
+      electronWindow.electronAPI.maximize();
       setIsMaximized(!isMaximized);
     }
   };
 
   const handleClose = () => {
-    if (isElectron() && (window as Record<string, unknown>).electronAPI?.close) {
-      (window as Record<string, unknown>).electronAPI.close();
+    if (isElectron() && electronWindow.electronAPI?.close) {
+      electronWindow.electronAPI.close();
     }
   };
 

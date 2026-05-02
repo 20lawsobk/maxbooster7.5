@@ -60,8 +60,9 @@ export function WebLayout({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const fluidLayout = useFluidLayout();
   const { containerRef, layoutMode, containerWidth, containerHeight, isSmallHeight } = fluidLayout;
-  const { user, logoutMutation } = useAuth();
+  const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
+  const [signingOut, setSigningOut] = useState(false);
 
   const isCompact = containerWidth < 1024;
   const isWide = containerWidth > 1600;
@@ -83,8 +84,15 @@ export function WebLayout({
     return getFluidGap(layoutMode);
   };
 
-  const handleLogout = () => {
-    logoutMutation.mutate();
+  const handleLogout = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await logout();
+    } finally {
+      setSigningOut(false);
+      setLocation('/login');
+    }
   };
 
   return (
@@ -150,7 +158,7 @@ export function WebLayout({
                       <User className="h-4 w-4 text-primary" />
                     </div>
                     <span className="hidden md:inline text-sm">
-                      {user?.displayName || user?.username || 'User'}
+                      {user?.username || 'User'}
                     </span>
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
                   </Button>

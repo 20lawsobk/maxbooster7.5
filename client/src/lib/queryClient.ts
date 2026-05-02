@@ -611,7 +611,7 @@ function shouldRetry(error: unknown): boolean {
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error, query) => {
-      if ((query.options as Record<string, unknown>)?.meta?.silentError) return;
+      if ((query.meta as { silentError?: boolean } | undefined)?.silentError) return;
       const apiError = error as ApiError & { userMessage?: string; status?: number };
       if (apiError.status === 401 || apiError.status === 403) return;
       // Suppress toast for background refetch failures — the query already has
