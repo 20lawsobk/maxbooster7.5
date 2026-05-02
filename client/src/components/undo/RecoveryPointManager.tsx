@@ -183,7 +183,7 @@ export function RecoveryPointManager({
       const data = await response.json();
       if (data.success && data.restorePoints) {
         setRecoveryPoints(
-          data.restorePoints.map((rp: any) => ({
+          data.restorePoints.map((rp: Record<string, unknown>) => ({
             id: rp.id,
             name: rp.name,
             description: rp.description,

@@ -16,7 +16,7 @@ export interface IdempotencyOptions {
 }
 
 class IdempotencyService {
-  private memoryFallback: Map<string, { data: any; expiresAt: number }> = new Map();
+  private memoryFallback: Map<string, { data: Record<string, unknown>; expiresAt: number }> = new Map();
   private readonly maxMemoryEntries = 1000;
 
   private getFullKey(key: string, prefix?: string): string {

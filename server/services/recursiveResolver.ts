@@ -438,7 +438,7 @@ async function resolveIterative(
 
       return { rcode: pkt.rcode, answers: pkt.answers, authority: pkt.authority, negative: false };
 
-    } catch (err: any) {
+    } catch (err) {
       lastErr = err;
       continue;
     }
@@ -476,7 +476,7 @@ export async function resolveRecursive(
       })),
       negative: result.negative,
     };
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ name, type, err: err.message }, '[Resolver] resolveRecursive error');
     return { rcode: 2, answers: [], negative: false };
   }

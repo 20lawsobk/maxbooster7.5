@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface AnalysisResult {
   type: 'image' | 'video' | 'audio' | 'text' | 'website';
-  data: any;
+  data: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -65,7 +65,7 @@ export function ContentAnalyzer() {
 
       if (response.success) {
         setResult({
-          type: type as any,
+          type: type as Record<string, unknown>,
           data: response.analysis,
           timestamp: response.timestamp,
         });
@@ -74,7 +74,7 @@ export function ContentAnalyzer() {
           description: `Your ${type} has been analyzed with AI-powered insights.`,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Analysis Failed',
         description: error.message || 'Failed to analyze content. Please try again.',
@@ -102,7 +102,7 @@ export function ContentAnalyzer() {
         description: 'This content analysis will be used to improve your autopilot AI predictions.',
         duration: 3000,
       });
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Save Failed',
         description: error.message || 'Failed to save for autopilot training.',
@@ -111,7 +111,7 @@ export function ContentAnalyzer() {
     }
   };
 
-  const renderImageAnalysis = (data: any) => (
+  const renderImageAnalysis = (data: Record<string, unknown>) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -192,7 +192,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderVideoAnalysis = (data: any) => (
+  const renderVideoAnalysis = (data: Record<string, unknown>) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -272,7 +272,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderTextAnalysis = (data: any) => (
+  const renderTextAnalysis = (data: Record<string, unknown>) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -345,7 +345,7 @@ export function ContentAnalyzer() {
     </div>
   );
 
-  const renderWebsiteAnalysis = (data: any) => (
+  const renderWebsiteAnalysis = (data: Record<string, unknown>) => (
     <div className="space-y-4">
       <div>
         <h4 className="font-semibold mb-2 flex items-center gap-2">
@@ -441,7 +441,7 @@ export function ContentAnalyzer() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Record<string, unknown>)} className="space-y-4">
           <TabsList className="grid grid-cols-5 w-full">
             <TabsTrigger value="image">
               <ImageIcon className="h-4 w-4 mr-2" />

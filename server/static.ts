@@ -369,7 +369,7 @@ function staticFileMiddlewareOptions() {
   return {
     etag: true,
     lastModified: true,
-    setHeaders: (res: any, filePath: string) => {
+    setHeaders: (res: Record<string, unknown>, filePath: string) => {
       if (filePath.endsWith('.html')) {
         res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       } else if (/\/assets\/[^/]*-[A-Za-z0-9_-]{6,16}\.(js|css|woff2?|ttf|eot|svg|png|jpe?g|webp|gif|avif)$/.test(filePath)) {
@@ -418,7 +418,7 @@ export function serveStatic(app: Express) {
 
     // If multiTenantRouter already resolved a storefront via storefrontDomains table,
     // inject its slug and serve the SPA so the React app auto-loads the right storefront.
-    const resolvedStorefront = (req as any).storefront as { slug?: string } | undefined;
+    const resolvedStorefront = (req as Record<string, unknown>).storefront as { slug?: string } | undefined;
     if (resolvedStorefront?.slug) {
       const safeSlug = resolvedStorefront.slug.replace(/[^a-z0-9-]/gi, '');
       const html = baseHtml.replace(

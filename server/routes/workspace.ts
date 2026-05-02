@@ -32,7 +32,7 @@ const requireWorkspaceMember = async (req: AuthenticatedRequest, res: Response, 
       return res.status(403).json({ error: 'Not a member of this workspace' });
     }
     next();
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in workspace member check:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -51,7 +51,7 @@ const requireWorkspaceAdmin = async (req: AuthenticatedRequest, res: Response, n
       return res.status(403).json({ error: 'Admin access required' });
     }
     next();
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in workspace admin check:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

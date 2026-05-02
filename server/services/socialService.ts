@@ -28,11 +28,11 @@ export interface Campaign {
   userId: string;
   name: string;
   platforms: string[];
-  content: any;
+  content: Record<string, unknown>;
   variants?: unknown[];
-  schedule?: any;
+  schedule?: Record<string, unknown>;
   status: 'draft' | 'active' | 'paused' | 'completed';
-  metrics?: any;
+  metrics?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -134,7 +134,7 @@ export class SocialService {
       }
 
       // Store schedule in campaign
-      const existingSchedule = (campaign.schedule as any[]) || [];
+      const existingSchedule = (campaign.schedule as unknown[]) || [];
       const newSchedule = [...existingSchedule, ...schedule];
 
       await storage.updateAdCampaign(campaignId, { schedule: newSchedule });
@@ -197,8 +197,8 @@ export class SocialService {
    * Optimize variant selection based on performance
    */
   async optimizeVariant(campaignId: number): Promise<{
-    bestVariant: any;
-    performanceData: any;
+    bestVariant: Record<string, unknown>;
+    performanceData: Record<string, unknown>;
   }> {
     try {
       const campaign = await storage.getAdCampaign(campaignId);
@@ -206,7 +206,7 @@ export class SocialService {
         throw new Error('Campaign not found');
       }
 
-      const variants = (campaign.variants as any[]) || [];
+      const variants = (campaign.variants as Record<string, unknown>[]) || [];
 
       // In production:
       // 1. Get metrics for each variant

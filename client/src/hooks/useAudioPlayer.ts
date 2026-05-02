@@ -433,8 +433,8 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
     try {
       // Use AudioContext's baseLatency and outputLatency for CPU estimation
       // Higher latency typically indicates higher CPU load
-      const baseLatency = (context as any).baseLatency || 0;
-      const outputLatency = (context as any).outputLatency || 0;
+      const baseLatency = (context as Record<string, unknown>).baseLatency || 0;
+      const outputLatency = (context as Record<string, unknown>).outputLatency || 0;
       const totalLatency = baseLatency + outputLatency;
       
       // Estimate CPU usage based on latency and active track count
@@ -449,7 +449,7 @@ export function useAudioPlayer(options: AudioPlayerOptions = {}) {
   }, [state.tracks]);
 
   // Get audio context state
-  const isSupported = !!window.AudioContext || !!(window as any).webkitAudioContext;
+  const isSupported = !!window.AudioContext || !!(window as Record<string, unknown>).webkitAudioContext;
 
   return {
     ...state,

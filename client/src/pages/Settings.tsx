@@ -191,7 +191,7 @@ export default function Settings() {
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    artistName: (user as any)?.artistName || '',
+    artistName: (user as Record<string, unknown>)?.artistName || '',
     email: user?.email || '',
     bio: '',
     website: '',
@@ -220,7 +220,7 @@ export default function Settings() {
       setProfileData({
         firstName: fullProfile.firstName || '',
         lastName: fullProfile.lastName || '',
-        artistName: (fullProfile as any).artistName || '',
+        artistName: (fullProfile as Record<string, unknown>).artistName || '',
         email: fullProfile.email || '',
         bio: fullProfile.bio || '',
         website: fullProfile.website || '',
@@ -456,7 +456,7 @@ export default function Settings() {
           : 'Your subscription will remain active until the end of the billing period',
       });
       setCancelSubscriptionOpen(false);
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       const errorMessage = errorData.code === 'SUBSCRIPTION_ALREADY_CANCELLED' 
         ? 'Your subscription is already cancelled'
@@ -491,7 +491,7 @@ export default function Settings() {
           ? `Your subscription will renew on ${new Date(data.nextBillingDate).toLocaleDateString()}`
           : 'Your subscription has been reactivated!',
       });
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       
       if (errorData.code === 'PAYMENT_METHOD_REQUIRED') {
@@ -540,7 +540,7 @@ export default function Settings() {
         title: 'Payment Successful',
         description: data.message || 'Your payment has been processed successfully.',
       });
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       
       if (errorData.code === 'PAYMENT_DECLINED') {
@@ -1460,7 +1460,7 @@ export default function Settings() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {billingHistory.map((billing: any) => (
+                      {billingHistory.map((billing: Record<string, unknown>) => (
                         <div
                           key={billing.id || billing.invoiceId}
                           className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20 hover:bg-muted/20 transition-colors"
@@ -1558,7 +1558,7 @@ export default function Settings() {
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {refundsData.refunds.map((refund: any) => (
+                          {refundsData.refunds.map((refund: Record<string, unknown>) => (
                             <div
                               key={refund.id}
                               className="flex items-center justify-between p-4 bg-muted/10 rounded-lg border border-muted/20"
@@ -1848,7 +1848,7 @@ export default function Settings() {
                     Upgrade Options
                   </h4>
                   <div className="grid gap-3">
-                    {subscriptionData.upgradeOptions.map((option: any) => (
+                    {subscriptionData.upgradeOptions.map((option: Record<string, unknown>) => (
                       <div key={option.tier} className="p-4 rounded-lg border bg-green-50/50 dark:bg-green-900/10 border-green-200 dark:border-green-800">
                         <div className="flex items-center justify-between">
                           <div>
@@ -1890,7 +1890,7 @@ export default function Settings() {
                     Downgrade Options
                   </h4>
                   <div className="grid gap-3">
-                    {subscriptionData.downgradeOptions.map((option: any) => (
+                    {subscriptionData.downgradeOptions.map((option: Record<string, unknown>) => (
                       <div key={option.tier} className="p-4 rounded-lg border bg-orange-50/50 dark:bg-orange-900/10 border-orange-200 dark:border-orange-800">
                         <div className="flex items-center justify-between">
                           <div>

@@ -53,7 +53,7 @@ async function httpGet(path: string, cookie?: string): Promise<{ status: number;
   });
 }
 
-async function httpPost(path: string, body: any, cookie?: string): Promise<{ status: number; time: number; error?: string }> {
+async function httpPost(path: string, body: Record<string, unknown>, cookie?: string): Promise<{ status: number; time: number; error?: string }> {
   const start = Date.now();
   const data = JSON.stringify(body);
   
@@ -127,7 +127,7 @@ async function runConcurrentRequests(
   concurrency: number,
   requestsPerUser: number,
   cookie: string,
-  body?: any
+  body?: Record<string, unknown>
 ): Promise<LoadTestResult> {
   const results: { status: number; time: number; error?: string }[] = [];
   const errors: Record<string, number> = {};
@@ -283,7 +283,7 @@ async function main() {
           allIssues.push(`${ep.name} at ${concurrency} users: ${JSON.stringify(result.errors)}`);
         }
         
-      } catch (error: any) {
+      } catch (error) {
         logger.warn(`Load test failed`, { endpoint: ep.path, concurrency, error: error.message });
         allIssues.push(`${ep.name} at ${concurrency}: ${error.message}`);
       }

@@ -220,13 +220,13 @@ async function cacheVideoLocally(rawUrl: string): Promise<string> {
         logger.info(`[AdvancedVideoRenderer] Video cached from ${url} — ${filename} (${(buffer.length / 1024).toFixed(0)} KB)`);
         urlStoreSet(filename, url);
         return `/uploads/videos/${filename}`;
-      } catch (err: any) {
+      } catch (err) {
         logger.info(`[AdvancedVideoRenderer] Candidate ${url} fetch error: ${err.message}`);
       }
     }
 
     logger.warn(`[AdvancedVideoRenderer] All ${candidates.length} candidates failed for "${filename}" — proxy will stream from MaxCore: ${absoluteForProxy}`);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[AdvancedVideoRenderer] Local cache setup failed: ${err.message}`);
   }
 
@@ -388,7 +388,7 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
       return null;
     }
 
-    const data: any = await resp.json();
+    const data: Record<string, unknown> = await resp.json() as Record<string, unknown>;
     const elapsedMs = Date.now() - startMs;
 
     logger.info(
@@ -421,9 +421,9 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
             relay_gpu_applied:   data.gpu_applied,
             relay_frames:        data.num_frames,
             ...intelligence,
-          } as any;
+          } as Record<string, unknown>;
         }
-      } catch (encErr: any) {
+      } catch (encErr: Record<string, unknown>) {
         logger.warn(`[RelayTier] mp4_b64 decode/write failed: ${encErr.message}`);
       }
     }
@@ -442,7 +442,7 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
         relay_gpu_applied:   data.gpu_applied,
         relay_frames:        data.num_frames,
         ...intelligence,
-      } as any;
+      } as Record<string, unknown>;
     }
 
     // Relay returned DigitalGPU-processed frames (no MaxCore URL) — still valid
@@ -460,13 +460,13 @@ async function renderVideoViaRelay(opts: VideoGenOptions, intelligence: {
         relay_gpu_applied:   data.gpu_applied,
         relay_frames:        data.num_frames,
         ...intelligence,
-      } as any;
+      } as Record<string, unknown>;
     }
 
     logger.warn('[RelayTier] Relay returned no video_url and no frames — falling back');
     return null;
 
-  } catch (err: any) {
+  } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError') {
       logger.warn(`[RelayTier] Relay timed out after ${RELAY_TIMEOUT_MS / 1000}s — falling back to direct MaxCore`);
     } else {
@@ -529,7 +529,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
   if (relayResult) {
     logger.info(
       `[AdvancedVideoRenderer] Relay tier succeeded in ${Date.now() - startMs}ms ` +
-      `(source=${(relayResult as any).source})`
+      `(source=${(relayResult as Record<string, unknown>).source})`
     );
     return { ...relayResult, processing_time_ms: Date.now() - startMs } as VideoGenResult;
   }
@@ -584,7 +584,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
       source:          'MaxCoreAI',
       processing_time_ms: Date.now() - startMs,
       ...intelligence,
-    } as any;
+    } as Record<string, unknown>;
   }
 
   // Async response — poll for completion
@@ -598,7 +598,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
         cta:   result.cta   || cta,
         processing_time_ms: Date.now() - startMs,
         ...intelligence,
-      } as any;
+      } as Record<string, unknown>;
     }
     return {
       success: false,

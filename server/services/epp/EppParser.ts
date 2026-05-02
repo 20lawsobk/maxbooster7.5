@@ -56,7 +56,7 @@ export class EppParser {
     if (!resp) throw new Error(`[EPP] No <response> element: ${xml.slice(0, 200)}`);
 
     // result may be an array (multi-result responses are rare but valid)
-    const resultArr: any[] = Array.isArray(resp.result) ? resp.result : [resp.result];
+    const resultArr: unknown[] = Array.isArray(resp.result) ? resp.result : [resp.result];
     const firstResult      = resultArr[0] ?? {};
     const code             = Number(firstResult['@_code'] ?? 0);
     const msg: string      = firstResult.msg ?? '';
@@ -85,9 +85,9 @@ export class EppParser {
     const chkData = base.resData?.chkData;
     if (!chkData) return [];
 
-    const cds: any[] = Array.isArray(chkData.cd) ? chkData.cd : [chkData.cd];
+    const cds: unknown[] = Array.isArray(chkData.cd) ? chkData.cd : [chkData.cd];
 
-    return cds.map((cd: any) => {
+    return cds.map((cd: Record<string, unknown>) => {
       const nameNode  = cd?.name;
       const fqdn: string =
         typeof nameNode === 'string' ? nameNode :
@@ -139,12 +139,12 @@ export class EppParser {
     const infData = base.resData?.infData;
     if (!infData) throw new Error('[EPP] No infData in domain:info response');
 
-    const rawStatuses: any[] = Array.isArray(infData.status) ? infData.status : [infData.status];
-    const statuses = rawStatuses.map((s: any) =>
+    const rawStatuses: unknown[] = Array.isArray(infData.status) ? infData.status : [infData.status];
+    const statuses = rawStatuses.map((s: Record<string, unknown>) =>
       typeof s === 'string' ? s : (s?.['@_s'] ?? ''),
     ).filter(Boolean);
 
-    const rawNs: any = infData.ns?.hostObj ?? [];
+    const rawNs: unknown[] = (infData.ns?.hostObj ?? []) as unknown[];
     const nameservers: string[] = Array.isArray(rawNs)
       ? rawNs.map(String)
       : (rawNs ? [String(rawNs)] : []);

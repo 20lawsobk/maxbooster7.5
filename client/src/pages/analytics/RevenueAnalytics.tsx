@@ -72,12 +72,12 @@ const PLATFORM_COLORS: Record<string, string> = {
   other: '#6B7280',
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
         <p className="font-semibold text-sm mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <span className="text-slate-600 dark:text-slate-400">{entry.name}:</span>
             <span className="font-medium">
@@ -174,7 +174,7 @@ export function RevenueAnalytics({
 
   const revenueBreakdown = useMemo<RevenueBreakdown[]>(() => {
     if (!data?.revenue?.revenueByPlatform) return [];
-    return data.revenue.revenueByPlatform.map((p: any) => ({
+    return data.revenue.revenueByPlatform.map((p: Record<string, unknown>) => ({
       platform: p.platform,
       earnings: p.revenue || 0,
       streams: p.streams || 0,

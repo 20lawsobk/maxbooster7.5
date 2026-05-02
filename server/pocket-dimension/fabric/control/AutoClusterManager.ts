@@ -267,7 +267,7 @@ export class AutoClusterManager {
 
     const autoSpawnedNodes = pdNodes
       .filter(n => {
-        const cfg = n.backendConfig as any;
+        const cfg = n.backendConfig as Record<string, unknown>;
         return cfg?.spawnedBy === 'auto-cluster' && this.isNodeHealthy(n);
       })
       .sort((a, b) => a.usedBytes - b.usedBytes);
@@ -278,7 +278,7 @@ export class AutoClusterManager {
     }
 
     const candidate = autoSpawnedNodes[0];
-    const pocketName: string = (candidate.backendConfig as any).pocketName ?? candidate.id;
+    const pocketName: string = (candidate.backendConfig as Record<string, unknown>).pocketName ?? candidate.id;
     const util = candidate.capacityBytes > 0 ? ((candidate.usedBytes / candidate.capacityBytes) * 100).toFixed(1) : '0.0';
 
     logger.info(
@@ -323,7 +323,7 @@ export class AutoClusterManager {
     const unhealthy = allPdNodes.filter(n => !this.isNodeHealthy(n));
     for (const dead of unhealthy) {
       triggers.push({ reason: 'unhealthy_node_replacement' });
-      logger.warn(`[AutoCluster] RULE unhealthy_node_replacement: ${(dead.backendConfig as any).pocketName}`);
+      logger.warn(`[AutoCluster] RULE unhealthy_node_replacement: ${(dead.backendConfig as Record<string, unknown>).pocketName}`);
     }
 
     if (avgUtil >= this.rules.utilizationHighWatermark) {
@@ -339,7 +339,7 @@ export class AutoClusterManager {
       const util = node.capacityBytes > 0 ? node.usedBytes / node.capacityBytes : 0;
       if (util >= this.rules.utilizationPerNodeHighWatermark) {
         triggers.push({ reason: 'hot_node_detected', hotNodeId: node.id });
-        logger.warn(`[AutoCluster] RULE hot_node: ${(node.backendConfig as any).pocketName} at ${(util * 100).toFixed(1)}%`);
+        logger.warn(`[AutoCluster] RULE hot_node: ${(node.backendConfig as Record<string, unknown>).pocketName} at ${(util * 100).toFixed(1)}%`);
       }
     }
 
@@ -431,7 +431,7 @@ export class AutoClusterManager {
   private nextPocketName(existing: FabricStorageNode[], offset = 0): string {
     const indices = existing
       .map(n => {
-        const name: string = (n.backendConfig as any).pocketName ?? '';
+        const name: string = (n.backendConfig as Record<string, unknown>).pocketName ?? '';
         const match = name.match(/fabric-cluster-(\d+)$/);
         return match ? parseInt(match[1], 10) : -1;
       })

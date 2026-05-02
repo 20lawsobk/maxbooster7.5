@@ -45,8 +45,8 @@ class PostDeploySelfTest {
 
   // Run GC if available
   private runGC(): void {
-    if (typeof (global as any).gc === 'function') {
-      (global as any).gc();
+    if (typeof (global as Record<string, unknown>).gc === 'function') {
+      (global as Record<string, unknown>).gc();
       logger.info('🧹 Garbage collection triggered');
     }
   }
@@ -66,7 +66,7 @@ class PostDeploySelfTest {
         AND table_name IN ('users', 'sessions', 'projects')
       `);
       
-      const tables = (result.rows as any[]).map(r => r.table_name);
+      const tables = (result.rows as { table_name: string }[]).map(r => r.table_name);
       
       return {
         name: 'database',
@@ -169,7 +169,7 @@ class PostDeploySelfTest {
           heapTotalMB: Math.round(heapTotalMB),
           heapPercent: Math.round(heapPercent),
           rssMB: Math.round(rssMB),
-          gcAvailable: typeof (global as any).gc === 'function',
+          gcAvailable: typeof (global as Record<string, unknown>).gc === 'function',
         },
       };
     } catch (error) {
@@ -308,7 +308,7 @@ export const postDeploySelfTest = new PostDeploySelfTest();
 
 // GC Enforcement utilities
 export function setupGCEnforcement(): void {
-  if (typeof (global as any).gc !== 'function') {
+  if (typeof (global as Record<string, unknown>).gc !== 'function') {
     logger.warn('⚠️ GC not available - start with --expose-gc for better memory management');
     return;
   }
@@ -318,7 +318,7 @@ export function setupGCEnforcement(): void {
   // Periodic GC every 5 minutes
   setInterval(() => {
     const before = process.memoryUsage().heapUsed;
-    (global as any).gc();
+    (global as Record<string, unknown>).gc();
     const after = process.memoryUsage().heapUsed;
     const freedMB = (before - after) / (1024 * 1024);
     
@@ -334,7 +334,7 @@ export function setupGCEnforcement(): void {
     
     if (heapPercent > 85) {
       logger.warn(`⚠️ High memory pressure (${heapPercent.toFixed(1)}%), triggering emergency GC`);
-      (global as any).gc();
+      (global as Record<string, unknown>).gc();
     }
   }, 60 * 1000);
 }

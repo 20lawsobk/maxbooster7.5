@@ -56,7 +56,7 @@ export interface UseTemplateResult {
   applyTemplate: (templateId: string, targetIds: string[]) => Promise<ApplyTemplateResult>;
   duplicateTemplate: (id: string, newName: string) => Promise<Template>;
   getTemplate: (id: string) => Template | undefined;
-  saveAsTemplate: (name: string, type: TemplateType, items: any[]) => Promise<Template>;
+  saveAsTemplate: (name: string, type: TemplateType, items: unknown[]) => Promise<Template>;
   isCreating: boolean;
   isApplying: boolean;
 }
@@ -177,7 +177,7 @@ export function useTemplate(options: UseTemplateOptions = {}): UseTemplateResult
   const saveAsTemplate = useCallback(async (
     name: string, 
     templateType: TemplateType, 
-    items: any[]
+    items: unknown[]
   ): Promise<Template> => {
     const commonFields = extractCommonFields(items);
     
@@ -205,7 +205,7 @@ export function useTemplate(options: UseTemplateOptions = {}): UseTemplateResult
   };
 }
 
-function extractCommonFields(items: any[]): Record<string, any> {
+function extractCommonFields(items: unknown[]): Record<string, any> {
   if (items.length === 0) return {};
   if (items.length === 1) return { ...items[0] };
   

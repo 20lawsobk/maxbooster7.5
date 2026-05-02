@@ -5,7 +5,7 @@ import { logger } from '../../../logger.js';
 const CHUNK_PREFIX = 'fabric-chunks/';
 
 export class ReplitChunkStore implements ChunkStore {
-  private client: any = null;
+  private client: Record<string, unknown> | null = null;
 
   private async getClient(): Promise<any> {
     if (this.client) return this.client;

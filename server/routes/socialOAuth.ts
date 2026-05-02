@@ -312,7 +312,7 @@ router.post('/connect/:platform', requireAuth, async (req: AuthenticatedRequest,
       });
     }
     
-    const platformConfig = config as any;
+    const platformConfig = config as Record<string, unknown>;
     const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
     
     const params = new URLSearchParams();
@@ -376,7 +376,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       return res.redirect(`/social-media?error=unsupported_platform`);
     }
     
-    const platformConfig = config as any;
+    const platformConfig = config as Record<string, unknown>;
     const redirectUri = platformConfig.redirectUri || getCallbackUrl(platform);
 
     let authCode = code as string;
@@ -384,7 +384,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
       authCode = authCode.replace(/#_$/, '');
     }
     
-    let tokenData: any;
+    let tokenData: Record<string, unknown>;
     
     try {
       const tokenParams = new URLSearchParams();
@@ -421,7 +421,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             },
             body: twitterTokenBody.toString(),
           });
-          const twitterTokenJson = await twitterTokenRes.json() as any;
+          const twitterTokenJson = await twitterTokenRes.json() as Record<string, unknown>;
           if (!twitterTokenRes.ok || !twitterTokenJson.access_token) {
             throw new Error(twitterTokenJson.error_description || twitterTokenJson.error || `Token request failed with status ${twitterTokenRes.status}`);
           }
@@ -432,7 +432,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             token_type: twitterTokenJson.token_type || 'bearer',
           };
           logger.info(`[OAuth] Twitter token exchange SUCCESS`, { hasAccessToken: !!tokenData.access_token, hasRefreshToken: !!tokenData.refresh_token, expiresIn: tokenData.expires_in });
-        } catch (twitterErr: any) {
+        } catch (twitterErr: Record<string, unknown>) {
           logger.warn(`[OAuth] Twitter token exchange ERROR:`, { 
             error: twitterErr?.message || twitterErr,
             data: twitterErr?.data,
@@ -471,7 +471,7 @@ router.get('/callback/:platform', async (req: Request, res: Response) => {
             signal: AbortSignal.timeout(15000),
           });
           responseText = await tokenResponse.text();
-        } catch (fetchErr: any) {
+        } catch (fetchErr: Record<string, unknown>) {
           logger.warn(`[OAuth] Token exchange network error for ${platform}:`, { error: fetchErr?.message || fetchErr, tokenUrl: config.tokenUrl });
           return res.redirect(`/social-media?error=token_exchange_failed&platform=${platform}&detail=${encodeURIComponent(fetchErr?.message || 'Network error')}`);
         }

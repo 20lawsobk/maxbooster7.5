@@ -167,10 +167,10 @@ class PermanentFixRegistry {
     try {
       const { getPdimClient } = await import('../lib/pdimClient.js');
       const client = getPdimClient();
-      this._pdimGet   = (k)       => (client as any).get(k).catch(() => null);
-      this._pdimSet   = async (k, v) => { await (client as any).set(k, v).catch(() => {}); };
-      this._pdimLpush = async (k, v) => { await (client as any).lpush(k, v).catch(() => {}); };
-      this._pdimLtrim = async (k, s, e) => { await (client as any).ltrim(k, s, e).catch(() => {}); };
+      this._pdimGet   = (k)       => (client as Record<string, unknown>).get(k).catch(() => null);
+      this._pdimSet   = async (k, v) => { await (client as Record<string, unknown>).set(k, v).catch(() => {}); };
+      this._pdimLpush = async (k, v) => { await (client as Record<string, unknown>).lpush(k, v).catch(() => {}); };
+      this._pdimLtrim = async (k, s, e) => { await (client as Record<string, unknown>).ltrim(k, s, e).catch(() => {}); };
     } catch {
       // PDIM not available — run in-memory only
     }
@@ -273,7 +273,7 @@ class PermanentFixRegistry {
           } catch { /* optional */ }
         }
       }
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[PermanentFixer] Failed to load overrides: ${err.message}`);
     }
 
@@ -289,7 +289,7 @@ class PermanentFixRegistry {
     this._aimdPersistTimer = setInterval(() => {
       this._persistAimdGap().catch(() => {});
     }, AIMD_PERSIST_INTERVAL_MS);
-    (this._aimdPersistTimer as any).unref?.();
+    (this._aimdPersistTimer as Record<string, unknown>).unref?.();
   }
 
   private async _persistAimdGap(): Promise<void> {
@@ -317,7 +317,7 @@ class PermanentFixRegistry {
     this._deEscalationTimer = setTimeout(async () => {
       await this._runDeEscalationCheck();
     }, DEESCALATION_WINDOW_MS);
-    (this._deEscalationTimer as any).unref?.();
+    (this._deEscalationTimer as Record<string, unknown>).unref?.();
   }
 
   private async _runDeEscalationCheck(): Promise<void> {
@@ -353,7 +353,7 @@ class PermanentFixRegistry {
 
       if (newValue === current) continue;
 
-      (this._overrides as any)[target.key] = newValue;
+      (this._overrides as Record<string, unknown>)[target.key] = newValue;
       this._deEscalationsAllTime++;
       this._escalationsAllTime++;       // counts toward all-time (it's a change event)
 
@@ -442,7 +442,7 @@ class PermanentFixRegistry {
       return;
     }
 
-    (this._overrides as any)[target.key] = newValue;
+    (this._overrides as Record<string, unknown>)[target.key] = newValue;
     this._escalationsThisSession++;
     this._escalationsAllTime++;
 

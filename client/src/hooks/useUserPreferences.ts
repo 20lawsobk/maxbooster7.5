@@ -58,7 +58,7 @@ export interface PreferenceRecommendation {
   reason: string;
   priority: 'high' | 'medium' | 'low';
   actionable: boolean;
-  suggestedValue?: any;
+  suggestedValue?: Record<string, unknown>;
 }
 
 export function useUserPreferences() {

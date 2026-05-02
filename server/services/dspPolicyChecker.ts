@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 
 // Optional sharp support with graceful fallback
-let sharpModule: any = null;
+let sharpModule: Record<string, unknown> | null = null;
 let sharpAvailable = false;
 
 async function getSharp() {

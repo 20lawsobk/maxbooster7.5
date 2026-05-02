@@ -52,7 +52,7 @@ async function pdimExec(cfg: PdimPeer, cmd: string, args: unknown[]): Promise<un
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) throw new Error(`PDIM exec HTTP ${res.status}`);
-  const json = await res.json() as any;
+  const json = await res.json() as Record<string, unknown>;
   return json.result ?? json;
 }
 
@@ -77,14 +77,14 @@ async function pdimRpc(
       const raw = await pdimExec(cfg, "GET", [`maxcore:rpc:out:${reqId}`]) as string | null;
       if (raw) {
         try { await pdimExec(cfg, "DEL", [`maxcore:rpc:out:${reqId}`]); } catch { /* intentional: PDIM key cleanup is best-effort */ }
-        const parsed = JSON.parse(raw) as any;
+        const parsed = JSON.parse(raw) as Record<string, unknown>;
         return { ok: parsed.ok !== false, status: parsed.status ?? 200, data: parsed.data ?? parsed };
       }
       await new Promise(r => setTimeout(r, 500));
     }
     // No response within timeout — command was queued but not yet acknowledged
     return { ok: true, status: 202, data: { queued: true, action, reqId, detail: "Command queued — MaxCore will process it on next cycle" } };
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[MaxCore] PDIM RPC error for ${action}: ${err.message}`);
     return { ok: false, status: 503, data: { error: String(err.message) } };
   }
@@ -109,7 +109,7 @@ async function httpPeer(
     const res = await fetch(`${cfg.baseUrl}${p}`, opts);
     const data = await res.json().catch(() => null);
     return { ok: res.ok, status: res.status, data };
-  } catch (err: any) {
+  } catch (err) {
     const offline = err.name === "AbortError" || err.code === "ECONNREFUSED";
     return { ok: false, status: offline ? 503 : 500, data: { error: offline ? "MaxCore machine is offline or unreachable" : String(err) } };
   } finally {
@@ -143,7 +143,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return res.status(401).json({ error: "Authentication required" });
   }
-  if (!req.user || (req.user as any).role !== "admin") {
+  if (!req.user || (req.user as Record<string, unknown>).role !== "admin") {
     return res.status(403).json({ error: "Admin access required" });
   }
   next();
@@ -167,7 +167,7 @@ router.get("/health", async (_req, res) => {
     try {
       const pong = await pdimExec(PEER_CFG, "PING", []);
       return res.json({ ok: true, mode: "pdim", ping: pong });
-    } catch (err: any) {
+    } catch (err) {
       return res.status(503).json({ ok: false, error: String(err.message) });
     }
   }
@@ -215,7 +215,7 @@ router.post("/train/trigger-session", async (_req, res) => {
     await mainPdimPush("mbs:downloads", job);
     logger.info("[MaxCore] trigger-session pushed directly to main PDIM");
     return res.json({ ok: true, detail: "Session pushed directly to PDIM", keys: ["mbs:training:session", "mbs:downloads"] });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[MaxCore] trigger-session PDIM push failed: ${err.message}`);
     return res.status(500).json({ ok: false, error: err.message });
   }
@@ -347,7 +347,7 @@ router.post("/downloader/start", async (_req, res) => {
     await mainPdimPush("mbs:training:session", { ...job, action: "start-7tb-download" });
     logger.info("[MaxCore] downloader:start pushed directly to main PDIM (mbs:downloads, mbs:training:session)");
     res.json({ ok: true, detail: "Download job pushed directly to PDIM", keys: ["mbs:downloads", "mbs:training:session"] });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[MaxCore] Failed to push to main PDIM: ${err.message}`);
     res.status(500).json({ ok: false, error: err.message });
   }
@@ -459,7 +459,7 @@ router.post("/ai-jobs/push-all", async (_req, res) => {
       await mainPdimPush(k, { id: `${k.replace(/:/g,"-")}-${ts}`, source: src, api_key: key, ...payload });
       results.push({ key: k, ok: true });
       pushed++;
-    } catch (err: any) {
+    } catch (err) {
       results.push({ key: k, ok: false, error: err.message });
       failed++;
       logger.warn(`[MaxCore] ai-jobs/push-all failed for ${k}: ${err.message}`);

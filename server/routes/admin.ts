@@ -19,11 +19,11 @@ const adminRouter = Router();
 const adminEmailLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
-  keyGenerator: (req) => `admin-email:${(req.user as any)?.id ?? 'anon'}`,
+  keyGenerator: (req) => `admin-email:${(req.user as Record<string, unknown>)?.id ?? 'anon'}`,
   message: { error: 'Too many email requests, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !(req.user as any)?.id,
+  skip: (req) => !(req.user as Record<string, unknown>)?.id,
 });
 
 const errorCounter = { last24h: 0, last7d: 0 };
@@ -54,7 +54,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction) {
 adminRouter.use(requireAdmin);
 
 adminRouter.get("/dashboard", (req, res) => {
-  const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as any;
+  const { password, twoFactorSecret, passwordResetToken, ...safeUser } = req.user as Record<string, unknown>;
   res.json({ message: "Welcome to the admin dashboard!", user: safeUser });
 });
 
@@ -374,7 +374,7 @@ adminRouter.get("/system-health", async (req, res) => {
         cpu: cpuUsage,
         disk: (() => {
           try {
-            const stat = (fs as any).statfsSync?.('/') ?? null;
+            const stat = (fs as Record<string, unknown>).statfsSync?.('/') ?? null;
             if (stat) {
               const total = stat.bsize * stat.blocks;
               const free = stat.bsize * stat.bfree;
@@ -388,10 +388,10 @@ adminRouter.get("/system-health", async (req, res) => {
         status: dbStatus,
         latency: dbLatency,
         connectionPool: {
-          active: (pool as any).totalCount ?? 0,
-          idle: (pool as any).idleCount ?? 0,
-          waiting: (pool as any).waitingCount ?? 0,
-          max: (pool as any).options?.max ?? (pool as any).maxSize ?? 0,
+          active: (pool as Record<string, unknown>).totalCount ?? 0,
+          idle: (pool as Record<string, unknown>).idleCount ?? 0,
+          waiting: (pool as Record<string, unknown>).waitingCount ?? 0,
+          max: (pool as Record<string, unknown>).options?.max ?? (pool as Record<string, unknown>).maxSize ?? 0,
         },
       },
       externalApis,
@@ -659,7 +659,7 @@ adminRouter.get("/metrics", async (req, res) => {
 
     let diskUsagePercent = 0;
     try {
-      const stat = (fs as any).statfsSync?.('/') ?? null;
+      const stat = (fs as Record<string, unknown>).statfsSync?.('/') ?? null;
       if (stat) {
         const total = stat.bsize * stat.blocks;
         const free = stat.bsize * stat.bfree;
@@ -717,7 +717,7 @@ adminRouter.get("/settings", async (req, res) => {
   }
 });
 
-async function updateSetting(key: string, value: any) {
+async function updateSetting(key: string, value: Record<string, unknown>) {
   const fullKey = `platform.${key}`;
   const stringValue = JSON.stringify(value);
 
@@ -864,7 +864,7 @@ adminRouter.patch('/financial-config/royalty-rates/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id) || id <= 0) return res.status(400).json({ error: 'Invalid rate ID' });
     const { baseRatePerStream, premiumMultiplier, notes } = req.body;
-    const updates: any = { updatedAt: new Date() };
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (baseRatePerStream !== undefined) updates.baseRatePerStream = parseFloat(baseRatePerStream);
     if (premiumMultiplier !== undefined) updates.premiumMultiplier = parseFloat(premiumMultiplier);
     if (notes !== undefined) updates.notes = notes;
@@ -900,7 +900,7 @@ adminRouter.patch('/financial-config/tax-treaties/:id', async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id) || id <= 0) return res.status(400).json({ error: 'Invalid treaty ID' });
     const { withholdingRate, treatyRate, hasTreaty, notes } = req.body;
-    const updates: any = { updatedAt: new Date() };
+    const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (withholdingRate !== undefined) updates.withholdingRate = parseFloat(withholdingRate);
     if (treatyRate !== undefined) updates.treatyRate = parseFloat(treatyRate);
     if (hasTreaty !== undefined) updates.hasTreaty = Boolean(hasTreaty);
@@ -961,7 +961,7 @@ adminRouter.patch('/financial-config/label-settings/:key', async (req, res) => {
 adminRouter.get('/chain-fixer/status', async (_req, res) => {
   try {
     res.json(chainErrorAutoFixer.getStatus());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -971,7 +971,7 @@ adminRouter.post('/chain-fixer/reset/:patternId', async (req, res) => {
   try {
     const ok = chainErrorAutoFixer.resetPattern(req.params.patternId);
     res.json({ success: ok });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -983,7 +983,7 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
     if (!message) return res.status(400).json({ error: 'message is required' });
     chainErrorAutoFixer.forceCheck(message);
     res.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -994,7 +994,7 @@ adminRouter.post('/chain-fixer/force-check', async (req, res) => {
 adminRouter.get('/platform-fixer/status', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getStatus());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1003,7 +1003,7 @@ adminRouter.get('/platform-fixer/status', async (_req, res) => {
 adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getSubsystems());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1012,7 +1012,7 @@ adminRouter.get('/platform-fixer/subsystems', async (_req, res) => {
 adminRouter.get('/platform-fixer/patches', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getPatches());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1021,7 +1021,7 @@ adminRouter.get('/platform-fixer/patches', async (_req, res) => {
 adminRouter.get('/platform-fixer/incidents', async (_req, res) => {
   try {
     res.json(platformAutoFixer.getIncidents());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1031,7 +1031,7 @@ adminRouter.post('/platform-fixer/scan', async (_req, res) => {
   try {
     await platformAutoFixer.runFullScan();
     res.json({ success: true, status: platformAutoFixer.getStatus() });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1039,10 +1039,10 @@ adminRouter.post('/platform-fixer/scan', async (_req, res) => {
 
 adminRouter.post('/platform-fixer/probe/:name', async (req, res) => {
   try {
-    const result = await platformAutoFixer.forceProbe(req.params.name as any);
+    const result = await platformAutoFixer.forceProbe(req.params.name as Record<string, unknown>);
     if (!result) return res.status(404).json({ error: `Unknown subsystem: ${req.params.name}` });
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1053,7 +1053,7 @@ adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
     const ok = platformAutoFixer.revertPatch(req.params.id, 'admin request');
     if (!ok) return res.status(404).json({ error: 'Patch not found or already reverted' });
     res.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1062,7 +1062,7 @@ adminRouter.post('/platform-fixer/patch/:id/revert', async (req, res) => {
 adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
   try {
     res.json({ degradedRoutes: platformAutoFixer.getDegradedRoutes() });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }
@@ -1076,7 +1076,7 @@ adminRouter.get('/platform-fixer/degraded-routes', async (_req, res) => {
 adminRouter.get('/permanent-fixes', async (_req, res) => {
   try {
     res.json(permanentFixRegistry.getStatus());
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, 'Admin route error:');
     res.status(500).json({ error: err.message });
   }

@@ -121,8 +121,8 @@ export function FlowStateTakeComping({
   
   useEffect(() => {
     if (takeGroups?.takeGroups?.length > 0) {
-      const mappedTakes = takeGroups.takeGroups.flatMap((group: any) =>
-        (group.lanes || []).map((lane: any, i: number) => ({
+      const mappedTakes = takeGroups.takeGroups.flatMap((group: Record<string, unknown>) =>
+        (group.lanes || []).map((lane: Record<string, unknown>, i: number) => ({
           id: lane.id || `t${i}`,
           name: lane.name || `Take ${i + 1}`,
           number: lane.laneIndex || i + 1,
@@ -170,8 +170,8 @@ export function FlowStateTakeComping({
   useEffect(() => {
     if (takeGroups?.takeGroups?.length > 0) {
       const mappedRegions: TakeRegion[] = [];
-      takeGroups.takeGroups.forEach((group: any) => {
-        (group.segments || []).forEach((segment: any, i: number) => {
+      takeGroups.takeGroups.forEach((group: Record<string, unknown>) => {
+        (group.segments || []).forEach((segment: Record<string, unknown>, i: number) => {
           mappedRegions.push({
             id: segment.id || `r${i}`,
             takeId: segment.laneId || segment.takeId || 't1',

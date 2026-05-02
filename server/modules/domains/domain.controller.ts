@@ -61,7 +61,7 @@ export async function checkManaged(req: Request, res: Response) {
       .limit(1);
 
     return res.json({ ok: true, available: existing.length === 0, domain: fqdn });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, "[domains] checkManaged error");
     return res.status(500).json({ ok: false, error: "Internal error." });
   }
@@ -86,7 +86,7 @@ export async function reserveManaged(req: Request, res: Response) {
       .limit(1);
 
     if (!sf) return res.status(404).json({ ok: false, error: "Storefront not found." });
-    if (sf.userId !== (req.user as any).id)
+    if (sf.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const existing = await db
@@ -158,7 +158,7 @@ export async function requestCustomDomain(req: Request, res: Response) {
       .limit(1);
 
     if (!sf) return res.status(404).json({ ok: false, error: "Storefront not found." });
-    if (sf.userId !== (req.user as any).id)
+    if (sf.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const domain = domResult.normalized;
@@ -233,7 +233,7 @@ export async function verifyCustomDomain(req: Request, res: Response) {
       .where(eq(storefronts.id, record.storefrontId))
       .limit(1);
 
-    if (sf?.userId !== (req.user as any).id)
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const txtName = `_maxbooster.${domain}`;
@@ -308,7 +308,7 @@ export async function listDomains(req: Request, res: Response) {
       .limit(1);
 
     if (!sf) return res.status(404).json({ ok: false, error: "Storefront not found." });
-    if (sf.userId !== (req.user as any).id)
+    if (sf.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     const domains = await db
@@ -342,7 +342,7 @@ export async function deleteDomain(req: Request, res: Response) {
       .where(eq(storefronts.id, record.storefrontId))
       .limit(1);
 
-    if (sf?.userId !== (req.user as any).id)
+    if (sf?.userId !== (req.user as Record<string, unknown>).id)
       return res.status(403).json({ ok: false, error: "Unauthorized." });
 
     await db.delete(storefrontDomains).where(eq(storefrontDomains.id, domainId));

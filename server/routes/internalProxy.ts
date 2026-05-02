@@ -49,7 +49,7 @@ async function proxyTo(
     } else {
       res.send(await upstream.text());
     }
-  } catch (err: any) {
+  } catch (err) {
     logger.debug(`[${label}] proxy → ${url} failed: ${err.message}`);
     res.status(503).json({ error: `${label} unavailable` });
   }

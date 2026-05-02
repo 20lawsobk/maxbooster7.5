@@ -85,7 +85,7 @@ function validateInput(body: unknown): { valid: boolean; error?: string; input?:
     campaignGoal: (b.campaignGoal as ArtistContextInput['campaignGoal']) ?? 'growth',
     platforms: requestedPlatforms as SupportedPlatform[] | undefined,
     collaborators: Array.isArray(b.collaborators) ? b.collaborators as string[] : undefined,
-    upcomingEvents: Array.isArray(b.upcomingEvents) ? b.upcomingEvents as any[] : undefined,
+    upcomingEvents: Array.isArray(b.upcomingEvents) ? b.upcomingEvents as unknown[] : undefined,
     socialHandles: b.socialHandles as Record<string, string> | undefined,
     targetArtistSegment: (b.targetArtistSegment as ArtistContextInput['targetArtistSegment']) ?? 'emerging_artist',
     schedulingOptions: b.schedulingOptions as Record<string, unknown> | undefined,
@@ -108,7 +108,7 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
   }
 
   try {
-    logger.info(`[UnifiedContent] Full pipeline triggered by user=${(req as any).userId ?? 'unknown'} artist="${input.artistName}"`);
+    logger.info(`[UnifiedContent] Full pipeline triggered by user=${req.user?.id ?? 'unknown'} artist="${input.artistName}"`);
     const pkg = await unifiedContentOrchestrator.generate(input);
 
     res.json({

@@ -372,7 +372,7 @@ export const platformAPI = {
 
         const personUrn = `urn:li:person:${profileResponse.data.id}`;
 
-        const shareData: any = {
+        const shareData: Record<string, unknown> = {
           author: personUrn,
           lifecycleState: 'PUBLISHED',
           specificContent: {

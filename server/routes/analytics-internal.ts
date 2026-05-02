@@ -119,7 +119,7 @@ router.post('/ai/predict-metric', async (req: Request, res: Response) => {
 });
 
 // 5-minute cache for churn predictions — avoids repeated scans on every admin refresh
-const _churnPredictCache: { data: any | null; expiresAt: number } = { data: null, expiresAt: 0 };
+const _churnPredictCache: { data: Record<string, unknown> | null; expiresAt: number } = { data: null, expiresAt: 0 };
 
 /**
  * GET /api/analytics/ai/predict-churn
@@ -156,7 +156,7 @@ router.get('/ai/predict-churn', requireAdmin, async (req: Request, res: Response
     `);
 
     const atRiskUsers = [];
-    for (const row of (rows as any).rows ?? rows) {
+    for (const row of (rows as Record<string, unknown>).rows ?? rows) {
       const activityScore = Number(row.activity_score ?? 0);
 
       if (activityScore === 0) {
@@ -672,13 +672,13 @@ router.get('/music/insights', async (req: Request, res: Response) => {
       GROUP BY dow
       ORDER BY total_streams DESC
     `);
-    const dayRows = (dayStreams as any).rows ?? dayStreams;
+    const dayRows = (dayStreams as Record<string, unknown>).rows ?? dayStreams;
 
     const bestDow = dayRows.length > 0 ? Number(dayRows[0].dow) : 5;
     const bestDay = DAY_NAMES[bestDow] ?? 'Friday';
     const bestDayStreams = dayRows.length > 0 ? Number(dayRows[0].total_streams) : 0;
-    const fridayStreams = dayRows.find((r: any) => Number(r.dow) === 5)
-      ? Number(dayRows.find((r: any) => Number(r.dow) === 5).total_streams)
+    const fridayStreams = dayRows.find((r: Record<string, unknown>) => Number(r.dow) === 5)
+      ? Number(dayRows.find((r: Record<string, unknown>) => Number(r.dow) === 5).total_streams)
       : 0;
     const bestDayBoost = bestDayStreams > 0 && fridayStreams > 0 && bestDow !== 5
       ? Math.round(((bestDayStreams - fridayStreams) / fridayStreams) * 100)
@@ -793,7 +793,7 @@ router.get('/music/release-strategy', async (req: Request, res: Response) => {
       GROUP BY dow
       ORDER BY total_streams DESC
     `);
-    const dayRowsRS = (dayStreamsRS as any).rows ?? dayStreamsRS;
+    const dayRowsRS = (dayStreamsRS as Record<string, unknown>).rows ?? dayStreamsRS;
     const bestDowRS = dayRowsRS.length > 0 ? Number(dayRowsRS[0].dow) : 5;
     const bestDayRS = DAY_NAMES_RS[bestDowRS] ?? 'Friday';
 
@@ -1524,8 +1524,8 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
       LIMIT 20
     `);
 
-    const rows = (growthRows as any).rows ?? growthRows;
-    let artists = rows.map((row: any, idx: number) => {
+    const rows = (growthRows as Record<string, unknown>).rows ?? growthRows;
+    let artists = rows.map((row: Record<string, unknown>, idx: number) => {
       const recent = Number(row.recent_streams ?? 0);
       const prev = Number(row.prev_streams ?? 0);
       const growth = prev > 0 ? Math.round(((recent - prev) / prev) * 100) : (recent > 0 ? 100 : 0);
@@ -1561,7 +1561,7 @@ router.get('/ar-discovery', async (req: Request, res: Response) => {
 
     if (minGrowth) {
       const minG = parseInt(minGrowth as string) || 0;
-      artists = artists.filter((a: any) => a.monthlyGrowth >= minG);
+      artists = artists.filter((a: Record<string, unknown>) => a.monthlyGrowth >= minG);
     }
 
     return res.json({
@@ -1599,7 +1599,7 @@ router.post('/schedule-export', requireAuth, async (req: Request, res: Response)
       message: `${frequency === 'weekly' ? 'Weekly' : 'Monthly'} ${(format || 'csv').toUpperCase()} report will be sent to ${email}`,
       scheduledAt: new Date().toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error scheduling export:', error?.message);
     return res.status(500).json({ error: 'Failed to schedule export' });
   }

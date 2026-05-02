@@ -123,14 +123,14 @@ encryption, monitoring, and incident response capabilities.`;
       auditDate: new Date(),
       auditor: 'Automated System',
       scope: 'Full SOC2 Trust Service Criteria Assessment',
-      findings: findings as any,
+      findings: findings as Record<string, unknown>,
       status: overallScore >= 80 ? 'passed' : overallScore >= 60 ? 'needs_improvement' : 'failed',
       overallScore,
       passedControls: implementedControls.length,
       failedControls: 0,
       partialControls: partialControls.length,
       totalControls: controls.length,
-      recommendations: recommendations as any,
+      recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
@@ -189,14 +189,14 @@ ${implementedControls.length} of ${controls.length} required controls are fully 
       auditDate: new Date(),
       auditor: 'Automated System',
       scope: 'Full ISO 27001:2022 Controls Assessment',
-      findings: findings as any,
+      findings: findings as Record<string, unknown>,
       status: overallScore >= 80 ? 'passed' : overallScore >= 60 ? 'needs_improvement' : 'failed',
       overallScore,
       passedControls: implementedControls.length,
       failedControls: 0,
       partialControls: partialControls.length,
       totalControls: controls.length,
-      recommendations: recommendations as any,
+      recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
@@ -255,14 +255,14 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
       auditDate: new Date(),
       auditor: 'Automated System',
       scope: 'Full GDPR Compliance Assessment',
-      findings: findings as any,
+      findings: findings as Record<string, unknown>,
       status: overallScore >= 80 ? 'passed' : overallScore >= 60 ? 'needs_improvement' : 'failed',
       overallScore,
       passedControls: implementedControls.length,
       failedControls: 0,
       partialControls: partialControls.length,
       totalControls: controls.length,
-      recommendations: recommendations as any,
+      recommendations: recommendations as Record<string, unknown>,
       reportPath: `/compliance/reports/${reportId}.json`,
     });
 
@@ -452,7 +452,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
           verified: true,
           verifiedBy: 'automated-system',
           verifiedAt: new Date(),
-          relatedStandards: [control.standard] as any,
+          relatedStandards: [control.standard] as Record<string, unknown>,
         });
 
         collected++;
@@ -482,7 +482,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
         verified: true,
         verifiedBy: 'automated-system',
         verifiedAt: new Date(),
-        relatedStandards: [control.standard] as any,
+        relatedStandards: [control.standard] as Record<string, unknown>,
       });
 
       collected++;
@@ -511,7 +511,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
         verified: true,
         verifiedBy: 'automated-system',
         verifiedAt: new Date(),
-        relatedStandards: [control.standard] as any,
+        relatedStandards: [control.standard] as Record<string, unknown>,
       });
 
       collected++;
@@ -542,7 +542,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
         verified: true,
         verifiedBy: 'automated-system',
         verifiedAt: new Date(),
-        relatedStandards: [control.standard] as any,
+        relatedStandards: [control.standard] as Record<string, unknown>,
       });
 
       collected++;
@@ -571,7 +571,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
         verified: true,
         verifiedBy: 'automated-system',
         verifiedAt: new Date(),
-        relatedStandards: [control.standard] as any,
+        relatedStandards: [control.standard] as Record<string, unknown>,
       });
 
       collected++;
@@ -601,7 +601,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
       verified: true,
       verifiedBy: 'automated-system',
       verifiedAt: new Date(),
-      relatedStandards: [control.standard] as any,
+      relatedStandards: [control.standard] as Record<string, unknown>,
     });
 
     return 1;

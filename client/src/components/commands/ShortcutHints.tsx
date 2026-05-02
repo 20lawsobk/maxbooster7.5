@@ -149,7 +149,7 @@ export function TooltipWithShortcut({
       <TooltipTrigger asChild>{children}</TooltipTrigger>
       <TooltipContent side={side} className="flex items-center gap-2">
         <span>{action}</span>
-        {shortcut && <ShortcutHint shortcut={shortcut as any} size="xs" variant="ghost" />}
+        {shortcut && <ShortcutHint shortcut={shortcut as Record<string, unknown>} size="xs" variant="ghost" />}
       </TooltipContent>
     </Tooltip>
   );

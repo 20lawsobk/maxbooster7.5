@@ -195,7 +195,7 @@ export function ConflictResolutionDialog({
               )}
             </div>
 
-            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)}>
+            <Tabs value={activeView} onValueChange={(v) => setActiveView(v as Record<string, unknown>)}>
               <TabsList className="bg-zinc-900">
                 <TabsTrigger value="split" className="gap-1">
                   <Diff className="w-3 h-3" />

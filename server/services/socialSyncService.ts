@@ -244,7 +244,7 @@ async function calcEngagementRate(userId: string, platform: string, followers: n
     let totalInteractions = 0;
     let counted = 0;
     for (const post of recentPosts) {
-      const eng = post.engagement as any;
+      const eng = post.engagement as Record<string, unknown>;
       if (!eng) continue;
       const interactions = (eng.likes || 0) + (eng.comments || 0) + (eng.shares || 0);
       totalInteractions += interactions;
@@ -314,7 +314,7 @@ export async function syncPlatformData(
         if (pagesData.data && pagesData.data.length > 0) {
           // Sum all managed page followers
           const totalPageFollowers = pagesData.data.reduce(
-            (sum: number, page: any) => sum + (page.followers_count || page.fan_count || 0),
+            (sum: number, page: Record<string, unknown>) => sum + (page.followers_count || page.fan_count || 0),
             0
           );
           const primaryPage = pagesData.data[0];
@@ -322,7 +322,7 @@ export async function syncPlatformData(
           syncedProfileUrl = `https://www.facebook.com/${primaryPage.id}`;
           syncedMetadata = {
             ...syncedMetadata,
-            pages: pagesData.data.map((pg: any) => ({
+            pages: pagesData.data.map((pg: Record<string, unknown>) => ({
               id: pg.id,
               name: pg.name,
               followers: pg.followers_count || pg.fan_count || 0,
@@ -339,7 +339,7 @@ export async function syncPlatformData(
         const pagesData = await pagesRes.json();
 
         if (pagesData.data && pagesData.data.length > 0) {
-          let bestIgAccount: any = null;
+          let bestIgAccount: Record<string, unknown> | null = null;
           let bestFollowers = 0;
 
           // Check all pages for linked Instagram Business accounts

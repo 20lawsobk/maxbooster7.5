@@ -89,7 +89,7 @@ export function RoyaltySplitManager({ projectId }: RoyaltySplitManagerProps) {
 
   // Update split mutation
   const updateSplitMutation = useMutation({
-    mutationFn: async ({ splitId, data }: { splitId: string; data: any }) => {
+    mutationFn: async ({ splitId, data }: { splitId: string; data: Record<string, unknown> }) => {
       const response = await apiRequest(
         'PUT',
         `/api/projects/${projectId}/royalty-splits/${splitId}`,

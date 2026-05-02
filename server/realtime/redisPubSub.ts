@@ -6,8 +6,8 @@ import { env } from '../config/env.js';
 const CHANNEL_USER = 'ws:user:notify';
 const CHANNEL_BROADCAST = 'ws:broadcast';
 
-let publisher: any | null = null;
-let subscriber: any | null = null;
+let publisher: { publish: (channel: string, msg: string) => Promise<unknown> } | null = null;
+let subscriber: { subscribe: (channel: string, cb: (msg: string) => void) => Promise<unknown>; on: (event: string, cb: (...args: unknown[]) => void) => void } | null = null;
 let _ready = false;
 
 type UserNotifyHandler = (userId: string, notification: object) => void;
@@ -46,7 +46,7 @@ export async function initRedisPubSub(): Promise<void> {
       await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
       _ready = true;
       logger.info('✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance');
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[WS PubSub] PDIM Pub/Sub init warning: ${err.message}`);
       _ready = !!publisher;
     }
@@ -89,7 +89,7 @@ export async function initRedisPubSub(): Promise<void> {
     await subscriber.subscribe(CHANNEL_USER, CHANNEL_BROADCAST);
     _ready = true;
     logger.info('✅ [WS PubSub] Redis Pub/Sub active — WebSocket broadcasting is cross-instance');
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[WS PubSub] Failed to init Redis Pub/Sub: ${err.message} — single-instance only`);
     publisher = null;
     subscriber = null;

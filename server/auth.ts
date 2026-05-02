@@ -22,7 +22,7 @@ async function isJwtBlocked(key: string): Promise<boolean> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const raw = await (client as any).get(redisKey);
+      const raw = await (client as Record<string, unknown>).get(redisKey);
       const count = raw ? parseInt(raw, 10) : 0;
       return count >= JWT_RL_MAX_FAILURES;
     }
@@ -39,8 +39,8 @@ async function recordJwtFailure(key: string): Promise<void> {
     const client = await getRedisClient();
     if (client) {
       const redisKey = `ratelimit:jwt:${key}`;
-      const count = await (client as any).incr(redisKey);
-      if (count === 1) await (client as any).pexpire(redisKey, JWT_RL_WINDOW_MS);
+      const count = await (client as Record<string, unknown>).incr(redisKey);
+      if (count === 1) await (client as Record<string, unknown>).pexpire(redisKey, JWT_RL_WINDOW_MS);
       return;
     }
   } catch {
@@ -126,13 +126,13 @@ export const requireAuthDual = async (req: Request, res: Response, next: NextFun
           email: user.email,
           name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
           username: user.username,
-          displayName: (user as any).displayName || user.username,
+          displayName: (user as Record<string, unknown>).displayName || user.username,
           firstName: user.firstName,
           lastName: user.lastName,
-          avatarUrl: (user as any).avatarUrl || null,
-          profileImageUrl: (user as any).profileImageUrl || null,
-          bio: (user as any).bio || null,
-          role: (user as any).role || 'user',
+          avatarUrl: (user as Record<string, unknown>).avatarUrl || null,
+          profileImageUrl: (user as Record<string, unknown>).profileImageUrl || null,
+          bio: (user as Record<string, unknown>).bio || null,
+          role: (user as Record<string, unknown>).role || 'user',
           subscriptionType: user.subscriptionTier || null,
           subscriptionStatus: user.subscriptionStatus || null,
           stripeCustomerId: user.stripeCustomerId || null,
@@ -171,7 +171,7 @@ export const requireAuth = requireAuthDual;
 // NOTE: This middleware is mounted at '/api', so req.path strips the '/api' prefix.
 // Use req.originalUrl for full-path matching or paths without the /api prefix.
 export const blockDemoWrite = async (req: Request, res: Response, next: NextFunction) => {
-  if ((req as any).user?.email !== 'demo@maxbooster.ai') {
+  if ((req as Record<string, unknown>).user?.email !== 'demo@maxbooster.ai') {
     return next();
   }
   

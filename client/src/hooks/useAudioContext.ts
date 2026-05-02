@@ -34,7 +34,7 @@ export function useSharedAudioContext() {
     
     if (!sharedAudioContext) {
       try {
-        sharedAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        sharedAudioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
         
         if (sharedAudioContext.state === 'suspended') {
           const resumeOnInteraction = () => {
@@ -312,7 +312,7 @@ export function useAudioContext() {
   const initializeAudioContext = async () => {
     try {
       // Check for Web Audio API support
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
 
       if (!AudioContextClass) {
         return;

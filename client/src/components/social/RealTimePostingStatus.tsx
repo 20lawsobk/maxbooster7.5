@@ -88,7 +88,7 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 const STAGE_CONFIG: Record<PostingStage, {
   label: string;
-  icon: any;
+  icon: React.ReactNode;
   color: string;
   description: string;
 }> = {

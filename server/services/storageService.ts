@@ -41,7 +41,7 @@ async function ensureLocalDir(filePath: string): Promise<void> {
  * Additionally writes a copy to the local filesystem for durability.
  */
 class PocketDimensionStorageProvider implements StorageProvider {
-  private pocket: any = null;
+  private pocket: Record<string, unknown> | null = null;
   private initPromise: Promise<void>;
 
   constructor() {
@@ -114,7 +114,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
     // Delete from local filesystem
     try {
       await fsPromises.unlink(localFilePath(key));
-    } catch (fsErr: any) {
+    } catch (fsErr: Record<string, unknown>) {
       if (fsErr.code !== 'ENOENT') {
         logger.warn(`[StorageService] local deleteFile failed for key=${key}:`, fsErr);
       }
@@ -124,7 +124,7 @@ class PocketDimensionStorageProvider implements StorageProvider {
     try {
       await this.ensure();
       await this.pocket.delete(`files/${key}`);
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[StorageService] deleteFile failed for key=${key}: ${err?.message}`);
     }
   }

@@ -144,7 +144,7 @@ export class AudioFingerprintService {
     duration: number;
     sampleRate: number;
     channels: number;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }> {
     const fileBuffer = await fs.promises.readFile(audioPath);
     const fileHash = crypto.createHash('sha256').update(fileBuffer).digest('hex');

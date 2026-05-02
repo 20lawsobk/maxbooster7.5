@@ -11,7 +11,7 @@ const router = Router();
 
 interface AuthenticatedRequest extends Request {
   user?: { id: string; email?: string };
-  session: any;
+  session: Record<string, unknown>;
 }
 
 router.post('/refresh-token', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
@@ -711,7 +711,7 @@ router.post('/security-alerts/:alertId/dismiss', requireAuth, async (req: Authen
   }
 });
 
-router.post('/send-verification-email', requireAuth, async (req: any, res) => {
+router.post('/send-verification-email', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const userId = req.user!.id;
     const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -780,7 +780,7 @@ router.get('/verify-email', async (req, res) => {
   }
 });
 
-router.get('/email-verification-status', requireAuth, async (req: any, res) => {
+router.get('/email-verification-status', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const userId = req.user!.id;
     const [user] = await db.select({ emailVerified: users.emailVerified }).from(users).where(eq(users.id, userId))

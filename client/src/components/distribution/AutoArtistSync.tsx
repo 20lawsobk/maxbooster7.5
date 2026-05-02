@@ -247,7 +247,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       setFixerOpen(false);
       toast({ title: 'Re-mapping request submitted', description: 'Will be applied to future releases' });
     },
-    onError: (err: any) => toast({
+    onError: (err: Error) => toast({
       title: 'Request failed',
       description: err?.message ?? 'Check that the Spotify URI is valid',
       variant: 'destructive',
@@ -264,7 +264,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   });
 
   // ── Phase 1: Claim Pipeline ───────────────────────────────────────────────
-  const { data: pipelineData, refetch: refetchPipeline } = useQuery<{ pipeline: any[] }>({
+  const { data: pipelineData, refetch: refetchPipeline } = useQuery<{ pipeline: unknown[] }>({
     queryKey: [`/api/artist-profiles/${profile.id}/claim-pipeline`],
     queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/claim-pipeline`).then(r => r.json()),
     staleTime: 30_000,
@@ -285,7 +285,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   });
 
   // ── Phase 3: DNA Snapshots ────────────────────────────────────────────────
-  const { data: dnaData, refetch: refetchDna } = useQuery<{ snapshots: any[] }>({
+  const { data: dnaData, refetch: refetchDna } = useQuery<{ snapshots: unknown[] }>({
     queryKey: [`/api/artist-profiles/${profile.id}/dna-snapshots`],
     queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/dna-snapshots`).then(r => r.json()),
     staleTime: 60_000,
@@ -294,7 +294,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
 
   // ── Phase 2: Identity Graph ───────────────────────────────────────────────
   const { data: graphData, refetch: refetchGraph } = useQuery<{
-    nodes: any[]; links: any[]; confirmationScore: number;
+    nodes: Record<string, unknown>[]; links: Record<string, unknown>[]; confirmationScore: number;
   }>({
     queryKey: [`/api/artist-profiles/${profile.id}/identity-graph`],
     queryFn: () => apiRequest('GET', `/api/artist-profiles/${profile.id}/identity-graph`).then(r => r.json()),
@@ -316,7 +316,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       setMultiFixerIds({});
       toast({ title: 'Multi-platform re-mapping submitted', description: 'Will apply to future releases on all selected platforms' });
     },
-    onError: (err: any) => toast({ title: 'Failed', description: err?.message, variant: 'destructive' }),
+    onError: (err: Error) => toast({ title: 'Failed', description: err?.message, variant: 'destructive' }),
   });
 
   // ── Social Handle Resolver ────────────────────────────────────────────────
@@ -326,7 +326,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         platform: handlePlatform,
         handle: handleValue,
       }).then(r => r.json()),
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
       onUpdated();
       setHandleValue('');
@@ -343,7 +343,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
         isrcList: importIsrcs.split(/[\n,\s]+/).filter(s => s.trim().length === 12),
         upcList: importUpcs.split(/[\n,\s]+/).filter(s => s.trim().length >= 8),
       }).then(r => r.json()),
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       setImportSource(''); setImportIsrcs(''); setImportUpcs('');
       setImportOpen(false);
       toast({ title: 'Import queued', description: `${data.isrcsQueued} ISRCs + ${data.upcsQueued} UPCs submitted for discovery` });
@@ -408,7 +408,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
       const res = await apiRequest('POST', `/api/artist-profiles/${profile.id}/dna-snapshot`);
       const data = await res.json();
       refetchDna();
-      toast({ title: 'DNA snapshot created', description: `Captured ${Object.keys((data.snapshot as any)?.platformIdsAtSnapshot ?? {}).length} platform IDs at this moment` });
+      toast({ title: 'DNA snapshot created', description: `Captured ${Object.keys((data.snapshot as Record<string, unknown>)?.platformIdsAtSnapshot ?? {}).length} platform IDs at this moment` });
     } catch {
       toast({ title: 'Snapshot failed', variant: 'destructive' });
     } finally {
@@ -463,7 +463,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   };
 
   const getClaimStateForPortal = (platformKey: string) =>
-    pipelineData?.pipeline?.find((p: any) => p.platform === platformKey);
+    pipelineData?.pipeline?.find((p: Record<string, unknown>) => p.platform === platformKey);
 
   const CLAIM_STEP_LABELS = ['Not Started', 'Instructions Read', 'Portal Visited', 'ID Submitted', 'Verified', 'Monitoring'];
 
@@ -525,7 +525,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
 
   const getDiscoverResultForPortal = (portal: Portal): DiscoverResult | null => {
     if (!portal.autoDiscoverKey || !discoverResults) return null;
-    return (discoverResults as any)[portal.autoDiscoverKey] ?? null;
+    return (discoverResults as Record<string, unknown>)[portal.autoDiscoverKey] ?? null;
   };
 
   return (
@@ -954,7 +954,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
               <div className="space-y-2 border-t pt-2">
                 <p className="text-xs font-medium">Discovery results:</p>
                 {(['spotify', 'apple', 'deezer', 'audiomack', 'musicbrainz', 'jiosaavn'] as const).map(key => {
-                  const r = (discoverResults as any)[key] as DiscoverResult | null;
+                  const r = (discoverResults as Record<string, unknown>)[key] as DiscoverResult | null;
                   if (!r) return (
                     <div key={key} className="flex items-center gap-2 text-xs text-muted-foreground">
                       <XCircle className="h-3.5 w-3.5" />
@@ -1289,7 +1289,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
             <button className="w-full flex items-center justify-between text-xs text-muted-foreground hover:text-foreground transition-colors py-1 border-t pt-3">
               <span className="flex items-center gap-1.5">
                 <GitBranch className="h-3.5 w-3.5" />
-                Claim Pipeline ({pipelineData.pipeline.filter((p: any) => p.currentState === 'monitoring').length}/{pipelineData.pipeline.length} complete)
+                Claim Pipeline ({pipelineData.pipeline.filter((p: Record<string, unknown>) => p.currentState === 'monitoring').length}/{pipelineData.pipeline.length} complete)
               </span>
               <ChevronDown className="h-3.5 w-3.5" />
             </button>
@@ -1297,7 +1297,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
           <CollapsibleContent>
             <div className="rounded-lg border p-3 space-y-3 mt-1">
               <p className="text-xs text-muted-foreground">Track your artist verification / claim progress per platform through the 6-stage pipeline.</p>
-              {pipelineData.pipeline.map((entry: any) => {
+              {pipelineData.pipeline.map((entry: Record<string, unknown>) => {
                 const stateIdx = CLAIM_STEP_LABELS.indexOf(entry.currentState ?? 'Not Started');
                 const pct = Math.max(0, ((stateIdx) / (CLAIM_STEP_LABELS.length - 1)) * 100);
                 return (
@@ -1482,7 +1482,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
             </Button>
             {dnaData?.snapshots && dnaData.snapshots.length > 0 && (
               <div className="space-y-2 border-t pt-2 max-h-40 overflow-y-auto">
-                {dnaData.snapshots.map((snap: any) => (
+                {dnaData.snapshots.map((snap: Record<string, unknown>) => (
                   <div key={snap.id} className="flex items-center justify-between text-xs rounded bg-muted/30 px-2 py-1.5">
                     <div className="flex items-center gap-2">
                       <Fingerprint className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1604,7 +1604,7 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
                 </div>
                 {graphData.nodes && graphData.nodes.length > 0 && (
                   <div className="space-y-1.5 max-h-32 overflow-y-auto">
-                    {graphData.nodes.map((node: any) => (
+                    {graphData.nodes.map((node: Record<string, unknown>) => (
                       <div key={node.id} className="flex items-center justify-between text-xs rounded bg-muted/20 px-2 py-1">
                         <div className="flex items-center gap-2">
                           <div className={`h-2 w-2 rounded-full ${node.confirmed ? 'bg-green-500' : 'bg-amber-500'}`} />

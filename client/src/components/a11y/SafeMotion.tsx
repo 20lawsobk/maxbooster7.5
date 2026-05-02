@@ -59,15 +59,15 @@ export function SafeMotion({
 
       case 'opacity':
         return {
-          animate: typeof animate === 'object' ? { opacity: (animate as any).opacity ?? 1 } : animate,
-          initial: typeof initial === 'object' ? { opacity: (initial as any).opacity ?? 0 } : initial,
-          exit: typeof exit === 'object' ? { opacity: (exit as any).opacity ?? 0 } : exit,
+          animate: typeof animate === 'object' ? { opacity: (animate as Record<string, unknown>).opacity ?? 1 } : animate,
+          initial: typeof initial === 'object' ? { opacity: (initial as Record<string, unknown>).opacity ?? 0 } : initial,
+          exit: typeof exit === 'object' ? { opacity: (exit as Record<string, unknown>).opacity ?? 0 } : exit,
           transition: opacityOnlyTransition,
           variants: variants
             ? Object.fromEntries(
                 Object.entries(variants).map(([key, value]) => [
                   key,
-                  typeof value === 'object' ? { opacity: (value as any).opacity } : value,
+                  typeof value === 'object' ? { opacity: (value as Record<string, unknown>).opacity } : value,
                 ])
               )
             : undefined,

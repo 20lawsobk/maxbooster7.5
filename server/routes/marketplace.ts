@@ -151,12 +151,12 @@ router.get('/beats', async (req: Request, res: Response) => {
     const cacheKey = `marketplace:beats:anon:${filterSig}`;
     const beats = await distributedCache.getOrSet(
       cacheKey,
-      () => marketplaceService.browseListings({ ...filters, sortBy: (sortBy as any) || 'recent' }),
+      () => marketplaceService.browseListings({ ...filters, sortBy: (sortBy as Record<string, unknown>) || 'recent' }),
       60
     );
 
     res.json(beats);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching beats:');
     res.status(500).json({ error: 'Failed to fetch beats' });
   }
@@ -264,7 +264,7 @@ router.get('/producer-analytics', async (req: Request, res: Response) => {
     );
 
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching producer analytics:');
     res.status(500).json({ error: 'Failed to fetch analytics' });
   }
@@ -370,7 +370,7 @@ router.get('/license-templates', async (req: Request, res: Response) => {
     }));
 
     res.json(mapped);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching license templates:');
     res.status(500).json({ error: 'Failed to fetch license templates' });
   }
@@ -399,7 +399,7 @@ router.post('/license-templates', requireAuth, async (req: Request, res: Respons
       sortOrder: sortOrder ?? 0,
     }).returning();
     res.status(201).json(template);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating license template:');
     res.status(500).json({ error: 'Failed to create license template' });
   }
@@ -432,7 +432,7 @@ router.put('/license-templates/:id', requireAuth, async (req: Request, res: Resp
       .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)))
       .returning();
     res.json(updated);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error updating license template:');
     res.status(500).json({ error: 'Failed to update license template' });
   }
@@ -450,7 +450,7 @@ router.delete('/license-templates/:id', requireAuth, async (req: Request, res: R
     await db.delete(licenseTemplates)
       .where(and(eq(licenseTemplates.id, id), eq(licenseTemplates.userId, req.user!.id)));
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error deleting license template:');
     res.status(500).json({ error: 'Failed to delete license template' });
   }
@@ -464,7 +464,7 @@ router.get('/my-beats', async (req: Request, res: Response) => {
 
     const userListings = await marketplaceService.getUserListings(req.user!.id);
     res.json(userListings);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching user beats:');
     res.status(500).json({ error: 'Failed to fetch your beats' });
   }
@@ -474,7 +474,7 @@ router.get('/producers', async (req: Request, res: Response) => {
   try {
     const producers = await storage.getProducers();
     res.json({ producers: producers || [] });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching producers:');
     res.status(500).json({ error: 'Failed to fetch producers' });
   }
@@ -488,7 +488,7 @@ router.get('/purchases', async (req: Request, res: Response) => {
 
     const purchases = await marketplaceService.getUserPurchases(req.user!.id);
     res.json(purchases);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching purchases:');
     res.status(500).json({ error: 'Failed to fetch purchases' });
   }
@@ -502,7 +502,7 @@ router.get('/sales-analytics', async (req: Request, res: Response) => {
 
     const analytics = await marketplaceService.getSalesAnalytics(req.user!.id);
     res.json(analytics);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching sales analytics:');
     res.status(500).json({ error: 'Failed to fetch sales analytics' });
   }
@@ -553,7 +553,7 @@ router.post('/interaction', async (req: Request, res: Response) => {
         }
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error recording interaction:');
     res.status(500).json({ error: 'Failed to record interaction' });
   }
@@ -632,7 +632,7 @@ router.get('/for-you', async (req: Request, res: Response) => {
       },
       allBeats: personalizedBeats,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching For You feed:');
     res.status(500).json({ error: 'Failed to fetch personalized feed' });
   }
@@ -658,7 +658,7 @@ router.get('/ai-recommendations', async (req: Request, res: Response) => {
     }));
 
     res.json(recommendations);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching AI recommendations:');
     res.status(500).json({ error: 'Failed to fetch recommendations' });
   }
@@ -672,7 +672,7 @@ router.get('/taste-profile', async (req: Request, res: Response) => {
 
     const insights = await discoveryAlgorithmService.getTasteInsights(req.user!.id);
     res.json(insights);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching taste profile:');
     res.status(500).json({ error: 'Failed to fetch taste profile' });
   }
@@ -691,7 +691,7 @@ router.post('/follow-producer', async (req: Request, res: Response) => {
 
     const result = await discoveryAlgorithmService.followProducer(req.user!.id, producerId);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error following producer:');
     res.status(500).json({ error: 'Failed to follow producer' });
   }
@@ -710,7 +710,7 @@ router.post('/unfollow-producer', async (req: Request, res: Response) => {
 
     const result = await discoveryAlgorithmService.unfollowProducer(req.user!.id, producerId);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error unfollowing producer:');
     res.status(500).json({ error: 'Failed to unfollow producer' });
   }
@@ -741,9 +741,9 @@ router.post('/purchase', async (req: Request, res: Response) => {
 
     setImmediate(async () => {
       try {
-        const beatTitle = (result as any).beatTitle || 'your beat';
-        const amount = (result as any).amount || 0;
-        const sellerId = (result as any).sellerId;
+        const beatTitle = (result as Record<string, unknown>).beatTitle || 'your beat';
+        const amount = (result as Record<string, unknown>).amount || 0;
+        const sellerId = (result as Record<string, unknown>).sellerId;
         await notificationService.sendBeatPurchasedNotification(req.user!.id, beatTitle, licenseType);
         if (sellerId && sellerId !== req.user!.id) {
           await notificationService.sendBeatSoldNotification(sellerId, beatTitle, licenseType, amount);
@@ -752,7 +752,7 @@ router.post('/purchase', async (req: Request, res: Response) => {
         logger.warn({ err: err }, '[Marketplace] purchase notification error:');
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error initiating purchase:');
     const msg = error.message || 'Failed to initiate purchase';
     if (msg.includes('not found') || msg.includes('Not found')) {
@@ -815,7 +815,7 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
     };
 
     const template = templateMap[licenseType] || templateMap.basic;
-    const snapshot = order.licenseSnapshot as any;
+    const snapshot = order.licenseSnapshot as Record<string, unknown>;
     const beatTitle = listing?.title || 'Unknown Beat';
     const producerName = seller?.displayName || seller?.username || 'Producer';
     const buyerName = buyer?.displayName || buyer?.username || 'Buyer';
@@ -916,7 +916,7 @@ router.get('/purchases/:orderId/license-agreement', async (req: Request, res: Re
       agreement,
       template,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating license agreement:');
     res.status(500).json({ error: 'Failed to generate license agreement' });
   }
@@ -928,7 +928,7 @@ router.get('/escrow', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const escrowOrders = await db
       .select()
       .from(orders)
@@ -954,7 +954,7 @@ router.get('/escrow', async (req: Request, res: Response) => {
     }));
 
     res.json(formatted);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching escrow transactions:');
     res.status(500).json({ error: 'Failed to fetch escrow transactions' });
   }
@@ -966,7 +966,7 @@ router.get('/affiliates', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
     const [row] = await db
       .select()
@@ -974,9 +974,9 @@ router.get('/affiliates', async (req: Request, res: Response) => {
       .where(eq(systemSettings.key, settingKey))
       .limit(1);
 
-    const affiliates = row ? (row.value as any[]) || [] : [];
+    const affiliates = row ? (row.value as unknown[]) || [] : [];
     res.json(affiliates);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching affiliates:');
     res.status(500).json({ error: 'Failed to fetch affiliates' });
   }
@@ -988,10 +988,10 @@ router.get('/contracts', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const contracts = await storage.getContractTemplates(userId);
     res.json(contracts);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching contracts:');
     res.status(500).json({ error: 'Failed to fetch contracts' });
   }
@@ -1003,7 +1003,7 @@ router.get('/contracts/:id', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { id } = req.params;
     const contract = await storage.getContractTemplateByUser(id, userId);
     
@@ -1012,7 +1012,7 @@ router.get('/contracts/:id', async (req: Request, res: Response) => {
     }
     
     res.json(contract);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching contract:');
     res.status(500).json({ error: 'Failed to fetch contract' });
   }
@@ -1024,7 +1024,7 @@ router.patch('/contracts/:id', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { id } = req.params;
 
     const parsed = contractSchema.partial().safeParse(req.body);
@@ -1040,7 +1040,7 @@ router.patch('/contracts/:id', async (req: Request, res: Response) => {
     const updatedContract = await storage.updateContractTemplate(id, parsed.data);
 
     res.json(updatedContract);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error updating contract:');
     res.status(500).json({ error: 'Failed to update contract' });
   }
@@ -1052,7 +1052,7 @@ router.delete('/contracts/:id', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { id } = req.params;
 
     const contract = await storage.getContractTemplateByUser(id, userId);
@@ -1062,7 +1062,7 @@ router.delete('/contracts/:id', async (req: Request, res: Response) => {
 
     await storage.deleteContractTemplate(id);
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error deleting contract:');
     res.status(500).json({ error: 'Failed to delete contract' });
   }
@@ -1093,7 +1093,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
       .where(eq(projectMembers.userId, userId))
       .limit(200);
 
-    let memberProjects: any[] = [];
+    let memberProjects: Record<string, unknown>[] = [];
     if (memberRows.length > 0) {
       const memberProjectIds = memberRows.map(r => r.projectId);
       memberProjects = await db
@@ -1110,7 +1110,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
     const allProjects = [...ownedProjects, ...memberProjects.filter(p => p.ownerId !== userId)];
 
     const collaborations = allProjects.map(project => {
-      const meta = (project.metadata as any) || {};
+      const meta = (project.metadata as Record<string, unknown>) || {};
       return {
         id: project.id,
         fromUser: meta.fromUser || { id: project.ownerId, name: 'Unknown', avatar: '' },
@@ -1128,7 +1128,7 @@ router.get('/collaborations', async (req: Request, res: Response) => {
     });
 
     res.json(collaborations);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching collaborations:');
     res.status(500).json({ error: 'Failed to fetch collaborations' });
   }
@@ -1205,7 +1205,7 @@ router.post('/upload', upload.fields([
           if (available) {
             const analysis = await pythonAIService.analyzeAudio(tmpPath, false);
             if (analysis.success && analysis.data) {
-              const updateData: any = {};
+              const updateData: Record<string, unknown> = {};
               if (!tempo && analysis.data.bpm) updateData.bpm = Math.round(analysis.data.bpm);
               if (!key && analysis.data.key) updateData.key = analysis.data.key;
               if (Object.keys(updateData).length > 0) {
@@ -1228,7 +1228,7 @@ router.post('/upload', upload.fields([
         await notificationService.sendAdminMarketplaceReviewNotification(
           title,
           listing.id,
-          (req.user as any)?.email || 'unknown'
+          (req.user as Record<string, unknown>)?.email || 'unknown'
         );
       } catch (err) {
         logger.warn({ err: err }, 'Marketplace review admin notification error:');
@@ -1239,7 +1239,7 @@ router.post('/upload', upload.fields([
     (async () => {
       try {
         const producerId = req.user!.id;
-        const producerName = (req.user as any)?.firstName || (req.user as any)?.username || 'A producer you follow';
+        const producerName = (req.user as Record<string, unknown>)?.firstName || (req.user as Record<string, unknown>)?.username || 'A producer you follow';
         const followers = await discoveryAlgorithmService.getProducerFollowers(producerId);
         
         if (followers.length > 0) {
@@ -1306,7 +1306,7 @@ router.post('/upload', upload.fields([
         logger.warn({ err: err }, '[Marketplace] beat listing notification error:');
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error uploading beat:');
     res.status(500).json({ error: 'Failed to upload beat' });
   }
@@ -1408,7 +1408,7 @@ router.get('/audio/*path', async (req: Request, res: Response) => {
       res.setHeader('Content-Length', fileSize);
       res.send(fileBuffer);
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error serving audio file:');
     res.status(500).json({ error: 'Failed to load audio file' });
   }
@@ -1452,7 +1452,7 @@ router.get('/cover/*path', async (req: Request, res: Response) => {
     res.setHeader('Content-Length', fileBuffer.length);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(fileBuffer);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error serving cover image:');
     res.status(500).json({ error: 'Failed to load cover image' });
   }
@@ -1471,7 +1471,7 @@ router.put('/listings/:id', upload.fields([
     const { title, description, genre, mood, tempo, key, price, tags, licenseType } = req.body;
     const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (title) updateData.title = title;
     if (description !== undefined) updateData.description = description;
     if (genre) updateData.genre = genre;
@@ -1506,7 +1506,7 @@ router.put('/listings/:id', upload.fields([
     }
 
     res.json(updatedListing);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error updating listing:');
     if (error.message === 'Not authorized to update this listing') {
       return res.status(403).json({ error: error.message });
@@ -1524,7 +1524,7 @@ router.delete('/listings/:id', async (req: Request, res: Response) => {
     const { id } = req.params;
     await marketplaceService.deleteListing(id, req.user!.id);
     res.json({ success: true, message: 'Beat deleted successfully' });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error deleting listing:');
     if (error.message === 'Not authorized to delete this listing') {
       return res.status(403).json({ error: error.message });
@@ -1554,7 +1554,7 @@ router.post('/connect-stripe', async (req: Request, res: Response) => {
     );
 
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error connecting Stripe:');
     res.status(500).json({ error: 'Failed to connect Stripe account' });
   }
@@ -1573,7 +1573,7 @@ router.post('/follow/:producerId', async (req: Request, res: Response) => {
 
     const result = await discoveryAlgorithmService.followProducer(req.user!.id, producerId);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error following producer:');
     res.status(500).json({ error: 'Failed to follow producer' });
   }
@@ -1587,7 +1587,7 @@ router.post('/escrow/:transactionId/release', async (req: Request, res: Response
 
     const { transactionId } = req.params;
     res.json({ success: true, message: 'Escrow released successfully', transactionId });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error releasing escrow:');
     res.status(500).json({ error: 'Failed to release escrow' });
   }
@@ -1605,14 +1605,14 @@ router.post('/affiliates', async (req: Request, res: Response) => {
     }
     const { name, email, commissionRate } = parsed.data;
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const settingKey = `affiliates:${userId}`;
     const [existing] = await db
       .select()
       .from(systemSettings)
       .where(eq(systemSettings.key, settingKey))
       .limit(1);
-    const currentList: any[] = existing ? (existing.value as any[]) || [] : [];
+    const currentList: Record<string, unknown>[] = existing ? (existing.value as Record<string, unknown>[]) || [] : [];
 
     const affiliate = {
       id: `aff-${Date.now()}`,
@@ -1638,7 +1638,7 @@ router.post('/affiliates', async (req: Request, res: Response) => {
     }
 
     res.status(201).json(affiliate);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating affiliate:');
     res.status(500).json({ error: 'Failed to create affiliate' });
   }
@@ -1650,7 +1650,7 @@ router.post('/contracts', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const parsed = contractSchema.safeParse(req.body);
     if (!parsed.success) {
       return res.status(400).json({ error: parsed.error.errors[0].message });
@@ -1667,7 +1667,7 @@ router.post('/contracts', async (req: Request, res: Response) => {
     });
 
     res.status(201).json(contract);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating contract:');
     res.status(500).json({ error: 'Failed to create contract' });
   }
@@ -1686,7 +1686,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
     const { toUserId, beatId, type, terms, splitPercentage, budget, message } = parsed.data;
     const userId = req.user!.id;
 
-    const fromUser = { id: userId, name: (req.user as any)?.username || 'User', avatar: '' };
+    const fromUser = { id: userId, name: (req.user as Record<string, unknown>)?.username || 'User', avatar: '' };
     const messages = message ? [{ sender: userId, content: message, timestamp: new Date().toISOString() }] : [];
 
     const [project] = await db.insert(collaborationProjects).values({
@@ -1710,7 +1710,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
       },
     }).returning();
 
-    const meta = (project.metadata as any) || {};
+    const meta = (project.metadata as Record<string, unknown>) || {};
     const collaboration = {
       id: project.id,
       fromUser: meta.fromUser,
@@ -1727,7 +1727,7 @@ router.post('/collaborations', async (req: Request, res: Response) => {
     };
 
     res.status(201).json(collaboration);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating collaboration:');
     res.status(500).json({ error: 'Failed to create collaboration' });
   }
@@ -1771,8 +1771,8 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
 
     if (avgRating === 0 && producerBeats.length > 0) {
       const beatRatings = producerBeats
-        .filter((b: any) => (b.avgRating || 0) > 0)
-        .map((b: any) => b.avgRating);
+        .filter((b: Record<string, unknown>) => (b.avgRating || 0) > 0)
+        .map((b: Record<string, unknown>) => b.avgRating);
       if (beatRatings.length > 0) {
         avgRating = Math.round((beatRatings.reduce((s: number, r: number) => s + r, 0) / beatRatings.length) * 10) / 10;
       }
@@ -1784,7 +1784,7 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       .limit(1);
     salesCount = salesResult?.count || 0;
     
-    const featuredBeats = producerBeats.slice(0, 8).map((beat: any) => ({
+    const featuredBeats = producerBeats.slice(0, 8).map((beat: Record<string, unknown>) => ({
       id: beat.id,
       title: beat.title,
       price: beat.price || (beat.priceCents ? beat.priceCents / 100 : 0),
@@ -1811,7 +1811,7 @@ router.get('/producers/:producerId', async (req: Request, res: Response) => {
       verified: producer.role === 'admin' || producer.subscriptionTier === 'lifetime',
       featuredBeats,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching producer:');
     res.status(500).json({ error: 'Failed to fetch producer' });
   }
@@ -1828,7 +1828,7 @@ router.get('/producers/:producerId/follow-status', async (req: Request, res: Res
     const followedProducers = profile.followedProducers || [];
     const isFollowing = followedProducers.includes(producerId);
     res.json({ isFollowing });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching follow status:');
     res.status(500).json({ error: 'Failed to fetch follow status' });
   }
@@ -1843,7 +1843,7 @@ router.post('/unfollow/:producerId', async (req: Request, res: Response) => {
     const { producerId } = req.params;
     const result = await discoveryAlgorithmService.unfollowProducer(req.user!.id, producerId);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error unfollowing producer:');
     res.status(500).json({ error: 'Failed to unfollow producer' });
   }
@@ -1885,7 +1885,7 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
       const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
       let newLikes = 0;
       if (listing) {
-        const currentMetadata = (listing.metadata as any) || {};
+        const currentMetadata = (listing.metadata as Record<string, unknown>) || {};
         newLikes = Math.max(0, (currentMetadata.likes || 0) - 1);
         await db.update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
@@ -1905,7 +1905,7 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
       // Increment like count in listing metadata
       const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
       if (listing) {
-        const currentMetadata = (listing.metadata as any) || {};
+        const currentMetadata = (listing.metadata as Record<string, unknown>) || {};
         const newLikes = (currentMetadata.likes || 0) + 1;
         await db.update(listings)
           .set({ metadata: { ...currentMetadata, likes: newLikes } })
@@ -1915,7 +1915,7 @@ router.post('/beats/:beatId/like', async (req: Request, res: Response) => {
         res.json({ success: true, liked: true });
       }
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error liking beat:');
     res.status(500).json({ error: 'Failed to like beat' });
   }
@@ -1943,7 +1943,7 @@ router.get('/beats/:beatId/like-status', async (req: Request, res: Response) => 
       .limit(1);
     
     res.json({ isLiked: likes.length > 0 });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error checking like status:');
     res.status(500).json({ error: 'Failed to check like status' });
   }
@@ -1974,9 +1974,9 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
     // Get current listing and update average rating
     const [listing] = await db.select().from(listings).where(eq(listings.id, beatId)).limit(1);
     if (listing) {
-      const currentMetadata = (listing.metadata as any) || {};
+      const currentMetadata = (listing.metadata as Record<string, unknown>) || {};
       const currentRatings = currentMetadata.ratings || [];
-      const userRatingIndex = currentRatings.findIndex((r: any) => r.userId === req.user!.id);
+      const userRatingIndex = currentRatings.findIndex((r: Record<string, unknown>) => r.userId === req.user!.id);
       
       if (userRatingIndex >= 0) {
         currentRatings[userRatingIndex].rating = rating;
@@ -1984,7 +1984,7 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
         currentRatings.push({ userId: req.user!.id, rating, createdAt: new Date().toISOString() });
       }
       
-      const avgRating = currentRatings.reduce((sum: number, r: any) => sum + r.rating, 0) / currentRatings.length;
+      const avgRating = currentRatings.reduce((sum: number, r: Record<string, unknown>) => sum + r.rating, 0) / currentRatings.length;
       
       await db.update(listings)
         .set({ 
@@ -2001,7 +2001,7 @@ router.post('/beats/:beatId/rate', async (req: Request, res: Response) => {
     } else {
       res.status(404).json({ error: 'Beat not found' });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error rating beat:');
     res.status(500).json({ error: 'Failed to rate beat' });
   }
@@ -2016,9 +2016,9 @@ router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Beat not found' });
     }
     
-    const metadata = (listing.metadata as any) || {};
+    const metadata = (listing.metadata as Record<string, unknown>) || {};
     const userRating = req.isAuthenticated() 
-      ? (metadata.ratings || []).find((r: any) => r.userId === req.user!.id)?.rating || 0
+      ? (metadata.ratings || []).find((r: Record<string, unknown>) => r.userId === req.user!.id)?.rating || 0
       : 0;
     
     res.json({
@@ -2026,7 +2026,7 @@ router.get('/beats/:beatId/rating', async (req: Request, res: Response) => {
       ratingCount: metadata.ratingCount || 0,
       userRating,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching beat rating:');
     res.status(500).json({ error: 'Failed to fetch rating' });
   }
@@ -2044,7 +2044,7 @@ router.get('/stems/:stemId', requireAuth, async (req: Request, res: Response) =>
       price: 29.99,
       downloadUrl: null,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching stem:');
     res.status(500).json({ error: 'Failed to fetch stem' });
   }
@@ -2070,7 +2070,7 @@ router.post('/stems/:stemId/purchase', async (req: Request, res: Response) => {
         logger.warn({ err: err }, '[Marketplace] stems purchase notification error:');
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error purchasing stem:');
     res.status(500).json({ error: 'Failed to purchase stem' });
   }
@@ -2087,7 +2087,7 @@ router.get('/stems/:stemId/download/:trackId', async (req: Request, res: Respons
       downloadUrl: `/uploads/stems/${stemId}_${trackId}.wav`,
       expiresAt: new Date(Date.now() + 3600000).toISOString(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating stem download:');
     res.status(500).json({ error: 'Failed to generate download link' });
   }
@@ -2106,7 +2106,7 @@ router.get('/my-stems', async (req: Request, res: Response) => {
       .orderBy(desc(listingStems.createdAt))
       .limit(100);
     res.json(stems);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching user stems:');
     res.status(500).json({ error: 'Failed to fetch your stems' });
   }
@@ -2122,7 +2122,7 @@ router.get('/listings/:listingId/stems', async (req: Request, res: Response) => 
       .orderBy(asc(listingStems.createdAt))
       .limit(50);
     res.json(stems);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching listing stems:');
     res.status(500).json({ error: 'Failed to fetch listing stems' });
   }
@@ -2152,7 +2152,7 @@ router.post('/listings/:listingId/stems', requireAuth, async (req: Request, res:
     }).returning();
 
     res.status(201).json(stem);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating stem:');
     res.status(500).json({ error: 'Failed to create stem' });
   }
@@ -2173,7 +2173,7 @@ router.delete('/stems/:stemId', requireAuth, async (req: Request, res: Response)
     }
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error deleting stem:');
     res.status(500).json({ error: 'Failed to delete stem' });
   }

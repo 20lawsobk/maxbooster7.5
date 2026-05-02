@@ -117,7 +117,7 @@ router.get('/', async (req: Request, res: Response) => {
     const category = req.query.category as string | undefined;
     const unreadOnly = req.query.unread === 'true';
 
-    const conditions: any[] = [eq(notifications.userId, req.user.id)];
+    const conditions: unknown[] = [eq(notifications.userId, req.user.id)];
     if (unreadOnly) {
       conditions.push(eq(notifications.isRead, false));
     }
@@ -136,7 +136,7 @@ router.get('/', async (req: Request, res: Response) => {
       .limit(limit)
       .offset(offset);
 
-    const mappedNotifications = userNotifications.map((n: any) => ({
+    const mappedNotifications = userNotifications.map((n: Record<string, unknown>) => ({
       ...n,
       priority: n.metadata?.priority || 'normal',
       category: n.metadata?.category || getCategory(n.type),
@@ -355,7 +355,7 @@ router.post('/push/subscribe', async (req: Request, res: Response) => {
     }
 
     const user = await storage.getUser(req.user.id);
-    const currentSettings = (user?.notificationSettings as any) || {};
+    const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
 
     await storage.updateUser(req.user.id, {
       notificationSettings: {
@@ -392,7 +392,7 @@ router.post('/push/unsubscribe', async (req: Request, res: Response) => {
 
   try {
     const user = await storage.getUser(req.user.id);
-    const currentSettings = (user?.notificationSettings as any) || {};
+    const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
 
     await storage.updateUser(req.user.id, {
       notificationSettings: {
@@ -441,7 +441,7 @@ router.post('/sms/verify', async (req: Request, res: Response) => {
     logger.info(`[SMS Verification] Code sent to ${phoneNumber.slice(0, 3)}***${phoneNumber.slice(-2)} for user ${req.user.id}`);
 
     const user = await storage.getUser(req.user.id);
-    const currentSettings = (user?.notificationSettings as any) || {};
+    const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
 
     await storage.updateUser(req.user.id, {
       notificationSettings: {
@@ -474,7 +474,7 @@ router.post('/sms/confirm', async (req: Request, res: Response) => {
     const { code } = req.body;
 
     const user = await storage.getUser(req.user.id);
-    const currentSettings = (user?.notificationSettings as any) || {};
+    const currentSettings = (user?.notificationSettings as Record<string, unknown>) || {};
     const pendingCode = currentSettings.sms?.pendingVerification;
 
     if (!pendingCode || pendingCode !== code) {
@@ -522,8 +522,8 @@ router.post('/test', async (req: Request, res: Response) => {
       metadata: { priority: 'normal', category: 'system' },
     });
 
-    if (typeof (global as any).broadcastNotification === 'function') {
-      (global as any).broadcastNotification(req.user.id, {
+    if (typeof (global as Record<string, unknown>).broadcastNotification === 'function') {
+      (global as Record<string, unknown>).broadcastNotification(req.user.id, {
         ...notification,
         priority: 'normal',
         category: 'system',
@@ -768,7 +768,7 @@ router.post('/push/silent', async (req: Request, res: Response) => {
       return res.json({ success: false, message: 'Push not configured' });
     }
 
-    const payload = buildSilentPayload(safeReason as any);
+    const payload = buildSilentPayload(safeReason as Record<string, unknown>);
     const result = await webPushService.sendRichToUser(req.user.id, payload);
 
     return res.json({ success: true, sent: result.sent, reason: safeReason });
@@ -836,7 +836,7 @@ router.get('/push-subscriptions/status', async (req: Request, res: Response) => 
     return res.json({
       hasSubscriptions: subs.length > 0,
       count: subs.length,
-      devices: subs.map((s: any) => ({
+      devices: subs.map((s: Record<string, unknown>) => ({
         id: s.id,
         userAgent: s.userAgent || 'Unknown device',
         createdAt: s.createdAt,
@@ -883,7 +883,7 @@ router.post('/push-test', async (req: Request, res: Response) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 router.get('/unread-count', requireAuth, async (req: Request, res: Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ error: 'Not authenticated' });
   }
@@ -909,7 +909,7 @@ router.get('/unread-count', requireAuth, async (req: Request, res: Response) => 
 
 // GET /:id - get single notification (after all specific paths to avoid route shadowing)
 router.get('/:id', async (req: Request, res: Response) => {
-  const userId = (req as any).user?.id;
+  const userId = req.user?.id;
   if (!userId) return res.status(401).json({ error: 'Not authenticated' });
   try {
     const [notification] = await db

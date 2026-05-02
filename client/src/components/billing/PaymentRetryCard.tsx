@@ -83,7 +83,7 @@ export default function PaymentRetryCard({
       } else {
         throw data;
       }
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       setRetryResult('failed');
 

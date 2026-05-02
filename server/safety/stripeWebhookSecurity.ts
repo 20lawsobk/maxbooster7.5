@@ -61,7 +61,7 @@ export function stripeWebhookMiddleware(
     });
 
     // Verify the signature using the raw body
-    const rawBody = (req as any).rawBody;
+    const rawBody = (req as Record<string, unknown>).rawBody;
     if (!rawBody) {
       throw new Error('Raw body not available - ensure body parser preserves raw body');
     }
@@ -73,7 +73,7 @@ export function stripeWebhookMiddleware(
     );
 
     // Attach verified event to request
-    (req as any).stripeEvent = event;
+    (req as Record<string, unknown>).stripeEvent = event;
 
     // Add to audit log
     addWebhookAudit({
@@ -81,14 +81,14 @@ export function stripeWebhookMiddleware(
       eventId: event.id,
       eventType: event.type,
       success: true,
-      customerId: (event.data.object as any).customer,
-      amount: (event.data.object as any).amount,
+      customerId: (event.data.object as Record<string, unknown>).customer,
+      amount: (event.data.object as Record<string, unknown>).amount,
     });
 
     logger.info(`[Stripe Webhook] Verified event: ${event.type} (${event.id})`);
     
     next();
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('[Stripe Webhook] Signature verification failed:', error.message);
     
     // Add failed attempt to audit log
@@ -117,7 +117,7 @@ export function stripeRawBodyParser(
   encoding: BufferEncoding
 ): void {
   if (req.path === '/api/webhooks/stripe' || req.path.includes('stripe')) {
-    (req as any).rawBody = buf;
+    (req as Record<string, unknown>).rawBody = buf;
   }
 }
 
@@ -235,7 +235,7 @@ export async function handleWebhookEvent(event: Stripe.Event): Promise<{ success
     }
     
     return result;
-  } catch (error: any) {
+  } catch (error) {
     // SECURITY: Don't mark as processed on error - allow retry
     logger.warn({ err: error }, `[Stripe Webhook] Handler error for ${event.type} (${event.id}):`);
     return { success: false, message: error.message };

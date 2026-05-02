@@ -2,7 +2,7 @@ import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import { logger } from '../logger.js';
 
 interface CacheEntry {
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
   etag: string;
   contentType: string;
@@ -32,7 +32,7 @@ class InMemoryCache {
     setInterval(() => this.cleanup(), 60000);
   }
 
-  private generateEtag(data: any): string {
+  private generateEtag(data: Record<string, unknown>): string {
     const str = typeof data === 'string' ? data : JSON.stringify(data);
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
@@ -43,7 +43,7 @@ class InMemoryCache {
     return `"${Math.abs(hash).toString(16)}"`;
   }
 
-  set(key: string, data: any, contentType: string = 'application/json'): void {
+  set(key: string, data: Record<string, unknown>, contentType: string = 'application/json'): void {
     if (!this.config.enabled) return;
 
     if (this.cache.size >= this.config.maxEntries) {
@@ -178,7 +178,7 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
   const cache = options.cacheInstance || globalCache;
   
   const generateKey = options.keyGenerator || ((req: Request) => {
-    const userId = (req as any).user?.id || 'anonymous';
+    const userId = (req as Record<string, unknown>).user?.id || 'anonymous';
     return `${req.method}:${req.originalUrl}:${userId}`;
   });
 
@@ -221,14 +221,14 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
     const originalJson = res.json.bind(res);
     const originalSend = res.send.bind(res);
 
-    res.json = (data: any) => {
+    res.json = (data: Record<string, unknown>) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         cache.set(key, data, 'application/json');
       }
       return originalJson(data);
     };
 
-    res.send = (data: any) => {
+    res.send = (data: Record<string, unknown>) => {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         const contentType = res.getHeader('Content-Type') as string || 'text/html';
         cache.set(key, data, contentType);
@@ -243,7 +243,7 @@ export const createCachingMiddleware = (options: CachingMiddlewareOptions = {}):
 export const apiResponseCache = createCachingMiddleware({
   cacheInstance: shortTermCache,
   keyGenerator: (req) => {
-    const userId = (req as any).user?.id || 'anon';
+    const userId = (req as Record<string, unknown>).user?.id || 'anon';
     return `api:${req.originalUrl}:${userId}`;
   },
   shouldCache: (req) => {

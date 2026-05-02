@@ -224,7 +224,7 @@ export class PocketDimension extends EventEmitter {
         }
       }
       // If no metadata in PDIM, start fresh (new dimension)
-    } catch (error: any) {
+    } catch (error) {
       if (error.message?.includes('keyfile')) {
         throw error;
       }
@@ -445,8 +445,8 @@ export class PocketDimension extends EventEmitter {
       storagePath: this.storagePath,
     });
     
-    (nested as any).currentDepth = this.currentDepth + 1;
-    (nested as any).metadata.parentDimension = this.id;
+    (nested as Record<string, unknown>).currentDepth = this.currentDepth + 1;
+    (nested as Record<string, unknown>).metadata.parentDimension = this.id;
     
     await nested.open();
     this.nestedDimensions.set(dimensionPath, nested);
@@ -728,7 +728,7 @@ export class PocketDimensionManager {
     return new Proxy(dimension, {
       get: (target, prop: string) => {
         if (prop in target) {
-          const value = (target as any)[prop];
+          const value = (target as Record<string, unknown>)[prop];
           return typeof value === 'function' ? value.bind(target) : value;
         }
         // Bracket accessor for paths
@@ -736,7 +736,7 @@ export class PocketDimensionManager {
       },
       set: (target, prop: string, value: Buffer | string) => {
         if (prop in target) {
-          (target as any)[prop] = value;
+          (target as Record<string, unknown>)[prop] = value;
           return true;
         }
         target.write(prop, value);

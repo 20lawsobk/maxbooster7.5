@@ -15,7 +15,7 @@ interface StudioTrack {
   mute: boolean;
   solo: boolean;
   color: string;
-  effects?: any;
+  effects?: Record<string, unknown>;
   plugins?: PluginInstance[];
 }
 

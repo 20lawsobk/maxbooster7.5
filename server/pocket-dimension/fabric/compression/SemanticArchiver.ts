@@ -20,7 +20,7 @@ export class SemanticArchiver {
   }
 
   private archiveJson(data: Buffer): ArchiveResult {
-    let parsed: any;
+    let parsed: Record<string, unknown>;
     try {
       parsed = JSON.parse(data.toString('utf8'));
     } catch {
@@ -40,7 +40,7 @@ export class SemanticArchiver {
     };
   }
 
-  private summarizeJsonValue(val: any, depth: number): any {
+  private summarizeJsonValue(val: Record<string, unknown>, depth: number): Record<string, unknown> {
     if (depth > 4) return '[truncated]';
     if (Array.isArray(val)) {
       const sample = val.slice(0, 5).map(v => this.summarizeJsonValue(v, depth + 1));

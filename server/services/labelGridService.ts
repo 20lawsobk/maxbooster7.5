@@ -113,7 +113,7 @@ export class LabelGridService {
 
       this.authToken = response.data.token;
       logger.info('[LABELGRID] Authentication successful via API key/secret');
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('[LABELGRID] Authentication failed:', error.response?.data || error.message);
       throw new Error('Failed to authenticate with LabelGrid');
     }
@@ -473,7 +473,7 @@ export class LabelGridService {
     // Update platform-specific status in database
     const release = await storage.getReleaseByDistributionId(releaseId);
     if (release) {
-      const platforms = (release.platforms as any[]) || [];
+      const platforms = (release.platforms as unknown[]) || [];
       const platformIndex = platforms.findIndex((p) => p.name === platform);
 
       if (platformIndex >= 0) {

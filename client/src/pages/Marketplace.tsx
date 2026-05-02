@@ -307,7 +307,7 @@ interface Purchase {
   amount: number;
   currency: string;
   licenseType: string;
-  licenseSnapshot?: any;
+  licenseSnapshot?: Record<string, unknown>;
   licenseDocumentUrl?: string;
   status: 'pending' | 'completed' | 'failed' | 'refunded';
   createdAt: string;
@@ -317,10 +317,10 @@ interface Purchase {
   beatTitle?: string;
   beatArtworkUrl?: string;
   beatAudioUrl?: string;
-  beatMetadata?: any;
+  beatMetadata?: Record<string, unknown>;
   sellerName?: string;
   sellerUsername?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface CartItem {
@@ -519,8 +519,8 @@ const LICENSE_TYPES: LicenseTemplate[] = [
 
 function ProducerFollowButton({ producerId, followMutation, unfollowMutation }: { 
   producerId: string; 
-  followMutation: any; 
-  unfollowMutation: any;
+  followMutation: Record<string, unknown>; 
+  unfollowMutation: Record<string, unknown>;
 }) {
   const { data: followStatus, isLoading } = useQuery({
     queryKey: ['/api/marketplace/producers', producerId, 'follow-status'],
@@ -863,7 +863,7 @@ export default function Marketplace() {
   });
 
   const addItemMutation = useMutation({
-    mutationFn: async (newItem: any) => {
+    mutationFn: async (newItem: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/merch', newItem);
       return res.json();
     },
@@ -1146,7 +1146,7 @@ export default function Marketplace() {
     // so the UI reflects them as soon as Save is clicked, before the server replies.
     // Wrapped defensively so any error here cannot block the actual PUT request.
     onMutate: async ({ id, data }) => {
-      const ctx: { prevMy?: any; prevAll?: any } = {};
+      const ctx: { prevMy?: unknown; prevAll?: unknown } = {};
       try {
         // Snapshot BEFORE patching so onError can restore the true pre-edit state.
         ctx.prevMy = queryClient.getQueryData(['/api/marketplace/my-beats']);
@@ -1203,9 +1203,9 @@ export default function Marketplace() {
         }
 
         const apply = (qk: readonly unknown[]) => {
-          const prev = queryClient.getQueryData<any[]>(qk as any);
+          const prev = queryClient.getQueryData<any[]>(qk as Record<string, unknown>);
           if (Array.isArray(prev)) {
-            queryClient.setQueryData(qk as any, prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)));
+            queryClient.setQueryData(qk as Record<string, unknown>, prev.map((b) => (b?.id === id ? { ...b, ...patch } : b)));
           }
         };
         apply(['/api/marketplace/my-beats']);
@@ -1215,7 +1215,7 @@ export default function Marketplace() {
       }
       return ctx;
     },
-    onError: (err: any, _vars, ctx: any) => {
+    onError: (err: Error, _vars: unknown, ctx: { prevMy?: unknown; prevAll?: unknown }) => {
       if (ctx?.prevMy !== undefined)
         queryClient.setQueryData(['/api/marketplace/my-beats'], ctx.prevMy);
       if (ctx?.prevAll !== undefined)
@@ -1237,9 +1237,9 @@ export default function Marketplace() {
       // any server-side normalization (e.g. trimmed strings, computed prices).
       if (updated && updated.id) {
         const merge = (key: readonly unknown[]) => {
-          const prev = queryClient.getQueryData<any[]>(key as any);
+          const prev = queryClient.getQueryData<any[]>(key as Record<string, unknown>);
           if (Array.isArray(prev)) {
-            queryClient.setQueryData(key as any, prev.map((b) => (b?.id === updated.id ? { ...b, ...updated } : b)));
+            queryClient.setQueryData(key as Record<string, unknown>, prev.map((b) => (b?.id === updated.id ? { ...b, ...updated } : b)));
           }
         };
         merge(['/api/marketplace/my-beats']);
@@ -1574,7 +1574,7 @@ export default function Marketplace() {
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/beats'] });
       queryClient.invalidateQueries({ queryKey: ['/api/marketplace/for-you'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Rating Failed',
         description: error?.message || 'Could not submit your rating. Please try again.',
@@ -1620,7 +1620,7 @@ export default function Marketplace() {
   });
 
   const updateContractMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       const response = await apiRequest('PATCH', `/api/marketplace/contracts/${id}`, data);
       return response.json();
     },
@@ -1663,7 +1663,7 @@ export default function Marketplace() {
     },
   });
 
-  const trackInteraction = async (beatId: string, interactionType: string, extra?: any) => {
+  const trackInteraction = async (beatId: string, interactionType: string, extra?: Record<string, unknown>) => {
     try {
       await fetch('/api/marketplace/interaction', {
         method: 'POST',
@@ -2514,11 +2514,11 @@ return (
                 {beats.map((beat) => (
                   <MarketplaceBeatCard
                     key={beat.id}
-                    beat={beat as any}
+                    beat={beat as Record<string, unknown>}
                     isPlaying={isPlaying === beat.id}
                     isLoadingAudio={isLoadingAudio}
                     availableLicenses={getAvailableLicenses(beat)}
-                    getLicenseTier={(license) => getLicenseTier(beat, license) as any}
+                    getLicenseTier={(license) => getLicenseTier(beat, license) as Record<string, unknown>}
                     getLicensePrice={(license) => getLicensePrice(beat, license)}
                     getLicenseOriginalPrice={(license) => getLicenseOriginalPrice(beat, license)}
                     getLicenseDescription={(license) => getLicenseDescription(license)}
@@ -2894,7 +2894,7 @@ return (
                     exclusive: 'Exclusive Rights',
                   };
                   const licenseName = purchase.licenseSnapshot?.label || licenseLabels[purchase.licenseType] || purchase.licenseType;
-                  const snapshot = purchase.licenseSnapshot as any;
+                  const snapshot = purchase.licenseSnapshot as Record<string, unknown>;
                   const fileFormats = snapshot?.fileFormats?.map((f: string) => f.toUpperCase()) || ['MP3'];
                   
                   return (
@@ -3311,10 +3311,10 @@ return (
                         <span className="font-medium">{license.duration}</span>
                       </div>
                     </div>
-                    {(license as any).fileFormats && (
+                    {(license as Record<string, unknown>).fileFormats && (
                       <div className="flex justify-between">
                         <span>File Formats</span>
-                        <span className="font-medium text-xs">{(license as any).fileFormats}</span>
+                        <span className="font-medium text-xs">{(license as Record<string, unknown>).fileFormats}</span>
                       </div>
                     )}
                     <div className="flex flex-wrap gap-1 pt-2 border-t">
@@ -3771,7 +3771,7 @@ return (
                       <p className="text-muted-foreground text-sm">Add your first product to get started.</p>
                     </div>
                   ) : (
-                    merchItems?.map((item: any) => (
+                    merchItems?.map((item: Record<string, unknown>) => (
                       <Card key={item.id} className="overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
                         <div className="aspect-square bg-muted relative">
                           {item.imageUrl ? (
@@ -3851,7 +3851,7 @@ return (
                             </TableCell>
                           </TableRow>
                         ) : (
-                          merchOrders?.map((order: any) => (
+                          merchOrders?.map((order: Record<string, unknown>) => (
                             <TableRow key={order.id}>
                               <TableCell className="font-mono text-xs">
                                 {order.id.split('-')[0]}

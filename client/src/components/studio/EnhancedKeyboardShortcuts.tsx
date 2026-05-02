@@ -40,7 +40,7 @@ interface KeyboardShortcut {
   keys: string[];
   description: string;
   category: string;
-  icon?: any;
+  icon?: Record<string, unknown>;
   action?: () => void;
 }
 

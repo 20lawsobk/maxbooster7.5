@@ -148,7 +148,7 @@ router.post('/resolve', expressRaw({ type: 'application/dns-message', limit: '64
       .set('Cache-Control', cacheHeader)
       .status(200)
       .send(result.buffer);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err.message }, '[DNS] /resolve error');
     res.status(500).send('Internal resolver error');
   }
@@ -201,7 +201,7 @@ router.post('/query', expressRaw({ type: 'application/dns-message', limit: '64kb
     res.set('Content-Type', 'application/dns-message');
     res.set('Cache-Control', dohCacheControl(result));
     res.send(result.buffer);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DoH] POST /api/dns/query error');
     res.status(500).set('Cache-Control', 'no-store').send('DNS query failed');
   }
@@ -225,7 +225,7 @@ router.get('/query', async (req, res) => {
     res.set('Content-Type', 'application/dns-message');
     res.set('Cache-Control', dohCacheControl(result));
     res.send(result.buffer);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DoH] GET /api/dns/query error');
     res.status(500).set('Cache-Control', 'no-store').send('DNS query failed');
   }

@@ -21,7 +21,7 @@ export type WorkflowPhase =
 export interface ConfigField {
   label: string;
   type: 'boolean' | 'string' | 'number' | 'select';
-  default: any;
+  default: Record<string, unknown>;
   options?: string[];
   description?: string;
 }
@@ -40,7 +40,7 @@ export interface WorkflowTemplate {
 
 export interface WorkflowEventData {
   userId: string;
-  [key: string]: any;
+  [key: string]: Record<string, unknown>;
 }
 
 // ─── Template definitions (15 covering full music artist journey) ─────────────
@@ -1028,7 +1028,7 @@ class MusicWorkflowAutomationService {
     logger.info(`[MusicWorkflow] Executing "${template.name}" for user ${userId}`);
 
     let status = 'success';
-    let result: any = null;
+    let result: Record<string, unknown> | null = null;
     let error: string | null = null;
 
     try {
@@ -1046,7 +1046,7 @@ class MusicWorkflowAutomationService {
             eq(musicWorkflowAutomations.templateId, template.id)
           )
         );
-    } catch (err: any) {
+    } catch (err) {
       status = 'failed';
       error = err?.message ?? 'Unknown error';
       logger.warn({ err: err }, `[MusicWorkflow] Failed "${template.name}" for user ${userId}:`);

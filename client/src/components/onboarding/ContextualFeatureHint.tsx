@@ -110,7 +110,7 @@ export default function ContextualFeatureHint({ currentPage }: ContextualFeature
   });
 
   const getActiveHint = (): FeatureHint | null => {
-    const completedSteps = (userProgress as any)?.completedSteps || [];
+    const completedSteps = (userProgress as Record<string, unknown>)?.completedSteps || [];
     const seen = seenFeatures?.seenFeatures || [];
     
     const stepToConditionMap: Record<string, string> = {

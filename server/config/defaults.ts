@@ -149,7 +149,7 @@ function parseEnvArray(key: string, defaultValue: string[]): string[] {
 }
 
 export const config: AppConfig = {
-  nodeEnv: (process.env.NODE_ENV as any) || 'development',
+  nodeEnv: (process.env.NODE_ENV as Record<string, unknown>) || 'development',
   isReplitDeployment,
   isReplitWorkspace,
   port: parseEnvInt('PORT', 5000),

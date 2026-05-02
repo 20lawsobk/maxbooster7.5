@@ -32,11 +32,11 @@ import { securityMiddleware } from './middleware/security.js';
 import helmet from "helmet";
 
 // Dynamic imports for monitoring services (optional)
-let metricsCollector: any = null;
-let alertingService: any = null;
-let capacityMonitor: any = null;
-let initializeRealtimeServer: any = null;
-let initializeWorkers: any = null;
+let metricsCollector: { collect?: () => void; [k: string]: unknown } | null = null;
+let alertingService: { check?: () => void; [k: string]: unknown } | null = null;
+let capacityMonitor: { monitor?: () => void; [k: string]: unknown } | null = null;
+let initializeRealtimeServer: ((server: import("http").Server) => void) | null = null;
+let initializeWorkers: (() => void) | null = null;
 
 // Load optional monitoring modules (NOT security-critical)
 async function loadOptionalModules() {
@@ -62,7 +62,7 @@ const app = express();
 // Do NOT register a second bare helmet() call here — duplicate middleware runs
 // in registration order and the LAST write wins, so a weaker second call would
 // silently override the stricter headers set by securityMiddleware.
-app.use(securityMiddleware as any);
+app.use(securityMiddleware as import("express").RequestHandler);
 
 setupStartupEndpoints(app);
 
@@ -146,7 +146,7 @@ app.use(cloudflareMiddleware);
 try {
   applyMandatoryMiddleware(app);
   logger.info('✅ Mandatory safety middleware applied');
-} catch (error: any) {
+} catch (error) {
   logger.warn('❌ CRITICAL: Failed to apply mandatory safety middleware');
   logger.warn(`   └─ Error: ${error.message}`);
   process.exit(1);
@@ -432,8 +432,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     import('./infrastructure/distributedCache.js'),
     import('./routes/prometheus.js'),
   ]);
-  const prometheusRouter = (prometheusModule as any).default;
-  const { httpRequestDuration, httpRequestTotal } = prometheusModule as any;
+  const prometheusRouter = (prometheusModule as { default?: unknown }).default;
+  const { httpRequestDuration, httpRequestTotal } = prometheusModule as { httpRequestDuration: unknown; httpRequestTotal: unknown };
 
   // ── Early static file serving ─────────────────────────────────────────────
   // Register express.static for dist/public BEFORE session middleware is wired.
@@ -452,7 +452,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // Load optional modules in background — they're only used inside setImmediate
   // blocks that fire after all sync setup completes, so awaiting here just adds
   // latency without any ordering benefit.
-  const _optionalModulesReady = loadOptionalModules().catch((e: any) =>
+  const _optionalModulesReady = loadOptionalModules().catch((e) =>
     logger.warn('[boot] Optional module load error (non-blocking):', e?.message)
   );
 
@@ -473,7 +473,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   try {
     const { chainErrorAutoFixer } = await import('./services/chainErrorAutoFixer.js');
     chainErrorAutoFixer.start();
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[ChainFixer] Failed to start: ${e.message}`);
   }
 
@@ -482,7 +482,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { platformAutoFixer, platformFixerMiddleware } = await import('./services/platformAutoFixer.js');
     platformAutoFixer.start();
     app.use(platformFixerMiddleware);
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[PlatformAutoFixer] Failed to start: ${e.message}`);
   }
 
@@ -493,7 +493,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     try {
       const { permanentFixRegistry } = await import('./services/permanentFixRegistry.js');
       await permanentFixRegistry.loadPermanentOverrides();
-    } catch (e: any) {
+    } catch (e) {
       logger.warn(`[PermanentFixer] Failed to load overrides: ${e.message}`);
     }
   }, 8_000);
@@ -518,7 +518,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 
   // Store reference to session store for WebSocket authentication
-  let activeSessionStore: any = null;
+  let activeSessionStore: import("express-session").Store | null = null;
 
   activeSessionStore = await createSessionStore();
   const sessionConfig = getSessionConfig(activeSessionStore);
@@ -531,7 +531,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // The cache falls back to in-memory until the deferred connect succeeds.
 
   // Export session store for WebSocket authentication
-  (global as any).__activeSessionStore = activeSessionStore;
+  (global as NodeJS.Global & { __activeSessionStore?: unknown }).__activeSessionStore = activeSessionStore;
 
   // ========================================
   // REQUEST ORIGIN VALIDATION
@@ -551,7 +551,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     app.use(generateCsrfToken);
     app.use(csrfProtectionWithExemptions);
     logger.info('✅ CSRF protection enabled (double-submit cookie, with safe exemptions)');
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`⚠️  CSRF middleware failed to load: ${e.message}`);
   }
 
@@ -559,7 +559,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   // re-pointed to the primary with a loud error — no per-query try/catch needed.
   try {
     await verifyReadReplica();
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[db] Failed to run replica verification: ${e.message}`);
   }
 
@@ -571,7 +571,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     if (!safetyResult.success) {
       logger.warn(`⚠️ Safety systems initialized with warnings: ${safetyResult.errors.join(', ')}`);
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('⚠️ Safety systems initialization error:', error.message);
   }
 
@@ -644,7 +644,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { startDomainVerificationWorker } = await import('./workers/domainVerificationWorker.js');
     startDomainVerificationWorker();
     logger.info('Domain verification worker started');
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`Domain verification worker unavailable: ${e.message}`);
   }
 
@@ -654,7 +654,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     const { startDomainLifecycleJob } = await import('./services/domainLifecycleJob.js');
     startDomainLifecycleJob();
     logger.info('[domainVerify] Domain lifecycle job started');
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`Domain lifecycle job unavailable: ${e.message}`);
   }
 
@@ -676,7 +676,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     if (rowCount && rowCount > 0) {
       logger.info(`[domainVerify] Backfilled ${rowCount} Max Booster-owned zone(s) to verified/active`);
     }
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[domainVerify] Backfill skipped: ${e.message}`);
   }
 
@@ -688,10 +688,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     try {
       const { mlModelRegistry } = await import('./services/mlModelRegistry.js');
       await tfWorkerPool.loadAllModels(mlModelRegistry);
-    } catch (modelErr: any) {
+    } catch (modelErr) {
       logger.warn(`[TFWorkerPool] Model preload skipped: ${modelErr.message}`);
     }
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[TFWorkerPool] Initialization skipped: ${e.message}`);
   }
 
@@ -713,21 +713,21 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     app.use('/api', demoAuthResult.value.blockDemoWrite);
     logger.info('✅ Demo write protection applied');
   } else {
-    logger.warn(`⚠️ Demo write protection not available: ${(demoAuthResult as any).reason?.message}`);
+    logger.warn(`⚠️ Demo write protection not available: ${((demoAuthResult as PromiseRejectedResult).reason as Error)?.message}`);
   }
 
   if (rateLimiterResult.status === 'fulfilled') {
     app.use('/api', rateLimiterResult.value.globalScalableRateLimiter);
     logger.info('✅ Scalable rate limiter applied');
   } else {
-    logger.warn(`⚠️ Rate limiter not available: ${(rateLimiterResult as any).reason?.message}`);
+    logger.warn(`⚠️ Rate limiter not available: ${((rateLimiterResult as PromiseRejectedResult).reason as Error)?.message}`);
   }
 
   if (admissionResult.status === 'fulfilled') {
     app.use('/api', admissionResult.value.admissionControl);
     logger.info('✅ Admission control applied (max concurrent: ' + (process.env.MAX_CONCURRENT_REQUESTS ?? '5000') + ')');
   } else {
-    logger.warn(`⚠️ Admission control not available: ${(admissionResult as any).reason?.message}`);
+    logger.warn(`⚠️ Admission control not available: ${((admissionResult as PromiseRejectedResult).reason as Error)?.message}`);
   }
 
   if (apiCacheResult.status === 'fulfilled') {
@@ -745,7 +745,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       '/api/royalties/summary':           60,
       '/api/achievements':               120,
     };
-    const routeCacheMiddleware = (req: any, res: any, next: any) => {
+    const routeCacheMiddleware: import("express").RequestHandler = (req, res, next) => {
       if (req.method !== 'GET') return next();
       const basePath = req.path.replace(/\/$/, '') || req.path;
       const ttl = cachedRoutes[basePath];
@@ -766,7 +766,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       '/api/analytics/dashboard':         'private, max-age=60, stale-while-revalidate=600',
       '/api/achievements':                'private, max-age=120, stale-while-revalidate=900',
     };
-    app.use('/api', (req: any, res: any, next: any) => {
+    app.use('/api', ((req, res, next) => {
       if (req.method !== 'GET') return next();
       const directive = SWR_ROUTES[req.path.replace(/\/$/, '') || req.path];
       if (directive && !res.getHeader('Cache-Control')) {
@@ -777,7 +777,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
     logger.info(`✅ API response cache initialized (${Object.keys(cachedRoutes).length} cached routes)`);
   } else {
-    logger.warn(`⚠️ API cache middleware: ${(apiCacheResult as any).reason?.message}`);
+    logger.warn(`⚠️ API cache middleware: ${((apiCacheResult as PromiseRejectedResult).reason as Error)?.message}`);
   }
 
   // Prometheus metrics endpoint (before routes so it's always reachable)
@@ -840,7 +840,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     startAcmeRenewalCron();
 
     const { recoverStaleProcessingBatches } = await import('./services/featureEventBuffer.js');
-    recoverStaleProcessingBatches().catch((e: any) =>
+    recoverStaleProcessingBatches().catch((e) =>
       logger.warn('[Retention] Stale batch recovery failed (non-blocking):', e?.message)
     );
 
@@ -875,10 +875,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
       try {
         const { advertisingDispatchService } = await import('./services/advertisingDispatchService.js');
         await advertisingDispatchService.collectAllActiveEngagement();
-      } catch (e: any) { logger.warn('[Engagement] Refresh failed (non-fatal):', e?.message); }
+      } catch (e) { logger.warn('[Engagement] Refresh failed (non-fatal):', e?.message); }
     }, 8 * 60 * 60 * 1000);
     logger.info('[Engagement] Social engagement refresh cron started (8h interval)');
-  } catch (retentionErr: any) {
+  } catch (retentionErr) {
     const errMsg = retentionErr instanceof Error
       ? `${retentionErr.message}\n${retentionErr.stack}`
       : String(retentionErr);
@@ -903,7 +903,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   try {
     const seoRoutes = (await import('./routes/seo.js')).default;
     app.use(seoRoutes);
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`⚠️ SEO routes not available: ${e.message}`);
   }
 
@@ -1069,7 +1069,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
         try {
           await distributedCache.connect();
           logger.info('✅ [DistributedCache] Connected (deferred)');
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ Distributed cache connect failed (non-fatal, in-memory fallback active): ${e.message}`);
         }
 
@@ -1078,7 +1078,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const priceIds = await ensureStripeProductsAndPrices();
           logger.info('✅ Stripe products and prices initialized');
           logger.info(`   Monthly: ${priceIds.monthly} | Yearly: ${priceIds.yearly} | Lifetime: ${priceIds.lifetime}`);
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`❌ Failed to initialize Stripe prices: ${e.message}`);
         }
 
@@ -1087,7 +1087,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const { initializeAdmin } = await import('./init-admin.js');
           await initializeAdmin();
           logger.info('✅ Admin account initialized');
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`❌ Failed to initialize admin: ${e.message}`);
         }
 
@@ -1096,7 +1096,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const { onboardingService } = await import('./services/onboardingService.js');
           await onboardingService.seedDefaultTasks();
           await onboardingService.ensureAITasksExist();
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ Could not seed onboarding tasks: ${e.message}`);
         }
 
@@ -1113,12 +1113,12 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               if (result.tieredDown > 0 || result.tieredUp > 0) {
                 logger.info(`[Storage] Auto-tiering: ${result.tieredDown} files moved to cold, ${result.tieredUp} promoted to hot`);
               }
-            } catch (e: any) {
+            } catch (e) {
               logger.warn(`[Storage] Auto-tiering error: ${e.message}`);
             }
           }, autoTierInterval);
           logger.info('✅ [Storage] Auto-tiering scheduler started (every 6 hours)');
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ [Storage] Hybrid Storage init: ${e.message}`);
         }
 
@@ -1127,11 +1127,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           const { initializeFabric, autoClusterManager } = await import('./pocket-dimension/fabric/index.js');
           await initializeFabric();
           logger.info('✅ [PocketFabric] Distributed fabric storage initialized');
-          killSwitch.registerSystem('pocket-fabric-autocluster' as any, {
+          killSwitch.registerSystem('pocket-fabric-autocluster' as string, {
             kill: () => autoClusterManager.stop(),
             resume: () => autoClusterManager.start(),
           });
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ [PocketFabric] Fabric init: ${e.message}`);
         }
 
@@ -1147,7 +1147,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof svc.startAutonomousOperations === 'function') svc.startAutonomousOperations(); },
             });
           }
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ [Autonomy] Autonomous Service: ${e.message}`);
         }
 
@@ -1159,11 +1159,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
             const system = AutomationSystemClass.getInstance();
             logger.info('✅ [Autonomy] Automation System initialized');
             killSwitch.registerSystem('automation-system', {
-              kill: () => { (system as any)._killSwitchPaused = true; logger.warn('[AutomationSystem] Paused by kill switch'); },
-              resume: () => { (system as any)._killSwitchPaused = false; logger.info('[AutomationSystem] Resumed'); },
+              kill: () => { (system as Record<string, unknown>)._killSwitchPaused = true; logger.warn('[AutomationSystem] Paused by kill switch'); },
+              resume: () => { (system as Record<string, unknown>)._killSwitchPaused = false; logger.info('[AutomationSystem] Resumed'); },
             });
           }
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ [Autonomy] Automation System: ${e.message}`);
         }
 
@@ -1189,7 +1189,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof orchestrator.start === 'function') orchestrator.start(); },
             });
           }
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`⚠️ [Autonomy] Autonomous Updates: ${e.message}`);
         }
 
@@ -1205,7 +1205,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
         // 4. Autonomous Autopilot
         if (parallelMods[0].status === 'fulfilled') {
-          const mod = parallelMods[0].value as any;
+          const mod = (parallelMods[0] as PromiseFulfilledResult<Record<string, unknown>>).value;
           if (mod.autonomousAutopilot) {
             logger.info('✅ [Autonomy] Autonomous Autopilot loaded');
             killSwitch.registerSystem('autonomous-autopilot', {
@@ -1213,11 +1213,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { logger.info('[AutonomousAutopilot] Kill switch released — restart per-user as needed'); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Autonomous Autopilot: ${(parallelMods[0] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Autonomous Autopilot: ${((parallelMods[0] as PromiseRejectedResult).reason as Error)?.message}`);
 
         // 5. Autopilot Engine
         if (parallelMods[1].status === 'fulfilled') {
-          const mod = parallelMods[1].value as any;
+          const mod = (parallelMods[1] as PromiseFulfilledResult<Record<string, unknown>>).value;
           const engine = mod.autopilotEngine ?? (mod.AutopilotEngine ? new mod.AutopilotEngine() : null);
           if (engine) {
             logger.info('✅ [Autonomy] Autopilot Engine loaded');
@@ -1226,11 +1226,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof engine.start === 'function') engine.start(); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Autopilot Engine: ${(parallelMods[1] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Autopilot Engine: ${((parallelMods[1] as PromiseRejectedResult).reason as Error)?.message}`);
 
         // 6. Auto-Posting Service V1
         if (parallelMods[2].status === 'fulfilled') {
-          const mod = parallelMods[2].value as any;
+          const mod = (parallelMods[2] as PromiseFulfilledResult<Record<string, unknown>>).value;
           if (mod.autoPostingService) {
             logger.info('✅ [Autonomy] Auto-Posting Service V1 initialized');
             killSwitch.registerSystem('auto-posting-v1', {
@@ -1238,11 +1238,11 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof mod.autoPostingService.resume === 'function') mod.autoPostingService.resume(); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V1: ${(parallelMods[2] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V1: ${((parallelMods[2] as PromiseRejectedResult).reason as Error)?.message}`);
 
         // 7. Auto-Posting Service V2
         if (parallelMods[3].status === 'fulfilled') {
-          const mod = parallelMods[3].value as any;
+          const mod = (parallelMods[3] as PromiseFulfilledResult<Record<string, unknown>>).value;
           if (mod.autoPostingServiceV2) {
             logger.info('✅ [Autonomy] Auto-Posting Service V2 initialized');
             killSwitch.registerSystem('auto-posting-v2', {
@@ -1250,23 +1250,23 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof mod.autoPostingServiceV2.resume === 'function') mod.autoPostingServiceV2.resume(); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V2: ${(parallelMods[3] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Auto-Posting V2: ${((parallelMods[3] as PromiseRejectedResult).reason as Error)?.message}`);
 
         // 8. Auto Post Generator (stateless — no running loop; kill switch flag surfaced via log)
         if (parallelMods[4].status === 'fulfilled') {
-          const mod = parallelMods[4].value as any;
+          const mod = (parallelMods[4] as PromiseFulfilledResult<Record<string, unknown>>).value;
           if (mod.autoPostGenerator) {
             logger.info('✅ [Autonomy] Auto Post Generator initialized');
             killSwitch.registerSystem('auto-post-generator', {
-              kill: () => { (mod.autoPostGenerator as any)._killed = true; logger.warn('[AutoPostGenerator] Paused by kill switch'); },
-              resume: () => { (mod.autoPostGenerator as any)._killed = false; logger.info('[AutoPostGenerator] Resumed'); },
+              kill: () => { (mod.autoPostGenerator as Record<string, unknown>)._killed = true; logger.warn('[AutoPostGenerator] Paused by kill switch'); },
+              resume: () => { (mod.autoPostGenerator as Record<string, unknown>)._killed = false; logger.info('[AutoPostGenerator] Resumed'); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Auto Post Generator: ${(parallelMods[4] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Auto Post Generator: ${((parallelMods[4] as PromiseRejectedResult).reason as Error)?.message}`);
 
         // 9. Autopilot Publisher
         if (parallelMods[5].status === 'fulfilled') {
-          const mod = parallelMods[5].value as any;
+          const mod = (parallelMods[5] as PromiseFulfilledResult<Record<string, unknown>>).value;
           if (mod.autopilotPublisher) {
             logger.info('✅ [Autonomy] Autopilot Publisher initialized');
             killSwitch.registerSystem('autopilot-publisher', {
@@ -1274,14 +1274,14 @@ app.use((req: Request, res: Response, next: NextFunction) => {
               resume: () => { if (typeof mod.autopilotPublisher.startScheduler === 'function') mod.autopilotPublisher.startScheduler(); },
             });
           }
-        } else logger.warn(`⚠️ [Autonomy] Autopilot Publisher: ${(parallelMods[5] as any).reason?.message}`);
+        } else logger.warn(`⚠️ [Autonomy] Autopilot Publisher: ${((parallelMods[5] as PromiseRejectedResult).reason as Error)?.message}`);
 
         logger.info('🤖 ═══════════════════════════════════════════════════════════');
         logger.info('🤖 AUTONOMOUS SYSTEMS READY');
 
         // Built-in authoritative DNS server for *.maxbooster.replit.app
         import('./services/dnsServer.js').then(({ startDNSServer }) => {
-          startDNSServer().catch((e: any) => logger.warn('[DNS] Start error:', e?.message));
+          startDNSServer().catch((e) => logger.warn('[DNS] Start error:', e?.message));
         }).catch(() => {});
 
         import('./services/baseModelTrainer.js').then(({ runBaseModelTraining }) => {
@@ -1290,7 +1290,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
         // MaxCore + PDIM connectivity probe, weight sync, and training feedback wiring
         import('./services/maxcoreSync.js').then(({ initMaxCoreSync }) => {
-          initMaxCoreSync().catch((e: any) => logger.warn('[MaxCoreSync] Init error:', e?.message));
+          initMaxCoreSync().catch((e) => logger.warn('[MaxCoreSync] Init error:', e?.message));
         }).catch(() => {});
 
         // MaxCore Score Calibrator — calibrates VeoGate weights/thresholds against 8TB corpus
@@ -1306,8 +1306,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
           import('./services/diffusionBackgroundTrainer.js').then(({ startBackgroundTraining }) => {
             startBackgroundTraining().then((result?: void) => {
               logger.info('🎬 [DiffBG] Diffusion trainer initialised (MaxCore Gateway or local fallback)');
-            }).catch((e: any) => logger.warn('[DiffBG] Background trainer init error:', e?.message));
-          }).catch((e: any) => logger.warn('[DiffBG] Could not import background trainer:', e?.message));
+            }).catch((e) => logger.warn('[DiffBG] Background trainer init error:', e?.message));
+          }).catch((e) => logger.warn('[DiffBG] Could not import background trainer:', e?.message));
         }, 60_000);
 
         // Neon keepalive: pool idleTimeoutMillis=60s, keepalive pings every 25s so
@@ -1370,7 +1370,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
       new Promise<void>((_, rej) => setTimeout(() => rej(new Error('BullMQ drain timeout')), 10_000)),
     ]);
     logger.info('[Shutdown] BullMQ workers drained');
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[Shutdown] BullMQ drain error (non-fatal):', err?.message);
   }
 
@@ -1383,7 +1383,7 @@ async function gracefulShutdown(signal: string, exitCode = 0): Promise<void> {
   try {
     // 4. Stop the platform auto-fixer probe loop.
     const { platformAutoFixer } = await import('./services/platformAutoFixer.js');
-    (platformAutoFixer as any)?.stop?.();
+    (platformAutoFixer as { stop?: () => void })?.stop?.();
     logger.info('[Shutdown] PlatformAutoFixer stopped');
   } catch { /* non-critical */ }
 

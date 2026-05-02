@@ -221,7 +221,7 @@ router.post('/social/predict', requireAuth, async (req: Request, res: Response) 
     }
 
     if (action === 'viral_potential' && result.data && req.user?.id) {
-      const score: number = (result.data as any).overallScore ?? 0;
+      const score: number = (result.data as Record<string, unknown>).overallScore ?? 0;
       if (score >= 0.75) {
         const pct = Math.round(score * 100);
         const platformLabel = platform.charAt(0).toUpperCase() + platform.slice(1);
@@ -387,7 +387,7 @@ router.get('/trends', requireAuth, async (req: Request, res: Response) => {
       ? (req.query.platforms as string).split(',') 
       : ['twitter', 'instagram', 'tiktok'];
 
-    const trends = unifiedAIController.detectTrends(platforms as any);
+    const trends = unifiedAIController.detectTrends(platforms as Record<string, unknown>);
 
     res.json({
       success: true,
@@ -428,7 +428,7 @@ router.get('/models', requireAuth, async (req: Request, res: Response) => {
     const { status, type } = req.query;
 
     let query = db.select().from(aiModels);
-    const conditions: any[] = [];
+    const conditions: unknown[] = [];
     if (status && typeof status === 'string') {
       conditions.push(eq(aiModels.status, status));
     }

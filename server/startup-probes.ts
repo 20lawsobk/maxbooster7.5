@@ -21,7 +21,7 @@ import { sql } from 'drizzle-orm';
 import { logger } from './logger.js';
 import { isProductionEnv } from './lib/envHelpers.js';
 
-const __metaUrl = (import.meta as any)?.url as string | undefined;
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
 const __filename = __metaUrl ? fileURLToPath(__metaUrl) : resolve(process.argv[1] ?? '');
 const __dirname = dirname(__filename);
 

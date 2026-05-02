@@ -5,7 +5,7 @@
 // Suppress noisy Node.js process warnings that are informational-only
 const _origEmit = process.emit.bind(process);
 // @ts-ignore — override to filter 'warning' events
-process.emit = function (event: string, ...args: any[]): boolean {
+process.emit = function (event: string, ...args: unknown[]): boolean {
   if (event === 'warning') {
     const w = args[0] as NodeJS.ErrnoException;
     const msg = w?.message ?? '';

@@ -4,9 +4,9 @@ import { logger } from '../../logger';
 
 interface AuthenticatedRequest {
   user?: { id: string };
-  body: any;
-  params: any;
-  query: any;
+  body: Record<string, unknown>;
+  params: Record<string, unknown>;
+  query: Record<string, unknown>;
 }
 
 const router = Router();
@@ -27,8 +27,8 @@ router.get('/alerts', async (req: AuthenticatedRequest, res: Response) => {
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 ? Math.min(rawLimit, 500) : undefined;
     
     const alerts = await analyticsAlertService.getAlerts(userId, {
-      type: type as any,
-      priority: priority as any,
+      type: type as Record<string, unknown>,
+      priority: priority as Record<string, unknown>,
       unreadOnly: unreadOnly === 'true',
       limit,
     });

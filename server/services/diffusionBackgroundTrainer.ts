@@ -30,7 +30,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { logger } from '../logger.js';
 
-const __metaUrl = (import.meta as any)?.url as string | undefined;
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
 const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
 const __dirname = path.dirname(__filename);
 
@@ -215,7 +215,7 @@ async function _isMaxCoreGatewayRunning(): Promise<boolean> {
     clearTimeout(timer);
     if (!res.ok) return false;
     const data = await res.json().catch(() => null);
-    return !!(data && (data as any).status === 'ok');
+    return !!(data && (data as Record<string, unknown>).status === 'ok');
   } catch {
     return false;
   }

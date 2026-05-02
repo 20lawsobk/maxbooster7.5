@@ -892,7 +892,7 @@ export class InstantPayoutService {
     completedPayouts: number;
     failedPayouts: number;
     pendingPayouts: number;
-    payouts: any[];
+    payouts: unknown[];
     summary: {
       byStatus: Record<string, { count: number; amount: number }>;
       byMonth: Record<string, { count: number; amount: number }>;

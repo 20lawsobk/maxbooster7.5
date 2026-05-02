@@ -31,7 +31,7 @@ export function getEnvironmentType(): EnvironmentType {
   }
   
   if (
-    (window as any).Capacitor !== undefined ||
+    (window as Record<string, unknown>).Capacitor !== undefined ||
     userAgent.includes('capacitor')
   ) {
     return 'capacitor';

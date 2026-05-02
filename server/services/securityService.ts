@@ -12,7 +12,7 @@ export interface AuditLog {
   action: string;
   resource: string;
   resourceId?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   ipAddress?: string;
   userAgent?: string;
   timestamp: Date;

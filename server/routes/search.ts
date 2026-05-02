@@ -95,7 +95,7 @@ function fuzzyMatch(query: string, target: string, threshold = 0.3): boolean {
   return similarity >= (1 - threshold);
 }
 
-function calculateRelevanceScore(query: string, item: any): number {
+function calculateRelevanceScore(query: string, item: Record<string, unknown>): number {
   const normalizedQuery = query.toLowerCase().trim();
   let score = 0;
   
@@ -119,8 +119,8 @@ function calculateRelevanceScore(query: string, item: any): number {
   return score;
 }
 
-async function searchBeats(query: string, filters: any, limit: number, offset: number) {
-  const conditions: any[] = [];
+async function searchBeats(query: string, filters: Record<string, unknown>, limit: number, offset: number) {
+  const conditions: Record<string, unknown>[] = [];
   
   if (query) {
     conditions.push(
@@ -158,7 +158,7 @@ async function searchBeats(query: string, filters: any, limit: number, offset: n
   
   conditions.push(eq(beats.isPublished, true));
   
-  let orderBy: any = desc(beats.createdAt);
+  let orderBy: import("drizzle-orm").SQL<unknown> = desc(beats.createdAt);
   if (filters.sort === 'popular') orderBy = desc(beats.plays);
   else if (filters.sort === 'price_low') orderBy = asc(beats.price);
   else if (filters.sort === 'price_high') orderBy = desc(beats.price);
@@ -231,7 +231,7 @@ async function searchUsers(query: string, limit: number, offset: number) {
 }
 
 async function searchProjects(query: string, userId: string | undefined, limit: number, offset: number) {
-  const conditions: any[] = [];
+  const conditions: Record<string, unknown>[] = [];
   
   if (query) {
     conditions.push(
@@ -297,7 +297,7 @@ async function searchReleases(query: string, limit: number, offset: number) {
 router.get('/', async (req: Request, res: Response) => {
   try {
     return res.redirect(307, `/api/search/unified?${new URLSearchParams(req.query as Record<string, string>).toString()}`);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in search redirect:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -340,10 +340,10 @@ router.get('/unified', async (req: Request, res: Response) => {
     };
     
     const results: {
-      beats: { items: any[]; total: number };
-      users: { items: any[]; total: number };
-      projects: { items: any[]; total: number };
-      releases: { items: any[]; total: number };
+      beats: { items: Record<string, unknown>[]; total: number };
+      users: { items: Record<string, unknown>[]; total: number };
+      projects: { items: Record<string, unknown>[]; total: number };
+      releases: { items: Record<string, unknown>[]; total: number };
     } = {
       beats: { items: [], total: 0 },
       users: { items: [], total: 0 },
@@ -436,7 +436,7 @@ router.get('/unified', async (req: Request, res: Response) => {
         hasMore: numOffset + numLimit < totalCount,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Unified search error:');
     res.status(500).json({ error: 'Search failed' });
   }
@@ -496,7 +496,7 @@ router.get('/autocomplete', async (req: Request, res: Response) => {
       .slice(0, Number(limit));
     
     res.json({ suggestions });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Autocomplete error:');
     res.status(500).json({ error: 'Autocomplete failed' });
   }
@@ -541,7 +541,7 @@ router.get('/trending', async (req: Request, res: Response) => {
       beats: trendingBeats,
       genres: trendingGenres.map(g => g.genre).filter(Boolean),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Trending search error:');
     res.status(500).json({ error: 'Failed to get trending data' });
   }
@@ -560,7 +560,7 @@ router.get('/history', async (req: Request, res: Response) => {
       .limit(50);
 
     res.json({ history: rows.slice(0, 20), totalCount: rows.length });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Search history error:');
     res.status(500).json({ error: 'Failed to get search history' });
   }
@@ -574,7 +574,7 @@ router.delete('/history', async (req: Request, res: Response) => {
     await db.delete(searchHistory).where(eq(searchHistory.userId, userId));
 
     res.json({ success: true, message: 'Search history cleared' });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Clear search history error:');
     res.status(500).json({ error: 'Failed to clear search history' });
   }
@@ -591,7 +591,7 @@ router.delete('/history/:query', async (req: Request, res: Response) => {
       .where(and(eq(searchHistory.userId, userId), eq(searchHistory.query, query)));
 
     res.json({ success: true, message: 'Search item removed' });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Remove search history item error:');
     res.status(500).json({ error: 'Failed to remove search item' });
   }
@@ -615,7 +615,7 @@ router.get('/discover', async (req: Request, res: Response) => {
       .limit(12);
     
     const genres = ['Hip-Hop', 'Trap', 'R&B', 'Pop', 'Lo-Fi', 'Drill'];
-    const curatedCollections: { name: string; description: string; items: any[] }[] = [];
+    const curatedCollections: { name: string; description: string; items: unknown[] }[] = [];
     
     for (const genre of genres.slice(0, 4)) {
       const genreBeats = await db.select()
@@ -633,7 +633,7 @@ router.get('/discover', async (req: Request, res: Response) => {
       }
     }
     
-    let personalized: any[] = [];
+    let personalized: Record<string, unknown>[] = [];
     
     if (userId) {
       const userHistory = await db
@@ -684,7 +684,7 @@ router.get('/discover', async (req: Request, res: Response) => {
       curatedCollections,
       featuredGenres: genres,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Discovery feed error:');
     res.status(500).json({ error: 'Failed to get discovery feed' });
   }
@@ -704,7 +704,7 @@ router.get('/similar/:beatId', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Beat not found' });
     }
     
-    const conditions: any[] = [eq(beats.isPublished, true)];
+    const conditions: Record<string, unknown>[] = [eq(beats.isPublished, true)];
     
     if (beat.genre) {
       conditions.push(eq(beats.genre, beat.genre));
@@ -736,7 +736,7 @@ router.get('/similar/:beatId', async (req: Request, res: Response) => {
         bpmRange: beat.bpm ? `${beat.bpm - 15} - ${beat.bpm + 15}` : null,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Similar beats error:');
     res.status(500).json({ error: 'Failed to find similar beats' });
   }
@@ -756,7 +756,7 @@ router.post('/filter-presets', async (req: Request, res: Response) => {
       .returning();
 
     res.json({ success: true, preset: inserted });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Save filter preset error:');
     res.status(500).json({ error: 'Failed to save filter preset' });
   }
@@ -810,7 +810,7 @@ router.get('/filter-presets', async (req: Request, res: Response) => {
       .limit(50);
 
     res.json({ presets: [...contextPresets, ...userPresets] });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Get filter presets error:');
     res.status(500).json({ error: 'Failed to get filter presets' });
   }
@@ -833,7 +833,7 @@ router.put('/filter-presets', async (req: Request, res: Response) => {
     if (!updated) return res.status(404).json({ error: 'Preset not found' });
 
     res.json({ success: true, preset: updated });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Update filter preset error:');
     res.status(500).json({ error: 'Failed to update filter preset' });
   }
@@ -850,7 +850,7 @@ router.delete('/filter-presets/:presetId', async (req: Request, res: Response) =
       .where(and(eq(filterPresets.id, presetId), eq(filterPresets.userId, userId)));
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Delete filter preset error:');
     res.status(500).json({ error: 'Failed to delete filter preset' });
   }
@@ -881,7 +881,7 @@ router.post('/filter-presets/:presetId/default', async (req: Request, res: Respo
       .where(eq(filterPresets.id, presetId));
 
     res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Set default preset error:');
     res.status(500).json({ error: 'Failed to set default preset' });
   }
@@ -897,7 +897,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
       return res.json({ suggestions: [] });
     }
     
-    const suggestions: any[] = [];
+    const suggestions: Record<string, unknown>[] = [];
     
     const beatTitles = await db.select({ title: beats.title, genre: beats.genre })
       .from(beats)
@@ -953,7 +953,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
     }
     
     res.json({ suggestions: suggestions.slice(0, Number(limit)) });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Suggestions error:');
     res.status(500).json({ error: 'Failed to get suggestions' });
   }
@@ -970,7 +970,7 @@ router.get('/distribution', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    const conditions: any[] = [eq(releases.userId, userId)];
+    const conditions: Record<string, unknown>[] = [eq(releases.userId, userId)];
     
     if (q) {
       conditions.push(ilike(releases.title, `%${q}%`));
@@ -1021,7 +1021,7 @@ router.get('/distribution', async (req: Request, res: Response) => {
         hasMore: Number(offset) + Number(limit) < total,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Distribution search error:');
     res.status(500).json({ error: 'Distribution search failed' });
   }
@@ -1151,7 +1151,7 @@ router.get('/analytics/search', async (req: Request, res: Response) => {
       availablePlatforms: ['spotify', 'apple_music', 'youtube', 'soundcloud', 'amazon_music', 'tidal'],
       availableMetrics: ['streams', 'downloads', 'revenue', 'listeners', 'saves', 'shares'],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Analytics search error:');
     res.status(500).json({ error: 'Analytics search failed' });
   }
@@ -1167,7 +1167,7 @@ router.get('/social/search', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Authentication required' });
     }
     
-    const conditions: any[] = [eq(socialCampaigns.userId, userId)];
+    const conditions: Record<string, unknown>[] = [eq(socialCampaigns.userId, userId)];
 
     if (q) {
       conditions.push(ilike(socialCampaigns.content, `%${q}%`));
@@ -1244,7 +1244,7 @@ router.get('/social/search', async (req: Request, res: Response) => {
       platforms: ['instagram', 'twitter', 'tiktok', 'facebook', 'youtube', 'linkedin', 'threads'],
       statuses: ['draft', 'scheduled', 'published', 'failed'],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Social search error:');
     res.status(500).json({ error: 'Social search failed' });
   }
@@ -1256,7 +1256,7 @@ router.get('/marketplace/producers', async (req: Request, res: Response) => {
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
     const offset = Math.min(Math.max(0, Number(req.query.offset ?? 0)), 100_000);
     
-    const conditions: any[] = [];
+    const conditions: Record<string, unknown>[] = [];
     
     if (q) {
       conditions.push(
@@ -1310,7 +1310,7 @@ router.get('/marketplace/producers', async (req: Request, res: Response) => {
         hasMore: Number(offset) + Number(limit) < total,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Producer search error:');
     res.status(500).json({ error: 'Producer search failed' });
   }

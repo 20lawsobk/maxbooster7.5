@@ -38,7 +38,7 @@ export function setAuthState(isAuthenticated: boolean): void {
 
 function shouldPrefetch(): boolean {
   if (typeof navigator === 'undefined') return false;
-  const conn = (navigator as any).connection;
+  const conn = (navigator as Record<string, unknown>).connection;
   if (conn) {
     if (conn.saveData) return false;
     if (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g') return false;
@@ -83,7 +83,7 @@ export function prefetchRoute(importFn: () => Promise<any>) {
   prefetchedRoutes.add(key);
 
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => importFn().catch(() => {}));
+    (window as Record<string, unknown>).requestIdleCallback(() => importFn().catch(() => {}));
   } else {
     setTimeout(() => importFn().catch(() => {}), 200);
   }
@@ -162,7 +162,7 @@ export function prefetchAdjacentRoutes(currentPath: string) {
   const adjacentRoutes = adjacencyMap[normalizedPath] || [];
 
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(() => {
+    (window as Record<string, unknown>).requestIdleCallback(() => {
       if (!shouldPrefetch()) return;
       for (const route of adjacentRoutes) {
         prefetchRouteByPath(route);
@@ -255,7 +255,7 @@ export function prefetchAllAuthChunks(): void {
   };
 
   if ('requestIdleCallback' in window) {
-    (window as any).requestIdleCallback(load, { timeout: 5000 });
+    (window as Record<string, unknown>).requestIdleCallback(load, { timeout: 5000 });
   } else {
     setTimeout(load, 2000);
   }

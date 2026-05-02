@@ -190,7 +190,7 @@ router.get('/admin/all', async (req, res) => {
     const result = await dmcaService.getAllNotices({
       limit,
       offset,
-      status: status as any,
+      status: status as Record<string, unknown>,
     });
 
     res.json(result);

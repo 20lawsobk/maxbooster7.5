@@ -84,7 +84,7 @@ export async function initializeAIContentModels() {
         versionNumber: 1,
         versionHash: `${modelData.modelName}_init`,
         status: 'production',
-        accuracy: (modelData.performance as any).accuracy,
+        accuracy: (modelData.performance as Record<string, unknown>).accuracy,
         parameters: modelData.parameters,
         changelog: 'Initial release',
         deployedAt: new Date(),

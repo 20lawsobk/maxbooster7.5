@@ -17,7 +17,7 @@ interface ProcessAlert {
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
   timestamp: Date;
-  metrics?: any;
+  metrics?: Record<string, unknown>;
 }
 
 class ProcessMonitor extends EventEmitter {
@@ -124,7 +124,7 @@ class ProcessMonitor extends EventEmitter {
       });
     });
 
-    process.on('unhandledRejection', (reason: any) => {
+    process.on('unhandledRejection', (reason: Record<string, unknown>) => {
       const msg = reason?.message || String(reason);
       // Filter out all known transient / expected rejections so they don't clutter
       // the alert list with false-positive critical entries.
@@ -151,8 +151,8 @@ class ProcessMonitor extends EventEmitter {
     };
 
     // Update connection count from active sockets (if available)
-    if ((global as any).activeConnections !== undefined) {
-      this.health.activeConnections = (global as any).activeConnections;
+    if ((global as Record<string, unknown>).activeConnections !== undefined) {
+      this.health.activeConnections = (global as Record<string, unknown>).activeConnections;
     }
   }
 
@@ -255,7 +255,7 @@ class ProcessMonitor extends EventEmitter {
     return this.alerts.filter((alert) => alert.severity === 'critical');
   }
 
-  getHealthSummary(): any {
+  getHealthSummary(): Record<string, unknown> {
     const recentAlerts = this.alerts.filter(
       (alert) => Date.now() - alert.timestamp.getTime() < 24 * 60 * 60 * 1000 // Last 24 hours
     );

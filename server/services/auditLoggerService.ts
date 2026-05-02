@@ -425,7 +425,7 @@ export class AuditLoggerService {
     total: number;
   }> {
     try {
-      const conditions: any[] = [];
+      const conditions: unknown[] = [];
 
       if (options.userId) {
         conditions.push(eq(auditLogs.userId, options.userId));

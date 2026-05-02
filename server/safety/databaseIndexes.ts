@@ -421,9 +421,9 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
     const batchResult = await db.execute(
       sql`SELECT indexname FROM pg_indexes WHERE schemaname = 'public' AND indexname IN (${namesSql})`
     );
-    existingSet = new Set<string>(batchResult.rows.map((r: any) => r.indexname as string));
+    existingSet = new Set<string>(batchResult.rows.map((r: Record<string, unknown>) => r.indexname as string));
     logger.info(`   Batch check: ${existingSet.size}/${allNames.length} indexes already exist`);
-  } catch (batchErr: any) {
+  } catch (batchErr: Record<string, unknown>) {
     logger.warn(`[Indexes] Batch existence check failed (${batchErr.message}) — will check individually`);
   }
 
@@ -460,7 +460,7 @@ export async function createRequiredIndexes(): Promise<IndexCreationResult> {
 
       created.push(index.name);
       logger.info(`   ✓ Created ${index.name} on ${index.table}(${index.columns.join(', ')})`);
-    } catch (error: any) {
+    } catch (error) {
       if (error.message?.includes('does not exist')) {
         skipped.push(index.name);
         logger.warn(`   ⚠️ ${index.name} - ${error.message}`);

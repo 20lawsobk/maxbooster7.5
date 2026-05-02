@@ -475,10 +475,10 @@ class MicrotonalService {
   }
 
   fitNotesToScale(
-    notes: { note: number; [key: string]: any }[],
+    notes: { note: number; [key: string]: unknown }[],
     rootNote: number,
     scaleId: string
-  ): { note: number; [key: string]: any }[] {
+  ): { note: number; [key: string]: unknown }[] {
     return notes.map(n => ({
       ...n,
       note: this.fitNoteToScale(n.note, rootNote, scaleId),

@@ -90,7 +90,7 @@ interface SubmissionStatusTrackerProps {
   onCancel?: (platform: string) => void;
 }
 
-const PLATFORM_CONFIG: Record<string, { icon: any; color: string; processingTime: string }> = {
+const PLATFORM_CONFIG: Record<string, { icon: Record<string, unknown>; color: string; processingTime: string }> = {
   spotify: { icon: SpotifyIcon, color: '#1DB954', processingTime: '2-3 days' },
   'apple-music': { icon: AppleMusicIcon, color: '#FA243C', processingTime: '3-5 days' },
   'youtube-music': { icon: YouTubeIcon, color: '#FF0000', processingTime: '2-4 days' },
@@ -100,7 +100,7 @@ const PLATFORM_CONFIG: Record<string, { icon: any; color: string; processingTime
   soundcloud: { icon: SoundCloudIcon, color: '#FF3300', processingTime: '1-2 days' },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; icon: any; description: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; icon: Record<string, unknown>; description: string }> = {
   queued: {
     label: 'In Queue',
     color: 'bg-slate-500/10 text-slate-500 border-slate-500/20',
@@ -286,7 +286,7 @@ export function SubmissionStatusTracker({
         </CardContent>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Record<string, unknown>)}>
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">All ({statuses.length})</TabsTrigger>
           <TabsTrigger value="live">Live ({summary.live})</TabsTrigger>

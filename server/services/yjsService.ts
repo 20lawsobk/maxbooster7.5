@@ -23,7 +23,7 @@ export class YjsCollaborationService {
   private readonly REDIS_DOC_PREFIX = 'yjs:doc:';
   private readonly REDIS_TTL = 3600; // 1 hour cache TTL
   
-  private subClient: any = null;
+  private subClient: Record<string, unknown> | null = null;
   private readonly YJS_PUBSUB_ENABLED = !!config.redis.url;
   private pubSubCallbacks: Map<string, Set<(update: Uint8Array) => void>> = new Map();
 

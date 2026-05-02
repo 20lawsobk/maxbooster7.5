@@ -72,7 +72,7 @@ export function AIAssistantBubble() {
     }
   }, [messages, isTyping]);
 
-  const mapRow = (m: any): Message => ({
+  const mapRow = (m: Record<string, unknown>): Message => ({
     id: m.id,
     role: m.role as 'user' | 'assistant',
     content: m.content,

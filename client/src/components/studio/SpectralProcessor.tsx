@@ -116,7 +116,7 @@ export function SpectralProcessor({
       
       if ('gpu' in navigator) {
         try {
-          const adapter = await (navigator as any).gpu?.requestAdapter();
+          const adapter = await (navigator as Record<string, unknown>).gpu?.requestAdapter();
           webgpuAvailable = !!adapter;
         } catch {
           webgpuAvailable = false;

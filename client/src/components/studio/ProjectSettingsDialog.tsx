@@ -156,7 +156,7 @@ export function ProjectSettingsDialog({
 
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to save project settings.',

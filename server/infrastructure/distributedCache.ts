@@ -69,7 +69,7 @@ export class DistributedCache {
   }
 
   async connect(): Promise<void> {
-    this.redis = getPdimClient() as any;
+    this.redis = getPdimClient() as Record<string, unknown>;
     applyIoredisCompatShim(this.redis);
     logger.info('✅ [DistributedCache] Connected (PDIM)');
   }

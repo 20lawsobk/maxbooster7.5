@@ -17,7 +17,7 @@ import { db } from '../db.js';
 import { warpMarkers, audioClips } from '@shared/schema';
 import { eq, asc } from 'drizzle-orm';
 
-let ffmpeg: any = null;
+let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {

@@ -160,7 +160,7 @@ async function fetchUserContext(userId: string): Promise<UserContext> {
       contentTone:         prefs?.contentTone         ?? voice?.writingStyle  ?? null,
       callToActionStyle:   prefs?.callToActionStyle   ?? null,
       uniqueSellingPoints: (prefs?.uniqueSellingPoints as string[] | null) ?? null,
-      currentReleases:     (prefs?.currentReleases as any[] | null)      ?? null,
+      currentReleases:     (prefs?.currentReleases as Record<string, unknown>[] | null)      ?? null,
     };
 
     _userContextCache.set(userId, { data, expiresAt: Date.now() + USER_CTX_TTL_MS });
@@ -190,7 +190,7 @@ function matchReleaseByUrl(url: string, releases: UserContext['currentReleases']
   return undefined;
 }
 
-function safeExtractJson(raw: string): any {
+function safeExtractJson(raw: string): Record<string, unknown> {
   const fenceMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fenceMatch ? fenceMatch[1] : raw;
   const braceStart = candidate.indexOf('{');
@@ -207,11 +207,11 @@ function safeExtractJson(raw: string): any {
   }
 }
 
-function validateTaskPlan(raw: any, requestId: string): TaskPlan {
+function validateTaskPlan(raw: Record<string, unknown>, requestId: string): TaskPlan {
   if (!raw || !Array.isArray(raw.steps)) {
     throw new Error('TaskPlan missing steps array');
   }
-  const steps: TaskStep[] = raw.steps.map((s: any, i: number) => ({
+  const steps: TaskStep[] = (raw.steps as Record<string, unknown>[]).map((s: Record<string, unknown>, i: number) => ({
     id: s.id || `step_${i}`,
     type: s.type === 'analyze' ? 'analyze' : 'generate',
     worker: ['text', 'image', 'audio', 'video'].includes(s.worker) ? s.worker : 'text',
@@ -1302,7 +1302,7 @@ function buildStepParamsForPlatform(
   return base;
 }
 
-async function planTasks(_normalized: any, req: GenerationRequest): Promise<TaskPlan> {
+async function planTasks(_normalized: Record<string, unknown>, req: GenerationRequest): Promise<TaskPlan> {
   // The remote planner (/generate/text with mode: 'planner') always produces
   // garbled output that fails JSON parsing, causing a 30-second timeout on
   // every request.  Use the deterministic local plan builder directly.
@@ -1474,8 +1474,8 @@ function isGarbledText(text: string): boolean {
 }
 
 function buildLocalTextAssets(
-  rawSlots: any[],
-  inputs: any,
+  rawSlots: unknown[],
+  inputs: Record<string, unknown>,
   req: GenerationRequest,
 ): GeneratedAsset[] {
   const normalized = inputs?.normalized ?? {};
@@ -1506,7 +1506,7 @@ function buildLocalTextAssets(
     google_business: (h, b, c, _a, _tags) => `${h}\n\n${b}\n\n${c}`,
   };
 
-  return rawSlots.map((slot: any) => {
+  return rawSlots.map((slot: Record<string, unknown>) => {
     const platform = (slot.platform ?? req.platforms[0]) as Platform;
     const rules = platform ? getRules(platform) : null;
 
@@ -1549,13 +1549,13 @@ function buildLocalTextAssets(
 }
 
 const textWorker = {
-  async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
+  async run(step: TaskStep, inputs: Record<string, unknown>, req: GenerationRequest): Promise<GeneratedAsset[]> {
     const packSpec = req.packId ? PACK_DEFINITIONS[req.packId] ?? null : null;
     const rawSlots = step.params?.slots || (step.params?.platform
       ? [{ id: `${step.params.platform}_post`, platform: step.params.platform, modality: 'text', purpose: 'Post copy' }]
       : packSpec?.filter(s => s.modality === 'text') || [{ id: 'post', platform: req.platforms[0], modality: 'text', purpose: 'Post copy' }]);
 
-    const slotsWithRules = rawSlots.map((slot: any) => ({
+    const slotsWithRules = rawSlots.map((slot: Record<string, unknown>) => ({
       ...slot,
       platformRules: getRules(slot.platform as Platform)?.text ?? null,
     }));
@@ -1626,7 +1626,7 @@ const textWorker = {
 
       // Merge DB context into the MaxCore params.  DB values take priority because
       // the user explicitly set them; fall back to whatever /analyze returned.
-      const resolvedArtistName     = userCtx.artistName     ?? normalized.artistName    ?? semantic.artist_name   ?? normalized.author ?? (normalized.metadata as any)?.author ?? undefined;
+      const resolvedArtistName     = userCtx.artistName     ?? normalized.artistName    ?? semantic.artist_name   ?? normalized.author ?? (normalized.metadata as Record<string, unknown>)?.author ?? undefined;
       const resolvedGenre          = userCtx.genre           ?? normalized.genre         ?? semantic.genre         ?? undefined;
       const resolvedBrandVoice     = userCtx.brandVoice      ?? normalized.brandVoice    ?? semantic.brand_voice   ?? undefined;
       const resolvedTargetAudience = userCtx.targetAudience  ?? normalized.targetAudience ?? semantic.target_audience ?? undefined;
@@ -1646,7 +1646,7 @@ const textWorker = {
       const artistContext = artistContextParts.join('. ') || undefined;
 
       const perSlotResults = await Promise.allSettled(
-        rawSlots.map(async (slot: any) => {
+        rawSlots.map(async (slot: Record<string, unknown>) => {
           const platform: string = slot.platform ?? req.platforms[0] ?? 'instagram';
           const mc = await maxcorePost('/generate/content', {
             platform,
@@ -1887,14 +1887,14 @@ function enrichTextAssetMetadata(
 }
 
 const imageWorker = {
-  async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
+  async run(step: TaskStep, inputs: Record<string, unknown>, req: GenerationRequest): Promise<GeneratedAsset[]> {
     const slots = step.params?.slots || [];
-    const slotsWithRules = slots.map((slot: any) => ({
+    const slotsWithRules = slots.map((slot: Record<string, unknown>) => ({
       ...slot,
       platformRules: getRules(slot.platform as Platform)?.image ?? null,
     }));
 
-    const mapOutputs = (outputs: any[]) => outputs.map((o: any) => ({
+    const mapOutputs = (outputs: unknown[]) => outputs.map((o: Record<string, unknown>) => ({
       id: randomUUID(),
       modality: 'image' as OutputModality,
       payload: o.url || o.src || '',
@@ -1923,7 +1923,7 @@ const imageWorker = {
       const allOutputs = Array.isArray(result.outputs) ? result.outputs : [];
       // Only accept outputs whose URLs are absolute — relative paths from the
       // remote server (e.g. /uploads/images/...) cannot be served by our server.
-      const outputs = allOutputs.filter((o: any) => {
+      const outputs = allOutputs.filter((o: Record<string, unknown>) => {
         const url = o.url || o.src || '';
         return url.startsWith('http://') || url.startsWith('https://');
       });
@@ -1939,7 +1939,7 @@ const imageWorker = {
     const normalized = inputs?.normalized ?? {};
     const prompt = normalized.summary ?? req.input?.payload ?? req.intent ?? 'music artist promotional image';
     const fallbackPlatforms: Platform[] = (slots.length > 0
-      ? slots.map((s: any) => s.platform as Platform)
+      ? slots.map((s: Record<string, unknown>) => s.platform as Platform)
       : req.platforms as Platform[]
     ).filter(Boolean);
 
@@ -1950,7 +1950,7 @@ const imageWorker = {
         const img = await sharpImageService.generateImage({
           prompt: String(prompt).slice(0, 200),
           platform: plat,
-          tone: (req.constraints as any)?.tone ?? 'creative',
+          tone: (req.constraints as Record<string, unknown>)?.tone ?? 'creative',
         });
         generated.push({
           id: randomUUID(),
@@ -1972,7 +1972,7 @@ const imageWorker = {
 };
 
 const audioWorker = {
-  async run(step: TaskStep, inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
+  async run(step: TaskStep, inputs: Record<string, unknown>, req: GenerationRequest): Promise<GeneratedAsset[]> {
     const platform  = step.params?.platform as Platform | undefined;
     const audioRules = platform ? getRules(platform).audio : null;
 
@@ -1988,7 +1988,7 @@ const audioWorker = {
       });
       const outputs = Array.isArray(result.outputs) ? result.outputs : [];
       if (outputs.length > 0) {
-        return outputs.map((o: any) => ({
+        return outputs.map((o: Record<string, unknown>) => ({
           id: randomUUID(),
           modality: 'audio' as OutputModality,
           payload: o.url || '',
@@ -2047,7 +2047,7 @@ const audioWorker = {
 };
 
 const videoWorker = {
-  async run(step: TaskStep, _inputs: any, req: GenerationRequest): Promise<GeneratedAsset[]> {
+  async run(step: TaskStep, _inputs: Record<string, unknown>, req: GenerationRequest): Promise<GeneratedAsset[]> {
     // FFmpeg video generation takes 2–5 minutes and cannot be run inline inside
     // a synchronous HTTP request (the client timeout fires first, leaving the
     // caller with a network error rather than a usable result).

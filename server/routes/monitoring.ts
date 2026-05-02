@@ -27,7 +27,7 @@ router.get(
         timestamp: new Date(),
         metrics: metricsArray,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in queue-metrics:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -52,7 +52,7 @@ router.get(
         success: true,
         metrics,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in queue-metrics by name:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -73,7 +73,7 @@ router.get(
           ...data,
         })),
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in queue-health:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -94,7 +94,7 @@ router.get(
         summary,
         cacheStats,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in ai-models:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -152,7 +152,7 @@ router.get(
         },
         timestamp: new Date(),
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in system-health:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -181,7 +181,7 @@ router.post(
         success: true,
         message: 'Alert thresholds updated successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in set-thresholds:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -205,7 +205,7 @@ router.get(
         },
         timestamp: new Date(),
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in monitoring dashboard:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -231,7 +231,7 @@ router.post(
         message: 'Baseline metrics saved successfully',
         filepath,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in baseline save:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -253,7 +253,7 @@ router.get(
           thresholds: config.thresholds,
         },
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in alerting config:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -276,7 +276,7 @@ router.post(
         success: true,
         message: 'Test alert sent successfully',
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error in alerting test:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }

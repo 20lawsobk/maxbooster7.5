@@ -225,11 +225,11 @@ class MemoryManager extends EventEmitter {
   }
 
   scheduleGarbageCollection(): void {
-    if ((global as any).gc) {
+    if ((global as Record<string, unknown>).gc) {
       const beforeMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
 
       logger.info('🧹 Scheduling garbage collection...');
-      (global as any).gc();
+      (global as Record<string, unknown>).gc();
 
       const afterMB = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
       const freedMB = beforeMB - afterMB;
@@ -273,8 +273,8 @@ class MemoryManager extends EventEmitter {
     logger.info('🚨 Performing emergency memory cleanup...');
 
     // Clear caches that might be holding memory
-    if ((global as any).memoryCache) {
-      (global as any).memoryCache.clear();
+    if ((global as Record<string, unknown>).memoryCache) {
+      (global as Record<string, unknown>).memoryCache.clear();
       logger.info('🧹 Cleared global memory cache');
     }
 
@@ -305,7 +305,7 @@ class MemoryManager extends EventEmitter {
     return this.metrics.filter((m) => m.timestamp > cutoff);
   }
 
-  getMemorySummary(): any {
+  getMemorySummary(): Record<string, unknown> {
     const current = this.getCurrentUsage();
     const history = this.getUsageHistory(60);
 

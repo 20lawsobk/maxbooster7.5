@@ -81,7 +81,7 @@ class MaxBooster247System extends EventEmitter {
     //
     // This module is an OBSERVER only — it tracks metrics and logs, but never exits.
 
-    process.on('unhandledRejection', (reason: any) => {
+    process.on('unhandledRejection', (reason: Record<string, unknown>) => {
       const msg = reason?.message || String(reason);
       const code = reason?.code;
       // Non-fatal: stream errors, transient PDIM / LuaExecutor / BullMQ failures.
@@ -117,13 +117,13 @@ class MaxBooster247System extends EventEmitter {
   }
 
   private enableGarbageCollection(): void {
-    if (typeof (global as any).gc === 'function') {
+    if (typeof (global as Record<string, unknown>).gc === 'function') {
       logger.info('✅ Garbage collection available');
       // Schedule GC every 10 minutes to keep heap tidy between normal GC pauses.
       setInterval(() => {
         try {
           const before = process.memoryUsage().heapUsed;
-          (global as any).gc();
+          (global as Record<string, unknown>).gc();
           const after = process.memoryUsage().heapUsed;
           const freed = Math.round((before - after) / 1024 / 1024);
           if (freed > 0) logger.info(`🧹 GC freed ${freed}MB memory`);
@@ -147,7 +147,7 @@ class MaxBooster247System extends EventEmitter {
 
       const memMB = Math.round(this.metrics.memory.heapUsed / 1024 / 1024);
       const uptimeHours = Math.round((this.metrics.uptime / (1000 * 60 * 60)) * 100) / 100;
-      const gcAvailable = typeof (global as any).gc === 'function';
+      const gcAvailable = typeof (global as Record<string, unknown>).gc === 'function';
 
       // Log health status every 10 minutes (approximate, modulo-gated to avoid a dedicated timer).
       if (Date.now() % (10 * 60 * 1000) < 30000) {
@@ -173,9 +173,9 @@ class MaxBooster247System extends EventEmitter {
     if (memMB > 800) {
       logger.warn(`⚠️ High memory usage: ${memMB}MB`);
 
-      if (typeof (global as any).gc === 'function') {
+      if (typeof (global as Record<string, unknown>).gc === 'function') {
         try {
-          (global as any).gc();
+          (global as Record<string, unknown>).gc();
           const after = Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
           logger.info(`🧹 Forced GC due to high memory: ${memMB}MB → ${after}MB`);
         } catch (error: unknown) {
@@ -289,7 +289,7 @@ class MaxBooster247System extends EventEmitter {
     return { ...this.metrics };
   }
 
-  getHealthSummary(): any {
+  getHealthSummary(): Record<string, unknown> {
     const uptimeHours = this.metrics.uptime / (1000 * 60 * 60);
     const successRate =
       this.metrics.requestCount > 0
@@ -326,7 +326,7 @@ class MaxBooster247System extends EventEmitter {
   }
 
   // Reserved VM health endpoint format
-  getReservedVMHealth(): any {
+  getReservedVMHealth(): Record<string, unknown> {
     const health = this.getHealthSummary();
 
     return {

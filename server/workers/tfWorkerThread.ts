@@ -40,7 +40,7 @@ parentPort.on('message', async (msg: {
     }
 
     const start = Date.now();
-    const output = model.predict(inputTensor) as any;
+    const output = model.predict(inputTensor) as Record<string, unknown>;
     const result = await output.data();
     const durationMs = Date.now() - start;
 
@@ -48,7 +48,7 @@ parentPort.on('message', async (msg: {
     output.dispose();
 
     parentPort!.postMessage({ id, result: Array.from(result), durationMs });
-  } catch (err: any) {
+  } catch (err) {
     parentPort!.postMessage({ id, error: err.message || String(err) });
   }
 });

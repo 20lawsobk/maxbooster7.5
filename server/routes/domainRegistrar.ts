@@ -58,7 +58,7 @@ const router = Router();
 // Every route defined below router.use(requireAuth) requires an active session —
 // already guaranteed by Max Booster's protected-route wrapper on the frontend,
 // but enforced here as well for direct API callers.
-const requireAuth = (req: any, res: any, next: any) => {
+const requireAuth = (req: Record<string, unknown>, res: Record<string, unknown>, next: Record<string, unknown>) => {
   if (!req.isAuthenticated()) return res.status(401).json({ ok: false, error: 'Unauthorized.' });
   next();
 };
@@ -128,7 +128,7 @@ router.get('/whois/:domain', async (req, res) => {
     }
     return res.json({ ok: true, domain: rows[0].domain, status: rows[0].status });
 
-  } catch (err: any) {
+  } catch (err) {
     logger.error({ err: err.message, domain }, '[WHOIS] lookup error');
     return res.status(500).json({ ok: false, error: 'WHOIS lookup failed.' });
   }
@@ -168,7 +168,7 @@ router.get('/search', async (req, res) => {
     });
 
     return res.json({ ok: true, name: raw, results, ns: NS });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] search error');
     return res.status(500).json({ ok: false, error: 'Search temporarily unavailable.' });
   }
@@ -181,7 +181,7 @@ router.use(requireAuth);
 
 router.post('/claim', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { domain, storefrontId } = req.body;
 
     if (!domain || typeof domain !== 'string') {
@@ -216,7 +216,7 @@ router.post('/claim', async (req, res) => {
     // Enforce quota + subscription (throws on violation)
     try {
       await enforceQuota(userId);
-    } catch (e: any) {
+    } catch (e) {
       return res.status(403).json({ ok: false, error: e.message, code: e.code });
     }
 
@@ -250,7 +250,7 @@ router.post('/claim', async (req, res) => {
           .update(storefronts)
           .set({ customDomain: domainLower, isCustomDomainActive: true })
           .where(eq(storefronts.id, storefrontId));
-      } catch (sfErr: any) {
+      } catch (sfErr: Record<string, unknown>) {
         logger.warn({ err: sfErr, storefrontId }, '[domainRegistrar] storefront update failed (non-fatal)');
       }
     }
@@ -275,7 +275,7 @@ router.post('/claim', async (req, res) => {
       ns:        NS,
       message:   result.message,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] claim error');
     const httpStatus = err.message?.includes('already') ? 409 : 500;
     return res.status(httpStatus).json({ ok: false, error: err.message || 'Registration failed.' });
@@ -286,7 +286,7 @@ router.post('/claim', async (req, res) => {
 
 router.get('/my-domains', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const domains = await db
       .select()
       .from(claimedDomains)
@@ -296,7 +296,7 @@ router.get('/my-domains', async (req, res) => {
     const quota = await getDomainQuota(userId);
 
     return res.json({ ok: true, domains, quota });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] my-domains error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }
@@ -306,7 +306,7 @@ router.get('/my-domains', async (req, res) => {
 
 router.get('/my-domains/:id', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const [row] = await db
       .select()
       .from(claimedDomains)
@@ -317,7 +317,7 @@ router.get('/my-domains/:id', async (req, res) => {
     if (row.userId !== userId) return res.status(403).json({ ok: false, error: 'Forbidden.' });
 
     return res.json({ ok: true, domain: row });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] get-domain error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }
@@ -327,14 +327,14 @@ router.get('/my-domains/:id', async (req, res) => {
 
 router.post('/my-domains/:id/release', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     await softReleaseDomain(req.params.id, userId);
 
     return res.json({
       ok:      true,
       message: 'Domain released. It will remain registered until natural expiry but no longer counts toward your quota.',
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] release error');
     const status = err.message?.includes('Forbidden') ? 403
       : err.message?.includes('not found') ? 404
@@ -347,7 +347,7 @@ router.post('/my-domains/:id/release', async (req, res) => {
 
 router.post('/my-domains/:id/renew', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const years  = Math.max(1, Math.min(10, Number(req.body.years ?? 1)));
 
     const [row] = await db
@@ -371,7 +371,7 @@ router.post('/my-domains/:id/renew', async (req, res) => {
     });
 
     return res.json({ ok: true, expiresAt: result.expiresAt, years });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] renew error');
     return res.status(500).json({ ok: false, error: err.message || 'Renewal failed.' });
   }
@@ -381,7 +381,7 @@ router.post('/my-domains/:id/renew', async (req, res) => {
 
 router.get('/my-domains/:id/events', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
 
     // Verify ownership
     const [row] = await db
@@ -395,7 +395,7 @@ router.get('/my-domains/:id/events', async (req, res) => {
 
     const events = await getDomainEvents(req.params.id, userId);
     return res.json({ ok: true, events });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] events error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }
@@ -405,7 +405,7 @@ router.get('/my-domains/:id/events', async (req, res) => {
 
 router.delete('/my-domains/:id', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const [row] = await db
       .select({ userId: claimedDomains.userId, domain: claimedDomains.domain })
       .from(claimedDomains)
@@ -420,12 +420,12 @@ router.delete('/my-domains/:id', async (req, res) => {
 
     try {
       await pool.query('DELETE FROM dns_zones WHERE domain = $1 AND user_id = $2', [row.domain, userId]);
-    } catch (zoneErr: any) {
+    } catch (zoneErr: Record<string, unknown>) {
       logger.warn({ err: zoneErr }, '[domainRegistrar] DNS zone cleanup failed (non-fatal)');
     }
 
     return res.json({ ok: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] delete error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }
@@ -435,7 +435,7 @@ router.delete('/my-domains/:id', async (req, res) => {
 
 router.get('/contacts', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const contacts = await db
       .select()
       .from(domainContacts)
@@ -449,7 +449,7 @@ router.get('/contacts', async (req, res) => {
     }
 
     return res.json({ ok: true, contacts });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] contacts error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }
@@ -457,7 +457,7 @@ router.get('/contacts', async (req, res) => {
 
 router.put('/contacts', async (req, res) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const { name, org, email, phone, address } = req.body;
 
     if (!name || !email) {
@@ -491,7 +491,7 @@ router.put('/contacts', async (req, res) => {
     await emitDomainEvent('DomainContactUpdated', '_contact', userId, '_profile', { name, email });
 
     return res.json({ ok: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[domainRegistrar] contacts update error');
     return res.status(500).json({ ok: false, error: 'Internal error.' });
   }

@@ -54,7 +54,7 @@ export default function ArtistProfileFixer({ open, onOpenChange, profile, onSubm
       setNotes('');
       onSubmitted();
     },
-    onError: (err: any) => toast({
+    onError: (err: Error) => toast({
       title: 'Failed to submit fixer request',
       description: err?.message ?? 'Please check the Spotify URI and try again.',
       variant: 'destructive',

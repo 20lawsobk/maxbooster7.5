@@ -222,7 +222,7 @@ router.get('/verify', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const prefs = user.preferences?.payout || {};
     const methods: string[] = [];
     
@@ -260,7 +260,7 @@ router.get('/preferences', async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
     
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const prefs = user.preferences?.payout || {};
     res.json({
       paypalEmail: prefs.paypalEmail || null,
@@ -289,7 +289,7 @@ router.post('/preferences/paypal', async (req, res) => {
       return res.status(400).json({ error: 'Valid PayPal email required' });
     }
     
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const currentPrefs = user.preferences || {};
     const updatedPrefs = {
       ...currentPrefs,
@@ -339,7 +339,7 @@ router.post('/preferences/bank', async (req, res) => {
       addedAt: new Date().toISOString()
     };
     
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const currentPrefs = user.preferences || {};
     const updatedPrefs = {
       ...currentPrefs,

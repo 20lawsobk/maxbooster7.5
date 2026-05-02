@@ -340,7 +340,7 @@ async function applyAudioToVideo(
 
   try {
     await execFileAsync(FFMPEG, ffmpegArgs, { timeout: 120_000 });
-  } catch (err: any) {
+  } catch (err) {
     const errMsg = err?.message || String(err);
     if (/No such filter|Invalid option|filter.*not found/i.test(errMsg)) {
       logger.warn('[ImageToVideo] Complex audio filters failed, retrying with safe chain');
@@ -406,7 +406,7 @@ async function combineImageScenes(
 // ── TEXT OVERLAYS FOR IMAGE VIDEO ─────────────────────────────────────────────
 function buildTextOverlays(
   hook: string, body: string, cta: string,
-  style: any,
+  style: Record<string, unknown>,
   width: number, height: number,
   sceneDuration: number,
   sceneType: 'hook' | 'body' | 'cta' | 'all',
@@ -501,7 +501,7 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
   }
 
   const templateKey  = (opts.template && TEMPLATE_STYLES[opts.template]) ? opts.template : 'cinematic_promo';
-  const style        = TEMPLATE_STYLES[templateKey] as any;
+  const style        = TEMPLATE_STYLES[templateKey] as Record<string, unknown>;
   const ratio        = opts.aspect_ratio || PLATFORM_RATIOS[opts.platform || 'tiktok'] || '9:16';
   const [width, height] = ASPECT_RATIOS[ratio] || [1080, 1920];
   const totalDur     = Math.max(4, Math.min(opts.duration || (imagePaths.length * 4), 60));
@@ -529,7 +529,7 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
         const cuts   = getBeatAlignedCuts(beatAnalysis, imagePaths.length, true);
         sceneDurations = cutsToSceneDurations(cuts, Math.min(totalDur, beatAnalysis.durationSeconds));
         logger.info(`[ImageToVideo] Beat sync — BPM=${beatAnalysis.bpm.toFixed(1)} tier=${beatAnalysis.tier}`);
-      } catch (e: any) {
+      } catch (e) {
         logger.warn('[ImageToVideo] Beat analysis failed, using equal durations:', e?.message);
         const perScene = totalDur / imagePaths.length;
         sceneDurations = imagePaths.map(() => perScene);
@@ -688,7 +688,7 @@ export async function imageToMusicVideo(opts: ImageToVideoOptions): Promise<Vide
       ],
     };
 
-  } catch (err: any) {
+  } catch (err) {
     cleanup(...tempFiles);
     logger.warn('[ImageToVideo] Render failed:', err?.stderr || err?.message);
     return { success: false, error: `Music video render failed: ${err?.message || 'FFmpeg error'}` };

@@ -43,7 +43,7 @@ class QueueMonitor {
   private readonly METRICS_RETENTION = 100;
   private readonly MONITORING_INTERVAL = 30000;
 
-  registerQueue(queueName: string, queue: any): void {
+  registerQueue(queueName: string, queue: Record<string, unknown>): void {
     this.queues.set(queueName, queue);
     this.metrics.set(queueName, []);
     logger.info(`📊 Queue monitor registered: ${queueName}`);

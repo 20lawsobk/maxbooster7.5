@@ -22,7 +22,7 @@ interface WorkflowData {
   progress: number;
   errorMessage: string | null;
   retryCount: number;
-  resultData: any | null;
+  resultData: Record<string, unknown> | null;
   isIntegrated: boolean;
   timestamp?: number;
 }

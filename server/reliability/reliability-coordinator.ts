@@ -9,10 +9,10 @@ interface SystemHealth {
   status: 'healthy' | 'degraded' | 'critical';
   uptime: number;
   components: {
-    process: any;
-    database: any;
-    memory: any;
-    server: any;
+    process: Record<string, unknown>;
+    database: Record<string, unknown>;
+    memory: Record<string, unknown>;
+    server: Record<string, unknown>;
   };
   alerts: unknown[];
   lastHealthCheck: Date;
@@ -111,7 +111,7 @@ class ReliabilityCoordinator extends EventEmitter {
     this.startHealthMonitoring();
 
     // Track global connection count
-    (global as any).activeConnections = 0;
+    (global as Record<string, unknown>).activeConnections = 0;
 
     logger.info('✅ 24/7/365 Reliability System ACTIVE');
     logger.info('📊 Monitoring: Process, Memory, Database, Health Checks');
@@ -194,7 +194,7 @@ class ReliabilityCoordinator extends EventEmitter {
         database: databaseHealth,
         memory: memoryHealth,
         server: {
-          activeConnections: (global as any).activeConnections || 0,
+          activeConnections: (global as Record<string, unknown>).activeConnections || 0,
           totalRequests: this.totalRequests,
           failedRequests: this.failedRequests,
         },
@@ -364,7 +364,7 @@ class ReliabilityCoordinator extends EventEmitter {
     return { ...this.systemHealth };
   }
 
-  getUptimeStats(): any {
+  getUptimeStats(): Record<string, unknown> {
     const uptimeMs = this.systemHealth.uptime;
     const uptimeHours = uptimeMs / (1000 * 60 * 60);
     const uptimeDays = uptimeHours / 24;

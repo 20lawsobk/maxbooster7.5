@@ -117,7 +117,7 @@ export async function softReleaseDomain(domainId: string, userId: string): Promi
   // Tell the registrar to stop auto-renewing (best-effort — internal provider just sets DB)
   try {
     await getRegistrarProvider().releaseDomain(row.domain);
-  } catch (e: any) {
+  } catch (e) {
     logger.warn({ domainId, err: e.message }, '[PolicyEngine] registrar.releaseDomain failed — updating DB only');
     await db
       .update(claimedDomains)
@@ -235,7 +235,7 @@ export async function emitDomainEvent(
        VALUES ($1, $2, $3, $4, $5)`,
       [domainId, userId, eventType, fqdn, JSON.stringify(metadata ?? {})]
     );
-  } catch (e: any) {
+  } catch (e) {
     // Event ledger failures must never block the main operation
     logger.warn({ eventType, domainId, err: e.message }, '[PolicyEngine] emitDomainEvent failed (non-fatal)');
   }

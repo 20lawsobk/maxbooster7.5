@@ -72,15 +72,15 @@ router.get('/status', requireAuth, async (req, res) => {
         .limit(10),
     ]).catch(() => [[], [], []]);
 
-    const totalCampaigns = Number((totalRow as any[])[0]?.value ?? 0);
-    const nextScheduledCampaign = (nextCampaignRow as any[])[0]?.startDate ?? null;
+    const totalCampaigns = Number((totalRow as { value?: number }[])[0]?.value ?? 0);
+    const nextScheduledCampaign = (nextCampaignRow as { startDate?: string }[])[0]?.startDate ?? null;
 
     // Aggregate reach and engagement from campaign performance JSON
     let totalReach = 0;
     let engagementRateSum = 0;
     let engagementRateCount = 0;
-    for (const c of (recentCampaignRows as any[])) {
-      const perf = c.performance as any;
+    for (const c of (recentCampaignRows as Record<string, unknown>[])) {
+      const perf = c.performance as Record<string, unknown>;
       if (perf) {
         totalReach += Number(perf.reach || perf.impressions || 0);
         const rate = perf.engagementRate || perf.engagement_rate;
@@ -89,7 +89,7 @@ router.get('/status', requireAuth, async (req, res) => {
     }
     const avgEngagementRate = engagementRateCount > 0 ? engagementRateSum / engagementRateCount : 0;
 
-    const recentActivity = (recentCampaignRows as any[]).map((c: any) => ({
+    const recentActivity = (recentCampaignRows as Record<string, unknown>[]).map((c: Record<string, unknown>) => ({
       status: c.status === 'active' || c.status === 'completed' ? 'completed' : c.status === 'failed' ? 'failed' : 'scheduled',
       title: c.name || 'Campaign',
       description: `${c.platform || 'multi-platform'} • ${c.objective || 'awareness'}`,
@@ -321,7 +321,7 @@ router.get('/performance', requireAuth, async (req, res) => {
         note: 'Estimates based on industry-avg $10 CPM and your real organic reach multiplier',
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Performance metrics error:');
     res.status(500).json({ error: 'Internal server error' });
   }

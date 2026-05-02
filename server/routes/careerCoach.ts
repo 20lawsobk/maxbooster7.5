@@ -40,7 +40,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
         lastAnalyzed: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching career coach recommendations:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -66,7 +66,7 @@ router.post('/dismiss/:id', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       message: 'Recommendation dismissed',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error dismissing recommendation:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -92,7 +92,7 @@ router.post('/complete/:id', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       message: 'Recommendation marked as completed',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error completing recommendation:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -120,7 +120,7 @@ router.get('/goals', requireAuth, asyncHandler(async (req, res) => {
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching career goals:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -152,7 +152,7 @@ router.post('/goals', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: goal,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error creating career goal:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -168,7 +168,7 @@ router.delete('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
     res.json({ success: true, message: 'Goal deleted' });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error deleting career goal:', error?.message);
     res.status(500).json({ error: 'Failed to delete goal' });
   }
@@ -194,7 +194,7 @@ router.put('/goals/:id', requireAuth, asyncHandler(async (req, res) => {
       return res.status(404).json({ success: false, message: 'Goal not found' });
     }
     res.json({ success: true, data: goal });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error updating career goal:', error?.message);
     res.status(500).json({ error: 'Failed to update goal' });
   }
@@ -223,7 +223,7 @@ router.post('/goals/smart', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: goal,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error creating SMART goal:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -257,7 +257,7 @@ router.patch('/goals/:id/progress', requireAuth, asyncHandler(async (req, res) =
       success: true,
       data: goal,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error updating goal progress:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -278,7 +278,7 @@ router.get('/analyze', requireAuth, asyncHandler(async (req, res) => {
         analyzedAt: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error analyzing career gaps:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -288,7 +288,7 @@ router.get('/patterns', requireAuth, asyncHandler(async (req, res) => {
   try {
     const patterns = careerCoachService.getPatternLibrary();
     res.json({ success: true, data: { patterns, total: patterns.length } });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching pattern library:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -385,7 +385,7 @@ router.get('/insights', requireAuth, asyncHandler(async (req, res) => {
         currentMonthStreams: currentStreams,
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching career insights:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

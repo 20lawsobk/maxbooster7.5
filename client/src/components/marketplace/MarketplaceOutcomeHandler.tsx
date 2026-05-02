@@ -52,7 +52,7 @@ interface OutcomeData {
   searchQuery?: string;
   resultCount?: number;
   filterName?: string;
-  recommendations?: any[];
+  recommendations?: unknown[];
   storefrontSlug?: string;
   followerCount?: number;
   payoutAmount?: number;
@@ -74,7 +74,7 @@ interface MarketplaceOutcomeHandlerProps {
 }
 
 const outcomeConfig: Record<OutcomeType, {
-  icon: any;
+  icon: React.ReactNode;
   title: string;
   variant: 'success' | 'error' | 'warning' | 'info';
   color: string;

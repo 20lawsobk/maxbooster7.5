@@ -57,7 +57,7 @@ function sanitizeString(input: string): string {
 /**
  * Validate and sanitize customization object
  */
-function sanitizeCustomization(customization: any): Record<string, any> {
+function sanitizeCustomization(customization: Record<string, unknown>): Record<string, any> {
   if (!customization || typeof customization !== 'object') {
     return {};
   }
@@ -117,12 +117,12 @@ function sanitizeCustomization(customization: any): Record<string, any> {
         sanitized[key] = linksObj;
       }
     } else if (Array.isArray(value) && key === 'socialLinks') {
-      sanitized[key] = value.filter((link: any) =>
+      sanitized[key] = value.filter((link: Record<string, unknown>) =>
         typeof link === 'object' &&
         typeof link.platform === 'string' &&
         typeof link.url === 'string' &&
         (link.url.startsWith('http://') || link.url.startsWith('https://'))
-      ).map((link: any) => ({
+      ).map((link: Record<string, unknown>) => ({
         platform: sanitizeString(link.platform),
         url: link.url,
       }));
@@ -135,7 +135,7 @@ function sanitizeCustomization(customization: any): Record<string, any> {
 /**
  * Validate and sanitize SEO object
  */
-function sanitizeSEO(seo: any): Record<string, any> {
+function sanitizeSEO(seo: Record<string, unknown>): Record<string, any> {
   if (!seo || typeof seo !== 'object') {
     return {};
   }
@@ -213,7 +213,7 @@ export interface CreateStorefrontInput {
   name: string;
   slug: string;
   templateId?: string;
-  customization?: any;
+  customization?: Record<string, unknown>;
 }
 
 export interface UpdateStorefrontInput {
@@ -224,8 +224,8 @@ export interface UpdateStorefrontInput {
   isSubdomainActive?: boolean;
   isCustomDomainActive?: boolean;
   templateId?: string;
-  customization?: any;
-  seo?: any;
+  customization?: Record<string, unknown>;
+  seo?: Record<string, unknown>;
   isActive?: boolean;
   isPublic?: boolean;
 }
@@ -237,7 +237,7 @@ export interface CreateMembershipTierInput {
   priceCents: number;
   currency?: string;
   interval: 'month' | 'year';
-  benefits?: any;
+  benefits?: Record<string, unknown>;
   maxSubscribers?: number;
 }
 
@@ -1053,8 +1053,8 @@ export class StorefrontService {
         limit: 50,
       });
 
-      return storefrontListings.map((listing: any) => {
-        const meta = (listing.metadata as any) || {};
+      return storefrontListings.map((listing: Record<string, unknown>) => {
+        const meta = (listing.metadata as Record<string, unknown>) || {};
         return {
           ...listing,
           coverArtUrl: listing.artworkUrl || '',

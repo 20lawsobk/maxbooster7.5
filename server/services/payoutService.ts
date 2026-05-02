@@ -174,8 +174,8 @@ export class PayoutService {
     // Persist to DB first
     await db
       .insert(systemSettings)
-      .values({ key: `payment_prefs:${preferences.userId}`, value: preferences as any })
-      .onConflictDoUpdate({ target: systemSettings.key, set: { value: preferences as any } });
+      .values({ key: `payment_prefs:${preferences.userId}`, value: preferences as Record<string, unknown> })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: preferences as unknown as Record<string, unknown> } });
     // Update in-process cache
     this.paymentPreferences.set(preferences.userId, { prefs: preferences, cachedAt: Date.now() });
     logger.info(`Updated payment preferences for user ${preferences.userId}`);

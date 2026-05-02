@@ -265,7 +265,7 @@ export const autoScalingManager = AutoScalingManager.getInstance();
 export const scalingMetricsRouter = Router();
 
 function requireAdminInline(req: Request, res: Response, next: () => void): void {
-  const user = (req as any).user;
+  const user = (req as Record<string, unknown>).user;
   if (!user || user.role !== 'admin') {
     res.status(403).json({ error: 'Admin access required' });
     return;

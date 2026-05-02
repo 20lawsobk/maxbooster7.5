@@ -217,7 +217,7 @@ class ContractTemplateService {
           variables: (row.variables ?? {}) as ContractVariables,
           createdBy: row.userId,
           parties: (row.parties ?? []) as GeneratedContract['parties'],
-          signatures: ((row.signatures ?? []) as any[]).map((s: any) => ({
+          signatures: ((row.signatures ?? []) as Record<string, unknown>[]).map((s: Record<string, unknown>) => ({
             partyName: s.partyName,
             signedAt: s.signedAt ? new Date(s.signedAt) : undefined,
             signatureHash: s.signatureHash,

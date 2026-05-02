@@ -175,7 +175,7 @@ class DesktopPushService {
           serialized
         );
         sent++;
-      } catch (error: any) {
+      } catch (error) {
         failed++;
         if (error.statusCode === 410 || error.statusCode === 404) {
           logger.info(`🖥️ Removing expired desktop subscription: ${sub.endpoint.substring(0, 60)}...`);

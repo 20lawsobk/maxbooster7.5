@@ -26,7 +26,7 @@ router.patch('/api/email-preferences', async (req: Request, res: Response) => {
 
     const { weeklyInsights, weeklyInsightsFrequency, marketingEmails, releaseAlerts, collaborationAlerts, revenueAlerts } = req.body;
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (typeof weeklyInsights === 'boolean') updates.weeklyInsights = weeklyInsights;
     if (typeof weeklyInsightsFrequency === 'string') updates.weeklyInsightsFrequency = weeklyInsightsFrequency;
     if (typeof marketingEmails === 'boolean') updates.marketingEmails = marketingEmails;

@@ -304,7 +304,7 @@ router.put('/admin/services/:serviceId/status', async (req, res) => {
         try {
           const statusLabel = status.replace(/_/g, ' ');
           await notificationService.sendAdminHealthAlertNotification(
-            (service as any)?.name || serviceId,
+            (service as Record<string, unknown>)?.name || serviceId,
             statusLabel
           );
         } catch (err) {

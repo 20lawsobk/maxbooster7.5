@@ -702,7 +702,7 @@ export function AutopilotDashboard() {
             <CardContent>
               {(status.recentActivity && status.recentActivity.length > 0) ? (
                 <div className="space-y-3">
-                  {status.recentActivity.map((activity: any, i: number) => (
+                  {status.recentActivity.map((activity: Record<string, unknown>, i: number) => (
                     <div key={i} className="flex items-center gap-3 p-3 bg-muted rounded-lg">
                       {activity.status === 'completed' ? (
                         <CheckCircle className="h-4 w-4 text-green-600" />

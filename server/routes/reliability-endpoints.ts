@@ -308,7 +308,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
 
   // Manual system controls (admin only)
   app.post('/api/system/gc', (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) return res.status(401).json({ error: 'Authentication required' });
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     try {
@@ -326,7 +326,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
   });
 
   app.post('/api/system/reset-circuit-breaker', (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) return res.status(401).json({ error: 'Authentication required' });
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     try {
@@ -428,7 +428,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
   });
 
   app.post('/api/health/circuits/:name/reset', (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) return res.status(401).json({ error: 'Authentication required' });
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     try {
@@ -455,7 +455,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
   });
 
   app.post('/api/health/circuits/reset-all', (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) return res.status(401).json({ error: 'Authentication required' });
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     try {
@@ -474,7 +474,7 @@ export function setupReliabilityEndpoints(app: Express, requireAuth?: unknown): 
   });
 
   app.delete('/api/health/retry-queue', (req: Request, res: Response) => {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) return res.status(401).json({ error: 'Authentication required' });
     if (user.role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
     try {

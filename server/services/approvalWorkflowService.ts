@@ -40,7 +40,7 @@ export interface EscalationPolicy {
 export interface WorkflowCondition {
   field: string;
   operator: 'equals' | 'greater_than' | 'less_than' | 'contains';
-  value: any;
+  value: Record<string, unknown>;
 }
 
 interface CreateWorkflowParams {
@@ -657,7 +657,7 @@ export class ApprovalWorkflowService {
     return mapping[resourceType] || 'release';
   }
 
-  private async logAuditEvent(params: any): Promise<void> {
+  private async logAuditEvent(params: Record<string, unknown>): Promise<void> {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {

@@ -32,7 +32,7 @@ export interface BulkEditField {
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
   description?: string;
-  validation?: (value: any) => string | null;
+  validation?: (value: Record<string, unknown>) => string | null;
   min?: number;
   max?: number;
   step?: number;
@@ -40,9 +40,9 @@ export interface BulkEditField {
 
 export interface FieldValue {
   enabled: boolean;
-  value: any;
+  value: Record<string, unknown>;
   hasMultipleValues: boolean;
-  originalValues?: any[];
+  originalValues?: Record<string, unknown>[];
 }
 
 export interface BulkEditFormProps<T extends Record<string, any>> {
@@ -105,7 +105,7 @@ export function BulkEditForm<T extends Record<string, any>>({
   }, []);
 
   const updateValue = useCallback(
-    (key: string, value: any) => {
+    (key: string, value: Record<string, unknown>) => {
       setFieldValues((prev) => ({
         ...prev,
         [key]: { ...prev[key], value, hasMultipleValues: false },
@@ -293,7 +293,7 @@ export function BulkEditForm<T extends Record<string, any>>({
   );
 }
 
-function getDefaultValue(field: BulkEditField): any {
+function getDefaultValue(field: BulkEditField): unknown {
   switch (field.type) {
     case 'checkbox':
       return false;
@@ -308,7 +308,7 @@ function getDefaultValue(field: BulkEditField): any {
   }
 }
 
-function formatValue(value: any, type: string): string {
+function formatValue(value: Record<string, unknown>, type: string): string {
   if (value === null || value === undefined) return '(empty)';
   if (type === 'checkbox') return value ? 'Yes' : 'No';
   if (Array.isArray(value)) return value.join(', ') || '(empty)';
@@ -318,7 +318,7 @@ function formatValue(value: any, type: string): string {
 function renderFieldInput(
   field: BulkEditField,
   fieldValue: FieldValue,
-  onChange: (value: any) => void
+  onChange: (value: Record<string, unknown>) => void
 ) {
   const { value, hasMultipleValues } = fieldValue;
 

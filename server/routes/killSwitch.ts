@@ -14,7 +14,7 @@ const router = Router();
 
 // Middleware to require admin role
 const requireAdmin = (req: Request, res: Response, next: Function) => {
-  const user = req.user as any;
+  const user = req.user as Record<string, unknown>;
   if (!user || user.role !== 'admin') {
     logger.warn(`[KillSwitch] Unauthorized access attempt by user: ${user?.id || 'anonymous'}`);
     return res.status(403).json({ 
@@ -27,7 +27,7 @@ const requireAdmin = (req: Request, res: Response, next: Function) => {
 
 // All kill-switch ops require admin role AND 2FA verification.
 // An admin with 2FA enabled must have completed 2FA in the current session.
-router.use(requireAdmin as any, require2FA);
+router.use(requireAdmin as Record<string, unknown>, require2FA);
 
 /**
  * GET /api/kill-switch/status
@@ -49,7 +49,7 @@ router.get('/status', requireAdmin, (req: Request, res: Response) => {
         auditLog: state.auditLog.slice(-20),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[KillSwitch] Failed to get status:');
     res.status(500).json({ success: false, error: 'Failed to get kill switch status' });
   }
@@ -61,7 +61,7 @@ router.get('/status', requireAdmin, (req: Request, res: Response) => {
  */
 router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
   try {
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const { reason } = req.body;
 
     if (!reason || typeof reason !== 'string' || reason.length < 5) {
@@ -80,7 +80,7 @@ router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
         : 'Some systems failed to stop - check logs',
       state: killSwitch.getState(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[KillSwitch] Failed to kill all:');
     res.status(500).json({ success: false, error: 'Failed to activate kill switch' });
   }
@@ -92,7 +92,7 @@ router.post('/kill-all', requireAdmin, (req: Request, res: Response) => {
  */
 router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
   try {
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const { reason } = req.body;
 
     if (!reason || typeof reason !== 'string' || reason.length < 5) {
@@ -111,7 +111,7 @@ router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
         : 'Some systems failed to resume - check logs',
       state: killSwitch.getState(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[KillSwitch] Failed to resume all:');
     res.status(500).json({ success: false, error: 'Failed to resume systems' });
   }
@@ -123,7 +123,7 @@ router.post('/resume-all', requireAdmin, (req: Request, res: Response) => {
  */
 router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
   try {
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const systemName = req.params.system as AutonomousSystemName;
     const { reason } = req.body;
 
@@ -143,7 +143,7 @@ router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
         : `Failed to stop ${systemName}`,
       state: killSwitch.getState(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, `[KillSwitch] Failed to kill system ${req.params.system}:`);
     res.status(500).json({ success: false, error: 'Failed to stop system' });
   }
@@ -155,7 +155,7 @@ router.post('/kill/:system', requireAdmin, (req: Request, res: Response) => {
  */
 router.post('/resume/:system', requireAdmin, (req: Request, res: Response) => {
   try {
-    const user = req.user as any;
+    const user = req.user as Record<string, unknown>;
     const systemName = req.params.system as AutonomousSystemName;
     const { reason } = req.body;
 
@@ -175,7 +175,7 @@ router.post('/resume/:system', requireAdmin, (req: Request, res: Response) => {
         : `Failed to resume ${systemName}`,
       state: killSwitch.getState(),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, `[KillSwitch] Failed to resume system ${req.params.system}:`);
     res.status(500).json({ success: false, error: 'Failed to resume system' });
   }
@@ -195,7 +195,7 @@ router.get('/audit-log', requireAdmin, (req: Request, res: Response) => {
       data: auditLog,
       total: auditLog.length,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[KillSwitch] Failed to get audit log:');
     res.status(500).json({ success: false, error: 'Failed to get audit log' });
   }

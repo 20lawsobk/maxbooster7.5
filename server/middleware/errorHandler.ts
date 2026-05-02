@@ -48,7 +48,7 @@ interface NormalizedError {
   status?: number;
   code?: string;
   isOperational: boolean;
-  issues?: any[];
+  issues?: unknown[];
   context?: Record<string, any>;
 }
 
@@ -66,7 +66,7 @@ function normalizeError(err: unknown): NormalizedError {
   }
 
   if (err instanceof Error) {
-    const anyErr = err as any;
+    const anyErr = err as Record<string, unknown>;
     return {
       name: err.name,
       message: err.message,
@@ -81,7 +81,7 @@ function normalizeError(err: unknown): NormalizedError {
   }
 
   if (err && typeof err === 'object') {
-    const anyErr = err as any;
+    const anyErr = err as Record<string, unknown>;
     return {
       name: typeof anyErr.name === 'string' ? anyErr.name : 'UnknownError',
       message: typeof anyErr.message === 'string' ? anyErr.message : String(err),
@@ -104,7 +104,7 @@ function normalizeError(err: unknown): NormalizedError {
 
 function extractReasonInfo(reason: unknown): { message: string; code?: string; stack?: string } {
   if (reason instanceof Error) {
-    const anyReason = reason as any;
+    const anyReason = reason as Record<string, unknown>;
     return {
       message: reason.message,
       code: typeof anyReason.code === 'string' ? anyReason.code : undefined,
@@ -112,7 +112,7 @@ function extractReasonInfo(reason: unknown): { message: string; code?: string; s
     };
   }
   if (reason && typeof reason === 'object') {
-    const anyReason = reason as any;
+    const anyReason = reason as Record<string, unknown>;
     return {
       message: typeof anyReason.message === 'string' ? anyReason.message : String(reason),
       code: typeof anyReason.code === 'string' ? anyReason.code : undefined,
@@ -214,8 +214,8 @@ export function globalErrorHandler(
 
   auditLogger.log({
     timestamp: new Date().toISOString(),
-    userId: (req as any).user?.id,
-    userEmail: (req as any).user?.email,
+    userId: (req as Record<string, unknown>).user?.id,
+    userEmail: (req as Record<string, unknown>).user?.email,
     ip: req.ip || 'unknown',
     userAgent: req.get('user-agent') || 'unknown',
     action: 'ERROR_HANDLED',
@@ -248,7 +248,7 @@ export function globalErrorHandler(
       error: normalized.message,
       stack: normalized.stack,
       context: normalized.context,
-      userId: (req as any).user?.id,
+      userId: (req as Record<string, unknown>).user?.id,
       ip: req.ip,
     });
   }

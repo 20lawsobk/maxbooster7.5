@@ -135,12 +135,12 @@ export class BoosterStateClient {
     return data.removed ?? 0;
   }
 
-  async queuePush(queue: string, data: any, priority?: number): Promise<string | null> {
+  async queuePush(queue: string, data: Record<string, unknown>, priority?: number): Promise<string | null> {
     const result = await post('/queue/push', { queue, data, priority });
     return result.id ?? null;
   }
 
-  async queuePop(queue: string): Promise<{ id: string; data: any } | null> {
+  async queuePop(queue: string): Promise<{ id: string; data: Record<string, unknown> } | null> {
     const result = await post('/queue/pop', { queue });
     return result.item ?? null;
   }

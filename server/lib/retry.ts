@@ -45,7 +45,7 @@ export async function withRetry<T>(fn: () => Promise<T>, opts: RetryOptions = {}
       const delay = jitter ? Math.floor(expo / 2 + Math.random() * (expo / 2)) : expo;
       opts.onRetry?.(err, attempt + 1, delay);
       logger.debug?.(
-        { attempt: attempt + 1, retries, delayMs: delay, label: opts.label, err: (err as any)?.message },
+        { attempt: attempt + 1, retries, delayMs: delay, label: opts.label, err: (err as Record<string, unknown>)?.message },
         '[retry] retrying'
       );
       await sleep(delay);

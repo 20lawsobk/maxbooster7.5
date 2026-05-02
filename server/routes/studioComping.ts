@@ -99,7 +99,7 @@ async function verifyProjectOwnership(projectId: string, userId: string): Promis
 router.post('/projects/:projectId/comping/groups', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -115,8 +115,8 @@ router.post('/projects/:projectId/comping/groups', requireAuth, async (req, res)
     res.status(201).json(takeGroup);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating take group:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to create take group' });
   }
@@ -125,7 +125,7 @@ router.post('/projects/:projectId/comping/groups', requireAuth, async (req, res)
 router.get('/projects/:projectId/comping/groups', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -142,7 +142,7 @@ router.get('/projects/:projectId/comping/groups', requireAuth, async (req, res) 
 router.get('/projects/:projectId/comping/groups/:groupId', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -163,7 +163,7 @@ router.get('/projects/:projectId/comping/groups/:groupId', requireAuth, async (r
 router.put('/projects/:projectId/comping/groups/:groupId', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -175,8 +175,8 @@ router.put('/projects/:projectId/comping/groups/:groupId', requireAuth, async (r
     res.json(takeGroup);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating take group:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update take group' });
   }
@@ -185,7 +185,7 @@ router.put('/projects/:projectId/comping/groups/:groupId', requireAuth, async (r
 router.delete('/projects/:projectId/comping/groups/:groupId', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -202,7 +202,7 @@ router.delete('/projects/:projectId/comping/groups/:groupId', requireAuth, async
 router.post('/projects/:projectId/comping/groups/:groupId/duplicate', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -219,7 +219,7 @@ router.post('/projects/:projectId/comping/groups/:groupId/duplicate', requireAut
 router.post('/projects/:projectId/comping/lanes', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -231,8 +231,8 @@ router.post('/projects/:projectId/comping/lanes', requireAuth, async (req, res) 
     res.status(201).json(takeLane);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating take lane:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to create take lane' });
   }
@@ -241,7 +241,7 @@ router.post('/projects/:projectId/comping/lanes', requireAuth, async (req, res) 
 router.get('/projects/:projectId/comping/groups/:groupId/lanes', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -258,7 +258,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/lanes', requireAuth, as
 router.put('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (req, res) => {
   try {
     const { projectId, laneId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -270,8 +270,8 @@ router.put('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (req
     res.json(lane);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating take lane:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update take lane' });
   }
@@ -280,7 +280,7 @@ router.put('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (req
 router.delete('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (req, res) => {
   try {
     const { projectId, laneId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -297,7 +297,7 @@ router.delete('/projects/:projectId/comping/lanes/:laneId', requireAuth, async (
 router.put('/projects/:projectId/comping/groups/:groupId/lanes/reorder', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -309,8 +309,8 @@ router.put('/projects/:projectId/comping/groups/:groupId/lanes/reorder', require
     res.json({ success: true });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error reordering lanes:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to reorder lanes' });
   }
@@ -319,7 +319,7 @@ router.put('/projects/:projectId/comping/groups/:groupId/lanes/reorder', require
 router.post('/projects/:projectId/comping/segments', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -331,8 +331,8 @@ router.post('/projects/:projectId/comping/segments', requireAuth, async (req, re
     res.status(201).json(segment);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating take segment:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to create take segment' });
   }
@@ -341,7 +341,7 @@ router.post('/projects/:projectId/comping/segments', requireAuth, async (req, re
 router.get('/projects/:projectId/comping/groups/:groupId/segments', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -358,7 +358,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/segments', requireAuth,
 router.put('/projects/:projectId/comping/segments/:segmentId', requireAuth, async (req, res) => {
   try {
     const { projectId, segmentId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -370,8 +370,8 @@ router.put('/projects/:projectId/comping/segments/:segmentId', requireAuth, asyn
     res.json(segment);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating take segment:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update take segment' });
   }
@@ -380,7 +380,7 @@ router.put('/projects/:projectId/comping/segments/:segmentId', requireAuth, asyn
 router.delete('/projects/:projectId/comping/segments/:segmentId', requireAuth, async (req, res) => {
   try {
     const { projectId, segmentId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -397,7 +397,7 @@ router.delete('/projects/:projectId/comping/segments/:segmentId', requireAuth, a
 router.post('/projects/:projectId/comping/groups/:groupId/versions', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -412,8 +412,8 @@ router.post('/projects/:projectId/comping/groups/:groupId/versions', requireAuth
     res.status(201).json(version);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating comp version:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to create comp version' });
   }
@@ -422,7 +422,7 @@ router.post('/projects/:projectId/comping/groups/:groupId/versions', requireAuth
 router.get('/projects/:projectId/comping/groups/:groupId/versions', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -439,7 +439,7 @@ router.get('/projects/:projectId/comping/groups/:groupId/versions', requireAuth,
 router.put('/projects/:projectId/comping/groups/:groupId/versions/:versionId/activate', requireAuth, async (req, res) => {
   try {
     const { projectId, groupId, versionId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -456,7 +456,7 @@ router.put('/projects/:projectId/comping/groups/:groupId/versions/:versionId/act
 router.delete('/projects/:projectId/comping/versions/:versionId', requireAuth, async (req, res) => {
   try {
     const { projectId, versionId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -477,7 +477,7 @@ router.post('/projects/:projectId/comping/render', requireAuth, async (req, res)
   try {
     const { projectId } = req.params;
     const { groupId } = req.body;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!groupId) {
       return res.status(400).json({ error: 'groupId is required' });

@@ -150,7 +150,7 @@ export function PluginOutcomes({
       setTimeout(() => {
         setLoadingStates(prev => prev.filter(s => s.pluginId !== plugin.id));
       }, 2000);
-    } catch (error: any) {
+    } catch (error) {
       setLoadingStates(prev => prev.map(s => 
         s.pluginId === plugin.id 
           ? { ...s, state: 'error', error: error.message || 'Failed to load plugin' }
@@ -185,7 +185,7 @@ export function PluginOutcomes({
       });
       
       setShowPresetDialog(false);
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Failed to Apply Preset',
         description: error.message || 'An error occurred',
@@ -213,7 +213,7 @@ export function PluginOutcomes({
       
       setShowSavePresetDialog(false);
       setNewPresetName('');
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Failed to Save Preset',
         description: error.message || 'An error occurred',

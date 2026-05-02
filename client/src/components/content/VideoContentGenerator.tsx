@@ -460,7 +460,7 @@ export function VideoContentGenerator({
       });
       
       onVideoGenerated(videoUrl, result.blob);
-    } catch (error: any) {
+    } catch (error) {
       if (error.code === 'ABORTED') {
         setPhase('ready');
         return;

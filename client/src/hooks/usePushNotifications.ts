@@ -146,7 +146,7 @@ export function usePushNotifications() {
       });
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Push subscription failed:', error);
       toast({
         title: 'Subscription Failed',
@@ -184,7 +184,7 @@ export function usePushNotifications() {
       });
 
       return true;
-    } catch (error: any) {
+    } catch (error) {
       logger.error('Push unsubscribe failed:', error);
       toast({
         title: 'Unsubscribe Failed',

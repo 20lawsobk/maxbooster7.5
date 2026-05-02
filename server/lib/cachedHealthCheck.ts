@@ -124,7 +124,7 @@ export function getLivenessProbe() {
 /**
  * Readiness probe with minimal caching (10s)
  */
-export async function getReadinessProbe(): Promise<{ ready: boolean; checks: any }> {
+export async function getReadinessProbe(): Promise<{ ready: boolean; checks: Record<string, unknown> }> {
   const health = await getCachedHealthCheck(10); // 10 second cache
 
   return {

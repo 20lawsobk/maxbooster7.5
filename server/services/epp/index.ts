@@ -88,7 +88,7 @@ export class EppSession {
     try {
       await this.ensureConnected();
       return await this._send(xml);
-    } catch (err: any) {
+    } catch (err) {
       // Mark session as dead so next call reconnects
       this.loggedIn = false;
       throw err;
@@ -104,8 +104,8 @@ export class EppSession {
 
     const avail = resp.resData?.chkData;
     if (!avail) return false;
-    const cds: any[] = Array.isArray(avail.cd) ? avail.cd : [avail.cd];
-    const match = cds.find((cd: any) => {
+    const cds: unknown[] = Array.isArray(avail.cd) ? avail.cd : [avail.cd];
+    const match = cds.find((cd: Record<string, unknown>) => {
       const n = cd?.name;
       return (typeof n === 'string' ? n : n?.['#text'] ?? n?.['$text'] ?? '') === fqdn;
     });
@@ -118,11 +118,11 @@ export class EppSession {
     return this.execute(EppCommands.domainInfo(fqdn, this.trid()));
   }
 
-  async createContact(id: string, contact: any): Promise<EppResponse> {
+  async createContact(id: string, contact: Record<string, unknown>): Promise<EppResponse> {
     return this.execute(EppCommands.contactCreate(id, contact, this.trid()));
   }
 
-  async registerDomain(params: any): Promise<EppResponse> {
+  async registerDomain(params: Record<string, unknown>): Promise<EppResponse> {
     return this.execute(EppCommands.domainCreate(params, this.trid()));
   }
 

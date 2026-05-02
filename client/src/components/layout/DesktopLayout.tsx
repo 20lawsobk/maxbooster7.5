@@ -103,21 +103,21 @@ export function DesktopLayout({
   };
 
   const handleMinimize = () => {
-    if (isElectron() && (window as any).electronAPI?.minimize) {
-      (window as any).electronAPI.minimize();
+    if (isElectron() && (window as Record<string, unknown>).electronAPI?.minimize) {
+      (window as Record<string, unknown>).electronAPI.minimize();
     }
   };
 
   const handleMaximize = () => {
-    if (isElectron() && (window as any).electronAPI?.maximize) {
-      (window as any).electronAPI.maximize();
+    if (isElectron() && (window as Record<string, unknown>).electronAPI?.maximize) {
+      (window as Record<string, unknown>).electronAPI.maximize();
       setIsMaximized(!isMaximized);
     }
   };
 
   const handleClose = () => {
-    if (isElectron() && (window as any).electronAPI?.close) {
-      (window as any).electronAPI.close();
+    if (isElectron() && (window as Record<string, unknown>).electronAPI?.close) {
+      (window as Record<string, unknown>).electronAPI.close();
     }
   };
 

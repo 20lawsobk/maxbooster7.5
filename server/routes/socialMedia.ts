@@ -112,7 +112,7 @@ const router = Router();
 
 interface FFmpegJob {
   status: 'processing' | 'done' | 'error';
-  result?: any;
+  result?: Record<string, unknown>;
   error?: string;
   createdAt: number;
 }
@@ -457,7 +457,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
     const stalePlatforms: string[] = [];
     for (const conn of connections) {
       if (conn.isActive) {
-        const meta = conn.metadata as any;
+        const meta = conn.metadata as Record<string, unknown>;
         const lastSync = meta?.lastSyncedAt
           ? new Date(meta.lastSyncedAt).getTime()
           : conn.createdAt ? new Date(conn.createdAt).getTime() : 0;
@@ -472,7 +472,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
       const uniquePlatforms = new Set<string>();
       const hasPreBootStale = stalePlatforms.some(p => {
         const conn = connections.find(c => c.platform === p);
-        const meta = conn?.metadata as any;
+        const meta = conn?.metadata as Record<string, unknown>;
         const lastSync = meta?.lastSyncedAt ? new Date(meta.lastSyncedAt).getTime() : 0;
         return lastSync < SERVER_BOOT_MS;
       });
@@ -536,8 +536,8 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         const igFollowers = ig?.followerCount || 0;
         const followers = fbFollowers + igFollowers;
 
-        const fbMeta = fb?.metadata as any;
-        const igMeta = ig?.metadata as any;
+        const fbMeta = fb?.metadata as Record<string, unknown>;
+        const igMeta = ig?.metadata as Record<string, unknown>;
 
         // Average engagement across both (only include platforms with real data)
         const rates = [fbMeta?.engagementRate, igMeta?.engagementRate].filter(r => typeof r === 'number' && r > 0);
@@ -586,7 +586,7 @@ router.get('/platform-status', requireAuth, async (req: AuthenticatedRequest, re
         };
       }
       const conn = connectionMap.get(platform.id);
-      const connMeta = conn?.metadata as any;
+      const connMeta = conn?.metadata as Record<string, unknown>;
       const engagement = typeof connMeta?.engagementRate === 'number' ? connMeta.engagementRate : 0;
       const needsReconnect = !!connMeta?.needsReconnect;
       return {
@@ -694,8 +694,8 @@ router.get('/hashtags/trending', requireAuth, async (req: AuthenticatedRequest, 
       topic: 'trending music hashtags for social media marketing',
       platform: 'instagram',
       tone: 'energetic',
-      genre: (user as any)?.genre || 'music',
-      artist_name: (user as any)?.artistName || '',
+      genre: (user as Record<string, unknown>)?.genre as string || 'music',
+      artist_name: (user as Record<string, unknown>)?.artistName as string || '',
       includeHashtags: true,
       extraContext: 'Return a diverse list of trending music hashtags across categories: general music, production, hip-hop, R&B, promotion, indie. Include high-reach and niche tags.',
     });
@@ -1277,9 +1277,9 @@ router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequ
       ...scheduledPosts
         .filter(p => !calendarPostIds.has(p.id))
         .map(p => {
-          const eng = (p.engagement as any) || {};
+          const eng = (p.engagement as Record<string, unknown>) || {};
           const meta = eng._autopilotMeta ? eng : {};
-          let parsedContent: any = {};
+          let parsedContent: Record<string, unknown> = {};
           try { parsedContent = JSON.parse(p.content ?? '{}'); } catch { parsedContent = {}; }
           const contentObj = meta.content || parsedContent || {};
           const titleText = contentObj.text || contentObj.caption || (p.content?.slice(0, 80)) || '(no caption)';
@@ -1305,7 +1305,7 @@ router.get('/unified-calendar/posts', requireAuth, async (req: AuthenticatedRequ
         status: c.status,
         scheduledAt: c.scheduledAt,
         publishedAt: c.publishedAt,
-        content: (c.content as any)?.body ?? null,
+        content: (c.content as Record<string, unknown>)?.body as string ?? null,
         mediaUrls: c.mediaUrls ?? [],
         source: 'calendar' as const,
       })),
@@ -1446,7 +1446,7 @@ router.post('/generate-content', requireAuthOnly, async (req: AuthenticatedReque
             platform,
             topic:           topic || 'music',
             contentType:     contentTypeMap[contentType] || 'engagement',
-            userId:          (req as any).user?.id,
+            userId:          req.user?.id,
             includeHashtags: true,
             includeEmojis:   true,
           });
@@ -1757,7 +1757,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     // SSRF guard — block private/internal targets before spawning Python subprocess
     try {
       assertSafeExternalUrl(url.trim());
-    } catch (ssrfErr: any) {
+    } catch (ssrfErr) {
       return res.status(400).json({ error: ssrfErr?.message || 'Invalid URL' });
     }
 
@@ -1767,7 +1767,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
     let analysis: import('../services/mediaAnalyzerService.js').UrlAnalysis;
     try {
       analysis = await analyzeUrl(url.trim());
-    } catch (analyzeErr: any) {
+    } catch (analyzeErr) {
       logger.warn('[generate-from-url] URL analysis failed — using URL-derived stub:', analyzeErr?.message);
       const parsedUrl = (() => { try { return new URL(url.trim()); } catch { return null; } })();
       const domain = parsedUrl?.hostname.replace(/^www\./, '') || url;
@@ -1795,7 +1795,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
         apple_music_type: '', apple_music_id: '',
         data_sources: ['url_fallback'],
         error: analyzeErr?.message,
-      } as any;
+      } as Record<string, unknown>;
     }
     const seed = urlToContentSeed(analysis);
 
@@ -1820,7 +1820,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
 
     const validPlatforms = ['instagram', 'twitter', 'facebook', 'tiktok', 'youtube', 'linkedin', 'threads', 'googlebusiness'];
     const validTones = ['professional', 'casual', 'energetic', 'promotional'];
-    const generatedContent: any[] = [];
+    const generatedContent: Record<string, unknown>[] = [];
 
     // Combine keywords + tags from URL analysis into a deduplicated keyword list
     const allKeywords = [...new Set([
@@ -1861,7 +1861,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
             description:     analysis.description?.slice(0, 200) || undefined,
             bodyPreview:     seed.body_preview?.slice(0, 300) || undefined,
             extraContext:    extraParts.length ? extraParts.join(' | ') : undefined,
-            userId:          (req as any).user?.id,
+            userId:          req.user?.id,
             includeHashtags: true,
             includeEmojis:   true,
           });
@@ -1920,7 +1920,7 @@ router.post('/generate-from-url', requireAuthOnly, async (req: AuthenticatedRequ
           genre:           seed.genre || 'hip-hop',
           artistName:      seed.artist || '',
           trackTitle:      seed.track  || '',
-          userId:          (req as any).user?.id,
+          userId:          req.user?.id,
           includeHashtags: true,
           includeEmojis:   true,
         });
@@ -2020,8 +2020,8 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
     const stalePlatforms = new Set<string>();
     for (const acc of accounts) {
       if (!acc.isActive) continue;
-      const lastSynced = (acc.metadata as any)?.lastSyncedAt
-        ? new Date((acc.metadata as any).lastSyncedAt).getTime()
+      const lastSynced = (acc.metadata as Record<string, unknown>)?.lastSyncedAt
+        ? new Date((acc.metadata as Record<string, unknown>).lastSyncedAt).getTime()
         : acc.createdAt ? new Date(acc.createdAt).getTime() : 0;
       if (now - lastSynced > ONE_HOUR_MS) {
         stalePlatforms.add(acc.platform === 'facebook' || acc.platform === 'instagram' ? 'meta' : acc.platform);
@@ -2038,7 +2038,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
     const platformEngagement: Record<string, { likes: number; comments: number; shares: number; views: number; posts: number }> = {};
 
     for (const post of periodPosts) {
-      const eng = post.engagement as any;
+      const eng = post.engagement as Record<string, unknown>;
       if (eng) {
         const pl = (post.platform || 'unknown').toLowerCase();
         if (!platformEngagement[pl]) platformEngagement[pl] = { likes: 0, comments: 0, shares: 0, views: 0, posts: 0 };
@@ -2057,7 +2057,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
     }
 
     for (const content of autopilotContent) {
-      const perf = content.performance as any;
+      const perf = content.performance as Record<string, unknown>;
       if (perf) {
         const pl = (content.platform || 'unknown').toLowerCase();
         if (!platformEngagement[pl]) platformEngagement[pl] = { likes: 0, comments: 0, shares: 0, views: 0, posts: 0 };
@@ -2107,7 +2107,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
       const d = new Date(post.createdAt!).toISOString().split('T')[0];
       if (dailyMap[d]) {
         dailyMap[d].posts += 1;
-        const eng = post.engagement as any;
+        const eng = post.engagement as Record<string, unknown>;
         if (eng) {
           dailyMap[d].engagement += (eng.likes || 0) + (eng.comments || 0) + (eng.shares || 0);
           dailyMap[d].views += eng.views || 0;
@@ -2118,7 +2118,7 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
       const d = new Date(content.createdAt!).toISOString().split('T')[0];
       if (dailyMap[d]) {
         dailyMap[d].posts += 1;
-        const perf = content.performance as any;
+        const perf = content.performance as Record<string, unknown>;
         if (perf) {
           dailyMap[d].engagement += (perf.likes || 0) + (perf.comments || 0) + (perf.shares || 0);
           dailyMap[d].views += perf.views || 0;
@@ -2134,15 +2134,15 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
         content: p.content?.substring(0, 120) || '',
         publishedAt: p.publishedAt || p.createdAt,
         engagement: (() => {
-          const e = p.engagement as any;
+          const e = p.engagement as Record<string, unknown>;
           return e ? (e.likes || 0) + (e.comments || 0) + (e.shares || 0) : 0;
         })(),
-        views: (p.engagement as any)?.views || 0,
+        views: (p.engagement as Record<string, unknown>)?.views || 0,
       })),
     ].sort((a, b) => b.engagement - a.engagement).slice(0, 10);
 
     // Spotify artist data if connected
-    let spotifyStats: any = null;
+    let spotifyStats: Record<string, unknown> | null = null;
     const profile = artistProfile[0];
     if (profile?.spotifyArtistId) {
       try {
@@ -2156,13 +2156,13 @@ router.get('/analytics', requireAuth, async (req: AuthenticatedRequest, res: Res
             signal: AbortSignal.timeout(6000),
           });
           if (tokenRes.ok) {
-            const { access_token } = await tokenRes.json() as any;
+            const { access_token } = await tokenRes.json() as { access_token: string };
             const artistRes = await fetch(`https://api.spotify.com/v1/artists/${profile.spotifyArtistId}`, {
               headers: { Authorization: `Bearer ${access_token}` },
               signal: AbortSignal.timeout(6000),
             });
             if (artistRes.ok) {
-              const artist = await artistRes.json() as any;
+              const artist = await artistRes.json() as Record<string, unknown>;
               spotifyStats = {
                 followers: artist.followers?.total || 0,
                 popularity: artist.popularity || 0,
@@ -2266,8 +2266,8 @@ router.post('/generate-video', requireAuthOnly, aiRateLimiter, async (req: Authe
           let scriptSource = 'template';
           try {
             const scriptResult = await (await getUnifiedAI()).generateContent({
-              platform: (platform || 'tiktok') as any,
-              tone: (tone || 'energetic') as any,
+              platform: (platform || 'tiktok') as string,
+              tone: (tone || 'energetic') as string,
               topic: resolvedTopic,
               contentType: (goal === 'sales' || goal === 'traffic')
                 ? 'promotional'
@@ -2278,7 +2278,7 @@ router.post('/generate-video', requireAuthOnly, aiRateLimiter, async (req: Authe
             });
 
             if (scriptResult.success && scriptResult.data) {
-              const d = scriptResult.data as any;
+              const d = scriptResult.data as Record<string, unknown>;
               hook = (d.hook || d.caption || '').slice(0, 80);
               body = (d.body || d.caption || '').split('\n')[0].slice(0, 120);
               cta  = (d.cta || '').slice(0, 60);
@@ -2335,8 +2335,8 @@ router.post('/generate-video', requireAuthOnly, aiRateLimiter, async (req: Authe
           ffmpegJobs.set(jobId, { status: 'error', error: errMsg, createdAt: Date.now() });
           logger.warn(`[VideoGen] Job ${jobId} FAILED — ${errMsg}`);
         }
-      } catch (err: any) {
-        ffmpegJobs.set(jobId, { status: 'error', error: err?.message || 'Video generation failed', createdAt: Date.now() });
+      } catch (err) {
+        ffmpegJobs.set(jobId, { status: 'error', error: (err instanceof Error ? err.message : undefined) || 'Video generation failed', createdAt: Date.now() });
         logger.warn({ err: err }, `[VideoGen] Background job ${jobId} threw:`);
       }
     })();
@@ -2576,7 +2576,7 @@ router.get('/video-proxy/:filename', requireAuthOnly, async (req: AuthenticatedR
 
       logger.info(`[VideoProxy] Streaming ${filename} from ${url}`);
       return;
-    } catch (err: any) {
+    } catch (err) {
       logger.info(`[VideoProxy] Candidate ${url} fetch error: ${err.message}`);
     }
   }
@@ -2830,7 +2830,7 @@ router.post('/veo-campaign/promote-storefront', requireAuth, async (req: Authent
 
     const { slug, platforms, mood, brand_notes, campaign_notes } = req.body;
 
-    let storefront: any;
+    let storefront: Record<string, unknown> | null = null;
     if (slug) {
       const rows = await db.select().from(storefronts).where(
         and(eq(storefronts.slug, slug), eq(storefronts.userId, userId))
@@ -2857,8 +2857,8 @@ router.post('/veo-campaign/promote-storefront', requireAuth, async (req: Authent
       .limit(10);
 
     const listingCount = storeListings.length;
-    const genres = [...new Set(storeListings.map((l: any) => l.category).filter(Boolean))];
-    const topListings = storeListings.slice(0, 3).map((l: any) => l.title).join(', ');
+    const genres = [...new Set(storeListings.map((l: Record<string, unknown>) => l.category).filter(Boolean))];
+    const topListings = storeListings.slice(0, 3).map((l: Record<string, unknown>) => l.title).join(', ');
 
     const description = seo.description || customization.bio || '';
     const title = seo.title || storefront.name || 'My Storefront';
@@ -2923,7 +2923,7 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
     const rows = await db.select().from(listings).where(
       and(eq(listings.id, listingId), eq(listings.userId, userId))
     ).limit(1);
-    const listing = rows[0] as any;
+    const listing = rows[0] as Record<string, unknown>;
     if (!listing) return res.status(404).json({ success: false, message: 'Listing not found or you do not own it' });
 
     if (!listing.isPublished) {
@@ -2933,7 +2933,7 @@ router.post('/veo-campaign/promote-listing', requireAuth, async (req: Authentica
     let storefrontName = 'My Store';
     if (listing.storefrontId) {
       const storeRows = await db.select().from(storefronts).where(eq(storefronts.id, listing.storefrontId)).limit(1);
-      if (storeRows[0]) storefrontName = (storeRows[0] as any).name || storefrontName;
+      if (storeRows[0]) storefrontName = (storeRows[0] as Record<string, unknown>).name || storefrontName;
     }
 
     const metadata = (listing.metadata || {}) as Record<string, any>;
@@ -3065,7 +3065,7 @@ router.post('/analyze-url', requireAuth, async (req: AuthenticatedRequest, res: 
     // SSRF guard — block private/internal targets before spawning Python subprocess
     try {
       assertSafeExternalUrl(url.trim());
-    } catch (ssrfErr: any) {
+    } catch (ssrfErr) {
       return res.status(400).json({ success: false, message: ssrfErr?.message || 'Invalid URL' });
     }
 
@@ -3214,11 +3214,11 @@ router.post(
   '/analyze-audio',
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    audioUpload.single('audio')(req as any, res as any, next);
+    audioUpload.single('audio')(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const file = (req as any).file as Express.Multer.File | undefined;
+      const file = req.file;
       if (!file) {
         return res.status(400).json({ success: false, message: 'audio file is required (field: audio)' });
       }
@@ -3274,11 +3274,11 @@ router.post(
   '/analyze-image',
   requireAuth,
   (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    artworkUpload.single('image')(req as any, res as any, next);
+    artworkUpload.single('image')(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const file = (req as any).file as Express.Multer.File | undefined;
+      const file = req.file;
       if (!file) {
         return res.status(400).json({ success: false, message: 'image file is required (field: image)' });
       }
@@ -3339,7 +3339,7 @@ router.get('/voice-profiles', requireAuthOnly, async (_req: AuthenticatedRequest
   try {
     const svc = await getVoiceSynthService();
     res.json({ success: true, profiles: svc.listVoiceProfiles() });
-  } catch (e: any) {
+  } catch (e) {
     logger.warn('[Route] voice-profiles:', e?.message);
     res.status(500).json({ success: false, error: 'Failed to load voice profiles' });
   }
@@ -3357,7 +3357,7 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     // mediaUpload → disk storage so referenceAudioPath has a real file path for FFmpeg
-    mediaUpload.single('reference_audio')(req as any, res as any, next);
+    mediaUpload.single('reference_audio')(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
@@ -3373,7 +3373,7 @@ router.post(
       };
 
       const svc = await getVoiceSynthService();
-      const referenceAudioPath = (req as any).file?.path;
+      const referenceAudioPath = req.file?.path;
 
       const options = {
         profileId,
@@ -3403,7 +3403,7 @@ router.post(
       const userId    = req.user?.id?.toString() || req.user?.userId?.toString() || 'anonymous';
 
       // ── Persist to PDIM (non-blocking — response already sent after this) ──
-      let pdimMeta: any = null;
+      let pdimMeta: Record<string, unknown> | null = null;
       try {
         const { storeVoiceFile } = await import('../services/pdimMediaStorageService.js');
         pdimMeta = await storeVoiceFile(userId, result.outputPath!, {
@@ -3412,7 +3412,7 @@ router.post(
           durationSeconds: result.durationSeconds,
           text: typeof text === 'string' ? text : undefined,
         });
-      } catch (e: any) {
+      } catch (e) {
         logger.warn('[Route] voice PDIM store skipped:', e?.message?.slice(0, 80));
       }
 
@@ -3426,7 +3426,7 @@ router.post(
         outputPath:       result.outputPath,
         pdim: pdimMeta ? { key: pdimMeta.pdimKey, compressedSize: pdimMeta.compressedSize } : null,
       });
-    } catch (e: any) {
+    } catch (e) {
       logger.warn('[Route] synthesize-voice:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Voice synthesis failed' });
     }
@@ -3442,18 +3442,18 @@ router.post(
   '/analyze-reference-voice',
   requireAuthOnly,
   (req, res, next) => {
-    mediaUpload.single('audio')(req as any, res as any, next);
+    mediaUpload.single('audio')(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const file = (req as any).file;
+      const file = req.file;
       if (!file?.path) {
         return res.status(400).json({ success: false, error: 'Audio file required' });
       }
       const svc = await getVoiceSynthService();
       const characteristics = await svc.analyzeReferenceVoice(file.path);
       res.json({ success: true, characteristics });
-    } catch (e: any) {
+    } catch (e) {
       logger.warn('[Route] analyze-reference-voice:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Analysis failed' });
     }
@@ -3475,11 +3475,11 @@ router.post(
   requireAuthOnly,
   (req, res, next) => {
     // mediaUpload → disk storage gives us a real file path for FFmpeg analysis
-    mediaUpload.single('audio')(req as any, res as any, next);
+    mediaUpload.single('audio')(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     try {
-      const file = (req as any).file;
+      const file = req.file;
       if (!file?.path) {
         return res.status(400).json({ success: false, error: 'Audio file required (multipart/form-data, field: audio)' });
       }
@@ -3506,7 +3506,7 @@ router.post(
       }
 
       res.json({ success: true, analysis, cacheHit });
-    } catch (e: any) {
+    } catch (e) {
       logger.warn('[Route] analyze-audio-beats:', e?.message);
       res.status(500).json({ success: false, error: e?.message || 'Beat analysis failed' });
     }
@@ -3520,7 +3520,7 @@ router.post(
 // Track async music video jobs in the same pattern as ffmpegJobs
 interface MusicVideoJob {
   status: 'processing' | 'done' | 'error';
-  result?: any;
+  result?: Record<string, unknown>;
   error?: string;
   createdAt: number;
 }
@@ -3558,7 +3558,7 @@ router.post(
       { name: 'images', maxCount: 10 },
       { name: 'audio',  maxCount: 1 },
       { name: 'reference_voice', maxCount: 1 },
-    ])(req as any, res as any, next);
+    ])(req as Record<string, unknown>, res as Record<string, unknown>, next);
   },
   async (req: AuthenticatedRequest, res: Response) => {
     const jobId = `mvjob_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -3570,7 +3570,7 @@ router.post(
     // Process async
     (async () => {
       try {
-        const files = (req as any).files as Record<string, Express.Multer.File[]> | undefined;
+        const files = req.files as Record<string, Express.Multer.File[]> | undefined;
         const imageFiles = files?.images || [];
         const audioFile  = files?.audio?.[0];
         const voiceRef   = files?.reference_voice?.[0];
@@ -3597,7 +3597,7 @@ router.post(
             if (voiceResult.success && voiceResult.outputPath) {
               voiceSynthPath = voiceResult.outputPath;
             }
-          } catch (e: any) {
+          } catch (e) {
             logger.warn('[MusicVideo] Voice synthesis skipped:', e?.message);
           }
         }
@@ -3617,8 +3617,8 @@ router.post(
           cta:                body.cta,
           artistName:         body.artist_name || body.artistName,
           beatSync:           body.beat_sync !== 'false',
-          kenBurnsIntensity:  (body.intensity as any) || 'moderate',
-          colorGrade:         (body.color_grade as any) || 'cinematic',
+          kenBurnsIntensity:  (body.intensity as Record<string, unknown>) || 'moderate',
+          colorGrade:         (body.color_grade as Record<string, unknown>) || 'cinematic',
           transitionType:     body.transition,
         });
 
@@ -3629,7 +3629,7 @@ router.post(
 
         // ── Persist rendered video to PDIM as primary storage ────────────────
         const userId = req.user?.id?.toString() || req.user?.userId?.toString() || 'anonymous';
-        let pdimVideoMeta: any = null;
+        let pdimVideoMeta: Record<string, unknown> | null = null;
         try {
           const { storeMusicVideo } = await import('../services/pdimMediaStorageService.js');
           const videoFilePath = `${process.cwd()}/uploads/videos/${result.filename}`;
@@ -3637,13 +3637,13 @@ router.post(
           if (pdimVideoMeta) {
             result.pdim = { key: pdimVideoMeta.pdimKey, compressedSize: pdimVideoMeta.compressedSize, tier: pdimVideoMeta.tier };
           }
-        } catch (e: any) {
+        } catch (e) {
           logger.warn(`[MusicVideo] PDIM store skipped for job ${jobId}:`, e?.message?.slice(0, 80));
         }
 
         musicVideoJobs.set(jobId, { status: 'done', result, createdAt: Date.now() });
         logger.info(`[MusicVideo] Job ${jobId} complete — ${result.filename} | PDIM: ${pdimVideoMeta?.pdimKey ?? 'skipped'}`);
-      } catch (e: any) {
+      } catch (e) {
         logger.warn(`[MusicVideo] Job ${jobId} failed:`, e?.message);
         musicVideoJobs.set(jobId, { status: 'error', error: e?.message || 'Music video generation failed', createdAt: Date.now() });
       }
@@ -3700,7 +3700,7 @@ router.get('/music-video-capabilities', requireAuthOnly, async (_req: Authentica
       maxImages: 10,
       maxDurationSeconds: 60,
     });
-  } catch (e: any) {
+  } catch (e) {
     res.status(500).json({ success: false, error: e?.message || 'Failed to load capabilities' });
   }
 });

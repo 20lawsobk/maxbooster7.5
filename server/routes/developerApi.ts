@@ -408,7 +408,7 @@ print(data)
       `.trim(),
     },
   });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in developer docs:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

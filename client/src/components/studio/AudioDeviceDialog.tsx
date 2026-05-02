@@ -73,7 +73,7 @@ export function AudioDeviceDialog({ open, onOpenChange }: AudioDeviceDialogProps
   useEffect(() => {
     if (!open) return;
     navigator.permissions?.query({ name: 'microphone' as PermissionName }).then(result => {
-      setPermission(result.state as any);
+      setPermission(result.state as Record<string, unknown>);
       if (result.state === 'granted') enumerateDevices();
     }).catch(() => enumerateDevices());
   }, [open, enumerateDevices]);

@@ -43,7 +43,7 @@ async function resilientHttp<T = unknown>(
     maxMs: 8_000,
     onRetry: (err, attempt, delayMs) =>
       logger.warn(
-        { label, attempt, delayMs, err: (err as any)?.message },
+        { label, attempt, delayMs, err: (err as Record<string, unknown>)?.message },
         '[ai-advertising] retrying external call'
       ),
   });
@@ -64,7 +64,7 @@ interface AIAdOptimization {
   };
   platformOptimization: {
     platform: string;
-    customStrategy: any;
+    customStrategy: Record<string, unknown>;
     nativeFeatures: string[];
     algorithmHacks: unknown[];
   }[];
@@ -80,15 +80,15 @@ interface SmartBidding {
   predictedCPM: number;
   optimalBid: number;
   competitorAnalysis: unknown[];
-  demandForecast: any;
+  demandForecast: Record<string, unknown>;
   algorithmicAdvantage: number;
 }
 
 interface AIPersonalization {
   personalizedContent: string;
-  dynamicAudience: any;
+  dynamicAudience: Record<string, unknown>;
   realTimeOptimization: boolean;
-  crossPlatformSynergy: any;
+  crossPlatformSynergy: Record<string, unknown>;
 }
 
 export class AIAdvertisingEngine {
@@ -315,7 +315,7 @@ export class AIAdvertisingEngine {
   }
 
   // Helper methods
-  private parseAIAdContent(content: string): any {
+  private parseAIAdContent(content: string): Record<string, unknown> {
     return {
       headlines: this.extractHeadlines(content),
       captions: this.extractCaptions(content),
@@ -325,7 +325,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private generateFallbackContent(): any {
+  private generateFallbackContent(): Record<string, unknown> {
     return {
       headlines: [
         'Discover Your Next Favorite Song',
@@ -458,7 +458,7 @@ export class AIAdvertisingEngine {
     return ['Discovery', 'Exclusivity'];
   }
 
-  private extractPlatformAdaptations(content: string): any {
+  private extractPlatformAdaptations(content: string): Record<string, unknown> {
     return {
       TikTok: 'Short, punchy, viral-ready',
       Instagram: 'Visual-first approach',
@@ -638,7 +638,7 @@ export class AIAdvertisingEngine {
     mood: string,
     title: string,
     targetAudience: unknown
-  ): any {
+  ): Record<string, unknown> {
     return {
       tiktok: `${title} 🎵 Tag someone who needs to hear this! #${genre} #NewMusic #Viral #FYP`,
       instagram: `New vibes 🔥 ${title} is out now. Link in bio. What's your favorite part? Drop a 🎵 if you're feeling this!`,
@@ -649,7 +649,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private mapGenreEmotionalTriggers(genre: string, mood: string): any {
+  private mapGenreEmotionalTriggers(genre: string, mood: string): Record<string, unknown> {
     const triggers = {
       'hip-hop': ['authenticity', 'street credibility', 'success', 'hustle', 'loyalty'],
       pop: ['joy', 'nostalgia', 'romance', 'confidence', 'celebration'],
@@ -669,7 +669,7 @@ export class AIAdvertisingEngine {
     );
   }
 
-  private generatePlatformAdaptations(musicData: unknown, targetAudience: unknown): any {
+  private generatePlatformAdaptations(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
     return {
       tiktok: { format: '15-60s clips', hook: 'First 3 seconds', cta: 'Duet this', hashtags: 5 },
       instagram: {
@@ -720,7 +720,7 @@ export class AIAdvertisingEngine {
     ];
   }
 
-  private generateMicroMomentTargeting(genre: string, targetAudience: unknown): any {
+  private generateMicroMomentTargeting(genre: string, targetAudience: unknown): Record<string, unknown> {
     return {
       morningCommute: { time: '7-9AM', message: 'Start your day right', energy: 'high' },
       lunchBreak: { time: '12-1PM', message: 'Your midday escape', energy: 'medium' },
@@ -731,7 +731,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private generateCrossPlatformAmplification(musicData: unknown): any {
+  private generateCrossPlatformAmplification(musicData: unknown): Record<string, unknown> {
     return {
       sequence: [
         { platform: 'TikTok', action: 'Launch viral challenge', timing: 'Day 1' },

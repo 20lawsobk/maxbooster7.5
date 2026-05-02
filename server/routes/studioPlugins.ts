@@ -76,7 +76,7 @@ router.post('/instantiate/:id', requireAuth, async (req, res) => {
   try {
     const { id: pluginId } = req.params;
     const { projectId } = req.query;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!projectId || typeof projectId !== 'string') {
       return res.status(400).json({ error: 'projectId query parameter is required' });
@@ -127,7 +127,7 @@ router.post('/instantiate/:id', requireAuth, async (req, res) => {
 router.get('/instances', requireAuth, async (req, res) => {
   try {
     const { projectId, trackId } = req.query;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!projectId || typeof projectId !== 'string') {
       return res.status(400).json({ error: 'projectId query parameter is required' });
@@ -174,7 +174,7 @@ router.get('/instances', requireAuth, async (req, res) => {
 router.get('/instances/:instanceId', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -211,7 +211,7 @@ router.get('/instances/:instanceId', requireAuth, async (req, res) => {
 router.put('/instances/:instanceId', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -254,7 +254,7 @@ router.put('/instances/:instanceId', requireAuth, async (req, res) => {
 router.delete('/instances/:instanceId', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -281,7 +281,7 @@ router.delete('/instances/:instanceId', requireAuth, async (req, res) => {
 router.post('/instances/:instanceId/render', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -337,7 +337,7 @@ router.post('/instances/:instanceId/apply-preset', requireAuth, async (req, res)
   try {
     const { instanceId } = req.params;
     const { presetId } = req.body;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!presetId || typeof presetId !== 'string') {
       return res.status(400).json({ error: 'presetId is required' });
@@ -371,7 +371,7 @@ router.post('/instances/:instanceId/apply-preset', requireAuth, async (req, res)
 router.get('/presets', requireAuth, async (req, res) => {
   try {
     const { pluginId, category, includePublic } = req.query;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!pluginId || typeof pluginId !== 'string') {
       return res.status(400).json({ error: 'pluginId query parameter is required' });
@@ -407,7 +407,7 @@ router.get('/presets', requireAuth, async (req, res) => {
 
 router.post('/presets', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const data = savePresetSchema.parse(req.body);
 
     const preset = await pluginHostService.savePreset(
@@ -456,7 +456,7 @@ router.get('/presets/:presetId', requireAuth, async (req, res) => {
 router.delete('/presets/:presetId', requireAuth, async (req, res) => {
   try {
     const { presetId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     await pluginHostService.deletePreset(presetId, userId);
 
@@ -529,7 +529,7 @@ const modulationMatrixSchema = z.object({
   })),
 });
 
-const abCompareStates = new Map<string, { slotA: any; slotB: any; activeSlot: 'A' | 'B' }>();
+const abCompareStates = new Map<string, { slotA: Record<string, unknown>; slotB: Record<string, unknown>; activeSlot: 'A' | 'B' }>();
 const modulationConfigs = new Map<string, any>();
 
 // Both maps are keyed by instanceId/projectId and grow without bound if not capped.
@@ -543,7 +543,7 @@ function capMap<K, V>(m: Map<K, V>, max: number) {
 router.get('/device/ab-compare/:instanceId', requireAuth, async (req, res) => {
   try {
     const { instanceId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -580,7 +580,7 @@ router.get('/device/ab-compare/:instanceId', requireAuth, async (req, res) => {
 router.post('/device/ab-compare', requireAuth, async (req, res) => {
   try {
     const data = abCompareSchema.parse(req.body);
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(data.instanceId);
     if (!instance) {
@@ -620,7 +620,7 @@ router.post('/device/ab-compare/:instanceId/switch', requireAuth, async (req, re
   try {
     const { instanceId } = req.params;
     const { slot } = req.body;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const instance = await pluginHostService.getInstance(instanceId);
     if (!instance) {
@@ -663,7 +663,7 @@ router.post('/device/ab-compare/:instanceId/copy', requireAuth, async (req, res)
   try {
     const { instanceId } = req.params;
     const { from, to } = req.body;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!['A', 'B'].includes(from) || !['A', 'B'].includes(to)) {
       return res.status(400).json({ error: 'Invalid slot specification' });
@@ -708,7 +708,7 @@ router.post('/device/ab-compare/:instanceId/copy', requireAuth, async (req, res)
 router.post('/bounce', requireAuth, async (req, res) => {
   try {
     const data = bounceSchema.parse(req.body);
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, data.projectId), eq(projects.userId, userId)),
@@ -757,7 +757,7 @@ router.post('/bounce', requireAuth, async (req, res) => {
 router.get('/bounce/:projectId', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -781,7 +781,7 @@ router.get('/modulation-matrix/:projectId', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
     const { trackId } = req.query;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -846,7 +846,7 @@ router.get('/modulation-matrix/:projectId', requireAuth, async (req, res) => {
 router.post('/modulation-matrix', requireAuth, async (req, res) => {
   try {
     const data = modulationMatrixSchema.parse(req.body);
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, data.projectId), eq(projects.userId, userId)),
@@ -889,7 +889,7 @@ router.delete('/modulation-matrix/:projectId/:routingId', requireAuth, async (re
   try {
     const { projectId, routingId } = req.params;
     const { trackId } = req.query;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -903,7 +903,7 @@ router.delete('/modulation-matrix/:projectId/:routingId', requireAuth, async (re
     const config = modulationConfigs.get(key);
 
     if (config) {
-      config.routings = config.routings.filter((r: any) => r.id !== routingId);
+      config.routings = config.routings.filter((r: Record<string, unknown>) => r.id !== routingId);
       modulationConfigs.set(key, config);
       capMap(modulationConfigs, MODULATION_MAX);
     }

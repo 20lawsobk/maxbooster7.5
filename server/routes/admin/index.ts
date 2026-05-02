@@ -452,7 +452,7 @@ router.get('/settings', async (req, res) => {
   }
 });
 
-async function updateSetting(key: string, value: any) {
+async function updateSetting(key: string, value: Record<string, unknown>) {
   const fullKey = `platform.${key}`;
   const stringValue = JSON.stringify(value);
   
@@ -842,7 +842,7 @@ router.patch('/financial-config/royalty-rates/:id', async (req, res) => {
     }
     const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'royalty_rates')).limit(1);
     const current = stored.length ? JSON.parse(stored[0].value as string) : { rates: DEFAULT_ROYALTY_RATES };
-    const rates = (current.rates || DEFAULT_ROYALTY_RATES).map((r: any, idx: number) =>
+    const rates = (current.rates || DEFAULT_ROYALTY_RATES).map((r: Record<string, unknown>, idx: number) =>
       String(idx) === String(id) || r.platform === id ? { ...r, ...update } : r
     );
     await db.insert(systemSettings).values({ key: 'royalty_rates', value: JSON.stringify({ rates }) })
@@ -868,7 +868,7 @@ router.patch('/financial-config/tax-treaties/:id', async (req, res) => {
     }
     const stored = await db.select().from(systemSettings).where(eq(systemSettings.key, 'tax_treaties')).limit(1);
     const current = stored.length ? JSON.parse(stored[0].value as string) : { treaties: DEFAULT_TAX_TREATIES };
-    const treaties = (current.treaties || DEFAULT_TAX_TREATIES).map((t: any, idx: number) =>
+    const treaties = (current.treaties || DEFAULT_TAX_TREATIES).map((t: Record<string, unknown>, idx: number) =>
       String(idx) === String(id) || t.code === id ? { ...t, ...update } : t
     );
     await db.insert(systemSettings).values({ key: 'tax_treaties', value: JSON.stringify({ treaties }) })

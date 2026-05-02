@@ -73,7 +73,7 @@ router.get('/capabilities', requireAuth, async (req, res) => {
 
 router.post('/cache', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = cacheProjectSchema.parse(req.body);
 
     const cachedProject = await offlineModeService.cacheProject(projectId, userId);
@@ -113,7 +113,7 @@ router.delete('/cache/:projectId', requireAuth, async (req, res) => {
 
 router.get('/cache', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const cachedProjects = offlineModeService.getCachedProjects(userId);
 
     res.json({
@@ -272,7 +272,7 @@ router.post('/cleanup', requireAuth, async (req, res) => {
 router.post('/export/:projectId', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const exportResult = await offlineModeService.exportProjectForOffline(projectId, userId);
 
@@ -288,7 +288,7 @@ router.post('/export/:projectId', requireAuth, async (req, res) => {
 
 router.post('/import', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const projectData = req.body;
 
     const projectId = await offlineModeService.importOfflineProject(userId, projectData);

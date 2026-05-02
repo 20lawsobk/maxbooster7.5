@@ -100,7 +100,7 @@ type HyperFollowFormData = z.infer<typeof hyperFollowSchema>;
 interface Platform {
   id: string;
   name: string;
-  icon: any;
+  icon: React.ReactNode;
   color: string;
   category: 'streaming' | 'social';
   defaultUrl?: string;

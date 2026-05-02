@@ -50,7 +50,7 @@ import { spawnSync, spawn } from 'child_process';
   const probe = spawnSync(bin, ['--version'], {
     timeout: 300,        // killed after 300 ms if binary starts (server mode)
     stdio: 'ignore',
-    killSignal: 'SIGKILL' as any,
+    killSignal: 'SIGKILL' as Record<string, unknown>,
   });
   const isEnoent = probe.error && (probe.error as NodeJS.ErrnoException).code === 'ENOENT';
   if (isEnoent) {
@@ -125,7 +125,7 @@ import { spawnSync, spawn } from 'child_process';
 
 // CJS-safe: import.meta.url is undefined when bundled to CJS by esbuild.
 // Fall back to process.argv[1] (the entry file path) for __dirname resolution.
-const __metaUrl = (import.meta as any)?.url as string | undefined;
+const __metaUrl = (import.meta as Record<string, unknown>)?.url as string | undefined;
 const __filename = __metaUrl ? fileURLToPath(__metaUrl) : path.resolve(process.argv[1] ?? '');
 const __dirname = path.dirname(__filename);
 const require = createRequire(__metaUrl ?? ('file://' + __filename));

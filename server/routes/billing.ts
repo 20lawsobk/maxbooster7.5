@@ -51,7 +51,7 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey, {
   apiVersion: '2026-01-28.clover',
 }) : null;
 
-const requireStripe = (req: Request, res: Response, next: any) => {
+const requireStripe = (req: Request, res: Response, next: Record<string, unknown>) => {
   if (!stripe) {
     return res.status(503).json({ 
       message: 'Billing service not configured',
@@ -176,7 +176,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
           .where(eq(users.id, user.id));
         saved = true;
         break;
-      } catch (dbErr: any) {
+      } catch (dbErr: Record<string, unknown>) {
         logger.warn(`[Billing] Failed to save stripeCustomerId (attempt ${attempt}/3): ${dbErr.message}`);
         if (attempt < 3) await new Promise(r => setTimeout(r, attempt * 500));
       }
@@ -186,7 +186,7 @@ async function getOrCreateStripeCustomer(user: AuthenticatedRequest['user']): Pr
     }
 
     return customer.id;
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('[Billing] Failed to create Stripe customer:', error.message);
     throw new Error('Failed to create billing account. Please try again.');
   }
@@ -290,7 +290,7 @@ router.get('/plans', async (req: Request, res: Response) => {
         }
       ]
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to fetch plans:');
     res.status(500).json({ 
       message: 'Failed to fetch plans',
@@ -328,7 +328,7 @@ router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRe
 
     const plan = priceMap[planId];
 
-    const sessionParams: any = {
+    const sessionParams: Record<string, unknown> = {
       customer: customerId,
       mode: plan.mode,
       line_items: [{
@@ -350,7 +350,7 @@ router.post('/create-checkout-session', requireAuth, async (req: AuthenticatedRe
 
     const session = await stripe.checkout.sessions.create(sessionParams);
     res.json({ url: session.url, sessionId: session.id });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to create checkout session:');
     res.status(500).json({ error: 'Checkout failed', message: 'Failed to create checkout session' });
   }
@@ -395,7 +395,7 @@ router.get('/subscription', requireAuth, async (req: AuthenticatedRequest, res: 
         );
         
         stripeSubscription = activeSubscription || canceledSubscription || pastDueSubscription || null;
-      } catch (err: any) {
+      } catch (err) {
         logger.warn({ err: err }, '[Billing] Failed to fetch Stripe subscription:');
         subscriptionError = 'Failed to sync subscription status with payment provider';
       }
@@ -731,7 +731,7 @@ router.post('/cancel-subscription', requireAuth, async (req: AuthenticatedReques
         daysRemaining: Math.ceil((subscription.current_period_end * 1000 - Date.now()) / (1000 * 60 * 60 * 24))
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to cancel subscription:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -833,7 +833,7 @@ router.post('/reactivate-subscription', requireAuth, async (req: AuthenticatedRe
       code: 'SUBSCRIPTION_REACTIVATED',
       nextBillingDate: new Date(subscription.current_period_end * 1000).toISOString()
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to reactivate subscription:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -874,7 +874,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
     let invoice: Stripe.Invoice;
     try {
       invoice = await stripe.invoices.retrieve(invoiceId);
-    } catch (stripeError: any) {
+    } catch (stripeError: Record<string, unknown>) {
       if (stripeError.code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Invoice not found',
@@ -911,7 +911,7 @@ router.get('/invoices/:invoiceId/download', requireAuth, async (req: Authenticat
       code: 'INVOICE_PDF_NOT_AVAILABLE',
       retryable: false
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to download invoice:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -1031,7 +1031,7 @@ router.get('/refund/:refundId', requireAuth, async (req: AuthenticatedRequest, r
     }
     
     res.json(refund);
-  } catch (error: any) {
+  } catch (error) {
     if (error.message === 'Refund not found') {
       return res.status(404).json({ error: 'Refund not found' });
     }
@@ -1142,7 +1142,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
           status: 'active'
         });
       }
-    } catch (payError: any) {
+    } catch (payError: Record<string, unknown>) {
       const mappedError = mapStripeError(payError);
       
       if (mappedError.code === 'REQUIRES_3D_SECURE') {
@@ -1174,7 +1174,7 @@ router.post('/retry-payment', requireAuth, requireStripe, async (req: Authentica
       code: 'RETRY_FAILED',
       retryable: true
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to retry payment:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -1241,7 +1241,7 @@ router.delete('/payment-method', requireAuth, requireStripe, async (req: Authent
       message: 'Payment method removed successfully',
       code: 'PAYMENT_METHOD_REMOVED'
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to remove payment method:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -1359,7 +1359,7 @@ router.post('/3ds/confirm', requireAuth, requireStripe, async (req: Authenticate
       status: paymentIntent.status,
       retryable: true
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] 3DS confirmation failed:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -1516,7 +1516,7 @@ router.post('/refund/request', requireAuth, async (req: AuthenticatedRequest, re
       code: 'REFUND_REQUESTED',
       refundRequest: refundRequestPayload,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to create refund request:');
     
     if (error.code === 'resource_missing') {
@@ -1623,7 +1623,7 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
         disputeId,
         status: evidence.submit ? 'under_review' : 'needs_response'
       });
-    } catch (stripeError: any) {
+    } catch (stripeError: Record<string, unknown>) {
       if (stripeError.code === 'resource_missing') {
         return res.status(404).json({ 
           message: 'Dispute not found',
@@ -1633,7 +1633,7 @@ router.post('/dispute/evidence', requireAuth, async (req: AuthenticatedRequest, 
       }
       throw stripeError;
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Billing] Failed to submit dispute evidence:');
     const mappedError = mapStripeError(error);
     res.status(mappedError.status).json({ 
@@ -1772,7 +1772,7 @@ router.get('/disputes', requireAuth, async (req: AuthenticatedRequest, res: Resp
       });
       
       const disputedCharges = charges.data.filter(charge => charge.dispute);
-      const disputes: any[] = [];
+      const disputes: unknown[] = [];
       
       for (const charge of disputedCharges) {
         if (charge.dispute) {
@@ -1924,7 +1924,7 @@ router.get('/refunds', requireAuth, async (req: AuthenticatedRequest, res: Respo
         limit: 50,
       });
       
-      const refunds: any[] = [];
+      const refunds: unknown[] = [];
       
       for (const charge of charges.data) {
         if (charge.refunds && charge.refunds.data.length > 0) {

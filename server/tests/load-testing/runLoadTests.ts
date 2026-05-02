@@ -8,7 +8,7 @@ interface TestSuite {
   name: string;
   endpoint: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
-  body?: any;
+  body?: Record<string, unknown>;
   requiresAuth: boolean;
 }
 
@@ -116,7 +116,7 @@ async function runAllLoadTests(): Promise<void> {
         }
       }
 
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`${suite.name} test failed`, { error: error.message });
       issues.push(`${suite.name}: Test execution failed - ${error.message}`);
     }

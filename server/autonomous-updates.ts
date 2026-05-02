@@ -162,7 +162,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
         lastRunAt:     this.status.lastRunAt,
         updatedAt:     new Date().toISOString(),
       });
-      await (client as any).set(AUTONOMOUS_STATUS_KEY, payload);
+      await (client as Record<string, unknown>).set(AUTONOMOUS_STATUS_KEY, payload);
     } catch { /* non-critical — in-memory status is still correct */ }
   }
 
@@ -170,7 +170,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     if (!isPdimConfigured()) return;
     try {
       const client = getPdimClient();
-      const raw = await (client as any).get(AUTONOMOUS_STATUS_KEY);
+      const raw = await (client as Record<string, unknown>).get(AUTONOMOUS_STATUS_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw as string);
       if (typeof saved.runsCompleted === 'number' && saved.runsCompleted > 0) {
@@ -391,7 +391,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       if (module.enabled) {
         try {
           result[module.name] = await module.fn();
-        } catch (e: any) {
+        } catch (e) {
           result[`${module.name}Error`] = e?.message || `${module.name} failed`;
           // Only log errors if not in silent mode
           if (!this.config.silentMode) {
@@ -704,7 +704,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       engagementHooks: ['question', 'cta', 'teaser'],
     };
 
-    const platformOptimizations: any = {};
+    const platformOptimizations: Record<string, unknown> = {};
     for (const change of algorithmChanges) {
       const platform = change.metadata?.platform || change.source;
       const shift = parseFloat(change.metadata?.engagementShift || '0');
@@ -1097,7 +1097,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return deployment;
   }
 
-  private selectCanaryUsers(percentage: number): any {
+  private selectCanaryUsers(percentage: number): Record<string, unknown>[] {
     const timestamp = Date.now();
     const criteria = {
       selectionMethod: 'deterministic_sampling',

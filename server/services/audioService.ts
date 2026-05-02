@@ -3,7 +3,7 @@ import path from 'path';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
+const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 import { storageService } from './storageService.js';
 import os from 'os';
 import { queueService } from './queueService.js';
@@ -23,7 +23,7 @@ import {
   type BitDepth,
 } from '../../shared/audioConstants.js';
 
-let ffmpeg: any = null;
+let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {
@@ -227,7 +227,7 @@ export class AudioService {
       const wav = new WaveFile.WaveFile(wavBuffer);
       
       // Get samples and downsample for visualization
-      const samplesData = wav.getSamples(true) as any;
+      const samplesData = wav.getSamples(true) as Record<string, unknown>;
       const samples = samplesData instanceof Int16Array ? samplesData : new Int16Array(samplesData);
       const downsampledData = this.downsampleAudio(samples, 2000); // 2000 points for waveform
       
@@ -309,7 +309,7 @@ export class AudioService {
     const job = await queueService.addAudioJob('convert', {
       userId,
       filePath: inputPath,
-      format: outputFormat as any,
+      format: outputFormat as Record<string, unknown>,
       quality: options.bitrate === '320k' ? 'high' : 'medium',
     });
     
@@ -713,7 +713,7 @@ export class AudioService {
     return denominator === 0 ? 0 : numerator / denominator;
   }
 
-  async applyAudioEffects(filePath: string, effects: any[]): Promise<string> {
+  async applyAudioEffects(filePath: string, effects: unknown[]): Promise<string> {
     try {
       const available = await initializeFfmpeg();
       if (!available || !ffmpeg) {
@@ -955,7 +955,7 @@ export class AudioService {
     }
   }
 
-  async masterAudio(filePath: string, masteringSettings: any): Promise<string> {
+  async masterAudio(filePath: string, masteringSettings: Record<string, unknown>): Promise<string> {
     try {
       const available = await initializeFfmpeg();
       if (!available || !ffmpeg) {

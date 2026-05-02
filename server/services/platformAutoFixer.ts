@@ -222,7 +222,7 @@ class PlatformAutoFixer extends EventEmitter {
       await this.runFullScan();
       this._scheduleNextScan();
     }, this.currentProbeIntervalMs);
-    (this.probeTimer as any).unref?.();
+    (this.probeTimer as Record<string, unknown>).unref?.();
   }
 
   private _adjustProbeInterval(): void {
@@ -396,7 +396,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     try {
       const { pool } = await import('../db.js');
-      const p = pool as any;
+      const p = pool as Record<string, unknown>;
       const total   = p.totalCount   ?? 0;
       const idle    = p.idleCount    ?? 0;
       const waiting = p.waitingCount ?? 0;
@@ -427,7 +427,7 @@ class PlatformAutoFixer extends EventEmitter {
       } else {
         message = `ping ${pingMs}ms, ${idle}/${total} idle`;
       }
-    } catch (err: any) {
+    } catch (err) {
       status  = 'critical';
       message = `DB probe failed: ${err.message}`;
 
@@ -536,7 +536,7 @@ class PlatformAutoFixer extends EventEmitter {
       } else {
         message = `ping ${pingMs}ms, gap ${gapMs}ms, queue depth ${queueDepth}`;
       }
-    } catch (err: any) {
+    } catch (err) {
       // Any probe failure resets the consecutive-success streak so a
       // subsequent success starts counting from 1, not from a stale value.
       this._pdimConsecutiveProbeSuccesses = 0;
@@ -733,7 +733,7 @@ class PlatformAutoFixer extends EventEmitter {
       await Promise.race([
         pool.query('SELECT 1 FROM session WHERE expire > NOW() LIMIT 1'),
         new Promise((_, rej) => setTimeout(() => rej(new Error('session ping timeout')), 3000)),
-      ]) as any;
+      ]) as Record<string, unknown>;
       const pingMs = Date.now() - start;
       details = { pingMs };
       if (pingMs > 1500) {
@@ -742,7 +742,7 @@ class PlatformAutoFixer extends EventEmitter {
       } else {
         message = `Session store OK (${pingMs}ms)`;
       }
-    } catch (err: any) {
+    } catch (err) {
       const msg = err.message ?? '';
       // 'session' table may not exist (no sessions yet) — not a real failure.
       if (msg.includes('does not exist') || msg.includes('relation "session"')) {
@@ -787,7 +787,7 @@ class PlatformAutoFixer extends EventEmitter {
       // Threshold is set high because this app runs many autonomous systems, BullMQ workers,
       // DB keep-alive intervals, autopilot schedulers, and realtime servers that each hold handles.
       // A baseline of 1200 handles is normal at runtime. Alarm at 3000 (genuine leak territory).
-      const listenerCount = (process as any)._getActiveHandles?.()?.length ?? 0;
+      const listenerCount = (process as Record<string, unknown>)._getActiveHandles?.()?.length ?? 0;
       details.activeHandles = listenerCount;
       if (listenerCount > 3000) {
         status  = status === 'healthy' ? 'degraded' : status;
@@ -812,7 +812,7 @@ class PlatformAutoFixer extends EventEmitter {
       if (status === 'healthy') {
         message = `entropy OK (${Math.round(uptimeHours)}h uptime, ${details.openFds ?? 'n/a'} FDs, ${Math.round(rssMB)}MB RSS)`;
       }
-    } catch (err: any) {
+    } catch (err) {
       status  = 'unknown';
       message = `Entropy probe error: ${err.message}`;
     }
@@ -860,7 +860,7 @@ class PlatformAutoFixer extends EventEmitter {
 
     // Apply patches based on subsystem and status
     if (subsystem === 'memory') {
-      const heapRatio = (result.details as any)?.heapRatio ?? 0;
+      const heapRatio = (result.details as Record<string, unknown>)?.heapRatio ?? 0;
 
       // Read live thresholds from permanentFixRegistry (permanently tuned over time)
       const warnPct  = Math.round(permanentFixRegistry.getHeapWarnRatio()  * 100);
@@ -896,7 +896,7 @@ class PlatformAutoFixer extends EventEmitter {
             if (typeof global.gc === 'function') global.gc();
             try {
               const { distributedCache } = await import('./distributedCacheService.js');
-              await (distributedCache as any)?.evictExpired?.();
+              await (distributedCache as Record<string, unknown>)?.evictExpired?.();
               logger.info(`[PlatformAutoFixer] Heap critical (${heapRatio}%) — GC + cache eviction complete`);
             } catch { /* evict is best-effort */ }
           },
@@ -913,7 +913,7 @@ class PlatformAutoFixer extends EventEmitter {
             action: async () => {
               try {
                 const { distributedCache } = await import('./distributedCacheService.js');
-                await (distributedCache as any)?.flush?.();
+                await (distributedCache as Record<string, unknown>)?.flush?.();
                 logger.warn(`[PlatformAutoFixer] EXTREME heap pressure (${heapRatio}%) — full cache flush executed`);
               } catch { /* non-critical */ }
             },
@@ -1014,7 +1014,7 @@ class PlatformAutoFixer extends EventEmitter {
             const { pool } = await import('../db.js');
             await pool.query('SELECT 1');
             logger.info('[PlatformAutoFixer] Session store ping recovered after critical failure');
-          } catch (err: any) {
+          } catch (err) {
             logger.warn('[PlatformAutoFixer] Session store reconnect failed:', err.message);
           }
         },
@@ -1348,7 +1348,7 @@ class PlatformAutoFixer extends EventEmitter {
       const { pool } = await import('../db.js');
       const t0 = Date.now();
       await Promise.race([
-        (pool as any).query('SELECT 1'),
+        (pool as Record<string, unknown>).query('SELECT 1'),
         new Promise<never>((_, r) => setTimeout(() => r(new Error('stress timeout')), STRESS_TIMEOUT_MS)),
       ]);
       const latency = Date.now() - t0;
@@ -1359,7 +1359,7 @@ class PlatformAutoFixer extends EventEmitter {
           `Pre-warming connection pool.`
         );
         // Fire a second no-op query to pre-warm the next connection slot
-        await (pool as any).query('SELECT 1').catch(() => { /* ignore */ });
+        await (pool as Record<string, unknown>).query('SELECT 1').catch(() => { /* ignore */ });
         this._threatsNeutralized++;
       }
     } catch {
@@ -1487,7 +1487,7 @@ class PlatformAutoFixer extends EventEmitter {
       // Also try evicting cache to buy headroom
       try {
         const { distributedCache } = await import('../infrastructure/distributedCache.js');
-        await (distributedCache as any)?.evictExpired?.();
+        await (distributedCache as Record<string, unknown>)?.evictExpired?.();
         logger.info('[PlatformAutoFixer] 🎯 OFFENSIVE: Cache eviction triggered to slow heap growth');
       } catch { /* non-fatal */ }
 
@@ -1719,8 +1719,8 @@ export const platformAutoFixer = new PlatformAutoFixer();
  * Usage: app.use(platformFixerMiddleware);
  */
 export function platformFixerMiddleware(
-  req: any,
-  res: any,
+  req: Record<string, unknown>,
+  res: Record<string, unknown>,
   next: () => void,
 ): void {
   res.on('finish', () => {

@@ -24,7 +24,7 @@ export function DeepLinkHandler() {
     }
 
     if ('launchQueue' in window) {
-      (window as any).launchQueue.setConsumer((launchParams: any) => {
+      (window as Record<string, unknown>).launchQueue.setConsumer((launchParams: Record<string, unknown>) => {
         if (launchParams.targetURL) {
           handleDeepLink(launchParams.targetURL);
         }

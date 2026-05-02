@@ -186,7 +186,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
     }
   }
 
-  async checkQueueMetrics(metrics: any): Promise<void> {
+  async checkQueueMetrics(metrics: Record<string, unknown>): Promise<void> {
     if (metrics.waiting > this.config.thresholds.queueMaxWaiting) {
       await this.sendAlert({
         severity: 'warning',
@@ -218,7 +218,7 @@ This is an automated alert from Max Booster Platform Monitoring System.
     }
   }
 
-  async checkAICacheMetrics(metrics: any): Promise<void> {
+  async checkAICacheMetrics(metrics: Record<string, unknown>): Promise<void> {
     const socialUtil = parseFloat(metrics.social.utilizationPercent);
     const adUtil = parseFloat(metrics.advertising.utilizationPercent);
 

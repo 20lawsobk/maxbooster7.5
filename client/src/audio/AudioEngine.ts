@@ -252,7 +252,7 @@ export class WebAudioEngine extends BaseAudioEngine {
 }
 
 export class ElementaryAudioEngine extends BaseAudioEngine {
-  private core: any = null;
+  private core: Record<string, unknown> | null = null;
   private isInitialized: boolean = false;
   
   async initialize(): Promise<void> {
@@ -297,17 +297,17 @@ export class ElementaryAudioEngine extends BaseAudioEngine {
     }
   }
   
-  createSynth(type: 'sine' | 'saw' | 'square' | 'triangle', frequency: number): any {
+  createSynth(type: 'sine' | 'saw' | 'square' | 'triangle', frequency: number): OscillatorNode {
     logger.info(`[ElementaryAudioEngine] Creating ${type} oscillator at ${frequency}Hz`);
     return { type, frequency };
   }
   
-  createFilter(type: 'lowpass' | 'highpass' | 'bandpass', cutoff: number, resonance: number): any {
+  createFilter(type: 'lowpass' | 'highpass' | 'bandpass', cutoff: number, resonance: number): BiquadFilterNode {
     logger.info(`[ElementaryAudioEngine] Creating ${type} filter: cutoff=${cutoff}Hz, Q=${resonance}`);
     return { type, cutoff, resonance };
   }
   
-  createEnvelope(attack: number, decay: number, sustain: number, release: number): any {
+  createEnvelope(attack: number, decay: number, sustain: number, release: number): GainNode {
     logger.info(`[ElementaryAudioEngine] Creating ADSR envelope: A=${attack}, D=${decay}, S=${sustain}, R=${release}`);
     return { attack, decay, sustain, release };
   }

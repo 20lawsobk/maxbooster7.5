@@ -559,9 +559,9 @@ router.post('/subscribe/:tierId', async (req, res) => {
       return res.status(503).json({ error: 'Payment service unavailable. Please try again later.' });
     }
 
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as '2024-06-20' });
 
-    let stripeCustomerId = (user as any).stripeCustomerId as string | undefined;
+    let stripeCustomerId = (user as Record<string, unknown>).stripeCustomerId as string | undefined;
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: user.email,
@@ -571,7 +571,7 @@ router.post('/subscribe/:tierId', async (req, res) => {
       await db.update(users).set({ stripeCustomerId }).where(eq(users.id, user.id));
     }
 
-    let stripePriceId = (tier as any).stripePriceId as string | null | undefined;
+    let stripePriceId = (tier as Record<string, unknown>).stripePriceId as string | null | undefined;
     if (!stripePriceId) {
       const price = await stripe.prices.create({
         unit_amount: tier.priceCents,
@@ -1163,7 +1163,7 @@ router.post('/:id/checkout', async (req, res) => {
       logger.warn('Stripe secret key is not configured');
       return res.status(503).json({ error: 'Payment processing is not available. Please contact support.' });
     }
-    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as any });
+    const stripe = new Stripe(stripeKey, { apiVersion: '2024-06-20' as '2024-06-20' });
 
     const [storefront] = await db.select().from(storefronts).where(eq(storefronts.id, storefrontId)).limit(1);
     if (!storefront) return res.status(404).json({ error: 'Storefront not found' });
@@ -1309,7 +1309,7 @@ router.get('/:id/orders', async (req, res) => {
 
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = (page - 1) * limit;
+    const offset = Math.min((page - 1) * limit, 100_000);
     const orders = await db.select().from(storefrontOrders)
       .where(and(
         eq(storefrontOrders.storefrontId, storefrontId),
@@ -1454,7 +1454,7 @@ router.put('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
       insertedTiers.push(inserted);
     }
 
-    const existingMeta = (listing.metadata as any) || {};
+    const existingMeta = (listing.metadata as Record<string, unknown>) || {};
     await db.update(listings).set({
       metadata: { ...existingMeta, hasLicenseTiers: tiers.length > 0 },
       updatedAt: new Date(),
@@ -1478,7 +1478,7 @@ router.delete('/:storefrontId/listings/:listingId/tiers', async (req, res) => {
 
     await db.delete(listingLicenseTiers).where(eq(listingLicenseTiers.listingId, listingId));
 
-    const existingMeta = (listing.metadata as any) || {};
+    const existingMeta = (listing.metadata as Record<string, unknown>) || {};
     await db.update(listings).set({
       metadata: { ...existingMeta, hasLicenseTiers: false },
       updatedAt: new Date(),
@@ -1652,7 +1652,7 @@ function getActivePromotionsFilter(storefrontId: string) {
 }
 
 interface BogoResult {
-  appliedPromotion: any | null;
+  appliedPromotion: Record<string, unknown> | null;
   freeItemIndices: number[];
   discountedItems: { index: number; discountPercent: number }[];
   totalSavingsCents: number;
@@ -1661,7 +1661,7 @@ interface BogoResult {
 
 function applyBogoToCart(
   cartListings: Array<{ id: string; priceCents: number; genre?: string | null }>,
-  promotions: any[],
+  promotions: unknown[],
   customerRedemptions?: Map<string, number>,
   cartLicenseType?: string
 ): BogoResult {
@@ -1691,11 +1691,11 @@ function applyBogoToCart(
     if (promo.appliesTo === 'specific' && promo.applicableListingIds?.length > 0) {
       eligibleItems = cartListings
         .map((l, i) => ({ index: i, priceCents: l.priceCents, id: l.id }))
-        .filter(item => promo.applicableListingIds.includes((item as any).id));
+        .filter(item => promo.applicableListingIds.includes((item as Record<string, unknown>).id));
     } else if (promo.appliesTo === 'genre' && promo.applicableGenres?.length > 0) {
       eligibleItems = cartListings
         .map((l, i) => ({ index: i, priceCents: l.priceCents, genre: l.genre }))
-        .filter(item => promo.applicableGenres.includes((item as any).genre));
+        .filter(item => promo.applicableGenres.includes((item as Record<string, unknown>).genre));
     } else {
       eligibleItems = cartListings.map((l, i) => ({ index: i, priceCents: l.priceCents }));
     }
@@ -1848,7 +1848,7 @@ router.put('/:storefrontId/bogo-promotions/:promoId', async (req, res) => {
             appliesTo, applicableListingIds, applicableGenres, buyLicenseType, bogoLicenseType,
             maxRedemptions, perCustomerLimit, stackable, priority, status, startAt, endAt } = req.body;
 
-    const updateData: any = { updatedAt: new Date() };
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
     if (promoType !== undefined) updateData.promoType = promoType;

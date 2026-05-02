@@ -111,7 +111,7 @@ function normalizeDomain(d: string): string {
     .replace(/\.$/, '');            // strip trailing FQDN dot
 }
 
-function mapZone(row: any) {
+function mapZone(row: Record<string, unknown>) {
   return {
     id: row.id,
     userId: row.user_id,
@@ -127,7 +127,7 @@ function mapZone(row: any) {
   };
 }
 
-function mapRecord(row: any) {
+function mapRecord(row: Record<string, unknown>) {
   return {
     id: row.id,
     zoneId: row.zone_id,
@@ -153,7 +153,7 @@ function mapRecord(row: any) {
 router.get('/usage', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const [usage, hasSubscription] = await Promise.all([
       getUserDomainUsage(userId),
       userHasActiveSubscription(userId),
@@ -166,7 +166,7 @@ router.get('/usage', async (req, res) => {
       remaining: Math.max(0, DOMAIN_LIMIT - usage.total),
       hasSubscription,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Usage error: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to fetch usage' });
   }
@@ -201,7 +201,7 @@ router.get('/zones', async (req, res) => {
     );
 
     res.json({ zones: result.rows.map(mapZone) });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error listing zones: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to list zones' });
   }
@@ -210,7 +210,7 @@ router.get('/zones', async (req, res) => {
 router.post('/zones', async (req, res) => {
   try {
     if (!req.isAuthenticated()) return res.status(401).json({ error: 'Unauthorized' });
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
 
     const schema = z.object({ domain: z.string().min(3), notes: z.string().optional() });
     const parsed = schema.safeParse(req.body);
@@ -260,7 +260,7 @@ router.post('/zones', async (req, res) => {
     );
 
     res.json({ success: true, zone });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error creating zone: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to create zone' });
   }
@@ -311,9 +311,9 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
     for (const url of DOH_ENDPOINTS) {
       try {
         const r = await fetch(url, { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(5000) });
-        const d: any = await r.json();
-        const answers: any[] = d.Answer ?? [];
-        if (answers.some((a: any) => typeof a.data === 'string' && (a.data.includes(NS1) || a.data.includes(BASE_DOMAIN)))) {
+        const d: Record<string, unknown> = await r.json() as Record<string, unknown>;
+        const answers: unknown[] = d.Answer ?? [];
+        if (answers.some((a: Record<string, unknown>) => typeof a.data === 'string' && (a.data.includes(NS1) || a.data.includes(BASE_DOMAIN)))) {
           nsResolved = true;
           break;
         }
@@ -325,9 +325,9 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
       for (const url of TXT_ENDPOINTS) {
         try {
           const r = await fetch(url, { headers: { Accept: 'application/dns-json' }, signal: AbortSignal.timeout(5000) });
-          const d: any = await r.json();
-          const answers: any[] = d.Answer ?? [];
-          if (answers.some((a: any) => typeof a.data === 'string' && a.data.includes(token))) {
+          const d: Record<string, unknown> = await r.json() as Record<string, unknown>;
+          const answers: unknown[] = d.Answer ?? [];
+          if (answers.some((a: Record<string, unknown>) => typeof a.data === 'string' && a.data.includes(token))) {
             txtResolved = true;
             break;
           }
@@ -350,7 +350,7 @@ router.post('/zones/:zoneId/verify', async (req, res) => {
       verified: false,
       message: `NS delegation not detected. Make sure your registrar's nameserver is set to ${NS1}, or add TXT record: maxbooster-verify=${token}`,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Verify error: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Verification check failed' });
   }
@@ -372,7 +372,7 @@ router.delete('/zones/:zoneId', async (req, res) => {
     await pool.query('DELETE FROM dns_zones WHERE id = $1', [zoneId]);
 
     res.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error deleting zone: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to delete zone' });
   }
@@ -396,7 +396,7 @@ router.get('/zones/:zoneId/records', async (req, res) => {
     );
 
     res.json({ records: records.rows.map(mapRecord), zone });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error fetching records: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to fetch records' });
   }
@@ -430,7 +430,7 @@ router.post('/zones/:zoneId/records', async (req, res) => {
     );
 
     res.json({ success: true, record: mapRecord(result.rows[0]) });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error adding record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to add record' });
   }
@@ -466,7 +466,7 @@ router.put('/zones/:zoneId/records/:recordId', async (req, res) => {
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record not found' });
     res.json({ success: true, record: mapRecord(result.rows[0]) });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error updating record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to update record' });
   }
@@ -489,7 +489,7 @@ router.delete('/zones/:zoneId/records/:recordId', async (req, res) => {
     );
 
     res.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error deleting record: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to delete record' });
   }
@@ -530,7 +530,7 @@ router.post('/zones/:zoneId/records/batch', async (req, res) => {
     }
 
     res.json({ success: true, count: validated.length });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS Manager] Error batch adding records: ' + (err?.message ?? String(err)));
     res.status(500).json({ error: 'Failed to batch add records' });
   }
@@ -570,7 +570,7 @@ router.get('/zones/:zoneId/storefront-link', async (req, res) => {
         ? { storefrontId: link.storefront_id, storefrontName: link.name, storefrontSlug: link.slug, status: link.status }
         : null,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DNS Manager] storefront-link GET error');
     return res.status(500).json({ error: 'Failed to fetch storefront link' });
   }
@@ -669,7 +669,7 @@ router.post('/zones/:zoneId/use-as-storefront', async (req, res) => {
       storefrontName: sf.name,
       storefrontSlug: sf.slug,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DNS Manager] use-as-storefront POST error');
     return res.status(500).json({ error: 'Failed to link domain as storefront URL' });
   }
@@ -762,7 +762,7 @@ router.get('/zones/:zoneId/export', async (req, res) => {
     const filename = `${zone.domain.replace(/\./g, '_')}_zone.txt`;
 
     res.json({ zoneText, filename, domain: zone.domain, recordCount: userRecords.length });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DNS Manager] export error');
     res.status(500).json({ error: 'Failed to export zone' });
   }
@@ -810,7 +810,7 @@ router.post('/zones/:zoneId/transfer-out', async (req, res) => {
 
     logger.info(`[DNS Manager] Zone ${zone.domain} transferred out by user ${userId}`);
     res.json({ success: true, domain: zone.domain });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DNS Manager] transfer-out error');
     res.status(500).json({ error: 'Failed to transfer out domain' });
   }
@@ -856,7 +856,7 @@ router.delete('/zones/:zoneId/use-as-storefront', async (req, res) => {
 
     logger.info(`[DNS Manager] Storefront URL link removed for zone ${zone.domain}`);
     return res.json({ success: true });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err }, '[DNS Manager] use-as-storefront DELETE error');
     return res.status(500).json({ error: 'Failed to unlink storefront URL' });
   }

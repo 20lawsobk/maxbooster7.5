@@ -3,7 +3,7 @@ import { useBatchSelect, UseBatchSelectResult } from '@/hooks/useBatchSelect';
 
 export interface SelectionItem {
   id: string;
-  [key: string]: any;
+  [key: string]: Record<string, unknown>;
 }
 
 export interface SelectionContextValue<T extends SelectionItem = SelectionItem> extends UseBatchSelectResult<string> {

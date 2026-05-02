@@ -211,7 +211,7 @@ const invoices = invoicesData?.invoices || [];
     });
   };
 
-  const updateInvoiceItem = (index: number, field: string, value: any) => {
+  const updateInvoiceItem = (index: number, field: string, value: Record<string, unknown>) => {
     const items = [...newInvoice.items];
     items[index] = { ...items[index], [field]: value };
     setNewInvoice({ ...newInvoice, items });

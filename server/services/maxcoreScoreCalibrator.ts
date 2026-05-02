@@ -125,7 +125,7 @@ export async function runCalibration(): Promise<void> {
       `Top weights: engagement=${(_cachedWeights?.engagement ?? DEFAULT_WEIGHTS.engagement).toFixed(3)}, ` +
       `hook=${(_cachedWeights?.hookStrength ?? DEFAULT_WEIGHTS.hookStrength).toFixed(3)}`
     );
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[ScoreCalibrator] Calibration error: ${err.message} — retaining previous values`);
   } finally {
     _calibrating = false;
@@ -210,7 +210,7 @@ async function buildPerformanceSummary(): Promise<PerformanceSummary | null> {
       percentileP75: p75,
       percentileP90: p90,
     };
-  } catch (err: any) {
+  } catch (err) {
     logger.debug(`[ScoreCalibrator] DB query error: ${err.message}`);
     return null;
   }
@@ -405,12 +405,12 @@ async function fetchMaxCoreCalibration(
     // Merge: content signals always available; depth weights layer on top when trained.
     const mergedWeights: Partial<ScoreWeights> = { ...contentSignals };
     for (const k of Object.keys(depthWeights) as Array<keyof ScoreWeights>) {
-      const cs = (contentSignals as any)?.[k];
-      const dw = (depthWeights  as any)[k];
+      const cs = (contentSignals as Record<string, unknown>)?.[k];
+      const dw = (depthWeights  as Record<string, unknown>)[k];
       if (cs != null && dw != null) {
-        (mergedWeights as any)[k] = Math.max(cs, dw);
+        (mergedWeights as Record<string, unknown>)[k] = Math.max(cs, dw);
       } else if (dw != null) {
-        (mergedWeights as any)[k] = dw;
+        (mergedWeights as Record<string, unknown>)[k] = dw;
       }
     }
 
@@ -422,7 +422,7 @@ async function fetchMaxCoreCalibration(
       floor,
       confidence: contentSignals ? 0.5 + coverageRatio * 0.5 : coverageRatio,
     };
-  } catch (err: any) {
+  } catch (err) {
     logger.info(`[ScoreCalibrator] MaxCore calibration fetch failed: ${err.message}`);
   }
   return null;
@@ -445,7 +445,7 @@ function applyCalibration(resp: MaxCoreCalibrationResponse, summary: Performance
   if (resp.weights) {
     for (const [k, v] of Object.entries(resp.weights)) {
       if (k in merged && typeof v === 'number') {
-        (merged as any)[k] = Math.max(0.01, Math.min(0.50, v));
+        (merged as Record<string, unknown>)[k] = Math.max(0.01, Math.min(0.50, v));
       }
     }
   }

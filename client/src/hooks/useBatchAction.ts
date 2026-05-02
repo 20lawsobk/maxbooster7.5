@@ -41,7 +41,7 @@ export interface BatchResult {
   totalFailed: number;
   downloadUrl?: string;
   exportId?: string;
-  comparisonData?: any[];
+  comparisonData?: unknown[];
 }
 
 export interface BatchActionConfig {

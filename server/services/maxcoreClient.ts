@@ -84,7 +84,7 @@ export class MaxCoreAIClient {
         return null;
       }
       return await r.json() as T;
-    } catch (e: any) {
+    } catch (e) {
       logger.debug(`[MaxCoreAI] GET ${path} failed: ${e.message}`);
       return null;
     }
@@ -110,7 +110,7 @@ export class MaxCoreAIClient {
         return null;
       }
       return await r.json() as T;
-    } catch (e: any) {
+    } catch (e) {
       logger.debug(`[MaxCoreAI] poll ${path} network error (continuing): ${e.message}`);
       return null;
     }
@@ -152,7 +152,7 @@ export class MaxCoreAIClient {
         }
 
         logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
-      } catch (e: any) {
+      } catch (e) {
         logger.debug(`[MaxCoreAI] generate ${path} attempt ${attempt + 1} failed: ${e.message}`);
       }
 
@@ -205,7 +205,7 @@ export class MaxCoreAIClient {
         }
 
         logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} → HTTP ${r.status}`);
-      } catch (e: any) {
+      } catch (e) {
         logger.debug(`[MaxCoreAI] infer ${path} attempt ${attempt + 1} failed: ${e.message}`);
       }
 

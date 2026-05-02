@@ -115,7 +115,7 @@ export interface Order {
 }
 
 // Helper functions to map between service and database Order types
-function toServiceOrder(dbOrder: any): Order {
+function toServiceOrder(dbOrder: Record<string, unknown>): Order {
   return {
     id: dbOrder.id,
     beatId: dbOrder.listingId || '',
@@ -284,7 +284,7 @@ export class MarketplaceService {
       const createdListing = await storage.createListing(dbListing);
 
       // Map database result back to service format
-      const metadata = (createdListing.metadata as any) || {};
+      const metadata = (createdListing.metadata as Record<string, unknown>) || {};
       return {
         id: createdListing.id,
         userId: createdListing.userId,
@@ -749,7 +749,7 @@ export class MarketplaceService {
       const user = await storage.getUser(userId);
 
       const listingIds = listings.map(l => l.id);
-      let allTiers: any[] = [];
+      let allTiers: unknown[] = [];
       if (listingIds.length > 0) {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
@@ -803,7 +803,7 @@ export class MarketplaceService {
       const producer = await storage.getUser(producerId);
 
       const listingIds = listings.map(l => l.id);
-      let allTiers: any[] = [];
+      let allTiers: unknown[] = [];
       if (listingIds.length > 0) {
         for (const lid of listingIds) {
           const tiers = await db.select().from(listingLicenseTiers)
@@ -891,7 +891,7 @@ export class MarketplaceService {
         throw new Error(`Listing validation failed: ${validation.errors.join('; ')}`);
       }
 
-      const updateData: any = {};
+      const updateData: Record<string, unknown> = {};
       if (data.title !== undefined) updateData.title = data.title;
       if (data.description !== undefined) updateData.description = data.description;
       if (data.price !== undefined) updateData.priceCents = Math.round(data.price * 100);
@@ -899,7 +899,7 @@ export class MarketplaceService {
       if (data.audioUrl !== undefined) updateData.audioUrl = data.audioUrl;
       if (data.artworkUrl !== undefined) updateData.artworkUrl = data.artworkUrl;
 
-      const existingMetadata = (listing as any).metadata || {};
+      const existingMetadata = (listing as Record<string, unknown>).metadata || {};
       updateData.metadata = {
         ...existingMetadata,
         genre: data.genre ?? existingMetadata.genre,
@@ -913,7 +913,7 @@ export class MarketplaceService {
       const updatedListing = await storage.updateListing(listingId, updateData);
       if (!updatedListing) return null;
 
-      const metadata = (updatedListing.metadata as any) || {};
+      const metadata = (updatedListing.metadata as Record<string, unknown>) || {};
       return {
         id: updatedListing.id,
         userId: updatedListing.userId,
@@ -1000,10 +1000,10 @@ export class MarketplaceService {
 
       let priceInCents: number;
       let licenseLabel = licenseType;
-      let licenseSnapshot: any = null;
+      let licenseSnapshot: Record<string, unknown> | null = null;
 
       if (beat.hasLicenseTiers && beat.licenseTiers?.length) {
-        const tier = beat.licenseTiers.find((t: any) => t.licenseType === licenseType && t.isActive);
+        const tier = beat.licenseTiers.find((t: Record<string, unknown>) => t.licenseType === licenseType && t.isActive);
         if (!tier) {
           throw new Error('Invalid or inactive license type');
         }
@@ -1020,7 +1020,7 @@ export class MarketplaceService {
           bogoGetPercent: tier.bogoGetPercent,
         };
       } else {
-        const license = beat.licenses.find((l: any) => l.type === licenseType);
+        const license = beat.licenses.find((l: Record<string, unknown>) => l.type === licenseType);
         if (!license) {
           throw new Error('Invalid license type');
         }

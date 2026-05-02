@@ -70,11 +70,11 @@ export interface IStorage {
   getProjectsByUserId(userId: string): Promise<Project[]>;
   createProject(project: InsertProject): Promise<Project>;
   getReleasesByUserId(userId: string): Promise<Release[]>;
-  createJWTToken(data: any): Promise<any>;
+  createJWTToken(data: Record<string, unknown>): Promise<string>;
   verifyJWTToken(jti: string): Promise<boolean>;
   revokeJWTToken(id: string, reason: string): Promise<void>;
   revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void>;
-  createRefreshToken(data: any): Promise<any>;
+  createRefreshToken(data: Record<string, unknown>): Promise<string>;
   getRefreshToken(token: string): Promise<any>;
   revokeRefreshToken(id: string, reason: string): Promise<void>;
   revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void>;
@@ -88,7 +88,7 @@ export class DatabaseStorage implements IStorage {
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         return await fn();
-      } catch (err: any) {
+      } catch (err) {
         lastErr = err;
         const msg = err?.message ?? '';
         const causeMsg = err?.cause?.message ?? '';
@@ -201,12 +201,12 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     if (!user) return undefined;
-    return ((user as any).preferences as any)?.autopilotConfig || undefined;
+    return (user?.preferences as Record<string, unknown>)?.autopilotConfig || undefined;
   }
 
-  async saveAutopilotConfig(userId: string, config: any): Promise<any> {
+  async saveAutopilotConfig(userId: string, config: Record<string, unknown>): Promise<Record<string, unknown>> {
     const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
-    const prefs = (user?.preferences as any) || {};
+    const prefs = (user?.preferences as Record<string, unknown>) || {};
     prefs.autopilotConfig = config;
     await db
       .update(users)
@@ -223,12 +223,12 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     if (!user) return undefined;
-    return ((user as any).preferences as any)?.advertisingAutopilotConfig || undefined;
+    return (user?.preferences as Record<string, unknown>)?.advertisingAutopilotConfig || undefined;
   }
 
-  async saveAdvertisingAutopilotConfig(userId: string, config: any): Promise<any> {
+  async saveAdvertisingAutopilotConfig(userId: string, config: Record<string, unknown>): Promise<Record<string, unknown>> {
     const [user] = await dbRead.select({ preferences: users.preferences }).from(users).where(eq(users.id, userId));
-    const prefs = (user?.preferences as any) || {};
+    const prefs = (user?.preferences as Record<string, unknown>) || {};
     prefs.advertisingAutopilotConfig = config;
     await db
       .update(users)
@@ -244,8 +244,8 @@ export class DatabaseStorage implements IStorage {
       WHERE (preferences->>'autopilotConfig')::jsonb->>'enabled' = 'true'
       LIMIT 1000
     `);
-    const rows = (result as any).rows ?? result;
-    return Array.isArray(rows) ? rows.map((user: any) => {
+    const rows = (result as { rows?: unknown[] }).rows ?? result;
+    return Array.isArray(rows) ? rows.map((user: Record<string, unknown>) => {
       const prefs = typeof user.preferences === 'string'
         ? JSON.parse(user.preferences)
         : (user.preferences ?? {});
@@ -263,7 +263,7 @@ export class DatabaseStorage implements IStorage {
     return model || undefined;
   }
 
-  async saveUserAIModel(userId: string, modelType: string, weights: any, metadata?: any): Promise<void> {
+  async saveUserAIModel(userId: string, modelType: string, weights: unknown, metadata?: Record<string, unknown>): Promise<void> {
     const existing = await this.getUserAIModel(userId, modelType);
     if (existing) {
       await db
@@ -295,7 +295,7 @@ export class DatabaseStorage implements IStorage {
     return model || undefined;
   }
 
-  async createInferenceRun(data: any): Promise<any> {
+  async createInferenceRun(data: Record<string, unknown>): Promise<Record<string, unknown>> {
     const [run] = await db.insert(inferenceRuns).values(data).returning();
     return run;
   }
@@ -314,7 +314,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getScheduledPosts(input: string | { userId?: string; status?: string }): Promise<any[]> {
-    const conditions: any[] = [];
+    const conditions: import("drizzle-orm").SQL<unknown>[] = [];
     if (typeof input === 'string') {
       conditions.push(eq(posts.userId, input));
       conditions.push(sql`${posts.status} IN ('scheduled', 'pending')`);
@@ -334,7 +334,7 @@ export class DatabaseStorage implements IStorage {
       .limit(500);
   }
 
-  async createScheduledPost(post: any): Promise<any> {
+  async createScheduledPost(post: Record<string, unknown>): Promise<Record<string, unknown>> {
     const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = post;
     const [newPost] = await db.insert(posts).values({
       id: post.id,
@@ -358,7 +358,7 @@ export class DatabaseStorage implements IStorage {
   async getScheduledPostById(id: string): Promise<any | null> {
     const [post] = await db.select().from(posts).where(eq(posts.id, id)).limit(1);
     if (!post) return null;
-    const eng = (post.engagement as any) || {};
+    const eng = (post.engagement as Record<string, unknown>) || {};
     const meta = eng._autopilotMeta ? eng : {};
     return {
       ...post,
@@ -373,7 +373,7 @@ export class DatabaseStorage implements IStorage {
 
   async updateScheduledPost(id: string, updates: Partial<any>): Promise<any> {
     const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = updates;
-    const updateValues: any = { ...rest };
+    const updateValues: Record<string, unknown> = { ...(rest as Record<string, unknown>) };
     if (platforms) updateValues.platform = Array.isArray(platforms) ? platforms[0] : platforms;
     if (content !== undefined) updateValues.content = typeof content === 'string' ? content : JSON.stringify(content);
     if (scheduledTime) updateValues.scheduledAt = new Date(scheduledTime);
@@ -385,8 +385,8 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async updateScheduledPostStatus(id: string, status: string, results?: any[]): Promise<void> {
-    const updateValues: any = { status };
+  async updateScheduledPostStatus(id: string, status: string, results?: unknown[]): Promise<void> {
+    const updateValues: Record<string, unknown> = { status };
     if (results !== undefined) updateValues.engagement = results;
     if (status === 'completed' || status === 'published') updateValues.publishedAt = new Date();
     await db.update(posts).set(updateValues).where(eq(posts.id, id));
@@ -412,7 +412,7 @@ export class DatabaseStorage implements IStorage {
     let totalReach = 0, totalImpressions = 0;
 
     for (const post of recentPosts) {
-      const eng = post.engagement as any;
+      const eng = post.engagement as Record<string, unknown>;
       if (eng) {
         totalLikes += eng.likes || 0;
         totalComments += eng.comments || 0;
@@ -424,7 +424,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     for (const content of autopilotContent) {
-      const perf = content.performance as any;
+      const perf = content.performance as Record<string, unknown>;
       if (perf) {
         totalLikes += perf.likes || 0;
         totalComments += perf.comments || 0;
@@ -456,7 +456,7 @@ export class DatabaseStorage implements IStorage {
     // Compute content performance from posts
     const contentPerformance = recentPosts.length > 0
       ? recentPosts.slice(0, 5).map(p => {
-          const eng = p.engagement as any;
+          const eng = p.engagement as Record<string, unknown>;
           return {
             id: p.id,
             platform: p.platform,
@@ -575,10 +575,10 @@ export class DatabaseStorage implements IStorage {
     const normalizedPosts = scheduledPosts
       .filter(p => !calendarIds.has(p.id))
       .map(p => {
-        const eng = (p.engagement as any) || {};
+        const eng = (p.engagement as Record<string, unknown>) || {};
         const meta = eng._autopilotMeta ? eng : {};
         const rawContent = typeof p.content === 'string' ? p.content : JSON.stringify(p.content ?? '');
-        let parsedContent: any = {};
+        let parsedContent: Record<string, unknown> = {};
         try { parsedContent = JSON.parse(rawContent); } catch { parsedContent = {}; }
         const contentObj = meta.content || parsedContent || {};
         const titleText =
@@ -721,15 +721,15 @@ export class DatabaseStorage implements IStorage {
 
     // Index results by ISO date string for O(1) merge
     const postMap = new Map<string, any>();
-    for (const row of (postRows as any).rows ?? postRows) {
+    for (const row of ((postRows as { rows?: unknown[] }).rows ?? postRows) as Record<string, unknown>[]) {
       postMap.set(String(row.day).substring(0, 10), row);
     }
     const contentMap = new Map<string, any>();
-    for (const row of (contentRows as any).rows ?? contentRows) {
+    for (const row of ((contentRows as { rows?: unknown[] }).rows ?? contentRows) as Record<string, unknown>[]) {
       contentMap.set(String(row.day).substring(0, 10), row);
     }
 
-    const stats: any[] = [];
+    const stats: Record<string, unknown>[] = [];
     for (let i = 6; i >= 0; i--) {
       const dayStart = new Date();
       dayStart.setHours(0, 0, 0, 0);
@@ -774,7 +774,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAudienceSegments(userId: string): Promise<any[]> {
     const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).limit(200);
-    const segments: any[] = [];
+    const segments: Record<string, unknown>[] = [];
     campaigns.forEach(c => {
       const ta = c.targetAudience as Record<string, any> | null;
       if (ta && ta.segment) {
@@ -826,7 +826,7 @@ export class DatabaseStorage implements IStorage {
   async getLookalikeAudiences(userId: string): Promise<any[]> {
     const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `lookalike_audiences:${userId}`)).limit(1);
     if (!row) return [];
-    return (row.value as any[]) || [];
+    return (row.value as unknown[]) || [];
   }
 
   async getAdvertisingForecasts(userId: string): Promise<any> {
@@ -842,7 +842,7 @@ export class DatabaseStorage implements IStorage {
   async getCompetitorInsights(userId: string): Promise<any[]> {
     const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitor_insights:${userId}`)).limit(1);
     if (!row) return [];
-    return (row.value as any[]) || [];
+    return (row.value as unknown[]) || [];
   }
 
   async getABTests(userId: string): Promise<any[]> {
@@ -858,8 +858,8 @@ export class DatabaseStorage implements IStorage {
       .map(([campaignId, variants]) => {
         const perfs = variants.map(v => (v.performance as Record<string, any>) || {});
         const best = variants.reduce((a, b) => {
-          const aRate = ((a.performance as any)?.clicks || 0) / Math.max(1, (a.performance as any)?.impressions || 1);
-          const bRate = ((b.performance as any)?.clicks || 0) / Math.max(1, (b.performance as any)?.impressions || 1);
+          const aRate = ((a.performance as Record<string, unknown>)?.clicks || 0) / Math.max(1, (a.performance as Record<string, unknown>)?.impressions || 1);
+          const bRate = ((b.performance as Record<string, unknown>)?.clicks || 0) / Math.max(1, (b.performance as Record<string, unknown>)?.impressions || 1);
           return bRate > aRate ? b : a;
         });
         return { id: campaignId, campaignId, name: `A/B Test – ${variants[0].name}`, variants: variants.map(v => ({ id: v.id, name: v.name, status: v.status, performance: v.performance })), winnerVariantId: best.id, status: 'running', createdAt: variants[0].createdAt };
@@ -916,7 +916,7 @@ export class DatabaseStorage implements IStorage {
 
   async getBudgetPacingHistory(userId: string): Promise<any[]> {
     const campaigns = await db.select().from(adCampaigns).where(eq(adCampaigns.userId, userId)).orderBy(desc(adCampaigns.createdAt)).limit(10);
-    const history: any[] = [];
+    const history: Record<string, unknown>[] = [];
     campaigns.forEach(c => {
       const perf = c.performance as Record<string, any> | null;
       if (c.startDate) {
@@ -993,10 +993,10 @@ export class DatabaseStorage implements IStorage {
 
     if (accounts.length === 0 && recentContent.length === 0) return [];
 
-    const insights: any[] = [];
+    const insights: Record<string, unknown>[] = [];
     if (recentContent.length > 0) {
       const topPerforming = recentContent.filter(c => {
-        const perf = c.performance as any;
+        const perf = c.performance as Record<string, unknown>;
         return perf && (perf.views > 0 || perf.likes > 0);
       });
       if (topPerforming.length > 0) {
@@ -1048,7 +1048,7 @@ export class DatabaseStorage implements IStorage {
   async getCompetitors(userId: string): Promise<any[]> {
     const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, `competitors:${userId}`)).limit(1);
     if (!row) return [];
-    return (row.value as any[]) || [];
+    return (row.value as unknown[]) || [];
   }
 
   async getRecentAnalyzedContent(userId: string, limit: number): Promise<any[]> {
@@ -1073,7 +1073,7 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
-  async saveAnalyzedContentFeatures(userId: string, features: any): Promise<string> {
+  async saveAnalyzedContentFeatures(userId: string, features: Record<string, unknown>): Promise<string> {
     const id = `feature-${Date.now()}-${userId.slice(0, 8)}`;
     try {
       await db.insert(systemSettings).values({ key: `analyzed_content:${id}`, value: { userId, features, createdAt: new Date().toISOString() }, description: `Analyzed content features for user ${userId}` }).onConflictDoNothing();
@@ -1122,7 +1122,7 @@ export class DatabaseStorage implements IStorage {
     title: string;
     message?: string;
     actionUrl?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }): Promise<Notification> {
     const [notification] = await db
       .insert(notifications)
@@ -1282,10 +1282,10 @@ export class DatabaseStorage implements IStorage {
         LIMIT 50
       `);
 
-      const rows = (result as any).rows ?? result;
+      const rows = (result as { rows?: unknown[] }).rows ?? result;
       if (!Array.isArray(rows)) return [];
 
-      return rows.map((u: any) => {
+      return rows.map((u: Record<string, unknown>) => {
         const displayName = u.username || `${u.first_name || ''} ${u.last_name || ''}`.trim() || 'Producer';
         return {
           id: u.id,
@@ -1312,7 +1312,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDistroRelease(data: any): Promise<DistroRelease> {
+  async createDistroRelease(data: Record<string, unknown>): Promise<DistroRelease> {
     const [release] = await db
       .insert(distroReleases)
       .values(data)
@@ -1338,7 +1338,7 @@ export class DatabaseStorage implements IStorage {
     return release || undefined;
   }
 
-  async updateDistroRelease(id: string, data: any): Promise<DistroRelease | undefined> {
+  async updateDistroRelease(id: string, data: Record<string, unknown>): Promise<DistroRelease | undefined> {
     const [release] = await db
       .update(distroReleases)
       .set(data)
@@ -1355,7 +1355,7 @@ export class DatabaseStorage implements IStorage {
       .limit(50);
   }
 
-  async createDistroTrack(data: any): Promise<DistroTrack> {
+  async createDistroTrack(data: Record<string, unknown>): Promise<DistroTrack> {
     const [track] = await db
       .insert(distroTracks)
       .values(data)
@@ -1367,7 +1367,7 @@ export class DatabaseStorage implements IStorage {
     return this.getDistroTracksByRelease(releaseId);
   }
 
-  async updateDistroTrack(trackId: string, releaseId: string, data: any): Promise<DistroTrack | undefined> {
+  async updateDistroTrack(trackId: string, releaseId: string, data: Record<string, unknown>): Promise<DistroTrack | undefined> {
     const [track] = await db
       .update(distroTracks)
       .set(data)
@@ -1429,7 +1429,7 @@ export class DatabaseStorage implements IStorage {
     slug: string;
     isActive?: boolean;
     logoUrl?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }): Promise<any> {
     try {
       const [provider] = await db
@@ -1455,7 +1455,7 @@ export class DatabaseStorage implements IStorage {
   async updateDSPProvider(id: string, data: {
     name?: string;
     isActive?: boolean;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }): Promise<any | null> {
     try {
       const [provider] = await db
@@ -1490,10 +1490,10 @@ export class DatabaseStorage implements IStorage {
   private async _loadDispatches(releaseId: string): Promise<any[]> {
     const key = this._dispatchSettingKey(releaseId);
     const [row] = await db.select().from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
-    return (row?.value as any[]) || [];
+    return (row?.value as unknown[]) || [];
   }
 
-  private async _saveDispatches(releaseId: string, dispatches: any[]): Promise<void> {
+  private async _saveDispatches(releaseId: string, dispatches: unknown[]): Promise<void> {
     const key = this._dispatchSettingKey(releaseId);
     const [existing] = await db.select({ id: systemSettings.id }).from(systemSettings).where(eq(systemSettings.key, key)).limit(1);
     if (existing) {
@@ -1503,7 +1503,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDistroDispatch(data: any): Promise<any> {
+  async createDistroDispatch(data: Record<string, unknown>): Promise<any> {
     const dispatch = {
       id: `dispatch_${Date.now()}_${randomBytes(4).toString("hex")}`,
       ...data,
@@ -1520,10 +1520,10 @@ export class DatabaseStorage implements IStorage {
     return this._loadDispatches(releaseId);
   }
 
-  async updateDistroDispatchStatus(releaseId: string, data: any): Promise<any | null> {
+  async updateDistroDispatchStatus(releaseId: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     const dispatches = await this._loadDispatches(releaseId);
     if (data.platform) {
-      const dispatch = dispatches.find((d: any) => d.platform === data.platform);
+      const dispatch = dispatches.find((d: Record<string, unknown>) => d.platform === data.platform);
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
         await this._saveDispatches(releaseId, dispatches);
@@ -1533,12 +1533,12 @@ export class DatabaseStorage implements IStorage {
     return null;
   }
 
-  async updateDistroDispatch(dispatchId: string, data: any): Promise<any | null> {
+  async updateDistroDispatch(dispatchId: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     const rows = await db.select().from(systemSettings)
       .where(sql`${systemSettings.key} like ${'distro_dispatch:%'}`).limit(200);
     for (const row of rows) {
-      const dispatches = (row.value as any[]) || [];
-      const dispatch = dispatches.find((d: any) => d.id === dispatchId);
+      const dispatches = (row.value as Record<string, unknown>[]) || [];
+      const dispatch = dispatches.find((d: Record<string, unknown>) => d.id === dispatchId);
       if (dispatch) {
         Object.assign(dispatch, data, { updatedAt: new Date().toISOString() });
         const releaseId = row.key.replace('distro_dispatch:', '');
@@ -1549,7 +1549,7 @@ export class DatabaseStorage implements IStorage {
     return null;
   }
 
-  async createAuditLog(data: any): Promise<any> {
+  async createAuditLog(data: Record<string, unknown>): Promise<any> {
     try {
       const [entry] = await db
         .insert(workspaceAuditLog)
@@ -1671,7 +1671,7 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
     
-    return data[0].topCountries as any[] || [];
+    return (data[0].topCountries as unknown[]) || [];
   }
 
   async getPayoutHistory(userId: string): Promise<any[]> {
@@ -1747,7 +1747,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createHyperFollowPage(data: any): Promise<any | null> {
+  async createHyperFollowPage(data: Record<string, unknown>): Promise<any | null> {
     try {
       const [page] = await db
         .insert(hyperFollowPages)
@@ -1766,7 +1766,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateHyperFollowPage(id: string, data: any): Promise<any | null> {
+  async updateHyperFollowPage(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     try {
       const [page] = await db
         .update(hyperFollowPages)
@@ -1790,7 +1790,7 @@ export class DatabaseStorage implements IStorage {
     artworkUrl?: string;
     previewUrl?: string;
     isPublished?: boolean;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
     tags?: string[];
   }): Promise<any> {
     try {
@@ -1830,7 +1830,7 @@ export class DatabaseStorage implements IStorage {
     userId?: string;
   }): Promise<any[]> {
     try {
-      const conditions: any[] = [];
+      const conditions: import("drizzle-orm").SQL<unknown>[] = [];
 
       if (filters?.userId) {
         conditions.push(eq(listings.userId, filters.userId));
@@ -1876,7 +1876,7 @@ export class DatabaseStorage implements IStorage {
 
       const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-      let orderBy: any;
+      let orderBy: import("drizzle-orm").SQL<unknown> | undefined;
       switch (filters?.sortBy) {
         case 'popular':
           orderBy = [desc(sql`(${listings.metadata}->>'plays')::int`)];
@@ -1915,7 +1915,7 @@ export class DatabaseStorage implements IStorage {
       const userMap = new Map(userRows.map(u => [u.id, u]));
 
       return results.map(listing => {
-        const meta = (listing.metadata as any) || {};
+        const meta = (listing.metadata as Record<string, unknown>) || {};
         const owner = userMap.get(listing.userId);
         const producerName = owner?.username || `${owner?.firstName || ''} ${owner?.lastName || ''}`.trim() || 'Producer';
         return {
@@ -2008,7 +2008,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateListing(id: string, data: any): Promise<any | null> {
+  async updateListing(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     try {
       const [listing] = await db
         .update(listings)
@@ -2098,7 +2098,7 @@ export class DatabaseStorage implements IStorage {
     description?: string;
     content: string;
     category?: string;
-    variables?: any[];
+    variables?: Record<string, unknown>[];
   }): Promise<any> {
     try {
       const [template] = await db
@@ -2120,7 +2120,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async updateContractTemplate(id: string, data: any): Promise<any | null> {
+  async updateContractTemplate(id: string, data: Record<string, unknown>): Promise<Record<string, unknown> | null> {
     try {
       const [template] = await db
         .update(contractTemplates)
@@ -2240,7 +2240,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createJWTToken(data: any): Promise<any> {
+  async createJWTToken(data: Record<string, unknown>): Promise<any> {
     const [token] = await db.insert(jwtTokens).values(data).returning();
     return token;
   }
@@ -2271,7 +2271,7 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(jwtTokens.userId, userId), eq(jwtTokens.revoked, false)));
   }
 
-  async createRefreshToken(data: any): Promise<any> {
+  async createRefreshToken(data: Record<string, unknown>): Promise<any> {
     const [token] = await db.insert(refreshTokens).values(data).returning();
     return token;
   }

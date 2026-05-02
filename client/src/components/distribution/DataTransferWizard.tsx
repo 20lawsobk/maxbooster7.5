@@ -177,7 +177,7 @@ export function DataTransferWizard() {
       setArtistName('');
       invalidateAll();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Link Failed', description: error.message, variant: 'destructive' });
     },
   });
@@ -230,7 +230,7 @@ export function DataTransferWizard() {
       refetchJobs();
       invalidateAll();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Import Failed', description: error.message, variant: 'destructive' });
     },
   });
@@ -260,7 +260,7 @@ export function DataTransferWizard() {
           ? `Found ${releases.length} release${releases.length !== 1 ? 's' : ''} on ${getPlatformName(platformId)}`
           : `No releases found on ${getPlatformName(platformId)}`,
       });
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Scan Failed', description: err.message, variant: 'destructive' });
     } finally {
       setScanningPlatform(null);

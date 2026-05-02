@@ -38,7 +38,7 @@ const transientDetectionSchema = z.object({
 async function verifyClipOwnership(
   clipId: string,
   userId: string
-): Promise<{ clip: any; track: any; project: any } | null> {
+): Promise<{ clip: Record<string, unknown>; track: Record<string, unknown>; project: Record<string, unknown> } | null> {
   const clip = await db.query.audioClips.findFirst({
     where: eq(audioClips.id, clipId),
   });
@@ -69,7 +69,7 @@ async function verifyClipOwnership(
 router.get('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -91,7 +91,7 @@ router.get('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
 router.post('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -109,7 +109,7 @@ router.post('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
       .returning();
 
     res.status(201).json(newMarker);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating warp marker:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
@@ -121,7 +121,7 @@ router.post('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
 router.put('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, res) => {
   try {
     const { clipId, markerId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -148,7 +148,7 @@ router.put('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, res
       .returning();
 
     res.json(updatedMarker);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error updating warp marker:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid marker data', details: error.errors });
@@ -160,7 +160,7 @@ router.put('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, res
 router.delete('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, res) => {
   try {
     const { clipId, markerId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -187,7 +187,7 @@ router.delete('/clips/:clipId/warp/markers/:markerId', requireAuth, async (req, 
 router.post('/clips/:clipId/warp/preview', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -207,7 +207,7 @@ router.post('/clips/:clipId/warp/preview', requireAuth, async (req, res) => {
       userId,
       clipId,
       storageKey: clip.filePath,
-      markers: markers.map((m: any) => ({
+      markers: markers.map((m: Record<string, unknown>) => ({
         id: m.id,
         sourceTime: m.sourceTime,
         targetTime: m.targetTime,
@@ -230,7 +230,7 @@ router.post('/clips/:clipId/warp/preview', requireAuth, async (req, res) => {
       status: 'queued',
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error creating warp preview:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid preview options', details: error.errors });
@@ -242,7 +242,7 @@ router.post('/clips/:clipId/warp/preview', requireAuth, async (req, res) => {
 router.post('/clips/:clipId/warp/commit', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -266,7 +266,7 @@ router.post('/clips/:clipId/warp/commit', requireAuth, async (req, res) => {
       userId,
       clipId,
       storageKey: clip.filePath,
-      markers: markers.map((m: any) => ({
+      markers: markers.map((m: Record<string, unknown>) => ({
         id: m.id,
         sourceTime: m.sourceTime,
         targetTime: m.targetTime,
@@ -289,7 +289,7 @@ router.post('/clips/:clipId/warp/commit', requireAuth, async (req, res) => {
       message: 'Warp rendering started. The clip will be updated when complete.',
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error committing warp:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid commit options', details: error.errors });
@@ -301,7 +301,7 @@ router.post('/clips/:clipId/warp/commit', requireAuth, async (req, res) => {
 router.get('/clips/:clipId/warp/transients', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -331,7 +331,7 @@ router.get('/clips/:clipId/warp/transients', requireAuth, async (req, res) => {
       message: 'Transient detection started',
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error detecting transients:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid detection options', details: error.errors });
@@ -343,7 +343,7 @@ router.get('/clips/:clipId/warp/transients', requireAuth, async (req, res) => {
 router.post('/clips/:clipId/warp/quantize', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -381,7 +381,7 @@ router.post('/clips/:clipId/warp/quantize', requireAuth, async (req, res) => {
       message: 'Beat quantization started',
       statusUrl: `/api/studio/jobs/${jobId}/status`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error quantizing to grid:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ error: 'Invalid quantize options', details: error.errors });
@@ -393,7 +393,7 @@ router.post('/clips/:clipId/warp/quantize', requireAuth, async (req, res) => {
 router.delete('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -415,7 +415,7 @@ router.delete('/clips/:clipId/warp/markers', requireAuth, async (req, res) => {
 router.get('/clips/:clipId/warp/tempo', requireAuth, async (req, res) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const ownership = await verifyClipOwnership(clipId, userId);
     if (!ownership) {
@@ -440,7 +440,7 @@ router.get('/clips/:clipId/warp/tempo', requireAuth, async (req, res) => {
       pitchShift: clip.pitchShift || 0,
       preserveFormants: clip.preserveFormants ?? true,
       markerCount: markers.length,
-      markers: markers.map((m: any) => ({
+      markers: markers.map((m: Record<string, unknown>) => ({
         id: m.id,
         sourceTime: m.sourceTime,
         targetTime: m.targetTime,

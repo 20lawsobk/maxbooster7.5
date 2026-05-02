@@ -196,6 +196,8 @@ const DigitalGPUVideoPlayer = forwardRef<
       frontBufRef.current.forEach(b => b.close?.());
       backBufRef.current.forEach(b => b.close?.());
     };
+    // INTENTIONAL: bridgeRef/frontBufRef/backBufRef are stable useRef objects — they never
+    // change identity, so listing them as deps would cause no extra runs but adds noise.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [width, height]);
 
@@ -223,6 +225,8 @@ const DigitalGPUVideoPlayer = forwardRef<
         rafRef.current = requestAnimationFrame(tick);
       }
     });
+    // INTENTIONAL: autoPlay and tick are intentionally excluded — including them would
+    // re-trigger frame decoding whenever autoPlay toggles, causing double-playback.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [frames]);
 
@@ -287,6 +291,8 @@ const DigitalGPUVideoPlayer = forwardRef<
         }
       })
       .catch(e => console.warn('[DigitalGPUVideoPlayer] SSE stream error:', e));
+    // INTENTIONAL: only reconnect when the stream URL or mode changes; tick/renderBitmap
+    // are stable useCallbacks whose identity changes would not warrant a reconnect.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [streamMode, streamUrl]);
 
@@ -320,6 +326,8 @@ const DigitalGPUVideoPlayer = forwardRef<
     }
 
     rafRef.current = requestAnimationFrame(tick);
+  // INTENTIONAL: renderBitmap has stable [] deps and onFrameRendered is a prop whose
+  // change should not reset the render loop mid-playback.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loop, skipClientGpu, sceneName]);
 
@@ -329,7 +337,7 @@ const DigitalGPUVideoPlayer = forwardRef<
 
     const bridge = bridgeRef.current;
     if (!skipClientGpu && bridge?.isReady) {
-      const imageData = await bridge.process(bitmap as any, sceneName);
+      const imageData = await bridge.process(bitmap as Record<string, unknown>, sceneName);
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.putImageData(imageData, 0, 0);
     } else {
@@ -382,7 +390,7 @@ const DigitalGPUVideoPlayer = forwardRef<
     // Expose buffer helpers for external clip management
     prefetchIntoBack,
     swapBuffers,
-  } as any));
+  } as Record<string, unknown>));
 
   // ── Render ────────────────────────────────────────────────────────────────
 

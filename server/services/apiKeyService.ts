@@ -273,7 +273,7 @@ async function trackUsageRecord(usage: {
   method: string;
   statusCode: number;
   responseTime: number;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }) {
   try {
     await db.insert(apiUsage).values({

@@ -137,7 +137,7 @@ router.post('/text', requireAuth, aiRateLimiter, async (req, res) => {
       projectId: validatedData.projectId,
     });
 
-    const userId = (req as any).user?.id || 'unknown';
+    const userId = req.user?.id || 'unknown';
     const category = validatedData.instrumentCategory === 'drums' ? 'drums'
       : validatedData.instrumentCategory === 'percussion' ? 'percussion'
       : validatedData.genre ? validatedData.genre.toLowerCase()
@@ -168,7 +168,7 @@ router.post('/text', requireAuth, aiRateLimiter, async (req, res) => {
       generatedNotes: result.generatedNotes || [],
       generatedChords: result.generatedChords || [],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Studio Generation] Text generation failed:');
     
     if (error instanceof z.ZodError) {
@@ -214,7 +214,7 @@ router.post('/audio', requireAuth, aiRateLimiter, upload.single('audio'), async 
       projectId: validatedData.projectId,
     });
 
-    const userId2 = (req as any).user?.id || 'unknown';
+    const userId2 = req.user?.id || 'unknown';
     await persistGeneratedSample({
       name: `AI Style Transfer: ${validatedData.targetType || 'drums'}`,
       category: validatedData.targetType === 'drums' ? 'drums' : 'synths',
@@ -234,7 +234,7 @@ router.post('/audio', requireAuth, aiRateLimiter, upload.single('audio'), async 
       generatedNotes: result.generatedNotes || [],
       generatedChords: result.generatedChords || [],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Studio Generation] Audio generation failed:');
     
     if (error instanceof z.ZodError) {
@@ -302,7 +302,7 @@ router.get('/presets', requireAuth, async (req, res) => {
     };
 
     res.json(presets);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Studio Generation] Failed to get presets:');
     res.status(500).json({ 
       success: false, 
@@ -328,7 +328,7 @@ router.get('/pattern/instruments', requireAuth, async (_req, res) => {
   try {
     const instruments = melodyPatternService.getAvailableInstruments();
     res.json(instruments);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching instruments:');
     res.status(500).json({ error: 'Failed to fetch instruments' });
   }
@@ -338,7 +338,7 @@ router.get('/pattern/genres', requireAuth, async (_req, res) => {
   try {
     const genres = melodyPatternService.getAvailableGenres();
     res.json(genres);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching genres:');
     res.status(500).json({ error: 'Failed to fetch genres' });
   }
@@ -348,7 +348,7 @@ router.get('/pattern/styles', requireAuth, async (_req, res) => {
   try {
     const styles = melodyPatternService.getAvailableStyles();
     res.json(styles);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching styles:');
     res.status(500).json({ error: 'Failed to fetch styles' });
   }
@@ -358,7 +358,7 @@ router.get('/pattern/scales', requireAuth, async (_req, res) => {
   try {
     const scales = melodyPatternService.getAvailableScales();
     res.json(scales);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching scales:');
     res.status(500).json({ error: 'Failed to fetch scales' });
   }
@@ -387,7 +387,7 @@ router.get('/pattern/stats', requireAuth, async (_req, res) => {
       styles: melodyPatternService.getAvailableStyles().length,
       scales: melodyPatternService.getAvailableScales().length,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching stats:');
     res.status(500).json({ error: 'Failed to fetch stats' });
   }
@@ -410,7 +410,7 @@ router.post('/pattern/melody', requireAuth, aiRateLimiter, async (req, res) => {
       pattern,
       params,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating melody:');
     res.status(500).json({ error: 'Failed to generate melody' });
   }
@@ -433,7 +433,7 @@ router.post('/pattern/drums', requireAuth, aiRateLimiter, async (req, res) => {
       pattern,
       params,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating drums:');
     res.status(500).json({ error: 'Failed to generate drums' });
   }
@@ -456,7 +456,7 @@ router.post('/pattern/chords', requireAuth, aiRateLimiter, async (req, res) => {
       progression,
       params,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating chords:');
     res.status(500).json({ error: 'Failed to generate chords' });
   }
@@ -490,14 +490,14 @@ router.post('/pattern/arrangement', requireAuth, aiRateLimiter, async (req, res)
       },
       params,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error generating full arrangement:');
     res.status(500).json({ error: 'Failed to generate arrangement' });
   }
 });
 
 router.post('/audio-to-melody', requireAuth, aiRateLimiter, upload.single('audio'), async (req, res) => {
-  const file = (req as any).file as Express.Multer.File | undefined;
+  const file = req.file;
   if (!file) {
     return res.status(400).json({ error: 'No audio file provided' });
   }
@@ -519,13 +519,13 @@ router.post('/audio-to-melody', requireAuth, aiRateLimiter, upload.single('audio
       );
       stdout = out.stdout;
       stderr = out.stderr;
-    } catch (execErr: any) {
+    } catch (execErr: Record<string, unknown>) {
       const msg = execErr?.stderr?.trim() || execErr?.message || 'Pitch tracking process failed';
       logger.warn('[audio-to-melody] execFile error:', msg);
       return res.status(500).json({ error: 'Pitch tracking failed. Make sure the audio contains a clear melody.' });
     }
 
-    let result: any;
+    let result: Record<string, unknown>;
     try {
       result = JSON.parse(stdout.trim());
     } catch {
@@ -538,7 +538,7 @@ router.post('/audio-to-melody', requireAuth, aiRateLimiter, upload.single('audio
     }
 
     const NOTES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const melodyNotes = (result.notes as any[]).map((n: any) => ({
+    const melodyNotes = (result.notes as Record<string, unknown>[]).map((n: Record<string, unknown>) => ({
       pitch: n.midi,
       noteName: NOTES[n.midi % 12] + n.octave,
       duration: n.duration_beats,
@@ -553,7 +553,7 @@ router.post('/audio-to-melody', requireAuth, aiRateLimiter, upload.single('audio
       bpm: result.bpm,
       note_count: result.note_count,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[audio-to-melody] Error:');
     res.status(500).json({ error: 'Pitch tracking failed' });
   } finally {

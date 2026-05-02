@@ -14,7 +14,7 @@ import axios from 'axios';
 import { logger } from '../logger';
 
 // Optional sharp support with graceful fallback
-let sharpModule: any = null;
+let sharpModule: typeof import("sharp") | null = null;
 let sharpAvailable = false;
 
 async function getSharp() {
@@ -240,9 +240,9 @@ export interface TextAnalysisResult {
 }
 
 export class ContentAnalysisService {
-  private imageClassificationModel: any = null;
-  private faceDetectionModel: any = null;
-  private textDetectionModel: any = null;
+  private imageClassificationModel: import("@tensorflow/tfjs").LayersModel | null = null;
+  private faceDetectionModel: import("@tensorflow/tfjs").LayersModel | null = null;
+  private textDetectionModel: import("@tensorflow/tfjs").LayersModel | null = null;
   private modelsInitialized = false;
   private initializationPromise: Promise<void> | null = null;
   private ready = false;
@@ -299,7 +299,7 @@ export class ContentAnalysisService {
   /**
    * Build custom image classification model
    */
-  private buildImageClassificationModel(): any {
+  private buildImageClassificationModel(): Promise<import("@tensorflow/tfjs").LayersModel> {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -334,7 +334,7 @@ export class ContentAnalysisService {
   /**
    * Build custom face detection model
    */
-  private buildFaceDetectionModel(): any {
+  private buildFaceDetectionModel(): Promise<import("@tensorflow/tfjs").LayersModel> {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -366,7 +366,7 @@ export class ContentAnalysisService {
   /**
    * Build custom text detection model
    */
-  private buildTextDetectionModel(): any {
+  private buildTextDetectionModel(): Promise<import("@tensorflow/tfjs").LayersModel> {
     if (!isTensorFlowAvailable() || !tf) {
       return null;
     }
@@ -719,7 +719,7 @@ export class ContentAnalysisService {
         [224, 224, 3]
       ).div(255.0).expandDims(0);
 
-      const prediction = this.faceDetectionModel.predict(imageTensor) as any;
+      const prediction = this.faceDetectionModel.predict(imageTensor) as Record<string, unknown>;
       const hasFacesProbability = (await prediction.data())[0];
 
       imageTensor.dispose();
@@ -831,9 +831,9 @@ export class ContentAnalysisService {
    * Calculate attention-grabbing score
    */
   private calculateAttentionScore(
-    colors: any,
-    composition: any,
-    faces: any
+    colors: Record<string, unknown>,
+    composition: Record<string, unknown>,
+    faces: Record<string, unknown>
   ): number {
     let score = 0.5;
     
@@ -852,7 +852,7 @@ export class ContentAnalysisService {
   /**
    * Calculate emotional impact
    */
-  private calculateEmotionalImpact(colors: any, faces: any): 'high' | 'medium' | 'low' {
+  private calculateEmotionalImpact(colors: Record<string, unknown>, faces: Record<string, unknown>): 'high' | 'medium' | 'low' {
     if (faces.hasFaces && colors.mood === 'vibrant') return 'high';
     if (faces.hasFaces || colors.mood === 'vibrant') return 'medium';
     return 'low';
@@ -861,7 +861,7 @@ export class ContentAnalysisService {
   /**
    * Calculate shareability score
    */
-  private calculateShareability(colors: any, composition: any, features: any): number {
+  private calculateShareability(colors: Record<string, unknown>, composition: Record<string, unknown>, features: Record<string, unknown>): number {
     let score = 0.5;
     
     if (colors.mood === 'vibrant') score += 0.15;
@@ -874,7 +874,7 @@ export class ContentAnalysisService {
   /**
    * Calculate vibe tags
    */
-  private calculateVibe(colors: any, composition: any, features: any): string[] {
+  private calculateVibe(colors: Record<string, unknown>, composition: Record<string, unknown>, features: Record<string, unknown>): string[] {
     const vibes: string[] = [];
     
     if (colors.mood === 'vibrant') vibes.push('energetic', 'bold');
@@ -954,7 +954,7 @@ export class ContentAnalysisService {
   /**
    * Analyze audio/music content
    */
-  async analyzeAudio(audioUrl: string, metadata?: any): Promise<AudioAnalysisResult> {
+  async analyzeAudio(audioUrl: string, metadata?: Record<string, unknown>): Promise<AudioAnalysisResult> {
     await this.ensureInitialized();
     
     try {

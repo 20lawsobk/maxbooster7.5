@@ -218,7 +218,7 @@ function simulateExportProgress(jobId: string): void {
 router.post('/audio/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = audioExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -281,7 +281,7 @@ router.post('/audio/:projectId', requireAuth, async (req: Request, res: Response
 router.get('/jobs/:jobId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(jobId);
     if (!job) {
@@ -302,7 +302,7 @@ router.get('/jobs/:jobId', requireAuth, async (req: Request, res: Response) => {
 // Get all active export jobs for user
 router.get('/jobs', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const userJobs = Array.from(exportJobs.values())
       .filter(job => job.userId === userId)
@@ -319,7 +319,7 @@ router.get('/jobs', requireAuth, async (req: Request, res: Response) => {
 router.post('/jobs/:jobId/cancel', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(jobId);
     if (!job) {
@@ -346,7 +346,7 @@ router.post('/jobs/:jobId/cancel', requireAuth, async (req: Request, res: Respon
 router.post('/jobs/:jobId/retry', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(jobId);
     if (!job) {
@@ -389,7 +389,7 @@ router.post('/jobs/:jobId/retry', requireAuth, async (req: Request, res: Respons
 // Start data export
 router.post('/data', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = dataExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -456,7 +456,7 @@ router.post('/data', requireAuth, async (req: Request, res: Response) => {
 // Get export history
 router.get('/history', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { type, status, limit = '50', offset = '0' } = req.query;
 
     let filtered = exportHistory.filter(item => item.userId === userId);
@@ -486,7 +486,7 @@ router.get('/history', requireAuth, async (req: Request, res: Response) => {
 router.delete('/history/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const index = exportHistory.findIndex(item => item.id === id && item.userId === userId);
     if (index === -1) {
@@ -508,7 +508,7 @@ router.delete('/history/:id', requireAuth, async (req: Request, res: Response) =
 // Create share link
 router.post('/share-links', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = shareLinkSchema.safeParse(req.body);
     if (!validation.success) {
@@ -550,7 +550,7 @@ router.post('/share-links', requireAuth, async (req: Request, res: Response) => 
 // Get all share links for user
 router.get('/share-links', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const rows = await db
       .select()
@@ -679,7 +679,7 @@ router.get('/share/:shortCode/download', async (req: Request, res: Response) => 
 router.delete('/share-links/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const [link] = await db
       .select({ id: shareLinksTable.id, userId: shareLinksTable.userId })
@@ -710,7 +710,7 @@ router.delete('/share-links/:id', requireAuth, async (req: Request, res: Respons
 router.patch('/share-links/:id', requireAuth, async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const updates = req.body;
 
     const [link] = await db
@@ -752,7 +752,7 @@ router.patch('/share-links/:id', requireAuth, async (req: Request, res: Response
 router.get('/download/:jobId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(jobId);
     if (!job) {
@@ -793,7 +793,7 @@ router.get('/download/:jobId', requireAuth, async (req: Request, res: Response) 
 // Start batch export
 router.post('/batch', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { outputs, projectId, projectName } = req.body;
 
     if (!outputs || !Array.isArray(outputs) || outputs.length === 0) {
@@ -856,7 +856,7 @@ router.post('/batch', requireAuth, async (req: Request, res: Response) => {
 
 router.post('/analytics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { format, sections, filters, dateRange, includeCharts } = req.body;
 
     const jobId = randomBytes(8).toString('hex');
@@ -917,7 +917,7 @@ const reportTypeSchema = z.object({
 router.post('/report/:type', requireAuth, async (req: Request, res: Response) => {
   try {
     const { type } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!reportTypes.includes(type as ReportType)) {
       return res.status(400).json({ 
@@ -1008,7 +1008,7 @@ const chartExportSchema = z.object({
 
 router.post('/chart', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = chartExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -1103,7 +1103,7 @@ const bulkExportSchema = z.object({
 
 router.post('/bulk', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = bulkExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -1169,7 +1169,7 @@ router.post('/bulk', requireAuth, async (req: Request, res: Response) => {
 router.get('/download/zip/:jobId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(jobId);
     if (!job) {
@@ -1189,7 +1189,7 @@ router.get('/download/zip/:jobId', requireAuth, async (req: Request, res: Respon
       message: 'ZIP download initiated',
       fileName: `${job.name.replace(/[^a-zA-Z0-9]/g, '_')}.zip`,
       fileSize: job.fileSize,
-      itemCount: (job.settings as any)?.items?.length || 0,
+      itemCount: (job.settings as Record<string, unknown>)?.items?.length || 0,
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error downloading ZIP:');
@@ -1224,7 +1224,7 @@ const masteredExportSchema = z.object({
 router.post('/audio/:projectId/mastered', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = masteredExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -1317,7 +1317,7 @@ const stemsExportSchema = z.object({
 router.post('/audio/:projectId/stems', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const validation = stemsExportSchema.safeParse(req.body);
     if (!validation.success) {
@@ -1376,7 +1376,7 @@ router.post('/audio/:projectId/stems', requireAuth, async (req: Request, res: Re
 router.get('/status/:exportId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { exportId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const job = exportJobs.get(exportId);
     if (!job) {
@@ -1419,7 +1419,7 @@ router.get('/status/:exportId', requireAuth, async (req: Request, res: Response)
 router.post('/notify/:jobId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { email } = req.body;
 
     const job = exportJobs.get(jobId);

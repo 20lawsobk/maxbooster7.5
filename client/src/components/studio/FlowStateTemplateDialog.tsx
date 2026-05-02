@@ -84,7 +84,7 @@ async function createProjectFromTemplate(templateId: string, title?: string): Pr
 interface FlowStateTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onProjectCreated: (project: any) => void;
+  onProjectCreated: (project: Record<string, unknown>) => void;
 }
 
 export function FlowStateTemplateDialog({

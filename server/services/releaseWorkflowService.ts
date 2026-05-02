@@ -59,8 +59,8 @@ export interface UpdateRequest {
   userId: string;
   changes: {
     field: string;
-    oldValue: any;
-    newValue: any;
+    oldValue: Record<string, unknown>;
+    newValue: Record<string, unknown>;
   }[];
   reason?: string;
 }
@@ -319,8 +319,8 @@ class ReleaseWorkflowService {
     releaseId: string,
     changedBy: string,
     changeType: string,
-    previousData: any,
-    newData: any,
+    previousData: Record<string, unknown>,
+    newData: Record<string, unknown>,
     changeReason?: string
   ): Promise<void> {
     const latestVersion = await db.select()

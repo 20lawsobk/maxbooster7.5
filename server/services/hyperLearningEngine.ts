@@ -362,7 +362,7 @@ class HyperLearningEngine extends EventEmitter {
 
       const _microKey = _hlKey('micro_all_90d');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let allData: any[] | undefined = _hlGet<any[]>(_microKey);
+      let allData: Record<string, unknown>[] | undefined = _hlGet<Record<string, unknown>[]>(_microKey);
       if (!allData) {
         allData = await db
           .select()
@@ -427,7 +427,7 @@ class HyperLearningEngine extends EventEmitter {
     }
   }
 
-  private detectCharacterCountPatterns(data: any[]): MicroPattern[] {
+  private detectCharacterCountPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const buckets: Map<string, { total: number; engagement: number; count: number }> = new Map();
     
@@ -472,7 +472,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectEmojiDensityPatterns(data: any[]): MicroPattern[] {
+  private detectEmojiDensityPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const emojiRegex = /[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu;
     
@@ -517,7 +517,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectHashtagPositionPatterns(data: any[]): MicroPattern[] {
+  private detectHashtagPositionPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const positions: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -573,7 +573,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectTimingPrecisionPatterns(data: any[]): MicroPattern[] {
+  private detectTimingPrecisionPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const minuteBuckets: Map<number, { engagement: number; count: number }> = new Map();
     
@@ -616,7 +616,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectHookStructurePatterns(data: any[]): MicroPattern[] {
+  private detectHookStructurePatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const hookTypes: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -677,7 +677,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectLineBreakPatterns(data: any[]): MicroPattern[] {
+  private detectLineBreakPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const breakBuckets: Map<number, { engagement: number; count: number }> = new Map();
     
@@ -718,7 +718,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectPunctuationPatterns(data: any[]): MicroPattern[] {
+  private detectPunctuationPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     
     const punctuationTypes = [
@@ -769,7 +769,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectNumberUsagePatterns(data: any[]): MicroPattern[] {
+  private detectNumberUsagePatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const numberTypes: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -822,7 +822,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectCTAPlacementPatterns(data: any[]): MicroPattern[] {
+  private detectCTAPlacementPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const ctaPositions: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -881,7 +881,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectSentimentCorrelation(data: any[]): MicroPattern[] {
+  private detectSentimentCorrelation(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const sentimentBuckets: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -940,7 +940,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectWordFrequencyPatterns(data: any[]): MicroPattern[] {
+  private detectWordFrequencyPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const wordEngagement: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -997,7 +997,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectTemporalMicroPatterns(data: any[]): MicroPattern[] {
+  private detectTemporalMicroPatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     
     const dayOfMonthBuckets: Map<string, { engagement: number; count: number }> = new Map();
@@ -1054,7 +1054,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectMediaCorrelations(data: any[]): MicroPattern[] {
+  private detectMediaCorrelations(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     const mediaTypes: Map<string, { engagement: number; count: number }> = new Map();
     
@@ -1093,7 +1093,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectAudienceResponsePatterns(data: any[]): MicroPattern[] {
+  private detectAudienceResponsePatterns(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     
     const responseRatios: Map<string, { engagement: number; count: number }> = new Map();
@@ -1149,7 +1149,7 @@ class HyperLearningEngine extends EventEmitter {
     return patterns;
   }
 
-  private detectViralityPrecursors(data: any[]): MicroPattern[] {
+  private detectViralityPrecursors(data: Record<string, unknown>[]): MicroPattern[] {
     const patterns: MicroPattern[] = [];
     
     const sortedByEngagement = [...data].sort((a, b) => (b.engagementRate || 0) - (a.engagementRate || 0));
@@ -1194,19 +1194,19 @@ class HyperLearningEngine extends EventEmitter {
     }
 
     Object.keys(viralCharacteristics).forEach(key => {
-      (viralCharacteristics as any)[key] /= top10Percent.length;
-      (nonViralCharacteristics as any)[key] /= bottom50Percent.length;
+      (viralCharacteristics as Record<string, unknown>)[key] /= top10Percent.length;
+      (nonViralCharacteristics as Record<string, unknown>)[key] /= bottom50Percent.length;
     });
 
     const significantDifferences = Object.keys(viralCharacteristics).filter(key => {
-      const viral = (viralCharacteristics as any)[key];
-      const nonViral = (nonViralCharacteristics as any)[key];
+      const viral = (viralCharacteristics as Record<string, unknown>)[key];
+      const nonViral = (nonViralCharacteristics as Record<string, unknown>)[key];
       return Math.abs(viral - nonViral) / Math.max(0.1, nonViral) > 0.3;
     });
 
     for (const characteristic of significantDifferences) {
-      const viralValue = (viralCharacteristics as any)[characteristic];
-      const nonViralValue = (nonViralCharacteristics as any)[characteristic];
+      const viralValue = (viralCharacteristics as Record<string, unknown>)[characteristic];
+      const nonViralValue = (nonViralCharacteristics as Record<string, unknown>)[characteristic];
       const difference = ((viralValue - nonViralValue) / Math.max(0.1, nonViralValue)) * 100;
 
       patterns.push({
@@ -1232,7 +1232,7 @@ class HyperLearningEngine extends EventEmitter {
 
       const _crossKey = _hlKey('cross_platform_90d');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let platformData: any[] | undefined = _hlGet<any[]>(_crossKey);
+      let platformData: Record<string, unknown>[] | undefined = _hlGet<Record<string, unknown>[]>(_crossKey);
       if (!platformData) {
         platformData = await db
           .select({
@@ -1462,7 +1462,7 @@ class HyperLearningEngine extends EventEmitter {
       // viralityThresholds: the 90th-percentile engagement per platform from real data.
       // Filled in from the platform-level cross-platform cache when available.
       const crossKey      = _hlKey('cross_platform_90d');
-      const platformData: any[] = _hlGet<any[]>(crossKey) ?? [];
+      const platformData: Record<string, unknown>[] = _hlGet<any[]>(crossKey) ?? [];
       const viralityThresholds: Record<string, number> = {};
       for (const row of platformData) {
         const p90 = parseFloat(String(row.avgEngagement) || '0') * 1.5; // approx 90th pct
@@ -1520,7 +1520,7 @@ class HyperLearningEngine extends EventEmitter {
     // This gives us actual hour×dayOfWeek → avgEngagement derived from the user's own
     // posting history rather than hardcoded morning/evening heuristics.
     const behavKey     = _hlKey('behavioral_velocity_30d');
-    const engVelocity: any[] = _hlGet<any[]>(behavKey) ?? [];
+    const engVelocity: Record<string, unknown>[] = _hlGet<any[]>(behavKey) ?? [];
     const hasBehavData = engVelocity.length > 0;
 
     // Compute data-derived boosts: for each (hour, day) slot, how much does
@@ -1586,7 +1586,7 @@ class HyperLearningEngine extends EventEmitter {
 
         // Confidence scales with how much real data backs this slot
         const slotRows = engVelocity.filter(r => r.hour === hour && r.dayOfWeek === dayOfWeek);
-        const slotDataPoints = slotRows.length > 0 ? (slotRows[0] as any).postCount || 1 : 0;
+        const slotDataPoints = slotRows.length > 0 ? (slotRows[0] as Record<string, unknown>).postCount || 1 : 0;
         const confidence = hasBehavData
           ? Math.min(0.92, 0.35 + (slotDataPoints / 50) * 0.5 + relevantPatterns.length * 0.05)
           : Math.min(0.5,  0.2  + relevantPatterns.length * 0.05);
@@ -1629,7 +1629,7 @@ class HyperLearningEngine extends EventEmitter {
     // neutral reference (predictions are expressed as engagement deltas, not
     // absolute percentages, until the DB has enough posts to compute a true mean).
     const microKey  = _hlKey('micro_all_90d');
-    const allData: any[] = _hlGet<any[]>(microKey) ?? [];
+    const allData: Record<string, unknown>[] = _hlGet<any[]>(microKey) ?? [];
     const baseEngagement = allData.length >= 10
       ? allData.reduce((s, d) => s + (d.engagementRate || 0), 0) / allData.length
       : 0;
@@ -1714,7 +1714,7 @@ class HyperLearningEngine extends EventEmitter {
 
       const _behavKey = _hlKey('behavioral_velocity_30d');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      let engagementVelocity: any[] | undefined = _hlGet<any[]>(_behavKey);
+      let engagementVelocity: Record<string, unknown>[] | undefined = _hlGet<Record<string, unknown>[]>(_behavKey);
       if (!engagementVelocity) {
         engagementVelocity = await db
           .select({
@@ -1750,7 +1750,7 @@ class HyperLearningEngine extends EventEmitter {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
       const benchKey = _hlKey('competitive_benchmark_90d');
-      let benchmarkData: any[] | undefined = _hlGet<any[]>(benchKey);
+      let benchmarkData: Record<string, unknown>[] | undefined = _hlGet<Record<string, unknown>[]>(benchKey);
       if (!benchmarkData) {
         benchmarkData = await db
           .select({
@@ -1771,11 +1771,11 @@ class HyperLearningEngine extends EventEmitter {
       if (benchmarkData.length === 0) return { insightsFound: 0 };
 
       // Overall mean engagement across all platform×contentType combos
-      const overallMean = benchmarkData.reduce((s: number, r: any) =>
+      const overallMean = benchmarkData.reduce((s: number, r: Record<string, unknown>) =>
         s + parseFloat(String(r.avgEngagement) || '0'), 0) / benchmarkData.length;
 
       // Insights = combos that beat the mean by ≥15% and have ≥5 posts (statistically meaningful)
-      const insights = benchmarkData.filter((r: any) =>
+      const insights = benchmarkData.filter((r: Record<string, unknown>) =>
         parseFloat(String(r.avgEngagement) || '0') > overallMean * 1.15 &&
         (r.postCount ?? 0) >= 5
       );
@@ -1897,10 +1897,10 @@ class HyperLearningEngine extends EventEmitter {
         source:           'hyper_ab_test',
         trigger:          'ab_winner',
         engagement_rate:  winner.engagementRate,
-        platform:         (test as any).platform    || 'unknown',
-        content_type:     (test as any).contentType || 'post',
-        hook_type:        (winner as any).hookType  || 'unknown',
-        media_type:       (winner as any).mediaType || 'text',
+        platform:         (test as Record<string, unknown>).platform    || 'unknown',
+        content_type:     (test as Record<string, unknown>).contentType || 'post',
+        hook_type:        (winner as Record<string, unknown>).hookType  || 'unknown',
+        media_type:       (winner as Record<string, unknown>).mediaType || 'text',
         curriculum_hint:  'reinforce_winning_visual_style',
         dispatched_at:    new Date().toISOString(),
         // Extra context (non-schema fields — MaxCore ignores extras)
@@ -2193,9 +2193,9 @@ class HyperLearningEngine extends EventEmitter {
 
     // Base engagement from real data mean, or null when no data is available yet
     const microKey2 = _hlKey('micro_all_90d');
-    const allDataBase: any[] = _hlGet<any[]>(microKey2) ?? [];
+    const allDataBase: Record<string, unknown>[] = _hlGet<any[]>(microKey2) ?? [];
     const dataMeanEngagement = allDataBase.length >= 10
-      ? allDataBase.reduce((s: number, d: any) => s + (d.engagementRate || 0), 0) / allDataBase.length
+      ? allDataBase.reduce((s: number, d: Record<string, unknown>) => s + (d.engagementRate || 0), 0) / allDataBase.length
       : null;
     const patternBoostTotal = platformPatterns.reduce((s, p) => s + p.engagementImpact, 0) / 100;
     const predictedEngagement = dataMeanEngagement !== null

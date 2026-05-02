@@ -23,7 +23,7 @@ router.get('/', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: forecasts,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching stored forecasts:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -41,7 +41,7 @@ router.get('/projections', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: projections,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error getting revenue projections:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -59,7 +59,7 @@ router.get('/accuracy', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: accuracy,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error fetching forecast accuracy:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -80,7 +80,7 @@ router.get('/rate', requireAuth, asyncHandler(async (req, res) => {
         description: `$${(rate * 1000).toFixed(2)} per 1,000 streams`,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error calculating stream-to-revenue rate:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -100,7 +100,7 @@ router.post('/generate', requireAuth, asyncHandler(async (req, res) => {
       data: forecast,
       message: `Successfully generated ${months}-month revenue forecast`,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error generating forecast:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -118,7 +118,7 @@ router.delete('/:id', requireAuth, asyncHandler(async (req, res) => {
     }
 
     res.json({ success: true, message: 'Forecast deleted' });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error deleting forecast:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

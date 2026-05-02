@@ -347,7 +347,7 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
                 transition={{ duration: 0.5 }}
               >
                 <div className="absolute bottom-4 right-4 flex gap-2">
-                  {(displayProducer.badges || []).map((badge: any) => {
+                  {(displayProducer.badges || []).map((badge: Record<string, unknown>) => {
                     const badgeConfig = BADGE_ICONS[badge.type];
                     return (
                       <TooltipProvider key={badge.id}>
@@ -760,7 +760,7 @@ export function ProducerProfile({ producerId, isOpen, onClose }: ProducerProfile
   );
 }
 
-export function ProducerCard({ producer, onClick }: { producer: any; onClick: () => void }) {
+export function ProducerCard({ producer, onClick }: { producer: Record<string, unknown>; onClick: () => void }) {
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`;
@@ -807,7 +807,7 @@ export function ProducerCard({ producer, onClick }: { producer: any; onClick: ()
             </div>
             
             <div className="flex flex-col gap-1">
-              {producer.badges?.slice(0, 3).map((badge: any) => {
+              {producer.badges?.slice(0, 3).map((badge: Record<string, unknown>) => {
                 const badgeConfig = BADGE_ICONS[badge.type];
                 return (
                   <div

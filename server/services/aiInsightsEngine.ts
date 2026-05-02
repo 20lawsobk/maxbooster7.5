@@ -59,7 +59,7 @@ interface MetricPrediction {
   algorithm: string;
   seasonalityDetected: boolean;
   trendDirection: 'upward' | 'downward' | 'stable';
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 interface CohortDefinition {
@@ -81,7 +81,7 @@ interface CohortAnalysisResult {
     day365: { retention: number; ltv: number; engagement: number };
   };
   comparisonToAverage: number;
-  visualizationData: any;
+  visualizationData: Record<string, unknown>;
 }
 
 interface ChurnPrediction {
@@ -89,7 +89,7 @@ interface ChurnPrediction {
   churnProbability: number;
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
   timeWindow: number;
-  topRiskFactors: Array<{ factor: string; importance: number; value: any }>;
+  topRiskFactors: Array<{ factor: string; importance: number; value: unknown }>;
   retentionRecommendations: AIRecommendation[];
   confidenceScore: number;
 }
@@ -134,7 +134,7 @@ interface InsightNarrative {
   priority: 'high' | 'medium' | 'low';
   confidence: number;
   actionableRecommendations: AIRecommendation[];
-  supportingData: any;
+  supportingData: Record<string, unknown>;
 }
 
 export class CustomAIEngine {
@@ -290,7 +290,7 @@ export class CustomAIEngine {
     const cohortSize = cohortUsers.length;
 
     const timePoints = [1, 7, 30, 90, 365];
-    const cohortMetrics: any = {};
+    const cohortMetrics: Record<string, unknown> = {};
 
     for (const days of timePoints) {
       const dayKey = `day${days}`;
@@ -813,7 +813,7 @@ export class CustomAIEngine {
     };
 
     const field = metricMapping[metricName] || 'streams';
-    return data.map((d) => parseFloat((d as any)[field]?.toString() || '0'));
+    return data.map((d) => parseFloat((d as Record<string, unknown>)[field]?.toString() || '0'));
   }
 
   private detectSeasonalityAndTrend(data: number[]): {
@@ -934,7 +934,7 @@ export class CustomAIEngine {
     if (users.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
-    const userIds = users.map((u: any) => u.id).filter(Boolean);
+    const userIds = users.map((u: Record<string, unknown>) => u.id).filter(Boolean);
     if (userIds.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
@@ -959,7 +959,7 @@ export class CustomAIEngine {
     };
   }
 
-  private generateCohortVisualizationData(metrics: unknown): any {
+  private generateCohortVisualizationData(metrics: unknown): Record<string, unknown> {
     return {
       heatmap: metrics,
       trend: 'stable',
@@ -967,7 +967,7 @@ export class CustomAIEngine {
   }
 
   private async compareCohortToAverage(
-    cohortMetrics: any,
+    cohortMetrics: Record<string, unknown>,
     cohortType: string
   ): Promise<number> {
     const industryRetentionBenchmark = 0.35;
@@ -1019,8 +1019,8 @@ export class CustomAIEngine {
 
   private identifyTopRiskFactors(
     features: unknown
-  ): Array<{ factor: string; importance: number; value: any }> {
-    const factors: Array<{ factor: string; importance: number; value: any }> = [];
+  ): Array<{ factor: string; importance: number; value: unknown }> {
+    const factors: Array<{ factor: string; importance: number; value: unknown }> = [];
 
     if (features.engagementScore < 0.5) {
       factors.push({

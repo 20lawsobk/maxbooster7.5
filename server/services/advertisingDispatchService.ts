@@ -218,8 +218,8 @@ export class AdvertisingDispatchService {
         .update(adCampaigns)
         .set({
           status: 'active',
-          organicMetrics: organicMetrics as any,
-          connectedPlatforms: platformsToUse as any,
+          organicMetrics: organicMetrics as Record<string, unknown>,
+          connectedPlatforms: platformsToUse as Record<string, unknown>,
         })
         .where(eq(adCampaigns.id, campaignId));
 
@@ -266,7 +266,7 @@ export class AdvertisingDispatchService {
       }
 
       const campaign = campaigns[0];
-      const organicMetrics = campaign.organicMetrics as any;
+      const organicMetrics = campaign.organicMetrics as Record<string, unknown>;
 
       if (!organicMetrics || !organicMetrics.posts) {
         logger.info('No organic posts to track for campaign', campaignId);
@@ -336,7 +336,7 @@ export class AdvertisingDispatchService {
         .set({
           impressions: totalImpressions,
           clicks: totalEngagements, // Using clicks field for total engagements
-          organicMetrics: updatedOrganicMetrics as any,
+          organicMetrics: updatedOrganicMetrics as Record<string, unknown>,
         })
         .where(eq(adCampaigns.id, campaignId));
 
@@ -392,14 +392,14 @@ export class AdvertisingDispatchService {
         userId,
         title: `${campaign.name} - ${platform}`,
         scheduledFor: new Date(), // Already published
-        platforms: [platform] as any,
+        platforms: [platform] as Record<string, unknown>,
         status: 'published',
         postType: 'campaign_post',
         content: creative.normalizedContent || creative.rawContent,
-        mediaUrls: creative.assetUrls as any,
+        mediaUrls: creative.assetUrls as Record<string, unknown>,
         hashtags: this.extractHashtags(
           creative.normalizedContent || creative.rawContent || ''
-        ) as any,
+        ) as Record<string, unknown>,
         publishedAt: new Date(),
       })
       .returning();

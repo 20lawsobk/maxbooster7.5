@@ -295,7 +295,7 @@ class CollaborationService {
 
     const userFactors = this.extractMatchingFactors(currentUser);
     const scoredMatches: CollaboratorMatch[] = potentialMatches.map((match) => {
-      const matchFactors = this.extractMatchingFactors(match as any);
+      const matchFactors = this.extractMatchingFactors(match as Record<string, unknown>);
       const { score, reasons } = this.calculateMatchScore(
         userFactors,
         matchFactors
@@ -320,7 +320,7 @@ class CollaborationService {
     return scoredMatches.slice(0, limit);
   }
 
-  private extractMatchingFactors(user: any): MatchingFactors {
+  private extractMatchingFactors(user: Record<string, unknown>): MatchingFactors {
     const onboardingData = user.onboardingData || {};
     const skills: string[] = [];
 
@@ -446,11 +446,11 @@ class CollaborationService {
     let query = db.select().from(collaborationProjects);
 
     if (filters?.ownOnly && userId) {
-      query = query.where(eq(collaborationProjects.ownerId, userId)) as any;
+      query = query.where(eq(collaborationProjects.ownerId, userId)) as Record<string, unknown>;
     } else if (filters?.status) {
       query = query.where(
         eq(collaborationProjects.status, filters.status)
-      ) as any;
+      ) as Record<string, unknown>;
     }
 
     const projects = await query.orderBy(desc(collaborationProjects.createdAt));
@@ -593,7 +593,7 @@ class CollaborationService {
     },
     limit: number = 20
   ): Promise<Partial<User>[]> {
-    let whereConditions: any[] = [];
+    let whereConditions: unknown[] = [];
 
     if (query) {
       whereConditions.push(
@@ -629,7 +629,7 @@ class CollaborationService {
 
     if (filters?.genre) {
       filteredResults = results.filter((user) => {
-        const data = user.onboardingData as any;
+        const data = user.onboardingData as Record<string, unknown>;
         const userGenre = data?.primaryGenre || data?.genre;
         return (
           userGenre &&
@@ -640,7 +640,7 @@ class CollaborationService {
 
     if (filters?.skills && filters.skills.length > 0) {
       filteredResults = filteredResults.filter((user) => {
-        const data = user.onboardingData as any;
+        const data = user.onboardingData as Record<string, unknown>;
         const userSkills = [
           data?.artistType?.toLowerCase(),
           ...(data?.skills || []).map((s: string) => s.toLowerCase()),

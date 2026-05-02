@@ -5,7 +5,7 @@ import path from 'path';
 import { db } from '../db';
 import { projects, studioTracks, audioClips, studioTemplates, users, studioProjects, studioRecentFiles, studioPinnedFolders, stemExports, pluginPresets, studioSamples } from '@shared/schema';
 import { notificationService } from '../services/notificationService.js';
-import { eq, and, or, desc, isNull, inArray, sql as drizzleSql, ilike, arrayOverlaps } from 'drizzle-orm';
+import { eq, and, or, desc, isNull, inArray, sql as drizzleSql, ilike, arrayOverlaps, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { studioService } from '../services/studioService';
 import { logger } from '../logger.js';
@@ -93,7 +93,7 @@ async function verifyProjectOwnership(projectId: string, userId: string): Promis
 // GET all projects for user (with optional pagination)
 router.get('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit || '200'), 10)));
     const offset = Math.min(Math.max(0, parseInt(String(req.query.offset || '0'), 10)), 100_000);
     const userProjects = await db.query.projects.findMany({
@@ -112,7 +112,7 @@ router.get('/projects', requireAuth, async (req: Request, res: Response) => {
 // POST create new project
 router.post('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { title, description, genre, tempo, bpm, key, timeSignature, sampleRate, bitDepth, workflowStage, status } = req.body;
     const projectId = randomBytes(8).toString('hex');
     
@@ -151,7 +151,7 @@ router.post('/projects', requireAuth, async (req: Request, res: Response) => {
 router.delete('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -171,7 +171,7 @@ router.delete('/projects/:projectId', requireAuth, async (req: Request, res: Res
 // GET recent files
 router.get('/recent-files', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const files = await db
       .select()
       .from(studioRecentFiles)
@@ -242,14 +242,14 @@ const BUILT_IN_SAMPLES: SampleMetadata[] = [
 // GET samples library with filtering
 router.get('/samples', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { category, subcategory, search, tags, tempo, key, limit = '50', offset = '0' } = req.query;
 
     const limitNum = Math.min(Math.max(parseInt(limit as string) || 0, 0), 100);
     const offsetNum = Math.min(Math.max(parseInt(offset as string) || 0, 0), 100_000);
 
     // Build DB query conditions
-    const conditions: any[] = [
+    const conditions: SQL<unknown>[] = [
       or(eq(studioSamples.isBuiltIn, true), eq(studioSamples.userId, userId))
     ];
     if (category) conditions.push(eq(studioSamples.category, category as string));
@@ -403,7 +403,7 @@ router.post(
   handleUploadError,
   async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user.id;
+      const userId = req.user!.id;
       const file = req.file;
 
       if (!file) {
@@ -495,7 +495,7 @@ const DEFAULT_MIX_BUSSES: MixBusConfig[] = [
 router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -518,7 +518,7 @@ router.get('/projects/:projectId/mix-busses', requireAuth, async (req: Request, 
 router.get('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -538,7 +538,7 @@ router.get('/projects/:projectId', requireAuth, async (req: Request, res: Respon
 router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -559,8 +559,8 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
     res.json(updated);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating project:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update project' });
   }
@@ -569,7 +569,7 @@ router.patch('/projects/:projectId', requireAuth, async (req: Request, res: Resp
 router.post('/projects/:projectId/save-daw-state', requireAuth, express.json({ limit: '10mb' }), async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -615,7 +615,7 @@ router.post('/projects/:projectId/save-daw-state', requireAuth, express.json({ l
 router.get('/projects/:projectId/daw-state', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const project = await db.query.projects.findFirst({
       where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
@@ -656,7 +656,7 @@ router.get('/projects/:projectId/daw-state', requireAuth, async (req: Request, r
 router.post('/projects/:projectId/sync', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -713,7 +713,7 @@ router.post('/projects/:projectId/sync', requireAuth, async (req: Request, res: 
 router.post('/projects/:projectId/render', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -891,7 +891,7 @@ router.post('/projects/:projectId/render', requireAuth, async (req: Request, res
 
 router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const data = createTrackSchema.parse(req.body);
 
     if (!await verifyProjectOwnership(data.projectId, userId)) {
@@ -961,7 +961,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
       }
       
       if (studioProject) {
-        const metadata = (studioProject.metadata as any) || {};
+        const metadata = (studioProject.metadata as Record<string, unknown>) || {};
         const trackFolders = { ...metadata.trackFolders };
         trackFolders[trackId] = data.parentFolderId;
         await db.update(studioProjects)
@@ -973,8 +973,8 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
     res.status(201).json({ ...track, parentFolderId: data.parentFolderId || null });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error creating track:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to create track' });
   }
@@ -983,7 +983,7 @@ router.post('/tracks', requireAuth, async (req: Request, res: Response) => {
 router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -1067,7 +1067,7 @@ router.get('/projects/:projectId/tracks', requireAuth, async (req: Request, res:
 router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const track = await db.query.studioTracks.findFirst({
       where: eq(studioTracks.id, trackId),
@@ -1137,7 +1137,7 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
       }
       
       if (studioProject) {
-        const metadata = (studioProject.metadata as any) || {};
+        const metadata = (studioProject.metadata as Record<string, unknown>) || {};
         const trackFolders = { ...metadata.trackFolders };
         
         if (data.parentFolderId === null) {
@@ -1171,8 +1171,8 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
     res.json({ ...updated, parentFolderId });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating track:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update track' });
   }
@@ -1181,7 +1181,7 @@ router.patch('/tracks/:trackId', requireAuth, async (req: Request, res: Response
 router.delete('/tracks/:trackId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const track = await db.query.studioTracks.findFirst({
       where: eq(studioTracks.id, trackId),
@@ -1208,7 +1208,7 @@ router.delete('/tracks/:trackId', requireAuth, async (req: Request, res: Respons
 router.get('/tracks/:trackId/audio-clips', requireAuth, async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const track = await db.query.studioTracks.findFirst({
       where: eq(studioTracks.id, trackId),
@@ -1242,7 +1242,7 @@ router.post(
   async (req: Request, res: Response) => {
     try {
       const { projectId, trackId } = req.params;
-      const userId = (req as any).user.id;
+      const userId = req.user!.id;
 
       if (!await verifyProjectOwnership(projectId, userId)) {
         return res.status(404).json({ error: 'Project not found' });
@@ -1298,7 +1298,7 @@ router.post(
 router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const clip = await db.query.audioClips.findFirst({
       where: eq(audioClips.id, clipId),
@@ -1330,8 +1330,8 @@ router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) 
     res.json(updated);
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error updating clip:');
-    if ((error as any).name === 'ZodError') {
-      return res.status(400).json({ error: 'Invalid data', details: (error as any).errors });
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: 'Invalid data', details: error.errors });
     }
     res.status(500).json({ error: 'Failed to update clip' });
   }
@@ -1340,7 +1340,7 @@ router.patch('/clips/:clipId', requireAuth, async (req: Request, res: Response) 
 router.delete('/clips/:clipId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { clipId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const clip = await db.query.audioClips.findFirst({
       where: eq(audioClips.id, clipId),
@@ -1370,7 +1370,7 @@ router.delete('/clips/:clipId', requireAuth, async (req: Request, res: Response)
 router.get('/tracks/:trackId/automation', requireAuth, async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { parameter } = req.query;
 
     const track = await db.query.studioTracks.findFirst({
@@ -1402,7 +1402,7 @@ router.get('/tracks/:trackId/automation', requireAuth, async (req: Request, res:
 router.put('/tracks/:trackId/automation', requireAuth, express.json({ limit: '10mb' }), async (req: Request, res: Response) => {
   try {
     const { trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { parameter, points } = req.body;
 
     if (!parameter || !Array.isArray(points)) {
@@ -1443,7 +1443,7 @@ router.put('/tracks/:trackId/automation', requireAuth, express.json({ limit: '10
 
 router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, name, type, color, outputBus } = req.body;
 
     if (!projectId) {
@@ -1494,7 +1494,7 @@ router.post('/mix-busses', requireAuth, async (req: Request, res: Response) => {
 // PATCH update mix bus
 router.patch('/mix-busses/:busId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { busId } = req.params;
     const { projectId, name, volume, pan, muted, solo, color, outputBus } = req.body;
 
@@ -1548,7 +1548,7 @@ router.patch('/mix-busses/:busId', requireAuth, async (req: Request, res: Respon
 // DELETE mix bus
 router.delete('/mix-busses/:busId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { busId } = req.params;
     const { projectId } = req.query as { projectId: string };
 
@@ -1590,7 +1590,7 @@ router.delete('/mix-busses/:busId', requireAuth, async (req: Request, res: Respo
 // POST update track routing
 router.post('/projects/:projectId/track-routing', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { trackId, outputBus } = req.body;
 
@@ -1684,7 +1684,7 @@ router.get('/conversions/:conversionId/download', requireAuth, async (req: Reque
 // Lyrics endpoints
 router.get('/lyrics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId } = req.query;
     if (!projectId || typeof projectId !== 'string') {
       return res.status(400).json({ error: 'projectId query param is required' });
@@ -1712,7 +1712,7 @@ router.get('/lyrics', requireAuth, async (req: Request, res: Response) => {
 
 router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId, lyrics, sections } = req.body;
     if (!projectId || typeof projectId !== 'string') {
       return res.status(400).json({ error: 'projectId is required' });
@@ -1750,7 +1750,7 @@ router.post('/lyrics', requireAuth, async (req: Request, res: Response) => {
 // AI Master endpoint
 router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { targetLoudness, genre, preset } = req.body;
     res.json({
@@ -1781,7 +1781,7 @@ router.post('/ai-master/:projectId', requireAuth, async (req: Request, res: Resp
 // AI Mix endpoint
 router.post('/ai-mix/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { targetGenre, referenceTrack, autoEQ, autoCompression } = req.body;
     res.json({
@@ -1894,7 +1894,7 @@ router.post('/ai-music/match-reference', requireAuth, async (req: Request, res: 
 // Studio upload endpoint with proper file handling
 router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploadError, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     const file = req.file;
     const projectId = req.body.projectId;
     
@@ -1991,7 +1991,7 @@ router.post('/upload', requireAuth, audioUpload.single('audioFile'), handleUploa
 // Studio export endpoints
 router.post('/export', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, format, quality, settings, trackIds } = req.body;
 
     if (!projectId || typeof projectId !== 'string') {
@@ -2038,7 +2038,7 @@ router.post('/export', requireAuth, async (req: Request, res: Response) => {
 router.get('/export/:jobId/status', requireAuth, async (req: Request, res: Response) => {
   try {
     const { jobId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const [record] = await db
       .select({
@@ -2094,7 +2094,7 @@ router.post('/export/:jobId/upload', requireAuth, async (req: Request, res: Resp
 
 router.post('/clips/audio', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { trackId, projectId, startTime, duration, name, audioUrl } = req.body;
 
     if (!trackId || typeof trackId !== 'string') {
@@ -2240,7 +2240,7 @@ async function ensureStudioProject(projectId: string, userId: number): Promise<b
 // Create a folder track
 router.post('/folders', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, name, color, position } = req.body;
 
     if (!projectId || !name) {
@@ -2276,7 +2276,7 @@ router.post('/folders', requireAuth, async (req: Request, res: Response) => {
 // Get all folders for a project with their children
 router.get('/projects/:projectId/folders', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
 
     // Ensure studioProject exists
@@ -2297,7 +2297,7 @@ router.get('/projects/:projectId/folders', requireAuth, async (req: Request, res
     // Build folder hierarchy
     const folders = tracks.filter(t => t.trackType === 'folder');
     const childTracks = tracks.filter(t => t.trackType !== 'folder');
-    const metadata = (studioProject?.metadata as any) || {};
+    const metadata = (studioProject?.metadata as Record<string, unknown>) || {};
     const trackFolders = metadata?.trackFolders || {};
 
     const foldersWithChildren = folders.map(folder => ({
@@ -2318,7 +2318,7 @@ router.get('/projects/:projectId/folders', requireAuth, async (req: Request, res
 // Update folder properties
 router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { folderId } = req.params;
     const { name, color, collapsed } = req.body;
 
@@ -2332,11 +2332,11 @@ router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Respon
       },
     });
 
-    if (!folder || (folder.project as any)?.userId !== userId) {
+    if (!folder || (folder.project as { userId?: string })?.userId !== userId) {
       return res.status(404).json({ error: 'Folder not found' });
     }
 
-    const updates: any = {};
+    const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
     if (color !== undefined) updates.color = color;
 
@@ -2353,7 +2353,7 @@ router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Respon
       });
       
       if (project) {
-        const metadata = (project.metadata as any) || {};
+        const metadata = (project.metadata as Record<string, unknown>) || {};
         const folderStates = metadata.folderStates || {};
         folderStates[folderId] = { collapsed };
         
@@ -2373,7 +2373,7 @@ router.patch('/folders/:folderId', requireAuth, async (req: Request, res: Respon
 // Move track to folder
 router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { trackId } = req.params;
     const { folderId, position } = req.body;
 
@@ -2384,7 +2384,7 @@ router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request,
       },
     });
 
-    if (!track || (track.project as any)?.userId !== userId) {
+    if (!track || (track.project as { userId?: string })?.userId !== userId) {
       return res.status(404).json({ error: 'Track not found' });
     }
 
@@ -2408,7 +2408,7 @@ router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request,
     });
 
     if (project) {
-      const metadata = (project.metadata as any) || {};
+      const metadata = (project.metadata as Record<string, unknown>) || {};
       const trackFolders = metadata.trackFolders || {};
       
       if (folderId) {
@@ -2444,7 +2444,7 @@ router.post('/tracks/:trackId/move-to-folder', requireAuth, async (req: Request,
 // Delete folder (optionally preserving child tracks)
 router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { folderId } = req.params;
     const { deleteChildren } = req.query;
 
@@ -2458,7 +2458,7 @@ router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Respo
       },
     });
 
-    if (!folder || (folder.project as any)?.userId !== userId) {
+    if (!folder || (folder.project as { userId?: string })?.userId !== userId) {
       return res.status(404).json({ error: 'Folder not found' });
     }
 
@@ -2468,7 +2468,7 @@ router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Respo
     });
 
     if (project) {
-      const metadata = (project.metadata as any) || {};
+      const metadata = (project.metadata as Record<string, unknown>) || {};
       const trackFolders = metadata.trackFolders || {};
       
       // Find children
@@ -2515,7 +2515,7 @@ router.delete('/folders/:folderId', requireAuth, async (req: Request, res: Respo
 // Bulk move tracks to folder
 router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { trackIds, folderId } = req.body;
 
@@ -2568,7 +2568,7 @@ router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req:
       }
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const trackFolders = { ...metadata.trackFolders };
 
     for (const trackId of trackIds) {
@@ -2600,7 +2600,7 @@ router.post('/projects/:projectId/bulk-move-to-folder', requireAuth, async (req:
 // Stem exports endpoint
 router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const exports = await db
       .select()
@@ -2618,7 +2618,7 @@ router.get('/stem-exports/:projectId', requireAuth, async (req: Request, res: Re
 // Project export stems endpoint
 router.post('/projects/:projectId/export-stems', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user!.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { format, bitDepth, sampleRate, trackIds, name } = req.body;
 
@@ -2662,7 +2662,7 @@ router.post('/projects/:projectId/export-stems', requireAuth, async (req: Reques
 // Create a mix snapshot (save current mix state)
 router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { name, description, autoSave } = req.body;
 
@@ -2701,7 +2701,7 @@ router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reque
     }));
 
     // Get current bus configurations
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixBusConfig = metadata.mixBusConfig || { busses: [] };
 
     // Create the snapshot
@@ -2752,7 +2752,7 @@ router.post('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reque
 // Get all mix snapshots for a project
 router.get('/projects/:projectId/mix-snapshots', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
 
     const hasAccess = await ensureStudioProject(projectId, userId);
@@ -2768,11 +2768,11 @@ router.get('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reques
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
 
     // Return summaries (without full track state data for list view)
-    const summaries = mixSnapshots.map((s: any) => ({
+    const summaries = mixSnapshots.map((s: Record<string, unknown>) => ({
       id: s.id,
       name: s.name,
       description: s.description,
@@ -2791,7 +2791,7 @@ router.get('/projects/:projectId/mix-snapshots', requireAuth, async (req: Reques
 // Get a specific mix snapshot with full details
 router.get('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, snapshotId } = req.params;
 
     const hasAccess = await ensureStudioProject(projectId, userId);
@@ -2807,9 +2807,9 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async 
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
-    const snapshot = mixSnapshots.find((s: any) => s.id === snapshotId);
+    const snapshot = mixSnapshots.find((s: Record<string, unknown>) => s.id === snapshotId);
 
     if (!snapshot) {
       return res.status(404).json({ error: 'Snapshot not found' });
@@ -2825,7 +2825,7 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async 
 // Recall (restore) a mix snapshot
 router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, snapshotId } = req.params;
     const { selective, trackIds, includePlugins, includeBusConfig } = req.body;
 
@@ -2842,9 +2842,9 @@ router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
-    const snapshot = mixSnapshots.find((s: any) => s.id === snapshotId);
+    const snapshot = mixSnapshots.find((s: Record<string, unknown>) => s.id === snapshotId);
 
     if (!snapshot) {
       return res.status(404).json({ error: 'Snapshot not found' });
@@ -2853,14 +2853,14 @@ router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth
     // Determine which tracks to update
     const trackStates = snapshot.trackStates || [];
     const tracksToUpdate = selective && trackIds?.length > 0
-      ? trackStates.filter((ts: any) => trackIds.includes(ts.trackId))
+      ? trackStates.filter((ts: Record<string, unknown>) => trackIds.includes(ts.trackId))
       : trackStates;
 
     let updatedCount = 0;
 
     // Update each track with the snapshot state
     for (const trackState of tracksToUpdate) {
-      const updateData: any = {
+      const updateData: Record<string, unknown> = {
         volume: trackState.volume,
         pan: trackState.pan,
         muted: trackState.muted,
@@ -2916,7 +2916,7 @@ router.post('/projects/:projectId/mix-snapshots/:snapshotId/recall', requireAuth
 // Update a mix snapshot (rename, update description)
 router.patch('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, snapshotId } = req.params;
     const { name, description } = req.body;
 
@@ -2933,9 +2933,9 @@ router.patch('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asyn
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
-    const snapshotIndex = mixSnapshots.findIndex((s: any) => s.id === snapshotId);
+    const snapshotIndex = mixSnapshots.findIndex((s: Record<string, unknown>) => s.id === snapshotId);
 
     if (snapshotIndex === -1) {
       return res.status(404).json({ error: 'Snapshot not found' });
@@ -2977,7 +2977,7 @@ router.patch('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asyn
 // Delete a mix snapshot
 router.delete('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, snapshotId } = req.params;
 
     const hasAccess = await ensureStudioProject(projectId, userId);
@@ -2993,9 +2993,9 @@ router.delete('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asy
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
-    const snapshotIndex = mixSnapshots.findIndex((s: any) => s.id === snapshotId);
+    const snapshotIndex = mixSnapshots.findIndex((s: Record<string, unknown>) => s.id === snapshotId);
 
     if (snapshotIndex === -1) {
       return res.status(404).json({ error: 'Snapshot not found' });
@@ -3027,7 +3027,7 @@ router.delete('/projects/:projectId/mix-snapshots/:snapshotId', requireAuth, asy
 // Compare two mix snapshots
 router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnapshotId', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId, snapshotId, compareSnapshotId } = req.params;
 
     const hasAccess = await ensureStudioProject(projectId, userId);
@@ -3043,11 +3043,11 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
       return res.status(404).json({ error: 'Project not found' });
     }
 
-    const metadata = (project.metadata as any) || {};
+    const metadata = (project.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
     
-    const snapshot1 = mixSnapshots.find((s: any) => s.id === snapshotId);
-    const snapshot2 = mixSnapshots.find((s: any) => s.id === compareSnapshotId);
+    const snapshot1 = mixSnapshots.find((s: Record<string, unknown>) => s.id === snapshotId);
+    const snapshot2 = mixSnapshots.find((s: Record<string, unknown>) => s.id === compareSnapshotId);
 
     if (!snapshot1 || !snapshot2) {
       return res.status(404).json({ error: 'One or both snapshots not found' });
@@ -3057,10 +3057,10 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
     const trackStates1 = snapshot1.trackStates || [];
     const trackStates2 = snapshot2.trackStates || [];
     
-    const differences: any[] = [];
+    const differences: Record<string, unknown>[] = [];
 
     for (const ts1 of trackStates1) {
-      const ts2 = trackStates2.find((t: any) => t.trackId === ts1.trackId);
+      const ts2 = trackStates2.find((t: Record<string, unknown>) => t.trackId === ts1.trackId);
       if (!ts2) {
         differences.push({
           trackId: ts1.trackId,
@@ -3097,7 +3097,7 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
 
     // Check for tracks in snapshot2 that don't exist in snapshot1
     for (const ts2 of trackStates2) {
-      const ts1 = trackStates1.find((t: any) => t.trackId === ts2.trackId);
+      const ts1 = trackStates1.find((t: Record<string, unknown>) => t.trackId === ts2.trackId);
       if (!ts1) {
         differences.push({
           trackId: ts2.trackId,
@@ -3127,7 +3127,7 @@ router.get('/projects/:projectId/mix-snapshots/:snapshotId/compare/:compareSnaps
 // GET detailed project statistics
 router.get('/projects/:projectId/statistics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
 
     // Verify access
@@ -3165,7 +3165,7 @@ router.get('/projects/:projectId/statistics', requireAuth, async (req: Request, 
       tracksByType[type] = (tracksByType[type] || 0) + 1;
     }
 
-    const metadata = (studioProject?.metadata as any) || {};
+    const metadata = (studioProject?.metadata as Record<string, unknown>) || {};
     const mixSnapshots = metadata.mixSnapshots || [];
     const mixBusConfig = metadata.mixBusConfig || { busses: [] };
 
@@ -3181,7 +3181,7 @@ router.get('/projects/:projectId/statistics', requireAuth, async (req: Request, 
     let totalPlugins = 0;
     const pluginCounts: Record<string, number> = {};
     for (const track of tracks) {
-      const plugins = track.plugins as any[] || [];
+      const plugins = (track.plugins as unknown[] | null) || [];
       totalPlugins += plugins.length;
       for (const plugin of plugins) {
         const name = plugin.name || 'Unknown';
@@ -3257,7 +3257,7 @@ function formatDuration(seconds: number): string {
 // Uses SQL aggregation to avoid loading all rows into memory
 router.get('/user-statistics', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const [projectStats, trackStats, clipStats, templateStats, mostRecentProject] = await Promise.all([
       // Aggregate project counts in a single query
@@ -3363,7 +3363,7 @@ router.get('/user-statistics', requireAuth, async (req: Request, res: Response) 
 // GET Start Hub summary - main data for the start page (Studio One-style)
 router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     // Get user info for profile section
     const user = await db.query.users.findFirst({
@@ -3518,7 +3518,7 @@ router.get('/start-hub/summary', requireAuth, async (req: Request, res: Response
 // GET recent projects for start hub
 router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 200);
     
     // Include ALL user projects, not just studio-specific ones
@@ -3539,7 +3539,7 @@ router.get('/start-hub/recent', requireAuth, async (req: Request, res: Response)
 router.patch('/projects/:projectId/favorite', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { favorite } = req.body;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -3566,7 +3566,7 @@ router.patch('/projects/:projectId/favorite', requireAuth, async (req: Request, 
 router.patch('/projects/:projectId/opened', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -3592,7 +3592,7 @@ router.patch('/projects/:projectId/opened', requireAuth, async (req: Request, re
 // GET all templates
 router.get('/templates', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const category = req.query.category as string;
     
     // Build the where clause for user's templates OR built-in templates
@@ -3620,7 +3620,7 @@ router.get('/templates', requireAuth, async (req: Request, res: Response) => {
 // POST create template from project
 router.post('/templates', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { 
       name, 
       description, 
@@ -3675,7 +3675,7 @@ router.post('/templates', requireAuth, async (req: Request, res: Response) => {
 // POST create template from existing project (capture current state)
 router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { projectId } = req.params;
     const { name, description, category, tags } = req.body;
 
@@ -3717,7 +3717,7 @@ router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Re
     }));
 
     // Get metadata including mix bus config
-    const metadata = (studioProject.metadata as any) || {};
+    const metadata = (studioProject.metadata as Record<string, unknown>) || {};
 
     // Create the template
     const templateId = randomBytes(8).toString('hex');
@@ -3758,7 +3758,7 @@ router.post('/projects/:projectId/save-as-template', requireAuth, async (req: Re
 router.post('/templates/:templateId/create-project', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { title } = req.body;
     
     // Get template with access check (built-in OR owned by user)
@@ -3776,13 +3776,13 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
       return res.status(404).json({ error: 'Template not found' });
     }
     
-    const templateData = (template.templateData as any) || {};
+    const templateData = (template.templateData as Record<string, unknown>) || {};
     const trackLayout = templateData.trackLayout || [];
     const mixBusConfig = templateData.mixBusConfig || null;
     
     // Validate track layout entries
     const validTrackTypes = ['audio', 'instrument', 'vocal', 'drums', 'guitar', 'bus', 'folder', 'midi'];
-    const validatedTrackLayout = trackLayout.map((track: any) => ({
+    const validatedTrackLayout = trackLayout.map((track: Record<string, unknown>) => ({
       name: String(track.name || 'Untitled Track').slice(0, 100),
       trackType: validTrackTypes.includes(track.trackType) ? track.trackType : 'audio',
       color: typeof track.color === 'string' && track.color.match(/^#[0-9A-Fa-f]{6}$/) ? track.color : '#3B82F6',
@@ -3796,7 +3796,7 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
     
     // Create the base project with cleanup on failure
     const projectId = randomBytes(8).toString('hex');
-    let project: any = null;
+    let project: Record<string, unknown> | null = null;
     
     try {
       // Step 1: Create project
@@ -3893,7 +3893,7 @@ router.post('/templates/:templateId/create-project', requireAuth, async (req: Re
 router.get('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     // Query only templates user has access to (built-in OR owned)
     const template = await db.query.studioTemplates.findFirst({
@@ -3910,7 +3910,7 @@ router.get('/templates/:templateId', requireAuth, async (req: Request, res: Resp
       return res.status(404).json({ error: 'Template not found' });
     }
     
-    const templateData = (template.templateData as any) || {};
+    const templateData = (template.templateData as Record<string, unknown>) || {};
     
     res.json({
       ...template,
@@ -3928,7 +3928,7 @@ router.get('/templates/:templateId', requireAuth, async (req: Request, res: Resp
 // GET template categories with counts
 router.get('/template-categories', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     // Define all available categories with their metadata
     const categories = [
@@ -3967,7 +3967,7 @@ router.get('/template-categories', requireAuth, async (req: Request, res: Respon
 router.patch('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { name, description, category, tags, coverImageUrl } = req.body;
     
     // Verify ownership
@@ -3983,8 +3983,8 @@ router.patch('/templates/:templateId', requireAuth, async (req: Request, res: Re
       return res.status(403).json({ error: 'Cannot modify built-in templates' });
     }
     
-    const templateData = (template.templateData as any) || {};
-    const updateData: any = { updatedAt: new Date() };
+    const templateData = (template.templateData as Record<string, unknown>) || {};
+    const updateData: Record<string, unknown> = { updatedAt: new Date() };
     
     if (name !== undefined) updateData.name = name;
     if (description !== undefined) updateData.description = description;
@@ -4010,7 +4010,7 @@ router.patch('/templates/:templateId', requireAuth, async (req: Request, res: Re
 router.delete('/templates/:templateId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { templateId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     // Verify ownership (can't delete built-in templates)
     const template = await db.query.studioTemplates.findFirst({
@@ -4041,7 +4041,7 @@ router.delete('/templates/:templateId', requireAuth, async (req: Request, res: R
 // GET pinned folders
 router.get('/pinned-folders', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const folders = await db.query.studioPinnedFolders.findMany({
       where: eq(studioPinnedFolders.userId, userId),
@@ -4058,7 +4058,7 @@ router.get('/pinned-folders', requireAuth, async (req: Request, res: Response) =
 // POST create pinned folder
 router.post('/pinned-folders', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { name, path } = req.body;
     
     if (!name || !path) {
@@ -4090,7 +4090,7 @@ router.post('/pinned-folders', requireAuth, async (req: Request, res: Response) 
 router.delete('/pinned-folders/:folderId', requireAuth, async (req: Request, res: Response) => {
   try {
     const { folderId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     await db.delete(studioPinnedFolders)
       .where(and(eq(studioPinnedFolders.id, folderId), eq(studioPinnedFolders.userId, userId)));
@@ -4110,7 +4110,7 @@ router.delete('/pinned-folders/:folderId', requireAuth, async (req: Request, res
 router.get('/projects/:projectId/pool', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4146,7 +4146,7 @@ router.get('/projects/:projectId/pool', requireAuth, async (req: Request, res: R
 router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { fileName, filePath, fileType, metadata } = req.body;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -4179,7 +4179,7 @@ router.post('/projects/:projectId/pool', requireAuth, async (req: Request, res: 
 // POST cleanup orphaned uploads (admin only)
 router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
@@ -4246,7 +4246,7 @@ router.post('/maintenance/cleanup-orphaned-uploads', requireAuth, async (req: Re
 // GET orphaned uploads stats (admin only)
 router.get('/maintenance/orphaned-uploads-stats', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const user = await db.query.users.findFirst({
       where: eq(users.id, userId),
     });
@@ -4345,7 +4345,7 @@ const masterSettingsSchema = z.object({
 router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4388,7 +4388,7 @@ router.post('/projects/:projectId/mix', requireAuth, async (req: Request, res: R
 router.post('/projects/:projectId/master', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4435,7 +4435,7 @@ router.post('/projects/:projectId/master', requireAuth, async (req: Request, res
 router.post('/projects/:projectId/tracks/:trackId/duplicate', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4486,7 +4486,7 @@ router.post('/projects/:projectId/tracks/:trackId/duplicate', requireAuth, async
 router.post('/projects/:projectId/tracks/:trackId/bounce', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, trackId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { format = 'wav', normalize = true, includeEffects = true } = req.body;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -4533,7 +4533,7 @@ router.post('/projects/:projectId/tracks/:trackId/bounce', requireAuth, async (r
 router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { pluginId, trackId } = req.body;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -4584,7 +4584,7 @@ router.post('/projects/:projectId/plugins/load', requireAuth, async (req: Reques
 router.get('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, pluginId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4614,7 +4614,7 @@ router.get('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async 
 router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, pluginId, presetId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4662,7 +4662,7 @@ router.post('/projects/:projectId/plugins/:pluginId/presets/:presetId/apply', re
 router.post('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId, pluginId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { name, settings } = req.body;
 
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -4711,7 +4711,7 @@ router.post('/projects/:projectId/plugins/:pluginId/presets', requireAuth, async
 router.post('/projects/:projectId/collaboration/save', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4745,7 +4745,7 @@ router.post('/projects/:projectId/collaboration/save', requireAuth, async (req: 
 router.post('/projects/:projectId/collaboration/resolve-conflict', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { conflictId, resolution } = req.body;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
@@ -4782,7 +4782,7 @@ router.post('/projects/:projectId/collaboration/resolve-conflict', requireAuth, 
 router.get('/projects/:projectId/collaboration/sync-status', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4805,7 +4805,7 @@ router.get('/projects/:projectId/collaboration/sync-status', requireAuth, async 
 router.get('/projects/:projectId/history', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4828,7 +4828,7 @@ router.get('/projects/:projectId/history', requireAuth, async (req: Request, res
 router.post('/projects/:projectId/history/undo', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4853,7 +4853,7 @@ router.post('/projects/:projectId/history/undo', requireAuth, async (req: Reques
 router.post('/projects/:projectId/history/redo', requireAuth, async (req: Request, res: Response) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     
     const hasAccess = await verifyProjectOwnership(projectId, userId);
     if (!hasAccess) {
@@ -4877,7 +4877,7 @@ router.post('/projects/:projectId/history/redo', requireAuth, async (req: Reques
 // POST generate - AI-powered audio/content generation
 router.post('/generate', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { type, prompt, projectId, options } = req.body;
     
     if (!type || !prompt) {

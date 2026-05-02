@@ -195,7 +195,7 @@ export class SocialOAuthService {
           // If the upstream refresh detected a revocation, handleRevokedToken was
           // already called inside refreshAccessToken.  Just log at debug level to
           // avoid noisy warn spam for a condition that is already being handled.
-          const msg = (error as any)?.message ?? '';
+          const msg = (error as Record<string, unknown>)?.message ?? '';
           if (msg.includes('revoked') || msg.includes('Token revoked')) {
             logger.info(
               `[SocialOAuth] Proactive refresh: token revoked for ${account.userId}:${account.platform} — platform disconnected`
@@ -216,7 +216,7 @@ export class SocialOAuthService {
   /**
    * Check if a token error indicates revocation
    */
-  private isTokenRevokedError(error: any): boolean {
+  private isTokenRevokedError(error: Error): boolean {
     const revokedIndicators = [
       'invalid_grant',
       'token_revoked',
@@ -295,7 +295,7 @@ export class SocialOAuthService {
         try {
           const refreshed = await this.refreshAccessToken(userId, platform);
           return refreshed.accessToken;
-        } catch (error: any) {
+        } catch (error) {
           if (this.isTokenRevokedError(error)) {
             await this.handleRevokedToken(userId, platform);
             return null;
@@ -311,7 +311,7 @@ export class SocialOAuthService {
   /**
    * Parse stored token data, handling both encrypted and legacy formats
    */
-  private parseStoredTokens(tokenString: string): any {
+  private parseStoredTokens(tokenString: string): Record<string, unknown> {
     if (!tokenString) return null;
 
     try {
@@ -586,11 +586,11 @@ export class SocialOAuthService {
       };
     } catch (error: unknown) {
       // Surface the actual API error (e.g. Google's invalid_grant) in the log
-      const apiError = (error as any)?.response?.data;
-      const httpStatus = (error as any)?.response?.status;
+      const apiError = (error as Record<string, unknown>)?.response?.data;
+      const httpStatus = (error as Record<string, unknown>)?.response?.status;
       const errDetail = apiError
         ? JSON.stringify(apiError)
-        : (error as any)?.message ?? 'unknown error';
+        : (error as Record<string, unknown>)?.message ?? 'unknown error';
       logger.warn(
         `[SocialOAuth] Token refresh failed for ${platform} (HTTP ${httpStatus ?? 'n/a'}): ${errDetail}`
       );

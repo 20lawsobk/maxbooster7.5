@@ -34,8 +34,8 @@ import {
 } from 'lucide-react';
 
 interface InspectorPanelProps {
-  selectedTrack?: any;
-  selectedClip?: any;
+  selectedTrack?: Record<string, unknown>;
+  selectedClip?: Record<string, unknown>;
   onTrackUpdate?: (trackId: string, updates: unknown) => void;
   onClipUpdate?: (clipId: string, updates: unknown) => void;
   plugins?: PluginInstance[];

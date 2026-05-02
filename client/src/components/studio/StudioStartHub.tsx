@@ -375,7 +375,7 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
               ].map(item => (
                 <button
                   key={item.id}
-                  onClick={() => setActiveSection(item.id as any)}
+                  onClick={() => setActiveSection(item.id as Record<string, unknown>)}
                   className={cn(
                     "w-full flex items-center justify-between p-2.5 rounded-lg transition-colors",
                     activeSection === item.id
@@ -642,7 +642,7 @@ export function StudioStartHub({ onProjectSelect, onCreateProject }: StudioStart
             {PROJECT_TYPES.map(type => (
               <button
                 key={type.id}
-                onClick={() => setNewProjectType(type.id as any)}
+                onClick={() => setNewProjectType(type.id as Record<string, unknown>)}
                 className={cn(
                   "p-3 rounded-lg border-2 transition-all",
                   newProjectType === type.id

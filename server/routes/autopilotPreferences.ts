@@ -135,7 +135,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     logger.info(`Autopilot preferences saved for user ${req.user.id}`);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error, message: error?.message, code: error?.code }, 'Error saving autopilot preferences');
     res.status(500).json({ error: 'Failed to save preferences', detail: error?.message });
   }
@@ -171,7 +171,7 @@ router.patch('/', async (req: Request, res: Response) => {
 
     logger.info(`Autopilot preferences updated for user ${req.user.id}`);
     res.json(result);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error, message: error?.message, code: error?.code }, 'Error updating autopilot preferences');
     res.status(500).json({ error: 'Failed to update preferences', detail: error?.message });
   }

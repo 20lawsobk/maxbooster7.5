@@ -146,11 +146,11 @@ export function AdaptiveVisibility({ children, showOn, hideOn }: AdaptiveVisibil
   
   const currentBreakpoint = isMobile ? 'xs' : isTablet ? 'md' : isDesktop ? 'lg' : 'xl';
   
-  if (showOn && !showOn.includes(currentBreakpoint as any)) {
+  if (showOn && !showOn.includes(currentBreakpoint as Record<string, unknown>)) {
     return null;
   }
   
-  if (hideOn && hideOn.includes(currentBreakpoint as any)) {
+  if (hideOn && hideOn.includes(currentBreakpoint as Record<string, unknown>)) {
     return null;
   }
   

@@ -17,8 +17,8 @@ logger.info('✅ Sharp-based image generation loaded for social media content');
 // AI-powered social media content generation (images, videos, audio)
 // Uses 100% in-house AI services from shared/ml
 export class SocialMediaContentGenerator {
-  private canvas: any;
-  private ctx: any;
+  private canvas: OffscreenCanvas | null = null;
+  private ctx: OffscreenCanvasRenderingContext2D | null = null;
   private readonly contentDir = join(__dirname, '../public/generated-content');
   private readonly imageDir = join(this.contentDir, 'images');
   private readonly videoDir = join(this.contentDir, 'videos');
@@ -49,10 +49,10 @@ export class SocialMediaContentGenerator {
     image?: string;
     video?: string;
     audio?: string;
-    content: any;
+    content: Record<string, unknown>;
   }> {
     try {
-      const result: any = {
+      const result: Record<string, unknown> = {
         content: await this.generateAIContent(platform, musicData, targetAudience),
       };
 
@@ -89,8 +89,8 @@ export class SocialMediaContentGenerator {
     image?: string;
     video?: string;
     audio?: string;
-    content: any;
-    extractedData: any;
+    content: Record<string, unknown>;
+    extractedData: Record<string, unknown>;
   }> {
     try {
       // Extract content from URL
@@ -164,7 +164,7 @@ export class SocialMediaContentGenerator {
     dimensions: { width: number; height: number }
   ): Promise<string> {
     const { width, height } = dimensions;
-    const data = musicData as any || {};
+    const data = (musicData as Record<string, unknown>) || {};
     const title = data.title || data.name || 'New Release';
     const artist = data.artist || data.artistName || 'B-Lawz Music';
 
@@ -269,7 +269,7 @@ export class SocialMediaContentGenerator {
   ): Promise<string> {
     try {
       const dimensions = this.getPlatformVideoDimensions(platform);
-      const data = musicData as any || {};
+      const data = (musicData as Record<string, unknown>) || {};
       const title = data.title || data.name || 'New Release';
       const artist = data.artist || data.artistName || 'B-Lawz Music';
       
@@ -417,7 +417,7 @@ export class SocialMediaContentGenerator {
     this.applyAIFilters(platform, targetAudience);
   }
 
-  private generateAIColorScheme(musicData: unknown, targetAudience: unknown): any {
+  private generateAIColorScheme(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
     // AI algorithm to determine optimal colors based on:
     // - Music genre
     // - Target audience demographics
@@ -571,7 +571,7 @@ export class SocialMediaContentGenerator {
     this.ctx.fillText('Stream Now', width / 2, height * 0.7);
   }
 
-  private getOptimizedTextConfig(platform: string, targetAudience: unknown): any {
+  private getOptimizedTextConfig(platform: string, targetAudience: unknown): Record<string, unknown> {
     // AI-optimized text configuration based on platform and audience
     const configs = {
       facebook: {
@@ -657,7 +657,7 @@ export class SocialMediaContentGenerator {
     targetAudience: unknown,
     dimensions: unknown
   ): Promise<Buffer> {
-    const data = musicData as any || {};
+    const data = (musicData as Record<string, unknown>) || {};
     const dims = dimensions as { width: number; height: number; duration: number };
     const title = data.title || data.name || 'New Release';
     const artist = data.artist || data.artistName || 'B-Lawz Music';
@@ -710,7 +710,7 @@ export class SocialMediaContentGenerator {
     musicData: unknown,
     targetAudience: unknown
   ): Promise<Buffer> {
-    const data = musicData as any || {};
+    const data = (musicData as Record<string, unknown>) || {};
     const audioConfig = {
       style: this.getAIAudioStyle(musicData, targetAudience),
       effects: this.getAIAudioEffects(platform, musicData),
@@ -851,8 +851,8 @@ export class SocialMediaContentGenerator {
     platform: string,
     targetAudience: unknown
   ): Promise<any> {
-    const data = extractedData as any || {};
-    const audience = targetAudience as any || {};
+    const data = (extractedData as Record<string, unknown>) || {};
+    const audience = (targetAudience as Record<string, unknown>) || {};
     
     try {
       const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
@@ -901,8 +901,8 @@ export class SocialMediaContentGenerator {
     musicData: unknown,
     targetAudience: unknown
   ): Promise<any> {
-    const data = musicData as any || {};
-    const audience = targetAudience as any || {};
+    const data = (musicData as Record<string, unknown>) || {};
+    const audience = (targetAudience as Record<string, unknown>) || {};
     
     try {
       const platformMap: Record<string, 'twitter' | 'instagram' | 'tiktok' | 'youtube' | 'facebook' | 'linkedin'> = {
@@ -945,7 +945,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video style generation
-  private getAIVideoStyle(musicData: unknown, targetAudience: unknown): any {
+  private getAIVideoStyle(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
     return {
       animation: 'dynamic',
       speed: 'medium',
@@ -955,7 +955,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video effects generation
-  private getAIVideoEffects(platform: string, musicData: unknown): any {
+  private getAIVideoEffects(platform: string, musicData: unknown): Record<string, unknown> {
     return {
       filters: ['vintage', 'neon'],
       overlays: ['waveform', 'lyrics'],
@@ -964,7 +964,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video transitions
-  private getAIVideoTransitions(platform: string): any {
+  private getAIVideoTransitions(platform: string): Record<string, unknown> {
     return {
       type: 'smooth',
       duration: 0.5,
@@ -973,7 +973,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI video text overlay
-  private getAIVideoTextOverlay(musicData: unknown, platform: string): any {
+  private getAIVideoTextOverlay(musicData: unknown, platform: string): Record<string, unknown> {
     return {
       title: musicData.title || 'New Release',
       artist: musicData.artist || 'Artist Name',
@@ -984,7 +984,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI audio style generation
-  private getAIAudioStyle(musicData: unknown, targetAudience: unknown): any {
+  private getAIAudioStyle(musicData: unknown, targetAudience: unknown): Record<string, unknown> {
     return {
       genre: musicData.genre || 'pop',
       mood: 'upbeat',
@@ -994,7 +994,7 @@ export class SocialMediaContentGenerator {
   }
 
   // AI audio effects
-  private getAIAudioEffects(platform: string, musicData: unknown): any {
+  private getAIAudioEffects(platform: string, musicData: unknown): Record<string, unknown> {
     return {
       eq: 'balanced',
       compression: 'medium',
@@ -1101,7 +1101,7 @@ export async function generateSocialMediaContent(
   image?: string;
   video?: string;
   audio?: string;
-  content: any;
+  content: Record<string, unknown>;
 }> {
   return await contentGenerator.generateSocialMediaContent(
     platform,
@@ -1119,8 +1119,8 @@ export async function generateContentFromURL(
   image?: string;
   video?: string;
   audio?: string;
-  content: any;
-  extractedData: any;
+  content: Record<string, unknown>;
+  extractedData: Record<string, unknown>;
 }> {
   return await contentGenerator.generateContentFromURL(url, platform, targetAudience);
 }

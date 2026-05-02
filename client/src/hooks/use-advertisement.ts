@@ -145,7 +145,7 @@ export function useAdvertisement() {
 
   // Generate AI content mutation
   const generateAIContentMutation = useMutation({
-    mutationFn: async ({ musicData, targetAudience }: { musicData: any; targetAudience: any }) => {
+    mutationFn: async ({ musicData, targetAudience }: { musicData: Record<string, unknown>; targetAudience: Record<string, unknown> }) => {
       const response = await apiRequest('POST', '/api/advertising/generate-content', {
         musicData,
         targetAudience,
@@ -169,7 +169,7 @@ export function useAdvertisement() {
 
   // Optimize campaign mutation
   const optimizeCampaignMutation = useMutation({
-    mutationFn: async ({ campaignId, performance }: { campaignId: string; performance: any }) => {
+    mutationFn: async ({ campaignId, performance }: { campaignId: string; performance: Record<string, unknown> }) => {
       const response = await apiRequest('POST', '/api/advertising/optimize-campaign', {
         campaignId,
         performance,

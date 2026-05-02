@@ -71,7 +71,7 @@ export class HnsAuctionManager {
         txHash    = tx.hash;
         auctionState = 'opening';
         logger.info({ name: cleanName, txHash }, '[HNS] Auction opened');
-      } catch (err: any) {
+      } catch (err) {
         error        = err.message;
         auctionState = 'failed';
         logger.warn({ name: cleanName, err: err.message }, '[HNS] Failed to open auction');
@@ -117,7 +117,7 @@ export class HnsAuctionManager {
         .returning();
       logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Bid placed');
       return this.rowToRecord(updated);
-    } catch (err: any) {
+    } catch (err) {
       await db.update(hnsAuctions)
         .set({ state: 'failed', error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
@@ -145,7 +145,7 @@ export class HnsAuctionManager {
         .returning();
       logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Bid revealed');
       return this.rowToRecord(updated);
-    } catch (err: any) {
+    } catch (err) {
       await db.update(hnsAuctions)
         .set({ state: 'failed', error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
@@ -184,7 +184,7 @@ export class HnsAuctionManager {
         .returning();
       logger.info({ name: row.name, txHash: tx.hash }, '[HNS] Name registered with NS records');
       return this.rowToRecord(updated);
-    } catch (err: any) {
+    } catch (err) {
       await db.update(hnsAuctions)
         .set({ state: 'failed', error: err.message, updatedAt: new Date() })
         .where(eq(hnsAuctions.id, auctionId));
@@ -247,7 +247,7 @@ export class HnsAuctionManager {
     return row ?? null;
   }
 
-  private rowToRecord(row: any): AuctionRecord {
+  private rowToRecord(row: Record<string, unknown>): AuctionRecord {
     return {
       id:        row.id,
       userId:    row.userId,

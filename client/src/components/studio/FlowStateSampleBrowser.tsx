@@ -65,7 +65,7 @@ interface Sample {
 interface Folder {
   id: string;
   name: string;
-  icon: any;
+  icon: React.ReactNode;
   count: number;
   children?: Folder[];
 }
@@ -144,7 +144,7 @@ export function FlowStateSampleBrowser({
     if (apiSamples && !samplesError) {
       setApiDataLoaded(true);
       if (apiSamples.samples?.length > 0) {
-        const mappedSamples = apiSamples.samples.map((s: any) => ({
+        const mappedSamples = apiSamples.samples.map((s: Record<string, unknown>) => ({
           id: s.id,
           name: s.name || s.fileName,
           path: s.filePath || s.path,

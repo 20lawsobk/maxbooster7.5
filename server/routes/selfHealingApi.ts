@@ -18,7 +18,7 @@ const router = Router();
 
 // Inline admin guard reused across routes
 function assertAdmin(req: Request, res: Response): boolean {
-  const user = (req as any).user;
+  const user = req.user;
   if (!user) {
     res.status(401).json({ success: false, error: 'Authentication required' });
     return false;
@@ -31,7 +31,7 @@ function assertAdmin(req: Request, res: Response): boolean {
 }
 
 function assertAuth(req: Request, res: Response): boolean {
-  const user = (req as any).user;
+  const user = req.user;
   if (!user) {
     res.status(401).json({ success: false, error: 'Authentication required' });
     return false;
@@ -251,7 +251,7 @@ router.delete('/blocked-ips/:ip', async (req: Request, res: Response) => {
   try {
     const { ip } = req.params;
     await selfHealingEngine.unblockIp(ip);
-    logger.info(`Admin ${(req as any).user.email} unblocked IP: ${ip}`);
+    logger.info(`Admin ${req.user.email} unblocked IP: ${ip}`);
     res.json({ success: true, message: `IP ${ip} unblocked` });
   } catch (error) {
     logger.warn({ err: error }, 'Error unblocking IP:');
@@ -264,7 +264,7 @@ router.post('/clear-all-blocks', async (req: Request, res: Response) => {
   if (!assertAdmin(req, res)) return;
   try {
     await selfHealingEngine.clearAllBlocks();
-    logger.warn(`Admin ${(req as any).user.email} cleared ALL blocked IPs`);
+    logger.warn(`Admin ${req.user.email} cleared ALL blocked IPs`);
     res.json({ success: true, message: 'All blocked IPs cleared' });
   } catch (error) {
     logger.warn({ err: error }, 'Error clearing blocked IPs:');

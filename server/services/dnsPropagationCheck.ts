@@ -115,7 +115,7 @@ async function queryResolver(
       resolver: resolver.name, region: resolver.region, propagated,
       values, latencyMs: Date.now() - start,
     };
-  } catch (err: any) {
+  } catch (err) {
     return {
       resolver: resolver.name, region: resolver.region, propagated: false,
       values: [], latencyMs: Date.now() - start,

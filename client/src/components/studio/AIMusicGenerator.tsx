@@ -39,8 +39,8 @@ interface GeneratedTrack {
     genre: string;
   };
   duration: number;
-  generatedNotes?: any[];
-  generatedChords?: any[];
+  generatedNotes?: unknown[];
+  generatedChords?: unknown[];
   name?: string;
   type?: 'audio' | 'midi' | 'instrument';
   color?: string;
@@ -224,7 +224,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
           description: `Created ${bars} bars of ${selectedGenre} ${instrumentName} at ${tempo} BPM`,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Generation Failed',
         description: error.message || 'Failed to generate music',
@@ -308,7 +308,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
         complexity,
         bars,
       });
-      const data = await res.json() as any;
+      const data = await res.json() as Record<string, unknown>;
       if (data?.arrangement) {
         const tracks = [
           { key: 'melody', label: 'AI Melody', category: 'melodic' },
@@ -337,7 +337,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
           description: `${selectedGenre} arrangement — melody, bass, pad, and drums added to timeline`,
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({
         title: 'Arrangement Failed',
         description: error.message || 'Failed to generate full arrangement',

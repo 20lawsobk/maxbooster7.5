@@ -46,7 +46,7 @@ export function ConnectionsList() {
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections'] });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections/pending'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to accept connection',
@@ -64,7 +64,7 @@ export function ConnectionsList() {
       toast({ title: 'Connection Declined' });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections/pending'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to decline connection',
@@ -82,7 +82,7 @@ export function ConnectionsList() {
       toast({ title: 'Connection Removed' });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/connections'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to remove connection',
@@ -91,7 +91,7 @@ export function ConnectionsList() {
     },
   });
 
-  const getDisplayName = (user: any) => {
+  const getDisplayName = (user: Record<string, unknown>) => {
     return (
       user?.username ||
       [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
@@ -99,7 +99,7 @@ export function ConnectionsList() {
     );
   };
 
-  const getInitials = (user: any) => {
+  const getInitials = (user: Record<string, unknown>) => {
     const name = getDisplayName(user);
     return name
       .split(' ')
@@ -109,7 +109,7 @@ export function ConnectionsList() {
       .slice(0, 2);
   };
 
-  const renderConnectionCard = (connection: any, showActions: boolean = false) => {
+  const renderConnectionCard = (connection: Record<string, unknown>, showActions: boolean = false) => {
     const user = connection.connectedUser || connection.requester;
     const displayName = getDisplayName(user);
     const initials = getInitials(user);
@@ -219,7 +219,7 @@ export function ConnectionsList() {
               renderSkeletons()
             ) : connections?.length > 0 ? (
               <div className="space-y-3">
-                {connections.map((conn: any) => renderConnectionCard(conn, false))}
+                {connections.map((conn: Record<string, unknown>) => renderConnectionCard(conn, false))}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -235,7 +235,7 @@ export function ConnectionsList() {
               renderSkeletons()
             ) : pendingRequests?.length > 0 ? (
               <div className="space-y-3">
-                {pendingRequests.map((req: any) => renderConnectionCard(req, true))}
+                {pendingRequests.map((req: Record<string, unknown>) => renderConnectionCard(req, true))}
               </div>
             ) : (
               <div className="text-center py-8 text-muted-foreground">

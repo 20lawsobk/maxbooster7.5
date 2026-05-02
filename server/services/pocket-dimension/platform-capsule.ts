@@ -379,7 +379,7 @@ class PlatformCapsuleBuilder {
     options: CapsuleBuildOptions
   ): Promise<CapsuleManifest> {
     // Read package.json for dependencies
-    let packageJson: any = {};
+    let packageJson: Record<string, unknown> = {};
     try {
       const content = await fs.readFile(path.join(this.projectRoot, 'package.json'), 'utf-8');
       packageJson = JSON.parse(content);

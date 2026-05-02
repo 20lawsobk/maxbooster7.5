@@ -72,7 +72,7 @@ router.get('/schedule', requireAuth, async (req, res) => {
     const userId = req.user!.id;
     const parsed = scheduleFilterSchema.parse(req.query);
     
-    const options: any = {};
+    const options: Record<string, unknown> = {};
     if (parsed.autopilotType) options.autopilotType = parsed.autopilotType;
     if (parsed.platform) options.platform = parsed.platform;
     if (parsed.status) options.status = parsed.status;

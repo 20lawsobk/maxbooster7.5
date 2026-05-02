@@ -479,7 +479,7 @@ export function UICustomizer({ open, onOpenChange, onApplyPreferences }: UICusto
     setEditingShortcut(null);
   };
 
-  const handleMeterSettingsChange = (key: keyof MeterSettings, value: any) => {
+  const handleMeterSettingsChange = (key: keyof MeterSettings, value: Record<string, unknown>) => {
     setPreferences((prev) => ({
       ...prev,
       meterSettings: { ...prev.meterSettings, [key]: value },

@@ -61,7 +61,7 @@ router.get("/", requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: countdownsWithProgress,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in get countdowns:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -84,7 +84,7 @@ router.post("/", requireAuth, asyncHandler(async (req, res) => {
         tasks,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in create countdown:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -120,7 +120,7 @@ router.get("/:id", requireAuth, asyncHandler(async (req, res) => {
         analytics,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in get countdown by id:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -139,7 +139,7 @@ router.patch("/:id", requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: countdown,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in update countdown:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -161,7 +161,7 @@ router.post("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: task,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in add task:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -186,7 +186,7 @@ router.get("/:id/tasks", requireAuth, asyncHandler(async (req, res) => {
         progress,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in get tasks:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -218,7 +218,7 @@ router.patch("/:id/tasks/:taskId", requireAuth, asyncHandler(async (req, res) =>
       success: true,
       data: task,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in update task:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -239,7 +239,7 @@ router.get("/:id/analytics", requireAuth, asyncHandler(async (req, res) => {
       success: true,
       data: analytics,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in get analytics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -265,7 +265,7 @@ router.post("/:id/analytics/track", requireAuth, asyncHandler(async (req, res) =
       success: true,
       data: analytics,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in track analytics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -288,7 +288,7 @@ router.post("/:id/generate-checklist", requireAuth, asyncHandler(async (req, res
       success: true,
       data: addedTasks,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate checklist:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

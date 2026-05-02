@@ -23,7 +23,7 @@ export class RoyaltiesCSVImportService {
   }
 
   mapColumns(row: unknown, mapping: Record<string, string>): Partial<InsertRevenueEvent> {
-    const mapped: any = {};
+    const mapped: Record<string, unknown> = {};
     for (const [schemaField, csvColumn] of Object.entries(mapping)) {
       mapped[schemaField] = row[csvColumn];
     }

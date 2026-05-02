@@ -436,8 +436,8 @@ export class StudioService {
 
       // Batch-fetch all clips in parallel (eliminates N+1: was 2×tracks serial queries)
       const [allAudioClipArrays, allMidiClipArrays] = await Promise.all([
-        Promise.all(tracks.map((t: any) => storageAny.getTrackAudioClips(t.id))),
-        Promise.all(tracks.map((t: any) => storageAny.getTrackMidiClips(t.id))),
+        Promise.all(tracks.map((t: Record<string, unknown>) => storageAny.getTrackAudioClips(t.id))),
+        Promise.all(tracks.map((t: Record<string, unknown>) => storageAny.getTrackMidiClips(t.id))),
       ]);
       const audioClips: AudioClip[] = allAudioClipArrays.flat();
       const midiClips: unknown[] = allMidiClipArrays.flat();
@@ -883,7 +883,7 @@ export class StudioService {
       const frozenFilePath = (track as { frozenFilePath?: string }).frozenFilePath;
       if (frozenFilePath) {
         const frozenPath = path.join(process.cwd(), frozenFilePath);
-        try { await fsPromises.unlink(frozenPath); } catch (e: any) { if (e.code !== 'ENOENT') throw e; }
+        try { await fsPromises.unlink(frozenPath); } catch (e) { if (e.code !== 'ENOENT') throw e; }
       }
 
       await storageAny.updateStudioTrack(trackId, projectId, {

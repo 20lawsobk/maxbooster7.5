@@ -68,7 +68,7 @@ async function createTrack(params: CreateTrackParams) {
 }
 
 interface FlowStateAddTrackProps {
-  onAddTrack: (type: string, name: string, track?: any) => void;
+  onAddTrack: (type: string, name: string, track?: Record<string, unknown>) => void;
   onClose: () => void;
   isOpen: boolean;
   projectId?: string;

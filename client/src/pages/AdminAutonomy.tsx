@@ -221,8 +221,8 @@ export default function AdminAutonomy() {
 
   const isRunning = status?.isRunning ?? false;
   const safetyStatus = status?.safety;
-  const recentChanges: any[] = status?.recentChanges ?? [];
-  const recentUpgrades: any[] = status?.recentUpgrades ?? [];
+  const recentChanges: Record<string, unknown>[] = status?.recentChanges ?? [];
+  const recentUpgrades: Record<string, unknown>[] = status?.recentUpgrades ?? [];
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-gray-900">
@@ -236,7 +236,7 @@ export default function AdminAutonomy() {
             const ksData = killSwitchData?.data ?? killSwitchData ?? {};
             const globalKilled: boolean = ksData.globalKilled ?? false;
             const systemStates: Record<string, boolean> = ksData.systemStates ?? {};
-            const auditLog: any[] = ksData.auditLog ?? [];
+            const auditLog: Record<string, unknown>[] = ksData.auditLog ?? [];
             const registeredSystems = Object.keys(systemStates);
             return (
               <Card className={`border-2 ${globalKilled ? 'border-red-500 bg-red-50 dark:bg-red-950' : 'border-green-200 dark:border-green-900'}`}>
@@ -319,7 +319,7 @@ export default function AdminAutonomy() {
                       <p className="text-xs font-medium text-muted-foreground mb-1.5">Recent Audit Log</p>
                       <ScrollArea className="h-24">
                         <div className="space-y-1 pr-1">
-                          {[...auditLog].reverse().slice(0, 10).map((entry: any, i: number) => (
+                          {[...auditLog].reverse().slice(0, 10).map((entry: Record<string, unknown>, i: number) => (
                             <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
                               <span className={`font-medium shrink-0 ${entry.action.includes('KILL') ? 'text-red-600' : 'text-green-700'}`}>
                                 {entry.action}
@@ -437,7 +437,7 @@ export default function AdminAutonomy() {
                 ) : (
                   <ScrollArea className="h-64">
                     <div className="space-y-2 pr-2">
-                      {recentChanges.map((change: any) => (
+                      {recentChanges.map((change: Record<string, unknown>) => (
                         <div key={change.id} className="p-3 border rounded-lg text-sm space-y-1">
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5 font-medium min-w-0">
@@ -480,7 +480,7 @@ export default function AdminAutonomy() {
                 ) : (
                   <ScrollArea className="h-64">
                     <div className="space-y-2 pr-2">
-                      {recentUpgrades.map((upgrade: any) => (
+                      {recentUpgrades.map((upgrade: Record<string, unknown>) => (
                         <div key={upgrade.id} className="p-3 border rounded-lg text-sm space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-medium capitalize">{upgrade.type?.replace(/_/g, ' ')}</span>
@@ -597,7 +597,7 @@ export default function AdminAutonomy() {
                 <div className="text-xs text-muted-foreground">Total logged: {securityMetrics?.totalThreats ?? 0}</div>
                 {(securityThreats ?? []).length > 0 && (
                   <ScrollArea className="h-24 mt-2">
-                    {(securityThreats ?? []).slice(-5).map((t: any, i: number) => (
+                    {(securityThreats ?? []).slice(-5).map((t: Record<string, unknown>, i: number) => (
                       <div key={i} className="text-xs p-1.5 border rounded mb-1">
                         <span className="font-medium">{t.type}</span>
                         <span className="text-muted-foreground ml-2">{t.severity}</span>
@@ -686,11 +686,11 @@ export default function AdminAutonomy() {
               <CardContent className="space-y-3">
                 {(() => {
                   const cf = chainFixerStatus ?? {};
-                  const patterns: any[] = cf.patterns ?? [];
-                  const history: any[] = cf.history ?? [];
-                  const active = patterns.filter((p: any) => !p.suppressed && p.attempts > 0);
+                  const patterns: Record<string, unknown>[] = cf.patterns ?? [];
+                  const history: Record<string, unknown>[] = cf.history ?? [];
+                  const active = patterns.filter((p: Record<string, unknown>) => !p.suppressed && p.attempts > 0);
                   const totalFixes = history.length;
-                  const successFixes = history.filter((h: any) => h.result === 'success').length;
+                  const successFixes = history.filter((h: Record<string, unknown>) => h.result === 'success').length;
                   return (
                     <>
                       <div className="grid grid-cols-2 gap-2 text-xs">
@@ -714,7 +714,7 @@ export default function AdminAutonomy() {
                       {history.length > 0 && (
                         <ScrollArea className="h-20">
                           <div className="space-y-1 pr-1">
-                            {[...history].reverse().slice(0, 5).map((h: any, i: number) => (
+                            {[...history].reverse().slice(0, 5).map((h: Record<string, unknown>, i: number) => (
                               <div key={i} className="flex items-center gap-1.5 text-xs">
                                 <span className={`shrink-0 ${h.result === 'success' ? 'text-emerald-600' : 'text-red-500'}`}>
                                   {h.result === 'success' ? '✓' : '✗'}
@@ -749,9 +749,9 @@ export default function AdminAutonomy() {
               <CardContent className="space-y-3">
                 {(() => {
                   const pf = platformFixerStatus?.data ?? platformFixerStatus ?? {};
-                  const subsystems: any = pf.subsystems ?? {};
-                  const patches: any[] = pf.activePatches ?? [];
-                  const incidents: any[] = pf.incidents ?? [];
+                  const subsystems: Record<string, unknown> = (pf.subsystems as Record<string, unknown>) ?? {};
+                  const patches: Record<string, unknown>[] = pf.activePatches ?? [];
+                  const incidents: Record<string, unknown>[] = pf.incidents ?? [];
                   const subsysNames = Object.keys(subsystems);
                   const degraded = subsysNames.filter(s => subsystems[s]?.status === 'degraded' || subsystems[s]?.status === 'critical');
                   const overallStatus = pf.overallStatus ?? 'unknown';
@@ -785,7 +785,7 @@ export default function AdminAutonomy() {
                       {patches.length > 0 && (
                         <ScrollArea className="h-16">
                           <div className="space-y-1 pr-1">
-                            {patches.slice(0, 3).map((p: any, i: number) => (
+                            {patches.slice(0, 3).map((p: Record<string, unknown>, i: number) => (
                               <div key={i} className="text-xs text-muted-foreground truncate">
                                 <span className="text-violet-600 font-medium">patch</span> {p.name ?? p.subsystem}
                               </div>

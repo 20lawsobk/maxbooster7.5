@@ -647,26 +647,26 @@ export class RoyaltyExportsService {
     doc.text('Form 1099-MISC', 105, 20, { align: 'center' });
     doc.setFontSize(12);
     doc.text('Miscellaneous Income', 105, 28, { align: 'center' });
-    doc.text(`Tax Year: ${(taxDoc as any).taxYear}`, 105, 36, { align: 'center' });
+    doc.text(`Tax Year: ${(taxDoc as Record<string, unknown>).taxYear}`, 105, 36, { align: 'center' });
 
     doc.setFontSize(10);
     doc.text('PAYER\'S Information:', 20, 50);
-    doc.text((taxDoc as any).payer.name, 20, 58);
-    doc.text(`EIN: ${(taxDoc as any).payer.ein}`, 20, 66);
-    doc.text((taxDoc as any).payer.address, 20, 74);
+    doc.text((taxDoc as Record<string, unknown>).payer.name, 20, 58);
+    doc.text(`EIN: ${(taxDoc as Record<string, unknown>).payer.ein}`, 20, 66);
+    doc.text((taxDoc as Record<string, unknown>).payer.address, 20, 74);
 
     doc.text('RECIPIENT\'S Information:', 110, 50);
-    doc.text((taxDoc as any).recipient.name, 110, 58);
-    doc.text(`TIN: ${(taxDoc as any).recipient.taxId}`, 110, 66);
-    doc.text((taxDoc as any).recipient.address, 110, 74);
+    doc.text((taxDoc as Record<string, unknown>).recipient.name, 110, 58);
+    doc.text(`TIN: ${(taxDoc as Record<string, unknown>).recipient.taxId}`, 110, 66);
+    doc.text((taxDoc as Record<string, unknown>).recipient.address, 110, 74);
 
     doc.autoTable({
       startY: 90,
       head: [['Box', 'Description', 'Amount']],
       body: [
-        ['1', 'Rents', `$${(taxDoc as any).amounts.box1_rents.toFixed(2)}`],
-        ['2', 'Royalties', `$${(taxDoc as any).amounts.box2_royalties.toFixed(2)}`],
-        ['3', 'Other Income', `$${(taxDoc as any).amounts.box3_otherIncome.toFixed(2)}`],
+        ['1', 'Rents', `$${(taxDoc as Record<string, unknown>).amounts.box1_rents.toFixed(2)}`],
+        ['2', 'Royalties', `$${(taxDoc as Record<string, unknown>).amounts.box2_royalties.toFixed(2)}`],
+        ['3', 'Other Income', `$${(taxDoc as Record<string, unknown>).amounts.box3_otherIncome.toFixed(2)}`],
       ],
       theme: 'grid',
     });
@@ -680,12 +680,12 @@ export class RoyaltyExportsService {
   private formatFor1099Submission(taxDoc: unknown): string {
     return [
       'IRS 1099-MISC SUBMISSION FORMAT',
-      `TAX_YEAR:${(taxDoc as any).taxYear}`,
-      `PAYER_NAME:${(taxDoc as any).payer.name}`,
-      `PAYER_EIN:${(taxDoc as any).payer.ein}`,
-      `RECIPIENT_NAME:${(taxDoc as any).recipient.name}`,
-      `RECIPIENT_TIN:${(taxDoc as any).recipient.taxId}`,
-      `BOX2_ROYALTIES:${(taxDoc as any).amounts.box2_royalties}`,
+      `TAX_YEAR:${(taxDoc as Record<string, unknown>).taxYear}`,
+      `PAYER_NAME:${(taxDoc as Record<string, unknown>).payer.name}`,
+      `PAYER_EIN:${(taxDoc as Record<string, unknown>).payer.ein}`,
+      `RECIPIENT_NAME:${(taxDoc as Record<string, unknown>).recipient.name}`,
+      `RECIPIENT_TIN:${(taxDoc as Record<string, unknown>).recipient.taxId}`,
+      `BOX2_ROYALTIES:${(taxDoc as Record<string, unknown>).amounts.box2_royalties}`,
       `GENERATED:${new Date().toISOString()}`,
     ].join('\n');
   }

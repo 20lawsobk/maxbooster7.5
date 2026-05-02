@@ -175,7 +175,7 @@ export class RoyaltyDisputeService {
     options?: { status?: string; limit?: number; offset?: number }
   ): Promise<RoyaltyDispute[]> {
     const conditions = [eq(royaltyDisputes.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as any));
+    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as Record<string, unknown>));
 
     return await db
       .select()
@@ -204,7 +204,7 @@ export class RoyaltyDisputeService {
     }
   ): Promise<RoyaltyDispute[]> {
     const conditions = [];
-    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as any));
+    if (options?.status) conditions.push(eq(royaltyDisputes.status, options.status as Record<string, unknown>));
     if (options?.priority) conditions.push(eq(royaltyDisputes.priority, options.priority));
     if (options?.assignedTo) conditions.push(eq(royaltyDisputes.assignedTo, options.assignedTo));
 

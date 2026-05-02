@@ -379,7 +379,7 @@ export function StudioLoader({ children, userId }: StudioLoaderProps) {
 // Export a HOC for wrapping the Studio component
 export function withStudioLoader<P extends object>(Component: React.ComponentType<P>): React.FC<P> {
   return (props: P) => (
-    <StudioLoader userId={(props as any).userId}>
+    <StudioLoader userId={(props as Record<string, unknown>).userId}>
       <Component {...props} />
     </StudioLoader>
   );

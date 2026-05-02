@@ -176,7 +176,7 @@ class DSPAnalyticsService {
       });
       const topTracks = topTracksRes.ok ? await topTracksRes.json() : { items: [] };
 
-      const totalPopularity = topTracks.items?.reduce((sum: number, t: any) => sum + (t.popularity || 0), 0) || 0;
+      const totalPopularity = topTracks.items?.reduce((sum: number, t: Record<string, unknown>) => sum + (t.popularity || 0), 0) || 0;
       const avgPopularity = topTracks.items?.length > 0 ? Math.round(totalPopularity / topTracks.items.length) : 0;
 
       return {
@@ -407,10 +407,10 @@ class DSPAnalyticsService {
         const insightsData = await insightsResponse.json();
         for (const metric of insightsData.data || []) {
           if (metric.name === 'reach') {
-            reach = metric.values?.reduce((sum: number, v: any) => sum + (v.value || 0), 0) || 0;
+            reach = metric.values?.reduce((sum: number, v: Record<string, unknown>) => sum + (v.value || 0), 0) || 0;
           }
           if (metric.name === 'impressions') {
-            impressions = metric.values?.reduce((sum: number, v: any) => sum + (v.value || 0), 0) || 0;
+            impressions = metric.values?.reduce((sum: number, v: Record<string, unknown>) => sum + (v.value || 0), 0) || 0;
           }
         }
       }
@@ -878,10 +878,10 @@ class DSPAnalyticsService {
       completionRate: data.completionRate,
       avgListenDuration: data.avgListenDuration,
       revenue: data.revenue?.toString(),
-      demographics: data.demographics as any,
-      geography: data.geography as any,
-      sourceBreakdown: data.sourceBreakdown as any,
-      deviceBreakdown: data.deviceBreakdown as any,
+      demographics: data.demographics as Record<string, unknown>,
+      geography: data.geography as Record<string, unknown>,
+      sourceBreakdown: data.sourceBreakdown as Record<string, unknown>,
+      deviceBreakdown: data.deviceBreakdown as Record<string, unknown>,
     };
 
     await db.insert(dspAnalytics).values(analyticsRecord);

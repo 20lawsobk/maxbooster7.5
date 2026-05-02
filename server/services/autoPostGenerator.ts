@@ -270,7 +270,7 @@ class AutoPostGenerator {
   async getTrendingForPlatform(
     platform: string,
     genre?: string
-  ): Promise<{ topics: any[]; hashtags: any[] }> {
+  ): Promise<{ topics: unknown[]; hashtags: unknown[] }> {
     const [topics, hashtags] = await Promise.all([
       dynamicTrendsService.getTrendingTopics(platform, genre),
       dynamicTrendsService.getOptimizedHashtags(platform, genre, undefined, 15),
@@ -510,7 +510,7 @@ class AutoPostGenerator {
     content: GeneratedContent;
     posted?: boolean;
     scheduled?: boolean;
-    results?: any;
+    results?: Record<string, unknown>;
     veoAssets?: string[];
   }> {
     const content = await this.generateEnhancedContent(userId, request);
@@ -574,7 +574,7 @@ class AutoPostGenerator {
     content: GeneratedContent;
     posted?: boolean;
     scheduled?: boolean;
-    results?: any;
+    results?: Record<string, unknown>;
   }> {
     const content = await this.generateEnhancedContent(userId, {
       ...request,

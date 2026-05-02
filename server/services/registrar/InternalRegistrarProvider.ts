@@ -177,7 +177,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
     // Remove DNS zone so the slot is truly freed
     try {
       await pool.query('DELETE FROM dns_zones WHERE domain = $1', [fqdn.toLowerCase()]);
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ fqdn, err: e.message }, '[InternalRegistrar] DNS zone removal on release failed (non-fatal)');
     }
     logger.info({ fqdn, provider: this.name }, '[InternalRegistrar] domain released (soft)');
@@ -219,7 +219,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
     try {
       await db.select({ id: claimedDomains.id }).from(claimedDomains).limit(1);
       return { ok: true, message: 'Internal DB registry reachable' };
-    } catch (e: any) {
+    } catch (e) {
       return { ok: false, message: e.message };
     }
   }
@@ -251,7 +251,7 @@ export class InternalRegistrarProvider implements RegistrarProvider {
         ]
       );
       logger.info({ fqdn, zoneId }, '[InternalRegistrar] DNS zone ensured');
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ fqdn, err: e.message }, '[InternalRegistrar] _ensureDnsZone failed (non-fatal)');
     }
   }

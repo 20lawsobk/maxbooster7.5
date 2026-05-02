@@ -94,14 +94,14 @@ export class SupportTicketService {
       category?: string;
     }
   ) {
-    const conditions: any[] = [eq(supportTickets.userId, userId)];
+    const conditions: unknown[] = [eq(supportTickets.userId, userId)];
 
     if (filters?.status && filters.status.length > 0) {
-      conditions.push(inArray(supportTickets.status, filters.status as any));
+      conditions.push(inArray(supportTickets.status, filters.status as Record<string, unknown>));
     }
 
     if (filters?.priority && filters.priority.length > 0) {
-      conditions.push(inArray(supportTickets.priority, filters.priority as any));
+      conditions.push(inArray(supportTickets.priority, filters.priority as Record<string, unknown>));
     }
 
     if (filters?.category) {
@@ -128,11 +128,11 @@ export class SupportTicketService {
     const conditions = [];
 
     if (filters?.status && filters.status.length > 0) {
-      conditions.push(inArray(supportTickets.status, filters.status as any));
+      conditions.push(inArray(supportTickets.status, filters.status as Record<string, unknown>));
     }
 
     if (filters?.priority && filters.priority.length > 0) {
-      conditions.push(inArray(supportTickets.priority, filters.priority as any));
+      conditions.push(inArray(supportTickets.priority, filters.priority as Record<string, unknown>));
     }
 
     if (filters?.assignedTo) {
@@ -179,7 +179,7 @@ export class SupportTicketService {
       }
     }
 
-    const updateData: any = {
+    const updateData: Record<string, unknown> = {
       ...updates,
       updatedAt: new Date(),
     };

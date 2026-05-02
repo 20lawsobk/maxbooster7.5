@@ -29,7 +29,7 @@ interface PaymentError {
   retryable?: boolean;
 }
 
-const getPaymentErrorMessage = (error: any): PaymentError => {
+const getPaymentErrorMessage = (error: Error): PaymentError => {
   const errorCode = error.code || error.type;
   
   switch (errorCode) {
@@ -143,7 +143,7 @@ export default function PaymentUpdateDialog({ open, onOpenChange }: PaymentUpdat
         onOpenChange(false);
         resetForm();
       }, 1500);
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       const parsedError = getPaymentErrorMessage(errorData);
       setPaymentError(parsedError);

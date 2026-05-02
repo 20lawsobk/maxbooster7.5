@@ -33,7 +33,7 @@ router.get('/', requireAuth, async (req, res) => {
         or(
           ilike(songwritingSessions.title, `%${safeSearch}%`),
           ilike(songwritingSessions.notes, `%${safeSearch}%`),
-        ) as any,
+        ) as Record<string, unknown>,
       );
     }
     if (genre && typeof genre === 'string') {
@@ -124,7 +124,7 @@ router.post('/', requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, '[Songwriting] Failed to create session:');
     if (error instanceof Error && error.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
+      return res.status(400).json({ error: 'Validation error', details: (error as Record<string, unknown>).flatten() });
     }
     res.status(500).json({ error: 'Failed to create songwriting session' });
   }
@@ -153,7 +153,7 @@ router.put('/:id', requireAuth, async (req, res) => {
   } catch (error: unknown) {
     logger.warn({ err: error }, '[Songwriting] Failed to update session:');
     if (error instanceof Error && error.name === 'ZodError') {
-      return res.status(400).json({ error: 'Validation error', details: (error as any).flatten() });
+      return res.status(400).json({ error: 'Validation error', details: (error as Record<string, unknown>).flatten() });
     }
     res.status(500).json({ error: 'Failed to update songwriting session' });
   }
@@ -243,10 +243,10 @@ router.post('/ai-assist', requireAuth, async (req, res) => {
     if (
       rhymeResult.status === 'fulfilled' &&
       rhymeResult.value &&
-      (rhymeResult.value as any)?.success &&
-      (rhymeResult.value as any)?.data
+      (rhymeResult.value as Record<string, unknown>)?.success &&
+      (rhymeResult.value as Record<string, unknown>)?.data
     ) {
-      const rhymeText: string = (rhymeResult.value as any).data.caption || '';
+      const rhymeText: string = (rhymeResult.value as Record<string, unknown>).data.caption || '';
       const extracted = rhymeText
         .split(/[\s,;|/]+/)
         .map((w: string) => w.replace(/[^a-zA-Z'-]/g, '').toLowerCase())

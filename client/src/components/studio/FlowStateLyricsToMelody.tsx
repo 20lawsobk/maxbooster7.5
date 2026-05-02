@@ -217,9 +217,9 @@ export function FlowStateLyricsToMelody({
         complexity: rhythmComplexity[0] / 100,
         bars: Math.ceil(totalSyllables / 4) || 2,
       });
-      const data = await res.json() as any;
+      const data = await res.json() as Record<string, unknown>;
       if (data?.melody?.notes?.length > 0) {
-        const mappedNotes: MelodyNote[] = data.melody.notes.map((n: any, i: number) => ({
+        const mappedNotes: MelodyNote[] = data.melody.notes.map((n: Record<string, unknown>, i: number) => ({
           pitch: n.note + (n.octave || 4) * 12,
           noteName: NOTES[n.note % 12] + (n.octave || 4),
           duration: n.duration || 0.5,
@@ -255,12 +255,12 @@ export function FlowStateLyricsToMelody({
         body: formData,
         credentials: 'include',
       });
-      const data = await res.json() as any;
+      const data = await res.json() as Record<string, unknown>;
       if (!res.ok || data.error) {
         toast({ title: 'Analysis failed', description: data.error || 'Could not extract melody from audio', variant: 'destructive' });
         return;
       }
-      const notes: MelodyNote[] = (data.notes as any[]).map((n: any) => ({
+      const notes: MelodyNote[] = (data.notes as Record<string, unknown>[]).map((n: Record<string, unknown>) => ({
         pitch: n.pitch,
         noteName: n.noteName,
         duration: n.duration,

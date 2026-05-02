@@ -127,7 +127,7 @@ export default function Dashboard() {
 }
 
 function UpcomingReleasesSection() {
-  const { data, isLoading } = useQuery<{ countdowns: any[] }>({
+  const { data, isLoading } = useQuery<{ countdowns: unknown[] }>({
     queryKey: ['/api/countdowns'],
   });
 
@@ -154,7 +154,7 @@ function UpcomingReleasesSection() {
           </div>
         ) : (
           <div className="space-y-3">
-            {countdowns.map((countdown: any) => {
+            {countdowns.map((countdown: Record<string, unknown>) => {
               const releaseDate = new Date(countdown.releaseDate);
               const now = new Date();
               const diff = releaseDate.getTime() - now.getTime();
@@ -188,7 +188,7 @@ function UpcomingReleasesSection() {
 }
 
 // Separate component to ensure hooks are only called when user is authenticated
-function DashboardContent({ user }: { user: any }) {
+function DashboardContent({ user }: { user: Record<string, unknown> }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { invalidateOnProjectChange, invalidateDashboard } = useAnalyticsInvalidation();
@@ -237,7 +237,7 @@ function DashboardContent({ user }: { user: any }) {
     staleTime: 5 * 60 * 1000, // 5 minutes - moderate freshness
   });
 
-  const projects = (projectsData as any)?.data || [];
+  const projects = (projectsData as Record<string, unknown>)?.data || [];
 
   const { data: analytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ['/api/analytics/dashboard'],
@@ -555,7 +555,7 @@ function DashboardContent({ user }: { user: any }) {
               <Card
                 key={index}
                 data-testid={
-                  (stat as any).testId ||
+                  (stat as Record<string, unknown>).testId ||
                   `card-stat-${stat.title.toLowerCase().replace(/\s+/g, '-')}`
                 }
                 className={`${stat.bgColor} ${stat.borderColor} border-2 hover:shadow-lg transition-all duration-300`}

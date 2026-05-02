@@ -164,7 +164,7 @@ class ReadReplicaPool {
     return this.replicaPools[healthyIndices[0]];
   }
 
-  async query(text: string, params?: any[], preferReplica: boolean = false): Promise<any> {
+  async query(text: string, params?: unknown[], preferReplica: boolean = false): Promise<any> {
     const isReadQuery = this.isReadOnlyQuery(text);
     
     if (isReadQuery && preferReplica && this.replicaPools.length > 0) {
@@ -188,7 +188,7 @@ class ReadReplicaPool {
            normalized.startsWith('EXPLAIN');
   }
 
-  async queryRead(text: string, params?: any[]): Promise<any> {
+  async queryRead(text: string, params?: unknown[]): Promise<any> {
     return this.query(text, params, true);
   }
 
@@ -240,7 +240,7 @@ class ReadReplicaPool {
 export const readReplicaPool = {
   getInstance: () => ReadReplicaPool.getInstance(),
   initialize: (config: ReadReplicaPoolConfig) => ReadReplicaPool.initializeWithConfig(config),
-  queryRead: (text: string, params?: any[]) => ReadReplicaPool.getInstance().queryRead(text, params),
+  queryRead: (text: string, params?: unknown[]) => ReadReplicaPool.getInstance().queryRead(text, params),
 };
 
 export { ReadReplicaPool, ReadReplicaPoolConfig, ReplicaConfig };

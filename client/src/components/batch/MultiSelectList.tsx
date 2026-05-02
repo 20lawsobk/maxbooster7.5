@@ -130,7 +130,7 @@ export function MultiSelectList<T extends { id: string }>({
             checked={allSelected}
             ref={(el) => {
               if (el) {
-                (el as any).indeterminate = someSelected;
+                (el as Record<string, unknown>).indeterminate = someSelected;
               }
             }}
             onCheckedChange={() => {

@@ -696,7 +696,7 @@ class PersonalizationService {
 
   async getLayoutPresets(userId: string): Promise<{ id: string; name: string; widgetIds: string[] }[]> {
     const userData = this.userPreferencesCache.get(userId);
-    const presets = (userData as any)?.layoutPresets || [];
+    const presets = (userData as Record<string, unknown>)?.layoutPresets || [];
     return presets;
   }
 
@@ -708,9 +708,9 @@ class PersonalizationService {
     };
     
     const userData = this.userPreferencesCache.get(userId) || {};
-    const presets = (userData as any).layoutPresets || [];
+    const presets = (userData as Record<string, unknown>).layoutPresets || [];
     presets.push(newPreset);
-    (userData as any).layoutPresets = presets;
+    (userData as Record<string, unknown>).layoutPresets = presets;
     this.userPreferencesCache.set(userId, userData as PersonalizationPreferences);
     
     return newPreset;

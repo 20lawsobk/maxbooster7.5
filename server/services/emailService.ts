@@ -85,7 +85,7 @@ class EmailService {
         logger.warn(`⏱️ SendGrid timeout for email to ${emailData.to}`);
       } else {
         errorMessage =
-          (error as any)?.response?.body?.errors?.[0]?.message ||
+          (error as Record<string, unknown>)?.response?.body?.errors?.[0]?.message ||
           (error as Error).message ||
           'Unknown error';
       }

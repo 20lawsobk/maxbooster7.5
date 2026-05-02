@@ -59,7 +59,7 @@ type DAWEventType =
 
 interface DAWEvent {
   type: DAWEventType;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 type DAWListener = (event: DAWEvent) => void;
@@ -186,7 +186,7 @@ export class DAWCore {
     const defaultName = name || `${type.charAt(0).toUpperCase() + type.slice(1)} ${trackCount + 1}`;
 
     const routingNodeId = this.routing.addNode({
-      type: type === 'audio' || type === 'instrument' ? 'track' : type as any,
+      type: type === 'audio' || type === 'instrument' ? 'track' : type as Record<string, unknown>,
       name: defaultName,
       trackId: id,
       latency: 0,
@@ -278,7 +278,7 @@ export class DAWCore {
       (data: { trackId: string; before: DAWTrack; after: DAWTrack }) => {
         const t = this.state.tracks.find(t => t.id === data.trackId);
         if (t) {
-          Object.keys(t).forEach(key => delete (t as any)[key]);
+          Object.keys(t).forEach(key => delete (t as Record<string, unknown>)[key]);
           Object.assign(t, data.after);
         }
         this.notifyState();

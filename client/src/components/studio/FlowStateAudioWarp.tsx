@@ -105,7 +105,7 @@ export function FlowStateAudioWarp({
   
   useEffect(() => {
     if (apiMarkers?.markers?.length > 0) {
-      const mappedMarkers = apiMarkers.markers.map((m: any) => ({
+      const mappedMarkers = apiMarkers.markers.map((m: Record<string, unknown>) => ({
         id: m.id,
         originalTime: m.sourceTime ?? m.originalTime ?? 0,
         warpedTime: m.targetTime ?? m.warpedTime ?? m.sourceTime ?? 0,
@@ -130,7 +130,7 @@ export function FlowStateAudioWarp({
     },
     onSuccess: (data) => {
       if (data.transients) {
-        const newMarkers = data.transients.map((t: any, i: number) => ({
+        const newMarkers = data.transients.map((t: Record<string, unknown>, i: number) => ({
           id: `t${i}`,
           originalTime: t.time ?? t.sourceTime ?? 0,
           warpedTime: t.time ?? t.sourceTime ?? 0,

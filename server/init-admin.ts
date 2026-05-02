@@ -1465,7 +1465,7 @@ export async function seedDSPProviders() {
     await db.update(dspProviders).set({ isActive: true }).where(sql`is_active IS DISTINCT FROM true`);
     
     logger.info(`✅ Seeded/activated ${dspList.length} DSP providers`);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Failed to seed DSP providers:', error.message);
   }
 }
@@ -1490,7 +1490,7 @@ async function seedDistributionPlatformsFromFile() {
   try {
     const { seedDistributionPlatforms } = await import('./seed/distributionPlatforms.js');
     await seedDistributionPlatforms();
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Distribution platforms seeding skipped:', error.message);
   }
 }
@@ -1500,7 +1500,7 @@ async function seedAchievementsData() {
     const { seedAchievements } = await import('./seed/seedAchievements.js');
     await seedAchievements();
     logger.info('   ✓ Achievements seeded');
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Achievements seeding skipped:', error.message);
   }
 }
@@ -1510,7 +1510,7 @@ async function seedStatusPageServices() {
     const { statusPageService } = await import('./services/statusPageService.js');
     await statusPageService.initializeDefaultServices();
     logger.info('   ✓ Status page services initialized');
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Status page services seeding skipped:', error.message);
   }
 }
@@ -1524,7 +1524,7 @@ async function seedAIModels() {
     const { initializeAIContentModels } = await import('./seed/initializeAIContentModels.js');
     await initializeAIContentModels();
     logger.info('   ✓ AI models seeded');
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('AI models seeding skipped:', error.message);
   }
 }
@@ -1564,7 +1564,7 @@ async function seedSystemSettings() {
       await db.insert(systemSettings).values(setting).onConflictDoNothing();
     }
     logger.info(`   ✓ System settings seeded (${defaults.length} defaults)`);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('System settings seeding skipped:', error.message);
   }
 }
@@ -1596,7 +1596,7 @@ async function seedAlertRules() {
       await db.insert(alertRules).values(rule).onConflictDoNothing();
     }
     logger.info(`   ✓ Alert rules seeded (${defaults.length} defaults)`);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Alert rules seeding skipped:', error.message);
   }
 }

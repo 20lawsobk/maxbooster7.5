@@ -185,7 +185,7 @@ export default function Royalties() {
   const [newCollaboratorPercentage, setNewCollaboratorPercentage] = useState('');
 
   // Fetch royalties data
-  const { data: royaltiesResponse, isLoading} = useQuery<{ data: Royalty[]; pagination: any }>({
+  const { data: royaltiesResponse, isLoading} = useQuery<{ data: Royalty[]; pagination: Record<string, unknown> }>({
     queryKey: ['/api/royalties', { period: selectedPeriod, platform: selectedPlatform }],
     enabled: !!user,
     retry: false,
@@ -247,7 +247,7 @@ export default function Royalties() {
   });
   const disputes = disputesData?.disputes ?? [];
 
-  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{ forms: any[] }>({
+  const { data: taxFormsData, isLoading: taxFormsLoading } = useQuery<{ forms: unknown[] }>({
     queryKey: ['/api/payouts/tax-forms'],
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
@@ -280,7 +280,7 @@ export default function Royalties() {
       queryClient.invalidateQueries({ queryKey: ['/api/publishing'] });
       queryClient.invalidateQueries({ queryKey: ['/api/publishing/stats'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Registration Failed',
         description: error.message || 'Failed to register work',
@@ -978,7 +978,7 @@ return (
           <TabsContent value="payouts" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <PayoutHistoryTimeline
-                payouts={payoutHistory.map((p: any) => ({
+                payouts={payoutHistory.map((p: Record<string, unknown>) => ({
                   ...p,
                   requestedAt: new Date(p.requestedAt),
                   completedAt: p.completedAt ? new Date(p.completedAt) : undefined,
@@ -1009,7 +1009,7 @@ return (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-1">
                 <StatementDateRangePicker
-                  statements={statements.map((s: any) => ({
+                  statements={statements.map((s: Record<string, unknown>) => ({
                     ...s,
                     startDate: new Date(s.startDate),
                     endDate: new Date(s.endDate),
@@ -1341,18 +1341,18 @@ return (
 
           <TabsContent value="disputes" className="space-y-6">
             <DisputeTracker
-              disputes={disputes.map((d: any) => ({
+              disputes={disputes.map((d: Record<string, unknown>) => ({
                 ...d,
                 createdAt: new Date(d.createdAt),
                 updatedAt: new Date(d.updatedAt),
-                messages: d.messages?.map((m: any) => ({
+                messages: d.messages?.map((m: Record<string, unknown>) => ({
                   ...m,
                   timestamp: new Date(m.timestamp),
                 })) || [],
               }))}
               isLoading={disputesLoading}
               onFileDispute={async (data) => {
-                await fileDisputeMutation.mutateAsync(data as any);
+                await fileDisputeMutation.mutateAsync(data as Record<string, unknown>);
               }}
               onSubmitEvidence={async (disputeId, evidence) => {
                 await submitEvidenceMutation.mutateAsync({ disputeId, evidence });

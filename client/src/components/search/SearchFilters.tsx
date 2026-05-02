@@ -155,7 +155,7 @@ export function SearchFilters({
     },
   });
 
-  const updateFilter = (key: keyof SearchFilters, value: any) => {
+  const updateFilter = (key: keyof SearchFilters, value: Record<string, unknown>) => {
     const newFilters = { ...filters, [key]: value };
     onFilterChange(newFilters);
   };
@@ -183,7 +183,7 @@ export function SearchFilters({
 
   const presets: FilterPreset[] = presetsData?.presets || [];
 
-  const hasConflict = (key: string, value: any): string | null => {
+  const hasConflict = (key: string, value: Record<string, unknown>): string | null => {
     if (key === 'exclusive_only' && value && filters.hasStems) {
       return 'Exclusive beats may not include stems';
     }
@@ -514,7 +514,7 @@ export function ActiveFiltersBar({
     onFilterChange(newFilters);
   };
 
-  const formatValue = (key: string, value: any): string => {
+  const formatValue = (key: string, value: Record<string, unknown>): string => {
     if (key.includes('price')) return `$${value}`;
     if (key.includes('bpm')) return `${value} BPM`;
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';

@@ -25,7 +25,7 @@ import {
 interface ConfigField {
   label: string;
   type: 'boolean' | 'string' | 'number' | 'select';
-  default: any;
+  default: Record<string, unknown>;
   options?: string[];
   description?: string;
 }
@@ -49,7 +49,7 @@ interface ExecutionLog {
   templateId: string;
   eventType: string;
   status: string;
-  result: any;
+  result: Record<string, unknown>;
   error: string | null;
   executedAt: string;
 }
@@ -114,7 +114,7 @@ function ConfigEditor({
 }: {
   schema: Record<string, ConfigField>;
   values: Record<string, any>;
-  onChange: (key: string, value: any) => void;
+  onChange: (key: string, value: Record<string, unknown>) => void;
 }) {
   return (
     <div className="space-y-4">
@@ -557,9 +557,9 @@ function RunHistoryTab({ templateNameMap }: { templateNameMap: Record<string, st
                   Trigger: <span className="font-mono">{log.eventType}</span>
                 </p>
                 {log.error && <p className="text-xs text-destructive mt-1">{log.error}</p>}
-                {log.result && typeof log.result === 'object' && Array.isArray((log.result as any).actions) && (
+                {log.result && typeof log.result === 'object' && Array.isArray((log.result as Record<string, unknown>).actions) && (
                   <p className="text-xs text-muted-foreground mt-1">
-                    Actions: {((log.result as any).actions as string[]).join(' · ')}
+                    Actions: {((log.result as Record<string, unknown>).actions as string[]).join(' · ')}
                   </p>
                 )}
               </div>

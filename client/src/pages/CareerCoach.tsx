@@ -90,19 +90,19 @@ export default function CareerCoach() {
     enabled: !!user,
   });
 
-  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{ insights: any }>({
+  const { data: insightsData, isLoading: isLoadingInsights } = useQuery<{ insights: Record<string, unknown> }>({
     queryKey: ['/api/career-coach/insights'],
     enabled: !!user,
   });
 
-  const { data: historyData } = useQuery<{ messages: any[] }>({
+  const { data: historyData } = useQuery<{ messages: unknown[] }>({
     queryKey: ['/api/assistant/history'],
     enabled: !!user,
   });
 
   useEffect(() => {
     if (historyData && !historyLoaded) {
-      const historical = (historyData.messages || []).map((m: any) => ({
+      const historical = (historyData.messages || []).map((m: Record<string, unknown>) => ({
         id: m.id || String(m.createdAt),
         role: m.role === 'assistant' ? 'coach' as const : 'user' as const,
         content: m.content,

@@ -111,7 +111,7 @@ export async function initializeAIMusicModels() {
           versionNumber: 1,
           versionHash,
           status: 'production',
-          accuracy: (modelData.performance as any).accuracy,
+          accuracy: (modelData.performance as Record<string, unknown>).accuracy,
           parameters: modelData.parameters,
           changelog: 'Initial release with professional-grade audio processing',
           deployedAt: new Date(),

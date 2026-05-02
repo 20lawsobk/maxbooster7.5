@@ -349,7 +349,7 @@ export function HybridStorageStats() {
                       }`} />
                       <div className="flex-1 space-y-1">
                         <div className="flex items-center gap-2">
-                          <Badge variant={getPriorityColor(rec.priority) as any}>
+                          <Badge variant={getPriorityColor(rec.priority) as Record<string, unknown>}>
                             {rec.priority}
                           </Badge>
                           <Badge variant="outline">{rec.type.replace('_', ' ')}</Badge>

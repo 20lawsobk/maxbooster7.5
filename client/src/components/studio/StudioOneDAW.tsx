@@ -92,7 +92,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
   const [showMixer, setShowMixer] = useState(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
-  const copiedClipRef = useRef<{ clip: any; trackId: string; type: 'audio' | 'midi' } | null>(null);
+  const copiedClipRef = useRef<{ clip: Record<string, unknown>; trackId: string; type: 'audio' | 'midi' } | null>(null);
   const [zoom, setZoom] = useState(1);
   const [scrollX, setScrollX] = useState(0);
   const [showProjectDialog, setShowProjectDialog] = useState(false);
@@ -113,9 +113,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     description: string; 
     createdAt: number;
     snapshot?: {
-      project: any;
-      transport: any;
-      tracks: any[];
+      project: Record<string, unknown>;
+      transport: Record<string, unknown>;
+      tracks: Record<string, unknown>[];
     };
   }>>([]);
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
@@ -337,9 +337,9 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     if (!currentSelectedClipId) return null;
     const s = useStudioStore.getState();
     for (const t of s.tracks) {
-      const ac = t.audioClips.find((c: any) => c.id === currentSelectedClipId);
+      const ac = t.audioClips.find((c: Record<string, unknown>) => c.id === currentSelectedClipId);
       if (ac) return { track: t, clip: ac, type: 'audio' as const };
-      const mc = t.midiClips.find((c: any) => c.id === currentSelectedClipId);
+      const mc = t.midiClips.find((c: Record<string, unknown>) => c.id === currentSelectedClipId);
       if (mc) return { track: t, clip: mc, type: 'midi' as const };
     }
     return null;
@@ -570,7 +570,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       // Load and schedule audio clips
       for (const track of tracks) {
         for (const clip of (track.audioClips || [])) {
-          const clipUrl = clip.sourceUrl || (clip as any).filePath;
+          const clipUrl = clip.sourceUrl || (clip as Record<string, unknown>).filePath as string;
           if (!clipUrl) continue;
 
           const alreadyLoaded = loadedClipsRef.current.has(clip.id);
@@ -775,13 +775,13 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (updates.name !== undefined) patchData.name = updates.name;
       if (updates.color !== undefined) patchData.color = updates.color;
       if (Object.keys(patchData).length === 0) return;
-      apiRequest('PATCH', `/api/studio/tracks/${trackId}`, patchData).catch((err: any) => {
+      apiRequest('PATCH', `/api/studio/tracks/${trackId}`, patchData).catch((err) => {
         logger.error('[DAW] Failed to update track on backend:', err);
       });
     }, 500);
   }, [projectId]);
 
-  const handleTrackUpdate = useCallback((trackId: string, updates: any) => {
+  const handleTrackUpdate = useCallback((trackId: string, updates: Record<string, unknown>) => {
     store.updateTrack(trackId, updates);
     if (trackId === 'master') {
       if (updates.volume !== undefined) audioEngine.setMasterVolume(updates.volume);
@@ -795,7 +795,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     store.removeTrack(trackId);
     toast({ title: 'Track Removed', description: 'Track has been deleted.' });
     if (projectId) {
-      apiRequest('DELETE', `/api/studio/tracks/${trackId}`).catch((err: any) => {
+      apiRequest('DELETE', `/api/studio/tracks/${trackId}`).catch((err) => {
         logger.error('[DAW] Failed to delete track on backend:', err);
         toast({ title: 'Sync Error', description: 'Failed to delete track on server.', variant: 'destructive' });
       });
@@ -818,7 +818,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
         mute: false,
         solo: false,
         armed: false,
-      }).catch((err: any) => {
+      }).catch((err) => {
         logger.error('[DAW] Failed to sync new track to backend:', err);
         toast({ title: 'Sync Error', description: 'Track created locally but failed to sync to server.', variant: 'destructive' });
       });
@@ -829,7 +829,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     try {
       await forceSave();
       toast({ title: 'Project Saved', description: 'All changes have been saved.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Save Failed', description: error.message, variant: 'destructive' });
     }
   }, [forceSave, toast]);
@@ -840,7 +840,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     try {
       await apiRequest('POST', `/api/studio/ai-mix/${projectId}`);
       toast({ title: 'AI Mix Complete', description: 'Your tracks have been balanced and processed.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Mix Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsAIMixing(false);
@@ -853,7 +853,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     try {
       await apiRequest('POST', `/api/studio/ai-master/${projectId}`, { targetLufs: -14 });
       toast({ title: 'AI Master Complete', description: 'Your project has been mastered for streaming.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Master Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsAIMastering(false);
@@ -876,7 +876,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (response.audioFilePath) {
         toast({ title: 'Melody Generated', description: 'New melody track has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
@@ -895,7 +895,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (response.audioFilePath) {
         toast({ title: 'Drums Generated', description: 'New drum pattern has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, toast]);
@@ -916,7 +916,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (response.audioFilePath) {
         toast({ title: 'Bass Generated', description: 'New bass line has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
@@ -935,7 +935,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (response.audioFilePath) {
         toast({ title: 'Percussion Generated', description: 'New percussion pattern has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, toast]);
@@ -956,7 +956,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
       if (response.audioFilePath) {
         toast({ title: 'Chords Generated', description: 'New chord progression has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, musicalKey, musicalScale, toast]);
@@ -1003,7 +1003,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
     }
     store.addPlugin(selectedTrackId, {
       name: pluginId,
-      type: type as any,
+      type: type as string,
       bypassed: false,
       parameters: {},
     });
@@ -1586,7 +1586,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                 <span className="text-xs text-gray-400">Format:</span>
                 <select
                   value={surroundFormat}
-                  onChange={(e) => setSurroundFormat(e.target.value as any)}
+                  onChange={(e) => setSurroundFormat(e.target.value as string)}
                   className="h-6 bg-[#1a1a1e] border border-[#444] rounded px-2 text-xs text-gray-300"
                 >
                   <option value="2.0">Stereo (2.0)</option>
@@ -1760,7 +1760,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             }
             // Restore track states (volume, pan, mute, solo)
             if (parsed.tracks && Array.isArray(parsed.tracks)) {
-              parsed.tracks.forEach((recoveredTrack: any) => {
+              parsed.tracks.forEach((recoveredTrack: Record<string, unknown>) => {
                 const existingTrack = store.tracks.find(t => t.id === recoveredTrack.id);
                 if (existingTrack) {
                   store.updateTrack(recoveredTrack.id, {
@@ -1842,7 +1842,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
           });
         }}
         onLoadVersion={(versionId) => {
-          const version = projectVersions.find(v => v.id === versionId) as any;
+          const version = projectVersions.find(v => v.id === versionId) as Record<string, unknown>;
           if (version?.snapshot) {
             // Restore project state
             if (version.snapshot.project) {
@@ -1861,7 +1861,7 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
             }
             // Restore track states
             if (version.snapshot.tracks && Array.isArray(version.snapshot.tracks)) {
-              version.snapshot.tracks.forEach((snapshotTrack: any) => {
+              version.snapshot.tracks.forEach((snapshotTrack: Record<string, unknown>) => {
                 const existingTrack = store.tracks.find(t => t.id === snapshotTrack.id);
                 if (existingTrack) {
                   store.updateTrack(snapshotTrack.id, {
@@ -1923,7 +1923,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
                   try {
                     const response = await fetch(file.url);
                     const arrayBuffer = await response.arrayBuffer();
-                    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext as typeof AudioContext;
+                    const audioContext = new AudioContextClass();
                     const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
                     const sampleRate = audioBuffer.sampleRate;
                     const totalSamples = audioBuffer.length;
@@ -1973,8 +1974,8 @@ export function StudioOneDAW({ projectId }: StudioOneDAWProps) {
 }
 
 interface TransportBarProps {
-  transport: any;
-  project: any;
+  transport: Record<string, unknown>;
+  project: Record<string, unknown>;
   livePosition: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -2498,7 +2499,7 @@ function Toolbar({
                 <TooltipTrigger asChild>
                   <Button
                     variant="ghost" size="sm"
-                    onClick={() => setEditMode(mode as any)}
+                    onClick={() => setEditMode(mode as string)}
                     className={cn('h-7 w-7 p-0', editMode === mode && 'bg-blue-600/20 text-blue-400')}
                   >
                     <MIcon className="h-3.5 w-3.5" />
@@ -2965,7 +2966,7 @@ function TimelineRuler({ zoom, scrollX, tempo, sampleRate = 44100, timeSignature
 }
 
 interface ArrangeViewProps {
-  tracks: any[];
+  tracks: Record<string, unknown>[];
   selectedTrackId: string | null;
   selectedClipId: string | null;
   zoom: number;
@@ -2976,14 +2977,14 @@ interface ArrangeViewProps {
   trackHeaderWidth: number;
   onSelectTrack: (id: string) => void;
   onSelectClip: (id: string | null) => void;
-  onUpdateTrack: (id: string, updates: any) => void;
+  onUpdateTrack: (id: string, updates: Record<string, unknown>) => void;
   onDeleteTrack: (id: string) => void;
   onDuplicateTrack: (id: string) => void;
   showAutomation?: boolean;
-  automationLanes?: any[];
-  onAutomationLanesChange?: (lanes: any[]) => void;
+  automationLanes?: Record<string, unknown>[];
+  onAutomationLanesChange?: (lanes: Record<string, unknown>[]) => void;
   showVideoTrack?: boolean;
-  allTracks?: any[];
+  allTracks?: Record<string, unknown>[];
   onAddTrack?: (type: 'audio' | 'instrument' | 'midi' | 'bus') => void;
 }
 
@@ -3143,7 +3144,7 @@ function ArrangeView({
 }
 
 interface TrackLaneProps {
-  track: any;
+  track: Record<string, unknown>;
   index: number;
   isSelected: boolean;
   selectedClipId: string | null;
@@ -3151,10 +3152,10 @@ interface TrackLaneProps {
   tempo: number;
   onSelect: () => void;
   onSelectClip: (id: string | null) => void;
-  onUpdate: (updates: any) => void;
+  onUpdate: (updates: Record<string, unknown>) => void;
   onDelete: () => void;
   onDuplicate: () => void;
-  allTracks?: any[];
+  allTracks?: Record<string, unknown>[];
 }
 
 function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSelect, onSelectClip, onUpdate, onDelete, onDuplicate, allTracks = [] }: TrackLaneProps) {
@@ -3295,10 +3296,10 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
           </div>
 
           <div className="flex-1 relative bg-[#1a1a1e]">
-            {!track.collapsed && track.audioClips?.map((clip: any) => (
+            {!track.collapsed && track.audioClips?.map((clip: Record<string, unknown>) => (
               <AudioClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} trackId={track.id} isSelected={clip.id === selectedClipId} onSelect={() => onSelectClip(clip.id)} />
             ))}
-            {!track.collapsed && track.midiClips?.map((clip: any) => (
+            {!track.collapsed && track.midiClips?.map((clip: Record<string, unknown>) => (
               <MidiClipView key={clip.id} clip={clip} zoom={zoom} tempo={tempo} trackColor={track.color} trackId={track.id} isSelected={clip.id === selectedClipId} onSelect={() => onSelectClip(clip.id)} />
             ))}
           </div>
@@ -3319,7 +3320,7 @@ function TrackLane({ track, index, isSelected, selectedClipId, zoom, tempo, onSe
 }
 
 interface AudioClipViewProps {
-  clip: any;
+  clip: Record<string, unknown>;
   zoom: number;
   tempo: number;
   trackColor: string;
@@ -3593,15 +3594,15 @@ function AudioClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onS
       <ContextMenuContent>
         <ContextMenuItem onClick={() => {
           const s = useStudioStore.getState();
-          const params = (s as any)._clipEditParams?.[clip.id] || {};
-          (s as any)._showTimeStretchDialog = clip.id;
+          const params = (s as Record<string, unknown>)._clipEditParams?.[clip.id as string] || {};
+          (s as Record<string, unknown>)._showTimeStretchDialog = clip.id;
         }}>
           <Waves className="h-3.5 w-3.5 mr-2" />
           Time Stretch...
         </ContextMenuItem>
         <ContextMenuItem onClick={() => {
           const s = useStudioStore.getState();
-          (s as any)._showPitchShiftDialog = clip.id;
+          (s as Record<string, unknown>)._showPitchShiftDialog = clip.id;
         }}>
           <ArrowUpDown className="h-3.5 w-3.5 mr-2" />
           Pitch Shift...
@@ -3667,7 +3668,7 @@ function MidiClipGrid({ clipStartTime, clipDuration, tempo }: { clipStartTime: n
 }
 
 interface MidiClipViewProps {
-  clip: any;
+  clip: Record<string, unknown>;
   zoom: number;
   tempo: number;
   trackColor: string;
@@ -3777,7 +3778,7 @@ function MidiClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSe
           <div className="px-1.5 py-0.5 text-[10px] truncate text-white/80 pointer-events-none">{clip.name}</div>
           <MidiClipGrid clipStartTime={clip.startTime} clipDuration={clip.duration} tempo={tempo} />
           <div className="absolute inset-x-1 bottom-1 top-5 flex flex-col gap-px overflow-hidden pointer-events-none">
-            {clip.notes?.slice(0, 8).map((note: any, i: number) => (
+            {clip.notes?.slice(0, 8).map((note: Record<string, unknown>, i: number) => (
               <div
                 key={i}
                 className="h-1.5 rounded-sm"
@@ -3826,9 +3827,9 @@ function MidiClipView({ clip, zoom, tempo, trackColor, trackId, isSelected, onSe
 }
 
 interface TrackInspectorProps {
-  track: any;
+  track: Record<string, unknown>;
   onClose: () => void;
-  onUpdate: (updates: any) => void;
+  onUpdate: (updates: Record<string, unknown>) => void;
   onOpenPlugins: () => void;
   embedded?: boolean;
 }
@@ -3908,7 +3909,7 @@ function TrackInspector({ track, onClose, onUpdate, onOpenPlugins, embedded }: T
             </Button>
           </div>
           <div className="space-y-1">
-            {track.plugins?.map((plugin: any) => (
+            {track.plugins?.map((plugin: Record<string, unknown>) => (
               <div
                 key={plugin.id}
                 className="flex items-center gap-2 p-2 bg-[#2a2a2e] rounded text-xs"
@@ -3937,7 +3938,7 @@ function TrackInspector({ track, onClose, onUpdate, onOpenPlugins, embedded }: T
 }
 
 interface EditorPanelProps {
-  track: any;
+  track: Record<string, unknown>;
   onClose: () => void;
 }
 
@@ -3995,11 +3996,11 @@ function EditorPanel({ track, onClose }: EditorPanelProps) {
 }
 
 interface MixerPanelProps {
-  tracks: any[];
-  masterTrack: any;
+  tracks: Record<string, unknown>[];
+  masterTrack: Record<string, unknown>;
   selectedTrackId: string | null;
   onSelectTrack: (id: string) => void;
-  onUpdateTrack: (id: string, updates: any) => void;
+  onUpdateTrack: (id: string, updates: Record<string, unknown>) => void;
   onClose: () => void;
   projectId: string;
   embedded?: boolean;
@@ -4114,7 +4115,7 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
                     {snapshots.length === 0 ? (
                       <div className="px-3 py-2 text-xs text-gray-500">No snapshots saved</div>
                     ) : (
-                      snapshots.map((snap: any) => (
+                      snapshots.map((snap: Record<string, unknown>) => (
                         <div key={snap.id} className="flex items-center justify-between px-3 py-1.5 hover:bg-[#333] group">
                           <button
                             className="flex-1 text-left text-xs truncate"
@@ -4173,12 +4174,12 @@ function MixerPanel({ tracks, masterTrack, selectedTrackId, onSelectTrack, onUpd
 }
 
 interface ChannelStripProps {
-  track: any;
+  track: Record<string, unknown>;
   isSelected: boolean;
   isMaster?: boolean;
   onSelect: () => void;
-  onUpdate: (updates: any) => void;
-  allTracks?: any[];
+  onUpdate: (updates: Record<string, unknown>) => void;
+  allTracks?: Record<string, unknown>[];
 }
 
 function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTracks = [] }: ChannelStripProps) {
@@ -4312,8 +4313,8 @@ function ChannelStrip({ track, isSelected, isMaster, onSelect, onUpdate, allTrac
 
 // ════ NODE GRAPH VIEW ════
 interface NodeGraphViewProps {
-  tracks: any[];
-  masterTrack: any;
+  tracks: Record<string, unknown>[];
+  masterTrack: Record<string, unknown>;
   selectedTrackId: string | null;
   onSelectTrack: (id: string) => void;
   onOpenPlugins: (trackId: string) => void;
@@ -4410,7 +4411,7 @@ function NodeGraphView({ tracks, masterTrack, selectedTrackId, onSelectTrack, on
 
 // ════ FLOW VIEW ════
 interface FlowViewProps {
-  tracks: any[];
+  tracks: Record<string, unknown>[];
   tempo: number;
   timeSignature: string;
   selectedTrackId: string | null;

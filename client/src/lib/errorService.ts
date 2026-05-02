@@ -43,7 +43,7 @@ export interface ErrorContext {
   action?: string;
   metadata?: Record<string, any>;
   stackTrace?: string;
-  breadcrumbs?: Array<{ timestamp: Date; action: string; data?: any }>;
+  breadcrumbs?: Array<{ timestamp: Date; action: string; data?: unknown }>;
 }
 
 export interface ErrorReport {
@@ -70,7 +70,7 @@ class ErrorService {
   private static instance: ErrorService;
   private errorQueue: ErrorReport[] = [];
   private isReporting = false;
-  private breadcrumbs: Array<{ timestamp: Date; action: string; data?: any }> = [];
+  private breadcrumbs: Array<{ timestamp: Date; action: string; data?: unknown }> = [];
   private maxBreadcrumbs = 50;
   private retryDelays = [1000, 2000, 4000, 8000, 16000, 30000]; // Exponential backoff
   private errorCount = 0;

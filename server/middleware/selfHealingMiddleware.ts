@@ -59,7 +59,7 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
     source: {
       ip,
       userAgent: req.headers['user-agent'],
-      userId: (req as any).user?.id,
+      userId: (req as Record<string, unknown>).user?.id,
       sessionId: req.sessionID,
     },
     payload: {
@@ -85,7 +85,7 @@ export function selfHealingSecurityMiddleware(req: Request, res: Response, next:
         source: {
           ip,
           userAgent: req.headers['user-agent'],
-          userId: (req as any).user?.id,
+          userId: (req as Record<string, unknown>).user?.id,
           sessionId: req.sessionID,
         },
         payload: {
@@ -114,7 +114,7 @@ function getRequestCategory(path: string): string {
   return 'general';
 }
 
-function sanitizeBody(body: any): any {
+function sanitizeBody(body: Record<string, unknown>): Record<string, unknown> {
   if (!body || typeof body !== 'object') return body;
   
   const sensitiveFields = ['password', 'token', 'secret', 'apiKey', 'creditCard', 'cvv', 'ssn'];

@@ -40,7 +40,7 @@ interface ReleaseOutcome {
   type: 'draft_saved' | 'validation_error' | 'cover_upload' | 'track_upload' | 'metadata_autofill';
   status: 'success' | 'warning' | 'error' | 'in_progress';
   message: string;
-  details?: any;
+  details?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -89,13 +89,13 @@ interface AnalyticsOutcome {
   type: 'loading' | 'no_data' | 'geographic' | 'platform_comparison';
   status: 'success' | 'info' | 'warning';
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: string;
 }
 
 interface DistributionOutcomeHandlerProps {
   releaseId: string;
-  onAction?: (action: string, data?: any) => void;
+  onAction?: (action: string, data?: Record<string, unknown>) => void;
 }
 
 export function DistributionOutcomeHandler({ releaseId, onAction }: DistributionOutcomeHandlerProps) {
@@ -123,7 +123,7 @@ export function DistributionOutcomeHandler({ releaseId, onAction }: Distribution
   });
 
   const retryMutation = useMutation({
-    mutationFn: async ({ type, data }: { type: string; data?: any }) => {
+    mutationFn: async ({ type, data }: { type: string; data?: Record<string, unknown> }) => {
       const response = await apiRequest('POST', `/api/distribution/releases/${releaseId}/retry-outcome`, { type, data });
       return response.json();
     },
@@ -197,7 +197,7 @@ export function DistributionOutcomeHandler({ releaseId, onAction }: Distribution
 
   const summary = outcomes?.summary || { totalOutcomes: 0, errors: 0, warnings: 0, successes: 0, inProgress: 0 };
 
-  const renderOutcomeItem = (outcome: any, index: number) => (
+  const renderOutcomeItem = (outcome: Record<string, unknown>, index: number) => (
     <div key={index} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors">
       {getStatusIcon(outcome.status)}
       <div className="flex-1 min-w-0">
@@ -209,7 +209,7 @@ export function DistributionOutcomeHandler({ releaseId, onAction }: Distribution
         )}
         {outcome.platforms && outcome.platforms.length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {outcome.platforms.map((platform: any, i: number) => (
+            {outcome.platforms.map((platform: Record<string, unknown>, i: number) => (
               <Badge key={i} variant="outline" className={getStatusBadge(platform.status === 'live' ? 'success' : platform.status === 'failed' ? 'error' : 'in_progress')}>
                 {platform.name}
               </Badge>

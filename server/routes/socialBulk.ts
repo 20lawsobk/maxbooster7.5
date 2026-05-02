@@ -13,7 +13,7 @@ const router = Router();
 
 router.post('/validate', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const validatedData = bulkValidatePostSchema.parse(req.body);
     const errors: Array<{ index: number; field: string; message: string }> = [];
     const warnings: Array<{ index: number; message: string }> = [];
@@ -119,7 +119,7 @@ router.post('/validate', requireAuth, async (req, res) => {
 
 router.post('/schedule', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const validatedData = bulkSchedulePostSchema.parse(req.body);
 
     if (validatedData.posts.length === 0) {
@@ -271,7 +271,7 @@ router.post('/schedule', requireAuth, async (req, res) => {
 
 router.get('/status/:batchId', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { batchId } = req.params;
 
     if (!batchId || typeof batchId !== 'string') {
@@ -335,7 +335,7 @@ router.get('/status/:batchId', requireAuth, async (req, res) => {
 
 router.delete('/:batchId', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { batchId } = req.params;
 
     if (!batchId || typeof batchId !== 'string') {
@@ -357,15 +357,16 @@ router.delete('/:batchId', requireAuth, async (req, res) => {
 
 router.get('/batches', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const page = Math.max(1, parseInt(String(req.query.page || '1'), 10));
     const pageSize = Math.min(100, Math.max(1, parseInt(String(req.query.pageSize || '50'), 10)));
+    const pageOffset = Math.min((page - 1) * pageSize, 100_000);
 
     const batches = await db.query.scheduledPostBatches.findMany({
       where: eq(scheduledPostBatches.userId, userId),
       orderBy: [desc(scheduledPostBatches.createdAt)],
       limit: pageSize,
-      offset: (page - 1) * pageSize,
+      offset: pageOffset,
     });
 
     return res.json({

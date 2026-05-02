@@ -18,7 +18,7 @@ const MAX_KEYS_PER_USER = 20;
 const keyCreateLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 7_200_000_000,
-  keyGenerator: (req) => `apikey-create:${(req.user as any)?.id ?? 'anon'}`,
+  keyGenerator: (req) => `apikey-create:${(req.user as Record<string, unknown>)?.id ?? 'anon'}`,
   message: { error: 'Too many API key operations, please try again later' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -82,7 +82,7 @@ router.post('/', keyCreateLimiter, async (req: Request, res: Response) => {
     const VALID_SCOPES = new Set(['read', 'write', 'analytics', 'distribution', 'social', 'billing', 'admin']);
     const trimmedName = name.trim().substring(0, 100);
     const requestedScopes = Array.isArray(scopes) ? scopes : ['read'];
-    const invalidScopes = requestedScopes.filter((s: any) => typeof s !== 'string' || !VALID_SCOPES.has(s));
+    const invalidScopes = requestedScopes.filter((s: Record<string, unknown>) => typeof s !== 'string' || !VALID_SCOPES.has(s));
     if (invalidScopes.length > 0) {
       return res.status(400).json({ error: 'Invalid scopes', invalid: invalidScopes, valid: [...VALID_SCOPES] });
     }

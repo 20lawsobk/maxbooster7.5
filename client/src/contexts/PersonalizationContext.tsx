@@ -63,7 +63,7 @@ export interface UserPersonalization {
 export interface SmartDefault {
   category: string;
   key: string;
-  value: any;
+  value: Record<string, unknown>;
   confidence: number;
   reasoning: string;
   source: 'onboarding' | 'behavior' | 'ai' | 'manual';
@@ -112,7 +112,7 @@ interface PersonalizationContextValue {
   updateWidgetSize: (widgetId: string, size: WidgetSize) => Promise<void>;
   saveDashboardLayout: (widgets: DashboardWidget[]) => Promise<void>;
   
-  updatePreference: (key: keyof UserPersonalization, value: any) => Promise<void>;
+  updatePreference: (key: keyof UserPersonalization, value: Record<string, unknown>) => Promise<void>;
   applyArtistTypeDefaults: (artistType: ArtistType) => Promise<void>;
   applyGenreDefaults: (genre: string) => Promise<void>;
   resetToDefaults: () => Promise<void>;
@@ -203,7 +203,7 @@ export function PersonalizationProvider({ children }: PersonalizationProviderPro
   });
 
   const updatePreferenceMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: any }) => {
+    mutationFn: async ({ key, value }: { key: string; value: unknown }) => {
       const response = await apiRequest('PUT', '/api/personalization/preferences', { [key]: value });
       return response.json();
     },
@@ -368,7 +368,7 @@ export function PersonalizationProvider({ children }: PersonalizationProviderPro
     return def ? def.value : fallback;
   }, [getDefault]);
 
-  const updatePreference = useCallback(async (key: keyof UserPersonalization, value: any) => {
+  const updatePreference = useCallback(async (key: keyof UserPersonalization, value: Record<string, unknown>) => {
     await updatePreferenceMutation.mutateAsync({ key, value });
   }, [updatePreferenceMutation]);
 

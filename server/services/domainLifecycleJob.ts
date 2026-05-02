@@ -105,7 +105,7 @@ async function _autoRenewDueSoon(now: Date, threshold: Date): Promise<void> {
       });
 
       logger.info({ domain: row.domain, newExpiry: result.expiresAt }, '[DomainLifecycle] auto-renewed');
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ domain: row.domain, err: e.message }, '[DomainLifecycle] auto-renewal failed');
       // If renewal fails, domain will naturally transition to grace on next run
     }
@@ -175,7 +175,7 @@ async function _cleanUpExpiredZones(): Promise<void> {
         [row.domain]
       );
       logger.info({ domain: row.domain }, '[DomainLifecycle] removed DNS zone for expired domain');
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ domain: row.domain, err: e.message }, '[DomainLifecycle] DNS zone removal failed (non-fatal)');
     }
   }
@@ -196,13 +196,13 @@ export function startDomainLifecycleJob(): void {
 
   // Run once shortly after startup (stagger by 2 minutes to not block boot)
   setTimeout(async () => {
-    try { await runDomainLifecycleChecks(); } catch (e: any) {
+    try { await runDomainLifecycleChecks(); } catch (e) {
       logger.warn({ err: e.message }, '[DomainLifecycle] startup run failed');
     }
   }, 2 * 60 * 1000);
 
   _lifecycleTimer = setInterval(async () => {
-    try { await runDomainLifecycleChecks(); } catch (e: any) {
+    try { await runDomainLifecycleChecks(); } catch (e) {
       logger.warn({ err: e.message }, '[DomainLifecycle] scheduled run failed');
     }
   }, INTERVAL_MS);

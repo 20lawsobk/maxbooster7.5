@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 
 export interface SelectionItem {
   id: string;
-  [key: string]: any;
+  [key: string]: Record<string, unknown>;
 }
 
 export interface UseSelectionOptions<T extends SelectionItem = SelectionItem> {

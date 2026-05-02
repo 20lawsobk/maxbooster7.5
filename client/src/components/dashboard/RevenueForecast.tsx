@@ -484,7 +484,7 @@ export default function RevenueForecast() {
                       strokeWidth={2}
                       fill="url(#colorRevenue)"
                       name="Projected Revenue"
-                      dot={(props: any) => {
+                      dot={(props: Record<string, unknown>) => {
                         const { cx, cy, payload } = props;
                         if (payload.isHistorical) {
                           return (

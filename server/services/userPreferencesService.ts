@@ -67,7 +67,7 @@ export interface PreferenceRecommendation {
   reason: string;
   priority: 'high' | 'medium' | 'low';
   actionable: boolean;
-  suggestedValue?: any;
+  suggestedValue?: Record<string, unknown>;
 }
 
 const DEFAULT_WIDGETS: DashboardWidget[] = [
@@ -200,7 +200,7 @@ class UserPreferencesService {
       const updated = this.deepMerge(current, updates);
 
       await db.update(users)
-        .set({ preferences: updated as any })
+        .set({ preferences: updated as Record<string, unknown> })
         .where(eq(users.id, userId));
 
       const redis = await getRedisClient();
@@ -385,7 +385,7 @@ class UserPreferencesService {
     return preferences?.dashboardLayout || { preset: 'standard', widgets: [...DEFAULT_WIDGETS] };
   }
 
-  private async analyzeFeatureUsage(userId: string, redis: any): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
+  private async analyzeFeatureUsage(userId: string, redis: Record<string, unknown>): Promise<{ studioUsage: number; aiUsage: number; socialUsage: number }> {
     const studioEvents = await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:studio_action`) || 0;
     const aiEvents = await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:ai_action`) || 0;
     const socialEvents = await redis.lLen(`${this.BEHAVIOR_PREFIX}${userId}:social_action`) || 0;
@@ -398,7 +398,7 @@ class UserPreferencesService {
     };
   }
 
-  private async analyzeTimePatterns(userId: string, redis: any): Promise<{ peakHour: number | null }> {
+  private async analyzeTimePatterns(userId: string, redis: Record<string, unknown>): Promise<{ peakHour: number | null }> {
     const events = await redis.lRange(`${this.BEHAVIOR_PREFIX}${userId}:login`, 0, -1);
     if (!events || events.length === 0) return { peakHour: null };
 
@@ -415,7 +415,7 @@ class UserPreferencesService {
     return { peakHour: peakHour ? parseInt(peakHour[0]) : null };
   }
 
-  private async analyzeContentPatterns(userId: string, redis: any): Promise<{ topContentType: string | null }> {
+  private async analyzeContentPatterns(userId: string, redis: Record<string, unknown>): Promise<{ topContentType: string | null }> {
     const events = await redis.lRange(`${this.BEHAVIOR_PREFIX}${userId}:content_create`, 0, -1);
     if (!events || events.length === 0) return { topContentType: null };
 
@@ -437,9 +437,9 @@ class UserPreferencesService {
     const output = { ...target };
     for (const key in source) {
       if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-        output[key] = this.deepMerge(target[key] || {}, source[key] as any);
+        output[key] = this.deepMerge(target[key] || {}, source[key] as Record<string, unknown>);
       } else if (source[key] !== undefined) {
-        output[key] = source[key] as any;
+        output[key] = source[key] as Record<string, unknown>;
       }
     }
     return output;

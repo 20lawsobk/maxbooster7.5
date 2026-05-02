@@ -110,7 +110,7 @@ export default function ProducerProfilePage() {
         queryClient.invalidateQueries({ queryKey: ['/api/marketplace/purchases'] });
       }
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Purchase Failed', description: err?.message || 'Something went wrong. Please try again.', variant: 'destructive' });
     },
   });
@@ -168,7 +168,7 @@ export default function ProducerProfilePage() {
 
   const beats = Array.isArray(beatsData) ? beatsData : [];
 
-  const { data: allProducersData } = useQuery<{ producers: any[] }>({
+  const { data: allProducersData } = useQuery<{ producers: unknown[] }>({
     queryKey: ['all-producers'],
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/marketplace/producers');
@@ -450,9 +450,9 @@ if (!producer) {
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {allProducers
-                .filter((p: any) => p.id !== producerId)
+                .filter((p: Record<string, unknown>) => p.id !== producerId)
                 .slice(0, 6)
-                .map((p: any) => (
+                .map((p: Record<string, unknown>) => (
                   <Card
                     key={p.id}
                     className="hover:shadow-xl transition group cursor-pointer border-2 hover:border-blue-500"

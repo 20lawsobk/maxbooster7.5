@@ -429,9 +429,9 @@ class AIModelManager {
    * Extract model weights for persistence
    * Implements actual weight extraction using TensorFlow.js serialization
    */
-  private async extractModelWeights(model: any): Promise<any> {
+  private async extractModelWeights(model: Record<string, unknown>): Promise<any> {
     try {
-      const weights: any = {
+      const weights: Record<string, unknown> = {
         version: '1.0',
         timestamp: new Date().toISOString(),
       };
@@ -440,7 +440,7 @@ class AIModelManager {
         const tensorWeights = await model.getWeights();
         if (tensorWeights && Array.isArray(tensorWeights)) {
           weights.tensors = await Promise.all(
-            tensorWeights.map(async (tensor: any) => ({
+            tensorWeights.map(async (tensor: Record<string, unknown>) => ({
               shape: tensor.shape,
               dtype: tensor.dtype,
               data: Array.from(await tensor.data()),
@@ -472,16 +472,16 @@ class AIModelManager {
    * Load model weights from persisted data
    * Implements actual weight loading using TensorFlow.js deserialization
    */
-  private async loadModelWeights(model: any, weights: any): Promise<void> {
+  private async loadModelWeights(model: Record<string, unknown>, weights: Record<string, unknown>): Promise<void> {
     if (!weights) return;
     try {
       if (weights.tensors && model.setWeights && typeof model.setWeights === 'function') {
         const tf = await import('@tensorflow/tfjs');
-        const tensorWeights = weights.tensors.map((w: any) => 
+        const tensorWeights = weights.tensors.map((w: Record<string, unknown>) => 
           tf.tensor(w.data, w.shape, w.dtype)
         );
         await model.setWeights(tensorWeights);
-        tensorWeights.forEach((t: any) => t.dispose());
+        tensorWeights.forEach((t: Record<string, unknown>) => t.dispose());
         logger.debug('Loaded TensorFlow.js tensor weights');
       }
 

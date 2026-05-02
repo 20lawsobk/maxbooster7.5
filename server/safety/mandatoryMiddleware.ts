@@ -35,7 +35,7 @@ function isInternalIp(ip: string): boolean {
  * Prototype pollution protection
  * Removes dangerous properties from objects recursively
  */
-function sanitizeObject(obj: any, depth: number = 0): any {
+function sanitizeObject(obj: Record<string, unknown>, depth: number = 0): Record<string, unknown> {
   if (depth > 10) return obj; // Prevent stack overflow
   if (obj === null || typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) {
@@ -43,7 +43,7 @@ function sanitizeObject(obj: any, depth: number = 0): any {
   }
   
   const dangerous = ['__proto__', 'constructor', 'prototype'];
-  const sanitized: any = {};
+  const sanitized: Record<string, unknown> = {};
   
   for (const key of Object.keys(obj)) {
     if (dangerous.includes(key)) {
@@ -72,7 +72,7 @@ export function prototypePollutionMiddleware(
     if (req.query && typeof req.query === 'object') {
       const sanitized = sanitizeObject(req.query);
       for (const key of Object.keys(req.query)) {
-        if (!(key in sanitized)) delete (req.query as any)[key];
+        if (!(key in sanitized)) delete (req.query as Record<string, unknown>)[key];
       }
       Object.assign(req.query, sanitized);
     }
@@ -103,14 +103,14 @@ export function globalErrorHandler(
   res: Response,
   next: NextFunction
 ): void {
-  const requestId = (req as any).requestId || 'unknown';
+  const requestId = (req as Record<string, unknown>).requestId || 'unknown';
   
   let statusCode = 500;
   let message = err.message || 'Internal server error';
 
   if (err.name === 'ZodError') {
     statusCode = 400;
-    const issues = Array.isArray((err as any).issues) ? (err as any).issues : [];
+    const issues = Array.isArray((err as Record<string, unknown>).issues) ? (err as Record<string, unknown>).issues : [];
     const firstIssue = issues[0];
     message = firstIssue
       ? `Validation failed: ${firstIssue.path?.length ? firstIssue.path.join('.') + ' - ' : ''}${firstIssue.message}`
@@ -118,10 +118,10 @@ export function globalErrorHandler(
   } else if (err.name === 'ValidationError') {
     statusCode = 400;
     message = err.message || 'Validation failed';
-  } else if ((err as any).statusCode) {
-    statusCode = (err as any).statusCode;
-  } else if ((err as any).status) {
-    statusCode = (err as any).status;
+  } else if ((err as Record<string, unknown>).statusCode) {
+    statusCode = (err as Record<string, unknown>).statusCode;
+  } else if ((err as Record<string, unknown>).status) {
+    statusCode = (err as Record<string, unknown>).status;
   }
 
   if (statusCode >= 500) {
@@ -131,7 +131,7 @@ export function globalErrorHandler(
       stack: err.stack,
       path: req.path,
       method: req.method,
-      userId: (req.user as any)?.id,
+      userId: (req.user as Record<string, unknown>)?.id,
     }, `[${requestId}] Unhandled error: ${err.message}`);
     try {
       if (Sentry) {
@@ -139,7 +139,7 @@ export function globalErrorHandler(
           scope.setTag('requestId', requestId);
           scope.setTag('path', req.path);
           scope.setTag('method', req.method);
-          scope.setUser({ id: (req.user as any)?.id });
+          scope.setUser({ id: (req.user as Record<string, unknown>)?.id });
           Sentry!.captureException(err);
         });
       }
@@ -175,7 +175,7 @@ export function requestIdMiddleware(
   next: NextFunction
 ): void {
   const requestId = req.headers['x-request-id'] as string || randomUUID();
-  (req as any).requestId = requestId;
+  (req as Record<string, unknown>).requestId = requestId;
   res.setHeader('x-request-id', requestId);
   next();
 }
@@ -189,7 +189,7 @@ export function requestLoggingMiddleware(
   next: NextFunction
 ): void {
   const start = Date.now();
-  const requestId = (req as any).requestId;
+  const requestId = (req as Record<string, unknown>).requestId;
 
   res.on('finish', () => {
     const duration = Date.now() - start;
@@ -341,7 +341,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     const maxRequests = isLoadTest ? 1_000_000 : isDev ? 100_000 : 1_000;
     const windowMs = 15 * 60 * 1000;
 
-    let redisClient: any = null;
+    let redisClient: Record<string, unknown> | null = null;
     try { redisClient = getRedisClient(); } catch { /* fall through to in-memory */ }
 
     const limiter = new DistributedRateLimiter(
@@ -355,7 +355,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
           return req.path === '/health' || req.path === '/api/health' || req.path === '/api/version';
         },
         keyGenerator: (req) => {
-          const userId = (req as any).user?.id;
+          const userId = (req as Record<string, unknown>).user?.id;
           const ip = req.ip || req.socket?.remoteAddress || 'unknown';
           return `mandatory:${userId ?? ip}`;
         },
@@ -379,7 +379,7 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     const maxRequests = isDev || isLoadTest ? 100_000 : 200;
     const windowMs = 15 * 60 * 1000;
 
-    let redisClient: any = null;
+    let redisClient: Record<string, unknown> | null = null;
     try { redisClient = getRedisClient(); } catch { /* fall through to in-memory */ }
 
     const strictLimiter = new DistributedRateLimiter(

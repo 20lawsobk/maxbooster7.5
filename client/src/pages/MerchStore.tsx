@@ -86,7 +86,7 @@ export default function MerchStore() {
   const { data: stats, isLoading: statsLoading } = useQuery({ queryKey: ['/api/merch/stats'] });
 
   const addItemMutation = useMutation({
-    mutationFn: async (newItem: any) => {
+    mutationFn: async (newItem: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/merch', newItem);
       return res.json();
     },
@@ -103,7 +103,7 @@ export default function MerchStore() {
   });
 
   const updateItemMutation = useMutation({
-    mutationFn: async ({ id, ...data }: any) => {
+    mutationFn: async ({ id, ...data }: { id: string; [k: string]: unknown }) => {
       const res = await apiRequest('PUT', `/api/merch/${id}`, data);
       return res.json();
     },
@@ -120,7 +120,7 @@ export default function MerchStore() {
   });
 
   const updateOrderMutation = useMutation({
-    mutationFn: async ({ id, status, trackingNumber }: any) => {
+    mutationFn: async ({ id, status, trackingNumber }: { id: string; status: string; trackingNumber?: string }) => {
       const res = await apiRequest('PUT', `/api/merch/orders/${id}`, { status, trackingNumber });
       return res.json();
     },
@@ -171,7 +171,7 @@ export default function MerchStore() {
     });
   };
 
-  const filteredItems = (items as any[])?.filter((item: any) =>
+  const filteredItems = (items as Record<string, unknown>[])?.filter((item: Record<string, unknown>) =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.sku?.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -271,7 +271,7 @@ export default function MerchStore() {
     variants,
     setVariants,
   }: {
-    defaultValues?: any;
+    defaultValues?: Record<string, unknown>;
     onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
     isLoading: boolean;
     submitLabel: string;
@@ -345,8 +345,8 @@ export default function MerchStore() {
     </form>
   );
 
-  const itemsArr = (items as any[]) || [];
-  const ordersArr = (orders as any[]) || [];
+  const itemsArr = (items as Record<string, unknown>[]) || [];
+  const ordersArr = (orders as Record<string, unknown>[]) || [];
 
   const categoryRevenue = (() => {
     const map: Record<string, number> = {};
@@ -369,7 +369,7 @@ export default function MerchStore() {
 
   const avgOrderValue =
     ordersArr.length > 0
-      ? ordersArr.reduce((s: number, o: any) => s + parseFloat(o.total || 0), 0) / ordersArr.length
+      ? ordersArr.reduce((s: number, o: Record<string, unknown>) => s + parseFloat(o.total || 0), 0) / ordersArr.length
       : 0;
 
   const totalCatRev = categoryRevenue.reduce((s, x) => s + x.rev, 0) || 1;
@@ -418,10 +418,10 @@ export default function MerchStore() {
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[
-            { label: 'Total Revenue', value: `$${(stats as any)?.totalRevenue?.toFixed(2) || '0.00'}`, sub: 'Lifetime earnings', icon: DollarSign, color: 'text-green-500' },
-            { label: 'Orders (Month)', value: (stats as any)?.ordersThisMonth || 0, sub: 'Orders this month', icon: ShoppingCart, color: 'text-blue-500' },
-            { label: 'Total Orders', value: (stats as any)?.totalOrders || 0, sub: 'All time orders', icon: TrendingUp, color: 'text-purple-500' },
-            { label: 'Low Stock', value: (stats as any)?.inventoryAlerts || 0, sub: 'Items needing restock', icon: AlertCircle, color: 'text-destructive' },
+            { label: 'Total Revenue', value: `$${(stats as Record<string, unknown>)?.totalRevenue?.toFixed(2) || '0.00'}`, sub: 'Lifetime earnings', icon: DollarSign, color: 'text-green-500' },
+            { label: 'Orders (Month)', value: (stats as Record<string, unknown>)?.ordersThisMonth || 0, sub: 'Orders this month', icon: ShoppingCart, color: 'text-blue-500' },
+            { label: 'Total Orders', value: (stats as Record<string, unknown>)?.totalOrders || 0, sub: 'All time orders', icon: TrendingUp, color: 'text-purple-500' },
+            { label: 'Low Stock', value: (stats as Record<string, unknown>)?.inventoryAlerts || 0, sub: 'Items needing restock', icon: AlertCircle, color: 'text-destructive' },
           ].map(({ label, value, sub, icon: Icon, color }) => (
             <Card key={label}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -473,7 +473,7 @@ export default function MerchStore() {
                   </Button>
                 </div>
               ) : (
-                filteredItems?.map((item: any) => (
+                filteredItems?.map((item: Record<string, unknown>) => (
                   <Card key={item.id} className="overflow-hidden group">
                     <div className="aspect-square bg-muted relative">
                       {item.imageUrl ? (
@@ -585,7 +585,7 @@ export default function MerchStore() {
                         </TableCell>
                       </TableRow>
                     ) : (
-                      ordersArr.map((order: any) => (
+                      ordersArr.map((order: Record<string, unknown>) => (
                         <TableRow key={order.id}>
                           <TableCell className="font-mono text-xs">{order.id.split('-')[0]}</TableCell>
                           <TableCell className="text-sm">{format(new Date(order.createdAt), 'MMM d, yyyy')}</TableCell>
@@ -675,7 +675,7 @@ export default function MerchStore() {
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Units Sold</CardTitle>
-                  <div className="text-2xl font-bold">{itemsArr.reduce((s: number, i: any) => s + (i.soldCount || 0), 0)}</div>
+                  <div className="text-2xl font-bold">{itemsArr.reduce((s: number, i: Record<string, unknown>) => s + (i.soldCount || 0), 0)}</div>
                 </CardHeader>
               </Card>
             </div>
@@ -760,14 +760,14 @@ export default function MerchStore() {
                   <CardTitle>Best Sellers</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!(stats as any)?.bestSellers?.length ? (
+                  {!(stats as Record<string, unknown>)?.bestSellers?.length ? (
                     <div className="flex flex-col items-center py-8 text-muted-foreground">
                       <TrendingUp className="h-8 w-8 mb-2 opacity-30" />
                       <p className="text-sm">No sales data yet.</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
-                      {(stats as any).bestSellers.map((item: any, i: number) => (
+                      {(stats as Record<string, unknown>).bestSellers.map((item: Record<string, unknown>, i: number) => (
                         <div key={item.id} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <span className="text-muted-foreground text-sm w-4">{i + 1}.</span>
@@ -799,14 +799,14 @@ export default function MerchStore() {
                   <CardTitle>Inventory Alerts</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {!(stats as any)?.lowInventoryItems?.length ? (
+                  {!(stats as Record<string, unknown>)?.lowInventoryItems?.length ? (
                     <div className="flex flex-col items-center py-8 text-center">
                       <CheckCircle className="h-8 w-8 text-green-500 mb-2" />
                       <p className="text-sm text-muted-foreground">All items are well-stocked.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {(stats as any).lowInventoryItems.map((item: any) => (
+                      {(stats as Record<string, unknown>).lowInventoryItems.map((item: Record<string, unknown>) => (
                         <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-destructive/5 border border-destructive/20">
                           <div className="flex items-center gap-3">
                             <AlertCircle className="h-4 w-4 text-destructive flex-shrink-0" />

@@ -221,7 +221,7 @@ export function CollaboratorSearch() {
             renderSkeletons()
           ) : artists?.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {artists.map((artist: any) => (
+              {artists.map((artist: Record<string, unknown>) => (
                 <CollaboratorCard
                   key={artist.id}
                   user={artist}

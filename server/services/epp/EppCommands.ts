@@ -66,7 +66,7 @@ export class EppCommands {
 </epp>`;
   }
 
-  static contactCreate(id: string, contact: any, trid: string) {
+  static contactCreate(id: string, contact: Record<string, unknown>, trid: string) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>
@@ -96,7 +96,7 @@ export class EppCommands {
 </epp>`;
   }
 
-  static domainCreate(params: any, trid: string) {
+  static domainCreate(params: Record<string, unknown>, trid: string) {
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <epp xmlns="urn:ietf:params:xml:ns:epp-1.0">
   <command>

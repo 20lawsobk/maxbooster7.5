@@ -467,7 +467,7 @@ function AutopilotTab({
     }
   };
 
-  const toggleWorkflow = async (wf: any) => {
+  const toggleWorkflow = async (wf: Record<string, unknown>) => {
     const endpoint = wf.enabled
       ? `/api/custom-workflows/${wf.id}/disable`
       : `/api/custom-workflows/${wf.id}/enable`;
@@ -972,7 +972,7 @@ export function EmbedCodeGenerator() {
                   <div className="grid grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Style</Label>
-                      <Select value={slStyle} onValueChange={(v) => setSlStyle(v as any)}>
+                      <Select value={slStyle} onValueChange={(v) => setSlStyle(v as Record<string, unknown>)}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
@@ -985,7 +985,7 @@ export function EmbedCodeGenerator() {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Size</Label>
-                      <Select value={slSize} onValueChange={(v) => setSlSize(v as any)}>
+                      <Select value={slSize} onValueChange={(v) => setSlSize(v as Record<string, unknown>)}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
@@ -1082,7 +1082,7 @@ export function EmbedCodeGenerator() {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label className="text-xs">Theme</Label>
-                      <Select value={rwTheme} onValueChange={(v) => setRwTheme(v as any)}>
+                      <Select value={rwTheme} onValueChange={(v) => setRwTheme(v as Record<string, unknown>)}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>
@@ -1095,7 +1095,7 @@ export function EmbedCodeGenerator() {
                     </div>
                     <div className="space-y-1">
                       <Label className="text-xs">Size</Label>
-                      <Select value={rwSize} onValueChange={(v) => setRwSize(v as any)}>
+                      <Select value={rwSize} onValueChange={(v) => setRwSize(v as Record<string, unknown>)}>
                         <SelectTrigger className="h-8 text-xs">
                           <SelectValue />
                         </SelectTrigger>

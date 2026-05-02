@@ -329,7 +329,7 @@ export class UserPocketDimensionService {
     const release = await this.acquireWriteLock(userId);
     try {
       const KEY = 'ai-journey/generation-history.json';
-      let history: any[] = [];
+      let history: unknown[] = [];
       try {
         const raw = await pocket.read(KEY);
         history = JSON.parse(raw.toString());
@@ -382,7 +382,7 @@ export class UserPocketDimensionService {
     if (!pocket) return [];
     try {
       const raw     = await pocket.read('ai-journey/generation-history.json');
-      const history = JSON.parse(raw.toString()) as any[];
+      const history = JSON.parse(raw.toString()) as Record<string, unknown>[];
       return history.slice(-limit);
     } catch {
       return [];

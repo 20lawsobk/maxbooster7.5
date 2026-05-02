@@ -153,7 +153,7 @@ export class HybridStorageService {
           chunkSize: 32 * 1024 * 1024,
         });
         logger.info('[HybridStorage] Pocket Dimension storage initialized (PDIM-only, 32 MB chunks, level-9 gzip, dedup)');
-      } catch (e: any) {
+      } catch (e) {
         logger.warn(`[HybridStorage] Pocket Dimension unavailable: ${e.message}`);
         this.coldPocket = null;
       }

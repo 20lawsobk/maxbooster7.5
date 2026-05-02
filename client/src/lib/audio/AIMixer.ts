@@ -576,7 +576,7 @@ interface MixResult {
   adjustments: Array<{
     trackId: string;
     parameter: string;
-    value: any;
+    value: Record<string, unknown>;
     reason: string;
   }>;
   recommendations: string[];

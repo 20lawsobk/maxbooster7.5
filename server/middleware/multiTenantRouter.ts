@@ -74,8 +74,8 @@ export async function multiTenantRouter(
       .where(eq(users.id, hostRow.storefront.userId))
       .limit(1);
 
-    (req as any).storefront = hostRow.storefront;
-    (req as any).artist = user ?? null;
+    (req as Record<string, unknown>).storefront = hostRow.storefront;
+    (req as Record<string, unknown>).artist = user ?? null;
 
     logger.debug(`[multiTenant] Resolved ${host} → storefront ${hostRow.storefront.id}`);
     next();

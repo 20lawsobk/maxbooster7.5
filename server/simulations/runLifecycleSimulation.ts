@@ -95,7 +95,7 @@ async function runFullSimulation() {
   return allPassed;
 }
 
-function generateReport(result: any): string {
+function generateReport(result: Record<string, unknown>): string {
   const { config, finalMetrics, kpis, systemTests, recommendations } = result;
   
   const testStatus = systemTests.failed === 0 ? '✅ ALL TESTS PASSED' :
@@ -386,7 +386,7 @@ async function main() {
           process.exit(1);
         }
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Simulation failed:');
     process.exit(1);
   }

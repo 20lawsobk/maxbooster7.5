@@ -52,8 +52,8 @@ async function pdimSet(key: string, value: string, ttlSeconds: number): Promise<
   if (!isPdimConfigured()) return;
   try {
     const client = getPdimClient();
-    await (client as any).setex(`${PDIM_KEY_PREFIX}:${key}`, ttlSeconds, value);
-  } catch (e: any) {
+    await (client as Record<string, unknown>).setex(`${PDIM_KEY_PREFIX}:${key}`, ttlSeconds, value);
+  } catch (e) {
     logger.debug(`[PDIM Media] setex skipped: ${e?.message?.slice(0, 80)}`);
   }
 }
@@ -62,7 +62,7 @@ async function pdimGet(key: string): Promise<string | null> {
   if (!isPdimConfigured()) return null;
   try {
     const client = getPdimClient();
-    return await (client as any).get(`${PDIM_KEY_PREFIX}:${key}`);
+    return await (client as Record<string, unknown>).get(`${PDIM_KEY_PREFIX}:${key}`);
   } catch {
     return null;
   }
@@ -173,7 +173,7 @@ export async function storeVoiceFile(
     );
 
     return voiceMeta;
-  } catch (e: any) {
+  } catch (e) {
     logger.warn('[PDIM Media] storeVoiceFile failed:', e?.message);
     return null;
   }
@@ -264,7 +264,7 @@ export async function storeMusicVideo(
     );
 
     return videoMeta;
-  } catch (e: any) {
+  } catch (e) {
     logger.warn('[PDIM Media] storeMusicVideo failed:', e?.message);
     return null;
   }
@@ -295,7 +295,7 @@ export async function getUserMediaLibrary(userId: string): Promise<{
       totalStorageBytes:    analytics.totalSizeBytes,
       totalCompressedBytes: analytics.totalCompressedBytes,
     };
-  } catch (e: any) {
+  } catch (e) {
     logger.warn('[PDIM Media] getUserMediaLibrary failed:', e?.message);
     return { voices: [], videos: [], totalStorageBytes: 0, totalCompressedBytes: 0 };
   }

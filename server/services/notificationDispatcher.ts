@@ -251,7 +251,7 @@ class NotificationDispatcher {
         .where(eq(users.id, userId))
         .limit(1);
 
-      const settings = (user?.notificationSettings as any) || {};
+      const settings = (user?.notificationSettings as Record<string, unknown>) || {};
       const push = settings.push || {};
       return {
         enabled: push.enabled ?? false,

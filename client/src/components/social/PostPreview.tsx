@@ -69,7 +69,7 @@ interface PostPreviewProps {
 }
 
 const PLATFORM_CONFIG: Record<string, {
-  icon: any;
+  icon: React.ReactNode;
   name: string;
   color: string;
   bgColor: string;
@@ -134,7 +134,7 @@ const PLATFORM_CONFIG: Record<string, {
   },
 };
 
-const STATUS_CONFIG: Record<PostStatus, { label: string; icon: any; color: string }> = {
+const STATUS_CONFIG: Record<PostStatus, { label: string; icon: Record<string, unknown>; color: string }> = {
   draft: { label: 'Draft', icon: Clock, color: 'text-gray-500' },
   scheduled: { label: 'Scheduled', icon: Calendar, color: 'text-blue-500' },
   publishing: { label: 'Publishing...', icon: Loader2, color: 'text-yellow-500' },

@@ -497,12 +497,12 @@ class VersionInfinity extends EventEmitter {
     }
   }
 
-  async getVersionHistory(resourceId: string): Promise<{ version: number; metadata: any }[]> {
+  async getVersionHistory(resourceId: string): Promise<{ version: number; metadata: Record<string, unknown> }[]> {
     await this.initialize();
     if (!this.pocket) return [];
 
     const versions = this.versionIndex.get(resourceId) || [];
-    const history: { version: number; metadata: any }[] = [];
+    const history: { version: number; metadata: Record<string, unknown> }[] = [];
 
     for (const v of versions) {
       try {

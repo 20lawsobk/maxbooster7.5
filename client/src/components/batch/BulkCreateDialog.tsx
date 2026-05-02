@@ -55,7 +55,7 @@ export interface BulkCreateField {
   required?: boolean;
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
-  defaultValue?: any;
+  defaultValue?: Record<string, unknown>;
 }
 
 export interface BulkCreateTemplate {
@@ -162,7 +162,7 @@ export function BulkCreateDialog({
     setItems(prev => prev.filter(item => item.id !== id));
   }, []);
 
-  const updateItem = useCallback((id: string, key: string, value: any) => {
+  const updateItem = useCallback((id: string, key: string, value: Record<string, unknown>) => {
     setItems(prev =>
       prev.map(item =>
         item.id === id
@@ -349,7 +349,7 @@ export function BulkCreateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Record<string, unknown>)}>
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="manual" disabled={isProcessing}>
               <FileText className="h-4 w-4 mr-2" />
@@ -515,7 +515,7 @@ export function BulkCreateDialog({
                     <TableBody>
                       {csvPreview.slice(0, 10).map((row, index) => (
                         <TableRow key={index}>
-                          {Object.values(row).map((value: any, i) => (
+                          {Object.values(row).map((value: Record<string, unknown>, i) => (
                             <TableCell key={i}>{String(value)}</TableCell>
                           ))}
                         </TableRow>

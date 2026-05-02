@@ -95,7 +95,7 @@ export class ApiError extends Error {
         });
         
       case 403: {
-        const isDemoBlock = (parsed as any).isDemo === true;
+        const isDemoBlock = (parsed as Record<string, unknown>).isDemo === true;
         return new ApiError({
           code: 'FORBIDDEN',
           message: serverMessage,
@@ -611,7 +611,7 @@ function shouldRetry(error: unknown): boolean {
 export const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error: Error, query) => {
-      if ((query.options as any)?.meta?.silentError) return;
+      if ((query.options as Record<string, unknown>)?.meta?.silentError) return;
       const apiError = error as ApiError & { userMessage?: string; status?: number };
       if (apiError.status === 401 || apiError.status === 403) return;
       // Suppress toast for background refetch failures — the query already has

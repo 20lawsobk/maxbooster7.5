@@ -187,7 +187,7 @@ export function FilterPresetsManager({
     setShowSaveDialog(true);
   };
 
-  const formatFilterValue = (key: string, value: any): string => {
+  const formatFilterValue = (key: string, value: Record<string, unknown>): string => {
     if (key.includes('price')) return `$${value}`;
     if (key.includes('bpm')) return `${value} BPM`;
     if (typeof value === 'boolean') return value ? 'Yes' : 'No';

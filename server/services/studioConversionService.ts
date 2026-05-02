@@ -4,7 +4,7 @@ import { existsSync } from 'fs';
 import type { IStorage } from '../storage';
 import { logger } from '../logger.js';
 
-let ffmpeg: any = null;
+let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {

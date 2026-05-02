@@ -160,8 +160,8 @@ router.post('/lookalike-audiences', requireAuth, async (req: AuthenticatedReques
       createdAt: new Date().toISOString(),
     };
     const updated = [...existing, newAudience];
-    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: updated as any })
-      .onConflictDoUpdate({ target: systemSettings.key, set: { value: updated as any } });
+    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: updated as Record<string, unknown> })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: updated as Record<string, unknown> } });
     res.status(201).json(newAudience);
   } catch (error) {
     logger.warn({ err: error }, 'Failed to create lookalike audience:');
@@ -174,7 +174,7 @@ router.patch('/lookalike-audiences/:id', requireAuth, async (req: AuthenticatedR
     const userId = req.user!.id;
     const { id } = req.params;
     const existing = await storage.getLookalikeAudiences(userId);
-    const idx = existing.findIndex((a: any) => a.id === id);
+    const idx = existing.findIndex((a: Record<string, unknown>) => a.id === id);
     if (idx === -1) {
       return res.status(404).json({ error: 'Audience not found' });
     }
@@ -188,8 +188,8 @@ router.patch('/lookalike-audiences/:id', requireAuth, async (req: AuthenticatedR
       ...(status          !== undefined && { status }),
       id,
     };
-    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: existing as any })
-      .onConflictDoUpdate({ target: systemSettings.key, set: { value: existing as any } });
+    await db.insert(systemSettings).values({ key: `lookalike_audiences:${userId}`, value: existing as Record<string, unknown> })
+      .onConflictDoUpdate({ target: systemSettings.key, set: { value: existing as Record<string, unknown> } });
     res.json(existing[idx]);
   } catch (error) {
     logger.warn({ err: error }, 'Failed to update lookalike audience:');
@@ -230,7 +230,7 @@ router.get('/ab-tests', requireAuth, async (req: AuthenticatedRequest, res) => {
       .limit(50);
 
     const tests = creatives
-      .filter(c => c.variants && Array.isArray(c.variants) && (c.variants as any[]).length > 1)
+      .filter(c => c.variants && Array.isArray(c.variants) && (c.variants as unknown[]).length > 1)
       .map(c => ({
         id: c.id,
         name: c.name,
@@ -312,7 +312,7 @@ router.post('/campaigns', requireAuth, async (req: AuthenticatedRequest, res) =>
         await autopilotEngine.configure({
           ...engineConfig,
           platforms: platforms.map((p: string) => p.toLowerCase()),
-          campaignObjective: (objective as any) || 'awareness',
+          campaignObjective: (objective as Record<string, unknown>) || 'awareness',
         });
         // Start the engine if not already running so it schedules the first content generation
         const status = await autopilotEngine.getStatus();
@@ -461,7 +461,7 @@ router.get('/variants', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     const variants = creatives.flatMap(c => {
       if (!c.variants || !Array.isArray(c.variants)) return [];
-      return (c.variants as any[]).map((v: any, idx: number) => ({
+      return (c.variants as Record<string, unknown>[]).map((v: Record<string, unknown>, idx: number) => ({
         id: `${c.id}-v${idx}`,
         creativeId: c.id,
         creativeName: c.name,
@@ -489,7 +489,7 @@ router.get('/attribution/channels', requireAuth, async (req: AuthenticatedReques
 
     const channelMap = new Map<string, { spend: number; conversions: number; revenue: number; campaigns: number }>();
     for (const c of campaigns) {
-      const perf = (c.performance || {}) as any;
+      const perf = (c.performance || {}) as Record<string, unknown>;
       const entry = channelMap.get(c.platform) || { spend: 0, conversions: 0, revenue: 0, campaigns: 0 };
       entry.spend += Number(c.budget || 0);
       entry.conversions += Number(perf.conversions || 0);
@@ -524,11 +524,11 @@ router.get('/attribution/paths', requireAuth, async (req: AuthenticatedRequest, 
       .limit(100);
 
     const paths = campaigns
-      .filter(c => (c.performance as any)?.conversions > 0)
+      .filter(c => (c.performance as Record<string, unknown>)?.conversions > 0)
       .map(c => ({
         path: [c.platform, c.objective || 'conversion'].filter(Boolean),
-        conversions: (c.performance as any)?.conversions || 0,
-        revenue: (c.performance as any)?.revenue || 0,
+        conversions: (c.performance as Record<string, unknown>)?.conversions || 0,
+        revenue: (c.performance as Record<string, unknown>)?.revenue || 0,
       }));
 
     res.json({ paths });
@@ -551,7 +551,7 @@ router.get('/dashboard/attribution', requireAuth, async (req: AuthenticatedReque
     const channelMap = new Map<string, number>();
     let total = 0;
     for (const c of campaigns) {
-      const rev = Number((c.performance as any)?.revenue || c.budget || 0);
+      const rev = Number((c.performance as Record<string, unknown>)?.revenue || c.budget || 0);
       channelMap.set(c.platform, (channelMap.get(c.platform) || 0) + rev);
       total += rev;
     }
@@ -583,7 +583,7 @@ router.get('/dashboard/paths', requireAuth, async (req: AuthenticatedRequest, re
       .map(c => ({
         channel: c.platform,
         objective: c.objective,
-        conversions: (c.performance as any)?.conversions || 0,
+        conversions: (c.performance as Record<string, unknown>)?.conversions || 0,
       }));
 
     res.json({ paths });
@@ -609,7 +609,7 @@ router.get('/roas/audience-segments', requireAuth, async (req: AuthenticatedRequ
       audience: c.targetAudience,
       spend: Number(c.budget || 0),
       roas: (() => {
-        const perf = c.performance as any;
+        const perf = c.performance as Record<string, unknown>;
         const revenue = Number(perf?.revenue || 0);
         const spend = Number(c.budget || 0);
         return spend > 0 ? revenue / spend : 0;
@@ -649,11 +649,11 @@ router.get('/roas/creative-fatigue-analysis', requireAuth, async (req: Authentic
       .orderBy(desc(adCreatives.createdAt))
       .limit(100);
 
-    const fatigued: any[] = [];
-    const healthy: any[] = [];
+    const fatigued: Record<string, unknown>[] = [];
+    const healthy: Record<string, unknown>[] = [];
 
     for (const c of creatives) {
-      const perf = (c.performance || {}) as any;
+      const perf = (c.performance || {}) as Record<string, unknown>;
       const ctr = Number(perf.ctr || 0);
       const impressions = Number(perf.impressions || 0);
       const age = c.createdAt ? Math.floor((Date.now() - new Date(c.createdAt).getTime()) / (1000 * 60 * 60 * 24)) : 0;
@@ -697,9 +697,9 @@ router.get('/roas/forecast', requireAuth, async (req: AuthenticatedRequest, res)
 
     const totalDailyBudget = campaigns.reduce((sum, c) => sum + Number(c.dailyBudget || c.budget / 30 || 0), 0);
     const avgRoas = (() => {
-      const withPerf = campaigns.filter(c => (c.performance as any)?.roas);
+      const withPerf = campaigns.filter(c => (c.performance as Record<string, unknown>)?.roas);
       if (!withPerf.length) return 2.5;
-      return withPerf.reduce((sum, c) => sum + Number((c.performance as any).roas || 0), 0) / withPerf.length;
+      return withPerf.reduce((sum, c) => sum + Number((c.performance as Record<string, unknown>).roas || 0), 0) / withPerf.length;
     })();
 
     const daily = Array.from({ length: 7 }, (_, i) => {

@@ -32,9 +32,9 @@ const MAX_GLOBAL_WS_CONNECTIONS = 50_000;   // per process; multiply by # replic
 const MAX_WS_CONNECTIONS_PER_USER = 5;      // tabs + mobile + desktop
 
 // Session store reference - set by main server during initialization
-let sessionStore: any = null;
+let sessionStore: Record<string, unknown> | null = null;
 
-export function setSessionStore(store: any): void {
+export function setSessionStore(store: Record<string, unknown>): void {
   sessionStore = store;
   logger.info('WebSocket session store configured');
 }
@@ -60,7 +60,7 @@ async function authenticateFromSession(request: IncomingMessage): Promise<string
     }
 
     return new Promise((resolve) => {
-      sessionStore.get(rawSessionId, (err: any, session: any) => {
+      sessionStore.get(rawSessionId, (err: Record<string, unknown>, session: Record<string, unknown>) => {
         if (err || !session) {
           resolve(null);
           return;
@@ -191,7 +191,7 @@ function initializeNotificationServer(httpServer: HttpServer): void {
   });
 
   // Register global broadcast function for notification service
-  (global as any).broadcastNotification = sendNotificationToUser;
+  (global as Record<string, unknown>).broadcastNotification = sendNotificationToUser;
 
   logger.info('General notification WebSocket server initialized at /ws');
 }

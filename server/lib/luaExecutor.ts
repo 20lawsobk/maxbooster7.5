@@ -277,11 +277,11 @@ export async function execLuaViaPdim(
   pdimExec: (args: string[]) => Promise<any>,
   script: string,
   numKeys: number,
-  allArgs: any[],
+  allArgs: unknown[],
 ): Promise<any> {
   const keys = allArgs.slice(0, numKeys).map(String);
 
-  const argv = allArgs.slice(numKeys).map((arg: any) => {
+  const argv = allArgs.slice(numKeys).map((arg: Record<string, unknown>) => {
     if (arg instanceof Buffer || arg instanceof Uint8Array) {
       try {
         return _msgUnpacker.unpack(arg);
@@ -356,12 +356,12 @@ export async function execLuaViaPdim(
       logger.warn(`[LuaExecutor] script still running after ${elapsedS}s — active=${_activeWorkers}, queued=${_waitQueue.length}`);
     }, 60_000);
 
-    worker.on('message', async (msg: any) => {
+    worker.on('message', async (msg: Record<string, unknown>) => {
       if (msg.type === 'redis') {
         let payload: string;
         let status: 1 | 2;
         try {
-          let r: any;
+          let r: Record<string, unknown>;
           const cmd = (msg.cmd as string).toUpperCase();
           if (cmd === 'HMSET') {
             // PDIM's Redis only accepts HSET with one field-value pair at a time.
@@ -376,7 +376,7 @@ export async function execLuaViaPdim(
           }
           payload = JSON.stringify(r ?? null);
           status  = 1; // success
-        } catch (e: any) {
+        } catch (e) {
           const short = (e.message as string).slice(0, 200);
           // 502 means PDIM itself is down — the circuit breaker already logs
           // this at WARN/ERROR level; repeat per-command logs add no value and

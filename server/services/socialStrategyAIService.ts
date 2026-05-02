@@ -276,7 +276,7 @@ class SocialStrategyAIService {
       const suggestedContent = await this.generateSuggestedContentAsync(idea.title, platform);
       recommendations.push({
         id: randomBytes(8).toString('hex'),
-        type: idea.type as any,
+        type: idea.type as Record<string, unknown>,
         platform,
         title: idea.title,
         description: `Create a ${idea.type} about ${idea.title.toLowerCase()} to engage your audience.`,
@@ -302,15 +302,15 @@ class SocialStrategyAIService {
     // Priority 1: full advanced AI pipeline (MaxCore → Python AI → in-house JS)
     try {
       const aiResult = await unifiedAIController.generateContent({
-        platform: platform as any,
-        tone: 'energetic' as any,
+        platform: platform as Record<string, unknown>,
+        tone: 'energetic' as Record<string, unknown>,
         topic: title,
         contentType: 'engagement',
         includeHashtags: true,
         includeEmojis: true,
       });
       if (aiResult.success && aiResult.data) {
-        const d = aiResult.data as any;
+        const d = aiResult.data as Record<string, unknown>;
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         if (caption) return caption;
       }

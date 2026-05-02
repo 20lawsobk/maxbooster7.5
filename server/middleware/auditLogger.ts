@@ -67,7 +67,7 @@ class AuditLogger {
           result: event.result,
           risk: event.risk,
           sessionId: event.sessionId ?? null,
-          details: (event.details ?? null) as any,
+          details: (event.details ?? null) as Record<string, unknown>,
         })
         .catch((err) => {
           // Never let an audit DB write crash the request — file sink already wrote.
@@ -305,7 +305,7 @@ export function auditMiddleware(
     const originalSend = res.send;
 
     res.send = function (data) {
-      const user = (req as any).user;
+      const user = (req as Record<string, unknown>).user;
       const statusCode = res.statusCode;
 
       if (user && statusCode < 400) {

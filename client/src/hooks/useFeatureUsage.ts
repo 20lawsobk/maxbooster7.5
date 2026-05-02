@@ -51,7 +51,7 @@ export function useFeatureUsage() {
   const { data: visibilitySettings } = useQuery<FeatureVisibility[]>({
     queryKey: ['/api/personalization/preferences'],
     staleTime: 10 * 60 * 1000,
-    select: (data: any) => {
+    select: (data: Record<string, unknown>) => {
       const hiddenFeatures = data?.hiddenFeatures || [];
       const featurePrefs = data?.featurePreferences || {};
       

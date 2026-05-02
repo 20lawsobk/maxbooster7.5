@@ -55,7 +55,7 @@ class DatabaseOptimizer {
       `;
 
       const result = await db.execute(existsQuery);
-      const exists = (result.rows[0] as any)?.exists;
+      const exists = (result.rows[0] as Record<string, unknown>)?.exists;
 
       if (exists) {
         logger.info(`⏭️  Index ${indexName} already exists, skipping...`);
@@ -201,7 +201,7 @@ class DatabaseOptimizer {
           ) as exists
         `);
 
-        if (result.rows && result.rows[0] && (result.rows[0] as any).exists) {
+        if (result.rows && result.rows[0] && (result.rows[0] as Record<string, unknown>).exists) {
           logger.info(`✅ ${indexName} - OK`);
         } else {
           logger.info(`❌ ${indexName} - MISSING`);

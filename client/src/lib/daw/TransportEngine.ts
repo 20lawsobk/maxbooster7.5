@@ -54,7 +54,7 @@ export type TransportEventType =
 export interface TransportEvent {
   type: TransportEventType;
   time: number;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 type TransportListener = (event: TransportEvent) => void;

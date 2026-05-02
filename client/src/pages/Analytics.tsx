@@ -133,7 +133,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 interface AnalyticsWebSocketMessage {
   type: string;
-  data: any;
+  data: Record<string, unknown>;
   timestamp?: number;
 }
 
@@ -1282,7 +1282,7 @@ export default function Analytics() {
     data: anomalyData,
     isLoading: anomaliesLoading,
     refetch: refetchAnomalies,
-  } = useQuery<{ anomalies: any[]; summary: AnomalySummary | undefined }>({
+  } = useQuery<{ anomalies: Record<string, unknown>[]; summary: AnomalySummary | undefined }>({
     queryKey: ['/api/analytics/anomalies', anomalyMetricFilter, anomalySeverityFilter],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -1310,7 +1310,7 @@ export default function Analytics() {
         description: 'The anomaly has been marked as acknowledged.',
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -1365,7 +1365,7 @@ export default function Analytics() {
   });
 
   useEffect(() => {
-    const handleAnomalyDetected = (message: any) => {
+    const handleAnomalyDetected = (message: Record<string, unknown>) => {
       if (message.type === 'anomaly_detected') {
         queryClient.invalidateQueries({ queryKey: ['/api/analytics/anomalies'] });
         queryClient.invalidateQueries({ queryKey: ['/api/analytics/anomalies/summary'] });
@@ -1833,7 +1833,7 @@ const data = analyticsData as AnalyticsData;
             ) : crossPlatformData?.data ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-                  {(crossPlatformData.data as any).metrics?.map((platform: any) => {
+                  {(crossPlatformData.data as Record<string, unknown>).metrics?.map((platform: Record<string, unknown>) => {
                     const platformColors: Record<string, string> = {
                       spotify: 'bg-green-500',
                       apple: 'bg-red-500',
@@ -1893,7 +1893,7 @@ const data = analyticsData as AnalyticsData;
                   })}
                 </div>
 
-                {(crossPlatformData.data as any).recommendations?.length > 0 && (
+                {(crossPlatformData.data as Record<string, unknown>).recommendations?.length > 0 && (
                   <Card className="mt-6">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -1903,7 +1903,7 @@ const data = analyticsData as AnalyticsData;
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
-                        {(crossPlatformData.data as any).recommendations.map((rec: string, idx: number) => (
+                        {(crossPlatformData.data as Record<string, unknown>).recommendations.map((rec: string, idx: number) => (
                           <div key={idx} className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
                             <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                               <span className="text-xs font-medium text-blue-600">{idx + 1}</span>
@@ -1943,9 +1943,9 @@ const data = analyticsData as AnalyticsData;
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-40" />)}
               </div>
-            ) : (triggerCitiesData?.data as any[])?.length > 0 ? (
+            ) : (triggerCitiesData?.data as unknown[])?.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(triggerCitiesData?.data as any[]).map((city: any, idx: number) => (
+                {(triggerCitiesData?.data as unknown[]).map((city: Record<string, unknown>, idx: number) => (
                   <Card key={idx} className={`relative overflow-hidden ${city.isHotspot ? 'border-orange-500 border-2' : ''}`}>
                     {city.isHotspot && (
                       <div className="absolute top-2 right-2">
@@ -2032,7 +2032,7 @@ const data = analyticsData as AnalyticsData;
                   <div className="flex items-center gap-2">
                     <Bell className="h-5 w-5 text-blue-500" />
                     <div>
-                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).total || 0}</p>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as Record<string, unknown>).total || 0}</p>
                       <p className="text-xs text-muted-foreground">Total Alerts</p>
                     </div>
                   </div>
@@ -2041,7 +2041,7 @@ const data = analyticsData as AnalyticsData;
                   <div className="flex items-center gap-2">
                     <Eye className="h-5 w-5 text-orange-500" />
                     <div>
-                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).unread || 0}</p>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as Record<string, unknown>).unread || 0}</p>
                       <p className="text-xs text-muted-foreground">Unread</p>
                     </div>
                   </div>
@@ -2050,7 +2050,7 @@ const data = analyticsData as AnalyticsData;
                   <div className="flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-yellow-500" />
                     <div>
-                      <p className="text-2xl font-bold">{(alertSummaryData.data as any).byType?.milestone || 0}</p>
+                      <p className="text-2xl font-bold">{(alertSummaryData.data as Record<string, unknown>).byType?.milestone || 0}</p>
                       <p className="text-xs text-muted-foreground">Milestones</p>
                     </div>
                   </div>
@@ -2059,7 +2059,7 @@ const data = analyticsData as AnalyticsData;
                   <div className="flex items-center gap-2">
                     <ListMusic className="h-5 w-5 text-green-500" />
                     <div>
-                      <p className="text-2xl font-bold">{((alertSummaryData.data as any).byType?.playlist_add || 0) + ((alertSummaryData.data as any).byType?.playlist_remove || 0)}</p>
+                      <p className="text-2xl font-bold">{((alertSummaryData.data as Record<string, unknown>).byType?.playlist_add || 0) + ((alertSummaryData.data as Record<string, unknown>).byType?.playlist_remove || 0)}</p>
                       <p className="text-xs text-muted-foreground">Playlist Changes</p>
                     </div>
                   </div>
@@ -2071,9 +2071,9 @@ const data = analyticsData as AnalyticsData;
               <div className="space-y-4">
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-24" />)}
               </div>
-            ) : (alertsData?.data as any[])?.length > 0 ? (
+            ) : (alertsData?.data as unknown[])?.length > 0 ? (
               <div className="space-y-4">
-                {(alertsData?.data as any[]).map((alert: any) => {
+                {(alertsData?.data as unknown[]).map((alert: Record<string, unknown>) => {
                   const priorityColors: Record<string, string> = {
                     critical: 'border-l-4 border-l-red-500 bg-red-50 dark:bg-red-950/20',
                     high: 'border-l-4 border-l-orange-500 bg-orange-50 dark:bg-orange-950/20',
@@ -2197,7 +2197,7 @@ const data = analyticsData as AnalyticsData;
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {data.fanJourney.journeyInsights.map((insight: any, idx: number) => (
+                    {data.fanJourney.journeyInsights.map((insight: Record<string, unknown>, idx: number) => (
                       <div key={idx} className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border">
                         <p className="font-medium">{insight.insight}</p>
                         <p className="text-sm text-slate-500 mt-1">Impact: {insight.impact}</p>
@@ -2452,7 +2452,7 @@ const data = analyticsData as AnalyticsData;
               </div>
             ) : anomalyData?.anomalies && anomalyData.anomalies.length > 0 ? (
               <div className="space-y-4">
-                {anomalyData.anomalies.map((anomaly: any) => {
+                {anomalyData.anomalies.map((anomaly: Record<string, unknown>) => {
                   const severityColors: Record<string, string> = {
                     critical: 'border-red-500 bg-red-50 dark:bg-red-950/20',
                     high: 'border-orange-500 bg-orange-50 dark:bg-orange-950/20',
@@ -2491,7 +2491,7 @@ const data = analyticsData as AnalyticsData;
                             <div className="flex-1 space-y-3">
                               <div className="flex items-center gap-3">
                                 <Badge
-                                  variant={severityBadgeColors[anomaly.severity] as any || 'default'}
+                                  variant={severityBadgeColors[anomaly.severity] as unknown || 'default'}
                                 >
                                   {anomaly.severity}
                                 </Badge>

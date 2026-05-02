@@ -200,7 +200,7 @@ export function ServerVideoGenerator({
       if (!jobId || document.visibilityState !== 'visible') return;
       fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' })
         .then(r => r.json())
-        .then((data: any) => {
+        .then((data: Record<string, unknown>) => {
           const url = data.url || data.video_url;
           if ((data.status === 'done' || data.status === 'completed') && url) {
             activeJobIdRef.current = null;
@@ -234,7 +234,7 @@ export function ServerVideoGenerator({
     };
   }, []);
 
-  const applyVideoResult = (data: any) => {
+  const applyVideoResult = (data: Record<string, unknown>) => {
     setVideoUrl(data.url);
     setVideoInfo({
       hook:               data.hook,
@@ -266,7 +266,7 @@ export function ServerVideoGenerator({
       try {
         const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
         const text = await resp.text();
-        let data: any;
+        let data: Record<string, unknown>;
         try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
         consecutiveErrors = 0;
 
@@ -277,7 +277,7 @@ export function ServerVideoGenerator({
         if (isDone) { activeJobIdRef.current = null; return { ...data, success: true, url: videoUrl }; }
         if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
         setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
-      } catch (err: any) {
+      } catch (err) {
         if (err.message === 'Cancelled' || err.message === 'Video generation failed') throw err;
         // Network/parse error — retry up to 5 times before giving up
         consecutiveErrors++;
@@ -325,7 +325,7 @@ export function ServerVideoGenerator({
       });
 
       const rawText = await response.text();
-      let data: any;
+      let data: Record<string, unknown>;
       try { data = JSON.parse(rawText); } catch {
         throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
@@ -412,7 +412,7 @@ export function ServerVideoGenerator({
       } else {
         throw new Error(data.error || 'Video generation failed');
       }
-    } catch (error: any) {
+    } catch (error) {
       if (error.name === 'AbortError') {
         if (userCancelledRef.current) {
           toast({
@@ -533,7 +533,7 @@ export function ServerVideoGenerator({
       if (!resp.ok || !data.success) throw new Error(data.message || 'Audio analysis failed');
       setAudioAnalysis(data);
       toast({ title: 'Audio Analyzed', description: `Detected: ${data.analysis?.genre || 'music'} — ${data.analysis?.tempo ? Math.round(data.analysis.tempo) + ' BPM' : ''}` });
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Analysis Failed', description: err.message, variant: 'destructive' });
     } finally {
       setIsAnalyzingAudio(false);
@@ -583,7 +583,7 @@ export function ServerVideoGenerator({
       if (!resp.ok || !data.success) throw new Error(data.message || 'Image analysis failed');
       setImageAnalysis(data);
       toast({ title: 'Image Analyzed', description: `Mood: ${data.analysis?.mood || 'detected'} — colors extracted` });
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Analysis Failed', description: err.message, variant: 'destructive' });
     } finally {
       setIsAnalyzingImage(false);

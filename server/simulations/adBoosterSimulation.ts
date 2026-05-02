@@ -196,7 +196,7 @@ function simulatePaidAdvertising(campaign: CampaignConfig): SimulationResult['pa
 
   let totalReach = 0;
   let totalEngagement = 0;
-  const platformBreakdown: any = {};
+  const platformBreakdown: Record<string, unknown> = {};
 
   for (const platform of campaign.platforms) {
     const benchmark = PAID_AD_BENCHMARKS[platform as keyof typeof PAID_AD_BENCHMARKS];

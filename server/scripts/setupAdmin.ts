@@ -483,7 +483,7 @@ async function setupAdmin() {
           'This one hits different. Link in bio.'
         ],
         isDefault: true,
-      } as any);
+      } as Record<string, unknown>);
       console.log('   ✓ Brand voice created');
     } else {
       console.log('   ✓ Brand voice exists');
@@ -608,7 +608,7 @@ async function setupAdmin() {
     console.log('═══════════════════════════════════════════════════════════════════════');
     
     process.exit(0);
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Failed to setup admin account:', error.message);
     console.error(error.stack);
     process.exit(1);

@@ -38,11 +38,11 @@ interface GenerationParams {
 interface GenerationResult {
   success: boolean;
   audioFilePath: string;
-  parameters: any;
+  parameters: Record<string, unknown>;
   duration: number;
   sourceType: string;
-  generatedNotes?: any[];
-  generatedChords?: any[];
+  generatedNotes?: unknown[];
+  generatedChords?: unknown[];
 }
 
 const INSTRUMENT_GROUPS = [

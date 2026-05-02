@@ -119,7 +119,7 @@ const ACTION_HANDLERS: Record<string, (payload: unknown, userId: string) => Prom
 
 router.post('/batch', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { actions } = batchSyncRequestSchema.parse(req.body);
 
     logger.info('Processing batch sync request', { userId, actionCount: actions.length });
@@ -192,7 +192,7 @@ router.post('/batch', requireAuth, async (req, res) => {
 
 router.get('/status', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     res.json({
       success: true,
@@ -208,7 +208,7 @@ router.get('/status', requireAuth, async (req, res) => {
 
 router.post('/resolve-conflict', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { actionId, resolution, mergedData } = req.body;
 
     if (!actionId || !['local', 'server', 'merged'].includes(resolution)) {

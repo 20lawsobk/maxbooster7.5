@@ -67,7 +67,7 @@ router.post('/', requireAuth, async (req, res) => {
     const data = insertProjectBudgetSchema.parse({ ...req.body, userId: req.user!.id });
     const [item] = await db.insert(projectBudgets).values(data).returning();
     res.status(201).json(item);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[ProjectBudgets] Failed to create:');
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
@@ -95,7 +95,7 @@ router.put('/:id', requireAuth, async (req, res) => {
       .where(and(eq(projectBudgets.id, id), eq(projectBudgets.userId, userId)))
       .returning();
     res.json(item);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[ProjectBudgets] Failed to update:');
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
@@ -143,7 +143,7 @@ router.post('/:id/items', requireAuth, async (req, res) => {
     const data = insertBudgetLineItemSchema.parse({ ...req.body, budgetId: id, userId });
     const [item] = await db.insert(budgetLineItems).values(data).returning();
     res.status(201).json(item);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[ProjectBudgets] Failed to create line item:');
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });
@@ -171,7 +171,7 @@ router.put('/items/:id', requireAuth, async (req, res) => {
       .where(and(eq(budgetLineItems.id, id), eq(budgetLineItems.userId, userId)))
       .returning();
     res.json(item);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[ProjectBudgets] Failed to update line item:');
     if (error?.name === 'ZodError') {
       return res.status(400).json({ error: 'Validation error', details: error.flatten() });

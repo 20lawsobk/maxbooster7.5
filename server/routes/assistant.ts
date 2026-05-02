@@ -17,7 +17,7 @@ const anonChatLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  skip: (req) => !!(req as any).user,
+  skip: (req) => !!req.user,
   message: { error: 'Too many messages — please sign in or wait before sending again.' },
 });
 
@@ -52,7 +52,7 @@ async function getOrCreateConversation(userId: string): Promise<string> {
 // Response: { messages, hasMore, total, conversationId }
 router.get('/history', async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) {
       return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
     }
@@ -125,7 +125,7 @@ router.get('/history', async (req: Request, res: Response) => {
     const messages = pageRows.reverse();
 
     return res.json({ messages, hasMore, total, conversationId: convId });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('[assistant] Error fetching history:', error.message);
     return res.json({ messages: [], hasMore: false, total: 0, conversationId: null });
   }
@@ -144,7 +144,7 @@ router.post('/chat', aiRateLimiter, anonChatLimiter, async (req: Request, res: R
     }
 
     const trimmed = message.trim().slice(0, 2000);
-    const user = (req as any).user;
+    const user = req.user;
 
     let history: { role: 'user' | 'assistant'; content: string }[] = [];
     let conversationId: string | null = null;
@@ -202,7 +202,7 @@ router.post('/chat', aiRateLimiter, anonChatLimiter, async (req: Request, res: R
       messageId: userMessageId,
       assistantMessageId,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('[assistant] Error processing chat:', error.message);
     return res.status(500).json({ error: 'Failed to process your message. Please try again.' });
   }
@@ -212,7 +212,7 @@ router.post('/chat', aiRateLimiter, anonChatLimiter, async (req: Request, res: R
 // Clears all messages and conversation records for the user.
 router.delete('/history', async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     if (!user) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
@@ -235,7 +235,7 @@ router.delete('/history', async (req: Request, res: Response) => {
       .where(eq(assistantConversations.userId, user.id));
 
     return res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('[assistant] Error clearing history:', error.message);
     return res.status(500).json({ error: 'Failed to clear history' });
   }

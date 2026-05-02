@@ -40,7 +40,7 @@ interface SecurityEvent {
   payload: {
     path?: string;
     method?: string;
-    body?: any;
+    body?: Record<string, unknown>;
     headers?: Record<string, string>;
   };
   metrics: {

@@ -7,9 +7,9 @@ const router = Router();
 
 // All payment-bypass routes require admin role + 2FA — defined locally to
 // avoid circular deps, but require2FA is the canonical shared middleware.
-const requireAdmin = (req: Request, res: Response, next: any) => {
+const requireAdmin = (req: Request, res: Response, next: Record<string, unknown>) => {
   if (!req.user) return res.status(401).json({ error: 'Authentication required' });
-  if ((req.user as any).role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
+  if ((req.user as Record<string, unknown>).role !== 'admin') return res.status(403).json({ error: 'Admin access required' });
   next();
 };
 
@@ -37,10 +37,10 @@ router.post('/activate', async (req: Request, res: Response) => {
     }
     const durationHours = Math.min(rawHours, MAX_BYPASS_HOURS);
     const reason = typeof req.body.reason === 'string' ? req.body.reason.slice(0, 500) : undefined;
-    const adminId = (req.user as any).id;
+    const adminId = (req.user as Record<string, unknown>).id;
 
     const config = await paymentBypassService.activate(adminId, reason, durationHours);
-    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} activated bypass for ${durationHours}h (requested ${rawHours}h)`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} activated bypass for ${durationHours}h (requested ${rawHours}h)`);
 
     res.json({
       success: true,
@@ -56,10 +56,10 @@ router.post('/activate', async (req: Request, res: Response) => {
 router.post('/deactivate', async (req: Request, res: Response) => {
   try {
     const reason = typeof req.body.reason === 'string' ? req.body.reason.slice(0, 500) : undefined;
-    const adminId = (req.user as any).id;
+    const adminId = (req.user as Record<string, unknown>).id;
 
     const config = await paymentBypassService.deactivate(adminId, reason);
-    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} deactivated payment bypass`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} deactivated payment bypass`);
 
     res.json({ success: true, message: 'Payment requirements re-enabled', config });
   } catch (error) {
@@ -75,17 +75,17 @@ router.post('/extend', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'additionalHours must be a positive number' });
     }
     const additionalHours = Math.min(rawHours, MAX_EXTEND_HOURS);
-    const adminId = (req.user as any).id;
+    const adminId = (req.user as Record<string, unknown>).id;
 
     const config = await paymentBypassService.extendBypass(adminId, additionalHours);
-    logger.info(`[PaymentBypass] Admin ${(req.user as any).email} extended bypass by ${additionalHours}h (requested ${rawHours}h)`);
+    logger.info(`[PaymentBypass] Admin ${(req.user as Record<string, unknown>).email} extended bypass by ${additionalHours}h (requested ${rawHours}h)`);
 
     res.json({
       success: true,
       message: `Payment bypass extended by ${additionalHours} hours`,
       config,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[PaymentBypass] Failed to extend:');
     res.status(400).json({ error: error?.message || 'Failed to extend payment bypass' });
   }

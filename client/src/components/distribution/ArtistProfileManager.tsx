@@ -111,7 +111,7 @@ export default function ArtistProfileManager({ onSelectProfile, selectedProfileI
       await triggerDiscover(profile.id, upc);
       queryClient.invalidateQueries({ queryKey: ['/api/artist-profiles'] });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       const isStorageLimit = err?.status === 507 || err?.message?.includes('storage limit') || err?.message?.includes('DB_STORAGE_LIMIT');
       toast({
         title: isStorageLimit ? 'Database Storage Full' : 'Failed to create artist profile',

@@ -152,7 +152,7 @@ router.get('/recommended-settings', requireAuth, async (req: Request, res: Respo
     const artistType = (req.query.artistType as string) || 'solo';
     const settings = await smartDefaultsService.getRecommendedSettings(
       req.user.id,
-      artistType as any
+      artistType as string
     );
     return res.json(settings);
   } catch (error) {

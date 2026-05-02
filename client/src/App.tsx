@@ -191,8 +191,8 @@ function Router() {
 }
 
 function isNativeApp(): boolean {
-  return !!(window as any).electronAPI?.isElectron ||
-    !!(window as any).Capacitor?.isNativePlatform?.();
+  return !!(window as Record<string, unknown>).electronAPI?.isElectron ||
+    !!(window as Record<string, unknown>).Capacitor?.isNativePlatform?.();
 }
 
 const PUBLIC_ONLY_ROUTES = [
@@ -263,7 +263,7 @@ function AppWithKeyboardShortcuts() {
   }, [location]);
 
   useEffect(() => {
-    const storefrontSlug = (window as any).__MAXBOOSTER_SUBDOMAIN__;
+    const storefrontSlug = (window as Record<string, unknown>).__MAXBOOSTER_SUBDOMAIN__;
     if (storefrontSlug && typeof storefrontSlug === 'string') {
       setLocation(`/storefront/${storefrontSlug}`);
     }

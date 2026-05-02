@@ -21,7 +21,7 @@ const markerSchema = z.object({
 router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     // Verify project ownership
     const project = await db.query.projects.findFirst({
@@ -48,7 +48,7 @@ router.get('/projects/:projectId/markers', requireAuth, async (req, res) => {
 router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     // Validate input
     const markerData = markerSchema.parse(req.body);
@@ -84,7 +84,7 @@ router.post('/projects/:projectId/markers', requireAuth, async (req, res) => {
 router.patch('/markers/:markerId', requireAuth, async (req, res) => {
   try {
     const { markerId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     // Partial validation
     const updates = markerSchema.partial().parse(req.body);
@@ -127,7 +127,7 @@ router.patch('/markers/:markerId', requireAuth, async (req, res) => {
 router.delete('/markers/:markerId', requireAuth, async (req, res) => {
   try {
     const { markerId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     // Get marker and verify ownership
     const marker = await db.query.markers.findFirst({

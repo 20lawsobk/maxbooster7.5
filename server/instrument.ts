@@ -88,7 +88,7 @@ process.on('uncaughtException', (err) => {
   if (Sentry) Sentry.flush(8000).catch(() => { /* best-effort, must not throw */ });
 });
 
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: Record<string, unknown>) => {
   const err = reason instanceof Error ? reason : new Error(String(reason));
   const code = (reason as NodeJS.ErrnoException)?.code;
 

@@ -151,7 +151,7 @@ export class DistributionService {
         const estimatedLiveDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
         // Update release platforms
-        const platforms = (release.platforms as any) || [];
+        const platforms = (release.platforms as Record<string, unknown>) || [];
         platforms.push({
           providerId,
           status: 'processing',
@@ -184,7 +184,7 @@ export class DistributionService {
         throw new Error("Release not found");
       }
 
-      const platforms = (release.platforms as any[]) || [];
+      const platforms = (release.platforms as unknown[]) || [];
       
       return platforms.map(p => ({
         provider: p.providerId,
@@ -295,7 +295,7 @@ export class DistributionService {
       if (notifData && release.userId) {
         await notificationService.sendNotification(
           release.userId,
-          notifData.type as any,
+          notifData.type as Record<string, unknown>,
           notifData.title,
           notifData.body,
           { releaseId, provider, status: internalStatus }
@@ -809,7 +809,7 @@ Generated: ${new Date().toISOString()}
           const status = await labelGridService.getDeliveryStatus(releaseId);
           return {
             status: status.status || 'pending',
-            platforms: status.platforms?.map((p: any) => ({
+            platforms: status.platforms?.map((p: Record<string, unknown>) => ({
               platform: p.platform,
               status: p.status,
               liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
@@ -821,10 +821,10 @@ Generated: ${new Date().toISOString()}
         }
       }
 
-      const currentPlatforms = (release.platforms as any[]) || [];
+      const currentPlatforms = (release.platforms as unknown[]) || [];
       return {
         status: release.status || 'draft',
-        platforms: currentPlatforms.map((p: any) => ({
+        platforms: currentPlatforms.map((p: Record<string, unknown>) => ({
           platform: typeof p === 'string' ? p : p.platform || p.name,
           status: p.status || 'pending',
           liveDate: p.liveDate ? new Date(p.liveDate) : undefined,
@@ -1429,7 +1429,7 @@ Generated: ${new Date().toISOString()}
 
         // Calculate conversion rate
         const totalSaves = (updates.totalSaves || campaign.totalSaves || 0);
-        const pageViews = (campaign.metadata as any)?.pageViews || 1;
+        const pageViews = (campaign.metadata as Record<string, unknown>)?.pageViews || 1;
         updates.conversionRate = (totalSaves / pageViews) * 100;
 
         await storage.updatePreSaveCampaign(data.campaignId, updates);

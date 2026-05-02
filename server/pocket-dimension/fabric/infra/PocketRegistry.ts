@@ -12,7 +12,7 @@ export class PocketRegistry {
       id,
       ownerId,
       name,
-      policy: policy as any,
+      policy: policy as Record<string, unknown>,
       createdAt: now,
       updatedAt: now,
     });
@@ -30,7 +30,7 @@ export class PocketRegistry {
   }
 
   async updatePolicy(id: PocketId, policy: PocketPolicy): Promise<void> {
-    await db.update(fabricPockets).set({ policy: policy as any, updatedAt: new Date() }).where(eq(fabricPockets.id, id));
+    await db.update(fabricPockets).set({ policy: policy as Record<string, unknown>, updatedAt: new Date() }).where(eq(fabricPockets.id, id));
   }
 
   async deletePocket(id: PocketId): Promise<void> {

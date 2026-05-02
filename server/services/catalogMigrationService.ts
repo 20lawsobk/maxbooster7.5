@@ -258,7 +258,7 @@ async function deezerFindTrack(
   artistName: string
 ): Promise<{ isrc: string | null; albumId: number | null } | null> {
   const q = `track:"${trackTitle}" artist:"${artistName}"`;
-  const data = await deezerRequest<{ data: any[] }>(
+  const data = await deezerRequest<{ data: unknown[] }>(
     `https://api.deezer.com/search?q=${encodeURIComponent(q)}&limit=5`
   );
   if (!data?.data?.length) return null;
@@ -286,7 +286,7 @@ async function itunesRequest<T>(url: string): Promise<T | null> {
 async function itunesFindArtistId(
   artistName: string
 ): Promise<{ id: number; name: string } | null> {
-  const data = await itunesRequest<{ results: any[] }>(
+  const data = await itunesRequest<{ results: unknown[] }>(
     `https://itunes.apple.com/search?term=${encodeURIComponent(artistName)}&entity=album&limit=50&country=US`
   );
   const counts: Record<number, { count: number; name: string }> = {};
@@ -302,17 +302,17 @@ async function itunesFindArtistId(
 }
 
 async function itunesAlbumsByArtist(artistId: number): Promise<iTunesAlbumEntry[]> {
-  const data = await itunesRequest<{ results: any[] }>(
+  const data = await itunesRequest<{ results: unknown[] }>(
     `https://itunes.apple.com/lookup?id=${artistId}&entity=album&limit=200&country=US`
   );
-  return (data?.results ?? []).filter((r: any) => r.wrapperType === 'collection');
+  return (data?.results ?? []).filter((r: Record<string, unknown>) => r.wrapperType === 'collection');
 }
 
 async function itunesTracksByAlbum(collectionId: number): Promise<iTunesTrackEntry[]> {
-  const data = await itunesRequest<{ results: any[] }>(
+  const data = await itunesRequest<{ results: unknown[] }>(
     `https://itunes.apple.com/lookup?id=${collectionId}&entity=song&limit=200&country=US`
   );
-  return (data?.results ?? []).filter((r: any) => r.wrapperType === 'track');
+  return (data?.results ?? []).filter((r: Record<string, unknown>) => r.wrapperType === 'track');
 }
 
 /**
@@ -323,7 +323,7 @@ async function itunesFindRelease(
   title: string,
   artistName: string
 ): Promise<iTunesAlbumEntry | null> {
-  const data = await itunesRequest<{ results: any[] }>(
+  const data = await itunesRequest<{ results: unknown[] }>(
     `https://itunes.apple.com/search?term=${encodeURIComponent(`${artistName} ${title}`)}&entity=album&limit=10&country=US`
   );
   for (const r of data?.results ?? []) {
@@ -800,7 +800,7 @@ async function buildFromLinkedProfiles(
       );
       logger.info(`[CatalogMigration]   ${scanned.length} release(s) from ${profile.platformId}`);
       allScanned.push(...scanned);
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[CatalogMigration] Scan failed for ${profile.platformId}: ${err?.message}`);
     }
   }

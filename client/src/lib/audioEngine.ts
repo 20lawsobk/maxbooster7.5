@@ -338,7 +338,7 @@ class AudioEngine {
    */
   static isSupported(): boolean {
     try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
       return !!AudioContextClass;
     } catch {
       return false;
@@ -351,7 +351,7 @@ class AudioEngine {
   static canCreateContext(): boolean {
     try {
       if (!AudioEngine.isSupported()) return false;
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
       const testContext = new AudioContextClass();
       const canCreate = testContext.state !== 'suspended' || true;
       testContext.close().catch(() => {});
@@ -470,7 +470,7 @@ class AudioEngine {
 
     // Step 1: Create AudioContext if not exists
     if (!this.context) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
       
       if (!AudioContextClass) {
         throw new Error('Web Audio API is not supported in this browser');
@@ -2705,7 +2705,7 @@ class AudioEngine {
   /**
    * Get performance guarantee info for current configuration
    */
-  getPerformanceGuarantee(): { maxTracks: number; description: string; requirements: any } | null {
+  getPerformanceGuarantee(): { maxTracks: number; description: string; requirements: Record<string, unknown> } | null {
     const sampleRate = this.config.sampleRate!;
 
     if (sampleRate >= SAMPLE_RATES.SR_192000) {

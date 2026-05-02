@@ -105,7 +105,7 @@ export class AutonomousService extends EventEmitter {
     this.loadMetricsFromCache();
   }
 
-  private boundedMapSet(map: Map<string, any>, key: string, value: any, maxSize: number): void {
+  private boundedMapSet(map: Map<string, any>, key: string, value: Record<string, unknown>, maxSize: number): void {
     if (map.size >= maxSize && !map.has(key)) {
       const firstKey = map.keys().next().value;
       if (firstKey !== undefined) map.delete(firstKey);
@@ -113,11 +113,11 @@ export class AutonomousService extends EventEmitter {
     map.set(key, value);
   }
 
-  private addToProcessingQueue(key: string, value: any): void {
+  private addToProcessingQueue(key: string, value: Record<string, unknown>): void {
     this.boundedMapSet(this.processingQueue, key, value, MAX_PROCESSING_QUEUE);
   }
 
-  private addToLearningData(key: string, value: any): void {
+  private addToLearningData(key: string, value: Record<string, unknown>): void {
     this.boundedMapSet(this.learningData, key, value, MAX_LEARNING_DATA);
   }
 
@@ -254,7 +254,7 @@ export class AutonomousService extends EventEmitter {
           approvalStatus: 'auto-approved',
           approvedBy: 'autonomous-system',
           approvedAt: new Date(),
-        } as any);
+        } as Record<string, unknown>);
 
         await socialQueueService.schedulePost(post.id, new Date());
         await this.dispatchAutonomousContent(post.id);
@@ -276,7 +276,7 @@ export class AutonomousService extends EventEmitter {
           platforms,
           status: 'draft',
           approvalStatus: 'pending',
-        } as any);
+        } as Record<string, unknown>);
 
         await approvalService.submitForApproval({
           type: 'social_post',
@@ -319,7 +319,7 @@ export class AutonomousService extends EventEmitter {
           approvalStatus: 'auto-approved',
           approvedBy: 'autonomous-system',
           approvedAt: new Date(),
-        } as any);
+        } as Record<string, unknown>);
 
         await advertisingDispatchService.startCampaign(newCampaign.id);
         scheduleCampaignOptimization(newCampaign.id).catch((err) =>
@@ -342,7 +342,7 @@ export class AutonomousService extends EventEmitter {
           userId,
           status: 'draft',
           approvalStatus: 'pending',
-        } as any);
+        } as Record<string, unknown>);
 
         await approvalService.submitForApproval({
           type: 'ad_campaign',
@@ -389,7 +389,7 @@ export class AutonomousService extends EventEmitter {
       });
 
       const scoredVariants = await Promise.all(
-        variants.map(async (variant: any) => {
+        variants.map(async (variant: Record<string, unknown>) => {
           const viralScore = await viralScoringService.calculateViralScore({
             content: variant.content,
             platform: variant.platform,
@@ -415,7 +415,7 @@ export class AutonomousService extends EventEmitter {
       return {
         success: true,
         contentId: bestVariant.id,
-        variants: scoredVariants.map((v: any) => v.content),
+        variants: scoredVariants.map((v: Record<string, unknown>) => v.content),
         viralScore: bestVariant.viralScore,
         optimalTiming: optimalTiming.recommendedTime,
         platforms,
@@ -441,7 +441,7 @@ export class AutonomousService extends EventEmitter {
         ...releaseData,
         userId,
         status: 'processing',
-      } as any);
+      } as Record<string, unknown>);
 
       const providers = ['spotify', 'apple_music', 'amazon_music', 'youtube_music', 'tidal', 'deezer'];
       const dispatchResults = [];
@@ -604,9 +604,9 @@ export class AutonomousService extends EventEmitter {
 
   async autoAnalyzePerformance(userId: string): Promise<{
     success: boolean;
-    insights?: any;
+    insights?: Record<string, unknown>;
     recommendations?: string[];
-    predictions?: any;
+    predictions?: Record<string, unknown>;
   }> {
     try {
       if (!this.config.analytics) {
@@ -667,7 +667,7 @@ export class AutonomousService extends EventEmitter {
     success: boolean;
     optimizations?: string[];
     viralScore?: number;
-    recommendations?: any;
+    recommendations?: Record<string, unknown>;
   }> {
     try {
       if (!this.config.growthHacking) {
@@ -718,13 +718,13 @@ export class AutonomousService extends EventEmitter {
     contentPlan: { topic: string; platforms: string[] }[]
   ): Promise<{
     success: boolean;
-    scheduledPosts?: any[];
+    scheduledPosts?: Record<string, unknown>[];
     totalReach?: number;
   }> {
     try {
       logger.info(`[AUTO-SCHEDULE] Creating week schedule for ${userId}`);
 
-      const scheduledPosts: any[] = [];
+      const scheduledPosts: Record<string, unknown>[] = [];
       const now = new Date();
 
       for (let i = 0; i < contentPlan.length; i++) {
@@ -742,7 +742,7 @@ export class AutonomousService extends EventEmitter {
             {
               content: contentResult.variants?.[0],
               scheduledAt: scheduledDate,
-            } as any,
+            } as Record<string, unknown>,
             plan.platforms
           );
 

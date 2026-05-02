@@ -35,7 +35,7 @@ export class ZstdEngine {
     };
 
     if (dict) {
-      (opts.params as any)[zlibConstants.ZSTD_c_enableDedupSequences] = 1;
+      (opts.params as Record<string, unknown>)[zlibConstants.ZSTD_c_enableDedupSequences] = 1;
     }
 
     const compressed = await zstdCompressAsync(data, opts);

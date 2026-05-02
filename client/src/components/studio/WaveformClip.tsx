@@ -127,7 +127,7 @@ export function WaveformClip({
           if (ctx && ctx.state !== 'closed') {
             audioContext = ctx;
           } else {
-            const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+            const AudioContextClass = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
             audioContext = new AudioContextClass();
             shouldClose = true;
           }

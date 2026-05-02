@@ -50,7 +50,7 @@ router.post("/connect", async (req: Request, res: Response) => {
       message
     );
     return res.json(connection);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error sending connection request:", error);
     return res.status(400).json({ error: "Failed to send connection request" });
   }
@@ -67,7 +67,7 @@ router.post("/accept/:id", async (req: Request, res: Response) => {
       req.user.id
     );
     return res.json(connection);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error accepting connection:", error);
     return res.status(400).json({ error: "Failed to accept connection" });
   }
@@ -84,7 +84,7 @@ router.post("/decline/:id", async (req: Request, res: Response) => {
       req.user.id
     );
     return res.json(connection);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error declining connection:", error);
     return res.status(400).json({ error: "Failed to decline connection" });
   }
@@ -98,7 +98,7 @@ router.delete("/connections/:id", async (req: Request, res: Response) => {
   try {
     await collaborationService.removeConnection(req.params.id, req.user.id);
     return res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error removing connection:", error);
     return res.status(400).json({ error: "Failed to remove connection" });
   }
@@ -162,7 +162,7 @@ router.post("/projects", async (req: Request, res: Response) => {
       isPublic,
     });
     return res.json(project);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error creating project:", error);
     return res.status(400).json({ error: "Failed to create project" });
   }
@@ -180,7 +180,7 @@ router.post("/projects/:id/join", async (req: Request, res: Response) => {
       "member"
     );
     return res.json(member);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error joining project:", error);
     return res.status(400).json({ error: "Failed to join project" });
   }
@@ -194,7 +194,7 @@ router.post("/projects/:id/leave", async (req: Request, res: Response) => {
   try {
     await collaborationService.leaveProject(req.user.id, req.params.id);
     return res.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn("Error leaving project:", error);
     return res.status(400).json({ error: "Failed to leave project" });
   }

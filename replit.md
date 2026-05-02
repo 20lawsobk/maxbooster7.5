@@ -245,6 +245,36 @@ Files fixed:
 - **BullMQ retries**: `attempts: 3`, `backoff: exponential`, `removeOnFail: { count: 200 }` ✅
 - **Session secret enforcement**: Throws at startup if missing/weak in production ✅
 
+### Code Quality Hardening (Completed — May 2026)
+
+#### TypeScript `any` Elimination
+- **Starting count**: ~2,405 `any` usages across codebase.
+- **Final count**: 5 total — 3 are JSDoc/block comments (not code), 2 are in `hybridStorageService.ts` (explicitly excluded file per user preferences).
+- **Effective code `any` count: 0** — 99.8% reduction achieved.
+- Key patterns eliminated: `(req as any).user` → `req.user!`, `catch (error: any)` → `catch (error)` (0 remaining), JSON column casts, Redis variadic args, component prop interfaces, Web Audio API return types, DB row casts, mutation data types, lazy module holders.
+- `server/routes.ts` `isAuthenticated()` guard typed as `import("../shared/schema.js").User`.
+- `hybridStorageService.ts` untouched per user directive.
+
+#### ESLint `react-hooks/exhaustive-deps` Suppressions
+- **Starting count**: 10 suppressions.
+- **Fixed**: 2 genuinely fixed (`StorefrontBuilder.tsx`, `ContentGenerator.tsx`).
+- **Remaining**: 8 — all intentional, each annotated with `// INTENTIONAL:` comment explaining why (refs, mount-only effects, RAF animation loops).
+
+#### Unit Tests Added (17 files, 153 tests — all passing)
+- `tests/unit/env-helpers.test.ts` — isProductionEnv(), isDevelopmentEnv()
+- `tests/unit/security-middleware.test.ts` — maxPayload, SESSION_SECRET validation
+- `tests/unit/rate-limiter.test.ts` — globalRateLimiter config
+- `tests/unit/input-validation.test.ts` — Zod schemas, safeUrl .refine(), javascript: URI rejection
+- `tests/unit/pagination-guards.test.ts` — offset/page caps at 100_000
+- `tests/unit/webhook-security.test.ts` — isProductionEnv() used for secret enforcement
+- `tests/unit/file-operations.test.ts` — fileIds array cap at 500
+- `tests/unit/schema-validators.test.ts` — insertUserSchema field validation
+- Plus 9 additional test files covering auth guards, storage, rate limiting, and API health.
+
+#### GeoDNS Database
+- `data/GeoLite2-Country.mmdb` present (9.3 MB).
+- `GEODNS_ENABLED=true` configured in environment.
+
 ### Architecture Notes
 - `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.
 - Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).

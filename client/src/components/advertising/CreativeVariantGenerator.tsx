@@ -168,7 +168,7 @@ export function CreativeVariantGenerator() {
       return res.json();
     },
     onSuccess: (data) => {
-      const textAssets = (data.assets || []).filter((a: any) => a.modality === 'text');
+      const textAssets = (data.assets || []).filter((a: Record<string, unknown>) => a.modality === 'text');
       if (textAssets.length > 0) {
         const first = textAssets[0];
         setGeneratedContent({

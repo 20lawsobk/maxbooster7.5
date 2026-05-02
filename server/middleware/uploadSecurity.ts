@@ -294,7 +294,7 @@ export function createUploadValidator(category: UploadCategory) {
           category,
           filename: file.originalname,
           error: result.error,
-          userId: (req as any).user?.id,
+          userId: (req as Record<string, unknown>).user?.id,
         });
         return res.status(400).json({
           success: false,
@@ -302,7 +302,7 @@ export function createUploadValidator(category: UploadCategory) {
           code: 'UPLOAD_VALIDATION_FAILED',
         });
       }
-      (file as any).sanitizedFilename = result.sanitizedFilename;
+      (file as Record<string, unknown>).sanitizedFilename = result.sanitizedFilename;
     }
 
     next();

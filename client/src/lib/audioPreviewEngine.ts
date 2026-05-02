@@ -88,7 +88,7 @@ export const useAudioPreviewStore = create<AudioPreviewState & AudioPreviewActio
   initializeContext: async () => {
     let { audioContext } = get();
     if (!audioContext) {
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      audioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
       const gainNode = audioContext.createGain();
       gainNode.connect(audioContext.destination);
       gainNode.gain.value = get().volume;

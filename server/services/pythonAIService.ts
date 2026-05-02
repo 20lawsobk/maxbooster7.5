@@ -26,7 +26,7 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeoutMs = T
   }
 }
 
-async function callAIModel<T>(endpoint: string, body: any): Promise<AIModelResponse<T>> {
+async function callAIModel<T>(endpoint: string, body: Record<string, unknown>): Promise<AIModelResponse<T>> {
   try {
     const response = await fetchWithTimeout(`${AI_MODEL_URL}${endpoint}`, {
       method: 'POST',
@@ -73,7 +73,7 @@ export interface ContentResult {
   video_hook?: string;
   video_body?: string;
   video_cta?: string;
-  visual_spec?: any;
+  visual_spec?: Record<string, unknown>;
   posting_time?: string;
   processing_time_ms: number;
 }
@@ -113,7 +113,7 @@ export interface BoostSheetResult {
   sheet_id: string;
   type: string;
   platform: string;
-  blocks: any;
+  blocks: Record<string, unknown>;
   history: string[];
 }
 
@@ -457,7 +457,7 @@ export class PythonAIService {
       }
       const data = await response.json();
       return { success: true, data };
-    } catch (e: any) {
+    } catch (e) {
       return { success: false, error: `Audio analysis error: ${e.message}` };
     }
   }
@@ -491,7 +491,7 @@ export class PythonAIService {
       }
       const data = await response.json();
       return { success: true, data };
-    } catch (e: any) {
+    } catch (e) {
       return { success: false, error: `MIDI transcription error: ${e.message}` };
     }
   }

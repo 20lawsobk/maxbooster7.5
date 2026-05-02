@@ -587,7 +587,7 @@ export class ProjectManager {
       const response = await fetch('/api/studio/projects');
       if (!response.ok) throw new Error('Failed to fetch projects');
       const projects = await response.json();
-      return projects.map((p: any) => ({
+      return projects.map((p: Record<string, unknown>) => ({
         id: p.id,
         name: p.title,
         updatedAt: p.updatedAt || p.createdAt,

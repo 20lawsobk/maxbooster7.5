@@ -511,7 +511,7 @@ router.get('/ai-content/ab-variants', requireAuth, async (req: AuthenticatedRequ
   try {
     const { content = '', variationType = 'tone' } = req.query as Record<string, string>;
     const validTypes = ['headline', 'CTA', 'emoji', 'length', 'tone'];
-    const type = validTypes.includes(variationType) ? variationType as any : 'tone';
+    const type = validTypes.includes(variationType) ? variationType as string : 'tone';
     const variants = await aiContentService.generateABVariants(content, type);
     res.json({ variants });
   } catch (error) {
@@ -844,7 +844,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
     const validContentTypes = ['release', 'behind-the-scenes', 'announcement', 'engagement', 'promotional'];
 
     const resolvedPlatform = validPlatforms.includes(platform) ? platform : 'instagram';
-    const resolvedTone: any = validTones.includes(tone) ? tone : 'energetic';
+    const resolvedTone: string = validTones.includes(tone) ? tone : 'energetic';
 
     const mappedContentType = contentType === 'post' ? 'engagement' :
                               contentType === 'announcement' ? 'announcement' :
@@ -861,7 +861,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       try {
         const ua = await analyzeUrl(embeddedUrl);
         if (ua && !ua.error) {
-          inlineUrlAnalysis = ua as any;
+          inlineUrlAnalysis = ua as Record<string, unknown>;
           logger.info(`[socialAI] Inline URL analyzed: ${embeddedUrl} → ${ua.content_type} / "${ua.title}"`);
         }
       } catch (err) {
@@ -983,7 +983,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
 
     const result = await unifiedAIController.generateContent({
       tone: resolvedTone,
-      platform: resolvedPlatform as any,
+      platform: resolvedPlatform as Record<string, unknown>,
       topic: metadataTopic,
       genre: detectedGenre || userContext.genre,
       artistName: effectiveArtistName || userContext.artistName,
@@ -992,7 +992,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       label: effectiveLabel || undefined,
       releaseDate: effectiveReleaseDate || undefined,
       keywords: uniqueKeywords.length ? uniqueKeywords : undefined,
-      contentType: validContentTypes.includes(mappedContentType) ? mappedContentType as any : 'engagement',
+      contentType: validContentTypes.includes(mappedContentType) ? mappedContentType as string : 'engagement',
       includeHashtags: true,
       includeEmojis: true,
       userContext,
@@ -1005,7 +1005,7 @@ router.post('/generate', requireAuth, async (req: AuthenticatedRequest, res: Res
       return res.status(500).json({ error: result.error });
     }
 
-    const data = result.data as any;
+    const data = result.data as Record<string, unknown>;
     const hook: string = data?.hook || '';
     const body: string = data?.body || '';
     const cta: string = data?.cta || '';

@@ -2,7 +2,7 @@ import { logger } from '../logger.js';
 import { UPLOAD_LIMITS, type UploadCategory } from '../middleware/uploadSecurity.js';
 
 // Optional sharp support with graceful fallback
-let sharpModule: any = null;
+let sharpModule: Record<string, unknown> | null = null;
 let sharpAvailable = false;
 
 async function getSharp() {

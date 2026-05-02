@@ -166,7 +166,7 @@ export default function RefundRequestForm({
       } else {
         throw data;
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorData = err.body || err;
       setError(errorData.message || 'Failed to submit refund request');
 

@@ -101,7 +101,7 @@ router.get(
         success: true,
         dashboard: executiveDashboard,
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error fetching executive dashboard:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
@@ -127,14 +127,14 @@ router.get(
           : 'Some systems require attention',
         timestamp: new Date(),
       });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Error fetching health summary:', error?.message);
       res.status(500).json({ error: 'Failed to process request' });
     }
   })
 );
 
-function getRecommendedActions(dashboard: any, queueHealth: any): string[] {
+function getRecommendedActions(dashboard: Record<string, unknown>, queueHealth: Record<string, unknown>): string[] {
   const actions: string[] = [];
 
   if (dashboard.trends.memory === 'increasing') {

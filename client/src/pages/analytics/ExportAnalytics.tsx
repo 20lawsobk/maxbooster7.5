@@ -379,7 +379,7 @@ export function ExportAnalytics({
             <CardContent>
               <RadioGroup
                 value={exportFormat}
-                onValueChange={(v) => setExportFormat(v as any)}
+                onValueChange={(v) => setExportFormat(v as Record<string, unknown>)}
                 className="grid grid-cols-3 gap-4"
               >
                 {FORMAT_OPTIONS.map((format) => {

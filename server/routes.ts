@@ -39,7 +39,7 @@ import { artistProfileService } from './services/artistProfileService.js';
 const log = (msg: string) => logger.info(msg);
 
 // Helper to safely load route modules
-async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promise<{ type: 'router' | 'function' | 'skip'; value: any } | null> {
+async function safeLoadRoute(name: string, importFn: () => Promise<{ default?: unknown; router?: unknown }>): Promise<{ type: 'router' | 'function' | 'skip'; value: unknown } | null> {
   try {
     const module = await importFn();
 
@@ -71,7 +71,7 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
     logger.warn(`[routes] Route module '${name}' loaded successfully but exports no router or setup function — check the module's default export`);
     log(`ERROR: ${name} has no usable export (router or setup function)`);
     return { type: 'skip', value: null };
-  } catch (error: any) {
+  } catch (error) {
     const criticalRoutes = ['auth', 'billing', 'stripeWebhook', 'admin', 'security', 'storage'];
     if (criticalRoutes.includes(name)) {
       log(`ERROR: Critical route '${name}' failed to load - ${error.message}`);
@@ -88,8 +88,8 @@ async function safeLoadRoute(name: string, importFn: () => Promise<any>): Promis
 declare global {
   namespace Express {
     interface Request {
-      user?: any;
-      isAuthenticated(): this is Request & { user: any };
+      user?: import("../shared/schema.js").User;
+      isAuthenticated(): this is Request & { user: import("../shared/schema.js").User };
     }
   }
 }
@@ -116,7 +116,7 @@ async function attachUser(req: Request, res: Response, next: NextFunction) {
   }
 
   // Add isAuthenticated method
-  req.isAuthenticated = function (): this is Request & { user: any } {
+  req.isAuthenticated = function (): this is Request & { user: import("../shared/schema.js").User } {
     return !!this.user;
   };
 
@@ -207,7 +207,7 @@ export async function registerRoutes(
     }
 
     if (req.user) {
-      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } = req.user as any;
+      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...safeUser } = req.user!;
       if (safeUser.email === 'demo@maxbooster.ai') {
         safeUser.isDemo = true;
       }
@@ -268,14 +268,14 @@ export async function registerRoutes(
           firstName: firstName || "",
           lastName: lastName || ""
         });
-      } catch (createErr: any) {
+      } catch (createErr) {
         if (createErr?.code === '23505' || createErr?.message?.toLowerCase().includes('unique')) {
           return res.status(400).json({ message: "Email already registered" });
         }
         throw createErr;
       }
 
-      const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+      const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as Record<string, unknown>;
 
       try {
         await sessionRegenerate(req);
@@ -390,7 +390,7 @@ export async function registerRoutes(
           req.headers['user-agent'] || undefined
         ).catch(() => {});
 
-        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as any;
+        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = user as Record<string, unknown>;
         return res.json(safeUser);
       } catch (sessionErr) {
         logger.warn('[Login] Session operation failed after retries:', sessionErr);
@@ -420,7 +420,7 @@ export async function registerRoutes(
   // Auth: Inactivity heartbeat — called by the frontend whenever the user is active.
   // Rolling session auto-extends the cookie. No DB update needed.
   app.post("/api/auth/heartbeat", (req: Request, res: Response) => {
-    const userId = req.session?.userId || (req as any).user?.id;
+    const userId = req.session?.userId || req.user?.id;
     if (!userId) {
       return res.status(401).json({ ok: false });
     }
@@ -514,7 +514,7 @@ export async function registerRoutes(
     if (!req.user) {
       return res.status(401).json({ message: "Not authenticated" });
     }
-    const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...profile } = req.user as any;
+    const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...profile } = req.user!;
     return res.json(profile);
   });
 
@@ -1077,7 +1077,7 @@ export async function registerRoutes(
       const { avatarUpload, storeUploadedFile } = await import('./middleware/uploadHandler.js');
 
       // Handle multipart upload
-      avatarUpload.single('avatar')(req, res, async (err: any) => {
+      avatarUpload.single('avatar')(req, res, async (err: unknown) => {
         if (err) {
           logger.warn("Avatar upload error:", err);
           return res.status(400).json({ message: err.message || "Failed to upload avatar" });
@@ -1093,7 +1093,7 @@ export async function registerRoutes(
           try {
             const result = await storeUploadedFile(req.file, req.user!.id, 'avatar');
             avatarUrl = result.url;
-          } catch (storeError: any) {
+          } catch (storeError) {
             // Object Storage unavailable — fall back to storing the processed image
             // as a base64 data URL directly in the database. Avatars are small
             // (512x512 WebP ≈ 30-60 KB) so this is safe for the users table.
@@ -1116,7 +1116,7 @@ export async function registerRoutes(
             profileImageUrl: avatarUrl,
             avatarUrl,
           });
-        } catch (storeError: any) {
+        } catch (storeError) {
           logger.warn("Avatar storage error:", storeError);
           return res.status(500).json({ message: storeError.message || "Failed to store avatar" });
         }
@@ -1233,7 +1233,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...userData } = req.user as any;
+      const { password, twoFactorSecret, passwordResetToken, emailVerificationToken, ...userData } = req.user!;
       return res.json({
         user: userData,
         exportedAt: new Date().toISOString(),
@@ -1409,7 +1409,7 @@ export async function registerRoutes(
         req.session.userId = demoUser.id;
         await sessionSave(req);
         logger.info('[Demo] SUCCESS for demoUser:', demoUser.id);
-        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as any;
+        const { password: _, twoFactorSecret: _2fa, passwordResetToken: _prt, emailVerificationToken: _evt, ...safeUser } = demoUser as Record<string, unknown>;
         return res.json({ ...safeUser, isDemo: true });
       } catch (sessionErr) {
         logger.warn('[Demo] Session operation failed after retries:', sessionErr);
@@ -1533,7 +1533,7 @@ export async function registerRoutes(
 
     // Store state in session
     if (req.session) {
-      (req.session as any).googleOAuthState = state;
+      (req.session as import("express-session").Session & { googleOAuthState?: string }).googleOAuthState = state;
     }
 
     // Always use production URL for OAuth callbacks (must match Google Console registration)
@@ -1562,11 +1562,11 @@ export async function registerRoutes(
     }
 
     // Verify state
-    const savedState = (req.session as any)?.googleOAuthState;
+    const savedState = (req.session as import('express-session').Session & { googleOAuthState?: string })?.googleOAuthState;
     if (!state || state !== savedState) {
       return res.redirect('/login?error=invalid_state');
     }
-    delete (req.session as any).googleOAuthState;
+    delete (req.session as import('express-session').Session & { googleOAuthState?: string }).googleOAuthState;
 
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -1730,7 +1730,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { studioProjects, releases, socialAccounts, analytics } = await import('@shared/schema');
       const { count, sum, gte, eq, and } = await import('drizzle-orm');
 
@@ -1825,7 +1825,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { studioProjects, releases, socialAccounts, subscriptions: subscriptionsTable } = await import('@shared/schema');
       const { count, eq, and } = await import('drizzle-orm');
 
@@ -2044,8 +2044,8 @@ export async function registerRoutes(
       });
 
       // Broadcast via WebSocket if available
-      if (typeof (global as any).broadcastNotification === 'function') {
-        (global as any).broadcastNotification(req.user.id, {
+      if (typeof (global as NodeJS.Global & { broadcastNotification?: (userId: string, data: Record<string, unknown>) => void }).broadcastNotification === 'function') {
+        (global as NodeJS.Global & { broadcastNotification?: (userId: string, data: Record<string, unknown>) => void }).broadcastNotification!(req.user.id, {
           ...notification,
           read: notification.isRead,
           link: notification.actionUrl,
@@ -2335,7 +2335,7 @@ export async function registerRoutes(
   // Projects: Create new project (supports both JSON and FormData)
   // Wrap multer in error handler to prevent server crashes
   app.post("/api/projects", (req: Request, res: Response, next) => {
-    upload.single('audio')(req, res, (err: any) => {
+    upload.single('audio')(req, res, (err: unknown) => {
       if (err) {
         logger.warn("Project upload error:", err);
         if (err.code === 'LIMIT_FILE_SIZE') {
@@ -2841,7 +2841,7 @@ export async function registerRoutes(
         .groupBy(sql`DATE(${analytics.date})`)
         .orderBy(sql`DATE(${analytics.date})`);
 
-      const anomalies: any[] = [];
+      const anomalies: Record<string, unknown>[] = [];
 
       // Simple anomaly detection: look for significant changes
       for (let i = 1; i < metricsData.length; i++) {
@@ -2980,7 +2980,7 @@ export async function registerRoutes(
     const accessibilityRouter = (await import('./routes/accessibility.js')).default;
     app.use('/api/user', accessibilityRouter);
     log('Accessibility routes registered');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load accessibility routes - ${error.message}`);
   }
 
@@ -3016,7 +3016,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const prefs = req.user.preferences as any;
+      const prefs = req.user.preferences as Record<string, unknown>;
       return res.json(prefs?.studio || {});
     } catch (error) {
       logger.warn("Error fetching studio preferences:", error);
@@ -3029,7 +3029,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const currentPrefs = (req.user.preferences as any) || {};
+      const currentPrefs = (req.user.preferences as Record<string, unknown> | null) || {};
       const preferences = { ...currentPrefs, studio: req.body };
       await db.update(users).set({ preferences }).where(eq(users.id, req.user.id));
       return res.json({ success: true, studio: req.body });
@@ -3100,7 +3100,7 @@ export async function registerRoutes(
     try {
       const { audioUpload, storeUploadedFile, handleUploadError } = await import('./middleware/uploadHandler.js');
       
-      audioUpload.single('assetFile')(req, res, async (err: any) => {
+      audioUpload.single('assetFile')(req, res, async (err: unknown) => {
         if (err) {
           return handleUploadError(err, req, res, next);
         }
@@ -3446,7 +3446,7 @@ export async function registerRoutes(
       const days = daysMap[period] ?? 30;
       const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
-      const conditions: any[] = [eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)];
+      const conditions: import("drizzle-orm").SQL<unknown>[] = [eq(royaltyTransactions.userId, userId), gte(royaltyTransactions.createdAt, since)];
       if (platform && platform !== 'all') {
         conditions.push(eq(royaltyTransactions.platform, platform));
       }
@@ -3578,7 +3578,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const user = req.user as any;
+      const user = req.user!;
       const prefs = user.preferences?.payout || {};
       const methods = [];
       if (user.stripeConnectedAccountId) {
@@ -3605,13 +3605,13 @@ export async function registerRoutes(
       const { type, paypalEmail, bankDetails } = req.body;
       if (!type) return res.status(400).json({ message: 'Payment method type required' });
 
-      const user = req.user as any;
+      const user = req.user!;
       const currentPrefs = user.preferences || {};
       const updated = { ...currentPrefs, payout: { ...(currentPrefs.payout || {}) } };
       if (type === 'paypal' && paypalEmail) updated.payout.paypalEmail = paypalEmail;
       if (type === 'bank_transfer' && bankDetails) updated.payout.bankDetails = bankDetails;
 
-      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
+      await db.update(users).set({ preferences: updated } as Record<string, unknown>).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payment method added' });
     } catch (error) {
       logger.warn("Add payment method error:", error);
@@ -3624,7 +3624,7 @@ export async function registerRoutes(
       return res.status(401).json({ message: "Not authenticated" });
     }
     try {
-      const user = req.user as any;
+      const user = req.user!;
       const prefs = user.preferences?.payoutSettings || {};
 
       // Pull the latest submitted tax form to surface taxCountry / taxId
@@ -3635,7 +3635,7 @@ export async function registerRoutes(
         .orderBy(desc(taxForms.submittedAt))
         .limit(1);
 
-      const taxFormData = latestTaxForm?.formData as any;
+      const taxFormData = latestTaxForm?.formData as Record<string, unknown>;
       const taxCountry = taxFormData?.taxCountry ?? taxFormData?.address?.country ?? null;
       const taxId = taxFormData?.taxId ? '***-**-' + String(taxFormData.taxId).slice(-4) : null;
 
@@ -3662,7 +3662,7 @@ export async function registerRoutes(
     }
     try {
       const { minimumPayout, payoutSchedule, preferredMethod } = req.body;
-      const user = req.user as any;
+      const user = req.user!;
       const currentPrefs = user.preferences || {};
       const updated = {
         ...currentPrefs,
@@ -3673,7 +3673,7 @@ export async function registerRoutes(
           ...(preferredMethod && { preferredMethod }),
         },
       };
-      await db.update(users).set({ preferences: updated } as any).where(eq(users.id, req.user.id));
+      await db.update(users).set({ preferences: updated } as Record<string, unknown>).where(eq(users.id, req.user.id));
       return res.json({ success: true, message: 'Payout settings updated' });
     } catch (error) {
       logger.warn("Update payout settings error:", error);
@@ -3910,7 +3910,7 @@ export async function registerRoutes(
       const returnUrl = `${baseUrl}/royalties?setup=complete`;
       const url = await instantPayoutService.createAccountLink(req.user.id, refreshUrl, returnUrl);
       return res.json({ success: true, url });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn("Connect Stripe error:", error);
       if (
         error?.type === 'StripeInvalidRequestError' ||
@@ -3954,7 +3954,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "planName (monthly/yearly/lifetime) is required" });
       }
 
-      const user = req.user as any;
+      const user = req.user!;
 
       // Find or create Stripe customer linked to this user
       let customerId: string | undefined = user.stripeCustomerId;
@@ -4055,7 +4055,7 @@ export async function registerRoutes(
         const chunkPath = pathMod.join(dir, String(chunkIndex).padStart(6, '0') + '.bin');
         await fsPromises.writeFile(chunkPath, req.file.buffer);
         return res.json({ received: Number(chunkIndex), uploadId });
-      } catch (err: any) {
+      } catch (err) {
         logger.warn("[ChunkUpload] Failed to store chunk:", err);
         return res.status(500).json({ message: "Failed to store chunk" });
       }
@@ -4097,7 +4097,7 @@ export async function registerRoutes(
       };
       const contentType = mimeMap[ext] || 'audio/octet-stream';
       const destCategory = category || 'audio';
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       const { storageService } = await import('./services/storageService.js');
       const finalKey = await storageService.uploadFile(assembled, `${destCategory}/${userId}`, filename, contentType);
@@ -4107,7 +4107,7 @@ export async function registerRoutes(
       fsPromises.rm(dir, { recursive: true, force: true }).catch(() => {});
 
       return res.json({ url, key: finalKey, size: assembled.length });
-    } catch (err: any) {
+    } catch (err) {
       logger.warn("[ChunkUpload] Assembly failed:", err);
       return res.status(500).json({ message: "Failed to assemble upload" });
     }
@@ -4121,7 +4121,7 @@ export async function registerRoutes(
     }
     try {
       const { audioData, format, duration, trackId } = req.body;
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       if (!audioData) {
         return res.status(400).json({ message: "audioData is required" });
@@ -4263,7 +4263,7 @@ export async function registerRoutes(
     } else {
       logger.error('[routes] socialMedia direct load: no usable router export (type=' + typeof socialMediaRouter + ')');
     }
-  } catch (e: any) {
+  } catch (e) {
     logger.error({ err: e }, '[routes] socialMedia direct load FAILED');
   }
 
@@ -4455,13 +4455,13 @@ export async function registerRoutes(
       if (result.type === 'router' && result.value) {
         try {
           app.use(path, result.value);
-        } catch (e: any) {
+        } catch (e) {
           log(`Warning: Failed to mount ${name} - ${e.message}`);
         }
       } else if (result.type === 'function' && result.value) {
         try {
           result.value(app);
-        } catch (e: any) {
+        } catch (e) {
           log(`Warning: Failed to setup ${name} - ${e.message}`);
         }
       }
@@ -4561,7 +4561,7 @@ export async function registerRoutes(
         buildId: BUILD_ID,
         subsystems: result.subsystems,
       });
-    } catch (err: any) {
+    } catch (err) {
       res.status(503).json({
         status: 'down',
         timestamp: new Date().toISOString(),
@@ -4691,7 +4691,7 @@ export async function registerRoutes(
       });
 
       res.json({ url: session.url, sessionId: session.id });
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Error creating checkout session:');
       res.status(500).json({ error: 'Failed to create checkout session. Please try again.' });
     }
@@ -4792,7 +4792,7 @@ export async function registerRoutes(
         logger.warn('[PostPayment] Session operation failed after retries:', sessionErr);
         return res.status(500).json({ error: 'Account created but login failed - please sign in.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Error completing registration after payment:');
 
       if (error.type === 'StripeInvalidRequestError') {
@@ -4831,12 +4831,12 @@ export async function registerRoutes(
       try {
         const status = getInfrastructureStatus();
         res.json({ success: true, ...status });
-      } catch (error: any) {
+      } catch (error) {
         res.status(500).json({ success: false, error: 'Failed to get infrastructure status' });
       }
     });
     log('Infrastructure scaling routes registered');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load infrastructure routes - ${error.message}`);
   }
 
@@ -4845,7 +4845,7 @@ export async function registerRoutes(
     const unifiedContentRouter = (await import('./routes/unifiedContent.js')).default;
     app.use('/api/content/generate-unified', unifiedContentRouter);
     log('Loaded route: unifiedContent');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load unifiedContent routes - ${error.message}`);
   }
 
@@ -4854,7 +4854,7 @@ export async function registerRoutes(
     const creativeModelRouter = (await import('./routes/creativeModel.js')).default;
     app.use('/api/content/creative-model', creativeModelRouter);
     log('Loaded route: creativeModel');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load creativeModel routes - ${error.message}`);
   }
 
@@ -4863,7 +4863,7 @@ export async function registerRoutes(
     const collaborationRouter = (await import('./routes/collaboration.js')).default;
     app.use('/api/collaboration', collaborationRouter);
     log('Collaboration routes registered');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load collaboration routes - ${error.message}`);
   }
 
@@ -4872,7 +4872,7 @@ export async function registerRoutes(
     const musicWorkflowRouter = (await import('./routes/musicWorkflowAutomations.js')).default;
     app.use('/api/music-workflow-automations', musicWorkflowRouter);
     log('Loaded route: musicWorkflowAutomations');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load musicWorkflowAutomations routes - ${error.message}`);
   }
 
@@ -4880,7 +4880,7 @@ export async function registerRoutes(
     const fabricRouter = (await import('./routes/fabric.js')).default;
     app.use('/api/fabric', fabricRouter);
     log('Loaded route: fabric');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load fabric routes - ${error.message}`);
   }
 
@@ -4888,7 +4888,7 @@ export async function registerRoutes(
     const labelSubmissionsRouter = (await import('./routes/labelSubmissions.js')).default;
     app.use('/api/label-submissions', labelSubmissionsRouter);
     log('Loaded route: labelSubmissions');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load labelSubmissions routes - ${error.message}`);
   }
 
@@ -4896,7 +4896,7 @@ export async function registerRoutes(
     const radioPitchesRouter = (await import('./routes/radioPitches.js')).default;
     app.use('/api/radio-pitches', radioPitchesRouter);
     log('Loaded route: radioPitches');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load radioPitches routes - ${error.message}`);
   }
 
@@ -4904,7 +4904,7 @@ export async function registerRoutes(
     const venuesRouter = (await import('./routes/venues.js')).default;
     app.use('/api/venues', venuesRouter);
     log('Loaded route: venues');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load venues routes - ${error.message}`);
   }
 
@@ -4912,7 +4912,7 @@ export async function registerRoutes(
     const projectBudgetsRouter = (await import('./routes/projectBudgets.js')).default;
     app.use('/api/project-budgets', projectBudgetsRouter);
     log('Loaded route: projectBudgets');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load projectBudgets routes - ${error.message}`);
   }
 
@@ -4920,7 +4920,7 @@ export async function registerRoutes(
     const sampleClearancesRouter = (await import('./routes/sampleClearances.js')).default;
     app.use('/api/sample-clearances', sampleClearancesRouter);
     log('Loaded route: sampleClearances');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load sampleClearances routes - ${error.message}`);
   }
 
@@ -4928,7 +4928,7 @@ export async function registerRoutes(
     const musicVideosRouter = (await import('./routes/musicVideos.js')).default;
     app.use('/api/music-videos', musicVideosRouter);
     log('Loaded route: musicVideos');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load musicVideos routes - ${error.message}`);
   }
 
@@ -4936,7 +4936,7 @@ export async function registerRoutes(
     const songwritingRouter = (await import('./routes/songwriting.js')).default;
     app.use('/api/songwriting', songwritingRouter);
     log('Loaded route: songwriting');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load songwriting routes - ${error.message}`);
   }
 
@@ -4944,7 +4944,7 @@ export async function registerRoutes(
     const fanCampaignsRouter = (await import('./routes/fanCampaigns.js')).default;
     app.use('/api/fan-campaigns', fanCampaignsRouter);
     log('Loaded route: fanCampaigns');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load fanCampaigns routes - ${error.message}`);
   }
 
@@ -4952,7 +4952,7 @@ export async function registerRoutes(
     const customWorkflowsRouter = (await import('./routes/customWorkflows.js')).default;
     app.use('/api/custom-workflows', customWorkflowsRouter);
     log('Loaded route: customWorkflows');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load customWorkflows routes - ${error.message}`);
   }
 
@@ -4960,7 +4960,7 @@ export async function registerRoutes(
     const assistantRouter = (await import('./routes/assistant.js')).default;
     app.use('/api/assistant', assistantRouter);
     log('Loaded route: assistant');
-  } catch (error: any) {
+  } catch (error) {
     log(`Warning: Could not load assistant routes - ${error.message}`);
   }
 
@@ -4972,7 +4972,7 @@ export async function registerRoutes(
     } else {
       log('Silent deployment system on standby (set ENABLE_SELF_EVOLUTION=true to activate)');
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn(`[routes] FATAL: Silent deployment service failed to initialize - ${error.message}`, error.stack || error.message);
     if (process.env.ENABLE_SELF_EVOLUTION === 'true') {
       throw new Error(`Silent deployment init failed (ENABLE_SELF_EVOLUTION=true): ${error.message}`);

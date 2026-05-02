@@ -742,7 +742,7 @@ export class RoyaltyEngine {
     options?: { limit?: number; offset?: number; status?: string }
   ): Promise<RoyaltyStatement[]> {
     const conditions = [eq(royaltyStatements.userId, userId)];
-    if (options?.status) conditions.push(eq(royaltyStatements.status, options.status as any));
+    if (options?.status) conditions.push(eq(royaltyStatements.status, options.status as Record<string, unknown>));
 
     return await db
       .select()

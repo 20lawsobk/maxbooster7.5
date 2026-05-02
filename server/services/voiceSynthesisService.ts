@@ -268,7 +268,7 @@ export async function analyzeReferenceVoice(audioPath: string): Promise<VoiceCha
     }
 
     return { estimatedPitch, estimatedTempo, energy, suggestedProfileId };
-  } catch (e: any) {
+  } catch (e) {
     logger.warn('[VoiceSynth] Reference analysis failed:', e?.message);
     return { estimatedPitch: 'medium', estimatedTempo: 'medium', energy: 'moderate', suggestedProfileId: 'smooth_narrator' };
   }
@@ -410,7 +410,7 @@ export async function synthesizeVoice(
       profileUsed: profile.id,
       voiceUsed: fliteVoice,
     };
-  } catch (err: any) {
+  } catch (err) {
     const errMsg = err?.stderr?.slice(-500) || err?.message || String(err);
     logger.warn('[VoiceSynth] Synthesis failed:', errMsg);
     return { success: false, error: `Voice synthesis failed: ${errMsg}` };
@@ -476,7 +476,7 @@ export async function synthesizeSegments(
     ], { timeout: 60_000 });
 
     return { success: true, outputPath, profileUsed: options.profileId };
-  } catch (err: any) {
+  } catch (err) {
     return { success: false, error: err?.message || String(err) };
   } finally {
     // Clean up temp segment files

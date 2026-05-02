@@ -258,8 +258,8 @@ class BridgeInsightsService {
           id: randomBytes(8).toString('hex'),
           userId,
           insightType,
-          topHooks: topHooks as any,
-          topTracksByImpact: topTracksByImpact as any,
+          topHooks: topHooks as Record<string, unknown>,
+          topTracksByImpact: topTracksByImpact as Record<string, unknown>,
           generatedAt: new Date(),
         })
         .returning();

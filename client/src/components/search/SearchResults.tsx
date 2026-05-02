@@ -29,7 +29,7 @@ interface SearchResultsProps {
   query: string;
   filters?: Record<string, any>;
   onFilterChange?: (filters: Record<string, any>) => void;
-  onResultClick?: (result: any, type: string) => void;
+  onResultClick?: (result: Record<string, unknown>, type: string) => void;
   showFilters?: boolean;
   initialCategory?: string;
 }

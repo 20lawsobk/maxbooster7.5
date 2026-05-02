@@ -917,7 +917,7 @@ class TaxFormService {
       ['Net Earnings', formatCurrency(summary.netEarnings)],
     ];
 
-    (doc as any).autoTable({
+    (doc as Record<string, unknown>).autoTable({
       startY: y,
       body: summaryData,
       theme: 'plain',
@@ -928,7 +928,7 @@ class TaxFormService {
       },
     });
 
-    y = (doc as any).lastAutoTable.finalY + 15;
+    y = (doc as Record<string, unknown>).lastAutoTable.finalY + 15;
 
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
@@ -944,7 +944,7 @@ class TaxFormService {
       formatCurrency(s.netAmount),
     ]);
 
-    (doc as any).autoTable({
+    (doc as Record<string, unknown>).autoTable({
       startY: y,
       head: [['Source', 'Description', 'Gross', 'Fees', 'Withholding', 'Net']],
       body: sourceData,
@@ -959,7 +959,7 @@ class TaxFormService {
       },
     });
 
-    y = (doc as any).lastAutoTable.finalY + 15;
+    y = (doc as Record<string, unknown>).lastAutoTable.finalY + 15;
 
     if (summary.forms.length > 0) {
       doc.setFontSize(12);
@@ -973,7 +973,7 @@ class TaxFormService {
         f.signatureDate ? new Date(f.signatureDate).toLocaleDateString() : 'Not signed',
       ]);
 
-      (doc as any).autoTable({
+      (doc as Record<string, unknown>).autoTable({
         startY: y,
         head: [['Form Type', 'Status', 'Signed Date']],
         body: formData,

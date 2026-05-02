@@ -418,14 +418,14 @@ export const subatomicCore = new SubatomicCore();
 
 // Express middleware for subatomic compression
 export function subatomicMiddleware() {
-  return async (req: any, res: any, next: any) => {
+  return async (req: Record<string, unknown>, res: Record<string, unknown>, next: Record<string, unknown>) => {
     // Check if client accepts brotli
     const acceptEncoding = req.headers['accept-encoding'] || '';
     
     // Store original send
     const originalSend = res.send.bind(res);
     
-    res.send = async function(body: any) {
+    res.send = async function(body: Record<string, unknown>) {
       if (typeof body === 'string' || Buffer.isBuffer(body)) {
         const input = typeof body === 'string' ? Buffer.from(body) : body;
         

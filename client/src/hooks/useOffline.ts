@@ -97,7 +97,7 @@ export function useOffline(): UseOfflineReturn {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    const connection = (navigator as any).connection;
+    const connection = (navigator as Record<string, unknown>).connection;
     if (connection) {
       const handleConnectionChange = () => {
         const effectiveType = connection.effectiveType;

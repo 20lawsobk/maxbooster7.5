@@ -11,7 +11,7 @@ import * as wav from 'node-wav';
 import FFT from 'fft.js';
 import { logger } from '../logger.js';
 
-let ffmpeg: any = null;
+let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {

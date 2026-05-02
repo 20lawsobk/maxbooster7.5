@@ -721,7 +721,7 @@ class SocialChatbotService {
   async processIncomingMessages(
     messages: ChatbotMessage[],
     userId: string
-  ): Promise<Array<{ message: ChatbotMessage; response: ChatbotResponse; routing: any }>> {
+  ): Promise<Array<{ message: ChatbotMessage; response: ChatbotResponse; routing: Record<string, unknown> }>> {
     const results = [];
 
     for (const message of messages) {

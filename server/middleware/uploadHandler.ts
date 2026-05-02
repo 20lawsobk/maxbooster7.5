@@ -501,7 +501,7 @@ export async function storeSecureUpload(
   file: Express.Multer.File,
   userId: string,
   category: UploadCategory
-): Promise<{ key: string; url: string; processed: boolean; metadata: any }> {
+): Promise<{ key: string; url: string; processed: boolean; metadata: Record<string, unknown> }> {
   const validation = await validateFileBuffer(
     file.buffer,
     file.originalname,

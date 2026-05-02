@@ -59,7 +59,7 @@ export interface RdapDomain {
   registrar:        { name: string; url: string; email: string; abuseEmail: string };
 }
 
-export function buildRdapResponse(row: any, privacyRedact = true): RdapDomain {
+export function buildRdapResponse(row: Record<string, unknown>, privacyRedact = true): RdapDomain {
   const ns  = [
     row.nameserver1 || NS1,
     row.nameserver2 || NS2,
@@ -298,7 +298,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
           WHERE zone_id = $2 AND type = 'NS'
         `, [ns1, rows[0].id]);
       }
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ fqdn, err: e.message }, '[MaxBoosterRegistrar] NS zone record update failed (non-fatal)');
     }
 
@@ -354,7 +354,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
 
     try {
       await pool.query('DELETE FROM dns_zones WHERE domain = $1', [domain]);
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ fqdn, err: e.message }, '[MaxBoosterRegistrar] DNS zone removal on release failed (non-fatal)');
     }
     logger.info({ fqdn: domain, provider: this.name }, '[MaxBoosterRegistrar] Domain released');
@@ -402,7 +402,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
         ok: true,
         message: `${REGISTRAR_NAME} registry operational. Nameservers: ${ALL_NS.join(', ')}.`,
       };
-    } catch (e: any) {
+    } catch (e) {
       return { ok: false, message: `Registry DB unreachable: ${e.message}` };
     }
   }
@@ -454,7 +454,7 @@ export class MaxBoosterRegistrarProvider implements RegistrarProvider {
       );
 
       logger.info({ domain, zoneId, ns: ALL_NS }, '[MaxBoosterRegistrar] DNS zone ensured');
-    } catch (e: any) {
+    } catch (e) {
       logger.warn({ domain, err: e.message }, '[MaxBoosterRegistrar] _ensureDnsZone failed (non-fatal)');
     }
   }

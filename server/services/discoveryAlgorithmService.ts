@@ -436,7 +436,7 @@ export class DiscoveryAlgorithmService {
    * Diversity injection — ensures no more than 2 consecutive results from same genre.
    * Prevents the feed from becoming a mono-genre echo chamber.
    */
-  private diversifyResults<T extends { beat: { metadata: any; category?: string | null }; discoveryScore: number }>(
+  private diversifyResults<T extends { beat: { metadata: Record<string, unknown>; category?: string | null }; discoveryScore: number }>(
     scoredBeats: T[]
   ): T[] {
     const result: T[] = [];
@@ -537,7 +537,7 @@ export class DiscoveryAlgorithmService {
         sql`SELECT user_id FROM user_taste_profiles
             WHERE followed_producers @> ARRAY[${producerId}]::text[]`
       );
-      return (result.rows || []).map((row: any) => row.user_id as string);
+      return (result.rows || []).map((row: Record<string, unknown>) => row.user_id as string);
     } catch (error) {
       logger.warn({ err: error }, 'Error getting producer followers:');
       return [];

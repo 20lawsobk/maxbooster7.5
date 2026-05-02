@@ -109,7 +109,7 @@ export function AIAssistantPanel({ projectId, onApplyChanges }: AIAssistantPanel
       try {
         const res = await apiRequest('GET', `/api/studio/ai-music/suggestions?projectId=${projectId}&genre=${selectedGenre || 'pop'}`);
         const data = await res.json();
-        return data.map((s: any) => ({
+        return data.map((s: Record<string, unknown>) => ({
           id: s.id,
           type: s.priority === 'high' ? 'warning' : s.priority === 'medium' ? 'info' : 'success',
           message: s.suggestion || s.message,

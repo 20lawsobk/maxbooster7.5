@@ -9,7 +9,7 @@ const POCKET_ID = 'ai-model-weights';
 
 class ModelWeightStorage {
   private static instance: ModelWeightStorage;
-  private pocket: any = null;
+  private pocket: Record<string, unknown> | null = null;
   private initialized = false;
 
   static getInstance(): ModelWeightStorage {

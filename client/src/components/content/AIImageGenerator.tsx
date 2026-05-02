@@ -126,7 +126,7 @@ export function AIImageGenerator({
     setResult(null);
 
     try {
-      let data: any;
+      let data: Record<string, unknown>;
 
       if (isMultimodalEndpoint) {
         const mmPlatform = platform === 'instagram_reels' ? 'instagram' : platform;
@@ -142,7 +142,7 @@ export function AIImageGenerator({
           constraints: { styleTags: [selectedStyle, selectedTone] },
         });
         const mmData = await response.json();
-        const imageAsset = (mmData.assets || []).find((a: any) => a.modality === 'image');
+        const imageAsset = (mmData.assets || []).find((a: Record<string, unknown>) => a.modality === 'image');
         if (!imageAsset) throw new Error('No image asset returned');
         data = {
           success: true,

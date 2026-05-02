@@ -37,7 +37,7 @@ const preSavePageSchema = z.object({
 
 router.post('/presave', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const data = preSavePageSchema.parse(req.body);
     const page = await promotionalToolsService.createPreSavePage(userId, data.releaseId, data);
     res.json(page);
@@ -49,7 +49,7 @@ router.post('/presave', requireAuth, async (req: Request, res: Response) => {
 
 router.get('/presave', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const pages = await promotionalToolsService.getUserPreSavePages(userId);
     res.json(pages);
   } catch (error) {
@@ -88,10 +88,10 @@ router.get('/presave/slug/:slug', async (req: Request, res: Response) => {
 
 router.put('/presave/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const page = await promotionalToolsService.updatePreSavePage(req.params.id, userId, req.body);
     res.json(page);
-  } catch (error: any) {
+  } catch (error) {
     if (error?.message === 'Pre-save page not found') {
       return res.status(404).json({ error: 'Pre-save page not found' });
     }
@@ -140,7 +140,7 @@ router.post('/presave/:id/email', async (req: Request, res: Response) => {
 
 router.delete('/presave/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const deleted = await promotionalToolsService.deletePreSavePage(req.params.id, userId);
     if (!deleted) return res.status(404).json({ error: 'Pre-save page not found' });
     res.json({ success: true });
@@ -163,7 +163,7 @@ const promoCardSchema = z.object({
 
 router.post('/promo-cards', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const data = promoCardSchema.parse(req.body);
     const card = await promotionalToolsService.createPromoCard(userId, data.releaseId, data);
     res.json(card);
@@ -175,7 +175,7 @@ router.post('/promo-cards', requireAuth, async (req: Request, res: Response) => 
 
 router.get('/promo-cards', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const cards = await promotionalToolsService.getPromoCards(userId, releaseId);
     res.json(cards);
@@ -188,7 +188,7 @@ router.get('/promo-cards', requireAuth, async (req: Request, res: Response) => {
 router.get('/promo-cards/templates', async (req: Request, res: Response) => {
   try {
     res.json(promotionalToolsService.getPromoCardTemplates());
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in promo card templates:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -196,7 +196,7 @@ router.get('/promo-cards/templates', async (req: Request, res: Response) => {
 
 router.delete('/promo-cards/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const deleted = await promotionalToolsService.deletePromoCard(req.params.id, userId);
     if (!deleted) return res.status(404).json({ error: 'Promo card not found' });
     res.json({ success: true });
@@ -220,7 +220,7 @@ const miniVideoSchema = z.object({
 
 router.post('/mini-videos', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const data = miniVideoSchema.parse(req.body);
     const video = await promotionalToolsService.createMiniVideo(userId, data.releaseId, data);
     res.json(video);
@@ -232,7 +232,7 @@ router.post('/mini-videos', requireAuth, async (req: Request, res: Response) => 
 
 router.get('/mini-videos', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const videos = await promotionalToolsService.getMiniVideos(userId, releaseId);
     res.json(videos);
@@ -244,7 +244,7 @@ router.get('/mini-videos', requireAuth, async (req: Request, res: Response) => {
 
 router.delete('/mini-videos/:id', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const deleted = await promotionalToolsService.deleteMiniVideo(req.params.id, userId);
     if (!deleted) return res.status(404).json({ error: 'Mini video not found' });
     res.json({ success: true });
@@ -264,7 +264,7 @@ const spotifyCanvasSchema = z.object({
 
 router.post('/spotify-canvas', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const data = spotifyCanvasSchema.parse(req.body);
     const canvas = await promotionalToolsService.createSpotifyCanvas(
       userId, data.releaseId, data.trackId, data
@@ -278,7 +278,7 @@ router.post('/spotify-canvas', requireAuth, async (req: Request, res: Response) 
 
 router.get('/spotify-canvas', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const canvases = await promotionalToolsService.getSpotifyCanvases(userId, releaseId);
     res.json(canvases);
@@ -328,7 +328,7 @@ const lyricsSyncSchema = z.object({
 
 router.post('/lyrics-sync', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const data = lyricsSyncSchema.parse(req.body);
     const sync = await promotionalToolsService.createLyricsSync(
       userId, data.releaseId, data.trackId, data
@@ -342,7 +342,7 @@ router.post('/lyrics-sync', requireAuth, async (req: Request, res: Response) => 
 
 router.get('/lyrics-sync', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req.user as any).id;
+    const userId = (req.user as Record<string, unknown>).id;
     const releaseId = req.query.releaseId as string | undefined;
     const syncs = await promotionalToolsService.getLyricsSyncs(userId, releaseId);
     res.json(syncs);
@@ -375,7 +375,7 @@ router.post('/lyrics-sync/:id/submit', requireAuth, async (req: Request, res: Re
 
 router.get('/lyrics-sync/:id/export/lrc', requireAuth, async (req: Request, res: Response) => {
   try {
-    const syncs = await promotionalToolsService.getLyricsSyncs((req.user as any).id);
+    const syncs = await promotionalToolsService.getLyricsSyncs((req.user as Record<string, unknown>).id);
     const sync = syncs.find(s => s.id === req.params.id);
     if (!sync) {
       return res.status(404).json({ error: 'Lyrics sync not found' });
@@ -392,7 +392,7 @@ router.get('/lyrics-sync/:id/export/lrc', requireAuth, async (req: Request, res:
 
 router.get('/lyrics-sync/:id/export/srt', requireAuth, async (req: Request, res: Response) => {
   try {
-    const syncs = await promotionalToolsService.getLyricsSyncs((req.user as any).id);
+    const syncs = await promotionalToolsService.getLyricsSyncs((req.user as Record<string, unknown>).id);
     const sync = syncs.find(s => s.id === req.params.id);
     if (!sync) {
       return res.status(404).json({ error: 'Lyrics sync not found' });

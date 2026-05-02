@@ -165,7 +165,7 @@ export default function DisputeTracker({ className }: DisputeTrackerProps) {
       } else {
         throw data;
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorData = err.body || err;
       toast({
         title: 'Submission Failed',

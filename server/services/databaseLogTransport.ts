@@ -138,15 +138,15 @@ class DatabaseLogTransport {
     } catch (error) {
       this.consecutiveFailures++;
 
-      const pgCode = (error as any)?.cause?.code ?? (error as any)?.code ?? '';
+      const pgCode = (error as Record<string, unknown>)?.cause?.code ?? (error as Record<string, unknown>)?.code ?? '';
 
       // 53100/53300/too_many_connections: pool contention or Neon connection limit.
       // During the startup grace period (~90s) this is a transient boot-burst
       // condition — the pool frees up once initialization completes.  Treat it
       // as a regular retryable failure rather than immediately giving up forever.
       const isTooManyConnections = pgCode === '53100' || pgCode === '53300' ||
-        String((error as any)?.message ?? '').includes('too many connections') ||
-        String((error as any)?.message ?? '').includes('53100');
+        String((error as Record<string, unknown>)?.message ?? '').includes('too many connections') ||
+        String((error as Record<string, unknown>)?.message ?? '').includes('53100');
 
       // Pool exhaustion (53100/53300) is ALWAYS transient — the pool frees itself
       // once in-flight queries complete.  Never permanently disable for connection
@@ -194,7 +194,7 @@ class DatabaseLogTransport {
         }, backoffMs);
         return;
       }
-      const pgDetail = (error as any)?.cause?.detail ?? (error as any)?.detail ?? '';
+      const pgDetail = (error as Record<string, unknown>)?.cause?.detail ?? (error as Record<string, unknown>)?.detail ?? '';
       const errMsg = error instanceof Error ? error.message.slice(0, 200) : String(error).slice(0, 200);
       process.stderr.write(`[DatabaseLogTransport] Failed to persist logs: ${errMsg}${pgCode ? ' PG_CODE=' + pgCode : ''}${pgDetail ? ' DETAIL=' + pgDetail : ''}\n`);
 

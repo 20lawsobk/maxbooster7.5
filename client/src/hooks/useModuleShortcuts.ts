@@ -40,7 +40,7 @@ export function useModuleShortcuts({
         key: shortcut.key,
         modifiers: shortcut.modifiers,
         description: shortcut.description,
-        category: shortcut.category as any,
+        category: shortcut.category as Record<string, unknown>,
         context: module,
         action: shortcut.handler,
       };

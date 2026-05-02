@@ -75,7 +75,7 @@ export function openExternalLink(url: string, options?: {
  */
 export function isPWAStandalone(): boolean {
   return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone === true ||
+         (window.navigator as Record<string, unknown>).standalone === true ||
          document.referrer.includes('android-app://');
 }
 

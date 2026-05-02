@@ -62,7 +62,7 @@ async function verifyProjectOwnership(
 router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -76,8 +76,8 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
       trackIds: data.trackIds,
       exportName: data.exportName,
       format: data.format,
-      sampleRate: data.sampleRate as any,
-      bitDepth: data.bitDepth as any,
+      sampleRate: data.sampleRate as Record<string, unknown>,
+      bitDepth: data.bitDepth as Record<string, unknown>,
       bitrate: data.bitrate,
       normalize: data.normalize,
       normalizationType: data.normalizationType,
@@ -106,7 +106,7 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
         logger.warn({ err: err }, '[Studio] stem export notification error:');
       }
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error starting stem export:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ 
@@ -121,7 +121,7 @@ router.post('/projects/:projectId/stems/export', requireAuth, async (req, res) =
 router.get('/projects/:projectId/stems/status/:exportId', requireAuth, async (req, res) => {
   try {
     const { projectId, exportId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -133,7 +133,7 @@ router.get('/projects/:projectId/stems/status/:exportId', requireAuth, async (re
       success: true,
       ...status,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching export status:');
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
@@ -145,7 +145,7 @@ router.get('/projects/:projectId/stems/status/:exportId', requireAuth, async (re
 router.get('/projects/:projectId/stems/download/:exportId', requireAuth, async (req, res) => {
   try {
     const { projectId, exportId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -163,7 +163,7 @@ router.get('/projects/:projectId/stems/download/:exportId', requireAuth, async (
       fileName: download.fileName,
       fileSize: download.fileSize,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error getting export download:');
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
@@ -178,7 +178,7 @@ router.get('/projects/:projectId/stems/download/:exportId', requireAuth, async (
 router.get('/projects/:projectId/stems/list', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -198,7 +198,7 @@ router.get('/projects/:projectId/stems/list', requireAuth, async (req, res) => {
       limit: queryParams.limit,
       offset: queryParams.offset,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error listing exports:');
     if (error.name === 'ZodError') {
       return res.status(400).json({ 
@@ -213,7 +213,7 @@ router.get('/projects/:projectId/stems/list', requireAuth, async (req, res) => {
 router.delete('/projects/:projectId/stems/:exportId', requireAuth, async (req, res) => {
   try {
     const { projectId, exportId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -225,7 +225,7 @@ router.delete('/projects/:projectId/stems/:exportId', requireAuth, async (req, r
       success: true,
       message: 'Export deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error deleting export:');
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
@@ -237,7 +237,7 @@ router.delete('/projects/:projectId/stems/:exportId', requireAuth, async (req, r
 router.post('/projects/:projectId/stems/:exportId/cancel', requireAuth, async (req, res) => {
   try {
     const { projectId, exportId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -249,7 +249,7 @@ router.post('/projects/:projectId/stems/:exportId/cancel', requireAuth, async (r
       success: true,
       message: 'Export cancelled',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error cancelling export:');
     if (error.message === 'Export not found') {
       return res.status(404).json({ error: 'Export not found' });
@@ -264,7 +264,7 @@ router.post('/projects/:projectId/stems/:exportId/cancel', requireAuth, async (r
 router.get('/projects/:projectId/stems/formats', requireAuth, async (req, res) => {
   try {
     const { projectId } = req.params;
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
 
     if (!await verifyProjectOwnership(projectId, userId)) {
       return res.status(404).json({ error: 'Project not found' });
@@ -349,7 +349,7 @@ router.get('/projects/:projectId/stems/formats', requireAuth, async (req, res) =
         },
       ],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, 'Error fetching export formats:');
     res.status(500).json({ error: 'Failed to fetch export formats' });
   }

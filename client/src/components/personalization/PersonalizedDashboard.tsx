@@ -129,8 +129,8 @@ function StreamsWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const streams = (analytics as any)?.totalStreams || 0;
-  const growth = (analytics as any)?.streamGrowth || 0;
+  const streams = (analytics as Record<string, unknown>)?.totalStreams || 0;
+  const growth = (analytics as Record<string, unknown>)?.streamGrowth || 0;
 
   return (
     <Card className={size === 'small' ? 'p-3' : ''}>
@@ -156,8 +156,8 @@ function RevenueWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const revenue = (analytics as any)?.totalRevenue || 0;
-  const growth = (analytics as any)?.revenueGrowth || 0;
+  const revenue = (analytics as Record<string, unknown>)?.totalRevenue || 0;
+  const growth = (analytics as Record<string, unknown>)?.revenueGrowth || 0;
 
   return (
     <Card className={size === 'small' ? 'p-3' : ''}>
@@ -183,8 +183,8 @@ function SocialReachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const reach = (analytics as any)?.socialReach || 0;
-  const growth = (analytics as any)?.socialGrowth || 0;
+  const reach = (analytics as Record<string, unknown>)?.socialReach || 0;
+  const growth = (analytics as Record<string, unknown>)?.socialGrowth || 0;
 
   return (
     <Card className={size === 'small' ? 'p-3' : ''}>
@@ -210,7 +210,7 @@ function NextReleaseWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  const nextRelease = (releases as any)?.[0];
+  const nextRelease = (releases as Record<string, unknown>)?.[0];
 
   return (
     <Card className={size === 'small' ? 'p-3' : ''}>
@@ -242,7 +242,7 @@ function AICoachWidget({ size }: { size: 'small' | 'medium' | 'large' }) {
     staleTime: 10 * 60 * 1000,
   });
 
-  const topInsight = (insights as any)?.recommendations?.[0];
+  const topInsight = (insights as Record<string, unknown>)?.recommendations?.[0];
 
   return (
     <Card className="border-blue-200 dark:border-blue-800 bg-gradient-to-br from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950">

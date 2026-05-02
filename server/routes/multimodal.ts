@@ -26,7 +26,7 @@ const VALID_PACKS = new Set<PackId>(
 router.post('/generate', requireAuthOnly, async (req: Request, res: Response) => {
   try {
     const body = req.body as Partial<GenerationRequest> & { userId?: string };
-    const userId: string = (req as any).user?.id || body.userId || '';
+    const userId: string = req.user?.id || body.userId || '';
 
     if (!body.input?.payload) {
       return res.status(400).json({ error: 'input.payload is required' });
@@ -63,7 +63,7 @@ router.post('/generate', requireAuthOnly, async (req: Request, res: Response) =>
 
     const pkg = await handleGeneration(genRequest);
     return res.json(pkg);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[POST /multimodal/generate]');
     return res.status(500).json({ error: err.message || 'Generation failed' });
   }

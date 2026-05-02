@@ -134,7 +134,7 @@ export function FlowStateArrangementMarkers({
   
   const markers: Marker[] = useMemo(() => {
     if (currentProjectId && apiMarkers && !markersError) {
-      return apiMarkers.map((m: any) => ({
+      return apiMarkers.map((m: Record<string, unknown>) => ({
         id: m.id,
         name: m.name || 'Marker',
         type: (m.type || 'custom') as MarkerType,
@@ -181,7 +181,7 @@ export function FlowStateArrangementMarkers({
     } else {
       const newMarker: Marker = {
         id: `m${Date.now()}`,
-        ...newMarkerData as any
+        ...(newMarkerData as Record<string, unknown>)
       };
       setMarkers(prev => [...prev, newMarker].sort((a, b) => a.time - b.time));
       setEditingMarker(newMarker);

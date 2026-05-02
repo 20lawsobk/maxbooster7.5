@@ -118,7 +118,7 @@ class VSTPluginBridge extends EventEmitter {
   private isScanning: boolean = false;
   private lastScanTime: Date | null = null;
   private bridgeReady: boolean = false;
-  private desktopConnection: any = null;
+  private desktopConnection: Record<string, unknown> | null = null;
 
   constructor(config: Partial<VSTBridgeConfig> = {}) {
     super();
@@ -197,7 +197,7 @@ class VSTPluginBridge extends EventEmitter {
           result.invalid += plugins.invalid;
           result.plugins.push(...plugins.plugins);
           result.errors.push(...plugins.errors);
-        } catch (error: any) {
+        } catch (error) {
           result.errors.push({ path: scanPath, error: error.message });
         }
       }

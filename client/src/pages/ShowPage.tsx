@@ -221,7 +221,7 @@ export default function ShowPage() {
       const latest = savedSetlists[0];
       setSetlistId(latest.id);
       if (Array.isArray(latest.tracks) && latest.tracks.length > 0) {
-        setSetlist(latest.tracks.map((t: any, i: number) => ({
+        setSetlist(latest.tracks.map((t: Record<string, unknown>, i: number) => ({
           id: String(t.id || i + 1),
           title: t.title,
           artist: t.artist || '',

@@ -152,7 +152,7 @@ class AutopilotPublisher {
   /**
    * Publish content for a single user
    */
-  private async publishForUser(config: any): Promise<AutoPublishResult> {
+  private async publishForUser(config: Record<string, unknown>): Promise<AutoPublishResult> {
     const result: AutoPublishResult = {
       userId: config.userId,
       socialPosts: 0,
@@ -203,7 +203,7 @@ class AutopilotPublisher {
         result.errors.push(`Advertising: ${adResult.error}`);
       }
 
-    } catch (error: any) {
+    } catch (error) {
       result.errors.push(`General: ${error.message}`);
       logger.warn({ err: error }, `Error processing user ${config.userId}:`);
     }
@@ -359,7 +359,7 @@ class AutopilotPublisher {
     }
   }
 
-  private async publishSocialContent(config: any): Promise<{ posts: number; error?: string }> {
+  private async publishSocialContent(config: Record<string, unknown>): Promise<{ posts: number; error?: string }> {
     try {
       const userId = config.userId;
       const platforms: string[] = config.platforms && config.platforms.length > 0
@@ -567,7 +567,7 @@ class AutopilotPublisher {
       if (resolvedMediaType !== 'text') {
         const generatedAsset = await aiContentService.generateContent({
           prompt: finalText,
-          platform: targetPlatform as any,
+          platform: targetPlatform as Record<string, unknown>,
           format: resolvedMediaType,
           tone: 'creative',
           length: 'medium',
@@ -612,7 +612,7 @@ class AutopilotPublisher {
       );
 
       return { posts: 1 };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Error in publishSocialContent:');
       return { posts: 0, error: error.message };
     }
@@ -621,7 +621,7 @@ class AutopilotPublisher {
   /**
    * Publish advertising campaigns for a user
    */
-  private async publishAdvertisingCampaigns(config: any): Promise<{ campaigns: number; error?: string }> {
+  private async publishAdvertisingCampaigns(config: Record<string, unknown>): Promise<{ campaigns: number; error?: string }> {
     try {
       const userId = config.userId;
 
@@ -665,7 +665,7 @@ class AutopilotPublisher {
       }
 
       // Pick the best recommendation
-      const bestCampaign = recommendations.reduce((best: any, current: any) => {
+      const bestCampaign = recommendations.reduce((best: Record<string, unknown>, current: Record<string, unknown>) => {
         return (current.predictedROI || 0) > (best.predictedROI || 0) ? current : best;
       });
 
@@ -684,7 +684,7 @@ class AutopilotPublisher {
       if (bestCampaign.mediaType !== 'text') {
         const generatedAsset = await aiContentService.generateContent({
           prompt: bestCampaign.content,
-          platform: bestCampaign.platforms[0] as any,
+          platform: bestCampaign.platforms[0] as Record<string, unknown>,
           format: bestCampaign.mediaType,
           tone: 'promotional',
           length: 'medium',
@@ -741,7 +741,7 @@ class AutopilotPublisher {
       logger.info(`✅ User ${userId}: Created ${mediaUrl ? bestCampaign.mediaType : 'text'} ad campaign ${campaign.id} for ${primaryPlatform} at ${nextOptimalTime.toISOString()} (confidence: ${confidence.toFixed(2)}, ROI: ${bestCampaign.predictedROI.toFixed(2)}x)${mediaUrl ? ` with asset: ${mediaUrl}` : ''}`);
       
       return { campaigns: 1 };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Error in publishAdvertisingCampaigns:');
       return { campaigns: 0, error: error.message };
     }
@@ -760,7 +760,7 @@ class AutopilotPublisher {
    *   platform-specific time slot — timing quality is NOT lost, just decoupled from
    *   the "should we generate now" gate.
    */
-  private shouldPostNow(config: any): boolean {
+  private shouldPostNow(config: Record<string, unknown>): boolean {
     const frequency = config.postingFrequency || 'daily';
     const userId = config.userId;
     const now = new Date();

@@ -385,7 +385,7 @@ interface PlatformData {
 
 interface DistroPlatform extends PlatformData {
   id: string;
-  icon: any;
+  icon: React.ReactNode;
   color: string;
   earnings: number;
 }
@@ -518,7 +518,7 @@ function PlaylistPitchingContent() {
   });
 
   const createPitchMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const response = await apiRequest('POST', '/api/playlist-pitching', data);
       return response.json();
     },
@@ -678,7 +678,7 @@ function ShowsContent() {
   });
 
   const createShowMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest("POST", "/api/shows", data);
       return res.json();
     },
@@ -799,7 +799,7 @@ function VenueBookingCRM() {
   const { data: stats } = useQuery<any>({ queryKey: ['/api/venues/stats'] });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/venues', { ...data, capacity: data.capacity ? parseInt(data.capacity) : undefined });
       return res.json();
     },
@@ -878,7 +878,7 @@ function VenueBookingCRM() {
           </div>
         ) : (
           <div className="space-y-2">
-            {venues.map((v: any) => (
+            {venues.map((v: Record<string, unknown>) => (
               <div key={v.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-gray-50 transition-colors">
                 <div>
                   <p className="font-medium text-sm">{v.venueName}</p>
@@ -908,7 +908,7 @@ function SyncLicensingContent() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/sync-licensing', data);
       return res.json();
     },
@@ -1276,7 +1276,7 @@ export default function Distribution() {
   });
 
   const updateReleaseMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       const response = await apiRequest('PATCH', `/api/distribution/releases/${id}`, data);
       return response.json();
     },
@@ -1520,10 +1520,10 @@ export default function Distribution() {
           
           // Prepare table data from actual releases
           const releases = releasesData?.releases || [];
-          const tableData = releases.map((release: any) => [
+          const tableData = releases.map((release: Record<string, unknown>) => [
             release.title || 'Untitled',
-            (release.metadata as any)?.artistName || release.artistName || 'Unknown Artist',
-            (release.metadata as any)?.primaryGenre || release.genre || 'N/A',
+            (release.metadata as Record<string, unknown>)?.artistName || release.artistName || 'Unknown Artist',
+            (release.metadata as Record<string, unknown>)?.primaryGenre || release.genre || 'N/A',
             release.releaseDate ? new Date(release.releaseDate).toLocaleDateString() : 'Not Set',
             release.status || 'Draft',
             release.platforms?.length || 0,
@@ -1540,18 +1540,18 @@ export default function Distribution() {
           });
           
           // Add summary
-          const finalY = (doc as any).lastAutoTable?.finalY || 60;
+          const finalY = (doc as Record<string, unknown>).lastAutoTable?.finalY || 60;
           doc.setFontSize(12);
           doc.text('Summary', 14, finalY + 15);
           doc.setFontSize(10);
           doc.text(`Total Releases: ${releases.length}`, 14, finalY + 23);
           doc.text(
-            `Active Releases: ${releases.filter((r: any) => r.status === 'published').length}`,
+            `Active Releases: ${releases.filter((r: Record<string, unknown>) => r.status === 'published').length}`,
             14,
             finalY + 29
           );
           doc.text(
-            `Draft Releases: ${releases.filter((r: any) => r.status === 'draft').length}`,
+            `Draft Releases: ${releases.filter((r: Record<string, unknown>) => r.status === 'draft').length}`,
             14,
             finalY + 35
           );
@@ -2100,20 +2100,20 @@ return (
                             {release.title}
                           </h3>
                           <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                            {(release.metadata as any)?.artistName || release.artistName || '—'}
+                            {(release.metadata as Record<string, unknown>)?.artistName || release.artistName || '—'}
                           </p>
                           <div className="flex items-center space-x-2">
-                            {(release.metadata as any)?.releaseType && (
+                            {(release.metadata as Record<string, unknown>)?.releaseType && (
                               <Badge variant="outline" className="text-xs capitalize">
-                                {(release.metadata as any).releaseType}
+                                {(release.metadata as Record<string, unknown>).releaseType}
                               </Badge>
                             )}
-                            {(release.metadata as any)?.primaryGenre && (
+                            {(release.metadata as Record<string, unknown>)?.primaryGenre && (
                               <Badge variant="outline" className="text-xs">
-                                {(release.metadata as any).primaryGenre}
+                                {(release.metadata as Record<string, unknown>).primaryGenre}
                               </Badge>
                             )}
-                            {((release.metadata as any)?.isExplicit || release.isExplicit) && (
+                            {((release.metadata as Record<string, unknown>)?.isExplicit || release.isExplicit) && (
                               <Badge variant="destructive" className="text-xs">
                                 Explicit
                               </Badge>
@@ -2149,7 +2149,7 @@ return (
                           </div>
                           <div className="flex items-center space-x-1">
                             <Globe className="w-4 h-4" />
-                            <span>{(release.metadata as any)?.upcCode || release.upcCode || '—'}</span>
+                            <span>{(release.metadata as Record<string, unknown>)?.upcCode || release.upcCode || '—'}</span>
                           </div>
                         </div>
 
@@ -2175,9 +2175,9 @@ return (
                               setSelectedRelease(release);
                               setEditReleaseForm({
                                 title: release.title,
-                                artistName: (release.metadata as any)?.artistName || release.artistName || '',
+                                artistName: (release.metadata as Record<string, unknown>)?.artistName || release.artistName || '',
                                 releaseDate: release.releaseDate ? new Date(release.releaseDate).toISOString().split('T')[0] : '',
-                                primaryGenre: (release.metadata as any)?.primaryGenre || '',
+                                primaryGenre: (release.metadata as Record<string, unknown>)?.primaryGenre || '',
                               });
                               setShowEditRelease(true);
                             }}
@@ -3315,7 +3315,7 @@ return (
                           </div>
                           <div className="flex-1">
                             <p className="font-medium">{release.title}</p>
-                            <p className="text-sm text-muted-foreground">{(release.metadata as any)?.artistName || release.artistName || '—'}</p>
+                            <p className="text-sm text-muted-foreground">{(release.metadata as Record<string, unknown>)?.artistName || release.artistName || '—'}</p>
                           </div>
                           <Badge
                             variant={release.status === 'live' ? 'default' : release.status === 'processing' ? 'secondary' : 'outline'}
@@ -4163,7 +4163,7 @@ return (
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Artist</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any)?.artistName || '—'}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>)?.artistName || '—'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Status</p>
@@ -4173,11 +4173,11 @@ return (
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Release Type</p>
-                    <p className="font-medium capitalize">{(selectedRelease.metadata as any)?.releaseType || '—'}</p>
+                    <p className="font-medium capitalize">{(selectedRelease.metadata as Record<string, unknown>)?.releaseType || '—'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Genre</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any)?.primaryGenre || '—'}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>)?.primaryGenre || '—'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Release Date</p>
@@ -4189,31 +4189,31 @@ return (
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Language</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any)?.language || '—'}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>)?.language || '—'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Copyright Owner</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any)?.copyrightOwner || '—'}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>)?.copyrightOwner || '—'}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Copyright Year</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any)?.copyrightYear || '—'}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>)?.copyrightYear || '—'}</p>
                   </div>
                 </div>
-                {(selectedRelease.metadata as any)?.selectedPlatforms?.length > 0 && (
+                {(selectedRelease.metadata as Record<string, unknown>)?.selectedPlatforms?.length > 0 && (
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-2">Platforms</p>
                     <div className="flex flex-wrap gap-1">
-                      {(selectedRelease.metadata as any).selectedPlatforms.map((p: string) => (
+                      {(selectedRelease.metadata as Record<string, unknown>).selectedPlatforms.map((p: string) => (
                         <Badge key={p} variant="outline" className="text-xs capitalize">{p}</Badge>
                       ))}
                     </div>
                   </div>
                 )}
-                {(selectedRelease.metadata as any)?.labelName && (
+                {(selectedRelease.metadata as Record<string, unknown>)?.labelName && (
                   <div>
                     <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide mb-1">Label</p>
-                    <p className="font-medium">{(selectedRelease.metadata as any).labelName}</p>
+                    <p className="font-medium">{(selectedRelease.metadata as Record<string, unknown>).labelName}</p>
                   </div>
                 )}
               </div>
@@ -4225,9 +4225,9 @@ return (
                 if (selectedRelease) {
                   setEditReleaseForm({
                     title: selectedRelease.title,
-                    artistName: (selectedRelease.metadata as any)?.artistName || '',
+                    artistName: (selectedRelease.metadata as Record<string, unknown>)?.artistName || '',
                     releaseDate: selectedRelease.releaseDate ? new Date(selectedRelease.releaseDate).toISOString().split('T')[0] : '',
-                    primaryGenre: (selectedRelease.metadata as any)?.primaryGenre || '',
+                    primaryGenre: (selectedRelease.metadata as Record<string, unknown>)?.primaryGenre || '',
                   });
                   setShowEditRelease(true);
                 }
@@ -4374,7 +4374,7 @@ function ARSubmissionsContent() {
   const { data: stats } = useQuery<any>({ queryKey: ['/api/label-submissions/stats'] });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/label-submissions', data); return res.json(); },
+    mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/label-submissions', data); return res.json(); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/label-submissions'] });
       setIsNewOpen(false);
@@ -4384,7 +4384,7 @@ function ARSubmissionsContent() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/label-submissions/${id}`, { status }); return res.json(); },
+    mutationFn: async ({ id, status }: { id: string; status: string }) => { const res = await apiRequest('PUT', `/api/label-submissions/${id}`, { status }); return res.json(); },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/label-submissions'] }),
   });
 
@@ -4477,7 +4477,7 @@ function ARSubmissionsContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {submissions.map((sub: any) => (
+              {submissions.map((sub: Record<string, unknown>) => (
                 <div key={sub.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -4525,7 +4525,7 @@ function SampleClearanceContent() {
   const { data: stats } = useQuery<any>({ queryKey: ['/api/sample-clearances/stats'] });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/sample-clearances', data); return res.json(); },
+    mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/sample-clearances', data); return res.json(); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/sample-clearances'] });
       setIsNewOpen(false);
@@ -4534,7 +4534,7 @@ function SampleClearanceContent() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/sample-clearances/${id}`, { status }); return res.json(); },
+    mutationFn: async ({ id, status }: { id: string; status: string }) => { const res = await apiRequest('PUT', `/api/sample-clearances/${id}`, { status }); return res.json(); },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/sample-clearances'] }),
   });
 
@@ -4626,7 +4626,7 @@ function SampleClearanceContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {clearances.map((c: any) => (
+              {clearances.map((c: Record<string, unknown>) => (
                 <div key={c.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div className="flex-1">
                     <p className="font-medium text-sm">{c.trackTitle} <span className="text-gray-400">uses</span> "{c.sampleSource}"</p>
@@ -4762,7 +4762,7 @@ function MusicVideosContent() {
       } else {
         throw new Error(data.error || 'Failed to start generation');
       }
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
@@ -4925,7 +4925,7 @@ function MusicVideosContent() {
               <Select value={voiceProfile} onValueChange={setVoiceProfile}>
                 <SelectTrigger className="w-40 h-7 text-xs shrink-0"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {(voiceProfiles.length ? voiceProfiles : FALLBACK_VOICES).map((v: any) => (
+                  {(voiceProfiles.length ? voiceProfiles : FALLBACK_VOICES).map((v: Record<string, unknown>) => (
                     <SelectItem key={v.id} value={v.id}>{v.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -5004,7 +5004,7 @@ function MusicVideosContent() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {libraryVideos.map((v: any) => (
+              {libraryVideos.map((v: Record<string, unknown>) => (
                 <div key={v.id} className="flex items-center justify-between p-3 border border-gray-100 dark:border-gray-800 rounded-lg">
                   <div>
                     <p className="text-sm font-medium">{v.trackTitle || v.songTitle || 'Untitled'}</p>

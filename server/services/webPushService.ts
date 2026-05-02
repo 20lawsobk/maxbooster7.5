@@ -151,7 +151,7 @@ class WebPushService {
           serializedPayload
         );
         sent++;
-      } catch (error: any) {
+      } catch (error) {
         failed++;
         if (error.statusCode === 410 || error.statusCode === 404) {
           logger.info(`Removing expired push subscription: ${sub.endpoint.substring(0, 50)}...`);

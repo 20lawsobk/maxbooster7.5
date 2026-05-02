@@ -162,7 +162,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { setupRepeatableJobs } = await import('./autonomousJobScheduler.js');
           await setupRepeatableJobs();
           logger.info('[ChainFixer] Repeatable jobs re-registered successfully');
-        } catch (err: any) {
+        } catch (err) {
           logger.warn(`[ChainFixer] Repeatable job re-registration attempt failed: ${err.message}`);
           throw err;
         }
@@ -210,7 +210,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { initializeFabric } = await import('../pocket-dimension/fabric/index.js');
           await initializeFabric();
           logger.info('[ChainFixer] PocketFabric re-initialized successfully');
-        } catch (err: any) {
+        } catch (err) {
           logger.warn(`[ChainFixer] PocketFabric re-init failed: ${err.message}`);
           throw err;
         }
@@ -512,7 +512,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           } else {
             logger.info('[ChainFixer] Autonomous system still running — no restart needed');
           }
-        } catch (err: any) {
+        } catch (err) {
           logger.warn(`[ChainFixer] Autonomous restart attempt failed: ${err.message}`);
         }
       },
@@ -537,7 +537,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           const { pool } = await import('../db.js');
           await pool.query('SELECT 1');
           logger.info('[ChainFixer] Session store — DB pool responsive; sessions will auto-recover');
-        } catch (err: any) {
+        } catch (err) {
           logger.warn(`[ChainFixer] Session store — DB pool also failing: ${err.message}`);
         }
       },
@@ -590,7 +590,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         logger.warn('[ChainFixer] Filesystem error detected — GC triggered to release buffers; check disk space and file descriptor limits');
         try {
           const { distributedCache } = await import('./distributedCacheService.js');
-          await (distributedCache as any)?.evictExpired?.();
+          await (distributedCache as Record<string, unknown>)?.evictExpired?.();
           logger.info('[ChainFixer] Cache evicted to reduce storage pressure after filesystem error');
         } catch { /* non-critical */ }
       },
@@ -661,7 +661,7 @@ class ChainErrorAutoFixer extends EventEmitter {
         if (typeof global.gc === 'function') { try { global.gc(); } catch { /* ignore */ } }
         try {
           const { distributedCache } = await import('./distributedCacheService.js');
-          await (distributedCache as any)?.flush?.();
+          await (distributedCache as Record<string, unknown>)?.flush?.();
         } catch { /* non-critical */ }
         logger.warn('[ChainFixer] OOM detected — emergency GC + cache flush executed. Process may be unstable until it is recycled by the cluster.');
       },
@@ -917,7 +917,7 @@ class ChainErrorAutoFixer extends EventEmitter {
     let matched = false;
 
     for (const pattern of this.patterns) {
-      if (!pattern.levels.includes(entry.level as any)) continue;
+      if (!pattern.levels.includes(entry.level as Record<string, unknown>)) continue;
       if (!pattern.matchers.some(r => r.test(msg))) continue;
       matched = true;
       await this.triggerFix(pattern, msg);
@@ -957,7 +957,7 @@ class ChainErrorAutoFixer extends EventEmitter {
           this.triggerFix(pattern, msg).catch(() => { /* best-effort */ });
           // Non-fatal known errors — swallow them so the default handler never fires
           if (pattern.severity === 'low' || pattern.severity === 'medium') {
-            process.emit('_chainFixerAbsorbed' as any, err);
+            process.emit('_chainFixerAbsorbed' as Record<string, unknown>, err);
           }
         }
       }
@@ -1119,7 +1119,7 @@ class ChainErrorAutoFixer extends EventEmitter {
 
       // ── OFFENSIVE: chain prediction — pattern fired, pre-empt known downstream ──
       this._predictAndPreemptChain(pattern.id);
-    } catch (err: any) {
+    } catch (err) {
       st.failCount++;
       st.lastFixResult = 'failed';
       entry.result = 'failed';
@@ -1311,7 +1311,7 @@ class ChainErrorAutoFixer extends EventEmitter {
       const { autonomousService } = await import('./autonomousService.js');
       const status = autonomousService.getStatus();
       const now = Date.now();
-      const lastActivity = (status as any).lastActivityAt ?? 0;
+      const lastActivity = (status as Record<string, unknown>).lastActivityAt ?? 0;
       const stalledMs = lastActivity > 0 ? now - lastActivity : 0;
       // If supposedly running but no activity for > 10 min, it has silently stalled
       if (status.isRunning && stalledMs > 10 * 60_000) {

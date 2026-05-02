@@ -150,11 +150,11 @@ class AutoPostingServiceV2 {
               (post.content.text || '').slice(0, 100)
             ).catch(err => logger.warn('[AutoPost] notification error (non-fatal):', err?.message));
           }
-        } catch (error: any) {
+        } catch (error) {
           logger.warn({ err: error }, `Failed to process auto-post ${post.id}:`);
           await storage.updateScheduledPost(post.id, { status: 'failed' });
         }
-      } catch (error: any) {
+      } catch (error) {
         logger.warn('⚠️  Auto-posting worker poll error:', error?.message || error);
       }
     }, 2000);
@@ -168,7 +168,7 @@ class AutoPostingServiceV2 {
     content: PostContent,
     scheduledTime: Date,
     createdBy: 'social_autopilot' | 'advertising_autopilot' | 'manual' = 'manual',
-    viralPrediction?: any,
+    viralPrediction?: Record<string, unknown>,
     idempotencyKey?: string
   ): Promise<ScheduledPost> {
     const postId = idempotencyKey
@@ -240,7 +240,7 @@ class AutoPostingServiceV2 {
       try {
         const result = await this.postToPlatform(user, platform, post.content);
         results.push(result);
-      } catch (error: any) {
+      } catch (error) {
         logger.warn({ err: error }, `Failed to post to ${platform}:`);
         results.push({
           platform,
@@ -566,7 +566,7 @@ class AutoPostingServiceV2 {
     );
     const personUrn = `urn:li:person:${profileResponse.data.sub}`;
 
-    let mediaAssets: any[] = [];
+    let mediaAssets: unknown[] = [];
 
     if (content.mediaUrl && content.mediaType === 'image') {
       const registerResponse = await axios.post(
@@ -610,7 +610,7 @@ class AutoPostingServiceV2 {
       }
     }
 
-    const postData: any = {
+    const postData: Record<string, unknown> = {
       author: personUrn,
       lifecycleState: 'PUBLISHED',
       specificContent: {
@@ -665,7 +665,7 @@ class AutoPostingServiceV2 {
     const threadsUsername = userResponse.data.username;
 
     let mediaType = 'TEXT';
-    const containerData: any = {
+    const containerData: Record<string, unknown> = {
       text: caption.slice(0, 500),
     };
 
@@ -753,7 +753,7 @@ class AutoPostingServiceV2 {
       throw new Error('No Google Business location found');
     }
 
-    const postData: any = {
+    const postData: Record<string, unknown> = {
       languageCode: 'en-US',
       summary: postText.slice(0, 1500),
       topicType: 'STANDARD',

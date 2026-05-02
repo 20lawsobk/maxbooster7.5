@@ -116,7 +116,7 @@ export default function PlaylistPitching() {
   });
 
   const createPitchMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const response = await apiRequest('POST', '/api/playlist-pitching', data);
       return response.json();
     },

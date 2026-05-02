@@ -110,7 +110,7 @@ interface AIGenerateResult {
   cta: string;
   caption: string;
   hashtags: string[];
-  content?: any;
+  content?: Record<string, unknown>;
 }
 
 type PackId = 'singlereleasefull_pack' | 'announcement_pack' | 'tourdatespack' | 'evergreenbrandpack';
@@ -315,7 +315,7 @@ export function ContentGenerator() {
     onError: (error: Error) => {
       toast({
         title: 'Generation Failed',
-        description: (error as any).message || 'Unable to generate content',
+        description: (error as Record<string, unknown>).message || 'Unable to generate content',
         variant: 'destructive',
       });
     },
@@ -338,7 +338,7 @@ export function ContentGenerator() {
     onError: (error: Error) => {
       toast({
         title: 'Generation Failed',
-        description: (error as any).message || 'Unable to generate content',
+        description: (error as Record<string, unknown>).message || 'Unable to generate content',
         variant: 'destructive',
       });
     },
@@ -374,7 +374,7 @@ export function ContentGenerator() {
 
   const generateVisualMutation = useMutation({
     mutationFn: async () => {
-      const body: any = {
+      const body: Record<string, unknown> = {
         topic: contentPrompt || urlAnalysis?.title || '',
         platform: selectedPlatform,
         tone: selectedTone,
@@ -401,7 +401,7 @@ export function ContentGenerator() {
         toast({ title: 'Visual Generation Failed', description: data.message, variant: 'destructive' });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Visual Generation Failed', description: error.message || 'Unable to generate visual spec', variant: 'destructive' });
     },
   });
@@ -424,7 +424,7 @@ export function ContentGenerator() {
         description: `Created ${count} asset${count !== 1 ? 's' : ''} across ${packPlatforms.length} platform${packPlatforms.length !== 1 ? 's' : ''}`,
       });
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({
         title: 'Pack Generation Failed',
         description: err.message || 'Unable to generate content pack',
@@ -604,8 +604,7 @@ export function ContentGenerator() {
     return () => {
       if (promptUrlDebounce.current) clearTimeout(promptUrlDebounce.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contentPrompt]);
+  }, [contentPrompt, selectedPlatform]);
 
   const handleUrlImport = async () => {
     if (!importUrl.trim()) return;
@@ -632,7 +631,7 @@ export function ContentGenerator() {
         title: 'URL imported',
         description: `Loaded from ${analysis.domain || analysis.platform}`,
       });
-    } catch (err: any) {
+    } catch (err) {
       toast({
         title: 'Import failed',
         description: err.message || 'Could not analyze that URL',

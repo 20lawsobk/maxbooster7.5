@@ -2,7 +2,7 @@ import path from 'path';
 import fs from 'fs/promises';
 import { randomBytes } from 'crypto';
 import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
+const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
 // ============================================================================
 // TYPE DEFINITIONS
@@ -497,7 +497,7 @@ export async function analyzeAudioForGeneration(audioPath: string): Promise<Musi
     const wav = new WaveFile.WaveFile(audioBuffer);
     
     // Get audio samples for analysis
-    const samplesData = wav.getSamples(true) as any;
+    const samplesData = wav.getSamples(true) as Record<string, unknown>;
     const samples = samplesData instanceof Float32Array 
       ? samplesData 
       : new Float32Array(samplesData);

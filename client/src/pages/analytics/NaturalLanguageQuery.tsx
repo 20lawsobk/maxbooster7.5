@@ -31,7 +31,7 @@ import {
 interface QueryResult {
   type: 'chart' | 'metric' | 'table' | 'text';
   title: string;
-  data: any;
+  data: Record<string, unknown>;
   summary: string;
 }
 
@@ -57,7 +57,7 @@ const exampleQueries = [
 ];
 
 
-const ResultChart = memo(({ data }: { data: any }) => {
+const ResultChart = memo(({ data }: { data: Record<string, unknown> }) => {
   if (data.chartType === 'line') {
     const max = Math.max(...data.values);
     const min = Math.min(...data.values);
@@ -112,7 +112,7 @@ const ResultChart = memo(({ data }: { data: any }) => {
   if (data.chartType === 'bar') {
     return (
       <div className="space-y-3">
-        {data.items.map((item: any, idx: number) => (
+        {data.items.map((item: Record<string, unknown>, idx: number) => (
           <div key={idx} className="space-y-1">
             <div className="flex justify-between text-sm">
               <span>{item.name}</span>
@@ -135,7 +135,7 @@ const ResultChart = memo(({ data }: { data: any }) => {
   if (data.chartType === 'comparison') {
     return (
       <div className="grid grid-cols-2 gap-6">
-        {data.platforms.map((platform: any, idx: number) => (
+        {data.platforms.map((platform: Record<string, unknown>, idx: number) => (
           <div key={idx} className="text-center p-4 rounded-lg" style={{ backgroundColor: `${platform.color}15` }}>
             <p className="font-bold text-lg" style={{ color: platform.color }}>{platform.name}</p>
             <div className="mt-4 space-y-2">
@@ -162,7 +162,7 @@ const ResultChart = memo(({ data }: { data: any }) => {
     const colors = ['#6366f1', '#ec4899', '#22c55e', '#f59e0b', '#06b6d4'];
     return (
       <div className="grid grid-cols-5 gap-2">
-        {data.segments.map((segment: any, idx: number) => (
+        {data.segments.map((segment: Record<string, unknown>, idx: number) => (
           <div key={idx} className="text-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900">
             <div 
               className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold"
@@ -182,7 +182,7 @@ const ResultChart = memo(({ data }: { data: any }) => {
 });
 ResultChart.displayName = 'ResultChart';
 
-const ResultMetric = memo(({ data }: { data: any }) => {
+const ResultMetric = memo(({ data }: { data: Record<string, unknown> }) => {
   return (
     <div className="flex items-center justify-center gap-8 py-8">
       <div className="text-center">
@@ -211,7 +211,7 @@ const ResultMetric = memo(({ data }: { data: any }) => {
 });
 ResultMetric.displayName = 'ResultMetric';
 
-const ResultTable = memo(({ data }: { data: any }) => {
+const ResultTable = memo(({ data }: { data: Record<string, unknown> }) => {
   const items = data.tracks || data.platforms || [];
   const isTrackData = !!data.tracks;
 
@@ -227,7 +227,7 @@ const ResultTable = memo(({ data }: { data: any }) => {
           </tr>
         </thead>
         <tbody>
-          {items.map((item: any, idx: number) => (
+          {items.map((item: Record<string, unknown>, idx: number) => (
             <motion.tr
               key={idx}
               initial={{ opacity: 0, x: -10 }}

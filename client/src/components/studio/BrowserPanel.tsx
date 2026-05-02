@@ -833,7 +833,7 @@ export function BrowserPanel({ projectId = null, onTrackCreated }: BrowserPanelP
 
       <Tabs
         value={browserActiveTab}
-        onValueChange={(value) => setBrowserActiveTab(value as any)}
+        onValueChange={(value) => setBrowserActiveTab(value as Record<string, unknown>)}
         className="flex-1 flex flex-col min-h-0"
       >
         <TabsList

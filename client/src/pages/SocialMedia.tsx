@@ -136,7 +136,7 @@ import {
 interface SocialPlatform {
   id: string;
   name: string;
-  icon: any;
+  icon: React.ReactNode;
   color: string;
   isConnected: boolean;
   followers: number;
@@ -649,7 +649,7 @@ export default function SocialMedia() {
     if (id === 'google_business')                return 'googlebusiness';
     return id;
   };
-  const mapAssetsToGeneratedContent = (assets: any[], filterModality?: string): GeneratedContent[] => {
+  const mapAssetsToGeneratedContent = (assets: unknown[], filterModality?: string): GeneratedContent[] => {
     const hashtagRe = /#[\w\u0080-\uFFFF]+/g;
     const emojiRe   = /\p{Emoji_Presentation}|\p{Emoji}\uFE0F/gu;
 
@@ -679,8 +679,8 @@ export default function SocialMedia() {
     };
 
     return (assets || [])
-      .filter((a: any) => !filterModality || a.modality === filterModality)
-      .map((a: any) => {
+      .filter((a: Record<string, unknown>) => !filterModality || a.modality === filterModality)
+      .map((a: Record<string, unknown>) => {
         const m       = a.metadata ?? {};
         const isMedia = a.modality === 'image' || a.modality === 'audio' || a.modality === 'video';
         const rawText = isMedia ? (m.caption || '') : (a.payload || '');
@@ -1768,7 +1768,7 @@ return (
                       <AIImageGenerator
                         platform={(selectedPlatforms[0] || 'instagram') as AIImagePlatform}
                         topic={postContent || ''}
-                        tone={selectedTone as any}
+                        tone={selectedTone as Record<string, unknown>}
                         goal="growth"
                         artistName={user?.displayName || user?.username || ''}
                         endpoint="/api/social/generate-image"
@@ -3574,7 +3574,7 @@ function PressKitTabContent() {
   });
 
   const updatePressKitMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('PUT', '/api/press-kit', data);
       return res.json();
     },
@@ -3623,10 +3623,10 @@ function PressKitTabContent() {
       formData.append('file', file);
       formData.append('category', 'press-kit');
 
-      const res = await uploadWithProgress('/api/storage/upload', formData) as any;
+      const res = await uploadWithProgress('/api/storage/upload', formData) as Record<string, unknown>;
       const photoUrl = res.file.url;
 
-      const currentPhotos = (pressKit?.photos as any[]) || [];
+      const currentPhotos = (pressKit?.photos as unknown[]) || [];
       updatePressKitMutation.mutate({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: '' }],
@@ -3639,7 +3639,7 @@ function PressKitTabContent() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as any[])];
+    const currentPhotos = [...(pressKit?.photos as unknown[])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
@@ -3719,7 +3719,7 @@ function PressKitTabContent() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {pressKit?.photos?.map((photo: any, index: number) => (
+                  {pressKit?.photos?.map((photo: Record<string, unknown>, index: number) => (
                     <div key={index} className="group relative aspect-square rounded-md overflow-hidden border">
                       <img src={photo.url} alt="Press" className="h-full w-full object-cover" />
                       <button
@@ -3827,7 +3827,7 @@ function RadioPitchingContent() {
   const { data: stats } = useQuery<any>({ queryKey: ['/api/radio-pitches/stats'] });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/radio-pitches', data); return res.json(); },
+    mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/radio-pitches', data); return res.json(); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/radio-pitches'] });
       setIsNewOpen(false);
@@ -3837,13 +3837,13 @@ function RadioPitchingContent() {
   });
 
   const updateStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: any) => { const res = await apiRequest('PUT', `/api/radio-pitches/${id}`, { status }); return res.json(); },
+    mutationFn: async ({ id, status }: { id: string; status: string }) => { const res = await apiRequest('PUT', `/api/radio-pitches/${id}`, { status }); return res.json(); },
     onMutate: ({ id }) => setUpdatingId(id),
     onSettled: () => setUpdatingId(null),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['/api/radio-pitches'] }),
   });
 
-  const filteredPitches = filterType === 'all' ? pitches : pitches.filter((p: any) => p.targetType === filterType);
+  const filteredPitches = filterType === 'all' ? pitches : pitches.filter((p: Record<string, unknown>) => p.targetType === filterType);
 
   const typeColors: Record<string, string> = {
     radio: 'bg-blue-100 text-blue-700',
@@ -3946,7 +3946,7 @@ function RadioPitchingContent() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredPitches.map((p: any) => (
+              {filteredPitches.map((p: Record<string, unknown>) => (
                 <div key={p.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -3999,7 +3999,7 @@ function FanCampaignsContent() {
   const { data: stats } = useQuery<any>({ queryKey: ['/api/fan-campaigns/stats'] });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => { const res = await apiRequest('POST', '/api/fan-campaigns', data); return res.json(); },
+    mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/fan-campaigns', data); return res.json(); },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] });
       setIsNewOpen(false);
@@ -4012,7 +4012,7 @@ function FanCampaignsContent() {
     mutationFn: async (id: string) => { const res = await apiRequest('POST', `/api/fan-campaigns/${id}/send`); return res.json(); },
     onMutate: (id) => setSendingId(id),
     onSettled: () => setSendingId(null),
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['/api/fan-campaigns'] });
       toast({ title: 'Campaign Sent!', description: `Delivered to ${data.recipientCount ?? 0} fans.` });
     },
@@ -4115,7 +4115,7 @@ function FanCampaignsContent() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {campaigns.map((c: any) => (
+                  {campaigns.map((c: Record<string, unknown>) => (
                     <div key={c.id} className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">

@@ -89,7 +89,7 @@ router.post('/score-viral', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       score,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in score-viral:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -113,7 +113,7 @@ router.post('/predict-potential', requireAuth, asyncHandler(async (req, res) => 
       potential,
       category: potential >= 80 ? 'high' : potential >= 50 ? 'medium' : 'low',
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in predict-potential:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -136,7 +136,7 @@ router.post('/suggest-improvements', requireAuth, asyncHandler(async (req, res) 
       success: true,
       improvements,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in suggest-improvements:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -159,7 +159,7 @@ router.post('/compare-variants', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       comparison,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in compare-variants:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -186,7 +186,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
       success: true,
       timing,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in optimal-timing:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -204,7 +204,7 @@ router.get('/optimal-timing-all', requireAuth, asyncHandler(async (req, res) => 
       success: true,
       timings: allTimings,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in optimal-timing-all:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -225,7 +225,7 @@ router.post('/timing-recommendation', requireAuth, asyncHandler(async (req, res)
       success: true,
       recommendation,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in timing-recommendation:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -245,7 +245,7 @@ router.post('/audience-patterns', requireAuth, asyncHandler(async (req, res) => 
       success: true,
       patterns,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in audience-patterns:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -261,7 +261,7 @@ router.get('/competitor-timing/:platform', requireAuth, asyncHandler(async (req,
       success: true,
       competitorTiming,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in competitor-timing:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -285,7 +285,7 @@ router.post('/posting-schedule', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       schedule,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in posting-schedule:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -303,7 +303,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
     };
 
     const result = await contentVariantGeneratorService.generateVariants(
-      contentData as any,
+      contentData as Record<string, unknown>,
       count
     );
 
@@ -313,7 +313,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
       success: true,
       ...result,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate-variants:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -336,7 +336,7 @@ router.post('/generate-caption-variants', requireAuth, asyncHandler(async (req, 
       success: true,
       variants,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate-caption-variants:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -347,7 +347,7 @@ router.post('/generate-hashtag-sets', requireAuth, asyncHandler(async (req, res)
     const { content, count = 5 } = generateVariantsSchema.parse(req.body);
 
     const hashtagSets = await contentVariantGeneratorService.generateHashtagSets(
-      content as any,
+      content as Record<string, unknown>,
       count
     );
 
@@ -355,7 +355,7 @@ router.post('/generate-hashtag-sets', requireAuth, asyncHandler(async (req, res)
       success: true,
       hashtagSets,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate-hashtag-sets:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -365,13 +365,13 @@ router.post('/generate-hooks', requireAuth, asyncHandler(async (req, res) => {
   try {
     const { content } = scoreViralSchema.parse(req.body);
 
-    const hooks = await contentVariantGeneratorService.generateHookVariants(content as any);
+    const hooks = await contentVariantGeneratorService.generateHookVariants(content as Record<string, unknown>);
 
     res.json({
       success: true,
       hooks,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate-hooks:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -393,7 +393,7 @@ router.post('/create-ab-test', requireAuth, asyncHandler(async (req, res) => {
     };
 
     const abTest = await contentVariantGeneratorService.createABTest(
-      contentData as any,
+      contentData as Record<string, unknown>,
       variantCount
     );
 
@@ -403,7 +403,7 @@ router.post('/create-ab-test', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       ...abTest,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in create-ab-test:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -424,7 +424,7 @@ router.post('/algorithm-health', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       health,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in algorithm-health:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -446,7 +446,7 @@ router.get('/algorithm-health/:platform', requireAuth, asyncHandler(async (req, 
       success: true,
       health,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in algorithm-health by platform:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -469,7 +469,7 @@ router.post('/shadowban-check', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       result,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in shadowban-check:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -486,7 +486,7 @@ router.get('/engagement-patterns/:platform', requireAuth, asyncHandler(async (re
       success: true,
       patterns,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in engagement-patterns:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -502,7 +502,7 @@ router.get('/platform-profile/:platform', requireAuth, asyncHandler(async (req, 
       success: true,
       profile,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in platform-profile:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -519,7 +519,7 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
       success: true,
       insights,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in algorithm-insights:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -614,7 +614,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
         lastUpdated: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in dashboard:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -642,7 +642,7 @@ router.get('/summary', requireAuth, asyncHandler(async (req, res) => {
         benchmarkComparison: insights.benchmarks,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in summary:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

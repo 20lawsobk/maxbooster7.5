@@ -170,7 +170,7 @@ router.get('/support', async (req, res) => {
         },
       ],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in KYC support info:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -190,7 +190,7 @@ router.get('/document-types', async (req, res) => {
       { type: 'selfie', ...kycService.getDocumentInfo('selfie') },
     ];
     res.json({ documentTypes });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in KYC document types:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

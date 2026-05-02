@@ -223,7 +223,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
     try {
       await apiRequest('POST', `/api/studio/ai-mix/${projectId}`);
       toast({ title: 'AI Mix Complete', description: 'Your tracks have been balanced and processed.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Mix Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsAIMixing(false);
@@ -236,7 +236,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
     try {
       await apiRequest('POST', `/api/studio/ai-master/${projectId}`, { targetLufs: -14 });
       toast({ title: 'AI Master Complete', description: 'Your project has been mastered for streaming.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Master Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsAIMastering(false);
@@ -259,7 +259,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       if (response.audioFilePath) {
         toast({ title: 'Melody Generated', description: 'New melody track has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, musicalKey, scale, toast]);
@@ -278,7 +278,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       if (response.audioFilePath) {
         toast({ title: 'Drums Generated', description: 'New drum pattern has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, toast]);
@@ -299,7 +299,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       if (response.audioFilePath) {
         toast({ title: 'Bass Generated', description: 'New bass line has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, musicalKey, scale, toast]);
@@ -318,7 +318,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
       if (response.audioFilePath) {
         toast({ title: 'Percussion Generated', description: 'New percussion pattern has been created.' });
       }
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Generation Failed', description: error.message, variant: 'destructive' });
     }
   }, [projectId, transport.tempo, toast]);
@@ -376,7 +376,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
 
       let duration = 30;
       try {
-        const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+        const AudioCtx = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
         const tempCtx = new AudioCtx();
         const arrayBuf = await file.arrayBuffer();
         const decoded = await tempCtx.decodeAudioData(arrayBuf);
@@ -414,7 +414,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
         locked: false,
       });
       toast({ title: 'Audio added', description: `"${file.name}" placed on track.` });
-    } catch (err: any) {
+    } catch (err) {
       toast({ title: 'Upload failed', description: err.message, variant: 'destructive' });
     } finally {
       setUploadingTrackId(null);
@@ -833,7 +833,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
                 onTrackGenerated={(track) => {
                   const trackName = track.name || 'AI Generated Track';
                   const trackType = track.type || 'audio';
-                  const newTrackId = store.addTrack(trackType as any, trackName);
+                  const newTrackId = store.addTrack(trackType as Record<string, unknown>, trackName);
                   if (track.audioFilePath && newTrackId) {
                     store.addAudioClip(newTrackId, {
                       trackId: newTrackId,
@@ -1213,7 +1213,7 @@ export function UltimateDAW({ projectId, projectName = 'Untitled', onSave, onExp
           isOpen={showAddTrack}
           onClose={() => setShowAddTrack(false)}
           onAddTrack={(type, name) => {
-            store.addTrack(type as any, name);
+            store.addTrack(type as Record<string, unknown>, name);
             setShowAddTrack(false);
           }}
         />

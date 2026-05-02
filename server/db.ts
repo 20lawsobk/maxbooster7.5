@@ -210,7 +210,7 @@ export const pool = new InstrumentedPool({
 // minutes and starving user-facing requests. Using pool.on('connect') rather
 // than the 'options' startup parameter is safer with Neon's WebSocket proxy,
 // which may not forward arbitrary startup options to the backend.
-pool.on('connect', (client: any) => {
+pool.on('connect', (client: Record<string, unknown>) => {
   client.query("SET statement_timeout = '30000'").catch((err: Error) => {
     logger.warn('[DB] Failed to set statement_timeout on new connection:', err.message);
   });
@@ -269,7 +269,7 @@ export async function verifyReadReplica(): Promise<void> {
   try {
     await dbRead.execute(sql`SELECT 1`);
     logger.info('[db] ✅ Read replica verified — SELECTs route to Neon replica');
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[db] ❌ Read replica health check FAILED — routing ALL queries to primary');
     logger.warn(`[db]    Replica error: ${err.message}`);
     logger.warn('[db]    Check DATABASE_REPLICA_URLS — the replica URL may be invalid or the Neon replica may be down');

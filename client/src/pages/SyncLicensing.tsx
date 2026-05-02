@@ -83,7 +83,7 @@ export default function SyncLicensing() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/sync-licensing', data);
       return res.json();
     },
@@ -96,7 +96,7 @@ export default function SyncLicensing() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: any) => {
+    mutationFn: async ({ id, ...data }: Record<string, unknown>) => {
       const res = await apiRequest('PUT', `/api/sync-licensing/${id}`, data);
       return res.json();
     },

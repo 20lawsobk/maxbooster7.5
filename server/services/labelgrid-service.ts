@@ -69,7 +69,7 @@ export interface LabelGridWebhookPayload {
   status?: string;
   errorMessage?: string;
   platform?: string;
-  data?: any;
+  data?: Record<string, unknown>;
   timestamp: string;
 }
 
@@ -242,7 +242,7 @@ class LabelGridService {
   private client: AxiosInstance;
   private apiToken: string | undefined;
   private baseUrl: string;
-  private endpoints: any;
+  private endpoints: Record<string, unknown>;
   private authHeaderFormat: string;
   private webhookSecret: string | undefined;
   private isConfigured: boolean = false;
@@ -296,9 +296,9 @@ class LabelGridService {
     // automatically protected — opens after 5 consecutive failures, resets after 60s.
     const originalAdapter = this.client.defaults.adapter;
     const cb = this.circuitBreaker;
-    this.client.defaults.adapter = async (config: any) => {
+    this.client.defaults.adapter = async (config: Record<string, unknown>) => {
       return cb.execute(
-        () => (originalAdapter as any)(config),
+        () => (originalAdapter as Record<string, unknown>)(config),
         async () => {
           throw new Error('LabelGrid API circuit breaker is open - service temporarily unavailable');
         }
@@ -381,7 +381,7 @@ class LabelGridService {
   }
 
   private logError(context: string, error: unknown): void {
-    const err = error as any;
+    const err = error as Record<string, unknown>;
     logger.warn(`${context}: ${err?.message || 'Unknown error'}`, {
       context,
       message: err?.message,
@@ -431,7 +431,7 @@ class LabelGridService {
     try {
       const providers = await storage.getAllDSPProviders();
       
-      const dsps: LabelGridDSP[] = providers.map((p: any) => ({
+      const dsps: LabelGridDSP[] = providers.map((p: Record<string, unknown>) => ({
         id: p.id,
         name: p.name,
         slug: p.slug,
@@ -479,7 +479,7 @@ class LabelGridService {
         active,
         inactive,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Failed to verify DSP catalog:');
       return { total: 0, active: 0, inactive: 0 };
     }
@@ -534,11 +534,11 @@ class LabelGridService {
 
       const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
         ? response.data
-        : (response.data as any)?.releases ?? [];
+        : (response.data as Record<string, unknown>)?.releases ?? [];
 
       logger.info(`[LabelGrid] getUserCatalog: ${releases.length} release(s) returned`);
       return releases;
-    } catch (err: any) {
+    } catch (err) {
       logger.warn('[LabelGrid] getUserCatalog failed (non-fatal):', err?.message ?? err);
       return [];
     }
@@ -564,7 +564,7 @@ class LabelGridService {
         this.client.get<LabelGridCatalogRelease>(endpoint)
       );
       return response.data ?? null;
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[LabelGrid] getReleaseDetail failed for ${releaseId}:`, err?.message ?? err);
       return null;
     }
@@ -1342,7 +1342,7 @@ class LabelGridService {
         });
       });
 
-      const artists: LabelGridArtistSearchResult[] = response.data?.artists ?? (Array.isArray(response.data) ? response.data as any : []);
+      const artists: LabelGridArtistSearchResult[] = response.data?.artists ?? (Array.isArray(response.data) ? response.data as LabelGridArtistSearchResult[] : []);
       if (!artists.length) return null;
 
       // Pick the best match by name similarity
@@ -1355,7 +1355,7 @@ class LabelGridService {
 
       logger.info(`[LabelGrid] Artist search found: ${best.name} — ${best.platforms?.length ?? 0} platform(s)`);
       return best;
-    } catch (err: any) {
+    } catch (err) {
       logger.warn('[LabelGrid] Artist search failed (non-fatal):', err?.message ?? err);
       return null;
     }
@@ -1378,7 +1378,7 @@ class LabelGridService {
         return await this.client.get<{ platforms: LabelGridArtistPlatformPresence[] }>(endpoint);
       });
       return response.data?.platforms ?? [];
-    } catch (err: any) {
+    } catch (err) {
       logger.warn('[LabelGrid] Artist platform presence fetch failed (non-fatal):', err?.message ?? err);
       return [];
     }
@@ -1415,11 +1415,11 @@ class LabelGridService {
 
       const releases: LabelGridCatalogRelease[] = Array.isArray(response.data)
         ? response.data
-        : (response.data as any)?.releases ?? [];
+        : (response.data as Record<string, unknown>)?.releases ?? [];
 
       logger.info(`[LabelGrid] Artist catalog fetched: ${releases.length} release(s) for ${artistExternalId}`);
       return releases;
-    } catch (err: any) {
+    } catch (err) {
       logger.warn('[LabelGrid] Artist catalog fetch failed (non-fatal), caller may fall back to direct scan:', err?.message ?? err);
       return [];
     }

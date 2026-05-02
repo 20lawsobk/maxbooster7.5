@@ -249,7 +249,7 @@ export function StudioProjectDialog({
       });
       return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
@@ -271,7 +271,7 @@ export function StudioProjectDialog({
         setLocation(`/studio/${projectId}`);
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Creation Failed',
         description: error.message || 'Failed to create project. Please try again.',

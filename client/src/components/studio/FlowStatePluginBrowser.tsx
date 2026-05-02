@@ -215,7 +215,7 @@ async function instantiatePlugin(
   pluginId: string,
   projectId: string,
   trackId?: string
-): Promise<{ success: boolean; instance: any }> {
+): Promise<{ success: boolean; instance: Record<string, unknown> }> {
   const response = await fetch(`/api/studio/plugins/instantiate/${pluginId}?projectId=${projectId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

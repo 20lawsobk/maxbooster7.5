@@ -82,7 +82,7 @@ async function run() {
       await db.execute(sql.raw(idx.ddl));
       console.log(`  ✓ ${idx.name}`);
       created++;
-    } catch (err: any) {
+    } catch (err) {
       console.error(`  ✗ ${idx.name}: ${err.message}`);
       failed++;
     }

@@ -9,7 +9,7 @@ export interface LoadTestConfig {
   endpoint: string;
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
   headers?: Record<string, string>;
-  body?: any;
+  body?: Record<string, unknown>;
   concurrentUsers: number;
   requestsPerUser: number;
   rampUpSeconds: number;
@@ -103,7 +103,7 @@ export class LoadTestFramework extends EventEmitter {
         const errorKey = `HTTP ${response.statusCode}`;
         this.errors.set(errorKey, (this.errors.get(errorKey) || 0) + 1);
       }
-    } catch (error: any) {
+    } catch (error) {
       const duration = Date.now() - startTime;
       this.responseTimes.push(duration);
       this.failCount++;
@@ -255,7 +255,7 @@ export class ScalabilityTester {
 
         if (profile.name === maxScale) break;
         
-      } catch (error: any) {
+      } catch (error) {
         logger.warn(`Test failed at ${profile.name} scale`, { error: error.message });
         results.push({
           scale: profile.name,

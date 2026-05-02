@@ -89,7 +89,7 @@ async function apiFetch(url: string, options?: RequestInit) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as any).error || res.statusText);
+    throw new Error((err as Record<string, unknown>).error || res.statusText);
   }
   return res.json();
 }

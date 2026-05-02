@@ -35,7 +35,7 @@ export interface HistoryAction {
   type: string;
   description: string;
   timestamp: number;
-  data: any;
+  data: Record<string, unknown>;
   isBookmarked?: boolean;
 }
 

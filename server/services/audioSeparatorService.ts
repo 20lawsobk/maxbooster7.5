@@ -200,7 +200,7 @@ export async function processUploadedBeat(
 
     await db
       .update(listings)
-      .set(updatePayload as any)
+      .set(updatePayload as Record<string, unknown>)
       .where(eq(listings.id, listingId));
 
     logger.info(`[AudioSeparator] Updated listing ${listingId} metadata`);

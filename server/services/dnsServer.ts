@@ -68,7 +68,7 @@ const {
   Packet,
   createServer,
   UDPClient,
-} = dns2 as any;
+} = dns2 as Record<string, unknown>;
 
 const BASE_DOMAIN = (process.env.BASE_DOMAIN || 'max-booster.com').toLowerCase();
 const DNS_SERVER_IP = process.env.DNS_SERVER_IP || '34.111.179.208';
@@ -88,8 +88,8 @@ const DOH_UPSTREAM = process.env.DOH_UPSTREAM || 'https://cloudflare-dns.com/dns
  */
 async function dohFallback(queryBuf: Buffer): Promise<any | null> {
   try {
-    const { default: fetch } = await import('node-fetch').catch(() => ({ default: null as any }));
-    const fetchFn = fetch ?? (globalThis as any).fetch;
+    const { default: fetch } = await import('node-fetch').catch(() => ({ default: null as typeof import('node-fetch').default | null }));
+    const fetchFn = fetch ?? (globalThis as Record<string, unknown>).fetch;
     if (!fetchFn) return null;
 
     const resp = await fetchFn(DOH_UPSTREAM, {
@@ -255,12 +255,12 @@ function makeA(name: string, ip: string) {
 
 // ─── Request handler ──────────────────────────────────────────────────────────
 
-async function handleRequest(request: any, send: (response: any) => void): Promise<void> {
+async function handleRequest(request: Record<string, unknown>, send: (response: Record<string, unknown>) => void): Promise<void> {
   queryCount++;
   const response = Packet.createResponseFromRequest(request);
   response.header.aa = 0; // default: not authoritative
 
-  const questions: any[] = request.questions || [];
+  const questions: Record<string, unknown>[] = request.questions || [];
   if (questions.length === 0) { send(response); return; }
 
   const question = questions[0];
@@ -278,7 +278,7 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
     //   Tier 1: Iterative recursive resolution from 13 IANA root servers (UDP)
     //   Tier 2: DNS-over-HTTPS to Cloudflare (works even when UDP port 53 is firewalled)
     //   Tier 3: UDP forwarding to configured upstream (8.8.8.8 default)
-    const rawBuf: Buffer | undefined = (request as any)._rawBuffer;
+    const rawBuf: Buffer | undefined = (request as Record<string, unknown>)._rawBuffer;
 
     // ── Tier 1: Recursive resolver (2 s cap — UDP may be firewalled) ────────
     try {
@@ -349,8 +349,8 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
   switch (qtype) {
     case Packet.TYPE.A: {
       const ip = await resolveGeoIP(
-        (request as any)._rawBuffer ?? Buffer.alloc(0),
-        (request as any)._srcIp,
+        (request as Record<string, unknown>)._rawBuffer ?? Buffer.alloc(0),
+        (request as Record<string, unknown>)._srcIp,
       );
       response.answers.push(makeA(name, ip));
       break;
@@ -497,7 +497,7 @@ async function handleRequest(request: any, send: (response: any) => void): Promi
 
 // ─── Server lifecycle ────────────────────────────────────────────────────────
 
-let dnsServer: any = null;
+let dnsServer: Record<string, unknown> | null = null;
 let running = false;
 
 /**
@@ -539,7 +539,7 @@ export async function startDNSServer(): Promise<void> {
       };
 
       // Single aggregated error handler — fires for UDP or TCP sub-server errors
-      server.on('error', (err: any, proto?: string) => {
+      server.on('error', (err: Error, proto?: string) => {
         const code: string = err?.code || '';
         if (code === 'EACCES') {
           settle(false, `[DNS] ⚠️  Port ${DNS_PORT} requires elevated privileges (${proto || 'unknown'}). DNS server not started.`);
@@ -563,10 +563,10 @@ export async function startDNSServer(): Promise<void> {
         // Prime cache so first query hits DB immediately, not on first request
         await warmCache();
         settle(true);
-      }).catch((err: any) => {
+      }).catch((err) => {
         settle(false, `[DNS] ⚠️  listen() rejected: ${err?.message}`);
       });
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[DNS] ⚠️  Could not instantiate DNS server: ${err?.message}`);
       resolve();
     }
@@ -597,7 +597,7 @@ export async function stopDNSServer(): Promise<void> {
     dnsServer.close();
     running = false;
     logger.info('[DNS] Nameserver stopped.');
-  } catch (err: any) {
+  } catch (err) {
     logger.warn('[DNS] Error stopping DNS server:', err?.message);
   }
 }
@@ -758,7 +758,7 @@ function skipNameOffset(buf: Buffer, offset: number): number {
 }
 
 /** Convert a dns2 answer record's payload to raw RDATA Buffer for DNSSEC signing. */
-function recordToRdata(rr: any): Buffer | null {
+function recordToRdata(rr: Record<string, unknown>): Buffer | null {
   try {
     switch (rr.type) {
       case 1: { // A
@@ -877,7 +877,7 @@ async function buildDnskeyResponse(
     dnskeyRdatas, ksk.privateKeyPem, ksk.keyTag, zone,
   );
 
-  const answers: any[] = [
+  const answers: Record<string, unknown>[] = [
     { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: kskData },
     { type: 'DNSKEY', name: zone, ttl: TTL_NS, data: zskData },
     { type: 'RRSIG',  name: zone, ttl: TTL_NS, data: rrsig   },
@@ -976,7 +976,7 @@ async function buildNsec3ParamResponse(
   const rdata = nsec3ParamRdata(salt, NSEC3_ITERATIONS);
   const keys = await getOrCreateKeys(zone);
 
-  const answers: any[] = [{
+  const answers: Record<string, unknown>[] = [{
     type: 'UNKNOWN_51', name: zone, ttl: TTL_SOA,
     data: { type: 51, data: rdata },
   }];
@@ -988,7 +988,7 @@ async function buildNsec3ParamResponse(
 }
 
 /** Minimal SOA record for dns-packet format. */
-function buildSoaForDnsPacket(zone: string): any {
+function buildSoaForDnsPacket(zone: string): Record<string, unknown> {
   return {
     type: 'SOA', name: zone, ttl: TTL_SOA,
     data: {
@@ -1043,7 +1043,7 @@ async function addDNSSECSignatures(
   qname:        string,
 ): Promise<Buffer> {
   const dnsPacket = await import('dns-packet');
-  let parsed: any;
+  let parsed: Record<string, unknown>;
   try {
     parsed = dnsPacket.decode(wireResponse);
   } catch {
@@ -1054,7 +1054,7 @@ async function addDNSSECSignatures(
   if (!keys) return wireResponse;
 
   const { zsk } = keys;
-  const rrsigs: any[] = [];
+  const rrsigs: Record<string, unknown>[] = [];
 
   // Group answers by numeric type code
   // dns-packet returns rr.type as a string (e.g. 'A', 'MX') not a number
@@ -1071,7 +1071,7 @@ async function addDNSSECSignatures(
 
   for (const [rrTypeNum, rrs] of byType) {
 
-    const rdatas = rrs.map((rr: any) => {
+    const rdatas = rrs.map((rr: Record<string, unknown>) => {
       // dns-packet decoded records have a 'data' field
       // We need to convert back to rdata buffer for signing
       return rrdataFromDnsPacket(rrTypeNum, rr.data ?? rr);
@@ -1089,7 +1089,7 @@ async function addDNSSECSignatures(
         rdatas, zsk.privateKeyPem, zsk.keyTag, zone,
       );
       rrsigs.push({ type: 'RRSIG', name: ownerName, ttl, data: rrsig });
-    } catch (err: any) {
+    } catch (err) {
       logger.warn({ err: err.message, typeName }, '[DNSSEC] Failed to sign RRset');
     }
   }
@@ -1110,7 +1110,7 @@ async function addDNSSECSignatures(
 }
 
 /** Convert a dns-packet decoded record's data to RDATA buffer for signing. */
-function rrdataFromDnsPacket(rrType: number, data: any): Buffer | null {
+function rrdataFromDnsPacket(rrType: number, data: Record<string, unknown>): Buffer | null {
   try {
     switch (rrType) {
       case 1: { // A
@@ -1180,7 +1180,7 @@ function rrdataFromDnsPacket(rrType: number, data: any): Buffer | null {
  *   Content-Type: application/dns-message
  */
 export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise<DohQueryResult> {
-  let request: any;
+  let request: Record<string, unknown>;
   try {
     request = Packet.parse(queryBuffer);
   } catch {
@@ -1192,8 +1192,8 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
   }
 
   // Attach raw buffer + source IP to request for GeoDNS use in handleRequest
-  (request as any)._rawBuffer = queryBuffer;
-  (request as any)._srcIp    = srcIp;
+  (request as Record<string, unknown>)._rawBuffer = queryBuffer;
+  (request as Record<string, unknown>)._srcIp    = srcIp;
 
   // ── DNSSEC special query types (served directly, bypass dns2) ──────────────
   if (DNSSEC_ENABLED) {
@@ -1205,7 +1205,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
     if (qtype === 48 /* DNSKEY */) {
       try {
         return await buildDnskeyResponse(queryBuffer, zone);
-      } catch (err: any) {
+      } catch (err) {
         logger.warn({ err: err.message }, '[DNSSEC] DNSKEY response failed');
         return buildServfailResponse(parseTxId(queryBuffer));
       }
@@ -1214,7 +1214,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
     if (qtype === 43 /* DS */) {
       try {
         return await buildDSResponse(queryBuffer, zone);
-      } catch (err: any) {
+      } catch (err) {
         logger.warn({ err: err.message }, '[DNSSEC] DS response failed');
         return buildServfailResponse(parseTxId(queryBuffer));
       }
@@ -1223,7 +1223,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
     if (qtype === 51 /* NSEC3PARAM */) {
       try {
         return await buildNsec3ParamResponse(queryBuffer, zone);
-      } catch (err: any) {
+      } catch (err) {
         logger.warn({ err: err.message }, '[DNSSEC] NSEC3PARAM response failed');
         return buildServfailResponse(parseTxId(queryBuffer));
       }
@@ -1239,7 +1239,7 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
       15_000,
     );
 
-    handleRequest(request, async (response: any) => {
+    handleRequest(request, async (response: Record<string, unknown>) => {
       clearTimeout(timeout);
       try {
         // Serialize dns2 response to wire format
@@ -1264,18 +1264,18 @@ export async function processQuery(queryBuffer: Buffer, srcIp?: string): Promise
             const isBase = qname === BASE_DOMAIN || qname.endsWith(`.${BASE_DOMAIN}`);
             const zone   = isBase ? BASE_DOMAIN : qname.split('.').slice(-2).join('.');
             buffer = await addDNSSECSignatures(buffer, zone, qname);
-          } catch (err: any) {
+          } catch (err) {
             logger.warn({ err: err.message }, '[DNSSEC] Signature addition failed (continuing without RRSIG)');
           }
         }
 
         // ── Compute Cache-Control TTL (RFC 8484 §5.1) ────────────────────
-        const allRRs: any[] = [
+        const allRRs: Record<string, unknown>[] = [
           ...(response.answers     || []),
           ...(response.authorities || []),
         ];
         const positiveTtls = allRRs
-          .map((rr: any) => (typeof rr.ttl === 'number' ? rr.ttl : 0))
+          .map((rr: Record<string, unknown>) => (typeof rr.ttl === 'number' ? rr.ttl : 0))
           .filter((t: number) => t > 0);
         const minTtl = positiveTtls.length > 0 ? Math.min(...positiveTtls) : 0;
 

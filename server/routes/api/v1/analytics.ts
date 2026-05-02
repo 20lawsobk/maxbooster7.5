@@ -213,7 +213,7 @@ router.get('/engagement{/:artistId}', async (req: ApiKeyRequest, res) => {
 
     // Aggregate engagement metrics
     const engagement = engagementData.map((row) => {
-      const data = (row.platformData as any) || {};
+      const data = (row.platformData as Record<string, unknown>) || {};
       return {
         date: row.date,
         platform: row.platform,
@@ -289,7 +289,7 @@ router.get('/demographics{/:artistId}', async (req: ApiKeyRequest, res) => {
       .orderBy(desc(analytics.date))
       .limit(1);
 
-    const demographics = (audienceData[0]?.audienceData as any) || {
+    const demographics = (audienceData[0]?.audienceData as Record<string, unknown>) || {
       age: [],
       gender: [],
       location: [],
@@ -356,7 +356,7 @@ router.get('/playlists{/:artistId}', async (req: ApiKeyRequest, res) => {
 
     // Extract playlist information
     const playlists = playlistData.flatMap((row) => {
-      const data = (row.platformData as any) || {};
+      const data = (row.platformData as Record<string, unknown>) || {};
       return (data.playlists || []).map((playlist: unknown) => ({
         date: row.date,
         platform: row.platform,

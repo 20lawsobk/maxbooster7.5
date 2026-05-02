@@ -648,7 +648,7 @@ class PorkbunProvider implements DnsProvider {
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) },
     );
     const data = await resp.json() as { status: string } & T;
-    if ((data as any).status !== 'SUCCESS') {
+    if ((data as Record<string, unknown>).status !== 'SUCCESS') {
       throw new Error(`Porkbun error on ${path}: ${JSON.stringify(data)}`);
     }
     return data;

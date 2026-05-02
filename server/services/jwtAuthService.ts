@@ -62,13 +62,13 @@ export class JWTAuthService {
 
   async getUserTokenVersion(userId: string): Promise<number> {
     const user = await storage.getUser(userId);
-    return (user as any)?.tokenVersion || 0;
+    return (user as Record<string, unknown>)?.tokenVersion || 0;
   }
 
   async incrementUserTokenVersion(userId: string): Promise<number> {
     const currentVersion = await this.getUserTokenVersion(userId);
     const newVersion = currentVersion + 1;
-    await storage.updateUser(userId, { tokenVersion: newVersion } as any);
+    await storage.updateUser(userId, { tokenVersion: newVersion } as Record<string, unknown>);
     return newVersion;
   }
 

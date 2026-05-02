@@ -1036,10 +1036,10 @@ class PluginHostService {
       userId: preset.userId || userId,
       pluginId: preset.pluginId || plugin.id,
       name: preset.name,
-      category: (preset.metadata as any)?.category || undefined,
+      category: (preset.metadata as Record<string, unknown>)?.category || undefined,
       parameters: preset.parameters as Record<string, number | boolean | string>,
       isDefault: preset.isFactory || false,
-      isPublic: (preset.metadata as any)?.isPublic || false,
+      isPublic: (preset.metadata as Record<string, unknown>)?.isPublic || false,
       createdAt: preset.createdAt,
     };
   }
@@ -1067,10 +1067,10 @@ class PluginHostService {
       userId: p.userId || userId,
       pluginId: p.pluginId || pluginId,
       name: p.name,
-      category: (p.metadata as any)?.category || undefined,
+      category: (p.metadata as Record<string, unknown>)?.category || undefined,
       parameters: p.parameters as Record<string, number | boolean | string>,
       isDefault: p.isFactory || false,
-      isPublic: (p.metadata as any)?.isPublic || false,
+      isPublic: (p.metadata as Record<string, unknown>)?.isPublic || false,
       createdAt: p.createdAt,
     }));
   }
@@ -1089,10 +1089,10 @@ class PluginHostService {
       userId: preset.userId || '',
       pluginId: preset.pluginId || '',
       name: preset.name,
-      category: (preset.metadata as any)?.category || undefined,
+      category: (preset.metadata as Record<string, unknown>)?.category || undefined,
       parameters: preset.parameters as Record<string, number | boolean | string>,
       isDefault: preset.isFactory || false,
-      isPublic: (preset.metadata as any)?.isPublic || false,
+      isPublic: (preset.metadata as Record<string, unknown>)?.isPublic || false,
       createdAt: preset.createdAt,
     };
   }

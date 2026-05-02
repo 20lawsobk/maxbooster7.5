@@ -376,7 +376,7 @@ export default function Contracts() {
       
       setCurrentOutcome('pdf_downloaded');
       toast({ title: 'PDF downloaded', description: 'Contract PDF has been downloaded.' });
-    } catch (error: any) {
+    } catch (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };

@@ -249,7 +249,7 @@ export class DigitalGPUInferenceBridge {
     const { width, height } = this.config;
     const res = new Float32Array([width, height]);
 
-    const srcTex = this.renderer.createTexture('src_frame', imageSource as any);
+    const srcTex = this.renderer.createTexture('src_frame', imageSource as Record<string, unknown>);
     const fbA    = this.renderer.getFramebuffer('pingA')!;
     const fbB    = this.renderer.getFramebuffer('pingB')!;
     const fbBl0  = this.renderer.getFramebuffer('bloom0')!;

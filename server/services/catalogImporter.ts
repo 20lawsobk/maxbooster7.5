@@ -27,7 +27,7 @@ export interface ImportRow {
   duration?: number;
   isExplicit?: boolean;
   language?: string;
-  [key: string]: any;
+  [key: string]: Record<string, unknown>;
 }
 
 export interface ImportResult {
@@ -208,7 +208,7 @@ class CatalogImporter {
       .replace(/\s+/g, '_');
   }
 
-  private parseValue(field: string, value: string): any {
+  private parseValue(field: string, value: string): Record<string, unknown> {
     switch (field) {
       case 'trackNumber':
       case 'duration':
@@ -545,7 +545,7 @@ class CatalogImporter {
         completedAt: new Date(),
         importedTracks: result.successfulRows,
         progress: 100,
-        errors: result.errors as any,
+        errors: result.errors as Record<string, unknown>,
       })
       .where(eq(catalogImportJobs.id, jobId));
 

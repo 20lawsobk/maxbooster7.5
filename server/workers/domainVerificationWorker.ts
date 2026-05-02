@@ -110,7 +110,7 @@ export function startDomainVerificationWorker(): void {
   }, POLL_INTERVAL_MS);
 
   // Unref so the worker doesn't prevent clean process shutdown
-  if ((intervalHandle as any).unref) (intervalHandle as any).unref();
+  if ((intervalHandle as Record<string, unknown>).unref) (intervalHandle as Record<string, unknown>).unref();
 
   logger.info(
     { intervalMs: POLL_INTERVAL_MS, batchSize: BATCH_SIZE },

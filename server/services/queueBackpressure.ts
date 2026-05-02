@@ -33,7 +33,7 @@ export class QueueBackpressureManager extends EventEmitter {
     logger.info(`   Max Memory: ${this.config.maxMemoryMB}MB`);
   }
 
-  registerQueue(name: string, queue: any): void {
+  registerQueue(name: string, queue: Record<string, unknown>): void {
     logger.info(`📊 Registered queue for backpressure monitoring: ${name}`);
   }
 
@@ -134,8 +134,8 @@ export class QueueBackpressureManager extends EventEmitter {
 
     if (!check.allowed) {
       const error = new Error(`Job rejected: ${check.reason}`);
-      (error as any).code = 'BACKPRESSURE_REJECTION';
-      (error as any).retryAfter = 30;
+      (error as Record<string, unknown>).code = 'BACKPRESSURE_REJECTION';
+      (error as Record<string, unknown>).retryAfter = 30;
       logger.warn(`🚫 Job rejected for queue ${queueName}: ${check.reason}`);
       throw error;
     }

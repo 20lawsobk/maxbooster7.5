@@ -59,7 +59,7 @@ export function SaveAsDialog({
 
       return response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       queryClient.invalidateQueries({ queryKey: ['/api/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/projects'] });
       queryClient.invalidateQueries({ queryKey: ['/api/studio/start-hub/summary'] });
@@ -77,7 +77,7 @@ export function SaveAsDialog({
 
       onOpenChange(false);
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Save Failed',
         description: error.message || 'Failed to save project. Please try again.',

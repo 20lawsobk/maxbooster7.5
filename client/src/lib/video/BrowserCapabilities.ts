@@ -233,7 +233,7 @@ class BrowserCapabilitiesDetector {
   }
 
   private detectAudio(): AudioCapabilities {
-    const audioContext = typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined';
+    const audioContext = typeof AudioContext !== 'undefined' || typeof (window as Record<string, unknown>).webkitAudioContext !== 'undefined';
     const offlineAudioContext = typeof OfflineAudioContext !== 'undefined';
     const audioWorklet = audioContext && typeof AudioWorkletNode !== 'undefined';
     
@@ -244,7 +244,7 @@ class BrowserCapabilitiesDetector {
 
     if (audioContext) {
       try {
-        const ctx = new (AudioContext || (window as any).webkitAudioContext)();
+        const ctx = new (AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
         webAudioApi = true;
         mediaElementSource = typeof ctx.createMediaElementSource === 'function';
         analyserNode = typeof ctx.createAnalyser === 'function';
@@ -265,7 +265,7 @@ class BrowserCapabilitiesDetector {
   }
 
   private async detectDevice(): Promise<DeviceCapabilities> {
-    const navigator_any = navigator as any;
+    const navigator_any = navigator as Record<string, unknown>;
     const deviceMemory = navigator_any.deviceMemory ?? 4;
     const hardwareConcurrency = navigator.hardwareConcurrency ?? 4;
     
@@ -300,7 +300,7 @@ class BrowserCapabilitiesDetector {
   }
 
   private estimateMaxBitrate(): number {
-    const navigator_any = navigator as any;
+    const navigator_any = navigator as Record<string, unknown>;
     const connection = navigator_any.connection;
     
     if (connection) {
@@ -517,7 +517,7 @@ export function supportsFeature(feature: string): boolean {
     case 'mediaRecorder':
       return typeof MediaRecorder !== 'undefined';
     case 'audioContext':
-      return typeof AudioContext !== 'undefined' || typeof (window as any).webkitAudioContext !== 'undefined';
+      return typeof AudioContext !== 'undefined' || typeof (window as Record<string, unknown>).webkitAudioContext !== 'undefined';
     case 'audioWorklet':
       return typeof AudioWorkletNode !== 'undefined';
     case 'sharedArrayBuffer':

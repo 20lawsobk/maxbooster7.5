@@ -52,7 +52,7 @@ try {
 
 // ── MaxMind mmdb reader (lazy-loaded) ─────────────────────────────────────────
 
-let geoReader: any = null;
+let geoReader: Record<string, unknown> | null = null;
 let geoReaderLoading: Promise<any> | null = null;
 
 async function getGeoReader(): Promise<any> {
@@ -72,7 +72,7 @@ async function getGeoReader(): Promise<any> {
       geoReader = await maxmind.open(GEODB_PATH);
       logger.info(`[GeoDNS] GeoIP database loaded from ${GEODB_PATH}`);
       return geoReader;
-    } catch (err: any) {
+    } catch (err) {
       logger.warn({ err: err.message }, '[GeoDNS] Failed to open GeoIP database');
       geoReaderLoading = null; // allow retry on next request
       return null;

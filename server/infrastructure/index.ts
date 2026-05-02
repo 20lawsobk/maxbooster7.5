@@ -35,10 +35,10 @@ export async function initializeInfrastructure(): Promise<void> {
 }
 
 export function getInfrastructureStatus(): {
-  cache: any;
-  sessions: any;
-  circuitBreakers: any;
-  scaling: any;
+  cache: Record<string, unknown>;
+  sessions: Record<string, unknown>;
+  circuitBreakers: Record<string, unknown>;
+  scaling: Record<string, unknown>;
 } {
   return {
     cache: distributedCache.getStats(),

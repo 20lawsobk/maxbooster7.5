@@ -12,8 +12,8 @@ import { logger } from '../logger.js';
 export class AdvertisingNormalizationService {
   private async getPdimAdData(artistId: string): Promise<{
     patterns: Record<string, any>;
-    peaks: any[];
-    globalPeaks: any[];
+    peaks: unknown[];
+    globalPeaks: unknown[];
   }> {
     const redis = await getRedisClient();
     if (!redis) {
@@ -97,7 +97,7 @@ export class AdvertisingNormalizationService {
           platform
         ),
         mediaUrls: creative.assetUrls || [],
-        aspectRatio: limits.imageRatio || (limits as any).videoRatio,
+        aspectRatio: limits.imageRatio || (limits as Record<string, unknown>).videoRatio,
         callToAction: this.generateCTA(platform, pdim.patterns),
         optimalPostTime: this.calculateOptimalPostTime(platform, pdim.peaks, pdim.globalPeaks),
         engagementHooks: this.generateEngagementHooks(creative.rawContent || '', platform, pdim.patterns),
@@ -113,7 +113,7 @@ export class AdvertisingNormalizationService {
   async checkCompliance(
     content: string,
     assets: string[]
-  ): Promise<{ status: string; issues: any }> {
+  ): Promise<{ status: string; issues: Record<string, unknown> }> {
     const issues = {
       offensive: this.detectOffensiveContent(content),
       spam: this.detectSpamPatterns(content),
@@ -217,7 +217,7 @@ export class AdvertisingNormalizationService {
    * Prefers artist-specific peak windows from PDIM, falls back to global peaks,
    * then to research-backed defaults.
    */
-  private calculateOptimalPostTime(platform: string, peaks: any[] = [], globalPeaks: any[] = []): string {
+  private calculateOptimalPostTime(platform: string, peaks: unknown[] = [], globalPeaks: unknown[] = []): string {
     const artistPeak = peaks.find(p => p?.platform === platform || p?.platforms?.includes(platform));
     if (artistPeak?.window) return artistPeak.window;
 

@@ -190,7 +190,7 @@ export default function Projects() {
   });
 
   const editMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, unknown> }) => {
       const response = await apiRequest('PATCH', `/api/studio/projects/${id}`, data);
       return response.json();
     },
@@ -863,7 +863,7 @@ function SongwritingTab() {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('POST', '/api/songwriting', data);
       return res.json();
     },
@@ -876,7 +876,7 @@ function SongwritingTab() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...data }: any) => {
+    mutationFn: async ({ id, ...data }: Record<string, unknown>) => {
       const res = await apiRequest('PUT', `/api/songwriting/${id}`, data);
       return res.json();
     },
@@ -965,7 +965,7 @@ function SongwritingTab() {
             <Mic2 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
             <p className="text-gray-500">No sessions yet. Create your first song!</p>
           </Card>
-        ) : sessions.map((s: any) => (
+        ) : sessions.map((s: Record<string, unknown>) => (
           <Card key={s.id} className={`cursor-pointer hover:shadow-md transition-shadow ${selectedSession?.id === s.id ? 'border-blue-500 shadow-md' : ''}`} onClick={() => setSelectedSession(s)}>
             <CardContent className="p-4">
               <div className="flex items-start justify-between">

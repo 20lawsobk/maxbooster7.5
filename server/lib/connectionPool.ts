@@ -113,7 +113,7 @@ class OptimizedConnectionPool {
     }
   }
 
-  async query<T = any>(text: string, params?: any[]): Promise<T[]> {
+  async query<T = any>(text: string, params?: unknown[]): Promise<T[]> {
     const start = Date.now();
     this.queryCount++;
 
@@ -128,7 +128,7 @@ class OptimizedConnectionPool {
       }
 
       return result.rows;
-    } catch (error: any) {
+    } catch (error) {
       this.errorCount++;
       throw error;
     }
@@ -138,7 +138,7 @@ class OptimizedConnectionPool {
     return this.pool.connect();
   }
 
-  async transaction<T>(fn: (client: any) => Promise<T>): Promise<T> {
+  async transaction<T>(fn: (client: Record<string, unknown>) => Promise<T>): Promise<T> {
     const client = await this.pool.connect();
     
     try {
@@ -191,7 +191,7 @@ class OptimizedConnectionPool {
         healthy: true,
         latencyMs: Date.now() - start,
       };
-    } catch (error: any) {
+    } catch (error) {
       return {
         healthy: false,
         latencyMs: Date.now() - start,
@@ -220,7 +220,7 @@ class OptimizedConnectionPool {
 
 export const connectionPool = new OptimizedConnectionPool();
 
-export async function withConnection<T>(fn: (client: any) => Promise<T>): Promise<T> {
+export async function withConnection<T>(fn: (client: Record<string, unknown>) => Promise<T>): Promise<T> {
   const client = await connectionPool.getClient();
   try {
     return await fn(client);
@@ -229,7 +229,7 @@ export async function withConnection<T>(fn: (client: any) => Promise<T>): Promis
   }
 }
 
-export async function withTransaction<T>(fn: (client: any) => Promise<T>): Promise<T> {
+export async function withTransaction<T>(fn: (client: Record<string, unknown>) => Promise<T>): Promise<T> {
   return connectionPool.transaction(fn);
 }
 

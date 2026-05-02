@@ -73,7 +73,7 @@ export function useRecoveryPoints(options: UseRecoveryPointsOptions = {}): UseRe
       const data = await response.json();
       
       if (data.success && data.restorePoints) {
-        const points: RecoveryPoint[] = data.restorePoints.map((rp: any) => ({
+        const points: RecoveryPoint[] = data.restorePoints.map((rp: Record<string, unknown>) => ({
           id: rp.id,
           name: rp.name,
           description: rp.description,

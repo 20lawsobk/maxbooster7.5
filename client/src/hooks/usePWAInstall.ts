@@ -13,7 +13,7 @@ export function usePWAInstall() {
   useEffect(() => {
     const checkInstalled = () => {
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                          (window.navigator as any).standalone === true;
+                          (window.navigator as Record<string, unknown>).standalone === true;
       setIsInstalled(isStandalone);
     };
     checkInstalled();

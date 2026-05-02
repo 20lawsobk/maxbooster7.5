@@ -194,7 +194,7 @@ process.on('uncaughtException', (error) => {
   gracefulShutdown('uncaughtException');
 });
 
-process.on('unhandledRejection', (reason: any) => {
+process.on('unhandledRejection', (reason: Record<string, unknown>) => {
   const msg = reason?.message || String(reason);
   const code = reason?.code;
   // Never crash the worker process on transient/stream/network errors.

@@ -930,7 +930,7 @@ export class UnifiedAIController {
 
   public async getRegisteredModels(filter?: { status?: string; type?: string }) {
     await this.ensureInitialized();
-    return this.modelRegistry.listModels(filter as any);
+    return this.modelRegistry.listModels(filter as Record<string, unknown>);
   }
 
   public async registerModel(options: {
@@ -979,7 +979,7 @@ export class UnifiedAIController {
         this.recommendationEngine.findSimilar('test', 'track', 1);
       }),
       adOptimizationEngine: await this.checkServiceHealth('adOptimizationEngine', async () => {
-        return (this.adOptimizationEngine as any).isTrained ?? true;
+        return (this.adOptimizationEngine as Record<string, unknown>).isTrained ?? true;
       }),
       socialAutopilotEngine: this.checkSyncServiceHealth('socialAutopilotEngine', () => {
         this.socialAutopilotEngine.predictBestTime('twitter', 'text');
@@ -1088,9 +1088,9 @@ export class UnifiedAIController {
   // ============================================================================
 
   public async optimizeOrganicGrowth(options: {
-    profiles: any[];
-    content: any;
-    goals: any;
+    profiles: unknown[];
+    content: Record<string, unknown>;
+    goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<any>> {
     const startTime = Date.now();
     try {
@@ -1116,7 +1116,7 @@ export class UnifiedAIController {
     }
   }
 
-  public async calculateOrganicROI(results: any): Promise<UnifiedAIResult<any>> {
+  public async calculateOrganicROI(results: Record<string, unknown>): Promise<UnifiedAIResult<any>> {
     const startTime = Date.now();
     try {
       const analysis = this.adEngine.calculateOrganicROI(results);
@@ -1138,9 +1138,9 @@ export class UnifiedAIController {
   }
 
   public async generateOrganicSchedule(options: {
-    profiles: any[];
-    contentQueue: any[];
-    goals: any;
+    profiles: unknown[];
+    contentQueue: unknown[];
+    goals: Record<string, unknown>;
   }): Promise<UnifiedAIResult<any>> {
     const startTime = Date.now();
     try {
@@ -1169,12 +1169,12 @@ export class UnifiedAIController {
   public async analyzePersonalAdNetwork(userId?: string): Promise<UnifiedAIResult<any>> {
     const startTime = Date.now();
     try {
-      let profiles: any[] = [];
+      let profiles: unknown[] = [];
       
       if (userId) {
         const socialAccounts = await storage.getUserSocialAccounts(userId);
         if (socialAccounts && socialAccounts.length > 0) {
-          profiles = socialAccounts.map((account: any) => ({
+          profiles = socialAccounts.map((account: Record<string, unknown>) => ({
             id: account.id?.toString() || account.platformUserId || '',
             platform: account.platform,
             username: account.username || account.profileName || 'user',

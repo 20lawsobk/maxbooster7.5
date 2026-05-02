@@ -287,7 +287,7 @@ export async function renderDiffusionScene(
     );
     return opts.outputPath;
 
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(
       `[DiffusionScene] Scene ${opts.sceneIndex + 1} failed (${err?.message ?? err}) ` +
       `— will fall back to Ken Burns`,

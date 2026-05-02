@@ -142,7 +142,7 @@ export class AIService {
             await redis.set(key, JSON.stringify(value));
             logger.info(`[AIService] Seeded audio data for ${key}`);
           }
-        } catch (e: any) {
+        } catch (e) {
           // Only log if the circuit is not already OPEN (circuit-OPEN failures are expected).
           if (!cbIsOpen()) {
             logger.warn(`[AIService] Could not seed ${key}: ${e.message}`);
@@ -196,8 +196,8 @@ export class AIService {
     adContent: {
       primary: string;
       variations: string[];
-      targetingStrategy: any;
-      distributionPlan: any;
+      targetingStrategy: Record<string, unknown>;
+      distributionPlan: Record<string, unknown>;
     };
   }> {
     try {
@@ -519,7 +519,7 @@ export class AIService {
     return { primary, variations };
   }
 
-  private calculatePrecisionTargeting(audience: AIAdvertisingConfig['targetAudience']): any {
+  private calculatePrecisionTargeting(audience: AIAdvertisingConfig['targetAudience']): Record<string, unknown> {
     return {
       demographic_precision: `${audience.age} ${audience.demographics}`,
       geographic_focus: audience.location,
@@ -530,7 +530,7 @@ export class AIService {
     };
   }
 
-  private optimizeDistributionPlan(config: AIAdvertisingConfig, musicData: unknown): any {
+  private optimizeDistributionPlan(config: AIAdvertisingConfig, musicData: unknown): Record<string, unknown> {
     // Create distribution plan based on campaign type and audience
     const platforms =
       config.campaignType === 'viral'

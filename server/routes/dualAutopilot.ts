@@ -391,7 +391,7 @@ router.post('/organic/assets', requireAuth, async (req, res) => {
     const parsed = createAssetSchema.parse(req.body);
     
     const asset = await organicCompoundingService.createAsset(userId, {
-      id: undefined as any,
+      id: undefined as Record<string, unknown>,
       ...parsed,
     });
     
@@ -429,7 +429,7 @@ router.put('/organic/assets/:id/performance', requireAuth, async (req, res) => {
     const assetId = req.params.id;
     const parsed = updateAssetPerformanceSchema.parse(req.body);
     
-    const asset = await organicCompoundingService.updateAssetPerformance(assetId, parsed as any);
+    const asset = await organicCompoundingService.updateAssetPerformance(assetId, parsed as Record<string, unknown>);
     
     if (!asset) {
       return res.status(404).json({ success: false, error: 'Asset not found' });
@@ -471,7 +471,7 @@ router.post('/organic/channels', requireAuth, async (req, res) => {
     const parsed = createChannelSchema.parse(req.body);
     
     const channel = await organicCompoundingService.createChannel(userId, {
-      id: undefined as any,
+      id: undefined as Record<string, unknown>,
       ...parsed,
     });
     

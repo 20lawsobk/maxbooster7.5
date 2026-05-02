@@ -392,7 +392,7 @@ export class AutonomousAutopilot extends EventEmitter {
         status: 'draft',
         contentType: 'social_post',
         coordinatorPostId,
-      } as any;
+      } as Record<string, unknown>;
 
       // Publish immediately (fully autonomous)
       const publishResults = await platformAPI.publishContent(
@@ -404,7 +404,7 @@ export class AutonomousAutopilot extends EventEmitter {
 
       if (successfulPublish) {
         savedContent.status = 'published';
-        (savedContent as any).publishedAt = new Date();
+        (savedContent as Record<string, unknown>).publishedAt = new Date();
 
         // Update coordinator with post status
         if (coordinatorPostId) {
@@ -558,7 +558,7 @@ export class AutonomousAutopilot extends EventEmitter {
       TikTok: 5,
     };
 
-    const maxHashtags = (platformHashtagCounts as any)[platform] || 3;
+    const maxHashtags = (platformHashtagCounts as Record<string, unknown>)[platform] || 3;
 
     // Generate contextual hashtags
     const hashtags = keywords
@@ -760,7 +760,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   private async learnFromPerformance(analytics: unknown, platform: string): Promise<void> {
-    const engagementRate = (analytics as any).engagementRate;
+    const engagementRate = (analytics as Record<string, unknown>).engagementRate;
 
     // Feed performance data to custom AI for learning
     // Default to 'tips' content type and template index 0 since we don't track these in autonomous mode
@@ -787,10 +787,10 @@ export class AutonomousAutopilot extends EventEmitter {
       platform,
       engagementRate,
       hour: currentHour,
-      likes: (analytics as any).likes || 0,
-      comments: (analytics as any).comments || 0,
-      shares: (analytics as any).shares || 0,
-      reach: (analytics as any).reach || 0,
+      likes: (analytics as Record<string, unknown>).likes || 0,
+      comments: (analytics as Record<string, unknown>).comments || 0,
+      shares: (analytics as Record<string, unknown>).shares || 0,
+      reach: (analytics as Record<string, unknown>).reach || 0,
     });
 
     // Share timing insights if engagement is above average

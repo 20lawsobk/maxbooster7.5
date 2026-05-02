@@ -1281,7 +1281,7 @@ export async function renderMaxcoreVideo(
 
   const blobReady = new Promise<Blob>((resolve, reject) => {
     recorder.onstop  = () => resolve(new Blob(chunks, { type: mimeType }));
-    recorder.onerror = (e) => reject(new Error(`MediaRecorder error: ${(e as any).error?.message || 'unknown'}`));
+    recorder.onerror = (e) => reject(new Error(`MediaRecorder error: ${(e as Record<string, unknown>).error?.message || 'unknown'}`));
   });
 
   recorder.start(100);

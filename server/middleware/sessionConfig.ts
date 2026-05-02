@@ -67,7 +67,7 @@ class SessionL1Cache {
  *   del(key1, key2)   ← spread, not array
  *   scan / no scanIterator
  */
-function createIoredisAdapter(ioredisClient: any) {
+function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise<unknown>; set: (...a: unknown[]) => Promise<unknown>; del: (...a: unknown[]) => Promise<unknown>; expire: (...a: unknown[]) => Promise<unknown> }) {
   return {
     get(key: string): Promise<string | null> {
       return ioredisClient.get(key);
@@ -138,7 +138,7 @@ class PdimSessionStore extends session.Store {
     this.inner = inner;
   }
 
-  get(sid: string, cb: (err: any, session?: session.SessionData | null) => void): void {
+  get(sid: string, cb: (err: unknown, session?: session.SessionData | null) => void): void {
     const cached = this.l1.get(sid);
     if (cached !== undefined) return cb(null, cached);
 
@@ -169,11 +169,11 @@ class PdimSessionStore extends session.Store {
     });
   }
 
-  set(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+  set(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
     this.l1.set(sid, sess);
     // Write through to PDIM; swallow errors because L1 cache already holds the
     // authoritative copy — the session is functional even if PDIM is temporarily down.
-    this.inner.set(sid, sess, (err?: any) => {
+    this.inner.set(sid, sess, (err?: unknown) => {
       if (err) {
         logger.warn('[SessionStore] PDIM session write failed (session held in L1 cache):', (err as Error).message);
       }
@@ -181,11 +181,11 @@ class PdimSessionStore extends session.Store {
     });
   }
 
-  destroy(sid: string, cb?: (err?: any) => void): void {
+  destroy(sid: string, cb?: (err?: unknown) => void): void {
     this.l1.invalidate(sid);
     // Best-effort delete from PDIM; L1 is already invalidated so the session
     // will not be served from cache regardless of whether PDIM succeeds.
-    this.inner.destroy(sid, (err?: any) => {
+    this.inner.destroy(sid, (err?: unknown) => {
       if (err) {
         logger.warn('[SessionStore] PDIM session destroy failed (L1 already invalidated):', (err as Error).message);
       }
@@ -193,11 +193,11 @@ class PdimSessionStore extends session.Store {
     });
   }
 
-  touch(sid: string, sess: session.SessionData, cb?: (err?: any) => void): void {
+  touch(sid: string, sess: session.SessionData, cb?: (err?: unknown) => void): void {
     this.l1.set(sid, sess);
-    const primaryTouch = (this.inner as any).touch;
+    const primaryTouch = (this.inner as Record<string, unknown>).touch;
     if (primaryTouch) {
-      primaryTouch.call(this.inner, sid, sess, (err?: any) => {
+      primaryTouch.call(this.inner, sid, sess, (err?: unknown) => {
         if (err) {
           // PDIM congestion during TTL refresh is non-critical — the session
           // remains valid at its original TTL. Swallow the error so express-session
@@ -213,7 +213,7 @@ class PdimSessionStore extends session.Store {
 }
 
 // VM-reserved deployment: retry PDIM ping a few times on startup.
-async function pingWithRetry(client: any, maxAttempts = 8, delayMs = 2_000): Promise<void> {
+async function pingWithRetry(client: { ping: () => Promise<string> }, maxAttempts = 8, delayMs = 2_000): Promise<void> {
   let lastErr: unknown;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
@@ -244,7 +244,7 @@ export async function createSessionStore(): Promise<session.Store> {
     await pingWithRetry(ioredisClient);
 
     const redisStore = new RedisStore({
-      client: createIoredisAdapter(ioredisClient) as any,
+      client: createIoredisAdapter(ioredisClient) as Record<string, unknown>,
       prefix: 'sess:',
       ttl: 24 * 60 * 60,
     });

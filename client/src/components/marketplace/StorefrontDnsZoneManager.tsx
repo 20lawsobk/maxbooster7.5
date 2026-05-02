@@ -352,7 +352,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
       qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       toast({ title: 'Storefront URL set!', description: `${zone.domain} is now your storefront URL.` });
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Failed to link domain';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -372,7 +372,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
       qc.invalidateQueries({ queryKey: ['/api/storefront/my'] });
       toast({ title: 'Storefront URL removed', description: `${zone.domain} is no longer your storefront URL.` });
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Failed to unlink domain';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -403,7 +403,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
       onBack();
       toast({ title: 'Domain transferred out', description: `${zone.domain} has been removed from Max Booster DNS.` });
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Transfer failed';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -418,7 +418,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
       if (data.error) throw new Error(data.error);
       setZoneFileText(data.zoneText);
       setZoneFilename(data.filename ?? 'zone.txt');
-    } catch (e: any) {
+    } catch (e) {
       toast({ title: 'Export failed', description: e.message, variant: 'destructive' });
     } finally {
       setLoadingExport(false);
@@ -475,7 +475,7 @@ function DnsZoneEditor({ zone, onBack, storefrontId, onCustomizeStorefront }: { 
       return apiRequest('POST', `/api/dns-manager/zones/${zone.id}/records`, body).then(r => r.json());
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['/api/dns-manager/zones', zone.id, 'records'] }); closeDialog(); toast({ title: editingRecord ? 'Record updated' : 'Record added' }); },
-    onError:   async (err: any) => {
+    onError:   async (err: Error) => {
       let msg = 'Failed to save record';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -1150,7 +1150,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
           : (data.message ?? 'Your domain is active. DNS zone created — manage records in the DNS Records tab.'),
       });
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Could not claim domain';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -1182,7 +1182,7 @@ export function StorefrontDnsZoneManager({ storefrontId, onCustomizeStorefront }
       setSelectedZone(data.zone);
       toast({ title: 'Domain added to DNS', description: 'Add records and update your nameservers.' });
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Failed to add domain';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });

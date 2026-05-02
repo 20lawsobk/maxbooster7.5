@@ -197,14 +197,14 @@ export function DataDenseAnalytics() {
         revenueChange: 0,
         followerChange: 0,
         playChange: 0,
-        platforms: (streams.byPlatform || []).map((p: any) => ({
+        platforms: (streams.byPlatform || []).map((p: Record<string, unknown>) => ({
           platform: p.platform || 'Unknown',
           streams: p.streams || 0,
           followers: 0,
           change: p.growth || 0,
           color: '#6b7280',
         })),
-        geoData: (streams.byCountry || []).map((c: any) => ({
+        geoData: (streams.byCountry || []).map((c: Record<string, unknown>) => ({
           country: c.country || 'Unknown',
           code: c.code || '',
           streams: c.streams || 0,
@@ -212,14 +212,14 @@ export function DataDenseAnalytics() {
           growth: c.growth || 0,
         })),
         timeline: raw.timeline || [],
-        triggerCities: (streams.byCity || []).map((c: any) => ({
+        triggerCities: (streams.byCity || []).map((c: Record<string, unknown>) => ({
           city: c.city || 'Unknown',
           listeners: c.listeners || 0,
           growth: c.growth || 0,
         })),
         demographics: raw.demographics || { age: [], gender: [] },
         revenueBySource: (raw.revenue?.revenueBySource || raw.revenueBySource || []),
-        streamHistory: (streams.daily || []).map((d: any) => ({
+        streamHistory: (streams.daily || []).map((d: Record<string, unknown>) => ({
           date: d.date,
           streams: d.streams || 0,
           revenue: d.revenue || 0,
@@ -353,7 +353,7 @@ export function DataDenseAnalytics() {
           changeLabel="vs last period"
           icon={<Headphones className="w-4 h-4" />}
           color="blue"
-          sparkline={(data.streamHistory || []).map((d: any) => d.streams || 0)}
+          sparkline={(data.streamHistory || []).map((d: Record<string, unknown>) => d.streams || 0)}
           compact
         />
         <MetricCard
@@ -362,7 +362,7 @@ export function DataDenseAnalytics() {
           change={data.revenueChange}
           icon={<DollarSign className="w-4 h-4" />}
           color="green"
-          sparkline={(data.streamHistory || []).map((d: any) => d.revenue || 0)}
+          sparkline={(data.streamHistory || []).map((d: Record<string, unknown>) => d.revenue || 0)}
           compact
         />
         <MetricCard
@@ -423,7 +423,7 @@ export function DataDenseAnalytics() {
               <p className="text-muted-foreground text-sm py-4 text-center">No platform data available</p>
             ) : (
             <div className="space-y-3">
-              {(data.platforms || []).map((platform: any, index: number) => {
+              {(data.platforms || []).map((platform: Record<string, unknown>, index: number) => {
                 const maxStreams = data.platforms?.[0]?.streams || 1;
                 return (
                 <motion.div
@@ -439,7 +439,7 @@ export function DataDenseAnalytics() {
                       <Progress 
                         value={(platform.streams / maxStreams) * 100} 
                         className="h-2 flex-1"
-                        style={{ '--progress-color': platform.color } as any}
+                        style={{ '--progress-color': platform.color } as Record<string, unknown>}
                       />
                       <span className="text-xs font-medium w-16 text-right">
                         {formatNumber(platform.streams || 0)}
@@ -477,7 +477,7 @@ export function DataDenseAnalytics() {
                     outerRadius={70}
                     paddingAngle={2}
                   >
-                    {(data.revenueBySource || []).map((entry: any, index: number) => (
+                    {(data.revenueBySource || []).map((entry: Record<string, unknown>, index: number) => (
                       <Cell key={entry.source} fill={['#3b82f6', '#22c55e', '#f59e0b', '#a855f7'][index % 4]} />
                     ))}
                   </Pie>
@@ -486,7 +486,7 @@ export function DataDenseAnalytics() {
               </ResponsiveContainer>
             </div>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {(data.revenueBySource || []).map((source: any, index: number) => (
+              {(data.revenueBySource || []).map((source: Record<string, unknown>, index: number) => (
                 <div key={source.source} className="flex items-center gap-2 text-xs">
                   <div 
                     className="w-2 h-2 rounded-full" 
@@ -514,7 +514,7 @@ export function DataDenseAnalytics() {
           <CardContent>
             <ScrollArea className="h-[220px]">
               <div className="space-y-2">
-                {(data.geoData || []).map((geo: any, index: number) => (
+                {(data.geoData || []).map((geo: Record<string, unknown>, index: number) => (
                   <motion.div
                     key={geo.code}
                     initial={{ opacity: 0 }}
@@ -564,7 +564,7 @@ export function DataDenseAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {(data.triggerCities || []).map((city: any, index: number) => (
+              {(data.triggerCities || []).map((city: Record<string, unknown>, index: number) => (
                 <motion.div
                   key={city.city}
                   initial={{ opacity: 0, x: 20 }}
@@ -602,7 +602,7 @@ export function DataDenseAnalytics() {
           <div className="relative">
             <div className="absolute left-4 top-0 bottom-0 w-px bg-border" />
             <div className="space-y-4">
-              {(data.timeline || []).map((event: any, index: number) => (
+              {(data.timeline || []).map((event: Record<string, unknown>, index: number) => (
                 <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
@@ -641,7 +641,7 @@ export function DataDenseAnalytics() {
               <div>
                 <h4 className="text-sm font-medium mb-3">Age Distribution</h4>
                 <div className="space-y-2">
-                  {(data.demographics?.age || []).map((age: any) => (
+                  {(data.demographics?.age || []).map((age: Record<string, unknown>) => (
                     <div key={age.range} className="flex items-center gap-2">
                       <span className="text-xs w-12">{age.range}</span>
                       <Progress value={age.percentage || 0} className="flex-1 h-2" />
@@ -653,7 +653,7 @@ export function DataDenseAnalytics() {
               <div>
                 <h4 className="text-sm font-medium mb-3">Gender Split</h4>
                 <div className="space-y-2">
-                  {(data.demographics?.gender || []).map((gender: any) => (
+                  {(data.demographics?.gender || []).map((gender: Record<string, unknown>) => (
                     <div key={gender.type} className="flex items-center gap-2">
                       <span className="text-xs w-12">{gender.type}</span>
                       <Progress value={gender.percentage || 0} className="flex-1 h-2" />

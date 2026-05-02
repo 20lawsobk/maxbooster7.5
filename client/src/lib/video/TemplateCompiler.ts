@@ -105,7 +105,7 @@ function compileTemplateToCompiledTemplate(options: PromoTemplateOptions): Compi
     case 'teaser':
       return compileSocialTeaser(options as SocialTeaserOptions);
     default:
-      throw new Error(`Unknown template type: ${(options as any).type}`);
+      throw new Error(`Unknown template type: ${(options as Record<string, unknown>).type}`);
   }
 }
 
@@ -560,22 +560,22 @@ function scaleLayerConfig(
   const cfg = config as Record<string, unknown>;
 
   if ('fontSize' in cfg && typeof cfg.fontSize === 'number') {
-    (cfg as any).fontSize = cfg.fontSize * Math.min(scaleX, scaleY);
+    (cfg as Record<string, unknown>).fontSize = cfg.fontSize * Math.min(scaleX, scaleY);
   }
   if ('width' in cfg && typeof cfg.width === 'number') {
-    (cfg as any).width = cfg.width * scaleX;
+    (cfg as Record<string, unknown>).width = cfg.width * scaleX;
   }
   if ('height' in cfg && typeof cfg.height === 'number') {
-    (cfg as any).height = cfg.height * scaleY;
+    (cfg as Record<string, unknown>).height = cfg.height * scaleY;
   }
   if ('radius' in cfg && typeof cfg.radius === 'number') {
-    (cfg as any).radius = cfg.radius * Math.min(scaleX, scaleY);
+    (cfg as Record<string, unknown>).radius = cfg.radius * Math.min(scaleX, scaleY);
   }
   if ('barWidth' in cfg && typeof cfg.barWidth === 'number') {
-    (cfg as any).barWidth = cfg.barWidth * scaleX;
+    (cfg as Record<string, unknown>).barWidth = cfg.barWidth * scaleX;
   }
   if ('lineWidth' in cfg && typeof cfg.lineWidth === 'number') {
-    (cfg as any).lineWidth = cfg.lineWidth * Math.min(scaleX, scaleY);
+    (cfg as Record<string, unknown>).lineWidth = cfg.lineWidth * Math.min(scaleX, scaleY);
   }
 
   return config;

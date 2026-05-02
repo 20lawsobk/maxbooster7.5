@@ -824,7 +824,7 @@ export class WorkspaceService {
     memberIds: string[];
     permission: string;
     sharedBy: string;
-  }): Promise<{ success: boolean; shares?: any[]; error?: string }> {
+  }): Promise<{ success: boolean; shares?: unknown[]; error?: string }> {
     try {
       const shares = [];
       
@@ -884,7 +884,7 @@ export class WorkspaceService {
     allowDownload?: boolean;
     requireSignIn?: boolean;
     createdBy: string;
-  }): Promise<{ success: boolean; link?: any; error?: string }> {
+  }): Promise<{ success: boolean; link?: Record<string, unknown>; error?: string }> {
     try {
       const token = crypto.randomBytes(16).toString('hex');
       const baseUrl = process.env.BASE_URL || 'https://maxbooster.app';

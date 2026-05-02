@@ -24,7 +24,7 @@ interface BillingError {
 }
 
 const getPaymentErrorMessage = (error: StripeError | BillingError): { message: string; canRetry: boolean } => {
-  const errorCode = (error as any).code || (error as StripeError).type;
+  const errorCode = (error as Record<string, unknown>).code || (error as StripeError).type;
   
   switch (errorCode) {
     case 'card_declined':
@@ -114,7 +114,7 @@ const plans = {
   },
 };
 
-const SubscribeForm = ({ plan, onRetry }: { plan: any; onRetry?: () => void }) => {
+const SubscribeForm = ({ plan, onRetry }: { plan: Record<string, unknown>; onRetry?: () => void }) => {
   const stripe = useStripe();
   const elements = useElements();
   const { toast } = useToast();
@@ -171,7 +171,7 @@ const SubscribeForm = ({ plan, onRetry }: { plan: any; onRetry?: () => void }) =
           description: 'Please complete the verification in the popup window.',
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       const errorInfo = getPaymentErrorMessage(err);
       setPaymentError(errorInfo);
       toast({
@@ -326,7 +326,7 @@ export default function Subscribe() {
       }
       
       setClientSecret(data.clientSecret);
-    } catch (error: any) {
+    } catch (error) {
       const errorData = error.body || error;
       
       if (errorData.code === 'STRIPE_NOT_CONFIGURED' || error.status === 503) {
@@ -514,9 +514,9 @@ export default function Subscribe() {
                 <div className="flex items-baseline space-x-2">
                   <span className="text-4xl font-bold text-gray-900">${plan.price}</span>
                   <span className="text-gray-500">/{plan.period}</span>
-                  {(plan as any).originalPrice && (
+                  {(plan as Record<string, unknown>).originalPrice && (
                     <span className="text-sm text-gray-500 line-through ml-2">
-                      ${(plan as any).originalPrice}/{plan.period}
+                      ${(plan as Record<string, unknown>).originalPrice}/{plan.period}
                     </span>
                   )}
                 </div>

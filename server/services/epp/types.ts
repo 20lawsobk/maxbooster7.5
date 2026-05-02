@@ -21,7 +21,7 @@ export interface EppResponse {
     svTRID:   string;
   };
   resData?:   any;              // Raw parsed <resData> contents
-  extension?: any;              // Raw parsed <extension> contents
+  extension?: Record<string, unknown>;              // Raw parsed <extension> contents
   data?:      any;              // Full parsed response body (for debugging)
 }
 

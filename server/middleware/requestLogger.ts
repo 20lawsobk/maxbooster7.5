@@ -30,7 +30,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
     url: req.originalUrl,
     ip: req.ip || 'unknown',
     userAgent: req.get('user-agent') || 'unknown',
-    userId: (req as any).user?.id,
+    userId: (req as Record<string, unknown>).user?.id,
     sessionId: req.sessionID,
     query: Object.keys(req.query).length > 0 ? req.query : undefined,
     referrer: req.get('referrer'),
@@ -38,7 +38,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
   // Override res.end to capture response details
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): any {
+  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Record<string, unknown> {
     const responseTime = Date.now() - startTime;
 
     // Update log data with response information
@@ -73,7 +73,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
       auditLogger.log({
         timestamp: logData.timestamp,
         userId: logData.userId,
-        userEmail: (req as any).user?.email,
+        userEmail: (req as Record<string, unknown>).user?.email,
         ip: logData.ip,
         userAgent: logData.userAgent,
         action: 'HTTP_REQUEST',
@@ -118,7 +118,7 @@ export function requestLogger(req: Request, res: Response, next: NextFunction): 
 
     // Call original end method
     return originalEnd(chunk, encoding, cb);
-  } as any;
+  } as Record<string, unknown>;
 
   next();
 }
@@ -136,7 +136,7 @@ export function errorContext(req: Request, res: Response, next: NextFunction): v
         url: req.originalUrl,
         ip: req.ip,
         userAgent: req.get('user-agent'),
-        userId: (req as any).user?.id,
+        userId: (req as Record<string, unknown>).user?.id,
         sessionId: req.sessionID,
         timestamp: new Date().toISOString(),
       };

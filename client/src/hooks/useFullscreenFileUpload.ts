@@ -122,7 +122,7 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
     if (supportsFileSystemAccess() && isInFullscreen) {
       try {
         const fileTypes = parseAcceptToFileTypes(accept);
-        const handles = await (window as any).showOpenFilePicker({
+        const handles = await window.showOpenFilePicker({
           multiple,
           types: fileTypes.length > 0 ? fileTypes : undefined,
           excludeAcceptAllOption: false
@@ -138,8 +138,8 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
           onFilesSelected?.(files);
         }
         return;
-      } catch (e: any) {
-        if (e.name === 'AbortError') {
+      } catch (e) {
+        if (e instanceof Error && e.name === 'AbortError') {
           return;
         }
         logger.warn('File System Access API failed, falling back:', e);
@@ -155,12 +155,12 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
       try {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
-        } else if ((document as any).webkitExitFullscreen) {
-          await (document as any).webkitExitFullscreen();
-        } else if ((document as any).mozCancelFullScreen) {
-          await (document as any).mozCancelFullScreen();
-        } else if ((document as any).msExitFullscreen) {
-          await (document as any).msExitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          await document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
         }
       } catch (e) {
         logger.warn('Could not exit fullscreen:', e);
@@ -195,29 +195,29 @@ export function useFullscreenFileUpload(options: UseFullscreenFileUploadOptions 
 export function isInFullscreenMode(): boolean {
   return !!(
     document.fullscreenElement ||
-    (document as any).webkitFullscreenElement ||
-    (document as any).mozFullScreenElement ||
-    (document as any).msFullscreenElement
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
   );
 }
 
 export async function exitFullscreenForUpload(): Promise<Element | null> {
   const fullscreenElement = document.fullscreenElement ||
-    (document as any).webkitFullscreenElement ||
-    (document as any).mozFullScreenElement ||
-    (document as any).msFullscreenElement;
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement;
 
   if (!fullscreenElement) return null;
 
   try {
     if (document.exitFullscreen) {
       await document.exitFullscreen();
-    } else if ((document as any).webkitExitFullscreen) {
-      await (document as any).webkitExitFullscreen();
-    } else if ((document as any).mozCancelFullScreen) {
-      await (document as any).mozCancelFullScreen();
-    } else if ((document as any).msExitFullscreen) {
-      await (document as any).msExitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      await document.webkitExitFullscreen();
+    } else if (document.mozCancelFullScreen) {
+      await document.mozCancelFullScreen();
+    } else if (document.msExitFullscreen) {
+      await document.msExitFullscreen();
     }
   } catch (e) {
     logger.warn('Could not exit fullscreen:', e);
@@ -232,12 +232,12 @@ export async function reenterFullscreen(element: Element | null): Promise<void> 
   try {
     if (element.requestFullscreen) {
       await element.requestFullscreen();
-    } else if ((element as any).webkitRequestFullscreen) {
-      await (element as any).webkitRequestFullscreen();
-    } else if ((element as any).mozRequestFullScreen) {
-      await (element as any).mozRequestFullScreen();
-    } else if ((element as any).msRequestFullscreen) {
-      await (element as any).msRequestFullscreen();
+    } else if (element.webkitRequestFullscreen) {
+      await element.webkitRequestFullscreen();
+    } else if (element.mozRequestFullScreen) {
+      await element.mozRequestFullScreen();
+    } else if (element.msRequestFullscreen) {
+      await element.msRequestFullscreen();
     }
   } catch (e) {
     logger.warn('Could not re-enter fullscreen:', e);
@@ -253,7 +253,7 @@ export async function openFilePickerInFullscreen(options: {
   if (supportsFileSystemAccess()) {
     try {
       const fileTypes = parseAcceptToFileTypes(accept);
-      const handles = await (window as any).showOpenFilePicker({
+      const handles = await window.showOpenFilePicker({
         multiple,
         types: fileTypes.length > 0 ? fileTypes : undefined,
         excludeAcceptAllOption: false
@@ -265,8 +265,8 @@ export async function openFilePickerInFullscreen(options: {
         files.push(file);
       }
       return files;
-    } catch (e: any) {
-      if (e.name === 'AbortError') {
+    } catch (e) {
+      if (e instanceof Error && e.name === 'AbortError') {
         return [];
       }
       throw e;

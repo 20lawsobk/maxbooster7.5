@@ -3,7 +3,7 @@ import { randomUUID } from 'crypto';
 import { logger } from '../logger.js';
 
 // Cache for the maxBooster247 instance to avoid repeated imports
-let maxBooster247Cache: any = null;
+let maxBooster247Cache: Record<string, unknown> | null = null;
 let importAttempted = false;
 
 // Get reliability system at runtime using ES module imports
@@ -63,7 +63,7 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
 
   // Override res.end to capture timing
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): any {
+  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Response {
     const end = process.hrtime.bigint();
     const duration = Number(end - start) / 1000000; // Convert to milliseconds
 
@@ -117,7 +117,7 @@ export function performanceMonitoring(req: Request, res: Response, next: NextFun
     } else {
       return originalEnd(chunk, encoding, cb);
     }
-  } as any;
+  } as Record<string, unknown>;
 
   next();
 }
@@ -128,7 +128,7 @@ export function memoryMonitoring(req: Request, res: Response, next: NextFunction
 
   // Override res.end to capture memory usage
   const originalEnd = res.end.bind(res);
-  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): any {
+  res.end = function (chunk?: unknown, encoding?: unknown, cb?: unknown): Response {
     const finalMemory = process.memoryUsage();
     const memoryDelta = finalMemory.heapUsed - initialMemory.heapUsed;
 
@@ -157,7 +157,7 @@ export function memoryMonitoring(req: Request, res: Response, next: NextFunction
     } else {
       return originalEnd(chunk, encoding, cb);
     }
-  } as any;
+  } as Record<string, unknown>;
 
   next();
 }

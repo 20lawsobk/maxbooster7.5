@@ -11,24 +11,24 @@ const execAsync = promisify(exec);
 // Lazy service loaders — avoid circular imports at module load time.
 async function loadNotificationService() {
   const m = await import('./services/notificationService.js');
-  return (m as any).notificationService ?? (m as any).default;
+  return (m as Record<string, unknown>).notificationService ?? (m as Record<string, unknown>).default;
 }
 async function loadDistributionService() {
   const m = await import('./services/distributionService.js');
-  return (m as any).distributionService ?? (m as any).default;
+  return (m as Record<string, unknown>).distributionService ?? (m as Record<string, unknown>).default;
 }
 async function loadAutoPostingService() {
   try {
     const m = await import('./services/autoPostingServiceV2.js');
-    return (m as any).autoPostingServiceV2 ?? (m as any).default;
+    return (m as Record<string, unknown>).autoPostingServiceV2 ?? (m as Record<string, unknown>).default;
   } catch {
     const m = await import('./services/autoPostingService.js');
-    return (m as any).autoPostingService ?? (m as any).default;
+    return (m as Record<string, unknown>).autoPostingService ?? (m as Record<string, unknown>).default;
   }
 }
 async function loadStorage() {
   const m = await import('./storage.js');
-  return (m as any).storage;
+  return (m as Record<string, unknown>).storage;
 }
 
 // Comprehensive Automation System
@@ -146,7 +146,7 @@ export class AutomationSystem extends EventEmitter {
             link: params.link,
           });
           return { success: true, message: 'Email sent successfully' };
-        } catch (e: any) {
+        } catch (e) {
           logger.warn({ err: e }, 'send-email action failed');
           return { success: false, message: e?.message ?? 'send-email failed' };
         }
@@ -181,7 +181,7 @@ export class AutomationSystem extends EventEmitter {
           const scheduledTime = params.schedule ? new Date(params.schedule) : new Date();
           const r = await svc.schedulePost(params.userId, platforms, postContent, scheduledTime);
           return { success: true, message: 'Posted to social media', result: r };
-        } catch (e: any) {
+        } catch (e) {
           logger.warn({ err: e }, 'post-social-media action failed');
           return { success: false, message: e?.message ?? 'post-social-media failed' };
         }
@@ -201,7 +201,7 @@ export class AutomationSystem extends EventEmitter {
           if (!dist?.distributeRelease) throw new Error('distributionService unavailable');
           const r = await dist.distributeRelease(params.releaseId, params.userId);
           return { success: true, message: 'Music distribution dispatched', detail: r };
-        } catch (e: any) {
+        } catch (e) {
           logger.warn({ err: e }, 'distribute-music action failed');
           return { success: false, message: e?.message ?? 'distribute-music failed' };
         }
@@ -290,7 +290,7 @@ export class AutomationSystem extends EventEmitter {
             });
           }
           return { success: true, message: 'Notification sent', count: recipients.length };
-        } catch (e: any) {
+        } catch (e) {
           logger.warn({ err: e }, 'send-notification action failed');
           return { success: false, message: e?.message ?? 'send-notification failed' };
         }
@@ -494,7 +494,7 @@ export class AutomationSystem extends EventEmitter {
       stop: (trigger) => {
         if (!trigger?.webhookId) return;
         const list = this.webhookHandlers.get(trigger.webhookId) || [];
-        const next = list.filter((h: any) => h !== trigger.handler);
+        const next = list.filter((h: Record<string, unknown>) => h !== trigger.handler);
         if (next.length === 0) this.webhookHandlers.delete(trigger.webhookId);
         else this.webhookHandlers.set(trigger.webhookId, next);
       },

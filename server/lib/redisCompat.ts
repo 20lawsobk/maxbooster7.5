@@ -11,7 +11,7 @@ import { logger } from '../logger.js';
  *
  * Argument order is identical between the two libraries for all aliases below.
  */
-export function applyIoredisCompatShim(client: any): any {
+export function applyIoredisCompatShim(client: Record<string, unknown>): Record<string, unknown> {
   if (!client || typeof client !== 'object') return client;
 
   // Already patched — idempotent
@@ -70,7 +70,7 @@ export function applyIoredisCompatShim(client: any): any {
   // doing Object.entries(result).
   if (typeof client.hgetall === 'function') {
     const origHgetall = client.hgetall.bind(client);
-    client.hGetAll = async (...args: any[]) => {
+    client.hGetAll = async (...args: unknown[]) => {
       const result = await origHgetall(...args);
       return result ?? {};
     };

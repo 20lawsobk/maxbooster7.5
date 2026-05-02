@@ -176,7 +176,7 @@ export class PocketSimulationStorage {
   // SAMPLE POOL (For behavioral simulation with minimal memory)
   // ============================================================================
 
-  addToSamplePool(user: any): boolean {
+  addToSamplePool(user: Record<string, unknown>): boolean {
     if (this.samplePool.size >= this.MAX_SAMPLE_SIZE) {
       return false;
     }

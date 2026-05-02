@@ -369,7 +369,7 @@ export class SSOService {
 
   async handleSAMLResponse(
     workspaceId: string,
-    samlResponse: any
+    samlResponse: Record<string, unknown>
   ): Promise<{ success: boolean; userId?: string; isNewUser?: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
@@ -459,8 +459,8 @@ export class SSOService {
 
   async handleOIDCCallback(
     workspaceId: string,
-    tokenData: any,
-    userInfo: any
+    tokenData: Record<string, unknown>,
+    userInfo: Record<string, unknown>
   ): Promise<{ success: boolean; userId?: string; isNewUser?: boolean; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
@@ -551,7 +551,7 @@ export class SSOService {
   async createSCIMUser(
     workspaceId: string,
     scimUser: SCIMUser
-  ): Promise<{ success: boolean; user?: any; error?: string }> {
+  ): Promise<{ success: boolean; user?: Record<string, unknown>; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
@@ -629,7 +629,7 @@ export class SSOService {
     workspaceId: string,
     userId: string,
     scimUser: Partial<SCIMUser>
-  ): Promise<{ success: boolean; user?: any; error?: string }> {
+  ): Promise<{ success: boolean; user?: Record<string, unknown>; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config || !config.scimEnabled) {
@@ -646,7 +646,7 @@ export class SSOService {
         return { success: false, error: 'User not found' };
       }
 
-      const updates: any = {};
+      const updates: Record<string, unknown> = {};
       if (scimUser.name?.givenName) updates.firstName = scimUser.name.givenName;
       if (scimUser.name?.familyName) updates.lastName = scimUser.name.familyName;
       if (scimUser.emails?.[0]?.value) updates.email = scimUser.emails[0].value;
@@ -749,7 +749,7 @@ export class SSOService {
     filter?: string,
     startIndex: number = 1,
     count: number = 100
-  ): Promise<{ totalResults: number; itemsPerPage: number; startIndex: number; Resources: any[] }> {
+  ): Promise<{ totalResults: number; itemsPerPage: number; startIndex: number; Resources: unknown[] }> {
     try {
       const members = await db
         .select({
@@ -811,7 +811,7 @@ export class SSOService {
     }
   }
 
-  private async logAuditEvent(params: any): Promise<void> {
+  private async logAuditEvent(params: Record<string, unknown>): Promise<void> {
     try {
       await db.insert(workspaceAuditLog).values(params);
     } catch (error: unknown) {
@@ -819,7 +819,7 @@ export class SSOService {
     }
   }
 
-  async getIdPMetadata(workspaceId: string): Promise<{ success: boolean; metadata?: any; error?: string }> {
+  async getIdPMetadata(workspaceId: string): Promise<{ success: boolean; metadata?: Record<string, unknown>; error?: string }> {
     try {
       const config = await this.getSSOConfig(workspaceId);
       if (!config) {

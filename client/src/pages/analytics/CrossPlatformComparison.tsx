@@ -83,12 +83,12 @@ const PLATFORM_INFO: Record<string, { color: string; icon: string }> = {
   tidal: { color: '#000000', icon: '🌊' },
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
         <p className="font-semibold text-sm mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div
               className="w-3 h-3 rounded-full"
@@ -217,9 +217,9 @@ export function CrossPlatformComparison({
   });
 
   const platformData = useMemo<PlatformData[]>(() => {
-    const metrics: any[] = data?.data?.metrics ?? data?.metrics ?? [];
+    const metrics: unknown[] = data?.data?.metrics ?? data?.metrics ?? [];
     if (!metrics.length) return [];
-    return metrics.map((p: any) => ({
+    return metrics.map((p: Record<string, unknown>) => ({
       platform: p.platform || p.name || '',
       color: PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]?.color || '#6B7280',
       icon: PLATFORM_INFO[p.platform?.toLowerCase() ?? p.name?.toLowerCase()]?.icon || '🎵',
@@ -239,12 +239,12 @@ export function CrossPlatformComparison({
   const maxStreams = platformData.length > 0 ? Math.max(...platformData.map(p => p.streams)) : 1;
 
   const growthData = useMemo<GrowthData[]>(() => {
-    const timeline: any[] = data?.data?.timeline ?? data?.timeline ?? [];
+    const timeline: unknown[] = data?.data?.timeline ?? data?.timeline ?? [];
     return timeline;
   }, [data]);
 
   const engagementData = useMemo<EngagementMetric[]>(() => {
-    const engagement: any[] = data?.data?.engagementBreakdown ?? data?.engagementBreakdown ?? [];
+    const engagement: unknown[] = data?.data?.engagementBreakdown ?? data?.engagementBreakdown ?? [];
     return engagement;
   }, [data]);
 

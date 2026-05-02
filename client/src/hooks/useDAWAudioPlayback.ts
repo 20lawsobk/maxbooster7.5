@@ -23,7 +23,7 @@ export function useDAWAudioPlayback({ tracks, transport }: UseDAWAudioPlaybackOp
 
   const getOrCreateContext = useCallback((): AudioContext => {
     if (!contextRef.current || contextRef.current.state === 'closed') {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      const AudioCtx = window.AudioContext || (window as Record<string, unknown>).webkitAudioContext;
       contextRef.current = new AudioCtx({ latencyHint: 'interactive' });
     }
     return contextRef.current;

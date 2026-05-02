@@ -262,7 +262,7 @@ class DatabaseResilience extends EventEmitter {
     return { ...this.pool };
   }
 
-  getHealthMetrics(): any {
+  getHealthMetrics(): Record<string, unknown> {
     const successRate =
       this.pool.totalRequests > 0
         ? ((this.pool.totalRequests - this.pool.failedRequests) / this.pool.totalRequests) * 100

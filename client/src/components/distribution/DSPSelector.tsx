@@ -114,7 +114,7 @@ interface DSP {
   category: 'streaming' | 'social' | 'store' | 'other';
   region: string;
   processingTime: string;
-  iconComponent?: any;
+  iconComponent?: Record<string, unknown>;
   color?: string;
 }
 

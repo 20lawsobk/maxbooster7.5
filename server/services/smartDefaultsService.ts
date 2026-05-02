@@ -552,7 +552,7 @@ class SmartDefaultsService {
     return campaigns[stage];
   }
 
-  private getAccountAgeMonths(user: any): number {
+  private getAccountAgeMonths(user: Record<string, unknown>): number {
     if (!user?.createdAt) return 1;
     const created = new Date(user.createdAt);
     const now = new Date();
@@ -569,7 +569,7 @@ class SmartDefaultsService {
     return 'occasional';
   }
 
-  private calculateGrowthRate(analyticsData: any[], field: string): number {
+  private calculateGrowthRate(analyticsData: unknown[], field: string): number {
     if (analyticsData.length < 2) return 0;
     const recent = analyticsData.slice(0, Math.floor(analyticsData.length / 2));
     const older = analyticsData.slice(Math.floor(analyticsData.length / 2));

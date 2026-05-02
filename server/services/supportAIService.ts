@@ -6,7 +6,7 @@ import { logger } from '../logger.js';
 interface SupportQuery {
   question: string;
   userId?: string;
-  context?: any;
+  context?: Record<string, unknown>;
 }
 
 interface AIResponse {

@@ -13,7 +13,7 @@ interface NotificationOptions {
   title: string;
   message: string;
   link?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 }
 
 interface EmailTemplate {
@@ -54,7 +54,7 @@ class NotificationService {
         return;
       }
 
-      const preferences = (user.notificationSettings as any) || {
+      const preferences = (user.notificationSettings as Record<string, unknown>) || {
         email: true,
         browser: true,
         releases: true,
@@ -89,8 +89,8 @@ class NotificationService {
       }
 
       // Broadcast notification via WebSocket for real-time updates
-      if (typeof (global as any).broadcastNotification === 'function') {
-        (global as any).broadcastNotification(userId, notification);
+      if (typeof (global as Record<string, unknown>).broadcastNotification === 'function') {
+        (global as Record<string, unknown>).broadcastNotification(userId, notification);
       }
 
       logger.info(`✅ Notification sent to user ${userId}: ${title}`);
@@ -135,7 +135,7 @@ class NotificationService {
     message: string,
     link?: string,
     type?: string,
-    metadata?: any
+    metadata?: Record<string, unknown>
   ): Promise<void> {
     try {
       if (!webPushService.isReady()) {
@@ -177,7 +177,7 @@ class NotificationService {
         };
       }
 
-      const result = await webPushService.sendRichToUser((user as any).id, richPayload as any);
+      const result = await webPushService.sendRichToUser((user as Record<string, unknown>).id, richPayload as Record<string, unknown>);
       if (result.sent > 0) {
         logger.info(`🔔 Push notification [${type || 'generic'}] delivered to ${result.sent} device(s)`);
       }

@@ -449,7 +449,7 @@ class AutopilotLearningService {
   async getPerformanceHistory(
     userId: string,
     options: { platform?: string; limit?: number; offset?: number } = {}
-  ): Promise<{ data: any[]; total: number }> {
+  ): Promise<{ data: unknown[]; total: number }> {
     try {
       const conditions = [eq(autopilotLearningData.userId, userId)];
       

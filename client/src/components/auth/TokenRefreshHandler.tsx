@@ -92,7 +92,7 @@ export function TokenRefreshHandler({
 
         return result;
       }
-    } catch (error: any) {
+    } catch (error) {
       const result: TokenRefreshResult = {
         success: false,
         outcome: 'provider_api_error',
@@ -157,7 +157,7 @@ export function useTokenRefresh() {
         expiresAt: data.expiresAt,
         message: data.message,
       };
-    } catch (error: any) {
+    } catch (error) {
       setLastOutcome('provider_api_error');
       return {
         success: false,

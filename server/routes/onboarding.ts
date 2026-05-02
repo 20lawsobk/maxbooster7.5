@@ -166,7 +166,7 @@ router.post('/track-tutorial', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const tutorialProgress = (user?.onboardingData as any)?.tutorials || {};
+    const tutorialProgress = (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
     const tutorialData = tutorialProgress[tutorialId] || { completedSteps: [], startedAt: null, completedAt: null };
 
     if (!tutorialData.startedAt) {
@@ -223,7 +223,7 @@ router.post('/skip-tutorial', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const tutorialProgress = (user?.onboardingData as any)?.tutorials || {};
+    const tutorialProgress = (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
     const tutorialData = tutorialProgress[tutorialId] || { completedSteps: [], startedAt: null };
 
     tutorialData.skippedAt = new Date().toISOString();
@@ -267,7 +267,7 @@ router.get('/tutorials', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const tutorialProgress = (user?.onboardingData as any)?.tutorials || {};
+    const tutorialProgress = (user?.onboardingData as Record<string, unknown>)?.tutorials || {};
 
     res.json({
       tutorials: tutorialProgress,
@@ -297,7 +297,7 @@ router.post('/mark-celebrated', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const celebrations = (user?.onboardingData as any)?.celebrations || {};
+    const celebrations = (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
     celebrations[actionType] = {
       celebratedAt: new Date().toISOString(),
     };
@@ -337,7 +337,7 @@ router.get('/first-actions', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const celebrations = (user?.onboardingData as any)?.celebrations || {};
+    const celebrations = (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
     res.json({
       celebrations,
@@ -371,7 +371,7 @@ router.get('/check-first-login', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const onboardingData = user?.onboardingData as any;
+    const onboardingData = user?.onboardingData as Record<string, unknown>;
     const isFirstLogin = !onboardingData?.welcomeCompleted;
     const hasCompletedOnboarding = user?.onboardingCompleted || false;
 
@@ -553,8 +553,8 @@ router.get('/achievements', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const unlockedAchievements = (user?.onboardingData as any)?.achievements || {};
-    const celebrations = (user?.onboardingData as any)?.celebrations || {};
+    const unlockedAchievements = (user?.onboardingData as Record<string, unknown>)?.achievements || {};
+    const celebrations = (user?.onboardingData as Record<string, unknown>)?.celebrations || {};
 
     const achievements = DEFAULT_ACHIEVEMENTS.map((achievement) => {
       const unlocked = unlockedAchievements[achievement.id] || celebrations[achievement.id];
@@ -562,7 +562,7 @@ router.get('/achievements', requireAuth, async (req, res) => {
         ...achievement,
         unlockedAt: unlocked?.unlockedAt || unlocked?.celebratedAt || null,
         progress: unlocked?.progress || 0,
-        maxProgress: (achievement as any).threshold ?? 1,
+        maxProgress: (achievement as Record<string, unknown>).threshold ?? 1,
       };
     });
 
@@ -625,7 +625,7 @@ router.post('/unlock-achievement', requireAuth, async (req, res) => {
       .where(eq(users.id, userId))
       .limit(1);
 
-    const achievements = (user?.onboardingData as any)?.achievements || {};
+    const achievements = (user?.onboardingData as Record<string, unknown>)?.achievements || {};
     
     if (achievements[achievementId]?.unlockedAt) {
       return res.json({
@@ -684,7 +684,7 @@ router.get('/profile/completion', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const onboardingData = user.onboardingData as any || {};
+    const onboardingData = user.onboardingData as unknown || {};
 
     const completion = {
       emailVerified: user.emailVerified || false,

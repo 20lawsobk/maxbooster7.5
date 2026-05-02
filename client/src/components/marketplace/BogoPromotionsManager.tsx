@@ -126,18 +126,18 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
   const availableGenres = [...new Set(listings.map(l => l.genre).filter(Boolean))] as string[];
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('POST', `/api/storefront/${storefrontId}/bogo-promotions`, data),
+    mutationFn: (data: Record<string, unknown>) => apiRequest('POST', `/api/storefront/${storefrontId}/bogo-promotions`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefrontId}/bogo-promotions/all`] });
       setShowCreateDialog(false);
       resetForm();
       toast({ title: 'BOGO promotion created!' });
     },
-    onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+    onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Record<string, unknown> }) =>
       apiRequest('PUT', `/api/storefront/${storefrontId}/bogo-promotions/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefrontId}/bogo-promotions/all`] });
@@ -146,7 +146,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       resetForm();
       toast({ title: 'Promotion updated!' });
     },
-    onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+    onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
@@ -155,7 +155,7 @@ export function BogoPromotionsManager({ storefrontId }: Props) {
       queryClient.invalidateQueries({ queryKey: [`/api/storefront/${storefrontId}/bogo-promotions/all`] });
       toast({ title: 'Promotion deleted' });
     },
-    onError: (err: any) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
+    onError: (err: Error) => toast({ title: 'Error', description: err.message, variant: 'destructive' }),
   });
 
   const toggleStatusMutation = useMutation({

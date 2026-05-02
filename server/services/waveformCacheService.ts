@@ -2,7 +2,7 @@ import { db } from '../db.js';
 import { logger } from '../logger.js';
 import { storageService } from './storageService.js';
 import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
+const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 
 export interface WaveformData {
   peaks: number[];

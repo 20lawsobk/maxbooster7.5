@@ -40,7 +40,7 @@ interface Payout {
   requestedAt: Date;
   completedAt: Date | null;
   failureReason: string | null;
-  metadata: any;
+  metadata: Record<string, unknown>;
 }
 
 interface AccountVerification {

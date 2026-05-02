@@ -106,7 +106,7 @@ const PLATFORM_COLORS: Record<string, string> = {
 
 const STATUS_CONFIG: Record<ConnectionStatus, {
   label: string;
-  icon: any;
+  icon: React.ReactNode;
   color: string;
   bgColor: string;
   borderColor: string;

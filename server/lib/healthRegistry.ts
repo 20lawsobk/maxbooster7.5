@@ -84,7 +84,7 @@ export function registerCoreProbes(): void {
   healthRegistry.register('database', async () => {
     try {
       const { db } = await import('../db.js');
-      await (db as any).execute?.('SELECT 1');
+      await (db as Record<string, unknown>).execute?.('SELECT 1');
       return { status: 'ok' };
     } catch (e) {
       return { status: 'down', detail: (e as Error).message };
@@ -98,7 +98,7 @@ export function registerCoreProbes(): void {
       const { getRedisClient } = await import('./redisConnectionFactory.js');
       const client = await getRedisClient();
       if (!client) return { status: 'degraded', detail: 'no client' };
-      await (client as any).ping?.();
+      await (client as Record<string, unknown>).ping?.();
       return { status: 'ok' };
     } catch (e) {
       return { status: 'degraded', detail: (e as Error).message };
@@ -109,7 +109,7 @@ export function registerCoreProbes(): void {
   healthRegistry.register('audit', async () => {
     try {
       const mod = await import('../audit-system.js');
-      const audit = (mod as any).default?.getInstance?.() ?? (mod as any).AuditSystem?.getInstance?.();
+      const audit = (mod as Record<string, unknown>).default?.getInstance?.() ?? (mod as Record<string, unknown>).AuditSystem?.getInstance?.();
       if (!audit) return { status: 'unknown', detail: 'not initialized' };
       const results = audit.getAuditResults?.() ?? audit.auditResults;
       const score = results?.overallScore ?? 0;
@@ -125,7 +125,7 @@ export function registerCoreProbes(): void {
   healthRegistry.register('automation', async () => {
     try {
       const mod = await import('../automation-system.js');
-      const auto = (mod as any).default?.getInstance?.() ?? (mod as any).AutomationSystem?.getInstance?.();
+      const auto = (mod as Record<string, unknown>).default?.getInstance?.() ?? (mod as Record<string, unknown>).AutomationSystem?.getInstance?.();
       if (!auto) return { status: 'unknown', detail: 'not initialized' };
       const m = auto.getMetrics?.();
       return { status: 'ok', detail: `workflows=${m?.totalWorkflows ?? 0}` };

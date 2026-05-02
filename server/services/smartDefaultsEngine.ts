@@ -8,7 +8,7 @@ import { userPreferencesService, ArtistType, CareerStage, UserPreferences } from
 export interface SmartDefault {
   category: string;
   key: string;
-  value: any;
+  value: Record<string, unknown>;
   confidence: number;
   reasoning: string;
 }

@@ -317,7 +317,7 @@ class SharpImageService {
         filename,
         publicUrl,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`Sharp image generation failed: ${error.message}`);
       throw error;
     }

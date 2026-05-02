@@ -77,9 +77,9 @@ export const generateCsrfToken: RequestHandler = (req: Request, res: Response, n
       path: '/',
     });
     
-    (req as any).csrfToken = token;
+    (req as Record<string, unknown>).csrfToken = token;
   } else {
-    (req as any).csrfToken = req.cookies[CSRF_COOKIE];
+    (req as Record<string, unknown>).csrfToken = req.cookies[CSRF_COOKIE];
   }
   
   next();

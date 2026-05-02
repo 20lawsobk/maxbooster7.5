@@ -104,7 +104,7 @@ class PromotionalToolsService {
       userId,
       slug,
       title: release.title,
-      artistName: (release.metadata as any)?.artistName || 'Unknown Artist',
+      artistName: (release.metadata as Record<string, unknown>)?.artistName || 'Unknown Artist',
       coverArtUrl: release.artworkUrl,
       releaseDate: release.releaseDate,
       description: config.description,
@@ -243,7 +243,7 @@ class PromotionalToolsService {
         backgroundColor: config.backgroundColor || '#1a1a2e',
         textColor: config.textColor || '#ffffff',
         accentColor: config.accentColor || '#4ecdc4',
-        artistName: (release.metadata as any)?.artistName || 'Unknown Artist',
+        artistName: (release.metadata as Record<string, unknown>)?.artistName || 'Unknown Artist',
         trackTitle: release.title,
         releaseDate: release.releaseDate?.toLocaleDateString(),
         template: config.template || 'minimal',
@@ -272,7 +272,7 @@ class PromotionalToolsService {
       type: config.type,
       template: config.template || 'minimal',
       coverArtUrl: release.artworkUrl,
-      artistName: (release.metadata as any)?.artistName || 'Unknown Artist',
+      artistName: (release.metadata as Record<string, unknown>)?.artistName || 'Unknown Artist',
       trackTitle: release.title,
       releaseDate: release.releaseDate?.toLocaleDateString(),
       customText: config.customText,
@@ -462,7 +462,7 @@ class PromotionalToolsService {
       syncMethod?: string;
     }
   ): Promise<LyricsSync> {
-    let lyrics: any[] = [];
+    let lyrics: unknown[] = [];
     if (config.syncMethod === 'auto' || config.syncMethod === 'ai') {
       lyrics = this.autoSyncLyrics(config.plainText);
     }
@@ -482,7 +482,7 @@ class PromotionalToolsService {
     return sync;
   }
 
-  private autoSyncLyrics(plainText: string): any[] {
+  private autoSyncLyrics(plainText: string): unknown[] {
     const lines = plainText.split('\n').filter(line => line.trim());
     const avgDuration = 3;
     return lines.map((text, index) => ({
@@ -492,7 +492,7 @@ class PromotionalToolsService {
     }));
   }
 
-  async updateLyricsSync(syncId: string, lyrics: any[]): Promise<LyricsSync> {
+  async updateLyricsSync(syncId: string, lyrics: unknown[]): Promise<LyricsSync> {
     const [sync] = await db.update(lyricsSyncs)
       .set({ lyrics, status: 'synced', syncMethod: 'manual', updatedAt: new Date() })
       .where(eq(lyricsSyncs.id, syncId))
@@ -537,7 +537,7 @@ class PromotionalToolsService {
   }
 
   exportLRC(sync: LyricsSync): string {
-    const lyricsArray = sync.lyrics as any[];
+    const lyricsArray = (sync.lyrics as unknown[]) || [];
     let lrc = '';
     for (const line of lyricsArray) {
       const minutes = Math.floor(line.startTime / 60);
@@ -548,7 +548,7 @@ class PromotionalToolsService {
   }
 
   exportSRT(sync: LyricsSync): string {
-    const lyricsArray = sync.lyrics as any[];
+    const lyricsArray = (sync.lyrics as unknown[]) || [];
     let srt = '';
     lyricsArray.forEach((line, index) => {
       const startTime = this.formatSRTTime(line.startTime);
@@ -671,7 +671,7 @@ class PromotionalToolsService {
       return existingRecs;
     }
 
-    const recommendations: any[] = [];
+    const recommendations: unknown[] = [];
     const types = ['for_you', 'trending', 'similar', 'new_releases', 'spotlight'];
     
     for (const type of types) {

@@ -282,7 +282,7 @@ router.delete('/releases/:id', requireAuth, async (req: Request, res: Response) 
     }
 
     // If release is live on LabelGrid, initiate takedown
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
     if (metadata?.labelGridReleaseId && release.status !== 'draft') {
       try {
         await labelGridService.takedownRelease(metadata.labelGridReleaseId);
@@ -717,7 +717,7 @@ router.post(
       const userId = (req.user as AuthenticatedUser).id;
       const file = req.file;
 
-      let bodyData: any;
+      let bodyData: Record<string, unknown> | string | undefined;
       try {
         bodyData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : (req.body.data || req.body);
       } catch (parseErr) {
@@ -1033,7 +1033,7 @@ router.get('/releases/:id/status', requireAuth, async (req: Request, res: Respon
     }
 
     // Get real-time status from LabelGrid if we have an external release ID
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
     let labelGridStatus = null;
 
     if (metadata?.labelGridReleaseId) {
@@ -1104,7 +1104,7 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const releaseMetadata = release.metadata as any;
+    const releaseMetadata = release.metadata as Record<string, unknown>;
     const currentStatus = releaseMetadata?.status || release.status || 'draft';
 
     if (currentStatus === 'draft') {
@@ -1132,7 +1132,7 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
         setImmediate(async () => {
           try {
             const livePlatformCount = Array.isArray(statusResult.platforms)
-              ? statusResult.platforms.filter((p: any) => p.status === 'live' || p.status === 'delivered').length || statusResult.platforms.length
+              ? statusResult.platforms.filter((p: Record<string, unknown>) => p.status === 'live' || p.status === 'delivered').length || statusResult.platforms.length
               : 1;
             await notificationService.sendReleaseLiveNotification(
               userId,
@@ -1146,11 +1146,11 @@ router.post('/releases/:id/check-status', requireAuth, async (req: Request, res:
       }
     } catch (refreshError) {
       logger.warn('Status refresh failed, returning current status:', refreshError);
-      const currentPlatforms = (release.metadata as any)?.platforms || [];
+      const currentPlatforms = (release.metadata as Record<string, unknown>)?.platforms || [];
       res.json({
         success: true,
         status: currentStatus,
-        platforms: Array.isArray(currentPlatforms) ? currentPlatforms.map((p: any) => ({
+        platforms: Array.isArray(currentPlatforms) ? currentPlatforms.map((p: Record<string, unknown>) => ({
           platform: typeof p === 'string' ? p : p.platform || p.name,
           status: p.status || 'unknown',
         })) : [],
@@ -1186,7 +1186,7 @@ router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res:
 
     const tracks = await storage.getDistroTracks(id);
 
-    const metadata = (release.metadata as any) || {};
+    const metadata = (release.metadata as Record<string, unknown>) || {};
     const xml = await ddexPackageService.generateDDEXXML(
       {
         id: release.id,
@@ -1205,8 +1205,8 @@ router.post('/releases/:id/ddex/preview', requireAuth, async (req: Request, res:
         coverArtPath: release.artworkUrl || metadata.coverArtUrl || null,
         territories: metadata.territories || ['worldwide'],
       },
-      tracks.map((track: any, index: number) => {
-        const trackMeta = (track.metadata as any) || {};
+      tracks.map((track: Record<string, unknown>, index: number) => {
+        const trackMeta = (track.metadata as Record<string, unknown>) || {};
         return {
           id: track.id,
           title: track.title || `Track ${index + 1}`,
@@ -1253,7 +1253,7 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
       return res.status(400).json({ error: 'Release has no tracks. Add tracks before downloading a DDEX package.' });
     }
 
-    const metadata = (release.metadata as any) || {};
+    const metadata = (release.metadata as Record<string, unknown>) || {};
     const upc = metadata.upc || '';
     const coverArtPath = release.artworkUrl || metadata.coverArtUrl || null;
 
@@ -1278,8 +1278,8 @@ router.get('/releases/:id/ddex/download', requireAuth, async (req: Request, res:
           coverArtPath: coverArtPath,
           territories: metadata.territories || ['worldwide'],
         },
-        tracks.map((track: any, index: number) => {
-          const trackMeta = (track.metadata as any) || {};
+        tracks.map((track: Record<string, unknown>, index: number) => {
+          const trackMeta = (track.metadata as Record<string, unknown>) || {};
           return {
             id: track.id,
             title: track.title || `Track ${index + 1}`,
@@ -1331,7 +1331,7 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
 
     // HARDENING: Validate status transition - prevent duplicate submissions
     const currentStatus = metadata?.status || release.status;
@@ -1368,18 +1368,18 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       });
     }
 
-    const tracksWithoutISRC = tracks.filter((t: any) => !t.isrc);
+    const tracksWithoutISRC = tracks.filter((t: Record<string, unknown>) => !t.isrc);
     if (tracksWithoutISRC.length > 0) {
       return res.status(400).json({ 
         error: 'Missing ISRC codes',
         message: `${tracksWithoutISRC.length} track(s) are missing ISRC codes. All tracks require valid ISRC codes before submission.`,
-        tracksMissing: tracksWithoutISRC.map((t: any) => ({ id: t.id, title: t.title }))
+        tracksMissing: tracksWithoutISRC.map((t: Record<string, unknown>) => ({ id: t.id, title: t.title }))
       });
     }
 
     // HARDENING: Validate ISRC format for all tracks (12 alphanumeric characters)
     const isrcPattern = /^[A-Z]{2}[A-Z0-9]{3}\d{2}\d{5}$/;
-    const invalidISRCs = tracks.filter((t: any) => {
+    const invalidISRCs = tracks.filter((t: Record<string, unknown>) => {
       const isrcClean = (t.isrc || '').replace(/[-\s]/g, '').toUpperCase();
       return !isrcPattern.test(isrcClean);
     });
@@ -1387,7 +1387,7 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
       return res.status(400).json({ 
         error: 'Invalid ISRC format',
         message: `${invalidISRCs.length} track(s) have invalid ISRC format. ISRC must be 12 characters (CC-XXX-YY-NNNNN).`,
-        tracksInvalid: invalidISRCs.map((t: any) => ({ id: t.id, title: t.title, isrc: t.isrc }))
+        tracksInvalid: invalidISRCs.map((t: Record<string, unknown>) => ({ id: t.id, title: t.title, isrc: t.isrc }))
       });
     }
 
@@ -1413,7 +1413,7 @@ router.post('/releases/:id/submit', requireAuth, async (req: Request, res: Respo
         const provider = await storage.getDSPProviderBySlug(platformSlug);
         if (!provider) return;
         const lgPlatformStatus = lgResult.platforms?.find(
-          (p: any) => p.platform === platformSlug || p.platform === provider.slug
+          (p: Record<string, unknown>) => p.platform === platformSlug || p.platform === provider.slug
         );
         await storage.createDistroDispatch({
           releaseId: id,
@@ -1616,7 +1616,7 @@ router.get('/releases/:id/analytics', requireAuth, async (req: Request, res: Res
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
 
     // Get analytics from LabelGrid if we have an external release ID
     if (metadata?.labelGridReleaseId) {
@@ -1670,7 +1670,7 @@ router.get('/:id/streams-revenue', requireAuth, async (req: Request, res: Respon
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
 
     // Try LabelGrid first if the release is distributed
     if (metadata?.labelGridReleaseId) {
@@ -1688,7 +1688,7 @@ router.get('/:id/streams-revenue', requireAuth, async (req: Request, res: Respon
         return res.json({
           releaseId: id,
           streams: totalStreams,
-          downloads: platformList.reduce((s: number, p: any) => s + (p.downloads ?? 0), 0),
+          downloads: platformList.reduce((s: number, p: Record<string, unknown>) => s + (p.downloads ?? 0), 0),
           revenue: totalRevenue,
           platforms: platformList,
           source: 'labelgrid',
@@ -2241,7 +2241,7 @@ router.get('/workflow/:releaseId/history', requireAuth, async (req: Request, res
       auditLog,
       takedownRequests,
       updateRequests,
-      validTransitions: releaseWorkflowService.getValidTransitions(release.status as any),
+      validTransitions: releaseWorkflowService.getValidTransitions(release.status as string),
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching workflow history:');
@@ -2340,7 +2340,7 @@ router.post('/fingerprint/generate', requireAuth, upload.single('audio'), async 
     const tmpPath = path.join(os.tmpdir(), `fp_gen_${Date.now()}${path.extname(file.originalname || '.mp3')}`);
     await fsPromises.writeFile(tmpPath, file.buffer);
 
-    let fingerprint: any;
+    let fingerprint: Record<string, unknown> | null = null;
     try {
       fingerprint = await audioFingerprintService.generateFingerprint(tmpPath, trackId, releaseId);
     } finally {
@@ -2896,8 +2896,8 @@ router.post('/workflow/transition', requireAuth, async (req: Request, res: Respo
     const result = await enhancedWorkflowService.transition(
       releaseId,
       userId,
-      targetStatus as any,
-      requestType as any,
+      targetStatus as string,
+      requestType as string,
       { reason, metadata }
     );
     
@@ -2939,12 +2939,12 @@ router.get('/workflow/versions/:releaseId', requireAuth, async (req: Request, re
 router.get('/workflow/transitions/:status', async (req: Request, res: Response) => {
   try {
     const { status } = req.params;
-    const validTransitions = enhancedWorkflowService.getValidTransitions(status as any);
+    const validTransitions = enhancedWorkflowService.getValidTransitions(status as string);
     res.json({ 
       currentStatus: status, 
       validTransitions,
-      displayName: enhancedWorkflowService.getStatusDisplayName(status as any),
-      color: enhancedWorkflowService.getStatusColor(status as any)
+      displayName: enhancedWorkflowService.getStatusDisplayName(status as string),
+      color: enhancedWorkflowService.getStatusColor(status as string)
     });
   } catch (error: unknown) {
     logger.warn({ err: error }, 'Error fetching transitions:');
@@ -2961,28 +2961,28 @@ router.get('/workflow/transitions/:status', async (req: Request, res: Response) 
 // LabelGrid exposes one analytics API — per-release. We aggregate across all distributed releases.
 async function aggregateLabelGridAnalytics(userId: string) {
   const releases = await storage.getDistroReleasesByArtist(userId);
-  const lgReleases = releases.filter(r => (r.metadata as any)?.labelGridReleaseId);
+  const lgReleases = releases.filter(r => (r.metadata as Record<string, unknown>)?.labelGridReleaseId);
   if (lgReleases.length === 0) return null;
 
   const settled = await Promise.allSettled(
-    lgReleases.map(r => labelGridService.getReleaseAnalytics((r.metadata as any).labelGridReleaseId))
+    lgReleases.map(r => labelGridService.getReleaseAnalytics((r.metadata as Record<string, unknown>).labelGridReleaseId))
   );
   const results = settled
     .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
     .map(r => r.value);
   if (results.length === 0) return null;
 
-  const totalStreams = results.reduce((s: number, a: any) => s + (a.totalStreams || 0), 0);
-  const totalRevenue = results.reduce((s: number, a: any) => s + (a.totalRevenue || 0), 0);
+  const totalStreams = results.reduce((s: number, a: Record<string, unknown>) => s + (a.totalStreams || 0), 0);
+  const totalRevenue = results.reduce((s: number, a: Record<string, unknown>) => s + (a.totalRevenue || 0), 0);
 
   // Merge platform breakdowns
   const platforms: Record<string, { streams: number; revenue: number; listeners: number }> = {};
   for (const a of results) {
     for (const [name, data] of Object.entries(a.platforms || {})) {
       if (!platforms[name]) platforms[name] = { streams: 0, revenue: 0, listeners: 0 };
-      platforms[name].streams += (data as any).streams || 0;
-      platforms[name].revenue += (data as any).revenue || 0;
-      platforms[name].listeners += (data as any).listeners || 0;
+      platforms[name].streams += (data as Record<string, unknown>).streams || 0;
+      platforms[name].revenue += (data as Record<string, unknown>).revenue || 0;
+      platforms[name].listeners += (data as Record<string, unknown>).listeners || 0;
     }
   }
 
@@ -3513,7 +3513,7 @@ router.post('/export-report', requireAuth, async (req: Request, res: Response) =
 // GET /api/distribution/codes/stats - Get code generation stats
 router.get('/codes/stats', requireAuth, async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
     if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
     const [[isrcResult], [upcResult]] = await Promise.all([
@@ -3719,7 +3719,7 @@ router.get('/royalties/currency-rates', requireAuth, async (req: Request, res: R
       .limit(1);
 
     if (setting && setting.value) {
-      const val = setting.value as any;
+      const val = setting.value as Record<string, unknown>;
       res.json({
         rates: val.rates || { USD: 1, EUR: 0.92, GBP: 0.79 },
         baseCurrency: val.baseCurrency || 'USD',
@@ -4329,7 +4329,7 @@ router.get('/releases/:id/content-id', requireAuth, async (req: Request, res: Re
     }
 
     const tracks = await storage.getDistroTracks(id);
-    const registrations = tracks.map((track: any) => {
+    const registrations = tracks.map((track: Record<string, unknown>) => {
       const metadata = track.metadata || {};
       return {
         id: `cid_${track.id}`,
@@ -4491,7 +4491,7 @@ router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Resp
       return res.status(404).json({ error: 'Release not found' });
     }
 
-    const metadata = release.metadata as any;
+    const metadata = release.metadata as Record<string, unknown>;
     const dispatches = await storage.getDistroDispatchStatuses(id) as DispatchStatus[];
     const tracks = await storage.getDistroTracks(id);
 
@@ -4557,7 +4557,7 @@ router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Resp
     }
 
     const contentIdOutcomes = [];
-    const tracksWithFingerprint = tracks.filter((t: any) => t.metadata?.fingerprint);
+    const tracksWithFingerprint = tracks.filter((t: Record<string, unknown>) => t.metadata?.fingerprint);
     if (tracksWithFingerprint.length > 0) {
       contentIdOutcomes.push({
         type: 'fingerprint_generated',
@@ -4566,7 +4566,7 @@ router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Resp
         timestamp: new Date().toISOString(),
       });
     }
-    const registeredTracks = tracks.filter((t: any) => t.metadata?.contentIdStatus === 'registered');
+    const registeredTracks = tracks.filter((t: Record<string, unknown>) => t.metadata?.contentIdStatus === 'registered');
     if (registeredTracks.length > 0) {
       contentIdOutcomes.push({
         type: 'registration_confirmed',
@@ -4587,7 +4587,7 @@ router.get('/releases/:id/outcomes', requireAuth, async (req: Request, res: Resp
         timestamp: new Date().toISOString(),
       });
     }
-    const tracksWithISRC = tracks.filter((t: any) => t.isrc);
+    const tracksWithISRC = tracks.filter((t: Record<string, unknown>) => t.isrc);
     if (tracksWithISRC.length > 0) {
       codeOutcomes.push({
         type: 'isrc_generated',
@@ -5386,8 +5386,8 @@ router.get('/packages/:id/export', requireAuth, async (req: Request, res: Respon
 // ─── Platform-specific submission endpoints (via LabelGrid API) ───────────────
 // Helper: build a LabelGridRelease payload from a DB release + tracks.
 // `platforms` can be a single slug string or an array of slugs.
-async function buildLabelGridPayload(release: any, tracks: any[], platforms: string | string[]) {
-  const metadata = (release.metadata as any) || {};
+async function buildLabelGridPayload(release: Record<string, unknown>, tracks: unknown[], platforms: string | string[]) {
+  const metadata = (release.metadata as Record<string, unknown>) || {};
   const platformList = Array.isArray(platforms) ? platforms : [platforms];
   return {
     title: release.title,
@@ -5402,7 +5402,7 @@ async function buildLabelGridPayload(release: any, tracks: any[], platforms: str
     territoryMode: (metadata.territoryMode as 'worldwide' | 'include' | 'exclude') || 'worldwide',
     territories: metadata.territories || [],
     platforms: platformList,
-    tracks: tracks.map((t: any, idx: number) => ({
+    tracks: tracks.map((t: Record<string, unknown>, idx: number) => ({
       title: t.title,
       artist: t.artistName || release.artistName || release.artist || metadata.artistName || 'Unknown Artist',
       isrc: t.isrc,
@@ -5433,7 +5433,7 @@ router.post('/platform/spotify', requireAuth, async (req: Request, res: Response
     logger.info(`[Distribution] Submitting release ${releaseId} to Spotify via LabelGrid`, { userId });
     const result = await labelGridService.createRelease(payload);
 
-    const metadata = (release.metadata as any) || {};
+    const metadata = (release.metadata as Record<string, unknown>) || {};
     await storage.updateDistroRelease(releaseId, {
       metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridSpotifySubmittedAt: new Date().toISOString() },
     });
@@ -5473,7 +5473,7 @@ router.post('/platform/apple', requireAuth, async (req: Request, res: Response) 
     logger.info(`[Distribution] Submitting release ${releaseId} to Apple Music via LabelGrid`, { userId });
     const result = await labelGridService.createRelease(payload);
 
-    const metadata = (release.metadata as any) || {};
+    const metadata = (release.metadata as Record<string, unknown>) || {};
     await storage.updateDistroRelease(releaseId, {
       metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridAppleSubmittedAt: new Date().toISOString() },
     });
@@ -5513,7 +5513,7 @@ router.post('/platform/youtube', requireAuth, async (req: Request, res: Response
     logger.info(`[Distribution] Submitting release ${releaseId} to YouTube Music via LabelGrid`, { userId });
     const result = await labelGridService.createRelease(payload);
 
-    const metadata = (release.metadata as any) || {};
+    const metadata = (release.metadata as Record<string, unknown>) || {};
     await storage.updateDistroRelease(releaseId, {
       metadata: { ...metadata, labelGridReleaseId: result.releaseId, labelGridYoutubeSubmittedAt: new Date().toISOString() },
     });

@@ -7,11 +7,11 @@ import { Request, Response, NextFunction } from 'express';
  */
 function extractUserIdFromRequest(req: Request): string {
   // 1. req.user already populated (auth ran before cache)
-  const user = (req as any).user;
+  const user = (req as Record<string, unknown>).user;
   if (user?.id) return user.id;
 
   // 2. Session-stored userId (Passport/express-session flows)
-  const sessionUid = (req.session as any)?.userId || (req.session as any)?.passport?.user;
+  const sessionUid = (req.session as Record<string, unknown>)?.userId || (req.session as Record<string, unknown>)?.passport?.user;
   if (sessionUid) return String(sessionUid);
 
   // 3. Decode JWT bearer token payload (no crypto – just base64)
@@ -45,7 +45,7 @@ function extractUserIdFromRequest(req: Request): string {
 }
 
 interface CacheEntry {
-  body: any;
+  body: Record<string, unknown>;
   headers: Record<string, string>;
   statusCode: number;
   timestamp: number;
@@ -58,7 +58,7 @@ class APIResponseCache {
   private hitCount = 0;
   private missCount = 0;
 
-  private generateETag(body: any): string {
+  private generateETag(body: Record<string, unknown>): string {
     let hash = 0;
     const str = typeof body === 'string' ? body : JSON.stringify(body);
     for (let i = 0; i < str.length; i++) {
@@ -165,7 +165,7 @@ export function cacheMiddleware(options: CacheOptions = {}) {
     }
 
     const originalJson = res.json.bind(res);
-    res.json = function(body: any) {
+    res.json = function(body: Record<string, unknown>) {
       if (res.statusCode >= 200 && res.statusCode < 300) {
         const etag = apiCache['generateETag'](body);
         apiCache.set(cacheKey, {

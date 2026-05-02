@@ -22,7 +22,7 @@ router.post('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Resp
     if (!name) return res.status(400).json({ error: 'name is required' });
     const pocket = await fabricStorage.createPocket(req.user!.id, name, policy || {});
     res.status(201).json(pocket);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] createPocket:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -32,7 +32,7 @@ router.get('/pockets', requireAuth, async (req: AuthenticatedRequest, res: Respo
   try {
     const pockets = await fabricStorage.listPockets(req.user!.id);
     res.json(pockets);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] listPockets:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -44,7 +44,7 @@ router.get('/pockets/:pocketId', requireAuth, async (req: AuthenticatedRequest, 
     if (!pocket) return res.status(404).json({ error: 'Pocket not found' });
     if (pocket.ownerId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
     res.json(pocket);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] getPocket:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -59,7 +59,7 @@ router.post('/pockets/:pocketId/volumes', requireAuth, async (req: Authenticated
     if (!name) return res.status(400).json({ error: 'name is required' });
     const volume = await fabricStorage.createVolume(req.params.pocketId, name, type || 'objects');
     res.status(201).json(volume);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] createVolume:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -72,7 +72,7 @@ router.get('/pockets/:pocketId/volumes', requireAuth, async (req: AuthenticatedR
     if (pocket.ownerId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
     const volumes = await fabricStorage.listVolumes(req.params.pocketId);
     res.json(volumes);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] listVolumes:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -99,7 +99,7 @@ router.put('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
       contentType,
     );
     res.status(201).json({ objectId });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] putObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -112,7 +112,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects', requireAuth, async (r
     if (pocket.ownerId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
     const objects = await fabricStorage.listObjects(req.params.volumeId);
     res.json(objects);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] listObjects:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -131,7 +131,7 @@ router.get('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireAuth
     res.setHeader('Content-Length', result.data.length);
     res.setHeader('X-Original-Name', result.object.originalName);
     res.send(result.data);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] getObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -144,7 +144,7 @@ router.delete('/pockets/:pocketId/volumes/:volumeId/objects/:objectId', requireA
     if (pocket.ownerId !== req.user!.id) return res.status(403).json({ error: 'Forbidden' });
     await fabricStorage.deleteObject(req.params.objectId);
     res.status(204).end();
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] deleteObject:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -164,7 +164,7 @@ router.post('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respon
       healthy: true,
     });
     res.status(201).json(node);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] registerNode:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -175,7 +175,7 @@ router.get('/nodes', requireAuth, async (req: AuthenticatedRequest, res: Respons
     if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Admin only' });
     const nodes = await fabricNodeRegistry.listAllNodes();
     res.json(nodes);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] listNodes:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -185,7 +185,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res: Respons
   try {
     const stats = await fabricStorage.getStats();
     res.json(stats);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] getStats:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -203,7 +203,7 @@ router.get('/cluster/status', requireAuth, async (req: AuthenticatedRequest, res
         healthyNodes: pdNodes.filter(n => n.healthy).length,
         nodes: pdNodes.map(n => ({
           id: n.id,
-          pocketName: (n.backendConfig as any).pocketName,
+          pocketName: (n.backendConfig as Record<string, unknown>).pocketName,
           region: n.region,
           healthy: n.healthy,
           utilizationPercent: n.capacityBytes > 0
@@ -216,7 +216,7 @@ router.get('/cluster/status', requireAuth, async (req: AuthenticatedRequest, res
       },
       autoScaler: status,
     });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] cluster/status:');
     res.status(500).json({ error: sanitizeError(err) });
   }
@@ -228,7 +228,7 @@ router.post('/cluster/evaluate', requireAuth, async (req: AuthenticatedRequest, 
     logger.info('[FabricRoute] Manual cluster evaluation triggered');
     const result = await autoClusterManager.evaluate();
     res.json({ triggered: true, ...result });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[FabricRoute] cluster/evaluate:');
     res.status(500).json({ error: sanitizeError(err) });
   }

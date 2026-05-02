@@ -28,9 +28,9 @@ export class MetricsCollector {
   private metricsDir = 'metrics-baseline';
 
   async collectSnapshot(
-    queueMetrics: any,
-    aiMetrics: any,
-    systemMetrics: any
+    queueMetrics: Record<string, unknown>,
+    aiMetrics: Record<string, unknown>,
+    systemMetrics: Record<string, unknown>
   ): Promise<MetricsSnapshot> {
     const snapshot: MetricsSnapshot = {
       timestamp: new Date(),

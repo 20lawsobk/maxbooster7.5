@@ -953,7 +953,7 @@ export function FlowStateStudioPro({
               <FlowStateAIPanel
                 suggestions={suggestions.map(s => ({
                   id: s.id,
-                  type: s.type as any,
+                  type: s.type as Record<string, unknown>,
                   title: s.title,
                   description: s.description,
                   confidence: s.confidence,

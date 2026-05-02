@@ -109,9 +109,9 @@ export function validate<T extends ZodSchema>(
       if (source === 'body') {
         req.body = validated;
       } else if (source === 'query') {
-        (req as any).validatedQuery = validated;
+        (req as Record<string, unknown>).validatedQuery = validated;
       } else {
-        (req as any).validatedParams = validated;
+        (req as Record<string, unknown>).validatedParams = validated;
       }
       
       next();
@@ -151,7 +151,7 @@ export function sanitizeString(input: string): string {
  * Sanitize object recursively
  */
 export function sanitizeObject<T extends Record<string, any>>(obj: T): T {
-  const result: any = {};
+  const result: Record<string, unknown> = {};
   
   for (const [key, value] of Object.entries(obj)) {
     if (typeof value === 'string') {
@@ -188,7 +188,7 @@ export function sanitizationMiddleware(
   if (req.query && typeof req.query === 'object') {
     const sanitized = sanitizeObject(req.query as Record<string, any>);
     for (const key of Object.keys(req.query)) {
-      if (!(key in sanitized)) delete (req.query as any)[key];
+      if (!(key in sanitized)) delete (req.query as Record<string, unknown>)[key];
     }
     Object.assign(req.query, sanitized);
   }

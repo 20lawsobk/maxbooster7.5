@@ -57,7 +57,7 @@ router.get('/playlists{/:trackId}', async (req: AuthenticatedRequest, res: Respo
 
     const attributions = await playlistAttributionService.getPlaylistAttributions(userId, {
       platform: platform as DSPPlatform | undefined,
-      playlistType: playlistType as any,
+      playlistType: playlistType as Record<string, unknown>,
       trackId,
       activeOnly: activeOnly === 'true',
     });

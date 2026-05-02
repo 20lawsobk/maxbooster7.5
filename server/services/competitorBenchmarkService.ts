@@ -353,7 +353,7 @@ export class CompetitorBenchmarkService {
       let totalShares = 0;
 
       recentPosts.forEach(post => {
-        const engagement = post.engagement as any;
+        const engagement = post.engagement as Record<string, unknown>;
         if (engagement) {
           totalLikes += engagement.likes || 0;
           totalComments += engagement.comments || 0;
@@ -390,7 +390,7 @@ export class CompetitorBenchmarkService {
     }
   }
 
-  private mapToCompetitorMetrics(profile: any): CompetitorMetrics {
+  private mapToCompetitorMetrics(profile: Record<string, unknown>): CompetitorMetrics {
     const platformsData = (profile.platforms as string[]) || ['twitter', 'instagram'];
     
     return {

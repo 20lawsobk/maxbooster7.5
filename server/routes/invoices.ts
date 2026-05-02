@@ -76,7 +76,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =
       return res.status(400).json({ error: 'Line items are required' });
     }
     
-    const subtotalCents = lineItems.reduce((sum: number, item: any) => {
+    const subtotalCents = lineItems.reduce((sum: number, item: Record<string, unknown>) => {
       return sum + (item.quantity * item.unitPrice * 100);
     }, 0);
     
@@ -137,7 +137,7 @@ router.put('/:invoiceId', requireAuth, async (req: AuthenticatedRequest, res: Re
     let totalCents = existing.totalCents;
     
     if (lineItems && Array.isArray(lineItems)) {
-      subtotalCents = lineItems.reduce((sum: number, item: any) => {
+      subtotalCents = lineItems.reduce((sum: number, item: Record<string, unknown>) => {
         return sum + (item.quantity * item.unitPrice * 100);
       }, 0);
       totalCents = subtotalCents + (existing.taxCents || 0);
@@ -250,7 +250,7 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
       userId: invoice.userId,
       type: (invoice.invoiceType as 'sale' | 'purchase' | 'royalty' | 'service') || 'sale',
       status: (invoice.status as 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled' | 'refunded') || 'draft',
-      from: (invoice.fromAddress as any) || {
+      from: (invoice.fromAddress as Record<string, unknown>) || {
         name: 'Max Booster',
         street: '123 Music Lane',
         city: 'Los Angeles',
@@ -258,14 +258,14 @@ router.get('/:invoiceId/pdf', requireAuth, async (req: AuthenticatedRequest, res
         postalCode: '90001',
         country: 'US',
       },
-      to: (invoice.toAddress as any) || {
+      to: (invoice.toAddress as Record<string, unknown>) || {
         name: 'Customer',
         street: 'N/A',
         city: 'N/A',
         postalCode: 'N/A',
         country: 'US',
       },
-      lineItems: ((invoice.lineItems as any[]) || []).map((item: any, idx: number) => ({
+      lineItems: ((invoice.lineItems as Record<string, unknown>[]) || []).map((item: Record<string, unknown>, idx: number) => ({
         id: `item-${idx}`,
         description: item.description || 'Service',
         quantity: item.quantity || 1,

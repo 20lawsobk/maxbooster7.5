@@ -68,7 +68,7 @@ async function getAudioDuration(audioPath: string): Promise<number> {
     const { stderr } = await execFileAsync(FFMPEG, ['-i', audioPath, '-f', 'null', '-'], { timeout: 15_000 });
     const m = stderr.match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
     if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
-  } catch (e: any) {
+  } catch (e) {
     const m = (e?.stderr || '').match(/Duration:\s*(\d+):(\d+):([\d.]+)/);
     if (m) return parseInt(m[1]) * 3600 + parseInt(m[2]) * 60 + parseFloat(m[3]);
   }
@@ -398,7 +398,7 @@ async function analyzeBeatLibrosa(audioPath: string): Promise<BeatAnalysis | nul
     logger.info(`[BeatSync] librosa analysis — BPM=${bpm.toFixed(1)} beats=${beats.length} confidence=${(confidence * 100).toFixed(0)}%`);
 
     return { bpm, confidence, beats, downbeats, beatsPerMeasure, durationSeconds: duration, energyEnvelope, peakPositions, sections, tier: 'librosa' };
-  } catch (e: any) {
+  } catch (e) {
     logger.debug('[BeatSync] librosa analysis failed:', e?.message?.slice(0, 100));
     return null;
   } finally {

@@ -40,7 +40,7 @@ router.get('/viral-score/:contentId', requireAuth, asyncHandler(async (req, res)
       message: 'No content data available. Please use POST /viral-score with real content data to calculate viral score.',
       contentId,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in get viral-score:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -83,7 +83,7 @@ router.post('/viral-score', requireAuth, asyncHandler(async (req, res) => {
       success: true,
       score: transformedScore,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in post viral-score:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -126,7 +126,7 @@ router.get('/optimal-timing/:platform', requireAuth, asyncHandler(async (req, re
       success: true,
       timing: transformedTiming,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in optimal-timing:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -239,7 +239,7 @@ router.get('/reach-dashboard', requireAuth, asyncHandler(async (req, res) => {
         lastUpdated: new Date().toISOString(),
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in reach-dashboard:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -259,13 +259,13 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
     };
 
     const variantResult = await contentVariantGeneratorService.generateVariants(
-      contentData as any,
+      contentData as Record<string, unknown>,
       count
     );
     const variants = Array.isArray(variantResult) ? variantResult : (variantResult.variants || []);
 
     const variantsWithScores = await Promise.all(
-      variants.map(async (variant: any) => {
+      variants.map(async (variant: Record<string, unknown>) => {
         const score = await viralScoringService.scoreContent({
           ...contentData,
           caption: variant.caption,
@@ -293,7 +293,7 @@ router.post('/generate-variants', requireAuth, asyncHandler(async (req, res) => 
       winner: variantsWithScores[0],
       statisticalConfidence: Math.min(95, 60 + variants.length * 7),
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in generate-variants:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -345,7 +345,7 @@ router.get('/algorithm-insights', requireAuth, asyncHandler(async (req, res) => 
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in algorithm-insights:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -367,7 +367,7 @@ router.get('/algorithm-insights/:platform', requireAuth, asyncHandler(async (req
       success: true,
       insights,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in algorithm-insights by platform:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -391,7 +391,7 @@ router.get('/dashboard', requireAuth, asyncHandler(async (req, res) => {
       viralScoreTrends: [],
       alerts: [],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in organic dashboard:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -407,7 +407,7 @@ router.get('/stats', requireAuth, asyncHandler(async (req, res) => {
       avgEngagement: 0,
       viralPosts: 0,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in organic stats:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -424,7 +424,7 @@ router.get('/metrics', requireAuth, asyncHandler(async (req, res) => {
       engagement: null,
       viralScore: null,
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in organic metrics:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -437,7 +437,7 @@ router.get('/recommendations', requireAuth, asyncHandler(async (req, res) => {
     res.json({
       recommendations: [],
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in organic recommendations:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }

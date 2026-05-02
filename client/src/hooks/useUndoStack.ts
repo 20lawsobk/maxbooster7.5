@@ -122,7 +122,7 @@ export function useUndoStack(options: UseUndoStackOptions = {}): UseUndoStackRet
 export interface UseUndoableOperationOptions {
   type: UndoActionType;
   module: string;
-  description?: string | ((args: any) => string);
+  description?: string | ((args: Record<string, unknown>) => string);
   entityType?: string;
 }
 

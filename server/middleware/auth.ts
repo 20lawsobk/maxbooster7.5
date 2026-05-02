@@ -5,7 +5,7 @@ import { logger } from '../logger.js';
 
 interface AuthenticatedRequest extends Request {
   isAuthenticated(): boolean;
-  user?: any;
+  user?: Record<string, unknown>;
 }
 
 /**
@@ -116,13 +116,13 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
  * should NOT use this middleware.
  */
 export const require2FA = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  const user = req.user as any;
+  const user = req.user as Record<string, unknown>;
   if (!user) {
     return res.status(401).json({ error: 'Authentication required' });
   }
   // If user has 2FA enabled, they must have verified it this session
   if (user.twoFactorEnabled) {
-    const session = (req as any).session;
+    const session = (req as Record<string, unknown>).session;
     if (!session?.twoFactorVerified) {
       return res.status(403).json({
         error: 'Two-factor authentication required for this action',

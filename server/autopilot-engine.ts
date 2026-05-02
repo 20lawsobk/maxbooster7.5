@@ -23,7 +23,7 @@ interface AutopilotJob {
   type: 'content_generation' | 'content_publishing' | 'performance_analysis';
   scheduledAt: Date;
   platform: string;
-  data: any;
+  data: Record<string, unknown>;
   status: 'pending' | 'running' | 'completed' | 'failed';
   retries: number;
   maxRetries: number;
@@ -570,7 +570,7 @@ export class AutopilotEngine extends EventEmitter {
   private async learnFromPerformance(contentId: string, analytics: unknown): Promise<void> {
     // Get content details to extract template information
     // In this minimal integration, we don't persist content externally.
-    const content = { id: contentId, text: '', contentType: 'tips', platform: 'Twitter' } as any;
+    const content = { id: contentId, text: '', contentType: 'tips', platform: 'Twitter' } as Record<string, unknown>;
 
     // Extract content metadata for learning
     const contentType = content.contentType || 'tips';

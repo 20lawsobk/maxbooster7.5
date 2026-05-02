@@ -52,7 +52,7 @@ export function ensureVenv(): void {
       execFileSync('python3', ['-m', 'venv', path.join(CWD, '.venv')], { timeout: 30_000, stdio: 'inherit' });
       execFileSync(venvPy, ['-m', 'pip', 'install', '-r', reqFile, '--quiet'], { timeout: 120_000, stdio: 'inherit' });
       process.stdout.write('[Python] venv created and packages installed\n');
-    } catch (e: any) {
+    } catch (e) {
       process.stderr.write(`[Python] Could not create venv: ${e.message}\n`);
     }
   }

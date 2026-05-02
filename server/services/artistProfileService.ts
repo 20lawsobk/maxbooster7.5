@@ -409,7 +409,7 @@ class ArtistProfileService {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
         return await fn();
-      } catch (err: any) {
+      } catch (err) {
         lastErr = err;
         const isRetryable = err?.name === 'TimeoutError' ||
                             err?.message?.includes('timeout') ||
@@ -477,8 +477,8 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = await response.json() as any;
-      return (data.artists?.items || []).map((a: any): SpotifyArtistResult => ({
+      const data = await response.json() as Record<string, unknown>;
+      return (data.artists?.items || []).map((a: Record<string, unknown>): SpotifyArtistResult => ({
         id: a.id,
         uri: a.uri,
         name: a.name,
@@ -506,7 +506,7 @@ class ArtistProfileService {
 
       if (!response.ok) return null;
 
-      const a = await response.json() as any;
+      const a = await response.json() as Record<string, unknown>;
       return {
         id: a.id,
         uri: a.uri,
@@ -530,10 +530,10 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = await response.json() as any;
+      const data = await response.json() as Record<string, unknown>;
       return (data.results || [])
-        .filter((a: any) => a.artistId && a.artistName)
-        .map((a: any): AppleArtistResult => ({
+        .filter((a: Record<string, unknown>) => a.artistId && a.artistName)
+        .map((a: Record<string, unknown>): AppleArtistResult => ({
           id: String(a.artistId),
           name: a.artistName,
           genres: [
@@ -557,11 +557,11 @@ class ArtistProfileService {
 
       if (!response.ok) return [];
 
-      const data = await response.json() as any;
+      const data = await response.json() as Record<string, unknown>;
       if (data.error) return []; // Deezer returns {error:{...}} on quota/errors
       return (data.data || [])
-        .filter((a: any) => a.id && a.name)
-        .map((a: any): DeezerArtistResult => ({
+        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .map((a: Record<string, unknown>): DeezerArtistResult => ({
           id: String(a.id),
           name: a.name,
           // Prefer highest-resolution image: xl → big → medium → small
@@ -582,10 +582,10 @@ class ArtistProfileService {
       'Accept': 'application/json',
     };
 
-    const parseMbArtists = (data: any): MusicBrainzArtistResult[] =>
+    const parseMbArtists = (data: Record<string, unknown>): MusicBrainzArtistResult[] =>
       (data.artists || [])
-        .filter((a: any) => a.id && a.name)
-        .map((a: any): MusicBrainzArtistResult => ({
+        .filter((a: Record<string, unknown>) => a.id && a.name)
+        .map((a: Record<string, unknown>): MusicBrainzArtistResult => ({
           id: a.id,
           name: a.name,
           score: Number(a.score ?? 0),
@@ -593,8 +593,8 @@ class ArtistProfileService {
           country: a.country ?? null,
           // Include both genre tags and regular tags for richer scoring
           tags: [
-            ...(a.tags || []).map((t: any) => String(t.name)),
-            ...(a['genre-list'] || []).map((g: any) => String(g.name ?? g)),
+            ...(a.tags || []).map((t: Record<string, unknown>) => String(t.name)),
+            ...(a['genre-list'] || []).map((g: Record<string, unknown>) => String(g.name ?? g)),
           ].filter((v, i, arr) => arr.indexOf(v) === i),
           disambiguation: a.disambiguation ?? null,
         }));
@@ -608,7 +608,7 @@ class ArtistProfileService {
       }), 2, 'MusicBrainz');
 
       if (strictRes.ok) {
-        const data = await strictRes.json() as any;
+        const data = await strictRes.json() as Record<string, unknown>;
         const results = parseMbArtists(data);
         if (results.length > 0) return results;
       }
@@ -621,7 +621,7 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (!relaxedRes.ok) return [];
-      const relaxedData = await relaxedRes.json() as any;
+      const relaxedData = await relaxedRes.json() as Record<string, unknown>;
       return parseMbArtists(relaxedData);
     } catch (err) {
       logger.warn({ err: err }, '[ArtistProfile] MusicBrainz search error (non-fatal):');
@@ -645,8 +645,8 @@ class ArtistProfileService {
       }
       if (!response.ok) return [];
 
-      const data = await response.json() as any;
-      return (data.results || []).slice(0, 5).map((a: any): AudiomackArtistResult => ({
+      const data = await response.json() as Record<string, unknown>;
+      return (data.results || []).slice(0, 5).map((a: Record<string, unknown>): AudiomackArtistResult => ({
         id: String(a.id ?? a.url_slug ?? ''),
         name: a.name ?? a.label ?? '',
         slug: a.url_slug ?? '',
@@ -654,7 +654,7 @@ class ArtistProfileService {
         followers: a.followers ?? a.fans ?? 0,
         url: a.url_slug ? `https://audiomack.com/${a.url_slug}` : '',
       }));
-    } catch (err: any) {
+    } catch (err) {
       // Suppress noise — Audiomack API consistently requires auth in production
       if (!err?.message?.includes('401')) {
         logger.warn('[ArtistProfile] Audiomack search error (non-fatal):', err?.message ?? err);
@@ -674,15 +674,15 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(7000),
       });
       if (response.ok) {
-        const data = await response.json() as any;
-        const artists: any[] = data?.data?.results ?? data?.results ?? [];
+        const data = await response.json() as Record<string, unknown>;
+        const artists: Record<string, unknown>[] = data?.data?.results ?? data?.results ?? [];
         if (artists.length > 0) {
-          return artists.slice(0, 5).map((a: any): JioSaavnArtistResult => ({
+          return artists.slice(0, 5).map((a: Record<string, unknown>): JioSaavnArtistResult => ({
             id: String(a.id ?? ''),
             name: a.name ?? a.title ?? '',
             // saavn.dev image array: [{quality:"50x50",url:...},{quality:"150x150",url:...},{quality:"500x500",url:...}]
             imageUrl: (Array.isArray(a.image)
-              ? (a.image.find((i: any) => i.quality === '500x500') ?? a.image[a.image.length - 1])?.url
+              ? (a.image.find((i: Record<string, unknown>) => i.quality === '500x500') ?? a.image[a.image.length - 1])?.url
               : a.image) ?? null,
             url: a.url ?? (a.id ? `https://www.jiosaavn.com/artist/-/${a.id}` : ''),
           }));
@@ -698,9 +698,9 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (!response.ok) return [];
-      const data = await response.json() as any;
-      const artists: any[] = data?.artists?.data ?? [];
-      return artists.slice(0, 5).map((a: any): JioSaavnArtistResult => ({
+      const data = await response.json() as Record<string, unknown>;
+      const artists: Record<string, unknown>[] = data?.artists?.data ?? [];
+      return artists.slice(0, 5).map((a: Record<string, unknown>): JioSaavnArtistResult => ({
         id: String(a.id ?? ''),
         name: a.title ?? a.name ?? '',
         imageUrl: a.image ?? null,
@@ -726,15 +726,15 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       }).then(async r => {
         if (!r.ok) return null;
-        const d = await r.json() as any;
-        const results: any[] = d.results || [];
+        const d = await r.json() as Record<string, unknown>;
+        const results: Record<string, unknown>[] = d.results || [];
 
         // Prefer explicit artist record (wrapperType==='artist')
-        let artist = results.find((x: any) => x.wrapperType === 'artist' || x.kind === 'artist');
+        let artist = results.find((x: Record<string, unknown>) => x.wrapperType === 'artist' || x.kind === 'artist');
 
         // Fallback: extract artist info from album collection (iTunes often returns album first)
         if (!artist) {
-          const album = results.find((x: any) =>
+          const album = results.find((x: Record<string, unknown>) =>
             x.wrapperType === 'collection' || x.collectionType === 'Album'
           );
           if (album?.artistId) {
@@ -763,7 +763,7 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       }).then(async r => {
         if (!r.ok) return null;
-        const d = await r.json() as any;
+        const d = await r.json() as Record<string, unknown>;
         if (!d?.artist?.id || d.error) return null;
         return {
           id: String(d.artist.id),
@@ -836,7 +836,7 @@ class ArtistProfileService {
           updatedAt: new Date(),
         }).returning();
         return profile;
-      } catch (err: any) {
+      } catch (err) {
         lastErr = err;
         const isTransient = err?.message?.includes('Failed query') || err?.cause?.message?.includes('timeout') || err?.cause?.message?.includes('connection');
         if (isTransient && attempt < 3) {
@@ -1332,7 +1332,7 @@ class ArtistProfileService {
           signal: AbortSignal.timeout(8000),
         });
         if (res.ok) {
-          const d = await res.json() as any;
+          const d = await res.json() as Record<string, unknown>;
           synced.push('deezer');
           if (d.picture_medium && d.picture_medium !== profile.profileImageUrl && !updates.profileImageUrl) {
             updates.profileImageUrl = d.picture_medium;
@@ -1603,7 +1603,7 @@ class ArtistProfileService {
           signal: AbortSignal.timeout(8000),
         });
         if (!res.ok) continue;
-        const data = await res.json() as any;
+        const data = await res.json() as Record<string, unknown>;
         const recordings = data?.recordings ?? [];
         for (const recording of recordings) {
           const artistCredit = recording['artist-credit']?.[0];
@@ -1641,8 +1641,8 @@ class ArtistProfileService {
         signal: AbortSignal.timeout(8000),
       });
       if (res.ok) {
-        const data = await res.json() as any;
-        const relations: any[] = data?.relations ?? [];
+        const data = await res.json() as Record<string, unknown>;
+        const relations: Record<string, unknown>[] = data?.relations ?? [];
 
         for (const rel of relations) {
           const url = rel.url?.resource ?? '';
@@ -1800,7 +1800,7 @@ class ArtistProfileService {
             { headers: { 'User-Agent': 'MaxBooster/3.0 (music-career-platform)' }, signal: AbortSignal.timeout(6000) },
           );
           if (!res.ok) continue;
-          const data = await res.json() as any;
+          const data = await res.json() as Record<string, unknown>;
           // Look at URL relations to check Spotify artist IDs
           for (const recording of (data?.recordings ?? [])) {
             const mbArtistId = recording['artist-credit']?.[0]?.artist?.id;
@@ -1811,7 +1811,7 @@ class ArtistProfileService {
                 { headers: { 'User-Agent': 'MaxBooster/3.0' }, signal: AbortSignal.timeout(6000) },
               );
               if (relRes.ok) {
-                const relData = await relRes.json() as any;
+                const relData = await relRes.json() as Record<string, unknown>;
                 for (const rel of relData?.relations ?? []) {
                   const url = rel.url?.resource ?? '';
                   if (url.includes('open.spotify.com/artist/')) {
@@ -2324,7 +2324,7 @@ class ArtistProfileService {
           { headers: { 'User-Agent': 'MaxBooster/3.0' }, signal: AbortSignal.timeout(6000) },
         );
         if (res.ok) {
-          const data = await res.json() as any;
+          const data = await res.json() as Record<string, unknown>;
           for (const recording of data?.recordings ?? []) {
             const mbArtistId = recording['artist-credit']?.[0]?.artist?.id;
             if (mbArtistId && !discovered.musicbrainz) {
@@ -2345,7 +2345,7 @@ class ArtistProfileService {
     if (Object.keys(discovered).length > 0) {
       await this.updateProfile(profileId, userId, {
         musicbrainzId: discovered.musicbrainz,
-      } as any);
+      } as Record<string, unknown>);
     }
 
     logger.info(`[ArtistProfile] Import processed: importId=${importId} discovered=${Object.keys(discovered).join(',')}`);
@@ -2535,7 +2535,7 @@ class ArtistProfileService {
         profileUrl = `https://${cleanHandle}.bandcamp.com`;
         dspLink = profileUrl;
         if (!profile.bandcampSlug) {
-          await this.updateProfile(profileId, userId, { bandcampSlug: cleanHandle } as any);
+          await this.updateProfile(profileId, userId, { bandcampSlug: cleanHandle } as Record<string, unknown>);
           saved = true;
         }
         break;
@@ -2545,7 +2545,7 @@ class ArtistProfileService {
     const currentHandles = (profile.socialHandles as Record<string, string>) ?? {};
     if (!currentHandles[platform] || currentHandles[platform] !== cleanHandle) {
       currentHandles[platform] = cleanHandle;
-      await this.updateProfile(profileId, userId, { socialHandles: currentHandles } as any);
+      await this.updateProfile(profileId, userId, { socialHandles: currentHandles } as Record<string, unknown>);
       saved = true;
     }
 
@@ -2614,8 +2614,8 @@ class ArtistProfileService {
             { headers: { Authorization: `Bearer ${token}` }, signal: AbortSignal.timeout(8000) },
           );
           if (res.ok) {
-            const data = await res.json() as any;
-            const remoteAlbumNames = (data.items ?? []).map((a: any) => a.name as string);
+            const data = await res.json() as Record<string, unknown>;
+            const remoteAlbumNames = (data.items ?? []).map((a: Record<string, unknown>) => a.name as string);
             logger.info(`[ArtistProfile] Watch: Spotify profile=${profileId} albums=${remoteAlbumNames.length}`);
             // Flag releases we don't recognize (not in distroReleases for this user)
             // Simplified heuristic for now: if albums list is non-empty, profile is active

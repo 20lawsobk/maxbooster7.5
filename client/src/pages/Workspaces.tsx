@@ -321,7 +321,7 @@ const workspaces = workspacesData?.workspaces || [];
     isOnline: presence.some(p => p.userId === m.userId && p.status === 'online'),
   }));
 
-  const formattedRoles: Role[] = roles.map((r: any) => ({
+  const formattedRoles: Role[] = roles.map((r: Record<string, unknown>) => ({
     id: r.id,
     name: r.name,
     description: r.description,
@@ -427,7 +427,7 @@ const workspaces = workspacesData?.workspaces || [];
                     <Label htmlFor="type">Workspace Type</Label>
                     <Select
                       value={newWorkspace.type}
-                      onValueChange={(v: any) => setNewWorkspace({ ...newWorkspace, type: v })}
+                      onValueChange={(v: Record<string, unknown>) => setNewWorkspace({ ...newWorkspace, type: v })}
                     >
                       <SelectTrigger>
                         <SelectValue />

@@ -64,7 +64,7 @@ router.post('/initialize', requireAuth, async (req, res) => {
 
 router.post('/connect-desktop', requireAuth, async (req, res) => {
   try {
-    const userId = (req as any).user.id;
+    const userId = req.user!.id;
     const { sessionId } = connectDesktopSchema.parse(req.body);
 
     const connected = await vstPluginBridge.connectDesktopApp({
@@ -138,7 +138,7 @@ router.get('/plugins', requireAuth, async (req, res) => {
     }
 
     if (format && ['vst2', 'vst3', 'au', 'aax'].includes(format as string)) {
-      plugins = vstPluginBridge.getPluginsByFormat(format as any);
+      plugins = vstPluginBridge.getPluginsByFormat(format as Record<string, unknown>);
     }
 
     res.json({

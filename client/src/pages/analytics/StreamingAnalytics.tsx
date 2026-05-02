@@ -62,12 +62,12 @@ interface StreamingMetrics {
   listenerChange: number;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700">
         <p className="font-semibold text-sm mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div
               className="w-3 h-3 rounded-full"
@@ -195,7 +195,7 @@ export function StreamingAnalytics({
 
   const streamingData = useMemo<StreamingData[]>(() => {
     if (!data?.streams?.daily) return [];
-    return data.streams.daily.map((d: any) => ({
+    return data.streams.daily.map((d: Record<string, unknown>) => ({
       date: new Date(d.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       streams: d.streams || 0,
       uniqueListeners: d.listeners || Math.round((d.streams || 0) * 0.6),
@@ -317,7 +317,7 @@ if (!hasData) {
               <CardDescription>Daily streams and unique listeners over time</CardDescription>
             </div>
             <div className="flex items-center gap-2">
-              <Tabs value={chartView} onValueChange={(v) => setChartView(v as any)}>
+              <Tabs value={chartView} onValueChange={(v) => setChartView(v as Record<string, unknown>)}>
                 <TabsList className="h-8">
                   <TabsTrigger value="area" className="text-xs h-6">Area</TabsTrigger>
                   <TabsTrigger value="bar" className="text-xs h-6">Bar</TabsTrigger>

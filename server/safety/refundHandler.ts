@@ -103,7 +103,7 @@ export async function processRefund(params: {
     await handlePostRefundActions(params.userId, refund);
 
     return { success: true, refundId: refund.id };
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, `[Refund] Failed to process refund for ${params.chargeId}:`);
     return { success: false, error: error.message };
   }

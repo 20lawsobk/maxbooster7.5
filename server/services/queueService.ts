@@ -26,7 +26,7 @@ export interface CSVImportJobData {
 export interface AnalyticsJobData {
   userId?: string;
   type: 'anomaly-detection' | 'report-generation';
-  params?: any;
+  params?: Record<string, unknown>;
 }
 
 export interface EmailJobData {
@@ -145,7 +145,7 @@ class QueueService {
     data: AudioConvertJobData | AudioMixJobData,
     priority?: number
   ) {
-    return this.audioQueue.add(type, data as any, {
+    return this.audioQueue.add(type, data as Record<string, unknown>, {
       priority,
       jobId: `audio_${type}_${Date.now()}`,
     });

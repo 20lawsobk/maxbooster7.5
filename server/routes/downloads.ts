@@ -94,7 +94,7 @@ async function fetchLatestRelease(): Promise<ReleaseInfo | null> {
   }
 }
 
-function processRelease(data: any): ReleaseInfo {
+function processRelease(data: Record<string, unknown>): ReleaseInfo {
   const platforms: ReleaseInfo['platforms'] = {
     windows: {},
     mac: {},
@@ -102,7 +102,7 @@ function processRelease(data: any): ReleaseInfo {
     android: {},
   };
 
-  const assets: ReleaseAsset[] = (data.assets || []).map((a: any) => ({
+  const assets: ReleaseAsset[] = (data.assets || []).map((a: Record<string, unknown>) => ({
     name: a.name,
     browser_download_url: a.browser_download_url,
     size: a.size,
@@ -114,7 +114,7 @@ function processRelease(data: any): ReleaseInfo {
     const classification = classifyAsset(asset);
     if (!classification) continue;
     const { platform, type } = classification;
-    (platforms as any)[platform][type] = asset;
+    (platforms as Record<string, unknown>)[platform][type] = asset;
   }
 
   const version = (data.tag_name || '').replace(/^v/, '') || data.name || 'unknown';

@@ -92,7 +92,7 @@ export async function initializeFabric(): Promise<void> {
 
     if (pdNodes.length >= SEED_CLUSTER_SIZE) {
       for (const node of pdNodes) {
-        const pocketName = (node.backendConfig as any).pocketName as string;
+        const pocketName = (node.backendConfig as Record<string, unknown>).pocketName as string;
         if (pocketName) {
           nodePocketMap.set(node.id, pocketName);
           chunkStoreCache.set(node.id, new PocketDimensionChunkStore(pocketName));
@@ -103,7 +103,7 @@ export async function initializeFabric(): Promise<void> {
       for (let i = 0; i < SEED_CLUSTER_SIZE; i++) {
         const pocketName = `fabric-cluster-${i}`;
         const alreadyRegistered = pdNodes.find(
-          n => (n.backendConfig as any).pocketName === pocketName
+          n => (n.backendConfig as Record<string, unknown>).pocketName === pocketName
         );
 
         let nodeId: NodeId;

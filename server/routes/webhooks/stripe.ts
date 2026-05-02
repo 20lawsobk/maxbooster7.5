@@ -6,6 +6,10 @@
  */
 
 import { Router, Request, Response } from 'express';
+
+interface StripeWebhookRequest extends Request {
+  stripeEvent: Stripe.Event;
+}
 import Stripe from 'stripe';
 import { logger } from '../../logger.js';
 import { 
@@ -274,12 +278,12 @@ registerWebhookHandler('invoice.payment_failed', async (event) => {
   );
 
   try {
-    const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as any)?.id;
+    const customerId = typeof invoice.customer === 'string' ? invoice.customer : (invoice.customer as Record<string, unknown>)?.id;
     if (customerId) {
       const found = await db.select({ id: users.id, email: users.email }).from(users).where(eq(users.stripeCustomerId, customerId)).limit(1);
       if (found.length > 0) {
         const amount = invoice.amount_due / 100;
-        const reason = (invoice as any).last_payment_error?.message;
+        const reason = (invoice as Record<string, unknown>).last_payment_error?.message;
         await notificationService.sendPaymentFailedNotification(found[0].id, amount, reason);
         await notificationService.sendAdminPaymentIssueNotification(found[0].email!, found[0].id, amount, reason);
 
@@ -368,9 +372,9 @@ registerWebhookHandler('payout.failed', async (event) => {
  * POST /api/webhooks/stripe
  * Main webhook endpoint with signature verification
  */
-router.post('/', stripeWebhookMiddleware, async (req: Request, res: Response) => {
+router.post('/', stripeWebhookMiddleware, async (req: StripeWebhookRequest, res: Response) => {
   try {
-    const event = (req as any).stripeEvent as Stripe.Event;
+    const event = req.stripeEvent;
     
     if (!event) {
       return res.status(400).json({ error: 'No event found' });
@@ -384,7 +388,7 @@ router.post('/', stripeWebhookMiddleware, async (req: Request, res: Response) =>
     } else {
       res.status(500).json({ error: result.message });
     }
-  } catch (error: any) {
+  } catch (error) {
     logger.warn({ err: error }, '[Stripe Webhook] Handler error:');
     res.status(500).json({ error: 'Webhook handler failed' });
   }

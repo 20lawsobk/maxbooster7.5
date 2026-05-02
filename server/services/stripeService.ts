@@ -59,7 +59,7 @@ export class StripeService {
         const subscription = result.data;
         const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
         const paymentIntent = latestInvoice
-          ? ((latestInvoice as any).payment_intent as Stripe.PaymentIntent | null)
+          ? ((latestInvoice as Record<string, unknown>).payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
           subscriptionId: subscription.id,
@@ -118,7 +118,7 @@ export class StripeService {
 
         const latestInvoice = subscription.latest_invoice as Stripe.Invoice | null;
         const paymentIntent = latestInvoice
-          ? ((latestInvoice as any).payment_intent as Stripe.PaymentIntent | null)
+          ? ((latestInvoice as Record<string, unknown>).payment_intent as Stripe.PaymentIntent | null)
           : null;
         return {
           subscriptionId: subscription.id,
@@ -286,7 +286,7 @@ export class StripeService {
   }
 
   private async handleSubscriptionPayment(invoice: Stripe.Invoice) {
-    const invoiceSubscription = (invoice as any).subscription;
+    const invoiceSubscription = (invoice as Record<string, unknown>).subscription;
     if (invoice.customer && invoiceSubscription) {
       const customerId = invoice.customer as string;
       const subscriptionId =
@@ -392,7 +392,7 @@ export class StripeService {
           // that also creates a duplicate refundRecord is still safe.
           { idempotencyKey: `refund:${refundRecord.id}` },
         );
-      } catch (stripeError: any) {
+      } catch (stripeError: Record<string, unknown>) {
         await db
           .update(refunds)
           .set({ status: 'failed', failureReason: stripeError.message })
@@ -433,7 +433,7 @@ export class StripeService {
             metadata: { refundId: refundRecord.id, orderId: params.orderId },
           });
         });
-      } catch (ledgerError: any) {
+      } catch (ledgerError: Record<string, unknown>) {
         // Stripe accepted the refund but the ledger tx failed. Surface a loud
         // alert — manual reconciliation is required (the refund webhook will
         // also retry the status update independently).
@@ -464,7 +464,7 @@ export class StripeService {
         refundId: refundRecord.id,
         stripeRefundId: stripeRefund.id,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Error creating refund:');
       return { success: false, error: error.message || 'Failed to create refund' };
     }

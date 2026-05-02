@@ -57,8 +57,8 @@ export interface BatchEditField {
   placeholder?: string;
   description?: string;
   group?: string;
-  validation?: (value: any) => string | null;
-  defaultValue?: any;
+  validation?: (value: unknown) => string | null;
+  defaultValue?: unknown;
 }
 
 export interface BatchEditPreview {
@@ -72,7 +72,7 @@ export interface BatchEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   fields: BatchEditField[];
-  selectedItems: Array<{ id: string; name?: string; [key: string]: any }>;
+  selectedItems: Array<{ id: string; name?: string; [key: string]: unknown }>;
   onApply: (changes: Record<string, any>, itemIds: string[]) => Promise<{
     success: string[];
     failed: Array<{ id: string; error: string }>;
@@ -85,7 +85,7 @@ export interface BatchEditDialogProps {
 
 interface FieldChange {
   enabled: boolean;
-  value: any;
+  value: unknown;
 }
 
 export function BatchEditDialog({
@@ -168,7 +168,7 @@ export function BatchEditDialog({
     });
   }, []);
 
-  const updateValue = useCallback((key: string, value: any) => {
+  const updateValue = useCallback((key: string, value: unknown) => {
     setChanges(prev => ({
       ...prev,
       [key]: { ...prev[key], value },
@@ -224,7 +224,7 @@ export function BatchEditDialog({
           onOpenChange(false);
         }, 1500);
       }
-    } catch (error: any) {
+    } catch (error) {
       setApplyResult({
         success: [],
         failed: selectedItems.map(item => ({ id: item.id, error: error.message || 'Unknown error' })),
@@ -468,7 +468,7 @@ export function BatchEditDialog({
   );
 }
 
-function getDefaultValue(field: BatchEditField): any {
+function getDefaultValue(field: BatchEditField): unknown {
   switch (field.type) {
     case 'checkbox':
       return false;
@@ -484,7 +484,7 @@ function getDefaultValue(field: BatchEditField): any {
   }
 }
 
-function formatValue(value: any): string {
+function formatValue(value: unknown): string {
   if (value === null || value === undefined) return '(empty)';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (Array.isArray(value)) return value.join(', ') || '(none)';
@@ -493,8 +493,8 @@ function formatValue(value: any): string {
 
 function renderFieldInput(
   field: BatchEditField,
-  value: any,
-  onChange: (value: any) => void
+  value: unknown,
+  onChange: (value: unknown) => void
 ) {
   switch (field.type) {
     case 'select':

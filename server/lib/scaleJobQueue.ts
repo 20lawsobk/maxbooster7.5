@@ -102,7 +102,7 @@ async function cleanStalledJobs(attempt = 1): Promise<void> {
     // saturating the PDIM AIMD chain with N individual job.remove() calls.
     try {
       const waiting = await queue.getJobs(['waiting'], 0, 500);
-      const stale   = waiting.filter(j => !j.name && !(j.data as any)?.type);
+      const stale   = waiting.filter(j => !j.name && !(j.data as Record<string, unknown>)?.type);
       if (stale.length > 10) {
         // Bulk drain: removes ALL waiting jobs in a single Lua EVALSHA.
         // Legitimate named jobs are re-added by the scheduler on its next tick

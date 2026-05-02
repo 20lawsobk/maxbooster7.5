@@ -71,7 +71,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     res.status(201).json({ profile });
-  } catch (err: any) {
+  } catch (err) {
     const cause = err?.cause;
     const causeMsg: string = cause?.message ?? (typeof cause === 'string' ? cause : '') ?? '';
     logger.warn('[ArtistProfiles] POST / error:', err, cause ? { cause: causeMsg } : {});
@@ -187,7 +187,7 @@ router.post('/:id/fixer', async (req: Request, res: Response) => {
 
     if (!profile) return res.status(404).json({ error: 'Artist profile not found' });
     res.json({ profile, message: 'Fixer request submitted. Re-mapping will be applied to future releases.' });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/fixer error:');
     if (err.message?.includes('Invalid Spotify artist URI')) {
       return res.status(400).json({ error: err.message });
@@ -200,7 +200,7 @@ router.get('/:id/profile-hub', requireAuth, async (req: Request, res: Response) 
   try {
     const result = await artistProfileService.profileHub(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/profile-hub error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Profile hub failed' });
@@ -213,7 +213,7 @@ router.post('/:id/auto-discover', requireAuth, async (req: Request, res: Respons
     const upc = typeof req.body?.upc === 'string' ? req.body.upc.replace(/[^0-9]/g, '') : undefined;
     const result = await artistProfileService.autoDiscover(req.params.id, req.user!.id, upc || undefined);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/auto-discover error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Auto-discover failed' });
@@ -224,7 +224,7 @@ router.post('/:id/auto-sync', requireAuth, async (req: Request, res: Response) =
   try {
     const result = await artistProfileService.autoSync(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/auto-sync error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Auto-sync failed' });
@@ -277,7 +277,7 @@ router.post('/:id/isrc-discover', requireAuth, async (req: Request, res: Respons
   try {
     const result = await artistProfileService.isrcChainDiscover(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/isrc-discover error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'ISRC chain discovery failed' });
@@ -289,7 +289,7 @@ router.post('/:id/scan-splits', requireAuth, async (req: Request, res: Response)
   try {
     const result = await artistProfileService.scanForSplitProfiles(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/scan-splits error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Split profile scan failed' });
@@ -301,7 +301,7 @@ router.get('/:id/claim-pipeline', requireAuth, async (req: Request, res: Respons
   try {
     const result = await artistProfileService.getClaimPipeline(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/claim-pipeline error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Failed to get claim pipeline' });
@@ -328,7 +328,7 @@ router.patch('/:id/claim-state', requireAuth, async (req: Request, res: Response
       state as ClaimState, triggeredBy as 'user' | 'system', notes,
     );
     res.json({ pipelineRow: result });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] PATCH /:id/claim-state error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Failed to update claim state' });
@@ -340,7 +340,7 @@ router.get('/:id/health', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await artistProfileService.calculateHealthScore(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/health error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Health score calculation failed' });
@@ -352,7 +352,7 @@ router.get('/:id/identity-graph', requireAuth, async (req: Request, res: Respons
   try {
     const result = await artistProfileService.getIdentityGraph(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/identity-graph error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Failed to get identity graph' });
@@ -369,7 +369,7 @@ router.post('/:id/dna-snapshot', requireAuth, async (req: Request, res: Response
       Array.isArray(isrcs) ? isrcs : undefined,
     );
     res.json({ snapshot });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/dna-snapshot error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'DNA snapshot failed' });
@@ -380,7 +380,7 @@ router.get('/:id/dna-snapshots', requireAuth, async (req: Request, res: Response
   try {
     const snapshots = await artistProfileService.getDnaSnapshots(req.params.id, req.user!.id);
     res.json({ snapshots });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/dna-snapshots error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Failed to fetch DNA snapshots' });
@@ -408,7 +408,7 @@ router.post('/:id/fixer-multi', requireAuth, async (req: Request, res: Response)
     );
     if (!profile) return res.status(404).json({ error: 'Artist profile not found' });
     res.json({ profile, message: 'Multi-platform fixer submitted. Re-mapping will apply to future releases.' });
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/fixer-multi error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     if (err.message?.includes('Invalid Spotify')) return res.status(400).json({ error: err.message });
@@ -436,7 +436,7 @@ router.post('/:id/import-history', requireAuth, async (req: Request, res: Respon
       parsed.data.upcList,
     );
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/import-history error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'History import failed' });
@@ -448,7 +448,7 @@ router.get('/:id/portability-report', requireAuth, async (req: Request, res: Res
   try {
     const report = await artistProfileService.exportPortabilityReport(req.params.id, req.user!.id);
     res.json(report);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] GET /:id/portability-report error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Portability report generation failed' });
@@ -473,7 +473,7 @@ router.post('/:id/resolve-handle', requireAuth, async (req: Request, res: Respon
       parsed.data.handle,
     );
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/resolve-handle error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Handle resolution failed' });
@@ -485,7 +485,7 @@ router.post('/:id/watch', requireAuth, async (req: Request, res: Response) => {
   try {
     const result = await artistProfileService.watchProfileForUnauthorizedReleases(req.params.id, req.user!.id);
     res.json(result);
-  } catch (err: any) {
+  } catch (err) {
     logger.warn({ err: err }, '[ArtistProfiles] POST /:id/watch error:');
     if (err.message === 'Artist profile not found') return res.status(404).json({ error: err.message });
     res.status(500).json({ error: 'Profile watch failed' });

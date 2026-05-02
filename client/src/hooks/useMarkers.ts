@@ -54,7 +54,7 @@ export function useMarkers(projectId: string | null) {
       const previousData = queryClient.getQueryData(['markers', projectId]);
       const tempId = `temp-${Date.now()}`;
       const optimisticMarker: Marker = { id: tempId, ...newMarker };
-      queryClient.setQueryData(['markers', projectId], (old: any) => ({
+      queryClient.setQueryData(['markers', projectId], (old: { markers?: Array<Record<string, unknown>> }) => ({
         markers: [...(old?.markers || []), optimisticMarker]
       }));
       addMarker(optimisticMarker);
@@ -65,8 +65,8 @@ export function useMarkers(projectId: string | null) {
         deleteMarker(context.tempId);
       }
       addMarker(data);
-      queryClient.setQueryData(['markers', projectId], (old: any) => ({
-        markers: (old?.markers || []).filter((m: any) => m.id !== context?.tempId).concat(data)
+      queryClient.setQueryData(['markers', projectId], (old: { markers?: Array<Record<string, unknown>> }) => ({
+        markers: (old?.markers || []).filter((m: Record<string, unknown>) => m.id !== context?.tempId).concat(data)
       }));
       toast({ title: 'Marker created' });
     },
@@ -94,8 +94,8 @@ export function useMarkers(projectId: string | null) {
       await queryClient.cancelQueries({ queryKey: ['markers', projectId] });
       const previousData = queryClient.getQueryData(['markers', projectId]);
       const previousMarker = markers.find((m) => m.id === id);
-      queryClient.setQueryData(['markers', projectId], (old: any) => ({
-        markers: (old?.markers || []).map((m: any) => m.id === id ? { ...m, ...updates } : m)
+      queryClient.setQueryData(['markers', projectId], (old: { markers?: Array<Record<string, unknown>> }) => ({
+        markers: (old?.markers || []).map((m: Record<string, unknown>) => m.id === id ? { ...m, ...updates } : m)
       }));
       if (previousMarker) {
         updateMarker(id, updates);
@@ -104,8 +104,8 @@ export function useMarkers(projectId: string | null) {
     },
     onSuccess: (data) => {
       updateMarker(data.id, data);
-      queryClient.setQueryData(['markers', projectId], (old: any) => ({
-        markers: (old?.markers || []).map((m: any) => m.id === data.id ? data : m)
+      queryClient.setQueryData(['markers', projectId], (old: { markers?: Array<Record<string, unknown>> }) => ({
+        markers: (old?.markers || []).map((m: Record<string, unknown>) => m.id === data.id ? data : m)
       }));
     },
     onError: (error: unknown, { id }, context) => {
@@ -132,8 +132,8 @@ export function useMarkers(projectId: string | null) {
       await queryClient.cancelQueries({ queryKey: ['markers', projectId] });
       const previousData = queryClient.getQueryData(['markers', projectId]);
       const previousMarker = markers.find((m) => m.id === id);
-      queryClient.setQueryData(['markers', projectId], (old: any) => ({
-        markers: (old?.markers || []).filter((m: any) => m.id !== id)
+      queryClient.setQueryData(['markers', projectId], (old: { markers?: Array<Record<string, unknown>> }) => ({
+        markers: (old?.markers || []).filter((m: Record<string, unknown>) => m.id !== id)
       }));
       deleteMarker(id);
       return { previousMarker, previousData };

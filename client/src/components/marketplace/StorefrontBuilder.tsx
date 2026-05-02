@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, uploadWithProgress } from '@/lib/queryClient';
@@ -66,7 +66,7 @@ interface StorefrontTemplate {
   description: string;
   previewUrl: string;
   thumbnailUrl: string;
-  customizationOptions: any;
+  customizationOptions: Record<string, unknown>;
   isPremium: boolean;
   isActive: boolean;
 }
@@ -131,7 +131,7 @@ interface MembershipTier {
   priceCents: number;
   currency: string;
   interval: 'month' | 'year';
-  benefits: any;
+  benefits: Record<string, unknown>;
   isActive: boolean;
   sortOrder: number;
   maxSubscribers: number | null;
@@ -302,7 +302,7 @@ export default function StorefrontBuilder() {
 
       const result = await uploadWithProgress('/api/storefront/upload-asset', formData, {
         onProgress: (percent: number) => setUploadProgress(percent),
-      }) as any;
+      }) as Record<string, unknown>;
 
       if (result.error) {
         throw new Error(result.error);
@@ -508,7 +508,7 @@ export default function StorefrontBuilder() {
       const response = await apiRequest('PATCH', `/api/storefront/${storefrontId}/publish`, { isPublished });
       return response.json();
     },
-    onSuccess: (data: any, variables) => {
+    onSuccess: (data: Record<string, unknown>, variables) => {
       toast({
         title: variables.isPublished ? 'Storefront Published' : 'Storefront Unpublished',
         description: variables.isPublished
@@ -520,7 +520,7 @@ export default function StorefrontBuilder() {
         setSelectedStorefront({ ...selectedStorefront, isPublic: variables.isPublished });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Publish Failed',
         description: error.message || 'Failed to update publish status',
@@ -569,7 +569,7 @@ export default function StorefrontBuilder() {
         description: `Video campaign created with ${data.campaign?.videos?.length || 0} platform videos.`,
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Campaign Failed',
         description: error.message || 'Failed to generate video campaign',
@@ -592,7 +592,7 @@ export default function StorefrontBuilder() {
         toast({ title: 'Reserve Failed', description: data.error || 'Failed to reserve subdomain', variant: 'destructive' });
       }
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({ title: 'Reserve Failed', description: error.message || 'Failed to reserve subdomain', variant: 'destructive' });
     },
   });
@@ -615,7 +615,7 @@ export default function StorefrontBuilder() {
         toast({ title: 'Failed', description: data.error || 'Could not add domain', variant: 'destructive' });
       }
     },
-    onError: async (err: any) => {
+    onError: async (err: Error) => {
       let msg = 'Failed to add domain';
       try { const d = await err.response?.json(); msg = d?.error ?? msg; } catch {}
       toast({ title: 'Error', description: msg, variant: 'destructive' });
@@ -726,7 +726,7 @@ export default function StorefrontBuilder() {
   // Called by shuffle buttons — each call returns a different memorable combo.
   // When target is 'slug', also resets the user-edited flag so title typing
   // resumes syncing (matching Replit's behaviour after a shuffle).
-  const suggestRandomUrl = async (target: 'slug' | 'subdomain' = 'slug') => {
+  const suggestRandomUrl = useCallback(async (target: 'slug' | 'subdomain' = 'slug') => {
     setSuggestingUrl(true);
     try {
       const response = await apiRequest('GET', '/api/storefront/suggest-url');
@@ -743,7 +743,7 @@ export default function StorefrontBuilder() {
     } finally {
       setSuggestingUrl(false);
     }
-  };
+  }, [toast]);
 
   // Auto-populate the slug with a memorable random URL whenever the create dialog opens,
   // exactly as Replit does — the field is never blank when the dialog appears.
@@ -752,8 +752,7 @@ export default function StorefrontBuilder() {
       setSlugUserEdited(false);
       suggestRandomUrl('slug');
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCreateDialog]);
+  }, [showCreateDialog, suggestRandomUrl]);
 
   const handleSaveCustomization = () => {
     if (!selectedStorefront) return;

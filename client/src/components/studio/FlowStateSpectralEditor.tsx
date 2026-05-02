@@ -62,7 +62,7 @@ interface FlowStateSpectralEditorProps {
   className?: string;
 }
 
-const TOOLS: { id: SpectralTool; icon: any; label: string; shortcut: string }[] = [
+const TOOLS: { id: SpectralTool; icon: Record<string, unknown>; label: string; shortcut: string }[] = [
   { id: 'select', icon: MousePointer2, label: 'Select', shortcut: 'V' },
   { id: 'brush', icon: Paintbrush, label: 'Paint', shortcut: 'B' },
   { id: 'eraser', icon: Eraser, label: 'Erase', shortcut: 'E' },

@@ -36,7 +36,7 @@ async function runTest(
     const duration = Date.now() - start;
     results.push({ section, test: testName, status: 'pass', duration });
     logger.info(`  ✅ ${testName} (${duration}ms)`);
-  } catch (error: any) {
+  } catch (error) {
     const duration = Date.now() - start;
     results.push({ 
       section, 

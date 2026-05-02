@@ -64,7 +64,7 @@ const getDefaultPermissions = (provider: string) => {
   return basePermissions;
 };
 
-function getAccountStatus(account: any): 'connected' | 'expired' | 'error' {
+function getAccountStatus(account: Record<string, unknown>): 'connected' | 'expired' | 'error' {
   if (!account.isActive) return 'error';
   if (account.tokenExpiresAt && new Date(account.tokenExpiresAt) < new Date()) return 'expired';
   return 'connected';

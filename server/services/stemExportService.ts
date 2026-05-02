@@ -34,7 +34,7 @@ import {
   type BitDepth,
 } from '../../shared/audioConstants.js';
 
-let ffmpeg: any = null;
+let ffmpeg: Record<string, unknown> | null = null;
 let ffmpegAvailable = false;
 
 async function initializeFfmpeg() {
@@ -117,7 +117,7 @@ interface TrackAudioData {
   }>;
   volume: number;
   pan: number;
-  effects: any[];
+  effects: unknown[];
   mute: boolean;
 }
 
@@ -235,7 +235,7 @@ class StemExportService {
   private async processExportAsync(
     exportId: string,
     options: StemExportOptions,
-    tracks: any[]
+    tracks: Record<string, unknown>[]
   ): Promise<void> {
     const tempDir = path.join(os.tmpdir(), `stem_export_${exportId}`);
     
@@ -353,7 +353,7 @@ class StemExportService {
   }
 
   private async renderTrackStem(
-    track: any,
+    track: Record<string, unknown>,
     options: StemExportOptions,
     tempDir: string
   ): Promise<IndividualStemFile | null> {
@@ -408,7 +408,7 @@ class StemExportService {
   }
 
   private async createEmptyStem(
-    track: any,
+    track: Record<string, unknown>,
     options: StemExportOptions,
     tempDir: string
   ): Promise<IndividualStemFile> {
@@ -456,7 +456,7 @@ class StemExportService {
   }
 
   private async renderSingleClip(
-    clip: any,
+    clip: Record<string, unknown>,
     outputPath: string,
     options: StemExportOptions
   ): Promise<void> {
@@ -495,8 +495,8 @@ class StemExportService {
   }
 
   private async mixAndRenderClips(
-    clips: any[],
-    track: any,
+    clips: unknown[],
+    track: Record<string, unknown>,
     outputPath: string,
     options: StemExportOptions
   ): Promise<void> {
@@ -888,7 +888,7 @@ class StemExportService {
     projectId: string,
     userId: string,
     options?: { limit?: number; offset?: number }
-  ): Promise<{ exports: any[]; total: number }> {
+  ): Promise<{ exports: unknown[]; total: number }> {
     const { limit = 20, offset = 0 } = options || {};
 
     const exports = await db.query.stemExports.findMany({

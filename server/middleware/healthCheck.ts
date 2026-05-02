@@ -62,7 +62,7 @@ async function checkDatabase(): Promise<{
 }
 
 // Check memory usage
-function checkMemory(): { status: 'healthy' | 'degraded' | 'unhealthy'; usage: any } {
+function checkMemory(): { status: 'healthy' | 'degraded' | 'unhealthy'; usage: Record<string, unknown> } {
   const memUsage = process.memoryUsage();
   const heapPercent = (memUsage.heapUsed / memUsage.heapTotal) * 100;
 

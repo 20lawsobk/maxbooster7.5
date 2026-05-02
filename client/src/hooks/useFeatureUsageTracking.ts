@@ -75,10 +75,10 @@ export function useFeatureUsageTracking() {
   const getFeatureUsageStats = useCallback((): FeatureUsageStats | null => {
     if (!behaviorAnalysis) return null;
 
-    const analysis = behaviorAnalysis as any;
+    const analysis = behaviorAnalysis as Record<string, unknown>;
     return {
       mostUsedFeatures: analysis.mostUsedFeatures || [],
-      recentFeatures: analysis.mostUsedFeatures?.slice(0, 5).map((f: any) => f.feature) || [],
+      recentFeatures: analysis.mostUsedFeatures?.slice(0, 5).map((f: Record<string, unknown>) => f.feature) || [],
       sessionDuration: Date.now() - sessionStartTime.current,
       featureTimeSpent: {},
     };
@@ -86,24 +86,24 @@ export function useFeatureUsageTracking() {
 
   const isFrequentlyUsed = useCallback((feature: string): boolean => {
     if (!behaviorAnalysis) return false;
-    const analysis = behaviorAnalysis as any;
-    const featureData = analysis.mostUsedFeatures?.find((f: any) => f.feature === feature);
+    const analysis = behaviorAnalysis as Record<string, unknown>;
+    const featureData = analysis.mostUsedFeatures?.find((f: Record<string, unknown>) => f.feature === feature);
     return featureData ? featureData.count >= 5 : false;
   }, [behaviorAnalysis]);
 
   const getFeatureUsageCount = useCallback((feature: string): number => {
     if (!behaviorAnalysis) return 0;
-    const analysis = behaviorAnalysis as any;
-    const featureData = analysis.mostUsedFeatures?.find((f: any) => f.feature === feature);
+    const analysis = behaviorAnalysis as Record<string, unknown>;
+    const featureData = analysis.mostUsedFeatures?.find((f: Record<string, unknown>) => f.feature === feature);
     return featureData?.count || 0;
   }, [behaviorAnalysis]);
 
   const getTopFeatures = useCallback((count: number = 5): string[] => {
     if (!behaviorAnalysis) return [];
-    const analysis = behaviorAnalysis as any;
+    const analysis = behaviorAnalysis as Record<string, unknown>;
     return (analysis.mostUsedFeatures || [])
       .slice(0, count)
-      .map((f: any) => f.feature);
+      .map((f: Record<string, unknown>) => f.feature);
   }, [behaviorAnalysis]);
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export function usePageTracking(pageName: string) {
 export function useActionTracking() {
   const { trackAction, trackButtonClick } = useFeatureUsageTracking();
 
-  const withTracking = useCallback(<T extends (...args: any[]) => any>(
+  const withTracking = useCallback(<T extends (...args: unknown[]) => any>(
     actionName: string,
     handler: T
   ): T => {

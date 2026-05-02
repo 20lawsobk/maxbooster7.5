@@ -63,7 +63,7 @@ export interface GeneratedContent {
   type: string;
   content: string | string[];
   url?: string;
-  metadata?: any;
+  metadata?: Record<string, unknown>;
   createdAt: Date;
 }
 
@@ -149,7 +149,7 @@ export class AIContentService {
     
     const enrichedOptions = {
       ...options,
-      tone: preferences?.contentTone as any || options.tone || 'casual',
+      tone: preferences?.contentTone as unknown || options.tone || 'casual',
       artistName: preferences?.artistName,
       genre: preferences?.genre,
       brandVoice: preferences?.brandVoice,
@@ -247,8 +247,8 @@ export class AIContentService {
       // Route through the full advanced AI pipeline:
       // MaxCore (trained) → Python AI → ContentGenerator (in-house JS)
       const aiResult = await unifiedAIController.generateContent({
-        platform: platform as any,
-        tone: tone as any,
+        platform: platform as Record<string, unknown>,
+        tone: tone as Record<string, unknown>,
         topic: prompt || 'new music',
         contentType: 'engagement',
         includeHashtags: true,
@@ -259,7 +259,7 @@ export class AIContentService {
 
       let content: string[];
       if (aiResult.success && aiResult.data) {
-        const d = aiResult.data as any;
+        const d = aiResult.data as Record<string, unknown>;
         const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
         content = caption ? [caption] : (d.content || []);
       } else {
@@ -313,8 +313,8 @@ export class AIContentService {
       targetLanguages.map(async (lang) => {
         const langName = LANGUAGE_NAMES[lang] || lang;
         const aiResult = await unifiedAIController.generateContent({
-          platform: (options?.platform || 'instagram') as any,
-          tone: 'energetic' as any,
+          platform: (options?.platform || 'instagram') as Record<string, unknown>,
+          tone: 'energetic' as Record<string, unknown>,
           topic: prompt,
           contentType: 'engagement',
           includeHashtags: true,
@@ -322,7 +322,7 @@ export class AIContentService {
           extraContext: `Generate this content fully in ${langName}. Apply cultural adaptations and music marketing language appropriate for ${langName}-speaking audiences.`,
         });
 
-        const d = aiResult.success && aiResult.data ? aiResult.data as any : null;
+        const d = aiResult.success && aiResult.data ? aiResult.data as Record<string, unknown> : null;
         const content = d
           ? (d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n') || prompt)
           : prompt;
@@ -429,7 +429,7 @@ export class AIContentService {
         await db
           .update(userBrandVoices)
           .set({
-            voiceProfile: profile as any,
+            voiceProfile: profile as Record<string, unknown>,
             confidenceScore: profile.confidenceScore,
             postsAnalyzed: historicalPosts.length,
             lastAnalyzedAt: new Date(),
@@ -439,7 +439,7 @@ export class AIContentService {
       } else {
         await db.insert(userBrandVoices).values({
           userId,
-          voiceProfile: profile as any,
+          voiceProfile: profile as Record<string, unknown>,
           confidenceScore: profile.confidenceScore,
           postsAnalyzed: historicalPosts.length,
           lastAnalyzedAt: new Date(),
@@ -505,7 +505,7 @@ export class AIContentService {
         }).then((r) => (Array.isArray(r.content) ? r.content[0] : r.content));
       }
 
-      const profile = brandVoice.voiceProfile as any as BrandVoiceProfile;
+      const profile = brandVoice.voiceProfile as unknown as BrandVoiceProfile;
       let content = prompt;
 
       if (profile.tone === 'casual') {
@@ -604,8 +604,8 @@ export class AIContentService {
       : '';
 
     const aiResult = await unifiedAIController.generateContent({
-      platform: platform as any,
-      tone: 'energetic' as any,
+      platform: platform as Record<string, unknown>,
+      tone: 'energetic' as Record<string, unknown>,
       topic,
       contentType: 'engagement',
       includeHashtags: true,
@@ -614,7 +614,7 @@ export class AIContentService {
     });
 
     if (aiResult.success && aiResult.data) {
-      const d = aiResult.data as any;
+      const d = aiResult.data as Record<string, unknown>;
       return d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n') || topic;
     }
     return topic;
@@ -640,8 +640,8 @@ export class AIContentService {
 
     // Route through MaxCore — it knows platform-specific hashtag strategy from 8TB of data
     const aiResult = await unifiedAIController.generateContent({
-      platform: platform as any,
-      tone: 'energetic' as any,
+      platform: platform as Record<string, unknown>,
+      tone: 'energetic' as Record<string, unknown>,
       topic: content || 'music promotion',
       contentType: 'engagement',
       includeHashtags: true,
@@ -650,7 +650,7 @@ export class AIContentService {
     });
 
     const rawHashtags: string[] = aiResult.success && aiResult.data
-      ? ((aiResult.data as any).hashtags || [])
+      ? ((aiResult.data as Record<string, unknown>).hashtags || [])
       : [];
 
     const suggestions: HashtagSuggestion[] = rawHashtags.slice(0, limit).map((tag, i) => {
@@ -856,8 +856,8 @@ export class AIContentService {
       variantSpecs.map(async (spec) => {
         try {
           const aiResult = await unifiedAIController.generateContent({
-            platform: 'instagram' as any,
-            tone: spec.tone as any,
+            platform: 'instagram' as Record<string, unknown>,
+            tone: spec.tone as Record<string, unknown>,
             topic: baseContent,
             contentType: 'engagement',
             includeHashtags: true,
@@ -866,7 +866,7 @@ export class AIContentService {
 
           let generatedText = baseContent;
           if (aiResult.success && aiResult.data) {
-            const d = aiResult.data as any;
+            const d = aiResult.data as Record<string, unknown>;
             generatedText = d.caption
               || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n')
               || baseContent;
@@ -938,8 +938,8 @@ export class AIContentService {
     length?: string
   ): Promise<GeneratedContent> {
     const aiResult = await unifiedAIController.generateContent({
-      platform: platform as any,
-      tone: (tone || 'energetic') as any,
+      platform: platform as Record<string, unknown>,
+      tone: (tone || 'energetic') as Record<string, unknown>,
       topic: prompt || 'new music',
       contentType: 'engagement',
       includeHashtags: true,
@@ -948,7 +948,7 @@ export class AIContentService {
 
     let content: string[];
     if (aiResult.success && aiResult.data) {
-      const d = aiResult.data as any;
+      const d = aiResult.data as Record<string, unknown>;
       const caption = d.caption || [d.hook, d.body, d.cta].filter(Boolean).join('\n\n');
       content = caption ? [caption] : (d.content || []);
     } else {
@@ -979,7 +979,7 @@ export class AIContentService {
       const result = await sharpImageService.generateImage({
         prompt,
         platform,
-        tone: (tone as any) || 'creative',
+        tone: (tone as Record<string, unknown>) || 'creative',
       });
 
       return {
@@ -996,7 +996,7 @@ export class AIContentService {
         },
         createdAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`Image generation failed: ${error.message}`);
       throw error;
     }
@@ -1018,15 +1018,15 @@ export class AIContentService {
     let cta  = '';
     try {
       const scriptResult = await unifiedAIController.generateContent({
-        platform: platform as any,
-        tone: (tone || 'energetic') as any,
+        platform: platform as Record<string, unknown>,
+        tone: (tone || 'energetic') as Record<string, unknown>,
         topic: prompt || 'new music',
         contentType: 'engagement',
         includeHashtags: false,
         includeEmojis: false,
       });
       if (scriptResult.success && scriptResult.data) {
-        const d = scriptResult.data as any;
+        const d = scriptResult.data as Record<string, unknown>;
         hook = (d.hook || d.caption || '').slice(0, 80);
         body = (d.body || d.caption || '').split('\n')[0].slice(0, 120);
         cta  = (d.cta  || '').slice(0, 60);
@@ -1117,7 +1117,7 @@ export class AIContentService {
         },
         createdAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn(`Audio generation failed: ${error.message}`);
       throw error;
     }
@@ -1264,7 +1264,7 @@ export class AIContentService {
   // IN-HOUSE AUDIO GENERATION HELPERS
   // ============================================================================
 
-  private promptToMusicParams(prompt: string, tone?: string): any {
+  private promptToMusicParams(prompt: string, tone?: string): Record<string, unknown> {
     const moodMap: Record<string, string> = {
       professional: 'calm',
       casual: 'happy',

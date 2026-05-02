@@ -54,9 +54,9 @@ const skipRateLimiting = (req: Request): boolean => {
 
 export class DistributedRateLimiter {
   private config: RateLimiterConfig;
-  private redisClient: any;
+  private redisClient: Record<string, unknown>;
 
-  constructor(config: RateLimiterConfig, redisClient: any) {
+  constructor(config: RateLimiterConfig, redisClient: Record<string, unknown>) {
     this.config = config;
     this.redisClient = redisClient;
   }
@@ -137,7 +137,7 @@ function buildDistributedGlobal(
       maxRequests,
       skip: skipRateLimiting,
       keyGenerator: (req) => {
-        const userId = (req as any).user?.id;
+        const userId = (req as Record<string, unknown>).user?.id;
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
         return `${keyPrefix}:${userId ?? ip}`;
       },
@@ -164,7 +164,7 @@ export const createScalableRateLimiter = (overrides?: Partial<RateLimiterConfig>
       skip: skipRateLimiting,
       keyGenerator: (req) => {
         const ip = req.ip || req.socket.remoteAddress || 'unknown';
-        const userId = (req as any).user?.id;
+        const userId = (req as Record<string, unknown>).user?.id;
         return userId ? `user:${userId}` : `ip:${ip}`;
       },
       onRateLimit: (req, res) => {
@@ -212,7 +212,7 @@ export const createHighScaleRateLimiter = (
     ...limits[tier],
     skip: skipRateLimiting,
     keyGenerator: (req) => {
-      const userId = (req as any).user?.id;
+      const userId = (req as Record<string, unknown>).user?.id;
       return userId ? `${tier}:${userId}` : `${tier}:${req.ip}`;
     },
   });

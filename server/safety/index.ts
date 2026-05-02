@@ -119,7 +119,7 @@ export async function initializeSafetySystems(): Promise<{
     if (!envResult.valid) {
       errors.push(...envResult.errors);
     }
-  } catch (error: any) {
+  } catch (error) {
     errors.push(`Environment validation failed: ${error.message}`);
     logger.warn({ err: error }, '[Safety] Environment validation error:');
   }
@@ -129,7 +129,7 @@ export async function initializeSafetySystems(): Promise<{
     const { initAuditLogger } = await import('./auditLogger');
     await initAuditLogger();
     logger.info('   ✓ Audit logger initialized');
-  } catch (error: any) {
+  } catch (error) {
     errors.push(`Audit logger failed: ${error.message}`);
     logger.warn({ err: error }, '[Safety] Audit logger error:');
   }
@@ -143,7 +143,7 @@ export async function initializeSafetySystems(): Promise<{
     } else {
       logger.info('   ✓ Database indexes verified');
     }
-  } catch (error: any) {
+  } catch (error) {
     // Non-critical - log but don't fail
     logger.warn('[Safety] Database index creation skipped:', error.message);
   }
@@ -153,7 +153,7 @@ export async function initializeSafetySystems(): Promise<{
     const { registerRefundWebhookHandlers } = await import('./refundHandler');
     registerRefundWebhookHandlers();
     logger.info('   ✓ Refund webhook handlers registered');
-  } catch (error: any) {
+  } catch (error) {
     errors.push(`Refund handlers failed: ${error.message}`);
     logger.warn({ err: error }, '[Safety] Refund handler error:');
   }
@@ -163,7 +163,7 @@ export async function initializeSafetySystems(): Promise<{
     const { killSwitch } = await import('./killSwitch');
     const state = killSwitch.getState();
     logger.info(`   ✓ Kill switch ready (global killed: ${state.globalKilled})`);
-  } catch (error: any) {
+  } catch (error) {
     errors.push(`Kill switch failed: ${error.message}`);
     logger.warn({ err: error }, '[Safety] Kill switch error:');
   }

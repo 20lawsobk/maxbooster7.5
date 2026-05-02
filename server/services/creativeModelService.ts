@@ -124,7 +124,7 @@ async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<any> {
   return res.json();
 }
 
-function tryParseJson(raw: string): any {
+function tryParseJson(raw: string): Record<string, unknown> {
   const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
   const candidate = fence ? fence[1] : raw;
   const s = candidate.indexOf('{');
@@ -233,7 +233,7 @@ async function analyzeMusicStage(audioPath: string, brief: CreativeBrief): Promi
       bpm: raw.bpm ?? raw.tempo ?? 120,
       key: raw.key ?? raw.musical_key ?? 'C major',
       sections: Array.isArray(raw.sections)
-        ? raw.sections.map((s: any) => ({
+        ? raw.sections.map((s: Record<string, unknown>) => ({
             name: s.name ?? s.label ?? 'section',
             start: Number(s.start ?? 0),
             end: Number(s.end ?? s.start + 8),
@@ -494,7 +494,7 @@ Return JSON only — beats array must match the constraint count exactly:
     const parsed = tryParseJson(text);
 
     const maxCoreBeats: BeatNote[] = Array.isArray(parsed.beats)
-      ? parsed.beats.map((b: any) => ({
+      ? parsed.beats.map((b: Record<string, unknown>) => ({
           timecodeHint: b.timecodeHint ?? b.timecode_hint ?? '0-3s',
           description: b.description ?? '',
           emotionalGoal: b.emotionalGoal ?? b.emotional_goal ?? 'curiosity',
@@ -734,7 +734,7 @@ Only override a beat's timing or transition if there is a strong narrative reaso
 
     if (Array.isArray(parsed?.timeline)) {
       return {
-        timeline: parsed.timeline.map((t: any, i: number) => ({
+        timeline: parsed.timeline.map((t: Record<string, unknown>, i: number) => ({
           start: Number(t.start ?? timeline[i]?.start ?? 0),
           end: Number(t.end ?? timeline[i]?.end ?? 4),
           beat: plan.beats[i] ?? plan.beats[plan.beats.length - 1],
@@ -820,7 +820,7 @@ async function assemblyStage(
       logger.info(`[CreativeModel] Stage 6: DiT-24 local video (${relayResp.frames ?? '?'} frames, source=${relayResp.source})`);
       return `data:video/mp4;base64,${relayResp.mp4_b64}`;
     }
-  } catch (relayErr: any) {
+  } catch (relayErr: Record<string, unknown>) {
     logger.warn('[CreativeModel] Stage 6: DiT-24 relay unavailable — falling back to MaxCore direct', {
       err: relayErr?.message ?? String(relayErr),
     });

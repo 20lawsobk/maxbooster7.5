@@ -38,7 +38,7 @@ export interface PluginStateManagerState {
   failedPlugins: string[];
 }
 
-type PluginParameterChangeListener = (instanceId: string, parameterId: string, value: any) => void;
+type PluginParameterChangeListener = (instanceId: string, parameterId: string, value: Record<string, unknown>) => void;
 
 export class PluginStateManager {
   private state: PluginStateManagerState;
@@ -357,7 +357,7 @@ export class PluginStateManager {
     return () => this.parameterListeners.get(instanceId)?.delete(listener);
   }
 
-  private emitParameterChange(instanceId: string, parameterId: string, value: any): void {
+  private emitParameterChange(instanceId: string, parameterId: string, value: Record<string, unknown>): void {
     this.parameterListeners.get(instanceId)?.forEach(l => l(instanceId, parameterId, value));
   }
 

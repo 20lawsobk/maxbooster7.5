@@ -22,7 +22,7 @@ async function getPdimArtistLearningData(artistId: string) {
       runs: (runsRaw || []).map((r: string) => { try { return JSON.parse(r); } catch { return null; } }).filter(Boolean),
       stats: statsRaw || null,
     };
-  } catch (e: any) {
+  } catch (e) {
     logger.warn(`[AutopilotLearning] PDIM artist data fetch failed: ${e.message}`);
     return null;
   }
@@ -89,9 +89,9 @@ router.get('/status', requireAuth, async (req, res) => {
         platformsLearned: Object.keys(pdimData.patterns || {}),
         peakWindows: pdimData.peaks.length,
         runsRecorded: pdimData.runs.length,
-        topCtas: Object.values(pdimData.patterns || {}).flatMap((p: any) => p.top_ctas || []).slice(0, 5),
-        topHooks: Object.values(pdimData.patterns || {}).flatMap((p: any) => p.top_hooks || []).slice(0, 5),
-        avgRoas: Object.values(pdimData.patterns || {}).map((p: any) => p.avg_roas).filter(Boolean),
+        topCtas: Object.values(pdimData.patterns || {}).flatMap((p: Record<string, unknown>) => p.top_ctas || []).slice(0, 5),
+        topHooks: Object.values(pdimData.patterns || {}).flatMap((p: Record<string, unknown>) => p.top_hooks || []).slice(0, 5),
+        avgRoas: Object.values(pdimData.patterns || {}).map((p: Record<string, unknown>) => p.avg_roas).filter(Boolean),
         stats: pdimData.stats,
       } : null,
       capabilities: [

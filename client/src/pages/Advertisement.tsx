@@ -1500,7 +1500,7 @@ function PressKitTabContent() {
   });
 
   const updatePressKitMutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: Record<string, unknown>) => {
       const res = await apiRequest('PUT', '/api/press-kit', data);
       return res.json();
     },
@@ -1549,10 +1549,10 @@ function PressKitTabContent() {
       formData.append('file', file);
       formData.append('category', 'press-kit');
 
-      const res = await uploadWithProgress('/api/storage/upload', formData) as any;
+      const res = await uploadWithProgress('/api/storage/upload', formData) as Record<string, unknown>;
       const photoUrl = res.file.url;
 
-      const currentPhotos = (pressKit?.photos as any[]) || [];
+      const currentPhotos = (pressKit?.photos as unknown[]) || [];
       updatePressKitMutation.mutate({
         ...pressKit,
         photos: [...currentPhotos, { url: photoUrl, caption: '' }],
@@ -1565,7 +1565,7 @@ function PressKitTabContent() {
   };
 
   const removePhoto = (index: number) => {
-    const currentPhotos = [...(pressKit?.photos as any[])];
+    const currentPhotos = [...(pressKit?.photos as unknown[])];
     currentPhotos.splice(index, 1);
     updatePressKitMutation.mutate({ ...pressKit, photos: currentPhotos });
   };
@@ -1645,7 +1645,7 @@ function PressKitTabContent() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {pressKit?.photos?.map((photo: any, index: number) => (
+                  {pressKit?.photos?.map((photo: Record<string, unknown>, index: number) => (
                     <div key={index} className="group relative aspect-square rounded-md overflow-hidden border">
                       <img src={photo.url} alt="Press" className="h-full w-full object-cover" />
                       <button

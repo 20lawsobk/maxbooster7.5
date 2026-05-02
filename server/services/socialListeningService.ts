@@ -222,7 +222,7 @@ class SocialListeningService {
     }
   }
 
-  private async getTwitterMentions(userId: string, options: any): Promise<Mention[]> {
+  private async getTwitterMentions(userId: string, options: Record<string, unknown>): Promise<Mention[]> {
     try {
       const tokenData = await storage.getUserSocialToken(userId, 'twitter');
       if (!tokenData) return [];
@@ -278,7 +278,7 @@ class SocialListeningService {
     }
   }
 
-  private async getInstagramMentions(userId: string, options: any): Promise<Mention[]> {
+  private async getInstagramMentions(userId: string, options: Record<string, unknown>): Promise<Mention[]> {
     try {
       const tokenData = await storage.getUserSocialToken(userId, 'instagram');
       if (!tokenData) return [];
@@ -330,7 +330,7 @@ class SocialListeningService {
     }
   }
 
-  private async getFacebookMentions(userId: string, options: any): Promise<Mention[]> {
+  private async getFacebookMentions(userId: string, options: Record<string, unknown>): Promise<Mention[]> {
     try {
       const tokenData = await storage.getUserSocialToken(userId, 'facebook');
       if (!tokenData) return [];
@@ -403,7 +403,7 @@ class SocialListeningService {
   }
 
   // @deprecated - No longer used. Kept for reference only.
-  private generateMockMentions(count: number, options: any): Mention[] {
+  private generateMockMentions(count: number, options: Record<string, unknown>): Mention[] {
     const platforms = ['twitter', 'instagram', 'facebook', 'tiktok', 'youtube', 'linkedin'] as const;
     const sentiments = ['positive', 'neutral', 'negative'] as const;
     const types = ['mention', 'hashtag', 'keyword', 'tag'] as const;
@@ -539,7 +539,7 @@ class SocialListeningService {
         id: randomBytes(8).toString('hex'),
         topic: data.topic,
         hashtag: data.hashtag,
-        category: data.category as any,
+        category: data.category as Record<string, unknown>,
         volume: Math.floor(Math.random() * 100000) + 10000,
         volumeChange: Math.floor(Math.random() * 200) - 50,
         sentiment: Math.random() > 0.3 ? 'positive' : 'neutral',

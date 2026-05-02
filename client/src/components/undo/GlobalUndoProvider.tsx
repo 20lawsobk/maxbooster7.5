@@ -188,7 +188,7 @@ export function GlobalUndoProvider({
       if (data.success && data.restorePoints) {
         setState((prev) => ({
           ...prev,
-          recoveryPoints: data.restorePoints.map((rp: any) => ({
+          recoveryPoints: data.restorePoints.map((rp: Record<string, unknown>) => ({
             id: rp.id,
             name: rp.name,
             description: rp.description,

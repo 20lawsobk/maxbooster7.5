@@ -45,8 +45,8 @@ export interface UpdateRequest {
 
 export interface ReleaseChange {
   field: string;
-  oldValue: any;
-  newValue: any;
+  oldValue: Record<string, unknown>;
+  newValue: Record<string, unknown>;
   changeType: 'metadata' | 'audio' | 'artwork' | 'credits' | 'pricing' | 'availability';
 }
 
@@ -639,7 +639,7 @@ export class ReleaseWorkflowService {
     }
   }
 
-  createChangeRecord(field: string, oldValue: any, newValue: any, changeType: ReleaseChange['changeType']): ReleaseChange {
+  createChangeRecord(field: string, oldValue: Record<string, unknown>, newValue: Record<string, unknown>, changeType: ReleaseChange['changeType']): ReleaseChange {
     return {
       field,
       oldValue,

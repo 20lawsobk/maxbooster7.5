@@ -911,7 +911,7 @@ async function generateVoiceover(
     ], { timeout: 30_000 });
 
     return existsSync(outPath) ? outPath : null;
-  } catch (e: any) {
+  } catch (e) {
     const msg = e?.stderr || e?.message || String(e);
     logger.warn(`[VideoGen] Voiceover generation failed, skipping: ${msg}`);
     return null;
@@ -1401,7 +1401,7 @@ export async function generateVideo(opts: VideoGenOptions): Promise<VideoGenResu
       };
     }
 
-  } catch (err: any) {
+  } catch (err) {
     cleanup(...tempFiles);
     logger.warn('[VideoGen] Render failed:', err?.stderr || err?.message);
     return { success: false, error: `Video render failed: ${err?.message || 'FFmpeg error'}` };

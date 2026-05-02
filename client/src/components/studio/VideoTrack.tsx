@@ -218,6 +218,8 @@ export function VideoTrack({
     })();
 
     return () => { cancelled = true; };
+  // INTENTIONAL: only re-run when a new import URL appears. currentTime/duration/generateThumbnails
+  // are deliberately excluded — including them would restart the import on every seek/zoom.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingImportUrl]);
   // ── End URL-based import ────────────────────────────────────────────────────
@@ -339,7 +341,7 @@ export function VideoTrack({
 
         setImportProgress(80);
 
-        const videoStream = (video as any).captureStream?.() || null;
+        const videoStream = (video as Record<string, unknown>).captureStream?.() || null;
         const hasAudio = videoStream?.getAudioTracks?.()?.length > 0;
 
         const newClip: VideoClip = {

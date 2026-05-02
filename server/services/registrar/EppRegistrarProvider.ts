@@ -68,7 +68,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
       const session = await this.getSession();
       await session.connectAndLogin();
       return { ok: true };
-    } catch (err: any) {
+    } catch (err) {
       return { ok: false, message: err.message };
     }
   }
@@ -188,7 +188,7 @@ export class EppRegistrarProvider implements RegistrarProvider {
       nameservers: Array.isArray(ns) ? ns : [ns],
       registryId: infData.roid,
       autoRenew: true, // EPP doesn't always expose this directly in info
-      locked: !!infData.status?.find?.((s: any) => s['@_s']?.includes('Prohibited')),
+      locked: !!infData.status?.find?.((s: Record<string, unknown>) => s['@_s']?.includes('Prohibited')),
     };
   }
 

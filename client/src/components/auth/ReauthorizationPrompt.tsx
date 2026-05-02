@@ -45,7 +45,7 @@ interface ReauthorizationPromptProps {
   sensitiveAction?: string;
 }
 
-const REASON_CONFIG: Record<ReauthReason, { title: string; description: string; icon: any }> = {
+const REASON_CONFIG: Record<ReauthReason, { title: string; description: string; icon: React.ReactNode }> = {
   session_expired: {
     title: 'Session Expired',
     description: 'Your session has expired. Please sign in again to continue.',
@@ -127,7 +127,7 @@ export function ReauthorizationPrompt({
       setPassword('');
       onSuccess?.();
       onOpenChange(false);
-    } catch (err: any) {
+    } catch (err) {
       setError(err.message || 'Incorrect password. Please try again.');
     } finally {
       setIsLoading(false);

@@ -359,7 +359,7 @@ export class ApprovalService {
     fromStatus: ApprovalStatus | null;
     toStatus: ApprovalStatus;
     comment?: string;
-    metadata?: any;
+    metadata?: Record<string, unknown>;
   }): Promise<void> {
     try {
       await db.insert(approvalHistory).values({
@@ -556,7 +556,7 @@ export class ApprovalService {
         })
         .from(posts);
 
-      const conditions: any[] = [];
+      const conditions: unknown[] = [];
 
       if (['content_creator'].includes(userRole)) {
         conditions.push(eq(posts.submittedBy, userId));
@@ -570,7 +570,7 @@ export class ApprovalService {
         ? query.where(and(...conditions))
         : query;
 
-      const results = await (baseQuery as any).orderBy(desc(posts.createdAt)).limit(500);
+      const results = await (baseQuery as Record<string, unknown>).orderBy(desc(posts.createdAt)).limit(500);
       return results;
     } catch (error: unknown) {
       logger.warn({ err: error }, 'Get user posts error:');

@@ -214,7 +214,7 @@ export function createCaptchaCheckMiddleware(): RequestHandler {
     const ip = getClientIP(req);
     const status = await getCaptchaStatus(ip);
     
-    (req as any).captchaStatus = status;
+    (req as Record<string, unknown>).captchaStatus = status;
     next();
   };
 }

@@ -93,7 +93,7 @@ export function PreferenceLearner({
   });
 
   const trackInteractionMutation = useMutation({
-    mutationFn: async (interactions: any[]) => {
+    mutationFn: async (interactions: unknown[]) => {
       const response = await apiRequest('POST', '/api/personalization/track-batch', {
         interactions,
       });
@@ -143,7 +143,7 @@ export function PreferenceLearner({
     }
   }, [trackInteractionMutation]);
 
-  const queueInteraction = useCallback((interaction: any) => {
+  const queueInteraction = useCallback((interaction: Record<string, unknown>) => {
     if (!isTrackingEnabled) return;
 
     interactionQueueRef.current.push({

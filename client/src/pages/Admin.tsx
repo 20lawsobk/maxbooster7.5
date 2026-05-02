@@ -1333,13 +1333,13 @@ export default function Admin() {
     const [editingSetting, setEditingSetting] = useState<{ key: string; value: string } | null>(null);
     const [editingTreaty, setEditingTreaty] = useState<{ id: number; field: string; value: string } | null>(null);
 
-    const { data: ratesData, refetch: refetchRates } = useQuery<{ rates: any[] }>({
+    const { data: ratesData, refetch: refetchRates } = useQuery<{ rates: unknown[] }>({
       queryKey: ['/api/admin/financial-config/royalty-rates'],
     });
-    const { data: treatiesData, refetch: refetchTreaties } = useQuery<{ treaties: any[] }>({
+    const { data: treatiesData, refetch: refetchTreaties } = useQuery<{ treaties: unknown[] }>({
       queryKey: ['/api/admin/financial-config/tax-treaties'],
     });
-    const { data: settingsData, refetch: refetchSettings } = useQuery<{ settings: any[] }>({
+    const { data: settingsData, refetch: refetchSettings } = useQuery<{ settings: unknown[] }>({
       queryKey: ['/api/admin/financial-config/label-settings'],
     });
 
@@ -1395,7 +1395,7 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {ratesData?.rates?.map((r: any) => (
+                {ratesData?.rates?.map((r: Record<string, unknown>) => (
                   <TableRow key={r.id}>
                     <TableCell className="font-medium">{r.displayName}</TableCell>
                     <TableCell>
@@ -1459,7 +1459,7 @@ export default function Admin() {
             <CardDescription>ISRC registrant code, UPC company prefix, and other label-level configuration.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {settingsData?.settings?.map((s: any) => (
+            {settingsData?.settings?.map((s: Record<string, unknown>) => (
               <div key={s.key} className="flex items-start justify-between gap-4 py-2 border-b last:border-0">
                 <div className="flex-1">
                   <p className="text-sm font-medium font-mono">{s.key}</p>
@@ -1508,7 +1508,7 @@ export default function Admin() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {treatiesData?.treaties?.map((t: any) => (
+                {treatiesData?.treaties?.map((t: Record<string, unknown>) => (
                   <TableRow key={t.id}>
                     <TableCell className="font-medium">{t.countryName}</TableCell>
                     <TableCell><Badge variant="outline">{t.countryCode}</Badge></TableCell>

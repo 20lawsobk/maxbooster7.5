@@ -1842,7 +1842,7 @@ export const ${this.camelCase(techName)}Adoption = {
         logLevel: 'silent',
       });
       return { ok: true };
-    } catch (err: any) {
+    } catch (err) {
       const msg = err?.message ?? String(err);
       logger.warn(`[SelfEvolution] Compile gate FAILED for ${filePath}: ${msg}`);
       return { ok: false, error: msg };

@@ -73,12 +73,12 @@ router.get('/status', requireAuth, async (req, res) => {
         .limit(10),
     ]).catch(() => [[], [], [], [], []]);
 
-    const totalGenerated = Number((totalGenRow as any[])[0]?.value ?? 0);
-    const totalPublished = Number((publishedRow as any[])[0]?.value ?? 0);
-    const pendingCount = Number((pendingRow as any[])[0]?.value ?? 0);
-    const nextScheduledJob = (nextJobRow as any[])[0]?.value ?? null;
+    const totalGenerated = Number((totalGenRow as unknown[])[0]?.value ?? 0);
+    const totalPublished = Number((publishedRow as unknown[])[0]?.value ?? 0);
+    const pendingCount = Number((pendingRow as unknown[])[0]?.value ?? 0);
+    const nextScheduledJob = (nextJobRow as unknown[])[0]?.value ?? null;
 
-    const recentActivity = (recentRows as any[]).map((row: any) => {
+    const recentActivity = (recentRows as unknown[]).map((row: Record<string, unknown>) => {
       const isPast = row.postingTime && new Date(row.postingTime) < now;
       const isFuture = row.postingTime && new Date(row.postingTime) >= now;
       return {
@@ -335,7 +335,7 @@ router.post('/save-features', requireAuth, async (req, res) => {
       return;
     }
     
-    const featuresToSave: any = {
+    const featuresToSave: Record<string, unknown> = {
       contentType,
       contentUrl,
       contentText,
@@ -399,10 +399,10 @@ router.post('/train', requireAuth, async (req, res) => {
     const advertisingModel = await aiModelManager.getAdvertisingAutopilot(userId);
     
     const enrichedPosts = socialModel.enrichPostsWithAnalyzedFeatures(posts, analyzedFeatures);
-    logger.info(`✅ Enriched ${enrichedPosts.filter((p: any) => p.contentAnalysis).length} posts with multimodal features`);
+    logger.info(`✅ Enriched ${enrichedPosts.filter((p: Record<string, unknown>) => p.contentAnalysis).length} posts with multimodal features`);
     
     const enrichedCampaigns = advertisingModel.enrichCampaignsWithAnalyzedFeatures(campaigns, analyzedFeatures);
-    logger.info(`✅ Enriched ${enrichedCampaigns.filter((c: any) => c.contentAnalysis).length} campaigns with multimodal features`);
+    logger.info(`✅ Enriched ${enrichedCampaigns.filter((c: Record<string, unknown>) => c.contentAnalysis).length} campaigns with multimodal features`);
     
     let socialResult = null;
     let advertisingResult = null;
@@ -414,7 +414,7 @@ router.post('/train', requireAuth, async (req, res) => {
       } else {
         logger.warn(`⚠️ Not enough posts for social training (${enrichedPosts.length}/50)`);
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Social model training failed:');
     }
     
@@ -425,7 +425,7 @@ router.post('/train', requireAuth, async (req, res) => {
       } else {
         logger.warn(`⚠️ Not enough campaigns for advertising training (${enrichedCampaigns.length}/30)`);
       }
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, 'Advertising model training failed:');
     }
     
@@ -440,8 +440,8 @@ router.post('/train', requireAuth, async (req, res) => {
         posts: enrichedPosts.length,
         campaigns: enrichedCampaigns.length,
         analyzedFeatures: analyzedFeatures.length,
-        enrichedPosts: enrichedPosts.filter((p: any) => p.contentAnalysis).length,
-        enrichedCampaigns: enrichedCampaigns.filter((c: any) => c.contentAnalysis).length,
+        enrichedPosts: enrichedPosts.filter((p: Record<string, unknown>) => p.contentAnalysis).length,
+        enrichedCampaigns: enrichedCampaigns.filter((c: Record<string, unknown>) => c.contentAnalysis).length,
       },
     });
   } catch (error) {

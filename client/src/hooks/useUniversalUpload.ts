@@ -17,7 +17,7 @@ export interface UploadOptions {
   acceptedTypes?: string[];
   acceptedExtensions?: string[];
   onProgress?: (progress: UploadProgress) => void;
-  onSuccess?: (response: any, file: File) => void;
+  onSuccess?: (response: Record<string, unknown>, file: File) => void;
   onError?: (error: string, file: File) => void;
   withCredentials?: boolean;
 }
@@ -81,7 +81,7 @@ export function useUniversalUpload() {
   const uploadFile = useCallback(async (
     file: File,
     options: UploadOptions
-  ): Promise<{ success: boolean; response?: any; error?: string }> => {
+  ): Promise<{ success: boolean; response?: Record<string, unknown>; error?: string }> => {
     const uploadId = generateId();
     const fieldName = options.fieldName ?? 'audioFile';
 
@@ -134,7 +134,7 @@ export function useUniversalUpload() {
         abortControllers.current.delete(uploadId);
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          let response: any;
+          let response: Record<string, unknown>;
           try {
             response = JSON.parse(xhr.responseText);
           } catch {

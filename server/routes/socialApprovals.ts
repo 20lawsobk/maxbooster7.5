@@ -295,7 +295,7 @@ router.get('/my-posts', async (req: AuthenticatedRequest, res) => {
     }
 
     const { status } = req.query;
-    const posts = await approvalService.getUserPosts(req.user.id, status as any);
+    const posts = await approvalService.getUserPosts(req.user.id, status as Record<string, unknown>);
 
     return res.json({
       success: true,

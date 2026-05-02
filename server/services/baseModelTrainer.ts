@@ -752,15 +752,15 @@ export async function runBaseModelTraining(): Promise<void> {
   );
 }
 
-export function loadSocialBaseState(): any | null {
+export function loadSocialBaseState(): Record<string, unknown> | null {
   return modelWeightStorage.load('social_base');
 }
 
-export function loadAdvertisingBaseState(): any | null {
+export function loadAdvertisingBaseState(): Record<string, unknown> | null {
   return modelWeightStorage.load('advertising_base');
 }
 
-export function loadFineTuneState(): any | null {
+export function loadFineTuneState(): Record<string, unknown> | null {
   return modelWeightStorage.load('fine_tune_public_datasets');
 }
 
@@ -794,7 +794,7 @@ async function trainCreativePlannerBase(): Promise<boolean> {
     await modelWeightStorage.save('creative_planner_base', { trained: true, samples: 500 });
     logger.info('[BaseTrainer] ✅ CreativePlannerModel trained');
     return true;
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[BaseTrainer] CreativePlannerModel training failed: ${err.message}`);
     return false;
   }
@@ -824,7 +824,7 @@ async function trainBeatSyncAlignmentBase(): Promise<boolean> {
     await modelWeightStorage.save('beat_sync_alignment_base', { trained: true, samples: 600 });
     logger.info('[BaseTrainer] ✅ BeatSyncAlignmentModel trained');
     return true;
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[BaseTrainer] BeatSyncAlignmentModel training failed: ${err.message}`);
     return false;
   }
@@ -854,7 +854,7 @@ async function trainVideoCreativeScorerBase(): Promise<boolean> {
     await modelWeightStorage.save('video_creative_scorer_base', { trained: true, samples: 800 });
     logger.info('[BaseTrainer] ✅ VideoCreativeScorer trained');
     return true;
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[BaseTrainer] VideoCreativeScorer training failed: ${err.message}`);
     return false;
   }
@@ -884,7 +884,7 @@ async function trainKeyframeSelectorBase(): Promise<boolean> {
     await modelWeightStorage.save('keyframe_style_selector_base', { trained: true, samples: 700 });
     logger.info('[BaseTrainer] ✅ KeyframeStyleSelector trained');
     return true;
-  } catch (err: any) {
+  } catch (err) {
     logger.warn(`[BaseTrainer] KeyframeStyleSelector training failed: ${err.message}`);
     return false;
   }

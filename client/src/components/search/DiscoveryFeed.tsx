@@ -26,11 +26,11 @@ import { cn } from '@/lib/utils';
 interface DiscoverySection {
   title: string;
   description: string;
-  items: any[];
+  items: Record<string, unknown>[];
 }
 
 interface DiscoveryFeedProps {
-  onItemClick?: (item: any, type: string) => void;
+  onItemClick?: (item: Record<string, unknown>, type: string) => void;
   onSeeAll?: (section: string) => void;
   showPersonalized?: boolean;
   className?: string;
@@ -143,7 +143,7 @@ export function DiscoveryFeed({
         <TabsContent value="trending" className="mt-6">
           {trending && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {trending.items?.map((item: any, index: number) => (
+              {trending.items?.map((item: Record<string, unknown>, index: number) => (
                 <BeatCard
                   key={item.id}
                   beat={item}
@@ -158,7 +158,7 @@ export function DiscoveryFeed({
         <TabsContent value="new" className="mt-6">
           {newReleases && (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {newReleases.items?.map((item: any) => (
+              {newReleases.items?.map((item: Record<string, unknown>) => (
                 <BeatCard
                   key={item.id}
                   beat={item}
@@ -232,8 +232,8 @@ function DiscoverSection({
   title: string;
   description: string;
   icon: React.ReactNode;
-  items: any[];
-  onItemClick: (item: any) => void;
+  items: Record<string, unknown>[];
+  onItemClick: (item: Record<string, unknown>) => void;
   onSeeAll?: () => void;
   highlight?: boolean;
 }) {
@@ -269,7 +269,7 @@ function DiscoverSection({
       <CardContent>
         <ScrollArea className="w-full whitespace-nowrap">
           <div className="flex gap-4">
-            {items.slice(0, 8).map((item: any, index: number) => (
+            {items.slice(0, 8).map((item: Record<string, unknown>, index: number) => (
               <BeatCardCompact
                 key={item.id}
                 beat={item}
@@ -290,7 +290,7 @@ function BeatCard({
   isNew,
   onClick,
 }: {
-  beat: any;
+  beat: Record<string, unknown>;
   rank?: number;
   isNew?: boolean;
   onClick: () => void;
@@ -361,7 +361,7 @@ function BeatCardCompact({
   beat,
   onClick,
 }: {
-  beat: any;
+  beat: Record<string, unknown>;
   onClick: () => void;
 }) {
   return (
@@ -434,7 +434,7 @@ export function SimilarBeatsSection({
   onItemClick,
 }: {
   beatId: string;
-  onItemClick?: (item: any) => void;
+  onItemClick?: (item: Record<string, unknown>) => void;
 }) {
   const { data, isLoading } = useQuery({
     queryKey: ['/api/search/similar', beatId],
@@ -481,7 +481,7 @@ export function SimilarBeatsSection({
       <CardContent>
         <ScrollArea className="w-full">
           <div className="flex gap-4">
-            {data.similar.map((beat: any) => (
+            {data.similar.map((beat: Record<string, unknown>) => (
               <BeatCardCompact
                 key={beat.id}
                 beat={beat}

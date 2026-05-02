@@ -294,7 +294,7 @@ router.put('/presence/:sessionId', requireAuth, async (req: AuthenticatedRequest
       return res.status(404).json({ error: 'User not in session' });
     }
 
-    const outcomes: any[] = [];
+    const outcomes: unknown[] = [];
     const previousStatus = userPresence.status;
 
     if (validatedData.status) {
@@ -761,7 +761,7 @@ router.post('/comments', requireAuth, async (req: AuthenticatedRequest, res: Res
       })
       .returning();
 
-    const outcomes: any[] = [{
+    const outcomes: unknown[] = [{
       type: validatedData.parentId ? 'comment_replied' : 'comment_added',
       message: validatedData.parentId ? 'Reply added' : 'Comment added',
       commentId: inserted.id,
@@ -850,15 +850,15 @@ router.get('/conflicts/:projectId', requireAuth, async (req: AuthenticatedReques
     const { projectId } = req.params;
     const projectConflicts = conflicts.get(projectId) || [];
 
-    const hasUnresolved = projectConflicts.some((c: any) => c.resolvedBy === undefined || c.resolvedBy === null);
+    const hasUnresolved = projectConflicts.some((c: Record<string, unknown>) => c.resolvedBy === undefined || c.resolvedBy === null);
 
     res.json({
       conflicts: projectConflicts,
       pendingConflict: hasUnresolved
         ? {
-            id: projectConflicts.find((c: any) => !c.resolvedBy)?.id || null,
+            id: projectConflicts.find((c: Record<string, unknown>) => !c.resolvedBy)?.id || null,
             detected: true,
-            details: projectConflicts.find((c: any) => !c.resolvedBy) || null,
+            details: projectConflicts.find((c: Record<string, unknown>) => !c.resolvedBy) || null,
           }
         : {
             id: null,

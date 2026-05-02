@@ -412,7 +412,7 @@ class ArtistProgressService {
   }
 
   // @deprecated - No longer used. Empty array returned instead.
-  private generateSampleHistory(days: number): any[] {
+  private generateSampleHistory(days: number): unknown[] {
     return [];
   }
 

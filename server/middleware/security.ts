@@ -127,7 +127,7 @@ export function securityMiddleware(
   res: Response,
   next: NextFunction,
 ): void {
-  helmetMiddleware(req, res, (helmetErr?: any) => {
+  helmetMiddleware(req, res, (helmetErr?: Record<string, unknown>) => {
     if (helmetErr) {
       logger.warn('[Security] Helmet error (non-fatal):', helmetErr?.message);
     }

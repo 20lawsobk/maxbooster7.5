@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 
 interface WebSocketMessage {
   type: string;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 interface UseWebSocketOptions {

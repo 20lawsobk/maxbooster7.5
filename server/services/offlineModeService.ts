@@ -27,7 +27,7 @@ export interface OfflineProject {
   localChanges: number;
   serverChanges: number;
   audioFiles: OfflineAudioFile[];
-  projectData: any;
+  projectData: Record<string, unknown>;
 }
 
 export interface OfflineAudioFile {
@@ -107,7 +107,7 @@ class OfflineModeService extends EventEmitter {
   private syncQueue: string[] = [];
   private isSyncing: boolean = false;
   private lastOnlineCheck: Date = new Date();
-  private pocket: any = null;
+  private pocket: Record<string, unknown> | null = null;
   private pocketReady: Promise<void>;
   private offlineCapabilities: OfflineCapabilities = {
     projectEditing: true,
@@ -151,7 +151,7 @@ class OfflineModeService extends EventEmitter {
       const raw = await this.pocket.read('index/cache-index.json');
       const index = JSON.parse(raw.toString('utf-8'));
       for (const [projectId, rawProject] of Object.entries(index.projects || {})) {
-        const project = rawProject as any;
+        const project = rawProject as Record<string, unknown>;
         project.cachedAt = new Date(project.cachedAt);
         project.lastSyncAt = new Date(project.lastSyncAt);
         if (project.audioFiles) {
@@ -182,7 +182,7 @@ class OfflineModeService extends EventEmitter {
       settings: this.settings,
       projects: Object.fromEntries(this.cachedProjects),
     };
-    this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: any) =>
+    this.pocket.write('index/cache-index.json', Buffer.from(JSON.stringify(index, null, 2))).catch((err: Error) =>
       logger.warn({ err: err }, '[OfflineCache] Failed to save cache index:')
     );
   }
@@ -478,7 +478,7 @@ class OfflineModeService extends EventEmitter {
         errors: [],
         syncTime,
       };
-    } catch (error: any) {
+    } catch (error) {
       cached.status = 'outdated';
       this.emit('syncError', { projectId, error: error.message });
 
@@ -633,7 +633,7 @@ class OfflineModeService extends EventEmitter {
     };
   }
 
-  async importOfflineProject(userId: string, data: any): Promise<string> {
+  async importOfflineProject(userId: string, data: Record<string, unknown>): Promise<string> {
     logger.info('Importing offline project:', { userId });
 
     const projectId = data.projectData?.project?.id;

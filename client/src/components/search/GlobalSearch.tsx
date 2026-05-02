@@ -57,8 +57,8 @@ interface TrendingSearch {
 }
 
 interface GlobalSearchProps {
-  onSearch: (query: string, filters?: any) => void;
-  onResultClick?: (result: any) => void;
+  onSearch: (query: string, filters?: Record<string, unknown>) => void;
+  onResultClick?: (result: Record<string, unknown>) => void;
   placeholder?: string;
   className?: string;
   showTrending?: boolean;
@@ -171,7 +171,7 @@ export function GlobalSearch({
       return;
     }
 
-    const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
+    const SpeechRecognition = (window as Record<string, unknown>).webkitSpeechRecognition || (window as Record<string, unknown>).SpeechRecognition;
     const recognition = new SpeechRecognition();
     
     recognition.continuous = false;
@@ -182,7 +182,7 @@ export function GlobalSearch({
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
     
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: Record<string, unknown>) => {
       const transcript = event.results[0][0].transcript;
       setQuery(transcript);
       handleSearch(transcript);

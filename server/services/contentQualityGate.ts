@@ -322,7 +322,7 @@ export class ContentQualityGate {
           }
         }
       }
-    } catch (e: any) {
+    } catch (e) {
       logger.debug(`[QualityGate] PDIM threshold read failed (non-fatal): ${e.message}`);
     }
 
@@ -433,7 +433,7 @@ export class ContentQualityGate {
         curriculum_hint: curriculum,
         dispatched_at:   new Date().toISOString(),
       });
-    } catch (e: any) {
+    } catch (e) {
       logger.warn(`[QualityGate] recordEngagementOutcome failed (non-fatal): ${e.message}`);
     }
   }
@@ -521,7 +521,7 @@ export class ContentQualityGate {
       'conversions',
       'engagement',
     ];
-    if (round === 1 && base) return base as any;
+    if (round === 1 && base) return base as Record<string, unknown>;
     return rotation[(round - 1) % rotation.length];
   }
 

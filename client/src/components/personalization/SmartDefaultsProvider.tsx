@@ -8,7 +8,7 @@ export type CareerStage = 'emerging' | 'developing' | 'established' | 'professio
 export interface SmartDefault {
   category: string;
   key: string;
-  value: any;
+  value: Record<string, unknown>;
   confidence: number;
   reasoning: string;
   source: 'onboarding' | 'behavior' | 'ai' | 'manual';
@@ -77,7 +77,7 @@ interface SmartDefaultsContextValue {
   defaults: SmartDefault[];
   getDefault: (category: string, key: string) => SmartDefault | undefined;
   getDefaultValue: <T>(category: string, key: string, fallback: T) => T;
-  updatePreference: (key: string, value: any) => Promise<void>;
+  updatePreference: (key: string, value: Record<string, unknown>) => Promise<void>;
   trackInteraction: (event: InteractionEvent) => Promise<void>;
   applyArtistTypeDefaults: (artistType: ArtistType) => Promise<void>;
   applyGenrePreset: (genre: string) => Promise<void>;
@@ -142,7 +142,7 @@ export function SmartDefaultsProvider({ children, userId }: SmartDefaultsProvide
   });
 
   const updatePreferenceMutation = useMutation({
-    mutationFn: async ({ key, value }: { key: string; value: any }) => {
+    mutationFn: async ({ key, value }: { key: string; value: unknown }) => {
       const response = await apiRequest('PUT', '/api/personalization/preferences', { [key]: value });
       return response.json();
     },
@@ -196,7 +196,7 @@ export function SmartDefaultsProvider({ children, userId }: SmartDefaultsProvide
     return def ? def.value : fallback;
   }, [getDefault]);
 
-  const updatePreference = useCallback(async (key: string, value: any) => {
+  const updatePreference = useCallback(async (key: string, value: Record<string, unknown>) => {
     await updatePreferenceMutation.mutateAsync({ key, value });
   }, [updatePreferenceMutation]);
 

@@ -91,7 +91,7 @@ class TensorFlowWorkerPool {
 
         const timeout = setTimeout(() => reject(new Error(`TF worker ${index} init timeout`)), 15000);
 
-        worker.once('message', (msg: any) => {
+        worker.once('message', (msg: Record<string, unknown>) => {
           if (msg.ready) {
             clearTimeout(timeout);
             logger.info(`[TFWorkerPool] Worker ${index + 1}/${this.poolSize} ready`);
@@ -99,7 +99,7 @@ class TensorFlowWorkerPool {
           }
         });
 
-        worker.on('message', (msg: any) => {
+        worker.on('message', (msg: Record<string, unknown>) => {
           if (msg.ready) return;
           const req = this.pendingRequests.get(msg.id);
           if (!req) return;
@@ -138,7 +138,7 @@ class TensorFlowWorkerPool {
       );
       this.initialized = true;
       logger.info(`✅ [TFWorkerPool] ${this.poolSize} TensorFlow inference worker(s) ready — event loop isolated`);
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[TFWorkerPool] Could not initialize worker pool: ${err.message} — falling back to in-process inference`);
     }
   }
@@ -158,7 +158,7 @@ class TensorFlowWorkerPool {
       let failed = 0;
       const total = this.workers.length;
 
-      const onResponse = (msg: any) => {
+      const onResponse = (msg: Record<string, unknown>) => {
         if (msg.type !== 'load' || msg.modelId !== modelId || msg.id !== id) return;
 
         if (msg.error) {
@@ -190,11 +190,11 @@ class TensorFlowWorkerPool {
    * Load all models that have a filePath persisted in the MLModelRegistry.
    * Called once after pool initialization so workers can serve real inference.
    */
-  async loadAllModels(registry: { listModels: (f?: any) => Promise<Array<{ id: string; filePath?: string }>> }): Promise<void> {
+  async loadAllModels(registry: { listModels: (f?: Record<string, unknown>) => Promise<Array<{ id: string; filePath?: string }>> }): Promise<void> {
     let models: Array<{ id: string; filePath?: string }> = [];
     try {
       models = await registry.listModels();
-    } catch (err: any) {
+    } catch (err) {
       logger.warn(`[TFWorkerPool] Could not list models from registry: ${err.message}`);
       return;
     }

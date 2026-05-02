@@ -83,7 +83,7 @@ async function pdimRpush(key: string, payload: Record<string, unknown>): Promise
   if (!isPdimConfigured()) return false;
   try {
     const client = getPdimClient();
-    await (client as any).rpush(key, JSON.stringify({ ...payload, ts: Date.now() }));
+    await (client as Record<string, unknown>).rpush(key, JSON.stringify({ ...payload, ts: Date.now() }));
     return true;
   } catch (err) {
     logger.warn(`[MaxCoreSync] PDIM rpush to ${key} failed:`, err instanceof Error ? err.message : String(err));
@@ -100,7 +100,7 @@ async function probeConnectivity(): Promise<void> {
   if (isPdimConfigured()) {
     try {
       const client = getPdimClient();
-      await (client as any).ping();
+      await (client as Record<string, unknown>).ping();
       logger.info('[MaxCoreSync] PDIM ✅ reachable — Redis-compatible layer active');
     } catch (err) {
       logger.warn('[MaxCoreSync] PDIM ⚠️ ping failed:', err instanceof Error ? err.message : String(err));

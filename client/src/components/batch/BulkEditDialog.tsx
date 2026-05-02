@@ -32,7 +32,7 @@ export interface EditableField {
   options?: Array<{ value: string; label: string }>;
   placeholder?: string;
   description?: string;
-  validation?: (value: any) => string | null;
+  validation?: (value: Record<string, unknown>) => string | null;
 }
 
 export interface BulkEditDialogProps {
@@ -48,7 +48,7 @@ export interface BulkEditDialogProps {
 
 interface FieldChange {
   enabled: boolean;
-  value: any;
+  value: Record<string, unknown>;
 }
 
 export function BulkEditDialog({
@@ -86,7 +86,7 @@ export function BulkEditDialog({
     });
   }, []);
 
-  const updateValue = useCallback((key: string, value: any) => {
+  const updateValue = useCallback((key: string, value: Record<string, unknown>) => {
     setChanges(prev => ({
       ...prev,
       [key]: { ...prev[key], value },
@@ -245,7 +245,7 @@ export function BulkEditDialog({
   );
 }
 
-function getDefaultValue(field: EditableField): any {
+function getDefaultValue(field: EditableField): unknown {
   switch (field.type) {
     case 'checkbox':
       return false;
@@ -260,8 +260,8 @@ function getDefaultValue(field: EditableField): any {
 
 function renderFieldInput(
   field: EditableField,
-  value: any,
-  onChange: (value: any) => void
+  value: Record<string, unknown>,
+  onChange: (value: Record<string, unknown>) => void
 ) {
   switch (field.type) {
     case 'select':

@@ -76,7 +76,7 @@ class AutoPostingService {
     content: PostContent,
     scheduledTime: Date,
     createdBy: 'social_autopilot' | 'advertising_autopilot' | 'manual' = 'manual',
-    viralPrediction?: any
+    viralPrediction?: Record<string, unknown>
   ): Promise<ScheduledPost> {
     const postId = `post_${Date.now()}_${randomBytes(4).toString('hex')}`;
 
@@ -126,7 +126,7 @@ class AutoPostingService {
       try {
         const result = await this.postToPlatform(user, platform, content);
         results.push(result);
-      } catch (error: any) {
+      } catch (error) {
         logger.warn({ err: error }, `Failed to post to ${platform}:`);
         results.push({
           platform,
@@ -212,7 +212,7 @@ class AutoPostingService {
    */
   private async postToFacebook(token: string, content: PostContent): Promise<PostResult> {
     try {
-      const postData: any = {
+      const postData: Record<string, unknown> = {
         message: this.formatContent(content),
         access_token: token,
       };
@@ -237,7 +237,7 @@ class AutoPostingService {
         postUrl: `https://facebook.com/${response.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Facebook posting error:', error.response?.data || error.message);
       throw new Error(`Facebook: ${error.response?.data?.error?.message || error.message}`);
     }
@@ -254,7 +254,7 @@ class AutoPostingService {
       }
 
       // Step 1: Create media container
-      const containerData: any = {
+      const containerData: Record<string, unknown> = {
         image_url: content.mediaType === 'image' ? content.mediaUrl : undefined,
         video_url: content.mediaType === 'video' ? content.mediaUrl : undefined,
         caption: this.formatContent(content),
@@ -284,7 +284,7 @@ class AutoPostingService {
         postUrl: `https://instagram.com/p/${publishResponse.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Instagram posting error:', error.response?.data || error.message);
       throw new Error(`Instagram: ${error.response?.data?.error?.message || error.message}`);
     }
@@ -295,7 +295,7 @@ class AutoPostingService {
    */
   private async postToTwitter(token: string, content: PostContent): Promise<PostResult> {
     try {
-      const tweetData: any = {
+      const tweetData: Record<string, unknown> = {
         text: this.formatContent(content, 280), // Twitter character limit
       };
 
@@ -323,7 +323,7 @@ class AutoPostingService {
         postUrl: `https://twitter.com/i/web/status/${response.data.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Twitter posting error:', error.response?.data || error.message);
       throw new Error(`Twitter: ${error.response?.data?.detail || error.message}`);
     }
@@ -375,7 +375,7 @@ class AutoPostingService {
         postUrl: `https://www.tiktok.com/@/video/${publishId}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('TikTok posting error:', error.response?.data || error.message);
       throw new Error(`TikTok: ${error.response?.data?.message || error.message}`);
     }
@@ -386,7 +386,7 @@ class AutoPostingService {
    */
   private async postToYouTube(token: string, content: PostContent): Promise<PostResult> {
     try {
-      const postData: any = {
+      const postData: Record<string, unknown> = {
         snippet: {
           description: this.formatContent(content),
         },
@@ -414,7 +414,7 @@ class AutoPostingService {
         postUrl: `https://youtube.com/post/${response.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('YouTube posting error:', error.response?.data || error.message);
       throw new Error(`YouTube: ${error.response?.data?.error?.message || error.message}`);
     }
@@ -435,7 +435,7 @@ class AutoPostingService {
       }
       const authorUrn = `urn:li:person:${personId}`;
 
-      const postData: any = {
+      const postData: Record<string, unknown> = {
         author: authorUrn,
         lifecycleState: 'PUBLISHED',
         specificContent: {
@@ -480,7 +480,7 @@ class AutoPostingService {
         postUrl: `https://linkedin.com/feed/update/${response.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('LinkedIn posting error:', error.response?.data || error.message);
       throw new Error(`LinkedIn: ${error.response?.data?.message || error.message}`);
     }
@@ -491,7 +491,7 @@ class AutoPostingService {
    */
   private async postToThreads(token: string, content: PostContent): Promise<PostResult> {
     try {
-      const postData: any = {
+      const postData: Record<string, unknown> = {
         text: this.formatContent(content, 500), // Threads limit
         access_token: token,
       };
@@ -513,7 +513,7 @@ class AutoPostingService {
         postUrl: `https://threads.net/t/${response.data.id}`,
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Threads posting error:', error.response?.data || error.message);
       throw new Error(`Threads: ${error.response?.data?.error?.message || error.message}`);
     }
@@ -524,7 +524,7 @@ class AutoPostingService {
    */
   private async postToGoogleBusiness(token: string, content: PostContent): Promise<PostResult> {
     try {
-      const postData: any = {
+      const postData: Record<string, unknown> = {
         summary: this.formatContent(content, 1500),
         topicType: 'STANDARD',
       };
@@ -556,7 +556,7 @@ class AutoPostingService {
         postUrl: 'https://business.google.com',
         postedAt: new Date(),
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn('Google Business posting error:', error.response?.data || error.message);
       throw new Error(`Google Business: ${error.response?.data?.error?.message || error.message}`);
     }
@@ -657,7 +657,7 @@ class AutoPostingService {
         accessToken: result.accessToken,
         expiresIn: result.expiresIn,
       };
-    } catch (error: any) {
+    } catch (error) {
       logger.warn({ err: error }, `Token refresh failed for ${platform}:`);
       throw new Error(`Failed to refresh ${platform} access token: ${error.message}`);
     }
@@ -723,7 +723,7 @@ class AutoPostingService {
                   ).catch(err => logger.warn('Learning record failed (non-fatal):', err?.message));
                 }
               }
-            } catch (error: any) {
+            } catch (error) {
               logger.warn({ err: error }, `Failed scheduled post ${postId}:`);
               scheduledPost.status = 'failed';
               await storage.updateScheduledPostStatus(postId, 'failed');

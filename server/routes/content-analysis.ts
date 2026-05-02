@@ -52,7 +52,7 @@ const contentAnalysisLimiter = rateLimit({
 
 // Middleware to check if user has a paid subscription (required for content analysis)
 // Note: There is no free tier - all content analysis requires a paid subscription
-const requirePremium = async (req: any, res: any, next: any) => {
+const requirePremium = async (req: Record<string, unknown>, res: Record<string, unknown>, next: Record<string, unknown>) => {
   try {
     if (!req.user) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -291,7 +291,7 @@ router.post('/batch', async (req, res) => {
   try {
     const { mediaType, mediaUrl, text, landingPageUrl, videoDuration } = req.body;
 
-    const results: any = {};
+    const results: Record<string, unknown> = {};
 
     if (mediaType === 'image' && mediaUrl) {
       results.image = await contentAnalysisService.analyzeImage(mediaUrl);

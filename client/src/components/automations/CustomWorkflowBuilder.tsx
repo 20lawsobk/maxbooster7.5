@@ -215,7 +215,7 @@ function WorkflowDialog({
       });
       onClose();
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       toast({ title: 'Error', description: err.message ?? 'Could not save workflow.', variant: 'destructive' });
     },
   });
@@ -420,7 +420,7 @@ function WorkflowCard({
       const res = await apiRequest('POST', `/api/custom-workflows/${workflow.id}/test`);
       return res.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: Record<string, unknown>) => {
       qc.invalidateQueries({ queryKey: ['/api/custom-workflows'] });
       toast({
         title: 'Test run complete',

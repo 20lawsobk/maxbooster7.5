@@ -50,7 +50,7 @@ interface ReleaseStatusDashboardProps {
 const PLATFORM_CONFIG: Record<
   string,
   {
-    icon: any;
+    icon: React.ReactNode;
     color: string;
     processingTime: string;
   }

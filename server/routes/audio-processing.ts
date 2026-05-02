@@ -462,7 +462,7 @@ router.get('/capabilities', requireAuth, async (req: Request, res: Response) => 
         },
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Error in audio capabilities:', error?.message);
     res.status(500).json({ error: 'Failed to process request' });
   }
@@ -490,7 +490,7 @@ router.post('/analyze-file', requireAuth, async (req: Request, res: Response) =>
       return res.status(500).json({ error: result.error || 'Analysis failed' });
     }
     return res.json({ success: true, ...result.data });
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('Audio file analysis error:', error?.message);
     res.status(500).json({ error: 'Audio analysis failed' });
   }
@@ -505,7 +505,7 @@ router.get('/analysis-features', async (_req: Request, res: Response) => {
     const { pythonAIService } = await import('../services/pythonAIService.js');
     const result = await pythonAIService.getAudioFeatureInfo();
     return res.json(result.data ?? { available: false });
-  } catch (error: any) {
+  } catch (error) {
     res.json({ available: false, error: error?.message });
   }
 });
@@ -532,7 +532,7 @@ router.post('/transcribe', requireAuth, async (req: Request, res: Response) => {
       return res.status(500).json({ error: result.error || 'Transcription failed' });
     }
     return res.json(result.data);
-  } catch (error: any) {
+  } catch (error) {
     logger.warn('MIDI transcription error:', error?.message);
     res.status(500).json({ error: 'MIDI transcription failed' });
   }

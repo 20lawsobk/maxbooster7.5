@@ -38,7 +38,7 @@ class CDNManager {
   private constructor() {
     this.config = {
       enabled: process.env.CDN_ENABLED === 'true',
-      provider: (process.env.CDN_PROVIDER as any) || 'cloudflare',
+      provider: (process.env.CDN_PROVIDER as Record<string, unknown>) || 'cloudflare',
       baseUrl: process.env.CDN_BASE_URL || '',
       staticAssetPaths: ['/static', '/assets', '/uploads', '/audio'],
       cacheControlRules: DEFAULT_CACHE_RULES,

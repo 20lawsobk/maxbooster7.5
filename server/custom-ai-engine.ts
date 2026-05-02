@@ -32,7 +32,7 @@ function seededShuffle<T>(arr: T[], seed: string): T[] {
 }
 
 interface ModelParameters {
-  [key: string]: any;
+  [key: string]: Record<string, unknown>;
 }
 
 interface ContentGenerationParams {
@@ -510,7 +510,7 @@ class CustomAIEngine {
     return this.performanceHistory.get(modelType) || [];
   }
 
-  getPerformanceSummary(modelType: string): any {
+  getPerformanceSummary(modelType: string): Record<string, unknown> {
     const history = this.performanceHistory.get(modelType) || [];
     if (history.length === 0) {
       return { records: 0, avgEngagement: 0, avgQuality: 0 };

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,17 +9,27 @@ import { TwitterIcon, LinkedInIcon, YouTubeIcon, TikTokIcon, ThreadsIcon, Google
 import { useOnboardingProgress } from '@/hooks/useOnboardingProgress';
 import { apiRequest } from '@/lib/queryClient';
 
+interface SocialConnection {
+  platform: string;
+  username?: string;
+  followers?: number;
+  profileUrl?: string;
+  metadata?: Record<string, unknown>;
+}
+
+type PlatformIcon = ComponentType<{ className?: string }>;
+
 interface Platform {
   id: string;
   name: string;
-  icon: any;
+  icon: PlatformIcon;
   color: string;
   connected: boolean;
   username?: string;
   oauth: boolean;
   followers?: number;
   profileUrl?: string;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 function formatCompactNumber(num: number): string {
@@ -33,7 +43,7 @@ export function PlatformConnections() {
   const queryClient = useQueryClient();
   const { trackSocialAccountConnected } = useOnboardingProgress();
 
-  const { data: connections = [], isLoading } = useQuery({
+  const { data: connections = [], isLoading } = useQuery<SocialConnection[]>({
     queryKey: ['/api/social/connections'],
     retry: false,
   });
@@ -116,17 +126,17 @@ export function PlatformConnections() {
     },
   });
 
-  const metaConnected = connections.some((c: any) => c.platform === 'facebook' || c.platform === 'instagram');
-  const metaUsername = connections.find((c: any) => c.platform === 'facebook')?.username || 
-                       connections.find((c: any) => c.platform === 'instagram')?.username;
-  const metaFollowers = (connections.find((c: any) => c.platform === 'facebook')?.followers || 0) +
-                        (connections.find((c: any) => c.platform === 'instagram')?.followers || 0);
+  const metaConnected = connections.some(c => c.platform === 'facebook' || c.platform === 'instagram');
+  const metaUsername = connections.find(c => c.platform === 'facebook')?.username || 
+                       connections.find(c => c.platform === 'instagram')?.username;
+  const metaFollowers = (connections.find(c => c.platform === 'facebook')?.followers || 0) +
+                        (connections.find(c => c.platform === 'instagram')?.followers || 0);
   const metaMetadata = {
-    ...(connections.find((c: any) => c.platform === 'facebook')?.metadata || {}),
-    ...(connections.find((c: any) => c.platform === 'instagram')?.metadata || {}),
+    ...(connections.find(c => c.platform === 'facebook')?.metadata || {}),
+    ...(connections.find(c => c.platform === 'instagram')?.metadata || {}),
   };
-  const metaProfileUrl = connections.find((c: any) => c.platform === 'instagram')?.profileUrl ||
-                         connections.find((c: any) => c.platform === 'facebook')?.profileUrl || '';
+  const metaProfileUrl = connections.find(c => c.platform === 'instagram')?.profileUrl ||
+                         connections.find(c => c.platform === 'facebook')?.profileUrl || '';
 
   const platforms: Platform[] = [
     {
@@ -146,84 +156,84 @@ export function PlatformConnections() {
       name: 'Twitter/X',
       icon: TwitterIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: any) => c.platform === 'twitter'),
-      username: connections.find((c: any) => c.platform === 'twitter')?.username,
+      connected: connections.some(c => c.platform === 'twitter'),
+      username: connections.find(c => c.platform === 'twitter')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'twitter')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'twitter')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'twitter')?.metadata || {},
+      followers: connections.find(c => c.platform === 'twitter')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'twitter')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'twitter')?.metadata || {},
     },
     {
       id: 'threads',
       name: 'Threads',
       icon: ThreadsIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: any) => c.platform === 'threads'),
-      username: connections.find((c: any) => c.platform === 'threads')?.username,
+      connected: connections.some(c => c.platform === 'threads'),
+      username: connections.find(c => c.platform === 'threads')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'threads')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'threads')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'threads')?.metadata || {},
+      followers: connections.find(c => c.platform === 'threads')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'threads')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'threads')?.metadata || {},
     },
     {
       id: 'tiktok',
       name: 'TikTok',
       icon: TikTokIcon,
       color: 'text-black dark:text-white',
-      connected: connections.some((c: any) => c.platform === 'tiktok'),
-      username: connections.find((c: any) => c.platform === 'tiktok')?.username,
+      connected: connections.some(c => c.platform === 'tiktok'),
+      username: connections.find(c => c.platform === 'tiktok')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'tiktok')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'tiktok')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'tiktok')?.metadata || {},
+      followers: connections.find(c => c.platform === 'tiktok')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'tiktok')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'tiktok')?.metadata || {},
     },
     {
       id: 'youtube',
       name: 'YouTube',
       icon: YouTubeIcon,
       color: 'text-red-600',
-      connected: connections.some((c: any) => c.platform === 'youtube'),
-      username: connections.find((c: any) => c.platform === 'youtube')?.username,
+      connected: connections.some(c => c.platform === 'youtube'),
+      username: connections.find(c => c.platform === 'youtube')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'youtube')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'youtube')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'youtube')?.metadata || {},
+      followers: connections.find(c => c.platform === 'youtube')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'youtube')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'youtube')?.metadata || {},
     },
     {
       id: 'linkedin',
       name: 'LinkedIn',
       icon: LinkedInIcon,
       color: 'text-blue-600',
-      connected: connections.some((c: any) => c.platform === 'linkedin'),
-      username: connections.find((c: any) => c.platform === 'linkedin')?.username,
+      connected: connections.some(c => c.platform === 'linkedin'),
+      username: connections.find(c => c.platform === 'linkedin')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'linkedin')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'linkedin')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'linkedin')?.metadata || {},
+      followers: connections.find(c => c.platform === 'linkedin')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'linkedin')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'linkedin')?.metadata || {},
     },
     {
       id: 'googlebusiness',
       name: 'Google Business',
       icon: GoogleIcon,
       color: 'text-blue-500',
-      connected: connections.some((c: any) => c.platform === 'googlebusiness'),
-      username: connections.find((c: any) => c.platform === 'googlebusiness')?.username,
+      connected: connections.some(c => c.platform === 'googlebusiness'),
+      username: connections.find(c => c.platform === 'googlebusiness')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'googlebusiness')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'googlebusiness')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'googlebusiness')?.metadata || {},
+      followers: connections.find(c => c.platform === 'googlebusiness')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'googlebusiness')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'googlebusiness')?.metadata || {},
     },
     {
       id: 'spotify',
       name: 'Spotify',
       icon: SpotifyIcon,
       color: 'text-green-500',
-      connected: connections.some((c: any) => c.platform === 'spotify'),
-      username: connections.find((c: any) => c.platform === 'spotify')?.username,
+      connected: connections.some(c => c.platform === 'spotify'),
+      username: connections.find(c => c.platform === 'spotify')?.username,
       oauth: true,
-      followers: connections.find((c: any) => c.platform === 'spotify')?.followers || 0,
-      profileUrl: connections.find((c: any) => c.platform === 'spotify')?.profileUrl || '',
-      metadata: connections.find((c: any) => c.platform === 'spotify')?.metadata || {},
+      followers: connections.find(c => c.platform === 'spotify')?.followers || 0,
+      profileUrl: connections.find(c => c.platform === 'spotify')?.profileUrl || '',
+      metadata: connections.find(c => c.platform === 'spotify')?.metadata || {},
     },
   ];
 

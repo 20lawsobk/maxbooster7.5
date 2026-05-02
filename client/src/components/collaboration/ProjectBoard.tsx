@@ -81,7 +81,7 @@ export function ProjectBoard() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to create project',
@@ -99,7 +99,7 @@ export function ProjectBoard() {
       toast({ title: 'Joined Project!' });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to join project',
@@ -117,7 +117,7 @@ export function ProjectBoard() {
       toast({ title: 'Left Project' });
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/projects'] });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to leave project',
@@ -135,15 +135,15 @@ export function ProjectBoard() {
     }));
   };
 
-  const isUserMember = (project: any) => {
-    return project.members?.some((m: any) => m.userId === user?.id);
+  const isUserMember = (project: Record<string, unknown>) => {
+    return project.members?.some((m: Record<string, unknown>) => m.userId === user?.id);
   };
 
-  const isProjectOwner = (project: any) => {
+  const isProjectOwner = (project: Record<string, unknown>) => {
     return project.ownerId === user?.id;
   };
 
-  const renderProjectCard = (project: any) => {
+  const renderProjectCard = (project: Record<string, unknown>) => {
     const isMember = isUserMember(project);
     const isOwner = isProjectOwner(project);
     const memberCount = project.members?.length || 0;
@@ -207,7 +207,7 @@ export function ProjectBoard() {
 
           {project.members?.length > 0 && (
             <div className="flex -space-x-2">
-              {project.members.slice(0, 5).map((member: any) => (
+              {project.members.slice(0, 5).map((member: Record<string, unknown>) => (
                 <Avatar key={member.id} className="h-8 w-8 border-2 border-background">
                   <AvatarImage src={member.user?.avatarUrl} />
                   <AvatarFallback className="text-xs">

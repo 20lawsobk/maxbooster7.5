@@ -1161,7 +1161,7 @@ export class SelfHealingSecuritySystem {
         'unknown',
       requestPath: req.path,
       requestMethod: req.method,
-      userId: (req as any).user?.id,
+      userId: (req as Record<string, unknown>).user?.id,
       threatType: 'unknown',
       severity: 'medium',
     };
@@ -1278,7 +1278,7 @@ export class SelfHealingSecuritySystem {
     riskScore: number;
     riskLevel: 'low' | 'medium' | 'high';
     deviations: string[];
-    profile: any;
+    profile: Record<string, unknown>;
   }> {
     const startTime = Date.now();
 
@@ -1327,7 +1327,7 @@ export class SelfHealingSecuritySystem {
       } else {
         // Analyze deviations from established baseline
         const loginTimes = (profile.loginTimes as number[]) || [];
-        const devices = (profile.devices as any[]) || [];
+        const devices = (profile.devices as Record<string, unknown>[]) || [];
 
         // Check login time deviation
         const avgLoginTime =

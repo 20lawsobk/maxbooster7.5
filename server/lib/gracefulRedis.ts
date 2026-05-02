@@ -9,7 +9,7 @@ import { logger } from '../logger.js';
 import { getPdimClient, isPdimConfigured } from './pdimClient.js';
 
 interface RedisClientWrapper {
-  client: any;
+  client: Record<string, unknown>;
   readonly isConnected: boolean;
   get(key: string): Promise<string | null>;
   set(key: string, value: string, ttl?: number): Promise<void>;
@@ -62,6 +62,6 @@ export function createGracefulRedisClient(serviceName: string): RedisClientWrapp
   };
 }
 
-export function createLegacyGracefulRedisClient(_serviceName: string): any {
+export function createLegacyGracefulRedisClient(_serviceName: string): Record<string, unknown> {
   throw new Error('createLegacyGracefulRedisClient is removed — use createGracefulRedisClient with PDIM');
 }

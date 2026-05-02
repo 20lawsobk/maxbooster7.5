@@ -5,7 +5,7 @@ import { logger } from '../../../logger.js';
 const CHUNK_KEY_PREFIX = 'chunks';
 
 export class PocketDimensionChunkStore implements ChunkStore {
-  private pocket: any = null;
+  private pocket: Record<string, unknown> | null = null;
   private initPromise: Promise<void> | null = null;
 
   constructor(private readonly pocketName: string) {}

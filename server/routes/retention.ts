@@ -51,7 +51,7 @@ const featureEventSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-router.post('/nps', requireAuth, async (req: any, res) => {
+router.post('/nps', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const parsed = npsSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -80,7 +80,7 @@ router.post('/nps', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/cancellation-feedback', requireAuth, async (req: any, res) => {
+router.post('/cancellation-feedback', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const parsed = cancellationSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -102,7 +102,7 @@ router.post('/cancellation-feedback', requireAuth, async (req: any, res) => {
   }
 });
 
-router.post('/feature-event', requireAuth, async (req: any, res) => {
+router.post('/feature-event', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const parsed = featureEventSchema.safeParse(req.body);
     if (!parsed.success) {
@@ -125,7 +125,7 @@ router.post('/feature-event', requireAuth, async (req: any, res) => {
   }
 });
 
-router.get('/health-score', requireAuth, async (req: any, res) => {
+router.get('/health-score', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     const userId = req.user!.id;
 
@@ -153,7 +153,7 @@ router.get('/health-score', requireAuth, async (req: any, res) => {
   }
 });
 
-router.get('/admin/at-risk', requireAuth, async (req: any, res) => {
+router.get('/admin/at-risk', requireAuth, async (req: Record<string, unknown>, res) => {
   try {
     if (req.user?.role !== 'admin') return res.status(403).json({ error: 'Forbidden' });
 

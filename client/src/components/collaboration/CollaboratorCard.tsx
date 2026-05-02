@@ -62,7 +62,7 @@ export function CollaboratorCard({
       queryClient.invalidateQueries({ queryKey: ['/api/collaborations/suggestions'] });
       onConnect?.();
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: 'Error',
         description: error.message || 'Failed to send connection request',

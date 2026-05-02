@@ -85,7 +85,7 @@ export function TrackUploader({ files, onChange, maxFiles = 20 }: TrackUploaderP
       const reader = new FileReader();
       reader.onload = async (e) => {
         try {
-          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const audioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
           const channelData = audioBuffer.getChannelData(0);

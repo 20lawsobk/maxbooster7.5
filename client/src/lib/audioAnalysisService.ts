@@ -40,7 +40,7 @@ class AudioAnalysisService {
 
   private getAudioContext(): AudioContext {
     if (!this.audioContext) {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      this.audioContext = new (window.AudioContext || (window as Record<string, unknown>).webkitAudioContext)();
     }
     return this.audioContext;
   }

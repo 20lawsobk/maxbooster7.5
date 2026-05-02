@@ -73,12 +73,12 @@ const COUNTRY_FLAGS: Record<string, string> = {
   IT: '🇮🇹', NL: '🇳🇱', SE: '🇸🇪', IN: '🇮🇳', KR: '🇰🇷',
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: Record<string, unknown>) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white dark:bg-slate-800 p-3 rounded-lg shadow-lg border">
         <p className="font-semibold text-sm mb-2">{label}</p>
-        {payload.map((entry: any, index: number) => (
+        {payload.map((entry: Record<string, unknown>, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: entry.color }} />
             <span className="text-muted-foreground">{entry.name}:</span>
@@ -174,7 +174,7 @@ export function AudienceInsights({
     if (!data?.audience?.geographic) {
       return [];
     }
-    return data.audience.geographic.map((g: any) => ({
+    return data.audience.geographic.map((g: Record<string, unknown>) => ({
       ...g,
       flag: COUNTRY_FLAGS[g.code] || '🌍',
     }));

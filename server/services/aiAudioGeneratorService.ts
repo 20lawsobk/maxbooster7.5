@@ -5,7 +5,7 @@
  */
 
 import wavefilePkg from 'wavefile';
-const WaveFile = (wavefilePkg as any).WaveFile || wavefilePkg;
+const WaveFile = (wavefilePkg as Record<string, unknown>).WaveFile || wavefilePkg;
 import { randomBytes } from 'crypto';
 
 import { AIAudioGenerator, type GenerationOutput, type GenerationType } from '../../shared/ml/audio/AIAudioGenerator.js';

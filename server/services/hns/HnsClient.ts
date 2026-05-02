@@ -63,14 +63,14 @@ export interface HnsTx {
   date:    string;
   fee:     number;
   rate:    number;
-  outputs: Array<{ value: number; address: string; covenant?: any }>;
+  outputs: Array<{ value: number; address: string; covenant?: Record<string, unknown> }>;
 }
 
 export class HnsClient {
   private readonly cfg: Required<HnsConfig>;
   private readonly auth: string;
   private readonly httpLib: typeof http | typeof https;
-  private _nodeInfo: any = null;
+  private _nodeInfo: Record<string, unknown> | null = null;
 
   constructor(cfg: HnsConfig) {
     this.cfg = {
@@ -87,7 +87,7 @@ export class HnsClient {
 
   // ── Raw request helpers ───────────────────────────────────────────────────
 
-  private request(method: string, path: string, body?: any): Promise<any> {
+  private request(method: string, path: string, body?: Record<string, unknown>): Promise<any> {
     return new Promise((resolve, reject) => {
       const bodyStr = body ? JSON.stringify(body) : '';
       const opts: http.RequestOptions = {
@@ -127,7 +127,7 @@ export class HnsClient {
   }
 
   /** hsd node JSON-RPC */
-  private rpc(method: string, params: any[] = []): Promise<any> {
+  private rpc(method: string, params: unknown[] = []): Promise<any> {
     return this.request('POST', '/', { method, params, id: Date.now() });
   }
 
@@ -136,7 +136,7 @@ export class HnsClient {
     return this.request('GET', `/wallet/${this.cfg.wallet}${path}`);
   }
 
-  private walletPost(path: string, body: any): Promise<any> {
+  private walletPost(path: string, body: Record<string, unknown>): Promise<any> {
     return this.request('POST', `/wallet/${this.cfg.wallet}${path}`, body);
   }
 
