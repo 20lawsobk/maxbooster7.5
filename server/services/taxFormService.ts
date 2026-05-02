@@ -122,6 +122,15 @@ const treatyRates: Record<string, number> = {
 
 class TaxFormService {
   private taxForms: Map<string, GeneratedTaxForm> = new Map();
+  private static readonly MAX_TAX_FORMS = 100_000;
+
+  private cacheTaxForm(id: string, form: GeneratedTaxForm): void {
+    if (this.taxForms.size >= TaxFormService.MAX_TAX_FORMS) {
+      const oldest = this.taxForms.keys().next().value;
+      if (oldest !== undefined) this.taxForms.delete(oldest);
+    }
+    this.taxForms.set(id, form);
+  }
 
   // DB-backed treaty rate cache (TTL: 1 hour)
   private _treatyCache: { data: Record<string, number>; expiresAt: number } | null = null;
@@ -280,7 +289,7 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.taxForms.set(form.id, form);
+    this.cacheTaxForm(form.id, form);
     logger.info(`Generated W-9 form ${form.id} for user ${userId}`);
     return form;
   }
@@ -301,7 +310,7 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.taxForms.set(form.id, form);
+    this.cacheTaxForm(form.id, form);
     logger.info(`Generated W-8BEN form ${form.id} for user ${userId}`);
     return form;
   }
@@ -330,7 +339,7 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.taxForms.set(form.id, form);
+    this.cacheTaxForm(form.id, form);
     logger.info(`Generated 1099-NEC form ${form.id} for tax year ${taxYear}`);
     return form;
   }
@@ -381,7 +390,7 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.taxForms.set(form.id, form);
+    this.cacheTaxForm(form.id, form);
     logger.info(`Generated 1099-MISC form ${form.id} for tax year ${taxYear}`);
     return form;
   }
@@ -422,7 +431,7 @@ class TaxFormService {
       updatedAt: new Date(),
     };
 
-    this.taxForms.set(form.id, form);
+    this.cacheTaxForm(form.id, form);
     logger.info(`Generated 1099-K form ${form.id} for tax year ${taxYear}`);
     return form;
   }
@@ -452,7 +461,7 @@ class TaxFormService {
     form.signatureHash = signatureHash;
     form.updatedAt = new Date();
 
-    this.taxForms.set(formId, form);
+    this.cacheTaxForm(formId, form);
     logger.info(`Tax form ${formId} signed`);
     return form;
   }

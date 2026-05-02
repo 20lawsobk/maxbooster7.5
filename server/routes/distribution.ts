@@ -445,7 +445,7 @@ router.post('/codes/isrc', requireAuth, async (req: Request, res: Response) => {
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn('LabelGrid ISRC generation unavailable, using internal generator:', lgError);
-      const fallback = musicCodesService.generateISRC(userId);
+      const fallback = await musicCodesService.generateISRC(userId);
       isrcCode = fallback.code;
       isOfficiallyRegistered = false;
     }
@@ -493,7 +493,7 @@ router.post('/codes/upc', requireAuth, async (req: Request, res: Response) => {
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn('LabelGrid UPC generation unavailable, using internal generator:', lgError);
-      const fallback = musicCodesService.generateUPC(userId);
+      const fallback = await musicCodesService.generateUPC(userId);
       upcCode = fallback.code;
       isOfficiallyRegistered = false;
     }
@@ -1958,11 +1958,11 @@ router.post('/generate-codes', requireAuth, async (req: Request, res: Response) 
 
     if (data.type === 'isrc' || data.type === 'both') {
       const count = data.count || 1;
-      results.isrcs = musicCodesService.generateBulkISRCs(userId, count, countryCode);
+      results.isrcs = await musicCodesService.generateBulkISRCs(userId, count, countryCode);
     }
 
     if (data.type === 'upc' || data.type === 'both') {
-      const upcResult = musicCodesService.generateUPC(userId);
+      const upcResult = await musicCodesService.generateUPC(userId);
       results.upc = {
         code: upcResult.code,
         formatted: upcResult.formatted,
@@ -4707,7 +4707,7 @@ router.post('/isrc/generate', requireAuth, async (req: Request, res: Response) =
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn('LabelGrid ISRC generation unavailable, using internal generator:', lgError);
-      const fallback = musicCodesService.generateISRC(userId);
+      const fallback = await musicCodesService.generateISRC(userId);
       isrcCode = fallback.code;
       isOfficiallyRegistered = false;
     }
@@ -4755,7 +4755,7 @@ router.post('/upc/generate', requireAuth, async (req: Request, res: Response) =>
       assignedTo = result.assignedTo || assignedTo;
     } catch (lgError) {
       logger.warn('LabelGrid UPC generation unavailable, using internal generator:', lgError);
-      const fallback = musicCodesService.generateUPC(userId);
+      const fallback = await musicCodesService.generateUPC(userId);
       upcCode = fallback.code;
       isOfficiallyRegistered = false;
     }
@@ -5088,7 +5088,7 @@ router.post('/codes/generate', requireAuth, async (req: Request, res: Response) 
           const result = await labelGridService.generateISRC(trackInfo.artist, trackInfo.title);
           codes.push(result.code);
         } catch {
-          const fallback = musicCodesService.generateISRC(userId);
+          const fallback = await musicCodesService.generateISRC(userId);
           codes.push(fallback.code);
           isOfficiallyRegistered = false;
         }
@@ -5111,7 +5111,7 @@ router.post('/codes/generate', requireAuth, async (req: Request, res: Response) 
           const result = await labelGridService.generateUPC(title);
           codes.push(result.code);
         } catch {
-          const fallback = musicCodesService.generateUPC(userId);
+          const fallback = await musicCodesService.generateUPC(userId);
           codes.push(fallback.code);
           isOfficiallyRegistered = false;
         }

@@ -620,6 +620,20 @@ export class RoyaltyDisputeService {
   }
 
   private fundHolds: Map<string, FundHold> = new Map();
+  private _holdCleanupStarted = false;
+  private static readonly MAX_ACTIVE_FUND_HOLDS = 200_000;
+  private static readonly SETTLED_HOLD_TTL_MS = 48 * 60 * 60 * 1000;
+
+  private startFundHoldCleanup(): void {
+    setInterval(() => {
+      const cutoff = Date.now() - RoyaltyDisputeService.SETTLED_HOLD_TTL_MS;
+      for (const [id, hold] of this.fundHolds) {
+        if (hold.status !== 'held' && hold.releasedAt && hold.releasedAt.getTime() < cutoff) {
+          this.fundHolds.delete(id);
+        }
+      }
+    }, 6 * 60 * 60 * 1000).unref();
+  }
 
   async createFundHold(
     disputeId: string,
@@ -665,6 +679,14 @@ export class RoyaltyDisputeService {
       status: 'held',
     };
 
+    if (!this._holdCleanupStarted) {
+      this._holdCleanupStarted = true;
+      this.startFundHoldCleanup();
+    }
+    if (this.fundHolds.size >= RoyaltyDisputeService.MAX_ACTIVE_FUND_HOLDS) {
+      logger.error(`[RoyaltyDispute] fundHolds at capacity (${this.fundHolds.size}) — cannot create new hold for dispute ${disputeId}`);
+      return { holdId: '', disputeId, amountHeld: 0, currency, holdStatus: 'failed', message: 'Fund hold capacity reached' };
+    }
     this.fundHolds.set(holdId, hold);
 
     await this.addSystemMessage(disputeId, `Funds held: $${amount.toFixed(2)} ${currency}`, 'system');

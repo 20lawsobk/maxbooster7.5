@@ -55,9 +55,18 @@ class PromotionalToolsService {
   private autopilotEngines: Map<string, AutopilotEngine> = new Map();
   private autonomousAutopilots: Map<string, AutonomousAutopilot> = new Map();
   private pocketService = UserPocketDimensionService.getInstance();
+  private static readonly MAX_ENGINES = 10_000;
+
+  private evictOldestEngine<V>(map: Map<string, V>): void {
+    const oldest = map.keys().next().value;
+    if (oldest !== undefined) map.delete(oldest);
+  }
 
   getAutopilotForUser(userId: string): AutopilotEngine {
     if (!this.autopilotEngines.has(userId)) {
+      if (this.autopilotEngines.size >= PromotionalToolsService.MAX_ENGINES) {
+        this.evictOldestEngine(this.autopilotEngines);
+      }
       const engine = AutopilotEngine.createForSocialAndAds(userId);
       this.autopilotEngines.set(userId, engine);
     }
@@ -66,6 +75,9 @@ class PromotionalToolsService {
 
   getAutonomousAutopilotForUser(userId: string): AutonomousAutopilot {
     if (!this.autonomousAutopilots.has(userId)) {
+      if (this.autonomousAutopilots.size >= PromotionalToolsService.MAX_ENGINES) {
+        this.evictOldestEngine(this.autonomousAutopilots);
+      }
       const autopilot = AutonomousAutopilot.createForSocialAndAds(userId);
       this.autonomousAutopilots.set(userId, autopilot);
     }

@@ -143,7 +143,7 @@ export interface ListeningQuery {
 
 class SocialListeningService {
   private trackedKeywords: Map<string, ListeningQuery> = new Map();
-  private mentionCache: Map<string, Mention[]> = new Map();
+  private static readonly MAX_TRACKED_KEYWORDS = 50_000;
 
   constructor() {
     this.initializeDefaultKeywords();
@@ -728,6 +728,10 @@ class SocialListeningService {
       createdAt: new Date(),
     };
 
+    if (this.trackedKeywords.size >= SocialListeningService.MAX_TRACKED_KEYWORDS) {
+      const oldest = this.trackedKeywords.keys().next().value;
+      if (oldest !== undefined) this.trackedKeywords.delete(oldest);
+    }
     this.trackedKeywords.set(newQuery.id, newQuery);
     
     logger.info(`Listening query added for user ${userId}`, {
