@@ -93,10 +93,11 @@ export function TokenRefreshHandler({
         return result;
       }
     } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to refresh token';
       const result: TokenRefreshResult = {
         success: false,
         outcome: 'provider_api_error',
-        message: error.message || 'Failed to refresh token',
+        message,
       };
 
       if (!silentRefresh) {
@@ -162,7 +163,7 @@ export function useTokenRefresh() {
       return {
         success: false,
         outcome: 'provider_api_error',
-        message: error.message,
+        message: error instanceof Error ? error.message : 'Failed to refresh token',
       };
     } finally {
       setIsRefreshing(false);

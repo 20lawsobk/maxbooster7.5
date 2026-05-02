@@ -60,6 +60,68 @@ interface ServerVideoGeneratorProps {
 
 type InputMode = 'text' | 'audio' | 'image';
 
+/**
+ * Shape of a video-generation job record returned by `/api/social/generate-video`
+ * and `/api/social/video-job/:id`. All fields are optional because the server
+ * returns different subsets at different points (queued → processing → done).
+ */
+interface VideoJobData {
+  job_id?:             string;
+  status?:             string;
+  success?:            boolean;
+  url?:                string;
+  video_url?:          string;
+  hook?:               string;
+  body?:               string;
+  cta?:                string;
+  source?:             string;
+  topic?:              string;
+  template?:           string;
+  template_name?:      string;
+  width?:              number;
+  height?:             number;
+  duration?:           number;
+  aspect_ratio?:       string;
+  platform?:           string;
+  processing_time_ms?: number;
+  render_time_ms?:     number;
+  scenes_rendered?:    number;
+  quality?:            string;
+  hashtags?:           string[];
+  content_confidence?: number | null;
+  sentiment_score?:    number | null;
+  sentiment_label?:    string | null;
+  error?:              string;
+  message?:            string;
+}
+
+/** Subset of VideoJobData surfaced to the rendered UI in the result panel. */
+interface VideoInfo {
+  hook?:              string;
+  body?:              string;
+  cta?:               string;
+  source?:            string;
+  width?:             number;
+  height?:            number;
+  processingTime:     number;
+  renderTime:         number;
+  scenesRendered:     number;
+  templateName?:      string;
+  quality?:           string;
+  hashtags:           string[];
+  contentConfidence:  number | null;
+  sentimentScore:     number | null;
+  sentimentLabel:     string | null;
+}
+
+/** Narrow an unknown caught value to a string message. */
+function errMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error ?? '');
+}
+function errName(error: unknown): string | undefined {
+  return error instanceof Error ? error.name : undefined;
+}
+
 const CINEMATIC_TEMPLATES = [
   { id: 'cinematic_promo', name: 'Cinematic Promo', description: 'Film-quality dramatic lighting', category: 'promo', color: '#e94560', icon: Film },
   { id: 'neon_pulse', name: 'Neon Pulse', description: 'Vibrant plasma energy', category: 'energetic', color: '#ff6ec7', icon: Zap },
@@ -170,7 +232,7 @@ export function ServerVideoGenerator({
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingStage, setGeneratingStage] = useState<string>('');
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
-  const [videoInfo, setVideoInfo] = useState<any | null>(null);
+  const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
 
   const [renderProgress, setRenderProgress] = useState<number>(0);
   const blobUrlRef = useRef<string | null>(null);  // tracks current blob URL so we can revoke on unmount
@@ -199,8 +261,8 @@ export function ServerVideoGenerator({
       const jobId = activeJobIdRef.current;
       if (!jobId || document.visibilityState !== 'visible') return;
       fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' })
-        .then(r => r.json())
-        .then((data: Record<string, unknown>) => {
+        .then(r => r.json() as Promise<VideoJobData>)
+        .then((data) => {
           const url = data.url || data.video_url;
           if ((data.status === 'done' || data.status === 'completed') && url) {
             activeJobIdRef.current = null;
@@ -237,8 +299,9 @@ export function ServerVideoGenerator({
     };
   }, []);
 
-  const applyVideoResult = (data: Record<string, unknown>) => {
-    setVideoUrl(data.url);
+  const applyVideoResult = (data: VideoJobData) => {
+    const finalUrl = data.url ?? data.video_url ?? '';
+    setVideoUrl(finalUrl || null);
     setVideoInfo({
       hook:               data.hook,
       body:               data.body,
@@ -246,20 +309,20 @@ export function ServerVideoGenerator({
       source:             data.source,
       width:              data.width,
       height:             data.height,
-      processingTime:     Math.round(data.processing_time_ms || 0),
-      renderTime:         Math.round(data.render_time_ms || 0),
-      scenesRendered:     data.scenes_rendered || 1,
-      templateName:       data.template_name || data.template,
+      processingTime:     Math.round(data.processing_time_ms ?? 0),
+      renderTime:         Math.round(data.render_time_ms ?? 0),
+      scenesRendered:     data.scenes_rendered ?? 1,
+      templateName:       data.template_name ?? data.template,
       quality:            data.quality,
-      hashtags:           data.hashtags           || [],
+      hashtags:           data.hashtags ?? [],
       contentConfidence:  data.content_confidence ?? null,
       sentimentScore:     data.sentiment_score    ?? null,
       sentimentLabel:     data.sentiment_label    ?? null,
     });
-    onVideoGenerated(data.url);
+    if (finalUrl) onVideoGenerated(finalUrl);
   };
 
-  const pollJobUntilDone = async (jobId: string): Promise<unknown> => {
+  const pollJobUntilDone = async (jobId: string): Promise<VideoJobData> => {
     activeJobIdRef.current = jobId;
     const maxAttempts = 90; // 3 min budget (90 × 2s)
     let consecutiveErrors = 0;
@@ -269,8 +332,8 @@ export function ServerVideoGenerator({
       try {
         const resp = await fetch(`/api/social/video-job/${jobId}`, { credentials: 'include' });
         const text = await resp.text();
-        let data: Record<string, unknown>;
-        try { data = JSON.parse(text); } catch { throw new Error('Unexpected response from server'); }
+        let data: VideoJobData;
+        try { data = JSON.parse(text) as VideoJobData; } catch { throw new Error('Unexpected response from server'); }
         consecutiveErrors = 0;
 
         // Server returns status='completed' with video_url — normalise to the
@@ -281,7 +344,8 @@ export function ServerVideoGenerator({
         if (data.status === 'error') throw new Error(data.error || 'Video generation failed');
         setGeneratingStage(`Rendering… (${Math.round((i + 1) * 2)}s)`);
       } catch (err) {
-        if (err.message === 'Cancelled' || err.message === 'Video generation failed') throw err;
+        const msg = errMessage(err);
+        if (msg === 'Cancelled' || msg === 'Video generation failed') throw err;
         // Network/parse error — retry up to 5 times before giving up
         consecutiveErrors++;
         if (consecutiveErrors >= 5) throw new Error('Network error during video generation. Please check your connection.');
@@ -292,7 +356,7 @@ export function ServerVideoGenerator({
     throw new Error('Video generation timed out. Please try again.');
   };
 
-  const callGenerateVideo = async (payload: Record<string, any>) => {
+  const callGenerateVideo = async (payload: Record<string, unknown>) => {
     setIsGenerating(true);
     setGeneratingStage('Starting…');
     setVideoUrl(null);
@@ -328,8 +392,8 @@ export function ServerVideoGenerator({
       });
 
       const rawText = await response.text();
-      let data: Record<string, unknown>;
-      try { data = JSON.parse(rawText); } catch {
+      let data: VideoJobData;
+      try { data = JSON.parse(rawText) as VideoJobData; } catch {
         throw new Error(response.ok ? 'Invalid server response' : `Server error (${response.status})`);
       }
 
@@ -349,6 +413,7 @@ export function ServerVideoGenerator({
         setGeneratingStage('Rendering frames…');
         data = await pollJobUntilDone(data.job_id);
       }
+      // After polling, `data.url` is guaranteed when success is true.
       if (data.success && data.url) {
         // MaxCore returns job metadata but its /uploads/ URL is always 404
         // (MaxCore does not persist video files). Use the client-side Canvas
@@ -416,7 +481,8 @@ export function ServerVideoGenerator({
         throw new Error(data.error || 'Video generation failed');
       }
     } catch (error) {
-      if (error.name === 'AbortError') {
+      const message = errMessage(error);
+      if (errName(error) === 'AbortError') {
         if (userCancelledRef.current) {
           toast({
             title: 'Cancelled',
@@ -430,10 +496,10 @@ export function ServerVideoGenerator({
           });
         }
       } else {
-        const isRestartError = error.message?.includes('restarted');
+        const isRestartError = message.includes('restarted');
         toast({
           title: isRestartError ? 'Server Restarted' : 'Generation Failed',
-          description: error.message || 'Could not generate video',
+          description: message || 'Could not generate video',
           variant: 'destructive',
         });
       }

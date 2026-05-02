@@ -341,8 +341,11 @@ export function VideoTrack({
 
         setImportProgress(80);
 
-        const videoStream = (video as Record<string, unknown>).captureStream?.() || null;
-        const hasAudio = videoStream?.getAudioTracks?.()?.length > 0;
+        // captureStream() is supported in Chromium/Firefox but not in the standard
+        // HTMLVideoElement type — narrow with a local type.
+        const videoWithCapture = video as HTMLVideoElement & { captureStream?: () => MediaStream };
+        const videoStream = videoWithCapture.captureStream?.() ?? null;
+        const hasAudio = (videoStream?.getAudioTracks?.()?.length ?? 0) > 0;
 
         const newClip: VideoClip = {
           id: `video-${Date.now()}`,

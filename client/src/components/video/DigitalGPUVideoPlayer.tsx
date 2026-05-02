@@ -95,6 +95,10 @@ export interface DigitalGPUVideoPlayerHandle {
   seek:   (frame: number) => void;
   bridge: DigitalGPUInferenceBridge | null;
   canvas: HTMLCanvasElement | null;
+  /** Decode the next clip's frames into the back buffer for gapless transition. */
+  prefetchIntoBack: (nextFrames: string[]) => void;
+  /** Promote the back buffer to the front buffer. */
+  swapBuffers: () => void;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -337,7 +341,7 @@ const DigitalGPUVideoPlayer = forwardRef<
 
     const bridge = bridgeRef.current;
     if (!skipClientGpu && bridge?.isReady) {
-      const imageData = await bridge.process(bitmap as Record<string, unknown>, sceneName);
+      const imageData = await bridge.process(bitmap, sceneName);
       const ctx = canvas.getContext('2d');
       if (ctx) ctx.putImageData(imageData, 0, 0);
     } else {
@@ -390,7 +394,7 @@ const DigitalGPUVideoPlayer = forwardRef<
     // Expose buffer helpers for external clip management
     prefetchIntoBack,
     swapBuffers,
-  } as Record<string, unknown>));
+  }));
 
   // ── Render ────────────────────────────────────────────────────────────────
 
