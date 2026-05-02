@@ -23,7 +23,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res: Response) =>
   try {
     const userId = req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 100_000);
     const status = req.query.status as string | undefined;
 
     let query = db

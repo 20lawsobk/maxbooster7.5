@@ -172,7 +172,7 @@ router.get('/performance', requireAuth, async (req, res) => {
     const { platform, limit, offset } = req.query;
     
     const limitNum = Math.min(Math.max(parseInt(limit as string, 10) || 50, 1), 500);
-    const offsetNum = Math.max(parseInt(offset as string, 10) || 0, 0);
+    const offsetNum = Math.min(Math.max(parseInt(offset as string, 10) || 0, 0), 100_000);
 
     const result = await autopilotLearningService.getPerformanceHistory(userId, {
       platform: platform as string | undefined,

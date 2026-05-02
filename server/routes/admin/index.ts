@@ -148,7 +148,7 @@ router.get('/users', async (req, res) => {
 router.get('/users/export', async (req, res) => {
   try {
     const pageSize = Math.min(parseInt(req.query.limit as string) || 1000, 5000);
-    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 100_000);
 
     const [exportedUsers, totalResult] = await Promise.all([
       db.select({

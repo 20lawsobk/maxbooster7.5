@@ -350,7 +350,7 @@ router.get('/history', async (req: AuthenticatedRequest, res) => {
     }
     const userId = req.user.id;
     const limit = Math.min(parseInt(String(req.query.limit ?? '50'), 10), 200);
-    const offset = Math.max(parseInt(String(req.query.offset ?? '0'), 10), 0);
+    const offset = Math.min(Math.max(parseInt(String(req.query.offset ?? '0'), 10), 0), 100_000);
 
     const items = await db
       .select()

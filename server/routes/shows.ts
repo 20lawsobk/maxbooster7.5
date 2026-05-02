@@ -48,7 +48,10 @@ const createSetlistSchema = z.object({
 router.get("/", requireAuth, asyncHandler(async (req, res) => {
   const userId = req.user!.id;
   const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-  const offset = parseInt(req.query.offset as string) || 0;
+  // Cap offset — unbounded offset causes Postgres to scan N rows before returning
+  // any data, a silent DoS at scale.
+  const rawOffset = parseInt(req.query.offset as string) || 0;
+  const offset = Math.min(Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0, 100_000);
   const filter = req.query.filter as string | undefined;
 
   const now = new Date();

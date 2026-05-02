@@ -30,7 +30,7 @@ router.get('/query', async (req, res) => {
     } = req.query;
     
     const limitNum = Math.min(parseInt(limit as string) || 100, 1000);
-    const offsetNum = parseInt(offset as string) || 0;
+    const offsetNum = Math.min(Math.max(parseInt(offset as string) || 0, 0), 100_000);
 
     const conditions = [];
     

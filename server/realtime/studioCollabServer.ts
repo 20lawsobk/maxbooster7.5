@@ -86,7 +86,9 @@ export class StudioCollabServer {
   private awarenessInterval: NodeJS.Timeout | null = null;
 
   async initialize(server: Server, path: string = '/ws/studio'): Promise<void> {
-    this.wss = new WebSocketServer({ noServer: true });
+    // maxPayload: 1 MB covers the largest Yjs document update chunks produced by
+    // the studio editor.  Without this a single malicious frame OOMs the process.
+    this.wss = new WebSocketServer({ noServer: true, maxPayload: 1 * 1024 * 1024 });
 
     server.on('upgrade', async (request, socket, head) => {
       const pathname = parseUrl(request.url || '').pathname;

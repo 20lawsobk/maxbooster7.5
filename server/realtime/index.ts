@@ -77,7 +77,10 @@ async function authenticateFromSession(request: IncomingMessage): Promise<string
 }
 
 function initializeNotificationServer(httpServer: HttpServer): void {
-  notificationWss = new WebSocketServer({ noServer: true });
+  // maxPayload: 64 KB is generous for all notification message types (JSON events).
+  // Without this cap a single malicious client can send a 1 GB frame and OOM
+  // the process — ws closes the connection automatically when the limit is hit.
+  notificationWss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
 
   // Server-level error handler: prevents protocol/handshake errors from becoming
   // uncaughtExceptions that crash the process.

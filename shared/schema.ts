@@ -2338,7 +2338,9 @@ export type EmailEvent = typeof emailEvents.$inferSelect;
 // REQUEST INSTANT PAYOUT SCHEMA
 // ============================================================================
 export const requestInstantPayoutSchema = z.object({
-  amountCents: z.number().int().positive(),
+  // Max single payout: $100,000 (10,000,000 cents). Prevents runaway automation
+  // or UI bugs from issuing arbitrarily large transfers in a single request.
+  amountCents: z.number().int().positive().max(10_000_000),
   currency: z.string().default("usd"),
 });
 

@@ -282,7 +282,7 @@ router.get('/trash', async (req: Request, res: Response) => {
     const rawLimit = Number(req.query.limit ?? 50);
     const rawOffset = Number(req.query.offset ?? 0);
     const limit = Math.min(Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : 50, 500);
-    const offset = Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0;
+    const offset = Math.min(Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0, 100_000);
 
     const deletedFiles = await db.select()
       .from(userStorageFiles)
@@ -329,6 +329,11 @@ router.post('/bulk-restore', async (req: Request, res: Response) => {
 
     if (!Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({ error: 'No files specified' });
+    }
+    // Cap: each fileId causes a DB round-trip. Without a limit a single request
+    // could spawn thousands of parallel queries and exhaust the pool.
+    if (fileIds.length > 500) {
+      return res.status(400).json({ error: 'Too many files in one request (max 500)' });
     }
 
     const results = {
@@ -472,7 +477,7 @@ router.get('/list', async (req: Request, res: Response) => {
     const rawLimit2 = Number(req.query.limit ?? 50);
     const rawOffset2 = Number(req.query.offset ?? 0);
     const limit = Math.min(Number.isFinite(rawLimit2) && rawLimit2 > 0 ? rawLimit2 : 50, 500);
-    const offset = Number.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0;
+    const offset = Math.min(Number.isFinite(rawOffset2) && rawOffset2 >= 0 ? rawOffset2 : 0, 100_000);
 
     // Filter out soft-deleted files unless explicitly requested
     const baseConditions = includeDeleted === 'true' 
@@ -601,6 +606,9 @@ router.post('/bulk-delete', async (req: Request, res: Response) => {
 
     if (!Array.isArray(fileIds) || fileIds.length === 0) {
       return res.status(400).json({ error: 'No files specified' });
+    }
+    if (fileIds.length > 500) {
+      return res.status(400).json({ error: 'Too many files in one request (max 500)' });
     }
 
     const results = {

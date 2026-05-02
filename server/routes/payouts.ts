@@ -131,7 +131,7 @@ router.get('/history', async (req, res) => {
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 100_000);
 
     const payouts = await instantPayoutService.getPayoutHistory(req.user.id, limit, offset);
 
@@ -551,7 +551,7 @@ router.get('/ledger', async (req, res) => {
     }
 
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 500);
-    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 100_000);
 
     const entries = await instantPayoutService.getLedgerHistory(req.user.id, limit, offset);
 

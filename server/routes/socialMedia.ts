@@ -913,7 +913,7 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res: Respons
       .where(eq(socialInboxMessages.userId, userId))
       .orderBy(desc(socialInboxMessages.createdAt))
       .limit(Math.max(1, Math.min(200, Number(limit) || 50)))
-      .offset(Math.max(0, Number(offset) || 0));
+      .offset(Math.min(Math.max(0, Number(offset) || 0), 100_000));
 
     const messages = await query;
     

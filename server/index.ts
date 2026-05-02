@@ -57,9 +57,11 @@ async function loadOptionalModules() {
 
 const app = express();
 
-app.use(helmet({ contentSecurityPolicy: false })); // Security auto-fix
-
-// Apply rate limiting and production-grade CSP
+// securityMiddleware (server/middleware/security.ts) applies the canonical
+// helmet instance with a production-aware CSP (no unsafe-inline/-eval in prod).
+// Do NOT register a second bare helmet() call here — duplicate middleware runs
+// in registration order and the LAST write wins, so a weaker second call would
+// silently override the stricter headers set by securityMiddleware.
 app.use(securityMiddleware as any);
 
 setupStartupEndpoints(app);

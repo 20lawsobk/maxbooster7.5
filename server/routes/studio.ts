@@ -95,7 +95,7 @@ router.get('/projects', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     const limit = Math.min(500, Math.max(1, parseInt(String(req.query.limit || '200'), 10)));
-    const offset = Math.max(0, parseInt(String(req.query.offset || '0'), 10));
+    const offset = Math.min(Math.max(0, parseInt(String(req.query.offset || '0'), 10)), 100_000);
     const userProjects = await db.query.projects.findMany({
       where: eq(projects.userId, userId),
       orderBy: [desc(projects.updatedAt)],
@@ -245,8 +245,8 @@ router.get('/samples', requireAuth, async (req: Request, res: Response) => {
     const userId = (req as any).user.id;
     const { category, subcategory, search, tags, tempo, key, limit = '50', offset = '0' } = req.query;
 
-    const limitNum = Math.min(parseInt(limit as string), 100);
-    const offsetNum = parseInt(offset as string);
+    const limitNum = Math.min(Math.max(parseInt(limit as string) || 0, 0), 100);
+    const offsetNum = Math.min(Math.max(parseInt(offset as string) || 0, 0), 100_000);
 
     // Build DB query conditions
     const conditions: any[] = [

@@ -3,10 +3,13 @@ import axios from 'axios';
 import { storage } from '../storage';
 import type { InsertWebhookAttempt, InsertWebhookDeadLetterQueue } from '@shared/schema';
 import { env } from '../config/env.js';
+import { isProductionEnv } from '../lib/envHelpers.js';
 
+// SECURITY: Must use isProductionEnv() (not bare NODE_ENV check) because
+// Reserved VM deployments have REPLIT_DEPLOYMENT=1 but NODE_ENV=undefined.
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET
   || env.STRIPE_WEBHOOK_SECRET
-  || (process.env.NODE_ENV === 'production'
+  || (isProductionEnv()
     ? (() => { throw new Error('WEBHOOK_SECRET or STRIPE_WEBHOOK_SECRET is required in production'); })()
     : 'dev_webhook_secret_fallback_32_chars');
 const MAX_RETRIES = 5;

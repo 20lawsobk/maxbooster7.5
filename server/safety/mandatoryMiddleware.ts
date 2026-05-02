@@ -245,36 +245,15 @@ export function applyMandatoryMiddleware(app: Express): MandatoryMiddlewareResul
     throw new Error('Failed to load mandatory requestLogging middleware');
   }
 
-  // 3. Helmet security headers (required)
-  try {
-    app.use(helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://fonts.gstatic.com"],
-          fontSrc: ["'self'", "https://fonts.gstatic.com", "data:"],
-          scriptSrc: ["'self'", "'unsafe-inline'", "https://js.stripe.com"],
-          imgSrc: ["'self'", "data:", "https:", "blob:"],
-          connectSrc: ["'self'", "https://api.stripe.com", "wss:", "https:"],
-          frameSrc: ["'self'", "https://js.stripe.com"],
-          mediaSrc: ["'self'", "data:", "blob:"],
-          workerSrc: ["'self'", "blob:"],
-        },
-      },
-      hsts: {
-        maxAge: 31536000,
-        includeSubDomains: true,
-        preload: true,
-      },
-      crossOriginEmbedderPolicy: false,
-    }));
-    loadedMiddleware.push('helmet');
-    logger.info('   ✓ Helmet security headers (CSP: enabled)');
-  } catch (error) {
-    failedMiddleware.push('helmet');
-    logger.warn({ err: error }, '   ✗ Helmet middleware FAILED');
-    throw new Error('Failed to load mandatory helmet middleware');
-  }
+  // 3. Helmet security headers
+  // The canonical helmet instance with production-aware CSP is already registered
+  // in server/middleware/security.ts (securityMiddleware), which runs BEFORE this
+  // mandatory middleware block.  Registering a second helmet here would run AFTER
+  // the stricter one and its last-write-wins behaviour would silently downgrade the
+  // Content-Security-Policy (e.g. re-adding 'unsafe-inline' to scriptSrc).
+  // We therefore SKIP the duplicate helmet call here and rely on securityMiddleware.
+  loadedMiddleware.push('helmet');
+  logger.info('   ✓ Helmet security headers (deferred to securityMiddleware — avoids CSP downgrade)');
 
   // 4. CORS (required)
   try {

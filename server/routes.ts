@@ -4499,7 +4499,7 @@ export async function registerRoutes(
   }
   log('OAuth callback redirect routes registered');
 
-  app.post("/api/errors", (req: Request, res: Response) => {
+  app.post("/api/errors", criticalEndpointLimiter, (req: Request, res: Response) => {
     try {
       const errorData = req.body;
       if (typeof errorData === 'object' && errorData !== null) {

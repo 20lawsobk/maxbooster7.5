@@ -3544,7 +3544,7 @@ router.get('/earnings/entries', requireAuth, async (req: Request, res: Response)
   try {
     const userId = (req.user as AuthenticatedUser).id;
     const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
-    const pageOffset = Math.max(Number(req.query.offset) || 0, 0);
+    const pageOffset = Math.min(Math.max(Number(req.query.offset) || 0, 0), 100_000);
 
     const [entries, [{ total }]] = await Promise.all([
       db
@@ -3756,7 +3756,7 @@ router.get('/royalties/payouts', requireAuth, async (req: Request, res: Response
   try {
     const userId = (req.user as AuthenticatedUser).id;
     const pageLimit = Math.min(Number(req.query.limit) || 100, 500);
-    const pageOffset = Math.max(Number(req.query.offset) || 0, 0);
+    const pageOffset = Math.min(Math.max(Number(req.query.offset) || 0, 0), 100_000);
 
     const paidFilter = and(eq(royaltyTransactions.userId, userId), eq(royaltyTransactions.status, 'paid'));
 

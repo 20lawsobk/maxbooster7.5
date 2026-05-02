@@ -29,7 +29,10 @@ router.get('/', requireAuth, async (req, res) => {
   try {
     const userId = req.user!.id;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
-    const offset = parseInt(req.query.offset as string) || 0;
+    // Cap offset — an unbounded offset forces Postgres to scan and discard rows,
+    // becoming a denial-of-service vector at scale (offset=99999999).
+    const rawOffset = parseInt(req.query.offset as string) || 0;
+    const offset = Math.min(Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0, 100_000);
     const works = await db
       .select()
       .from(publishingRights)

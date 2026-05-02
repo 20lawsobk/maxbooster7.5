@@ -3,6 +3,7 @@ import { db } from '../db';
 import { users, orders, instantPayouts, notifications, ledgerEntries, splitPayments, refunds } from '@shared/schema';
 import { eq, and, sql, desc, gte, lte } from 'drizzle-orm';
 import { logger } from '../logger.js';
+import { withLock } from '../lib/distributedLock.js';
 
 // Initialize Stripe
 const stripe = process.env.STRIPE_SECRET_KEY?.startsWith('sk_')
@@ -581,6 +582,30 @@ export class InstantPayoutService {
     userId: string,
     amount: number,
     currency: string = 'usd'
+  ): Promise<PayoutResult> {
+    // Distributed lock: only one payout per user can be in-flight at a time.
+    // Without this, two concurrent requests both pass the balance check and both
+    // execute, causing a double-spend.  TTL=30 s covers the full Stripe API call.
+    const lockKey = `payout:user:${userId}`;
+    const lockResult = await withLock(lockKey, 30, async () => {
+      return this._executeInstantPayout(userId, amount, currency);
+    });
+
+    if (lockResult === null) {
+      logger.warn('[Payout] Concurrent payout attempt blocked by distributed lock', { userId, amount });
+      return {
+        success: false,
+        error: 'A payout is already being processed for your account. Please wait a moment and try again.',
+      };
+    }
+
+    return lockResult;
+  }
+
+  private async _executeInstantPayout(
+    userId: string,
+    amount: number,
+    currency: string
   ): Promise<PayoutResult> {
     try {
       if (!stripe) {

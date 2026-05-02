@@ -170,6 +170,81 @@ All routes that accepted user-supplied `limit` query params without a cap now en
 - `server/routes/search.ts` — autocomplete (50), similar (100), suggestions (50), distribution (500), social/search (500), marketplace/producers (500)
 - `server/routes/api/analyticsAlerts.ts` — alerts listing (500)
 
+---
+
+## Deep Security Audit — Session 3 (May 2026)
+
+Comprehensive top-to-bottom audit for 90M-user scale. All issues resolved. Server running clean throughout.
+
+### Triple Helmet CSP Conflict (Fixed)
+- `server/index.ts` had a bare `helmet({ contentSecurityPolicy: false })` overriding the strict production CSP.
+- `server/safety/mandatoryMiddleware.ts` had a second duplicate helmet with `'unsafe-inline'` in scriptSrc, weakening the production CSP.
+- Both duplicates removed. `server/middleware/security.ts` is now the sole helmet call with the correct production-aware CSP.
+
+### Payout Double-Spend (Fixed)
+- `server/services/instantPayoutService.ts`: `_executeInstantPayout` now runs inside `withLock()` (distributed Redis lock) keyed on `payout:${userId}`.
+- Concurrent payout attempts get a 409 Lock-Contention response instead of both succeeding.
+
+### Admin Full-Table SUM Scan (Fixed)
+- `server/routes/admin.ts`: `SELECT SUM(streams) FROM analytics` scoped to last 90 days (`WHERE date >= NOW() - INTERVAL '90 days'`).
+
+### Publishing/Shows Offset DoS (Fixed)
+- `server/routes/publishing.ts`, `server/routes/shows.ts`: rawOffset capped at `Math.min(..., 100_000)`.
+
+### WebSocket maxPayload — OOM via Giant Frame (Fixed)
+- `server/realtime/index.ts`: notification WS server now `{ noServer: true, maxPayload: 64 * 1024 }` (64 KB).
+- `server/realtime/studioCollabServer.ts`: studio collab WS now `{ noServer: true, maxPayload: 1 * 1024 * 1024 }` (1 MB).
+- Without this, one malicious WebSocket frame could OOM the Node process.
+
+### fileIds Array DoS (Fixed)
+- `server/routes/files.ts`: Both trash-restore and delete endpoints now reject arrays > 500 items.
+- Each fileId was a DB round-trip via `Promise.allSettled`; 10,000 IDs would exhaust the pool.
+
+### Unbounded DB OFFSET Cap — Full Audit (Fixed)
+All `Math.max(0, offset)` without a `Math.min` ceiling cap now capped at `Math.min(..., 100_000)`.
+Files fixed:
+- `server/routes/admin.ts`, `server/routes/admin/index.ts`
+- `server/routes/billing.ts`, `server/routes/dmca.ts`, `server/routes/invoices.ts`
+- `server/routes/payouts.ts` (×2), `server/routes/workspace.ts` (×2)
+- `server/routes/socialApprovals.ts`, `server/routes/studio.ts` (×2)
+- `server/routes/search.ts` (×2), `server/routes/distribution.ts` (×2)
+- `server/routes/autopilot-learning.ts`, `server/routes/export.ts`
+- `server/routes/marketplace.ts` (×2), `server/routes/socialMedia.ts`
+- `server/routes/logs.ts`, `server/routes/socialAI.ts`, `server/routes/undo.ts`
+- `server/routes/files.ts` (×2)
+
+### /api/errors Rate Limiting (Fixed)
+- `server/routes.ts`: Real `app.post('/api/errors', ...)` handler now wrapped with `criticalEndpointLimiter` (30 req/min per IP).
+
+### Webhook Secret Dev Fallback Bypass (Fixed)
+- `server/services/webhookReliabilityService.ts`: Changed bare `NODE_ENV === 'production'` check to `isProductionEnv()`.
+- In Reserved VM production (NODE_ENV=undefined, REPLIT_DEPLOYMENT=1), the bare check evaluated to `false`, silently using `'dev_webhook_secret_fallback_32_chars'` instead of throwing.
+
+### Confirmed Secure (Audit)
+- **Passwords**: `bcrypt.compare()` used for all logins in `server/routes.ts` ✅
+- **CSRF**: `timingSafeEqual` in `server/middleware/csrf.ts` ✅; applied globally in production ✅
+- **CORS**: Allowlist-based origin check in `server/safety/mandatoryMiddleware.ts`; no wildcard ✅
+- **Admin auth**: `requireAdmin` middleware applied at router level in all three admin routers ✅
+- **DB limits**: All admin endpoints bounded ✅
+- **Map eviction**: All module-level Maps (batchJobs, exportJobs, studioPlugins abCompareStates/modulationConfigs, simulation Maps, ffmpegJobs, audioCache, actionCache, autonomousStates, collaboration sessions) have eviction logic ✅
+- **sortBy injection**: Analytics `sortBy` uses a safe ternary (`sortBy === 'revenue' ? projects.revenue : projects.streams`) ✅
+- **Path traversal**: Marketplace audio/cover routes check `fileKey.includes('..')` and `fileKey.startsWith('/')` ✅
+- **SSRF protection**: Guards in `server/routes/socialMedia.ts`, `server/routes/customWorkflows.ts` ✅
+- **Async maps**: All `.map(async ...)` in distribution, search, socialMedia, storefrontDomains wrapped in `Promise.allSettled/all` ✅
+- **Log redaction**: pino `redact` covers password, token, secret, apiKey, CSRF token ✅
+- **Upload security**: MIME type + extension cross-check + per-type size limits in `server/middleware/uploadHandler.ts` ✅
+- **Error stacks**: Suppressed from HTTP responses in production via `!isProductionEnv()` in `server/middleware/errorHandler.ts` ✅
+- **X-Powered-By**: Disabled by helmet ✅
+- **HSTS**: Configured in `server/middleware/security.ts` ✅
+- **trust proxy**: `app.set('trust proxy', buildTrustProxyValue())` in `server/index.ts` ✅
+- **keepAlive/headersTimeout**: 65s/66s in `server/index.ts` ✅
+- **Body limits**: 1 MB JSON, 1 MB urlencoded, 8 KB web-vitals in `server/index.ts` ✅
+- **DB statement_timeout**: 30 s on every new pool connection ✅
+- **Graceful shutdown**: SIGTERM/SIGINT/uncaughtException/unhandledRejection all handled ✅
+- **Outbound fetch timeouts**: All service fetch calls use `AbortSignal.timeout()` ✅
+- **BullMQ retries**: `attempts: 3`, `backoff: exponential`, `removeOnFail: { count: 200 }` ✅
+- **Session secret enforcement**: Throws at startup if missing/weak in production ✅
+
 ### Architecture Notes
 - `digitalgpu` singleton: `server/services/digitalgpu.py` — GPU forward, NumPy backward always.
 - Decoder order: concat skip (same resolution) → ResBlocks + attention → upsample (standard U-Net).

@@ -196,8 +196,8 @@ router.get('/listening/mentions', requireAuth, async (req: AuthenticatedRequest,
       sentiment: sentiment as 'positive' | 'neutral' | 'negative' | undefined,
       startDate: startDate ? new Date(String(startDate)) : undefined,
       endDate: endDate ? new Date(String(endDate)) : undefined,
-      limit: limit ? parseInt(String(limit)) : undefined,
-      offset: offset ? parseInt(String(offset)) : undefined,
+      limit: limit ? Math.min(Math.max(parseInt(String(limit)) || 0, 0), 500) : undefined,
+      offset: offset ? Math.min(Math.max(parseInt(String(offset)) || 0, 0), 100_000) : undefined,
       influencersOnly: influencersOnly === 'true',
     });
 

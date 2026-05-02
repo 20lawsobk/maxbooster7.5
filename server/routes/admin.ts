@@ -128,7 +128,7 @@ adminRouter.get("/users", async (req, res) => {
 adminRouter.get("/users/export", async (req, res) => {
   try {
     const pageSize = Math.min(parseInt(req.query.limit as string) || 100, 500);
-    const offset = Math.max(parseInt(req.query.offset as string) || 0, 0);
+    const offset = Math.min(Math.max(parseInt(req.query.offset as string) || 0, 0), 100_000);
 
     const [exportedUsers, totalResult] = await Promise.all([
       db.select({
@@ -571,7 +571,12 @@ adminRouter.get("/analytics", async (req, res) => {
         count: count(),
       }).from(users).groupBy(users.subscriptionTier),
       db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(eq(orders.status, 'completed')),
-      db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` }).from(analytics),
+      // Scope to last 90 days — an unbounded SUM across the entire analytics table
+      // becomes a catastrophic full-table scan at 90 M users (billions of rows).
+      // The admin dashboard shows rolling metrics so 90 d is the correct window.
+      db.select({ total: sql<number>`COALESCE(SUM(${analytics.streams}), 0)` })
+        .from(analytics)
+        .where(gte(analytics.date, new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000))),
       db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(and(eq(orders.status, 'completed'), gte(orders.createdAt, thisMonthStart))),
       db.select({ total: sql<number>`COALESCE(SUM(${orders.amount}), 0)` }).from(orders).where(and(eq(orders.status, 'completed'), gte(orders.createdAt, lastMonthStart), lte(orders.createdAt, lastMonthEnd))),
       db.select({ count: count() }).from(projects).where(gte(projects.createdAt, thisMonthStart)),

@@ -322,7 +322,7 @@ router.get('/unified', async (req: Request, res: Response) => {
     
     const userId = req.user?.id;
     const numLimit = Math.min(Number(limit) || 20, 100);
-    const numOffset = Math.max(0, Number(offset) || 0);
+    const numOffset = Math.min(Math.max(0, Number(offset) || 0), 100_000);
 
     if (typeof q === 'string' && q.length > 200) {
       return res.status(400).json({ error: 'Search query must be 200 characters or fewer' });
@@ -964,7 +964,7 @@ router.get('/distribution', async (req: Request, res: Response) => {
     const userId = req.user?.id;
     const { q = '', status, platform } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
-    const offset = Math.max(0, Number(req.query.offset ?? 0));
+    const offset = Math.min(Math.max(0, Number(req.query.offset ?? 0)), 100_000);
     
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
@@ -1254,7 +1254,7 @@ router.get('/marketplace/producers', async (req: Request, res: Response) => {
   try {
     const { q = '', genre } = req.query;
     const limit = Math.min(Math.max(1, Number(req.query.limit ?? 20)), 500);
-    const offset = Math.max(0, Number(req.query.offset ?? 0));
+    const offset = Math.min(Math.max(0, Number(req.query.offset ?? 0)), 100_000);
     
     const conditions: any[] = [];
     
