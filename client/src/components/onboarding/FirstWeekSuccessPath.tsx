@@ -59,7 +59,7 @@ interface OnboardingProgress {
   recommendedNextStep: OnboardingTask | null;
 }
 
-const iconMap: Record<string, React.ComponentType<any>> = {
+const iconMap: Record<string, React.ComponentType<Record<string, unknown>>> = {
   User,
   Music,
   Share2,

@@ -151,13 +151,13 @@ export function ServerVideoGenerator({
 
   // Audio mode state
   const [audioFile, setAudioFile] = useState<File | null>(null);
-  const [audioAnalysis, setAudioAnalysis] = useState<any>(null);
+  const [audioAnalysis, setAudioAnalysis] = useState<Record<string, unknown> | null>(null);
   const [isAnalyzingAudio, setIsAnalyzingAudio] = useState(false);
 
   // Image mode state
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
-  const [imageAnalysis, setImageAnalysis] = useState<any>(null);
+  const [imageAnalysis, setImageAnalysis] = useState<Record<string, unknown> | null>(null);
   const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
 
   // Voiceover
@@ -214,6 +214,9 @@ export function ServerVideoGenerator({
     };
     document.addEventListener('visibilitychange', onVisible);
     return () => document.removeEventListener('visibilitychange', onVisible);
+  // INTENTIONAL: mount-only effect — the handler only needs to access refs (stable) and
+  // activeJobIdRef/applyVideoResult are always current via ref indirection. Adding them
+  // as deps would re-register the visibilitychange listener on every render.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -256,7 +259,7 @@ export function ServerVideoGenerator({
     onVideoGenerated(data.url);
   };
 
-  const pollJobUntilDone = async (jobId: string): Promise<any> => {
+  const pollJobUntilDone = async (jobId: string): Promise<unknown> => {
     activeJobIdRef.current = jobId;
     const maxAttempts = 90; // 3 min budget (90 × 2s)
     let consecutiveErrors = 0;
@@ -484,7 +487,10 @@ export function ServerVideoGenerator({
       // autoStartPending = true forever.
       autoStartFiredRef.current = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  // INTENTIONAL: mount-only effect — all props accessed here (topic, hook, template, etc.)
+  // are captured at mount time intentionally. Including them would re-trigger auto-start on
+  // every prop change; the ref guard (autoStartFiredRef) is sufficient to ensure single-fire.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Text mode ────────────────────────────────────────────────────────────────

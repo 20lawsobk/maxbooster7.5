@@ -67,7 +67,7 @@ async function fetchTemplates(category?: string): Promise<{ templates: StudioTem
   return response.json();
 }
 
-async function createProjectFromTemplate(templateId: string, title?: string): Promise<any> {
+async function createProjectFromTemplate(templateId: string, title?: string): Promise<unknown> {
   const response = await fetch(`/api/studio/templates/${templateId}/create-project`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

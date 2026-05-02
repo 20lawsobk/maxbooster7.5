@@ -813,7 +813,7 @@ export class SocialMediaContentGenerator {
   }
 
   // Extract content from URL
-  private async extractContentFromURL(url: string): Promise<any> {
+  private async extractContentFromURL(url: string): Promise<unknown> {
     try {
       // AI-powered URL content extraction
       const extractedData = {
@@ -850,7 +850,7 @@ export class SocialMediaContentGenerator {
     extractedData: unknown,
     platform: string,
     targetAudience: unknown
-  ): Promise<any> {
+  ): Promise<unknown> {
     const data = (extractedData as Record<string, unknown>) || {};
     const audience = (targetAudience as Record<string, unknown>) || {};
     
@@ -900,7 +900,7 @@ export class SocialMediaContentGenerator {
     platform: string,
     musicData: unknown,
     targetAudience: unknown
-  ): Promise<any> {
+  ): Promise<unknown> {
     const data = (musicData as Record<string, unknown>) || {};
     const audience = (targetAudience as Record<string, unknown>) || {};
     

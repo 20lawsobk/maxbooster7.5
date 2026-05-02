@@ -74,7 +74,7 @@ export default function AdminDashboard() {
   const [usersPage, setUsersPage] = useState(1);
   const [usersSearch, setUsersSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [selectedUser, setSelectedUser] = useState<Record<string, unknown> | null>(null);
   const [showUserDetails, setShowUserDetails] = useState(false);
 
   // Debounce search input

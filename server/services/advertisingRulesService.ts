@@ -87,7 +87,7 @@ export class AdvertisingRulesService {
   /**
    * Execute rule action (kill, pause, pivot, alert)
    */
-  private async executeRule(rule: unknown, variant: unknown): Promise<any> {
+  private async executeRule(rule: unknown, variant: unknown): Promise<unknown> {
     const triggerReason = this.generateTriggerReason(rule, variant);
     const learnings = this.extractLearnings(rule, variant);
 

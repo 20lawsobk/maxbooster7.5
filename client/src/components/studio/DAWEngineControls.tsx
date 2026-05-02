@@ -109,6 +109,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Undo"
                 variant="ghost"
                 size="icon"
                 className={cn("h-8 w-8", !daw.canUndo && "opacity-50")}
@@ -124,6 +125,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Redo"
                 variant="ghost"
                 size="icon"
                 className={cn("h-8 w-8", !daw.canRedo && "opacity-50")}
@@ -145,6 +147,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Return to Start"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
@@ -159,6 +162,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label={daw.isPlaying ? 'Pause' : 'Play'}
                 variant="ghost"
                 size="icon"
                 className={cn(
@@ -180,6 +184,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Stop"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
@@ -194,6 +199,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label={daw.isRecording ? 'Stop Recording' : 'Record'}
                 variant="ghost"
                 size="icon"
                 className={cn(
@@ -211,6 +217,8 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label={daw.isLooping ? 'Disable Loop' : 'Enable Loop'}
+                aria-pressed={daw.isLooping}
                 variant="ghost"
                 size="icon"
                 className={cn(
@@ -228,6 +236,7 @@ export function DAWEngineControls({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label="Skip Forward"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"

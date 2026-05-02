@@ -300,7 +300,7 @@ export class LabelGridService {
   /**
    * Get earnings report
    */
-  async getEarningsReport(startDate: Date, endDate: Date): Promise<any> {
+  async getEarningsReport(startDate: Date, endDate: Date): Promise<unknown> {
     try {
       if (!this.authToken) {
         await this.authenticate();

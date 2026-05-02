@@ -75,7 +75,7 @@ export interface IStorage {
   revokeJWTToken(id: string, reason: string): Promise<void>;
   revokeAllJWTTokensForUser(userId: string, reason: string): Promise<void>;
   createRefreshToken(data: Record<string, unknown>): Promise<string>;
-  getRefreshToken(token: string): Promise<any>;
+  getRefreshToken(token: string): Promise<unknown>;
   revokeRefreshToken(id: string, reason: string): Promise<void>;
   revokeAllRefreshTokensForUser(userId: string, reason: string): Promise<void>;
 }
@@ -371,7 +371,7 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async updateScheduledPost(id: string, updates: Partial<any>): Promise<any> {
+  async updateScheduledPost(id: string, updates: Partial<Record<string, unknown>>): Promise<unknown> {
     const { platforms, content, scheduledTime, viralPrediction, createdBy, results, ...rest } = updates;
     const updateValues: Record<string, unknown> = { ...(rest as Record<string, unknown>) };
     if (platforms) updateValues.platform = Array.isArray(platforms) ? platforms[0] : platforms;
@@ -392,7 +392,7 @@ export class DatabaseStorage implements IStorage {
     await db.update(posts).set(updateValues).where(eq(posts.id, id));
   }
 
-  async getSocialMetrics(userId: string): Promise<any> {
+  async getSocialMetrics(userId: string): Promise<unknown> {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
@@ -619,7 +619,7 @@ export class DatabaseStorage implements IStorage {
     return merged.slice(0, 500);
   }
 
-  async getSocialCalendarStats(userId: string): Promise<any> {
+  async getSocialCalendarStats(userId: string): Promise<unknown> {
     const [calendarRows, postRows] = await Promise.all([
       db
         .select({
@@ -760,7 +760,7 @@ export class DatabaseStorage implements IStorage {
       .limit(200);
   }
 
-  async getAdvertisingInsights(userId: string): Promise<any> {
+  async getAdvertisingInsights(userId: string): Promise<unknown> {
     const campaigns = await this.getAdvertisingCampaigns(userId);
     if (campaigns.length === 0) return null;
     
@@ -829,7 +829,7 @@ export class DatabaseStorage implements IStorage {
     return (row.value as unknown[]) || [];
   }
 
-  async getAdvertisingForecasts(userId: string): Promise<any> {
+  async getAdvertisingForecasts(userId: string): Promise<unknown> {
     const campaigns = await db.select().from(adCampaigns).where(and(eq(adCampaigns.userId, userId), eq(adCampaigns.status, 'active'))).limit(100);
     if (!campaigns.length) return null;
     const totalBudget = campaigns.reduce((s, c) => s + (c.budget || 0), 0);
@@ -1430,7 +1430,7 @@ export class DatabaseStorage implements IStorage {
     isActive?: boolean;
     logoUrl?: string;
     metadata?: Record<string, unknown>;
-  }): Promise<any> {
+  }): Promise<unknown> {
     try {
       const [provider] = await db
         .insert(dspProviders)
@@ -1503,7 +1503,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createDistroDispatch(data: Record<string, unknown>): Promise<any> {
+  async createDistroDispatch(data: Record<string, unknown>): Promise<unknown> {
     const dispatch = {
       id: `dispatch_${Date.now()}_${randomBytes(4).toString("hex")}`,
       ...data,
@@ -1549,7 +1549,7 @@ export class DatabaseStorage implements IStorage {
     return null;
   }
 
-  async createAuditLog(data: Record<string, unknown>): Promise<any> {
+  async createAuditLog(data: Record<string, unknown>): Promise<unknown> {
     try {
       const [entry] = await db
         .insert(workspaceAuditLog)
@@ -1574,7 +1574,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getDistroAnalytics(userId: string): Promise<any> {
+  async getDistroAnalytics(userId: string): Promise<unknown> {
     const now = new Date();
     const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
@@ -1792,7 +1792,7 @@ export class DatabaseStorage implements IStorage {
     isPublished?: boolean;
     metadata?: Record<string, unknown>;
     tags?: string[];
-  }): Promise<any> {
+  }): Promise<unknown> {
     try {
       const [listing] = await db
         .insert(listings)
@@ -2099,7 +2099,7 @@ export class DatabaseStorage implements IStorage {
     content: string;
     category?: string;
     variables?: Record<string, unknown>[];
-  }): Promise<any> {
+  }): Promise<unknown> {
     try {
       const [template] = await db
         .insert(contractTemplates)
@@ -2240,7 +2240,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async createJWTToken(data: Record<string, unknown>): Promise<any> {
+  async createJWTToken(data: Record<string, unknown>): Promise<unknown> {
     const [token] = await db.insert(jwtTokens).values(data).returning();
     return token;
   }
@@ -2271,12 +2271,12 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(jwtTokens.userId, userId), eq(jwtTokens.revoked, false)));
   }
 
-  async createRefreshToken(data: Record<string, unknown>): Promise<any> {
+  async createRefreshToken(data: Record<string, unknown>): Promise<unknown> {
     const [token] = await db.insert(refreshTokens).values(data).returning();
     return token;
   }
 
-  async getRefreshToken(token: string): Promise<any> {
+  async getRefreshToken(token: string): Promise<unknown> {
     const [rt] = await db
       .select()
       .from(refreshTokens)

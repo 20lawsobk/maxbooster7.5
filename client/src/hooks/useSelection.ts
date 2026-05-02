@@ -291,7 +291,7 @@ export function useMultiSelectKeyboard<T extends SelectionItem = SelectionItem>(
 
 export function useSelectionShortcuts(
   containerRef: React.RefObject<HTMLElement>,
-  selection: UseSelectionResult<any>
+  selection: UseSelectionResult<unknown>
 ) {
   useEffect(() => {
     const container = containerRef.current;

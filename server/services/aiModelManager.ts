@@ -429,7 +429,7 @@ class AIModelManager {
    * Extract model weights for persistence
    * Implements actual weight extraction using TensorFlow.js serialization
    */
-  private async extractModelWeights(model: Record<string, unknown>): Promise<any> {
+  private async extractModelWeights(model: Record<string, unknown>): Promise<unknown> {
     try {
       const weights: Record<string, unknown> = {
         version: '1.0',

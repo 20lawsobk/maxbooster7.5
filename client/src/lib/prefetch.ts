@@ -46,7 +46,7 @@ function shouldPrefetch(): boolean {
   return true;
 }
 
-const routeImportMap: Record<string, () => Promise<any>> = {
+const routeImportMap: Record<string, () => Promise<unknown>> = {
   '/dashboard': () => import('@/pages/Dashboard'),
   '/projects': () => import('@/pages/Projects'),
   '/studio': () => import('@/pages/Studio'),
@@ -77,7 +77,7 @@ const routeDataMap: Record<string, string[]> = {
   '/royalties': ['/api/royalties/summary'],
 };
 
-export function prefetchRoute(importFn: () => Promise<any>) {
+export function prefetchRoute(importFn: () => Promise<unknown>) {
   const key = importFn.toString();
   if (prefetchedRoutes.has(key)) return;
   prefetchedRoutes.add(key);

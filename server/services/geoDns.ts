@@ -53,9 +53,9 @@ try {
 // ── MaxMind mmdb reader (lazy-loaded) ─────────────────────────────────────────
 
 let geoReader: Record<string, unknown> | null = null;
-let geoReaderLoading: Promise<any> | null = null;
+let geoReaderLoading: Promise<unknown> | null = null;
 
-async function getGeoReader(): Promise<any> {
+async function getGeoReader(): Promise<unknown> {
   if (geoReader) return geoReader;
 
   // Deduplicate concurrent load attempts

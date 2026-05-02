@@ -89,6 +89,13 @@ export function FlowStateReferenceMatch({
   const [matchIntensity, setMatchIntensity] = useState([75]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Static placeholder waveform for the current (un-uploaded) mix display
+  const placeholderWaveform = useState<number[]>(() => {
+    const pts: number[] = [];
+    for (let i = 0; i < 200; i++) pts.push(0.25 + 0.3 * Math.abs(Math.sin(i * 0.18)) + 0.1 * Math.abs(Math.sin(i * 0.07)));
+    return pts;
+  })[0];
+
   const [currentAnalysis] = useState<ReferenceTrack['analysis']>({
     frequency: [
       { name: 'Sub', range: '20-60Hz', reference: 0, current: -2, difference: -2, suggestion: 'Boost sub frequencies by 2dB' },
@@ -116,13 +123,139 @@ export function FlowStateReferenceMatch({
     key: 'F Minor'
   });
 
-  const generateMockWaveform = (): number[] => {
-    const waveform: number[] = [];
-    for (let i = 0; i < 200; i++) {
-      waveform.push(0.3 + Math.random() * 0.5);
+  // ─── Real Web Audio API analysis helpers ─────────────────────────────────
+
+  /** Radix-2 Cooley–Tukey FFT (in-place). Length must be a power of 2. */
+  const fftInPlace = useCallback((re: Float64Array, im: Float64Array) => {
+    const n = re.length;
+    for (let i = 1, j = 0; i < n; i++) {
+      let bit = n >> 1;
+      for (; j & bit; bit >>= 1) j ^= bit;
+      j ^= bit;
+      if (i < j) {
+        [re[i], re[j]] = [re[j], re[i]];
+        [im[i], im[j]] = [im[j], im[i]];
+      }
     }
-    return waveform;
-  };
+    for (let len = 2; len <= n; len <<= 1) {
+      const ang = (-2 * Math.PI) / len;
+      const wRe = Math.cos(ang), wIm = Math.sin(ang);
+      for (let i = 0; i < n; i += len) {
+        let cRe = 1, cIm = 0;
+        for (let k = 0; k < len >> 1; k++) {
+          const uRe = re[i + k], uIm = im[i + k];
+          const vRe = re[i + k + len / 2] * cRe - im[i + k + len / 2] * cIm;
+          const vIm = re[i + k + len / 2] * cIm + im[i + k + len / 2] * cRe;
+          re[i + k] = uRe + vRe; im[i + k] = uIm + vIm;
+          re[i + k + len / 2] = uRe - vRe; im[i + k + len / 2] = uIm - vIm;
+          const ncRe = cRe * wRe - cIm * wIm;
+          cIm = cRe * wIm + cIm * wRe; cRe = ncRe;
+        }
+      }
+    }
+  }, []);
+
+  /** Compute per-half-spectrum magnitudes from a real-valued segment (Hann windowed). */
+  const computeFFTMagnitudes = useCallback((samples: Float32Array, fftSize: number): Float32Array => {
+    const n = Math.min(samples.length, fftSize);
+    const size = Math.pow(2, Math.ceil(Math.log2(Math.max(n, 2))));
+    const re = new Float64Array(size);
+    const im = new Float64Array(size);
+    for (let i = 0; i < n; i++) {
+      const win = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (n - 1)));
+      re[i] = (samples[i] || 0) * win;
+    }
+    fftInPlace(re, im);
+    const mag = new Float32Array(size >> 1);
+    for (let i = 0; i < size >> 1; i++) {
+      mag[i] = Math.sqrt(re[i] * re[i] + im[i] * im[i]) / size;
+    }
+    return mag;
+  }, [fftInPlace]);
+
+  /** Average dB in a Hz range from FFT magnitudes. */
+  const getBandDb = useCallback((mag: Float32Array, minHz: number, maxHz: number, sr: number, fftSize: number): number => {
+    const bw = sr / fftSize;
+    const lo = Math.max(0, Math.floor(minHz / bw));
+    const hi = Math.min(mag.length - 1, Math.ceil(maxHz / bw));
+    let s = 0;
+    for (let i = lo; i <= hi; i++) s += mag[i];
+    return +(20 * Math.log10(Math.max(s / Math.max(1, hi - lo + 1), 1e-9))).toFixed(1);
+  }, []);
+
+  /** Energy-envelope BPM detection via autocorrelation (60–200 BPM). */
+  const detectTempo = useCallback((data: Float32Array, sr: number): number => {
+    const hop = Math.floor(sr * 0.01);
+    const frames = Math.floor(data.length / hop);
+    const energy: number[] = [];
+    for (let i = 0; i < frames; i++) {
+      let s = 0;
+      const off = i * hop;
+      for (let j = 0; j < hop; j++) { const v = data[off + j] || 0; s += v * v; }
+      energy.push(s / hop);
+    }
+    const onset: number[] = energy.map((e, i) => i ? Math.max(0, e - energy[i - 1]) : 0);
+    let bestBpm = 120, bestScore = -Infinity;
+    for (let bpm = 60; bpm <= 200; bpm++) {
+      const period = (60 / bpm) * (sr / hop);
+      let score = 0;
+      for (let i = 0; i < onset.length; i++) {
+        const ph = i % period;
+        if (ph < period * 0.06 || ph > period * 0.94) score += onset[i];
+      }
+      if (score > bestScore) { bestScore = score; bestBpm = bpm; }
+    }
+    return bestBpm;
+  }, []);
+
+  /** Krumhansl–Schmuckler key detection via chroma autocorrelation. */
+  const detectKey = useCallback((data: Float32Array, sr: number): string => {
+    const MAJOR = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88];
+    const MINOR = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17];
+    const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const chroma = new Float64Array(12);
+    const segLen = Math.min(data.length, sr * 4);
+    const start = Math.floor((data.length - segLen) / 2);
+    for (let note = 0; note < 12; note++) {
+      const freq = 261.63 * Math.pow(2, note / 12);
+      for (let h = 1; h <= 3; h++) {
+        const p = Math.round(sr / (freq * h));
+        if (p < 2) continue;
+        const n = Math.min(segLen - p, 1024);
+        let c = 0;
+        for (let i = 0; i < n; i++) c += (data[start + i] || 0) * (data[start + i + p] || 0);
+        chroma[note] += Math.abs(c) / (Math.max(1, n) * h);
+      }
+    }
+    const mx = Math.max(...chroma);
+    if (mx > 0) for (let i = 0; i < 12; i++) chroma[i] /= mx;
+    let best = -Infinity, bestKey = 'C Major';
+    for (let r = 0; r < 12; r++) {
+      let maj = 0, min = 0;
+      for (let i = 0; i < 12; i++) { maj += chroma[i] * MAJOR[(i - r + 12) % 12]; min += chroma[i] * MINOR[(i - r + 12) % 12]; }
+      if (maj > best) { best = maj; bestKey = `${NOTES[r]} Major`; }
+      if (min > best) { best = min; bestKey = `${NOTES[r]} Minor`; }
+    }
+    return bestKey;
+  }, []);
+
+  /** Stereo width, correlation, and L/R balance from a 2-channel AudioBuffer. */
+  const analyzeStereo = useCallback((buf: AudioBuffer): StereoAnalysis => {
+    if (buf.numberOfChannels < 2) return { width: 0, correlation: 1, balance: 0 };
+    const L = buf.getChannelData(0), R = buf.getChannelData(1);
+    const n = Math.min(L.length, R.length);
+    let sL = 0, sR = 0, sLR = 0, sLL = 0, sRR = 0;
+    for (let i = 0; i < n; i++) { sL += L[i]; sR += R[i]; sLR += L[i]*R[i]; sLL += L[i]*L[i]; sRR += R[i]*R[i]; }
+    const denom = Math.sqrt(sLL * sRR);
+    const corr = denom > 0 ? Math.max(-1, Math.min(1, sLR / denom)) : 1;
+    return {
+      width: Math.round((1 - Math.max(0, corr)) * 100),
+      correlation: +corr.toFixed(2),
+      balance: Math.round(((sR - sL) / n) * 100),
+    };
+  }, []);
+
+  // ─────────────────────────────────────────────────────────────────────────
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -136,54 +269,106 @@ export function FlowStateReferenceMatch({
     setIsAnalyzing(true);
     setAnalysisProgress(0);
 
-    const progressInterval = setInterval(() => {
-      setAnalysisProgress(prev => Math.min(prev + Math.random() * 15, 95));
-    }, 200);
+    try {
+      setAnalysisProgress(10);
+      const arrayBuffer = await file.arrayBuffer();
+      const audioContext = new AudioContext();
+      setAnalysisProgress(25);
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      await audioContext.close();
+      setAnalysisProgress(40);
 
-    setTimeout(() => {
-      clearInterval(progressInterval);
+      const ch = audioBuffer.getChannelData(0);
+      const sr = audioBuffer.sampleRate;
+
+      // Waveform — 200 RMS-amplitude points
+      const pts = 200, blk = Math.floor(ch.length / pts);
+      const waveform: number[] = [];
+      for (let i = 0; i < pts; i++) {
+        let s = 0;
+        const off = i * blk;
+        for (let j = 0; j < blk; j++) s += Math.abs(ch[off + j] || 0);
+        waveform.push(Math.min(1, (s / blk) * 3));
+      }
+      setAnalysisProgress(50);
+
+      // Dynamics
+      let sumSq = 0, peak = 0;
+      for (let i = 0; i < ch.length; i++) {
+        const v = ch[i]; sumSq += v * v;
+        const a = Math.abs(v); if (a > peak) peak = a;
+      }
+      const rmsLin = Math.sqrt(sumSq / ch.length);
+      const rmsDb = +(20 * Math.log10(Math.max(rmsLin, 1e-7))).toFixed(1);
+      const peakDb = +(20 * Math.log10(Math.max(peak, 1e-7))).toFixed(1);
+      const crestFactor = +(peakDb - rmsDb).toFixed(1);
+      const lufs = +(rmsDb - 3.01).toFixed(1);
+      const dynamicRange = Math.min(20, Math.max(2, Math.round(crestFactor)));
+      setAnalysisProgress(65);
+
+      // Frequency analysis — FFT on middle segment
+      const fftSize = 8192;
+      const mid = Math.floor(ch.length / 2);
+      const seg = ch.slice(Math.max(0, mid - fftSize / 2), mid + fftSize / 2);
+      const mag = computeFFTMagnitudes(seg, fftSize);
+      setAnalysisProgress(75);
+
+      const BANDS = [
+        { name: 'Sub',        range: '20-60Hz',    lo: 20,    hi: 60    },
+        { name: 'Bass',       range: '60-250Hz',   lo: 60,    hi: 250   },
+        { name: 'Low Mid',    range: '250-500Hz',  lo: 250,   hi: 500   },
+        { name: 'Mid',        range: '500-2kHz',   lo: 500,   hi: 2000  },
+        { name: 'High Mid',   range: '2k-4kHz',    lo: 2000,  hi: 4000  },
+        { name: 'Presence',   range: '4k-6kHz',    lo: 4000,  hi: 6000  },
+        { name: 'Brilliance', range: '6k-10kHz',   lo: 6000,  hi: 10000 },
+        { name: 'Air',        range: '10k-20kHz',  lo: 10000, hi: 20000 },
+      ];
+      const TARGETS: Record<string, number> = { Sub:-18, Bass:-14, 'Low Mid':-16, Mid:-14, 'High Mid':-12, Presence:-12, Brilliance:-14, Air:-18 };
+      const TIPS: Record<string, [string, string]> = {
+        Sub:        ['Cut sub with high-pass at 30 Hz to tighten low end', 'Boost sub 2–3 dB for warmth'],
+        Bass:       ['Tighten bass with multiband compression', 'Add punch with 60 Hz boost'],
+        'Low Mid':  ['Cut mud at 300 Hz for clarity', 'Add body with gentle 250 Hz boost'],
+        Mid:        ['Cut boxiness at 500–800 Hz', 'Boost mids for vocal presence'],
+        'High Mid': ['Reduce harshness at 2–3 kHz', 'Add clarity with 2.5 kHz boost'],
+        Presence:   ['De-ess at 4–6 kHz, reduce sibilance', 'Boost for forward presence'],
+        Brilliance: ['Low-shelf cut above 8 kHz', 'Add sparkle with 8 kHz air band'],
+        Air:        ['Low-pass above 16 kHz to tame digital harshness', 'Air-shelf boost at 12–16 kHz'],
+      };
+      const frequency: FrequencyBand[] = BANDS.map(b => {
+        const current = getBandDb(mag, b.lo, b.hi, sr, fftSize);
+        const reference = TARGETS[b.name] ?? -14;
+        const diff = +(current - reference).toFixed(1);
+        const [tipHigh, tipLow] = TIPS[b.name] ?? ['Reduce level', 'Boost level'];
+        const suggestion = diff > 2 ? tipHigh : diff < -2 ? tipLow : `${b.name} balance is optimal`;
+        return { name: b.name, range: b.range, reference, current, difference: diff, suggestion };
+      });
+      setAnalysisProgress(85);
+
+      const tempo = detectTempo(ch, sr);
+      const key = detectKey(ch, sr);
+      const stereo = analyzeStereo(audioBuffer);
       setAnalysisProgress(100);
 
-      const mockReference: ReferenceTrack = {
+      setReferenceTrack({
         id: `ref-${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ''),
-        duration: 180 + Math.random() * 120,
-        waveform: generateMockWaveform(),
+        duration: audioBuffer.duration,
+        waveform,
         analysis: {
-          frequency: [
-            { name: 'Sub', range: '20-60Hz', reference: -3, current: -5, difference: -2, suggestion: 'Boost sub by 2dB with high-pass at 30Hz' },
-            { name: 'Bass', range: '60-250Hz', reference: 2, current: 3.5, difference: 1.5, suggestion: 'Tighten bass with multiband compression' },
-            { name: 'Low Mid', range: '250-500Hz', reference: -1, current: -0.5, difference: 0.5, suggestion: 'Cut mud at 300Hz' },
-            { name: 'Mid', range: '500-2kHz', reference: 1, current: 0, difference: -1, suggestion: 'Add body with 1dB boost at 800Hz' },
-            { name: 'High Mid', range: '2k-4kHz', reference: 3, current: 5, difference: 2, suggestion: 'Reduce harshness at 3kHz' },
-            { name: 'Presence', range: '4k-6kHz', reference: 2, current: 1.5, difference: -0.5, suggestion: 'Subtle presence boost for clarity' },
-            { name: 'Brilliance', range: '6k-10kHz', reference: 1, current: 2, difference: 1, suggestion: 'De-ess and reduce sibilance' },
-            { name: 'Air', range: '10k-20kHz', reference: 3, current: 1.5, difference: -1.5, suggestion: 'Add air with Maag-style EQ at 40kHz harmonic' },
-          ],
-          dynamics: {
-            rms: -12,
-            peak: -0.3,
-            crestFactor: 11.7,
-            lufs: -11,
-            dynamicRange: 6
-          },
-          stereo: {
-            width: 78,
-            correlation: 0.72,
-            balance: -1
-          },
-          tempo: 124,
-          key: 'G Minor'
-        }
-      };
-
-      setReferenceTrack(mockReference);
-      setIsAnalyzing(false);
-      toast({ 
-        title: 'Analysis complete', 
-        description: `Analyzed "${mockReference.name}" - Ready for matching!` 
+          frequency,
+          dynamics: { rms: rmsDb, peak: peakDb, crestFactor, lufs, dynamicRange },
+          stereo,
+          tempo,
+          key,
+        },
       });
-    }, 2500);
+      setIsAnalyzing(false);
+      toast({ title: 'Analysis complete', description: `Analyzed "${file.name.replace(/\.[^/.]+$/, '')}" — Ready for matching!` });
+    } catch (err) {
+      setIsAnalyzing(false);
+      toast({ title: 'Analysis failed', description: 'Could not decode audio file. Try WAV, MP3, or AAC.', variant: 'destructive' });
+      console.error('[ReferenceMatch] Audio analysis error:', err);
+    }
   };
 
   const applyEQMatch = () => {
@@ -344,7 +529,7 @@ export function FlowStateReferenceMatch({
                     <span className="text-xs text-zinc-500">{currentAnalysis.dynamics.lufs} LUFS</span>
                   </div>
                   <div className="h-12 bg-zinc-950 rounded flex items-center px-1">
-                    {generateMockWaveform().map((v, i) => (
+                    {placeholderWaveform.map((v, i) => (
                       <div
                         key={i}
                         className="flex-1 mx-px bg-blue-500/60 rounded-sm"

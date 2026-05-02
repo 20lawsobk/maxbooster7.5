@@ -1,7 +1,7 @@
 import { db } from '../db';
 import { MaxCoreAIClient } from './unifiedAIController.js';
-import { users, analytics, projects, posts, orders, sessions } from '@shared/schema';
-import { sql, gte, lte, desc, and, count, sum, avg, eq } from 'drizzle-orm';
+import { users, analytics, projects, posts, orders, sessions, dspAnalytics } from '@shared/schema';
+import { sql, gte, lte, desc, and, count, sum, avg, eq, isNotNull } from 'drizzle-orm';
 
 interface PredictMetricRequest {
   metric: 'streams' | 'engagement' | 'revenue';
@@ -802,20 +802,86 @@ export async function getFanbaseInsights(userId: string): Promise<FanbaseData> {
   // Calculate active listeners (estimate: 20% of total streams are unique listeners)
   const activeListeners = Math.round(totalStreams * 0.2);
 
-  // Platform distribution (simulated data based on industry averages)
-  const topPlatforms = [
-    { platform: 'Spotify', percentage: 45 },
-    { platform: 'Apple Music', percentage: 25 },
-    { platform: 'YouTube Music', percentage: 15 },
-    { platform: 'Amazon Music', percentage: 10 },
-    { platform: 'Others', percentage: 5 },
-  ];
+  // Platform distribution — real data from analytics table grouped by platform
+  const platformRows = await db
+    .select({
+      platform: analytics.platform,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+    })
+    .from(analytics)
+    .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo), isNotNull(analytics.platform)))
+    .groupBy(analytics.platform)
+    .orderBy(desc(sql<number>`SUM(${analytics.streams})`))
+    .limit(8);
 
-  // Demographics (simulated - would come from platform APIs in production)
-  const demographics = {
-    topLocations: ['United States', 'United Kingdom', 'Canada', 'Australia', 'Germany'],
-    peakListeningTimes: ['8 PM - 10 PM', '6 AM - 8 AM', '12 PM - 2 PM'],
+  const totalPlatformStreams = platformRows.reduce((s, p) => s + Number(p.streams), 0);
+
+  let topPlatforms: Array<{ platform: string; percentage: number }>;
+  if (platformRows.length > 0 && totalPlatformStreams > 0) {
+    const mapped = platformRows.map(p => ({
+      platform: p.platform ?? 'Other',
+      percentage: Math.round((Number(p.streams) / totalPlatformStreams) * 100),
+    }));
+    const assignedTotal = mapped.reduce((s, p) => s + p.percentage, 0);
+    if (assignedTotal !== 100 && mapped.length > 0) mapped[0].percentage += 100 - assignedTotal;
+    topPlatforms = mapped;
+  } else {
+    topPlatforms = [
+      { platform: 'Spotify', percentage: 45 },
+      { platform: 'Apple Music', percentage: 25 },
+      { platform: 'YouTube Music', percentage: 15 },
+      { platform: 'Amazon Music', percentage: 10 },
+      { platform: 'Others', percentage: 5 },
+    ];
+  }
+
+  // Demographics — derive peak listening times from actual analytics timestamps
+  const hourRows = await db
+    .select({
+      hour: sql<number>`EXTRACT(HOUR FROM ${analytics.date})`,
+      streams: sql<number>`CAST(COALESCE(SUM(${analytics.streams}), 0) AS INTEGER)`,
+    })
+    .from(analytics)
+    .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)))
+    .groupBy(sql`EXTRACT(HOUR FROM ${analytics.date})`)
+    .orderBy(desc(sql<number>`SUM(${analytics.streams})`))
+    .limit(3);
+
+  const HOUR_LABELS: Record<number, string> = {
+    0: '12 AM - 2 AM', 1: '1 AM - 3 AM', 2: '2 AM - 4 AM', 3: '3 AM - 5 AM',
+    4: '4 AM - 6 AM', 5: '5 AM - 7 AM', 6: '6 AM - 8 AM', 7: '7 AM - 9 AM',
+    8: '8 AM - 10 AM', 9: '9 AM - 11 AM', 10: '10 AM - 12 PM', 11: '11 AM - 1 PM',
+    12: '12 PM - 2 PM', 13: '1 PM - 3 PM', 14: '2 PM - 4 PM', 15: '3 PM - 5 PM',
+    16: '4 PM - 6 PM', 17: '5 PM - 7 PM', 18: '6 PM - 8 PM', 19: '7 PM - 9 PM',
+    20: '8 PM - 10 PM', 21: '9 PM - 11 PM', 22: '10 PM - 12 AM', 23: '11 PM - 1 AM',
   };
+  const peakListeningTimes = hourRows.length >= 2
+    ? hourRows.map(r => HOUR_LABELS[Number(r.hour)] ?? `${r.hour}:00`)
+    : ['8 PM - 10 PM', '6 AM - 8 AM', '12 PM - 2 PM'];
+
+  // Top listener locations from DSP analytics metadata
+  const dspRows = await db
+    .select({ metadata: dspAnalytics.metadata })
+    .from(dspAnalytics)
+    .where(eq(dspAnalytics.userId, userId))
+    .orderBy(desc(dspAnalytics.date))
+    .limit(50);
+
+  const locationCounts = new Map<string, number>();
+  for (const row of dspRows) {
+    const meta = row.metadata as Record<string, unknown> | null;
+    const country = typeof meta?.topCountry === 'string' ? meta.topCountry
+      : typeof meta?.country === 'string' ? meta.country : null;
+    if (country) locationCounts.set(country, (locationCounts.get(country) ?? 0) + 1);
+  }
+  const topLocations = locationCounts.size >= 3
+    ? [...locationCounts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([loc]) => loc)
+    : ['United States', 'United Kingdom', 'Canada', 'Australia', 'Germany'];
+
+  const demographics = { topLocations, peakListeningTimes };
 
   // Growth opportunities based on current metrics
   const growthOpportunities: string[] = [];

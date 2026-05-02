@@ -7,7 +7,7 @@ const CHUNK_PREFIX = 'fabric-chunks/';
 export class ReplitChunkStore implements ChunkStore {
   private client: Record<string, unknown> | null = null;
 
-  private async getClient(): Promise<any> {
+  private async getClient(): Promise<unknown> {
     if (this.client) return this.client;
     let sidecarAvailable = false;
     try {

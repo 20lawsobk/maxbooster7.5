@@ -274,11 +274,11 @@ try {
 `;
 
 export async function execLuaViaPdim(
-  pdimExec: (args: string[]) => Promise<any>,
+  pdimExec: (args: string[]) => Promise<unknown>,
   script: string,
   numKeys: number,
   allArgs: unknown[],
-): Promise<any> {
+): Promise<unknown> {
   const keys = allArgs.slice(0, numKeys).map(String);
 
   const argv = allArgs.slice(numKeys).map((arg: Record<string, unknown>) => {

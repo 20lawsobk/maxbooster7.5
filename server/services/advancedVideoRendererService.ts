@@ -244,7 +244,7 @@ async function pollVideoJob(jobId: string): Promise<VideoGenResult | null> {
   for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
     await new Promise(r => setTimeout(r, POLL_INTERVAL_MS));
 
-    const status = await MaxCoreAIClient.poll<any>('/video-job/' + jobId);
+    const status = await MaxCoreAIClient.poll<unknown>('/video-job/' + jobId);
     if (!status) continue;
 
     if (status.status === 'done' && status.url) {
@@ -537,7 +537,7 @@ export async function renderVideo(opts: VideoGenOptions): Promise<VideoGenResult
   logger.info('[AdvancedVideoRenderer] Relay tier unavailable — falling back to direct MaxCore');
 
   // ── Step 3: Direct MaxCore fallback ─────────────────────────────────────
-  const jobResp = await MaxCoreAIClient.infer<any>('/generate-video', {
+  const jobResp = await MaxCoreAIClient.infer<unknown>('/generate-video', {
     hook,
     body,
     cta,

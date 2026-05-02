@@ -898,7 +898,7 @@ interface Action {
   name: string;
   description: string;
   parameters: string[];
-  execute: (params: Record<string, any>) => Promise<any>;
+  execute: (params: Record<string, unknown>) => Promise<unknown>;
 }
 
 interface Condition {

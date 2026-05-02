@@ -166,16 +166,16 @@ export default function AutoArtistSync({ profile, onUpdated }: Props) {
   // ── New Phase 1-3 state ────────────────────────────────────────────────────
   const [healthOpen, setHealthOpen] = useState(false);
   const [isrcDiscoverOpen, setIsrcDiscoverOpen] = useState(false);
-  const [isrcResults, setIsrcResults] = useState<any>(null);
+  const [isrcResults, setIsrcResults] = useState<Record<string, unknown> | null>(null);
   const [isrcRunning, setIsrcRunning] = useState(false);
   const [splitScanOpen, setSplitScanOpen] = useState(false);
-  const [splitResults, setSplitResults] = useState<any>(null);
+  const [splitResults, setSplitResults] = useState<Record<string, unknown> | null>(null);
   const [splitRunning, setSplitRunning] = useState(false);
   const [dnaOpen, setDnaOpen] = useState(false);
   const [dnaSnapRunning, setDnaSnapRunning] = useState(false);
   const [portabilityOpen, setPortabilityOpen] = useState(false);
   const [portabilityRunning, setPortabilityRunning] = useState(false);
-  const [portabilityReport, setPortabilityReport] = useState<any>(null);
+  const [portabilityReport, setPortabilityReport] = useState<Record<string, unknown> | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [importSource, setImportSource] = useState('');
   const [importIsrcs, setImportIsrcs] = useState('');

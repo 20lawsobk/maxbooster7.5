@@ -108,7 +108,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
   // Start a workflow
   const startWorkflow = useCallback(
-    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<any>) => {
+    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<unknown>) => {
       // Cancel any existing operation
       const existingController = abortControllersRef.current.get(workflowType);
       if (existingController) {
@@ -244,7 +244,7 @@ export function useAIWorkflow(options: UseAIWorkflowOptions = {}) {
 
   // Retry a failed workflow
   const retry = useCallback(
-    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<any>) => {
+    (workflowType: AIWorkflowType, apiCall: (signal?: AbortSignal) => Promise<unknown>) => {
       const currentWorkflow = workflows[workflowType];
 
       if (currentWorkflow.retryCount >= maxRetries) {

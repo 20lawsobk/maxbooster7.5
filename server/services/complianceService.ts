@@ -787,7 +787,7 @@ erasure, portability) are supported with ${implementedControls.length} of ${cont
     }
   }
 
-  async getComplianceOverview(): Promise<any> {
+  async getComplianceOverview(): Promise<unknown> {
     return await storage.getComplianceOverview();
   }
 

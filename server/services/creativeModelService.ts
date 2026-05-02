@@ -64,7 +64,7 @@ const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 
 const DIT24_RELAY_URL = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
 
-async function dit24Post(path: string, body: unknown, timeoutMs = 90_000): Promise<any> {
+async function dit24Post(path: string, body: unknown, timeoutMs = 90_000): Promise<unknown> {
   const res = await fetch(`${DIT24_RELAY_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -82,7 +82,7 @@ async function dit24Post(path: string, body: unknown, timeoutMs = 90_000): Promi
   return res.json();
 }
 
-async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<any> {
+async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<unknown> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: 'POST',
     headers: {
@@ -109,7 +109,7 @@ async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Pro
   return res.json();
 }
 
-async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<any> {
+async function maxcoreGet(path: string, timeoutMs = 15_000): Promise<unknown> {
   const res = await fetch(`${MAXCORE_URL}${path}`, {
     method: 'GET',
     headers: MAXCORE_KEY

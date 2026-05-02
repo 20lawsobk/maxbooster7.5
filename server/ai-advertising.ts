@@ -98,7 +98,7 @@ export class AIAdvertisingEngine {
   }
 
   // Complete Native Platform Replacement System
-  async bypassNativeAdPlatforms(musicData: unknown, targetAudience: unknown): Promise<any> {
+  async bypassNativeAdPlatforms(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     // Validate at the boundary so downstream methods can rely on shape.
     const md = MusicDataSchema.safeParse(musicData);
     const ta = TargetAudienceSchema.safeParse(targetAudience);
@@ -131,7 +131,7 @@ export class AIAdvertisingEngine {
   }
 
   // Revolutionary In-House AI Content Generation - 100% Proprietary
-  async generateSuperiorAdContent(musicData: unknown, targetAudience: unknown): Promise<any> {
+  async generateSuperiorAdContent(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     // Max Booster Proprietary AI Algorithm - No External APIs
     // Uses advanced pattern matching, psychological frameworks, and music industry data
 
@@ -170,7 +170,7 @@ export class AIAdvertisingEngine {
   async generateSuperiorAudienceTargeting(
     musicProfile: unknown,
     campaignObjective: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const aiAudienceInsights = {
       psychographicSegments: [
         {
@@ -224,7 +224,7 @@ export class AIAdvertisingEngine {
   }
 
   // AI Creative Optimization that adapts in real-time
-  async optimizeCreativeElements(adContent: unknown, performance: unknown): Promise<any> {
+  async optimizeCreativeElements(adContent: unknown, performance: unknown): Promise<unknown> {
     return {
       dynamicHeadlines: await this.generateDynamicHeadlines(performance),
       adaptiveVisuals: await this.optimizeVisualElements(adContent, performance),
@@ -240,7 +240,7 @@ export class AIAdvertisingEngine {
   }
 
   // Viral amplification engine
-  async generateViralAmplification(content: unknown): Promise<any> {
+  async generateViralAmplification(content: unknown): Promise<unknown> {
     return {
       viralityFactors: {
         emotionalResonance: 0.92,
@@ -279,7 +279,7 @@ export class AIAdvertisingEngine {
   }
 
   // Performance prediction and optimization
-  async predictCampaignPerformance(campaignConfig: unknown): Promise<any> {
+  async predictCampaignPerformance(campaignConfig: unknown): Promise<unknown> {
     return {
       projectedMetrics: {
         reach: campaignConfig.budget * 2500, // 2500 people per dollar (vs 800 industry average)
@@ -365,7 +365,7 @@ export class AIAdvertisingEngine {
     ];
   }
 
-  private async identifyPlatformSynergies(): Promise<any> {
+  private async identifyPlatformSynergies(): Promise<unknown> {
     return {
       'TikTok + Spotify': 'Short form preview drives playlist adds',
       'Instagram + YouTube': 'Story teasers drive long-form engagement',
@@ -373,7 +373,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async analyzeBaselinePerformance(): Promise<any> {
+  private async analyzeBaselinePerformance(): Promise<unknown> {
     return {
       averageCPM: 3.5,
       averageCTR: 0.024,
@@ -395,7 +395,7 @@ export class AIAdvertisingEngine {
     ];
   }
 
-  private async predictDemandCycles(campaignData: unknown): Promise<any> {
+  private async predictDemandCycles(campaignData: unknown): Promise<unknown> {
     return {
       peakDemandHours: ['19:00-21:00', '12:00-14:00'],
       lowDemandHours: ['03:00-06:00'],
@@ -416,7 +416,7 @@ export class AIAdvertisingEngine {
     ];
   }
 
-  private async optimizeVisualElements(content: unknown, performance: unknown): Promise<any> {
+  private async optimizeVisualElements(content: unknown, performance: unknown): Promise<unknown> {
     return {
       colorPalette: ['#FF6B6B', '#4ECDC4', '#45B7D1'],
       imageStyle: 'Modern minimalist with bold typography',
@@ -424,7 +424,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async createPersonalizedMessages(performance: unknown): Promise<any> {
+  private async createPersonalizedMessages(performance: unknown): Promise<unknown> {
     return {
       newListeners: 'Discover your next favorite song',
       returningFans: 'Your artist just dropped something special',
@@ -432,7 +432,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async optimizeAcrossPlatforms(content: unknown): Promise<any> {
+  private async optimizeAcrossPlatforms(content: unknown): Promise<unknown> {
     return {
       TikTok: 'Vertical video, hook in first 3 seconds',
       Instagram: 'Square format, story sequence',
@@ -466,7 +466,7 @@ export class AIAdvertisingEngine {
   }
 
   // Platform-specific replacement methods
-  private async replaceFacebookAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceFacebookAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Organic Group Infiltration + Viral Seeding',
       reach: 'Unlimited organic reach vs limited paid reach',
@@ -476,7 +476,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceGoogleAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceGoogleAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'SEO Domination + YouTube Algorithm Exploitation',
       reach: 'Top search results for music discovery keywords',
@@ -486,7 +486,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceTikTokAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceTikTokAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Trend Prediction + Algorithm Gaming',
       reach: 'Viral distribution through For You Page domination',
@@ -496,7 +496,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceInstagramAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceInstagramAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Influencer Network + Story Cascade',
       reach: 'Organic story sharing and Reels amplification',
@@ -506,7 +506,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceYouTubeAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceYouTubeAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Playlist Placement + Recommendation Hijacking',
       reach: 'Organic video recommendations and playlist features',
@@ -516,7 +516,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceSpotifyAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceSpotifyAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Playlist Infiltration + Algorithm Optimization',
       reach: 'Discover Weekly and Release Radar placement',
@@ -526,7 +526,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceTwitterAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceTwitterAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Trend Hijacking + Community Building',
       reach: 'Viral tweet amplification and trending topic domination',
@@ -536,7 +536,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async replaceSnapchatAds(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async replaceSnapchatAds(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       method: 'Story Chain + Discovery Optimization',
       reach: 'Organic story sharing and Snap Map features',
@@ -546,7 +546,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async dominateOrganicReach(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async dominateOrganicReach(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       organicAmplification: {
         method: 'Zero-cost viral amplification that bypasses all paid promotion',
@@ -562,7 +562,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async hijackRecommendationAlgorithms(musicData: unknown): Promise<any> {
+  private async hijackRecommendationAlgorithms(musicData: unknown): Promise<unknown> {
     return {
       algorithmExploitation: {
         spotify: 'Hijack Discover Weekly and Release Radar algorithms',
@@ -576,7 +576,7 @@ export class AIAdvertisingEngine {
     };
   }
 
-  private async engineerViralContent(musicData: unknown, targetAudience: unknown): Promise<any> {
+  private async engineerViralContent(musicData: unknown, targetAudience: unknown): Promise<unknown> {
     return {
       viralFormula: {
         emotionalTriggers: 'AI identifies precise emotional triggers for viral content',

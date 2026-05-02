@@ -851,7 +851,7 @@ return (
 function SongwritingTab() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedSession, setSelectedSession] = useState<any>(null);
+  const [selectedSession, setSelectedSession] = useState<Record<string, unknown> | null>(null);
   const [isNewDialogOpen, setIsNewDialogOpen] = useState(false);
   const [rhymeWord, setRhymeWord] = useState('');
   const [rhymes, setRhymes] = useState<string[]>([]);

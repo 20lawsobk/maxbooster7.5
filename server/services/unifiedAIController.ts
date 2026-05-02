@@ -367,7 +367,7 @@ export class UnifiedAIController {
 
       logger.debug(`[UnifiedAI] MaxCore payload topic="${enrichedTopic.slice(0, 60)}" instruction="${(options.extraContext ?? '').slice(0, 80)}"`)
 
-      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', mcPayload);
+      const mc = await MaxCoreAIClient.infer<unknown>('/api/generate/content', mcPayload);
 
       if (mc?.caption || mc?.hook) {
         const caption = mc.caption || `${mc.hook}\n\n${mc.body || ''}\n\n${mc.cta || ''}`.trim();
@@ -452,7 +452,7 @@ export class UnifiedAIController {
 
     try {
       // MaxCore is the ONLY source — always succeeds via remote + local engine
-      const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+      const mc = await MaxCoreAIClient.infer<unknown>('/api/generate/content', {
         platform,
         topic,
         tone,
@@ -512,7 +512,7 @@ export class UnifiedAIController {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient.isAvailable()) {
         try {
-          const mc = await MaxCoreAIClient.infer<any>('/analyze/sentiment', {
+          const mc = await MaxCoreAIClient.infer<unknown>('/analyze/sentiment', {
             text: options.text,
             includeEmotions: options.includeEmotions,
             includeToxicity: options.includeToxicity,
@@ -650,7 +650,7 @@ export class UnifiedAIController {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient.isAvailable()) {
         try {
-          const mc = await MaxCoreAIClient.infer<any>('/optimize/ad', {
+          const mc = await MaxCoreAIClient.infer<unknown>('/optimize/ad', {
             action: options.action,
             campaign: options.campaign,
             campaigns: options.campaigns,
@@ -752,7 +752,7 @@ export class UnifiedAIController {
       // Priority 1: MaxCore
       if (await MaxCoreAIClient.isAvailable()) {
         try {
-          const mc = await MaxCoreAIClient.infer<any>('/predict/engagement', {
+          const mc = await MaxCoreAIClient.infer<unknown>('/predict/engagement', {
             platform: options.platform,
             action: options.action,
             content: options.content,
@@ -1025,7 +1025,7 @@ export class UnifiedAIController {
 
   private async checkServiceHealth(
     name: string,
-    healthCheck: () => Promise<any>
+    healthCheck: () => Promise<unknown>
   ): Promise<ServiceHealth> {
     const startTime = Date.now();
     try {
@@ -1091,7 +1091,7 @@ export class UnifiedAIController {
     profiles: unknown[];
     content: Record<string, unknown>;
     goals: Record<string, unknown>;
-  }): Promise<UnifiedAIResult<any>> {
+  }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date.now();
     try {
       const result = await this.adEngine.optimizePersonalAdNetwork(
@@ -1116,7 +1116,7 @@ export class UnifiedAIController {
     }
   }
 
-  public async calculateOrganicROI(results: Record<string, unknown>): Promise<UnifiedAIResult<any>> {
+  public async calculateOrganicROI(results: Record<string, unknown>): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date.now();
     try {
       const analysis = this.adEngine.calculateOrganicROI(results);
@@ -1141,7 +1141,7 @@ export class UnifiedAIController {
     profiles: unknown[];
     contentQueue: unknown[];
     goals: Record<string, unknown>;
-  }): Promise<UnifiedAIResult<any>> {
+  }): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date.now();
     try {
       const schedule = this.adEngine.generateOrganicSchedule(
@@ -1166,7 +1166,7 @@ export class UnifiedAIController {
     }
   }
 
-  public async analyzePersonalAdNetwork(userId?: string): Promise<UnifiedAIResult<any>> {
+  public async analyzePersonalAdNetwork(userId?: string): Promise<UnifiedAIResult<unknown>> {
     const startTime = Date.now();
     try {
       let profiles: unknown[] = [];

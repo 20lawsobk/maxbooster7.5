@@ -7,7 +7,7 @@ interface BatchSelectContextValue<T = string> extends UseBatchSelectResult<T> {
   setAllIds: (ids: T[]) => void;
 }
 
-const BatchSelectContext = createContext<BatchSelectContextValue<any> | null>(null);
+const BatchSelectContext = createContext<BatchSelectContextValue<unknown> | null>(null);
 
 export interface BatchSelectProviderProps<T = string> {
   children: ReactNode;

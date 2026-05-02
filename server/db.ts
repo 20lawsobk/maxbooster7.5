@@ -179,7 +179,7 @@ export function getQueryTelemetry() {
 
 // Instrumented Pool that measures actual query execution time
 class InstrumentedPool extends Pool {
-  async query(...args: unknown[]): Promise<any> {
+  async query(...args: unknown[]): Promise<unknown> {
     const startTime = Date.now();
     const sql = typeof args[0] === 'string' ? args[0] : args[0]?.text || 'unknown';
 

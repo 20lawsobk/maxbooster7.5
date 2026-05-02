@@ -716,7 +716,7 @@ class AdvancedAnalyticsService {
         entities.locationType = lowerQuery.includes('cities') ? 'cities' : 'countries';
 
         const geoRows = await db
-          .select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`, metadata: sql<any>`MAX(${analytics.metadata})` })
+          .select({ platform: analytics.platform, streams: sql<number>`COALESCE(SUM(${analytics.streams}), 0)`, listeners: sql<number>`COALESCE(SUM(${analytics.totalListeners}), 0)`, metadata: sql<unknown>`MAX(${analytics.metadata})` })
           .from(analytics)
           .where(and(eq(analytics.userId, userId), gte(analytics.date, thirtyDaysAgo)))
           .groupBy(analytics.platform)

@@ -122,7 +122,7 @@ class VeoMusicService {
     }
   }
 
-  async getAvailablePlatforms(): Promise<any> {
+  async getAvailablePlatforms(): Promise<unknown> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/platforms`, {
         method: 'GET',
@@ -136,7 +136,7 @@ class VeoMusicService {
     }
   }
 
-  async getAvailableGoals(): Promise<any> {
+  async getAvailableGoals(): Promise<unknown> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/goals`, {
         method: 'GET',
@@ -150,7 +150,7 @@ class VeoMusicService {
     }
   }
 
-  async getRecommendedGoals(platform: string): Promise<any> {
+  async getRecommendedGoals(platform: string): Promise<unknown> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/recommend/${platform}`, {
         method: 'GET',
@@ -164,7 +164,7 @@ class VeoMusicService {
     }
   }
 
-  async getPipelineStatus(): Promise<any> {
+  async getPipelineStatus(): Promise<unknown> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/status`, {
         method: 'GET',
@@ -178,7 +178,7 @@ class VeoMusicService {
     }
   }
 
-  async extractUrlMetadata(url: string): Promise<any> {
+  async extractUrlMetadata(url: string): Promise<unknown> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/veo/url/metadata`, {
         method: 'POST',
@@ -193,7 +193,7 @@ class VeoMusicService {
     }
   }
 
-  async generateCampaignFromUrl(url: string, overrides?: Record<string, any>): Promise<any> {
+  async generateCampaignFromUrl(url: string, overrides?: Record<string, unknown>): Promise<unknown> {
     try {
       const body: Record<string, any> = { url };
       if (overrides) {

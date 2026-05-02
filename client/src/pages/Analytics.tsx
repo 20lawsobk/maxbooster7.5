@@ -1201,7 +1201,7 @@ export default function Analytics() {
       trackAnalyticsExplored();
     }
   }, [trackAnalyticsExplored]);
-  const [realtimeData, setRealtimeData] = useState<any>(null);
+  const [realtimeData, setRealtimeData] = useState<Record<string, unknown> | null>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   const [connectionLostTime, setConnectionLostTime] = useState<number | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);

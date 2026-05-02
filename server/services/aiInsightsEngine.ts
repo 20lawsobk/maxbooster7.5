@@ -930,7 +930,7 @@ export class CustomAIEngine {
     startDate: Date,
     days: number,
     metrics: string[]
-  ): Promise<any> {
+  ): Promise<unknown> {
     if (users.length === 0) {
       return { retention: 0, ltv: 0, engagement: 0, churn: 0, conversion: 0 };
     }
@@ -975,7 +975,7 @@ export class CustomAIEngine {
     return parseFloat(((cohortRetention - industryRetentionBenchmark) * 100).toFixed(2));
   }
 
-  private async extractChurnFeatures(userId: string): Promise<any> {
+  private async extractChurnFeatures(userId: string): Promise<unknown> {
     const user = await db.select().from(users).where(eq(users.id, userId)).limit(1);
     const userProjects = await db.select().from(studioProjects).where(eq(studioProjects.userId, userId)).limit(100);
 
@@ -1172,7 +1172,7 @@ export class CustomAIEngine {
     return 'steady';
   }
 
-  private async calculateRevenueBreakdown(userId: string, forecastDate: Date): Promise<any> {
+  private async calculateRevenueBreakdown(userId: string, forecastDate: Date): Promise<unknown> {
     return {
       byPlan: { basic: 100, premium: 250, enterprise: 500 },
       byChannel: { organic: 300, paid: 400, referral: 150 },
@@ -1247,7 +1247,7 @@ export class CustomAIEngine {
     return Math.round(Math.abs(value - baseline) * 0.1);
   }
 
-  private async getUserStats(userId: string, timeframe: string): Promise<any> {
+  private async getUserStats(userId: string, timeframe: string): Promise<unknown> {
     const days = parseInt(timeframe);
     const now = new Date();
     const startDate = new Date(now);
@@ -1299,7 +1299,7 @@ export class CustomAIEngine {
     };
   }
 
-  private async analyzeTrends(userId: string, timeframe: string): Promise<any> {
+  private async analyzeTrends(userId: string, timeframe: string): Promise<unknown> {
     const days = parseInt(timeframe) || 30;
     const now = new Date();
     const periodStart = new Date(now);
@@ -1324,7 +1324,7 @@ export class CustomAIEngine {
     return { streamDecline, lastReleaseDate };
   }
 
-  private async compareToBenchmarks(userId: string, stats: unknown): Promise<any> {
+  private async compareToBenchmarks(userId: string, stats: unknown): Promise<unknown> {
     return {
       revenuePercentile: 75,
       averageConversionRate: 3.5,

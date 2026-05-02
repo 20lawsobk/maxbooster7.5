@@ -67,7 +67,7 @@ export class MonitoringService {
   /**
    * Check specific service health
    */
-  async checkServiceHealth(service: string): Promise<any> {
+  async checkServiceHealth(service: string): Promise<unknown> {
     try {
       return await securityService.checkHealth(service);
     } catch (error: unknown) {

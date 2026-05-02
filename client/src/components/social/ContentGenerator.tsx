@@ -223,13 +223,13 @@ export function ContentGenerator() {
 
   const [showUrlImport, setShowUrlImport] = useState(false);
   const [importUrl, setImportUrl] = useState('');
-  const [urlAnalysis, setUrlAnalysis] = useState<any>(null);
+  const [urlAnalysis, setUrlAnalysis] = useState<Record<string, unknown> | null>(null);
   const [urlImporting, setUrlImporting] = useState(false);
-  const [visualSpec, setVisualSpec] = useState<any>(null);
+  const [visualSpec, setVisualSpec] = useState<Record<string, unknown> | null>(null);
 
   // Inline URL auto-detection states
   const [detectedUrl, setDetectedUrl] = useState<string | null>(null);
-  const [promptUrlAnalysis, setPromptUrlAnalysis] = useState<any>(null);
+  const [promptUrlAnalysis, setPromptUrlAnalysis] = useState<Record<string, unknown> | null>(null);
   const [promptUrlFetching, setPromptUrlFetching] = useState(false);
   const promptUrlDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
 

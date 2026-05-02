@@ -578,11 +578,33 @@ export class AdvertisingAIService {
       upper: Math.min(1, predictedConversionRate + 0.005),
     };
 
-    // Historical comparison (simulated)
+    // Historical comparison — real data from past predictions in DB
+    const [histStats] = await db
+      .select({
+        avgCTR: sql<number>`AVG(CAST(${adCreativePredictions.predictedCTR} AS FLOAT))`,
+        totalCount: sql<number>`COUNT(*)`,
+      })
+      .from(adCreativePredictions);
+
+    const historicalCount = Number(histStats?.totalCount ?? 0);
+    const historicalAvgCTR = Number(histStats?.avgCTR ?? predictedCTR * 0.8);
+
+    let percentile: number;
+    if (historicalCount > 0) {
+      const [belowRow] = await db
+        .select({ belowCount: sql<number>`COUNT(*)` })
+        .from(adCreativePredictions)
+        .where(sql`CAST(${adCreativePredictions.predictedCTR} AS FLOAT) < ${predictedCTR}`);
+      const below = Number(belowRow?.belowCount ?? 0);
+      percentile = Math.round((below / historicalCount) * 100);
+    } else {
+      percentile = Math.min(95, Math.round(60 + viralityScore / 3));
+    }
+
     const comparisonData = {
-      historicalAvg: predictedCTR * 0.8, // Current prediction is 20% above average
-      percentile: 60 + viralityScore / 3, // 60-93rd percentile
-      similarCreatives: Math.floor(10 + random() * 50), // 10-60 similar creatives
+      historicalAvg: historicalAvgCTR || predictedCTR * 0.8,
+      percentile,
+      similarCreatives: historicalCount,
     };
 
     // Store prediction

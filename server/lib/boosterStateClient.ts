@@ -20,7 +20,7 @@ function authHeaders(): Record<string, string> {
   return {};
 }
 
-async function post(path: string, body: Record<string, any>): Promise<any> {
+async function post(path: string, body: Record<string, unknown>): Promise<unknown> {
   const res = await fetch(`${BASE_URL}${path}`, {
     method: 'POST',
     signal: AbortSignal.timeout(10_000), // 10 s — internal service hang must not hold event loop

@@ -681,7 +681,7 @@ export class AIService {
     };
   }
 
-  private async getGenreProfile(genre: string): Promise<any> {
+  private async getGenreProfile(genre: string): Promise<unknown> {
     try {
       const redis = await this.getRedis();
       if (!redis) return null;
@@ -694,7 +694,7 @@ export class AIService {
     }
   }
 
-  private async getAudioPattern(key: string): Promise<any> {
+  private async getAudioPattern(key: string): Promise<unknown> {
     try {
       const redis = await this.getRedis();
       if (!redis) return null;

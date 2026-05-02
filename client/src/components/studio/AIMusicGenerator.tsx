@@ -363,7 +363,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
           </div>
         </div>
         {onClose && (
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-zinc-400 hover:text-white">
+          <Button aria-label="Close" variant="ghost" size="icon" onClick={onClose} className="text-zinc-400 hover:text-white">
             <X className="w-5 h-5" />
           </Button>
         )}
@@ -581,6 +581,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
+                    aria-label={isMuted ? 'Unmute' : 'Mute'}
                     size="icon"
                     variant="ghost"
                     onClick={handleMuteToggle}
@@ -589,6 +590,7 @@ export function AIMusicGenerator({ projectId, onTrackGenerated, onClose, initial
                     {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
                   </Button>
                   <Button
+                    aria-label={isPlaying ? 'Pause preview' : 'Play preview'}
                     size="icon"
                     onClick={handlePlayPause}
                     className="bg-white text-black hover:bg-zinc-200"

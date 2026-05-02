@@ -173,7 +173,7 @@ export class AudioService {
     }
   }
 
-  private async getAudioMetadata(filePath: string): Promise<any> {
+  private async getAudioMetadata(filePath: string): Promise<unknown> {
     const hasFFmpeg = await initializeFfmpeg();
     if (!hasFFmpeg || !ffmpeg) {
       throw new Error('FFmpeg is not available. Audio processing features are disabled in this deployment.');
@@ -1062,7 +1062,7 @@ export class AudioService {
     }
   }
 
-  async exportProjectAudio(projectId: string, tracks: unknown[], format: string, exportType: 'mixdown' | 'stems'): Promise<any> {
+  async exportProjectAudio(projectId: string, tracks: unknown[], format: string, exportType: 'mixdown' | 'stems'): Promise<unknown> {
     try {
       if (exportType === 'stems') {
         // Export individual stems

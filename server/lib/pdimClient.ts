@@ -488,7 +488,7 @@ export class PdimRedisClient extends EventEmitter {
   // Reset to 0 on each success so the AIMD gap alone governs steady-state pacing.
   private static _rateLimitedUntil = 0;
 
-  private async exec(command: (string | number | null)[]): Promise<any> {
+  private async exec(command: (string | number | null)[]): Promise<unknown> {
     const [cmd, ...rawArgs] = command;
     // The PDIM server validates all args as strings — coerce numbers/nulls
     const args = rawArgs.map(a => (a === null ? '' : String(a)));
@@ -722,7 +722,7 @@ export class PdimRedisClient extends EventEmitter {
     };
   }
 
-  async sendCommand(args: string[]): Promise<any> {
+  async sendCommand(args: string[]): Promise<unknown> {
     const cmd = (args[0] ?? '').toUpperCase();
     if (cmd === 'PUBLISH') return 0;
     if (cmd === 'SUBSCRIBE' || cmd === 'UNSUBSCRIBE' || cmd === 'PSUBSCRIBE' || cmd === 'PUNSUBSCRIBE') return null;
@@ -744,7 +744,7 @@ export class PdimRedisClient extends EventEmitter {
    * the slowdown — but the rate-limit deadline (_rateLimitedUntil) IS checked
    * inside exec() so script calls still honour the mandatory hold-off.
    */
-  async scriptExec(args: string[]): Promise<any> {
+  async scriptExec(args: string[]): Promise<unknown> {
     const [cmd, ...rawArgs] = args;
     const strArgs = rawArgs.map(a => (a === null || a === undefined ? '' : String(a)));
 
@@ -1018,15 +1018,15 @@ export class PdimRedisClient extends EventEmitter {
   /** XACK key group id [id ...] */
   async xack(key: string, group: string, ...ids: string[]): Promise<number> { return this.exec(['XACK', key, group, ...ids]); }
   /** XGROUP CREATE|SETID|DESTROY|CREATECONSUMER|DELCONSUMER key group id */
-  async xgroup(subCmd: string, key: string, group: string, ...args: unknown[]): Promise<any> { return this.exec(['XGROUP', subCmd, key, group, ...args]); }
+  async xgroup(subCmd: string, key: string, group: string, ...args: unknown[]): Promise<unknown> { return this.exec(['XGROUP', subCmd, key, group, ...args]); }
   /** XCLAIM key group consumer min-idle-time id [id ...] */
   async xclaim(key: string, group: string, consumer: string, minIdleTime: number, ...args: unknown[]): Promise<any[]> { return this.exec(['XCLAIM', key, group, consumer, minIdleTime, ...args]); }
   /** XAUTOCLAIM key group consumer min-idle-time start [COUNT count] */
-  async xautoclaim(key: string, group: string, consumer: string, minIdleTime: number, start: string, ...args: unknown[]): Promise<any> { return this.exec(['XAUTOCLAIM', key, group, consumer, minIdleTime, start, ...args]); }
+  async xautoclaim(key: string, group: string, consumer: string, minIdleTime: number, start: string, ...args: unknown[]): Promise<unknown> { return this.exec(['XAUTOCLAIM', key, group, consumer, minIdleTime, start, ...args]); }
   /** XPENDING key group [[IDLE min-idle-time] start end count [consumer]] */
   async xpending(key: string, group: string, ...args: unknown[]): Promise<any[]> { return this.exec(['XPENDING', key, group, ...args]); }
   /** XINFO STREAM|GROUPS|CONSUMERS|FULL key */
-  async xinfo(subCmd: string, key: string, ...args: unknown[]): Promise<any> { return this.exec(['XINFO', subCmd, key, ...args]); }
+  async xinfo(subCmd: string, key: string, ...args: unknown[]): Promise<unknown> { return this.exec(['XINFO', subCmd, key, ...args]); }
   /**
    * XREADGROUP GROUP group consumer [COUNT count] [BLOCK milliseconds] [NOACK] STREAMS key [key ...] id [id ...]
    * Attempts to forward to PDIM exec endpoint; falls back to null (graceful degradation)
@@ -1062,7 +1062,7 @@ export class PdimRedisClient extends EventEmitter {
    * eval() — PDIM supports EVAL via its HTTP exec endpoint.
    * Signature matches ioredis: eval(script, numkeys, ...keys_and_args)
    */
-  async eval(script: string, numkeys: number | string, ...args: unknown[]): Promise<any> {
+  async eval(script: string, numkeys: number | string, ...args: unknown[]): Promise<unknown> {
     return this.exec(['EVAL', script, numkeys, ...args]);
   }
 

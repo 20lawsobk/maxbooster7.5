@@ -93,7 +93,7 @@ export function SafeMotion({
     variants,
   ]);
 
-  const MotionComponent = motion[as] as React.ComponentType<any>;
+  const MotionComponent = motion[as] as React.ComponentType<Record<string, unknown>>;
 
   return (
     <MotionComponent className={className} {...props} {...safeProps}>

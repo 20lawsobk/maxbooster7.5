@@ -1097,7 +1097,7 @@ class AdvancedSocialAIService {
     const audience = AUDIENCE_PROFILES[request.targetAudience?.toLowerCase().replace(/\s+/g, '_') || 'indie_artists'] || AUDIENCE_PROFILES.indie_artists;
 
     // ── 8TB dataset via MaxCore is the ONLY text source ─────────────────────
-    const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+    const mc = await MaxCoreAIClient.infer<unknown>('/api/generate/content', {
       platform:          request.platforms[0] || 'instagram',
       topic:             request.topic || 'new music',
       tone:              request.tone || 'energetic',
@@ -1166,7 +1166,7 @@ class AdvancedSocialAIService {
     return result;
   }
 
-  private async getUserContext(userId: string): Promise<any> {
+  private async getUserContext(userId: string): Promise<unknown> {
     try {
       const [[brandVoice], [preferences]] = await Promise.all([
         db.select().from(userBrandVoices).where(eq(userBrandVoices.userId, userId)).limit(1),

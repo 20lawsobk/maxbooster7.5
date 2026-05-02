@@ -375,7 +375,7 @@ export default function Settings() {
       const newUrl = data.avatarUrl || data.profileImageUrl || '';
       if (newUrl) {
         setAvatarUrl(newUrl);
-        const cached = queryClient.getQueryData<any>(['/api/auth/me']);
+        const cached = queryClient.getQueryData<Record<string, unknown>>(['/api/auth/me']);
         if (cached) {
           queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: newUrl, profileImageUrl: newUrl });
         }
@@ -404,7 +404,7 @@ export default function Settings() {
     try {
       await apiRequest('DELETE', '/api/auth/avatar');
       setAvatarUrl('');
-      const cached = queryClient.getQueryData<any>(['/api/auth/me']);
+      const cached = queryClient.getQueryData<Record<string, unknown>>(['/api/auth/me']);
       if (cached) {
         queryClient.setQueryData(['/api/auth/me'], { ...cached, avatarUrl: null, profileImageUrl: null });
       }

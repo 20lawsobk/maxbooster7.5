@@ -822,7 +822,7 @@ class StemExportService {
       .slice(0, 100);
   }
 
-  async getExportStatus(exportId: string, userId: string): Promise<any> {
+  async getExportStatus(exportId: string, userId: string): Promise<unknown> {
     const exportRecord = await db.query.stemExports.findFirst({
       where: and(eq(stemExports.id, exportId), eq(stemExports.userId, userId)),
     });

@@ -390,7 +390,7 @@ export async function kkboxSubmit(
  * Retrieve the current status and logs for a distribution dispatch record.
  * Throws if the dispatch ID does not exist.
  */
-export async function getDispatchStatus(dispatchId: string): Promise<any> {
+export async function getDispatchStatus(dispatchId: string): Promise<unknown> {
   const dispatch = await storage.getDistroDispatch(dispatchId);
   if (!dispatch) {
     throw new Error('Dispatch record not found');

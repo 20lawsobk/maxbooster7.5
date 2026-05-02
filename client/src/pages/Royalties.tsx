@@ -1972,10 +1972,10 @@ return (
 // ============================================================================
 
 function TaxIntelligenceContent() {
-  const { data: royaltyData } = useQuery<any>({ queryKey: ['/api/royalties/statements'] });
-  const { data: payoutsData } = useQuery<any>({ queryKey: ['/api/payouts'] });
+  const { data: royaltyData } = useQuery<Record<string, unknown>>({ queryKey: ['/api/royalties/statements'] });
+  const { data: payoutsData } = useQuery<Record<string, unknown>>({ queryKey: ['/api/payouts'] });
   const { data: publishingData } = useQuery<any[]>({ queryKey: ['/api/publishing'] });
-  const { data: forecastData } = useQuery<any>({ queryKey: ['/api/royalties/forecast'] });
+  const { data: forecastData } = useQuery<Record<string, unknown>>({ queryKey: ['/api/royalties/forecast'] });
 
   const currentYear = new Date().getFullYear();
   const quarters = ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Q4 (Oct–Dec)'];

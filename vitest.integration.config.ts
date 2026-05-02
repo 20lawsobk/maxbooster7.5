@@ -3,12 +3,17 @@ import path from 'path';
 
 export default defineConfig({
   test: {
-    // CI-safe integration tests: health probes + auth guard checks.
-    // These tests hit a running Express server via fetch — no DB writes required
-    // for health or unauthenticated-guard tests, only a running server.
+    // Integration tests hitting a running Express server via fetch.
+    // Run via: npm run test:integration
     include: [
       'tests/health.test.ts',
       'tests/api-guards.test.ts',
+      'tests/auth-flows.test.ts',
+      'tests/security-hardening.test.ts',
+      'tests/webhook-security.test.ts',
+      'tests/critical-paths.test.ts',
+      'tests/paid-user-e2e.test.ts',
+      'tests/ai-analytics-integration.test.ts',
     ],
     environment: 'node',
     globals: true,

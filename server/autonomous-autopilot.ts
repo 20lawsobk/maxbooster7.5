@@ -45,7 +45,7 @@ export class AutonomousAutopilot extends EventEmitter {
   private performanceAnalysisInterval: NodeJS.Timeout | null = null;
   private adaptationInterval: NodeJS.Timeout | null = null;
   private platformPerformance: Map<string, any> = new Map();
-  private contentPerformanceHistory: Array<any> = [];
+  private contentPerformanceHistory: Array<Record<string, unknown>> = [];
   private optimalTimingCache: Map<string, number[]> = new Map();
   private topicPerformanceMap: Map<string, number> = new Map();
   private topicTrialCountMap: Map<string, number> = new Map();
@@ -980,7 +980,7 @@ export class AutonomousAutopilot extends EventEmitter {
   }
 
   // Status and Monitoring
-  async getAutonomousStatus(): Promise<any> {
+  async getAutonomousStatus(): Promise<unknown> {
     return {
       isRunning: this.isRunning,
       config: this.config,

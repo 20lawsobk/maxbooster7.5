@@ -56,16 +56,16 @@ export default function AdminAutonomy() {
   const autopilotKey = ['/api/autopilot/status'];
   const autonomousKey = ['/api/auto/social/status'];
 
-  const { data: status, isLoading: statusLoading } = useQuery<any>({
+  const { data: status, isLoading: statusLoading } = useQuery<Record<string, unknown>>({
     queryKey: updatesKey,
     refetchInterval: 30000,
   });
-  const { data: changesData } = useQuery<any>({ queryKey: changesKey });
-  const { data: upgradesData } = useQuery<any>({ queryKey: upgradesKey });
-  const { data: securityMetrics } = useQuery<any>({ queryKey: securityMetricsKey });
-  const { data: securityThreats } = useQuery<any>({ queryKey: securityThreatsKey });
-  const { data: autopilotStatus } = useQuery<any>({ queryKey: autopilotKey });
-  const { data: autonomousStatus } = useQuery<any>({ queryKey: autonomousKey });
+  const { data: changesData } = useQuery<Record<string, unknown>>({ queryKey: changesKey });
+  const { data: upgradesData } = useQuery<Record<string, unknown>>({ queryKey: upgradesKey });
+  const { data: securityMetrics } = useQuery<Record<string, unknown>>({ queryKey: securityMetricsKey });
+  const { data: securityThreats } = useQuery<Record<string, unknown>>({ queryKey: securityThreatsKey });
+  const { data: autopilotStatus } = useQuery<Record<string, unknown>>({ queryKey: autopilotKey });
+  const { data: autonomousStatus } = useQuery<Record<string, unknown>>({ queryKey: autonomousKey });
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: updatesKey });
@@ -127,22 +127,22 @@ export default function AdminAutonomy() {
   const selfHealingStatusKey = ['/api/security/self-healing/status'];
   const selfHealingMetricsKey = ['/api/security/self-healing/metrics'];
 
-  const { data: chainFixerStatus, refetch: refetchChainFixer } = useQuery<any>({
+  const { data: chainFixerStatus, refetch: refetchChainFixer } = useQuery<Record<string, unknown>>({
     queryKey: chainFixerKey,
     refetchInterval: 15000,
     enabled: !!user,
   });
-  const { data: platformFixerStatus, refetch: refetchPlatformFixer } = useQuery<any>({
+  const { data: platformFixerStatus, refetch: refetchPlatformFixer } = useQuery<Record<string, unknown>>({
     queryKey: platformFixerKey,
     refetchInterval: 15000,
     enabled: !!user,
   });
-  const { data: selfHealingStatusData } = useQuery<any>({
+  const { data: selfHealingStatusData } = useQuery<Record<string, unknown>>({
     queryKey: selfHealingStatusKey,
     refetchInterval: 10000,
     enabled: !!user,
   });
-  const { data: selfHealingMetricsData } = useQuery<any>({
+  const { data: selfHealingMetricsData } = useQuery<Record<string, unknown>>({
     queryKey: selfHealingMetricsKey,
     refetchInterval: 10000,
     enabled: !!user,
@@ -161,7 +161,7 @@ export default function AdminAutonomy() {
   });
 
   const killSwitchKey = ['/api/kill-switch/status'];
-  const { data: killSwitchData, refetch: refetchKillSwitch } = useQuery<any>({
+  const { data: killSwitchData, refetch: refetchKillSwitch } = useQuery<Record<string, unknown>>({
     queryKey: killSwitchKey,
     refetchInterval: 30000,
   });

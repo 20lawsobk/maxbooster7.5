@@ -28,7 +28,7 @@ interface AutoUpdatesStatus {
   lastRunAt?: string;
   nextRunAt?: string;
   runsCompleted: number;
-  lastResult?: Record<string, any>;
+  lastResult?: Record<string, unknown>;
 }
 
 interface TrendEvent {
@@ -366,8 +366,8 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     }
   }
 
-  async runOnce(): Promise<Record<string, any>> {
-    const result: Record<string, any> = {};
+  async runOnce(): Promise<Record<string, unknown>> {
+    const result: Record<string, unknown> = {};
     const startedAt = new Date();
 
     // Silent background operation - no verbose logging
@@ -943,9 +943,9 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   async createModelVersion(
     modelId: string,
     changes: string,
-    parameters: Record<string, any>,
+    parameters: Record<string, unknown>,
     trainingDatasetId?: string
-  ): Promise<any> {
+  ): Promise<unknown> {
     const startTime = Date.now();
     const timestamp = Date.now();
     const versionNumber = `v${Math.floor(timestamp / 1000)}.0`;
@@ -996,7 +996,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
 
   private generateVersionHash(
     modelId: string,
-    parameters: Record<string, any>,
+    parameters: Record<string, unknown>,
     timestamp: number
   ): string {
     const hashInput = JSON.stringify({ modelId, parameters, timestamp });
@@ -1035,7 +1035,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return lines.join('\n');
   }
 
-  async rollbackToVersion(modelId: string, targetVersionId: string, reason: string): Promise<any> {
+  async rollbackToVersion(modelId: string, targetVersionId: string, reason: string): Promise<unknown> {
     this.silentLog(`🔄 Rolling back model ${modelId} to version ${targetVersionId}`);
     this.silentLog(`   Reason: ${reason}`);
 
@@ -1056,7 +1056,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
     versionId: string,
     initialPercentage: number = 5
-  ): Promise<any> {
+  ): Promise<unknown> {
     const startTime = Date.now();
     const userSegment = this.selectCanaryUsers(initialPercentage);
 
@@ -1141,7 +1141,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     }
   }
 
-  async advanceCanaryRollout(deploymentId: string, newPercentage: number): Promise<any> {
+  async advanceCanaryRollout(deploymentId: string, newPercentage: number): Promise<unknown> {
     this.silentLog(`📈 Advancing canary deployment ${deploymentId} to ${newPercentage}%`);
 
     return {
@@ -1166,7 +1166,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
       driftThreshold?: number;
       requiresApproval?: boolean;
     }
-  ): Promise<any> {
+  ): Promise<unknown> {
     const startTime = Date.now();
     const frequency = config.frequency || 'weekly';
 
@@ -1217,7 +1217,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return new Date(now.getTime() + (delays[frequency] || delays.weekly));
   }
 
-  async executeRetraining(scheduleId: string, modelId: string): Promise<any> {
+  async executeRetraining(scheduleId: string, modelId: string): Promise<unknown> {
     const startTime = Date.now();
     const timestamp = Date.now();
 
@@ -1287,7 +1287,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   // 4. PERFORMANCE BASELINE TRACKING
   // ==========================================
 
-  async updateBaseline(modelId: string, metrics: Record<string, number>): Promise<any> {
+  async updateBaseline(modelId: string, metrics: Record<string, number>): Promise<unknown> {
     const baseline = {
       modelId,
       metrics,
@@ -1312,7 +1312,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   async checkPerformanceRegression(
     modelId: string,
     currentMetrics: Record<string, number>
-  ): Promise<any> {
+  ): Promise<unknown> {
     const regressions: Array<{
       metric: string;
       baseline: number;
@@ -1360,7 +1360,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
     metricName: string,
     windowDays: number = 30
-  ): Promise<any> {
+  ): Promise<unknown> {
     const dataPoints = [];
     const now = Date.now();
     const dayMs = 24 * 60 * 60 * 1000;
@@ -1414,7 +1414,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     modelId: string,
     versionId: string,
     strategy: 'immediate' | 'canary' | 'scheduled' | 'manual-approval'
-  ): Promise<any> {
+  ): Promise<unknown> {
     const startTime = Date.now();
     const preDeploymentChecks = await this.runPreDeploymentChecks(modelId, versionId);
 
@@ -1484,7 +1484,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return mapping[strategy] || 'instant';
   }
 
-  private async runPreDeploymentChecks(modelId: string, versionId: string): Promise<any> {
+  private async runPreDeploymentChecks(modelId: string, versionId: string): Promise<unknown> {
     const checkValue1 = this.deterministicValue(`${modelId}_${versionId}_check1`, 0, 1);
     const checkValue2 = this.deterministicValue(`${modelId}_${versionId}_check2`, 0, 1);
 
@@ -1505,7 +1505,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     };
   }
 
-  private async runPostDeploymentChecks(modelId: string, versionId: string): Promise<any> {
+  private async runPostDeploymentChecks(modelId: string, versionId: string): Promise<unknown> {
     const checkValue1 = this.deterministicValue(`${modelId}_${versionId}_post1`, 0, 1);
     const checkValue2 = this.deterministicValue(`${modelId}_${versionId}_post2`, 0, 1);
     const checkValue3 = this.deterministicValue(`${modelId}_${versionId}_post3`, 0, 1);
@@ -1538,7 +1538,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
   // 6. ROLLBACK UI SUPPORT
   // ==========================================
 
-  async rollbackModel(modelId: string, targetVersionId: string, reason: string): Promise<any> {
+  async rollbackModel(modelId: string, targetVersionId: string, reason: string): Promise<unknown> {
     this.silentLog(`🔙 Initiating rollback for model ${modelId}`);
     this.silentLog(`   Target version: ${targetVersionId}`);
     this.silentLog(`   Reason: ${reason}`);
@@ -1561,7 +1561,7 @@ export class AutonomousUpdatesOrchestrator extends EventEmitter {
     return rollback;
   }
 
-  private async analyzeRollbackImpact(modelId: string, targetVersionId: string): Promise<any> {
+  private async analyzeRollbackImpact(modelId: string, targetVersionId: string): Promise<unknown> {
     const usersSeed = `${modelId}_${targetVersionId}_users`;
     const downtimeSeed = `${modelId}_${targetVersionId}_downtime`;
 

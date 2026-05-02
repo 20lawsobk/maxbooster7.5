@@ -385,7 +385,7 @@ export class SupportAIService {
 
   private async generateAIAnswer(question: string): Promise<string> {
     const { MaxCoreAIClient } = await import('./maxcoreClient.js');
-    const mc = await MaxCoreAIClient.infer<any>('/api/generate/content', {
+    const mc = await MaxCoreAIClient.infer<unknown>('/api/generate/content', {
       topic:    question,
       platform: 'support',
       tone:     'professional',

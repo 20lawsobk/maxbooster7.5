@@ -385,7 +385,7 @@ export class AdvertisingDispatchService {
     platform: string,
     postId: string,
     campaign: unknown
-  ): Promise<any> {
+  ): Promise<unknown> {
     const entry = await db
       .insert(contentCalendar)
       .values({
@@ -475,7 +475,7 @@ export class AdvertisingDispatchService {
     variant: unknown,
     userId: string,
     campaign: unknown
-  ): Promise<any> {
+  ): Promise<unknown> {
     try {
       // Prepare content from variant
       const content = {

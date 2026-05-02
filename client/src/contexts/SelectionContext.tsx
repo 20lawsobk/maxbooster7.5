@@ -16,7 +16,7 @@ export interface SelectionContextValue<T extends SelectionItem = SelectionItem> 
   handleItemClick: (id: string, e: React.MouseEvent) => void;
 }
 
-const SelectionContext = createContext<SelectionContextValue<any> | null>(null);
+const SelectionContext = createContext<SelectionContextValue<unknown> | null>(null);
 
 export interface SelectionProviderProps<T extends SelectionItem = SelectionItem> {
   children: ReactNode;

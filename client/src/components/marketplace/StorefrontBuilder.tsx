@@ -555,7 +555,7 @@ export default function StorefrontBuilder() {
     },
   });
 
-  const [showCampaignResult, setShowCampaignResult] = useState<any>(null);
+  const [showCampaignResult, setShowCampaignResult] = useState<Record<string, unknown> | null>(null);
 
   const promoteCampaignMutation = useMutation({
     mutationFn: async (storefrontId: string) => {

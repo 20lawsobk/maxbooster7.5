@@ -15,7 +15,7 @@ interface PowerFeature {
   title: string;
   subtitle: string;
   description: string;
-  icon: React.ComponentType<any>;
+  icon: React.ComponentType<Record<string, unknown>>;
   actionLabel: string;
   actionUrl: string;
   gradient: string;

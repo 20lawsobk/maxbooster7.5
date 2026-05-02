@@ -75,7 +75,7 @@ export default function MerchStore() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('products');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editingItem, setEditingItem] = useState<Record<string, unknown> | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [addVariants, setAddVariants] = useState<Variant[]>([]);

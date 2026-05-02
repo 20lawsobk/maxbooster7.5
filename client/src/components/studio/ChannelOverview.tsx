@@ -308,6 +308,7 @@ export function ChannelOverview({
               <RotateCcw className="h-3.5 w-3.5" style={{ color: 'var(--studio-text-muted)' }} />
             </Button>
             <Button
+              aria-label="Close channel"
               variant="ghost"
               size="icon"
               className="h-7 w-7 hover:bg-red-500/20"
@@ -477,6 +478,7 @@ export function ChannelOverview({
                       </div>
                       {onInsertRemove && (
                         <Button
+                          aria-label="Remove insert"
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6 hover:bg-red-500/20"
@@ -532,6 +534,8 @@ export function ChannelOverview({
                           </span>
                           {onSendMuteToggle && (
                             <Button
+                              aria-label={send.mute ? 'Unmute send' : 'Mute send'}
+                              aria-pressed={send.mute}
                               variant="ghost"
                               size="icon"
                               className="h-5 w-5"

@@ -630,7 +630,7 @@ export class ReleaseWorkflowService {
     };
   }
 
-  private async getRelease(releaseId: string): Promise<any> {
+  private async getRelease(releaseId: string): Promise<unknown> {
     try {
       return await storage.getDistroRelease(releaseId);
     } catch (error) {

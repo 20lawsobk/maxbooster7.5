@@ -238,7 +238,7 @@ class DatabaseResilience extends EventEmitter {
   }
 
   // Connection pool management
-  async createConnection(): Promise<any> {
+  async createConnection(): Promise<unknown> {
     if (this.pool.connections.length >= this.pool.maxConnections) {
       throw new Error('Connection pool exhausted');
     }

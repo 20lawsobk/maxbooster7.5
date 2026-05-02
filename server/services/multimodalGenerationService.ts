@@ -37,7 +37,7 @@ const MAXCORE_KEY = process.env.AI_SERVER_KEY || '';
 const DIT24_GATEWAY = `http://localhost:${process.env.VIDEO_DIFFUSION_PORT ?? 8008}`;
 const DIT24_PROXY_TIMEOUT_MS = 8_000; // fast timeout — fall through to direct MaxCore if 8008 is down
 
-async function dit24GatewayPost(proxyPath: string, body: unknown): Promise<any> {
+async function dit24GatewayPost(proxyPath: string, body: unknown): Promise<unknown> {
   const res = await fetch(`${DIT24_GATEWAY}${proxyPath}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -64,7 +64,7 @@ const DIT24_PROXY_PATHS = new Set([
   '/analyze/sentiment',
 ]);
 
-async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<any> {
+async function maxcorePost(path: string, body: unknown, timeoutMs = 30_000): Promise<unknown> {
   // Route through the port-8008 training gateway when the path is supported.
   // The gateway server proxies to MaxCore internally (and will eventually
   // serve locally once the local model is trained). This makes port 8008
@@ -1157,7 +1157,7 @@ async function localAnalyzeUrl(
   url: string,
   req: GenerationRequest,
   platformRulesSubset: Record<string, PlatformRules>,
-): Promise<any> {
+): Promise<unknown> {
   const ctx  = classifyUrl(url);
   const meta = await fetchUrlMetadata(url, ctx);
 
@@ -1201,7 +1201,7 @@ async function localAnalyzeUrl(
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function normalizeInput(req: GenerationRequest): Promise<any> {
+async function normalizeInput(req: GenerationRequest): Promise<unknown> {
   const platformRulesSubset = req.platforms.reduce<Record<string, PlatformRules>>((acc, p) => {
     acc[p] = getRules(p);
     return acc;

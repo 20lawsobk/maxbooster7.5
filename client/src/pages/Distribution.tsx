@@ -503,7 +503,7 @@ function PlaylistPitchingContent() {
     queryKey: ['/api/playlist-pitching'],
   });
 
-  const { data: stats, isLoading: statsLoading } = useQuery<any>({
+  const { data: stats, isLoading: statsLoading } = useQuery<Record<string, unknown>>({
     queryKey: ['/api/playlist-pitching/stats'],
   });
 
@@ -673,7 +673,7 @@ function ShowsContent() {
     queryKey: ["/api/shows"],
   });
 
-  const { data: stats } = useQuery<any>({
+  const { data: stats } = useQuery<Record<string, unknown>>({
     queryKey: ["/api/shows/stats"],
   });
 
@@ -796,7 +796,7 @@ function VenueBookingCRM() {
   const [newVenue, setNewVenue] = useState({ venueName: '', city: '', state: '', capacity: '', contactName: '', contactEmail: '', status: 'prospect', notes: '' });
 
   const { data: venues = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/venues'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/venues/stats'] });
+  const { data: stats } = useQuery<Record<string, unknown>>({ queryKey: ['/api/venues/stats'] });
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
@@ -903,7 +903,7 @@ function SyncLicensingContent() {
     queryKey: ['/api/sync-licensing'],
   });
 
-  const { data: stats } = useQuery<any>({
+  const { data: stats } = useQuery<Record<string, unknown>>({
     queryKey: ['/api/sync-licensing/stats'],
   });
 
@@ -4371,7 +4371,7 @@ function ARSubmissionsContent() {
   });
 
   const { data: submissions = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/label-submissions'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/label-submissions/stats'] });
+  const { data: stats } = useQuery<Record<string, unknown>>({ queryKey: ['/api/label-submissions/stats'] });
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/label-submissions', data); return res.json(); },
@@ -4522,7 +4522,7 @@ function SampleClearanceContent() {
   });
 
   const { data: clearances = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/sample-clearances'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/sample-clearances/stats'] });
+  const { data: stats } = useQuery<Record<string, unknown>>({ queryKey: ['/api/sample-clearances/stats'] });
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/sample-clearances', data); return res.json(); },
@@ -4684,7 +4684,7 @@ function MusicVideosContent() {
   const [enableVoice, setEnableVoice] = useState(false);
 
   const [jobId, setJobId] = useState<string | null>(null);
-  const [jobStatus, setJobStatus] = useState<any>(null);
+  const [jobStatus, setJobStatus] = useState<Record<string, unknown> | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [completedVideoUrl, setCompletedVideoUrl] = useState<string | null>(null);
 

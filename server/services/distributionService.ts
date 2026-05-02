@@ -532,7 +532,7 @@ export class DistributionService {
   /**
    * Generate DSP-compliant metadata JSON
    */
-  async generateMetadataJSON(packageId: string, artistProfileData?: Record<string, string | null>): Promise<any> {
+  async generateMetadataJSON(packageId: string, artistProfileData?: Record<string, string | null>): Promise<unknown> {
     try {
       const pkg = await storage.getDistributionPackageById(packageId);
       if (!pkg) {

@@ -2968,7 +2968,7 @@ async function aggregateLabelGridAnalytics(userId: string) {
     lgReleases.map(r => labelGridService.getReleaseAnalytics((r.metadata as Record<string, unknown>).labelGridReleaseId))
   );
   const results = settled
-    .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+    .filter((r): r is PromiseFulfilledResult<unknown> => r.status === 'fulfilled')
     .map(r => r.value);
   if (results.length === 0) return null;
 

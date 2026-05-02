@@ -77,7 +77,7 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
       key: string,
       val: string,
       opts?: { expiration?: { type?: string; value?: number } }
-    ): Promise<any> {
+    ): Promise<unknown> {
       const ttl = opts?.expiration?.value;
       if (ttl && ttl > 0) {
         return ioredisClient.set(key, val, 'EX', ttl);
@@ -85,11 +85,11 @@ function createIoredisAdapter(ioredisClient: { get: (...a: unknown[]) => Promise
       return ioredisClient.set(key, val);
     },
 
-    expire(key: string, ttl: number): Promise<any> {
+    expire(key: string, ttl: number): Promise<unknown> {
       return ioredisClient.expire(key, ttl);
     },
 
-    del(keys: string | string[]): Promise<any> {
+    del(keys: string | string[]): Promise<unknown> {
       if (Array.isArray(keys)) {
         if (keys.length === 0) return Promise.resolve(0);
         return ioredisClient.del(...keys);

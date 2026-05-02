@@ -268,8 +268,8 @@ export class PythonAIService {
     }
   }
 
-  async optimize(sheetId: string, performance: Record<string, number>, platform = 'tiktok', goal = 'growth'): Promise<AIModelResponse<any>> {
-    return callAIModel<any>('/optimize', {
+  async optimize(sheetId: string, performance: Record<string, number>, platform = 'tiktok', goal = 'growth'): Promise<AIModelResponse<unknown>> {
+    return callAIModel<unknown>('/optimize', {
       sheet_id: sheetId,
       performance,
       platform,
@@ -327,7 +327,7 @@ export class PythonAIService {
     thumbnail_url?: string;
     keywords?: string[];
     description?: string;
-  }): Promise<AIModelResponse<any>> {
+  }): Promise<AIModelResponse<unknown>> {
     return callAIModel('/generate/visual-spec', {
       topic:         options.topic,
       platform:      options.platform || 'instagram',
@@ -396,7 +396,7 @@ export class PythonAIService {
     });
   }
 
-  async getVideoJobStatus(jobId: string): Promise<AIModelResponse<any>> {
+  async getVideoJobStatus(jobId: string): Promise<AIModelResponse<unknown>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/video-job/${jobId}`, {
         method: 'GET',
@@ -412,7 +412,7 @@ export class PythonAIService {
     }
   }
 
-  async getCinematicTemplates(): Promise<AIModelResponse<any>> {
+  async getCinematicTemplates(): Promise<AIModelResponse<unknown>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/cinematic-templates`, {
         method: 'GET',
@@ -444,7 +444,7 @@ export class PythonAIService {
     }
   }
 
-  async analyzeAudio(filePath: string, detailed = false): Promise<AIModelResponse<any>> {
+  async analyzeAudio(filePath: string, detailed = false): Promise<AIModelResponse<unknown>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio`, {
         method: 'POST',
@@ -462,7 +462,7 @@ export class PythonAIService {
     }
   }
 
-  async getAudioFeatureInfo(): Promise<AIModelResponse<any>> {
+  async getAudioFeatureInfo(): Promise<AIModelResponse<unknown>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/audio-features`, {
         method: 'GET',
@@ -478,7 +478,7 @@ export class PythonAIService {
     }
   }
 
-  async transcribeToMidi(filePath: string): Promise<AIModelResponse<any>> {
+  async transcribeToMidi(filePath: string): Promise<AIModelResponse<unknown>> {
     try {
       const response = await fetchWithTimeout(`${AI_MODEL_URL}/analyze/transcribe`, {
         method: 'POST',

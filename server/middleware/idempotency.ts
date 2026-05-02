@@ -164,7 +164,7 @@ export function webhookIdempotency(options: { ttl?: number; prefix?: string } = 
   return async (
     eventId: string,
     eventType: string,
-    handler: () => Promise<any>
+    handler: () => Promise<unknown>
   ): Promise<{ processed: boolean; result?: unknown; cached?: boolean }> => {
     const key = idempotencyService.generateWebhookKey(eventId, eventType);
 

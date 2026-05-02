@@ -16,14 +16,14 @@ import { getPdimClient, isPdimConfigured } from './pdimClient.js';
 
 export type RedisClientType = any;
 
-export async function getRedisClient(): Promise<any> {
+export async function getRedisClient(): Promise<unknown> {
   if (!isPdimConfigured()) {
     throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
   }
   return getPdimClient();
 }
 
-export async function createRedisClient(): Promise<any> {
+export async function createRedisClient(): Promise<unknown> {
   if (!isPdimConfigured()) {
     throw new Error('[Redis] PDIM is not configured — PDIM_HTTP_EXEC_URL must be set');
   }

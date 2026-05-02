@@ -3824,7 +3824,7 @@ function RadioPitchingContent() {
   });
 
   const { data: pitches = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/radio-pitches'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/radio-pitches/stats'] });
+  const { data: stats } = useQuery<Record<string, unknown>>({ queryKey: ['/api/radio-pitches/stats'] });
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/radio-pitches', data); return res.json(); },
@@ -3996,7 +3996,7 @@ function FanCampaignsContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: campaigns = [], isLoading } = useQuery<any[]>({ queryKey: ['/api/fan-campaigns'] });
-  const { data: stats } = useQuery<any>({ queryKey: ['/api/fan-campaigns/stats'] });
+  const { data: stats } = useQuery<Record<string, unknown>>({ queryKey: ['/api/fan-campaigns/stats'] });
 
   const createMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => { const res = await apiRequest('POST', '/api/fan-campaigns', data); return res.json(); },

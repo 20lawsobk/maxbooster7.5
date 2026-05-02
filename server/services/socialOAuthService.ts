@@ -677,7 +677,7 @@ export class SocialOAuthService {
   /**
    * Get stored tokens from database with decryption
    */
-  private async getStoredTokens(userId: string, platform: string): Promise<any> {
+  private async getStoredTokens(userId: string, platform: string): Promise<unknown> {
     const tokenString = await storage.getUserSocialToken(userId, platform);
     if (!tokenString) return null;
 

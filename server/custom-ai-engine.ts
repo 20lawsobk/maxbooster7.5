@@ -751,7 +751,7 @@ class CustomAIEngine {
       .slice(0, limit);
   }
 
-  async analyzeMusicTrack(audioData: unknown): Promise<any> {
+  async analyzeMusicTrack(audioData: unknown): Promise<unknown> {
     const modelParams = this.modelParameters.get('music_analysis') || {};
 
     const keyConfidenceThreshold = modelParams.keyConfidenceThreshold || 0.7;
@@ -798,7 +798,7 @@ class CustomAIEngine {
     return pool[seededIndex(`${trendSeed}:all`, pool.length)];
   }
 
-  async optimizeSocialPosting(platform: string, content: unknown): Promise<any> {
+  async optimizeSocialPosting(platform: string, content: unknown): Promise<unknown> {
     const modelParams = this.modelParameters.get('social_posting') || {};
 
     const optimalTimes = modelParams.optimalPostingTimes || [9, 12, 15, 18, 21];

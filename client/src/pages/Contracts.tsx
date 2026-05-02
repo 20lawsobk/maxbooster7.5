@@ -88,7 +88,7 @@ export default function Contracts() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [declineReason, setDeclineReason] = useState('');
   const [currentOutcome, setCurrentOutcome] = useState<ContractOutcome | null>(null);
-  const [outcomeDetails, setOutcomeDetails] = useState<any>(null);
+  const [outcomeDetails, setOutcomeDetails] = useState<Record<string, unknown> | null>(null);
   const [signStep, setSignStep] = useState<'pick' | 'draw'>('pick');
   const [signingAs, setSigningAs] = useState<string>('');
   const [pendingContracts, setPendingContracts] = useState<Contract[]>([]);

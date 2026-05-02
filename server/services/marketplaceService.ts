@@ -964,7 +964,7 @@ export class MarketplaceService {
     }
   }
 
-  async getSalesAnalytics(userId: string): Promise<any> {
+  async getSalesAnalytics(userId: string): Promise<unknown> {
     try {
       const sales = await this.getUserSales(userId);
       const totalSales = sales.reduce((sum, sale) => sum + (sale.amount || 0), 0);
@@ -987,7 +987,7 @@ export class MarketplaceService {
     }
   }
 
-  async initiatePurchase(buyerId: string, beatId: string, licenseType: string): Promise<any> {
+  async initiatePurchase(buyerId: string, beatId: string, licenseType: string): Promise<unknown> {
     try {
       if (!stripe) {
         throw new Error('Payment system not configured');

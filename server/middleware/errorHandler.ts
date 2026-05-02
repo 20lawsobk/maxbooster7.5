@@ -272,7 +272,7 @@ export function asyncHandler(fn: Function) {
 }
 
 export function handleUnhandledRejection(server?: Server) {
-  process.on('unhandledRejection', (reason: unknown, _promise: Promise<any>) => {
+  process.on('unhandledRejection', (reason: unknown, _promise: Promise<unknown>) => {
     const info = extractReasonInfo(reason);
 
     // Completely silent: circuit-open rejections are owned by the circuit breaker's

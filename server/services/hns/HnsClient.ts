@@ -87,7 +87,7 @@ export class HnsClient {
 
   // ── Raw request helpers ───────────────────────────────────────────────────
 
-  private request(method: string, path: string, body?: Record<string, unknown>): Promise<any> {
+  private request(method: string, path: string, body?: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const bodyStr = body ? JSON.stringify(body) : '';
       const opts: http.RequestOptions = {
@@ -127,22 +127,22 @@ export class HnsClient {
   }
 
   /** hsd node JSON-RPC */
-  private rpc(method: string, params: unknown[] = []): Promise<any> {
+  private rpc(method: string, params: unknown[] = []): Promise<unknown> {
     return this.request('POST', '/', { method, params, id: Date.now() });
   }
 
   /** hsd wallet REST API */
-  private walletGet(path: string): Promise<any> {
+  private walletGet(path: string): Promise<unknown> {
     return this.request('GET', `/wallet/${this.cfg.wallet}${path}`);
   }
 
-  private walletPost(path: string, body: Record<string, unknown>): Promise<any> {
+  private walletPost(path: string, body: Record<string, unknown>): Promise<unknown> {
     return this.request('POST', `/wallet/${this.cfg.wallet}${path}`, body);
   }
 
   // ── Node info ─────────────────────────────────────────────────────────────
 
-  async getInfo(): Promise<any> {
+  async getInfo(): Promise<unknown> {
     if (this._nodeInfo) return this._nodeInfo;
     this._nodeInfo = await this.rpc('getinfo');
     return this._nodeInfo;
@@ -176,7 +176,7 @@ export class HnsClient {
     }
   }
 
-  async getNameResource(name: string): Promise<any> {
+  async getNameResource(name: string): Promise<unknown> {
     return this.rpc('getnameresource', [name]);
   }
 
@@ -204,7 +204,7 @@ export class HnsClient {
 
   // ── Wallet operations ─────────────────────────────────────────────────────
 
-  async getWalletInfo(): Promise<any> {
+  async getWalletInfo(): Promise<unknown> {
     return this.walletGet('');
   }
 
